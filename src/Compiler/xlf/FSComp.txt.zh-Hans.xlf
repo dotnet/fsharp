@@ -459,17 +459,17 @@
       </trans-unit>
       <trans-unit id="featureParsedHashDirectiveArgumentNonString">
         <source># directives with non-quoted string arguments</source>
-        <target state="new"># directives with non-quoted string arguments</target>
+        <target state="translated"># 指令的字符串参数不带引号</target>
         <note />
       </trans-unit>
       <trans-unit id="featureParsedHashDirectiveUnexpectedIdentifier">
         <source>Unexpected identifier '{0}'.</source>
-        <target state="new">Unexpected identifier '{0}'.</target>
+        <target state="translated">意外的标识符:“{0}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="featureParsedHashDirectiveUnexpectedInteger">
         <source>Unexpected integer literal '{0}'.</source>
-        <target state="new">Unexpected integer literal '{0}'.</target>
+        <target state="translated">意外的整数文本“{0}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePreferExtensionMethodOverPlainProperty">
