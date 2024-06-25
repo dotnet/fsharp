@@ -447,15 +447,13 @@ type OperatorsModule2() =
             if not Info.isNetFramework then
                 Assert.AreEqual(9223372036854775807n, result)
             else
-                // Cannot express this as a literal, see https://github.com/dotnet/fsharp/issues/9524
-                Assert.AreEqual("-9223372036854775808", string result)
+                Assert.AreEqual(-9223372036854775808n, string result)
 
         let result = Operators.nativeint System.Double.MinValue
         if Info.isX86Runtime then
             Assert.AreEqual(-2147483648n, result)
         else
-            // Cannot express this as a literal, see https://github.com/dotnet/fsharp/issues/9524
-            Assert.AreEqual("-9223372036854775808", string result)
+            Assert.AreEqual(-9223372036854775808n, string result)
 
         // Max and min value as literals (this breaks compilation if the lexer fails).
         // The following tests ensure that the proper value is parsed, which is similar to `nativeint Int64.MaxValue` etc.
