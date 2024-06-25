@@ -1103,7 +1103,10 @@ type OperatorsModule2() =
         
         // Overflow
         let result = Operators.uint64 Double.MinValue
-        Assert.AreEqual(9223372036854775808UL, result)      // surprising, but true, 2^63 + 1
+        if not Info.isNetFramework then
+            Assert.AreEqual(0UL, result)
+        else
+            Assert.AreEqual(9223372036854775808UL, result)      // surprising, but true, 2^63 + 1
         
         // Overflow
         let result = Operators.uint64 Int64.MinValue
@@ -1160,7 +1163,10 @@ type OperatorsModule2() =
         if Info.isX86Runtime then
             Assert.AreEqual(0un, result)
         else
-            Assert.AreEqual(9223372036854775808un, result)      // surprising, but true, 2^63 + 1
+            if not Info.isNetFramework then
+                Assert.AreEqual(0un, result)
+            else
+                Assert.AreEqual(9223372036854775808un, result)      // surprising, but true, 2^63 + 1
         
         // Overflow (depends on pointer size)
         let result = Operators.unativeint Int64.MinValue
