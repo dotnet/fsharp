@@ -278,24 +278,24 @@ type OperatorsModule1() =
         // Overflow
         let result = Operators.byte Single.MinValue
         Assert.AreEqual(0uy, result)
-        
+
         // Overflow
         let result = Operators.byte Single.MaxValue
-        if not Info.isNetFramework then
-            Assert.AreEqual(255uy, result)
-        else
+        if Info.isNetFramework then
             Assert.AreEqual(0uy, result)
-        
+        else
+            Assert.AreEqual(255uy, result)
+
         // Overflow
         let result = Operators.byte Double.MinValue
         Assert.AreEqual(0uy, result)
-        
+
         // Overflow
         let result = Operators.byte Double.MaxValue
-        if not Info.isNetFramework then
-            Assert.AreEqual(255uy, result)
-        else
+        if Info.isNetFramework then
             Assert.AreEqual(0uy, result)
+        else
+            Assert.AreEqual(255uy, result)
         
         // Overflow
         let result = Operators.byte (Int64.MaxValue * 8L)
@@ -349,16 +349,15 @@ type OperatorsModule1() =
 
         // Overflow
         Assert.AreEqual('\000', Operators.char Single.MinValue)
-        Assert.AreEqual('\000', Operators.char Double.MinValue)
-        if not Info.isNetFramework then
-            Assert.AreEqual('\uffff', Operators.char Single.MaxValue)
-        else
+        if Info.isNetFramework then
             Assert.AreEqual('\000', Operators.char Single.MaxValue)
-
-        if not Info.isNetFramework then
-            Assert.AreEqual('\uffff', Operators.char Double.MaxValue)
         else
+            Assert.AreEqual('\uffff', Operators.char Single.MaxValue)
+
+        if Info.isNetFramework then
             Assert.AreEqual('\000', Operators.char Double.MaxValue)
+        else
+            Assert.AreEqual('\uffff', Operators.char Double.MaxValue)
         CheckThrowsOverflowException(fun () -> Operators.char Decimal.MinValue |> ignore)
         
         // string type
