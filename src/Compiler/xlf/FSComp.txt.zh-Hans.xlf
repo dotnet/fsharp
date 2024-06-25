@@ -124,12 +124,12 @@
       </trans-unit>
       <trans-unit id="chkStaticAbstractInterfaceMembers">
         <source>A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.{0}).</source>
-        <target state="new">A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.{0}).</target>
+        <target state="translated">应仅通过类型参数调用静态抽象非虚拟接口成员(例如: “T.{0}”)。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkStaticAbstractMembersOnClasses">
         <source>Classes cannot contain static abstract members.</source>
-        <target state="new">Classes cannot contain static abstract members.</target>
+        <target state="translated">类不能包含静态抽象成员。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkStaticMembersOnObjectExpressions">
@@ -1139,22 +1139,22 @@
       </trans-unit>
       <trans-unit id="tcActivePatternArgsCountNotMatchArgs">
         <source>This active pattern expects {0} expression argument(s), e.g., '{1}{2}'.</source>
-        <target state="new">This active pattern expects {0} expression argument(s), e.g., '{1}{2}'.</target>
+        <target state="translated">此活动模式需要 {0} 个表达式参数，例如“{1}{2}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcActivePatternArgsCountNotMatchArgsAndPat">
         <source>This active pattern expects {0} expression argument(s) and a pattern argument, e.g., '{1}{2} pat'.</source>
-        <target state="new">This active pattern expects {0} expression argument(s) and a pattern argument, e.g., '{1}{2} pat'.</target>
+        <target state="translated">此活动模式需要 {0} 个表达式参数和一个模式参数，例如 “{1}{2} pat”。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcActivePatternArgsCountNotMatchNoArgsNoPat">
         <source>This active pattern does not expect any arguments, i.e., it should be used like '{0}' instead of '{1} x'.</source>
-        <target state="new">This active pattern does not expect any arguments, i.e., it should be used like '{0}' instead of '{1} x'.</target>
+        <target state="translated">此活动模式不需要任何参数，即它应像“{0}”而不是 “{1}x” 一样使用。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcActivePatternArgsCountNotMatchOnlyPat">
         <source>This active pattern expects exactly one pattern argument, e.g., '{0} pat'.</source>
-        <target state="new">This active pattern expects exactly one pattern argument, e.g., '{0} pat'.</target>
+        <target state="translated">此活动模式只需要一个模式参数，例如 “{0} pat”。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAmbiguousDiscardDotLambda">
@@ -1279,7 +1279,7 @@
       </trans-unit>
       <trans-unit id="tcImplicitConversionUsedForNonMethodArg">
         <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</source>
-        <target state="needs-review-translation">此表达式使用隐式转换“{0}”将类型“{1}”转换为类型“{2}”。请参阅 https://aka.ms/fsharp-implicit-convs。可使用 '#nowarn \"3391\" 禁用此警告。</target>
+        <target state="translated">此表达式使用隐式转换“{0}”将类型“{1}”转换为类型“{2}”。请参阅 https://aka.ms/fsharp-implicit-convs。可使用 '#nowarn \"3391\" 禁用此警告。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInfoIfFunctionShadowsUnionCase">
@@ -1534,12 +1534,12 @@
       </trans-unit>
       <trans-unit id="tcUsingInterfaceWithStaticAbstractMethodAsType">
         <source>'{0}' is normally used as a type constraint in generic code, e.g. \"'T when ISomeInterface&lt;'T&gt;\" or \"let f (x: #ISomeInterface&lt;_&gt;)\". See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3536\"' or '--nowarn:3536'.</source>
-        <target state="needs-review-translation">"{0}" 通常用作泛型代码中的类型约束，例如 \"'T when ISomeInterface&lt;'T&gt;\" or \"let f (x: #ISomeInterface&lt;_&gt;)\"。有关指南，请参阅 https://aka.ms/fsharp-iwsams。可以使用 '#nowarn \"3536\"' 或 '--nowarn:3536' 禁用此警告。</target>
+        <target state="translated">"{0}" 通常用作泛型代码中的类型约束，例如 \"'T when ISomeInterface&lt;'T&gt;\" or \"let f (x: #ISomeInterface&lt;_&gt;)\"。有关指南，请参阅 https://aka.ms/fsharp-iwsams。可以使用 '#nowarn \"3536\"' 或 '--nowarn:3536' 禁用此警告。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUsingInterfacesWithStaticAbstractMethods">
         <source>Declaring \"interfaces with static abstract methods\" is an advanced feature. See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3535\"' or '--nowarn:3535'.</source>
-        <target state="needs-review-translation">声明“使用静态抽象方法的接口”是一项高级功能。有关指南，请参阅 https://aka.ms/fsharp-iwsams。可以使用 "#nowarn \"3535\"' 或 '--nowarn:3535' 禁用此警告。</target>
+        <target state="translated">声明“使用静态抽象方法的接口”是一项高级功能。有关指南，请参阅 https://aka.ms/fsharp-iwsams。可以使用 "#nowarn \"3535\"' 或 '--nowarn:3535' 禁用此警告。</target>
         <note />
       </trans-unit>
       <trans-unit id="tooManyMethodsInDotNetTypeWritingAssembly">
@@ -1564,7 +1564,7 @@
       </trans-unit>
       <trans-unit id="typrelNeverRefinedAwayFromTop">
         <source>A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</source>
-        <target state="needs-review-translation">类型已被隐式推断为 "obj"，这可能是意外的。请考虑添加显式类型注释。可以使用"#nowarn\"3559\" 或 "--nowarn:3559" 禁用此警告。</target>
+        <target state="translated">类型已被隐式推断为 "obj"，这可能是意外的。请考虑添加显式类型注释。可以使用"#nowarn\"3559\" 或 "--nowarn:3559" 禁用此警告。</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
@@ -1899,7 +1899,7 @@
       </trans-unit>
       <trans-unit id="buildInvalidHashtimeDirective">
         <source>Invalid directive. Expected '#time', '#time \"on\"' or '#time \"off\"'.</source>
-        <target state="needs-review-translation">指令无效。应为 '#time'、'#time \"on\"' 或 '#time \"off\"'。</target>
+        <target state="translated">指令无效。应为 '#time'、'#time \"on\"' 或 '#time \"off\"'。</target>
         <note />
       </trans-unit>
       <trans-unit id="buildDirectivesInModulesAreIgnored">
