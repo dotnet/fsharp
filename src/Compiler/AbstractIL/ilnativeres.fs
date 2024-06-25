@@ -1149,7 +1149,12 @@ type NativeResourceWriter() =
                             dataWriter.WriteByte 0uy
 
                         false
-                    | e -> failwithf "Unknown entry %s" (match e with | null -> "<NULL>" | e -> e.GetType().FullName)
+                    | e ->
+                        failwithf
+                            "Unknown entry %s"
+                            (match e with
+                             | null -> "<NULL>"
+                             | e -> e.GetType().FullName)
 
                 if id >= 0 then
                     writer.WriteInt32 id

@@ -635,7 +635,11 @@ type TcConfigBuilder =
         seq {
             yield! tcConfigB.includes
             yield! tcConfigB.compilerToolPaths
-            yield! (tcConfigB.referencedDLLs |> Seq.map (fun ref -> !! Path.GetDirectoryName(ref.Text)))
+
+            yield!
+                (tcConfigB.referencedDLLs
+                 |> Seq.map (fun ref -> !! Path.GetDirectoryName(ref.Text)))
+
             tcConfigB.implicitIncludeDir
         }
         |> Seq.distinct
@@ -654,7 +658,8 @@ type TcConfigBuilder =
             rangeForErrors
         ) =
 
-        let defaultFSharpBinariesDir = nullArgCheck "defaultFSharpBinariesDir" defaultFSharpBinariesDir
+        let defaultFSharpBinariesDir =
+            nullArgCheck "defaultFSharpBinariesDir" defaultFSharpBinariesDir
 
         // These are all default values, many can be overridden using the command line switch
         {
@@ -1106,7 +1111,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     // clone the input builder to ensure nobody messes with it.
     let data = { data with pause = data.pause }
 
-    let computeKnownDllReference (libraryName:string) =
+    let computeKnownDllReference (libraryName: string) =
         let defaultCoreLibraryReference =
             AssemblyReference(range0, libraryName + ".dll", None)
 

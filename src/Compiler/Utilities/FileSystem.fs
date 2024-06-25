@@ -705,7 +705,8 @@ type DefaultFileSystem() as this =
 
     abstract ChangeExtensionShim: path: string * extension: string -> string
 
-    default _.ChangeExtensionShim(path: string, extension: string) : string = !! Path.ChangeExtension(path, extension)
+    default _.ChangeExtensionShim(path: string, extension: string) : string =
+        !! Path.ChangeExtension(path, extension)
 
     interface IFileSystem with
         member _.AssemblyLoader = this.AssemblyLoader

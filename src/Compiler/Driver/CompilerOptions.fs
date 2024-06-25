@@ -680,7 +680,7 @@ let SetEmbedAllSourceSwitch (tcConfigB: TcConfigBuilder) switch =
     else
         tcConfigB.embedAllSource <- false
 
-let setOutFileName tcConfigB (path:string) =
+let setOutFileName tcConfigB (path: string) =
     let outputDir = !! Path.GetDirectoryName(path)
     tcConfigB.outputDir <- Some outputDir
     tcConfigB.outputFile <- Some path

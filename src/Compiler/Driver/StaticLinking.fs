@@ -158,7 +158,7 @@ let StaticLinkILModules
                     match depILModule.Manifest with
                     | Some m ->
                         for ca in m.CustomAttrs.AsArray() do
-                            if ca.Method.MethodRef.DeclaringTypeRef.FullName = !! typeof<CompilationMappingAttribute>.FullName then
+                            if ca.Method.MethodRef.DeclaringTypeRef.FullName = !!typeof<CompilationMappingAttribute>.FullName then
                                 ca
                     | _ -> ()
             ]

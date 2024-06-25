@@ -307,7 +307,7 @@ type XmlDocumentationInfo private (tryGetXmlDocument: unit -> XmlDocument option
             let lines = Array.zeroCreate childNodes.Count
 
             for i = 0 to childNodes.Count - 1 do
-                let childNode = !! childNodes[i]
+                let childNode = !!childNodes[i]
                 lines[i] <- childNode.OuterXml
 
             XmlDoc(lines, range0))

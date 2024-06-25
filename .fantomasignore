@@ -12,7 +12,7 @@ vsintegration/*
 !vsintegration/tests/FSharp.Editor.Tests
 artifacts/
 
-# For some reason, it tries to format files from remotes (Processing .\.git\refs\remotes\<remote>\FSComp.fsi)
+# For some reason, it tries to format files from remotes (Processing ./.git/refs/remotes/<remote>/FSComp.fsi)
 .git/
 
 # Explicitly unformatted implementation
@@ -105,6 +105,15 @@ src/Compiler/Utilities/Activity.fs
 src/Compiler/Utilities/sformat.fs
 src/Compiler/Utilities/illib.fsi
 src/Compiler/Utilities/illib.fs
+
+src/Compiler/Utilities/NullnessShims.fs
+src/Compiler/Utilities/LruCache.fsi
+src/Compiler/Utilities/LruCache.fs
+src/Compiler/Utilities/HashMultiMap.fsi
+src/Compiler/Utilities/HashMultiMap.fs
+src/Compiler/Facilities/AsyncMemoize.fsi
+src/Compiler/Facilities/AsyncMemoize.fs
+src/Compiler/AbstractIL/il.fs
 
 # Fantomas limitations on implementation files  (to investigate)
 

@@ -69,7 +69,7 @@ type internal FxResolver
                 | NonNull message -> lock errorslock (fun () -> errorsList.Add(message))
 
             let psi = ProcessStartInfo()
-            psi.FileName <- !! pathToExe
+            psi.FileName <- !!pathToExe
 
             if workingDir.IsSome then
                 psi.WorkingDirectory <- workingDir.Value
@@ -91,7 +91,7 @@ type internal FxResolver
                 p.BeginOutputReadLine()
                 p.BeginErrorReadLine()
 
-                if not (p.WaitForExit(timeout:int)) then
+                if not (p.WaitForExit(timeout: int)) then
                     // Timed out resolving throw a diagnostic.
                     raise (TimeoutException(sprintf "Timeout executing command '%s' '%s'" psi.FileName psi.Arguments))
                 else
@@ -284,7 +284,10 @@ type internal FxResolver
             try
                 let asm = typeof<System.ValueTuple<int, int>>.Assembly
 
-                if (!!asm.FullName).StartsWith("System.ValueTuple", StringComparison.OrdinalIgnoreCase) then
+                if
+                    (!!asm.FullName)
+                        .StartsWith("System.ValueTuple", StringComparison.OrdinalIgnoreCase)
+                then
                     Some asm.Location
                 else
                     let valueTuplePath =
@@ -495,7 +498,7 @@ type internal FxResolver
                 try
                     if FileSystem.FileExistsShim(reference) then
                         // Reference is a path to a file on disk
-                        !!Path.GetFileNameWithoutExtension(reference), reference
+                        !! Path.GetFileNameWithoutExtension(reference), reference
                     else
                         // Reference is a SimpleAssembly name
                         reference, frameworkPathFromSimpleName reference

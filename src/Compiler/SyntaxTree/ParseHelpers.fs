@@ -75,7 +75,7 @@ type IParseState with
             match bls.TryGetValue key with
             | true, gen -> gen
             | _ ->
-                let gen = !! (box (SynArgNameGenerator()))
+                let gen = !!(box (SynArgNameGenerator()))
                 bls[key] <- gen
                 gen
 
@@ -97,7 +97,7 @@ module LexbufLocalXmlDocStore =
         match lexbuf.BufferLocalStore.TryGetValue xmlDocKey with
         | true, collector -> collector
         | _ ->
-            let collector = !! (box (XmlDocCollector()))
+            let collector = !!(box (XmlDocCollector()))
             lexbuf.BufferLocalStore[xmlDocKey] <- collector
             collector
 
@@ -188,7 +188,7 @@ module LexbufIfdefStore =
         match lexbuf.BufferLocalStore.TryGetValue ifDefKey with
         | true, store -> store
         | _ ->
-            let store = !! (box (ResizeArray<ConditionalDirectiveTrivia>()))
+            let store = !!(box (ResizeArray<ConditionalDirectiveTrivia>()))
             lexbuf.BufferLocalStore[ifDefKey] <- store
             store
         |> unbox<ResizeArray<ConditionalDirectiveTrivia>>
@@ -237,7 +237,7 @@ module LexbufCommentStore =
         match lexbuf.BufferLocalStore.TryGetValue commentKey with
         | true, store -> store
         | _ ->
-            let store = !! (box (ResizeArray<CommentTrivia>()))
+            let store = !!(box (ResizeArray<CommentTrivia>()))
             lexbuf.BufferLocalStore[commentKey] <- store
             store
         |> unbox<ResizeArray<CommentTrivia>>

@@ -373,7 +373,7 @@ type ILMultiInMemoryAssemblyEmitEnv
         let typT = convTypeRef tref
         let tyargs = List.map convTypeAux tspec.GenericArgs
 
-        let res : Type MaybeNull =
+        let res: Type MaybeNull =
             match isNil tyargs, typT.IsGenericType with
             | _, true -> typT.MakeGenericType(List.toArray tyargs)
             | true, false -> typT
@@ -396,8 +396,8 @@ type ILMultiInMemoryAssemblyEmitEnv
                 baseT.MakeArrayType()
             else
                 baseT.MakeArrayType shape.Rank
-        | ILType.Value tspec -> !! (convTypeSpec tspec)
-        | ILType.Boxed tspec -> !! (convTypeSpec tspec)
+        | ILType.Value tspec -> !!(convTypeSpec tspec)
+        | ILType.Boxed tspec -> !!(convTypeSpec tspec)
         | ILType.Ptr eltType ->
             let baseT = convTypeAux eltType
             baseT.MakePointerType()
@@ -994,7 +994,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                     | _ -> StringComparison.OrdinalIgnoreCase
 
                 if String.Compare(processFileName, commandLineExecutableFileName, stringComparison) = 0 then
-                    !! processFileName
+                    !!processFileName
                 else
                     sprintf "%s %s" processFileName commandLineExecutableFileName
 
@@ -1675,7 +1675,7 @@ let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
     entity, v, CheckedImplFile.CheckedImplFile(qname, [], mty, contents, false, false, StampMap.Empty, Map.empty)
 
 let scriptingSymbolsPath =
-    let createDirectory (path:string) =
+    let createDirectory (path: string) =
         lazy
             try
                 if not (Directory.Exists(path)) then
@@ -1696,7 +1696,7 @@ let deleteScriptingSymbols () =
 #else
         ()
 #endif
-    with _->
+    with _ ->
         ()
 
 //TODO nullness - this should not warn, since F# impl of Event.add is safe
@@ -2843,7 +2843,7 @@ type internal FsiDynamicCompiler
 
                      st),
                  (fun _ _ -> ()))
-                (tcConfigB, input, !!Path.GetDirectoryName(sourceFile), istate))
+                (tcConfigB, input, !! Path.GetDirectoryName(sourceFile), istate))
 
     member fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, sourceFiles, lexResourceManager, diagnosticsLogger: DiagnosticsLogger) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)

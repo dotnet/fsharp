@@ -352,7 +352,7 @@ let PostParseModuleSpecs
 type ModuleNamesDict = Map<string, Map<string, QualifiedNameOfFile>>
 
 /// Checks if a module name is already given and deduplicates the name if needed.
-let DeduplicateModuleName (moduleNamesDict: ModuleNamesDict) (fileName:string) (qualNameOfFile: QualifiedNameOfFile) =
+let DeduplicateModuleName (moduleNamesDict: ModuleNamesDict) (fileName: string) (qualNameOfFile: QualifiedNameOfFile) =
     let path = !! Path.GetDirectoryName(fileName)
 
     let path =
@@ -884,7 +884,7 @@ let ProcessMetaCommandsFromInput
 
         match args with
         | [ path ] ->
-            let p = if String.IsNullOrWhiteSpace(path) then "" else !! path
+            let p = if String.IsNullOrWhiteSpace(path) then "" else !!path
 
             hashReferenceF state (m, p, directive)
 

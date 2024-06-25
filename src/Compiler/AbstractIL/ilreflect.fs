@@ -163,9 +163,9 @@ type TypeBuilder with
         if logRefEmitCalls then
             printfn "typeBuilder%d.CreateType()" (abs <| hash typB)
 
-//Buggy annotation in ns20, will not be fixed.
+        //Buggy annotation in ns20, will not be fixed.
 #if NETSTANDARD && !NO_CHECKNULLS
-        !! (typB.CreateTypeInfo()) :> Type
+        !!(typB.CreateTypeInfo()) :> Type
 #else
         typB.CreateTypeInfo() :> Type
 #endif
@@ -700,7 +700,7 @@ let rec convTypeSpec cenv emEnv preferCreated (tspec: ILTypeSpec) =
     let typT = convTypeRef cenv emEnv preferCreated tspec.TypeRef
     let tyargs = List.map (convTypeAux cenv emEnv preferCreated) tspec.GenericArgs
 
-    let res : Type MaybeNull =
+    let res: Type MaybeNull =
         match isNil tyargs, typT.IsGenericType with
         | _, true -> typT.MakeGenericType(List.toArray tyargs)
         | true, false -> typT
@@ -713,7 +713,7 @@ let rec convTypeSpec cenv emEnv preferCreated (tspec: ILTypeSpec) =
 
 and convTypeAux cenv emEnv preferCreated ty =
     match ty with
-    | ILType.Void -> !!Type.GetType("System.Void")
+    | ILType.Void -> !! Type.GetType("System.Void")
     | ILType.Array(shape, eltType) ->
         let baseT = convTypeAux cenv emEnv preferCreated eltType
         let nDims = shape.Rank
@@ -1048,7 +1048,12 @@ let convMethodRef cenv emEnv (parentTI: Type) (mref: ILMethodRef) =
     | Null ->
         error (
             Error(
-                FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("method", mref.Name, parentTI.FullName |> string, parentTI.Assembly.FullName |> string),
+                FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen (
+                    "method",
+                    mref.Name,
+                    parentTI.FullName |> string,
+                    parentTI.Assembly.FullName |> string
+                ),
                 range0
             )
         )
@@ -1089,7 +1094,12 @@ let queryableTypeGetConstructor cenv emEnv (parentT: Type) (mref: ILMethodRef) =
     | Null ->
         error (
             Error(
-                FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("constructor", mref.Name, parentT.FullName |> string, parentT.Assembly.FullName |> string),
+                FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen (
+                    "constructor",
+                    mref.Name,
+                    parentT.FullName |> string,
+                    parentT.Assembly.FullName |> string
+                ),
                 range0
             )
         )
@@ -1124,7 +1134,12 @@ let convConstructorSpec cenv emEnv (mspec: ILMethodSpec) =
     | Null ->
         error (
             Error(
-                FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("constructor", "", parentTI.FullName |> string, parentTI.Assembly.FullName |> string),
+                FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen (
+                    "constructor",
+                    "",
+                    parentTI.FullName |> string,
+                    parentTI.Assembly.FullName |> string
+                ),
                 range0
             )
         )
@@ -1816,24 +1831,25 @@ let rec buildMethodPass2 cenv tref (typB: TypeBuilder) emEnv (mdef: ILMethodDef)
         let methB =
             System.Diagnostics.Debug.Assert(not (isNull definePInvokeMethod), "Runtime does not have DefinePInvokeMethod") // Absolutely can't happen
 
-            (!!definePInvokeMethod).Invoke(
-                typB,
-                [|
-                    mdef.Name
-                    p.Where.Name
-                    p.Name
-                    attrs
-                    cconv
-                    retTy
-                    null
-                    null
-                    argTys
-                    null
-                    null
-                    pcc
-                    pcs
-                |]
-            )
+            (!!definePInvokeMethod)
+                .Invoke(
+                    typB,
+                    [|
+                        mdef.Name
+                        p.Where.Name
+                        p.Name
+                        attrs
+                        cconv
+                        retTy
+                        null
+                        null
+                        argTys
+                        null
+                        null
+                        pcc
+                        pcs
+                    |]
+                )
             :?> MethodBuilder
 
         methB.SetImplementationFlagsAndLog implflags
@@ -2459,7 +2475,7 @@ let defineDynamicAssemblyAndLog (asmName, flags, asmDir: string) =
 
     asmB
 
-let mkDynamicAssemblyAndModule (assemblyName:string, optimize, collectible) =
+let mkDynamicAssemblyAndModule (assemblyName: string, optimize, collectible) =
     let asmDir = "."
     let asmName = AssemblyName()
     asmName.Name <- assemblyName

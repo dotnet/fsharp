@@ -7,7 +7,7 @@ open Internal.Utilities.Library
 [<Sealed>]
 type Cancellable =
     static let token = AsyncLocal<CancellationToken>()
-    
+
     static member Token = token.Value
 
     static member UsingToken(ct) =

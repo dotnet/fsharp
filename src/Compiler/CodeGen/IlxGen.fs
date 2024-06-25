@@ -12080,14 +12080,14 @@ let LookupGeneratedValue (cenv: cenv) (ctxt: ExecutionContext) eenv (v: Val) =
                 if hasLiteralAttr then
                     let staticTy = ctxt.LookupTypeRef fspec.DeclaringTypeRef
                     // Checked: This FieldInfo (FieldBuilder) supports GetValue().
-                    (!!staticTy.GetField(fspec.Name)).GetValue(null: obj MaybeNull)
+                    (!! staticTy.GetField(fspec.Name)).GetValue(null: obj MaybeNull)
                 else
                     let staticTy = ctxt.LookupTypeRef ilContainerTy.TypeRef
                     // We can't call .Invoke on the ILMethodRef's MethodInfo,
                     // because it is the MethodBuilder and that does not support Invoke.
                     // Rather, we look for the getter MethodInfo from the built type and .Invoke on that.
                     let methInfo =
-                        !!staticTy.GetMethod(ilGetterMethRef.Name, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
+                        !! staticTy.GetMethod(ilGetterMethRef.Name, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
 
                     methInfo.Invoke(null, null)
 
@@ -12100,7 +12100,7 @@ let LookupGeneratedValue (cenv: cenv) (ctxt: ExecutionContext) eenv (v: Val) =
                 // because it is the MethodBuilder and that does not support Invoke.
                 // Rather, we look for the getter MethodInfo from the built type and .Invoke on that.
                 let methInfo =
-                    !!staticTy.GetMethod(ilGetterMethSpec.Name, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
+                    !! staticTy.GetMethod(ilGetterMethSpec.Name, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
 
                 methInfo.Invoke(null, null)
 

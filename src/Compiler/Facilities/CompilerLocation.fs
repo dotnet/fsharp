@@ -10,7 +10,6 @@ open System.Runtime.InteropServices
 open Microsoft.FSharp.Core
 open Internal.Utilities.Library
 
-
 #nowarn "44" // ConfigurationSettings is obsolete but the new stuff is horribly complicated.
 
 module internal FSharpEnvironment =
@@ -25,7 +24,7 @@ module internal FSharpEnvironment =
 
     let FSharpProductName = UtilsStrings.SR.buildProductName (FSharpBannerVersion)
 
-    let versionOf<'t> : MaybeNull<string> = 
+    let versionOf<'t> : MaybeNull<string> =
         match typeof<'t>.Assembly.GetName().Version with
         | null -> null
         | v -> v.ToString()
@@ -75,7 +74,7 @@ module internal FSharpEnvironment =
         try
             // We let you set FSHARP_COMPILER_BIN. I've rarely seen this used and its not documented in the install instructions.
             match Environment.GetEnvironmentVariable("FSHARP_COMPILER_BIN") with
-            | result when not (String.IsNullOrWhiteSpace result) -> Some !! result
+            | result when not (String.IsNullOrWhiteSpace result) -> Some !!result
             | _ ->
                 let safeExists f =
                     (try
@@ -89,7 +88,7 @@ module internal FSharpEnvironment =
                 | _ ->
                     let fallback () =
                         let d = Assembly.GetExecutingAssembly()
-                        
+
                         Some(!! Path.GetDirectoryName(d.Location))
 
                     match tryCurrentDomain () with
@@ -189,7 +188,7 @@ module internal FSharpEnvironment =
                 match path with
                 | None -> ()
                 | Some(p: string) ->
-                    match Path.GetDirectoryName(p) with                    
+                    match Path.GetDirectoryName(p) with
                     | s when String.IsNullOrEmpty(s) || Path.GetFileName(p) = "packages" || s = p -> ()
                     | parentDir -> yield! searchParentDirChain (Option.ofObj parentDir) assemblyName
 
@@ -202,7 +201,9 @@ module internal FSharpEnvironment =
 
         let loadFromParentDirRelativeToRuntimeAssemblyLocation designTimeAssemblyName =
             let runTimeAssemblyPath = Path.GetDirectoryName runTimeAssemblyFileName
-            let paths = searchParentDirChain (Option.ofObj runTimeAssemblyPath) designTimeAssemblyName
+
+            let paths =
+                searchParentDirChain (Option.ofObj runTimeAssemblyPath) designTimeAssemblyName
 
             paths
             |> Seq.tryHead
@@ -244,7 +245,7 @@ module internal FSharpEnvironment =
         let location =
             try
                 let directory = Path.GetDirectoryName(defaultLocation.Assembly.Location)
-                Option.ofObj(directory)
+                Option.ofObj (directory)
             with _ ->
                 None
 
@@ -293,7 +294,7 @@ module internal FSharpEnvironment =
             if String.IsNullOrEmpty(pf) then
                 Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)
             else
-                !! pf
+                !!pf
 
         let candidate = Path.Combine(pf, "dotnet", dotnet)
 
@@ -318,9 +319,10 @@ module internal FSharpEnvironment =
         let probePathForDotnetHost () =
             let paths =
                 let p = Environment.GetEnvironmentVariable("PATH")
+
                 match p with
                 | null -> [||]
-                | p -> p.Split(Path.PathSeparator) 
+                | p -> p.Split(Path.PathSeparator)
 
             paths |> Array.tryFind (fun f -> fileExists (Path.Combine(f, dotnet)))
 
@@ -333,7 +335,7 @@ module internal FSharpEnvironment =
                 let assemblyLocation =
                     Path.GetDirectoryName(typeof<Int32>.GetTypeInfo().Assembly.Location)
 
-                Path.GetFullPath(Path.Combine(!! assemblyLocation, "..", "..", "..", dotnet))
+                Path.GetFullPath(Path.Combine(!!assemblyLocation, "..", "..", "..", dotnet))
 
             if fileExists candidate then
                 Some candidate

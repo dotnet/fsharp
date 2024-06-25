@@ -365,7 +365,8 @@ let IsPossibleOpName (name: string) = name.StartsWithOrdinal(opNamePrefix)
 
 // TODO nullness - remove this once covariance is supported for interfaces allowing nullness
 // In this case, IEqualityComparer allows `in T` (F# does not understand it at the moment), and we want an automatic conversion from EQC<string|null> to EQC<string>
-let ordinalStringComparer : IEqualityComparer<string> = StringComparer.Ordinal |> box |> unbox
+let ordinalStringComparer: IEqualityComparer<string> =
+    StringComparer.Ordinal |> box |> unbox
 
 /// Compiles a custom operator into a mangled operator name.
 /// For example, "!%" becomes "op_DereferencePercent".
@@ -646,6 +647,7 @@ let IsValidPrefixOperatorDefinitionName s =
         false
     else
         let s = !!s
+
         match s[0] with
         | '~' ->
             isTildeOnlyString s

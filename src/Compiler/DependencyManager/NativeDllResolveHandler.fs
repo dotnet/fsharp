@@ -24,7 +24,7 @@ type internal ProbingPathsStore() =
         else
             p
 
-    static member RemoveProbeFromProcessPath (probePath:string) =
+    static member RemoveProbeFromProcessPath(probePath: string) =
         if not (String.IsNullOrWhiteSpace(probePath)) then
             let probe = ProbingPathsStore.AppendPathSeparator probePath
 
@@ -162,8 +162,7 @@ type internal NativeDllResolveHandlerCoreClr(nativeProbingRoots: NativeResolutio
     let eventInfo, handler, defaultAssemblyLoadContext =
         !! assemblyLoadContextType.GetEvent("ResolvingUnmanagedDll"),
         Func<Assembly, string, IntPtr> resolveUnmanagedDll,
-        (!! assemblyLoadContextType
-            .GetProperty("Default", BindingFlags.Static ||| BindingFlags.Public))
+        (!! assemblyLoadContextType.GetProperty("Default", BindingFlags.Static ||| BindingFlags.Public))
             .GetValue(null, null)
 
     do eventInfo.AddEventHandler(defaultAssemblyLoadContext, handler)

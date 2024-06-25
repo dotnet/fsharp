@@ -90,7 +90,7 @@ let hashAssembly (peReader: PEReader) (hashAlgorithm: IncrementalHash) =
 
     // Hash content of all sections
     let signatureDirectory =
-        let corHeader = peHeaders.CorHeader |>  nullArgCheck (nameof peHeaders.CorHeader)
+        let corHeader = peHeaders.CorHeader |> nullArgCheck (nameof peHeaders.CorHeader)
         corHeader.StrongNameSignatureDirectory
 
     let signatureStart =
@@ -230,6 +230,7 @@ let toCLRKeyBlob (rsaParameters: RSAParameters) (algId: int) : byte array =
 
         let expAsDword =
             let mutable buffer = int 0
+
             match rsaParameters.Exponent with
             | null -> ()
             | exp ->
@@ -260,7 +261,7 @@ let toCLRKeyBlob (rsaParameters: RSAParameters) (algId: int) : byte array =
 
     key
 
-let createSignature (hash:byte array) keyBlob keyType =
+let createSignature (hash: byte array) keyBlob keyType =
     use rsa = RSA.Create()
     rsa.ImportParameters(RSAParamatersFromBlob keyBlob keyType)
 
@@ -271,7 +272,7 @@ let createSignature (hash:byte array) keyBlob keyType =
 
 let patchSignature (stream: Stream) (peReader: PEReader) (signature: byte array) =
     let peHeaders = peReader.PEHeaders
-    let corHeader = peHeaders.CorHeader |>  nullArgCheck (nameof peHeaders.CorHeader)
+    let corHeader = peHeaders.CorHeader |> nullArgCheck (nameof peHeaders.CorHeader)
     let signatureDirectory = corHeader.StrongNameSignatureDirectory
 
     let signatureOffset =

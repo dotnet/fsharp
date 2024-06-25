@@ -988,7 +988,11 @@ type internal TransparentCompiler
             projectSnapshot.NoFileVersionsKey,
             async {
                 use _ =
-                    Activity.start "ComputeBootstrapInfo" [| Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName  |> (!!) |]
+                    Activity.start
+                        "ComputeBootstrapInfo"
+                        [|
+                            Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |> (!!)
+                        |]
 
                 // Trap and report diagnostics from creation.
                 let delayedLogger = CapturingDiagnosticsLogger("IncrementalBuilderCreation")
@@ -1642,7 +1646,9 @@ type internal TransparentCompiler
                 use _ =
                     Activity.start
                         "ComputeParseAndCheckAllFilesInProject"
-                        [| Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |> (!!) |]
+                        [|
+                            Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |> (!!)
+                        |]
 
                 let! projectSnapshot = parseSourceFiles projectSnapshot bootstrapInfo.TcConfig
 
@@ -1747,7 +1753,7 @@ type internal TransparentCompiler
                             |> List.exists (fun (Attrib(tcref, _, _, _, _, _, _)) ->
                                 let nm = tcref.CompiledRepresentationForNamedType.BasicQualifiedName
 
-                                nm = !! typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName)
+                                nm = !!typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName)
 
                         if tcState.CreatesGeneratedProvidedTypes || hasTypeProviderAssemblyAttrib then
                             ProjectAssemblyDataResult.Unavailable true

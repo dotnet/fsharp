@@ -15,7 +15,7 @@ open System.Collections.Concurrent
 module Option =
 
     /// Convert string into Option string where null and String.Empty result in None
-    let ofString (s:string MaybeNull)  =
+    let ofString (s: string MaybeNull) =
         match s with
         | null -> None
         | "" -> None
@@ -58,7 +58,7 @@ module ReflectionHelper =
     let getInstanceProperty<'T> (theType: Type) propertyName =
         try
             let instanceFlags =
-                BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance                
+                BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance
 
             match theType.GetProperty(propertyName, instanceFlags, null, typeof<'T>, [||], [||]) with
             | null -> None
@@ -66,7 +66,7 @@ module ReflectionHelper =
                 match property.GetGetMethod() with
                 | null -> None
                 | getMethod when getMethod.IsStatic -> None
-                | _ -> Some property              
+                | _ -> Some property
         with _ ->
             None
 
@@ -74,13 +74,13 @@ module ReflectionHelper =
         try
             match theType.GetMethod(methodName, parameterTypes) with
             | null -> None
-            | theMethod -> Some theMethod           
+            | theMethod -> Some theMethod
         with _ ->
             None
 
     let stripTieWrapper (e: Exception) =
         match e with
-        | :? TargetInvocationException as e when isNotNull e.InnerException -> !! e.InnerException
+        | :? TargetInvocationException as e when isNotNull e.InnerException -> !!e.InnerException
         | _ -> e
 
 /// Indicate the type of error to report
@@ -499,7 +499,7 @@ type DependencyProvider
                 let assemblyLocation =
                     typeof<IDependencyManagerProvider>.GetTypeInfo().Assembly.Location
 
-                yield !! (Path.GetDirectoryName assemblyLocation)
+                yield !!(Path.GetDirectoryName assemblyLocation)
                 yield AppDomain.CurrentDomain.BaseDirectory
             ])
 

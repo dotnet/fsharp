@@ -54,7 +54,7 @@ let private SimulatedMSBuildResolver =
         let isDesktop = typeof<int>.Assembly.GetName().Name = "mscorlib"
 
         if isDesktop then
-            match (System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory() : string MaybeNull) with
+            match (System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(): string MaybeNull) with
             | null -> []
             | x -> [ x ]
         else
@@ -155,7 +155,7 @@ let private SimulatedMSBuildResolver =
 
                             PF
                             + @"\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\"
-                            + (!! n.Version).ToString()
+                            + (!!n.Version).ToString()
 
                         let trialPath = Path.Combine(fscoreDir0, !!n.Name + ".dll")
 
@@ -173,7 +173,7 @@ let private SimulatedMSBuildResolver =
                         r
                     else
                         try
-                            !! AssemblyName(r).Name + ".dll"
+                            !!AssemblyName(r).Name + ".dll"
                         with _ ->
                             r + ".dll"
 
@@ -198,7 +198,7 @@ let private SimulatedMSBuildResolver =
                         let netFx = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
 
                         let gac =
-                            Path.Combine(!!Path.GetDirectoryName(Path.GetDirectoryName(netFx.TrimEnd('\\'))), "assembly")
+                            Path.Combine(!! Path.GetDirectoryName(Path.GetDirectoryName(netFx.TrimEnd('\\'))), "assembly")
 
                         match n.Version, n.GetPublicKeyToken() with
                         | null, _
@@ -207,7 +207,7 @@ let private SimulatedMSBuildResolver =
                                 [
                                     if FileSystem.DirectoryExistsShim gac then
                                         for gacDir in FileSystem.EnumerateDirectoriesShim gac do
-                                            let assemblyDir = Path.Combine(gacDir, !! n.Name)
+                                            let assemblyDir = Path.Combine(gacDir, !!n.Name)
 
                                             if FileSystem.DirectoryExistsShim assemblyDir then
                                                 for tdir in FileSystem.EnumerateDirectoriesShim assemblyDir do
@@ -228,7 +228,7 @@ let private SimulatedMSBuildResolver =
                             if FileSystem.DirectoryExistsShim gac then
                                 for gacDir in Directory.EnumerateDirectories gac do
                                     //printfn "searching GAC directory: %s" gacDir
-                                    let assemblyDir = Path.Combine(gacDir, !! n.Name)
+                                    let assemblyDir = Path.Combine(gacDir, !!n.Name)
 
                                     if FileSystem.DirectoryExistsShim assemblyDir then
                                         //printfn "searching GAC directory: %s" assemblyDir

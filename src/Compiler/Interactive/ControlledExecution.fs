@@ -24,20 +24,20 @@ type internal ControlledExecution(isInteractive: bool) =
     static let ceType: Type option =
         Option.ofObj (Type.GetType("System.Runtime.ControlledExecution, System.Private.CoreLib", false))
 
-    static let threadType: Type option = typeof<Threading.Thread> |> Option.ofObj 
+    static let threadType: Type option = typeof<Threading.Thread> |> Option.ofObj
 
     static let ceRun: MethodInfo option =
         match ceType with
         | None -> None
         | Some t ->
-                t.GetMethod(
-                    "Run",
-                    BindingFlags.Static ||| BindingFlags.Public,
-                    defaultof<Binder>,
-                    [| typeof<System.Action>; typeof<System.Threading.CancellationToken> |],
-                    [||]
-                )
-                |> Option.ofObj            
+            t.GetMethod(
+                "Run",
+                BindingFlags.Static ||| BindingFlags.Public,
+                defaultof<Binder>,
+                [| typeof<System.Action>; typeof<System.Threading.CancellationToken> |],
+                [||]
+            )
+            |> Option.ofObj
 
     static let threadResetAbort: MethodInfo option =
         match isRunningOnCoreClr, threadType with

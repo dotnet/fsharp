@@ -41,7 +41,7 @@ module internal Activity =
 
     val startNoTags: name: string -> IDisposable
 
-    val start: name: string -> tags: (string * string) seq -> IDisposable   
+    val start: name: string -> tags: (string * string) seq -> IDisposable
 
     val addEvent: name: string -> unit
 

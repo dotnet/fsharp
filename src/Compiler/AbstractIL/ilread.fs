@@ -926,7 +926,6 @@ type GenericParamsIdx = GenericParamsIdx of numTypars: int * TypeOrMethodDefTag 
 // Polymorphic caches for row and heap readers
 //---------------------------------------------------------------------
 
-
 let mkCacheGeneric lowMem _inbase _nm (sz: int) =
     if lowMem then
         (fun f x -> f x)
@@ -934,6 +933,7 @@ let mkCacheGeneric lowMem _inbase _nm (sz: int) =
         let mutable cache = null
 #if STATISTICS
         let mutable _count = 0
+
         addReport (fun oc ->
             if !_count <> 0 then
                 oc.WriteLine((_inbase + string !_count + " " + _nm + " cache hits"): string))

@@ -29,10 +29,11 @@ type AssemblyResolveHandlerCoreclr(assemblyProbingPaths: AssemblyResolutionProbe
             !! ti.GetMethod("ResolveAssemblyNetStandard", BindingFlags.Instance ||| BindingFlags.NonPublic)
 
         let mi = gmi.MakeGenericMethod(loadContextType)
-        let del = Delegate.CreateDelegate(!! eventInfo.EventHandlerType, this, mi)
+        let del = Delegate.CreateDelegate(!!eventInfo.EventHandlerType, this, mi)
 
         let prop =
-            (!! loadContextType.GetProperty("Default", BindingFlags.Static ||| BindingFlags.Public)).GetValue(null, null)
+            (!! loadContextType.GetProperty("Default", BindingFlags.Static ||| BindingFlags.Public))
+                .GetValue(null, null)
 
         del, prop
 
