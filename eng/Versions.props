@@ -91,7 +91,6 @@
     <SystemThreadingTasksDataflow>$(SystemPackageVersionVersion)</SystemThreadingTasksDataflow>
     <SystemValueTupleVersion>4.5.0</SystemValueTupleVersion>
     <MicrosoftDiaSymReaderPortablePdbVersion>1.6.0</MicrosoftDiaSymReaderPortablePdbVersion>
-    <!-- -->
     <!-- Versions for package groups -->
     <RoslynVersion>4.11.0-2.24264.2</RoslynVersion>
     <VisualStudioEditorPackagesVersion>17.10.191</VisualStudioEditorPackagesVersion>
@@ -99,7 +98,6 @@
     <VisualStudioProjectSystemPackagesVersion>17.10.526-pre-g1b474069f5</VisualStudioProjectSystemPackagesVersion>
     <MicrosoftVisualStudioThreadingPackagesVersion>17.10.41</MicrosoftVisualStudioThreadingPackagesVersion>
     <MicrosoftBuildVersion>17.11.0-preview-24178-03</MicrosoftBuildVersion>
-    <!-- -->
     <!-- Roslyn packages -->
     <MicrosoftCodeAnalysisEditorFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesVersion>
     <MicrosoftCodeAnalysisEditorFeaturesTextVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesTextVersion>
