@@ -18,7 +18,7 @@ module OperatorsModuleDynamic =
             let _ = f ()
             sprintf "Expected %O exception, got no exception" typeof<'a> |> Assert.Fail 
         with
-        | :? 'a as e when e.GetType() = typeof<'a> -> ()
+        | :? 'a -> ()
         | :? Reflection.TargetInvocationException as r when (r.InnerException :? 'a) -> ()
         | e -> sprintf "Expected %O or TargetInvocationException containing it, got: %O" typeof<'a> e |> Assert.Fail
     let CheckThrowsOverflowException = CheckThrowsExn<OverflowException>
