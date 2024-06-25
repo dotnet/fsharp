@@ -8,6 +8,7 @@ open System.Threading
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Symbols
+open Internal.Utilities.Library
 
 /// Represents an evaluated F# value
 [<Class>]

@@ -7,7 +7,7 @@ module internal NullnessShims =
 
     let inline isNotNull (x: 'T) = not (isNull x)
 
-#if NO_CHECKNULLS
+#if NO_CHECKNULLS || BUILDING_WITH_LKG
     type 'T MaybeNull when 'T: not struct = 'T
     type objnull = obj
 
@@ -68,4 +68,5 @@ module internal NullnessShims =
     let inline (|NonEmptyString|_|) (x: string MaybeNull) =
         match x with
         | null -> ValueNone
+        | "" -> ValueNone
         | v -> ValueSome v

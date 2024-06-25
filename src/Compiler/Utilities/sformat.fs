@@ -30,6 +30,9 @@ open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Reflection
 open Microsoft.FSharp.Collections
+#if COMPILER
+open Internal.Utilities.Library
+#endif
 
 [<StructuralEquality; NoComparison>]
 type TextTag =

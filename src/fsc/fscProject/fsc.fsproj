@@ -14,8 +14,7 @@
     <RuntimeIdentifier>$(NETCoreSdkRuntimeIdentifier)</RuntimeIdentifier>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(Configuration)' == 'Proto'">  
-    <PublishReadyToRunExclude Include="FSharp.Core.dll" />
+  <ItemGroup Condition="'$(Configuration)' == 'Proto'">
   </ItemGroup>
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">

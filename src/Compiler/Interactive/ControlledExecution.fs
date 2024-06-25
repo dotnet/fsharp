@@ -13,6 +13,7 @@ open System.Reflection
 open System.Threading
 
 open Internal.Utilities.FSharpEnvironment
+open Internal.Utilities.Library
 
 open Unchecked
 
@@ -68,6 +69,6 @@ type internal ControlledExecution(isInteractive: bool) =
         match exn with
         | :? TargetInvocationException as e ->
             match e.InnerException with
-            | Null -> exn
-            | NonNull innerEx -> ControlledExecution.StripTargetInvocationException(innerEx)
+            | null -> exn
+            | innerEx -> ControlledExecution.StripTargetInvocationException(innerEx)
         | _ -> exn
