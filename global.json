@@ -17,7 +17,7 @@
     "perl": "5.38.2.2"
   },
   "msbuild-sdks": {
-    "Microsoft.DotNet.Arcade.Sdk": "8.0.0-beta.24311.3",
+    "Microsoft.DotNet.Arcade.Sdk": "8.0.0-beta.24324.7",
     "Microsoft.DotNet.Helix.Sdk": "8.0.0-beta.23255.2"
   }
 }
