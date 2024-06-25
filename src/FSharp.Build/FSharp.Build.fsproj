@@ -15,6 +15,7 @@
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <LangVersion>7.0</LangVersion>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
     <Configurations>Debug;Release;Proto</Configurations>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
+	<VersionSuffix Condition="'$(Configuration)' == 'Proto'">.0</VersionSuffix>
   </PropertyGroup>
 
   <!--  The FSharp.Build dll does not provide a referencable public interface although it's used for testing -->

@@ -10,11 +10,7 @@
 
   <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
     <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
-    <RuntimeIdentifier>$(NETCoreSdkRuntimeIdentifier)</RuntimeIdentifier>
   </PropertyGroup>
-
-  <ItemGroup Condition="'$(Configuration)' == 'Proto'">
-  </ItemGroup>
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
     <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>

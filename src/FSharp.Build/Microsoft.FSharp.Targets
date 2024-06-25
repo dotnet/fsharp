@@ -24,8 +24,8 @@ this file.
 
     <UsingTask TaskName="Fsc" AssemblyFile="$(FSharpBuildAssemblyFile)" />
     <UsingTask TaskName="Fsi" AssemblyFile="$(FSharpBuildAssemblyFile)" />
-    <UsingTask TaskName="FSharpEmbedResourceText" AssemblyFile="$(FSharpBuildAssemblyFile)" />
-    <UsingTask TaskName="FSharpEmbedResXSource" AssemblyFile="$(FSharpBuildAssemblyFile)" />
+    <UsingTask TaskName="FSharpEmbedResourceText" AssemblyFile="$(FSharpBuildAssemblyFile)" Override="true" />
+    <UsingTask TaskName="FSharpEmbedResXSource" AssemblyFile="$(FSharpBuildAssemblyFile)" Override="true" />
     <UsingTask TaskName="CreateFSharpManifestResourceName" AssemblyFile="$(FSharpBuildAssemblyFile)" />
     <UsingTask TaskName="WriteCodeFragment" AssemblyFile="$(FSharpBuildAssemblyFile)" />
     <UsingTask TaskName="FSharpPlatformInformation" AssemblyFile="$(FSharpBuildAssemblyFile)" />
@@ -230,7 +230,7 @@ this file.
         <MakeDir Directories="$(IntermediateOutputPath)" />
 
         <!-- Generate source for all resx files. -->
-        <FSharpEmbedResXSource EmbeddedResource="@(EmbeddedResource)" IntermediateOutputPath="$(IntermediateOutputPath)" TargetFramework="$(TargetFramework)">
+        <FSharpEmbedResXSource EmbeddedResource="@(EmbeddedResource)" IntermediateOutputPath="$(IntermediateOutputPath)">
             <Output TaskParameter="GeneratedSource" ItemName="_FsGeneratedResXSource" />
         </FSharpEmbedResXSource>
 
