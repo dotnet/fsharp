@@ -141,7 +141,7 @@ type SeqModule() =
         Assert.AreEqual(null, Seq.head <| Seq.replicate 1 null)
         Assert.AreEqual(["1";"1"],Seq.replicate 2 "1" |> Seq.toList)
 
-        CheckThrowsArgumentException (fun () ->  Seq.replicate -1 null |> ignore)
+        CheckThrowsArgumentOutOfRangeException (fun () ->  Seq.replicate -1 null |> ignore)
         
         
     [<Fact>]

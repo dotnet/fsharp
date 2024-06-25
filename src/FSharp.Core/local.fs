@@ -43,7 +43,6 @@ module internal DetailedExceptions =
             "{0}\nThe list was {1} {2} shorter than the index"
             [|SR.GetString SR.notEnoughElements; index; (if index=1 then "element" else "elements")|]
 
-
     /// eg. tried to {skip} {2} {elements} past the end of the seq. Seq.Length = {10}
     let invalidOpExceededSeqLength (fnName:string) (diff:int) (len:int) =
         invalidOpFmt "{0}\ntried to {1} {2} {3} past the end of the seq\nSeq.Length = {4}"
@@ -57,11 +56,11 @@ module internal DetailedExceptions =
     let inline invalidArgInputMustBePositive (arg:string) (count:int) =
         invalidArgFmt arg "{0}\n{1} = {2}" [|SR.GetString SR.inputMustBePositive; arg; count|]
 
-    /// throws an invalid argument exception and returns the out of range index,
+    /// throws an invalid argument out of range exception and returns the out of range index,
     /// a text description of the range, and the bound of the range
     /// e.g. sourceIndex = -4, source axis-0 lower bound = 0"
     let invalidArgOutOfRange (arg:string) (index:int) (text:string) (bound:int) =
-        invalidArgFmt arg
+        invalidArgOutOfRangeFmt arg
             "{0}\n{1} = {2}, {3} = {4}"
             [|SR.GetString SR.outOfRange; arg; index; text; bound|]
 

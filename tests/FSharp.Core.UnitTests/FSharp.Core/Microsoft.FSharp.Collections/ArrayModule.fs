@@ -372,9 +372,9 @@ type ArrayModule() =
         CheckThrowsArgumentNullException (fun () -> Array.blit nullArr 1 strDes 2 3 |> ignore) 
 
         // bounds check
-        CheckThrowsArgumentException (fun () -> Array.blit intSrc -1 intDes 1 3 |> ignore)
-        CheckThrowsArgumentException (fun () -> Array.blit intSrc 1 intDes -1 3 |> ignore)
-        CheckThrowsArgumentException (fun () -> Array.blit intSrc 1 intDes 1 -3 |> ignore)
+        CheckThrowsArgumentOutOfRangeException (fun () -> Array.blit intSrc -1 intDes 1 3 |> ignore)
+        CheckThrowsArgumentOutOfRangeException (fun () -> Array.blit intSrc 1 intDes -1 3 |> ignore)
+        CheckThrowsArgumentOutOfRangeException (fun () -> Array.blit intSrc 1 intDes 1 -3 |> ignore)
         CheckThrowsArgumentException (fun () -> Array.blit intSrc 1 intDes 1 300 |> ignore)
         CheckThrowsArgumentException (fun () -> Array.blit intSrc 1 intDes 5 8 |> ignore)
         
