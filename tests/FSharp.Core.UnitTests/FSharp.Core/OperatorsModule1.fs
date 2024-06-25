@@ -3,6 +3,10 @@
 // Various tests for the:
 // Microsoft.FSharp.Core.Operators module
 
+// For information on the runtime-dependent behavior differences in this file, see:
+// - https://github.com/dotnet/runtime/issues/61885
+// - https://github.com/dotnet/runtime/pull/97529
+
 namespace FSharp.Core.UnitTests.Operators
 
 open System
