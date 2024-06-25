@@ -436,9 +436,7 @@ type internal FSharpPackage() as this =
 type internal FSharpLanguageService(package: FSharpPackage) =
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
 
-    override _.Initialize() =
-        base.Initialize()
-
+    member _.Initialize() =
         let exportProvider = package.ComponentModel.DefaultExportProvider
         let globalOptions = exportProvider.GetExport<FSharpGlobalOptions>().Value
 
