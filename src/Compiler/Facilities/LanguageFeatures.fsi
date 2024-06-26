@@ -81,6 +81,7 @@ type LanguageFeature =
     | LowerIntegralRangesToFastLoops
     | AllowAccessModifiersToAutoPropertiesGettersAndSetters
     | LowerSimpleMappingsInComprehensionsToDirectCallsToMap
+    | ParsedHashDirectiveArgumentNonQuotes
 
 /// LanguageVersion management
 type LanguageVersion =

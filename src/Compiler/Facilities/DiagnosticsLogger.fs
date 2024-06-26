@@ -832,24 +832,26 @@ let internal languageFeatureError (langVersion: LanguageVersion) (langFeature: L
     let suggestedVersionStr = LanguageVersion.GetFeatureVersionString langFeature
     Error(FSComp.SR.chkFeatureNotLanguageSupported (featureStr, currentVersionStr, suggestedVersionStr), m)
 
-let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
+let internal tryLanguageFeatureErrorOption (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
     if not (langVersion.SupportsFeature langFeature) then
         Some(languageFeatureError langVersion langFeature m)
     else
         None
 
 let internal checkLanguageFeatureError langVersion langFeature m =
-    match tryLanguageFeatureErrorAux langVersion langFeature m with
+    match tryLanguageFeatureErrorOption langVersion langFeature m with
     | Some e -> error e
     | None -> ()
 
-let internal checkLanguageFeatureAndRecover langVersion langFeature m =
-    match tryLanguageFeatureErrorAux langVersion langFeature m with
-    | Some e -> errorR e
-    | None -> ()
+let internal tryCheckLanguageFeatureAndRecover langVersion langFeature m =
+    match tryLanguageFeatureErrorOption langVersion langFeature m with
+    | Some e ->
+        errorR e
+        false
+    | None -> true
 
-let internal tryLanguageFeatureErrorOption langVersion langFeature m =
-    tryLanguageFeatureErrorAux langVersion langFeature m
+let internal checkLanguageFeatureAndRecover langVersion langFeature m =
+    tryCheckLanguageFeatureAndRecover langVersion langFeature m |> ignore
 
 let internal languageFeatureNotSupportedInLibraryError (langFeature: LanguageFeature) (m: range) =
     let featureStr = LanguageVersion.GetFeatureString langFeature
@@ -885,12 +887,10 @@ type StackGuard(maxDepth: int, name: string) =
 
         try
             if depth % maxDepth = 0 then
-                let ct = Cancellable.Token
 
                 async {
                     do! Async.SwitchToNewThread()
                     Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depth})"
-                    use _token = Cancellable.UsingToken ct
                     return f ()
                 }
                 |> Async.RunImmediate
@@ -949,9 +949,19 @@ module MultipleDiagnosticsLoggers =
             try
                 // We want to restore the current diagnostics context when finished.
                 use _ = new CompilationGlobalsScope()
-                return! Async.Parallel computationsWithLoggers
+                let! results = Async.Parallel computationsWithLoggers
+                do! replayDiagnostics |> Async.AwaitTask
+                return results
             finally
-                replayDiagnostics.Wait()
+                // When any of the computation throws, Async.Parallel may not start some remaining computations at all.
+                // We set dummy results for them to allow the task to finish and to not lose any already emitted diagnostics.
+                if not replayDiagnostics.IsCompleted then
+                    let emptyLogger = CapturingDiagnosticsLogger("empty")
+
+                    for tcs in diagnosticsReady do
+                        tcs.TrySetResult(emptyLogger) |> ignore
+
+                    replayDiagnostics.Wait()
         }
 
     let Sequential computations =

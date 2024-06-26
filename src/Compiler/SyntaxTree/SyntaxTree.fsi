@@ -1838,6 +1838,9 @@ type SynModuleOrNamespaceSig =
 /// Represents a parsed hash directive argument
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedHashDirectiveArgument =
+    | Ident of value: Ident * range: range
+    | Int32 of value: Int32 * range: range
+    | LongIdent of value: SynLongIdent * range: range
     | String of value: string * stringKind: SynStringKind * range: range
     | SourceIdentifier of constant: string * value: string * range: range
 

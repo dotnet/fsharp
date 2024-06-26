@@ -462,6 +462,21 @@
         <target state="translated">Paketverwaltung</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureParsedHashDirectiveArgumentNonString">
+        <source># directives with non-quoted string arguments</source>
+        <target state="new"># directives with non-quoted string arguments</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureParsedHashDirectiveUnexpectedIdentifier">
+        <source>Unexpected identifier '{0}'.</source>
+        <target state="new">Unexpected identifier '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureParsedHashDirectiveUnexpectedInteger">
+        <source>Unexpected integer literal '{0}'.</source>
+        <target state="new">Unexpected integer literal '{0}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featurePreferExtensionMethodOverPlainProperty">
         <source>prefer extension method over plain property</source>
         <target state="translated">Erweiterungsmethode gegenüber plain-Eigenschaft bevorzugen</target>
@@ -1274,7 +1289,7 @@
       </trans-unit>
       <trans-unit id="tcImplicitConversionUsedForNonMethodArg">
         <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</source>
-        <target state="translated">Dieser Ausdruck verwendet die implizite Konvertierung "{0}", um den Typ "{1}" in den Typ "{2}" zu konvertieren. Siehe https://aka.ms/fsharp-implicit-convs. Diese Warnung kann durch "#nowarn \" 3391 \ " deaktiviert werden.</target>
+        <target state="needs-review-translation">Dieser Ausdruck verwendet die implizite Konvertierung "{0}", um den Typ "{1}" in den Typ "{2}" zu konvertieren. Siehe https://aka.ms/fsharp-implicit-convs. Diese Warnung kann durch "#nowarn \" 3391 \ " deaktiviert werden.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInfoIfFunctionShadowsUnionCase">
@@ -1529,12 +1544,12 @@
       </trans-unit>
       <trans-unit id="tcUsingInterfaceWithStaticAbstractMethodAsType">
         <source>'{0}' is normally used as a type constraint in generic code, e.g. \"'T when ISomeInterface&lt;'T&gt;\" or \"let f (x: #ISomeInterface&lt;_&gt;)\". See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3536\"' or '--nowarn:3536'.</source>
-        <target state="translated">„{0}“ wird normalerweise als Typeinschränkung im generischen Code verwendet, z. B. \"'T when ISomeInterface&lt;'T&gt;\" oder \"let f (x: #ISomeInterface&lt;_&gt;)\". Anleitungen finden Sie unter https://aka.ms/fsharp-iwsams. Sie können diese Warnung deaktivieren, indem Sie „#nowarn \"3536\"“ or „--nowarn:3536“ verwenden.</target>
+        <target state="needs-review-translation">„{0}“ wird normalerweise als Typeinschränkung im generischen Code verwendet, z. B. \"'T when ISomeInterface&lt;'T&gt;\" oder \"let f (x: #ISomeInterface&lt;_&gt;)\". Anleitungen finden Sie unter https://aka.ms/fsharp-iwsams. Sie können diese Warnung deaktivieren, indem Sie „#nowarn \"3536\"“ or „--nowarn:3536“ verwenden.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUsingInterfacesWithStaticAbstractMethods">
         <source>Declaring \"interfaces with static abstract methods\" is an advanced feature. See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3535\"' or '--nowarn:3535'.</source>
-        <target state="translated">Das Deklarieren von \"Schnittstellen mit statischen abstrakten Methoden\" ist ein erweitertes Feature. Anleitungen finden Sie unter https://aka.ms/fsharp-iwsams. Sie können diese Warnung deaktivieren, indem Sie „#nowarn \"3535\"“ or „--nowarn:3535“ verwenden.</target>
+        <target state="needs-review-translation">Das Deklarieren von \"Schnittstellen mit statischen abstrakten Methoden\" ist ein erweitertes Feature. Anleitungen finden Sie unter https://aka.ms/fsharp-iwsams. Sie können diese Warnung deaktivieren, indem Sie „#nowarn \"3535\"“ or „--nowarn:3535“ verwenden.</target>
         <note />
       </trans-unit>
       <trans-unit id="tooManyMethodsInDotNetTypeWritingAssembly">
@@ -1559,7 +1574,7 @@
       </trans-unit>
       <trans-unit id="typrelNeverRefinedAwayFromTop">
         <source>A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</source>
-        <target state="translated">Ein Typ wurde implizit als "obj" abgeleitet, was möglicherweise unbeabsichtigt ist. Erwägen Sie, explizite Typanmerkungen hinzuzufügen. Sie können diese Warnung deaktivieren, indem Sie "#nowarn \"3559\" oder "--nowarn:3559" verwenden.</target>
+        <target state="needs-review-translation">Ein Typ wurde implizit als "obj" abgeleitet, was möglicherweise unbeabsichtigt ist. Erwägen Sie, explizite Typanmerkungen hinzuzufügen. Sie können diese Warnung deaktivieren, indem Sie "#nowarn \"3559\" oder "--nowarn:3559" verwenden.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
@@ -1894,7 +1909,7 @@
       </trans-unit>
       <trans-unit id="buildInvalidHashtimeDirective">
         <source>Invalid directive. Expected '#time', '#time \"on\"' or '#time \"off\"'.</source>
-        <target state="translated">Ungültige Direktive. Erwartet wurde "#time", '#time \"on\"' oder '#time \"off\"'.</target>
+        <target state="needs-review-translation">Ungültige Direktive. Erwartet wurde "#time", '#time \"on\"' oder '#time \"off\"'.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildDirectivesInModulesAreIgnored">

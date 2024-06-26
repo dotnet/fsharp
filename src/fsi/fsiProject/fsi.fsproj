@@ -10,8 +10,8 @@
 
   <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
     <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
-    <PublishReadyToRun>true</PublishReadyToRun>
-    <UseCurrentRuntimeIdentifier>true</UseCurrentRuntimeIdentifier>
+    <PublishReadyToRun>$(EnablePublishReadyToRun)</PublishReadyToRun>
+    <RuntimeIdentifier>$(NETCoreSdkRuntimeIdentifier)</RuntimeIdentifier>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(Configuration)' == 'Proto'">

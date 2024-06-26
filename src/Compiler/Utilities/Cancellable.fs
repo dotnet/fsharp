@@ -6,37 +6,20 @@ open Internal.Utilities.Library
 
 [<Sealed>]
 type Cancellable =
-    [<ThreadStatic; DefaultValue>]
-    static val mutable private tokens: CancellationToken list
+    static let token = AsyncLocal<CancellationToken>()
 
-    static let disposable =
-        { new IDisposable with
-            member this.Dispose() =
-                Cancellable.Tokens <- Cancellable.Tokens |> List.tail
-        }
-
-    static member Tokens
-        with private get () =
-            match box Cancellable.tokens with
-            | Null -> []
-            | _ -> Cancellable.tokens
-        and private set v = Cancellable.tokens <- v
+    static member Token = token.Value
 
     static member UsingToken(ct) =
-        Cancellable.Tokens <- ct :: Cancellable.Tokens
-        disposable
+        let oldCt = token.Value
+        token.Value <- ct
 
-    static member Token =
-        match Cancellable.Tokens with
-        | [] -> CancellationToken.None
-        | token :: _ -> token
+        { new IDisposable with
+            member this.Dispose() = token.Value <- oldCt
+        }
 
-    /// There may be multiple tokens if `UsingToken` is called multiple times, producing scoped structure.
-    /// We're interested in the current, i.e. the most recent, one.
     static member CheckAndThrow() =
-        match Cancellable.Tokens with
-        | [] -> ()
-        | token :: _ -> token.ThrowIfCancellationRequested()
+        token.Value.ThrowIfCancellationRequested()
 
 namespace Internal.Utilities.Library
 

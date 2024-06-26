@@ -462,6 +462,21 @@
         <target state="translated">správa balíčků</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureParsedHashDirectiveArgumentNonString">
+        <source># directives with non-quoted string arguments</source>
+        <target state="new"># directives with non-quoted string arguments</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureParsedHashDirectiveUnexpectedIdentifier">
+        <source>Unexpected identifier '{0}'.</source>
+        <target state="new">Unexpected identifier '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureParsedHashDirectiveUnexpectedInteger">
+        <source>Unexpected integer literal '{0}'.</source>
+        <target state="new">Unexpected integer literal '{0}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featurePreferExtensionMethodOverPlainProperty">
         <source>prefer extension method over plain property</source>
         <target state="translated">preferovat metodu rozšíření před prostými vlastnostmi</target>
@@ -1274,7 +1289,7 @@
       </trans-unit>
       <trans-unit id="tcImplicitConversionUsedForNonMethodArg">
         <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</source>
-        <target state="translated">Tento výraz používá implicitní převod {0} pro převod typu {1} na typ {2}. Přečtěte si téma https://aka.ms/fsharp-implicit-convs. Toto upozornění může být vypnuté pomocí '#nowarn \"3391\".</target>
+        <target state="needs-review-translation">Tento výraz používá implicitní převod {0} pro převod typu {1} na typ {2}. Přečtěte si téma https://aka.ms/fsharp-implicit-convs. Toto upozornění může být vypnuté pomocí '#nowarn \"3391\".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInfoIfFunctionShadowsUnionCase">
@@ -1529,12 +1544,12 @@
       </trans-unit>
       <trans-unit id="tcUsingInterfaceWithStaticAbstractMethodAsType">
         <source>'{0}' is normally used as a type constraint in generic code, e.g. \"'T when ISomeInterface&lt;'T&gt;\" or \"let f (x: #ISomeInterface&lt;_&gt;)\". See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3536\"' or '--nowarn:3536'.</source>
-        <target state="translated">'{0}' se obvykle používá jako omezení typu v obecném kódu, například \"T when ISomeInterface&lt;'T&gt;\" nebo \"let f (x: #ISomeInterface&lt;_&gt;)\". Pokyny najdete v https://aka.ms/fsharp-iwsams. Toto upozornění můžete zakázat pomocí #nowarn \"3536\" nebo '--nowarn:3536'.</target>
+        <target state="needs-review-translation">'{0}' se obvykle používá jako omezení typu v obecném kódu, například \"T when ISomeInterface&lt;'T&gt;\" nebo \"let f (x: #ISomeInterface&lt;_&gt;)\". Pokyny najdete v https://aka.ms/fsharp-iwsams. Toto upozornění můžete zakázat pomocí #nowarn \"3536\" nebo '--nowarn:3536'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUsingInterfacesWithStaticAbstractMethods">
         <source>Declaring \"interfaces with static abstract methods\" is an advanced feature. See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3535\"' or '--nowarn:3535'.</source>
-        <target state="translated">Deklarování \"interfaces with static abstract methods\" (rozhraní se statickými abstraktními metodami) je pokročilá funkce. Pokyny najdete v https://aka.ms/fsharp-iwsams. Toto upozornění můžete zakázat pomocí #nowarn \"3535\" nebo '--nowarn:3535'.</target>
+        <target state="needs-review-translation">Deklarování \"interfaces with static abstract methods\" (rozhraní se statickými abstraktními metodami) je pokročilá funkce. Pokyny najdete v https://aka.ms/fsharp-iwsams. Toto upozornění můžete zakázat pomocí #nowarn \"3535\" nebo '--nowarn:3535'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tooManyMethodsInDotNetTypeWritingAssembly">
@@ -1559,7 +1574,7 @@
       </trans-unit>
       <trans-unit id="typrelNeverRefinedAwayFromTop">
         <source>A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</source>
-        <target state="translated">Typ se implicitně odvodil jako obj, což může být nezamýšlené. Zvažte přidání explicitních poznámek k typu. Toto upozornění můžete zakázat pomocí #nowarn 3559 nebo --nowarn:3559.</target>
+        <target state="needs-review-translation">Typ se implicitně odvodil jako obj, což může být nezamýšlené. Zvažte přidání explicitních poznámek k typu. Toto upozornění můžete zakázat pomocí #nowarn 3559 nebo --nowarn:3559.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
@@ -1894,7 +1909,7 @@
       </trans-unit>
       <trans-unit id="buildInvalidHashtimeDirective">
         <source>Invalid directive. Expected '#time', '#time \"on\"' or '#time \"off\"'.</source>
-        <target state="translated">Neplatná direktiva. Očekávaná direktiva je #time, #time \"on\" nebo #time \"off\".</target>
+        <target state="needs-review-translation">Neplatná direktiva. Očekávaná direktiva je #time, #time \"on\" nebo #time \"off\".</target>
         <note />
       </trans-unit>
       <trans-unit id="buildDirectivesInModulesAreIgnored">

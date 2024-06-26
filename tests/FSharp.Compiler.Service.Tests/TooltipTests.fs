@@ -10,7 +10,7 @@ open FSharp.Compiler.Tokenization
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
 open FSharp.Test
-open NUnit.Framework
+open Xunit
 
 let testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource line colAtEndOfNames lineText names (expectedContent: string) =
     let files =
@@ -50,12 +50,12 @@ let testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource line colAtEn
             | FSharpXmlDoc.FromXmlText xmlDoc ->
                 Assert.True xmlDoc.NonEmpty
                 Assert.True (xmlDoc.UnprocessedLines[0].Contains(expectedContent))
-            | xmlDoc -> Assert.Fail $"Expected FSharpXmlDoc.FromXmlText, got {xmlDoc}"
-        | elements -> Assert.Fail $"Expected at least one tooltip group element, got {elements}"
-    | _ -> Assert.Fail "Expected checking to succeed."
+            | xmlDoc -> failwith $"Expected FSharpXmlDoc.FromXmlText, got {xmlDoc}"
+        | elements -> failwith $"Expected at least one tooltip group element, got {elements}"
+    | _ -> failwith "Expected checking to succeed."
 
     
-[<Test>]
+[<Fact>]
 let ``Display XML doc of signature file for let if implementation doesn't have one`` () =
     let sigSource =
         """
@@ -76,7 +76,7 @@ let bar a b = a - b
     testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 4 4 "let bar a b = a - b" [ "bar" ] "Great XML doc comment"
     
 
-[<Test>]
+[<Fact>]
 let ``Display XML doc of signature file for partial AP if implementation doesn't have one`` () =
     let sigSource =
         """
@@ -97,7 +97,7 @@ let (|IsThree|_|) x = if x = 3 then Some x else None
     testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 4 4 "let (|IsThree|_|) x = if x = 3 then Some x else None" [ "IsThree" ] "Some Sig Doc on IsThree"
     
 
-[<Test>]
+[<Fact>]
 let ``Display XML doc of signature file for DU if implementation doesn't have one`` () =
     let sigSource =
         """
@@ -122,7 +122,7 @@ type Bar =
     testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 4 7 "type Bar =" [ "Bar" ] "Some sig comment on the disc union type"
 
 
-[<Test>]
+[<Fact>]
 let ``Display XML doc of signature file for DU case if implementation doesn't have one`` () =
     let sigSource =
         """
@@ -147,7 +147,7 @@ type Bar =
     testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 7 14 "    | BarCase2 of string" [ "BarCase2" ] "Some sig comment on the disc union case"
 
 
-[<Test>]
+[<Fact>]
 let ``Display XML doc of signature file for record type if implementation doesn't have one`` () =
     let sigSource =
         """
@@ -171,7 +171,7 @@ type Bar = {
     testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 3 9 "type Bar = {" [ "Bar" ] "Some sig comment on record type"
 
 
-[<Test>]
+[<Fact>]
 let ``Display XML doc of signature file for record field if implementation doesn't have one`` () =
     let sigSource =
         """
@@ -195,7 +195,7 @@ type Bar = {
     testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 5 13 "    SomeField: int" [ "SomeField" ] "Some sig comment on record field"
 
 
-[<Test>]
+[<Fact>]
 let ``Display XML doc of signature file for class type if implementation doesn't have one`` () =
     let sigSource =
         """
@@ -218,7 +218,7 @@ type Bar() =
     testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 3 9 "type Bar() =" [ "Bar" ] "Some sig comment on class type"
 
 
-[<Test>]
+[<Fact>]
 let ``Display XML doc of signature file for class member if implementation doesn't have one`` () =
     let sigSource =
         """
@@ -244,7 +244,7 @@ type Bar() =
     testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 6 30 "    member _.Func x y = x * y" [ "_"; "Func" ] "Some sig comment on class member"
 
 
-[<Test>]
+[<Fact>]
 let ``Display XML doc of signature file for module if implementation doesn't have one`` () =
     let sigSource =
         """
@@ -318,11 +318,11 @@ let testToolTipSquashing source line colAtEndOfNames lineText names tokenTag =
                 |> Array.concat
                 |> Array.sumBy (fun t -> if t.Tag = TextTag.LineBreak then 1 else 0)
                     
-            Assert.Less(breaks, squashedBreaks)
-    | _ -> Assert.Fail "Expected checking to succeed."
+            Assert.True(breaks < squashedBreaks)
+    | _ -> failwith "Expected checking to succeed."
 
 
-[<Test>]
+[<Fact>]
 let ``Squashed tooltip of long function signature should have newlines added`` () =
     let source =
         """
@@ -334,7 +334,7 @@ let bar (fileName: string) (fileVersion: int) (sourceText: string)  (options: in
     testToolTipSquashing source 3 6 "let bar (fileName: string) (fileVersion: int) (sourceText: string)  (options: int) (userOpName: string) = 0;" [ "bar" ] FSharpTokenTag.Identifier
 
 
-[<Test>]
+[<Fact>]
 let ``Squashed tooltip of record with long field signature should have newlines added`` () =
     let source =
         """
@@ -348,7 +348,7 @@ type Foo =
     testToolTipSquashing source 3 7 "type Foo =" [ "Foo" ] FSharpTokenTag.Identifier
 
 
-[<Test>]
+[<Fact>]
 let ``Squashed tooltip of DU with long case signature should have newlines added`` () =
     let source =
         """
@@ -362,7 +362,7 @@ type SomeDiscUnion =
     testToolTipSquashing source 3 7 "type SomeDiscUnion =" [ "SomeDiscUnion" ] FSharpTokenTag.Identifier
 
 
-[<Test>]
+[<Fact>]
 let ``Squashed tooltip of constructor with long signature should have newlines added`` () =
     let source =
         """
@@ -375,7 +375,7 @@ type SomeClass(a1: int, a2: int, a3: int, a4: int, a5: int, a6: int, a7: int, a8
     testToolTipSquashing source 3 7 "type SomeClass(a1: int, a2: int, a3: int, a4: int, a5: int, a6: int, a7: int, a8: int, a9: int, a10: int, a11: int, a12: int, a13: int, a14: int, a15: int, a16: int, a17: int, a18: int, a19: int, a20: int) =" [ "SomeClass" ] FSharpTokenTag.Identifier
 
 
-[<Test>]
+[<Fact>]
 let ``Squashed tooltip of property with long signature should have newlines added`` () =
     let source =
         """
@@ -390,7 +390,7 @@ c.Abc
 
     testToolTipSquashing source 7 5 "c.Abc" [ "c"; "Abc" ] FSharpTokenTag.Identifier
 
-[<Test>]
+[<Fact>]
 let ``Auto property should display a single tool tip`` () =
     let source = """
 namespace Foo
@@ -414,5 +414,5 @@ type Bar() =
             |> Array.map (fun taggedText -> taggedText.Text)
             |> String.concat ""
 
-        Assert.AreEqual("property Bar.Foo: string with get, set", toolTipText)
-    | _ -> Assert.Fail $"Expected group, got {items.[0]}"
+        Assert.Equal("property Bar.Foo: string with get, set", toolTipText)
+    | _ -> failwith $"Expected group, got {items.[0]}"

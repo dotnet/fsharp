@@ -1754,3 +1754,6 @@ featureReuseSameFieldsInStructUnions,"Share underlying fields in a [<Struct>] di
 3868,tcActivePatternArgsCountNotMatchArgsAndPat,"This active pattern expects %d expression argument(s) and a pattern argument, e.g., '%s%s pat'."
 featureAllowAccessModifiersToAutoPropertiesGettersAndSetters,"Allow access modifiers to auto properties getters and setters"
 3869,tcAccessModifiersNotAllowedInSRTPConstraint,"Access modifiers cannot be applied to an SRTP constraint."
+featureParsedHashDirectiveArgumentNonString,"# directives with non-quoted string arguments"
+3870,featureParsedHashDirectiveUnexpectedInteger,"Unexpected integer literal '%d'."
+3870,featureParsedHashDirectiveUnexpectedIdentifier,"Unexpected identifier '%s'."

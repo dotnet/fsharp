@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <PublishReadyToRun>true</PublishReadyToRun>
-    <UseCurrentRuntimeIdentifier>true</UseCurrentRuntimeIdentifier>
+    <PublishReadyToRun>$(EnablePublishReadyToRun)</PublishReadyToRun>
+    <RuntimeIdentifier>$(NETCoreSdkRuntimeIdentifier)</RuntimeIdentifier>
   </PropertyGroup>
 
   <ItemGroup>
