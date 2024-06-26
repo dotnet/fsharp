@@ -459,17 +459,17 @@
       </trans-unit>
       <trans-unit id="featureParsedHashDirectiveArgumentNonString">
         <source># directives with non-quoted string arguments</source>
-        <target state="new"># directives with non-quoted string arguments</target>
+        <target state="translated">따옴표가 없는 문자열 인수가 있는 #개의 지시문</target>
         <note />
       </trans-unit>
       <trans-unit id="featureParsedHashDirectiveUnexpectedIdentifier">
         <source>Unexpected identifier '{0}'.</source>
-        <target state="new">Unexpected identifier '{0}'.</target>
+        <target state="translated">예기치 않은 식별자 '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="featureParsedHashDirectiveUnexpectedInteger">
         <source>Unexpected integer literal '{0}'.</source>
-        <target state="new">Unexpected integer literal '{0}'.</target>
+        <target state="translated">예기치 않은 정수 리터럴 '{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePreferExtensionMethodOverPlainProperty">
