@@ -18,15 +18,12 @@ namespace FSharp.Compiler.Text
 namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 #endif
 
-
-
 open System
 open System.IO
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
 #if COMPILER
 open Internal.Utilities.Library
-
 
 /// Data representing joints in structured layouts of terms.  The representation
 /// of this data type is only for the consumption of formatting engines.
