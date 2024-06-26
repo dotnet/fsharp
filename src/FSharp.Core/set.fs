@@ -901,7 +901,7 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'
         | _ -> false
 
     interface System.IComparable with
-        member this.CompareTo(that: obj) =
+        member this.CompareTo(that: objnull) =
             SetTree.compare this.Comparer this.Tree ((that :?> Set<'T>).Tree)
 
     interface IStructuralEquatable with

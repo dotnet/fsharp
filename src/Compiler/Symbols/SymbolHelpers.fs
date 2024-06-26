@@ -542,6 +542,7 @@ module internal SymbolHelpers =
     let SimplerDisplayEnv denv = 
         { denv with shortConstraints=true
                     showStaticallyResolvedTyparAnnotations=false
+                    showNullnessAnnotations = Some true
                     abbreviateAdditionalConstraints=false
                     suppressNestedTypes=true
                     maxMembers=Some EnvMisc2.maxMembers }

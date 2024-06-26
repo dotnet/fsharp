@@ -300,7 +300,7 @@ type TyparRigidity =
 [<Struct>]
 type TyparFlags(flags: int32) =
 
-    new (kind: TyparKind, rigidity: TyparRigidity, isFromError: bool, isCompGen: bool, staticReq: TyparStaticReq, dynamicReq: TyparDynamicReq, equalityDependsOn: bool, comparisonDependsOn: bool) = 
+    new (kind: TyparKind, rigidity: TyparRigidity, isFromError: bool, isCompGen: bool, staticReq: TyparStaticReq, dynamicReq: TyparDynamicReq, equalityDependsOn: bool, comparisonDependsOn: bool, supportsNullFlex: bool) = 
         TyparFlags((if isFromError then                0b00000000000000010 else 0) |||
                    (if isCompGen   then                0b00000000000000100 else 0) |||
                    (match staticReq with
@@ -321,7 +321,11 @@ type TyparFlags(flags: int32) =
                      | TyparDynamicReq.No           -> 0b00000000000000000
                      | TyparDynamicReq.Yes          -> 0b00000010000000000) |||
                    (if equalityDependsOn then 
-                                                       0b00000100000000000 else 0))
+                                                       0b00000100000000000 else 0) |||
+                                                  //   0b00001000100000000 is being checked by x.Kind, but never set in this version of the code
+                                                  //   0b00010000000000000 is taken by compat flex
+                   (if supportsNullFlex then
+                                                       0b00100000000000000 else 0))
 
     /// Indicates if the type inference variable was generated after an error when type checking expressions or patterns
     member x.IsFromError         = (flags &&& 0b00000000000000010) <> 0x0
@@ -380,8 +384,20 @@ type TyparFlags(flags: int32) =
                   else
                       TyparFlags(flags &&& ~~~0b00010000000000000)
 
+    /// Indicates that whether this type parameter is flexible for 'supports null' constraint, e.g. in the case of assignment to a mutable value
+    member x.IsSupportsNullFlex = 
+                                   (flags &&& 0b00100000000000000) <> 0x0
+
+    member x.WithSupportsNullFlex b = 
+                  if b then 
+                      TyparFlags(flags |||    0b00100000000000000)
+                  else
+                      TyparFlags(flags &&& ~~~0b00100000000000000)
+
+
+
     member x.WithStaticReq staticReq =  
-        TyparFlags(x.Kind, x.Rigidity, x.IsFromError, x.IsCompilerGenerated, staticReq, x.DynamicReq, x.EqualityConditionalOn, x.ComparisonConditionalOn) 
+        TyparFlags(x.Kind, x.Rigidity, x.IsFromError, x.IsCompilerGenerated, staticReq, x.DynamicReq, x.EqualityConditionalOn, x.ComparisonConditionalOn, x.IsSupportsNullFlex) 
 
     /// Get the flags as included in the F# binary metadata. We pickle this as int64 to allow for future expansion
     member x.PickledBits = flags       
@@ -2321,6 +2337,8 @@ type Typar =
     /// Set whether this type parameter is a compat-flex type parameter (i.e. where "expr :> tp" only emits an optional warning)
     member x.SetIsCompatFlex b = x.typar_flags <- x.typar_flags.WithCompatFlex b
 
+     member x.SetSupportsNullFlex b = x.typar_flags <- x.typar_flags.WithSupportsNullFlex b
+
     /// Indicates whether a type variable can be instantiated by types or units-of-measure.
     member x.Kind = x.typar_flags.Kind
 
@@ -2397,14 +2415,18 @@ type Typar =
         | None -> ()
 
     /// Links a previously unlinked type variable to the given data. Only used during unpickling of F# metadata.
-    member x.AsType = 
-        let ty = x.typar_astype
-        match box ty with 
-        | null -> 
-            let ty2 = TType_var (x, 0uy)
-            x.typar_astype <- ty2
-            ty2
-        | _ -> ty
+    member x.AsType nullness = 
+        match nullness with 
+        | Nullness.Known NullnessInfo.AmbivalentToNull -> 
+            let ty = x.typar_astype
+            match box ty with 
+            | null -> 
+                let ty2 = TType_var (x, Nullness.Known NullnessInfo.AmbivalentToNull)
+                x.typar_astype <- ty2
+                ty2
+            | _ -> ty
+        | _ -> 
+            TType_var (x, nullness)
 
     /// Indicates if a type variable has been linked. Only used during unpickling of F# metadata.
     member x.IsLinked = x.typar_stamp <> -1L
@@ -2421,12 +2443,12 @@ type Typar =
     /// Sets the rigidity of a type variable
     member x.SetRigidity b =
         let flags = x.typar_flags
-        x.typar_flags <- TyparFlags(flags.Kind, b, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
+        x.typar_flags <- TyparFlags(flags.Kind, b, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn, flags.IsSupportsNullFlex) 
 
     /// Sets whether a type variable is compiler generated
     member x.SetCompilerGenerated b =
         let flags = x.typar_flags
-        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, b, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
+        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, b, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn, flags.IsSupportsNullFlex) 
 
     /// Sets whether a type variable has a static requirement
     member x.SetStaticReq b =
@@ -2435,17 +2457,17 @@ type Typar =
     /// Sets whether a type variable is required at runtime
     member x.SetDynamicReq b =
         let flags = x.typar_flags
-        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, b, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
+        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, b, flags.EqualityConditionalOn, flags.ComparisonConditionalOn, flags.IsSupportsNullFlex) 
 
     /// Sets whether the equality constraint of a type definition depends on this type variable 
     member x.SetEqualityDependsOn b =
         let flags = x.typar_flags
-        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, b, flags.ComparisonConditionalOn) 
+        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, b, flags.ComparisonConditionalOn, flags.IsSupportsNullFlex) 
 
     /// Sets whether the comparison constraint of a type definition depends on this type variable 
     member x.SetComparisonDependsOn b =
         let flags = x.typar_flags
-        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, b) 
+        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, b, flags.IsSupportsNullFlex) 
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -2464,6 +2486,9 @@ type TyparConstraint =
     
     /// A constraint that a type has a 'null' value 
     | SupportsNull of range: range 
+    
+    /// A constraint that a type doesn't support nullness
+    | NotSupportsNull of range 
     
     /// A constraint that a type has a member with the given signature 
     | MayResolveMember of constraintInfo: TraitConstraintInfo * range: range
@@ -4284,6 +4309,66 @@ type RecdFieldRef =
 
     override x.ToString() = x.FieldName
 
+[<RequireQualifiedAccess;NoComparison;NoEquality>]
+type Nullness = 
+   | Known of NullnessInfo
+   | Variable of NullnessVar
+
+   member n.Evaluate() = 
+       match n with 
+       | Known info -> info
+       | Variable v -> v.Evaluate()
+
+   member n.TryEvaluate() = 
+       match n with 
+       | Known info -> ValueSome info
+       | Variable v -> v.TryEvaluate()
+
+   override n.ToString() = match n.Evaluate() with NullnessInfo.WithNull -> "?"  | NullnessInfo.WithoutNull -> "" | NullnessInfo.AmbivalentToNull -> "%"
+
+   member n.ToFsharpCodeString() = match n.Evaluate() with NullnessInfo.WithNull -> " | null "  | NullnessInfo.WithoutNull -> "" | NullnessInfo.AmbivalentToNull -> ""
+
+// Note, nullness variables are only created if the nullness checking feature is on
+[<NoComparison;NoEquality>]
+type NullnessVar() = 
+    let mutable solution: Nullness option = None
+
+    member nv.Evaluate() = 
+       match solution with 
+       | None -> NullnessInfo.WithoutNull
+       | Some soln -> soln.Evaluate()
+
+    member nv.TryEvaluate() = 
+       match solution with 
+       | None -> ValueNone
+       | Some soln -> soln.TryEvaluate()
+
+    member nv.IsSolved = solution.IsSome
+
+    member nv.Set(nullness) = 
+       assert (not nv.IsSolved) 
+       solution <- Some nullness
+
+    member nv.Unset() = 
+       assert nv.IsSolved
+       solution <- None
+
+    member nv.Solution = 
+       assert nv.IsSolved
+       solution.Value
+
+[<RequireQualifiedAccess>]
+type NullnessInfo = 
+
+    /// we know that there is an extra null value in the type
+    | WithNull
+
+    /// we know that there is no extra null value in the type
+    | WithoutNull
+
+    /// we know we don't care
+    | AmbivalentToNull
+
 /// Represents a type in the typed abstract syntax
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TType =
@@ -4291,10 +4376,10 @@ type TType =
     /// Indicates the type is a universal type, only used for types of values and members 
     | TType_forall of typars: Typars * bodyTy: TType
 
-    /// Indicates the type is built from a named type and a number of type arguments.
+    /// TType_app(tyconRef, typeInstantiation, nullness).
     ///
-    /// 'flags' is a placeholder for future features, in particular nullness analysis
-    | TType_app of tyconRef: TyconRef * typeInstantiation: TypeInst * flags: byte
+    /// Indicates the type is built from a named type and a number of type arguments
+    | TType_app of tyconRef: TyconRef * typeInstantiation: TypeInst * nullness: Nullness
 
     /// Indicates the type is an anonymous record type whose compiled representation is located in the given assembly
     | TType_anon of anonInfo: AnonRecdTypeInfo * tys: TType list
@@ -4302,10 +4387,10 @@ type TType =
     /// Indicates the type is a tuple type. elementTypes must be of length 2 or greater.
     | TType_tuple of tupInfo: TupInfo * elementTypes: TTypes
 
-    /// Indicates the type is a function type.
+    /// TType_fun(domainType, rangeType, nullness).
     ///
-    /// 'flags' is a placeholder for future features, in particular nullness analysis.
-    | TType_fun of domainType: TType * rangeType: TType * flags: byte
+    /// Indicates the type is a function type 
+    | TType_fun of domainType: TType * rangeType: TType * nullness: Nullness
 
     /// Indicates the type is a non-F#-visible type representing a "proof" that a union value belongs to a particular union case
     /// These types are not user-visible and will never appear as an inferred type. They are the types given to
@@ -4313,9 +4398,7 @@ type TType =
     | TType_ucase of unionCaseRef: UnionCaseRef * typeInstantiation: TypeInst
 
     /// Indicates the type is a variable type, whether declared, generalized or an inference type parameter  
-    ///
-    /// 'flags' is a placeholder for future features, in particular nullness analysis
-    | TType_var of typar: Typar * flags: byte
+    | TType_var of typar: Typar * nullness: Nullness
 
     /// Indicates the type is a unit-of-measure expression being used as an argument to a type or member
     | TType_measure of measure: Measure
@@ -4341,18 +4424,18 @@ type TType =
     override x.ToString() =  
         match x with 
         | TType_forall (_tps, ty) -> "forall ... " + ty.ToString()
-        | TType_app (tcref, tinst, _) -> tcref.DisplayName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
+        | TType_app (tcref, tinst, nullness) -> tcref.DisplayName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">") + nullness.ToString() 
         | TType_tuple (tupInfo, tinst) -> 
             (match tupInfo with 
              | TupInfo.Const false -> ""
              | TupInfo.Const true -> "struct ")
-             + String.concat "," (List.map string tinst) 
+             + String.concat "," (List.map string tinst) + ")"
         | TType_anon (anonInfo, tinst) -> 
             (match anonInfo.TupInfo with 
              | TupInfo.Const false -> ""
              | TupInfo.Const true -> "struct ")
              + "{|" + String.concat "," (Seq.map2 (fun nm ty -> nm + " " + string ty + ";") anonInfo.SortedNames tinst) + "|}"
-        | TType_fun (domainTy, retTy, _) -> "(" + string domainTy + " -> " + string retTy + ")"
+        | TType_fun (domainTy, retTy, nullness) -> "(" + string domainTy + " -> " + string retTy + ")" + nullness.ToString()
         | TType_ucase (uc, tinst) -> "ucase " + uc.CaseName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
         | TType_var (tp, _) -> 
             match tp.Solution with 
@@ -4433,7 +4516,7 @@ type AnonRecdTypeInfo =
         x.SortedNames <- sortedNames
         x.IlTypeName <- d.IlTypeName
 
-    member x.IsLinked = (match x.SortedIds with null -> true | _ -> false)
+    member x.IsLinked = (match box x.SortedIds with null -> true | _ -> false)
     
     member x.DisplayNameCoreByIdx idx = x.SortedNames[idx]
 
@@ -5652,12 +5735,12 @@ type CcuThunk =
 
     /// Dereference the assembly reference 
     member ccu.Deref = 
-        if isNull (ccu.target :> obj) then 
+        if isNull (box ccu.target) then 
             raise(UnresolvedReferenceNoRange ccu.name)
         ccu.target
    
     /// Indicates if this assembly reference is unresolved
-    member ccu.IsUnresolvedReference = isNull (ccu.target :> obj)
+    member ccu.IsUnresolvedReference = isNull (box ccu.target)
 
     /// Ensure the ccu is derefable in advance. Supply a path to attach to any resulting error message.
     member ccu.EnsureDerefable(requiringPath: string[]) = 
@@ -5918,7 +6001,7 @@ type Construct() =
         let lazyBaseTy = 
             LazyWithContext.Create 
                 ((fun (m, objTy) -> 
-                      let baseSystemTy = st.PApplyOption((fun st -> match st.BaseType with null -> None | ty -> Some ty), m)
+                      let baseSystemTy = st.PApplyOption((fun st -> match st.BaseType with null -> None | ty -> Some (nonNull ty)), m)
                       match baseSystemTy with 
                       | None -> objTy 
                       | Some t -> importProvidedType t),
@@ -5932,7 +6015,9 @@ type Construct() =
               IsDelegate = (fun () -> st.PUntaint((fun st -> 
                                    let baseType = st.BaseType 
                                    match baseType with 
-                                   | null -> false
+                                   | Null -> false
+                                   | NonNull x -> 
+                                   match x with 
                                    | x when x.IsGenericType -> false
                                    | x when x.DeclaringType <> null -> false
                                    | x -> x.FullName = "System.Delegate" || x.FullName = "System.MulticastDelegate"), m))
@@ -6051,7 +6136,7 @@ type Construct() =
         Typar.New
           { typar_id = id 
             typar_stamp = newStamp() 
-            typar_flags= TyparFlags(kind, rigid, isFromError, isCompGen, staticReq, dynamicReq, eqDep, compDep) 
+            typar_flags= TyparFlags(kind, rigid, isFromError, isCompGen, staticReq, dynamicReq, eqDep, compDep, false) 
             typar_solution = None
             typar_astype = Unchecked.defaultof<_>
             typar_opt_data =
@@ -6234,8 +6319,8 @@ type Construct() =
     static member ComputeDefinitionLocationOfProvidedItem<'T when 'T :> IProvidedCustomAttributeProvider> (p: Tainted<'T>) : range option =
         let attrs = p.PUntaintNoFailure(fun x -> x.GetDefinitionLocationAttribute(p.TypeProvider.PUntaintNoFailure id))
         match attrs with
-        | None | Some (null, _, _) -> None
-        | Some (filePath, line, column) -> 
+        | None | Some (Null, _, _) -> None
+        | Some (NonNull filePath, line, column) -> 
             // Coordinates from type provider are 1-based for lines and columns
             // Coordinates internally in the F# compiler are 1-based for lines and 0-based for columns
             let pos = Position.mkPos line (max 0 (column - 1)) 
