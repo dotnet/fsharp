@@ -2127,6 +2127,7 @@ and typeDefReader ctxtH : ILTypeDefStored =
 
                     member _.CompareKey(rowIndex) =
                         let mutable addr = ctxt.rowAddr TableNames.CustomAttribute rowIndex
+                        // read parentIndex
                         let key = seekReadHasCustomAttributeIdx ctxt mdv &addr
                         hcaCompare searchedKey key
 
@@ -2151,12 +2152,15 @@ and typeDefReader ctxtH : ILTypeDefStored =
 
                 while attrIdx <= attrsEndIdx && not containsExtensionMethods do
                     let mutable addr = ctxt.rowAddr TableNames.CustomAttribute attrIdx
+                    // skip parentIndex to read typeIndex
                     seekReadHasCustomAttributeIdx ctxt mdv &addr |> ignore
                     let attrTypeIndex = seekReadCustomAttributeTypeIdx ctxt mdv &addr
                     let attrCtorIdx = attrTypeIndex.index
 
                     let name =
                         if attrTypeIndex.tag = cat_MethodDef then
+                            // the ExtensionAttribute constructor can be cat_MethodDef if the metadata is read from the assembly
+                            // in which the corresponding attribute is defined -- from the system library
                             if not looksLikeSystemAssembly then
                                 ""
                             else
