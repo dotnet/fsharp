@@ -2381,11 +2381,11 @@ objectImplementationMember:
         let flags = Some(memFlagsBuilder SynMemberKind.Member)
         let xmlDoc = grabXmlDocAtRangeStart (parseState, $1, rangeStart)
         let trivia = { LeadingKeyword = leadingKeyword; InlineKeyword = None; EqualsRange = None }
-        let mMember = rhs parseState 3
+        let mMember = rhs parseState 2
         let mEnd = mMember.EndRange
         let bindingPat = patFromParseError (SynPat.Wild(mEnd))
-        let expr = arbExpr ("classDefnMember1", mEnd)
-        let mWhole = rhs2 parseState 1 3
+        let expr = arbExpr ("objectImplementationMember1", mEnd)
+        let mWhole = rhs2 parseState 1 2
         let binding =
             mkSynBinding
                 (xmlDoc, bindingPat)

@@ -22,12 +22,13 @@ ImplFile
                            SynValInfo
                              ([[SynArgInfo ([], false, None)]; []],
                               SynArgInfo ([], false, None)), None),
-                        FromParseError (Wild (5,5--5,5), (5,5--5,5)), None,
-                        ArbitraryAfterError ("classDefnMember1", (5,5--5,5)),
-                        (4,5--5,5), NoneAtInvisible,
+                        FromParseError (Wild (4,11--4,11), (4,11--4,11)), None,
+                        ArbitraryAfterError
+                          ("objectImplementationMember1", (4,11--4,11)),
+                        (4,5--4,11), NoneAtInvisible,
                         { LeadingKeyword = Member (4,5--4,11)
                           InlineKeyword = None
-                          EqualsRange = None }), (4,5--5,5));
+                          EqualsRange = None }), (4,5--4,11));
                   Member
                     (SynBinding
                        (None, Normal, false, false, [],

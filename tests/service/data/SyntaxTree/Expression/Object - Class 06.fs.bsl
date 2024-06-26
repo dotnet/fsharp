@@ -22,12 +22,13 @@ ImplFile
                            SynValInfo
                              ([[SynArgInfo ([], false, None)]; []],
                               SynArgInfo ([], false, None)), None),
-                        FromParseError (Wild (4,13--4,13), (4,13--4,13)), None,
-                        ArbitraryAfterError ("classDefnMember1", (4,13--4,13)),
-                        (4,5--4,13), NoneAtInvisible,
+                        FromParseError (Wild (4,11--4,11), (4,11--4,11)), None,
+                        ArbitraryAfterError
+                          ("objectImplementationMember1", (4,11--4,11)),
+                        (4,5--4,11), NoneAtInvisible,
                         { LeadingKeyword = Member (4,5--4,11)
                           InlineKeyword = None
-                          EqualsRange = None }), (4,5--4,13))], [], (3,2--3,9),
+                          EqualsRange = None }), (4,5--4,11))], [], (3,2--3,9),
                  (3,0--4,13)), (3,0--4,13));
            Expr (Const (Unit, (6,0--6,2)), (6,0--6,2))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
