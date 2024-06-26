@@ -1084,7 +1084,7 @@ module List =
             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
 
         if count >= inputLength then
-            invalidArgOutOfRange "count" count "source.Length" inputLength
+            invalidArg "count" (SR.GetString(SR.notEnoughElements))
 
         // algorithm taken from https://github.com/python/cpython/blob/69b3e8ea569faabccd74036e3d0e5ec7c0c62a20/Lib/random.py#L363-L456
         let setSize =
@@ -1124,7 +1124,7 @@ module List =
             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
 
         if count >= inputLength then
-            invalidArgOutOfRange "count" count "source.Length" inputLength
+            invalidArg "count" (SR.GetString(SR.notEnoughElements))
 
         let setSize =
             Microsoft.FSharp.Primitives.Basics.Random.getMaxSetSizeForSampling count
