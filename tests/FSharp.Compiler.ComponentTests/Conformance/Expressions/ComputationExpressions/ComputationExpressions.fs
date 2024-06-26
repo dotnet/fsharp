@@ -69,6 +69,20 @@ module EmptyBodied =
             |> withErrorMessage "This value is not a function and cannot be applied."
 
         [<Fact>]
+        let ``task { } does not compile`` () =
+            Fsx """
+            open System.Threading.Tasks
+
+            let t : Task<unit> = task { }
+            """
+            |> withLangVersion80
+            |> asExe
+            |> compile
+            |> shouldFail
+            |> withErrorCode 3
+            |> withErrorMessage "This value is not a function and cannot be applied."
+
+        [<Fact>]
         let ``builder { } does not compile`` () =
             FSharp """
             type Builder () =
@@ -140,6 +154,12 @@ module EmptyBodied =
         /// TODO: Update this to the appropriate version when the feature comes out of preview.
         let [<Literal>] SupportedLanguageVersion = "preview"
 
+        /// warning FS3511: This state machine is not statically compilable.
+        /// A resumable code invocation at '(,--,)' could not be reduced.
+        /// An alternative dynamic implementation will be used, which may be slower.
+        /// Consider adjusting your code to ensure this state machine is statically compilable, or else suppress this warning.
+        let [<Literal>] FS3511 = 3511
+
         [<Fact>]
         let ``seq { } ≡ seq { () }`` () =
             Fsx """
@@ -165,6 +185,37 @@ module EmptyBodied =
             |> withLangVersion SupportedLanguageVersion
             |> runFsi
             |> shouldSucceed
+
+        [<Fact>]
+        let ``task { } ≡ task { () }`` () =
+            let src =
+                Fsx """
+open System.Threading.Tasks
+
+if
+    [|(); ()|] <> (Task.WhenAll (task { }, task { () })).GetAwaiter().GetResult()
+then
+    failwith "task { } ≢ task { () }"
+                """
+
+            do
+                src
+                |> withLangVersion SupportedLanguageVersion
+                |> runFsi
+                |> shouldFail
+                |> withStdErrContainsAllInOrder [
+                    "This state machine is not statically compilable. A resumable code invocation at '(5,33--5,37)' could not be reduced. An alternative dynamic implementation will be used, which may be slower. Consider adjusting your code to ensure this state machine is statically compilable, or else suppress this warning."
+                    "This state machine is not statically compilable. A resumable code invocation at '(5,43--5,47)' could not be reduced. An alternative dynamic implementation will be used, which may be slower. Consider adjusting your code to ensure this state machine is statically compilable, or else suppress this warning."
+                ]
+                |> ignore
+
+            do
+                src
+                |> withLangVersion SupportedLanguageVersion
+                |> withNoWarn FS3511
+                |> runFsi
+                |> shouldSucceed
+                |> ignore
 
         [<Fact>]
         let ``builder { () } and no Zero: FS0708`` () =
