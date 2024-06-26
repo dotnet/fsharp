@@ -1574,7 +1574,7 @@
       </trans-unit>
       <trans-unit id="IntfImplInIntrinsicAugmentation">
         <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using '#nowarn "69"' if you have checked this is not the case.</source>
-        <target state="new">Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using '#nowarn "69"' if you have checked this is not the case.</target>
+        <target state="translated">通常、インターフェイスの実装は、型の最初の宣言で指定する必要があります。拡張でのインターフェイス実装は、初期化前の静的バインディングへのアクセスを引き起こすことがあります。ただし、静的データの初期化中にそのインターフェイスの実装が呼び出された後に、静的データにアクセスする場合のみです。この件が問題でないと確認できたら、この警告を '#nowarn "69"' を使用して削除できます。</target>
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInExtrinsicAugmentation">
@@ -1594,12 +1594,12 @@
       </trans-unit>
       <trans-unit id="HashIncludeNotAllowedInNonScript">
         <source>#I directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="new">#I directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</target>
+        <target state="translated">#I ディレクティブを使用できるのは F# スクリプト ファイル (拡張子が .fsx または .fsscript) のみです。このコードをスクリプト ファイルに移動し、この参照に '-I' コンパイラー オプションを追加するか、ディレクティブを '#if INTERACTIVE'/'#endif' で区切ってください。</target>
         <note />
       </trans-unit>
       <trans-unit id="HashReferenceNotAllowedInNonScript">
         <source>#r directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="new">#r directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</target>
+        <target state="translated">#r ディレクティブを使用できるのは F# スクリプト ファイル (拡張子が .fsx または .fsscript) のみです。このコードをスクリプト ファイルに移動するか、この参照を '-r' コンパイラ オプションに置き換えてください。このディレクティブがユーザー入力として実行されている場合は、'#if INTERACTIVE'/'#endif' でディレクティブを区切ることができます。</target>
         <note />
       </trans-unit>
       <trans-unit id="HashDirectiveNotAllowedInNonScript">
