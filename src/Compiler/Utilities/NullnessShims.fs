@@ -21,7 +21,7 @@ module internal NullnessShims =
         | null -> raise (NullReferenceException())
         | v -> v
 
-    let inline nonNull (x: 'T MaybeNull) =
+    let inline nonNull<'T when 'T:not struct and 'T:null> (x: 'T MaybeNull ) =
         match x with
         | null -> raise (NullReferenceException())
         | v -> v
