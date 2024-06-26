@@ -858,10 +858,10 @@ let hsCompare (TaggedIndex(t1: HasSemanticsTag, idx1: int)) (TaggedIndex(t2: Has
     elif idx1 > idx2 then 1
     else compare t1.Tag t2.Tag
 
-let hcaCompare (TaggedIndex(t1: HasCustomAttributeTag, idx1: int)) (TaggedIndex(t2: HasCustomAttributeTag, idx2)) =
-    if idx1 < idx2 then -1
-    elif idx1 > idx2 then 1
-    else compare t1.Tag t2.Tag
+let inline hcaCompare (t1: TaggedIndex<HasCustomAttributeTag>) (t2: TaggedIndex<HasCustomAttributeTag>) =
+    if t1.index < t2.index then -1
+    elif t1.index > t2.index then 1
+    else compare t1.tag t2.tag
 
 let mfCompare (TaggedIndex(t1: MemberForwardedTag, idx1: int)) (TaggedIndex(t2: MemberForwardedTag, idx2)) =
     if idx1 < idx2 then -1
