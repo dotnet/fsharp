@@ -100,6 +100,8 @@
     <InternalsVisibleTo Include="HistoricalBenchmark" />
     <InternalsVisibleTo Include="FSharp.Test.Utilities" />
     <InternalsVisibleTo Include="FSharp.Editor" />
+    <InternalsVisibleTo Include="FsAutoComplete.Core" />
+    <InternalsVisibleTo Include="FsAutoComplete" />
   </ItemGroup>
 
   <ItemGroup>
