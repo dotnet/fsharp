@@ -1013,7 +1013,7 @@ printfn "Hello from F#"
         checkFile "As 01" expectTwoWarnings
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Transparent Compiler ScriptClosure cache is populated after GetProjectOptionsFromScript`` () =
     async {
         let transparentChecker = FSharpChecker.Create(useTransparentCompiler = true)
