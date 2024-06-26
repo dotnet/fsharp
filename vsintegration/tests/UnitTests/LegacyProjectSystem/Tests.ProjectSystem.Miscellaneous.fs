@@ -167,6 +167,7 @@ type Miscellaneous() =
 
     
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Automation.OutputGroup.OUTPUTLOC``() =
         this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
             this.MSBuildProjectMultiPlatform(["x86",""],"x86"),
@@ -184,6 +185,7 @@ type Miscellaneous() =
          )
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Automation.OutputGroups``() =
         DoWithTempFile "Test.fsproj" (fun file ->
             let text = TheTests.FsprojTextWithProjectReferences([],[],[],@"
@@ -261,6 +263,7 @@ type Miscellaneous() =
         ))
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``BuildAndClean``() =
         this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(["foo.fs"], [], 
              this.MSBuildProjectBoilerplate "Library", 
@@ -364,6 +367,7 @@ type Miscellaneous() =
 #endif
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``DebuggingEXESucceeds``() =
         this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(["foo.fs"], [], 
             this.MSBuildProjectBoilerplate "Exe",  
