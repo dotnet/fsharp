@@ -4,6 +4,7 @@ open Microsoft.CommonLanguageServerProtocol.Framework
 open Microsoft.VisualStudio.LanguageServer.Protocol
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Tokenization
 open System
 open System.Threading
 open System.Threading.Tasks
@@ -66,39 +67,78 @@ type FSharpRequestContext(lspServices: ILspServices, logger: ILspLogger, workspa
             async {
                 let! _, checkFileAnswer = checker.ParseAndCheckFileInProject(file.LocalPath, snapshot, "LSP Get semantic classification")
 
+                let! source =
+                    snapshot.ProjectSnapshot.SourceFiles
+                    |> Seq.find (fun f -> f.FileName = file.LocalPath)
+                    |> _.GetSource()
+                    |> Async.AwaitTask
+
+                let mutable a' = []
+
+                let tokenCallback =
+                    fun (tok: FSharpToken) ->
+                        let spanKind =
+                            if tok.IsKeyword then
+                                SemanticTokenTypes.Keyword
+                            elif tok.IsNumericLiteral then
+                                SemanticTokenTypes.Number
+                            elif tok.IsCommentTrivia then
+                                SemanticTokenTypes.Comment
+                            elif tok.IsStringLiteral then
+                                SemanticTokenTypes.String
+                            else
+                                SemanticTokenTypes.Function // XXX
+
+                        a' <- (tok.Range, spanKind)::a'
+
+                FSharpLexer.Tokenize(
+                    source,
+                    tokenCallback,
+                    flags = (FSharpLexerFlags.Default &&& ~~~FSharpLexerFlags.Compiling &&& ~~~FSharpLexerFlags.UseLexFilter),
+                    filePath = file.LocalPath
+                )
+
                 let a =
                     match checkFileAnswer with
                     | FSharpCheckFileAnswer.Succeeded result -> result.GetSemanticClassification(None) // XXX not sure if range opt should be None
                     | FSharpCheckFileAnswer.Aborted -> [||] // XXX should be error maybe
 
-                // XXX Not sure if this is needed, if so TODO should be declared out of the scope of this function
-                let compareRange (x: FSharp.Compiler.EditorServices.SemanticClassificationItem) (y: FSharp.Compiler.EditorServices.SemanticClassificationItem) =
-                    let c = x.Range.StartLine.CompareTo(y.Range.StartLine)
-                    if c <> 0 then c
-                    else x.Range.StartColumn.CompareTo(y.Range.StartColumn)
-
                 let b =
                     a
-                    |> Array.sortWith compareRange
                     |> Array.map (fun y ->
                         let startLine = y.Range.StartLine - 1
                         let startCol = y.Range.StartColumn
-                        let length = y.Range.EndColumn - y.Range.StartColumn // XXX
+                        let length = y.Range.EndColumn - y.Range.StartColumn // XXX Does not deal with multiline tokens?
                         let tokType = y.Type |> FSharpTokenTypeToLSP |> toIndex
                         let tokMods = 0
                         (startLine, startCol, length, tokType, tokMods)
                     )
+                let b' =
+                    a'
+                    |> List.map (fun (r, t) ->
+                        let startLine = r.StartLine - 1
+                        let startCol = r.StartColumn
+                        let length = r.EndColumn - r.StartColumn // XXX
+                        let tokType = t |> toIndex
+                        let tokMods = 0
+                        (startLine, startCol, length, tokType, tokMods)
+                    )
+                let b'' =
+                    Array.ofList b'
+                    |> Array.append b
+                    |> Array.sortWith (fun (l1, c1, _, _, _) (l2, c2, _, _, _) ->
+                        let c = l1.CompareTo(l2)
+                        if c <> 0 then c
+                        else c1.CompareTo(c2))
+
                 let c =
-                    b
+                    b''
                     |> Array.append [|(0,0,0,0,0)|]
                     |> Array.pairwise
                     |> Array.map (fun (prev, this) ->
                         let (prevSLine, prevSCol, _, _, _) = prev
                         let (thisSLine, thisSCol, length, tokType, tokMods) = this
                         (thisSLine - prevSLine, (if prevSLine = thisSLine then thisSCol - prevSCol else thisSCol), length, tokType, tokMods))
-
-                let _TODO_DELETE_readable_names =
-                    b |> Array.map( fun (_, _, _, t, _) -> SemanticTokenTypes.AllTypes.[t])
 
                 return c |> Array.map (fun (v, w, x, y, z) -> [| v; w; x; y; z |]) |> Array.concat
             })
