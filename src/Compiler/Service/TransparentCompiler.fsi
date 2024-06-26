@@ -97,9 +97,44 @@ type internal Extensions =
         fileSnapshots: #ProjectSnapshot.IFileSnapshot list * ?extraKeyFlag: DependencyGraphType ->
             ICacheKey<(DependencyGraphType option * byte array), string>
 
+type CacheSizes = {
+    ParseFileKeepStrongly: int
+    ParseFileKeepWeakly: int
+    ParseFileWithoutProjectKeepStrongly: int
+    ParseFileWithoutProjectKeepWeakly: int
+    ParseAndCheckFileInProjectKeepStrongly: int
+    ParseAndCheckFileInProjectKeepWeakly: int
+    ParseAndCheckAllFilesInProjectKeepStrongly: int
+    ParseAndCheckAllFilesInProjectKeepWeakly: int
+    ParseAndCheckProjectKeepStrongly: int
+    ParseAndCheckProjectKeepWeakly: int
+    FrameworkImportsKeepStrongly: int
+    FrameworkImportsKeepWeakly: int
+    BootstrapInfoStaticKeepStrongly: int
+    BootstrapInfoStaticKeepWeakly: int
+    BootstrapInfoKeepStrongly: int
+    BootstrapInfoKeepWeakly: int
+    TcLastFileKeepStrongly: int
+    TcLastFileKeepWeakly: int
+    TcIntermediateKeepStrongly: int
+    TcIntermediateKeepWeakly: int
+    DependencyGraphKeepStrongly: int
+    DependencyGraphKeepWeakly: int
+    ProjectExtrasKeepStrongly: int
+    ProjectExtrasKeepWeakly: int
+    AssemblyDataKeepStrongly: int
+    AssemblyDataKeepWeakly: int
+    SemanticClassificationKeepStrongly: int
+    SemanticClassificationKeepWeakly: int
+    ItemKeyStoreKeepStrongly: int
+    ItemKeyStoreKeepWeakly: int
+    ScriptClosureKeepStrongly: int
+    ScriptClosureKeepWeakly: int
+}
+
 type internal CompilerCaches =
 
-    new: sizeFactor: int -> CompilerCaches
+    new: sizeFactor: CacheSizes -> CompilerCaches
 
     member AssemblyData: AsyncMemoize<(string * string), (string * string), ProjectAssemblyDataResult>
 
@@ -131,7 +166,7 @@ type internal CompilerCaches =
 
     member SemanticClassification: AsyncMemoize<(string * (string * string)), string, SemanticClassificationView option>
 
-    member SizeFactor: int
+    member CacheSizes: CacheSizes
 
     member TcIntermediate: AsyncMemoize<(string * (string * string)), (string * int), TcIntermediate>
 
@@ -155,7 +190,9 @@ type internal TransparentCompiler =
         parallelReferenceResolution: ParallelReferenceResolution *
         captureIdentifiersWhenParsing: bool *
         getSource: (string -> Async<ISourceText option>) option *
-        useChangeNotifications: bool ->
+        useChangeNotifications: bool *
+        useSyntaxTreeCache: bool *
+        ?cacheSizes: CacheSizes ->
             TransparentCompiler
 
     member FindReferencesInFile:
@@ -174,6 +211,7 @@ type internal TransparentCompiler =
         fileName: string * projectSnapshot: ProjectSnapshot.ProjectSnapshot * _userOpName: 'a ->
             Async<FSharpParseFileResults>
 
+    member SetCacheSize: cacheSize: CacheSizes -> unit
     member SetCacheSizeFactor: sizeFactor: int -> unit
 
     member Caches: CompilerCaches
