@@ -2105,7 +2105,7 @@ module Array =
         if inputLength = 0 then
             invalidArg "source" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
 
-        if count >= inputLength then
+        if count > inputLength then
             invalidArg "count" (SR.GetString(SR.notEnoughElements))
 
         let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count

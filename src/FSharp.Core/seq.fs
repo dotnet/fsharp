@@ -2048,7 +2048,7 @@ module Seq =
         if inputLength = 0 then
             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
 
-        if count >= inputLength then
+        if count > inputLength then
             invalidArg "count" (SR.GetString(SR.notEnoughElements))
 
         // algorithm taken from https://github.com/python/cpython/blob/69b3e8ea569faabccd74036e3d0e5ec7c0c62a20/Lib/random.py#L363-L456
@@ -2089,7 +2089,7 @@ module Seq =
         if inputLength = 0 then
             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
 
-        if count >= inputLength then
+        if count > inputLength then
             invalidArg "count" (SR.GetString(SR.notEnoughElements))
 
         let setSize =
