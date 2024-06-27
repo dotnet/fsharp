@@ -182,21 +182,18 @@ module EmptyBodied =
 
         [<Fact>]
         let ``task { } ≡ task { () }`` () =
-            let src =
-                Fsx """
-open System.Threading.Tasks
+            Fsx """
+            open System.Threading.Tasks
 
-// We wrap this in a function to avoid https://github.com/dotnet/fsharp/issues/12038
-let f () =
-    if
-        [|(); ()|] <> Task.WhenAll(task { }, task { () }).GetAwaiter().GetResult()
-    then
-        failwith "task { } ≢ task { () }"
+            // We wrap this in a function to avoid https://github.com/dotnet/fsharp/issues/12038
+            let f () =
+                if
+                    [|(); ()|] <> Task.WhenAll(task { }, task { () }).GetAwaiter().GetResult()
+                then
+                    failwith "task { } ≢ task { () }"
 
-f ()
-                """
-
-            src
+            f ()
+            """
             |> withLangVersion SupportedLanguageVersion
             |> runFsi
             |> shouldSucceed
