@@ -11,6 +11,68 @@ open System.Threading.Tasks
 
 #nowarn "57"
 
+module TokenTypes =
+
+    [<return: Struct>]
+    let (|LexicalClassification|_|) (tok: FSharpToken) =
+        if tok.IsKeyword then
+            ValueSome SemanticTokenTypes.Keyword
+        elif tok.IsNumericLiteral then
+            ValueSome SemanticTokenTypes.Number
+        elif tok.IsCommentTrivia then
+            ValueSome SemanticTokenTypes.Comment
+        elif tok.IsStringLiteral then
+            ValueSome SemanticTokenTypes.String
+        else
+            ValueNone
+
+    // Tokenizes the source code and returns a list of token ranges and their SemanticTokenTypes
+    let GetSyntacticTokenTypes (source: FSharp.Compiler.Text.ISourceText) (fileName: string) =
+        let mutable tokRangesAndTypes = []
+
+        let tokenCallback =
+            fun (tok: FSharpToken) ->
+                match tok with
+                | LexicalClassification tokType -> tokRangesAndTypes <- (tok.Range, tokType) :: tokRangesAndTypes
+                | _ -> ()
+
+        FSharpLexer.Tokenize(
+            source,
+            tokenCallback,
+            flags = (FSharpLexerFlags.Default &&& ~~~FSharpLexerFlags.Compiling &&& ~~~FSharpLexerFlags.UseLexFilter),
+            filePath = fileName
+        )
+
+        tokRangesAndTypes
+
+    let FSharpTokenTypeToLSP (fst: SemanticClassificationType) =
+        // XXX kinda arbitrary mapping
+        match fst with
+        | SemanticClassificationType.ReferenceType -> SemanticTokenTypes.Class
+        | SemanticClassificationType.ValueType -> SemanticTokenTypes.Struct
+        | SemanticClassificationType.UnionCase -> SemanticTokenTypes.Enum
+        | SemanticClassificationType.UnionCaseField -> SemanticTokenTypes.EnumMember
+        | SemanticClassificationType.Function -> SemanticTokenTypes.Function
+        | SemanticClassificationType.Property -> SemanticTokenTypes.Property
+        | SemanticClassificationType.Module -> SemanticTokenTypes.Type
+        | SemanticClassificationType.Namespace -> SemanticTokenTypes.Namespace
+        | SemanticClassificationType.Interface -> SemanticTokenTypes.Interface
+        | SemanticClassificationType.TypeArgument -> SemanticTokenTypes.TypeParameter
+        | SemanticClassificationType.Operator -> SemanticTokenTypes.Operator
+        | SemanticClassificationType.Method -> SemanticTokenTypes.Method
+        | SemanticClassificationType.ExtensionMethod -> SemanticTokenTypes.Method
+        | SemanticClassificationType.Field -> SemanticTokenTypes.Property
+        | SemanticClassificationType.Event -> SemanticTokenTypes.Event
+        | SemanticClassificationType.Delegate -> SemanticTokenTypes.Function
+        | SemanticClassificationType.NamedArgument -> SemanticTokenTypes.Parameter
+        | SemanticClassificationType.LocalValue -> SemanticTokenTypes.Variable
+        | SemanticClassificationType.Plaintext -> SemanticTokenTypes.String
+        | SemanticClassificationType.Type -> SemanticTokenTypes.Type
+        | SemanticClassificationType.Printf -> SemanticTokenTypes.Keyword
+        | _ -> SemanticTokenTypes.Comment
+
+    let toIndex (x: string) = SemanticTokenTypes.AllTypes |> Seq.findIndex (fun y -> y = x)
+
 type FSharpRequestContext(lspServices: ILspServices, logger: ILspLogger, workspace: FSharpWorkspace, checker: FSharpChecker) =
     member _.LspServices = lspServices
     member _.Logger = logger
@@ -34,38 +96,15 @@ type FSharpRequestContext(lspServices: ILspServices, logger: ILspLogger, workspa
 
     member _.GetSemanticTokensForFile(file: Uri) =
 
-        let FSharpTokenTypeToLSP (fst: SemanticClassificationType) =
-            // XXX arbitrary
-            match fst with
-            | SemanticClassificationType.ReferenceType -> SemanticTokenTypes.Class
-            | SemanticClassificationType.ValueType -> SemanticTokenTypes.Struct
-            | SemanticClassificationType.UnionCase -> SemanticTokenTypes.Enum
-            | SemanticClassificationType.UnionCaseField -> SemanticTokenTypes.EnumMember
-            | SemanticClassificationType.Function -> SemanticTokenTypes.Function
-            | SemanticClassificationType.Property -> SemanticTokenTypes.Property
-            | SemanticClassificationType.Module -> SemanticTokenTypes.Type
-            | SemanticClassificationType.Namespace -> SemanticTokenTypes.Namespace
-            | SemanticClassificationType.Interface -> SemanticTokenTypes.Interface
-            | SemanticClassificationType.TypeArgument -> SemanticTokenTypes.TypeParameter
-            | SemanticClassificationType.Operator -> SemanticTokenTypes.Operator
-            | SemanticClassificationType.Method -> SemanticTokenTypes.Method
-            | SemanticClassificationType.ExtensionMethod -> SemanticTokenTypes.Method
-            | SemanticClassificationType.Field -> SemanticTokenTypes.Property
-            | SemanticClassificationType.Event -> SemanticTokenTypes.Event
-            | SemanticClassificationType.Delegate -> SemanticTokenTypes.Function
-            | SemanticClassificationType.NamedArgument -> SemanticTokenTypes.Parameter
-            | SemanticClassificationType.LocalValue -> SemanticTokenTypes.Variable
-            | SemanticClassificationType.Plaintext -> SemanticTokenTypes.String
-            | SemanticClassificationType.Type -> SemanticTokenTypes.Type
-            | SemanticClassificationType.Printf -> SemanticTokenTypes.Keyword
-            | _ -> SemanticTokenTypes.Comment
-
-        let toIndex (x: string) = SemanticTokenTypes.AllTypes |> Seq.findIndex (fun y -> y = x)
-
         workspace.GetSnapshotForFile file
         |> Option.map (fun snapshot ->
             async {
                 let! _, checkFileAnswer = checker.ParseAndCheckFileInProject(file.LocalPath, snapshot, "LSP Get semantic classification")
+
+                let semanticClassifications =
+                    match checkFileAnswer with
+                    | FSharpCheckFileAnswer.Succeeded result -> result.GetSemanticClassification(None) // XXX not sure if range opt should be None
+                    | FSharpCheckFileAnswer.Aborted -> [||] // XXX should be error maybe
 
                 let! source =
                     snapshot.ProjectSnapshot.SourceFiles
@@ -73,74 +112,38 @@ type FSharpRequestContext(lspServices: ILspServices, logger: ILspLogger, workspa
                     |> _.GetSource()
                     |> Async.AwaitTask
 
-                let mutable a' = []
+                let syntacticClassifications = TokenTypes.GetSyntacticTokenTypes source file.LocalPath
 
-                let tokenCallback =
-                    fun (tok: FSharpToken) ->
-                        let spanKind =
-                            if tok.IsKeyword then
-                                SemanticTokenTypes.Keyword
-                            elif tok.IsNumericLiteral then
-                                SemanticTokenTypes.Number
-                            elif tok.IsCommentTrivia then
-                                SemanticTokenTypes.Comment
-                            elif tok.IsStringLiteral then
-                                SemanticTokenTypes.String
-                            else
-                                SemanticTokenTypes.Function // XXX
-
-                        a' <- (tok.Range, spanKind)::a'
-
-                FSharpLexer.Tokenize(
-                    source,
-                    tokenCallback,
-                    flags = (FSharpLexerFlags.Default &&& ~~~FSharpLexerFlags.Compiling &&& ~~~FSharpLexerFlags.UseLexFilter),
-                    filePath = file.LocalPath
-                )
-
-                let a =
-                    match checkFileAnswer with
-                    | FSharpCheckFileAnswer.Succeeded result -> result.GetSemanticClassification(None) // XXX not sure if range opt should be None
-                    | FSharpCheckFileAnswer.Aborted -> [||] // XXX should be error maybe
-
-                let b =
-                    a
-                    |> Array.map (fun y ->
-                        let startLine = y.Range.StartLine - 1
-                        let startCol = y.Range.StartColumn
-                        let length = y.Range.EndColumn - y.Range.StartColumn // XXX Does not deal with multiline tokens?
-                        let tokType = y.Type |> FSharpTokenTypeToLSP |> toIndex
-                        let tokMods = 0
-                        (startLine, startCol, length, tokType, tokMods)
-                    )
-                let b' =
-                    a'
-                    |> List.map (fun (r, t) ->
-                        let startLine = r.StartLine - 1
-                        let startCol = r.StartColumn
-                        let length = r.EndColumn - r.StartColumn // XXX
-                        let tokType = t |> toIndex
-                        let tokMods = 0
-                        (startLine, startCol, length, tokType, tokMods)
-                    )
-                let b'' =
-                    Array.ofList b'
-                    |> Array.append b
-                    |> Array.sortWith (fun (l1, c1, _, _, _) (l2, c2, _, _, _) ->
-                        let c = l1.CompareTo(l2)
+                let lspFormatTokens =
+                    semanticClassifications
+                    |> Array.map (fun item -> (item.Range, item.Type |> TokenTypes.FSharpTokenTypeToLSP |> TokenTypes.toIndex))
+                    |> Array.append (syntacticClassifications|> List.map (fun (r, t) -> (r, TokenTypes.toIndex t)) |> Array.ofList)
+                    |> Array.map (fun (r, tokType) ->
+                        let length = r.EndColumn - r.StartColumn // XXX Does not deal with multiline tokens?
+                        {| startLine = r.StartLine - 1; startCol = r.StartColumn; length = length; tokType = tokType; tokMods = 0 |})
+                        //(startLine, startCol, length, tokType, tokMods))
+                    |> Array.sortWith (fun x1 x2 ->
+                        let c = x1.startLine.CompareTo(x2.startLine)
                         if c <> 0 then c
-                        else c1.CompareTo(c2))
+                        else x1.startCol.CompareTo(x2.startCol))
 
-                let c =
-                    b''
-                    |> Array.append [|(0,0,0,0,0)|]
+                let tokensRelative =
+                    lspFormatTokens
+                    |> Array.append [| {| startLine = 0; startCol = 0; length = 0; tokType = 0; tokMods = 0 |} |]
                     |> Array.pairwise
                     |> Array.map (fun (prev, this) ->
-                        let (prevSLine, prevSCol, _, _, _) = prev
-                        let (thisSLine, thisSCol, length, tokType, tokMods) = this
-                        (thisSLine - prevSLine, (if prevSLine = thisSLine then thisSCol - prevSCol else thisSCol), length, tokType, tokMods))
+                        {|
+                            startLine = this.startLine - prev.startLine
+                            startCol = (if prev.startLine = this.startLine then this.startCol - prev.startCol else this.startCol)
+                            length = this.length
+                            tokType = this.tokType
+                            tokMods = this.tokMods
+                        |})
 
-                return c |> Array.map (fun (v, w, x, y, z) -> [| v; w; x; y; z |]) |> Array.concat
+                return tokensRelative
+                    |> Array.map (fun tok ->
+                        [| tok.startLine; tok.startCol; tok.length; tok.tokType; tok.tokMods |])
+                    |> Array.concat
             })
         |> Option.defaultValue (async { return [||] })
 
