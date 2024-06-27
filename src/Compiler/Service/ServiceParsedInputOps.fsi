@@ -98,7 +98,7 @@ type public CompletionContext =
         isStatic: bool
 
     /// (s = | ) or (s <> | )
-    | CaretAfterOperator of mExprBeforeOperator: range
+    | CaretAfterOperator of mExprBeforeOperator: range * isInMatch: bool
 
 type public ModuleKind =
     { IsAutoOpen: bool

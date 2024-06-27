@@ -126,7 +126,7 @@ type CompletionContext =
         isStatic: bool
 
     /// (s =| ) or (s <>| )
-    | CaretAfterOperator of mExprBeforeOperator: range
+    | CaretAfterOperator of mExprBeforeOperator: range * isInMatch: bool
 
 type ShortIdent = string
 
@@ -1528,7 +1528,7 @@ module ParsedInput =
                             | _ ->
                                 match expr with
                                 | Operator "op_Equality" (l, r) when rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr r.Range pos ->
-                                    Some(CompletionContext.CaretAfterOperator l.Range)
+                                    Some(CompletionContext.CaretAfterOperator(l.Range, false))
                                 | _ -> defaultTraverse expr
 
                         | SynExpr.Record(None, None, [], _) -> Some(CompletionContext.RecordField RecordContext.Empty)
@@ -1546,10 +1546,10 @@ module ParsedInput =
                         | Operator "op_Inequality" (l, r)
                         | SynExpr.IfThenElse(ifExpr = Operator "op_Equality" (l, r) | Operator "op_Inequality" (l, r))
                         | SynExpr.Set(l, r, _) when rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr r.Range pos ->
-                            Some(CompletionContext.CaretAfterOperator l.Range)
+                            Some(CompletionContext.CaretAfterOperator (l.Range, false))
 
                         | SynExpr.LongIdentSet(l, r, _) when rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr r.Range pos ->
-                            Some(CompletionContext.CaretAfterOperator l.Range)
+                            Some(CompletionContext.CaretAfterOperator (l.Range, false))
 
                         // let a = 1: |
                         | SynExpr.Typed(targetType = SynType.FromParseError(range = m))
@@ -1581,6 +1581,9 @@ module ParsedInput =
 
                             | NewObjectOrMethodCallFound (lineStr, pos) (CompletionContext.ParameterList(a, b, c, d, e, f)) ->
                                 Some(CompletionContext.ParameterList(a, b + 1, c, d, e, f))
+
+                            | SynExpr.Match(expr = expr) ->
+                                Some (CompletionContext.CaretAfterOperator(expr.Range, true))
 
                             | _ -> defaultTraverse expr
 
@@ -1638,7 +1641,7 @@ module ParsedInput =
                     (
                         path,
                         defaultTraverse,
-                        (SynBinding(headPat = headPat; trivia = trivia; returnInfo = returnInfo) as synBinding)
+                        (SynBinding(headPat = headPat; trivia = trivia; returnInfo = returnInfo; expr = expr) as synBinding)
                     ) =
 
                     let isOverrideOrMember leadingKeyword =
@@ -1726,54 +1729,66 @@ module ParsedInput =
                     | Some(SynBindingReturnInfo(range = m)) when rangeContainsPosOrIsSpacesBetweenRangeAndPos lineStr m pos ->
                         Some CompletionContext.Type
                     | _ ->
-                        match headPat with
+                        match expr with
+                        // let a: string = |
+                        // member _.M(): string = |
+                        | SynExpr.Typed(expr = SynExpr.ArbitraryAfterError _) -> 
+                            let m =
+                                match headPat with
+                                | SynPat.Named (range = m) -> m
+                                | SynPat.LongIdent (longDotId = lid) -> lid.LongIdent |> List.last |> _.idRange
+                                | _ -> headPat.Range
+                            Some (CompletionContext.CaretAfterOperator(m, false))
 
-                        // static member |
-                        | SynPat.FromParseError _ when isStaticMember trivia.LeadingKeyword ->
-                            overrideContext path trivia.LeadingKeyword.Range false true false
+                        | _ ->
+                            match headPat with
 
-                        // override |
-                        | SynPat.FromParseError _ when isOverrideOrMember trivia.LeadingKeyword && lineStr.[pos.Column - 1] = ' ' ->
-                            overrideContext path trivia.LeadingKeyword.Range false false (isMember trivia.LeadingKeyword)
+                            // static member |
+                            | SynPat.FromParseError _ when isStaticMember trivia.LeadingKeyword ->
+                                overrideContext path trivia.LeadingKeyword.Range false true false
 
-                        // override _.|
-                        | SynPat.FromParseError _ when isOverrideOrMember trivia.LeadingKeyword ->
-                            overrideContext path trivia.LeadingKeyword.Range true false (isMember trivia.LeadingKeyword)
+                            // override |
+                            | SynPat.FromParseError _ when isOverrideOrMember trivia.LeadingKeyword && lineStr.[pos.Column - 1] = ' ' ->
+                                overrideContext path trivia.LeadingKeyword.Range false false (isMember trivia.LeadingKeyword)
 
-                        // override this.|
-                        | SynPat.Named(ident = SynIdent(ident = selfId)) when
-                            isOverrideOrMember trivia.LeadingKeyword && selfId.idRange.End.IsAdjacentTo pos
-                            ->
-                            overrideContext path trivia.LeadingKeyword.Range true false (isMember trivia.LeadingKeyword)
+                            // override _.|
+                            | SynPat.FromParseError _ when isOverrideOrMember trivia.LeadingKeyword ->
+                                overrideContext path trivia.LeadingKeyword.Range true false (isMember trivia.LeadingKeyword)
 
-                        // override this.ToStr|
-                        | SynPat.LongIdent(longDotId = SynLongIdent(id = [ _; methodId ])) when
-                            isOverrideOrMember trivia.LeadingKeyword
-                            && rangeContainsPos methodId.idRange pos
-                            ->
-                            overrideContext path trivia.LeadingKeyword.Range true false (isMember trivia.LeadingKeyword)
+                            // override this.|
+                            | SynPat.Named(ident = SynIdent(ident = selfId)) when
+                                isOverrideOrMember trivia.LeadingKeyword && selfId.idRange.End.IsAdjacentTo pos
+                                ->
+                                overrideContext path trivia.LeadingKeyword.Range true false (isMember trivia.LeadingKeyword)
 
-                        // static member A|
-                        | SynPat.LongIdent(longDotId = SynLongIdent(id = [ methodId ])) when
-                            isStaticMember trivia.LeadingKeyword && rangeContainsPos methodId.idRange pos
-                            ->
-                            overrideContext path trivia.LeadingKeyword.Range false true false
+                            // override this.ToStr|
+                            | SynPat.LongIdent(longDotId = SynLongIdent(id = [ _; methodId ])) when
+                                isOverrideOrMember trivia.LeadingKeyword
+                                && rangeContainsPos methodId.idRange pos
+                                ->
+                                overrideContext path trivia.LeadingKeyword.Range true false (isMember trivia.LeadingKeyword)
 
-                        | SynPat.LongIdent(longDotId = lidwd; argPats = SynArgPats.Pats pats; range = m) when rangeContainsPos m pos ->
-                            if rangeContainsPos lidwd.Range pos then
-                                // let fo|o x = ()
+                            // static member A|
+                            | SynPat.LongIdent(longDotId = SynLongIdent(id = [ methodId ])) when
+                                isStaticMember trivia.LeadingKeyword && rangeContainsPos methodId.idRange pos
+                                ->
+                                overrideContext path trivia.LeadingKeyword.Range false true false
+
+                            | SynPat.LongIdent(longDotId = lidwd; argPats = SynArgPats.Pats pats; range = m) when rangeContainsPos m pos ->
+                                if rangeContainsPos lidwd.Range pos then
+                                    // let fo|o x = ()
+                                    Some CompletionContext.Invalid
+                                else
+                                    pats
+                                    |> List.tryPick (fun pat -> TryGetCompletionContextInPattern true pat None pos)
+                                    |> Option.orElseWith (fun () -> defaultTraverse synBinding)
+
+                            | SynPat.Named(range = range)
+                            | SynPat.As(_, SynPat.Named(range = range), _) when rangeContainsPos range pos ->
+                                // let fo|o = 1
                                 Some CompletionContext.Invalid
-                            else
-                                pats
-                                |> List.tryPick (fun pat -> TryGetCompletionContextInPattern true pat None pos)
-                                |> Option.orElseWith (fun () -> defaultTraverse synBinding)
 
-                        | SynPat.Named(range = range)
-                        | SynPat.As(_, SynPat.Named(range = range), _) when rangeContainsPos range pos ->
-                            // let fo|o = 1
-                            Some CompletionContext.Invalid
-
-                        | _ -> defaultTraverse synBinding
+                            | _ -> defaultTraverse synBinding
 
                 member _.VisitHashDirective(_, _directive, range) =
                     // No completions in a directive

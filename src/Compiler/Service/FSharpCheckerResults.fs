@@ -773,7 +773,7 @@ type internal TypeCheckInfo
     let CompletionItem (ty: TyconRef voption) (assemblySymbol: AssemblySymbol voption) (item: ItemWithInst) =
         CompletionItemWithMoreSetting ty assemblySymbol 0 ValueNone ValueNone item
 
-    let getStaticFieldsOfSameTypeInTheType nenv ad m ty =
+    let getStaticFieldsOfSameTypeInTheType isInMatch nenv ad m ty =
         let targets =
             ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox ncenv.g ncenv.amap m)
 
@@ -783,24 +783,36 @@ type internal TypeCheckInfo
             items
             |> List.filter (function
                 | Item.UnionCase _ -> true
-                | Item.Value(valRef) -> typeEquiv g ty valRef.Type
-                | Item.ILField(iLFieldInfo) -> typeEquiv g ty (iLFieldInfo.FieldType(amap, m))
-                | Item.Property(info = pinfo :: _) -> typeEquiv g ty (pinfo.GetPropertyType(amap, m))
+                | Item.Value(valRef) -> typeEquiv g ty valRef.Type && not isInMatch
+                | Item.ILField(iLFieldInfo) -> typeEquiv g ty (iLFieldInfo.FieldType(amap, m)) && (not isInMatch || iLFieldInfo.LiteralValue.IsSome)
+                | Item.Property(info = pinfo :: _) -> typeEquiv g ty (pinfo.GetPropertyType(amap, m)) && not isInMatch
                 | _ -> false)
 
         let items = items |> List.map ItemWithNoInst
         let items = items |> RemoveDuplicateItems g
         items |> RemoveExplicitlySuppressed g
 
-    let getStaticFieldsOfSameTypeInTheTypeCompletionItem (nenv: NameResolutionEnv) ad m ty =
-        let tyName =
-            stringOfTy (nenv.DisplayEnv.UseGenericParameterStyle(GenericParameterStyle.Prefix)) ty
+    let getStaticFieldsOfSameTypeInTheTypeCompletionItem isInMatch (nenv: NameResolutionEnv) ad m ty =
+        let g = nenv.DisplayEnv.g
+        let ty = stripTyEqns g ty
 
-        getStaticFieldsOfSameTypeInTheType nenv ad m ty
+        let isAutoOpen =
+            match ty with
+            | TType_app (tcref, _, _) -> 
+                (tcref.IsUnionTycon && (TryFindFSharpBoolAttribute g g.attrib_RequireQualifiedAccessAttribute tcref.Attribs <> Some true)) ||
+                TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute tcref.Attribs = Some true
+            | _ -> false
+
+        let tyName = stringOfTy (nenv.DisplayEnv.UseGenericParameterStyle(GenericParameterStyle.Prefix)) ty
+
+        // if the parent namespace/module was opened, and the type was marked as AutoOpen, ignore the typeName
+        let tyName = if -1 = tyName.IndexOf '.' && isAutoOpen then String.Empty else tyName + "."
+
+        getStaticFieldsOfSameTypeInTheType isInMatch nenv ad m ty
         |> List.map (fun i ->
-            let code = ValueSome $"{tyName}.{i.Item.DisplayName}"
+            let code = ValueSome $"{tyName}{i.Item.DisplayName}"
 
-            CompletionItemWithMoreSetting ValueNone ValueNone -2 code code i)
+            CompletionItemWithMoreSetting ValueNone ValueNone -100 code code i)
 
     let CollectParameters (methods: MethInfo list) amap m : Item list =
         methods
@@ -822,7 +834,7 @@ type internal TypeCheckInfo
             let rec loopParamList i ls =
                 match ls with
                 | [] -> []
-                | x :: _ when i = paramIdx -> getStaticFieldsOfSameTypeInTheTypeCompletionItem nenv ad m (getTy x)
+                | x :: _ when i = paramIdx -> getStaticFieldsOfSameTypeInTheTypeCompletionItem false nenv ad m (getTy x)
                 | _ :: t -> loopParamList (i + 1) t
 
             let rec loopParamListList i ls =
@@ -834,15 +846,17 @@ type internal TypeCheckInfo
             loopParamListList 0 ls
 
         let getStaticFieldsOfSameTypeOfTheParameter nenv ad m tinst (methods: MethInfo list) (items: Item list) =
+            let getStaticFieldsOfSameTypeInTheTypeCompletionItem = 
+                getStaticFieldsOfSameTypeInTheTypeCompletionItem false nenv ad m 
             match paramName with
             | Some name ->
                 match items |> List.tryFind (fun i -> i.DisplayName = name) with
-                | Some(Item.OtherName(argType = ty)) -> getStaticFieldsOfSameTypeInTheTypeCompletionItem nenv ad m ty
-                | Some(Item.Value(valRef)) -> getStaticFieldsOfSameTypeInTheTypeCompletionItem nenv ad m valRef.Type
+                | Some(Item.OtherName(argType = ty)) -> getStaticFieldsOfSameTypeInTheTypeCompletionItem ty
+                | Some(Item.Value(valRef)) -> getStaticFieldsOfSameTypeInTheTypeCompletionItem valRef.Type
                 | Some(Item.ILField(iLFieldInfo)) ->
-                    getStaticFieldsOfSameTypeInTheTypeCompletionItem nenv ad m (iLFieldInfo.FieldType(amap, m))
+                    getStaticFieldsOfSameTypeInTheTypeCompletionItem (iLFieldInfo.FieldType(amap, m))
                 | Some(Item.Property(info = pinfo :: _)) ->
-                    getStaticFieldsOfSameTypeInTheTypeCompletionItem nenv ad m (pinfo.GetPropertyType(amap, m))
+                    getStaticFieldsOfSameTypeInTheTypeCompletionItem (pinfo.GetPropertyType(amap, m))
                 | _ -> []
             | _ ->
                 methods
@@ -2258,16 +2272,27 @@ type internal TypeCheckInfo
             | Some(CompletionContext.MethodOverride(ctx, enclosingTypeNameRange, spacesBeforeOverrideKeyword, hasThis, isStatic)) ->
                 GetOverridableMethods pos ctx enclosingTypeNameRange spacesBeforeOverrideKeyword hasThis isStatic
 
-            | Some(CompletionContext.CaretAfterOperator m) ->
+            | Some(CompletionContext.CaretAfterOperator(m, isInMatch)) ->
                 let declaredItems = getDeclaredItemsNotInRangeOpWithAllSymbols ()
                 let _, quals = GetExprTypingForPosition(m.End)
-                let bestQual = quals |> Array.tryFind (fun (_, _, _, r) -> posEq m.Start r.Start)
+                let bestQual = 
+                    quals 
+                    |> Array.tryFind (fun (_, _, _, r) -> posEq m.Start r.Start)
+                    |> Option.orElseWith (fun _ ->
+                        GetCapturedNameResolutions m.End ResolveOverloads.No
+                        |> ResizeArray.tryPick (fun (CNR(item, _, _, nenv, ad, r)) -> 
+                            if not (posEq m.Start r.Start) then None else
+                            match item with
+                            | Item.Value v -> Some(stripFunTy g v.Type |> snd, nenv, ad, r)
+                            | _ -> None
+                        )
+                    )
 
                 match bestQual with
                 | Some bestQual ->
                     let ty, nenv, ad, m = bestQual
                     let denv = nenv.DisplayEnv
-                    let items = getStaticFieldsOfSameTypeInTheTypeCompletionItem nenv ad m ty
+                    let items = getStaticFieldsOfSameTypeInTheTypeCompletionItem isInMatch nenv ad m ty
 
                     match declaredItems with
                     | Some(declaredItems, _, _) -> Some(items @ declaredItems, denv, m)
