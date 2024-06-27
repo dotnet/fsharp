@@ -49,7 +49,6 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <WarningsAsErrors>3239;$(WarningsAsErrors)</WarningsAsErrors>
     <UseStandardResourceNames Condition=" '$(UseStandardResourceNames)' == '' ">true</UseStandardResourceNames>
     <FsiExec Condition=" '$(FsiExec)' == '' ">true</FsiExec>
-    <ReflectionFree Condition=" '$(ReflectionFree)' == '' ">false</ReflectionFree>
   </PropertyGroup>
 
   <!-- BinaryFormatter is disabled (warning is treated as error) by default in .NET8+, this mirroring the change in SDK (https://github.com/dotnet/sdk/pull/31591) -->

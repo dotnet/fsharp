@@ -25,6 +25,11 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <DefineCommonCapabilities Condition=" '$(DefineCommonCapabilities)' == '' ">true</DefineCommonCapabilities>
     <SimpleResolution>true</SimpleResolution>
   </PropertyGroup>
+  
+  <PropertyGroup Label="AOT Customization" >
+    <ReflectionFree Condition=" '$(ReflectionFree)' == '' and '$(PublishAot)' == 'true' ">true</ReflectionFree>
+    <ReflectionFree Condition=" '$(ReflectionFree)' == '' ">false</ReflectionFree>
+  </PropertyGroup>
 
   <ItemGroup Condition="'$(_DebugSymbolsProduced)' == 'true' and '$(PdbFile)' != ''">
     <_DebugSymbolsIntermediatePathTemporary Include="$(PdbFile)"/>
