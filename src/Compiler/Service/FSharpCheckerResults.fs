@@ -579,7 +579,7 @@ type internal TypeCheckInfo
                 Some(StripSelfRefCell(g, vref.BaseOrThisInfo, vref.TauType))
         | _, _ -> None
 
-    /// Build a CompetionItem
+    /// Build a CompletionItem
     let CompletionItemWithMoreSetting
         (ty: TyconRef voption)
         (assemblySymbol: AssemblySymbol voption)
