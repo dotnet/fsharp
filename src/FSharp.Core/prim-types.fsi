@@ -2591,7 +2591,7 @@ namespace System.Runtime.CompilerServices
     [<CompilerMessage("This type is for compiler use and should not be used directly", 1204, IsHidden=true)>]
     [<Sealed>]
     [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Struct ||| AttributeTargets.Interface, Inherited = false)>]
-    type CollectionBuilderAttribute =
+    type internal CollectionBuilderAttribute =
         inherit Attribute
 
         /// <summary>Initialize the attribute to refer to the <paramref name="methodName"/> method on the <paramref name="builderType"/> type.</summary>
@@ -2615,7 +2615,7 @@ namespace System.Runtime.CompilerServices
     [<EditorBrowsable(EditorBrowsableState.Never)>]
     [<Sealed>]
     [<AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)>]
-    type ScopedRefAttribute =
+    type internal ScopedRefAttribute =
         inherit Attribute
 
         new: unit -> ScopedRefAttribute
