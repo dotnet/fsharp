@@ -196,7 +196,7 @@ type internal FSharpCompletionProvider
 
             Array.sortInPlaceWith
                 (fun (x: DeclarationListItem) (y: DeclarationListItem) ->
-                    let mutable n = x.IsPreferred.CompareTo(y.IsPreferred)
+                    let mutable n = (not x.IsPreferred).CompareTo(not y.IsPreferred)
 
                     if n <> 0 then
                         n

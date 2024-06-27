@@ -1499,6 +1499,7 @@ module ParsedInput =
                         | None -> Some CompletionContext.RangeOperator // nothing was found - report that we were in the context of range operator
                         | x -> x // ok, we found something - return it
                     else
+                        let lineStrTrimmed = lineStr.Trim()
                         match expr with
                         // new A(1, $)
                         | SynExpr.Paren(expr = SynExpr.Tuple(range = m))
@@ -1563,7 +1564,7 @@ module ParsedInput =
 
                         // { new | }
                         | SynExpr.ComputationExpr(expr = SynExpr.ArbitraryAfterError _) when
-                            lineStr.Trim().Split(' ') |> Array.contains "new"
+                            lineStrTrimmed.Split(' ') |> Array.contains "new"
                             ->
                             Some(CompletionContext.Inherit(InheritanceContext.Unknown, ([], None)))
 
@@ -1582,7 +1583,7 @@ module ParsedInput =
                             | NewObjectOrMethodCallFound (lineStr, pos) (CompletionContext.ParameterList(a, b, c, d, e, f)) ->
                                 Some(CompletionContext.ParameterList(a, b + 1, c, d, e, f))
 
-                            | SynExpr.Match(expr = expr) ->
+                            | SynExpr.Match(expr = expr) when lineStrTrimmed.EndsWithOrdinal "|" || lineStrTrimmed.EndsWithOrdinal " with" ->
                                 Some (CompletionContext.CaretAfterOperator(expr.Range, true))
 
                             | _ -> defaultTraverse expr
