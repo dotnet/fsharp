@@ -1037,7 +1037,7 @@ and [<CompilerMessage("This type is for compiler use and should not be used dire
         let mutable acc = SetTree.empty
 
         for item in items do
-            acc <- SetTree.add LanguagePrimitives.FastGenericComparer<'T> item acc
+            acc <- SetTree.add comparer item acc
 
         Set(comparer, acc)
 #endif
