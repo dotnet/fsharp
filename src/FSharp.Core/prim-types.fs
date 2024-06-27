@@ -566,6 +566,9 @@ namespace Microsoft.FSharp.Core
 
     open BasicInlinedOperations
 
+    // This exists solely so that it can be used in the CollectionBuilderAttribute on List<'T> in prim-types.fsi.
+    module TypeOfUtils =
+        let inline typeof<'T> = typeof<'T>
     
     module TupleUtils =
     
@@ -4069,6 +4072,28 @@ namespace Microsoft.FSharp.Core
 
     and 'T voption = ValueOption<'T>
 
+#if !NET8_0_OR_GREATER
+namespace System.Runtime.CompilerServices
+    open System
+    open System.ComponentModel
+    open Microsoft.FSharp.Core
+
+    [<CompilerMessage("This type is for compiler use and should not be used directly", 1204, IsHidden=true)>]
+    [<Sealed>]
+    [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Struct ||| AttributeTargets.Interface, Inherited = false)>]
+    type CollectionBuilderAttribute (builderType: Type, methodName: string) =
+        inherit Attribute ()
+        member _.BuilderType = builderType
+        member _.MethodName = methodName
+
+    [<CompilerMessage("This type is for compiler use and should not be used directly", 1204, IsHidden=true)>]
+    [<EditorBrowsable(EditorBrowsableState.Never)>]
+    [<Sealed>]
+    [<AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)>]
+    type ScopedRefAttribute () =
+        inherit Attribute ()
+#endif
+
 namespace Microsoft.FSharp.Collections
 
     //-------------------------------------------------------------------------
@@ -4086,6 +4111,9 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions
     open Microsoft.FSharp.Core.BasicInlinedOperations
 
+#if NETSTANDARD2_1_OR_GREATER
+    [<System.Runtime.CompilerServices.CollectionBuilder(typeof<List>, "Create")>]
+#endif
     [<DefaultAugmentation(false)>]
     [<DebuggerTypeProxyAttribute(typedefof<ListDebugView<_>>)>]
     [<DebuggerDisplay("{DebugDisplay,nq}")>]
@@ -4110,6 +4138,19 @@ namespace Microsoft.FSharp.Collections
        interface IReadOnlyList<'T>
         
     and 'T list = List<'T>
+
+#if NETSTANDARD2_1_OR_GREATER
+    and [<CompilerMessage("This type is for compiler use and should not be used directly", 1204, IsHidden=true);
+          Sealed;
+          AbstractClass;
+          CompiledName("FSharpList")>] List =
+        [<CompilerMessage("This method is for compiler use and should not be used directly", 1204, IsHidden=true)>]
+        static member Create([<System.Runtime.CompilerServices.ScopedRef>] items: System.ReadOnlySpan<'T>) =
+            let mutable list : 'T list = []
+            for i = items.Length - 1 downto 0 do
+                list <- items[i] :: list
+            list
+#endif
 
     //-------------------------------------------------------------------------
     // List (debug view)

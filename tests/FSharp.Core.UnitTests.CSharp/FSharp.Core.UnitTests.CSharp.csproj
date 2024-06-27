@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>$(FSharpNetCoreProductTargetFramework);net472</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>12.0</LangVersion>
+    <UnitTestType>xunit</UnitTestType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>
