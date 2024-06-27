@@ -1258,6 +1258,9 @@ let storeILCustomAttrs (attrs: ILAttributes) =
     else
         ILAttributesStored.Given attrs
 
+let mkILCustomAttrsComputed f =
+    ILAttributesStored.Reader(fun _ -> f ())
+
 let mkILCustomAttrsReader f = ILAttributesStored.Reader f
 
 type ILCodeLabel = int
@@ -2611,6 +2614,14 @@ let convertInitSemantics (init: ILTypeInit) =
     | ILTypeInit.BeforeField -> TypeAttributes.BeforeFieldInit
     | ILTypeInit.OnAny -> enum 0
 
+[<Flags>]
+type ILTypeDefAdditionalFlags =
+    | None = 0
+    | IsKnownToBeAttribute = 1
+    /// The type can contain extension methods,
+    /// or this information may not be available at the time the ILTypeDef is created
+    | CanContainExtensionMethods = 2
+
 [<NoComparison; NoEquality; StructuredFormatDisplay("{DebugText}")>]
 type ILTypeDef
     (
@@ -2626,13 +2637,15 @@ type ILTypeDef
         methodImpls: ILMethodImplDefs,
         events: ILEventDefs,
         properties: ILPropertyDefs,
-        isKnownToBeAttribute: bool,
+        additionalFlags: ILTypeDefAdditionalFlags,
         securityDeclsStored: ILSecurityDeclsStored,
         customAttrsStored: ILAttributesStored,
         metadataIndex: int32
     ) =
 
     let mutable customAttrsStored = customAttrsStored
+
+    let hasFlag flag = additionalFlags &&& flag = flag
 
     new(name,
         attributes,
@@ -2646,7 +2659,7 @@ type ILTypeDef
         methodImpls,
         events,
         properties,
-        isKnownToBeAttribute,
+        additionalFlags,
         securityDecls,
         customAttrs) =
         ILTypeDef(
@@ -2662,9 +2675,9 @@ type ILTypeDef
             methodImpls,
             events,
             properties,
-            isKnownToBeAttribute,
+            additionalFlags,
             storeILSecurityDecls securityDecls,
-            storeILCustomAttrs customAttrs,
+            customAttrs,
             NoMetadataIdx
         )
 
@@ -2694,7 +2707,10 @@ type ILTypeDef
 
     member _.Properties = properties
 
-    member _.IsKnownToBeAttribute = isKnownToBeAttribute
+    member _.IsKnownToBeAttribute = hasFlag ILTypeDefAdditionalFlags.IsKnownToBeAttribute
+
+    member _.CanContainExtensionMethods =
+        hasFlag ILTypeDefAdditionalFlags.CanContainExtensionMethods
 
     member _.CustomAttrsStored = customAttrsStored
 
@@ -2714,7 +2730,7 @@ type ILTypeDef
             ?methodImpls,
             ?events,
             ?properties,
-            ?isKnownToBeAttribute,
+            ?newAdditionalFlags,
             ?customAttrs,
             ?securityDecls
         ) =
@@ -2732,11 +2748,11 @@ type ILTypeDef
             methodImpls = defaultArg methodImpls x.MethodImpls,
             events = defaultArg events x.Events,
             properties = defaultArg properties x.Properties,
-            isKnownToBeAttribute = defaultArg isKnownToBeAttribute x.IsKnownToBeAttribute,
-            customAttrs = defaultArg customAttrs x.CustomAttrs
+            additionalFlags = defaultArg newAdditionalFlags additionalFlags,
+            customAttrs = defaultArg customAttrs (storeILCustomAttrs x.CustomAttrs)
         )
 
-    member x.CustomAttrs =
+    member x.CustomAttrs: ILAttributes =
         match customAttrsStored with
         | ILAttributesStored.Reader f ->
             let res = ILAttributes(f x.MetadataIndex)
@@ -4220,11 +4236,11 @@ let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nes
         methods = methods,
         fields = fields,
         nestedTypes = nestedTypes,
-        customAttrs = attrs,
+        customAttrs = storeILCustomAttrs attrs,
         methodImpls = emptyILMethodImpls,
         properties = props,
         events = events,
-        isKnownToBeAttribute = false,
+        additionalFlags = ILTypeDefAdditionalFlags.None,
         securityDecls = emptyILSecurityDecls
     )
 
@@ -4244,11 +4260,11 @@ let mkRawDataValueTypeDef (iltyp_ValueType: ILType) (nm, size, pack) =
         methods = emptyILMethods,
         fields = emptyILFields,
         nestedTypes = emptyILTypeDefs,
-        customAttrs = emptyILCustomAttrs,
+        customAttrs = emptyILCustomAttrsStored,
         methodImpls = emptyILMethodImpls,
         properties = emptyILProperties,
         events = emptyILEvents,
-        isKnownToBeAttribute = false,
+        additionalFlags = ILTypeDefAdditionalFlags.None,
         securityDecls = emptyILSecurityDecls
     )
 
