@@ -237,10 +237,16 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison> =
     override Equals: obj -> bool
 
 #if NETSTANDARD2_1_OR_GREATER
+/// <summary>Contains methods for compiler use related to sets.</summary>
 and [<CompilerMessage("This type is for compiler use and should not be used directly", 1204, IsHidden = true);
       Sealed;
       AbstractClass;
       CompiledName("FSharpSet")>] Set =
+    /// <summary>Creates a set with the specified items.</summary>
+    ///
+    /// <param name="items">The items to store in the set.</param>
+    ///
+    /// <returns>A set containing the specified items.</returns>
     [<CompilerMessage("This method is for compiler use and should not be used directly", 1204, IsHidden = true)>]
     static member Create: [<System.Runtime.CompilerServices.ScopedRef>] items: System.ReadOnlySpan<'T> -> Set<'T>
 #endif
