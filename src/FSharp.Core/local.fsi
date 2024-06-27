@@ -26,6 +26,7 @@ module internal DetailedExceptions =
 // Definitions internal for this library.
 namespace Microsoft.FSharp.Primitives.Basics
 
+open System
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
 
@@ -118,6 +119,14 @@ module internal Array =
     val stableSortInPlaceWith: comparer: ('T -> 'T -> int) -> array: 'T array -> unit
 
     val stableSortInPlace: array: 'T array -> unit when 'T: comparison
+
+module internal Random =
+
+    val next: randomizer: (unit -> float) -> minValue: int -> maxValue: int -> int
+    val getMaxSetSizeForSampling: count: int -> int
+
+    val shuffleArrayInPlaceWith: random: Random -> array: 'T[] -> unit
+    val shuffleArrayInPlaceBy: randomizer: (unit -> float) -> array: 'T[] -> unit
 
 module internal Seq =
     val tryLastV: 'T seq -> 'T ValueOption

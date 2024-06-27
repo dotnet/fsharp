@@ -142,3 +142,88 @@ let ``TopRequireQualifiedAccessParent property should be valid``() =
     let actual = source |> getSymbolMap getTopRequireQualifiedAccessParentName
 
     assertAreEqual (expectedResult, actual)
+
+
+[<Fact>]
+let ``Check Unresolved Symbols``() =
+    let source = """
+namespace ``1 2 3``
+
+module Test =
+    module M1 = 
+        let v1 = 1
+
+        module M11 = 
+            let v11 = 1
+
+            module M111 = 
+                let v111 = 1
+
+        [<RequireQualifiedAccess>]
+        module M12 = 
+            let v12 = 1
+
+            module M121 = 
+                let v121 = 1
+
+                [<RequireQualifiedAccess>]
+                module M1211 = 
+                    let v1211 = 1
+
+        type A = 
+            static member val B = 0
+            static member C() = ()
+            static member (++) s s2 = s + "/" + s2
+
+        type B =
+            abstract D: int -> int
+
+        let ``a.b.c`` = "999"
+
+        type E = { x: int; y: int }
+        type F =
+            | A = 1
+            | B = 2
+        type G =
+            | A of int
+            | B of string
+        
+        let (|Is1|_|) x = x = 1
+        let (++) s s2 = s + "/" + s2
+    """
+
+    let expectedResult = 
+        [ 
+            "1 2 3.Test", "open ``1 2 3`` - Test";
+            "1 2 3.Test.M1", "open ``1 2 3`` - Test.M1";
+            "1 2 3.Test.M1.(++)", "open ``1 2 3`` - Test.M1.``(++)``";
+            "1 2 3.Test.M1.A", "open ``1 2 3`` - Test.M1.A";
+            "1 2 3.Test.M1.A.(++)", "open ``1 2 3`` - Test.M1.A.``(++)``";
+            "1 2 3.Test.M1.A.B", "open ``1 2 3`` - Test.M1.A.B";
+            "1 2 3.Test.M1.A.C", "open ``1 2 3`` - Test.M1.A.C";
+            "1 2 3.Test.M1.A.op_PlusPlus", "open ``1 2 3`` - Test.M1.A.op_PlusPlus";
+            "1 2 3.Test.M1.B", "open ``1 2 3`` - Test.M1.B";
+            "1 2 3.Test.M1.E", "open ``1 2 3`` - Test.M1.E";
+            "1 2 3.Test.M1.F", "open ``1 2 3`` - Test.M1.F";
+            "1 2 3.Test.M1.G", "open ``1 2 3`` - Test.M1.G";
+            "1 2 3.Test.M1.M11", "open ``1 2 3`` - Test.M1.M11";
+            "1 2 3.Test.M1.M11.M111", "open ``1 2 3`` - Test.M1.M11.M111";
+            "1 2 3.Test.M1.M11.M111.v111", "open ``1 2 3`` - Test.M1.M11.M111.v111";
+            "1 2 3.Test.M1.M11.v11", "open ``1 2 3`` - Test.M1.M11.v11";
+            "1 2 3.Test.M1.M12", "open ``1 2 3`` - Test.M1.M12";
+            "1 2 3.Test.M1.M12.M121", "open ``1 2 3``.Test.M1 - M12.M121";
+            "1 2 3.Test.M1.M12.M121.M1211", "open ``1 2 3``.Test.M1 - M12.M121.M1211";
+            "1 2 3.Test.M1.M12.M121.M1211.v1211", "open ``1 2 3``.Test.M1 - M12.M121.M1211.v1211";
+            "1 2 3.Test.M1.M12.M121.v121", "open ``1 2 3``.Test.M1 - M12.M121.v121";
+            "1 2 3.Test.M1.M12.v12", "open ``1 2 3``.Test.M1 - M12.v12";
+            "1 2 3.Test.M1.``a.b.c``", "open ``1 2 3`` - Test.M1.``a.b.c``";
+            "1 2 3.Test.M1.op_PlusPlus", "open ``1 2 3`` - Test.M1.op_PlusPlus";
+            "1 2 3.Test.M1.v1", "open ``1 2 3`` - Test.M1.v1";
+        ]
+        |> Map.ofList
+
+    let actual = source |> getSymbolMap (fun i -> 
+        let ns = i.UnresolvedSymbol.Namespace |> String.concat "."
+        $"open {ns} - {i.UnresolvedSymbol.DisplayName}")
+
+    assertAreEqual (expectedResult, actual)
