@@ -80,6 +80,7 @@ type LanguageFeature =
     | LowerInterpolatedStringToConcat
     | LowerIntegralRangesToFastLoops
     | LowerSimpleMappingsInComprehensionsToDirectCallsToMap
+    | ParsedHashDirectiveArgumentNonQuotes
 
 /// LanguageVersion management
 type LanguageVersion =

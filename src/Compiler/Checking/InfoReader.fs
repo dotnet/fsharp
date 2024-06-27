@@ -950,7 +950,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
         infoReader.GetIntrinsicPropInfoSetsOfType optFilter ad allowMultiIntfInst findFlag m ty  |> List.concat
 
     /// Get the flattened list of intrinsic properties in the hierarchy
-    member infoReader.GetIntrinsicPropInfoWithOverridenPropOfType optFilter ad allowMultiIntfInst findFlag m ty = 
+    member infoReader.GetIntrinsicPropInfoWithOverriddenPropOfType optFilter ad allowMultiIntfInst findFlag m ty = 
         infoReader.GetRawIntrinsicPropertySetsOfType(optFilter, ad, allowMultiIntfInst, m, ty) 
         |> FilterOverridesOfPropInfosWithOverridenProp findFlag infoReader.g infoReader.amap m
         |> List.concat
@@ -1008,8 +1008,8 @@ let GetIntrinsicMethInfosOfType (infoReader: InfoReader) optFilter ad allowMulti
 let GetIntrinsicPropInfosOfType (infoReader: InfoReader) optFilter ad allowMultiIntfInst findFlag m ty = 
     infoReader.GetIntrinsicPropInfosOfType optFilter ad allowMultiIntfInst findFlag m ty
 
-let GetIntrinsicPropInfoWithOverridenPropOfType (infoReader: InfoReader) optFilter ad allowMultiIntfInst findFlag m ty = 
-    infoReader.GetIntrinsicPropInfoWithOverridenPropOfType optFilter ad allowMultiIntfInst findFlag m ty
+let GetIntrinsicPropInfoWithOverriddenPropOfType (infoReader: InfoReader) optFilter ad allowMultiIntfInst findFlag m ty = 
+    infoReader.GetIntrinsicPropInfoWithOverriddenPropOfType optFilter ad allowMultiIntfInst findFlag m ty
 
 let TryFindIntrinsicNamedItemOfType (infoReader: InfoReader) (nm, ad, includeConstraints) findFlag m ty = 
     infoReader.TryFindIntrinsicNamedItemOfType (nm, ad, includeConstraints) findFlag m ty

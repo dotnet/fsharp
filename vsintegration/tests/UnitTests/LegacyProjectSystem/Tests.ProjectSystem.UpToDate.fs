@@ -32,6 +32,7 @@ type UpToDate() =
     member public _.Init () = AssemblyResolver.addResolver ()
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.ItemInputs () =
         this.MakeProjectAndDo(["file1.fs"], [], @"
                 <ItemGroup>
@@ -92,6 +93,7 @@ type UpToDate() =
             ))
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.PropertyInputs () =
         this.MakeProjectAndDo(["file1.fs"], [], @"
                 <PropertyGroup>
@@ -140,6 +142,7 @@ type UpToDate() =
             ))
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.ProjectFile () =
         this.MakeProjectAndDoWithProjectFile(["file1.fs"], [], "", (fun project projFileName ->
             let configNameDebug = ConfigCanonicalName("Debug", "x86")
@@ -163,6 +166,7 @@ type UpToDate() =
             ))
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.References () =
         let configNameDebug = ConfigCanonicalName("Debug", "x86")
         let output = VsMocks.vsOutputWindowPane(ref [])
@@ -217,6 +221,7 @@ type UpToDate() =
        )
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.OutputFiles () =
         this.MakeProjectAndDo(["file1.fs"], [], @"
                <ItemGroup>
@@ -271,6 +276,7 @@ type UpToDate() =
             ))
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.ConfigChanges () =
         this.MakeProjectAndDo(["file1.fs"], [], "", (fun project ->
             let configNameDebugx86 = ConfigCanonicalName("Debug", "x86")

@@ -10,7 +10,7 @@
 
   <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
     <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
-    <PublishReadyToRun>true</PublishReadyToRun>
+    <PublishReadyToRun>$(EnablePublishReadyToRun)</PublishReadyToRun>
     <RuntimeIdentifier>$(NETCoreSdkRuntimeIdentifier)</RuntimeIdentifier>
   </PropertyGroup>
 

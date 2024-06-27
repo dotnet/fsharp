@@ -438,6 +438,8 @@ val languageFeatureError: langVersion: LanguageVersion -> langFeature: LanguageF
 
 val checkLanguageFeatureError: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
 
+val tryCheckLanguageFeatureAndRecover: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> bool
+
 val checkLanguageFeatureAndRecover: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
 
 val tryLanguageFeatureErrorOption:
