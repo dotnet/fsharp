@@ -2588,7 +2588,6 @@ namespace System.Runtime.CompilerServices
     open System.ComponentModel
     open Microsoft.FSharp.Core
 
-    [<CompilerMessage("This type is for compiler use and should not be used directly", 1204, IsHidden=true)>]
     [<Sealed>]
     [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Struct ||| AttributeTargets.Interface, Inherited = false)>]
     type internal CollectionBuilderAttribute =
@@ -2611,7 +2610,6 @@ namespace System.Runtime.CompilerServices
         /// <remarks>This should match the metadata name of the target method. For example, this might be ".ctor" if targeting the type's constructor.</remarks>
         member MethodName: string
 
-    [<CompilerMessage("This type is for compiler use and should not be used directly", 1204, IsHidden=true)>]
     [<EditorBrowsable(EditorBrowsableState.Never)>]
     [<Sealed>]
     [<AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)>]

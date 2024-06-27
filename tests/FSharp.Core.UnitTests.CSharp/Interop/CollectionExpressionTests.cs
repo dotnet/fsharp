@@ -1,6 +1,6 @@
-namespace FSharp.Core.UnitTests.CSharp.Interop;
-
 using Microsoft.FSharp.Collections;
+
+namespace FSharp.Core.UnitTests.CSharp.Interop;
 
 // The CollectionBuilderAttribute type is only available in .NET 8 and up.
 #if NET8_0_OR_GREATER
@@ -11,7 +11,7 @@ public class CollectionExpressionTests
         public int CompareTo(object? obj) => obj switch
         {
             null => 1,
-            RecordClass { X: var otherX } => X.CompareTo(otherX),
+            RecordClass(var otherX) => X.CompareTo(otherX),
             _ => throw new ArgumentException("Invalid comparison.", nameof(obj))
         };
     }
@@ -21,7 +21,7 @@ public class CollectionExpressionTests
         public int CompareTo(object? obj) => obj switch
         {
             null => 1,
-            RecordStruct { X: var otherX } => X.CompareTo(otherX),
+            RecordStruct(var otherX) => X.CompareTo(otherX),
             _ => throw new ArgumentException("Invalid comparison.", nameof(obj))
         };
     }

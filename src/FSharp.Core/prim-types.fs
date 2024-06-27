@@ -567,7 +567,7 @@ namespace Microsoft.FSharp.Core
     open BasicInlinedOperations
 
     // This exists solely so that it can be used in the CollectionBuilderAttribute on List<'T> in prim-types.fsi.
-    module TypeOfUtils =
+    module internal TypeOfUtils =
         let inline typeof<'T> = typeof<'T>
     
     module TupleUtils =
@@ -4078,19 +4078,17 @@ namespace System.Runtime.CompilerServices
     open System.ComponentModel
     open Microsoft.FSharp.Core
 
-    [<CompilerMessage("This type is for compiler use and should not be used directly", 1204, IsHidden=true)>]
     [<Sealed>]
     [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Struct ||| AttributeTargets.Interface, Inherited = false)>]
-    type CollectionBuilderAttribute (builderType: Type, methodName: string) =
+    type internal CollectionBuilderAttribute (builderType: Type, methodName: string) =
         inherit Attribute ()
         member _.BuilderType = builderType
         member _.MethodName = methodName
 
-    [<CompilerMessage("This type is for compiler use and should not be used directly", 1204, IsHidden=true)>]
     [<EditorBrowsable(EditorBrowsableState.Never)>]
     [<Sealed>]
     [<AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)>]
-    type ScopedRefAttribute () =
+    type internal ScopedRefAttribute () =
         inherit Attribute ()
 #endif
 
