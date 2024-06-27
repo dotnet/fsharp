@@ -217,6 +217,7 @@ Microsoft.FSharp.Collections.ComparisonIdentity: System.Collections.Generic.ICom
 Microsoft.FSharp.Collections.ComparisonIdentity: System.Collections.Generic.IComparer`1[T] NonStructural$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]])
 Microsoft.FSharp.Collections.ComparisonIdentity: System.Collections.Generic.IComparer`1[T] NonStructural[T]()
 Microsoft.FSharp.Collections.ComparisonIdentity: System.Collections.Generic.IComparer`1[T] Structural[T]()
+Microsoft.FSharp.Collections.FSharpList: Microsoft.FSharp.Collections.FSharpList`1[T] Create[T](System.ReadOnlySpan`1[T])
 Microsoft.FSharp.Collections.FSharpList`1+Tags[T]: Int32 Cons
 Microsoft.FSharp.Collections.FSharpList`1+Tags[T]: Int32 Empty
 Microsoft.FSharp.Collections.FSharpList`1[T]: Boolean Equals(Microsoft.FSharp.Collections.FSharpList`1[T])
@@ -274,6 +275,7 @@ Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: System.String ToString()
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: TValue Item [TKey]
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: TValue get_Item(TKey)
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: Void .ctor(System.Collections.Generic.IEnumerable`1[System.Tuple`2[TKey,TValue]])
+Microsoft.FSharp.Collections.FSharpSet: Microsoft.FSharp.Collections.FSharpSet`1[T] Create[T](System.ReadOnlySpan`1[T])
 Microsoft.FSharp.Collections.FSharpSet`1[T]: Boolean Contains(T)
 Microsoft.FSharp.Collections.FSharpSet`1[T]: Boolean Equals(System.Object)
 Microsoft.FSharp.Collections.FSharpSet`1[T]: Boolean IsEmpty
