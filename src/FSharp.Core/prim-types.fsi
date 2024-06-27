@@ -2585,7 +2585,6 @@ namespace Microsoft.FSharp.Core
 #if !NET8_0_OR_GREATER
 namespace System.Runtime.CompilerServices
     open System
-    open System.ComponentModel
     open Microsoft.FSharp.Core
 
     [<Sealed>]
@@ -2610,7 +2609,6 @@ namespace System.Runtime.CompilerServices
         /// <remarks>This should match the metadata name of the target method. For example, this might be ".ctor" if targeting the type's constructor.</remarks>
         member MethodName: string
 
-    [<EditorBrowsable(EditorBrowsableState.Never)>]
     [<Sealed>]
     [<AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)>]
     type internal ScopedRefAttribute =

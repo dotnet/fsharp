@@ -4075,7 +4075,6 @@ namespace Microsoft.FSharp.Core
 #if !NET8_0_OR_GREATER
 namespace System.Runtime.CompilerServices
     open System
-    open System.ComponentModel
     open Microsoft.FSharp.Core
 
     [<Sealed>]
@@ -4085,7 +4084,6 @@ namespace System.Runtime.CompilerServices
         member _.BuilderType = builderType
         member _.MethodName = methodName
 
-    [<EditorBrowsable(EditorBrowsableState.Never)>]
     [<Sealed>]
     [<AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)>]
     type internal ScopedRefAttribute () =
