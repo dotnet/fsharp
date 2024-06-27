@@ -78,7 +78,7 @@ public class CollectionExpressionTests
     }
 
     [Fact]
-    public void FSharpSet_CanCreateUsingCollectionExpression()
+    public void FSharpSet_Int_CanCreateUsingCollectionExpression()
     {
         var expected = SetModule.OfArray([1, 2, 3]);
         FSharpSet<int> actual = [1, 2, 3];
