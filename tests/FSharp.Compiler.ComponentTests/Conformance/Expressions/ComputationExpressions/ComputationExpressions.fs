@@ -154,12 +154,6 @@ module EmptyBodied =
         /// TODO: Update this to the appropriate version when the feature comes out of preview.
         let [<Literal>] SupportedLanguageVersion = "preview"
 
-        /// warning FS3511: This state machine is not statically compilable.
-        /// A resumable code invocation at '(,--,)' could not be reduced.
-        /// An alternative dynamic implementation will be used, which may be slower.
-        /// Consider adjusting your code to ensure this state machine is statically compilable, or else suppress this warning.
-        let [<Literal>] FS3511 = 3511
-
         [<Fact>]
         let ``seq { } ≡ seq { () }`` () =
             Fsx """
@@ -192,30 +186,20 @@ module EmptyBodied =
                 Fsx """
 open System.Threading.Tasks
 
-if
-    [|(); ()|] <> (Task.WhenAll (task { }, task { () })).GetAwaiter().GetResult()
-then
-    failwith "task { } ≢ task { () }"
+// We wrap this in a function to avoid https://github.com/dotnet/fsharp/issues/12038
+let f () =
+    if
+        [|(); ()|] <> Task.WhenAll(task { }, task { () }).GetAwaiter().GetResult()
+    then
+        failwith "task { } ≢ task { () }"
+
+f ()
                 """
 
-            do
-                src
-                |> withLangVersion SupportedLanguageVersion
-                |> runFsi
-                |> shouldFail
-                |> withStdErrContainsAllInOrder [
-                    "This state machine is not statically compilable. A resumable code invocation at '(5,33--5,37)' could not be reduced. An alternative dynamic implementation will be used, which may be slower. Consider adjusting your code to ensure this state machine is statically compilable, or else suppress this warning."
-                    "This state machine is not statically compilable. A resumable code invocation at '(5,43--5,47)' could not be reduced. An alternative dynamic implementation will be used, which may be slower. Consider adjusting your code to ensure this state machine is statically compilable, or else suppress this warning."
-                ]
-                |> ignore
-
-            do
-                src
-                |> withLangVersion SupportedLanguageVersion
-                |> withNoWarn FS3511
-                |> runFsi
-                |> shouldSucceed
-                |> ignore
+            src
+            |> withLangVersion SupportedLanguageVersion
+            |> runFsi
+            |> shouldSucceed
 
         [<Fact>]
         let ``builder { () } and no Zero: FS0708`` () =
