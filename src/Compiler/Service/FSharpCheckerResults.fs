@@ -712,7 +712,7 @@ type internal TypeCheckInfo
     let CompletionItemWithMoreSetting
         (ty: TyconRef voption)
         (assemblySymbol: AssemblySymbol voption)
-        minorPriority
+        preferred
         insertText
         displayText
         (item: ItemWithInst)
@@ -761,17 +761,18 @@ type internal TypeCheckInfo
 
         {
             ItemWithInst = item
-            MinorPriority = minorPriority
+            MinorPriority = 0
             Kind = kind
             IsOwnMember = false
             Type = ty
             Unresolved = isUnresolved
             CustomInsertText = insertText
             CustomDisplayText = displayText
+            IsPreferred = preferred
         }
 
     let CompletionItem (ty: TyconRef voption) (assemblySymbol: AssemblySymbol voption) (item: ItemWithInst) =
-        CompletionItemWithMoreSetting ty assemblySymbol 0 ValueNone ValueNone item
+        CompletionItemWithMoreSetting ty assemblySymbol false ValueNone ValueNone item
 
     let getStaticFieldsOfSameTypeInTheType isInMatch nenv ad m ty =
         let targets =
@@ -812,7 +813,7 @@ type internal TypeCheckInfo
         |> List.map (fun i ->
             let code = ValueSome $"{tyName}{i.Item.DisplayName}"
 
-            CompletionItemWithMoreSetting ValueNone ValueNone -100 code code i)
+            CompletionItemWithMoreSetting ValueNone ValueNone true code code i)
 
     let CollectParameters (methods: MethInfo list) amap m : Item list =
         methods
@@ -1251,13 +1252,14 @@ type internal TypeCheckInfo
     let CompletionItemSuggestedName displayName =
         {
             ItemWithInst = ItemWithNoInst(Item.NewDef(Ident(displayName, range0)))
-            MinorPriority = -3
+            MinorPriority = 0
             Type = None
             Kind = CompletionItemKind.SuggestedName
             IsOwnMember = false
             Unresolved = None
             CustomInsertText = ValueNone
             CustomDisplayText = ValueNone
+            IsPreferred = true
         }
 
     let getItem (x: ItemWithInst) = x.Item
@@ -1551,7 +1553,7 @@ type internal TypeCheckInfo
                             None
                         )
                         |> ItemWithNoInst
-                        |> CompletionItemWithMoreSetting ValueNone ValueNone -1 (ValueSome textInCode) (ValueSome name)
+                        |> CompletionItemWithMoreSetting ValueNone ValueNone true (ValueSome textInCode) (ValueSome name)
                         |> Some)
 
             let overridableMeths =
@@ -1617,7 +1619,7 @@ type internal TypeCheckInfo
 
                         Item.MethodGroup(name, [ meth ], None)
                         |> ItemWithNoInst
-                        |> CompletionItemWithMoreSetting ValueNone ValueNone -1 (ValueSome textInCode) (ValueSome name)
+                        |> CompletionItemWithMoreSetting ValueNone ValueNone true (ValueSome textInCode) (ValueSome name)
                         |> Some)
 
             overridableProps @ overridableMeths
@@ -2197,12 +2199,13 @@ type internal TypeCheckInfo
                             {
                                 ItemWithInst = item
                                 Kind = CompletionItemKind.Argument
-                                MinorPriority = -1
+                                MinorPriority = 0
                                 IsOwnMember = false
                                 Type = None
                                 Unresolved = None
                                 CustomInsertText = ValueNone
                                 CustomDisplayText = ValueNone
+                                IsPreferred = true
                             })
 
                     match declaredItems with

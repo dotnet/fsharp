@@ -94,6 +94,7 @@ type internal CompletionItem =
       
       CustomInsertText: string voption
       CustomDisplayText: string voption
+      IsPreferred: bool 
     }
     member Item: Item
 
@@ -141,6 +142,8 @@ type public DeclarationListItem =
     member IsResolved: bool
 
     member NamespaceToOpen: string option
+
+    member IsPreferred: bool
 
 
 /// Represents a set of declarations in F# source code, with information attached ready for display by an editor.
