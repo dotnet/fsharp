@@ -324,7 +324,7 @@ if [[ "$test_core_clr" == true ]]; then
   Test --testproject "$repo_root/tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj" --targetframework $coreclrtestframework
   Test --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework $coreclrtestframework
   Test --testproject "$repo_root/tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj" --targetframework $coreclrtestframework
-  Test --testproject "$repo_root/tests/FSharp.Core.UnitTests.CSharp/FSharp.Core.UnitTests.CSharp.fsproj" --targetframework $coreclrtestframework
+  Test --testproject "$repo_root/tests/FSharp.Core.UnitTests.CSharp/FSharp.Core.UnitTests.CSharp.csproj" --targetframework $coreclrtestframework
 fi
 
 if [[ "$test_compilercomponent_tests" == true ]]; then
