@@ -75,6 +75,10 @@ type CompletionItemKind =
     | CustomOperation
     | Other
 
+type CompletionPreferType =
+    | Suggested = 0
+    | Normal = 10000
+
 type UnresolvedSymbol =
     { FullName: string
       DisplayName: string
@@ -88,7 +92,8 @@ type CompletionItem =
       Type: TyconRef option
       Unresolved: UnresolvedSymbol option
       CustomInsertText: string voption
-      CustomDisplayText: string voption }
+      CustomDisplayText: string voption
+      PreferredType: CompletionPreferType }
     member x.Item = x.ItemWithInst.Item
 
 [<AutoOpen>]
@@ -1010,7 +1015,7 @@ module internal DescriptionListsImpl =
 /// An intellisense declaration
 [<Sealed>]
 type DeclarationListItem(textInDeclList: string, textInCode: string, fullName: string, glyph: FSharpGlyph, info, accessibility: FSharpAccessibility,
-                               kind: CompletionItemKind, isOwnMember: bool, priority: int, isResolved: bool, namespaceToOpen: string option) =
+                               kind: CompletionItemKind, isOwnMember: bool, priority: int, isResolved: bool, namespaceToOpen: string option, preferredType: CompletionPreferType) =
 
     member _.Name = textInDeclList
 
@@ -1042,6 +1047,8 @@ type DeclarationListItem(textInDeclList: string, textInCode: string, fullName: s
     member _.IsResolved = isResolved
 
     member _.NamespaceToOpen = namespaceToOpen
+
+    member _.PreferredType = preferredType
 
 /// A table of declarations for Intellisense completion 
 [<Sealed>]
@@ -1252,14 +1259,14 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
 
                 DeclarationListItem(
                     textInDeclList, textInCode, fullName, glyph, Choice1Of2 (items, infoReader, ad, m, denv), getAccessibility item.Item,
-                    item.Kind, item.IsOwnMember, item.MinorPriority, item.Unresolved.IsNone, namespaceToOpen))
+                    item.Kind, item.IsOwnMember, item.MinorPriority, item.Unresolved.IsNone, namespaceToOpen, item.PreferredType))
 
         DeclarationListInfo(Array.ofList decls, isForType, false)
     
     static member Error message = 
         DeclarationListInfo(
                 [| DeclarationListItem("<Note>", "<Note>", "<Note>", FSharpGlyph.Error, Choice2Of2 (ToolTipText [ToolTipElement.CompositionError message]),
-                                             FSharpAccessibility(taccessPublic), CompletionItemKind.Other, false, 0, false, None) |], false, true)
+                                             FSharpAccessibility(taccessPublic), CompletionItemKind.Other, false, 0, false, None, CompletionPreferType.Suggested) |], false, true)
     
     static member Empty = empty
 

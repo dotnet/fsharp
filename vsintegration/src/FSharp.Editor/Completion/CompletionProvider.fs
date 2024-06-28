@@ -196,29 +196,34 @@ type internal FSharpCompletionProvider
 
             Array.sortInPlaceWith
                 (fun (x: DeclarationListItem) (y: DeclarationListItem) ->
-                    let mutable n = (not x.IsResolved).CompareTo(not y.IsResolved)
+                    let mutable n = x.PreferredType.CompareTo(y.PreferredType)
 
                     if n <> 0 then
                         n
                     else
-                        n <-
-                            (CompletionUtils.getKindPriority x.Kind)
-                                .CompareTo(CompletionUtils.getKindPriority y.Kind)
+                        n <- (not x.IsResolved).CompareTo(not y.IsResolved)
 
                         if n <> 0 then
                             n
                         else
-                            n <- (not x.IsOwnMember).CompareTo(not y.IsOwnMember)
+                            n <-
+                                (CompletionUtils.getKindPriority x.Kind)
+                                    .CompareTo(CompletionUtils.getKindPriority y.Kind)
 
                             if n <> 0 then
                                 n
                             else
-                                n <- String.Compare(x.NameInList, y.NameInList, StringComparison.OrdinalIgnoreCase)
+                                n <- (not x.IsOwnMember).CompareTo(not y.IsOwnMember)
 
                                 if n <> 0 then
                                     n
                                 else
-                                    x.MinorPriority.CompareTo(y.MinorPriority))
+                                    n <- String.Compare(x.NameInList, y.NameInList, StringComparison.OrdinalIgnoreCase)
+
+                                    if n <> 0 then
+                                        n
+                                    else
+                                        x.MinorPriority.CompareTo(y.MinorPriority))
                 declarations.Items
 
             declarationItems <- declarations.Items
@@ -429,7 +434,6 @@ type internal FSharpCompletionProvider
             | false, _ -> return CompletionChange.Create(TextChange(item.Span, nameInCode))
             | true, ns ->
                 let! sourceText = document.GetTextAsync(cancellationToken)
-
                 let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("ProvideCompletionsAsyncAux")
 
                 let completionInsertRange =

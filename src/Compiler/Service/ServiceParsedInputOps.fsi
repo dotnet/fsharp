@@ -62,8 +62,14 @@ type public CompletionContext =
     | RangeOperator
 
     /// Completing named parameters\setters in parameter list of attributes\constructor\method calls
-    /// end of name ast node * list of properties\parameters that were already set
-    | ParameterList of pos * HashSet<string>
+    | ParameterList of
+        identEndPos: pos *
+        paramGroupIdx: int *
+        paramIdxInGroup: int *
+        paramName: string option *
+        settedParam: HashSet<string> *
+        caretIsAfterEqualMark: bool *
+        isInParen: bool
 
     /// Completing an attribute name, outside of the constructor
     | AttributeApplication

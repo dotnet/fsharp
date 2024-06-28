@@ -583,7 +583,7 @@ type internal TypeCheckInfo
     let CompletionItemWithMoreSetting
         (ty: TyconRef voption)
         (assemblySymbol: AssemblySymbol voption)
-        minorPriority
+        preferred
         insertText
         displayText
         (item: ItemWithInst)
@@ -632,17 +632,75 @@ type internal TypeCheckInfo
 
         {
             ItemWithInst = item
-            MinorPriority = minorPriority
+            MinorPriority = 0
             Kind = kind
             IsOwnMember = false
             Type = ty
             Unresolved = isUnresolved
             CustomInsertText = insertText
             CustomDisplayText = displayText
+            PreferredType = preferred
         }
 
     let CompletionItem (ty: TyconRef voption) (assemblySymbol: AssemblySymbol voption) (item: ItemWithInst) =
-        CompletionItemWithMoreSetting ty assemblySymbol 0 ValueNone ValueNone item
+        CompletionItemWithMoreSetting ty assemblySymbol CompletionPreferType.Normal ValueNone ValueNone item
+
+    let getStaticFieldsOfSameTypeInTheType isInMatch nenv ad m ty =
+        let targets =
+            ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox ncenv.g ncenv.amap m)
+
+        let items = ResolveCompletionsInType ncenv nenv targets m ad true ty
+
+        let items =
+            items
+            |> List.filter (function
+                | Item.UnionCase _ -> true
+                | Item.Value(valRef) -> typeEquiv g ty valRef.Type && not isInMatch
+                | Item.ILField(iLFieldInfo) ->
+                    typeEquiv g ty (iLFieldInfo.FieldType(amap, m))
+                    && (not isInMatch || iLFieldInfo.LiteralValue.IsSome)
+                | Item.Property(info = pinfo :: _) -> typeEquiv g ty (pinfo.GetPropertyType(amap, m)) && not isInMatch
+                | _ -> false)
+
+        let items = items |> List.map ItemWithNoInst
+        let items = items |> RemoveDuplicateItems g
+        items |> RemoveExplicitlySuppressed g
+
+    let getStaticFieldsOfSameTypeInTheTypeCompletionItem isInMatch (nenv: NameResolutionEnv) ad m shouldInParen shouldUnionCaseInParen ty =
+        let g = nenv.DisplayEnv.g
+        let ty = stripTyEqns g ty
+
+        let isAutoOpen =
+            match ty with
+            | TType_app(tcref, _, _) ->
+                (tcref.IsUnionTycon
+                 && (TryFindFSharpBoolAttribute g g.attrib_RequireQualifiedAccessAttribute tcref.Attribs
+                     <> Some true))
+                || TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute tcref.Attribs = Some true
+            | _ -> false
+
+        let tyName =
+            stringOfTy (nenv.DisplayEnv.UseGenericParameterStyle(GenericParameterStyle.Prefix)) ty
+
+        // if the parent namespace/module was opened, and the type was marked as AutoOpen, ignore the typeName
+        let tyName =
+            if -1 = tyName.IndexOf '.' && isAutoOpen then
+                String.Empty
+            else
+                tyName + "."
+
+        getStaticFieldsOfSameTypeInTheType isInMatch nenv ad m ty
+        |> List.map (fun i ->
+            let name = $"{tyName}{i.Item.DisplayName}"
+
+            let code =
+                match i.Item with
+                | Item.UnionCase(ui, _) when not ui.UnionCase.RecdFields.IsEmpty && shouldUnionCaseInParen -> $"({name}())"
+                | Item.UnionCase(ui, _) when not ui.UnionCase.RecdFields.IsEmpty -> $"{name}()"
+                | _ when shouldInParen -> $"({name})"
+                | _ -> name
+
+            CompletionItemWithMoreSetting ValueNone ValueNone CompletionPreferType.Suggested (ValueSome code) (ValueSome name) i)
 
     let CollectParameters (methods: MethInfo list) amap m : Item list =
         methods
@@ -656,15 +714,72 @@ type internal TypeCheckInfo
                     | None -> None)
             | _ -> [])
 
-    let GetNamedParametersAndSettableFields endOfExprPos =
+    let GetNamedParametersAndSettableFields endOfExprPos paramGroupIdx paramIdx paramName caretIsAfterEqualMark isInParen =
+        let paramGroupIdx = if paramGroupIdx = -1 then 0 else paramGroupIdx
+        let paramIdx = if paramIdx = -1 then 0 else paramIdx
+
+        let getByIdxInParamListList nenv ad m getTy ls =
+            let rec loopParamList i ls =
+                match ls with
+                | [] -> []
+                | x :: t when i = paramIdx ->
+                    getStaticFieldsOfSameTypeInTheTypeCompletionItem
+                        false
+                        nenv
+                        ad
+                        m
+                        (not isInParen && not t.IsEmpty)
+                        (not isInParen)
+                        (getTy x)
+                | _ :: t -> loopParamList (i + 1) t
+
+            let rec loopParamListList i ls =
+                match ls with
+                | [] -> []
+                | x :: _ when i = paramGroupIdx -> loopParamList 0 x
+                | _ :: t -> loopParamListList (i + 1) t
+
+            loopParamListList 0 ls
+
+        let getStaticFieldsOfSameTypeOfTheParameter nenv ad m tinst (methods: MethInfo list) (items: Item list) =
+            let getStaticFieldsOfSameTypeInTheTypeCompletionItem =
+                getStaticFieldsOfSameTypeInTheTypeCompletionItem false nenv ad m false false
+
+            match paramName with
+            | Some name ->
+                match items |> List.tryFind (fun i -> i.DisplayName = name) with
+                | Some(Item.OtherName(argType = ty)) -> getStaticFieldsOfSameTypeInTheTypeCompletionItem ty
+                | Some(Item.Value(valRef)) -> getStaticFieldsOfSameTypeInTheTypeCompletionItem valRef.Type
+                | Some(Item.ILField(iLFieldInfo)) -> getStaticFieldsOfSameTypeInTheTypeCompletionItem (iLFieldInfo.FieldType(amap, m))
+                | Some(Item.Property(info = pinfo :: _)) ->
+                    getStaticFieldsOfSameTypeInTheTypeCompletionItem (pinfo.GetPropertyType(amap, m))
+                | _ -> []
+            | _ ->
+                methods
+                |> List.map (fun meth -> meth.GetParamDatas(amap, m, meth.FormalMethodInst))
+                |> List.collect (getByIdxInParamListList nenv ad m (fun (ParamData(ttype = ty)) -> instType tinst ty))
+
+        let (|CNR|) (cnr: CapturedNameResolution) =
+            (cnr.ItemWithInst, cnr.DisplayEnv, cnr.NameResolutionEnv, cnr.AccessorDomain, cnr.Range)
+
         let cnrs =
-            GetCapturedNameResolutions endOfExprPos ResolveOverloads.No
+            GetCapturedNameResolutions endOfExprPos ResolveOverloads.Yes
             |> ResizeArray.toList
             |> List.rev
 
         let result =
             match cnrs with
-            | CNR(Item.CtorGroup(_, (ctor :: _ as ctors)), _, denv, nenv, ad, m) :: _ ->
+            | CNR({
+                      Item = Item.CtorGroup(_, (ctor :: _ as ctors))
+                      TyparInstantiation = tinst
+                  },
+                  denv,
+                  nenv,
+                  ad,
+                  m) :: _ ->
+
+                let isCurrying = ctor.NumArgs.Length > 1
+
                 let props =
                     ResolveCompletionsInType
                         ncenv
@@ -677,8 +792,26 @@ type internal TypeCheckInfo
 
                 let parameters = CollectParameters ctors amap m
                 let items = props @ parameters
-                Some(denv, m, items)
-            | CNR(Item.MethodGroup(_, methods, _), _, denv, nenv, ad, m) :: _ ->
+
+                let p = getStaticFieldsOfSameTypeOfTheParameter nenv ad m tinst ctors items
+
+                let items =
+                    if isCurrying || caretIsAfterEqualMark then
+                        []
+                    else
+                        List.map ItemWithNoInst items
+
+                Some(denv, m, items, p)
+            | CNR({
+                      Item = Item.MethodGroup(_, (meth :: _ as methods), _)
+                      TyparInstantiation = tinst
+                  },
+                  denv,
+                  nenv,
+                  ad,
+                  m) :: _ ->
+                let isCurrying = meth.NumArgs.Length > 1
+
                 let props =
                     methods
                     |> List.collect (fun meth ->
@@ -687,14 +820,63 @@ type internal TypeCheckInfo
 
                 let parameters = CollectParameters methods amap m
                 let items = props @ parameters
-                Some(denv, m, items)
+
+                let p = getStaticFieldsOfSameTypeOfTheParameter nenv ad m tinst methods items
+
+                let items =
+                    if isCurrying || caretIsAfterEqualMark then
+                        []
+                    else
+                        List.map ItemWithNoInst items
+
+                Some(denv, m, items, p)
+
+            | CNR({
+                      Item = Item.Value vref
+                      TyparInstantiation = tinst
+                  },
+                  denv,
+                  nenv,
+                  ad,
+                  m) :: _ when isForallFunctionTy g vref.Type ->
+                let ty =
+                    match vref.Type with
+                    | TType.TType_forall(bodyTy = ty)
+                    | ty -> instType tinst ty
+
+                let p =
+                    stripFunTyN g (paramGroupIdx + 1) ty
+                    |> fst
+                    |> List.map (function
+                        | ty when isAnyTupleTy g ty -> destAnyTupleTy g ty |> snd
+                        | ty -> [ ty ])
+                    |> getByIdxInParamListList nenv ad m id
+
+                if p.IsEmpty then None else Some(denv, m, [], p)
+
+            | CNR({
+                      Item = Item.UnionCase(uci, _)
+                      TyparInstantiation = tinst
+                  },
+                  denv,
+                  nenv,
+                  ad,
+                  m) :: _ when not uci.UnionCase.IsNullary ->
+                let p =
+                    uci.UnionCase.RecdFields
+                    |> List.map (fun field ->
+                        match instType tinst field.FormalType with
+                        | ty when isAnyTupleTy g ty -> destAnyTupleTy g ty |> snd
+                        | ty -> [ ty ])
+                    |> getByIdxInParamListList nenv ad m id
+
+                if p.IsEmpty then None else Some(denv, m, [], p)
+
             | _ -> None
 
         match result with
-        | None -> NameResResult.Empty
-        | Some(denv, m, items) ->
-            let items = List.map ItemWithNoInst items
-            ReturnItemsOfType items g denv m TypeNameResolutionFlag.ResolveTypeNamesToTypeRefs
+        | None -> NameResResult.Empty, []
+        | Some(denv, m, items, p) -> ReturnItemsOfType items g denv m TypeNameResolutionFlag.ResolveTypeNamesToTypeRefs, p
 
     /// finds captured typing for the given position
     let GetExprTypingForPosition endOfExprPos =
@@ -975,6 +1157,7 @@ type internal TypeCheckInfo
             Unresolved = None
             CustomInsertText = ValueNone
             CustomDisplayText = ValueNone
+            PreferredType = CompletionPreferType.Suggested
         }
 
     let getItem (x: ItemWithInst) = x.Item
@@ -1267,7 +1450,12 @@ type internal TypeCheckInfo
                             None
                         )
                         |> ItemWithNoInst
-                        |> CompletionItemWithMoreSetting ValueNone ValueNone -1 (ValueSome textInCode) (ValueSome name)
+                        |> CompletionItemWithMoreSetting
+                            ValueNone
+                            ValueNone
+                            CompletionPreferType.Suggested
+                            (ValueSome textInCode)
+                            (ValueSome name)
                         |> Some)
 
             let overridableMeths =
@@ -1333,7 +1521,12 @@ type internal TypeCheckInfo
 
                         Item.MethodGroup(name, [ meth ], None)
                         |> ItemWithNoInst
-                        |> CompletionItemWithMoreSetting ValueNone ValueNone -1 (ValueSome textInCode) (ValueSome name)
+                        |> CompletionItemWithMoreSetting
+                            ValueNone
+                            ValueNone
+                            CompletionPreferType.Suggested
+                            (ValueSome textInCode)
+                            (ValueSome name)
                         |> Some)
 
             overridableProps @ overridableMeths
@@ -1868,19 +2061,24 @@ type internal TypeCheckInfo
             | Some(CompletionContext.RecordField(RecordContext.Declaration true)) -> None
 
             // Completion at ' SomeMethod( ... ) ' or ' [<SomeAttribute( ... )>] ' with named arguments
-            | Some(CompletionContext.ParameterList(endPos, fields)) ->
-                let results = GetNamedParametersAndSettableFields endPos
+            | Some(CompletionContext.ParameterList(endPos, paramGroupIdx, idx, name, fields, caretIsAfterEqualMark, isInParen)) ->
+                let results =
+                    GetNamedParametersAndSettableFields endPos paramGroupIdx idx name caretIsAfterEqualMark isInParen
 
                 let declaredItems = getDeclaredItemsNotInRangeOpWithAllSymbols ()
 
                 match results with
-                | NameResResult.Members(items, denv, m) ->
+                | NameResResult.Members(items, denv, m), p ->
+                    let items = items
+
                     let filtered =
                         items
                         |> RemoveDuplicateItems g
                         |> RemoveExplicitlySuppressed g
                         |> List.filter (fun item -> not (fields.Contains item.Item.DisplayName))
                         |> List.map (fun item ->
+                            let code = item.Item.DisplayName + " = "
+
                             {
                                 ItemWithInst = item
                                 Kind = CompletionItemKind.Argument
@@ -1888,14 +2086,19 @@ type internal TypeCheckInfo
                                 IsOwnMember = false
                                 Type = None
                                 Unresolved = None
-                                CustomInsertText = ValueNone
-                                CustomDisplayText = ValueNone
+                                CustomInsertText = ValueSome(if isInParen then code else $"({code})")
+                                CustomDisplayText = ValueSome code
+                                PreferredType = CompletionPreferType.Suggested
                             })
 
                     match declaredItems with
-                    | None -> Some(toCompletionItems (items, denv, m))
-                    | Some(declItems, declaredDisplayEnv, declaredRange) -> Some(filtered @ declItems, declaredDisplayEnv, declaredRange)
-                | _ -> declaredItems
+                    | None -> Some(p @ (items |> List.map DefaultCompletionItem), denv, m)
+                    | Some(declItems, declaredDisplayEnv, declaredRange) ->
+                        Some(p @ filtered @ declItems, declaredDisplayEnv, declaredRange)
+                | _, p ->
+                    match declaredItems with
+                    | None -> None
+                    | Some(declItems, declaredDisplayEnv, declaredRange) -> Some(p @ declItems, declaredDisplayEnv, declaredRange)
 
             | Some(CompletionContext.AttributeApplication) ->
                 getDeclaredItemsNotInRangeOpWithAllSymbols ()
