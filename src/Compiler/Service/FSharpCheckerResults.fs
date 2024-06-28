@@ -785,7 +785,9 @@ type internal TypeCheckInfo
             |> List.filter (function
                 | Item.UnionCase _ -> true
                 | Item.Value(valRef) -> typeEquiv g ty valRef.Type && not isInMatch
-                | Item.ILField(iLFieldInfo) -> typeEquiv g ty (iLFieldInfo.FieldType(amap, m)) && (not isInMatch || iLFieldInfo.LiteralValue.IsSome)
+                | Item.ILField(iLFieldInfo) ->
+                    typeEquiv g ty (iLFieldInfo.FieldType(amap, m))
+                    && (not isInMatch || iLFieldInfo.LiteralValue.IsSome)
                 | Item.Property(info = pinfo :: _) -> typeEquiv g ty (pinfo.GetPropertyType(amap, m)) && not isInMatch
                 | _ -> false)
 
@@ -793,27 +795,41 @@ type internal TypeCheckInfo
         let items = items |> RemoveDuplicateItems g
         items |> RemoveExplicitlySuppressed g
 
-    let getStaticFieldsOfSameTypeInTheTypeCompletionItem isInMatch (nenv: NameResolutionEnv) ad m ty =
+    let getStaticFieldsOfSameTypeInTheTypeCompletionItem isInMatch (nenv: NameResolutionEnv) ad m shouldInParen shouldUnionCaseInParen ty =
         let g = nenv.DisplayEnv.g
         let ty = stripTyEqns g ty
 
         let isAutoOpen =
             match ty with
-            | TType_app (tcref, _, _) -> 
-                (tcref.IsUnionTycon && (TryFindFSharpBoolAttribute g g.attrib_RequireQualifiedAccessAttribute tcref.Attribs <> Some true)) ||
-                TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute tcref.Attribs = Some true
+            | TType_app(tcref, _, _) ->
+                (tcref.IsUnionTycon
+                 && (TryFindFSharpBoolAttribute g g.attrib_RequireQualifiedAccessAttribute tcref.Attribs
+                     <> Some true))
+                || TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute tcref.Attribs = Some true
             | _ -> false
 
-        let tyName = stringOfTy (nenv.DisplayEnv.UseGenericParameterStyle(GenericParameterStyle.Prefix)) ty
+        let tyName =
+            stringOfTy (nenv.DisplayEnv.UseGenericParameterStyle(GenericParameterStyle.Prefix)) ty
 
         // if the parent namespace/module was opened, and the type was marked as AutoOpen, ignore the typeName
-        let tyName = if -1 = tyName.IndexOf '.' && isAutoOpen then String.Empty else tyName + "."
+        let tyName =
+            if -1 = tyName.IndexOf '.' && isAutoOpen then
+                String.Empty
+            else
+                tyName + "."
 
         getStaticFieldsOfSameTypeInTheType isInMatch nenv ad m ty
         |> List.map (fun i ->
-            let code = ValueSome $"{tyName}{i.Item.DisplayName}"
+            let name = $"{tyName}{i.Item.DisplayName}"
 
-            CompletionItemWithMoreSetting ValueNone ValueNone true code code i)
+            let code =
+                match i.Item with
+                | Item.UnionCase(ui, _) when not ui.UnionCase.RecdFields.IsEmpty && shouldUnionCaseInParen -> $"({name}())"
+                | Item.UnionCase(ui, _) when not ui.UnionCase.RecdFields.IsEmpty -> $"{name}()"
+                | _ when shouldInParen -> $"({name})"
+                | _ -> name
+
+            CompletionItemWithMoreSetting ValueNone ValueNone true (ValueSome code) (ValueSome name) i)
 
     let CollectParameters (methods: MethInfo list) amap m : Item list =
         methods
@@ -827,7 +843,7 @@ type internal TypeCheckInfo
                     | None -> None)
             | _ -> [])
 
-    let GetNamedParametersAndSettableFields endOfExprPos paramGroupIdx paramIdx paramName isCurrying =
+    let GetNamedParametersAndSettableFields endOfExprPos paramGroupIdx paramIdx paramName caretIsAfterEqualMark isInParen =
         let paramGroupIdx = if paramGroupIdx = -1 then 0 else paramGroupIdx
         let paramIdx = if paramIdx = -1 then 0 else paramIdx
 
@@ -835,7 +851,15 @@ type internal TypeCheckInfo
             let rec loopParamList i ls =
                 match ls with
                 | [] -> []
-                | x :: _ when i = paramIdx -> getStaticFieldsOfSameTypeInTheTypeCompletionItem false nenv ad m (getTy x)
+                | x :: t when i = paramIdx ->
+                    getStaticFieldsOfSameTypeInTheTypeCompletionItem
+                        false
+                        nenv
+                        ad
+                        m
+                        (not isInParen && not t.IsEmpty)
+                        (not isInParen)
+                        (getTy x)
                 | _ :: t -> loopParamList (i + 1) t
 
             let rec loopParamListList i ls =
@@ -847,15 +871,15 @@ type internal TypeCheckInfo
             loopParamListList 0 ls
 
         let getStaticFieldsOfSameTypeOfTheParameter nenv ad m tinst (methods: MethInfo list) (items: Item list) =
-            let getStaticFieldsOfSameTypeInTheTypeCompletionItem = 
-                getStaticFieldsOfSameTypeInTheTypeCompletionItem false nenv ad m 
+            let getStaticFieldsOfSameTypeInTheTypeCompletionItem =
+                getStaticFieldsOfSameTypeInTheTypeCompletionItem false nenv ad m false false
+
             match paramName with
             | Some name ->
                 match items |> List.tryFind (fun i -> i.DisplayName = name) with
                 | Some(Item.OtherName(argType = ty)) -> getStaticFieldsOfSameTypeInTheTypeCompletionItem ty
                 | Some(Item.Value(valRef)) -> getStaticFieldsOfSameTypeInTheTypeCompletionItem valRef.Type
-                | Some(Item.ILField(iLFieldInfo)) ->
-                    getStaticFieldsOfSameTypeInTheTypeCompletionItem (iLFieldInfo.FieldType(amap, m))
+                | Some(Item.ILField(iLFieldInfo)) -> getStaticFieldsOfSameTypeInTheTypeCompletionItem (iLFieldInfo.FieldType(amap, m))
                 | Some(Item.Property(info = pinfo :: _)) ->
                     getStaticFieldsOfSameTypeInTheTypeCompletionItem (pinfo.GetPropertyType(amap, m))
                 | _ -> []
@@ -882,46 +906,57 @@ type internal TypeCheckInfo
                   nenv,
                   ad,
                   m) :: _ ->
+
+                let isCurrying = ctor.NumArgs.Length > 1
+
                 let props =
-                    if isCurrying then
-                        []
-                    else
-                        ResolveCompletionsInType
-                            ncenv
-                            nenv
-                            ResolveCompletionTargets.SettablePropertiesAndFields
-                            m
-                            ad
-                            false
-                            ctor.ApparentEnclosingType
+                    ResolveCompletionsInType
+                        ncenv
+                        nenv
+                        ResolveCompletionTargets.SettablePropertiesAndFields
+                        m
+                        ad
+                        false
+                        ctor.ApparentEnclosingType
 
                 let parameters = CollectParameters ctors amap m
                 let items = props @ parameters
+
                 let p = getStaticFieldsOfSameTypeOfTheParameter nenv ad m tinst ctors items
-                let items = List.map ItemWithNoInst items
+
+                let items =
+                    if isCurrying || caretIsAfterEqualMark then
+                        []
+                    else
+                        List.map ItemWithNoInst items
 
                 Some(denv, m, items, p)
             | CNR({
-                      Item = Item.MethodGroup(_, methods, _)
+                      Item = Item.MethodGroup(_, (meth :: _ as methods), _)
                       TyparInstantiation = tinst
                   },
                   denv,
                   nenv,
                   ad,
                   m) :: _ ->
+                let isCurrying = meth.NumArgs.Length > 1
+
                 let props =
-                    if isCurrying then
-                        []
-                    else
-                        methods
-                        |> List.collect (fun meth ->
-                            let retTy = meth.GetFSharpReturnType(amap, m, meth.FormalMethodInst)
-                            ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false retTy)
+                    methods
+                    |> List.collect (fun meth ->
+                        let retTy = meth.GetFSharpReturnType(amap, m, meth.FormalMethodInst)
+                        ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false retTy)
 
                 let parameters = CollectParameters methods amap m
                 let items = props @ parameters
+
                 let p = getStaticFieldsOfSameTypeOfTheParameter nenv ad m tinst methods items
-                let items = List.map ItemWithNoInst items
+
+                let items =
+                    if isCurrying || caretIsAfterEqualMark then
+                        []
+                    else
+                        List.map ItemWithNoInst items
 
                 Some(denv, m, items, p)
 
@@ -2180,9 +2215,9 @@ type internal TypeCheckInfo
             | Some(CompletionContext.RecordField(RecordContext.Declaration true)) -> None
 
             // Completion at ' SomeMethod( ... ) ' or ' [<SomeAttribute( ... )>] ' with named arguments
-            | Some(CompletionContext.ParameterList(endPos, paramGroupIdx, idx, name, fields, isCurrying)) ->
+            | Some(CompletionContext.ParameterList(endPos, paramGroupIdx, idx, name, fields, caretIsAfterEqualMark, isInParen)) ->
                 let results =
-                    GetNamedParametersAndSettableFields endPos paramGroupIdx idx name isCurrying
+                    GetNamedParametersAndSettableFields endPos paramGroupIdx idx name caretIsAfterEqualMark isInParen
 
                 let declaredItems = getDeclaredItemsNotInRangeOpWithAllSymbols ()
 
@@ -2196,6 +2231,8 @@ type internal TypeCheckInfo
                         |> RemoveExplicitlySuppressed g
                         |> List.filter (fun item -> not (fields.Contains item.Item.DisplayName))
                         |> List.map (fun item ->
+                            let code = item.Item.DisplayName + " = "
+
                             {
                                 ItemWithInst = item
                                 Kind = CompletionItemKind.Argument
@@ -2203,8 +2240,8 @@ type internal TypeCheckInfo
                                 IsOwnMember = false
                                 Type = None
                                 Unresolved = None
-                                CustomInsertText = ValueNone
-                                CustomDisplayText = ValueNone
+                                CustomInsertText = ValueSome(if isInParen then code else $"({code})")
+                                CustomDisplayText = ValueSome code
                                 IsPreferred = true
                             })
 
@@ -2278,24 +2315,27 @@ type internal TypeCheckInfo
             | Some(CompletionContext.CaretAfterOperator(m, isInMatch)) ->
                 let declaredItems = getDeclaredItemsNotInRangeOpWithAllSymbols ()
                 let _, quals = GetExprTypingForPosition(m.End)
-                let bestQual = 
-                    quals 
+
+                let bestQual =
+                    quals
                     |> Array.tryFind (fun (_, _, _, r) -> posEq m.Start r.Start)
                     |> Option.orElseWith (fun _ ->
                         GetCapturedNameResolutions m.End ResolveOverloads.No
-                        |> ResizeArray.tryPick (fun (CNR(item, _, _, nenv, ad, r)) -> 
-                            if not (posEq m.Start r.Start) then None else
-                            match item with
-                            | Item.Value v -> Some(stripFunTy g v.Type |> snd, nenv, ad, r)
-                            | _ -> None
-                        )
-                    )
+                        |> ResizeArray.tryPick (fun (CNR(item, _, _, nenv, ad, r)) ->
+                            if not (posEq m.Start r.Start) then
+                                None
+                            else
+                                match item with
+                                | Item.Value v -> Some(stripFunTy g v.Type |> snd, nenv, ad, r)
+                                | _ -> None))
 
                 match bestQual with
                 | Some bestQual ->
                     let ty, nenv, ad, m = bestQual
                     let denv = nenv.DisplayEnv
-                    let items = getStaticFieldsOfSameTypeInTheTypeCompletionItem isInMatch nenv ad m ty
+
+                    let items =
+                        getStaticFieldsOfSameTypeInTheTypeCompletionItem isInMatch nenv ad m false false ty
 
                     match declaredItems with
                     | Some(declaredItems, _, _) -> Some(items @ declaredItems, denv, m)

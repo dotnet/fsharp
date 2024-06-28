@@ -68,7 +68,8 @@ type public CompletionContext =
         paramIdxInGroup: int *
         paramName: string option *
         settedParam: HashSet<string> *
-        isCurrying: bool
+        caretIsAfterEqualMark: bool *
+        isInParen: bool
 
     /// Completing an attribute name, outside of the constructor
     | AttributeApplication
