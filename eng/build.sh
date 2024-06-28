@@ -214,7 +214,7 @@ function Test() {
   projectname=$(basename -- "$testproject")
   projectname="${projectname%.*}"
   testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework.xml"
-  args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"nunit;LogFilePath=$testlogpath\" --blame --results-directory $artifacts_dir/TestResults/$configuration"
+  args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"nunit;LogFilePath=$testlogpath\" --blame --results-directory $artifacts_dir/TestResults/$configuration -p:vstestusemsbuildoutput=false"
   "$DOTNET_INSTALL_DIR/dotnet" $args || exit $?
 }
 
