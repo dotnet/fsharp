@@ -2306,6 +2306,7 @@ and seekReadTypeDefAsTypeUncached ctxtH (TypeDefAsTypIdx(boxity, ginst, idx)) =
 
 and seekReadTypeDefAsTypeRef (ctxt: ILMetadataReader) idx =
     let mdv = ctxt.mdfile.GetView()
+
     let enc =
         if seekIsTopTypeDefOfIdx ctxt idx then
             []
