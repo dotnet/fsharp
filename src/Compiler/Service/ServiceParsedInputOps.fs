@@ -1726,52 +1726,52 @@ module ParsedInput =
                     | _ ->
                         match headPat with
 
-                            // static member |
-                            | SynPat.FromParseError _ when isStaticMember trivia.LeadingKeyword ->
-                                overrideContext path trivia.LeadingKeyword.Range false true false
+                        // static member |
+                        | SynPat.FromParseError _ when isStaticMember trivia.LeadingKeyword ->
+                            overrideContext path trivia.LeadingKeyword.Range false true false
 
-                            // override |
-                            | SynPat.FromParseError _ when isOverrideOrMember trivia.LeadingKeyword && lineStr.[pos.Column - 1] = ' ' ->
-                                overrideContext path trivia.LeadingKeyword.Range false false (isMember trivia.LeadingKeyword)
+                        // override |
+                        | SynPat.FromParseError _ when isOverrideOrMember trivia.LeadingKeyword && lineStr.[pos.Column - 1] = ' ' ->
+                            overrideContext path trivia.LeadingKeyword.Range false false (isMember trivia.LeadingKeyword)
 
-                            // override _.|
-                            | SynPat.FromParseError _ when isOverrideOrMember trivia.LeadingKeyword ->
-                                overrideContext path trivia.LeadingKeyword.Range true false (isMember trivia.LeadingKeyword)
+                        // override _.|
+                        | SynPat.FromParseError _ when isOverrideOrMember trivia.LeadingKeyword ->
+                            overrideContext path trivia.LeadingKeyword.Range true false (isMember trivia.LeadingKeyword)
 
-                            // override this.|
-                            | SynPat.Named(ident = SynIdent(ident = selfId)) when
-                                isOverrideOrMember trivia.LeadingKeyword && selfId.idRange.End.IsAdjacentTo pos
-                                ->
-                                overrideContext path trivia.LeadingKeyword.Range true false (isMember trivia.LeadingKeyword)
+                        // override this.|
+                        | SynPat.Named(ident = SynIdent(ident = selfId)) when
+                            isOverrideOrMember trivia.LeadingKeyword && selfId.idRange.End.IsAdjacentTo pos
+                            ->
+                            overrideContext path trivia.LeadingKeyword.Range true false (isMember trivia.LeadingKeyword)
 
-                            // override this.ToStr|
-                            | SynPat.LongIdent(longDotId = SynLongIdent(id = [ _; methodId ])) when
-                                isOverrideOrMember trivia.LeadingKeyword
-                                && rangeContainsPos methodId.idRange pos
-                                ->
-                                overrideContext path trivia.LeadingKeyword.Range true false (isMember trivia.LeadingKeyword)
+                        // override this.ToStr|
+                        | SynPat.LongIdent(longDotId = SynLongIdent(id = [ _; methodId ])) when
+                            isOverrideOrMember trivia.LeadingKeyword
+                            && rangeContainsPos methodId.idRange pos
+                            ->
+                            overrideContext path trivia.LeadingKeyword.Range true false (isMember trivia.LeadingKeyword)
 
-                            // static member A|
-                            | SynPat.LongIdent(longDotId = SynLongIdent(id = [ methodId ])) when
-                                isStaticMember trivia.LeadingKeyword && rangeContainsPos methodId.idRange pos
-                                ->
-                                overrideContext path trivia.LeadingKeyword.Range false true false
+                        // static member A|
+                        | SynPat.LongIdent(longDotId = SynLongIdent(id = [ methodId ])) when
+                            isStaticMember trivia.LeadingKeyword && rangeContainsPos methodId.idRange pos
+                            ->
+                            overrideContext path trivia.LeadingKeyword.Range false true false
 
-                            | SynPat.LongIdent(longDotId = lidwd; argPats = SynArgPats.Pats pats; range = m) when rangeContainsPos m pos ->
-                                if rangeContainsPos lidwd.Range pos then
-                                    // let fo|o x = ()
-                                    Some CompletionContext.Invalid
-                                else
-                                    pats
-                                    |> List.tryPick (fun pat -> TryGetCompletionContextInPattern true pat None pos)
-                                    |> Option.orElseWith (fun () -> defaultTraverse synBinding)
-
-                            | SynPat.Named(range = range)
-                            | SynPat.As(_, SynPat.Named(range = range), _) when rangeContainsPos range pos ->
-                                // let fo|o = 1
+                        | SynPat.LongIdent(longDotId = lidwd; argPats = SynArgPats.Pats pats; range = m) when rangeContainsPos m pos ->
+                            if rangeContainsPos lidwd.Range pos then
+                                // let fo|o x = ()
                                 Some CompletionContext.Invalid
+                            else
+                                pats
+                                |> List.tryPick (fun pat -> TryGetCompletionContextInPattern true pat None pos)
+                                |> Option.orElseWith (fun () -> defaultTraverse synBinding)
 
-                            | _ -> defaultTraverse synBinding
+                        | SynPat.Named(range = range)
+                        | SynPat.As(_, SynPat.Named(range = range), _) when rangeContainsPos range pos ->
+                            // let fo|o = 1
+                            Some CompletionContext.Invalid
+
+                        | _ -> defaultTraverse synBinding
 
                 member _.VisitHashDirective(_, _directive, range) =
                     // No completions in a directive
