@@ -6,4 +6,5 @@ FSharp.Test.Utilities.dll
 FSharp.Compiler.Private.Scripting.UnitTests.dll
 FSharp.Compiler.Service.Tests.dll
 FSharp.Core.UnitTests.dll
+FSharp.Core.UnitTests.CSharp.dll
 FSharpSuite.Tests.dll
