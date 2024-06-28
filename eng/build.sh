@@ -339,7 +339,7 @@ fi
 
 if [[ "$test_scripting" == true ]]; then
   coreclrtestframework=$tfm
-  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj" --targetframework $coreclrtestframework
+  Test --testproject "$repo_root/tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj" --targetframework $coreclrtestframework
 fi
 
 ExitWithExitCode 0
