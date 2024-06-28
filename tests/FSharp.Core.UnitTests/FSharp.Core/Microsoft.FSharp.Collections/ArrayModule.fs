@@ -372,9 +372,9 @@ type ArrayModule() =
         CheckThrowsArgumentNullException (fun () -> Array.blit nullArr 1 strDes 2 3 |> ignore) 
 
         // bounds check
-        CheckThrowsArgumentException (fun () -> Array.blit intSrc -1 intDes 1 3 |> ignore)
-        CheckThrowsArgumentException (fun () -> Array.blit intSrc 1 intDes -1 3 |> ignore)
-        CheckThrowsArgumentException (fun () -> Array.blit intSrc 1 intDes 1 -3 |> ignore)
+        CheckThrowsArgumentOutOfRangeException (fun () -> Array.blit intSrc -1 intDes 1 3 |> ignore)
+        CheckThrowsArgumentOutOfRangeException (fun () -> Array.blit intSrc 1 intDes -1 3 |> ignore)
+        CheckThrowsArgumentOutOfRangeException (fun () -> Array.blit intSrc 1 intDes 1 -3 |> ignore)
         CheckThrowsArgumentException (fun () -> Array.blit intSrc 1 intDes 1 300 |> ignore)
         CheckThrowsArgumentException (fun () -> Array.blit intSrc 1 intDes 5 8 |> ignore)
         
@@ -1962,3 +1962,436 @@ type ArrayModule() =
         Assert.AreEqual(arr.[-4..(-3)], ([||]: int array))
 
 
+    [<Fact>]
+    member _.RandomShuffle() =
+        let arr = [| 1..20 |]
+
+        let shuffled1 = arr |> Array.randomShuffle
+        let shuffled2 = arr |> Array.randomShuffle
+
+        Assert.AreNotEqual(shuffled1, arr)
+        Assert.AreNotEqual(shuffled1, shuffled2)
+
+    [<Fact>]
+    member _.RandomShuffleWrongArg() =
+        let nullArr = null
+        CheckThrowsArgumentNullException (fun () -> Array.randomShuffle nullArr |> ignore)
+
+    [<Fact>]
+    member _.RandomShuffleWith() =
+        let arr = [| 1..20 |]
+
+        let rand1 = Random(123)
+        let rand2 = Random(123)
+        let rand3 = Random(321)
+
+        let shuffle1 = arr |> Array.randomShuffleWith rand1
+        let shuffle2 = arr |> Array.randomShuffleWith rand2
+        let shuffle3 = arr |> Array.randomShuffleWith rand3
+
+        Assert.AreEqual(shuffle1, shuffle2)
+        Assert.AreNotEqual(arr, shuffle1)
+        Assert.AreNotEqual(shuffle1, shuffle3)
+
+    [<Fact>]
+    member _.RandomShuffleWithWrongArg() =
+        let nullArr = null
+        let arr = [| 1..20 |]
+        let nullRand = null
+        let rand = Random(123)
+
+        CheckThrowsArgumentNullException (fun () -> Array.randomShuffleWith rand nullArr |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Array.randomShuffleWith nullRand arr |> ignore)
+
+    [<Fact>]
+    member _.RandomShuffleBy() =
+        let arr = [| 1..20 |]
+
+        let rand1 = Random(123)
+        let rand2 = Random(123)
+        let rand3 = Random(321)
+
+        let shuffle1 = arr |> Array.randomShuffleBy rand1.NextDouble
+        let shuffle2 = arr |> Array.randomShuffleBy rand2.NextDouble
+        let shuffle3 = arr |> Array.randomShuffleBy rand3.NextDouble
+
+        Assert.AreEqual(shuffle1, shuffle2)
+        Assert.AreNotEqual(arr, shuffle1)
+        Assert.AreNotEqual(shuffle1, shuffle3)
+
+    [<Fact>]
+    member _.RandomShuffleByWrongArg() =
+        let nullArr = null
+        let arr = [| 1..20 |]
+        let wrongRandomizers = [
+            fun () -> nan
+            fun () -> 1.0
+            fun () -> infinity
+        ]
+        let randomizer = Random(123).NextDouble
+
+        CheckThrowsArgumentNullException (fun () -> Array.randomShuffleBy randomizer nullArr |> ignore)
+        wrongRandomizers |> List.iter (fun wrongRandomizer ->
+            CheckThrowsArgumentOutOfRangeException (fun () -> Array.randomShuffleBy wrongRandomizer arr |> ignore))
+
+    [<Fact>]
+    member _.RandomShuffleInPlace() =
+        let arr = [| 1..20 |]
+        let shuffled1 = [| 1..20 |]
+        let shuffled2 = [| 1..20 |]
+
+        shuffled1 |> Array.randomShuffleInPlace
+        shuffled2 |> Array.randomShuffleInPlace
+
+        Assert.AreNotEqual(shuffled1, arr)
+        Assert.AreNotEqual(shuffled1, shuffled2)
+
+    [<Fact>]
+    member _.RandomShuffleInPlaceWrongArg() =
+        let nullArr = null
+
+        CheckThrowsArgumentNullException (fun () -> Array.randomShuffleInPlace nullArr |> ignore)
+
+    [<Fact>]
+    member _.RandomShuffleInPlaceWith() =
+        let arr = [| 1..20 |]
+
+        let rand1 = Random(123)
+        let rand2 = Random(123)
+        let rand3 = Random(321)
+
+        let shuffle1 = [| 1..20 |]
+        let shuffle2 = [| 1..20 |]
+        let shuffle3 = [| 1..20 |]
+
+        shuffle1 |> Array.randomShuffleInPlaceWith rand1
+        shuffle2 |> Array.randomShuffleInPlaceWith rand2
+        shuffle3 |> Array.randomShuffleInPlaceWith rand3
+
+        Assert.AreEqual(shuffle1, shuffle2)
+        Assert.AreNotEqual(arr, shuffle1)
+        Assert.AreNotEqual(shuffle1, shuffle3)
+
+    [<Fact>]
+    member _.RandomShuffleInPlaceWithWrongArg() =
+        let nullArr = null
+        let arr = [| 1..20 |]
+        let rand = Random(123)
+        let nullRand = null
+
+        CheckThrowsArgumentNullException (fun () -> Array.randomShuffleInPlaceWith rand nullArr |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Array.randomShuffleInPlaceWith nullRand arr |> ignore)
+
+    [<Fact>]
+    member _.RandomShuffleInPlaceBy() =
+        let arr = [| 1..20 |]
+
+        let rand1 = Random(123)
+        let rand2 = Random(123)
+        let rand3 = Random(321)
+
+        let shuffle1 = [| 1..20 |]
+        let shuffle2 = [| 1..20 |]
+        let shuffle3 = [| 1..20 |]
+
+        shuffle1 |> Array.randomShuffleInPlaceBy rand1.NextDouble
+        shuffle2 |> Array.randomShuffleInPlaceBy rand2.NextDouble
+        shuffle3 |> Array.randomShuffleInPlaceBy rand3.NextDouble
+
+        Assert.AreEqual(shuffle1, shuffle2)
+        Assert.AreNotEqual(arr, shuffle1)
+        Assert.AreNotEqual(shuffle1, shuffle3)
+
+    [<Fact>]
+    member _.RandomShuffleInPlaceByWrongArg() =
+        let nullArr = null
+        let arr = [| 1..20 |]
+        let wrongRandomizers = [
+            fun () -> nan
+            fun () -> 1.0
+            fun () -> infinity
+        ]
+        let randomizer = Random(123).NextDouble
+
+        CheckThrowsArgumentNullException (fun () -> Array.randomShuffleInPlaceBy randomizer nullArr |> ignore)
+        wrongRandomizers |> List.iter (fun wrongRandomizer ->
+            CheckThrowsArgumentOutOfRangeException (fun () -> Array.randomShuffleInPlaceBy wrongRandomizer arr |> ignore))
+
+    [<Fact>]
+    member _.RandomChoice() =
+        let arr = [| 1..5000 |]
+
+        // try choice five times, if all are same, it must be broken
+        let results = [|
+            Array.randomChoice arr
+            Array.randomChoice arr
+            Array.randomChoice arr
+            Array.randomChoice arr
+            Array.randomChoice arr
+        |]
+        let allSame = results |> Array.forall (fun x -> x = results.[0])
+        Assert.False(allSame)
+
+    [<Fact>]
+    member _.RandomChoiceWrongArg() =
+        let nullArr = null
+        let emptyArr = [||]
+
+        CheckThrowsArgumentNullException (fun () -> Array.randomChoice nullArr |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.randomChoice emptyArr |> ignore)
+
+    [<Fact>]
+    member _.RandomChoiceWith() =
+        let arr = [| 1..5000 |]
+        let rand1 = Random(123)
+        let rand2 = Random(123)
+        let rand3 = Random(321)
+
+        let choice1 = arr |> Array.randomChoiceWith rand1
+        let choice2 = arr |> Array.randomChoiceWith rand2
+        let choice3 = arr |> Array.randomChoiceWith rand3
+
+        Assert.AreEqual(choice1, choice2)
+        Assert.AreNotEqual(choice1, choice3)
+
+    [<Fact>]
+    member _.RandomChoiceWithWrongArg() =
+        let nullArr = null
+        let emptyArr = [||]
+        let arr = [| 1..20 |]
+        let nullRand = null
+        let rand = Random(123)
+
+        CheckThrowsArgumentNullException (fun () -> Array.randomChoiceWith rand nullArr |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Array.randomChoiceWith nullRand arr |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.randomChoiceWith rand emptyArr |> ignore)
+
+    [<Fact>]
+    member _.RandomChoiceBy() =
+        let arr = [| 1..5000 |]
+        let rand1 = Random(123)
+        let rand2 = Random(123)
+        let rand3 = Random(321)
+
+        let choice1 = arr |> Array.randomChoiceBy rand1.NextDouble
+        let choice2 = arr |> Array.randomChoiceBy rand2.NextDouble
+        let choice3 = arr |> Array.randomChoiceBy rand3.NextDouble
+
+        Assert.AreEqual(choice1, choice2)
+        Assert.AreNotEqual(choice1, choice3)
+
+    [<Fact>]
+    member _.RandomChoiceByWrongArg() =
+        let nullArr = null
+        let emptyArr = [||]
+        let arr = [| 1..20 |]
+        let wrongRandomizers = [
+            fun () -> nan
+            fun () -> 1.0
+            fun () -> infinity
+        ]
+        let randomizer = Random(123).NextDouble
+
+        CheckThrowsArgumentNullException (fun () -> Array.randomChoiceBy randomizer nullArr |> ignore)
+        wrongRandomizers |> List.iter (fun wrongRandomizer ->
+            CheckThrowsArgumentOutOfRangeException (fun () -> Array.randomChoiceBy wrongRandomizer arr |> ignore))
+        CheckThrowsArgumentException (fun () -> Array.randomChoiceBy randomizer emptyArr |> ignore)
+
+    [<Fact>]
+    member _.RandomChoices() =
+        let arr = [| 1..50 |]
+
+        let choicesLength = 20
+        let choice1 = arr |> Array.randomChoices choicesLength
+        let choice2 = arr |> Array.randomChoices choicesLength
+
+        Assert.AreNotEqual(choice1, choice2)
+        Assert.AreEqual(choicesLength, choice1.Length)
+        Assert.AreEqual(choicesLength, choice2.Length)
+
+        let arr = [| 1; 2 |]
+        let choices = arr |> Array.randomChoices choicesLength
+        Assert.AreEqual(choicesLength, choices.Length)
+        Assert.AreEqual(arr, choices |> Array.distinct |> Array.sort)
+
+    [<Fact>]
+    member _.RandomChoicesWrongArg() =
+        let nullArr = null
+        let emptyArr = [||]
+        let arr = [| 1..50 |]
+        let choicesLength = 20
+        let negativeChoicesLength = -1
+
+        CheckThrowsArgumentNullException (fun () -> Array.randomChoices choicesLength nullArr |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.randomChoices choicesLength emptyArr |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.randomChoices negativeChoicesLength arr |> ignore)
+
+    [<Fact>]
+    member _.RandomChoicesWith() =
+        let arr = [| 1..50 |]
+        let rand1 = Random(123)
+        let rand2 = Random(123)
+        let rand3 = Random(321)
+
+        let choicesLength = 20
+        let choice1 = arr |> Array.randomChoicesWith rand1 choicesLength
+        let choice2 = arr |> Array.randomChoicesWith rand2 choicesLength
+        let choice3 = arr |> Array.randomChoicesWith rand3 choicesLength
+
+        Assert.AreEqual(choice1, choice2)
+        Assert.AreNotEqual(choice1, choice3)
+
+    [<Fact>]
+    member _.RandomChoicesWithWrongArg() =
+        let nullArr = null
+        let emptyArr = [||]
+        let arr = [| 1..50 |]
+        let nullRand = null
+        let rand = Random(123)
+        let choicesLength = 20
+        let negativeChoicesLength = -1
+
+        CheckThrowsArgumentNullException (fun () -> Array.randomChoicesWith rand choicesLength nullArr |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Array.randomChoicesWith nullRand choicesLength arr |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.randomChoicesWith rand choicesLength emptyArr |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.randomChoicesWith rand negativeChoicesLength arr |> ignore)
+
+    [<Fact>]
+    member _.RandomChoicesBy() =
+        let arr = [| 1..50 |]
+        let rand1 = Random(123)
+        let rand2 = Random(123)
+        let rand3 = Random(321)
+
+        let choicesLength = 20
+        let choice1 = arr |> Array.randomChoicesBy rand1.NextDouble choicesLength
+        let choice2 = arr |> Array.randomChoicesBy rand2.NextDouble choicesLength
+        let choice3 = arr |> Array.randomChoicesBy rand3.NextDouble choicesLength
+
+        Assert.AreEqual(choice1, choice2)
+        Assert.AreNotEqual(choice1, choice3)
+
+    [<Fact>]
+    member _.RandomChoicesByWrongArg() =
+        let nullArr = null
+        let emptyArr = [||]
+        let arr = [| 1..50 |]
+        let wrongRandomizers = [
+            fun () -> nan
+            fun () -> 1.0
+            fun () -> infinity
+        ]
+        let randomizer = Random(123).NextDouble
+        let choicesLength = 20
+        let negativeChoicesLength = -1
+
+        CheckThrowsArgumentNullException (fun () -> Array.randomChoicesBy randomizer choicesLength nullArr |> ignore)
+        wrongRandomizers |> List.iter (fun wrongRandomizer ->
+            CheckThrowsArgumentOutOfRangeException (fun () -> Array.randomChoicesBy wrongRandomizer choicesLength arr |> ignore))
+        CheckThrowsArgumentException (fun () -> Array.randomChoicesBy randomizer choicesLength emptyArr |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.randomChoicesBy randomizer negativeChoicesLength arr |> ignore)
+
+    [<Fact>]
+    member _.RandomSample() =
+        let arr = [| 1..50 |]
+
+        let choicesLength = 20
+        let choice1 = arr |> Array.randomSample choicesLength
+        let choice2 = arr |> Array.randomSample choicesLength
+
+        Assert.AreNotEqual(choice1, choice2)
+        Assert.AreEqual(choicesLength, choice1.Length)
+        Assert.AreEqual(choicesLength, choice2.Length)
+        Assert.AreEqual(choice1, choice1 |> Array.distinct)
+        Assert.AreEqual(choice2, choice2 |> Array.distinct)
+
+    [<Fact>]
+    member _.RandomSampleWrongArg() =
+        let nullArr = null
+        let emptyArr = [||]
+        let arr = [| 1..50 |]
+        let tooBigSampleLength = 100
+        let negativeSampleLength = -1
+        let sampleLength = 20
+
+        CheckThrowsArgumentNullException (fun () -> Array.randomSample sampleLength nullArr |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.randomSample sampleLength emptyArr |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.randomSample negativeSampleLength arr |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.randomSample tooBigSampleLength arr |> ignore)
+
+    [<Fact>]
+    member _.RandomSampleWith() =
+        let arr = [| 1..50 |]
+        let rand1 = Random(123)
+        let rand2 = Random(123)
+        let rand3 = Random(321)
+
+        let choicesLength = 20
+        let choice1 = arr |> Array.randomSampleWith rand1 choicesLength
+        let choice2 = arr |> Array.randomSampleWith rand2 choicesLength
+        let choice3 = arr |> Array.randomSampleWith rand3 choicesLength
+
+        Assert.AreEqual(choice1, choice2)
+        Assert.AreNotEqual(choice1, choice3)
+        Assert.AreEqual(choicesLength, choice1.Length)
+        Assert.AreEqual(choicesLength, choice3.Length)
+        Assert.AreEqual(choice1, choice1 |> Array.distinct)
+        Assert.AreEqual(choice3, choice3 |> Array.distinct)
+
+    [<Fact>]
+    member _.RandomSampleWithWrongArg() =
+        let nullArr = null
+        let emptyArr = [||]
+        let arr = [| 1..50 |]
+        let nullRand = null
+        let rand = Random(123)
+        let tooBigSampleLength = 100
+        let negativeSampleLength = -1
+        let sampleLength = 20
+
+        CheckThrowsArgumentNullException (fun () -> Array.randomSampleWith rand sampleLength nullArr |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Array.randomSampleWith nullRand sampleLength arr |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.randomSampleWith rand sampleLength emptyArr |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.randomSampleWith rand negativeSampleLength arr |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.randomSampleWith rand tooBigSampleLength arr |> ignore)
+
+    [<Fact>]
+    member _.RandomSampleBy() =
+        let arr = [| 1..50 |]
+        let rand1 = Random(123)
+        let rand2 = Random(123)
+        let rand3 = Random(321)
+
+        let choicesLength = 20
+        let choice1 = arr |> Array.randomSampleBy rand1.NextDouble choicesLength
+        let choice2 = arr |> Array.randomSampleBy rand2.NextDouble choicesLength
+        let choice3 = arr |> Array.randomSampleBy rand3.NextDouble choicesLength
+
+        Assert.AreEqual(choice1, choice2)
+        Assert.AreNotEqual(choice1, choice3)
+        Assert.AreEqual(choicesLength, choice1.Length)
+        Assert.AreEqual(choicesLength, choice3.Length)
+        Assert.AreEqual(choice1, choice1 |> Array.distinct)
+        Assert.AreEqual(choice3, choice3 |> Array.distinct)
+
+    [<Fact>]
+    member _.RandomSampleByWrongArg() =
+        let nullArr = null
+        let emptyArr = [||]
+        let arr = [| 1..50 |]
+        let wrongRandomizers = [
+            fun () -> nan
+            fun () -> 1.0
+            fun () -> infinity
+        ]
+        let randomizer = Random(123).NextDouble
+        let tooBigSampleLength = 100
+        let negativeSampleLength = -1
+        let sampleLength = 20
+
+        CheckThrowsArgumentNullException (fun () -> Array.randomSampleBy randomizer sampleLength nullArr |> ignore)
+        wrongRandomizers |> List.iter (fun wrongRandomizer ->
+            CheckThrowsArgumentOutOfRangeException (fun () -> Array.randomSampleBy wrongRandomizer sampleLength arr |> ignore))
+        CheckThrowsArgumentException (fun () -> Array.randomSampleBy randomizer sampleLength emptyArr |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.randomSampleBy randomizer negativeSampleLength arr |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.randomSampleBy randomizer tooBigSampleLength arr |> ignore)

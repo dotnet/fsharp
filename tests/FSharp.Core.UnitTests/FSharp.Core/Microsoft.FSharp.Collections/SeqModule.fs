@@ -141,7 +141,7 @@ type SeqModule() =
         Assert.AreEqual(null, Seq.head <| Seq.replicate 1 null)
         Assert.AreEqual(["1";"1"],Seq.replicate 2 "1" |> Seq.toList)
 
-        CheckThrowsArgumentException (fun () ->  Seq.replicate -1 null |> ignore)
+        CheckThrowsArgumentOutOfRangeException (fun () ->  Seq.replicate -1 null |> ignore)
         
         
     [<Fact>]
@@ -1160,3 +1160,335 @@ type SeqModule() =
         let nullSeq:seq<'a> = null
 
         CheckThrowsArgumentNullException (fun () -> Seq.contains 5 nullSeq |> ignore)
+
+    [<Fact>]
+    member _.RandomShuffle() =
+        let intSeq = seq { 1..20 }
+
+        let shuffled1 = intSeq |> Seq.randomShuffle |> Seq.cache
+        let shuffled2 = intSeq |> Seq.randomShuffle |> Seq.cache
+
+        Assert.AreNotEqual(shuffled1, intSeq)
+        Assert.AreNotEqual(shuffled1, shuffled2)
+
+    [<Fact>]
+    member _.RandomShuffleWrongArg() =
+        let nullSeq = null
+        CheckThrowsArgumentNullException (fun () -> Seq.randomShuffle nullSeq |> ignore)
+
+    [<Fact>]
+    member _.RandomShuffleWith() =
+        let intSeq = seq { 1..20 }
+
+        let rand1 = Random(123)
+        let rand2 = Random(123)
+        let rand3 = Random(321)
+
+        let shuffle1 = intSeq |> Seq.randomShuffleWith rand1 |> Seq.cache
+        let shuffle2 = intSeq |> Seq.randomShuffleWith rand2 |> Seq.cache
+        let shuffle3 = intSeq |> Seq.randomShuffleWith rand3 |> Seq.cache
+
+        Assert.AreEqual(shuffle1, shuffle2)
+        Assert.AreNotEqual(intSeq, shuffle1)
+        Assert.AreNotEqual(shuffle1, shuffle3)
+
+    [<Fact>]
+    member _.RandomShuffleWithWrongArg() =
+        let nullSeq = null
+        let intSeq = seq { 1..20 }
+        let nullRand = null
+        let rand = Random(123)
+
+        CheckThrowsArgumentNullException (fun () -> Seq.randomShuffleWith rand nullSeq |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Seq.randomShuffleWith nullRand intSeq |> ignore)
+
+    [<Fact>]
+    member _.RandomShuffleBy() =
+        let intSeq = seq { 1..20 }
+
+        let rand1 = Random(123)
+        let rand2 = Random(123)
+        let rand3 = Random(321)
+
+        let shuffle1 = intSeq |> Seq.randomShuffleBy rand1.NextDouble |> Seq.cache
+        let shuffle2 = intSeq |> Seq.randomShuffleBy rand2.NextDouble |> Seq.cache
+        let shuffle3 = intSeq |> Seq.randomShuffleBy rand3.NextDouble |> Seq.cache
+
+        Assert.AreEqual(shuffle1, shuffle2)
+        Assert.AreNotEqual(intSeq, shuffle1)
+        Assert.AreNotEqual(shuffle1, shuffle3)
+
+    [<Fact>]
+    member _.RandomShuffleByWrongArg() =
+        let nullSeq = null
+        let intSeq = seq { 1..20 }
+        let wrongRandomizer = fun () -> 1.0
+        let randomizer = Random(123).NextDouble
+
+        CheckThrowsArgumentNullException (fun () -> Seq.randomShuffleBy randomizer nullSeq |> ignore)
+        CheckThrowsArgumentOutOfRangeException (fun () -> Seq.randomShuffleBy wrongRandomizer intSeq |> ignore)
+
+    [<Fact>]
+    member _.RandomChoice() =
+        let intSeq = seq { 1..5000 }
+
+        // try choice five times, if all are same, it must be broken
+        let results = [|
+            Seq.randomChoice intSeq
+            Seq.randomChoice intSeq
+            Seq.randomChoice intSeq
+            Seq.randomChoice intSeq
+            Seq.randomChoice intSeq
+        |]
+        let allSame = results |> Array.forall (fun x -> x = results.[0])
+        Assert.False(allSame)
+
+    [<Fact>]
+    member _.RandomChoiceWrongArg() =
+        let nullSeq = null
+        let emptySeq = Seq.empty
+
+        CheckThrowsArgumentNullException (fun () -> Seq.randomChoice nullSeq |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.randomChoice emptySeq |> ignore)
+
+    [<Fact>]
+    member _.RandomChoiceWith() =
+        let intSeq = seq { 1..5000 }
+        let rand1 = Random(123)
+        let rand2 = Random(123)
+        let rand3 = Random(321)
+
+        let choice1 = intSeq |> Seq.randomChoiceWith rand1
+        let choice2 = intSeq |> Seq.randomChoiceWith rand2
+        let choice3 = intSeq |> Seq.randomChoiceWith rand3
+
+        Assert.AreEqual(choice1, choice2)
+        Assert.AreNotEqual(choice1, choice3)
+
+    [<Fact>]
+    member _.RandomChoiceWithWrongArg() =
+        let nullSeq = null
+        let emptySeq = Seq.empty
+        let intSeq = seq { 1..20 }
+        let nullRand = null
+        let rand = Random(123)
+
+        CheckThrowsArgumentNullException (fun () -> Seq.randomChoiceWith rand nullSeq |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Seq.randomChoiceWith nullRand intSeq |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.randomChoiceWith rand emptySeq |> ignore)
+
+    [<Fact>]
+    member _.RandomChoiceBy() =
+        let intSeq = seq { 1..5000 }
+        let rand1 = Random(123)
+        let rand2 = Random(123)
+        let rand3 = Random(321)
+
+        let choice1 = intSeq |> Seq.randomChoiceBy rand1.NextDouble
+        let choice2 = intSeq |> Seq.randomChoiceBy rand2.NextDouble
+        let choice3 = intSeq |> Seq.randomChoiceBy rand3.NextDouble
+
+        Assert.AreEqual(choice1, choice2)
+        Assert.AreNotEqual(choice1, choice3)
+
+    [<Fact>]
+    member _.RandomChoiceByWrongArg() =
+        let nullSeq = null
+        let emptySeq = Seq.empty
+        let intSeq = seq { 1..20 }
+        let wrongRandomizer = fun () -> 1.0
+        let randomizer = Random(123).NextDouble
+
+        CheckThrowsArgumentNullException (fun () -> Seq.randomChoiceBy randomizer nullSeq |> ignore)
+        CheckThrowsArgumentOutOfRangeException (fun () -> Seq.randomChoiceBy wrongRandomizer intSeq |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.randomChoiceBy randomizer emptySeq |> ignore)
+
+    [<Fact>]
+    member _.RandomChoices() =
+        let intSeq = seq { 1..50 }
+
+        let choicesLength = 20
+        let choice1 = intSeq |> Seq.randomChoices choicesLength |> Seq.cache
+        let choice2 = intSeq |> Seq.randomChoices choicesLength |> Seq.cache
+
+        Assert.AreNotEqual(choice1, choice2)
+        Assert.AreEqual(choicesLength, choice1 |> Seq.length)
+        Assert.AreEqual(choicesLength, choice2 |> Seq.length)
+
+        let intSeq = seq { 1; 2 }
+        let choices = intSeq |> Seq.randomChoices choicesLength
+        Assert.AreEqual(choicesLength, choices |> Seq.length)
+        Assert.AreEqual(intSeq, choices |> Seq.distinct |> Seq.sort)
+
+    [<Fact>]
+    member _.RandomChoicesWrongArg() =
+        let nullSeq = null
+        let emptySeq = Seq.empty
+        let intSeq = seq { 1..50 }
+        let choicesLength = 20
+        let negativeChoicesLength = -1
+
+        CheckThrowsArgumentNullException (fun () -> Seq.randomChoices choicesLength nullSeq |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.randomChoices choicesLength emptySeq |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.randomChoices negativeChoicesLength intSeq |> ignore)
+
+    [<Fact>]
+    member _.RandomChoicesWith() =
+        let seq = seq { 1..50 }
+        let rand1 = Random(123)
+        let rand2 = Random(123)
+        let rand3 = Random(321)
+
+        let choicesLength = 20
+        let choice1 = seq |> Seq.randomChoicesWith rand1 choicesLength |> Seq.cache
+        let choice2 = seq |> Seq.randomChoicesWith rand2 choicesLength |> Seq.cache
+        let choice3 = seq |> Seq.randomChoicesWith rand3 choicesLength |> Seq.cache
+
+        Assert.AreEqual(choice1, choice2)
+        Assert.AreNotEqual(choice1, choice3)
+
+    [<Fact>]
+    member _.RandomChoicesWithWrongArg() =
+        let nullSeq = null
+        let emptySeq = Seq.empty
+        let intSeq = seq { 1..50 }
+        let nullRand = null
+        let rand = Random(123)
+        let choicesLength = 20
+        let negativeChoicesLength = -1
+
+        CheckThrowsArgumentNullException (fun () -> Seq.randomChoicesWith rand choicesLength nullSeq |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Seq.randomChoicesWith nullRand choicesLength intSeq |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.randomChoicesWith rand choicesLength emptySeq |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.randomChoicesWith rand negativeChoicesLength intSeq |> ignore)
+
+    [<Fact>]
+    member _.RandomChoicesBy() =
+        let seq = seq { 1..50 }
+        let rand1 = Random(123)
+        let rand2 = Random(123)
+        let rand3 = Random(321)
+
+        let choicesLength = 20
+        let choice1 = seq |> Seq.randomChoicesBy rand1.NextDouble choicesLength |> Seq.cache
+        let choice2 = seq |> Seq.randomChoicesBy rand2.NextDouble choicesLength |> Seq.cache
+        let choice3 = seq |> Seq.randomChoicesBy rand3.NextDouble choicesLength |> Seq.cache
+
+        Assert.AreEqual(choice1, choice2)
+        Assert.AreNotEqual(choice1, choice3)
+
+    [<Fact>]
+    member _.RandomChoicesByWrongArg() =
+        let nullSeq = null
+        let emptySeq = Seq.empty
+        let intSeq = seq { 1..50 }
+        let wrongRandomizer = fun () -> 1.0
+        let randomizer = Random(123).NextDouble
+        let choicesLength = 20
+        let negativeChoicesLength = -1
+
+        CheckThrowsArgumentNullException (fun () -> Seq.randomChoicesBy randomizer choicesLength nullSeq |> ignore)
+        CheckThrowsArgumentOutOfRangeException (fun () -> Seq.randomChoicesBy wrongRandomizer choicesLength intSeq |> Seq.toList |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.randomChoicesBy randomizer choicesLength emptySeq |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.randomChoicesBy randomizer negativeChoicesLength intSeq |> ignore)
+
+    [<Fact>]
+    member _.RandomSample() =
+        let intSeq = seq { 1..50 }
+
+        let choicesLength = 20
+        let choice1 = intSeq |> Seq.randomSample choicesLength |> Seq.cache
+        let choice2 = intSeq |> Seq.randomSample choicesLength |> Seq.cache
+
+        Assert.AreNotEqual(choice1, choice2)
+        Assert.AreEqual(choicesLength, choice1 |> Seq.length)
+        Assert.AreEqual(choicesLength, choice2 |> Seq.length)
+
+        Assert.AreEqual(choice1, choice1 |> Seq.distinct)
+        Assert.AreEqual(choice2, choice2 |> Seq.distinct)
+
+    [<Fact>]
+    member _.RandomSampleWrongArg() =
+        let nullSeq = null
+        let emptySeq = Seq.empty
+        let intSeq = seq { 1..50 }
+        let tooBigSampleLength = 100
+        let negativeSampleLength = -1
+        let sampleLength = 20
+
+        CheckThrowsArgumentNullException (fun () -> Seq.randomSample sampleLength nullSeq |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.randomSample sampleLength emptySeq |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.randomSample negativeSampleLength intSeq |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.randomSample tooBigSampleLength intSeq |> ignore)
+
+    [<Fact>]
+    member _.RandomSampleWith() =
+        let intSeq = seq { 1..50 }
+        let rand1 = Random(123)
+        let rand2 = Random(123)
+        let rand3 = Random(321)
+
+        let choicesLength = 20
+        let choice1 = intSeq |> Seq.randomSampleWith rand1 choicesLength |> Seq.cache
+        let choice2 = intSeq |> Seq.randomSampleWith rand2 choicesLength |> Seq.cache
+        let choice3 = intSeq |> Seq.randomSampleWith rand3 choicesLength |> Seq.cache
+
+        Assert.AreEqual(choice1, choice2)
+        Assert.AreNotEqual(choice1, choice3)
+        Assert.AreEqual(choicesLength, choice1 |> Seq.length)
+        Assert.AreEqual(choicesLength, choice3 |> Seq.length)
+        Assert.AreEqual(choice1, choice1 |> Seq.distinct)
+        Assert.AreEqual(choice3, choice3 |> Seq.distinct)
+
+    [<Fact>]
+    member _.RandomSampleWithWrongArg() =
+        let nullSeq = null
+        let emptySeq = Seq.empty
+        let intSeq = seq { 1..50 }
+        let nullRand = null
+        let rand = Random(123)
+        let tooBigSampleLength = 100
+        let negativeSampleLength = -1
+        let sampleLength = 20
+
+        CheckThrowsArgumentNullException (fun () -> Seq.randomSampleWith rand sampleLength nullSeq |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Seq.randomSampleWith nullRand sampleLength intSeq |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.randomSampleWith rand sampleLength emptySeq |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.randomSampleWith rand negativeSampleLength intSeq |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.randomSampleWith rand tooBigSampleLength intSeq |> ignore)
+
+    [<Fact>]
+    member _.RandomSampleBy() =
+        let intSeq = seq { 1..50 }
+        let rand1 = Random(123)
+        let rand2 = Random(123)
+        let rand3 = Random(321)
+
+        let choicesLength = 20
+        let choice1 = intSeq |> Seq.randomSampleBy rand1.NextDouble choicesLength |> Seq.cache
+        let choice2 = intSeq |> Seq.randomSampleBy rand2.NextDouble choicesLength |> Seq.cache
+        let choice3 = intSeq |> Seq.randomSampleBy rand3.NextDouble choicesLength |> Seq.cache
+
+        Assert.AreEqual(choice1, choice2)
+        Assert.AreNotEqual(choice1, choice3)
+        Assert.AreEqual(choicesLength, choice1 |> Seq.length)
+        Assert.AreEqual(choicesLength, choice3 |> Seq.length)
+        Assert.AreEqual(choice1, choice1 |> Seq.distinct)
+        Assert.AreEqual(choice3, choice3 |> Seq.distinct)
+
+    [<Fact>]
+    member _.RandomSampleByWrongArg() =
+        let nullSeq = null
+        let emptySeq = Seq.empty
+        let intSeq = seq { 1..50 }
+        let wrongRandomizer = fun () -> 1.0
+        let randomizer = Random(123).NextDouble
+        let tooBigSampleLength = 100
+        let negativeSampleLength = -1
+        let sampleLength = 20
+
+        CheckThrowsArgumentNullException (fun () -> Seq.randomSampleBy randomizer sampleLength nullSeq |> ignore)
+        CheckThrowsArgumentOutOfRangeException (fun () -> Seq.randomSampleBy wrongRandomizer sampleLength intSeq |> Seq.toList |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.randomSampleBy randomizer sampleLength emptySeq |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.randomSampleBy randomizer negativeSampleLength intSeq |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.randomSampleBy randomizer tooBigSampleLength intSeq |> ignore)
