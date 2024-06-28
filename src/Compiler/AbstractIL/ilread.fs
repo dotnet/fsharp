@@ -3249,16 +3249,22 @@ and customAttrsReader ctxtH tag : ILAttributesStored =
         let (ctxt: ILMetadataReader) = getHole ctxtH
         let mdv = ctxt.mdfile.GetView()
 
+        let searchedKey = TaggedIndex(tag, idx)
+
         let reader =
-            { new ISeekReadIndexedRowReader<CustomAttributeRow, TaggedIndex<HasCustomAttributeTag>, ILAttribute> with
-                member _.GetRow(i, row) =
-                    seekReadCustomAttributeRow ctxt mdv i &row
+            { new ISeekReadIndexedRowReader<int, int, ILAttribute> with
+                member _.GetRow(i, rowIndex) = rowIndex <- i
+                member _.GetKey(rowIndex) = rowIndex
 
-                member _.GetKey(attrRow) = attrRow.parentIndex
+                member _.CompareKey(rowIndex) =
+                    let mutable addr = ctxt.rowAddr TableNames.CustomAttribute rowIndex
+                    // read parentIndex
+                    let key = seekReadHasCustomAttributeIdx ctxt mdv &addr
+                    hcaCompare searchedKey key
 
-                member _.CompareKey(key) = hcaCompare (TaggedIndex(tag, idx)) key
-
-                member _.ConvertRow(attrRow) =
+                member _.ConvertRow(rowIndex) =
+                    let mutable attrRow = Unchecked.defaultof<_>
+                    seekReadCustomAttributeRow ctxt mdv rowIndex &attrRow
                     seekReadCustomAttr ctxt (attrRow.typeIndex, attrRow.valueIndex)
             }
 
