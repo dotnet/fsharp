@@ -2861,10 +2861,20 @@ FSharp.Compiler.EditorServices.CompletionContext+MethodOverride: Int32 get_space
 FSharp.Compiler.EditorServices.CompletionContext+MethodOverride: Int32 spacesBeforeOverrideKeyword
 FSharp.Compiler.EditorServices.CompletionContext+OpenDeclaration: Boolean get_isOpenType()
 FSharp.Compiler.EditorServices.CompletionContext+OpenDeclaration: Boolean isOpenType
-FSharp.Compiler.EditorServices.CompletionContext+ParameterList: FSharp.Compiler.Text.Position Item1
-FSharp.Compiler.EditorServices.CompletionContext+ParameterList: FSharp.Compiler.Text.Position get_Item1()
-FSharp.Compiler.EditorServices.CompletionContext+ParameterList: System.Collections.Generic.HashSet`1[System.String] Item2
-FSharp.Compiler.EditorServices.CompletionContext+ParameterList: System.Collections.Generic.HashSet`1[System.String] get_Item2()
+FSharp.Compiler.EditorServices.CompletionContext+ParameterList: Boolean caretIsAfterEqualMark
+FSharp.Compiler.EditorServices.CompletionContext+ParameterList: Boolean get_caretIsAfterEqualMark()
+FSharp.Compiler.EditorServices.CompletionContext+ParameterList: Boolean get_isInParen()
+FSharp.Compiler.EditorServices.CompletionContext+ParameterList: Boolean isInParen
+FSharp.Compiler.EditorServices.CompletionContext+ParameterList: FSharp.Compiler.Text.Position get_identEndPos()
+FSharp.Compiler.EditorServices.CompletionContext+ParameterList: FSharp.Compiler.Text.Position identEndPos
+FSharp.Compiler.EditorServices.CompletionContext+ParameterList: Int32 get_paramGroupIdx()
+FSharp.Compiler.EditorServices.CompletionContext+ParameterList: Int32 get_paramIdxInGroup()
+FSharp.Compiler.EditorServices.CompletionContext+ParameterList: Int32 paramGroupIdx
+FSharp.Compiler.EditorServices.CompletionContext+ParameterList: Int32 paramIdxInGroup
+FSharp.Compiler.EditorServices.CompletionContext+ParameterList: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_paramName()
+FSharp.Compiler.EditorServices.CompletionContext+ParameterList: Microsoft.FSharp.Core.FSharpOption`1[System.String] paramName
+FSharp.Compiler.EditorServices.CompletionContext+ParameterList: System.Collections.Generic.HashSet`1[System.String] get_settedParam()
+FSharp.Compiler.EditorServices.CompletionContext+ParameterList: System.Collections.Generic.HashSet`1[System.String] settedParam
 FSharp.Compiler.EditorServices.CompletionContext+Pattern: FSharp.Compiler.EditorServices.PatternContext context
 FSharp.Compiler.EditorServices.CompletionContext+Pattern: FSharp.Compiler.EditorServices.PatternContext get_context()
 FSharp.Compiler.EditorServices.CompletionContext+RecordField: FSharp.Compiler.EditorServices.RecordContext context
@@ -2914,7 +2924,7 @@ FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext NewInherit(FSharp.Compiler.EditorServices.InheritanceContext, System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],Microsoft.FSharp.Core.FSharpOption`1[System.String]])
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext NewMethodOverride(FSharp.Compiler.EditorServices.MethodOverrideCompletionContext, FSharp.Compiler.Text.Range, Int32, Boolean, Boolean)
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext NewOpenDeclaration(Boolean)
-FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext NewParameterList(FSharp.Compiler.Text.Position, System.Collections.Generic.HashSet`1[System.String])
+FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext NewParameterList(FSharp.Compiler.Text.Position, Int32, Int32, Microsoft.FSharp.Core.FSharpOption`1[System.String], System.Collections.Generic.HashSet`1[System.String], Boolean, Boolean)
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext NewPattern(FSharp.Compiler.EditorServices.PatternContext)
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext NewRecordField(FSharp.Compiler.EditorServices.RecordContext)
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext RangeOperator
@@ -2994,6 +3004,9 @@ FSharp.Compiler.EditorServices.CompletionItemKind: Int32 GetHashCode(System.Coll
 FSharp.Compiler.EditorServices.CompletionItemKind: Int32 Tag
 FSharp.Compiler.EditorServices.CompletionItemKind: Int32 get_Tag()
 FSharp.Compiler.EditorServices.CompletionItemKind: System.String ToString()
+FSharp.Compiler.EditorServices.CompletionPreferType: FSharp.Compiler.EditorServices.CompletionPreferType Normal
+FSharp.Compiler.EditorServices.CompletionPreferType: FSharp.Compiler.EditorServices.CompletionPreferType Suggested
+FSharp.Compiler.EditorServices.CompletionPreferType: Int32 value__
 FSharp.Compiler.EditorServices.DeclarationListInfo: Boolean IsError
 FSharp.Compiler.EditorServices.DeclarationListInfo: Boolean IsForType
 FSharp.Compiler.EditorServices.DeclarationListInfo: Boolean get_IsError()
@@ -3008,6 +3021,8 @@ FSharp.Compiler.EditorServices.DeclarationListItem: Boolean get_IsOwnMember()
 FSharp.Compiler.EditorServices.DeclarationListItem: Boolean get_IsResolved()
 FSharp.Compiler.EditorServices.DeclarationListItem: FSharp.Compiler.EditorServices.CompletionItemKind Kind
 FSharp.Compiler.EditorServices.DeclarationListItem: FSharp.Compiler.EditorServices.CompletionItemKind get_Kind()
+FSharp.Compiler.EditorServices.DeclarationListItem: FSharp.Compiler.EditorServices.CompletionPreferType PreferredType
+FSharp.Compiler.EditorServices.DeclarationListItem: FSharp.Compiler.EditorServices.CompletionPreferType get_PreferredType()
 FSharp.Compiler.EditorServices.DeclarationListItem: FSharp.Compiler.EditorServices.FSharpGlyph Glyph
 FSharp.Compiler.EditorServices.DeclarationListItem: FSharp.Compiler.EditorServices.FSharpGlyph get_Glyph()
 FSharp.Compiler.EditorServices.DeclarationListItem: FSharp.Compiler.EditorServices.ToolTipText Description

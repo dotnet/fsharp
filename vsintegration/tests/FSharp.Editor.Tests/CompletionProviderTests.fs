@@ -646,8 +646,8 @@ type A() =
 let _ = new A(Setta)
 """
 
-        let expected = [ "SettableProperty"; "AnotherSettableProperty" ]
-        let notExpected = [ "NonSettableProperty" ]
+        let expected = [ "SettableProperty = "; "AnotherSettableProperty = " ]
+        let notExpected = [ "NonSettableProperty = " ]
         VerifyCompletionList(fileContents, "(Setta", expected, notExpected)
 
     [<Fact>]
@@ -1476,22 +1476,22 @@ type A =
 """
 
         // Attribute on module, completing attribute name - settable properties omitted
-        VerifyCompletionList(fileContents, "[<La", [ "Lang" ], [ "LangMember1"; "langParam" ])
+        VerifyCompletionList(fileContents, "[<La", [ "Lang" ], [ "LangMember1 = "; "langParam = " ])
 
-        // Attribute on let-bound value - LangMember2 is already set, so it's omitted
-        VerifyCompletionList(fileContents, "[< Lang(2", [ "langParam"; "LangMember2" ], [ "LangMember1" ])
+        // Attribute on let-bound value - LangMember1 is already set, so it's omitted
+        VerifyCompletionList(fileContents, "[< Lang(2,", [ "langParam = "; "LangMember2 = " ], [ "LangMember1 = " ])
 
         // Attribute on type - LangMember1 is already set, so it's omitted
-        VerifyCompletionList(fileContents, "[<  Lang(3, LangMember1 = 3, L", [ "LangMember2" ], [ "LangMember1" ])
+        VerifyCompletionList(fileContents, "[<  Lang(3, LangMember1 = 3, L", [ "LangMember2 = " ], [ "LangMember1 = " ])
 
         // Attribute on member - All settable properties available
-        VerifyCompletionList(fileContents, "[<   Lang(l", [ "langParam"; "LangMember1"; "LangMember2" ], [])
+        VerifyCompletionList(fileContents, "[<   Lang(l", [ "langParam = "; "LangMember1 = "; "LangMember2 = " ], [])
 
         // Attribute on record field - All settable properties available
-        VerifyCompletionList(fileContents, "{ [<Lang(l", [ "langParam"; "LangMember1"; "LangMember2" ], [])
+        VerifyCompletionList(fileContents, "{ [<Lang(l", [ "langParam = "; "LangMember1 = "; "LangMember2 = " ], [])
 
         // Attribute on enum case - All settable properties available
-        VerifyCompletionList(fileContents, "| [<Lang(l", [ "langParam"; "LangMember1"; "LangMember2" ], [])
+        VerifyCompletionList(fileContents, "| [<Lang(l", [ "langParam = "; "LangMember1 = "; "LangMember2 = " ], [])
 
     [<Fact>]
     let ``Completion list for nested copy and update contains correct record fields, nominal`` () =

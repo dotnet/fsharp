@@ -1103,8 +1103,8 @@ module ParsedInput =
 
     let rangeContainsPosOrIsSpacesBetweenRangeAndPos (lineStr: string) m pos =
         rangeContainsPos m pos
-        // pos is before m
-        || posLt pos m.Start
+        // // pos is before m
+        // || posLt pos m.Start
         || posAfterRangeAndBetweenSpaces lineStr m pos
 
     let findSetters identPos (lineStr, pos) currentParamGroup currentParamIdxInGroup argList =
