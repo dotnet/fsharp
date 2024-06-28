@@ -659,12 +659,12 @@ type internal TypeCheckInfo
                 | Item.ILField(iLFieldInfo) ->
                     typeEquiv g ty (iLFieldInfo.FieldType(amap, m))
                     && (not isInMatch || iLFieldInfo.LiteralValue.IsSome)
-                | Item.Property(info = pinfo :: _) -> typeEquiv g ty (pinfo.GetPropertyType(amap, m)) && not isInMatch
+                | Item.Property(info = pinfo :: _) -> pinfo.HasGetter && typeEquiv g ty (pinfo.GetPropertyType(amap, m)) && not isInMatch
                 | _ -> false)
 
         let items = items |> List.map ItemWithNoInst
-        let items = items |> RemoveDuplicateItems g
-        items |> RemoveExplicitlySuppressed g
+        // let items = items |> RemoveDuplicateItems g
+        items |> List.distinctBy _.Item.DisplayName |> RemoveExplicitlySuppressed g
 
     let getStaticFieldsOfSameTypeInTheTypeCompletionItem isInMatch (nenv: NameResolutionEnv) ad m shouldInParen shouldUnionCaseInParen ty =
         let g = nenv.DisplayEnv.g
