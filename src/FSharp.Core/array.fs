@@ -1936,6 +1936,211 @@ module Array =
 
             result
 
+    [<CompiledName("RandomShuffleWith")>]
+    let randomShuffleWith (random: Random) (source: 'T array) : 'T array =
+        checkNonNull "random" random
+        checkNonNull "source" source
+
+        let result = copy source
+
+        Microsoft.FSharp.Primitives.Basics.Random.shuffleArrayInPlaceWith random result
+
+        result
+
+    [<CompiledName("RandomShuffleBy")>]
+    let randomShuffleBy (randomizer: unit -> float) (source: 'T array) : 'T array =
+        checkNonNull "source" source
+
+        let result = copy source
+
+        Microsoft.FSharp.Primitives.Basics.Random.shuffleArrayInPlaceBy randomizer result
+
+        result
+
+    [<CompiledName("RandomShuffle")>]
+    let randomShuffle (source: 'T array) : 'T array =
+        randomShuffleWith ThreadSafeRandom.Shared source
+
+    [<CompiledName("RandomShuffleInPlaceWith")>]
+    let randomShuffleInPlaceWith (random: Random) (source: 'T array) =
+        checkNonNull "random" random
+        checkNonNull "source" source
+
+        Microsoft.FSharp.Primitives.Basics.Random.shuffleArrayInPlaceWith random source
+
+    [<CompiledName("RandomShuffleInPlaceBy")>]
+    let randomShuffleInPlaceBy (randomizer: unit -> float) (source: 'T array) =
+        checkNonNull "source" source
+
+        Microsoft.FSharp.Primitives.Basics.Random.shuffleArrayInPlaceBy randomizer source
+
+    [<CompiledName("RandomShuffleInPlace")>]
+    let randomShuffleInPlace (source: 'T array) =
+        randomShuffleInPlaceWith ThreadSafeRandom.Shared source
+
+    [<CompiledName("RandomChoiceWith")>]
+    let randomChoiceWith (random: Random) (source: 'T array) : 'T =
+        checkNonNull "random" random
+        checkNonNull "source" source
+
+        let inputLength = source.Length
+
+        if inputLength = 0 then
+            invalidArg "source" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+
+        let i = random.Next(0, inputLength)
+        source[i]
+
+    [<CompiledName("RandomChoiceBy")>]
+    let randomChoiceBy (randomizer: unit -> float) (source: 'T array) : 'T =
+        checkNonNull "source" source
+
+        let inputLength = source.Length
+
+        if inputLength = 0 then
+            invalidArg "source" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+
+        let i = Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 inputLength
+        source[i]
+
+    [<CompiledName("RandomChoice")>]
+    let randomChoice (source: 'T array) : 'T =
+        randomChoiceWith ThreadSafeRandom.Shared source
+
+    [<CompiledName("RandomChoicesWith")>]
+    let randomChoicesWith (random: Random) (count: int) (source: 'T array) : 'T array =
+        checkNonNull "random" random
+        checkNonNull "source" source
+
+        if count < 0 then
+            invalidArgInputMustBeNonNegative "count" count
+
+        let inputLength = source.Length
+
+        if inputLength = 0 then
+            invalidArg "source" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+
+        let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
+
+        for i = 0 to count - 1 do
+            let j = random.Next(0, inputLength)
+            result[i] <- source[j]
+
+        result
+
+    [<CompiledName("RandomChoicesBy")>]
+    let randomChoicesBy (randomizer: unit -> float) (count: int) (source: 'T array) : 'T array =
+        checkNonNull "source" source
+
+        if count < 0 then
+            invalidArgInputMustBeNonNegative "count" count
+
+        let inputLength = source.Length
+
+        if inputLength = 0 then
+            invalidArg "source" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+
+        let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
+
+        for i = 0 to count - 1 do
+            let j = Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 inputLength
+            result[i] <- source[j]
+
+        result
+
+    [<CompiledName("RandomChoices")>]
+    let randomChoices (count: int) (source: 'T array) : 'T array =
+        randomChoicesWith ThreadSafeRandom.Shared count source
+
+    [<CompiledName("RandomSampleWith")>]
+    let randomSampleWith (random: Random) (count: int) (source: 'T array) : 'T array =
+        checkNonNull "random" random
+        checkNonNull "source" source
+
+        if count < 0 then
+            invalidArgInputMustBeNonNegative "count" count
+
+        let inputLength = source.Length
+
+        if inputLength = 0 then
+            invalidArg "source" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+
+        if count > inputLength then
+            invalidArg "count" (SR.GetString(SR.notEnoughElements))
+
+        let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
+
+        let setSize =
+            Microsoft.FSharp.Primitives.Basics.Random.getMaxSetSizeForSampling count
+
+        if inputLength <= setSize then
+            let pool = copy source
+
+            for i = 0 to count - 1 do
+                let j = random.Next(0, inputLength - i)
+                result[i] <- pool[j]
+                pool[j] <- pool[inputLength - i - 1]
+        else
+            let selected = HashSet()
+
+            for i = 0 to count - 1 do
+                let mutable j = random.Next(0, inputLength)
+
+                while not (selected.Add j) do
+                    j <- random.Next(0, inputLength)
+
+                result[i] <- source[j]
+
+        result
+
+    [<CompiledName("RandomSampleBy")>]
+    let randomSampleBy (randomizer: unit -> float) (count: int) (source: 'T array) : 'T array =
+        checkNonNull "source" source
+
+        if count < 0 then
+            invalidArgInputMustBeNonNegative "count" count
+
+        let inputLength = source.Length
+
+        if inputLength = 0 then
+            invalidArg "source" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+
+        if count > inputLength then
+            invalidArg "count" (SR.GetString(SR.notEnoughElements))
+
+        let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
+
+        // algorithm taken from https://github.com/python/cpython/blob/69b3e8ea569faabccd74036e3d0e5ec7c0c62a20/Lib/random.py#L363-L456
+        let setSize =
+            Microsoft.FSharp.Primitives.Basics.Random.getMaxSetSizeForSampling count
+
+        if inputLength <= setSize then
+            let pool = copy source
+
+            for i = 0 to count - 1 do
+                let j =
+                    Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 (inputLength - i)
+
+                result[i] <- pool[j]
+                pool[j] <- pool[inputLength - i - 1]
+        else
+            let selected = HashSet()
+
+            for i = 0 to count - 1 do
+                let mutable j =
+                    Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 inputLength
+
+                while not (selected.Add j) do
+                    j <- Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 inputLength
+
+                result[i] <- source[j]
+
+        result
+
+    [<CompiledName("RandomSample")>]
+    let randomSample (count: int) (source: 'T array) : 'T array =
+        randomSampleWith ThreadSafeRandom.Shared count source
+
     module Parallel =
         open System.Threading
         open System.Threading.Tasks
