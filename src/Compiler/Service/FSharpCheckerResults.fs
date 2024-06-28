@@ -768,11 +768,11 @@ type internal TypeCheckInfo
             Unresolved = isUnresolved
             CustomInsertText = insertText
             CustomDisplayText = displayText
-            IsPreferred = preferred
+            PreferredType = preferred
         }
 
     let CompletionItem (ty: TyconRef voption) (assemblySymbol: AssemblySymbol voption) (item: ItemWithInst) =
-        CompletionItemWithMoreSetting ty assemblySymbol false ValueNone ValueNone item
+        CompletionItemWithMoreSetting ty assemblySymbol CompletionPreferType.Normal ValueNone ValueNone item
 
     let getStaticFieldsOfSameTypeInTheType isInMatch nenv ad m ty =
         let targets =
@@ -829,7 +829,7 @@ type internal TypeCheckInfo
                 | _ when shouldInParen -> $"({name})"
                 | _ -> name
 
-            CompletionItemWithMoreSetting ValueNone ValueNone true (ValueSome code) (ValueSome name) i)
+            CompletionItemWithMoreSetting ValueNone ValueNone CompletionPreferType.Suggested (ValueSome code) (ValueSome name) i)
 
     let CollectParameters (methods: MethInfo list) amap m : Item list =
         methods
@@ -1294,7 +1294,7 @@ type internal TypeCheckInfo
             Unresolved = None
             CustomInsertText = ValueNone
             CustomDisplayText = ValueNone
-            IsPreferred = true
+            PreferredType = CompletionPreferType.Suggested
         }
 
     let getItem (x: ItemWithInst) = x.Item
@@ -1588,7 +1588,7 @@ type internal TypeCheckInfo
                             None
                         )
                         |> ItemWithNoInst
-                        |> CompletionItemWithMoreSetting ValueNone ValueNone true (ValueSome textInCode) (ValueSome name)
+                        |> CompletionItemWithMoreSetting ValueNone ValueNone CompletionPreferType.Suggested (ValueSome textInCode) (ValueSome name)
                         |> Some)
 
             let overridableMeths =
@@ -1654,7 +1654,7 @@ type internal TypeCheckInfo
 
                         Item.MethodGroup(name, [ meth ], None)
                         |> ItemWithNoInst
-                        |> CompletionItemWithMoreSetting ValueNone ValueNone true (ValueSome textInCode) (ValueSome name)
+                        |> CompletionItemWithMoreSetting ValueNone ValueNone CompletionPreferType.Suggested (ValueSome textInCode) (ValueSome name)
                         |> Some)
 
             overridableProps @ overridableMeths
@@ -2242,7 +2242,7 @@ type internal TypeCheckInfo
                                 Unresolved = None
                                 CustomInsertText = ValueSome(if isInParen then code else $"({code})")
                                 CustomDisplayText = ValueSome code
-                                IsPreferred = true
+                                PreferredType = CompletionPreferType.Suggested
                             })
 
                     match declaredItems with

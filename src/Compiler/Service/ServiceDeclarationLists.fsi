@@ -69,6 +69,10 @@ type public CompletionItemKind =
     | CustomOperation
     | Other
 
+type public CompletionPreferType =
+    | Suggested = 0
+    | Normal = 10000
+
 type public UnresolvedSymbol =
     {
       FullName: string
@@ -94,7 +98,7 @@ type internal CompletionItem =
       
       CustomInsertText: string voption
       CustomDisplayText: string voption
-      IsPreferred: bool 
+      PreferredType: CompletionPreferType 
     }
     member Item: Item
 
@@ -143,7 +147,7 @@ type public DeclarationListItem =
 
     member NamespaceToOpen: string option
 
-    member IsPreferred: bool
+    member PreferredType: CompletionPreferType
 
 
 /// Represents a set of declarations in F# source code, with information attached ready for display by an editor.
