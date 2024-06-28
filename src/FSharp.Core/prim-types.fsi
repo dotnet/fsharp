@@ -2582,7 +2582,7 @@ namespace Microsoft.FSharp.Core
       /// Represents an Error or a Failure. The code failed with a value of 'TError representing what went wrong.
       | Error of ErrorValue:'TError
 
-#if !NET8_0_OR_GREATER
+// These attributes only exist in .NET 8 and up.
 namespace System.Runtime.CompilerServices
     open System
     open Microsoft.FSharp.Core
@@ -2613,9 +2613,7 @@ namespace System.Runtime.CompilerServices
     [<AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)>]
     type internal ScopedRefAttribute =
         inherit Attribute
-
         new: unit -> ScopedRefAttribute
-#endif
 
 namespace Microsoft.FSharp.Collections
 

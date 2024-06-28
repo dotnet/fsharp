@@ -4072,7 +4072,7 @@ namespace Microsoft.FSharp.Core
 
     and 'T voption = ValueOption<'T>
 
-#if !NET8_0_OR_GREATER
+// These attributes only exist in .NET 8 and up.
 namespace System.Runtime.CompilerServices
     open System
     open Microsoft.FSharp.Core
@@ -4088,7 +4088,6 @@ namespace System.Runtime.CompilerServices
     [<AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)>]
     type internal ScopedRefAttribute () =
         inherit Attribute ()
-#endif
 
 namespace Microsoft.FSharp.Collections
 
