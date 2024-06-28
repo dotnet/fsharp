@@ -3088,13 +3088,11 @@ and seekReadMethodImpls (ctxt: ILMetadataReader) numTypars tidx =
                         let _tidx = seekReadUntaggedIdx TableNames.TypeDef ctxt mdv &addr
                         simpleIndexCompare tidx _tidx),
                     isSorted ctxt TableNames.MethodImpl,
-                    (fun i ->
-                        let _, b, c = seekReadMethodImplRow ctxt mdv i
-                        b, c)
+                    seekReadMethodImplRow ctxt mdv
                 )
 
             mimpls
-            |> List.map (fun (b, c) ->
+            |> List.map (fun (_, b, c) ->
                 {
                     OverrideBy =
                         let (MethodData(enclTy, cc, nm, argTys, retTy, methInst)) =
