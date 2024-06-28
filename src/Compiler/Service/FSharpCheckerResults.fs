@@ -670,27 +670,31 @@ type internal TypeCheckInfo
         let g = nenv.DisplayEnv.g
         let ty = stripTyEqns g ty
 
-        let isAutoOpen =
+        let isUnionType =
             match ty with
             | TType_app(tcref, _, _) ->
-                (tcref.IsUnionTycon
-                 && (TryFindFSharpBoolAttribute g g.attrib_RequireQualifiedAccessAttribute tcref.Attribs
-                     <> Some true))
-                || TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute tcref.Attribs = Some true
+                tcref.IsUnionTycon
+                && (TryFindFSharpBoolAttribute g g.attrib_RequireQualifiedAccessAttribute tcref.Attribs
+                    <> Some true)
+            | _ -> false
+
+        let isAutoOpen =
+            match ty with
+            | TType_app(tcref, _, _) -> TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute tcref.Attribs = Some true
             | _ -> false
 
         let tyName =
             stringOfTy (nenv.DisplayEnv.UseGenericParameterStyle(GenericParameterStyle.Prefix)) ty
 
-        // if the parent namespace/module was opened, and the type was marked as AutoOpen, ignore the typeName
-        let tyName =
-            if -1 = tyName.IndexOf '.' && isAutoOpen then
-                String.Empty
-            else
-                tyName + "."
-
         getStaticFieldsOfSameTypeInTheType isInMatch nenv ad m ty
         |> List.map (fun i ->
+            // if the parent namespace/module was opened(doesn't contain `.`), and the type was marked as AutoOpen, ignore the typeName
+            let tyName =
+                match i.Item with
+                | Item.UnionCase _ when -1 = tyName.IndexOf '.' && isUnionType -> String.Empty
+                | _ when -1 = tyName.IndexOf '.' && isAutoOpen -> String.Empty
+                | _ -> tyName + "."
+
             let name = $"{tyName}{i.Item.DisplayName}"
 
             let code =
