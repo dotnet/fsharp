@@ -1574,7 +1574,7 @@ let mkClassUnionDef
                     events = emptyILEvents,
                     properties = emptyILProperties,
                     additionalFlags = ILTypeDefAdditionalFlags.None,
-                    customAttrs = emptyILCustomAttrsStored
+                    customAttrs = emptyILCustomAttrs
                 )
                     .WithNestedAccess(cud.UnionCasesAccessibility)
                     .WithAbstract(true)

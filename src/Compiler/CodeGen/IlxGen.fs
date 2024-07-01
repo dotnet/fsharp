@@ -6238,7 +6238,6 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
             mkCompilationMappingAttr g (int SourceConstructFlags.Closure)
         ]
         |> mkILCustomAttrs
-        |> storeILCustomAttrs
 
     let cloTypeDef =
         ILTypeDef(
@@ -6672,7 +6671,6 @@ and GenClosureTypeDefs
     let customAttrs =
         attrs @ [ mkCompilationMappingAttr g (int SourceConstructFlags.Closure) ]
         |> mkILCustomAttrs
-        |> storeILCustomAttrs
 
     let tdef =
         ILTypeDef(
@@ -11379,7 +11377,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                 | TILObjectRepr _ ->
                     let tdef = tycon.ILTyconRawMetadata.WithAccess tyconAccess
 
-                    let customAttrs = ilCustomAttrs |> mkILCustomAttrs |> storeILCustomAttrs
+                    let customAttrs = ilCustomAttrs |> mkILCustomAttrs
 
                     let tdef = tdef.With(customAttrs = customAttrs, genericParams = ilGenParams)
 
@@ -11603,7 +11601,6 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                 ))
                         ]
                         |> mkILCustomAttrs
-                        |> storeILCustomAttrs
 
                     let tdef =
                         ILTypeDef(
