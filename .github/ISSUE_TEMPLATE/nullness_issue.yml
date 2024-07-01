@@ -24,7 +24,7 @@ body:
         - label: Missing nullness warning in a case which can produce nulls (false negative, code uses --checknulls and langversion:preview).
         - label: Breaking change related to older `null` constructs in code not using the checknulls switch.
         - label: Breaking change related to generic code and explicit type constraints (`null`, `not null`).
-        - label: Type inference issue (i.e. code worked without type annotations before, and applying the --checknulls enforces type annotatins).
+        - label: Type inference issue (i.e. code worked without type annotations before, and applying the --checknulls enforces type annotations).
         - label: C#/F# interop issue related to nullness metadata.
         - label: Other (none of the categories above apply).
     validations:
