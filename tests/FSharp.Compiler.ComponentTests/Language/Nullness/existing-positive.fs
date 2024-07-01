@@ -6,19 +6,19 @@ open System.Runtime.CompilerServices
 module Extractions0a =
 
     let x = null
-    let result = (x = "") // expect no warning under any configuration
+    let result = (x = "") //The type 'string' does not support 'null'.
 
 module Extractions0b =
 
     let x = null
     let f (x: 'T, y: 'T) = ()
-    let result = f (x, "")   // expect no warning under any configuration
+    let result = f (x, "")   //The type 'string' does not support 'null'.
 
 module Extractions0d =
 
     let x = null
     let f<'T when 'T : null> (x: 'T, y: 'T) = ()
-    let result = f (x, "")  // expect no warning under any configuration
+    let result = f (x, "")  //The type 'string' does not support 'null'.
 
 module Basics =     
     let x1 : String = null // expect a warning when checknulls is on
@@ -46,7 +46,7 @@ System.Console.WriteLine("a", (null: obj[])) // expect a warning when checknulls
 let f0 line = 
     let add (s:String) = ()
     match line with 
-    | null | "" -> ()
+    | null | "" -> () //The type 'string' does not support 'null'.
     | _ -> add line
 
 module NullConstraintTests =

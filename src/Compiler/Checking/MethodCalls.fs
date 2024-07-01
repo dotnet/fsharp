@@ -480,7 +480,7 @@ let MakeCalledArgs amap m (minfo: MethInfo) minst =
         IsOutArg=isOutArg
         ReflArgInfo=reflArgInfo
         NameOpt=nmOpt
-        CalledArgumentType=calledArgTy })
+        CalledArgumentType= changeWithNullReqTyToVariable amap.g calledArgTy})
 
 /// <summary>
 /// Represents the syntactic matching between a caller of a method and the called method.

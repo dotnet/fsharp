@@ -931,7 +931,6 @@ let mkCacheGeneric lowMem _inbase _nm (sz: int) =
         (fun f x -> f x)
     else
         let mutable cache = null
-
 #if STATISTICS
         let mutable _count = 0
 

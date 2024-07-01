@@ -4,13 +4,18 @@ open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 
-let typeCheckWithStrictNullness cu =
+let withStrictNullness cu =
     cu
     |> withLangVersionPreview
     |> withCheckNulls
     |> withWarnOn 3261
     |> withOptions ["--warnaserror+"]
-    |> compile
+
+let typeCheckWithStrictNullness cu =
+    cu
+    |> withStrictNullness
+    |> typecheck
+
 
 [<FactForNETCOREAPP>]
 let ``Passing null to IlGenerator BeginCatchBlock is fine`` () = 
@@ -29,6 +34,42 @@ type ILGenerator with
 
 let doSomethingAboutIt (ilg:ILGenerator) =
     ilg.BeginCatchBlockAndLog(null)
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<FactForNETCOREAPP>]
+let ``Consuming C# generic API which allows struct and yet uses question mark on the typar`` () = 
+    FSharp """module MyLibrary
+let ec = 
+    { new System.Collections.Generic.IEqualityComparer<int> with
+          member this.Equals(x, y) = (x+0) = (y+0)
+          member this.GetHashCode(obj) = obj * 2}
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<FactForNETCOREAPP>]
+let ``TypeBuilder CreateTypeInfo with an upcast`` () = 
+    FSharp """module MyLibrary
+open System
+open System.Reflection.Emit
+
+let createType (typB:TypeBuilder) : Type=
+    typB.CreateTypeInfo() :> Type
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<FactForNETCOREAPP>]
+let ``CurrentDomain ProcessExit add to event`` () = 
+    FSharp """module MyLibrary
+open System
+
+do System.AppDomain.CurrentDomain.ProcessExit |> Event.add (fun args -> failwith $"{args.GetHashCode()}")
 """
     |> asLibrary
     |> typeCheckWithStrictNullness
@@ -174,7 +215,8 @@ let ``Consumption of nullable C# - no generics, just strings in methods and fiel
     """
     |> asLibrary
     |> withReferences [csharpLib]
-    |> typeCheckWithStrictNullness
+    |> withStrictNullness
+    |> compile
     |> shouldFail
     |> withDiagnostics [
             Error 3261, Line 5, Col 40, Line 5, Col 85, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."

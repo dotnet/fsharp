@@ -663,12 +663,12 @@ type TcGlobals(
       | [_] -> None
       | _ -> TType_tuple (tupInfo, l)  |> Some
 
-  let decodeTupleTyAndNullness tupInfo tinst _nullness = // TODO nullness
+  let decodeTupleTyAndNullness tupInfo tinst _nullness =
       match tryDecodeTupleTy tupInfo tinst with
       | Some ty -> ty
       | None -> failwith "couldn't decode tuple ty"
 
-  let decodeTupleTyAndNullnessIfPossible tcref tupInfo tinst nullness = // TODO nullness
+  let decodeTupleTyAndNullnessIfPossible tcref tupInfo tinst nullness =
       match tryDecodeTupleTy tupInfo tinst with
       | Some ty -> ty
       | None -> TType_app(tcref, tinst, nullness)

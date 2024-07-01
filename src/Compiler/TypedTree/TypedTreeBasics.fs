@@ -192,7 +192,7 @@ let KnownWithoutNull = Nullness.Known NullnessInfo.WithoutNull
 
 let mkTyparTy (tp:Typar) = 
     match tp.Kind with 
-    | TyparKind.Type -> tp.AsType KnownWithoutNull // TODO NULLNESS: check various callers
+    | TyparKind.Type -> tp.AsType KnownWithoutNull
     | TyparKind.Measure -> TType_measure (Measure.Var tp)
 
 // For fresh type variables clear the StaticReq when copying because the requirement will be re-established through the
@@ -236,18 +236,22 @@ let rec stripUnitEqnsAux canShortcut unt =
     | _ -> unt
 
 let combineNullness (nullnessOrig: Nullness) (nullnessNew: Nullness) = 
-    match nullnessOrig.Evaluate() with
-    | NullnessInfo.WithoutNull -> nullnessNew
-    | NullnessInfo.AmbivalentToNull ->
-        match nullnessNew.Evaluate() with
-        | NullnessInfo.WithoutNull -> nullnessOrig
-        | NullnessInfo.AmbivalentToNull -> nullnessOrig
-        | NullnessInfo.WithNull -> nullnessNew
-    | NullnessInfo.WithNull -> 
-        match nullnessNew.Evaluate() with
-        | NullnessInfo.WithoutNull -> nullnessOrig
-        | NullnessInfo.AmbivalentToNull -> nullnessNew
-        | NullnessInfo.WithNull -> nullnessOrig
+    match nullnessOrig, nullnessNew with
+    | Nullness.Variable _, Nullness.Known NullnessInfo.WithoutNull -> 
+        nullnessOrig
+    | _ -> 
+        match nullnessOrig.Evaluate() with
+        | NullnessInfo.WithoutNull -> nullnessNew
+        | NullnessInfo.AmbivalentToNull ->
+            match nullnessNew.Evaluate() with
+            | NullnessInfo.WithoutNull -> nullnessOrig
+            | NullnessInfo.AmbivalentToNull -> nullnessOrig
+            | NullnessInfo.WithNull -> nullnessNew
+        | NullnessInfo.WithNull -> 
+            match nullnessNew.Evaluate() with
+            | NullnessInfo.WithoutNull -> nullnessOrig
+            | NullnessInfo.AmbivalentToNull -> nullnessNew
+            | NullnessInfo.WithNull -> nullnessOrig
 
 let nullnessEquiv (nullnessOrig: Nullness) (nullnessNew: Nullness) = LanguagePrimitives.PhysicalEquality nullnessOrig nullnessNew
 
@@ -265,9 +269,9 @@ let tryAddNullnessToTy nullnessNew (ty:TType) =
             Some ty
         else 
             Some (TType_app (tcr, tinst, nullnessAfter))
-    | TType_ucase _ -> None // TODO NULLNESS
-    | TType_tuple _ -> None // TODO NULLNESS
-    | TType_anon _ -> None // TODO NULLNESS
+    | TType_ucase _ -> None
+    | TType_tuple _ -> None
+    | TType_anon _ -> None
     | TType_fun (d, r, nullnessOrig) ->
         let nullnessAfter = combineNullness nullnessOrig nullnessNew
         if nullnessEquiv nullnessAfter nullnessOrig then
@@ -278,16 +282,19 @@ let tryAddNullnessToTy nullnessNew (ty:TType) =
     | TType_measure _ -> None
 
 let addNullnessToTy (nullness: Nullness) (ty:TType) =
-    match nullness.Evaluate() with
-    | NullnessInfo.WithoutNull -> ty
+    match nullness with
+    | Nullness.Known NullnessInfo.WithoutNull -> ty
+    | Nullness.Variable nv when nv.IsSolved && nv.Evaluate() = NullnessInfo.WithoutNull -> ty
     | _ -> 
     match ty with
     | TType_var (tp, nullnessOrig) -> TType_var (tp, combineNullness nullnessOrig nullness)
-    | TType_app (tcr, tinst, nullnessOrig) -> TType_app (tcr, tinst, combineNullness nullnessOrig nullness)
+    | TType_app (tcr, tinst, nullnessOrig) -> 
+        let tycon = tcr.Deref
+        if tycon.IsStructRecordOrUnionTycon || tycon.IsStructOrEnumTycon then
+            ty
+        else 
+            TType_app (tcr, tinst, combineNullness nullnessOrig nullness)
     | TType_fun (d, r, nullnessOrig) -> TType_fun (d, r, combineNullness nullnessOrig nullness)
-    //| TType_ucase _ -> None // TODO NULLNESS
-    //| TType_tuple _ -> None // TODO NULLNESS
-    //| TType_anon _ -> None // TODO NULLNESS
     | _ -> ty
 
 let rec stripTyparEqnsAux nullness0 canShortcut ty = 
@@ -326,9 +333,6 @@ let replaceNullnessOfTy nullness (ty:TType) =
     | TType_var (tp, _) -> TType_var (tp, nullness)
     | TType_app (tcr, tinst, _) -> TType_app (tcr, tinst, nullness)
     | TType_fun (d, r, _) -> TType_fun (d, r, nullness)
-    //| TType_ucase _ -> None // TODO NULLNESS
-    //| TType_tuple _ -> None // TODO NULLNESS
-    //| TType_anon _ -> None // TODO NULLNESS
     | sty -> sty
 
 /// Detect a use of a nominal type, including type abbreviations.

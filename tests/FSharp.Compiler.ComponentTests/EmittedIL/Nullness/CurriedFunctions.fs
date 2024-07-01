@@ -1,6 +1,6 @@
 module MyTestModule
 
-type Maybe<'T> = 'T | null
+type Maybe<'T when 'T: not struct> = 'T | null
 type MaybeString = string | null
 
 let curried3Func (a:MaybeString) (b:string) (c:int) = (a,b,c)
