@@ -6232,19 +6232,21 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
                 yield fdef
         ]
 
+    let customAttrs =
+        [
+            g.CompilerGeneratedAttribute
+            mkCompilationMappingAttr g (int SourceConstructFlags.Closure)
+        ]
+        |> mkILCustomAttrs
+        |> storeILCustomAttrs
+
     let cloTypeDef =
         ILTypeDef(
             name = ilCloTypeRef.Name,
             layout = ILTypeDefLayout.Auto,
             attributes = enum 0,
             genericParams = ilCloGenericFormals,
-            customAttrs =
-                mkILCustomAttrs (
-                    [
-                        g.CompilerGeneratedAttribute
-                        mkCompilationMappingAttr g (int SourceConstructFlags.Closure)
-                    ]
-                ),
+            customAttrs = customAttrs,
             fields = mkILFields fdefs,
             events = emptyILEvents,
             properties = emptyILProperties,
@@ -6254,7 +6256,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
             implements = ilInterfaceTys,
             implementsCustomAttrs = None,
             extends = Some super,
-            isKnownToBeAttribute = false,
+            additionalFlags = ILTypeDefAdditionalFlags.None,
             securityDecls = emptyILSecurityDecls
         )
             .WithSealed(true)
@@ -6667,13 +6669,18 @@ and GenClosureTypeDefs
         else
             mdefs, []
 
+    let customAttrs =
+        attrs @ [ mkCompilationMappingAttr g (int SourceConstructFlags.Closure) ]
+        |> mkILCustomAttrs
+        |> storeILCustomAttrs
+
     let tdef =
         ILTypeDef(
             name = tref.Name,
             layout = ILTypeDefLayout.Auto,
             attributes = enum 0,
             genericParams = ilGenParams,
-            customAttrs = mkILCustomAttrs (attrs @ [ mkCompilationMappingAttr g (int SourceConstructFlags.Closure) ]),
+            customAttrs = customAttrs,
             fields = mkILFields fdefs,
             events = emptyILEvents,
             properties = emptyILProperties,
@@ -6683,7 +6690,7 @@ and GenClosureTypeDefs
             implements = ilIntfTys,
             implementsCustomAttrs = None,
             extends = Some ext,
-            isKnownToBeAttribute = false,
+            additionalFlags = ILTypeDefAdditionalFlags.None,
             securityDecls = emptyILSecurityDecls
         )
             .WithSealed(true)
@@ -11372,8 +11379,9 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                 | TILObjectRepr _ ->
                     let tdef = tycon.ILTyconRawMetadata.WithAccess tyconAccess
 
-                    let tdef =
-                        tdef.With(customAttrs = mkILCustomAttrs ilCustomAttrs, genericParams = ilGenParams)
+                    let customAttrs = ilCustomAttrs |> mkILCustomAttrs |> storeILCustomAttrs
+
+                    let tdef = tdef.With(customAttrs = customAttrs, genericParams = ilGenParams)
 
                     tdef, None
 
@@ -11413,6 +11421,12 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                     let isKnownToBeAttribute =
                         ExistsSameHeadTypeInHierarchy g cenv.amap m super g.mk_Attribute_ty
 
+                    let additionalFlags =
+                        if isKnownToBeAttribute then
+                            ILTypeDefAdditionalFlags.IsKnownToBeAttribute
+                        else
+                            ILTypeDefAdditionalFlags.None
+
                     let tdef =
                         mkILGenericClass (
                             ilTypeName,
@@ -11440,7 +11454,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             .WithImport(isComInteropTy g thisTy)
                             .With(
                                 methodImpls = mkILMethodImpls methodImpls,
-                                isKnownToBeAttribute = isKnownToBeAttribute,
+                                newAdditionalFlags = additionalFlags,
                                 implementsCustomAttrs = ilIntCustomAttrs
                             )
 
@@ -11577,19 +11591,19 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             ILTypeDefLayout.Auto
 
                     let cattrs =
-                        mkILCustomAttrs (
-                            ilCustomAttrs
-                            @ [
-                                mkCompilationMappingAttr
-                                    g
-                                    (int (
-                                        if hiddenRepr then
-                                            SourceConstructFlags.SumType ||| SourceConstructFlags.NonPublicRepresentation
-                                        else
-                                            SourceConstructFlags.SumType
-                                    ))
-                            ]
-                        )
+                        ilCustomAttrs
+                        @ [
+                            mkCompilationMappingAttr
+                                g
+                                (int (
+                                    if hiddenRepr then
+                                        SourceConstructFlags.SumType ||| SourceConstructFlags.NonPublicRepresentation
+                                    else
+                                        SourceConstructFlags.SumType
+                                ))
+                        ]
+                        |> mkILCustomAttrs
+                        |> storeILCustomAttrs
 
                     let tdef =
                         ILTypeDef(
@@ -11613,7 +11627,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                     else
                                         g.ilg.typ_Object
                                 ),
-                            isKnownToBeAttribute = false,
+                            additionalFlags = ILTypeDefAdditionalFlags.None,
                             securityDecls = emptyILSecurityDecls
                         )
                             .WithLayout(layout)

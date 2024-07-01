@@ -264,7 +264,7 @@ namespace Microsoft.FSharp.Core
     /// interface types.</summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface, AllowMultiple=false)>]  
     [<Sealed>]
     type AllowNullLiteralAttribute =
         inherit Attribute
@@ -3665,8 +3665,8 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="id-example">
         /// <code lang="fsharp">
-        /// id 12     //  Evaulates to 12
-        /// id "abc"  //  Evaulates to "abc"
+        /// id 12     //  Evaluates to 12
+        /// id "abc"  //  Evaluates to "abc"
         /// </code>
         /// </example>
         /// 

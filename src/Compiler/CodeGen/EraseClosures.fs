@@ -579,11 +579,11 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                         extends = Some cenv.mkILTyFuncTy,
                         methods = mkILMethods (ctorMethodDef :: nowApplyMethDef :: nowMethods),
                         fields = mkILFields (mkILCloFldDefs cenv nowFields @ td.Fields.AsList()),
-                        customAttrs = emptyILCustomAttrs,
+                        customAttrs = emptyILCustomAttrsStored,
                         methodImpls = emptyILMethodImpls,
                         properties = emptyILProperties,
                         events = emptyILEvents,
-                        isKnownToBeAttribute = false,
+                        additionalFlags = ILTypeDefAdditionalFlags.None,
                         securityDecls = emptyILSecurityDecls
                     )
                         .WithSpecialName(false)
@@ -714,11 +714,11 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                         extends = Some nowEnvParentClass,
                         methods = mkILMethods (ctorMethodDef :: nowApplyMethDef :: nowMethods),
                         fields = mkILFields (mkILCloFldDefs cenv nowFields @ td.Fields.AsList()),
-                        customAttrs = emptyILCustomAttrs,
+                        customAttrs = emptyILCustomAttrsStored,
                         methodImpls = emptyILMethodImpls,
                         properties = emptyILProperties,
                         events = emptyILEvents,
-                        isKnownToBeAttribute = false,
+                        additionalFlags = ILTypeDefAdditionalFlags.None,
                         securityDecls = emptyILSecurityDecls
                     )
                         .WithHasSecurity(false)

@@ -21,4 +21,20 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="$(XUnitRunnerVersion)" />
     <PackageReference Include="NunitXml.TestLogger" Version="$(NunitXmlTestLoggerVersion)" />
   </ItemGroup>
+
+  <!--
+    When .NET gets built from source, make the SDK aware there are bootstrap packages
+    for Microsoft.NETCore.App.Runtime.<rid> and Microsoft.NETCore.App.Crossgen2.<rid>.
+  -->
+  <ItemGroup Condition="'$(DotNetBuildFromSource)' == 'true'">
+    <KnownRuntimePack Update="Microsoft.NETCore.App">
+      <RuntimePackRuntimeIdentifiers
+        Condition="'%(TargetFramework)' == '$(NetCurrent)'">%(RuntimePackRuntimeIdentifiers);$(NETCoreSdkRuntimeIdentifier)</RuntimePackRuntimeIdentifiers>
+    </KnownRuntimePack>
+    <KnownCrossgen2Pack Update="Microsoft.NETCore.App.Crossgen2">
+      <Crossgen2RuntimeIdentifiers
+        Condition="'%(TargetFramework)' == '$(NetCurrent)'">%(Crossgen2RuntimeIdentifiers);$(NETCoreSdkRuntimeIdentifier)</Crossgen2RuntimeIdentifiers>
+    </KnownCrossgen2Pack>
+  </ItemGroup>
+
 </Project>
