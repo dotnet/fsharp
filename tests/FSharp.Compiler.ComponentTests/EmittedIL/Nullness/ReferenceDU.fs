@@ -8,7 +8,7 @@ type MyDu =
 
 let giveMeLabel () = JustLabel
 
-let createMaybeString (innerValue) = MaybeString innerValue
+let createMaybeString (innerValue:string|null) = MaybeString innerValue
 
 let processNullableDu (x : (MyDu | null)) : string | null =
     match x with

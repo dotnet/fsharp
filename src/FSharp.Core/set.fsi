@@ -231,7 +231,7 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison> =
     interface System.IComparable
     interface System.Collections.IStructuralEquatable
     interface IReadOnlyCollection<'T>
-    override Equals: obj -> bool
+    override Equals: objnull -> bool
 
 namespace Microsoft.FSharp.Collections
 

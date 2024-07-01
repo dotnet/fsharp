@@ -2555,7 +2555,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                 // Check if it's marked unsafe
                 let zeroInitUnsafe = TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute f.FieldAttribs
                 if zeroInitUnsafe = Some true then
-                    if not (TypeHasDefaultValue g m ty) then
+                    if not (TypeHasDefaultValue g m f.FormalType) then
                         errorR(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
 
         // Check type abbreviations

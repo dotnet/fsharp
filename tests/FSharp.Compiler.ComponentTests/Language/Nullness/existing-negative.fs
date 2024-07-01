@@ -1,3 +1,5 @@
+module ExistingNegative
+
 open System
 open System.Diagnostics
 open System.Runtime.CompilerServices
@@ -29,7 +31,7 @@ module DefaultValueTests =
             [<DefaultValue>]
             val mutable Whoops : int * int // This gave an error in F# 4.5 and we expect it to continue to give an error
 
-        [<Struct>]
+        [<Struct;NoComparison;NoEquality>]
         type C6 =
             [<DefaultValue>]
             val mutable Whoops : int -> int // This gave an error in F# 4.5 and we expect it to continue to give an error

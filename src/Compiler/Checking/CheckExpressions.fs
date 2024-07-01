@@ -483,8 +483,9 @@ let UnifyOverallType (cenv: cenv) (env: TcEnv) m overallTy actualTy =
     match overallTy with
     | MustConvertTo(isMethodArg, reqdTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
         let actualTy = tryNormalizeMeasureInType g actualTy
-        let reqdTy = tryNormalizeMeasureInType g reqdTy
-        if AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m reqdTy actualTy then
+        let reqdTy = tryNormalizeMeasureInType g reqdTy       
+        let reqTyForUnification = reqTyForArgumentNullnessInference g actualTy reqdTy           
+        if AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m reqTyForUnification actualTy then
             ()
         else
             // try adhoc type-directed conversions
@@ -1040,6 +1041,7 @@ let TcAddNullnessToType (warn: bool) (cenv: cenv) (env: TcEnv) nullness innerTyC
 
             if not g.compilingFSharpCore || not (isTyparTy g innerTyC) then 
                 AddCxTypeDefnNotSupportsNull env.DisplayEnv cenv.css m NoTrace innerTyC
+                AddCxTypeIsReferenceType env.DisplayEnv cenv.css m NoTrace innerTyC
 
             if not g.compilingFSharpCore && isTyparTy g innerTyC then
                 // A typar might be later infered into a type not supporting `| null|, like tuple or anon.
@@ -2995,7 +2997,7 @@ let TcRuntimeTypeTest isCast isOperator (cenv: cenv) denv m tgtTy srcTy =
         else
             error(Error(FSComp.SR.tcTypeTestErased(NicePrint.minimalStringOfType denv tgtTy, NicePrint.minimalStringOfType denv (stripTyEqnsWrtErasure EraseAll g tgtTy)), m))
     else
-        for ety in getErasedTypes g tgtTy do
+        for ety in getErasedTypes g tgtTy true do
             if isMeasureTy g ety then
                 warning(Error(FSComp.SR.tcTypeTestLosesMeasures(NicePrint.minimalStringOfType denv ety), m))
             else
@@ -5203,6 +5205,7 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
                         | TyparConstraint.IsDelegate _
                         | TyparConstraint.IsEnum _
                         | TyparConstraint.IsNonNullableStruct _
+                        | TyparConstraint.NotSupportsNull _
                         | TyparConstraint.IsUnmanaged _
                         | TyparConstraint.RequiresDefaultConstructor _
                         | TyparConstraint.SimpleChoice _
@@ -5341,6 +5344,7 @@ and TcExprFlex (cenv: cenv) flex compat (desiredTy: TType) (env: TcEnv) tpenv (s
 
     if flex then
         let argTy = NewInferenceType g
+        (destTyparTy g argTy).SetSupportsNullFlex(true)
         if compat then
             (destTyparTy g argTy).SetIsCompatFlex(true)
 
@@ -9628,7 +9632,8 @@ and TcEventItemThen (cenv: cenv) overallTy env tpenv mItem mExprAndItem objDetai
     | None, false -> error (Error (FSComp.SR.tcEventIsNotStatic nm, mItem))
     | _ -> ()
 
-    let delTy = einfo.GetDelegateType(cenv.amap, mItem)
+    // The F# wrappers around events are null safe (impl is in FSharp.Core). Therefore, from an F# perspective, the type of the delegate can be considered Not Null.
+    let delTy = einfo.GetDelegateType(cenv.amap, mItem) |> replaceNullnessOfTy KnownWithoutNull 
     let (SigOfFunctionForDelegate(delInvokeMeth, delArgTys, _, _)) = GetSigOfFunctionForDelegate cenv.infoReader delTy mItem ad
     let objArgs = Option.toList (Option.map fst objDetails)
     MethInfoChecks g cenv.amap true None objArgs env.eAccessRights mItem delInvokeMeth

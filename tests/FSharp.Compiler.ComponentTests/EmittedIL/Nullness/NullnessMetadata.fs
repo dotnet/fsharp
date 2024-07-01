@@ -84,6 +84,12 @@ let ``Custom pipe`` compilation =
     compilation
     |> verifyCompilation DoNotOptimize
 
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SupportsNull.fs"|])>]
+let ``SupportsNull`` compilation =  
+    compilation
+    |> withNoWarn 52
+    |> verifyCompilation DoNotOptimize
+
 
 module Interop  =
     open System.IO

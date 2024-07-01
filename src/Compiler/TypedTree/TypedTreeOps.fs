@@ -1156,30 +1156,30 @@ let isErasedType g ty =
   | _ -> false
 
 // Return all components of this type expression that cannot be tested at runtime
-let rec getErasedTypes g ty = 
+let rec getErasedTypes g ty checkForNullness = 
     let ty = stripTyEqns g ty
     if isErasedType g ty then [ty] else 
     match ty with
     | TType_forall(_, bodyTy) -> 
-        getErasedTypes g bodyTy
+        getErasedTypes g bodyTy checkForNullness
 
     | TType_var (tp, nullness) -> 
-        match nullness.Evaluate() with
-        | NullnessInfo.WithNull -> [ty] // with-null annotations can't be tested at runtime (TODO NULLNESS: for value types Nullable<_> they can be)
+        match checkForNullness, nullness.Evaluate() with
+        | true, NullnessInfo.WithNull -> [ty] // with-null annotations can't be tested at runtime, Nullabe<> is not part of Nullness feature as of now.
         | _ -> if tp.IsErased then [ty] else []
 
     | TType_app (_, b, nullness) ->
-        match nullness.Evaluate() with
-        | NullnessInfo.WithNull -> [ty]
-        | _ -> List.foldBack (fun ty tys -> getErasedTypes g ty @ tys) b []
+        match checkForNullness, nullness.Evaluate() with
+        | true, NullnessInfo.WithNull -> [ty]
+        | _ -> List.foldBack (fun ty tys -> getErasedTypes g ty false @ tys) b []
 
     | TType_ucase(_, b) | TType_anon (_, b) | TType_tuple (_, b) ->
-        List.foldBack (fun ty tys -> getErasedTypes g ty @ tys) b []
+        List.foldBack (fun ty tys -> getErasedTypes g ty false @ tys) b []
 
     | TType_fun (domainTy, rangeTy, nullness) -> 
-        match nullness.Evaluate() with
-        | NullnessInfo.WithNull -> [ty]
-        | _ -> getErasedTypes g domainTy @ getErasedTypes g rangeTy
+        match checkForNullness, nullness.Evaluate() with
+        | true, NullnessInfo.WithNull -> [ty]
+        | _ -> getErasedTypes g domainTy false @ getErasedTypes g rangeTy false
     | TType_measure _ -> 
         [ty]
 
@@ -3515,7 +3515,7 @@ let TryFindLocalizedFSharpStringAttribute g nm attrs =
     | Some(Attrib(_, _, [ AttribStringArg b ], namedArgs, _, _, _)) -> 
         match namedArgs with 
         | ExtractAttribNamedArg "Localize" (AttribBoolArg true) -> 
-            #if PROTO
+            #if PROTO || BUILDING_WITH_LKG
             Some b
             #else
             FSComp.SR.GetTextOpt(b)
@@ -9157,10 +9157,32 @@ let nullnessOfTy g ty =
     |> function
         | TType_app(tcref, _, nullness) ->
             let nullness2 = intrinsicNullnessOfTyconRef g tcref
-            combineNullness nullness nullness2
+            if nullness2 === g.knownWithoutNull then
+                nullness
+            else
+                combineNullness nullness nullness2
         | TType_fun (_, _, nullness) | TType_var (_, nullness) ->
             nullness
         | _ -> g.knownWithoutNull
+
+let changeWithNullReqTyToVariable g reqTy =
+    let sty = stripTyEqns g reqTy
+    match isTyparTy g sty with
+    | false ->
+        match nullnessOfTy g sty with
+        | Nullness.Known NullnessInfo.WithNull -> 
+            reqTy |> replaceNullnessOfTy (NewNullnessVar())
+        | _ -> reqTy
+    | true -> reqTy
+
+/// When calling a null-allowing API, we prefer to infer a without null argument for idiomatic F# code.
+/// That is, unless caller explicitely marks a value (e.g. coming from a function parameter) as WithNull, it should not be infered as such.
+let reqTyForArgumentNullnessInference g actualTy reqTy =
+    // Only change reqd nullness if actualTy is an inference variable
+    match tryDestTyparTy g actualTy with
+    | ValueSome t when t.IsCompilerGenerated && not(t.Constraints |> List.exists(function | TyparConstraint.SupportsNull _ -> true | _ -> false))->
+        changeWithNullReqTyToVariable g reqTy       
+    | _ -> reqTy
 
 /// The new logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValueNew g m ty = 

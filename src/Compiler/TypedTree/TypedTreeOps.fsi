@@ -649,6 +649,10 @@ val tryDestForallTy: TcGlobals -> TType -> Typars * TType
 
 val nullnessOfTy: TcGlobals -> TType -> Nullness
 
+val changeWithNullReqTyToVariable: TcGlobals -> reqTy: TType -> TType
+
+val reqTyForArgumentNullnessInference: TcGlobals -> actualTy: TType -> reqTy: TType -> TType
+
 val isFunTy: TcGlobals -> TType -> bool
 
 val isForallTy: TcGlobals -> TType -> bool
@@ -923,7 +927,7 @@ val anonInfoEquiv: AnonRecdTypeInfo -> AnonRecdTypeInfo -> bool
 val isErasedType: TcGlobals -> TType -> bool
 
 // Return all components (units-of-measure, and types) of this type that would be erased
-val getErasedTypes: TcGlobals -> TType -> TType list
+val getErasedTypes: TcGlobals -> TType -> checkForNullness: bool -> TType list
 
 //-------------------------------------------------------------------------
 // Unit operations

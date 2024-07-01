@@ -32,8 +32,7 @@
   {
     .custom instance void System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
     .field public string propperString
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(string propperString) cil managed
+    .method assembly specialname rtspecialname instance void  .ctor(string propperString) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -87,8 +86,7 @@
     IL_0008:  ret
   } 
 
-  .method public static class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [runtime]System.Tuple`3<string,string,int32>>> 
-          partiallyAplied(string propperString) cil managed
+  .method public static class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [runtime]System.Tuple`3<string,string,int32>>> partiallyAplied(string propperString) cil managed
   {
     .param [0]
     .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8[]) = ( 01 00 06 00 00 00 01 01 01 01 02 01 00 00 ) 
@@ -99,11 +97,11 @@
     IL_0006:  ret
   } 
 
-  .method public static !!b  secondOutOfTriple<a,b,c,d,e>(!!a a,
-                                                          !!b b,
-                                                          !!c c,
-                                                          !!d d,
-                                                          !!e e) cil managed
+  .method public static !!b  secondOutOfTriple<a,class b,c,d,e>(!!a a,
+                                                                !!b b,
+                                                                !!c c,
+                                                                !!d d,
+                                                                !!e e) cil managed
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 03 00 00 00 03 00 00 00 01 00 00 00 01 00 
                                                                                                                     00 00 00 00 ) 
@@ -117,6 +115,10 @@
       .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
     .param type e 
       .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
+    .param [0]
+    .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+    .param [2]
+    .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     
     .maxstack  8
     IL_0000:  ldarg.1
@@ -137,8 +139,7 @@
   .field public uint8[] NullableFlags
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method public specialname rtspecialname 
-          instance void  .ctor(uint8 scalarByteValue) cil managed
+  .method public specialname rtspecialname instance void  .ctor(uint8 scalarByteValue) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -157,8 +158,7 @@
     IL_0016:  ret
   } 
 
-  .method public specialname rtspecialname 
-          instance void  .ctor(uint8[] NullableFlags) cil managed
+  .method public specialname rtspecialname instance void  .ctor(uint8[] NullableFlags) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -181,8 +181,7 @@
   .field public uint8 Flag
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method public specialname rtspecialname 
-          instance void  .ctor(uint8 Flag) cil managed
+  .method public specialname rtspecialname instance void  .ctor(uint8 Flag) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
