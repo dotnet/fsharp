@@ -63,7 +63,7 @@ body:
       description: |
         Provide a small code snippet demonstrating the issue. |
         If referenced code is needed for the repro and cannot be shared (e.g. a private C# nuget package), try to share at least the metadata annotations from the called type+member as seen in `ilspy.exe`. C# compiler produces attributes like `[Nullable]` and `[NullableContext]`, which is what F# compiler tries to load and interpret in C#/F# interop scenarios.
-      value: Code snippet
+      placeholder: Code snippet
     validations:
       required: false
   - type: textarea
@@ -71,6 +71,6 @@ body:
       label: Possible workarounds
       description: |
         Are there any language constructs (typically pattern matching, library constructs, Null/NonNull active patterns, explicit type annotations) allowing the same logic be expressed differently in order to mitigate the experienced nullness issue?
-      value: Possible workaround
+      placeholder: Possible workaround
     validations:
       required: false
