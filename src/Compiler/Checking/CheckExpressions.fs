@@ -5386,7 +5386,7 @@ and CheckForAdjacentListExpression (cenv: cenv) synExpr hpa isInfix delayed (arg
     let g = cenv.g
     // func (arg)[arg2] gives warning that .[ must be used.
     match delayed with
-    | DelayedApp (hpa2, isSugar2, _, arg2, _) :: _ when not isInfix && (hpa = ExprAtomicFlag.NonAtomic) && isAdjacentListExpr isSugar2 hpa2 synExpr arg2 -> 
+    | DelayedApp (hpa2, isSugar2, _, arg2, _) :: _ when not isInfix && (hpa = ExprAtomicFlag.NonAtomic) && isAdjacentListExpr isSugar2 hpa2 (Some synExpr) arg2 -> 
         let mWarning = unionRanges arg.Range arg2.Range
 
         match arg with 
@@ -6493,7 +6493,7 @@ and (|IndexerArgs|) expr =
 and TcIndexerThen (cenv: cenv) env overallTy mWholeExpr mDot tpenv (setInfo: _ option) synLeftExpr indexArgs delayed =
     let leftExpr, leftExprTy, tpenv = TcExprOfUnknownType cenv env tpenv synLeftExpr
     let expandedIndexArgs = ExpandIndexArgs cenv (Some synLeftExpr) indexArgs
-    TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExpr leftExpr leftExprTy expandedIndexArgs indexArgs delayed
+    TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo (Some synLeftExpr) leftExpr leftExprTy expandedIndexArgs indexArgs delayed
 
 // Eliminate GetReverseIndex from index args
 and ExpandIndexArgs (cenv: cenv) (synLeftExprOpt: SynExpr option) indexArgs =
@@ -6547,7 +6547,7 @@ and ExpandIndexArgs (cenv: cenv) (synLeftExprOpt: SynExpr option) indexArgs =
 // However it's not so simple as all that. First "Item" can have a different name according to an attribute in
 // .NET metadata. This means we manually typecheck 'expr and look to see if it has a nominal type. We then
 // do the right thing in each case.
-and TcIndexingThen (cenv: cenv) (env: TcEnv) overallTy mWholeExpr (mDot: range) tpenv setInfo synLeftExpr (expr: Expr) exprTy expandedIndexArgs (indexArgs: SynExpr list) delayed =
+and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprOpt expr exprTy expandedIndexArgs indexArgs delayed =
     let g = cenv.g
     let ad = env.AccessRights
 
@@ -6746,13 +6746,13 @@ and TcIndexingThen (cenv: cenv) (env: TcEnv) overallTy mWholeExpr (mDot: range) 
 
     /// expr1[expr2]
     let mkDelayedIndexedGet indexer =
-        [ DelayedDotLookup([ident (indexer, mWholeExpr)], mWholeExpr)
-          DelayedApp(ExprAtomicFlag.Atomic, true, Some synLeftExpr, parenthesize (tupleIfMultiple expandedIndexArgs), mWholeExpr) ]
+        [ DelayedDotLookup([ident(indexer, mWholeExpr)], mWholeExpr)
+          DelayedApp(ExprAtomicFlag.Atomic, true, synLeftExprOpt, parenthesize (tupleIfMultiple expandedIndexArgs), mWholeExpr) ]
 
     /// expr1[expr2] <- expr3
     let mkDelayedIndexedSet indexer setArg mOfLeftOfSet =
         [ DelayedDotLookup([ident(indexer, mOfLeftOfSet)], mOfLeftOfSet)
-          DelayedApp(ExprAtomicFlag.Atomic, true, Some synLeftExpr, parenthesize (tupleIfMultiple expandedIndexArgs), mOfLeftOfSet)
+          DelayedApp(ExprAtomicFlag.Atomic, true, synLeftExprOpt, parenthesize (tupleIfMultiple expandedIndexArgs), mOfLeftOfSet)
           MakeDelayedSet(setArg, mWholeExpr) ]
 
     /// expr1[expr2..]
@@ -6760,14 +6760,14 @@ and TcIndexingThen (cenv: cenv) (env: TcEnv) overallTy mWholeExpr (mDot: range) 
     /// expr1[expr2..expr3]
     let mkDelayedGetSlice indexer =
         [ DelayedDotLookup([ident(indexer, mWholeExpr)], mWholeExpr)
-          DelayedApp(ExprAtomicFlag.Atomic, true, Some synLeftExpr, parenthesize (SynExpr.Tuple (false, expandedIndexArgs, [], idxRange)), mWholeExpr) ]
+          DelayedApp(ExprAtomicFlag.Atomic, true, synLeftExprOpt, parenthesize (SynExpr.Tuple (false, expandedIndexArgs, [], idxRange)), mWholeExpr) ]
 
     /// expr1[expr2..] <- expr3
     /// expr1[..expr2] <- expr3
     /// expr1[expr2..expr3] <- expr3
     let mkDelayedSetSlice setArg mOfLeftOfSet =
         [ DelayedDotLookup([ident("SetSlice", mOfLeftOfSet)], mOfLeftOfSet)
-          DelayedApp(ExprAtomicFlag.Atomic, true, Some synLeftExpr, parenthesize (SynExpr.Tuple (false, expandedIndexArgs @ [setArg], [], idxRange)), mOfLeftOfSet) ]
+          DelayedApp(ExprAtomicFlag.Atomic, true, synLeftExprOpt, parenthesize (SynExpr.Tuple (false, expandedIndexArgs @ [setArg], [], idxRange)), mOfLeftOfSet) ]
 
     /// Match if we can generate a call to a `Slice` method.
     let (|Sliceable|_|) ((indexArgs, setInfo), exprTy) =
@@ -8481,7 +8481,7 @@ and Propagate (cenv: cenv) (overallTy: OverallTy) (env: TcEnv) tpenv (expr: Appl
                 // expr[..idx1]
                 // expr[idx1..idx2]
                 | SynExpr.ArrayOrListComputed(false, _, _) ->
-                    let isAdjacent = match synLeftExprOpt with Some synLeftExpr -> isAdjacentListExpr isSugar atomicFlag synLeftExpr synArg | None -> false
+                    let isAdjacent = isAdjacentListExpr isSugar atomicFlag synLeftExprOpt synArg
                     if isAdjacent && g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
                         // This is the non-error path
                         ()
@@ -8712,7 +8712,7 @@ and TcNameOfExprResult (cenv: cenv) (lastIdent: Ident) m =
 //-------------------------------------------------------------------------
 
 // leftExpr[idx] gives a warning 
-and isAdjacentListExpr isSugar atomicFlag (synLeftExpr: SynExpr) (synArg: SynExpr) =
+and isAdjacentListExpr isSugar atomicFlag (synLeftExprOpt: SynExpr option) (synArg: SynExpr) =
     not isSugar  &&
     if atomicFlag = ExprAtomicFlag.Atomic then
         match synArg with
@@ -8720,10 +8720,13 @@ and isAdjacentListExpr isSugar atomicFlag (synLeftExpr: SynExpr) (synArg: SynExp
         | SynExpr.ArrayOrListComputed (false, _, _) -> true
         | _ -> false
     else
-        match synArg with
-        | SynExpr.ArrayOrList (false, _, _)
-        | SynExpr.ArrayOrListComputed (false, _, _) ->
-            synLeftExpr.Range.IsAdjacentTo synArg.Range 
+        match synLeftExprOpt with
+        | Some synLeftExpr -> 
+            match synArg with
+            | SynExpr.ArrayOrList (false, _, _)
+            | SynExpr.ArrayOrListComputed (false, _, _) ->
+                synLeftExpr.Range.IsAdjacentTo synArg.Range 
+            | _ -> false
         | _ -> false
 
 // Check f x
@@ -8801,12 +8804,12 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
     | ValueNone ->
         // Type-directed invokables
 
-        match synLeftExprOpt, synArg with
+        match synArg with
         // leftExpr[idx]
         // leftExpr[idx] <- expr2
-        | Some synLeftExpr, SynExpr.ArrayOrListComputed(false, IndexerArgs indexArgs, m) 
+        | SynExpr.ArrayOrListComputed(false, IndexerArgs indexArgs, m) 
               when 
-                isAdjacentListExpr isSugar atomicFlag synLeftExpr synArg && 
+                isAdjacentListExpr isSugar atomicFlag synLeftExprOpt synArg && 
                 g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot ->
 
             let expandedIndexArgs = ExpandIndexArgs cenv synLeftExprOpt indexArgs
@@ -8814,13 +8817,13 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
                 match delayed with 
                 | DelayedSet(expr3, _) :: rest -> Some (expr3, unionRanges leftExpr.Range synArg.Range), rest
                 | _ -> None, delayed
-            TcIndexingThen cenv env overallTy mExprAndArg m tpenv setInfo synLeftExpr leftExpr.Expr exprTy expandedIndexArgs indexArgs delayed
+            TcIndexingThen cenv env overallTy mExprAndArg m tpenv setInfo synLeftExprOpt leftExpr.Expr exprTy expandedIndexArgs indexArgs delayed
 
         // Perhaps 'leftExpr' is a computation expression builder, and 'arg' is '{ ... }' or '{ }':
         // leftExpr { comp }
         // leftExpr { }
-        | _, SynExpr.ComputationExpr (false, comp, _m)
-        | _, SynExpr.Record (None, None, EmptyFieldListAsUnit comp, _m) ->
+        | SynExpr.ComputationExpr (false, comp, _m)
+        | SynExpr.Record (None, None, EmptyFieldListAsUnit comp, _m) ->
             let bodyOfCompExpr, tpenv = cenv.TcComputationExpression cenv env overallTy tpenv (mLeftExpr, leftExpr.Expr, exprTy, comp)
             TcDelayed cenv overallTy env tpenv mExprAndArg (MakeApplicableExprNoFlex cenv bodyOfCompExpr) (tyOfExpr g bodyOfCompExpr) ExprAtomicFlag.NonAtomic delayed
 
