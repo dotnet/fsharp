@@ -2084,6 +2084,10 @@ val mkCallGenericEqualityWithComparerOuter: TcGlobals -> range -> TType -> Expr 
 
 val mkCallGenericHashWithComparerOuter: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
+val mkCallMaxOperator: g: TcGlobals -> m: range -> ty: TType -> e1: Expr -> e2: Expr -> Expr
+
+val mkCallMinOperator: g: TcGlobals -> m: range -> ty: TType -> e1: Expr -> e2: Expr -> Expr
+
 val mkCallEqualsOperator: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 val mkCallNotEqualsOperator: TcGlobals -> range -> TType -> Expr -> Expr -> Expr

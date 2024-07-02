@@ -7747,6 +7747,10 @@ let mkCallGenericEqualityWithComparerOuter (g: TcGlobals) m ty comp e1 e2 = mkAp
 
 let mkCallGenericHashWithComparerOuter (g: TcGlobals) m ty comp e1 = mkApps g (typedExprForIntrinsic g m g.generic_hash_withc_outer_info, [[ty]], [comp;e1], m)
 
+let mkCallMaxOperator (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.max_operator_info, [[ty]], [ e1;e2 ], m)
+
+let mkCallMinOperator (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.min_operator_info, [[ty]], [ e1;e2 ], m)
+
 let mkCallEqualsOperator (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.equals_operator_info, [[ty]], [ e1;e2 ], m)
 
 let mkCallNotEqualsOperator (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.not_equals_operator, [[ty]], [ e1;e2 ], m)

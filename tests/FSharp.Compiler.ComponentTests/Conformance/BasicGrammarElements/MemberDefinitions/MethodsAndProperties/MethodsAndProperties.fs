@@ -668,3 +668,379 @@ type GenericIndexer<'indexerArgs,'indexerOutput,'indexerInput>() =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3581, Line 9, Col 17, Line 9, Col 21, "An indexed property's getter and setter must have the same type. Property 'Item' has getter of type ''indexerOutput' but setter of type ''indexerInput'.")
+
+    module Slicing =
+        let [<Literal>] SupportedVersion = "preview"
+
+        /// Slicing tests for types in the System namespace that
+        /// expose a Slice method (but not a GetSlice method).
+        module SystemTypes =
+            [<Fact>]
+            let ``readOnlySpan[start..finish]``() =
+                Fsx """
+                open System
+
+                let f () =
+                    let span = "abc123".AsSpan ()
+                    let actual = span[2..3]
+                    let expected = span.Slice (2, 2) // "c1"
+
+                    if not (expected.SequenceEqual actual) then
+                        failwith $"Expected '{expected.ToString ()}' but got '{actual.ToString ()}'."
+
+                f ()
+                """
+                |> withLangVersion SupportedVersion
+                |> runFsi
+                |> shouldSucceed
+
+            [<Fact>]
+            let ``readOnlySpan[start..]``() =
+                Fsx """
+                open System
+
+                let f () =
+                    let span = "abc123".AsSpan ()
+                    let actual = span[2..]
+                    let expected = span.Slice (2, span.Length - 2) // "c123"
+
+                    if not (expected.SequenceEqual actual) then
+                        failwith $"Expected '{expected.ToString ()}' but got '{actual.ToString ()}'."
+
+                f ()
+                """
+                |> withLangVersion SupportedVersion
+                |> runFsi
+                |> shouldSucceed
+
+            [<Fact>]
+            let ``readOnlySpan[..finish]``() =
+                Fsx """
+                open System
+
+                let f () =
+                    let span = "abc123".AsSpan ()
+                    let actual = span[..3]
+                    let expected = span.Slice (0, 4) // "abc1"
+
+                    if not (expected.SequenceEqual actual) then
+                        failwith $"Expected '{expected.ToString ()}' but got '{actual.ToString ()}'."
+
+                f ()
+                """
+                |> withLangVersion SupportedVersion
+                |> runFsi
+                |> shouldSucceed
+
+            [<Fact>]
+            let ``readOnlySpan[start () .. finish ()]``() =
+                Fsx """
+                open System
+
+                let f () =
+                    let effects = ResizeArray ()
+                    let start () = effects.Add "start"; 2
+                    let finish () = effects.Add "finish"; 3
+                    let span = "abc123".AsSpan ()
+                    let actual = span[start () .. finish ()]
+                    let expected = span.Slice (2, 2) // "c1"
+
+                    if not (expected.SequenceEqual actual) then
+                        failwith $"Expected '{expected.ToString ()}' but got '{actual.ToString ()}'."
+
+                    match List.ofSeq effects with
+                    | ["start"; "finish"] -> ()
+                    | actual -> failwith $"Expected '[\"start\"; \"finish\"]' but got '%A{actual}'."
+
+                f ()
+                """
+                |> withLangVersion SupportedVersion
+                |> runFsi
+                |> shouldSucceed
+
+            [<Fact>]
+            let ``readOnlySpan[start () ..]``() =
+                Fsx """
+                open System
+
+                let f () =
+                    let effects = ResizeArray ()
+                    let start () = effects.Add "start"; 2
+                    let span = "abc123".AsSpan ()
+                    let actual = span[start () ..]
+                    let expected = span.Slice (2, span.Length - 2) // "c123"
+
+                    if not (expected.SequenceEqual actual) then
+                        failwith $"Expected '{expected.ToString ()}' but got '{actual.ToString ()}'."
+
+                    match List.ofSeq effects with
+                    | ["start"] -> ()
+                    | actual -> failwith $"Expected '[\"start\"]' but got '%A{actual}'."
+
+                f ()
+                """
+                |> withLangVersion SupportedVersion
+                |> runFsi
+                |> shouldSucceed
+
+            [<Fact>]
+            let ``readOnlySpan[.. finish ()]``() =
+                Fsx """
+                open System
+
+                let f () =
+                    let effects = ResizeArray ()
+                    let finish () = effects.Add "finish"; 3
+                    let span = "abc123".AsSpan ()
+                    let actual = span[.. finish ()]
+                    let expected = span.Slice (0, 4) // "abc1"
+
+                    if not (expected.SequenceEqual actual) then
+                        failwith $"Expected '{expected.ToString ()}' but got '{actual.ToString ()}'."
+
+                    match List.ofSeq effects with
+                    | ["finish"] -> ()
+                    | actual -> failwith $"Expected '[\"finish\"]' but got '%A{actual}'."
+
+                f ()
+                """
+                |> withLangVersion SupportedVersion
+                |> runFsi
+                |> shouldSucceed
+
+            [<Fact>]
+            let ``(readOnlySpan ())[start..finish]``() =
+                Fsx """
+                open System
+
+                let effects = ResizeArray ()
+
+                let span () =
+                    effects.Add "span"
+                    "abc123".AsSpan ()
+
+                let f () =
+                    let actual = (span ())[2..3]
+                    let expected = "c1".AsSpan ()
+
+                    if not (expected.SequenceEqual actual) then
+                        failwith $"Expected '{expected.ToString ()}' but got '{actual.ToString ()}'."
+
+                    match List.ofSeq effects with
+                    | ["span"] -> ()
+                    | actual -> failwith $"Expected '[\"span\"]' but got '%A{actual}'."
+
+                f ()
+                """
+                |> withLangVersion SupportedVersion
+                |> runFsi
+                |> shouldSucceed
+
+            [<Fact>]
+            let ``(readOnlySpan ())[^start..^finish]``() =
+                Fsx """
+                open System
+
+                let effects = ResizeArray ()
+
+                let span () =
+                    effects.Add "span"
+                    "abc123".AsSpan ()
+
+                let f () =
+                    let actual = (span ())[^4..^3]
+                    let expected = "c1".AsSpan ()
+
+                    if not (expected.SequenceEqual actual) then
+                        failwith $"Expected '{expected.ToString ()}' but got '{actual.ToString ()}'."
+
+                    match List.ofSeq effects with
+                    | ["span"] -> ()
+                    | actual -> failwith $"Expected '[\"span\"]' but got '%A{actual}'."
+
+                f ()
+                """
+                |> withLangVersion SupportedVersion
+                |> runFsi
+                |> shouldSucceed
+
+        /// Slicing tests for types that expose both Slice and GetSlice methods.
+        module CustomTypes =
+            [<Fact>]
+            let ``sliceAndGetSlice[start..finish]``() =
+                Fsx """
+                open System
+
+                let effects = ResizeArray ()
+                
+                type T =
+                    | T
+
+                    member _.Length = 99
+
+                    member this.GetSlice (start, finish) =
+                        let start = defaultArg start 0
+                        let finish = defaultArg finish this.Length
+                        effects.Add "GetSlice"
+                        [start..finish]
+                
+                    member _.Slice (start, length) =
+                        effects.Add "Slice"
+                        [start..length - start]
+                
+                let f () =
+                    let actual = T[2..3]
+                    let expected = [2..3]
+
+                    if expected <> actual then
+                        failwith $"Expected '%A{expected}' but got '%A{actual}'."
+
+                    match List.ofSeq effects with
+                    | ["GetSlice"] -> ()
+                    | actual -> failwith $"Expected '\"GetSlice\"' but got '%A{actual}'."
+
+                f ()
+                """
+                |> withLangVersion SupportedVersion
+                |> runFsi
+                |> shouldSucceed
+
+            [<Fact>]
+            let ``justSlice[start..finish]``() =
+                Fsx """
+                open System
+
+                let effects = ResizeArray ()
+                
+                type T (xs : int array) =
+                    do effects.Add "T"
+
+                    member _.Length = xs.Length
+
+                    member _.Slice (start, length) =
+                        effects.Add "Slice"
+                        xs.AsSpan().Slice(start, length).ToArray ()
+                
+                let f () =
+                    let xs = [|1..10|]
+                    let actual = (T xs)[2..3]
+                    let expected = xs[2..3]
+
+                    if expected <> actual then
+                        failwith $"Expected '%A{expected}' but got '%A{actual}'."
+
+                    match List.ofSeq effects with
+                    | ["T"; "Slice"] -> ()
+                    | actual -> failwith $"Expected '[\"T\"; \"Slice\"]' but got '%A{actual}'."
+
+                f ()
+                """
+                |> withLangVersion SupportedVersion
+                |> runFsi
+                |> shouldSucceed
+
+            [<Fact>]
+            let ``justSlice_UnitsOfMeasure[start..finish]``() =
+                Fsx """
+                open System
+
+                type [<Measure>] m
+
+                let effects = ResizeArray ()
+                
+                type T (xs : int array) =
+                    do effects.Add "T"
+
+                    member _.Length = xs.Length
+
+                    member _.Slice (start : int<m>, length : int<m>) =
+                        effects.Add "Slice"
+                        xs.AsSpan().Slice(int start, int length).ToArray ()
+                
+                let f () =
+                    let xs = [|1..10|]
+                    let actual = (T xs)[2<m>..3<m>]
+                    let expected = xs[2..3]
+
+                    if expected <> actual then
+                        failwith $"Expected '%A{expected}' but got '%A{actual}'."
+
+                    match List.ofSeq effects with
+                    | ["T"; "Slice"] -> ()
+                    | actual -> failwith $"Expected '[\"T\"; \"Slice\"]' but got '%A{actual}'."
+
+                f ()
+                """
+                |> withLangVersion SupportedVersion
+                |> runFsi
+                |> shouldSucceed
+
+            [<Fact>]
+            let ``justGetSlice[start..finish]``() =
+                Fsx """
+                open System
+
+                let effects = ResizeArray ()
+                
+                type T =
+                    | T
+
+                    member _.Length = 99
+
+                    member this.GetSlice (start, finish) =
+                        let start = defaultArg start 0
+                        let finish = defaultArg finish this.Length
+                        effects.Add "GetSlice"
+                        [start..finish]
+                
+                let f () =
+                    let actual = T[2..3]
+                    let expected = [2..3]
+
+                    if expected <> actual then
+                        failwith $"Expected '%A{expected}' but got '%A{actual}'."
+
+                    match List.ofSeq effects with
+                    | ["GetSlice"] -> ()
+                    | actual -> failwith $"Expected '\"GetSlice\"' but got '%A{actual}'."
+
+                f ()
+                """
+                |> withLangVersion SupportedVersion
+                |> runFsi
+                |> shouldSucceed
+
+            [<Fact>]
+            let ``extensionSlice[start..finish]``() =
+                Fsx """
+                open System
+
+                module M =
+                    type T =
+                        { Xs : int array }
+
+                        member this.Length = this.Xs.Length
+
+                open M
+
+                module N =
+                    type T with
+                        member this.Slice (start, length) =
+                            { Xs = this.Xs.AsSpan().Slice(start, length).ToArray() }
+
+                open N
+
+                let f () =
+                    let xs = [|1..10|]
+                    let t = { Xs = xs }
+                    let actual = t[2..3]
+                    let expected = xs[2..3]
+
+                    if expected <> actual.Xs then
+                        failwith $"Expected '%A{expected}' but got '%A{actual}'."
+
+                f ()
+                """
+                |> withLangVersion SupportedVersion
+                |> runFsi
+                |> shouldSucceed
