@@ -247,6 +247,10 @@ System.Configuration.ConfigurationManager.AppSettings.Item "Environment" <- "LOC
 #if NETSTANDARD
     [<Fact>]
     member _.``ML - use assembly with native dependencies``() =
+        // Skip test on arm64, because there is not an arm64 netive library
+        if RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then
+            ()
+        else
         let code = @"
 #r ""nuget:Microsoft.ML,version=1.4.0-preview""
 #r ""nuget:Microsoft.ML.AutoML,version=0.16.0-preview""
