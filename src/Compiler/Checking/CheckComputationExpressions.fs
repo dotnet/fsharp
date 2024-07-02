@@ -252,7 +252,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
         // An unparameterized custom builder, e.g., `query`, `async`.
         | Expr.Val(vref, _, m)
         // A parameterized custom builder, e.g., `builder<…>`, `builder ()`.
-        | Expr.App(funcExpr = Expr.Val(vref, _, m)) ->
+        | Expr.App(funcExpr = Expr.Val(vref, _, m)) when vref.IsConstructor || not (vref.IsMember || vref.IsExtensionMember) ->
             let item = Item.CustomBuilder(vref.DisplayName, vref)
             CallNameResolutionSink cenv.tcSink (m, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
             valRefEq cenv.g vref cenv.g.query_value_vref
