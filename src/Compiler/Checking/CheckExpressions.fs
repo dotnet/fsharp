@@ -6666,6 +6666,9 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
     /// The `GetSlice` method name.
     let GetSlice = "GetSlice"
 
+    /// The `SetSlice` method name.
+    let SetSlice = "SetSlice"
+
     /// The `Slice` method name.
     let Slice = "Slice"
 
@@ -6735,35 +6738,35 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
 
     let parenthesize synExpr = SynExpr.Paren (synExpr, range0, None, idxRange)
 
-    let tupleIfMultiple expandedIndexArgs =
-        match expandedIndexArgs with
-        | [arg] -> arg
-        | args -> SynExpr.Tuple (false, args, [], idxRange)
+    let tupleIfMultiple decodedIndexArgs expandedIndexArgs =
+        match decodedIndexArgs, expandedIndexArgs with
+        | [IndexArgItem _], [arg] -> arg
+        | _, args -> SynExpr.Tuple (false, args, [], idxRange)
 
     /// expr1[expr2]
-    let mkDelayedIndexedGet indexer =
+    let mkDelayedIndexedGet indexer indexArgs =
         [ DelayedDotLookup([ident(indexer, mWholeExpr)], mWholeExpr)
-          DelayedApp(ExprAtomicFlag.Atomic, true, synLeftExprOpt, parenthesize (tupleIfMultiple expandedIndexArgs), mWholeExpr) ]
+          DelayedApp(ExprAtomicFlag.Atomic, true, synLeftExprOpt, parenthesize (tupleIfMultiple indexArgs expandedIndexArgs), mWholeExpr) ]
 
     /// expr1[expr2] <- expr3
-    let mkDelayedIndexedSet indexer setArg mOfLeftOfSet =
+    let mkDelayedIndexedSet indexer indexArgs setArg mOfLeftOfSet =
         [ DelayedDotLookup([ident(indexer, mOfLeftOfSet)], mOfLeftOfSet)
-          DelayedApp(ExprAtomicFlag.Atomic, true, synLeftExprOpt, parenthesize (tupleIfMultiple expandedIndexArgs), mOfLeftOfSet)
+          DelayedApp(ExprAtomicFlag.Atomic, true, synLeftExprOpt, parenthesize (tupleIfMultiple indexArgs expandedIndexArgs), mOfLeftOfSet)
           MakeDelayedSet(setArg, mWholeExpr) ]
 
     /// expr1[expr2..]
     /// expr1[..expr2]
     /// expr1[expr2..expr3]
-    let mkDelayedGetSlice indexer =
+    let mkDelayedGetSlice indexer indexArgs =
         [ DelayedDotLookup([ident(indexer, mWholeExpr)], mWholeExpr)
-          DelayedApp(ExprAtomicFlag.Atomic, true, synLeftExprOpt, parenthesize (SynExpr.Tuple (false, expandedIndexArgs, [], idxRange)), mWholeExpr) ]
+          DelayedApp(ExprAtomicFlag.Atomic, true, synLeftExprOpt, parenthesize (tupleIfMultiple indexArgs expandedIndexArgs), mWholeExpr) ]
 
     /// expr1[expr2..] <- expr3
     /// expr1[..expr2] <- expr3
     /// expr1[expr2..expr3] <- expr3
-    let mkDelayedSetSlice setArg mOfLeftOfSet =
-        [ DelayedDotLookup([ident("SetSlice", mOfLeftOfSet)], mOfLeftOfSet)
-          DelayedApp(ExprAtomicFlag.Atomic, true, synLeftExprOpt, parenthesize (SynExpr.Tuple (false, expandedIndexArgs @ [setArg], [], idxRange)), mOfLeftOfSet) ]
+    let mkDelayedSetSlice indexArgs setArg mOfLeftOfSet =
+        [ DelayedDotLookup([ident(SetSlice, mOfLeftOfSet)], mOfLeftOfSet)
+          DelayedApp(ExprAtomicFlag.Atomic, true, synLeftExprOpt, parenthesize (tupleIfMultiple indexArgs (expandedIndexArgs @ [setArg])), mOfLeftOfSet) ]
 
     /// Match if we can generate a call to a `Slice` method.
     let (|Sliceable|_|) ((indexArgs, setInfo), exprTy) =
@@ -6774,9 +6777,9 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
 
             /// Match if the given expression is or is equivalent to System.Int32,
             /// ignoring units of measure if present.
-            let (|Int32|_|) expr =
-                let expr, tpenv = TcExpr cenv (MustEqual (NewInferenceType g)) env tpenv expr
-                if typeEquivAux EraseMeasures g (tyOfExpr g expr) g.int32_ty then Some (Int32 (expr, tpenv))
+            let (|Int32|_|) synExpr =
+                let expr, ty, tpenv = TcExprOfUnknownType cenv env tpenv synExpr
+                if typeEquivAux EraseMeasures g ty g.int32_ty then Some (Int32 (expr, tpenv))
                 else None
 
             match indexArgs with
@@ -6963,7 +6966,9 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
     let propagateThenTcDelayed tpenv expr exprTy delayed =
         PropagateThenTcDelayed cenv overallTy env tpenv mDot (MakeApplicableExprNoFlex cenv expr) exprTy ExprAtomicFlag.Atomic delayed
 
-    match (DecodeIndexArgs cenv indexArgs, setInfo), exprTy with
+    let decodedIndexArgs = DecodeIndexArgs cenv indexArgs
+
+    match (decodedIndexArgs, setInfo), exprTy with
     // Look for FSharp.Core array and string indexing/slicing helpers.
     | (_, Array) & (ArrayIndexerOrSlicer (path, meth, args), _)
     | (_, String) & (StringIndexerOrSlicer (path, meth, args), _) -> tcArrayOrStringIndexing (path, meth, args)
@@ -6971,11 +6976,11 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
     // Look for an indexer property or method, or delay lookup while assuming `Item`.
     | (Indexing, Getting), Indexable indexer
     | (Indexing, Getting), (Array | Nominal) & PossiblyIndexable indexer ->
-        propagateThenTcDelayed tpenv expr exprTy (mkDelayedIndexedGet indexer @ delayed)
+        propagateThenTcDelayed tpenv expr exprTy (mkDelayedIndexedGet indexer decodedIndexArgs @ delayed)
 
     // Look for `GetSlice`.
     | (Slicing, Getting), Nominal & GetSliceable slicer ->
-        propagateThenTcDelayed tpenv expr exprTy (mkDelayedGetSlice slicer @ delayed)
+        propagateThenTcDelayed tpenv expr exprTy (mkDelayedGetSlice slicer decodedIndexArgs @ delayed)
 
     // In the absence of `GetSlice`, look for `Slice`.
     | ((Slicing, Getting), Nominal) & Sliceable (tpenv, expr, exprTy) ->
@@ -6983,16 +6988,16 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
 
     // In the immediate absence of either, delay lookup while assuming `GetSlice`.
     | (Slicing, Getting), PossiblyGetSliceable slicer ->
-        propagateThenTcDelayed tpenv expr exprTy (mkDelayedGetSlice slicer @ delayed)
+        propagateThenTcDelayed tpenv expr exprTy (mkDelayedGetSlice slicer decodedIndexArgs @ delayed)
 
     // Look for an indexer property or method, or delay lookup while assuming `Item`.
     | (Indexing, Setting (setArg, mOfLeftOfSet)), Indexable indexer
     | (Indexing, Setting (setArg, mOfLeftOfSet)), (Array | Nominal) & PossiblyIndexable indexer ->
-        propagateThenTcDelayed tpenv expr exprTy (mkDelayedIndexedSet indexer setArg mOfLeftOfSet @ delayed)
+        propagateThenTcDelayed tpenv expr exprTy (mkDelayedIndexedSet indexer decodedIndexArgs setArg mOfLeftOfSet @ delayed)
 
     // Delay lookup of `SetSlice`.
     | (Slicing, Setting (setArg, mOfLeftOfSet)), (Array | Nominal) ->
-        propagateThenTcDelayed tpenv expr exprTy (mkDelayedSetSlice setArg mOfLeftOfSet @ delayed)
+        propagateThenTcDelayed tpenv expr exprTy (mkDelayedSetSlice decodedIndexArgs setArg mOfLeftOfSet @ delayed)
 
     | _ ->
         // deprecated constrained lookup
