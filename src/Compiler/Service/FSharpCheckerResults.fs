@@ -1361,7 +1361,8 @@ type internal TypeCheckInfo
                     match r.Item with
                     | Item.Types(_, ty :: _) when equals r.Range typeNameRange && isAppTy g ty ->
                         let superTy =
-                            (tcrefOfAppTy g ty).TypeContents.tcaug_super |> Option.defaultValue g.obj_ty
+                            (tcrefOfAppTy g ty).TypeContents.tcaug_super
+                            |> Option.defaultValue g.obj_ty_noNulls
 
                         Some(ty, superTy)
                     | _ -> None)
