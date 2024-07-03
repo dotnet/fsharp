@@ -5209,6 +5209,7 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
                         | TyparConstraint.IsUnmanaged _
                         | TyparConstraint.RequiresDefaultConstructor _
                         | TyparConstraint.SimpleChoice _
+                        | TyparConstraint.NotSupportsNull _
                         | TyparConstraint.SupportsNull _ -> false))
 
             let caseRetTy =

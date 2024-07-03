@@ -1534,6 +1534,7 @@ FSharp.Compiler.AbstractIL.IL+ILType: System.String QualifiedName
 FSharp.Compiler.AbstractIL.IL+ILType: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILType: System.String get_BasicQualifiedName()
 FSharp.Compiler.AbstractIL.IL+ILType: System.String get_QualifiedName()
+FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean CanContainExtensionMethods
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean HasSecurity
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean IsAbstract
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean IsClass
@@ -1547,6 +1548,7 @@ FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean IsSerializable
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean IsSpecialName
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean IsStruct
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean IsStructOrEnum
+FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean get_CanContainExtensionMethods()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean get_HasSecurity()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean get_IsAbstract()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean get_IsClass()
@@ -1578,7 +1580,7 @@ FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILPropertyDefs Properties
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILPropertyDefs get_Properties()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILSecurityDecls SecurityDecls
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILSecurityDecls get_SecurityDecls()
-FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDef With(Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Reflection.TypeAttributes], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILType]], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef]], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILType]], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILMethodDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILTypeDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILFieldDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILMethodImplDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILEventDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILPropertyDefs], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILAttributes], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILSecurityDecls], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[FSharp.Compiler.AbstractIL.IL+ILAttributesStored,System.Int32]]]])
+FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDef With(Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Reflection.TypeAttributes], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILType]], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef]], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILType]], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILMethodDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILTypeDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILFieldDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILMethodImplDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILEventDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILPropertyDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILTypeDefAdditionalFlags], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILAttributes], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILSecurityDecls], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[FSharp.Compiler.AbstractIL.IL+ILAttributesStored,System.Int32]]]])
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDefAccess Access
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDefAccess get_Access()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDefLayout Layout
@@ -1600,7 +1602,7 @@ FSharp.Compiler.AbstractIL.IL+ILTypeDef: System.Reflection.TypeAttributes get_At
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: System.String Name
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: System.String get_Name()
-FSharp.Compiler.AbstractIL.IL+ILTypeDef: Void .ctor(System.String, System.Reflection.TypeAttributes, ILTypeDefLayout, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILType], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[FSharp.Compiler.AbstractIL.IL+ILAttributesStored,System.Int32]]], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILType], ILMethodDefs, ILTypeDefs, ILFieldDefs, ILMethodImplDefs, ILEventDefs, ILPropertyDefs, Boolean, ILSecurityDecls, ILAttributes)
+FSharp.Compiler.AbstractIL.IL+ILTypeDef: Void .ctor(System.String, System.Reflection.TypeAttributes, ILTypeDefLayout, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILType], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[FSharp.Compiler.AbstractIL.IL+ILAttributesStored,System.Int32]]], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILType], ILMethodDefs, ILTypeDefs, ILFieldDefs, ILMethodImplDefs, ILEventDefs, ILPropertyDefs, ILTypeDefAdditionalFlags, ILSecurityDecls, ILAttributes)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess+Nested: ILMemberAccess Item
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess+Nested: ILMemberAccess get_Item()
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess+Tags: Int32 Nested
@@ -1631,6 +1633,10 @@ FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess: Int32 GetHashCode(System.Collecti
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess: Int32 Tag
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess: Int32 get_Tag()
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess: System.String ToString()
+FSharp.Compiler.AbstractIL.IL+ILTypeDefAdditionalFlags: ILTypeDefAdditionalFlags CanContainExtensionMethods
+FSharp.Compiler.AbstractIL.IL+ILTypeDefAdditionalFlags: ILTypeDefAdditionalFlags IsKnownToBeAttribute
+FSharp.Compiler.AbstractIL.IL+ILTypeDefAdditionalFlags: ILTypeDefAdditionalFlags None
+FSharp.Compiler.AbstractIL.IL+ILTypeDefAdditionalFlags: Int32 value__
 FSharp.Compiler.AbstractIL.IL+ILTypeDefKind+Tags: Int32 Class
 FSharp.Compiler.AbstractIL.IL+ILTypeDefKind+Tags: Int32 Delegate
 FSharp.Compiler.AbstractIL.IL+ILTypeDefKind+Tags: Int32 Enum
@@ -1910,6 +1916,7 @@ FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILThisConvention
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILType
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILTypeDef
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess
+FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILTypeDefAdditionalFlags
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILTypeDefKind
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILTypeDefs
@@ -1923,6 +1930,9 @@ FSharp.Compiler.AbstractIL.IL: ILAttributes emptyILCustomAttrs
 FSharp.Compiler.AbstractIL.IL: ILAttributes get_emptyILCustomAttrs()
 FSharp.Compiler.AbstractIL.IL: ILAttributes mkILCustomAttrs(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILAttribute])
 FSharp.Compiler.AbstractIL.IL: ILAttributes mkILCustomAttrsFromArray(ILAttribute[])
+FSharp.Compiler.AbstractIL.IL: ILAttributesStored emptyILCustomAttrsStored
+FSharp.Compiler.AbstractIL.IL: ILAttributesStored get_emptyILCustomAttrsStored()
+FSharp.Compiler.AbstractIL.IL: ILAttributesStored mkILCustomAttrsComputed(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.AbstractIL.IL+ILAttribute[]])
 FSharp.Compiler.AbstractIL.IL: ILAttributesStored storeILCustomAttrs(ILAttributes)
 FSharp.Compiler.AbstractIL.IL: ILEventDefs emptyILEvents
 FSharp.Compiler.AbstractIL.IL: ILEventDefs get_emptyILEvents()

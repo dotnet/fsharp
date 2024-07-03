@@ -4675,7 +4675,7 @@ withPatternClauses:
       { let mBar = rhs parseState 1 |> Some
         $2 mBar }
 
-  | barCanBeRightBeforeNull barCanBeRightBeforeNull patternClauses
+  | BAR barCanBeRightBeforeNull patternClauses
      { let mBar1 = rhs parseState 1
        let mBar2 = rhs parseState 2
        reportParseErrorAt mBar2 (FSComp.SR.parsExpectingPattern ())
@@ -4716,7 +4716,7 @@ patternClauses:
        fun mBar ->
            (SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, { ArrowRange = Some mArrow; BarRange = mBar }) :: clauses), mLast }
 
-  | patternAndGuard patternResult barCanBeRightBeforeNull barCanBeRightBeforeNull patternClauses
+  | patternAndGuard patternResult BAR barCanBeRightBeforeNull patternClauses
      { let pat, guard = $1
        let mArrow, resultExpr = $2
        let mBar1 = rhs parseState 3
