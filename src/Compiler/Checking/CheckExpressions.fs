@@ -6660,6 +6660,15 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
         | [] -> None
         | matchingMembers -> choose matchingMembers
 
+    /// Try to find an instance getter with the given name and return type.
+    let tryFindInstanceGetter name exprTy retTy =
+        TryFindIntrinsicPropInfo cenv.infoReader mWholeExpr env.AccessRights name exprTy
+        |> List.tryFind (fun propInfo ->
+            not propInfo.IsStatic
+            && propInfo.HasGetter
+            && propInfo.GetterMethod.IsNullary
+            && typeEquivAux EraseMeasures g retTy (propInfo.GetterMethod.GetFSharpReturnType(cenv.amap, mWholeExpr, [])))
+
     /// The `Item` property name.
     let Item = "Item"
 
@@ -6675,14 +6684,17 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
     /// The `Length` property name.
     let Length = "Length"
 
+    /// The `Count` property name.
+    let Count = "Count"
+
     /// Try to find a `GetSlice` method.
-    /// If we have a `GetSlice` method, we don't need a `Length` getter.
+    /// If we have a `GetSlice` method, we don't need a `Length` or `Count` getter.
     let tryFindGetSlice exprTy =
         exprTy
         |> tryFindMember (tryFindMatchingMeths GetSlice (fun _ -> Some GetSlice))
 
     /// Try to find a `Slice` method with a single 2-tuple parameter.
-    /// If we have a `Slice` method, we also need a `Length` getter.
+    /// If we have a `Slice` method, we also need a `Length` or `Count` getter.
     let tryFindSlice exprTy =
         exprTy
         |> tryFindMember (tryFindMatchingMeths Slice (List.tryPick (fun slice ->
@@ -6690,8 +6702,8 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
             | [[_; _] as tys] when tys |> List.forall (typeEquivAux EraseMeasures g g.int32_ty) -> Some slice
             | _ -> None)))
         |> Option.bind (fun sliceOverloads ->
-            // TODO: What about Length: int<m>?
-            TryFindFSharpSignatureInstanceGetterProperty cenv env expr.Range Length exprTy [g.int32_ty]
+            tryFindInstanceGetter Length exprTy g.int32_ty
+            |> Option.orElseWith (fun () -> tryFindInstanceGetter Count exprTy g.int32_ty)
             |> Option.map (fun getLength -> sliceOverloads, getLength.GetterMethod))
 
     /// Whether the syntactic arguments are
