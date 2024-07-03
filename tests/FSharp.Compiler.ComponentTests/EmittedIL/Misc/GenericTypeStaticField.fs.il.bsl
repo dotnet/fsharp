@@ -17,12 +17,12 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.assembly
+.mresource public FSharpSignatureCompressedData.assembly
 {
   
   
 }
-.mresource public FSharpOptimizationData.assembly
+.mresource public FSharpOptimizationCompressedData.assembly
 {
   
   
@@ -49,8 +49,7 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field static assembly class assembly/Foo`1<!a> theInstance
     .field static assembly int32 init@2
-    .method public specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method public specialname rtspecialname instance void  .ctor() cil managed
     {
       
       .maxstack  8
@@ -61,8 +60,7 @@
       IL_0008:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  8
@@ -74,8 +72,7 @@
       IL_0012:  ret
     } 
 
-    .method public specialname static class assembly/Foo`1<!a> 
-            get_Instance() cil managed
+    .method public specialname static class assembly/Foo`1<!a> get_Instance() cil managed
     {
       
       .maxstack  8
@@ -108,8 +105,7 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field static assembly class assembly/Bar`2<!a,!b> theInstance
     .field static assembly int32 'init@6-1'
-    .method public specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method public specialname rtspecialname instance void  .ctor() cil managed
     {
       
       .maxstack  8
@@ -120,8 +116,7 @@
       IL_0008:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  8
@@ -133,8 +128,7 @@
       IL_0012:  ret
     } 
 
-    .method public specialname static class assembly/Bar`2<!a,!b> 
-            get_Instance() cil managed
+    .method public specialname static class assembly/Bar`2<!a,!b> get_Instance() cil managed
     {
       
       .maxstack  8

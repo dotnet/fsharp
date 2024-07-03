@@ -17,12 +17,12 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.assembly
+.mresource public FSharpSignatureCompressedData.assembly
 {
   
   
 }
-.mresource public FSharpOptimizationData.assembly
+.mresource public FSharpOptimizationCompressedData.assembly
 {
   
   
@@ -47,8 +47,7 @@
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-    .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
-            f4() cil managed
+    .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f4() cil managed
     {
       
       .maxstack  5

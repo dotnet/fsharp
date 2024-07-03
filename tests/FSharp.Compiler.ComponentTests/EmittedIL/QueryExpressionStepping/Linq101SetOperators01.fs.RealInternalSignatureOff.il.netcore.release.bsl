@@ -26,12 +26,12 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.assembly
+.mresource public FSharpSignatureCompressedData.assembly
 {
   
   
 }
-.mresource public FSharpOptimizationData.assembly
+.mresource public FSharpOptimizationCompressedData.assembly
 {
   
   
@@ -89,8 +89,7 @@
       IL_001b:  ret
     } 
 
-    .method public strict virtual instance int32 
-            GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
+    .method public strict virtual instance int32 GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
     {
       
       .maxstack  6
@@ -166,8 +165,7 @@
       IL_0093:  ret
     } 
 
-    .method public strict virtual instance void 
-            Close() cil managed
+    .method public strict virtual instance void Close() cil managed
     {
       
       .maxstack  6
@@ -248,8 +246,7 @@
       IL_007b:  ret
     } 
 
-    .method public strict virtual instance bool 
-            get_CheckClose() cil managed
+    .method public strict virtual instance bool get_CheckClose() cil managed
     {
       
       .maxstack  8
@@ -285,8 +282,7 @@
       IL_002f:  ret
     } 
 
-    .method public strict virtual instance int32 
-            get_LastGenerated() cil managed
+    .method public strict virtual instance int32 get_LastGenerated() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -297,8 +293,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<int32> 
-            GetFreshEnumerator() cil managed
+    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<int32> GetFreshEnumerator() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -319,8 +314,7 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>
   {
     .field static assembly initonly class assembly/'Pipe #2 input at line 21@22-1' @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -331,8 +325,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> 
-            Invoke(class [Utils]Utils/Product _arg1) cil managed
+    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> Invoke(class [Utils]Utils/Product _arg1) cil managed
     {
       
       .maxstack  5
@@ -345,8 +338,7 @@
       IL_000a:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10
@@ -394,8 +386,7 @@
       IL_001b:  ret
     } 
 
-    .method public strict virtual instance int32 
-            GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<string>& next) cil managed
+    .method public strict virtual instance int32 GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<string>& next) cil managed
     {
       
       .maxstack  7
@@ -471,8 +462,7 @@
       IL_009f:  ret
     } 
 
-    .method public strict virtual instance void 
-            Close() cil managed
+    .method public strict virtual instance void Close() cil managed
     {
       
       .maxstack  6
@@ -553,8 +543,7 @@
       IL_007b:  ret
     } 
 
-    .method public strict virtual instance bool 
-            get_CheckClose() cil managed
+    .method public strict virtual instance bool get_CheckClose() cil managed
     {
       
       .maxstack  8
@@ -590,8 +579,7 @@
       IL_002f:  ret
     } 
 
-    .method public strict virtual instance string 
-            get_LastGenerated() cil managed
+    .method public strict virtual instance string get_LastGenerated() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -602,8 +590,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<string> 
-            GetFreshEnumerator() cil managed
+    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<string> GetFreshEnumerator() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -624,8 +611,7 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>
   {
     .field static assembly initonly class assembly/'productFirstChars@32-1' @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -636,8 +622,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> 
-            Invoke(class [Utils]Utils/Product _arg1) cil managed
+    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> Invoke(class [Utils]Utils/Product _arg1) cil managed
     {
       
       .maxstack  5
@@ -650,8 +635,7 @@
       IL_000a:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10
@@ -699,8 +683,7 @@
       IL_001b:  ret
     } 
 
-    .method public strict virtual instance int32 
-            GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<char>& next) cil managed
+    .method public strict virtual instance int32 GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<char>& next) cil managed
     {
       
       .maxstack  7
@@ -778,8 +761,7 @@
       IL_00a5:  ret
     } 
 
-    .method public strict virtual instance void 
-            Close() cil managed
+    .method public strict virtual instance void Close() cil managed
     {
       
       .maxstack  6
@@ -860,8 +842,7 @@
       IL_007b:  ret
     } 
 
-    .method public strict virtual instance bool 
-            get_CheckClose() cil managed
+    .method public strict virtual instance bool get_CheckClose() cil managed
     {
       
       .maxstack  8
@@ -897,8 +878,7 @@
       IL_002f:  ret
     } 
 
-    .method public strict virtual instance char 
-            get_LastGenerated() cil managed
+    .method public strict virtual instance char get_LastGenerated() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -909,8 +889,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<char> 
-            GetFreshEnumerator() cil managed
+    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<char> GetFreshEnumerator() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -931,8 +910,7 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Customer,class [runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Customer>>
   {
     .field static assembly initonly class assembly/'customerFirstChars@38-1' @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -943,8 +921,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Customer> 
-            Invoke(class [Utils]Utils/Customer _arg1) cil managed
+    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Customer> Invoke(class [Utils]Utils/Customer _arg1) cil managed
     {
       
       .maxstack  5
@@ -957,8 +934,7 @@
       IL_000a:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10
@@ -1006,8 +982,7 @@
       IL_001b:  ret
     } 
 
-    .method public strict virtual instance int32 
-            GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<char>& next) cil managed
+    .method public strict virtual instance int32 GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<char>& next) cil managed
     {
       
       .maxstack  7
@@ -1085,8 +1060,7 @@
       IL_00a5:  ret
     } 
 
-    .method public strict virtual instance void 
-            Close() cil managed
+    .method public strict virtual instance void Close() cil managed
     {
       
       .maxstack  6
@@ -1167,8 +1141,7 @@
       IL_007b:  ret
     } 
 
-    .method public strict virtual instance bool 
-            get_CheckClose() cil managed
+    .method public strict virtual instance bool get_CheckClose() cil managed
     {
       
       .maxstack  8
@@ -1204,8 +1177,7 @@
       IL_002f:  ret
     } 
 
-    .method public strict virtual instance char 
-            get_LastGenerated() cil managed
+    .method public strict virtual instance char get_LastGenerated() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -1216,8 +1188,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<char> 
-            GetFreshEnumerator() cil managed
+    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<char> GetFreshEnumerator() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -1234,8 +1205,7 @@
 
   } 
 
-  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
-          get_factorsOf300() cil managed
+  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> get_factorsOf300() cil managed
   {
     
     .maxstack  8
@@ -1243,8 +1213,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
-          get_uniqueFactors() cil managed
+  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> get_uniqueFactors() cil managed
   {
     
     .maxstack  8
@@ -1252,8 +1221,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> 
-          get_products() cil managed
+  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> get_products() cil managed
   {
     
     .maxstack  8
@@ -1261,8 +1229,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> 
-          get_categoryNames() cil managed
+  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> get_categoryNames() cil managed
   {
     
     .maxstack  8
@@ -1270,8 +1237,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> 
-          get_customers() cil managed
+  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> get_customers() cil managed
   {
     
     .maxstack  8
@@ -1279,8 +1245,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static class [runtime]System.Collections.Generic.IEnumerable`1<char> 
-          get_productFirstChars() cil managed
+  .method public specialname static class [runtime]System.Collections.Generic.IEnumerable`1<char> get_productFirstChars() cil managed
   {
     
     .maxstack  8
@@ -1288,8 +1253,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static class [runtime]System.Collections.Generic.IEnumerable`1<char> 
-          get_customerFirstChars() cil managed
+  .method public specialname static class [runtime]System.Collections.Generic.IEnumerable`1<char> get_customerFirstChars() cil managed
   {
     
     .maxstack  8

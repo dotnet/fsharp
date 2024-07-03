@@ -17,12 +17,12 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.assembly
+.mresource public FSharpSignatureCompressedData.assembly
 {
   
   
 }
-.mresource public FSharpOptimizationData.assembly
+.mresource public FSharpOptimizationCompressedData.assembly
 {
   
   
@@ -49,8 +49,7 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field assembly string x
     .field assembly string x@8
-    .method public specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method public specialname rtspecialname instance void  .ctor() cil managed
     {
       
       .maxstack  8
@@ -67,8 +66,7 @@
       IL_001e:  ret
     } 
 
-    .method public hidebysig instance string 
-            M() cil managed
+    .method public hidebysig instance string M() cil managed
     {
       
       .maxstack  4
@@ -84,8 +82,7 @@
       IL_0013:  ret
     } 
 
-    .method assembly hidebysig instance string 
-            g() cil managed
+    .method assembly hidebysig instance string g() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -101,8 +98,7 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
   {
     .field static assembly initonly class assembly/g@13 @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -113,8 +109,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit 
-            Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar0) cil managed
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar0) cil managed
     {
       
       .maxstack  8
@@ -129,8 +124,7 @@
       IL_0021:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10
@@ -141,8 +135,7 @@
 
   } 
 
-  .method public static class [runtime]System.Tuple`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> 
-          f<a>(!!a x) cil managed
+  .method public static class [runtime]System.Tuple`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> f<a>(!!a x) cil managed
   {
     
     .maxstack  5

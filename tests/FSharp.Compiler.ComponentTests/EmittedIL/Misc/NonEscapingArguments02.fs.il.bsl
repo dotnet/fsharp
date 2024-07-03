@@ -17,12 +17,12 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.assembly
+.mresource public FSharpSignatureCompressedData.assembly
 {
   
   
 }
-.mresource public FSharpOptimizationData.assembly
+.mresource public FSharpOptimizationCompressedData.assembly
 {
   
   
@@ -48,8 +48,7 @@
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field assembly int32 size
-    .method public specialname rtspecialname 
-            instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!t> somelist) cil managed
+    .method public specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!t> somelist) cil managed
     {
       
       .maxstack  8
@@ -64,8 +63,7 @@
       IL_0014:  ret
     } 
 
-    .method public hidebysig specialname 
-            instance int32  get_Size() cil managed
+    .method public hidebysig specialname instance int32  get_Size() cil managed
     {
       
       .maxstack  8

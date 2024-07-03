@@ -17,12 +17,12 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.assembly
+.mresource public FSharpSignatureCompressedData.assembly
 {
   
   
 }
-.mresource public FSharpOptimizationData.assembly
+.mresource public FSharpOptimizationCompressedData.assembly
 {
   
   
@@ -68,13 +68,13 @@
     IL_0007:  ldc.i4.8
     IL_0008:  newobj     instance void class [runtime]System.Tuple`1<int32>::.ctor(!0)
     IL_000d:  newobj     instance void class [runtime]System.Tuple`8<int32,int32,int32,int32,int32,int32,int32,class [runtime]System.Tuple`1<int32>>::.ctor(!0,
-                                                                                                                                                              !1,
-                                                                                                                                                              !2,
-                                                                                                                                                              !3,
-                                                                                                                                                              !4,
-                                                                                                                                                              !5,
-                                                                                                                                                              !6,
-                                                                                                                                                              !7)
+                                                                                                                                                                          !1,
+                                                                                                                                                                          !2,
+                                                                                                                                                                          !3,
+                                                                                                                                                                          !4,
+                                                                                                                                                                          !5,
+                                                                                                                                                                          !6,
+                                                                                                                                                                          !7)
     IL_0012:  pop
     IL_0013:  ret
   } 

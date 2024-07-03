@@ -17,12 +17,12 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.assembly
+.mresource public FSharpSignatureCompressedData.assembly
 {
   
   
 }
-.mresource public FSharpOptimizationData.assembly
+.mresource public FSharpOptimizationCompressedData.assembly
 {
   
   
@@ -61,7 +61,7 @@
     IL_0000:  ldc.i4.1
     IL_0001:  ldc.i4.2
     IL_0002:  newobj     instance void class [runtime]System.Tuple`2<int32,int32>::.ctor(!0,
-                                                                                          !1)
+                                                                                                !1)
     IL_0007:  pop
     IL_0008:  ret
   } 

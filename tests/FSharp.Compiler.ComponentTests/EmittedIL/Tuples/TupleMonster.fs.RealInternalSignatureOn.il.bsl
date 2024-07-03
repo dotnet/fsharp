@@ -17,12 +17,12 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.assembly
+.mresource public FSharpSignatureCompressedData.assembly
 {
   
   
 }
-.mresource public FSharpOptimizationData.assembly
+.mresource public FSharpOptimizationCompressedData.assembly
 {
   
   
@@ -85,34 +85,34 @@
     IL_0030:  ldc.i4.s   121
     IL_0032:  ldc.i4.s   122
     IL_0034:  newobj     instance void class [runtime]System.Tuple`5<char,char,char,char,char>::.ctor(!0,
-                                                                                                       !1,
-                                                                                                       !2,
-                                                                                                       !3,
-                                                                                                       !4)
+                                                                                                             !1,
+                                                                                                             !2,
+                                                                                                             !3,
+                                                                                                             !4)
     IL_0039:  newobj     instance void class [runtime]System.Tuple`8<char,char,char,char,char,char,char,class [runtime]System.Tuple`5<char,char,char,char,char>>::.ctor(!0,
-                                                                                                                                                                          !1,
-                                                                                                                                                                          !2,
-                                                                                                                                                                          !3,
-                                                                                                                                                                          !4,
-                                                                                                                                                                          !5,
-                                                                                                                                                                          !6,
-                                                                                                                                                                          !7)
+                                                                                                                                                                                      !1,
+                                                                                                                                                                                      !2,
+                                                                                                                                                                                      !3,
+                                                                                                                                                                                      !4,
+                                                                                                                                                                                      !5,
+                                                                                                                                                                                      !6,
+                                                                                                                                                                                      !7)
     IL_003e:  newobj     instance void class [runtime]System.Tuple`8<char,char,char,char,char,char,char,class [runtime]System.Tuple`8<char,char,char,char,char,char,char,class [runtime]System.Tuple`5<char,char,char,char,char>>>::.ctor(!0,
-                                                                                                                                                                                                                                             !1,
-                                                                                                                                                                                                                                             !2,
-                                                                                                                                                                                                                                             !3,
-                                                                                                                                                                                                                                             !4,
-                                                                                                                                                                                                                                             !5,
-                                                                                                                                                                                                                                             !6,
-                                                                                                                                                                                                                                             !7)
+                                                                                                                                                                                                                                                               !1,
+                                                                                                                                                                                                                                                               !2,
+                                                                                                                                                                                                                                                               !3,
+                                                                                                                                                                                                                                                               !4,
+                                                                                                                                                                                                                                                               !5,
+                                                                                                                                                                                                                                                               !6,
+                                                                                                                                                                                                                                                               !7)
     IL_0043:  newobj     instance void class [runtime]System.Tuple`8<char,char,char,char,char,char,char,class [runtime]System.Tuple`8<char,char,char,char,char,char,char,class [runtime]System.Tuple`8<char,char,char,char,char,char,char,class [runtime]System.Tuple`5<char,char,char,char,char>>>>::.ctor(!0,
-                                                                                                                                                                                                                                                                                                                !1,
-                                                                                                                                                                                                                                                                                                                !2,
-                                                                                                                                                                                                                                                                                                                !3,
-                                                                                                                                                                                                                                                                                                                !4,
-                                                                                                                                                                                                                                                                                                                !5,
-                                                                                                                                                                                                                                                                                                                !6,
-                                                                                                                                                                                                                                                                                                                !7)
+                                                                                                                                                                                                                                                                                                                                        !1,
+                                                                                                                                                                                                                                                                                                                                        !2,
+                                                                                                                                                                                                                                                                                                                                        !3,
+                                                                                                                                                                                                                                                                                                                                        !4,
+                                                                                                                                                                                                                                                                                                                                        !5,
+                                                                                                                                                                                                                                                                                                                                        !6,
+                                                                                                                                                                                                                                                                                                                                        !7)
     IL_0048:  pop
     IL_0049:  ret
   } 

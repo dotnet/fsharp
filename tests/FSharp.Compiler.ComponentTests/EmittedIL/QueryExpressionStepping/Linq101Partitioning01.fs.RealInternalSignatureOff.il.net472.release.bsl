@@ -12,7 +12,7 @@
 .assembly extern netstandard
 {
   .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         
-  .ver 2:0:0:0
+  .ver 2:1:0:0
 }
 .assembly assembly
 {
@@ -26,12 +26,12 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.assembly
+.mresource public FSharpSignatureCompressedData.assembly
 {
   
   
 }
-.mresource public FSharpOptimizationData.assembly
+.mresource public FSharpOptimizationCompressedData.assembly
 {
   
   
@@ -89,8 +89,7 @@
       IL_001b:  ret
     } 
 
-    .method public strict virtual instance int32 
-            GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
+    .method public strict virtual instance int32 GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
     {
       
       .maxstack  6
@@ -166,8 +165,7 @@
       IL_0093:  ret
     } 
 
-    .method public strict virtual instance void 
-            Close() cil managed
+    .method public strict virtual instance void Close() cil managed
     {
       
       .maxstack  6
@@ -248,8 +246,7 @@
       IL_007b:  ret
     } 
 
-    .method public strict virtual instance bool 
-            get_CheckClose() cil managed
+    .method public strict virtual instance bool get_CheckClose() cil managed
     {
       
       .maxstack  8
@@ -285,8 +282,7 @@
       IL_002f:  ret
     } 
 
-    .method public strict virtual instance int32 
-            get_LastGenerated() cil managed
+    .method public strict virtual instance int32 get_LastGenerated() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -297,8 +293,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<int32> 
-            GetFreshEnumerator() cil managed
+    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<int32> GetFreshEnumerator() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -342,8 +337,7 @@
       IL_0014:  ret
     } 
 
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [runtime]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,object> 
-            Invoke(class [Utils]Utils/Order _arg2) cil managed
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [runtime]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,object> Invoke(class [Utils]Utils/Order _arg2) cil managed
     {
       
       .maxstack  7
@@ -371,8 +365,7 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
+    .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -386,8 +379,7 @@
       IL_000d:  ret
     } 
 
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [runtime]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [runtime]System.Collections.IEnumerable> 
-            Invoke(class [Utils]Utils/Customer _arg1) cil managed
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [runtime]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [runtime]System.Collections.IEnumerable> Invoke(class [Utils]Utils/Customer _arg1) cil managed
     {
       
       .maxstack  8
@@ -418,8 +410,7 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [runtime]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,bool>
   {
     .field static assembly initonly class assembly/'Pipe #2 input at line 19@22-2' @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -430,8 +421,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance bool 
-            Invoke(class [runtime]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order> tupledArg) cil managed
+    .method public strict virtual instance bool Invoke(class [runtime]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order> tupledArg) cil managed
     {
       
       .maxstack  6
@@ -451,8 +441,7 @@
       IL_001e:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10
@@ -467,8 +456,7 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [runtime]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [runtime]System.Tuple`3<string,int32,valuetype [runtime]System.DateTime>>
   {
     .field static assembly initonly class assembly/'Pipe #2 input at line 19@23-3' @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -479,8 +467,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Tuple`3<string,int32,valuetype [runtime]System.DateTime> 
-            Invoke(class [runtime]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order> tupledArg) cil managed
+    .method public strict virtual instance class [runtime]System.Tuple`3<string,int32,valuetype [runtime]System.DateTime> Invoke(class [runtime]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order> tupledArg) cil managed
     {
       
       .maxstack  7
@@ -504,8 +491,7 @@
       IL_0025:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10
@@ -553,8 +539,7 @@
       IL_001b:  ret
     } 
 
-    .method public strict virtual instance int32 
-            GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
+    .method public strict virtual instance int32 GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
     {
       
       .maxstack  6
@@ -630,8 +615,7 @@
       IL_0093:  ret
     } 
 
-    .method public strict virtual instance void 
-            Close() cil managed
+    .method public strict virtual instance void Close() cil managed
     {
       
       .maxstack  6
@@ -712,8 +696,7 @@
       IL_007b:  ret
     } 
 
-    .method public strict virtual instance bool 
-            get_CheckClose() cil managed
+    .method public strict virtual instance bool get_CheckClose() cil managed
     {
       
       .maxstack  8
@@ -749,8 +732,7 @@
       IL_002f:  ret
     } 
 
-    .method public strict virtual instance int32 
-            get_LastGenerated() cil managed
+    .method public strict virtual instance int32 get_LastGenerated() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -761,8 +743,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<int32> 
-            GetFreshEnumerator() cil managed
+    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<int32> GetFreshEnumerator() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -806,8 +787,7 @@
       IL_0014:  ret
     } 
 
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [runtime]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,object> 
-            Invoke(class [Utils]Utils/Order _arg2) cil managed
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [runtime]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,object> Invoke(class [Utils]Utils/Order _arg2) cil managed
     {
       
       .maxstack  7
@@ -835,8 +815,7 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
+    .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -850,8 +829,7 @@
       IL_000d:  ret
     } 
 
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [runtime]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [runtime]System.Collections.IEnumerable> 
-            Invoke(class [Utils]Utils/Customer _arg1) cil managed
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [runtime]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [runtime]System.Collections.IEnumerable> Invoke(class [Utils]Utils/Customer _arg1) cil managed
     {
       
       .maxstack  8
@@ -882,8 +860,7 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [runtime]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,bool>
   {
     .field static assembly initonly class assembly/'Pipe #4 input at line 35@38-2' @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -894,8 +871,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance bool 
-            Invoke(class [runtime]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order> tupledArg) cil managed
+    .method public strict virtual instance bool Invoke(class [runtime]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order> tupledArg) cil managed
     {
       
       .maxstack  6
@@ -915,8 +891,7 @@
       IL_001e:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10
@@ -931,8 +906,7 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [runtime]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [runtime]System.Tuple`3<string,int32,valuetype [runtime]System.DateTime>>
   {
     .field static assembly initonly class assembly/'Pipe #4 input at line 35@39-3' @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -943,8 +917,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Tuple`3<string,int32,valuetype [runtime]System.DateTime> 
-            Invoke(class [runtime]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order> tupledArg) cil managed
+    .method public strict virtual instance class [runtime]System.Tuple`3<string,int32,valuetype [runtime]System.DateTime> Invoke(class [runtime]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order> tupledArg) cil managed
     {
       
       .maxstack  7
@@ -968,8 +941,7 @@
       IL_0025:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10
@@ -1017,8 +989,7 @@
       IL_001b:  ret
     } 
 
-    .method public strict virtual instance int32 
-            GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
+    .method public strict virtual instance int32 GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
     {
       
       .maxstack  6
@@ -1094,8 +1065,7 @@
       IL_0093:  ret
     } 
 
-    .method public strict virtual instance void 
-            Close() cil managed
+    .method public strict virtual instance void Close() cil managed
     {
       
       .maxstack  6
@@ -1176,8 +1146,7 @@
       IL_007b:  ret
     } 
 
-    .method public strict virtual instance bool 
-            get_CheckClose() cil managed
+    .method public strict virtual instance bool get_CheckClose() cil managed
     {
       
       .maxstack  8
@@ -1213,8 +1182,7 @@
       IL_002f:  ret
     } 
 
-    .method public strict virtual instance int32 
-            get_LastGenerated() cil managed
+    .method public strict virtual instance int32 get_LastGenerated() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -1225,8 +1193,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<int32> 
-            GetFreshEnumerator() cil managed
+    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<int32> GetFreshEnumerator() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -1247,8 +1214,7 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>
   {
     .field static assembly initonly class assembly/'Pipe #5 input at line 44@46-1' @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -1259,8 +1225,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance bool 
-            Invoke(int32 n) cil managed
+    .method public strict virtual instance bool Invoke(int32 n) cil managed
     {
       
       .maxstack  8
@@ -1270,8 +1235,7 @@
       IL_0004:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10
@@ -1319,8 +1283,7 @@
       IL_001b:  ret
     } 
 
-    .method public strict virtual instance int32 
-            GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
+    .method public strict virtual instance int32 GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
     {
       
       .maxstack  6
@@ -1396,8 +1359,7 @@
       IL_0093:  ret
     } 
 
-    .method public strict virtual instance void 
-            Close() cil managed
+    .method public strict virtual instance void Close() cil managed
     {
       
       .maxstack  6
@@ -1478,8 +1440,7 @@
       IL_007b:  ret
     } 
 
-    .method public strict virtual instance bool 
-            get_CheckClose() cil managed
+    .method public strict virtual instance bool get_CheckClose() cil managed
     {
       
       .maxstack  8
@@ -1515,8 +1476,7 @@
       IL_002f:  ret
     } 
 
-    .method public strict virtual instance int32 
-            get_LastGenerated() cil managed
+    .method public strict virtual instance int32 get_LastGenerated() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -1527,8 +1487,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<int32> 
-            GetFreshEnumerator() cil managed
+    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<int32> GetFreshEnumerator() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -1549,8 +1508,7 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>
   {
     .field static assembly initonly class assembly/'Pipe #6 input at line 51@53-1' @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -1561,8 +1519,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance bool 
-            Invoke(int32 n) cil managed
+    .method public strict virtual instance bool Invoke(int32 n) cil managed
     {
       
       .maxstack  8
@@ -1576,8 +1533,7 @@
       IL_0009:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10
@@ -1588,8 +1544,7 @@
 
   } 
 
-  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
-          get_numbers() cil managed
+  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> get_numbers() cil managed
   {
     
     .maxstack  8
@@ -1597,8 +1552,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
-          get_first3Numbers() cil managed
+  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> get_first3Numbers() cil managed
   {
     
     .maxstack  8
@@ -1606,8 +1560,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> 
-          get_customers() cil managed
+  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> get_customers() cil managed
   {
     
     .maxstack  8
@@ -1615,8 +1568,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static class [runtime]System.Tuple`3<string,int32,valuetype [runtime]System.DateTime>[] 
-          get_WAOrders() cil managed
+  .method public specialname static class [runtime]System.Tuple`3<string,int32,valuetype [runtime]System.DateTime>[] get_WAOrders() cil managed
   {
     
     .maxstack  8
@@ -1624,8 +1576,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
-          get_allButFirst4Numbers() cil managed
+  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> get_allButFirst4Numbers() cil managed
   {
     
     .maxstack  8
@@ -1633,8 +1584,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`3<string,int32,valuetype [runtime]System.DateTime>> 
-          get_WAOrders2() cil managed
+  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [runtime]System.Tuple`3<string,int32,valuetype [runtime]System.DateTime>> get_WAOrders2() cil managed
   {
     
     .maxstack  8
@@ -1642,8 +1592,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
-          get_firstNumbersLessThan6() cil managed
+  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> get_firstNumbersLessThan6() cil managed
   {
     
     .maxstack  8
@@ -1651,8 +1600,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
-          get_allButFirst3Numbers() cil managed
+  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> get_allButFirst3Numbers() cil managed
   {
     
     .maxstack  8

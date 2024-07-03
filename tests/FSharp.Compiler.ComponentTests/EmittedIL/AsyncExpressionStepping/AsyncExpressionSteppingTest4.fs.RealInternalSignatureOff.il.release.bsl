@@ -17,12 +17,12 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.assembly
+.mresource public FSharpSignatureCompressedData.assembly
 {
   
   
 }
-.mresource public FSharpOptimizationData.assembly
+.mresource public FSharpOptimizationCompressedData.assembly
 {
   
   
@@ -54,8 +54,7 @@
       .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .method assembly specialname rtspecialname 
-              instance void  .ctor(int32 'value') cil managed
+      .method assembly specialname rtspecialname instance void  .ctor(int32 'value') cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -69,8 +68,7 @@
         IL_000d:  ret
       } 
 
-      .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn 
-              Invoke(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32> ctxt) cil managed
+      .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn Invoke(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32> ctxt) cil managed
       {
         
         .maxstack  8
@@ -112,8 +110,7 @@
         IL_0014:  ret
       } 
 
-      .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> 
-              Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
+      .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
       {
         
         .maxstack  6
@@ -155,8 +152,7 @@
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
     {
       .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> x
-      .method assembly specialname rtspecialname 
-              instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> x) cil managed
+      .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> x) cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -170,8 +166,7 @@
         IL_000d:  ret
       } 
 
-      .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit 
-              Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
+      .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
       {
         
         .maxstack  8
@@ -222,8 +217,7 @@
         IL_0014:  ret
       } 
 
-      .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn 
-              Invoke(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32> ctxt) cil managed
+      .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn Invoke(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32> ctxt) cil managed
       {
         
         .maxstack  8
@@ -248,8 +242,7 @@
       .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .method assembly specialname rtspecialname 
-              instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder builder@) cil managed
+      .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder builder@) cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -263,8 +256,7 @@
         IL_000d:  ret
       } 
 
-      .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> 
-              Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
+      .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
       {
         
         .maxstack  7
@@ -301,8 +293,7 @@
 
     } 
 
-    .method public static class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> 
-            f4() cil managed
+    .method public static class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> f4() cil managed
     {
       
       .maxstack  4
@@ -328,8 +319,7 @@
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method private specialname rtspecialname static 
-          void  .cctor() cil managed
+  .method private specialname rtspecialname static void  .cctor() cil managed
   {
     
     .maxstack  5

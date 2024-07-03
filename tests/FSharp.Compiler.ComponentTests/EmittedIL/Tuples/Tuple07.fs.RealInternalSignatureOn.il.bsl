@@ -17,12 +17,12 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.assembly
+.mresource public FSharpSignatureCompressedData.assembly
 {
   
   
 }
-.mresource public FSharpOptimizationData.assembly
+.mresource public FSharpOptimizationCompressedData.assembly
 {
   
   
@@ -66,12 +66,12 @@
     IL_0005:  ldc.i4.6
     IL_0006:  ldc.i4.7
     IL_0007:  newobj     instance void class [runtime]System.Tuple`7<int32,int32,int32,int32,int32,int32,int32>::.ctor(!0,
-                                                                                                                        !1,
-                                                                                                                        !2,
-                                                                                                                        !3,
-                                                                                                                        !4,
-                                                                                                                        !5,
-                                                                                                                        !6)
+                                                                                                                              !1,
+                                                                                                                              !2,
+                                                                                                                              !3,
+                                                                                                                              !4,
+                                                                                                                              !5,
+                                                                                                                              !6)
     IL_000c:  pop
     IL_000d:  ret
   } 

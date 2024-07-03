@@ -22,12 +22,12 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.assembly
+.mresource public FSharpSignatureCompressedData.assembly
 {
   
   
 }
-.mresource public FSharpOptimizationData.assembly
+.mresource public FSharpOptimizationCompressedData.assembly
 {
   
   
@@ -52,8 +52,7 @@
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .method public specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method public specialname rtspecialname instance void  .ctor() cil managed
     {
       
       .maxstack  8
@@ -70,8 +69,7 @@
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .method public specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method public specialname rtspecialname instance void  .ctor() cil managed
     {
       
       .maxstack  8
@@ -193,8 +191,7 @@
 
   } 
 
-  .method public static class [System.Collections]System.Collections.Generic.List`1<class assembly/A> 
-          test() cil managed
+  .method public static class [System.Collections]System.Collections.Generic.List`1<class assembly/A> test() cil managed
   {
     
     .maxstack  4
@@ -295,8 +292,7 @@
     IL_007c:  ret
   } 
 
-  .method public static class [System.Collections]System.Collections.Generic.List`1<class assembly/A> 
-          test2() cil managed
+  .method public static class [System.Collections]System.Collections.Generic.List`1<class assembly/A> test2() cil managed
   {
     
     .maxstack  4
@@ -398,8 +394,7 @@
     IL_0085:  ret
   } 
 
-  .method public static class [System.Collections]System.Collections.Generic.List`1<class assembly/A> 
-          test3() cil managed
+  .method public static class [System.Collections]System.Collections.Generic.List`1<class assembly/A> test3() cil managed
   {
     
     .maxstack  4
@@ -501,8 +496,7 @@
     IL_0085:  ret
   } 
 
-  .method public static class [System.Collections]System.Collections.Generic.List`1<class assembly/A> 
-          test4() cil managed
+  .method public static class [System.Collections]System.Collections.Generic.List`1<class assembly/A> test4() cil managed
   {
     
     .maxstack  4
@@ -619,3 +613,9 @@
   } 
 
 } 
+
+
+
+
+
+

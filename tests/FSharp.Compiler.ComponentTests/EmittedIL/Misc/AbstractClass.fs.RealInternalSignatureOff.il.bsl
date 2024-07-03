@@ -17,12 +17,12 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.assembly
+.mresource public FSharpSignatureCompressedData.assembly
 {
   
   
 }
-.mresource public FSharpOptimizationData.assembly
+.mresource public FSharpOptimizationCompressedData.assembly
 {
   
   
@@ -48,8 +48,7 @@
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.assemblyAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .method public specialname rtspecialname 
-            instance void  .ctor(int32 i) cil managed
+    .method public specialname rtspecialname instance void  .ctor(int32 i) cil managed
     {
       
       .maxstack  8
@@ -60,8 +59,7 @@
       IL_0008:  ret
     } 
 
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       
       .maxstack  8
@@ -71,8 +69,7 @@
       IL_0007:  ret
     } 
 
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(float32 f) cil managed
+    .method assembly specialname rtspecialname instance void  .ctor(float32 f) cil managed
     {
       
       .maxstack  8

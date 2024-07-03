@@ -17,12 +17,12 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.assembly
+.mresource public FSharpSignatureCompressedData.assembly
 {
   
   
 }
-.mresource public FSharpOptimizationData.assembly
+.mresource public FSharpOptimizationCompressedData.assembly
 {
   
   
@@ -48,8 +48,7 @@
   {
     .custom instance void [runtime]System.AttributeUsageAttribute::.ctor(valuetype [runtime]System.AttributeTargets) = ( 01 00 80 01 00 00 00 00 ) 
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .method public specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method public specialname rtspecialname instance void  .ctor() cil managed
     {
       
       .maxstack  8
@@ -62,8 +61,7 @@
 
   } 
 
-  .method public specialname static int32 
-          get_T() cil managed
+  .method public specialname static int32 get_T() cil managed
   {
     
     .maxstack  8
@@ -89,8 +87,7 @@
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method private specialname rtspecialname static 
-          void  .cctor() cil managed
+  .method private specialname rtspecialname static void  .cctor() cil managed
   {
     
     .maxstack  4

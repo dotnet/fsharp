@@ -17,12 +17,12 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.assembly
+.mresource public FSharpSignatureCompressedData.assembly
 {
   
   
 }
-.mresource public FSharpOptimizationData.assembly
+.mresource public FSharpOptimizationCompressedData.assembly
 {
   
   
@@ -68,8 +68,7 @@
     {
     } 
 
-    .method public hidebysig strict virtual 
-            instance int32  EndInvoke(class [runtime]System.IAsyncResult result) runtime managed
+    .method public hidebysig strict virtual instance int32  EndInvoke(class [runtime]System.IAsyncResult result) runtime managed
     {
     } 
 
