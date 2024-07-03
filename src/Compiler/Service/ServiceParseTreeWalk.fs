@@ -599,9 +599,16 @@ module SyntaxTraversal =
                             | _ -> ()
                             for b in binds do
                                 yield dive b b.RangeOfBindingWithRhs (traverseSynBinding path)
-                            for SynInterfaceImpl(bindings = binds) in ifaces do
+                            for SynInterfaceImpl(ty, withKeyword, binds, members, range) in ifaces do
+                                let path =
+                                    SyntaxNode.SynMemberDefn(SynMemberDefn.Interface(ty, withKeyword, Some members, range))
+                                    :: path
+
                                 for b in binds do
                                     yield dive b b.RangeOfBindingWithRhs (traverseSynBinding path)
+
+                                for m in members do
+                                    yield dive m m.Range (traverseSynMemberDefn path (fun _ -> None))
                         ]
                         |> pick expr
 
@@ -986,6 +993,7 @@ module SyntaxTraversal =
                                 x
                                 |> normalizeMembersToDealWithPeculiaritiesOfGettersAndSetters path (fun _ -> None)
                         ]
+
                         |> pick x
                 | ok -> ok
             | SynMemberDefn.Inherit(synType, _identOption, range) -> traverseInherit (synType, range)

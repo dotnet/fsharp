@@ -322,6 +322,11 @@
         <target state="translated">bezkropkowy literał float32</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureEmptyBodiedComputationExpressions">
+        <source>Support for computation expressions with empty bodies: builder {{ }}</source>
+        <target state="new">Support for computation expressions with empty bodies: builder {{ }}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureEnforceAttributeTargets">
         <source>Enforce AttributeTargets</source>
         <target state="translated">Wymuszaj elementy AttributeTargets</target>
@@ -1275,6 +1280,11 @@
       <trans-unit id="tcDotLambdaAtNotSupportedExpression">
         <source>Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'.</source>
         <target state="translated">Składnia lambda skrótu jest obsługiwana tylko w przypadku wyrażeń niepodzielnych, takich jak metoda, właściwość, pole lub indeksator w dorozumianym argumencie „_”. Na przykład: „let f = _. Length”.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcEmptyBodyRequiresBuilderZeroMethod">
+        <source>An empty body may only be used if the computation expression builder defines a 'Zero' method.</source>
+        <target state="new">An empty body may only be used if the computation expression builder defines a 'Zero' method.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
