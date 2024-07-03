@@ -80,6 +80,7 @@ type References() =
             )
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member this.``References.Bug787899.AddDuplicateUnresolved``() =
         // Let's create a run-of-the-mill project just to have a spare assembly around
         this.CreateDummyTestProjectBuildItAndDo(fun exe ->
@@ -97,6 +98,7 @@ type References() =
             )
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member this.``References.Bug787899.AddDuplicateResolved``() =
         // Let's create a run-of-the-mill project just to have a spare assembly around
         this.CreateDummyTestProjectBuildItAndDo(fun exe ->
@@ -244,6 +246,7 @@ type References() =
             TheTests.HelpfulAssertMatches ' ' "A reference to '.*' could not be added. A reference to the component '.*' already exists in the project." e.Message
 
     [<Test; Category("Expensive")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member this.``ReferenceResolution.Bug4423.NonFxAssembly.BrowseTab.RelativeHintPath.InsideProjectDir``() =
         // Let's create a run-of-the-mill project just to have a spare assembly around
         this.CreateDummyTestProjectBuildItAndDo(fun exe ->
@@ -276,6 +279,7 @@ type References() =
         )
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member this.``ReferenceResolution.Bug4423.NonFxAssembly.BrowseTab.RelativeHintPath.OutsideProjectDir``() =
         this.MakeProjectAndDo(["foo.fs"], [], "", (fun project ->
             // Let's create a run-of-the-mill 

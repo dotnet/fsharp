@@ -1683,3 +1683,42 @@ module M =
               Message =
                 "The member or function 'traverseSequentials' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Don't warn for rec call of async func that evaluates an async parameter in a match!`` () =
+        """
+namespace N
+
+module M =
+
+    [<TailCall>]
+    let rec f (g: bool Async) = async {
+        match! g with
+        | false -> ()
+        | true -> return! f g
+        }
+        """
+        |> FSharp
+        |> withLangVersion80
+        |> compile
+        |> shouldSucceed
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Don't warn for rec call of async func that evaluates an async parameter in a let!`` () =
+        """
+namespace N
+
+module M =
+
+    [<TailCall>]
+    let rec f (g: bool Async) = async {
+        let! x = g
+        match x with
+        | false -> ()
+        | true -> return! f g
+        }
+        """
+        |> FSharp
+        |> withLangVersion80
+        |> compile
+        |> shouldSucceed
