@@ -6647,12 +6647,6 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
             exprTy
             None
 
-    /// Try to find a `DefaultMemberAttribute` that specifies a named indexed property.
-    let tryFindDefaultMember ty =
-        match tryTcrefOfAppTy g ty with
-        | ValueSome tcref -> TryFindTyconRefStringAttribute g mWholeExpr g.attrib_DefaultMemberAttribute tcref
-        | ValueNone -> None
-
     /// Try to find a property with the given name.
     let tryFindNamedProp name ty =
         let name = Some name
@@ -6713,9 +6707,11 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
     let (|Indexable|_|) exprTy =
         exprTy
         |> tryFindMember (fun ty ->
-            tryFindDefaultMember ty
-            |> Option.orElseWith (fun () -> tryFindNamedProp Item ty)
-            |> Option.orElseWith (fun () -> tryFindMatchingMeths Item (fun _ -> Some Item) ty))
+            // Search each nominal type in the hierarchy for a `DefaultMemberAttribute`.
+            // If the type is not a nominal type, search for a property named `Item`.
+            match tryTcrefOfAppTy g ty with
+            | ValueSome tcref -> TryFindTyconRefStringAttribute g mWholeExpr g.attrib_DefaultMemberAttribute tcref
+            | ValueNone -> tryFindNamedProp Item ty)
 
     /// Fall back to `Item` for delayed lookup.
     let (|PossiblyIndexable|) (_exprTy: TType) = Item
