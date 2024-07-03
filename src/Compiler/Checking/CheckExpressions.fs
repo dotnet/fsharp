@@ -6973,7 +6973,7 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
     | (_, Array) & (ArrayIndexerOrSlicer (path, meth, args), _)
     | (_, String) & (StringIndexerOrSlicer (path, meth, args), _) -> tcArrayOrStringIndexing (path, meth, args)
 
-    // Look for an indexer property or method, or delay lookup while assuming `Item`.
+    // Look for an indexer property, or else assume `Item`.
     | (Indexing, Getting), Indexable indexer
     | (Indexing, Getting), (Array | Nominal) & PossiblyIndexable indexer ->
         propagateThenTcDelayed tpenv expr exprTy (mkDelayedIndexedGet indexer decodedIndexArgs @ delayed)
@@ -6986,16 +6986,16 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
     | ((Slicing, Getting), Nominal) & Sliceable (tpenv, expr, exprTy) ->
         propagateThenTcDelayed tpenv expr exprTy delayed
 
-    // In the immediate absence of either, delay lookup while assuming `GetSlice`.
+    // In the immediate absence of either, assume `GetSlice`.
     | (Slicing, Getting), PossiblyGetSliceable slicer ->
         propagateThenTcDelayed tpenv expr exprTy (mkDelayedGetSlice slicer decodedIndexArgs @ delayed)
 
-    // Look for an indexer property or method, or delay lookup while assuming `Item`.
+    // Look for an indexer property, or else assume `Item`.
     | (Indexing, Setting (setArg, mOfLeftOfSet)), Indexable indexer
     | (Indexing, Setting (setArg, mOfLeftOfSet)), (Array | Nominal) & PossiblyIndexable indexer ->
         propagateThenTcDelayed tpenv expr exprTy (mkDelayedIndexedSet indexer decodedIndexArgs setArg mOfLeftOfSet @ delayed)
 
-    // Delay lookup of `SetSlice`.
+    // Assume `SetSlice`.
     | (Slicing, Setting (setArg, mOfLeftOfSet)), (Array | Nominal) ->
         propagateThenTcDelayed tpenv expr exprTy (mkDelayedSetSlice decodedIndexArgs setArg mOfLeftOfSet @ delayed)
 
