@@ -524,7 +524,10 @@ let NextExtensionMethodPriority() = uint64 (newStamp())
 /// Checks if the type is used for C# style extension members.
 let IsTyconRefUsedForCSharpStyleExtensionMembers g m (tcref: TyconRef) =
     // Type must be non-generic and have 'Extension' attribute
-    isNil(tcref.Typars m) && TyconRefHasAttribute g m g.attrib_ExtensionAttribute tcref
+    match metadataOfTycon tcref.Deref with
+    | ILTypeMetadata(TILObjectReprData(_, _, tdef)) -> tdef.CanContainExtensionMethods
+    | _ -> true
+    && isNil(tcref.Typars m) && TyconRefHasAttribute g m g.attrib_ExtensionAttribute tcref
 
 /// Checks if the type is used for C# style extension members.
 let IsTypeUsedForCSharpStyleExtensionMembers g m ty =

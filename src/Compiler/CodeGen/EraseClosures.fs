@@ -583,7 +583,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                         methodImpls = emptyILMethodImpls,
                         properties = emptyILProperties,
                         events = emptyILEvents,
-                        isKnownToBeAttribute = false,
+                        additionalFlags = ILTypeDefAdditionalFlags.None,
                         securityDecls = emptyILSecurityDecls
                     )
                         .WithSpecialName(false)
@@ -718,7 +718,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                         methodImpls = emptyILMethodImpls,
                         properties = emptyILProperties,
                         events = emptyILEvents,
-                        isKnownToBeAttribute = false,
+                        additionalFlags = ILTypeDefAdditionalFlags.None,
                         securityDecls = emptyILSecurityDecls
                     )
                         .WithHasSecurity(false)

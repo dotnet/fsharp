@@ -1,5 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-
+// Copyright © 2001-2023 Python Software Foundation.  All Rights Reserved. License: https://docs.python.org/3/license.html#psf-license. Code for getMaxSetSizeForSampling is taken from https://github.com/python/cpython/blob/69b3e8ea569faabccd74036e3d0e5ec7c0c62a20/Lib/random.py#L363-L456
 
 namespace Microsoft.FSharp.Core
 
@@ -1204,3 +1204,43 @@ module internal Seq =
                 ValueSome(res)
             else
                 ValueNone
+
+module internal Random =
+    open System
+
+    let private executeRandomizer (randomizer: unit -> float) =
+        let value = randomizer()
+        if value >= 0.0 && value < 1.0 then
+            value
+        else
+            let argName = nameof randomizer
+            invalidArgOutOfRangeFmt argName
+                "{0}\n{1} returned {2}, should be in range [0.0, 1.0)."
+                [|SR.GetString SR.outOfRange; argName; value|]
+
+    let next (randomizer: unit -> float) (minValue: int) (maxValue: int) =
+        int ((executeRandomizer randomizer) * float (maxValue - minValue)) + minValue
+
+    let shuffleArrayInPlaceWith (random: Random) (array: array<'T>) =
+        let inputLength = array.Length
+        for i = 0 to inputLength - 2 do
+            let j = random.Next(i, inputLength)
+            if j <> i then
+                let temp = array[i]
+                array[i] <- array[j]
+                array[j] <- temp
+
+    let shuffleArrayInPlaceBy (randomizer: unit -> float) (array: array<'T>) =
+        let inputLength = array.Length
+        for i = 0 to inputLength - 2 do
+            let j = next randomizer i inputLength
+            if j <> i then
+                let temp = array[i]
+                array[i] <- array[j]
+                array[j] <- temp
+
+    let getMaxSetSizeForSampling count =
+        let mutable setSize = 21
+        if count > 5 then
+            setSize <- setSize + (4.0 ** ceil (Math.Log(count * 3 |> float, 4)) |> int)
+        setSize

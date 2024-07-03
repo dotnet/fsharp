@@ -11,6 +11,27 @@ ImplFile
                  [Member
                     (SynBinding
                        (None, Normal, false, false, [],
+                        PreXmlDoc ((4,5), FSharp.Compiler.Xml.XmlDocCollector),
+                        SynValData
+                          (Some { IsInstance = true
+                                  IsDispatchSlot = false
+                                  IsOverrideOrExplicitImpl = true
+                                  IsFinal = false
+                                  GetterOrSetterIsCompilerGenerated = false
+                                  MemberKind = Member },
+                           SynValInfo
+                             ([[SynArgInfo ([], false, None)]; []],
+                              SynArgInfo ([], false, None)), None),
+                        FromParseError (Wild (4,11--4,11), (4,11--4,11)), None,
+                        ArbitraryAfterError
+                          ("objectImplementationMember1", (4,11--4,11)),
+                        (4,5--4,11), NoneAtInvisible,
+                        { LeadingKeyword = Member (4,5--4,11)
+                          InlineKeyword = None
+                          EqualsRange = None }), (4,5--4,11));
+                  Member
+                    (SynBinding
+                       (None, Normal, false, false, [],
                         PreXmlDoc ((5,5), FSharp.Compiler.Xml.XmlDocCollector),
                         SynValData
                           (Some { IsInstance = true

@@ -91,6 +91,12 @@
     <Compile Include="prim-types.fs">
       <Link>Primitives/prim-types.fs</Link>
     </Compile>
+    <Compile Include="Random.fsi">
+      <Link>Random/Random.fsi</Link>
+    </Compile>
+    <Compile Include="Random.fs">
+      <Link>Random/Random.fs</Link>
+    </Compile>
     <Compile Include="local.fsi">
       <Link>Collections/local.fsi</Link>
     </Compile>
