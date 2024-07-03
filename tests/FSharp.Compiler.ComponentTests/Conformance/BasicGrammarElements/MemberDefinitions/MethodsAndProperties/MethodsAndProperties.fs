@@ -669,6 +669,9 @@ type GenericIndexer<'indexerArgs,'indexerOutput,'indexerInput>() =
         |> shouldFail
         |> withSingleDiagnostic (Warning 3581, Line 9, Col 17, Line 9, Col 21, "An indexed property's getter and setter must have the same type. Property 'Item' has getter of type ''indexerOutput' but setter of type ''indexerInput'.")
 
+// Strictly speaking, some of these could be made to work for netfx,
+// but they would require more custom setup (since we couldn't use ReadOnlySpan.Slice).
+#if NETCOREAPP2_1_OR_GREATER
     module Slicing =
         let [<Literal>] SupportedVersion = "preview"
 
@@ -1044,3 +1047,4 @@ type GenericIndexer<'indexerArgs,'indexerOutput,'indexerInput>() =
                 |> withLangVersion SupportedVersion
                 |> runFsi
                 |> shouldSucceed
+#endif
