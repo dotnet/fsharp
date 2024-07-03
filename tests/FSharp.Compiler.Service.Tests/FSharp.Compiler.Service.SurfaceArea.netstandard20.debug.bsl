@@ -2849,8 +2849,16 @@ FSharp.Compiler.EditorServices.CompletionContext+Inherit: FSharp.Compiler.Editor
 FSharp.Compiler.EditorServices.CompletionContext+Inherit: FSharp.Compiler.EditorServices.InheritanceContext get_context()
 FSharp.Compiler.EditorServices.CompletionContext+Inherit: System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],Microsoft.FSharp.Core.FSharpOption`1[System.String]] get_path()
 FSharp.Compiler.EditorServices.CompletionContext+Inherit: System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],Microsoft.FSharp.Core.FSharpOption`1[System.String]] path
+FSharp.Compiler.EditorServices.CompletionContext+MethodOverride: Boolean get_hasThis()
+FSharp.Compiler.EditorServices.CompletionContext+MethodOverride: Boolean get_isStatic()
+FSharp.Compiler.EditorServices.CompletionContext+MethodOverride: Boolean hasThis
+FSharp.Compiler.EditorServices.CompletionContext+MethodOverride: Boolean isStatic
+FSharp.Compiler.EditorServices.CompletionContext+MethodOverride: FSharp.Compiler.EditorServices.MethodOverrideCompletionContext ctx
+FSharp.Compiler.EditorServices.CompletionContext+MethodOverride: FSharp.Compiler.EditorServices.MethodOverrideCompletionContext get_ctx()
 FSharp.Compiler.EditorServices.CompletionContext+MethodOverride: FSharp.Compiler.Text.Range enclosingTypeNameRange
 FSharp.Compiler.EditorServices.CompletionContext+MethodOverride: FSharp.Compiler.Text.Range get_enclosingTypeNameRange()
+FSharp.Compiler.EditorServices.CompletionContext+MethodOverride: Int32 get_spacesBeforeOverrideKeyword()
+FSharp.Compiler.EditorServices.CompletionContext+MethodOverride: Int32 spacesBeforeOverrideKeyword
 FSharp.Compiler.EditorServices.CompletionContext+OpenDeclaration: Boolean get_isOpenType()
 FSharp.Compiler.EditorServices.CompletionContext+OpenDeclaration: Boolean isOpenType
 FSharp.Compiler.EditorServices.CompletionContext+ParameterList: FSharp.Compiler.Text.Position Item1
@@ -2904,7 +2912,7 @@ FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsUnionCaseFieldsD
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext AttributeApplication
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext Invalid
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext NewInherit(FSharp.Compiler.EditorServices.InheritanceContext, System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],Microsoft.FSharp.Core.FSharpOption`1[System.String]])
-FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext NewMethodOverride(FSharp.Compiler.Text.Range)
+FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext NewMethodOverride(FSharp.Compiler.EditorServices.MethodOverrideCompletionContext, FSharp.Compiler.Text.Range, Int32, Boolean, Boolean)
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext NewOpenDeclaration(Boolean)
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext NewParameterList(FSharp.Compiler.Text.Position, System.Collections.Generic.HashSet`1[System.String])
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext NewPattern(FSharp.Compiler.EditorServices.PatternContext)
@@ -3539,6 +3547,33 @@ FSharp.Compiler.EditorServices.MethodGroupItemParameter: System.String Canonical
 FSharp.Compiler.EditorServices.MethodGroupItemParameter: System.String ParameterName
 FSharp.Compiler.EditorServices.MethodGroupItemParameter: System.String get_CanonicalTypeTextForSorting()
 FSharp.Compiler.EditorServices.MethodGroupItemParameter: System.String get_ParameterName()
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext+Tags: Int32 Class
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext+Tags: Int32 Interface
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext+Tags: Int32 ObjExpr
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext: Boolean Equals(FSharp.Compiler.EditorServices.MethodOverrideCompletionContext)
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext: Boolean Equals(FSharp.Compiler.EditorServices.MethodOverrideCompletionContext, System.Collections.IEqualityComparer)
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext: Boolean Equals(System.Object)
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext: Boolean IsClass
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext: Boolean IsInterface
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext: Boolean IsObjExpr
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext: Boolean get_IsClass()
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext: Boolean get_IsInterface()
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext: Boolean get_IsObjExpr()
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext: FSharp.Compiler.EditorServices.MethodOverrideCompletionContext Class
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext: FSharp.Compiler.EditorServices.MethodOverrideCompletionContext NewInterface(FSharp.Compiler.Text.Range)
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext: FSharp.Compiler.EditorServices.MethodOverrideCompletionContext NewObjExpr(FSharp.Compiler.Text.Range)
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext: FSharp.Compiler.EditorServices.MethodOverrideCompletionContext get_Class()
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext: FSharp.Compiler.EditorServices.MethodOverrideCompletionContext+Tags
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext: FSharp.Compiler.Text.Range get_mExpr()
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext: FSharp.Compiler.Text.Range get_mInterfaceName()
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext: FSharp.Compiler.Text.Range mExpr
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext: FSharp.Compiler.Text.Range mInterfaceName
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext: Int32 GetHashCode()
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext: Int32 Tag
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext: Int32 get_Tag()
+FSharp.Compiler.EditorServices.MethodOverrideCompletionContext: System.String ToString()
 FSharp.Compiler.EditorServices.ModuleKind: Boolean Equals(FSharp.Compiler.EditorServices.ModuleKind)
 FSharp.Compiler.EditorServices.ModuleKind: Boolean Equals(FSharp.Compiler.EditorServices.ModuleKind, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.ModuleKind: Boolean Equals(System.Object)
@@ -5925,6 +5960,18 @@ FSharp.Compiler.Syntax.ParsedHashDirective: Microsoft.FSharp.Collections.FSharpL
 FSharp.Compiler.Syntax.ParsedHashDirective: System.String ToString()
 FSharp.Compiler.Syntax.ParsedHashDirective: System.String get_ident()
 FSharp.Compiler.Syntax.ParsedHashDirective: System.String ident
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Ident: FSharp.Compiler.Syntax.Ident get_value()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Ident: FSharp.Compiler.Syntax.Ident value
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Ident: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Ident: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Int32: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Int32: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Int32: Int32 get_value()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Int32: Int32 value
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+LongIdent: FSharp.Compiler.Syntax.SynLongIdent get_value()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+LongIdent: FSharp.Compiler.Syntax.SynLongIdent value
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+LongIdent: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+LongIdent: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+SourceIdentifier: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+SourceIdentifier: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+SourceIdentifier: System.String constant
@@ -5937,14 +5984,29 @@ FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+String: FSharp.Compiler.Text.
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+String: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+String: System.String get_value()
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+String: System.String value
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Tags: Int32 Ident
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Tags: Int32 Int32
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Tags: Int32 LongIdent
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Tags: Int32 SourceIdentifier
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Tags: Int32 String
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Boolean IsIdent
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Boolean IsInt32
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Boolean IsLongIdent
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Boolean IsSourceIdentifier
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Boolean IsString
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Boolean get_IsIdent()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Boolean get_IsInt32()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Boolean get_IsLongIdent()
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Boolean get_IsSourceIdentifier()
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Boolean get_IsString()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument NewIdent(FSharp.Compiler.Syntax.Ident, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument NewInt32(Int32, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument NewLongIdent(FSharp.Compiler.Syntax.SynLongIdent, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument NewSourceIdentifier(System.String, System.String, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument NewString(System.String, FSharp.Compiler.Syntax.SynStringKind, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Ident
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Int32
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+LongIdent
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+SourceIdentifier
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+String
 FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Tags
