@@ -37,10 +37,11 @@ module ILChecker =
         let verbatimStrings = @"@(""[^""]*"")+"
         let methodSingleLine = "^(\s*\.method.*)(?: \s*)$[\r?\n?]^(\s*\{)"
         let methodMultiLine = "^(\s*\.method.*)(?: \s*)$[\r?\n?]^(?: \s*)(.*)\s*$[\r?\n?]^(\s*\{)"
+        let resourceMultiLine = @"(?<resource>\.mresource\s+.*)(?<block>\s*\{[^}]*\})"
 
         let normalizeNewLines (text: string) = text.Replace("\r\n", "\n").Replace("\r\n", "\r").Trim('\t').Trim(' ')
 
-        let stripComments (text:string) =
+        let stripComments (text: string) =
             Regex.Replace(text,
                 $"{blockComments}|{lineComments}|{lineCommentsEof}|{strings}|{verbatimStrings}",
                 (fun me ->
@@ -50,7 +51,7 @@ module ILChecker =
                         me.Value), RegexOptions.Singleline)
             |> filterSpecialComment
 
-        let unifyMethodLine (text:string) =
+        let unifyMethodLine (text: string) =
             let text1 = Regex.Replace(text, $"{methodSingleLine}", (fun me -> $"{me.Groups[1].Value}\n{me.Groups[2].Value}"), RegexOptions.Multiline)
             let text2 = Regex.Replace(text1, $"{methodMultiLine}", (fun me -> $"{me.Groups[1].Value} {me.Groups[2].Value}\n{me.Groups[3].Value}"), RegexOptions.Multiline)
             text2
@@ -63,7 +64,7 @@ module ILChecker =
                 "(\.assembly extern (System\.Runtime|System\.Console|System\.Runtime\.Extensions|mscorlib|System\.Memory)){1}([^\}]*)\}", ".assembly extern runtime { }"
                 "(\.assembly extern (FSharp.Core)){1}([^\}]*)\}", ".assembly extern FSharp.Core { }" ]
 
-        let unifyImageBase ilCode = replace ilCode ("\.imagebase\s*0x\d*", ".imagebase {value}")
+        let unifyImageBase (ilCode: string) = replace ilCode ("\.imagebase\s*0x\d*", ".imagebase {value}")
 
         let unifyingAssemblyNames (text: string) =
             match assemblyName with
@@ -75,12 +76,17 @@ module ILChecker =
         // This lets the same test be used when targeting both netfx and netcore.
         let unifyNetStandardVersions (text: string) = text.Replace(".ver 2:0:0:0", ".ver 2:1:0:0")
 
+        let unifyResourceBlock text =
+            let text2 = Regex.Replace(text, resourceMultiLine, (fun (res: Match) -> $"""{res.Groups["resource"].Value} {{ }}"""), RegexOptions.Multiline)
+            text2
+
         ilCode.Trim()
         |> normalizeNewLines
         |> stripComments
         |> unifyingAssemblyNames
         |> unifyMethodLine
         |> unifyNetStandardVersions
+        |> unifyResourceBlock
 
     let private generateIlFile dllFilePath ildasmArgs =
         let ilFilePath = Path.ChangeExtension(dllFilePath, ".il")
