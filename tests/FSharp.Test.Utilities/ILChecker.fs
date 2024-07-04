@@ -38,7 +38,7 @@ module ILChecker =
         let methodSingleLine = "^(\s*\.method.*)(?: \s*)$[\r?\n?]^(\s*\{)"
         let methodMultiLine = "^(\s*\.method.*)(?: \s*)$[\r?\n?]^(?: \s*)(.*)\s*$[\r?\n?]^(\s*\{)"
 
-        let normalizeNewLines (text: string) = text.Replace("\r\n", "\n").Replace("\r\n", "\r")
+        let normalizeNewLines (text: string) = text.Replace("\r\n", "\n").Replace("\r\n", "\r").Trim('\t').Trim(' ')
 
         let stripComments (text:string) =
             Regex.Replace(text,
