@@ -1778,3 +1778,4 @@ featureEmptyBodiedComputationExpressions,"Support for computation expressions wi
 3870,parsExpectingUnionCaseField,"Expecting union case field"
 featureAllowAccessModifiersToAutoPropertiesGettersAndSetters,"Allow access modifiers to auto properties getters and setters"
 3871,tcAccessModifiersNotAllowedInSRTPConstraint,"Access modifiers cannot be applied to an SRTP constraint."
+featureAllowObjectExpressionWithoutOverrides,"Allow object expressions without overrides"
