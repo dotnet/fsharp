@@ -6791,8 +6791,8 @@ and TcRecordConstruction (cenv: cenv) (overallTy: TType) isObjExpr env tpenv wit
     UnifyTypes cenv env m overallTy objTy
 
     // Types with implicit constructors can't use record or object syntax: all constructions must go through the implicit constructor
-    let supportsObjectExpressionWithoutOverrides = isObjExpr && g.langVersion.SupportsFeature(LanguageFeature.AllowObjectExpressionWithoutOverrides)
-    if tycon.MembersOfFSharpTyconByName |> NameMultiMap.existsInRange (fun v -> v.IsIncrClassConstructor) && not supportsObjectExpressionWithoutOverrides then
+    // let supportsObjectExpressionWithoutOverrides = isObjExpr && g.langVersion.SupportsFeature(LanguageFeature.AllowObjectExpressionWithoutOverrides)
+    if tycon.MembersOfFSharpTyconByName |> NameMultiMap.existsInRange (fun v -> v.IsIncrClassConstructor) then
         errorR(Error(FSComp.SR.tcConstructorRequiresCall(tycon.DisplayName), m))
 
     let fspecs = tycon.TrueInstanceFieldsAsList
@@ -7207,8 +7207,9 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
 
         let overridesAndVirts, tpenv = ComputeObjectExprOverrides cenv env tpenv impls
 
-        // 2. check usage conditions
-        overridesAndVirts |> List.iter (fun (m, implTy, dispatchSlots, dispatchSlotsKeyed, availPriorOverrides, overrides) ->
+        // 2. check usage conditions 
+        for ovd in overridesAndVirts do
+            let (m, implTy, dispatchSlots, dispatchSlotsKeyed, availPriorOverrides, overrides) = ovd
             let overrideSpecs = overrides |> List.map fst
             let hasStaticMembers = dispatchSlots |> List.exists (fun reqdSlot -> not reqdSlot.MethodInfo.IsInstance)
             if hasStaticMembers then
@@ -7217,6 +7218,8 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
             DispatchSlotChecking.CheckOverridesAreAllUsedOnce (env.DisplayEnv, g, cenv.infoReader, true, implTy, dispatchSlotsKeyed, availPriorOverrides, overrideSpecs)
 
             if not hasStaticMembers then
+                DispatchSlotChecking.CheckDispatchSlotsAreImplemented (env.DisplayEnv, cenv.infoReader, m, env.NameEnv, cenv.tcSink, isAbstractClass, implTy, dispatchSlots, availPriorOverrides, overrideSpecs) |> ignore
+            
                 DispatchSlotChecking.CheckDispatchSlotsAreImplemented (env.DisplayEnv, cenv.infoReader, m, env.NameEnv, cenv.tcSink, isOverallTyAbstract, true, implTy, dispatchSlots, availPriorOverrides, overrideSpecs) |> ignore
             )
 

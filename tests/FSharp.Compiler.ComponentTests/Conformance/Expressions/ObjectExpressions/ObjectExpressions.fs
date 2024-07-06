@@ -150,6 +150,7 @@ let implSomeDU someDu =
 [<AbstractClass>]
 type Foo() = class end
 
+let foo = { new Foo() }
 let foo = { new Foo() } // Approved suggestion to allow this https://github.com/fsharp/fslang-suggestions/issues/632
 
 let foo1 = new Foo()
