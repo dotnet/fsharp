@@ -154,7 +154,7 @@ let main _ =
             """,
             (fun verifier -> verifier.VerifyIL [
             """
-.class public abstract auto ansi sealed StaticMember04
+.class public abstract auto ansi sealed StaticMember03
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
@@ -162,43 +162,83 @@ let main _ =
          extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname CreateFunc@9
-           extends [runtime]System.Object
+    .method public static void  M(int32 x) cil managed
     {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-      .method assembly static int32  Invoke(int32 x) cil managed
-      {
-        
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  ldc.i4.1
-        IL_0002:  add
-        IL_0003:  ret
-      } 
-
+      
+      .maxstack  8
+      IL_0000:  ret
     } 
 
-    .method public static int32  M(int32 x) cil managed
+  } 
+
+  .class auto ansi serializable nested public MyClass
+         extends [runtime]System.Object
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .field assembly int32 x
+    .method public specialname rtspecialname instance void  .ctor(int32 x) cil managed
     {
       
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldc.i4.1
-      IL_0002:  add
-      IL_0003:  ret
+      IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
+      IL_0006:  ldarg.0
+      IL_0007:  pop
+      IL_0008:  ldarg.0
+      IL_0009:  ldarg.1
+      IL_000a:  stfld      int32 StaticMember03/MyClass::x
+      IL_000f:  ret
     } 
 
-    .method public static class [runtime]System.Func`2<int32,int32> CreateFunc() cil managed
+    .method public hidebysig specialname instance int32  get_X() cil managed
     {
       
       .maxstack  8
-      IL_0000:  ldnull
-      IL_0001:  ldftn      int32 StaticMember04/C/CreateFunc@9::Invoke(int32)
-      IL_0007:  newobj     instance void class [runtime]System.Func`2<int32,int32>::.ctor(object,
-                                                                                           native int)
-      IL_000c:  ret
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      int32 StaticMember03/MyClass::x
+      IL_0006:  ret
     } 
 
+    .property instance int32 X()
+    {
+      .get instance int32 StaticMember03/MyClass::get_X()
+    } 
+  } 
+
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname func@15
+         extends [runtime]System.Object
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
+    .method assembly static void  Invoke(int32 x) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ret
+    } 
+
+  } 
+
+  .method public static int32  main(string[] _arg1) cil managed
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.EntryPointAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  4
+    .locals init (class StaticMember03/MyClass V_0,
+             class [runtime]System.Action`1<int32> V_1,
+             object V_2)
+    IL_0000:  ldc.i4.7
+    IL_0001:  newobj     instance void StaticMember03/MyClass::.ctor(int32)
+    IL_0006:  stloc.0
+    IL_0007:  ldnull
+    IL_0008:  ldftn      void StaticMember03/func@15::Invoke(int32)
+    IL_000e:  newobj     instance void class [runtime]System.Action`1<int32>::.ctor(object,
+                                                                                           native int)
+    IL_0013:  stloc.1
+    IL_0014:  ldloc.1
+    IL_0015:  box        class [runtime]System.Action`1<int32>
+    IL_001a:  stloc.2
+    IL_001b:  ldc.i4.0
+    IL_001c:  ret
   } 
 
 } 
