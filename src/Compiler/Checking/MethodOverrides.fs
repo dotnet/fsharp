@@ -332,7 +332,7 @@ module DispatchSlotChecking =
         let amap = infoReader.amap
 
         let isReqdTyInterface = isInterfaceTy g reqdTy
-        let showMissingMethodsAndRaiseErrors = (isReqdTyInterface || not isOverallTyAbstract)
+        let showMissingMethodsAndRaiseErrors = (isReqdTyInterface || isOverallTyAbstract)
         
         let mutable res = true
         let fail exn =

@@ -7276,6 +7276,13 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
         overridesAndVirts |> List.iter (fun (m, implTy, dispatchSlots, dispatchSlotsKeyed, availPriorOverrides, overrides) ->
             let overrideSpecs = overrides |> List.map fst
             let hasStaticMembers = dispatchSlots |> List.exists (fun reqdSlot -> not reqdSlot.MethodInfo.IsInstance)
+            let isOverallTyAbstract =
+                match tryTcrefOfAppTy g objTy with
+                | ValueNone -> false
+                | ValueSome tcref -> HasFSharpAttribute g g.attrib_AbstractClassAttribute tcref.Attribs
+                
+            if overrideSpecs.IsEmpty && not (isInterfaceTy g objTy) then
+                errorR (Error(FSComp.SR.tcInvalidObjectExpressionSyntaxForm (), mWholeExpr))
 
             if hasStaticMembers then
                 errorR(Error(FSComp.SR.chkStaticMembersOnObjectExpressions(), mObjTy))
@@ -7283,7 +7290,7 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
             DispatchSlotChecking.CheckOverridesAreAllUsedOnce (env.DisplayEnv, g, cenv.infoReader, true, implTy, dispatchSlotsKeyed, availPriorOverrides, overrideSpecs)
 
             if not hasStaticMembers then
-                DispatchSlotChecking.CheckDispatchSlotsAreImplemented (env.DisplayEnv, cenv.infoReader, m, env.NameEnv, cenv.tcSink, false, implTy, dispatchSlots, availPriorOverrides, overrideSpecs) |> ignore
+                DispatchSlotChecking.CheckDispatchSlotsAreImplemented (env.DisplayEnv, cenv.infoReader, m, env.NameEnv, cenv.tcSink, isOverallTyAbstract, implTy, dispatchSlots, availPriorOverrides, overrideSpecs) |> ignore
             )
 
         // 3. create the specs of overrides
@@ -10894,6 +10901,14 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         let isFixed, rhsExpr, overallPatTy, overallExprTy =
             match rhsExpr with
             | SynExpr.Fixed (e, _) -> true, e, NewInferenceType g, overallTy
+            // Currently { new Foo()  } is parsed as a SynExpr.ComputationExpr, but it should be a SynExpr.ObjExpr
+            // If a SynExpr.ComputationExpr body consists of a single SynExpr.New, we should convert it to a SynExpr.ObjExpr
+            // and it's not the argument of a computation expression builder type.
+            // { new Foo } -> SynExpr.ObjExpr
+            // { new Foo() } -> SynExpr.ObjExpr
+            // { New Foo with ... } -> SynExpr.ObjExpr
+            | SynExpr.ComputationExpr(false, SynExpr.New(_, targetType, expr, m), _) ->        
+                false, SynExpr.ObjExpr(targetType, Some(expr, None), None, [], [], [], m, rhsExpr.Range), overallTy, overallTy
             | e -> false, e, overallTy, overallTy
 
         // Check the attributes of the binding, parameters or return value
