@@ -335,7 +335,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
         let sources = extraSources |> List.filter (fileExists cfg)
 
         fsc cfg "%s --optimize -a -o:test--optimize-lib.dll -g --langversion:preview " cfg.fsc_flags sources
-        fsc cfg "%s --optimize -r:test--optimize-lib.dll -o:test--optimize-client-of-lib.exe -g --langversion:preview " cfg.fsc_flags sources
+        fsc cfg "%s --realsig- --optimize -r:test--optimize-lib.dll -o:test--optimize-client-of-lib.exe -g --langversion:preview " cfg.fsc_flags sources
 
         peverify cfg "test--optimize-lib.dll"
         peverify cfg "test--optimize-client-of-lib.exe"
