@@ -37,8 +37,8 @@ module ILChecker =
         let verbatimStrings = @"@(""[^""]*"")+"
         let methodSingleLine = "^(\s*\.method.*)(?: \s*)$[\r?\n?]^(\s*\{)"
         let methodMultiLine = "^(\s*\.method.*)(?: \s*)$[\r?\n?]^(?: \s*)(.*)\s*$[\r?\n?]^(\s*\{)"
-
         let normalizeNewLines (text: string) = text.Replace("\r\n", "\n").Replace("\r\n", "\r")
+        let resourceMultiLine = @"(?<resource>\.mresource\s+.*)(?<block>\s*\{[^}]*\})"
 
         let stripComments (text:string) =
             Regex.Replace(text,
@@ -75,12 +75,17 @@ module ILChecker =
         // This lets the same test be used when targeting both netfx and netcore.
         let unifyNetStandardVersions (text: string) = text.Replace(".ver 2:0:0:0", ".ver 2:1:0:0")
 
+        let unifyResourceBlock text =
+            let text2 = Regex.Replace(text, resourceMultiLine, (fun (res: Match) -> $"""{res.Groups["resource"].Value} {{ }}"""), RegexOptions.Multiline)
+            text2
+
         ilCode.Trim()
         |> normalizeNewLines
         |> stripComments
         |> unifyingAssemblyNames
         |> unifyMethodLine
         |> unifyNetStandardVersions
+        |> unifyResourceBlock
 
     let private generateIlFile dllFilePath ildasmArgs =
         let ilFilePath = Path.ChangeExtension(dllFilePath, ".il")
