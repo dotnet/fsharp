@@ -54,10 +54,10 @@ type PrimaryAssembly =
     static member IsPossiblePrimaryAssembly(fileName: string) =
         let name = System.IO.Path.GetFileNameWithoutExtension(fileName)
 
-        String.Compare(name, "mscorlib", true) <> 0
-        || String.Compare(name, "System.Runtime", true) <> 0
-        || String.Compare(name, "netstandard", true) <> 0
-        || String.Compare(name, "System.Private.CoreLib", true) <> 0
+        String.Equals(name, "System.Runtime", StringComparison.OrdinalIgnoreCase)
+        || String.Equals(name, "mscorlib", StringComparison.OrdinalIgnoreCase)
+        || String.Equals(name, "netstandard", StringComparison.OrdinalIgnoreCase)
+        || String.Equals(name, "System.Private.CoreLib", StringComparison.OrdinalIgnoreCase)
 
 // --------------------------------------------------------------------
 // Utilities: type names
@@ -90,22 +90,24 @@ let rec splitNamespaceAux (nm: string) =
     | -1 -> [ nm ]
     | idx ->
         let s1, s2 = splitNameAt nm idx
-        let s1 = memoizeNamespacePartTable.GetOrAdd(s1, id)
+        let s1 = memoizeNamespacePartTable.GetOrAdd(s1, s1)
         s1 :: splitNamespaceAux s2
 
+// Cache this as a delegate.
+let splitNamespaceAuxDelegate = Func<string, string list> splitNamespaceAux
+
 let splitNamespace nm =
-    memoizeNamespaceTable.GetOrAdd(nm, splitNamespaceAux)
+    memoizeNamespaceTable.GetOrAdd(nm, splitNamespaceAuxDelegate)
 
 // ++GLOBAL MUTABLE STATE (concurrency-safe)
 let memoizeNamespaceArrayTable = ConcurrentDictionary<string, string[]>()
 
+// Cache this as a delegate.
+let splitNamespaceToArrayDelegate =
+    Func<string, string array>(splitNamespace >> Array.ofList)
+
 let splitNamespaceToArray nm =
-    memoizeNamespaceArrayTable.GetOrAdd(
-        nm,
-        fun nm ->
-            let x = Array.ofList (splitNamespace nm)
-            x
-    )
+    memoizeNamespaceArrayTable.GetOrAdd(nm, splitNamespaceToArrayDelegate)
 
 let splitILTypeName (nm: string) =
     match nm.LastIndexOf '.' with
@@ -156,8 +158,12 @@ let splitTypeNameRightAux (nm: string) =
         let s1, s2 = splitNameAt nm idx
         Some s1, s2
 
+// Cache this as a delegate.
+let splitTypeNameRightAuxDelegate =
+    Func<string, string option * string> splitTypeNameRightAux
+
 let splitTypeNameRight nm =
-    memoizeNamespaceRightTable.GetOrAdd(nm, splitTypeNameRightAux)
+    memoizeNamespaceRightTable.GetOrAdd(nm, splitTypeNameRightAuxDelegate)
 
 // --------------------------------------------------------------------
 // Ordered lists with a lookup table
@@ -1251,6 +1257,9 @@ let storeILCustomAttrs (attrs: ILAttributes) =
         emptyILCustomAttrsStored
     else
         ILAttributesStored.Given attrs
+
+let mkILCustomAttrsComputed f =
+    ILAttributesStored.Reader(fun _ -> f ())
 
 let mkILCustomAttrsReader f = ILAttributesStored.Reader f
 
@@ -2605,6 +2614,14 @@ let convertInitSemantics (init: ILTypeInit) =
     | ILTypeInit.BeforeField -> TypeAttributes.BeforeFieldInit
     | ILTypeInit.OnAny -> enum 0
 
+[<Flags>]
+type ILTypeDefAdditionalFlags =
+    | None = 0
+    | IsKnownToBeAttribute = 1
+    /// The type can contain extension methods,
+    /// or this information may not be available at the time the ILTypeDef is created
+    | CanContainExtensionMethods = 2
+
 [<NoComparison; NoEquality; StructuredFormatDisplay("{DebugText}")>]
 type ILTypeDef
     (
@@ -2620,13 +2637,15 @@ type ILTypeDef
         methodImpls: ILMethodImplDefs,
         events: ILEventDefs,
         properties: ILPropertyDefs,
-        isKnownToBeAttribute: bool,
+        additionalFlags: ILTypeDefAdditionalFlags,
         securityDeclsStored: ILSecurityDeclsStored,
         customAttrsStored: ILAttributesStored,
         metadataIndex: int32
     ) =
 
     let mutable customAttrsStored = customAttrsStored
+
+    let hasFlag flag = additionalFlags &&& flag = flag
 
     new(name,
         attributes,
@@ -2640,7 +2659,7 @@ type ILTypeDef
         methodImpls,
         events,
         properties,
-        isKnownToBeAttribute,
+        additionalFlags,
         securityDecls,
         customAttrs) =
         ILTypeDef(
@@ -2656,9 +2675,9 @@ type ILTypeDef
             methodImpls,
             events,
             properties,
-            isKnownToBeAttribute,
+            additionalFlags,
             storeILSecurityDecls securityDecls,
-            storeILCustomAttrs customAttrs,
+            customAttrs,
             NoMetadataIdx
         )
 
@@ -2688,7 +2707,10 @@ type ILTypeDef
 
     member _.Properties = properties
 
-    member _.IsKnownToBeAttribute = isKnownToBeAttribute
+    member _.IsKnownToBeAttribute = hasFlag ILTypeDefAdditionalFlags.IsKnownToBeAttribute
+
+    member _.CanContainExtensionMethods =
+        hasFlag ILTypeDefAdditionalFlags.CanContainExtensionMethods
 
     member _.CustomAttrsStored = customAttrsStored
 
@@ -2708,7 +2730,7 @@ type ILTypeDef
             ?methodImpls,
             ?events,
             ?properties,
-            ?isKnownToBeAttribute,
+            ?newAdditionalFlags,
             ?customAttrs,
             ?securityDecls
         ) =
@@ -2726,11 +2748,11 @@ type ILTypeDef
             methodImpls = defaultArg methodImpls x.MethodImpls,
             events = defaultArg events x.Events,
             properties = defaultArg properties x.Properties,
-            isKnownToBeAttribute = defaultArg isKnownToBeAttribute x.IsKnownToBeAttribute,
-            customAttrs = defaultArg customAttrs x.CustomAttrs
+            additionalFlags = defaultArg newAdditionalFlags additionalFlags,
+            customAttrs = defaultArg customAttrs (storeILCustomAttrs x.CustomAttrs)
         )
 
-    member x.CustomAttrs =
+    member x.CustomAttrs: ILAttributes =
         match customAttrsStored with
         | ILAttributesStored.Reader f ->
             let res = ILAttributes(f x.MetadataIndex)
@@ -4214,11 +4236,11 @@ let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nes
         methods = methods,
         fields = fields,
         nestedTypes = nestedTypes,
-        customAttrs = attrs,
+        customAttrs = storeILCustomAttrs attrs,
         methodImpls = emptyILMethodImpls,
         properties = props,
         events = events,
-        isKnownToBeAttribute = false,
+        additionalFlags = ILTypeDefAdditionalFlags.None,
         securityDecls = emptyILSecurityDecls
     )
 
@@ -4238,11 +4260,11 @@ let mkRawDataValueTypeDef (iltyp_ValueType: ILType) (nm, size, pack) =
         methods = emptyILMethods,
         fields = emptyILFields,
         nestedTypes = emptyILTypeDefs,
-        customAttrs = emptyILCustomAttrs,
+        customAttrs = emptyILCustomAttrsStored,
         methodImpls = emptyILMethodImpls,
         properties = emptyILProperties,
         events = emptyILEvents,
-        isKnownToBeAttribute = false,
+        additionalFlags = ILTypeDefAdditionalFlags.None,
         securityDecls = emptyILSecurityDecls
     )
 

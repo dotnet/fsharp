@@ -17,12 +17,12 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.assembly
+.mresource public FSharpSignatureCompressedData.assembly
 {
   
   
 }
-.mresource public FSharpOptimizationData.assembly
+.mresource public FSharpOptimizationCompressedData.assembly
 {
   
   
@@ -2429,6 +2429,242 @@
 
     IL_0079:  ldloc.2
     IL_007a:  ret
+  } 
+
+  .method public static int32[]  f29(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32> f,
+                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32> g) cil managed
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
+    
+    .maxstack  6
+    .locals init (int32 V_0,
+             int32 V_1,
+             int32[] V_2,
+             uint64 V_3,
+             int32 V_4,
+             int32 V_5)
+    IL_0000:  nop
+    IL_0001:  ldarg.0
+    IL_0002:  ldnull
+    IL_0003:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::Invoke(!0)
+    IL_0008:  stloc.0
+    IL_0009:  ldarg.1
+    IL_000a:  ldnull
+    IL_000b:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::Invoke(!0)
+    IL_0010:  stloc.1
+    IL_0011:  ldc.i4.5
+    IL_0012:  conv.i8
+    IL_0013:  conv.ovf.i.un
+    IL_0014:  newarr     [runtime]System.Int32
+    IL_0019:  stloc.2
+    IL_001a:  ldc.i4.0
+    IL_001b:  conv.i8
+    IL_001c:  stloc.3
+    IL_001d:  ldc.i4.1
+    IL_001e:  stloc.s    V_4
+    IL_0020:  br.s       IL_003b
+
+    IL_0022:  ldloc.2
+    IL_0023:  ldloc.3
+    IL_0024:  conv.i
+    IL_0025:  ldloc.s    V_4
+    IL_0027:  stloc.s    V_5
+    IL_0029:  ldloc.s    V_5
+    IL_002b:  ldloc.0
+    IL_002c:  add
+    IL_002d:  ldloc.1
+    IL_002e:  add
+    IL_002f:  stelem.i4
+    IL_0030:  ldloc.s    V_4
+    IL_0032:  ldc.i4.2
+    IL_0033:  add
+    IL_0034:  stloc.s    V_4
+    IL_0036:  ldloc.3
+    IL_0037:  ldc.i4.1
+    IL_0038:  conv.i8
+    IL_0039:  add
+    IL_003a:  stloc.3
+    IL_003b:  ldloc.3
+    IL_003c:  ldc.i4.5
+    IL_003d:  conv.i8
+    IL_003e:  blt.un.s   IL_0022
+
+    IL_0040:  ldloc.2
+    IL_0041:  ret
+  } 
+
+  .method public static int32[]  f30(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32> f,
+                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> g) cil managed
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
+    
+    .maxstack  6
+    .locals init (int32 V_0,
+             int32[] V_1,
+             uint64 V_2,
+             int32 V_3,
+             int32 V_4)
+    IL_0000:  nop
+    IL_0001:  ldarg.0
+    IL_0002:  ldnull
+    IL_0003:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::Invoke(!0)
+    IL_0008:  stloc.0
+    IL_0009:  ldarg.1
+    IL_000a:  ldnull
+    IL_000b:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_0010:  pop
+    IL_0011:  ldc.i4.5
+    IL_0012:  conv.i8
+    IL_0013:  conv.ovf.i.un
+    IL_0014:  newarr     [runtime]System.Int32
+    IL_0019:  stloc.1
+    IL_001a:  ldc.i4.0
+    IL_001b:  conv.i8
+    IL_001c:  stloc.2
+    IL_001d:  ldc.i4.1
+    IL_001e:  stloc.3
+    IL_001f:  br.s       IL_0035
+
+    IL_0021:  ldloc.1
+    IL_0022:  ldloc.2
+    IL_0023:  conv.i
+    IL_0024:  ldloc.3
+    IL_0025:  stloc.s    V_4
+    IL_0027:  ldloc.s    V_4
+    IL_0029:  ldloc.0
+    IL_002a:  add
+    IL_002b:  stelem.i4
+    IL_002c:  ldloc.3
+    IL_002d:  ldc.i4.2
+    IL_002e:  add
+    IL_002f:  stloc.3
+    IL_0030:  ldloc.2
+    IL_0031:  ldc.i4.1
+    IL_0032:  conv.i8
+    IL_0033:  add
+    IL_0034:  stloc.2
+    IL_0035:  ldloc.2
+    IL_0036:  ldc.i4.5
+    IL_0037:  conv.i8
+    IL_0038:  blt.un.s   IL_0021
+
+    IL_003a:  ldloc.1
+    IL_003b:  ret
+  } 
+
+  .method public static int32[]  f31(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> f,
+                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> g) cil managed
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
+    
+    .maxstack  5
+    .locals init (int32[] V_0,
+             uint64 V_1,
+             int32 V_2,
+             int32 V_3)
+    IL_0000:  nop
+    IL_0001:  ldarg.0
+    IL_0002:  ldnull
+    IL_0003:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_0008:  pop
+    IL_0009:  ldarg.1
+    IL_000a:  ldnull
+    IL_000b:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_0010:  pop
+    IL_0011:  ldc.i4.5
+    IL_0012:  conv.i8
+    IL_0013:  conv.ovf.i.un
+    IL_0014:  newarr     [runtime]System.Int32
+    IL_0019:  stloc.0
+    IL_001a:  ldc.i4.0
+    IL_001b:  conv.i8
+    IL_001c:  stloc.1
+    IL_001d:  ldc.i4.1
+    IL_001e:  stloc.2
+    IL_001f:  br.s       IL_0031
+
+    IL_0021:  ldloc.0
+    IL_0022:  ldloc.1
+    IL_0023:  conv.i
+    IL_0024:  ldloc.2
+    IL_0025:  stloc.3
+    IL_0026:  ldloc.3
+    IL_0027:  stelem.i4
+    IL_0028:  ldloc.2
+    IL_0029:  ldc.i4.2
+    IL_002a:  add
+    IL_002b:  stloc.2
+    IL_002c:  ldloc.1
+    IL_002d:  ldc.i4.1
+    IL_002e:  conv.i8
+    IL_002f:  add
+    IL_0030:  stloc.1
+    IL_0031:  ldloc.1
+    IL_0032:  ldc.i4.5
+    IL_0033:  conv.i8
+    IL_0034:  blt.un.s   IL_0021
+
+    IL_0036:  ldloc.0
+    IL_0037:  ret
+  } 
+
+  .method public static int32[]  f32(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> f,
+                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32> g) cil managed
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
+    
+    .maxstack  6
+    .locals init (int32 V_0,
+             int32[] V_1,
+             uint64 V_2,
+             int32 V_3,
+             int32 V_4)
+    IL_0000:  nop
+    IL_0001:  ldarg.0
+    IL_0002:  ldnull
+    IL_0003:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_0008:  pop
+    IL_0009:  ldarg.1
+    IL_000a:  ldnull
+    IL_000b:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::Invoke(!0)
+    IL_0010:  stloc.0
+    IL_0011:  ldc.i4.5
+    IL_0012:  conv.i8
+    IL_0013:  conv.ovf.i.un
+    IL_0014:  newarr     [runtime]System.Int32
+    IL_0019:  stloc.1
+    IL_001a:  ldc.i4.0
+    IL_001b:  conv.i8
+    IL_001c:  stloc.2
+    IL_001d:  ldc.i4.1
+    IL_001e:  stloc.3
+    IL_001f:  br.s       IL_0035
+
+    IL_0021:  ldloc.1
+    IL_0022:  ldloc.2
+    IL_0023:  conv.i
+    IL_0024:  ldloc.3
+    IL_0025:  stloc.s    V_4
+    IL_0027:  ldloc.s    V_4
+    IL_0029:  ldloc.0
+    IL_002a:  add
+    IL_002b:  stelem.i4
+    IL_002c:  ldloc.3
+    IL_002d:  ldc.i4.2
+    IL_002e:  add
+    IL_002f:  stloc.3
+    IL_0030:  ldloc.2
+    IL_0031:  ldc.i4.1
+    IL_0032:  conv.i8
+    IL_0033:  add
+    IL_0034:  stloc.2
+    IL_0035:  ldloc.2
+    IL_0036:  ldc.i4.5
+    IL_0037:  conv.i8
+    IL_0038:  blt.un.s   IL_0021
+
+    IL_003a:  ldloc.1
+    IL_003b:  ret
   } 
 
 } 

@@ -211,6 +211,8 @@ module RepeatedModule = begin let repeatedByteLiteral = [| 12uy; 13uy; 14uy |] e
 (* Regressions for standard responses... *)
 "Check #help";;
 #help;;
+"Check #help for an identifier"
+#help "List.map";;
 "Check #time on and then off";;
 #time;; (* time on *)
 (* no eval in between, since time can vary and look like a regression *)

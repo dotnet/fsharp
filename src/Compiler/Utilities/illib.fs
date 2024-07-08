@@ -162,12 +162,17 @@ module internal PervasiveAutoOpens =
 
         static member RunImmediate(computation: Async<'T>, ?cancellationToken) =
             let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
+
             let ts = TaskCompletionSource<'T>()
+
             let task = ts.Task
 
             Async.StartWithContinuations(computation, (ts.SetResult), (ts.SetException), (fun _ -> ts.SetCanceled()), cancellationToken)
 
-            task.Result
+            try
+                task.Result
+            with :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
+                raise (ex.InnerExceptions[0])
 
 [<AbstractClass>]
 type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =

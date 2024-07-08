@@ -8,7 +8,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Text
 open FSharp.Compiler.Symbols
-open NUnit.Framework
+open Xunit
 
 module TASTCollecting =
 
@@ -155,7 +155,7 @@ let testPatterns handler source =
         | _ -> ()
     | _, _ -> ()
 
-[<Test>]
+[<Fact>]
 let ``union case with type`` () =
     let implSource =
         """
@@ -171,5 +171,5 @@ let x = Case1 "bla"
     let handler: TASTCollecting.Handler =
         TASTCollecting.Handler.NewUnionCaseHandler lst.Add
 
-    Assert.DoesNotThrow(fun _ -> testPatterns handler implSource)
+    testPatterns handler implSource // check this doesn't throw
     Assert.Contains("Case1", lst)

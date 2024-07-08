@@ -249,7 +249,7 @@
       </trans-unit>
       <trans-unit id="TypeIsImplicitlyAbstract">
         <source>Non-abstract classes cannot contain abstract members. Either provide a default member implementation or add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
-        <target state="needs-review-translation">Questo tipo è 'abstract' perché non è stata specificata un'implementazione per alcuni membri astratti. Se questa scelta è intenzionale, aggiungere l'attributo '[&lt;AbstractClass&gt;]' al tipo.</target>
+        <target state="translated">Le classi non astratte non possono contenere membri astratti. Specificare un'implementazione di membro predefinita o aggiungere l'attributo '[&lt;AbstractClass&gt;]' al tipo.</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar1">
@@ -1573,8 +1573,8 @@
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInIntrinsicAugmentation">
-        <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.</source>
-        <target state="translated">In genere, le implementazioni di interfaccia devono essere specificate nella dichiarazione iniziale di un tipo. Le implementazioni di interfaccia negli aumenti possono portare all'accesso ai binding statici prima dell'inizializzazione, anche se l'implementazione dell'interfaccia viene richiamata durante l'inizializzazione dei dati statici e a sua volta accede ai dati statici. È possibile rimuovere questo avviso utilizzando #nowarn "69" se è stato verificato che il caso specifico non lo richiede.</target>
+        <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using '#nowarn "69"' if you have checked this is not the case.</source>
+        <target state="translated">In genere, le implementazioni di interfaccia devono essere specificate nella dichiarazione iniziale di un tipo. Le implementazioni di interfaccia negli aumenti possono portare all'accesso ai binding statici prima dell'inizializzazione, anche se l'implementazione dell'interfaccia viene richiamata durante l'inizializzazione dei dati statici e a sua volta accede ai dati statici. È possibile rimuovere questo avviso utilizzando '#nowarn "69"' se è stato verificato che il caso specifico non lo richiede.</target>
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInExtrinsicAugmentation">
@@ -1593,13 +1593,13 @@
         <note />
       </trans-unit>
       <trans-unit id="HashIncludeNotAllowedInNonScript">
-        <source>#I directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">Le direttive #I possono trovarsi solo in file di script F# (estensioni fsx o fsscript). Spostare il codice in un file di script, aggiungere un'opzione di compilazione '-I' per questo riferimento oppure delimitare la direttiva con '#if INTERACTIVE'/'#endif'.</target>
+        <source>#I directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
+        <target state="translated">Le direttive #I possono essere usate solo in file di script F# (estensioni fsx o fsscript). Spostare il codice in un file di script, aggiungere un'opzione di compilazione '-I' per questo riferimento oppure delimitare la direttiva con '#if INTERACTIVE'/'#endif'.</target>
         <note />
       </trans-unit>
       <trans-unit id="HashReferenceNotAllowedInNonScript">
-        <source>#r directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">Le direttive #r possono trovarsi solo in file di script F# (estensioni fsx o fsscript). Spostare il codice in un file di script oppure sostituire questo riferimento con l'opzione del compilatore '-r'. Se questa direttiva viene eseguita come input utente, è possibile delimitarla con '#if INTERACTIVE'/'#endif'.</target>
+        <source>#r directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
+        <target state="translated">#r direttive #I possono essere usate solo in file di script F# (estensioni fsx o fsscript). Spostare il codice in un file di script oppure sostituire questo riferimento con l'opzione del compilatore '-r'. Se questa direttiva viene eseguita come input utente, è possibile delimitarla con '#if INTERACTIVE'/'#endif'.</target>
         <note />
       </trans-unit>
       <trans-unit id="HashDirectiveNotAllowedInNonScript">

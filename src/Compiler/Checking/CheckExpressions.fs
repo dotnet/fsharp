@@ -5119,17 +5119,41 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
     let vExprTy = vExpr.Type
 
     let activePatArgsAsSynPats, patArg =
-        let rec IsNotSolved ty =
-            match ty with
-            | TType_var(v, _) when v.IsSolved ->
-                match v.Solution with
-                | Some t -> IsNotSolved t
-                | None -> false
-            | TType_var _ -> true
-            | _ -> false
+        // only cases which return unit or unresolved type (in AP definition) compatible with unit can omit output arg 
+        let canOmit retTy =
+            let couldResolveToUnit ty =
+                tryDestTyparTy g ty
+                |> ValueOption.exists (fun typar ->
+                    not typar.IsSolved
+                    && typar.Constraints |> List.forall (fun c ->
+                        let (|Unit|_|) ty = if isUnitTy g ty then Some Unit else None
 
-        // only cases which return unit or unresolved type (in AP definition) can omit output arg 
-        let canOmit retTy = isUnitTy g retTy || IsNotSolved retTy 
+                        match c with
+                        // These apply or could apply to unit.
+                        | TyparConstraint.IsReferenceType _
+                        | TyparConstraint.SupportsComparison _
+                        | TyparConstraint.SupportsEquality _
+                        | TyparConstraint.DefaultsTo (ty = Unit)
+                        | TyparConstraint.MayResolveMember _ -> true
+
+                        // Any other kind of constraint is incompatible with unit.
+                        | TyparConstraint.CoercesTo _
+                        | TyparConstraint.DefaultsTo _
+                        | TyparConstraint.IsDelegate _
+                        | TyparConstraint.IsEnum _
+                        | TyparConstraint.IsNonNullableStruct _
+                        | TyparConstraint.IsUnmanaged _
+                        | TyparConstraint.RequiresDefaultConstructor _
+                        | TyparConstraint.SimpleChoice _
+                        | TyparConstraint.SupportsNull _ -> false))
+
+            let caseRetTy =
+                if isOptionTy g retTy then destOptionTy g retTy
+                elif isValueOptionTy g retTy then destValueOptionTy g retTy
+                elif isChoiceTy g retTy then destChoiceTy g retTy idx
+                else retTy
+
+            isUnitTy g caseRetTy || couldResolveToUnit caseRetTy
 
         // This bit of type-directed analysis ensures that parameterized partial active patterns returning unit do not need to take an argument
         let dtys, retTy = stripFunTy g vExprTy
@@ -5169,25 +5193,27 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
 
         // active pattern cases returning unit or unknown things (in AP definition) can omit output arg 
         elif paramCount = args.Length then
-             let caseRetTy =
-                 if isOptionTy g retTy then destOptionTy g retTy
-                 elif isValueOptionTy g retTy then destValueOptionTy g retTy
-                 elif isChoiceTy g retTy then destChoiceTy g retTy idx
-                 else retTy
-
              // only cases which return unit or unresolved type (in AP definition) can omit output arg 
-             if canOmit caseRetTy then
+             if canOmit retTy then
                 args, SynPat.Const(SynConst.Unit, m)
              else
                  showErrMsg 1
         
         // active pattern in function param (e.g. let f (|P|_|) = ...)
-        elif IsNotSolved vExprTy then
+        elif tryDestTyparTy g vExprTy |> ValueOption.exists (fun typar -> not typar.IsSolved) then
             List.frontAndBack args
 
         // args count should equal to AP function params count
         elif dtys.Length <> args.Length then
-            showErrMsg 1
+            let returnCount =
+                match dtys with
+                // val (|P|)   : expr1:_ -> unit
+                // val (|P|_|) : expr1:_ -> unit option
+                // val (|P|_|) : expr1:_ -> unit voption
+                | [_] when canOmit retTy -> 0
+                | _ -> 1
+
+            showErrMsg returnCount
         else
             List.frontAndBack args
 
@@ -7189,7 +7215,9 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
 
             DispatchSlotChecking.CheckOverridesAreAllUsedOnce (env.DisplayEnv, g, cenv.infoReader, true, implTy, dispatchSlotsKeyed, availPriorOverrides, overrideSpecs)
 
-            DispatchSlotChecking.CheckDispatchSlotsAreImplemented (env.DisplayEnv, cenv.infoReader, m, env.NameEnv, cenv.tcSink, false, true, implTy, dispatchSlots, availPriorOverrides, overrideSpecs) |> ignore)
+            if not hasStaticMembers then
+                DispatchSlotChecking.CheckDispatchSlotsAreImplemented (env.DisplayEnv, cenv.infoReader, m, env.NameEnv, cenv.tcSink, false, implTy, dispatchSlots, availPriorOverrides, overrideSpecs) |> ignore
+            )
 
         // 3. create the specs of overrides
         let allTypeImpls =
@@ -7442,8 +7470,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
 
         if List.isEmpty synFillExprs then
             if isString then
-                let sb = System.Text.StringBuilder(printfFormatString).Replace("%%", "%")
-                let str = mkString g m (sb.ToString())
+                let str = mkString g m (printfFormatString.Replace("%%", "%"))
                 TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env (* true *) m (fun () ->
                     str, tpenv
                 )
@@ -8162,6 +8189,10 @@ and Propagate (cenv: cenv) (overallTy: OverallTy) (env: TcEnv) tpenv (expr: Appl
                 // seq { ... }
                 | SynExpr.ComputationExpr _ -> ()
 
+                // async { }
+                // seq { }
+                | SynExpr.Record (None, None, [], _) when g.langVersion.SupportsFeature LanguageFeature.EmptyBodiedComputationExpressions -> ()
+
                 // expr[idx]
                 // expr[idx1, idx2]
                 // expr[idx1..]
@@ -8426,6 +8457,16 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
     let mArg = synArg.Range
     let mLeftExpr = leftExpr.Range
 
+    /// Treat an application of a value to an empty record expression
+    /// as a computation expression with a single unit expression.
+    /// Insert a (), i.e., such that builder { } ≡ builder { () }.
+    /// This transformation is only valid for language
+    /// versions that support this feature.
+    let (|EmptyFieldListAsUnit|_|) recordFields =
+        match recordFields with
+        | [] when g.langVersion.SupportsFeature LanguageFeature.EmptyBodiedComputationExpressions -> Some (EmptyFieldListAsUnit (SynExpr.Const (SynConst.Unit, range0)))
+        | _ -> None
+
     // If the type of 'synArg' unifies as a function type, then this is a function application, otherwise
     // it is an error or a computation expression or indexer or delegate invoke
     match UnifyFunctionTypeUndoIfFailed cenv denv mLeftExpr exprTy with
@@ -8447,11 +8488,15 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
             // though users don't realise that.
             let synArg =
                 match synArg with
-                | SynExpr.ComputationExpr (false, comp, m) when 
+                // seq { comp }
+                // seq { }
+                | SynExpr.ComputationExpr (false, comp, m)
+                | SynExpr.Record (None, None, EmptyFieldListAsUnit comp, m) when
                         (match leftExpr with
                          | ApplicableExpr(expr=Expr.Op(TOp.Coerce, _, [SeqExpr g], _)) -> true
                          | _ -> false) ->
                     SynExpr.ComputationExpr (true, comp, m)
+
                 | _ -> synArg
 
             let arg, tpenv =
@@ -8492,8 +8537,11 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
                 | _ -> None, delayed
             TcIndexingThen cenv env overallTy mExprAndArg m tpenv setInfo synLeftExprOpt leftExpr.Expr exprTy expandedIndexArgs indexArgs delayed
 
-        // Perhaps 'leftExpr' is a computation expression builder, and 'arg' is '{ ... }'
-        | SynExpr.ComputationExpr (false, comp, _m) ->
+        // Perhaps 'leftExpr' is a computation expression builder, and 'arg' is '{ ... }' or '{ }':
+        // leftExpr { comp }
+        // leftExpr { }
+        | SynExpr.ComputationExpr (false, comp, _m)
+        | SynExpr.Record (None, None, EmptyFieldListAsUnit comp, _m) ->
             let bodyOfCompExpr, tpenv = cenv.TcComputationExpression cenv env overallTy tpenv (mLeftExpr, leftExpr.Expr, exprTy, comp)
             TcDelayed cenv overallTy env tpenv mExprAndArg (MakeApplicableExprNoFlex cenv bodyOfCompExpr) (tyOfExpr g bodyOfCompExpr) ExprAtomicFlag.NonAtomic delayed
 

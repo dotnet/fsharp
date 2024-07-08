@@ -491,6 +491,15 @@ hashDirectiveArg:
   | string
       { let s, kind = $1
         ParsedHashDirectiveArgument.String(s, kind, lhs parseState) }
+  | INT32
+      { let n, _ = $1
+        ParsedHashDirectiveArgument.Int32(n, lhs parseState) }
+  | IDENT
+      { let m = rhs parseState 1
+        ParsedHashDirectiveArgument.Ident(Ident($1, m), lhs parseState) }
+  | pathOp
+      { let path = $1
+        ParsedHashDirectiveArgument.LongIdent(path, lhs parseState) }
   | sourceIdentifier
       { let c, v = $1
         ParsedHashDirectiveArgument.SourceIdentifier(c, v, lhs parseState) }
@@ -2375,8 +2384,23 @@ objectImplementationMember:
      { let rangeStart = rhs parseState 1
        $3 $1 $2 rangeStart }
 
-  | opt_attributes staticMemberOrMemberOrOverride error
-      { [] }
+  | opt_attributes staticMemberOrMemberOrOverride recover
+      { let rangeStart = rhs parseState 1
+        let memFlagsBuilder, leadingKeyword = $2
+        let flags = Some(memFlagsBuilder SynMemberKind.Member)
+        let xmlDoc = grabXmlDocAtRangeStart (parseState, $1, rangeStart)
+        let trivia = { LeadingKeyword = leadingKeyword; InlineKeyword = None; EqualsRange = None }
+        let mMember = rhs parseState 2
+        let mEnd = mMember.EndRange
+        let bindingPat = patFromParseError (SynPat.Wild(mEnd))
+        let expr = arbExpr ("objectImplementationMember1", mEnd)
+        let mWhole = rhs2 parseState 1 2
+        let binding =
+            mkSynBinding
+                (xmlDoc, bindingPat)
+                (None, false, false, mWhole, DebugPointAtBinding.NoneAtInvisible, None, expr, mEnd, [], $1, flags, trivia)
+
+        [SynMemberDefn.Member(binding, mWhole)] }
 
   | opt_attributes error memberCore opt_ODECLEND
       { [] }
@@ -2558,6 +2582,10 @@ opt_explicitValTyparDecls:
   |
       { SynValTyparDecls(None, true) }
 
+hashConstraint:
+  | HASH atomType
+     { SynType.HashConstraint($2, lhs parseState) }
+
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
 /* See the F# specification "Lexical analysis of type applications and type parameter definitions" */
 opt_typeConstraints:
@@ -2579,20 +2607,20 @@ typeConstraints:
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
 /* See the F# specification "Lexical analysis of type applications and type parameter definitions" */
 intersectionConstraints:
-  | intersectionConstraints AMP atomType %prec prec_no_more_attr_bindings // todo precedence
+  | intersectionConstraints AMP hashConstraint %prec prec_no_more_attr_bindings
       { let constraints, mAmpersands = $1
-
-        match $3 with
-        | SynType.HashConstraint _ -> ()
-        | ty -> errorR(Error(FSComp.SR.parsConstraintIntersectionSyntaxUsedWithNonFlexibleType(), ty.Range))
-
         ($3 :: constraints), (rhs parseState 2 :: mAmpersands) }
 
-  | atomType
-      { match $1 with
-        | SynType.HashConstraint _ -> ()
-        | ty -> errorR(Error(FSComp.SR.parsConstraintIntersectionSyntaxUsedWithNonFlexibleType(), ty.Range))
+  | intersectionConstraints AMP atomType %prec prec_no_more_attr_bindings
+      { let constraints, mAmpersands = $1
+        errorR(Error(FSComp.SR.parsConstraintIntersectionSyntaxUsedWithNonFlexibleType(), $3.Range))
+        ($3 :: constraints), (rhs parseState 2 :: mAmpersands) }
 
+  | hashConstraint
+      { [ $1 ], [] }
+
+  | atomType
+      { errorR(Error(FSComp.SR.parsConstraintIntersectionSyntaxUsedWithNonFlexibleType(), $1.Range))
         [ $1 ], [] }
 
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
@@ -3450,6 +3478,17 @@ headBindingPattern:
       { let mColonColon = rhs parseState 2
         SynPat.ListCons($1, $3, rhs2 parseState 1 3, { ColonColonRange = mColonColon }) }
 
+  | headBindingPattern COLON_COLON recover
+      { let mColonColon = rhs parseState 2
+        let pat2 = SynPat.Wild(mColonColon.EndRange)
+        SynPat.ListCons($1, pat2, rhs2 parseState 1 2, { ColonColonRange = mColonColon }) }
+
+  | headBindingPattern COLON_COLON
+      { let mColonColon = rhs parseState 2
+        reportParseErrorAt mColonColon (FSComp.SR.parsExpectingPattern ())
+        let pat2 = SynPat.Wild(mColonColon.EndRange)
+        SynPat.ListCons($1, pat2, rhs2 parseState 1 2, { ColonColonRange = mColonColon }) }
+
   | tuplePatternElements %prec pat_tuple
       { let pats, commas = $1
         let pats, commas = normalizeTuplePat pats commas
@@ -3755,6 +3794,17 @@ parenPattern:
   | parenPattern COLON_COLON parenPattern
       { let mColonColon = rhs parseState 2
         SynPat.ListCons($1, $3, rhs2 parseState 1 3, { ColonColonRange = mColonColon }) }
+
+  | parenPattern COLON_COLON recover
+      { let mColonColon = rhs parseState 2
+        let pat2 = SynPat.Wild(mColonColon.EndRange)
+        SynPat.ListCons($1, pat2, rhs2 parseState 1 2, { ColonColonRange = mColonColon }) }
+
+  | parenPattern COLON_COLON
+      { let mColonColon = rhs parseState 2
+        reportParseErrorAt mColonColon (FSComp.SR.parsExpectingPattern ())
+        let pat2 = SynPat.Wild(mColonColon.EndRange)
+        SynPat.ListCons($1, pat2, rhs2 parseState 1 2, { ColonColonRange = mColonColon }) }
 
   | constrPattern { $1 }
 
@@ -4629,6 +4679,14 @@ withPatternClauses:
       { let mBar = rhs parseState 1 |> Some
         $2 mBar }
 
+  | BAR BAR patternClauses
+     { let mBar1 = rhs parseState 1
+       let mBar2 = rhs parseState 2
+       reportParseErrorAt mBar2 (FSComp.SR.parsExpectingPattern ())
+       let clauses, mLast = Some mBar1 |> $3
+       let clauses = addEmptyMatchClause mBar1 mBar2 clauses
+       clauses, mLast }
+
   | BAR error
       { // silent recovery
         let mLast = rhs parseState 1
@@ -4661,6 +4719,20 @@ patternClauses:
        let m = unionRanges resultExpr.Range pat.Range
        fun mBar ->
            (SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, { ArrowRange = Some mArrow; BarRange = mBar }) :: clauses), mLast }
+
+  | patternAndGuard patternResult BAR BAR patternClauses
+     { let pat, guard = $1
+       let mArrow, resultExpr = $2
+       let mBar1 = rhs parseState 3
+       let mBar2 = rhs parseState 4
+       reportParseErrorAt mBar2 (FSComp.SR.parsExpectingPattern ())
+       let clauses, mLast = Some mBar1 |> $5
+       let clauses = addEmptyMatchClause mBar1 mBar2 clauses
+
+       fun mBar ->
+           let m = unionRanges resultExpr.Range pat.Range
+           let trivia = { ArrowRange = Some mArrow; BarRange = mBar }
+           SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, trivia) :: clauses, mLast }
 
   | patternAndGuard error BAR patternClauses
      { let pat, guard = $1
@@ -5993,11 +6065,11 @@ tupleOrQuotTypeElements:
       { [ SynTupleTypeSegment.Type $1 ] }
 
 intersectionType:
-  | typar AMP intersectionConstraints %prec prec_no_more_attr_bindings // todo precedence
+  | typar AMP intersectionConstraints %prec prec_no_more_attr_bindings
     { let constraints, mAmpersands = $3
       SynType.Intersection(Some $1, List.rev constraints, lhs parseState, { AmpersandRanges = rhs parseState 2 :: List.rev mAmpersands }) }
 
-  | atomType AMP intersectionConstraints %prec prec_no_more_attr_bindings // todo precedence
+  | hashConstraint AMP intersectionConstraints %prec prec_no_more_attr_bindings
     { let constraints, mAmpersands = $3
       SynType.Intersection(None, $1 :: List.rev constraints, lhs parseState, { AmpersandRanges = rhs parseState 2 :: List.rev mAmpersands }) }
 
@@ -6213,8 +6285,8 @@ atomTypeOrAnonRecdType:
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
 /* See the F# specification "Lexical analysis of type applications and type parameter definitions" */
 atomType:
-  | HASH atomType
-     { SynType.HashConstraint($2, lhs parseState) }
+  | hashConstraint
+     { $1 }
 
   | appTypeConPower %prec prec_atomtyp_path
      { $1 }

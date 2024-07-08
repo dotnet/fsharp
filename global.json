@@ -1,10 +1,10 @@
 {
   "sdk": {
-    "version": "9.0.100-preview.3.24204.13",
+    "version": "9.0.100-preview.5.24307.3",
     "allowPrerelease": true
   },
   "tools": {
-    "dotnet": "9.0.100-preview.3.24204.13",
+    "dotnet": "9.0.100-preview.5.24307.3",
     "vs": {
       "version": "17.8",
       "components": [
@@ -17,7 +17,7 @@
     "perl": "5.38.2.2"
   },
   "msbuild-sdks": {
-    "Microsoft.DotNet.Arcade.Sdk": "8.0.0-beta.24225.1",
+    "Microsoft.DotNet.Arcade.Sdk": "8.0.0-beta.24311.3",
     "Microsoft.DotNet.Helix.Sdk": "8.0.0-beta.23255.2"
   }
 }
