@@ -10901,9 +10901,9 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         let isFixed, rhsExpr, overallPatTy, overallExprTy =
             match rhsExpr with
             | SynExpr.Fixed (e, _) -> true, e, NewInferenceType g, overallTy
-            // Currently { new Foo()  } is parsed as a SynExpr.ComputationExpr, but it should be a SynExpr.ObjExpr
-            // If a SynExpr.ComputationExpr body consists of a single SynExpr.New, we should convert it to a SynExpr.ObjExpr
-            // and it's not the argument of a computation expression builder type.
+            // { new Foo()  } is parsed as a SynExpr.ComputationExpr.(See pars.fsy `objExpr` rule).
+            // If a SynExpr.ComputationExpr body consists of a single SynExpr.New, and it's not the argument of a computation expression builder type.
+            // Then we should treat it as a SynExpr.ObjExpr and make it consistent with the other object expressions. e.g.
             // { new Foo } -> SynExpr.ObjExpr
             // { new Foo() } -> SynExpr.ObjExpr
             // { New Foo with ... } -> SynExpr.ObjExpr
