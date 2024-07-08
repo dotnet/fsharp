@@ -126,7 +126,7 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
             | Some ty -> TypeFeasiblySubsumesType (ndeep+1) g amap m ty1 NoCoerce ty 
         let immediateInterfacesOfType = ty2 |> GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m
         let immediateInterfaces = immediateInterfacesOfType |> List.exists (TypeFeasiblySubsumesType (ndeep+1) g amap m ty1 NoCoerce)
-        isObjAndRefType || isAppAndRefType || (isAppAndRefType && superType || immediateInterfaces)
+        isObjAndRefType || (isAppAndRefType && superType || immediateInterfaces)
                    
 /// Choose solutions for Expr.TyChoose type "hidden" variables introduced
 /// by letrec nodes. Also used by the pattern match compiler to choose type
