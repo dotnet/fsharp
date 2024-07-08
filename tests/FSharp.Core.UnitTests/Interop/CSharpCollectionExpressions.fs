@@ -1,5 +1,8 @@
 ﻿module FSharp.Core.UnitTests.Interop.CSharp.CollectionExpressions
 
+// These tests require types available only in netstandard2.1 and up.
+#if NET8_0_OR_GREATER
+
 open FSharp.Test
 open FSharp.Test.Compiler
 open Xunit
@@ -209,3 +212,5 @@ let ``FSharpSet<RecordStruct>: can create using C# collection expression`` () =
     |> withName "Test"
     |> compileExeAndRun
     |> shouldSucceed
+
+#endif
