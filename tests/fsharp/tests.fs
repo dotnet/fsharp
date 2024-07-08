@@ -49,21 +49,6 @@ module CoreTests =
 #endif
 
 
-#if !NETCOREAPP
-// This test has hardcoded expectations about current synchronization context
-// Will be moved out of FsharpSuite.Tests in a later phase for desktop framework
-    [<Test>]
-    let ``control-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/control" FSC_OPTIMIZED
-
-    [<Test>]
-    let ``control-FSI`` () = singleTestBuildAndRun "core/control" FSI
-
-    [<Test>]
-    let ``control --tailcalls`` () =
-        let cfg = testConfig "core/control"
-        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_OPTIMIZED
-#endif  
-
     [<Test>]
     let ``SDKTests`` () =
         let cfg = testConfig "SDKTests"
