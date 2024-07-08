@@ -104,8 +104,6 @@ The F# tests are split as follows:
 
 * [FSharp.Core.UnitTests](tests/FSharp.Core.UnitTests) - Validation of the core F# types and the public surface area of `FSharp.Core.dll`.
 
-* [FSharp.Core.UnitTests.CSharp](tests/FSharp.Core.UnitTests.CSharp) - Validation of interop of F# types from `FSharp.Core.dll` in C#.
-
 * [FSharp.Compiler.Service.Tests](tests/FSharp.Compiler.Service.Tests) - Validation of compiler internals.
 
 * [FSharp.Compiler.ComponentTests](tests/FSharp.Compiler.ComponentTests) - Validation of compiler APIs.
