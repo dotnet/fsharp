@@ -124,12 +124,12 @@
       </trans-unit>
       <trans-unit id="chkStaticAbstractInterfaceMembers">
         <source>A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.{0}).</source>
-        <target state="new">A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.{0}).</target>
+        <target state="translated">Um membro de interface não virtual abstrato estático só deve ser chamado via parâmetro de tipo (por exemplo: ''T.{0}).</target>
         <note />
       </trans-unit>
       <trans-unit id="chkStaticAbstractMembersOnClasses">
         <source>Classes cannot contain static abstract members.</source>
-        <target state="new">Classes cannot contain static abstract members.</target>
+        <target state="translated">Classes não podem conter membros abstratos estáticos.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkStaticMembersOnObjectExpressions">
@@ -302,6 +302,11 @@
         <target state="translated">literal float32 sem ponto</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureEmptyBodiedComputationExpressions">
+        <source>Support for computation expressions with empty bodies: builder {{ }}</source>
+        <target state="new">Support for computation expressions with empty bodies: builder {{ }}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureEnforceAttributeTargets">
         <source>Enforce AttributeTargets</source>
         <target state="translated">Impor AttributeTargets</target>
@@ -459,17 +464,17 @@
       </trans-unit>
       <trans-unit id="featureParsedHashDirectiveArgumentNonString">
         <source># directives with non-quoted string arguments</source>
-        <target state="new"># directives with non-quoted string arguments</target>
+        <target state="translated">Diretivas # com argumentos de cadeia de caracteres sem aspas</target>
         <note />
       </trans-unit>
       <trans-unit id="featureParsedHashDirectiveUnexpectedIdentifier">
         <source>Unexpected identifier '{0}'.</source>
-        <target state="new">Unexpected identifier '{0}'.</target>
+        <target state="translated">Identificador inesperado "{0}".</target>
         <note />
       </trans-unit>
       <trans-unit id="featureParsedHashDirectiveUnexpectedInteger">
         <source>Unexpected integer literal '{0}'.</source>
-        <target state="new">Unexpected integer literal '{0}'.</target>
+        <target state="translated">Literal de inteiro inesperado "{0}".</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePreferExtensionMethodOverPlainProperty">
@@ -1139,22 +1144,22 @@
       </trans-unit>
       <trans-unit id="tcActivePatternArgsCountNotMatchArgs">
         <source>This active pattern expects {0} expression argument(s), e.g., '{1}{2}'.</source>
-        <target state="new">This active pattern expects {0} expression argument(s), e.g., '{1}{2}'.</target>
+        <target state="translated">Este padrão ativo espera argumentos de expressão {0}, por exemplo, ''{1}{2}''.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcActivePatternArgsCountNotMatchArgsAndPat">
         <source>This active pattern expects {0} expression argument(s) and a pattern argument, e.g., '{1}{2} pat'.</source>
-        <target state="new">This active pattern expects {0} expression argument(s) and a pattern argument, e.g., '{1}{2} pat'.</target>
+        <target state="translated">Este padrão ativo espera argumento(s) de expressão {0} e um argumento de padrão, por exemplo, ''{1}{2} pat''.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcActivePatternArgsCountNotMatchNoArgsNoPat">
         <source>This active pattern does not expect any arguments, i.e., it should be used like '{0}' instead of '{1} x'.</source>
-        <target state="new">This active pattern does not expect any arguments, i.e., it should be used like '{0}' instead of '{1} x'.</target>
+        <target state="translated">Este padrão ativo não espera argumentos, ou seja, ele deve ser usado como ''{0}'' em vez de ''{1} x''.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcActivePatternArgsCountNotMatchOnlyPat">
         <source>This active pattern expects exactly one pattern argument, e.g., '{0} pat'.</source>
-        <target state="new">This active pattern expects exactly one pattern argument, e.g., '{0} pat'.</target>
+        <target state="translated">Este padrão ativo espera exatamente um argumento de padrão, por exemplo, ''{0} pat''.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAmbiguousDiscardDotLambda">
@@ -1247,6 +1252,11 @@
         <target state="translated">A sintaxe lambda abreviada só tem suporte para expressões atômicas, como método, propriedade, campo ou indexador no argumento '_' implícito. Por exemplo: 'let f = _. Comprimento'.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcEmptyBodyRequiresBuilderZeroMethod">
+        <source>An empty body may only be used if the computation expression builder defines a 'Zero' method.</source>
+        <target state="new">An empty body may only be used if the computation expression builder defines a 'Zero' method.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
         <source>The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</source>
         <target state="translated">A sintaxe 'expr1[expr2]' é usada para indexação. Considere adicionar uma anotação de tipo para habilitar a indexação ou, se chamar uma função, adicione um espaço, por exemplo, 'expr1 [expr2]'.</target>
@@ -1279,7 +1289,7 @@
       </trans-unit>
       <trans-unit id="tcImplicitConversionUsedForNonMethodArg">
         <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</source>
-        <target state="needs-review-translation">Essa expressão usa a conversão implícita '{0}' para converter o tipo '{1}' ao tipo '{2}'. Consulte https://aka.ms/fsharp-implicit-convs. Este aviso pode ser desabilitado usando '#nowarn\"3391\".</target>
+        <target state="translated">Essa expressão usa a conversão implícita '{0}' para converter o tipo '{1}' ao tipo '{2}'. Consulte https://aka.ms/fsharp-implicit-convs. Este aviso pode ser desabilitado usando '#nowarn\"3391\".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInfoIfFunctionShadowsUnionCase">
@@ -1534,12 +1544,12 @@
       </trans-unit>
       <trans-unit id="tcUsingInterfaceWithStaticAbstractMethodAsType">
         <source>'{0}' is normally used as a type constraint in generic code, e.g. \"'T when ISomeInterface&lt;'T&gt;\" or \"let f (x: #ISomeInterface&lt;_&gt;)\". See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3536\"' or '--nowarn:3536'.</source>
-        <target state="needs-review-translation">'{0}' normalmente é usado como uma restrição de tipo em código genérico, por exemplo, \"'T when ISomeInterface&lt;'T&gt;\" ou \"let f (x: #ISomeInterface&lt;_&gt;)\". Confira https://aka.ms/fsharp-iwsams para obter as diretrizes. Você pode desabilitar este aviso usando '#nowarn \"3536\"' ou '--nowarn:3536'.</target>
+        <target state="translated">'{0}' normalmente é usado como uma restrição de tipo em código genérico, por exemplo, \"'T when ISomeInterface&lt;'T&gt;\" ou \"let f (x: #ISomeInterface&lt;_&gt;)\". Confira https://aka.ms/fsharp-iwsams para obter as diretrizes. Você pode desabilitar este aviso usando '#nowarn \"3536\"' ou '--nowarn:3536'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUsingInterfacesWithStaticAbstractMethods">
         <source>Declaring \"interfaces with static abstract methods\" is an advanced feature. See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3535\"' or '--nowarn:3535'.</source>
-        <target state="needs-review-translation">Declarando \"interfaces com métodos abstratos estáticos\" é um recurso avançado. Consulte https://aka.ms/fsharp-iwsams para obter diretrizes. Você pode desabilitar esse aviso usando '#nowarn \"3535\"' ou '--nowarn:3535'.</target>
+        <target state="translated">Declarando \"interfaces com métodos abstratos estáticos\" é um recurso avançado. Consulte https://aka.ms/fsharp-iwsams para obter diretrizes. Você pode desabilitar esse aviso usando '#nowarn \"3535\"' ou '--nowarn:3535'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tooManyMethodsInDotNetTypeWritingAssembly">
@@ -1564,7 +1574,7 @@
       </trans-unit>
       <trans-unit id="typrelNeverRefinedAwayFromTop">
         <source>A type has been implicitly inferred as 'obj', which may be unintended. Consider adding explicit type annotations. You can disable this warning by using '#nowarn \"3559\"' or '--nowarn:3559'.</source>
-        <target state="needs-review-translation">Um tipo foi implicitamente inferido como 'obj', que pode não ser intencional. Considere adicionar anotações de tipo explícitas. Você pode desabilitar esse aviso usando '#nowarn \"3559\"' ou '--nowarn:3559'.</target>
+        <target state="translated">Um tipo foi implicitamente inferido como 'obj', que pode não ser intencional. Considere adicionar anotações de tipo explícitas. Você pode desabilitar esse aviso usando '#nowarn \"3559\"' ou '--nowarn:3559'.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
@@ -1899,7 +1909,7 @@
       </trans-unit>
       <trans-unit id="buildInvalidHashtimeDirective">
         <source>Invalid directive. Expected '#time', '#time \"on\"' or '#time \"off\"'.</source>
-        <target state="needs-review-translation">Diretiva inválida. '#time', '#time \"on\"' ou '#time \"off\"' era esperado.</target>
+        <target state="translated">Diretiva inválida. '#time', '#time \"on\"' ou '#time \"off\"' era esperado.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildDirectivesInModulesAreIgnored">

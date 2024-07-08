@@ -264,6 +264,10 @@ TorchSharp.Tensor.LongTensor.From([| 0L .. 100L |]).Device
 
     [<Fact>]
     member _.``Use Dependency Manager to restore packages with native dependencies, build and run script that depends on the results``() =
+        // Skip test on arm64, because there is not an arm64 netive library
+        if RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then
+            ()
+        else
         let packagemanagerlines = [|
             "r", "Microsoft.ML,version=1.4.0-preview"
             "r", "Microsoft.ML.AutoML,version=0.16.0-preview"
@@ -360,6 +364,10 @@ printfn ""%A"" result
 
     [<Fact>]
     member _.``Use NativeResolver to resolve native dlls.``() =
+        // Skip test on arm64, because there is not an arm64 netive library
+        if RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then
+            ()
+        else
         let packagemanagerlines = [|
             "r", "Microsoft.ML,version=1.4.0-preview"
             "r", "Microsoft.ML.AutoML,version=0.16.0-preview"
@@ -442,6 +450,10 @@ printfn ""%A"" result
 
     [<Fact>]
     member _.``Use AssemblyResolver to resolve assemblies``() =
+        // Skip test on arm64, because there is not an arm64 netive library
+        if RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then
+            ()
+        else
         let packagemanagerlines = [|
             "r", "Microsoft.ML,version=1.4.0-preview"
             "r", "Microsoft.ML.AutoML,version=0.16.0-preview"

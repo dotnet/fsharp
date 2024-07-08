@@ -1086,6 +1086,8 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
             && hasMethInfo "Delay"
             && YieldFree cenv comp)
 
+    let origComp = comp
+
     /// <summary>
     /// Try translate the syntax sugar
     /// </summary>
@@ -1633,7 +1635,19 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                     (not enableImplicitYield)
                     && isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "Zero" builderTy)
                 then
-                    error (Error(FSComp.SR.tcRequireBuilderMethod ("Zero"), m))
+                    match origComp with
+                    // builder { }
+                    //
+                    // The compiler inserts a dummy () in CheckExpressions.fs for
+                    // empty-bodied computation expressions. In this case, the user
+                    // has not actually written any "control construct" in the body,
+                    // and so we use a more specific error message for clarity.
+                    | SynExpr.Const(SynConst.Unit, mUnit) when
+                        g.langVersion.SupportsFeature LanguageFeature.EmptyBodiedComputationExpressions
+                        && Range.equals mUnit range0
+                        ->
+                        error (Error(FSComp.SR.tcEmptyBodyRequiresBuilderZeroMethod (), mWhole))
+                    | _ -> error (Error(FSComp.SR.tcRequireBuilderMethod ("Zero"), m))
 
                 Some(translatedCtxt (mkSynCall "Zero" m []))
 
