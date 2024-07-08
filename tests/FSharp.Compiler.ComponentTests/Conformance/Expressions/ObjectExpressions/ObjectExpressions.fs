@@ -65,14 +65,17 @@ type Foo() = class end
 
 let foo = { new Foo() } // Approved suggestion to allow this https://github.com/fsharp/fslang-suggestions/issues/632
 
+let foo1 = new Foo()
+
 // hacky workaround
-let foo = { new Foo() with member __.ToString() = base.ToString() }
+let foo2 = { new Foo() with member __.ToString() = base.ToString() }
         """
          |> withLangVersion80
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
              (Error 738, Line 5, Col 11, Line 5, Col 24, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
+             (Error 759, Line 7, Col 12, Line 7, Col 21, "Instances of this type cannot be created since it has been marked abstract or not all methods have been given implementations. Consider using an object expression '{ new ... with ... }' instead.")
          ] 
          
     [<Fact>]
