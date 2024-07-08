@@ -117,16 +117,16 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
 
     | _ -> 
         // F# reference types are subtypes of type 'obj' 
-        (isObjTy g ty1 && (canCoerce = CanCoerce || isRefTy g ty2)) 
-        ||
-        (isAppTy g ty2 &&
-         (canCoerce = CanCoerce || isRefTy g ty2) && 
-         begin match GetSuperTypeOfType g amap m ty2 with 
-         | None -> false
-         | Some ty -> TypeFeasiblySubsumesType (ndeep+1) g amap m ty1 NoCoerce ty
-         end ||
-         ty2 |> GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m 
-             |> List.exists (TypeFeasiblySubsumesType (ndeep+1) g amap m ty1 NoCoerce))
+        let isObjAndRefType = (isObjTy g ty1 && (canCoerce = CanCoerce || isRefTy g ty2))
+        let isAppTy = isAppTy g ty2
+        let isAppAndRefType = isAppTy && (canCoerce = CanCoerce || isRefTy g ty2)
+        let superType =
+            match GetSuperTypeOfType g amap m ty2 with 
+            | None -> false
+            | Some ty -> TypeFeasiblySubsumesType (ndeep+1) g amap m ty1 NoCoerce ty 
+        let immediateInterfacesOfType = ty2 |> GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m
+        let immediateInterfaces = immediateInterfacesOfType |> List.exists (TypeFeasiblySubsumesType (ndeep+1) g amap m ty1 NoCoerce)
+        isObjAndRefType || isAppAndRefType || (isAppAndRefType && superType || immediateInterfaces)
                    
 /// Choose solutions for Expr.TyChoose type "hidden" variables introduced
 /// by letrec nodes. Also used by the pattern match compiler to choose type
