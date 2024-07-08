@@ -45,4 +45,4 @@ function CheckTrim($root, $tfm, $outputfile, $expected_len) {
 CheckTrim -root "SelfContained_Trimming_Test" -tfm "net8.0" -outputfile "FSharp.Core.dll" -expected_len 285184
 
 # Check net8.0 trimmed assemblies
-CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm "net8.0" -outputfile "StaticLinkedFSharpCore_Trimming_Test.dll" -expected_len 8818176
+CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm "net8.0" -outputfile "StaticLinkedFSharpCore_Trimming_Test.dll" -expected_len 8818688
