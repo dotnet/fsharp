@@ -47,7 +47,7 @@
   <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
     <NoOptimizationData>false</NoOptimizationData>
     <NoInterfaceData>false</NoInterfaceData>
-    <CompressMetadata>false</CompressMetadata>
+    <CompressMetadata>true</CompressMetadata>
   </PropertyGroup>
 
   <!-- When we build FCS solution and we include FSCore as reference, set path explicitly -->
