@@ -2,7 +2,7 @@
   <PropertyGroup>
     <LocalFSharpCompilerConfiguration Condition="'$(LocalFSharpCompilerConfiguration )' != ''">Debug</LocalFSharpCompilerConfiguration>
 
-    <LocalFSharpCompilerPath>$(MSBuildThisFileDirectory)</LocalFSharpCompilerPath>
+    <LocalFSharpCompilerPath  Condition="'$(LocalFSharpCompilerPath  )' != ''">$(MSBuildThisFileDirectory)</LocalFSharpCompilerPath>
     <LocalFSCDllPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/net8.0/fsc.dll</LocalFSCDllPath>
 
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
