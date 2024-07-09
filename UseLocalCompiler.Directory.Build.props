@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <LocalFSharpCompilerConfiguration>Debug</LocalFSharpCompilerConfiguration>
+    <LocalFSharpCompilerConfiguration Condition="'$(LocalFSharpCompilerConfiguration )' != ''">Debug</LocalFSharpCompilerConfiguration>
 
     <LocalFSharpCompilerPath>$(MSBuildThisFileDirectory)</LocalFSharpCompilerPath>
     <LocalFSCDllPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/net8.0/fsc.dll</LocalFSCDllPath>
