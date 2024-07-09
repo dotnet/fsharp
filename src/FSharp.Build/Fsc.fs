@@ -69,6 +69,9 @@ type public Fsc() as this =
     let mutable targetProfile: string MaybeNull = null
     let mutable targetType: string MaybeNull = null
     let mutable toolExe: string = "fsc.exe"
+    let mutable graphBasedChecking: bool = true
+    let mutable parallelOptimization : bool = true
+    let mutable parallelIlxGen: bool = true
 
     let defaultToolPath =
         let locationOfThisDll =
@@ -357,6 +360,24 @@ type public Fsc() as this =
 
         if refOnly then
             builder.AppendSwitch("--refonly")
+            
+        // graphbasedchecking
+        if graphBasedChecking then
+            builder.AppendSwitch("--graphbasedchecking+")
+        else
+            builder.AppendSwitch("--graphbasedchecking-")
+        
+        // paralleloptimization    
+        if parallelOptimization then
+            builder.AppendSwitch("--paralleloptimization+")
+        else
+            builder.AppendSwitch("--paralleloptimization-")
+            
+        // parallelilxgen
+        if parallelIlxGen then
+            builder.AppendSwitch("--parallelilxgen+")
+        else
+            builder.AppendSwitch("--parallelilxgen-")
 
         builder
 
@@ -660,6 +681,21 @@ type public Fsc() as this =
     member _.CommandLineArgs
         with get () = List.toArray commandLineArgs
         and set (p) = commandLineArgs <- (List.ofArray p)
+        
+    // --graphbasedchecking[+-]
+    member _.GraphBasedChecking
+        with get () = graphBasedChecking
+        and set (b) = graphBasedChecking <- b
+        
+    // --paralleloptimization[+-]
+    member _.ParallelOptimization
+        with get () = parallelOptimization
+        and set (b) = parallelOptimization <- b
+        
+    // --parallelilxgen[+-]
+    member _.ParallelIlxGen
+        with get () = parallelIlxGen
+        and set (b) = parallelIlxGen <- b
 
     // ToolTask methods
     override _.ToolName = "fsc.exe"
