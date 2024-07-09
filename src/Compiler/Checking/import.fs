@@ -624,6 +624,8 @@ let ImportILGenericParameters amap m scoref tinst (nullableFallback:Nullness.Nul
         let tptys = tps |> List.map mkTyparTy
         let importInst = tinst@tptys
         (tps, gps) ||> List.iter2 (fun tp gp -> 
+            if gp.Variance = ILGenericVariance.ContraVariant then
+                tp.MarkAsContravariant()
             let constraints = 
                 [  
                   if amap.g.langFeatureNullness && amap.g.checkNullness then

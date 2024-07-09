@@ -850,6 +850,31 @@ let mappableFunc =
     |> shouldSucceed
 
 [<Fact>]
+let ``Importing and processing contravariant interfaces`` () = 
+    
+    FSharp """module MyLibrary
+
+open System
+open System.Collections.Concurrent
+open System.Collections.Generic
+
+
+let cmp1 : IEqualityComparer<string> = StringComparer.Ordinal
+let cmp2 : IEqualityComparer<string | null> = StringComparer.Ordinal
+let stringHash = cmp2.GetHashCode("abc")
+let nullHash = cmp2.GetHashCode(null)
+let nullEquals = cmp2.Equals("abc", null)
+
+let dict = ConcurrentDictionary<string, int> (StringComparer.Ordinal)
+dict["ok"] <- 42
+
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+
+[<Fact>]
 let ``Notnull constraint and inline annotated value`` () = 
     FSharp """module MyLibrary
 open System
