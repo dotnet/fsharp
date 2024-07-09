@@ -200,7 +200,7 @@ namespace Microsoft.FSharp.Core
     /// <summary>Adding this attribute to a type causes it to be represented using a CLI struct.</summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Struct ||| AttributeTargets.ReturnValue ,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct ||| AttributeTargets.ReturnValue ,AllowMultiple=false)>]  
     [<Sealed>]
     type StructAttribute =
         inherit Attribute
