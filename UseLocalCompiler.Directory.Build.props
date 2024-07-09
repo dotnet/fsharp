@@ -1,16 +1,14 @@
 <Project>
   <PropertyGroup>
-    <LocalFSharpCompilerConfiguration Condition="'$(LocalFSharpCompilerConfiguration )' != ''">Debug</LocalFSharpCompilerConfiguration>
+    <LocalFSharpCompilerConfiguration Condition="'$(LocalFSharpCompilerConfiguration)' == ''">Release</LocalFSharpCompilerConfiguration>
 
-    <LocalFSharpCompilerPath  Condition="'$(LocalFSharpCompilerPath  )' != ''">$(MSBuildThisFileDirectory)</LocalFSharpCompilerPath>
-    <LocalFSCDllPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/net8.0/fsc.dll</LocalFSCDllPath>
+    <LocalFSharpCompilerPath Condition=" '$(LocalFSharpCompilerPath)' == '' ">$(MSBuildThisFileDirectory)</LocalFSharpCompilerPath>
 
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-
     <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
 
-    <DotnetFscCompilerPath>$(LocalFSCDllPath)</DotnetFscCompilerPath>
-    <Fsc_DotNET_DotnetFscCompilerPath>$(LocalFSCDllPath)</Fsc_DotNET_DotnetFscCompilerPath>
+    <DotnetFscCompilerPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/net8.0/fsc.dll</DotnetFscCompilerPath>
+    <Fsc_DotNET_DotnetFscCompilerPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/net8.0/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
 
     <FSharpPreferNetFrameworkTools>False</FSharpPreferNetFrameworkTools>
     <FSharpPrefer64BitTools>True</FSharpPrefer64BitTools>
