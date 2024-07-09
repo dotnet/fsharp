@@ -1,65 +1,317 @@
 ---
-title: Reusing typecheck results
+title: Reusing compilation results
 category: Compiler Internals
 categoryindex: 200
 index: 42
 ---
 
-# Reusing typecheck results between compiler and tooling runs
+# Reusing compilation results between compiler and tooling runs
 
-Caching and reusing typecheck results between compiler and tooling runs will be an optimization technique aimed at improving the performance and efficiency of the F# development experience.
+Caching and reusing compilation results between compiler and tooling runs will be an optimization technique aimed at improving the performance and efficiency of the F# development experience.
 
-### Why is it important
+## Motivation
 
-- **Performance**. Recomputing type information for large projects is time-consuming. By caching the results, subsequent runs can skip this step, leading to faster builds.
+- **Performance**. Things like recomputing type information for large projects are time-consuming. By caching the results, subsequent compilation can skip some steps, leading to faster builds.
 
-- **IDE responsiveness**. IDEs can provide faster IntelliSense, code navigation, and other features if they can quickly access cached type information.
+- **Better IDE cold start**. IDEs can provide faster IntelliSense, code navigation, and other features if they can quickly access cached compilation information.
 
-- **Error reduction**. Consistent typechecking results help avoid scenarios where slight differences between runs could cause different errors or warnings to be produced.
+- **Error reduction**. Consistent compilation results help avoid scenarios where slight differences between runs could cause different errors or warnings to be produced.
 
-### General considerations
+### Example real-world scenarios
 
-- The technique will be implemented separately for the compiler and tooling, for better granularity and trackability.
+The optimization will benefit the most in large and not very interdependent projects. For instance, a 100-files test project where a single test is changed. MSBuild will mark the project for recompilation but thanks to the improvement only one file would be recompiled in the full-blown manner.
 
-- Caching data will likely be unsophisticated, the harder part will be to understand what data can be reused and how.
+The technique should also help when MSBuild generally incorrectly marks projects for rebuild. The probably doesn't happen often though.
 
-## Detailed design: compiler layer
+## Premises
 
-### Caching
+Here are some assumptions I am coming with after tinkering with the topic and investigating the current state of the art. 
 
-- Cache data to the "obj" folder, next to other intermediary compilation information.
-- Do this during Phase 6 of the compilation, next to writing binaries (`main6`).
-- Store the data either in binary or in text, as with other things in "obj". The decision can maybe be made based on the speed of serialization/deserialization of different formats.
+### Premise 1: current compiler design
 
-### Reusing
+The heart of the compiler, `fsc.fs`, is split into 6 phases (`main1` - `main6`). The code is designed to pass minimum information between phases, using the `Args` structure, which is essentially a data bag. The first phase takes info from the program arguments.
 
-- Start reading data asynchronously in the beginning of compilation, around importing assemblies (beginning of `main1`).
-- Await the data just before the type check (middle of `main1`).
-- If there is no data, do type check as usual.
-- If there is some data, see what can be reused.
+```fsharp
+main1 (
+    ctok,
+    argv,
+    legacyReferenceResolver,
+    bannerAlreadyPrinted,
+    reduceMemoryUsage,
+    defaultCopyFSharpCore,
+    exiter,
+    loggerProvider,
+    disposables
+)
+|> main2
+|> main3
+|> main4 (tcImportsCapture, dynamicAssemblyCreator)
+|> main5
+|> main6 dynamicAssemblyCreator
+```
 
-### What data to store?
+### Premise 2: current compilation time consumption
 
-- Start with storing full typecheck data.
-- Later parsing data can be added if we find a good scenario for having just that. 
+Let's measure (`fsc --times`) the fresh compilation of large F# files. We'll use examples from our benchmarks - those are different but should be good to see general trends.
 
-### How to reuse data?
+**SomethingToCompile.fs**
+```
+--------------------------------------------------------------------------------------------------------
+|Phase name                          |Elapsed |Duration| WS(MB)|  GC0  |  GC1  |  GC2  |Handles|Threads|
+|------------------------------------|--------|--------|-------|-------|-------|-------|-------|-------|
+// main1
+|Import mscorlib+FSharp.Core         |  0,2720|  0,2604|     96|      0|      0|      0|    365|     30|     <-- long
+|Parse inputs                        |  0,3378|  0,0560|    108|      0|      0|      0|    372|     30|
+|Import non-system references        |  0,3932|  0,0476|    127|      0|      0|      0|    372|     30|
+|Typecheck                           |  0,9020|  0,5025|    164|      3|      2|      1|    456|     46|     <-- longest
+|Typechecked                         |  0,9087|  0,0002|    164|      0|      0|      0|    456|     46|
+// main2
+|Write Interface File                |  0,9191|  0,0000|    164|      0|      0|      0|    456|     46|
+|Write XML doc signatures            |  0,9280|  0,0000|    164|      0|      0|      0|    456|     46|
+|Write XML docs                      |  0,9342|  0,0002|    164|      0|      0|      0|    456|     46|
+// main3
+|Encode Interface Data               |  0,9778|  0,0345|    164|      0|      0|      0|    456|     46|
+|Optimizations                       |  1,2312|  0,2463|    178|      2|      2|      1|    456|     46|     <-- long
+|Ending Optimizations                |  1,2386|  0,0000|    178|      0|      0|      0|    456|     46|
+|Encoding OptData                    |  1,2549|  0,0093|    178|      0|      0|      0|    456|     46|
+|TailCall Checks                     |  1,2687|  0,0054|    178|      0|      0|      0|    456|     46|
+// main4, main5
+|TAST -> IL                          |  1,3657|  0,0883|    180|      0|      0|      0|    456|     46|
+|>Write Started                      |  1,3817|  0,0016|    180|      0|      0|      0|    455|     46|
+|>Module Generation Preparation      |  1,3909|  0,0002|    180|      0|      0|      0|    455|     46|
+|>Module Generation Pass 1           |  1,3987|  0,0015|    181|      0|      0|      0|    455|     46|
+|>Module Generation Pass 2           |  1,4266|  0,0216|    182|      0|      0|      0|    455|     46|
+|>Module Generation Pass 3           |  1,4353|  0,0024|    182|      0|      0|      0|    455|     46|
+|>Module Generation Pass 4           |  1,4423|  0,0004|    182|      0|      0|      0|    455|     46|
+|>Finalize Module Generation Results |  1,4515|  0,0003|    182|      0|      0|      0|    455|     46|
+|>Generated Tables and Code          |  1,4607|  0,0004|    182|      0|      0|      0|    455|     46|
+|>Layout Header of Tables            |  1,4663|  0,0001|    182|      0|      0|      0|    455|     46|
+|>Build String/Blob Address Tables   |  1,4750|  0,0013|    182|      0|      0|      0|    455|     46|
+|>Sort Tables                        |  1,4838|  0,0000|    182|      0|      0|      0|    455|     46|
+|>Write Header of tablebuf           |  1,4931|  0,0015|    182|      0|      0|      0|    455|     46|
+|>Write Tables to tablebuf           |  1,4999|  0,0000|    182|      0|      0|      0|    455|     46|
+|>Layout Metadata                    |  1,5070|  0,0000|    182|      0|      0|      0|    455|     46|
+|>Write Metadata Header              |  1,5149|  0,0000|    182|      0|      0|      0|    455|     46|
+|>Write Metadata Tables              |  1,5218|  0,0001|    182|      0|      0|      0|    455|     46|
+|>Write Metadata Strings             |  1,5297|  0,0000|    182|      0|      0|      0|    455|     46|
+|>Write Metadata User Strings        |  1,5369|  0,0002|    182|      0|      0|      0|    455|     46|
+|>Write Blob Stream                  |  1,5433|  0,0002|    182|      0|      0|      0|    455|     46|
+|>Fixup Metadata                     |  1,5516|  0,0003|    182|      0|      0|      0|    455|     46|
+|>Generated IL and metadata          |  1,5606|  0,0015|    182|      0|      0|      0|    455|     46|
+|>Layout image                       |  1,5713|  0,0018|    183|      0|      0|      0|    455|     46|
+|>Writing Image                      |  1,5799|  0,0009|    183|      0|      0|      0|    454|     46|
+|>Signing Image                      |  1,5871|  0,0000|    183|      0|      0|      0|    454|     46|
+// main6
+|Write .NET Binary                   |  1,6016|  0,2284|    183|      0|      0|      0|    462|     46|     <-- long
+--------------------------------------------------------------------------------------------------------
+```
 
-- Be defensive - if there's not 100% guarantee something can be reused, better just invalidate it.
-- We need to understand how to reuse data **partially**. Probably can be deduced based on AST diff in parsing?
+**decentlySizedStandAloneFile.fs**
+```
+--------------------------------------------------------------------------------------------------------
+|Phase name                          |Elapsed |Duration| WS(MB)|  GC0  |  GC1  |  GC2  |Handles|Threads|
+|------------------------------------|--------|--------|-------|-------|-------|-------|-------|-------|
+// main1
+|Import mscorlib+FSharp.Core         |  0,3285|  0,3120|    101|      0|      0|      0|    365|     30|     <-- longest
+|Parse inputs                        |  0,3673|  0,0292|    108|      0|      0|      0|    374|     30|
+|Import non-system references        |  0,4354|  0,0622|    128|      0|      0|      0|    374|     30|
+|Typecheck                           |  0,6464|  0,2045|    144|      1|      1|      1|    378|     30|     <-- long
+|Typechecked                         |  0,6522|  0,0004|    144|      0|      0|      0|    378|     30|
+// main2
+|Write Interface File                |  0,6597|  0,0000|    144|      0|      0|      0|    378|     30|
+|Write XML doc signatures            |  0,6661|  0,0000|    144|      0|      0|      0|    378|     30|
+|Write XML docs                      |  0,6710|  0,0002|    144|      0|      0|      0|    378|     30|
+// main3
+|Encode Interface Data               |  0,7273|  0,0503|    154|      0|      0|      0|    378|     30|
+|Optimizations                       |  0,8757|  0,1425|    172|      1|      1|      0|    378|     30|     <-- long
+|Ending Optimizations                |  0,8815|  0,0000|    172|      0|      0|      0|    378|     30|
+|Encoding OptData                    |  0,8899|  0,0024|    173|      0|      0|      0|    378|     30|
+|TailCall Checks                     |  0,8990|  0,0025|    173|      0|      0|      0|    378|     30|
+// main4, main5
+|TAST -> IL                          |  0,9487|  0,0447|    176|      0|      0|      0|    378|     30|
+|>Write Started                      |  0,9664|  0,0023|    177|      0|      0|      0|    377|     30|
+|>Module Generation Preparation      |  0,9728|  0,0001|    177|      0|      0|      0|    377|     30|
+|>Module Generation Pass 1           |  0,9821|  0,0022|    177|      0|      0|      0|    377|     30|
+|>Module Generation Pass 2           |  1,0012|  0,0138|    178|      0|      0|      0|    377|     30|
+|>Module Generation Pass 3           |  1,0098|  0,0012|    179|      0|      0|      0|    377|     30|
+|>Module Generation Pass 4           |  1,0180|  0,0002|    179|      0|      0|      0|    377|     30|
+|>Finalize Module Generation Results |  1,0264|  0,0007|    179|      0|      0|      0|    377|     30|
+|>Generated Tables and Code          |  1,0344|  0,0003|    179|      0|      0|      0|    377|     30|
+|>Layout Header of Tables            |  1,0403|  0,0000|    179|      0|      0|      0|    377|     30|
+|>Build String/Blob Address Tables   |  1,0481|  0,0010|    179|      0|      0|      0|    377|     30|
+|>Sort Tables                        |  1,0543|  0,0000|    179|      0|      0|      0|    377|     30|
+|>Write Header of tablebuf           |  1,0608|  0,0003|    179|      0|      0|      0|    377|     30|
+|>Write Tables to tablebuf           |  1,0681|  0,0000|    179|      0|      0|      0|    377|     30|
+|>Layout Metadata                    |  1,0738|  0,0000|    179|      0|      0|      0|    377|     30|
+|>Write Metadata Header              |  1,0796|  0,0000|    179|      0|      0|      0|    377|     30|
+|>Write Metadata Tables              |  1,0875|  0,0000|    179|      0|      0|      0|    377|     30|
+|>Write Metadata Strings             |  1,0933|  0,0000|    179|      0|      0|      0|    377|     30|
+|>Write Metadata User Strings        |  1,1016|  0,0001|    179|      0|      0|      0|    377|     30|
+|>Write Blob Stream                  |  1,1076|  0,0001|    179|      0|      0|      0|    377|     30|
+|>Fixup Metadata                     |  1,1135|  0,0004|    179|      0|      0|      0|    377|     30|
+|>Generated IL and metadata          |  1,1208|  0,0009|    179|      0|      0|      0|    377|     30|
+|>Layout image                       |  1,1269|  0,0010|    179|      0|      0|      0|    377|     30|
+|>Writing Image                      |  1,1347|  0,0003|    179|      0|      0|      0|    376|     30|
+|>Signing Image                      |  1,1402|  0,0000|    179|      0|      0|      0|    376|     30|
+// main6
+|Write .NET Binary                   |  1,1530|  0,1972|    180|      0|      0|      0|    384|     30|     <-- long
+--------------------------------------------------------------------------------------------------------
+```
 
-### How to test this?
+**CE100xnest5.fs**
+```
+--------------------------------------------------------------------------------------------------------
+|Phase name                          |Elapsed |Duration| WS(MB)|  GC0  |  GC1  |  GC2  |Handles|Threads|
+|------------------------------------|--------|--------|-------|-------|-------|-------|-------|-------|
+// main1
+|Import mscorlib+FSharp.Core         |  0,4092|  0,4084|    101|      0|      0|      0|    365|     30|     <-- long
+|Parse inputs                        |  0,4635|  0,0445|    108|      0|      0|      0|    374|     30|
+|Import non-system references        |  0,5475|  0,0775|    128|      0|      0|      0|    374|     30|
+|Typecheck                           |  3,1157|  2,5612|    198|     18|     15|      3|    712|     45|     <-- long
+|Typechecked                         |  3,1219|  0,0002|    198|      0|      0|      0|    712|     45|
+// main2
+|Write Interface File                |  3,1280|  0,0000|    198|      0|      0|      0|    712|     45|
+|Write XML doc signatures            |  3,1363|  0,0000|    198|      0|      0|      0|    712|     45|
+|Write XML docs                      |  3,1435|  0,0002|    198|      0|      0|      0|    712|     45|
+// main3
+|Encode Interface Data               |  3,1803|  0,0296|    198|      0|      0|      0|    712|     45|
+|Optimizations                       |  8,9949|  5,8049|    216|     43|     42|      2|    457|     45|     <-- longest
+|Ending Optimizations                |  9,0015|  0,0000|    216|      0|      0|      0|    457|     45|
+|Encoding OptData                    |  9,0090|  0,0010|    216|      0|      0|      0|    457|     45|
+|TailCall Checks                     |  9,0190|  0,0013|    216|      0|      0|      0|    457|     45|
+// main4, main5
+|TAST -> IL                          |  9,0463|  0,0210|    217|      0|      0|      0|    458|     46|
+|>Write Started                      |  9,0586|  0,0018|    217|      0|      0|      0|    457|     46|
+|>Module Generation Preparation      |  9,0655|  0,0001|    217|      0|      0|      0|    457|     46|
+|>Module Generation Pass 1           |  9,0719|  0,0005|    217|      0|      0|      0|    457|     46|
+|>Module Generation Pass 2           |  9,0820|  0,0031|    218|      0|      0|      0|    457|     46|
+|>Module Generation Pass 3           |  9,0894|  0,0005|    218|      0|      0|      0|    457|     46|
+|>Module Generation Pass 4           |  9,0968|  0,0002|    218|      0|      0|      0|    457|     46|
+|>Finalize Module Generation Results |  9,1032|  0,0003|    218|      0|      0|      0|    457|     46|
+|>Generated Tables and Code          |  9,1120|  0,0005|    218|      0|      0|      0|    457|     46|
+|>Layout Header of Tables            |  9,1189|  0,0000|    218|      0|      0|      0|    457|     46|
+|>Build String/Blob Address Tables   |  9,1276|  0,0006|    218|      0|      0|      0|    457|     46|
+|>Sort Tables                        |  9,1339|  0,0000|    218|      0|      0|      0|    457|     46|
+|>Write Header of tablebuf           |  9,1430|  0,0001|    218|      0|      0|      0|    457|     46|
+|>Write Tables to tablebuf           |  9,1503|  0,0000|    218|      0|      0|      0|    457|     46|
+|>Layout Metadata                    |  9,1588|  0,0000|    218|      0|      0|      0|    457|     46|
+|>Write Metadata Header              |  9,1656|  0,0000|    218|      0|      0|      0|    457|     46|
+|>Write Metadata Tables              |  9,1731|  0,0000|    218|      0|      0|      0|    457|     46|
+|>Write Metadata Strings             |  9,1819|  0,0000|    218|      0|      0|      0|    457|     46|
+|>Write Metadata User Strings        |  9,1897|  0,0000|    218|      0|      0|      0|    457|     46|
+|>Write Blob Stream                  |  9,1976|  0,0000|    218|      0|      0|      0|    457|     46|
+|>Fixup Metadata                     |  9,2033|  0,0002|    218|      0|      0|      0|    457|     46|
+|>Generated IL and metadata          |  9,2102|  0,0015|    218|      0|      0|      0|    457|     46|
+|>Layout image                       |  9,2195|  0,0025|    218|      0|      0|      0|    457|     46|
+|>Writing Image                      |  9,2272|  0,0006|    218|      0|      0|      0|    456|     46|
+|>Signing Image                      |  9,2338|  0,0000|    218|      0|      0|      0|    456|     46|
+// main6
+|Write .NET Binary                   |  9,2463|  0,1930|    218|      0|      0|      0|    464|     46|     <-- long
+--------------------------------------------------------------------------------------------------------
+```
 
-- Have a feature flag for this: applying it to current type checking tests shouldn't make any difference in results.
-- Unit tests: original code + partial typecheck results + reusing them = original code + fresh typecheck
+The phases taking the longest are marked in the right. Those are assembly import, type check, optimization and IL writing.
 
-### How to bench this?
+## Implementation plan
 
-- Add benchmarks to the FCSBenchmarks project
-- A good inspiration can be workflow-style tests for updating files done by @0101 in Transparent Compiler
+The conclusion from the above is that there is a lot of potential in caching - at the same time, implementing things to the full potential right away will require serious changes in the compiler code, which will be dangerous, hard to test and harder to review. Therefore, I propose to implement the feature in stages.
 
----
+### What should be done
 
-## Detailed design: tooling layer
+**Stage 1 - omit retypecheck for plain rebuild**
 
--- TO BE DONE --
+That is, after running "fsc test.fs", rerunning `fsc test.fs` will omit type-checking step. This should work for multiple files (project) as well. Everything will be happening in `main1` - after parsing, we check the cache and deserialize the typecheck info if available, passing it to `main2` right away. If not, we do the normal type check, caching the results at the end of it, prior to passing them to the next stage. This will speed up scenarios like tinkering with plain "fsc.exe" or project rebuild when the results are incorrectly invalidated.
+
+**Stage 2 - minimize retypecheck in slightly modified projects**
+
+That is, when rebuilding the project after modifying an independent file, only the modified file will be retypechecked, for others the check will be omitted. This will handle many target scenarios for the feature, like modifying one test in a test project.
+
+**Stage 3 - omit reresolving assemblies**
+
+That is, for either of the scenarios above, skip the `Import mscorlib+FSharp.Core` step. This logic is also done in `main1`, prior to parsing. Same ideas apply - if cached, deserialize the information - otherwise, follow the normal process and then cache the results. The data should be stored separately from the typecheck info, so that the information be reused partially.
+
+**Stage 4 - omit reoptimization**
+
+That is, for everything that doesn't need to be retypechecked, don't do reoptimization either. This happens in the `main3` phase of compilation. 
+
+### What else can be done
+
+**Omit rewriting .NET binaries**
+
+This means that if _for some reason_ the recompilation is triggered but there is nothing to retypecheck, reuse the binaries. This shouldn't be hard to do (just writing and reading existing files) - but it's unclear how often this happens in real life.
+
+**Omit all the other steps**
+
+If we have universal caching mechanism (see below), we can apply it to other steps (e.g. parsing). Those steps typically don't take much time each on their own, but can somewhat accummulate and maybe even peak in some edge cases. 
+
+**Integrate this into tooling**
+
+We can plug the feature into the tooling. This would lead to time savings in many more developer scenarios. However, this is not trivial and the tooling layer of the feature would need to do extra checks and invalidation calls, e.g. when the tooling and the compiler use different versions of the compiler service.
+
+**Omit recompilation for insignificant file changes**
+
+That is about getting smart after getting first parts of the compilation results. If we know that the code is IL-same, we can skip everything and reuse the binaries. This would be useful in scenarios like adding comments or removing unused opens. However, this might present a **hard** (albeit interesting) challenge - things like figuring out AST diffs seem to be unexplored yet.
+
+## Open questions
+
+### How to cache data?
+
+We can store the data in the intermediate build directory (e.g. `obj` in case of `dotnet build`). The usual way for caching would be to serialize + deserialize information.
+
+However, serialization of the compiler data is non-trivial:
+- we don't have a **full** out-of-the-box solution in the repo (some parts are available, see below)
+- well-known serialization libraries (like `System.Text.Json`) won't work right away, because data is internal and libs can't handle some F# type easily (e.g. DUs)
+- we can't use F#-specific libraries (like [this](https://github.com/fsprojects/FSharp.Json) or [this](https://github.com/Tarmil/FSharp.SystemTextJson)) because they are not "official" enough
+
+It should be possible to hack things around, but the more compiler data we want to serialize, the harder it will be. Hence I see 2 ways to go:
+
+**1) Start with leveraging some existing elements and then see.** 
+
+We have a mechanism for writing signature files. We could force generating signatures for fresh compilation, save them and then "feed" to the recompilation process. This will speed up typechecking, saving a lot of time on type inference. We also seem to have a mechanism for encoding optimization data. We can apply the same idea here - force saving it for the first run and then utilize for reruns. This won't help us with everything but **might be** good enough. Also, the things we'll be left with **might be** easier to hand-serialize.
+
+**2) Create the universal serialization + deserialization mechanism right away and use it for everything**
+
+This can take inspiration from existing mechanisms and random libraries on the internet. Here we'll be able to unlock the full potential of data caching, yet it will also mean a bigger investment in the beginning. Also, the caching procedure would be more uniform here - we can probably store whatever we can per each file, in the same format. 
+
+### Cache invalidation
+
+It's clear that we should be as defensive as possible here, cancelling further information reuse when suspecting that it might not match the fresh recompilation info.
+
+**Checking source files**
+
+To understand the source file is the same we can:
+1) Check the timestamp
+2) Hash the content and compare the hashes
+
+The former might lead to problems with things like time zone changes or manual file metadata modification. The latter might lead to problems in case of hash collisions. All of those scenarios are probably very unlikely, we might just look at what MSBuild does.
+
+**Checking auxiliary information**
+
+Besides tracking the source files, we should track:
+- compiler version
+- compiler flags 
+- ?
+
+**Checking dependencies**
+
+This is related to the minimization of retypecheck in slightly modified projects. If only one file is changed, how do we know that nothing depends on that?
+
+Graph-based typechecking mechanism should help here, however this also means we might need to store some additional data to keep track of things.
+
+### Data propagation
+
+Since the compilation steps we want to omit happen in different phases of compilation, I see 2 approaches to data propagation:
+
+**1) Cache and restore data in each phase.**
+
+For example, independently restore typecheck data and optimization data just before doing the respective jobs. This would lead to redundant checks (we don't need to reoptimize if we don't retypecheck), hence some code clutter, but would keep the general code structure same. We'll also have to leak the data a bit (invalidate optimization cache if we invalidate typecheck cache).
+
+**2) Restore at the beginning, cache at the end.**
+
+This would mean doing all the data restoring either in `main1` or even in a new phase dedicated to just that. Then the information would be gradually collected and propagated to the `main6`. This will avoid unnecessary checks but will also mean modifying the `Args` data and hence significantly intervening into the current compiler logic. 
+
+## Testing and benchmarking
+
+We should have a feature flag for this: applying it to current typechecking tests shouldn't make any difference in results. Unit tests should test that restored cached results + reusing them should be equivalent to fresh typecheck results.
+
+Benchmarks can be added to the FCSBenchmarks project. A good inspiration can be workflow-style tests for updating files done by @0101 in Transparent Compiler.
