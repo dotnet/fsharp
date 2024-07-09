@@ -1099,10 +1099,28 @@ module rec Compiler =
 
 
     let convenienceBaselineInstructions baseline expected actual =
+    
+        let getLines (text: string) =
+          [|
+            let reader = new StringReader(text)
+            let mutable line = reader.ReadLine()
+            while not(isNull line) do
+              line
+              line <- reader.ReadLine()
+          |]
+        let expectedLines = getLines expected |> Array.indexed
+        let actualLines = getLines actual |> Array.indexed
+        let firstDiff =
+          Seq.zip expectedLines actualLines 
+          |> Seq.skipWhile (fun (a,b) -> a = b)
+          |> Seq.tryHead
+          |> function | None -> ""
+                      | Some((line, expected), (_,actual)) -> $"diff at line {line+1}:\nexpected:\n{expected}\nactual:\n{actual}\n"
         $"""to update baseline:
 $ cp {baseline.FilePath} {baseline.BslSource}
 to compare baseline:
 $ code --diff {baseline.FilePath} {baseline.BslSource}
+{firstDiff}
 Expected:
 {expected}
 Actual:
@@ -1148,6 +1166,7 @@ Actual:
                 ).Replace("\r\n","\n")
 
             if errorsExpectedBaseLine <> errorsActual then
+
                 fs.CreateOutputDirectory()
                 createBaselineErrors bsl.FSBaseline errorsActual
                 updateBaseLineIfEnvironmentSaysSo bsl.FSBaseline

@@ -74,3 +74,7 @@ let newUnique() = System.Threading.Interlocked.Increment &uniqueCount
 //++GLOBAL MUTABLE STATE (concurrency-safe)
 let mutable private stampCount = 0L
 let newStamp() = System.Threading.Interlocked.Increment &stampCount
+
+let resetUniqueAndStamp() =
+  System.Threading.Interlocked.Exchange(&uniqueCount, 0) |> ignore
+  System.Threading.Interlocked.Exchange(&stampCount, 0) |> ignore

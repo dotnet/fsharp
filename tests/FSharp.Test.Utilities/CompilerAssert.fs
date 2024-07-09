@@ -315,8 +315,11 @@ module rec CompilerAssertHelpers =
                 // lookup the last static constructor
                 // of the assembly types, which should match
                 // the equivalent of a .fsx entry point
-                let moduleInitType = asm.GetTypes() |> Array.last
-                moduleInitType.GetConstructors(BindingFlags.Static ||| BindingFlags.NonPublic).[0] :> MethodBase
+                let startupcodeType = asm.GetTypes() |> Array.tryFindBack (fun m -> m.Name.StartsWith "$" && m.Name.EndsWith "$fsx")
+                match startupcodeType with
+                | None -> failwith $"unable to find startup code in script {asm.Location}"
+                | Some moduleInitType ->
+                    moduleInitType.GetConstructors(BindingFlags.Static ||| BindingFlags.NonPublic).[0] :> MethodBase
             else
                 entryPoint
         let args = mkDefaultArgs entryPoint
@@ -407,6 +410,7 @@ module rec CompilerAssertHelpers =
 
         // Generate a response file, purely for diagnostic reasons.
         File.WriteAllLines(Path.ChangeExtension(outputFilePath, ".rsp"), args)
+        FSharp.Compiler.CompilerGlobalState.resetUniqueAndStamp()
         let errors, rc = checker.Compile args |> Async.RunImmediate
         errors, rc, outputFilePath
 
