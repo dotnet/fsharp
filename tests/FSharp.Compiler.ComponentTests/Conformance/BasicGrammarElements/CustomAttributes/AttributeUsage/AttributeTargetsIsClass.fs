@@ -24,3 +24,11 @@ type SemanticClassificationItem =
 type ILTableName(idx: int) =
     member __.Index = idx
     static member FromIndex n = ILTableName n
+
+[<RequireQualifiedAccess>]
+[<CustomClass>]
+type Record = { Prop: string }
+
+[<RequireQualifiedAccess>]
+[<Struct>]
+type StructRecord = { Prop: string }

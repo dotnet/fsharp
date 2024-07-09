@@ -732,7 +732,7 @@ type TcConfigBuilder =
             metadataVersion = None
             standalone = false
             extraStaticLinkRoots = []
-            compressMetadata = false
+            compressMetadata = true
             noSignatureData = false
             onlyEssentialOptimizationData = false
             useOptimizationDataFile = false
@@ -831,7 +831,7 @@ type TcConfigBuilder =
                     DumpGraph = false
                 }
             dumpSignatureData = false
-            realsig = false
+            realsig = true
             strictIndentation = None
         }
 

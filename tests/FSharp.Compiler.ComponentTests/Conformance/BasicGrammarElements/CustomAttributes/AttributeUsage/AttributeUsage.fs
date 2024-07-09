@@ -639,3 +639,24 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
             (Error 842, Line 18, Col 3, Line 18, Col 14, "This attribute is not valid for use on this language element")
             (Error 842, Line 19, Col 3, Line 19, Col 15, "This attribute is not valid for use on this language element")
         ]
+
+    // SOURCE= E_AttributeTargetIsClass02.fs	# E_AttributeTargetIsClass02.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass02.fs"|])>]
+    let ``E_AttributeTargetIsClass02_fs`` compilation =
+        compilation
+        |> verifyCompile
+        |> shouldSucceed
+    
+    // SOURCE=E_AttributeTargetIsClass02.fs	# E_AttributeTargetIsClass02.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass02.fs"|])>]
+    let ``E_AttributeTargetIsClass02_fs preview`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 842, Line 15, Col 3, Line 15, Col 18, "This attribute is not valid for use on this language element")
+            (Error 842, Line 16, Col 3, Line 16, Col 15, "This attribute is not valid for use on this language element")
+            (Error 842, Line 20, Col 3, Line 20, Col 14, "This attribute is not valid for use on this language element")
+            (Error 842, Line 21, Col 3, Line 21, Col 18, "This attribute is not valid for use on this language element")
+        ]
