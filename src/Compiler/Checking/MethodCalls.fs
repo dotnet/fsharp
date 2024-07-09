@@ -1225,7 +1225,7 @@ let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo: MethInfo)  =
             elif IsBaseCall objArgs then 
                 ad
             else
-                AccessibleFrom(paths, None) 
+                AccessibleFrom(paths, Some tcref) 
         | _ -> ad
 
     if not (IsTypeAndMethInfoAccessible amap m adOriginal ad minfo) then 
