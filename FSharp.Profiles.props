@@ -18,7 +18,7 @@
     <NullCheckingSupportInLibrary>false</NullCheckingSupportInLibrary>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto' and '$(BUILDING_USING_DOTNET)' != 'true'"> 
     <OtherFlags>$(OtherFlags) /langversion:preview</OtherFlags>
   </PropertyGroup>
 
