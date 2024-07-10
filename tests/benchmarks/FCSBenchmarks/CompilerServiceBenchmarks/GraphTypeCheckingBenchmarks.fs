@@ -45,7 +45,7 @@ type GraphTypeCheckingBenchmarks() =
                 OtherOptions =
                     [
                         if this.GraphTypeChecking then
-                            "--test:GraphBasedChecking"
+                            "GraphBasedChecking"
                     ]
             }
 
@@ -67,7 +67,7 @@ type GraphTypeCheckingBenchmarks() =
                 OtherOptions =
                     [
                         if this.GraphTypeChecking then
-                            "--test:GraphBasedChecking"
+                            "GraphBasedChecking"
                     ]
             }
 
