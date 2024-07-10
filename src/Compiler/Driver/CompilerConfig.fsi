@@ -432,11 +432,11 @@ type TcConfigBuilder =
 
         mutable concurrentBuild: bool
 
-        mutable parallelIlxGen: bool
-
         mutable graphBasedChecking: bool
 
         mutable parallelOptimization: bool
+
+        mutable parallelIlxGen: bool
 
         mutable emitMetadataAssembly: MetadataAssemblyGeneration
 
@@ -767,6 +767,10 @@ type TcConfig =
     member deterministic: bool
 
     member concurrentBuild: bool
+
+    member graphBasedChecking: bool
+
+    member parallelOptimization: bool
 
     member parallelIlxGen: bool
 

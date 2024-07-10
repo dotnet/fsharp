@@ -1050,7 +1050,13 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
                 Some(FSComp.SR.optsCrossoptimize ())
             )
 
-            CompilerOption("reflectionfree", tagNone, OptionSwitch(SetRealsig tcConfigB), None, Some(FSComp.SR.optsReflectionFree ()))
+            CompilerOption(
+                "reflectionfree",
+                tagNone,
+                OptionUnit(fun () -> tcConfigB.useReflectionFreeCodeGen <- true),
+                None,
+                Some(FSComp.SR.optsReflectionFree ())
+            )
 
             CompilerOption(
                 "graphbasedchecking",
