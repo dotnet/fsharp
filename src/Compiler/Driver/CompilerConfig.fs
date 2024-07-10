@@ -524,6 +524,8 @@ type TcConfigBuilder =
         mutable emitTailcalls: bool
         mutable deterministic: bool
         mutable concurrentBuild: bool
+        mutable graphBasedChecking: bool
+        mutable parallelOptimization: bool
         mutable parallelIlxGen: bool
         mutable emitMetadataAssembly: MetadataAssemblyGeneration
         mutable preferredUiLang: string option
@@ -768,7 +770,9 @@ type TcConfigBuilder =
             emitTailcalls = true
             deterministic = false
             concurrentBuild = true
-            parallelIlxGen = FSharpExperimentalFeaturesEnabledAutomatically
+            graphBasedChecking = true
+            parallelOptimization = true
+            parallelIlxGen = true
             emitMetadataAssembly = MetadataAssemblyGeneration.None
             preferredUiLang = None
             lcid = None
@@ -814,11 +818,7 @@ type TcConfigBuilder =
             captureIdentifiersWhenParsing = false
             typeCheckingConfig =
                 {
-                    TypeCheckingConfig.Mode =
-                        if FSharpExperimentalFeaturesEnabledAutomatically then
-                            TypeCheckingMode.Graph
-                        else
-                            TypeCheckingMode.Sequential
+                    TypeCheckingConfig.Mode = TypeCheckingMode.Graph
                     DumpGraph = false
                 }
             dumpSignatureData = false

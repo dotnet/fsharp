@@ -847,6 +847,11 @@
         <target state="translated">Wyświetl dozwolone wartości dla wersji językowej.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsGraphBasedChecking">
+        <source>Use graph-based checking for type inference</source>
+        <target state="new">Use graph-based checking for type inference</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--standalone or --staticlink' with '--refonly or --refout'.</source>
         <target state="translated">Nieprawidłowe użycie emitowania zestawu odwołania. Nie używaj elementu „--standalone ani --staticlink” z elementem „--refonly lub --refout”.</target>
@@ -860,6 +865,16 @@
       <trans-unit id="optsOptimizationData">
         <source>Specify included optimization information, the default is file. Important for distributed libraries.</source>
         <target state="translated">Określ dołączone informacje o optymalizacji. Wartość domyślna to plik. Ważne dla bibliotek rozproszonych.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsParallelILXGen">
+        <source>Enable parallel ILXGen.</source>
+        <target state="new">Enable parallel ILXGen.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsParallelOptimization">
+        <source>Enable parallel optimization.</source>
+        <target state="new">Enable parallel optimization.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPdbMatchesOutputFileName">

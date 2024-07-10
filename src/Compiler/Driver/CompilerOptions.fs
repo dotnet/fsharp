@@ -571,6 +571,15 @@ let SetDeterministicSwitch (tcConfigB: TcConfigBuilder) switch =
 let SetRealsig (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.realsig <- (switch = OptionSwitch.On)
 
+let SetGraphTypeCheck (tcConfigB: TcConfigBuilder) switch =
+    tcConfigB.graphBasedChecking <- (switch = OptionSwitch.On)
+
+let SetParallelOptimization (tcConfigB: TcConfigBuilder) switch =
+    tcConfigB.parallelOptimization <- (switch = OptionSwitch.On)
+
+let SetParallelIlxGen (tcConfigB: TcConfigBuilder) switch =
+    tcConfigB.parallelIlxGen <- (switch = OptionSwitch.On)
+
 let SetReferenceAssemblyOnlySwitch (tcConfigB: TcConfigBuilder) switch =
     match tcConfigB.emitMetadataAssembly with
     | MetadataAssemblyGeneration.None when (not tcConfigB.standalone) && tcConfigB.extraStaticLinkRoots.IsEmpty ->
@@ -1041,12 +1050,29 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
                 Some(FSComp.SR.optsCrossoptimize ())
             )
 
+            CompilerOption("reflectionfree", tagNone, OptionSwitch(SetRealsig tcConfigB), None, Some(FSComp.SR.optsReflectionFree ()))
+
             CompilerOption(
-                "reflectionfree",
+                "graphbasedchecking",
                 tagNone,
-                OptionUnit(fun () -> tcConfigB.useReflectionFreeCodeGen <- true),
+                OptionSwitch(SetGraphTypeCheck tcConfigB),
                 None,
-                Some(FSComp.SR.optsReflectionFree ())
+                Some(FSComp.SR.optsGraphBasedChecking ())
+            )
+
+            CompilerOption(
+                "paralleloptimization",
+                tagNone,
+                OptionSwitch(SetParallelOptimization tcConfigB),
+                None,
+                Some(FSComp.SR.optsParallelOptimization ())
+            )
+            CompilerOption(
+                "parallelilxgen",
+                tagNone,
+                OptionSwitch(SetParallelIlxGen tcConfigB),
+                None,
+                Some(FSComp.SR.optsParallelILXGen ())
             )
         ]
 

@@ -434,6 +434,10 @@ type TcConfigBuilder =
 
         mutable parallelIlxGen: bool
 
+        mutable graphBasedChecking: bool
+
+        mutable parallelOptimization: bool
+
         mutable emitMetadataAssembly: MetadataAssemblyGeneration
 
         mutable preferredUiLang: string option
