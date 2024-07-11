@@ -290,12 +290,12 @@ let rescopePubPath viewedCcu (PubPath p) = NonLocalEntityRef(viewedCcu, p)
 // Equality between TAST items.
 //---------------------------------------------------------------------------
 
-let valRefInThisAssembly compilingFSharpCore (x: ValRef) = 
+let valRefInThisAssembly compilingCoreLibrary (x: ValRef) = 
     match x with 
     | VRefLocal _ -> true
-    | VRefNonLocal _ -> compilingFSharpCore
+    | VRefNonLocal _ -> compilingCoreLibrary
 
-let tyconRefUsesLocalXmlDoc compilingFSharpCore (x: TyconRef) = 
+let tyconRefUsesLocalXmlDoc compilingCoreLibrary (x: TyconRef) = 
     match x with 
     | ERefLocal _ -> true
     | ERefNonLocal _ ->
@@ -304,12 +304,12 @@ let tyconRefUsesLocalXmlDoc compilingFSharpCore (x: TyconRef) =
         | TProvidedTypeRepr _ -> true
         | _ -> 
 #endif
-        compilingFSharpCore
+        compilingCoreLibrary
     
-let entityRefInThisAssembly compilingFSharpCore (x: EntityRef) = 
+let entityRefInThisAssembly compilingCoreLibrary (x: EntityRef) = 
     match x with 
     | ERefLocal _ -> true
-    | ERefNonLocal _ -> compilingFSharpCore
+    | ERefNonLocal _ -> compilingCoreLibrary
 
 let arrayPathEq (y1: string[]) (y2: string[]) =
     let len1 = y1.Length 
@@ -386,10 +386,10 @@ let fslibValRefEq fslibCcu vref1 vref2 =
   
 /// Primitive routine to compare two EntityRef's for equality
 /// This takes into account the possibility that they may have type forwarders
-let primEntityRefEq compilingFSharpCore fslibCcu (x: EntityRef) (y: EntityRef) = 
+let primEntityRefEq compilingCoreLibrary fslibCcu (x: EntityRef) (y: EntityRef) = 
     x === y ||
     
-    if x.IsResolved && y.IsResolved && not compilingFSharpCore then
+    if x.IsResolved && y.IsResolved && not compilingCoreLibrary then
         x.ResolvedTarget === y.ResolvedTarget 
     elif not x.IsLocalRef && not y.IsLocalRef &&
         (// Two tcrefs with identical paths are always equal
@@ -402,11 +402,11 @@ let primEntityRefEq compilingFSharpCore fslibCcu (x: EntityRef) (y: EntityRef) =
             | _ -> match y.TryDeref with ValueNone -> true | _ -> false)) then
         true
     else
-        compilingFSharpCore && fslibEntityRefEq fslibCcu x y  
+        compilingCoreLibrary && fslibEntityRefEq fslibCcu x y  
 
 /// Primitive routine to compare two UnionCaseRef's for equality
-let primUnionCaseRefEq compilingFSharpCore fslibCcu (UnionCaseRef(tcr1, c1) as uc1) (UnionCaseRef(tcr2, c2) as uc2) = 
-    uc1 === uc2 || (primEntityRefEq compilingFSharpCore fslibCcu tcr1 tcr2 && c1 = c2)
+let primUnionCaseRefEq compilingCoreLibrary fslibCcu (UnionCaseRef(tcr1, c1) as uc1) (UnionCaseRef(tcr2, c2) as uc2) = 
+    uc1 === uc2 || (primEntityRefEq compilingCoreLibrary fslibCcu tcr1 tcr2 && c1 = c2)
 
 /// Primitive routine to compare two ValRef's for equality. On the whole value identity is not particularly
 /// significant in F#. However it is significant for
@@ -415,7 +415,7 @@ let primUnionCaseRefEq compilingFSharpCore fslibCcu (UnionCaseRef(tcr1, c1) as u
 ///        and quotation splicing 
 ///
 /// Note this routine doesn't take type forwarding into account
-let primValRefEq compilingFSharpCore fslibCcu (x: ValRef) (y: ValRef) =
+let primValRefEq compilingCoreLibrary fslibCcu (x: ValRef) (y: ValRef) =
     x === y
     || (x.IsResolved && y.IsResolved && x.ResolvedTarget === y.ResolvedTarget)
     || (x.IsLocalRef && y.IsLocalRef && valEq x.ResolvedTarget y.ResolvedTarget)
@@ -423,7 +423,7 @@ let primValRefEq compilingFSharpCore fslibCcu (x: ValRef) (y: ValRef) =
        match x.TryDeref with
        | ValueSome v1 -> match y.TryDeref with ValueSome v2 -> v1 === v2 | ValueNone -> false
        | ValueNone -> match y.TryDeref with ValueNone -> true | ValueSome _ -> false
-    || (compilingFSharpCore && fslibValRefEq fslibCcu x y)
+    || (compilingCoreLibrary && fslibValRefEq fslibCcu x y)
 
 //---------------------------------------------------------------------------
 // pubpath/cpath mess

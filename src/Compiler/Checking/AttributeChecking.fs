@@ -294,7 +294,7 @@ let CheckFSharpAttributes (g:TcGlobals) attribs m =
                 // See attribute on FSharp.Core 'nameof'
                 if n = 3501 then
                     ()
-                elif isError && (not g.compilingFSharpCore || n <> 1204) then
+                elif isError && (not g.compilingCoreLibrary || n <> 1204) then
                     do! ErrorD msg 
                 else
                     do! WarnD msg
@@ -304,7 +304,7 @@ let CheckFSharpAttributes (g:TcGlobals) attribs m =
             match TryFindFSharpAttribute g g.attrib_ExperimentalAttribute attribs with
             | Some(Attrib(_, _, [ AttribStringArg(s) ], _, _, _, _)) ->
                 let isExperimentalAttributeDisabled (s:string) =
-                    if g.compilingFSharpCore then
+                    if g.compilingCoreLibrary then
                         true
                     else
                         g.langVersion.IsPreviewEnabled && (s.IndexOf(langVersionPrefix, StringComparison.OrdinalIgnoreCase) >= 0)

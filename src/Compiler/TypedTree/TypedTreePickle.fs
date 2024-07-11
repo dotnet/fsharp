@@ -1779,7 +1779,7 @@ let rec p_tycon_repr x st =
 
     // Unions with static fields, added to format
     | TFSharpTyconRepr ({ fsobjmodel_cases = cases; fsobjmodel_kind = TFSharpUnion } as r) ->
-        if st.oglobals.compilingFSharpCore then
+        if st.oglobals.compilingCoreLibrary then
             let fields = r.fsobjmodel_rfields.FieldsByIndex
             let firstFieldRange = fields[0].DefinitionRange
             let allFieldsText = fields |> Array.map (fun f -> f.LogicalName) |> String.concat System.Environment.NewLine
@@ -1962,11 +1962,11 @@ and p_tycon_objmodel_kind x st =
     | TFSharpDelegate ss -> p_byte 3 st; p_slotsig ss st
     | TFSharpEnum        -> p_byte 4 st
     | TFSharpUnion       -> 
-        if st.oglobals.compilingFSharpCore then
+        if st.oglobals.compilingCoreLibrary then
             raise (Error(FSComp.SR.pickleFsharpCoreBackwardsCompatible("union as FSharpTyconKind ",st.ofile), range.Zero))
         p_byte 5 st
     | TFSharpRecord      -> 
-        if st.oglobals.compilingFSharpCore then
+        if st.oglobals.compilingCoreLibrary then
             raise (Error(FSComp.SR.pickleFsharpCoreBackwardsCompatible("record as FSharpTyconKind ",st.ofile), range.Zero))
         p_byte 6 st
 

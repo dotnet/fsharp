@@ -1275,7 +1275,7 @@ type FSharpLexerFlags =
     | Default = 0x11011
     | LightSyntaxOn = 0x00001
     | Compiling = 0x00010
-    | CompilingFSharpCore = 0x00110
+    | compilingCoreLibrary = 0x00110
     | SkipTrivia = 0x01000
     | UseLexFilter = 0x10000
 
@@ -1856,8 +1856,8 @@ module FSharpLexerImpl =
         let isCompiling =
             (flags &&& FSharpLexerFlags.Compiling) = FSharpLexerFlags.Compiling
 
-        let isCompilingFSharpCore =
-            (flags &&& FSharpLexerFlags.CompilingFSharpCore) = FSharpLexerFlags.CompilingFSharpCore
+        let iscompilingCoreLibrary =
+            (flags &&& FSharpLexerFlags.compilingCoreLibrary) = FSharpLexerFlags.compilingCoreLibrary
 
         let canUseLexFilter =
             (flags &&& FSharpLexerFlags.UseLexFilter) = FSharpLexerFlags.UseLexFilter
@@ -1884,7 +1884,7 @@ module FSharpLexerImpl =
 
             if canUseLexFilter then
                 let lexFilter =
-                    LexFilter.LexFilter(lexargs.indentationSyntaxStatus, isCompilingFSharpCore, lexer, lexbuf, false)
+                    LexFilter.LexFilter(lexargs.indentationSyntaxStatus, iscompilingCoreLibrary, lexer, lexbuf, false)
 
                 (fun _ -> lexFilter.GetToken())
             else

@@ -2246,6 +2246,9 @@ type Async =
 
 module CommonExtensions =
 
+    [<CompiledName("DefaultAsyncBuilder")>]
+    let async = AsyncBuilder()
+
     type System.IO.Stream with
 
         [<CompiledName("AsyncRead")>] // give the extension member a 'nice', unmangled compiled name, unique within this module

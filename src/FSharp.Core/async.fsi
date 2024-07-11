@@ -1394,6 +1394,24 @@ namespace Microsoft.FSharp.Control
     [<AutoOpen>]
     module CommonExtensions =
         
+        /// <summary>Builds an asynchronous workflow using computation expression syntax.</summary>
+        /// 
+        /// <example id="async-1">
+        /// <code lang="fsharp">
+        /// let sleepExample() =
+        ///     async {
+        ///         printfn "sleeping"
+        ///         do! Async.Sleep 10
+        ///         printfn "waking up"
+        ///         return 6
+        ///      }
+        ///
+        /// sleepExample() |> Async.RunSynchronously
+        /// </code>
+        /// </example>
+        [<CompiledName("DefaultAsyncBuilder")>]
+        val async: AsyncBuilder
+
         type System.IO.Stream with 
             
             /// <summary>Returns an asynchronous computation that will read from the stream into the given buffer.</summary>

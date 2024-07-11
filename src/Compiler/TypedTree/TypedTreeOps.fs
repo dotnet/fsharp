@@ -413,8 +413,8 @@ let mkTyconRefInst (tcref: TyconRef) tinst = mkTyconInst tcref.Deref tinst
 // Basic equalities
 //---------------------------------------------------------------------------
 
-let tyconRefEq (g: TcGlobals) tcref1 tcref2 = primEntityRefEq g.compilingFSharpCore g.fslibCcu tcref1 tcref2
-let valRefEq (g: TcGlobals) vref1 vref2 = primValRefEq g.compilingFSharpCore g.fslibCcu vref1 vref2
+let tyconRefEq (g: TcGlobals) tcref1 tcref2 = primEntityRefEq g.compilingCoreLibrary g.fslibCcu tcref1 tcref2
+let valRefEq (g: TcGlobals) vref1 vref2 = primValRefEq g.compilingCoreLibrary g.fslibCcu vref1 vref2
 
 //---------------------------------------------------------------------------
 // Remove inference equations and abbreviations from units
@@ -3875,34 +3875,34 @@ let (|AttribBitwiseOrExpr|_|) g expr =
     // is defined. These get through type checking because enums implicitly support the '|||' operator through
     // the automatic resolution of undefined operators (see tc.fs, Item.ImplicitOp). This then compiles as an 
     // application of a lambda to two arguments. We recognize this pattern here
-    | Expr.App (Expr.Lambda _, _, _, [arg1;arg2], _) when g.compilingFSharpCore -> 
+    | Expr.App (Expr.Lambda _, _, _, [arg1;arg2], _) when g.compilingCoreLibrary -> 
         ValueSome(arg1, arg2)
     | _ -> ValueNone
 
 let isUncheckedDefaultOfValRef g vref = 
     valRefEq g vref g.unchecked_defaultof_vref 
     // There is an internal version of typeof defined in prim-types.fs that needs to be detected
-    || (g.compilingFSharpCore && vref.LogicalName = "defaultof") 
+    || (g.compilingCoreLibrary && vref.LogicalName = "defaultof") 
 
 let isTypeOfValRef g vref = 
     valRefEq g vref g.typeof_vref 
     // There is an internal version of typeof defined in prim-types.fs that needs to be detected
-    || (g.compilingFSharpCore && vref.LogicalName = "typeof") 
+    || (g.compilingCoreLibrary && vref.LogicalName = "typeof") 
 
 let isSizeOfValRef g vref = 
     valRefEq g vref g.sizeof_vref 
     // There is an internal version of typeof defined in prim-types.fs that needs to be detected
-    || (g.compilingFSharpCore && vref.LogicalName = "sizeof") 
+    || (g.compilingCoreLibrary && vref.LogicalName = "sizeof") 
 
 let isNameOfValRef g vref =
     valRefEq g vref g.nameof_vref
     // There is an internal version of nameof defined in prim-types.fs that needs to be detected
-    || (g.compilingFSharpCore && vref.LogicalName = "nameof")
+    || (g.compilingCoreLibrary && vref.LogicalName = "nameof")
 
 let isTypeDefOfValRef g vref = 
     valRefEq g vref g.typedefof_vref 
     // There is an internal version of typedefof defined in prim-types.fs that needs to be detected
-    || (g.compilingFSharpCore && vref.LogicalName = "typedefof") 
+    || (g.compilingCoreLibrary && vref.LogicalName = "typedefof") 
 
 [<return: Struct>]
 let (|UncheckedDefaultOfExpr|_|) g expr = 
@@ -5908,7 +5908,7 @@ and remapExprImpl (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) exp
     
     | Expr.Op (TOp.ValFieldGetAddr (rfref, readonly), tinst, [arg], m) when 
           not rfref.RecdField.IsMutable && 
-          not (entityRefInThisAssembly ctxt.g.compilingFSharpCore rfref.TyconRef) -> 
+          not (entityRefInThisAssembly ctxt.g.compilingCoreLibrary rfref.TyconRef) -> 
 
         let tinst = remapTypes tmenv tinst 
         let arg = remapExprImpl ctxt compgen tmenv arg 
@@ -5917,7 +5917,7 @@ and remapExprImpl (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) exp
 
     | Expr.Op (TOp.UnionCaseFieldGetAddr (uref, cidx, readonly), tinst, [arg], m) when 
           not (uref.FieldByIndex(cidx).IsMutable) && 
-          not (entityRefInThisAssembly ctxt.g.compilingFSharpCore uref.TyconRef) -> 
+          not (entityRefInThisAssembly ctxt.g.compilingCoreLibrary uref.TyconRef) -> 
 
         let tinst = remapTypes tmenv tinst 
         let arg = remapExprImpl ctxt compgen tmenv arg 
@@ -6537,7 +6537,7 @@ let isExnDefinitelyMutable (_ecref: TyconRef) = true
 // with caution. Hence we are conservative and within FSharp.Core we don't treat list 
 // reads as if they were pure. 
 let isUnionCaseFieldMutable (g: TcGlobals) (ucref: UnionCaseRef) n = 
-    (g.compilingFSharpCore && tyconRefEq g ucref.TyconRef g.list_tcr_canon && n = 1) ||
+    (g.compilingCoreLibrary && tyconRefEq g ucref.TyconRef g.list_tcr_canon && n = 1) ||
     (ucref.FieldByIndex n).IsMutable
   
 let isExnFieldMutable ecref n = 
@@ -6963,7 +6963,7 @@ let CanTakeAddressOfImmutableVal (g: TcGlobals) m (vref: ValRef) mut =
     not vref.IsMutable &&
     not vref.IsMemberOrModuleBinding &&
     // Note: We can't add this:
-    //    || valRefInThisAssembly g.compilingFSharpCore vref
+    //    || valRefInThisAssembly g.compilingCoreLibrary vref
     // This is because we don't actually guarantee to generate static backing fields for all values like these, e.g. simple constants "let x = 1".  
     // We always generate a static property but there is no field to take an address of
     CanTakeAddressOf g m false vref.Type mut
@@ -6971,7 +6971,7 @@ let CanTakeAddressOfImmutableVal (g: TcGlobals) m (vref: ValRef) mut =
 let MustTakeAddressOfVal (g: TcGlobals) (vref: ValRef) = 
     vref.IsMutable &&
     // We can only take the address of mutable values in the same assembly
-    valRefInThisAssembly g.compilingFSharpCore vref
+    valRefInThisAssembly g.compilingCoreLibrary vref
 
 let MustTakeAddressOfByrefGet (g: TcGlobals) (vref: ValRef) = 
     isByrefTy g vref.Type && not (isInByrefTy g vref.Type)
@@ -6989,13 +6989,13 @@ let MustTakeAddressOfRecdFieldRef (rfref: RecdFieldRef) = MustTakeAddressOfRecdF
 
 let CanTakeAddressOfRecdFieldRef (g: TcGlobals) m (rfref: RecdFieldRef) tinst mut =
     // We only do this if the field is defined in this assembly because we can't take addresses across assemblies for immutable fields
-    entityRefInThisAssembly g.compilingFSharpCore rfref.TyconRef &&
+    entityRefInThisAssembly g.compilingCoreLibrary rfref.TyconRef &&
     not rfref.RecdField.IsMutable &&
     CanTakeAddressOf g m false (actualTyOfRecdFieldRef rfref tinst) mut
 
 let CanTakeAddressOfUnionFieldRef (g: TcGlobals) m (uref: UnionCaseRef) cidx tinst mut =
     // We only do this if the field is defined in this assembly because we can't take addresses across assemblies for immutable fields
-    entityRefInThisAssembly g.compilingFSharpCore uref.TyconRef &&
+    entityRefInThisAssembly g.compilingCoreLibrary uref.TyconRef &&
     let rfref = uref.FieldByIndex cidx
     not rfref.IsMutable &&
     CanTakeAddressOf g m false (actualTyOfUnionFieldRef uref cidx tinst) mut
@@ -7220,7 +7220,7 @@ let rec IterateRecursiveFixups g (selfv: Val option) rvs (access: Expr, set) exp
              (fun e -> 
                // NICE: it would be better to do this check in the type checker 
                let tcref = c.TyconRef
-               if not (c.FieldByIndex n).IsMutable && not (entityRefInThisAssembly g.compilingFSharpCore tcref) then
+               if not (c.FieldByIndex n).IsMutable && not (entityRefInThisAssembly g.compilingCoreLibrary tcref) then
                  errorR(Error(FSComp.SR.tastRecursiveValuesMayNotAppearInConstructionOfType(tcref.LogicalName), m))
                mkUnionCaseFieldSet (access, c, tinst, n, e, m))))
 
@@ -7231,7 +7231,7 @@ let rec IterateRecursiveFixups g (selfv: Val option) rvs (access: Expr, set) exp
             (mkRecdFieldGetViaExprAddr (access, fref, tinst, m), 
              (fun e -> 
                // NICE: it would be better to do this check in the type checker 
-               if not fspec.IsMutable && not (entityRefInThisAssembly g.compilingFSharpCore tcref) then
+               if not fspec.IsMutable && not (entityRefInThisAssembly g.compilingCoreLibrary tcref) then
                  errorR(Error(FSComp.SR.tastRecursiveValuesMayNotBeAssignedToNonMutableField(fspec.rfield_id.idText, tcref.LogicalName), m))
                mkRecdFieldSetViaExprAddr (access, fref, tinst, e, m))) arg )
     | Expr.Val _

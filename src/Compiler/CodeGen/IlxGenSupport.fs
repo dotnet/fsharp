@@ -180,7 +180,7 @@ let GenReadOnlyAttributeIfNecessary g ty =
 let GetDynamicallyAccessedMemberTypes (g: TcGlobals) =
     let tref = g.enum_DynamicallyAccessedMemberTypes.TypeRef
 
-    if not (g.compilingFSharpCore) then
+    if not (g.compilingCoreLibrary) then
         g.TryEmbedILType(
             tref,
             (fun () ->

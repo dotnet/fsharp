@@ -122,6 +122,8 @@ let ComputeMakePathAbsolute implicitIncludeDir (path: string) =
     with :? ArgumentException ->
         path
 
+let isCoreLibrary compilingLibraryName = compilingLibraryName = "FSharp.Core"
+
 //----------------------------------------------------------------------------
 // Configuration
 //----------------------------------------------------------------------------
@@ -419,7 +421,7 @@ type TcConfigBuilder =
         mutable implicitIncludeDir: string (* normally "." *)
         mutable openDebugInformationForLaterStaticLinking: bool (* only for --standalone *)
         defaultFSharpBinariesDir: string
-        mutable compilingFSharpCore: bool
+        mutable compilingLibraryName: string
         mutable useIncrementalBuilder: bool
         mutable includes: string list
         mutable implicitOpens: string list
@@ -661,7 +663,7 @@ type TcConfigBuilder =
             stackReserveSize = None
             conditionalDefines = []
             openDebugInformationForLaterStaticLinking = false
-            compilingFSharpCore = false
+            compilingLibraryName = null
             useIncrementalBuilder = false
             implicitOpens = []
             includes = []
@@ -1082,6 +1084,8 @@ type TcConfigBuilder =
         else
             ri, FileSystemUtils.fileNameOfPath ri, ILResourceAccess.Public
 
+    member tcConfigB.compilingCoreLibrary = isCoreLibrary tcConfigB.compilingLibraryName
+
 //----------------------------------------------------------------------------
 // TcConfig
 //--------------------------------------------------------------------------
@@ -1234,7 +1238,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         data.openDebugInformationForLaterStaticLinking
 
     member _.fsharpBinariesDir = data.defaultFSharpBinariesDir
-    member _.compilingFSharpCore = data.compilingFSharpCore
+    member _.compilingLibraryName = data.compilingLibraryName
     member _.useIncrementalBuilder = data.useIncrementalBuilder
     member _.includes = data.includes
     member _.implicitOpens = data.implicitOpens
@@ -1470,6 +1474,8 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 
     member tcConfig.assumeDotNetFramework =
         tcConfig.primaryAssembly = PrimaryAssembly.Mscorlib
+
+    member tcConfig.compilingCoreLibrary = isCoreLibrary tcConfig.compilingLibraryName
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
 /// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.

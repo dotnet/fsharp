@@ -232,7 +232,7 @@ type public FSharpParsingOptions =
 
         StrictIndentation: bool option
 
-        CompilingFSharpCore: bool
+        compilingCoreLibrary: bool
 
         IsExe: bool
     }

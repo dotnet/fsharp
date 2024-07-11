@@ -27,7 +27,7 @@ These release notes track our current efforts to document changes to the F# proj
   A 'do expr' declaration in a module will correspond to a SynModuleDecl.Expr enclosing a SynExpr.Do 
   This constructo also loses the debug point as it was always None. The debug point
   is always implicit for this construct.
-* In FCS API, FSharpParsingOptions, `CompilingFsLib` --> `CompilingFSharpCore`
+* In FCS API, FSharpParsingOptions, `CompilingFsLib` --> `compilingFSharpCore`
 * In FCS API, FSharpParsingOptions, `ErrorSeverityOptions` --> `DiagnosticOptions`
 * [SynIdent](https://fsharp.github.io/fsharp-compiler-docs/reference/fsharp-compiler-syntax-synident.html#SynIdent) was introduced in the Untyped Syntax Tree. 
   This represent an `Ident` with potential additional information, stored as [IdentTrivia](https://fsharp.github.io/fsharp-compiler-docs/reference/fsharp-compiler-syntaxtrivia-identtrivia.html)).
@@ -40,6 +40,7 @@ These release notes track our current efforts to document changes to the F# proj
 * `DoesIdentifierNeedBackticks` is removed, it should always be sufficient to call `NormalizeIdentifierBackticks` or else call something in `PrettyNaming`
 * `AddBackticksToIdentifierIfNeeded` is removed, it should always be sufficient to call `NormalizeIdentifierBackticks`
 * `DeclarationListItem.Name` --> `DeclarationListItem.NameInList`
+* In FCS API, FSharpParsingOptions, `compilingFSharpCore` --> `compilingCoreLibrary`
 
 ### F# 6.0 / Visual Studio 17.0
 
