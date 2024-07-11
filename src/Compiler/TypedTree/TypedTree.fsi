@@ -1485,6 +1485,9 @@ type TyparOptionalData =
 
         /// The declared attributes of the type parameter. Empty for type inference variables.
         mutable typar_attribs: Attribs
+
+        /// Set to true if the typar is contravariant, i.e. declared as <in T> in C#
+        mutable typar_is_contravariant: bool
     }
 
     override ToString: unit -> string
@@ -1540,6 +1543,9 @@ type Typar =
 
     /// Adjusts the constraints associated with a type variable
     member SetConstraints: cs: TyparConstraint list -> unit
+
+    /// Marks the typar as being contravariant
+    member MarkAsContravariant: unit -> unit
 
     /// Sets whether a type variable is required at runtime
     member SetDynamicReq: b: TyparDynamicReq -> unit

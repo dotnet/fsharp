@@ -2254,6 +2254,9 @@ type TyparOptionalData =
 
       /// The declared attributes of the type parameter. Empty for type inference variables. 
       mutable typar_attribs: Attribs
+
+      /// Set to true if the typar is contravariant, i.e. declared as <in T> in C#
+      mutable typar_is_contravariant: bool
     }
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -2355,10 +2358,10 @@ type Typar =
     member x.SetAttribs attribs = 
         match attribs, x.typar_opt_data with
         | [], None -> ()
-        | [], Some { typar_il_name = None; typar_xmldoc = doc; typar_constraints = [] } when doc.IsEmpty ->
+        | [], Some { typar_il_name = None; typar_xmldoc = doc; typar_constraints = []; typar_is_contravariant = false } when doc.IsEmpty ->
             x.typar_opt_data <- None
         | _, Some optData -> optData.typar_attribs <- attribs
-        | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs }
+        | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs; typar_is_contravariant = false }
 
     /// Get the XML documetnation for the type parameter
     member x.XmlDoc =
@@ -2376,7 +2379,7 @@ type Typar =
     member x.SetILName il_name =
         match x.typar_opt_data with
         | Some optData -> optData.typar_il_name <- il_name
-        | _ -> x.typar_opt_data <- Some { typar_il_name = il_name; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = [] }
+        | _ -> x.typar_opt_data <- Some { typar_il_name = il_name; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = []; typar_is_contravariant = false }
 
     /// Indicates the display name of a type variable
     member x.DisplayName = if x.Name = "?" then "?"+string x.Stamp else x.Name
@@ -2385,10 +2388,17 @@ type Typar =
     member x.SetConstraints cs =
         match cs, x.typar_opt_data with
         | [], None -> ()
-        | [], Some { typar_il_name = None; typar_xmldoc = doc; typar_attribs = [] } when doc.IsEmpty ->
+        | [], Some { typar_il_name = None; typar_xmldoc = doc; typar_attribs = [];typar_is_contravariant = false } when doc.IsEmpty ->
             x.typar_opt_data <- None
         | _, Some optData -> optData.typar_constraints <- cs
-        | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = cs; typar_attribs = [] }
+        | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = cs; typar_attribs = []; typar_is_contravariant = false }
+
+    /// Marks the typar as being contravariant
+    member x.MarkAsContravariant() = 
+        match x.typar_opt_data with
+        | Some optData -> optData.typar_is_contravariant <- true
+        | _ ->
+            x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = []; typar_is_contravariant = true }
 
     /// Creates a type variable that contains empty data, and is not yet linked. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Typar = 
@@ -2410,7 +2420,7 @@ type Typar =
         x.typar_solution <- tg.typar_solution
         match tg.typar_opt_data with
         | Some tg -> 
-            let optData = { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints; typar_attribs = tg.typar_attribs }
+            let optData = { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints; typar_attribs = tg.typar_attribs; typar_is_contravariant = tg.typar_is_contravariant }
             x.typar_opt_data <- Some optData
         | None -> ()
 
@@ -6142,7 +6152,7 @@ type Construct() =
             typar_opt_data =
                 match attribs with
                 | [] -> None
-                | _ -> Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs } } 
+                | _ -> Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs; typar_is_contravariant = false  } } 
 
     /// Create a new type parameter node for a declared type parameter
     static member NewRigidTypar nm m =
