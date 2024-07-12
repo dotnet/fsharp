@@ -87,12 +87,17 @@ type internal FSharpTaskListService [<ImportingConstructor>] () as this =
                 ()
             else
                 let lineTxt = line.ToString()
+
                 for ct in contractedTokens do
-                
+
                     let tokenSize = 1 + (ct.Right - ct.Left)
 
                     for (dText, d) in descriptors do
-                        if tokenSize < 0 || ct.Left >= lineTxt.Length || tokenSize > (lineTxt.Length - ct.Left) then
+                        if
+                            tokenSize < 0
+                            || ct.Left >= lineTxt.Length
+                            || tokenSize > (lineTxt.Length - ct.Left)
+                        then
                             ()
                         else
                             let idx =
