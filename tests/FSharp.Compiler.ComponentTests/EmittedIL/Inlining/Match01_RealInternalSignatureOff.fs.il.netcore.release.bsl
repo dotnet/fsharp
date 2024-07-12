@@ -17,16 +17,8 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
+.mresource public FSharpSignatureCompressedData.assembly { }
+.mresource public FSharpOptimizationCompressedData.assembly { }
 .module assembly.exe
 
 .imagebase {value}
@@ -1107,6 +1099,42 @@
     } 
   } 
 
+  .method public static int32  select1(class Match01/Test1 x) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  nop
+    IL_0001:  ldarg.0
+    IL_0002:  call       instance int32 Match01/Test1::get_Tag()
+    IL_0007:  switch     ( 
+                          IL_001c,
+                          IL_0028,
+                          IL_002a,
+                          IL_002c)
+    IL_001c:  ldarg.0
+    IL_001d:  castclass  Match01/Test1/X11
+    IL_0022:  ldfld      int32 Match01/Test1/X11::item
+    IL_0027:  ret
+
+    IL_0028:  ldc.i4.2
+    IL_0029:  ret
+
+    IL_002a:  ldc.i4.3
+    IL_002b:  ret
+
+    IL_002c:  ldc.i4.4
+    IL_002d:  ret
+  } 
+
+  .method public static int32  fm(class Match01/Test1 y) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  call       int32 Match01::select1(class Match01/Test1)
+    IL_0006:  ret
+  } 
+
   .method assembly static int32  CompareTo$cont@4(class Match01/Test1 this,
                                                   class Match01/Test1 obj,
                                                   class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
@@ -1376,42 +1404,6 @@
     IL_00fc:  ret
   } 
 
-  .method public static int32  select1(class Match01/Test1 x) cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  call       instance int32 Match01/Test1::get_Tag()
-    IL_0007:  switch     ( 
-                          IL_001c,
-                          IL_0028,
-                          IL_002a,
-                          IL_002c)
-    IL_001c:  ldarg.0
-    IL_001d:  castclass  Match01/Test1/X11
-    IL_0022:  ldfld      int32 Match01/Test1/X11::item
-    IL_0027:  ret
-
-    IL_0028:  ldc.i4.2
-    IL_0029:  ret
-
-    IL_002a:  ldc.i4.3
-    IL_002b:  ret
-
-    IL_002c:  ldc.i4.4
-    IL_002d:  ret
-  } 
-
-  .method public static int32  fm(class Match01/Test1 y) cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  call       int32 Match01::select1(class Match01/Test1)
-    IL_0006:  ret
-  } 
-
 } 
 
 .class private abstract auto ansi sealed '<StartupCode$assembly>'.$Match01
@@ -1426,7 +1418,6 @@
   } 
 
 } 
-
 
 
 
