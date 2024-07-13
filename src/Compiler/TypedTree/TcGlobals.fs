@@ -15,7 +15,6 @@ open System.Diagnostics
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Features
 open FSharp.Compiler.IO
@@ -24,9 +23,7 @@ open FSharp.Compiler.Text.FileIndex
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
-
 open Internal.Utilities
-open System.Reflection
 
 let internal DummyFileNameForRangesWithoutASpecificLocation = startupFileName
 let private envRange = rangeN DummyFileNameForRangesWithoutASpecificLocation 0
@@ -65,7 +62,6 @@ module FSharpLib =
     let LanguagePrimitivesName     = Root + ".Core.LanguagePrimitives"
     let CompilerServicesName       = Root + ".Core.CompilerServices"
     let LinqRuntimeHelpersName     = Root + ".Linq.RuntimeHelpers"
-    let RuntimeHelpersName         = Root + ".Core.CompilerServices.RuntimeHelpers"
     let ExtraTopLevelOperatorsName = Root + ".Core.ExtraTopLevelOperators"
     let NativeInteropName          = Root + ".NativeInterop"
 
@@ -77,7 +73,6 @@ module FSharpLib =
     let NativeInteropPath          = splitNamespace NativeInteropName |> Array.ofList
     let CompilerServicesPath       = splitNamespace CompilerServicesName |> Array.ofList
     let LinqRuntimeHelpersPath     = splitNamespace LinqRuntimeHelpersName |> Array.ofList
-    let RuntimeHelpersPath         = splitNamespace RuntimeHelpersName |> Array.ofList
     let QuotationsPath             = splitNamespace QuotationsName |> Array.ofList
 
     let RootPathArray              = RootPath |> Array.ofList
@@ -208,7 +203,6 @@ type TcGlobals(
   let mk_MFLinq_tcref             ccu n = mkNonLocalTyconRef2 ccu LinqPathArray n
   let mk_MFCollections_tcref      ccu n = mkNonLocalTyconRef2 ccu CollectionsPathArray n
   let mk_MFCompilerServices_tcref ccu n = mkNonLocalTyconRef2 ccu CompilerServicesPath n
-  let mk_MFRuntimeHelpers_tcref   ccu n = mkNonLocalTyconRef2 ccu RuntimeHelpersPath n
   let mk_MFControl_tcref          ccu n = mkNonLocalTyconRef2 ccu ControlPathArray n
 
   let tryFindSysTypeCcu path nm =
@@ -1854,6 +1848,10 @@ type TcGlobals(
 
   /// Indicates if we can use System.Array.Empty when emitting IL for empty array literals
   member val isArrayEmptyAvailable = v_Array_tcref.ILTyconRawMetadata.Methods.FindByName "Empty" |> List.isEmpty |> not
+
+  member g.isSpliceOperator v =
+    primValRefEq g.compilingFSharpCore g.fslibCcu v g.splice_expr_vref ||
+    primValRefEq g.compilingFSharpCore g.fslibCcu v g.splice_raw_expr_vref
 
   member _.FindSysTyconRef path nm = findSysTyconRef path nm
 
