@@ -296,7 +296,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
     match expr with
     // Detect expression tree exprSplices
     | Expr.App (InnerExprPat(Expr.Val (vref, _, _)), _, _, x0 :: rest, m)
-           when g.isSplice vref ->
+           when g.isSpliceOperator vref ->
         let idx = cenv.exprSplices.Count
         let ty = tyOfExpr g expr
 
@@ -309,7 +309,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         (hole, rest) ||> List.fold (fun fR arg -> QP.mkApp (fR, ConvExpr cenv env arg))
 
     | ModuleValueOrMemberUse g (vref, vFlags, _f, _fTy, tyargs, curriedArgs)
-        when not (g.isSplice vref) ->
+        when not (g.isSpliceOperator vref) ->
         let m = expr.Range
 
         let numEnclTypeArgs, _, isNewObj, valUseFlags, isSelfInit, takesInstanceArg, isPropGet, isPropSet =
