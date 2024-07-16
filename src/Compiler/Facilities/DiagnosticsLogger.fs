@@ -875,17 +875,21 @@ type StackGuard(maxDepth: int, name: string) =
             [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string,
             [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int
         ) =
-        use _ =
-            Activity.start
-                "DiagnosticsLogger.StackGuard.Guard"
-                [|
-                    Activity.Tags.stackGuardName, name
-                    Activity.Tags.stackGuardCurrentDepth, string depth
-                    Activity.Tags.stackGuardMaxDepth, string maxDepth
-                    Activity.Tags.callerMemberName, memberName
-                    Activity.Tags.callerFilePath, path
-                    Activity.Tags.callerLineNumber, string line
-                |]
+        ignore memberName
+        ignore path
+        ignore line
+        
+        // use _ =
+        //     Activity.start
+        //         "DiagnosticsLogger.StackGuard.Guard"
+        //         [|
+        //             Activity.Tags.stackGuardName, name
+        //             Activity.Tags.stackGuardCurrentDepth, string depth
+        //             Activity.Tags.stackGuardMaxDepth, string maxDepth
+        //             Activity.Tags.callerMemberName, memberName
+        //             Activity.Tags.callerFilePath, path
+        //             Activity.Tags.callerLineNumber, string line
+        //         |]
 
         depth <- depth + 1
 

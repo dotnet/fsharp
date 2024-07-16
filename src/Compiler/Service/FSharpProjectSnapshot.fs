@@ -560,7 +560,7 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
             referencedProjects: FSharpReferencedProjectSnapshot list,
             isIncompleteTypeCheckEnvironment: bool,
             useScriptResolutionRules: bool,
-            loadTime: DateTime, 
+            loadTime: DateTime,
             unresolvedReferences: FSharpUnresolvedReferencesSet option,
             originalLoadReferences: (range * string * string) list,
             stamp: int64 option
@@ -707,7 +707,8 @@ let rec internal snapshotToOptions (projectSnapshot: ProjectSnapshot) =
 type internal Extensions =
 
     [<Extension>]
-    static member ToOptions(this: ProjectSnapshot) = this |> snapshotToOptions
+    static member ToOptions(this: ProjectSnapshot) = 
+        this |> snapshotToOptions
 
     [<Extension>]
     static member ToOptions(this: FSharpProjectSnapshot) =
