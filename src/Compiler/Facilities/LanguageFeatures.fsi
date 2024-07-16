@@ -82,6 +82,7 @@ type LanguageFeature =
     | AllowAccessModifiersToAutoPropertiesGettersAndSetters
     | LowerSimpleMappingsInComprehensionsToDirectCallsToMap
     | ParsedHashDirectiveArgumentNonQuotes
+    | EmptyBodiedComputationExpressions
 
 /// LanguageVersion management
 type LanguageVersion =

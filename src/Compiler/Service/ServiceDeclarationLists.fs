@@ -86,7 +86,9 @@ type CompletionItem =
       IsOwnMember: bool
       MinorPriority: int
       Type: TyconRef option
-      Unresolved: UnresolvedSymbol option }
+      Unresolved: UnresolvedSymbol option
+      CustomInsertText: string voption
+      CustomDisplayText: string voption }
     member x.Item = x.ItemWithInst.Item
 
 [<AutoOpen>]
@@ -1125,19 +1127,23 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                     match u.Namespace with
                     | [||] -> u.DisplayName
                     | ns -> (ns |> String.concat ".") + "." + u.DisplayName
-                | None -> x.Item.DisplayName)
+                | None when x.CustomDisplayText.IsSome -> x.CustomDisplayText.Value
+                | None -> x.Item.DisplayName
+            )
             |> List.map (
                 let textInDeclList item =
                     match item.Unresolved with
                     | Some u -> u.DisplayName
+                    | None when item.CustomDisplayText.IsSome -> item.CustomDisplayText.Value
                     | None -> item.Item.DisplayNameCore
                 let textInCode (item: CompletionItem) =
                     match item.Item with
                     | Item.TypeVar (name, typar) -> (if typar.StaticReq = Syntax.TyparStaticReq.None then "'" else " ^") + name
                     | _ ->
-                        match item.Unresolved with
-                        | Some u -> u.DisplayName
-                        | None -> item.Item.DisplayName
+                        match item.Unresolved, item.CustomInsertText with
+                        | Some u, _ -> u.DisplayName
+                        | None, ValueSome textInCode -> textInCode
+                        | None, _ -> item.Item.DisplayName
                 if not supportsPreferExtsMethodsOverProperty then
                     // we don't pay the cost of filtering specific to RFC-1137
                     // nor risk a change in behaviour for the intellisense item list

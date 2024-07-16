@@ -3137,9 +3137,12 @@ and OptimizeVal cenv env expr (v: ValRef, m) =
 
     | None ->
        if v.ShouldInline then
-           warning(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
+            match valInfoForVal.ValExprInfo with
+            | UnknownValue -> error(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
+            | _ -> warning(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
        if v.InlineIfLambda then 
            warning(Error(FSComp.SR.optFailedToInlineSuggestedValue(v.DisplayName), m))
+
        expr, (AddValEqualityInfo g m v 
                     { Info=valInfoForVal.ValExprInfo 
                       HasEffect=false 

@@ -1452,8 +1452,8 @@ let mkClassUnionDef
                     methodImpls = emptyILMethodImpls,
                     events = emptyILEvents,
                     properties = emptyILProperties,
-                    isKnownToBeAttribute = false,
-                    customAttrs = emptyILCustomAttrs
+                    additionalFlags = ILTypeDefAdditionalFlags.None,
+                    customAttrs = emptyILCustomAttrsStored
                 )
                     .WithNestedAccess(cud.UnionCasesAccessibility)
                     .WithAbstract(true)

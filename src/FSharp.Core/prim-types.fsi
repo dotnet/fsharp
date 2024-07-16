@@ -199,7 +199,7 @@ namespace Microsoft.FSharp.Core
     /// <summary>Adding this attribute to a type causes it to be represented using a CLI struct.</summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Struct ||| AttributeTargets.ReturnValue ,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct ||| AttributeTargets.ReturnValue ,AllowMultiple=false)>]  
     [<Sealed>]
     type StructAttribute =
         inherit Attribute
@@ -1237,6 +1237,10 @@ namespace Microsoft.FSharp.Core
     /// <summary>Represents a out-argument managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
     /// <category>ByRef and Pointer Types</category>
     type outref<'T> = byref<'T, ByRefKinds.Out>
+
+    // This exists solely so that it can be used in the CollectionBuilderAttribute on List<'T> below.
+    module internal TypeOfUtils =
+        val inline typeof<'T>: Type
 
     /// <summary>Language primitives associated with the F# language</summary>
     ///
@@ -2578,12 +2582,46 @@ namespace Microsoft.FSharp.Core
       /// Represents an Error or a Failure. The code failed with a value of 'TError representing what went wrong.
       | Error of ErrorValue:'TError
 
+// These attributes only exist in .NET 8 and up.
+namespace System.Runtime.CompilerServices
+    open System
+    open Microsoft.FSharp.Core
+
+    [<Sealed>]
+    [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Struct ||| AttributeTargets.Interface, Inherited = false)>]
+    type internal CollectionBuilderAttribute =
+        inherit Attribute
+
+        /// <summary>Initialize the attribute to refer to the <paramref name="methodName"/> method on the <paramref name="builderType"/> type.</summary>
+        /// <param name="builderType">The type of the builder to use to construct the collection.</param>
+        /// <param name="methodName">The name of the method on the builder to use to construct the collection.</param>
+        /// <remarks>
+        /// <paramref name="methodName"/> must refer to a static method that accepts a single parameter of
+        /// type <see cref="T:System.ReadOnlySpan`1"/> and returns an instance of the collection being built containing
+        /// a copy of the data from that span. In future releases of .NET, additional patterns may be supported.
+        /// </remarks>
+        new: builderType: Type * methodName: string -> CollectionBuilderAttribute
+
+        /// <summary>Gets the type of the builder to use to construct the collection.</summary>
+        member BuilderType: Type
+ 
+        /// <summary>Gets the name of the method on the builder to use to construct the collection.</summary>
+        /// <remarks>This should match the metadata name of the target method. For example, this might be ".ctor" if targeting the type's constructor.</remarks>
+        member MethodName: string
+
+    [<Sealed>]
+    [<AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)>]
+    type internal ScopedRefAttribute =
+        inherit Attribute
+        new: unit -> ScopedRefAttribute
+
 namespace Microsoft.FSharp.Collections
 
     open System
     open System.Collections
     open System.Collections.Generic
     open Microsoft.FSharp.Core
+    open Microsoft.FSharp.Core.TypeOfUtils
 
     /// <summary>The type of immutable singly-linked lists.</summary>
     ///
@@ -2593,6 +2631,9 @@ namespace Microsoft.FSharp.Collections
     /// </remarks>
     ///
     /// <exclude />
+#if NETSTANDARD2_1_OR_GREATER
+    [<System.Runtime.CompilerServices.CollectionBuilder(typeof<List>, "Create")>]
+#endif
     [<DefaultAugmentation(false)>]
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpList`1")>]
@@ -2646,7 +2687,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The list with head appended to the front of tail.</returns>
         static member Cons: head: 'T * tail: 'T list -> 'T list
-        
+
         interface IEnumerable<'T>
         interface IEnumerable
         interface IReadOnlyCollection<'T>
@@ -2663,6 +2704,21 @@ namespace Microsoft.FSharp.Collections
     ///  See also <a href="https://learn.microsoft.com/dotnet/fsharp/language-reference/lists">F# Language Guide - Lists</a>.
     /// </remarks>
     and 'T list = List<'T>
+
+#if NETSTANDARD2_1_OR_GREATER
+    /// <summary>Contains methods for compiler use related to lists.</summary>
+    and [<CompilerMessage("This type is for compiler use and should not be used directly", 1204, IsHidden=true);
+          Sealed;
+          AbstractClass;
+          CompiledName("FSharpList")>] List =
+        /// <summary>Creates a list with the specified items.</summary>
+        ///
+        /// <param name="items">The items to store in the list.</param>
+        ///
+        /// <returns>A list containing the specified items.</returns>
+        [<CompilerMessage("This method is for compiler use and should not be used directly", 1204, IsHidden=true)>]
+        static member Create: [<System.Runtime.CompilerServices.ScopedRef>] items: System.ReadOnlySpan<'T> -> 'T list
+#endif
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.Collections.Generic.List`1"/></summary>
     type ResizeArray<'T> = System.Collections.Generic.List<'T>

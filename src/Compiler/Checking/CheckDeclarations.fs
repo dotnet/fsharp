@@ -428,6 +428,7 @@ module TcRecdUnionAndEnumDeclarations =
         let g = cenv.g
         let m = id.idRange
         let attrs, _ = TcAttributesWithPossibleTargets false cenv env AttributeTargets.FieldDecl synAttrs
+
         let attrsForProperty, attrsForField = attrs |> List.partition (fun (attrTargets, _) -> (attrTargets &&& AttributeTargets.Property) <> enum 0) 
         let attrsForProperty = (List.map snd attrsForProperty) 
         let attrsForField = (List.map snd attrsForField)
@@ -2840,6 +2841,7 @@ module EstablishTypeDefinitionCores =
         // Allow failure of constructor resolution because Vals for members in the same recursive group are not yet available
         let attrs, getFinalAttrs = TcAttributesCanFail cenv envinner AttributeTargets.TyconDecl synAttrs
         let hasMeasureAttr = HasFSharpAttribute g g.attrib_MeasureAttribute attrs
+        let hasStructAttr = HasFSharpAttribute g g.attrib_StructAttribute attrs
 
         let isStructRecordOrUnionType = 
             match synTyconRepr with
@@ -2896,6 +2898,12 @@ module EstablishTypeDefinitionCores =
 
                 // Run InferTyconKind to raise errors on inconsistent attribute sets
                 InferTyconKind g (SynTypeDefnKind.Record, attrs, [], [], inSig, true, m) |> ignore
+                
+                if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
+                    if hasStructAttr then
+                        TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Struct synAttrs |> ignore
+                    else
+                        TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Class synAttrs |> ignore
 
                 // Note: the table of record fields is initially empty
                 TFSharpTyconRepr (Construct.NewEmptyFSharpTyconData TFSharpRecord)

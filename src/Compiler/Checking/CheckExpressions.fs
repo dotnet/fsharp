@@ -8203,6 +8203,10 @@ and Propagate (cenv: cenv) (overallTy: OverallTy) (env: TcEnv) tpenv (expr: Appl
                 // seq { ... }
                 | SynExpr.ComputationExpr _ -> ()
 
+                // async { }
+                // seq { }
+                | SynExpr.Record (None, None, [], _) when g.langVersion.SupportsFeature LanguageFeature.EmptyBodiedComputationExpressions -> ()
+
                 // expr[idx]
                 // expr[idx1, idx2]
                 // expr[idx1..]
@@ -8467,6 +8471,16 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
     let mArg = synArg.Range
     let mLeftExpr = leftExpr.Range
 
+    /// Treat an application of a value to an empty record expression
+    /// as a computation expression with a single unit expression.
+    /// Insert a (), i.e., such that builder { } ≡ builder { () }.
+    /// This transformation is only valid for language
+    /// versions that support this feature.
+    let (|EmptyFieldListAsUnit|_|) recordFields =
+        match recordFields with
+        | [] when g.langVersion.SupportsFeature LanguageFeature.EmptyBodiedComputationExpressions -> Some (EmptyFieldListAsUnit (SynExpr.Const (SynConst.Unit, range0)))
+        | _ -> None
+
     // If the type of 'synArg' unifies as a function type, then this is a function application, otherwise
     // it is an error or a computation expression or indexer or delegate invoke
     match UnifyFunctionTypeUndoIfFailed cenv denv mLeftExpr exprTy with
@@ -8488,11 +8502,15 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
             // though users don't realise that.
             let synArg =
                 match synArg with
-                | SynExpr.ComputationExpr (false, comp, m) when 
+                // seq { comp }
+                // seq { }
+                | SynExpr.ComputationExpr (false, comp, m)
+                | SynExpr.Record (None, None, EmptyFieldListAsUnit comp, m) when
                         (match leftExpr with
                          | ApplicableExpr(expr=Expr.Op(TOp.Coerce, _, [SeqExpr g], _)) -> true
                          | _ -> false) ->
                     SynExpr.ComputationExpr (true, comp, m)
+
                 | _ -> synArg
 
             let arg, tpenv =
@@ -8533,8 +8551,11 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
                 | _ -> None, delayed
             TcIndexingThen cenv env overallTy mExprAndArg m tpenv setInfo synLeftExprOpt leftExpr.Expr exprTy expandedIndexArgs indexArgs delayed
 
-        // Perhaps 'leftExpr' is a computation expression builder, and 'arg' is '{ ... }'
-        | SynExpr.ComputationExpr (false, comp, _m) ->
+        // Perhaps 'leftExpr' is a computation expression builder, and 'arg' is '{ ... }' or '{ }':
+        // leftExpr { comp }
+        // leftExpr { }
+        | SynExpr.ComputationExpr (false, comp, _m)
+        | SynExpr.Record (None, None, EmptyFieldListAsUnit comp, _m) ->
             let bodyOfCompExpr, tpenv = cenv.TcComputationExpression cenv env overallTy tpenv (mLeftExpr, leftExpr.Expr, exprTy, comp)
             TcDelayed cenv overallTy env tpenv mExprAndArg (MakeApplicableExprNoFlex cenv bodyOfCompExpr) (tyOfExpr g bodyOfCompExpr) ExprAtomicFlag.NonAtomic delayed
 

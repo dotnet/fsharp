@@ -9,6 +9,7 @@
 * Allow access modifies to auto properties getters and setters ([PR 16687](https://github.com/dotnet/fsharp/pull/16687), [PR 16861](https://github.com/dotnet/fsharp/pull/16861), [Language suggestion #430](https://github.com/fsharp/fslang-suggestions/issues/430))
 * Allow #nowarn to support the FS prefix on error codes to disable warnings ([Issue #17206](https://github.com/dotnet/fsharp/issues/16447), [PR #17209](https://github.com/dotnet/fsharp/pull/17209))
 * Allow ParsedHashDirectives to have argument types other than strings ([Issue #17240](https://github.com/dotnet/fsharp/issues/16447), [PR #17209](https://github.com/dotnet/fsharp/pull/17209))
+* Support empty-bodied computation expressions. ([Language suggestion #1232](https://github.com/fsharp/fslang-suggestions/issues/1232), [PR #17352](https://github.com/dotnet/fsharp/pull/17352))
 
 ### Fixed
 
