@@ -1207,7 +1207,7 @@ let ComputeAccessAndCompPath (g:TcGlobals) env (declKindOpt: DeclKind option) m 
 let CheckForAbnormalOperatorNames (cenv: cenv) (idRange: range) coreDisplayName (memberInfoOpt: ValMemberInfo option) =
     let g = cenv.g
     if (idRange.EndColumn - idRange.StartColumn <= 5) &&
-        not g.compilingFSharpCore
+        not g.compilingCoreLibrary
     then
         let opName = ConvertValLogicalNameToDisplayNameCore coreDisplayName
         let isMember = memberInfoOpt.IsSome
@@ -10590,13 +10590,13 @@ and TcStaticOptimizationConstraint cenv env tpenv c =
 
     match c with
     | SynStaticOptimizationConstraint.WhenTyparTyconEqualsTycon(tp, ty, m) ->
-        if not g.compilingFSharpCore then
+        if not g.compilingCoreLibrary then
             errorR(Error(FSComp.SR.tcStaticOptimizationConditionalsOnlyForFSharpLibrary(), m))
         let tyR, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv ty
         let tpR, tpenv = TcTypar cenv env NewTyparsOK tpenv tp
         TTyconEqualsTycon(mkTyparTy tpR, tyR), tpenv
     | SynStaticOptimizationConstraint.WhenTyparIsStruct(tp, m) ->
-        if not g.compilingFSharpCore then
+        if not g.compilingCoreLibrary then
             errorR(Error(FSComp.SR.tcStaticOptimizationConditionalsOnlyForFSharpLibrary(), m))
         let tpR, tpenv = TcTypar cenv env NewTyparsOK tpenv tp
         TTyconIsStruct(mkTyparTy tpR), tpenv

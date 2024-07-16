@@ -86,7 +86,7 @@ type CompilerServiceBenchmarks() =
             ApplyLineDirectives = false
             IndentationAwareSyntax = None
             StrictIndentation = None
-            CompilingFSharpCore = false
+            compilingCoreLibrary = false
             IsExe = false
         }
 

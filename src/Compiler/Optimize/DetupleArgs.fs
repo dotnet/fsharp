@@ -282,7 +282,7 @@ module GlobalUsageAnalysis =
     //   - tmethods
     let UsageFolders (g: TcGlobals) =
         let foldLocalVal f z (vref: ValRef) =
-            if valRefInThisAssembly g.compilingFSharpCore vref then
+            if valRefInThisAssembly g.compilingCoreLibrary vref then
                 f z vref.Deref
             else
                 z

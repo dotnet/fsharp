@@ -1134,7 +1134,7 @@ type internal TransparentCompiler
             // TODO: we will probably want to cache and re-use larger graphs if available
 
             let graph =
-                if tcConfig.compilingFSharpCore then
+                if tcConfig.compilingCoreLibrary then
                     mkLinearGraph sourceFiles.Length
                 else
                     DependencyResolution.mkGraph filePairs sourceFiles |> fst |> processGraph
@@ -2053,7 +2053,7 @@ type internal TransparentCompiler
                                 yield options.IsInteractive
                                 yield! (Option.toList options.IndentationAwareSyntax)
                                 yield! (Option.toList options.StrictIndentation)
-                                yield options.CompilingFSharpCore
+                                yield options.compilingCoreLibrary
                                 yield options.IsExe
                             ]
                         |> Md5Hasher.toString

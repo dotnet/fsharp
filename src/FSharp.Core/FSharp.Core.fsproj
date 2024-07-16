@@ -25,7 +25,7 @@
     <OtherFlags>$(OtherFlags) --nowarn:3511</OtherFlags>
     <!-- Turn off 3513: resumable code invocation' - expected for resumable code combinators -->
     <OtherFlags>$(OtherFlags) --nowarn:3513</OtherFlags>
-    <OtherFlags>$(OtherFlags) --compiling-fslib --compiling-fslib-40 --maxerrors:100 --extraoptimizationloops:1</OtherFlags>
+    <OtherFlags>$(OtherFlags) --compiling-fslib --maxerrors:100 --extraoptimizationloops:1</OtherFlags>
     <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <Tailcalls>true</Tailcalls>
     <PreRelease>true</PreRelease>
@@ -103,12 +103,6 @@
     <Compile Include="local.fs">
       <Link>Collections/local.fs</Link>
     </Compile>
-    <Compile Include="array2.fsi">
-      <Link>Collections/array2.fsi</Link>
-    </Compile>
-    <Compile Include="array2.fs">
-      <Link>Collections/array2.fs</Link>
-    </Compile>
     <Compile Include="option.fsi">
       <Link>Collections/option.fsi</Link>
     </Compile>
@@ -157,6 +151,12 @@
     <Compile Include="array.fs">
       <Link>Collections/array.fs</Link>
     </Compile>
+    <Compile Include="array2.fsi">
+      <Link>Collections/array2.fsi</Link>
+    </Compile>
+    <Compile Include="array2.fs">
+      <Link>Collections/array2.fs</Link>
+    </Compile>
     <Compile Include="array3.fsi">
       <Link>Collections/array3.fsi</Link>
     </Compile>
@@ -174,6 +174,12 @@
     </Compile>
     <Compile Include="set.fs">
       <Link>Collections/set.fs</Link>
+    </Compile>
+    <Compile Include="collectionextensions.fsi">
+      <Link>Collections/collectionextensions.fsi</Link>
+    </Compile>
+    <Compile Include="collectionextensions.fs">
+      <Link>Collections/collectionextensions.fs</Link>
     </Compile>
     <Compile Include="reflect.fsi">
       <Link>Reflection/reflect.fsi</Link>

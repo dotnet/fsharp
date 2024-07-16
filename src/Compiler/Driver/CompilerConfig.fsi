@@ -238,7 +238,7 @@ type TcConfigBuilder =
 
         defaultFSharpBinariesDir: string
 
-        mutable compilingFSharpCore: bool
+        mutable compilingLibraryName: string
 
         mutable useIncrementalBuilder: bool
 
@@ -572,6 +572,8 @@ type TcConfigBuilder =
 
     member SetPrimaryAssembly: primaryAssembly: PrimaryAssembly -> unit
 
+    member compilingCoreLibrary: bool
+
 /// Immutable TcConfig, modifications are made via a TcConfigBuilder
 [<Sealed>]
 type TcConfig =
@@ -587,7 +589,7 @@ type TcConfig =
 
     member fsharpBinariesDir: string
 
-    member compilingFSharpCore: bool
+    member compilingCoreLibrary: bool
 
     member useIncrementalBuilder: bool
 
@@ -897,6 +899,8 @@ type TcConfig =
     member dumpSignatureData: bool
 
     member realsig: bool
+
+    member compilingCoreLibrary: bool
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
 /// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.

@@ -2164,7 +2164,7 @@ FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: System.String get_FileName(
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: System.String[] DependencyFiles
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: System.String[] get_DependencyFiles()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean ApplyLineDirectives
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean CompilingFSharpCore
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean compilingCoreLibrary
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpParsingOptions)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpParsingOptions, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean Equals(System.Object)
@@ -2172,7 +2172,7 @@ FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean Equals(System.Object,
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean IsExe
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean IsInteractive
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_ApplyLineDirectives()
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_CompilingFSharpCore()
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_compilingCoreLibrary()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_IsExe()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_IsInteractive()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: FSharp.Compiler.CodeAnalysis.FSharpParsingOptions Default
@@ -10852,7 +10852,7 @@ FSharp.Compiler.Tokenization.FSharpKeywords: Microsoft.FSharp.Collections.FSharp
 FSharp.Compiler.Tokenization.FSharpKeywords: System.String NormalizeIdentifierBackticks(System.String)
 FSharp.Compiler.Tokenization.FSharpLexer: Void Tokenize(FSharp.Compiler.Text.ISourceText, Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.Tokenization.FSharpToken,Microsoft.FSharp.Core.Unit], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.String]], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Tokenization.FSharpLexerFlags], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpMap`2[System.String,System.String]], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 FSharp.Compiler.Tokenization.FSharpLexerFlags: FSharp.Compiler.Tokenization.FSharpLexerFlags Compiling
-FSharp.Compiler.Tokenization.FSharpLexerFlags: FSharp.Compiler.Tokenization.FSharpLexerFlags CompilingFSharpCore
+FSharp.Compiler.Tokenization.FSharpLexerFlags: FSharp.Compiler.Tokenization.FSharpLexerFlags compilingCoreLibrary
 FSharp.Compiler.Tokenization.FSharpLexerFlags: FSharp.Compiler.Tokenization.FSharpLexerFlags Default
 FSharp.Compiler.Tokenization.FSharpLexerFlags: FSharp.Compiler.Tokenization.FSharpLexerFlags LightSyntaxOn
 FSharp.Compiler.Tokenization.FSharpLexerFlags: FSharp.Compiler.Tokenization.FSharpLexerFlags SkipTrivia

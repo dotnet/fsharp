@@ -1767,7 +1767,7 @@ let compilingFsLibFlag (tcConfigB: TcConfigBuilder) =
         "compiling-fslib",
         tagNone,
         OptionUnit(fun () ->
-            tcConfigB.compilingFSharpCore <- true
+            tcConfigB.compilingLibraryName <- "FSharp.Core"
             tcConfigB.TurnWarningOff(rangeStartup, "42")),
         Some(InternalCommandLineOption("--compiling-fslib", rangeCmdArgs)),
         None

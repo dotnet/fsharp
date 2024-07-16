@@ -1,0 +1,154 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks Condition="'$(Configuration)' == 'Proto'">netstandard2.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(Configuration)' != 'Proto'">netstandard2.0;netstandard2.1</TargetFrameworks>
+    <NoWarn>$(NoWarn);62</NoWarn> <!-- ML Compat -->
+    <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
+    <NoWarn>$(NoWarn);1204</NoWarn> <!-- This construct is for use in the FSharp.Core library and should not be used directly -->
+    <AllowCrossTargeting>true</AllowCrossTargeting>
+    <DefineConstants>$(DefineConstants);FSHARP_CORE</DefineConstants>
+    <!-- 3218: ArgumentsInSigAndImplMismatch -->
+    <OtherFlags>$(OtherFlags) --warnon:3218</OtherFlags>
+    <!-- 1182: Unused variables -->
+    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+    <!-- 3390: xmlDocBadlyFormed -->
+    <OtherFlags>$(OtherFlags) --warnon:3390</OtherFlags>
+    <!-- 3520: invalidXmlDocPosition -->
+    <OtherFlags>$(OtherFlags) --warnon:3520</OtherFlags>
+    <!-- Turn off 57: Use of construct with Experimental attribute -->
+    <OtherFlags>$(OtherFlags) --nowarn:57</OtherFlags>
+    <!-- Turn off 3511: state machine not compilable - expected for inlined functions defining state machine generators -->
+    <OtherFlags>$(OtherFlags) --nowarn:3511</OtherFlags>
+    <!-- Turn off 3513: resumable code invocation' - expected for resumable code combinators -->
+    <OtherFlags>$(OtherFlags) --nowarn:3513</OtherFlags>
+    <OtherFlags>$(OtherFlags) --compiling-fslib --maxerrors:100 --extraoptimizationloops:1</OtherFlags>
+    <!-- .tail annotations always emitted for this binary, even in debug mode -->
+    <Tailcalls>true</Tailcalls>
+    <PreRelease>true</PreRelease>
+    <Configurations>Debug;Release;Proto</Configurations>
+  </PropertyGroup>
+
+    <!-- .FSharp.Core always uses the old style initialization mechanism because of SQL CLR requirements -->
+  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' != 'true' and '$(Configuration)' != 'Proto'">
+    <OtherFlags>$(OtherFlags) --realsig+</OtherFlags>
+  </PropertyGroup>
+
+  <!--  The FSharp.Core dll provides a referencable public interface -->
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+    <NoOptimizationData>false</NoOptimizationData>
+    <NoInterfaceData>false</NoInterfaceData>
+    <CompressMetadata>true</CompressMetadata>
+  </PropertyGroup>
+
+  <!-- When we build FCS solution and we include FSCore as reference, set path explicitly -->
+  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
+    <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="FSCore.resx">
+      <GenerateSource>true</GenerateSource>
+      <GenerateLegacyCode>true</GenerateLegacyCode>
+      <GenerateLiterals>false</GenerateLiterals>
+      <GeneratedModuleName>Microsoft.FSharp.Core.SR</GeneratedModuleName>
+      <Link>FSCore.resx</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ILLink.LinkAttributes.xml" LogicalName="ILLink.LinkAttributes.xml" />
+    <EmbeddedResource Include="ILLink.Substitutions.xml" LogicalName="ILLink.Substitutions.xml" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)' == 'Proto' or '$(BUILDING_USING_DOTNET)' == 'true'">
+    <!-- This can be removed once CompileBefore support is shipped in an rtm relase -->
+    <CompileBefore Include="..\FSharp.Core\prim-types-prelude.fsi" />
+    <CompileBefore Include="..\FSharp.Core\prim-types-prelude.fs" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)' != 'Proto' and '$(BUILDING_USING_DOTNET)' != 'true'">
+    <Compile Include="..\FSharp.Core\prim-types-prelude.fsi" CompileOrder="CompileFirst" />
+    <Compile Include="..\FSharp.Core\prim-types-prelude.fs" CompileOrder="CompileFirst" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\FSharp.Core\prim-types.fsi" />
+    <Compile Include="..\FSharp.Core\prim-types.fs" />
+    <Compile Include="..\FSharp.Core\Random.fsi" />
+    <Compile Include="..\FSharp.Core\Random.fs" />
+    <Compile Include="..\FSharp.Core\local.fsi" />
+    <Compile Include="..\FSharp.Core\local.fs" />
+    <Compile Include="..\FSharp.Core\option.fsi" />
+    <Compile Include="..\FSharp.Core\option.fs" />
+    <Compile Include="..\FSharp.Core\result.fsi" />
+    <Compile Include="..\FSharp.Core\result.fs" />
+    <Compile Include="..\FSharp.Core\collections.fsi" />
+    <Compile Include="..\FSharp.Core\collections.fs" />
+    <Compile Include="..\FSharp.Core\seqcore.fsi" />
+    <Compile Include="..\FSharp.Core\seqcore.fs" />
+    <Compile Include="..\FSharp.Core\seq.fsi" />
+    <Compile Include="..\FSharp.Core\seq.fs" />
+    <Compile Include="..\FSharp.Core\string.fsi" />
+    <Compile Include="..\FSharp.Core\string.fs" />
+    <Compile Include="..\FSharp.Core\list.fsi" />
+    <Compile Include="..\FSharp.Core\list.fs" />
+    <Compile Include="..\FSharp.Core\array.fsi" />
+    <Compile Include="..\FSharp.Core\array.fs" />
+    <Compile Include="..\FSharp.Core\array2.fsi" />
+    <Compile Include="..\FSharp.Core\array2.fs" />
+    <Compile Include="..\FSharp.Core\array3.fsi" />
+    <Compile Include="..\FSharp.Core\array3.fs" />
+    <Compile Include="..\FSharp.Core\map.fsi" />
+    <Compile Include="..\FSharp.Core\map.fs" />
+    <Compile Include="..\FSharp.Core\set.fsi" />
+    <Compile Include="..\FSharp.Core\set.fs" />
+    <Compile Include="..\FSharp.Core\collectionextensions.fsi" />
+    <Compile Include="..\FSharp.Core\collectionextensions.fs" />
+    <Compile Include="..\FSharp.Core\reflect.fsi" />
+    <Compile Include="..\FSharp.Core\reflect.fs" />
+    <Compile Include="..\FSharp.Core\math\z.fsi" />
+    <Compile Include="..\FSharp.Core\math\z.fs" />
+    <Compile Include="..\FSharp.Core\..\Compiler\Utilities\sformat.fsi" />
+    <Compile Include="..\FSharp.Core\..\Compiler\Utilities\sformat.fs" />
+    <Compile Include="..\FSharp.Core\printf.fsi" />
+    <Compile Include="..\FSharp.Core\printf.fs" />
+    <Compile Include="..\FSharp.Core\quotations.fsi" />
+    <Compile Include="..\FSharp.Core\quotations.fs" />
+    <Compile Include="..\FSharp.Core\nativeptr.fsi" />
+    <Compile Include="..\FSharp.Core\nativeptr.fs" />
+    <Compile Include="..\FSharp.Core\event.fsi" />
+    <Compile Include="..\FSharp.Core\event.fs" />
+    <Compile Include="..\FSharp.Core\resumable.fsi" />
+    <Compile Include="..\FSharp.Core\resumable.fs" />
+    <Compile Include="..\FSharp.Core\async.fsi" />
+    <Compile Include="..\FSharp.Core\async.fs" />
+    <Compile Include="..\FSharp.Core\tasks.fsi" />
+    <Compile Include="..\FSharp.Core\tasks.fs" />
+    <Compile Include="..\FSharp.Core\eventmodule.fsi" />
+    <Compile Include="..\FSharp.Core\eventmodule.fs" />
+    <Compile Include="..\FSharp.Core\observable.fsi" />
+    <Compile Include="..\FSharp.Core\observable.fs" />
+    <Compile Include="..\FSharp.Core\mailbox.fsi" />
+    <Compile Include="..\FSharp.Core\mailbox.fs" />
+    <Compile Include="..\FSharp.Core\Nullable.fsi" />
+    <Compile Include="..\FSharp.Core\Nullable.fs" />
+    <Compile Include="..\FSharp.Core\Linq.fsi" />
+    <Compile Include="..\FSharp.Core\Linq.fs" />
+    <Compile Include="..\FSharp.Core\MutableTuple.fs" />
+    <Compile Include="..\FSharp.Core\QueryExtensions.fs" />
+    <Compile Include="..\FSharp.Core\Query.fsi" />
+    <Compile Include="..\FSharp.Core\Query.fs" />
+    <Compile Include="..\FSharp.Core\SI.fs" />
+    <Compile Include="..\FSharp.Core\fslib-extra-pervasives.fsi" />
+    <Compile Include="..\FSharp.Core\fslib-extra-pervasives.fs" />
+  </ItemGroup>
+
+  <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile">
+    <PropertyGroup>
+      <BuildOutputGroupLocation>$(BaseOutputPath)\$(Configuration)\$(TargetFramework)</BuildOutputGroupLocation>
+    </PropertyGroup>
+    <ItemGroup>
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\fscorlib.xml" />
+    </ItemGroup>
+  </Target>
+
+</Project>

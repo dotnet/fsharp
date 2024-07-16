@@ -38,7 +38,7 @@ module ILChecker =
         let methodSingleLine = "^(\s*\.method.*)(?: \s*)$[\r?\n?]^(\s*\{)"
         let methodMultiLine = "^(\s*\.method.*)(?: \s*)$[\r?\n?]^(?: \s*)(.*)\s*$[\r?\n?]^(\s*\{)"
         let normalizeNewLines (text: string) = text.Replace("\r\n", "\n").Replace("\r\n", "\r")
-        let resourceMultiLine = @"(?<resource>\.mresource\s+.*)(?<block>\s*\{[^}]*\})"
+        let resourceMultiLine = @"(?<resource>\.mresource\s+[^{}\n\r]*)\s*(?<block>\{[^}]*\})"
 
         let stripComments (text:string) =
             Regex.Replace(text,
@@ -76,7 +76,7 @@ module ILChecker =
         let unifyNetStandardVersions (text: string) = text.Replace(".ver 2:0:0:0", ".ver 2:1:0:0")
 
         let unifyResourceBlock text =
-            let text2 = Regex.Replace(text, resourceMultiLine, (fun (res: Match) -> $"""{res.Groups["resource"].Value} {{ }}"""), RegexOptions.Multiline)
+            let text2 = Regex.Replace(text, resourceMultiLine, (fun (res: Match) -> $"""{res.Groups["resource"].Value.Trim()} {{ }}"""), RegexOptions.Multiline)
             text2
 
         ilCode.Trim()

@@ -181,7 +181,7 @@ let tname_IsByRefLikeAttribute = "System.Runtime.CompilerServices.IsByRefLikeAtt
 //-------------------------------------------------------------------------
 
 type TcGlobals(
-    compilingFSharpCore: bool,
+    compilingCoreLibrary: bool,
     ilg: ILGlobals,
     fslibCcu: CcuThunk,
     directoryToResolveRelativePaths,
@@ -545,13 +545,15 @@ type TcGlobals(
   let fslib_MFOperatorIntrinsics_nleref        = mkNestedNonLocalEntityRef fslib_MFOperators_nleref "OperatorIntrinsics"
   let fslib_MFOperatorsUnchecked_nleref        = mkNestedNonLocalEntityRef fslib_MFOperators_nleref "Unchecked"
   let fslib_MFOperatorsChecked_nleref        = mkNestedNonLocalEntityRef fslib_MFOperators_nleref "Checked"
+
   let fslib_MFExtraTopLevelOperators_nleref    = mkNestedNonLocalEntityRef fslib_MFCore_nleref "ExtraTopLevelOperators"
   let fslib_MFNullableOperators_nleref         = mkNestedNonLocalEntityRef fslib_MFLinq_nleref "NullableOperators"
   let fslib_MFQueryRunExtensions_nleref              = mkNestedNonLocalEntityRef fslib_MFLinq_nleref "QueryRunExtensions"
   let fslib_MFQueryRunExtensionsLowPriority_nleref   = mkNestedNonLocalEntityRef fslib_MFQueryRunExtensions_nleref "LowPriority"
   let fslib_MFQueryRunExtensionsHighPriority_nleref  = mkNestedNonLocalEntityRef fslib_MFQueryRunExtensions_nleref "HighPriority"
 
-  let fslib_MFPrintfModule_nleref                 = mkNestedNonLocalEntityRef fslib_MFCore_nleref "PrintfModule"
+  let fslib_MFPrintfModule_nleref              = mkNestedNonLocalEntityRef fslib_MFCore_nleref "PrintfModule"
+  let fslib_MFPrintfExtensionsModule_nleref    = mkNestedNonLocalEntityRef fslib_MFCore_nleref "PrintfExtensions"
   let fslib_MFSeqModule_nleref                 = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "SeqModule"
   let fslib_MFListModule_nleref                = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "ListModule"
   let fslib_MFArrayModule_nleref               = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "ArrayModule"
@@ -593,7 +595,7 @@ type TcGlobals(
   let v_choice5_tcr     = mk_MFCore_tcref fslibCcu "Choice`5"
   let v_choice6_tcr     = mk_MFCore_tcref fslibCcu "Choice`6"
   let v_choice7_tcr     = mk_MFCore_tcref fslibCcu "Choice`7"
-  let tyconRefEq x y = primEntityRefEq compilingFSharpCore fslibCcu  x y
+  let tyconRefEq x y = primEntityRefEq compilingCoreLibrary fslibCcu  x y
 
   let v_suppressed_types =
     [ mk_MFCore_tcref fslibCcu "Option`1";
@@ -618,6 +620,7 @@ type TcGlobals(
                             fslib_MFQueryRunExtensionsHighPriority_nleref
 
                             fslib_MFPrintfModule_nleref
+                            fslib_MFPrintfExtensionsModule_nleref
                             fslib_MFSeqModule_nleref
                             fslib_MFListModule_nleref
                             fslib_MFArrayModule_nleref   
@@ -797,7 +800,7 @@ type TcGlobals(
   let v_invalid_arg_info           = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "invalidArg"                           , None                 , Some "InvalidArg" , [vara], ([[v_string_ty]; [v_string_ty]], varaTy))
   let v_null_arg_info              = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "nullArg"                              , None                 , Some "NullArg" , [vara],    ([[v_string_ty]], varaTy))
   let v_invalid_op_info            = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "invalidOp"                            , None                 , Some "InvalidOp" , [vara],  ([[v_string_ty]], varaTy))
-  let v_failwithf_info             = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "failwithf"                            , None                 , Some "PrintFormatToStringThenFail" , [vara;varb], ([[mk_format4_ty varaTy v_unit_ty v_string_ty v_string_ty]], varaTy))
+  let v_failwithf_info             = makeIntrinsicValRef(fslib_MFPrintfExtensionsModule_nleref,                "failwithf"                            , None                 , Some "PrintFormatToStringThenFail" , [vara;varb], ([[mk_format4_ty varaTy v_unit_ty v_string_ty v_string_ty]], varaTy))
 
   let v_reraise_info               = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "reraise"                              , None                 , Some "Reraise", [vara],     ([[v_unit_ty]], varaTy))
   let v_typeof_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "typeof"                               , None                 , Some "TypeOf" , [vara],     ([], v_system_Type_ty))
@@ -861,7 +864,7 @@ type TcGlobals(
   let v_seq_singleton_info         = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "singleton"                            , None                 , Some "Singleton"              , [vara],     ([[varaTy]], mkSeqTy varaTy))
   let v_seq_empty_info             = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "empty"                                , None                 , Some "Empty"                  , [vara],     ([], mkSeqTy varaTy))
   let v_new_format_info            = makeIntrinsicValRef(fslib_MFCore_nleref,                                  ".ctor"                                , Some "PrintfFormat`5", None                          , [vara;varb;varc;vard;vare], ([[v_string_ty]], mkPrintfFormatTy varaTy varbTy varcTy vardTy vareTy))
-  let v_sprintf_info               = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "sprintf"                              , None                 , Some "PrintFormatToStringThen", [vara],     ([[mk_format4_ty varaTy v_unit_ty v_string_ty v_string_ty]], varaTy))
+  let v_sprintf_info               = makeIntrinsicValRef(fslib_MFPrintfExtensionsModule_nleref,                "sprintf"                              , None                 , Some "PrintFormatToStringThen", [vara],     ([[mk_format4_ty varaTy v_unit_ty v_string_ty v_string_ty]], varaTy))
   let v_lazy_force_info            = makeIntrinsicValRef(fslib_MFLazyExtensions_nleref,                        "Force"                                , Some "Lazy`1"        , None                          , [vara],     ([[mkLazyTy varaTy]; []], varaTy))
   let v_lazy_create_info           = makeIntrinsicValRef(fslib_MFLazyExtensions_nleref,                        "Create"                               , Some "Lazy`1"        , None                          , [vara],     ([[v_unit_ty --> varaTy]], mkLazyTy varaTy))
 
@@ -1047,7 +1050,7 @@ type TcGlobals(
   /// Doing this normalization is a fairly performance critical piece of code as it is frequently invoked
   /// in the process of converting .NET metadata to F# internal compiler data structures (see import.fs).
   let decompileTy (tcref: EntityRef) tinst =
-      if compilingFSharpCore then
+      if compilingCoreLibrary then
           // No need to decompile when compiling FSharp.Core.dll
           TType_app (tcref, tinst, v_knownWithoutNull)
       else
@@ -1060,7 +1063,7 @@ type TcGlobals(
   /// Doing this normalization is a fairly performance critical piece of code as it is frequently invoked
   /// in the process of converting .NET metadata to F# internal compiler data structures (see import.fs).
   let improveTy (tcref: EntityRef) tinst =
-        if compilingFSharpCore then
+        if compilingCoreLibrary then
             let dict = getBetterTypeDict1()
             match dict.TryGetValue tcref.LogicalName with
             | true, builder -> builder tcref tinst
@@ -1106,7 +1109,7 @@ type TcGlobals(
   // better the job we do of mapping from provided expressions back to FSharp.Core F# functions and values.
   member _.knownFSharpCoreModules = v_knownFSharpCoreModules
 
-  member _.compilingFSharpCore = compilingFSharpCore
+  member _.compilingCoreLibrary = compilingCoreLibrary
 
   member _.useReflectionFreeCodeGen = useReflectionFreeCodeGen
 
@@ -1122,9 +1125,9 @@ type TcGlobals(
 
   member _.realsig = realsig
 
-  member _.unionCaseRefEq x y = primUnionCaseRefEq compilingFSharpCore fslibCcu x y
+  member _.unionCaseRefEq x y = primUnionCaseRefEq compilingCoreLibrary fslibCcu x y
 
-  member _.valRefEq x y = primValRefEq compilingFSharpCore fslibCcu x y
+  member _.valRefEq x y = primValRefEq compilingCoreLibrary fslibCcu x y
 
   member _.fslibCcu = fslibCcu
 
@@ -1849,7 +1852,7 @@ type TcGlobals(
   /// Indicates if we are generating witness arguments for SRTP constraints. Only done if the FSharp.Core
   /// supports witness arguments.
   member g.generateWitnesses =
-      compilingFSharpCore ||
+      compilingCoreLibrary ||
       ((ValRefForIntrinsic g.call_with_witnesses_info).TryDeref.IsSome && langVersion.SupportsFeature LanguageFeature.WitnessPassing)
 
   /// Indicates if we can use System.Array.Empty when emitting IL for empty array literals

@@ -643,7 +643,7 @@ and CheckLambdas
             destLambdaWithValReprInfo g cenv.amap valReprInfo (expr, ety)
 
         // Check the body of the lambda
-        if isTop && not g.compilingFSharpCore && isByrefLikeTy g m bodyTy then
+        if isTop && not g.compilingCoreLibrary && isByrefLikeTy g m bodyTy then
             // allow byref to occur as return position for byref-typed top level function or method
             CheckExprPermitReturnableByRef cenv body
         else
