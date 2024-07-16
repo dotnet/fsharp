@@ -263,12 +263,12 @@ and remapTyparConstraintsAux tyenv cs =
          | TyparConstraint.RequiresDefaultConstructor _ -> Some x)
 
 and remapTraitInfo tyenv (TTrait(tys, nm, flags, argTys, retTy, source, slnCell)) =
-    let slnCell = 
-        match slnCell.Value with 
+    let slnCell =
+        match slnCell.Value with
         | None -> None
         | _ when tyenv.removeTraitSolutions -> None
-        | Some sln -> 
-            let sln = 
+        | Some sln ->
+            let sln =
                 match sln with 
                 | ILMethSln(ty, extOpt, ilMethRef, minst, staticTyOpt) ->
                      ILMethSln(remapTypeAux tyenv ty, extOpt, ilMethRef, remapTypesAux tyenv minst, Option.map (remapTypeAux tyenv) staticTyOpt)  
@@ -277,7 +277,9 @@ and remapTraitInfo tyenv (TTrait(tys, nm, flags, argTys, retTy, source, slnCell)
                 | FSRecdFieldSln(tinst, rfref, isSet) ->
                      FSRecdFieldSln(remapTypesAux tyenv tinst, remapRecdFieldRef tyenv.tyconRefRemap rfref, isSet)  
                 | FSAnonRecdFieldSln(anonInfo, tinst, n) ->
-                     FSAnonRecdFieldSln(anonInfo, remapTypesAux tyenv tinst, n)  
+                     FSAnonRecdFieldSln(anonInfo, remapTypesAux tyenv tinst, n)
+                | ILFieldSln(ty, tinst, ilfref, isStruct, isStatic, isSet) ->
+                     ILFieldSln(remapTypeAux tyenv ty, remapTypesAux tyenv tinst, ilfref, isStruct, isStatic, isSet)
                 | BuiltInSln -> 
                      BuiltInSln
                 | ClosedExprSln e -> 
@@ -2315,6 +2317,9 @@ and accFreeInTraitSln opts sln acc =
          accFreeInTypes opts tinst acc
     | FSRecdFieldSln(tinst, _rfref, _isSet) ->
          accFreeInTypes opts tinst acc
+    | ILFieldSln (ty, tinst, _ilfref, _isStruct, _isStatic, _isSet) ->
+        (accFreeInType opts) ty
+            (accFreeInTypes opts tinst acc)
     | BuiltInSln -> acc
     | ClosedExprSln _ -> acc // nothing to accumulate because it's a closed expression referring only to erasure of provided method calls
 

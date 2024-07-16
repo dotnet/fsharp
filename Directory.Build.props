@@ -46,6 +46,7 @@
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
     <DisableAutoSetFscCompilerPath>false</DisableAutoSetFscCompilerPath>
     <FSHARPCORE_USE_PACKAGE Condition="'$(FSHARPCORE_USE_PACKAGE)' == ''">true</FSHARPCORE_USE_PACKAGE>
+    <BUILD_FROM_SOURCE Condition="'$(FSHARPCORE_USE_PACKAGE)' != 'true'">true</BUILD_FROM_SOURCE>
     <DISABLE_ARCADE Condition="'$(DISABLE_ARCADE)' == ''">true</DISABLE_ARCADE>
     <ArtifactsDir>$(MSBuildThisFileDirectory)artifacts/</ArtifactsDir>
     <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>

@@ -2857,9 +2857,11 @@ and seekReadMemberRefAsFieldSpecUncached ctxtH (MemberRefAsFspecIdx(numTypars, i
     let (ctxt: ILMetadataReader) = getHole ctxtH
     let mdv = ctxt.mdfile.GetView()
     let mrpIdx, nameIdx, typeIdx = seekReadMemberRefRow ctxt mdv idx
+
     let nm = readStringHeap ctxt nameIdx
     let enclTy = seekReadMethodRefParent ctxt mdv numTypars mrpIdx
     let retTy = readBlobHeapAsFieldSig ctxt numTypars typeIdx
+
     mkILFieldSpecInTy (enclTy, nm, retTy)
 
 // One extremely annoying aspect of the MD format is that given a
@@ -2923,7 +2925,7 @@ and seekReadFieldDefAsFieldSpec (ctxt: ILMetadataReader) idx = ctxt.seekReadFiel
 and seekReadFieldDefAsFieldSpecUncached ctxtH idx =
     let (ctxt: ILMetadataReader) = getHole ctxtH
     let mdv = ctxt.mdfile.GetView()
-    let _flags, nameIdx, typeIdx = seekReadFieldRow ctxt mdv idx
+    let _, nameIdx, typeIdx = seekReadFieldRow ctxt mdv idx
     let nm = readStringHeap ctxt nameIdx
     (* Look for the field def parent. *)
     let tidx =

@@ -5,7 +5,7 @@
         {
             "id": "fscArgsPrompt",
             "description": "Enter arguments for fsc",
-            "default": "",
+            "default": "@/Users/u/code/srtp-fields/srtp.rsp",
             "type": "promptString"
         },
         {
@@ -25,7 +25,7 @@
             // If you have changed target frameworks, make sure to update the program p
             "program": "${workspaceFolder}/artifacts/bin/fsi/Debug/net8.0/fsi.dll",
             "args": [
-                "${input:fsiArgsPrompt}"
+                "${input:fsiArgsPrompt}",
             ],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal", // This is the default to be able to run in Codespaces.

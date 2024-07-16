@@ -6,6 +6,51 @@ open Xunit
 open FSharp.Test.Compiler
 
 module MemberConstraints =
+    open FSharp.Test
+
+    [<Fact>]
+    let ``Member constraint for fields in C# library`` () =
+        let csLib =
+            CSharp """
+namespace CsLib
+{
+    public class Class1
+    {
+        public string Id;
+        public Class1(string id) {
+            Id = id;
+        }
+    }
+
+    public class Class2
+    {
+        public string Id { get; set; }
+        public Class2(string id) {
+            Id = id;
+        }
+    }
+}"""
+            |> withCSharpLanguageVersion CSharpLanguageVersion.Preview
+            |> withName "csLib"
+
+        let app =
+            FSharp """
+module Lib
+
+let inline f<'T when 'T: (member Id: string)> (x: 'T) = x.Id
+
+[<EntryPoint>]
+let main _ =
+    f (CsLib.Class1("Class1")) |> printfn "%s"
+    f (CsLib.Class2("Class2")) |> printfn "%s"
+    0
+            """ |> withReferences [csLib]
+
+        app
+        |> asExe
+        |> compile
+        |> run
+        |> verifyOutput "aaaaa"
 
     [<Fact>]
     let ``Invalid member constraint with ErrorRanges``() = // Regression test for FSharp1.0:2262

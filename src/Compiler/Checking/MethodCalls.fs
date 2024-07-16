@@ -2097,7 +2097,7 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
 
     let sln = 
         match traitInfo.Solution with 
-        | None -> Choice5Of5()
+        | None -> Choice6Of6()
         | Some sln ->
 
             // Given the solution information, reconstruct the MethInfo for the solution
@@ -2110,27 +2110,30 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
                     match extOpt with 
                     | None -> MethInfo.CreateILMeth(amap, m, origTy, mdef)
                     | Some ilActualTypeRef -> 
-                        let actualTyconRef = Import.ImportILTypeRef amap m ilActualTypeRef 
+                        let actualTyconRef = Import.ImportILTypeRef amap m ilActualTypeRef
                         MethInfo.CreateILExtensionMeth(amap, m, origTy, actualTyconRef, None, mdef)
-                Choice1Of5 (ilMethInfo, minst, staticTyOpt)
+                Choice1Of6 (ilMethInfo, minst, staticTyOpt)
 
             | FSMethSln(ty, vref, minst, staticTyOpt) ->
-                Choice1Of5  (FSMeth(g, ty, vref, None), minst, staticTyOpt)
+                Choice1Of6  (FSMeth(g, ty, vref, None), minst, staticTyOpt)
 
             | FSRecdFieldSln(tinst, rfref, isSetProp) ->
-                Choice2Of5  (tinst, rfref, isSetProp)
+                Choice2Of6  (tinst, rfref, isSetProp)
 
-            | FSAnonRecdFieldSln(anonInfo, tinst, i) -> 
-                Choice3Of5  (anonInfo, tinst, i)
+            | FSAnonRecdFieldSln(anonInfo, tinst, i) ->
+                Choice3Of6  (anonInfo, tinst, i)
 
-            | ClosedExprSln expr -> 
-                Choice4Of5 expr
+            | ClosedExprSln expr ->
+                Choice4Of6 expr
 
-            | BuiltInSln -> 
-                Choice5Of5 ()
+            | ILFieldSln (ty, tinst, ilfref, isStruct, isStatic, isSet) ->
+                Choice5Of6 (ty, tinst, ilfref, isStruct, isStatic, isSet)
+            | BuiltInSln ->
+                Choice6Of6 ()
+
 
     match sln with
-    | Choice1Of5(minfo, methArgTys, staticTyOpt) -> 
+    | Choice1Of6(minfo, methArgTys, staticTyOpt) -> 
         let argExprs = 
             // FIX for #421894 - typechecker assumes that coercion can be applied for the trait
             // calls arguments but codegen doesn't emit coercion operations
@@ -2174,7 +2177,7 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
         else        
             Some (MakeMethInfoCall amap m minfo methArgTys argExprs staticTyOpt)
 
-    | Choice2Of5 (tinst, rfref, isSet) -> 
+    | Choice2Of6 (tinst, rfref, isSet) -> // Recd field
         match isSet, rfref.RecdField.IsStatic, argExprs.Length with 
         // static setter
         | true, true, 1 -> 
@@ -2204,28 +2207,47 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
 
         | _ -> None 
 
-    | Choice3Of5 (anonInfo, tinst, i) -> 
+    | Choice3Of6 (anonInfo, tinst, i) -> // Anon recd field
         let tupInfo = anonInfo.TupInfo
         if evalTupInfoIsStruct tupInfo && isByrefTy g (tyOfExpr g argExprs[0]) then 
             Some (mkAnonRecdFieldGetViaExprAddr (anonInfo, argExprs[0], tinst, i, m))
-        else 
+        else
             Some (mkAnonRecdFieldGet g (anonInfo, argExprs[0], tinst, i, m))
 
-    | Choice4Of5 expr -> 
+    | Choice4Of6 expr -> // Closed expression solution
         Some (MakeApplicationAndBetaReduce g (expr, tyOfExpr g expr, [], argExprs, m))
 
-    | Choice5Of5 () -> 
+    | Choice5Of6 (ty, tinst, ilfref, isStruct, isStatic, isSet) -> // IL Field
+        let boxity = if isStruct then AsValue else AsObject
+        let ilTy = mkILNamedTy boxity ilfref.DeclaringTypeRef []
+        let fSpec = mkILFieldSpec (ilfref, ilTy)
+
+        match isStatic, isSet with
+        | false, false -> // Instance getter
+            Some(Expr.Op(TOp.ILAsm ([mkNormalLdfld fSpec], [ty]), tinst, argExprs, m))
+        | false, true -> // Instance setter
+            //Some(Expr.Op(TOp.ILAsm ([mkNormalStfld fieldSpec], [ty]), tinst, argExprs, m))
+            //TODO(vlza): do the address trick
+            // let wrap, objExpr, _, _ = mkExprAddrOfExpr g isStruct false NeverMutates argExprs[0] None m
+
+            failwith "5of6 - instance setter"
+        | true, false -> // Static getter
+            //Some(Expr.Op(TOp.ILAsm ([mkNormalLdsfld fieldSpec], [ty]), tinst, argExprs, m))
+            failwith "5of6 - static getter"
+        | true, true -> // Static setter
+            failwith "5of6 - static setter"
+    | Choice6Of6 () -> // Default branch, sort of
         match traitInfo.Solution with 
         | None -> None // the trait has been generalized
         | Some _-> 
-        // For these operators, the witness is just a call to the coresponding FSharp.Core operator
-        match g.TryMakeOperatorAsBuiltInWitnessInfo isStringTy isArrayTy traitInfo argExprs with
-        | Some (info, tyargs, actualArgExprs) -> 
-            tryMkCallCoreFunctionAsBuiltInWitness g info tyargs actualArgExprs m
-        | None -> 
-            // For all other built-in operators, the witness is a call to the coresponding BuiltInWitnesses operator
-            // These are called as F# methods not F# functions
-            tryMkCallBuiltInWitness g traitInfo argExprs m
+            // For these operators, the witness is just a call to the coresponding FSharp.Core operator
+            match g.TryMakeOperatorAsBuiltInWitnessInfo isStringTy isArrayTy traitInfo argExprs with
+            | Some (info, tyargs, actualArgExprs) -> 
+                tryMkCallCoreFunctionAsBuiltInWitness g info tyargs actualArgExprs m
+            | None -> 
+                // For all other built-in operators, the witness is a call to the coresponding BuiltInWitnesses operator
+                // These are called as F# methods not F# functions
+                tryMkCallBuiltInWitness g traitInfo argExprs m
         
 /// Generate a lambda expression for the given solved trait.
 let GenWitnessExprLambda amap g m (traitInfo: TraitConstraintInfo) =

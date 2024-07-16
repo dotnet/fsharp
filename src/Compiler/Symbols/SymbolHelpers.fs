@@ -600,6 +600,7 @@ module internal SymbolHelpers =
             | Some (TraitConstraintSln.FSRecdFieldSln _)
             | Some (TraitConstraintSln.FSAnonRecdFieldSln _)
             | Some (TraitConstraintSln.ClosedExprSln _)
+            | Some (TraitConstraintSln.ILFieldSln _)
             | Some TraitConstraintSln.BuiltInSln
             | None ->
                 GetXmlCommentForItemAux None infoReader m item

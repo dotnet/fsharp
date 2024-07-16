@@ -8986,6 +8986,7 @@ and TcTraitItemThen (cenv: cenv) overallTy env objOpt traitInfo tpenv mItem dela
             let applicableExpr = MakeApplicableExprNoFlex cenv expr
             applicableExpr, exprTy
         | _ ->
+            // TODO(vlza): process delayed (setters) to support `thing.Property <- value` and `thing.Field <- value` syntaxe
             let vs, ves = argTys |> List.mapi (fun i ty -> mkCompGenLocal mItem ("arg" + string i) ty) |> List.unzip
             // Account for a unit mismtach in logical v. compiled arguments
             let compiledArgExprs =
