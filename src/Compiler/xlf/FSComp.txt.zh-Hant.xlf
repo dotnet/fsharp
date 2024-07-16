@@ -12,6 +12,16 @@
         <target state="translated">陣列的所有元素必須以隱含方式轉換成第一個元素的類型，這是類型為\n    {1}    \n的元組長度 {0}此元素是類型為\n    {3}    \n的元組長度{2}</target>
         <note />
       </trans-unit>
+      <trans-unit id="augInvalidAttrForFSharpObjectModelType">
+        <source>The attribute {0} is only meant for discriminated unions or record types.</source>
+        <target state="new">The attribute {0} is only meant for discriminated unions or record types.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="augInvalidAttrsForFSharpObjectModelType">
+        <source>The attributes {0} are only meant for discriminated unions or record types.</source>
+        <target state="new">The attributes {0} are only meant for discriminated unions or record types.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="buildDuplicateFile">
         <source>The source file '{0}' (at position {1}/{2}) already appeared in the compilation list (at position {3}/{4}). Please verify that it is included only once in the project file.</source>
         <target state="translated">來源檔案 '{0}' ( 位於位置 {1}/{2}) 已出現在編譯清單 ( 位於位置 {3}/{4})。請確認它在專案檔中只包含一次。</target>

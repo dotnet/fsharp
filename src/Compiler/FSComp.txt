@@ -226,6 +226,8 @@ astDeprecatedIndexerNotation,"This indexer notation has been removed from the F#
 386,augNoEqNeedsNoObjEquals,"A type with attribute 'NoEquality' should not usually have an explicit implementation of 'Object.Equals(obj)'. Disable this warning if this is intentional for interoperability purposes"
 386,augNoCompCantImpIComp,"A type with attribute 'NoComparison' should not usually have an explicit implementation of 'System.IComparable', 'System.IComparable<_>' or 'System.Collections.IStructuralComparable'. Disable this warning if this is intentional for interoperability purposes"
 387,augCustomEqNeedsNoCompOrCustomComp,"The 'CustomEquality' attribute must be used in conjunction with the 'NoComparison' or 'CustomComparison' attributes"
+388,augInvalidAttrsForFSharpObjectModelType,"The attributes %s are only meant for discriminated unions or record types."
+388,augInvalidAttrForFSharpObjectModelType,"The attribute %s is only meant for discriminated unions or record types."
 forPositionalSpecifiersNotPermitted,"Positional specifiers are not permitted in format strings"
 forMissingFormatSpecifier,"Missing format specifier"
 forFlagSetTwice,"'%s' flag set twice"
