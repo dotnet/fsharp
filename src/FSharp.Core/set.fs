@@ -697,6 +697,9 @@ module internal SetTree =
     let ofArray comparer l =
         Array.fold (fun acc k -> add comparer k acc) empty l
 
+#if NETSTANDARD2_1_OR_GREATER
+[<System.Runtime.CompilerServices.CollectionBuilder(typeof<Set>, "Create")>]
+#endif
 [<Sealed>]
 [<CompiledName("FSharpSet`1")>]
 [<DebuggerTypeProxy(typedefof<SetDebugView<_>>)>]
@@ -1022,6 +1025,22 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'
                 .Append(txt3)
                 .Append("; ... ]")
                 .ToString()
+
+#if NETSTANDARD2_1_OR_GREATER
+and [<CompilerMessage("This type is for compiler use and should not be used directly", 1204, IsHidden = true);
+      Sealed;
+      AbstractClass;
+      CompiledName("FSharpSet")>] Set =
+    [<CompilerMessage("This method is for compiler use and should not be used directly", 1204, IsHidden = true)>]
+    static member Create([<System.Runtime.CompilerServices.ScopedRef>] items: System.ReadOnlySpan<'T>) =
+        let comparer = LanguagePrimitives.FastGenericComparer<'T>
+        let mutable acc = SetTree.empty
+
+        for item in items do
+            acc <- SetTree.add comparer item acc
+
+        Set(comparer, acc)
+#endif
 
 and [<Sealed>] SetDebugView<'T when 'T: comparison>(v: Set<'T>) =
 
