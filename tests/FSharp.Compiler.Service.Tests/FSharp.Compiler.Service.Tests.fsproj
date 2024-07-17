@@ -75,6 +75,12 @@
     <Compile Include="SynPatTests.fs" />
   </ItemGroup>
 
+	<ItemGroup>
+		<None Include="..\service\data\SyntaxTree\**\*.*" Exclude="@(Compile)">
+			<Link>SyntaxTreeTestSource\%(RecursiveDir)\%(Extension)\%(Filename)%(Extension)</Link>
+		</None>
+	</ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Dotnet.ProjInfo" Version="0.37.0" />
     <!-- Force a newer Newtonsoft.Json version to avoid conflicts. -->
