@@ -260,6 +260,97 @@
     IL_0028:  ret
   } 
 
+  .method public static int32[]  f00000() cil managed
+  {
+    
+    .maxstack  5
+    .locals init (int32[] V_0,
+             uint64 V_1,
+             int32 V_2,
+             int32 V_3)
+    IL_0000:  ldc.i4.s   10
+    IL_0002:  conv.i8
+    IL_0003:  conv.ovf.i.un
+    IL_0004:  newarr     [runtime]System.Int32
+    IL_0009:  stloc.0
+    IL_000a:  ldc.i4.0
+    IL_000b:  conv.i8
+    IL_000c:  stloc.1
+    IL_000d:  ldc.i4.1
+    IL_000e:  stloc.2
+    IL_000f:  br.s       IL_0021
+
+    IL_0011:  ldloc.0
+    IL_0012:  ldloc.1
+    IL_0013:  conv.i
+    IL_0014:  ldloc.2
+    IL_0015:  stloc.3
+    IL_0016:  ldloc.3
+    IL_0017:  stelem.i4
+    IL_0018:  ldloc.2
+    IL_0019:  ldc.i4.1
+    IL_001a:  add
+    IL_001b:  stloc.2
+    IL_001c:  ldloc.1
+    IL_001d:  ldc.i4.1
+    IL_001e:  conv.i8
+    IL_001f:  add
+    IL_0020:  stloc.1
+    IL_0021:  ldloc.1
+    IL_0022:  ldc.i4.s   10
+    IL_0024:  conv.i8
+    IL_0025:  blt.un.s   IL_0011
+
+    IL_0027:  ldloc.0
+    IL_0028:  ret
+  } 
+
+  .method public static int32[]  f000000() cil managed
+  {
+    
+    .maxstack  5
+    .locals init (int32[] V_0,
+             uint64 V_1,
+             int32 V_2,
+             int32 V_3)
+    IL_0000:  ldc.i4.s   10
+    IL_0002:  conv.i8
+    IL_0003:  conv.ovf.i.un
+    IL_0004:  newarr     [runtime]System.Int32
+    IL_0009:  stloc.0
+    IL_000a:  ldc.i4.0
+    IL_000b:  conv.i8
+    IL_000c:  stloc.1
+    IL_000d:  ldc.i4.1
+    IL_000e:  stloc.2
+    IL_000f:  br.s       IL_0022
+
+    IL_0011:  ldloc.0
+    IL_0012:  ldloc.1
+    IL_0013:  conv.i
+    IL_0014:  ldloc.2
+    IL_0015:  stloc.3
+    IL_0016:  nop
+    IL_0017:  ldloc.3
+    IL_0018:  stelem.i4
+    IL_0019:  ldloc.2
+    IL_001a:  ldc.i4.1
+    IL_001b:  add
+    IL_001c:  stloc.2
+    IL_001d:  ldloc.1
+    IL_001e:  ldc.i4.1
+    IL_001f:  conv.i8
+    IL_0020:  add
+    IL_0021:  stloc.1
+    IL_0022:  ldloc.1
+    IL_0023:  ldc.i4.s   10
+    IL_0025:  conv.i8
+    IL_0026:  blt.un.s   IL_0011
+
+    IL_0028:  ldloc.0
+    IL_0029:  ret
+  } 
+
   .method public static int32[]  f1() cil managed
   {
     

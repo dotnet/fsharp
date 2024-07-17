@@ -1,4 +1,5 @@
-﻿let f1 (seq: int seq) = [|for x in seq -> x|]
+﻿let f0 (seq: int seq) = [|for x in seq do let x = x in x|]
+let f1 (seq: int seq) = [|for x in seq -> x|]
 let f2 f (seq: int seq) = [|for x in seq -> f x|]
 let f3 f (seq: int seq) = [|for x in seq -> f (); x|]
 let f4 f g (seq: int seq) = [|for x in seq -> f (); g(); x|]

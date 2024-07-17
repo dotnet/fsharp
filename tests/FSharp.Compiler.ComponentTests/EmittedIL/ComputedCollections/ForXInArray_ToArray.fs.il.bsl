@@ -43,6 +43,46 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+  .method public static int32[]  f0(int32[] 'array') cil managed
+  {
+    
+    .maxstack  6
+    .locals init (int32[] V_0,
+             int32 V_1,
+             int32 V_2)
+    IL_0000:  nop
+    IL_0001:  ldarg.0
+    IL_0002:  ldlen
+    IL_0003:  conv.i4
+    IL_0004:  newarr     [runtime]System.Int32
+    IL_0009:  stloc.0
+    IL_000a:  ldc.i4.0
+    IL_000b:  stloc.1
+    IL_000c:  br.s       IL_001b
+
+    IL_000e:  ldloc.0
+    IL_000f:  ldloc.1
+    IL_0010:  ldarg.0
+    IL_0011:  ldloc.1
+    IL_0012:  ldelem.i4
+    IL_0013:  stloc.2
+    IL_0014:  nop
+    IL_0015:  ldloc.2
+    IL_0016:  stelem.i4
+    IL_0017:  ldloc.1
+    IL_0018:  ldc.i4.1
+    IL_0019:  add
+    IL_001a:  stloc.1
+    IL_001b:  ldloc.1
+    IL_001c:  ldloc.0
+    IL_001d:  ldlen
+    IL_001e:  conv.i4
+    IL_001f:  blt.s      IL_000e
+
+    IL_0021:  ldloc.0
+    IL_0022:  ret
+  } 
+
   .method public static int32[]  f1(int32[] 'array') cil managed
   {
     

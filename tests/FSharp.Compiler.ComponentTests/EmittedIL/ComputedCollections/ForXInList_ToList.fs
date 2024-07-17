@@ -1,4 +1,5 @@
-﻿let f1 (list: int list) = [for x in list -> x]
+﻿let f0 (list: int list) = [for x in list do let x = x in x]
+let f1 (list: int list) = [for x in list -> x]
 let f2 f (list: int list) = [for x in list -> f x]
 let f3 f (list: int list) = [for x in list -> f (); x]
 let f4 f g (list: int list) = [for x in list -> f (); g(); x]

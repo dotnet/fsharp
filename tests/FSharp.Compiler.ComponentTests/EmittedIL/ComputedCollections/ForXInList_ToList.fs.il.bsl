@@ -43,6 +43,43 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f0(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> list) cil managed
+  {
+    
+    .maxstack  4
+    .locals init (valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_0,
+             class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_1,
+             class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_2,
+             int32 V_3)
+    IL_0000:  nop
+    IL_0001:  ldarg.0
+    IL_0002:  stloc.1
+    IL_0003:  ldloc.1
+    IL_0004:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_0009:  stloc.2
+    IL_000a:  br.s       IL_0026
+
+    IL_000c:  ldloc.1
+    IL_000d:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
+    IL_0012:  stloc.3
+    IL_0013:  ldloca.s   V_0
+    IL_0015:  nop
+    IL_0016:  ldloc.3
+    IL_0017:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
+    IL_001c:  nop
+    IL_001d:  ldloc.2
+    IL_001e:  stloc.1
+    IL_001f:  ldloc.1
+    IL_0020:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_0025:  stloc.2
+    IL_0026:  ldloc.2
+    IL_0027:  brtrue.s   IL_000c
+
+    IL_0029:  ldloca.s   V_0
+    IL_002b:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+    IL_0030:  ret
+  } 
+
   .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> f1(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> list) cil managed
   {
     

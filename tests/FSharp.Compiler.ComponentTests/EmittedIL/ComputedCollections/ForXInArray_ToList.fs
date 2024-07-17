@@ -1,4 +1,5 @@
-﻿let f1 (array: int array) = [for x in array -> x]
+﻿let f0 (array: int array) = [for x in array do let x = x in x]
+let f1 (array: int array) = [for x in array -> x]
 let f2 f (array: int array) = [for x in array -> f x]
 let f3 f (array: int array) = [for x in array -> f (); x]
 let f4 f g (array: int array) = [for x in array -> f (); g(); x]
