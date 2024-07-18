@@ -524,25 +524,46 @@ module Array =
                     )
             )
 
-/// f (); …; Seq.singleton x
-///
-/// E.g., in [for x in … do f (); …; yield x]
+/// Matches Seq.singleton and returns the body expression.
 [<return: Struct>]
-let (|SimpleSequential|_|) g expr : Expr voption =
+let (|SeqSingleton|_|) g expr : Expr voption =
+    match expr with
+    | ValApp g g.seq_singleton_vref (_, [body], _) -> ValueSome body
+    | _ -> ValueNone
+
+/// Matches the compiled representation of the mapping in
+///
+///     for … in … do f (); …; yield …
+///     for … in … do let … = … in yield …
+///     for … in … do f (); …; …
+///     for … in … do let … = … in …
+///
+/// i.e.,
+///
+///     f (); …; Seq.singleton …
+///     let … = … in Seq.singleton …
+[<return: Struct>]
+let (|SingleYield|_|) g expr : Expr voption =
     let rec loop expr cont =
         match expr with
-        | Expr.Sequential (expr1, DebugPoints (ValApp g g.seq_singleton_vref (_, [body], _), debug), kind, m) ->
-            ValueSome (cont (expr1, debug body, kind, m))
+        | Expr.Let (binding, DebugPoints (SeqSingleton g body, debug), m, frees) ->
+            ValueSome (cont (Expr.Let (binding, debug body, m, frees)))
+
+        | Expr.Let (binding, DebugPoints (body, debug), m, frees) ->
+            loop body (cont << fun body -> Expr.Let (binding, debug body, m, frees))
+
+        | Expr.Sequential (expr1, DebugPoints (SeqSingleton g body, debug), kind, m) ->
+            ValueSome (cont (Expr.Sequential (expr1, debug body, kind, m)))
 
         | Expr.Sequential (expr1, DebugPoints (body, debug), kind, m) ->
-            loop body (cont >> fun body -> Expr.Sequential (expr1, debug body, kind, m))
+            loop body (cont << fun body -> Expr.Sequential (expr1, debug body, kind, m))
 
-        | ValApp g g.seq_singleton_vref (_, [body], _) ->
-            ValueSome body
+        | SeqSingleton g body ->
+            ValueSome (cont body)
 
         | _ -> ValueNone
 
-    loop expr Expr.Sequential
+    loop expr id
 
 /// Extracts any let-bindings or sequential
 /// expressions that directly precede the specified mapping application, e.g.,
@@ -576,11 +597,9 @@ let gatherPrelude ((|App|_|) : _ -> _ voption) expr =
 
 /// The representation used for
 ///
-/// for … in … -> …
-///
-/// and
-///
-/// for … in … do yield …
+///     for … in … -> …
+///     for … in … do yield …
+///     for … in … do …
 [<return: Struct>]
 let (|SeqMap|_|) g =
     gatherPrelude (function
@@ -595,11 +614,14 @@ let (|SeqMap|_|) g =
 
 /// The representation used for
 ///
-/// for … in … do f (); …; yield …
+///     for … in … do f (); …; yield …
+///     for … in … do let … = … in yield …
+///     for … in … do f (); …; …
+///     for … in … do let … = … in …
 [<return: Struct>]
 let (|SeqCollectSingle|_|) g =
     gatherPrelude (function
-        | ValApp g g.seq_collect_vref ([ty1; _; ty2], [Expr.Lambda (valParams = [loopVal]; bodyExpr = DebugPoints (SimpleSequential g body, debug); range = mIn) as mapping; input], mFor) ->
+        | ValApp g g.seq_collect_vref ([ty1; _; ty2], [Expr.Lambda (valParams = [loopVal]; bodyExpr = DebugPoints (SingleYield g body, debug); range = mIn) as mapping; input], mFor) ->
             let spIn = match mIn.NotedSourceConstruct with NotedSourceConstruct.InOrTo -> DebugPointAtInOrTo.Yes mIn | _ -> DebugPointAtInOrTo.No
             let spFor = DebugPointAtBinding.Yes mFor
             let spInWhile = match spIn with DebugPointAtInOrTo.Yes m -> DebugPointAtWhile.Yes m | DebugPointAtInOrTo.No -> DebugPointAtWhile.No
@@ -610,15 +632,23 @@ let (|SeqCollectSingle|_|) g =
 
 /// for … in … -> …
 /// for … in … do yield …
+/// for … in … do …
 /// for … in … do f (); …; yield …
+/// for … in … do let … = … in yield …
+/// for … in … do f (); …; …
+/// for … in … do let … = … in …
 [<return: Struct>]
 let (|SimpleMapping|_|) g expr =
     match expr with
     // for … in … -> …
     // for … in … do yield …
+    // for … in … do …
     | ValApp g g.seq_delay_vref (_, [Expr.Lambda (bodyExpr = DebugPoints (SeqMap g (cont, (ty1, ty2, input, mapping, loopVal, body, ranges)), debug))], _)
 
     // for … in … do f (); …; yield …
+    // for … in … do let … = … in yield …
+    // for … in … do f (); …; …
+    // for … in … do let … = … in …
     | ValApp g g.seq_delay_vref (_, [Expr.Lambda (bodyExpr = DebugPoints (SeqCollectSingle g (cont, (ty1, ty2, input, mapping, loopVal, body, ranges)), debug))], _) ->
         ValueSome (debug >> cont, (ty1, ty2, input, mapping, loopVal, body, ranges))
 
