@@ -423,8 +423,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureLowerSimpleMappingsInComprehensionsToFastLoops">
-        <source>Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to calls fast loops when xs is a list or an array, respectively.</source>
-        <target state="new">Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to calls fast loops when xs is a list or an array, respectively.</target>
+        <source>Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to fast loops when xs is a list or an array, respectively.</source>
+        <target state="new">Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to fast loops when xs is a list or an array, respectively.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
