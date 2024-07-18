@@ -422,9 +422,9 @@
         <target state="translated">Optymalizuje niektóre zastosowania operatorów zakresu całkowitego (..) i krok-zakresu (.. .), aby przyspieszyć pętle while.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureLowerSimpleMappingsInComprehensionsToDirectCallsToMap">
-        <source>Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to calls to List.map and Array.map when xs is a list or an array, respectively.</source>
-        <target state="translated">Obniża wartości [dla x w xs -&gt; f x] i [|dla x w xs -&gt; f x|] do wywołań w List.map i Array.map, gdy xs jest odpowiednio listą lub tablicą.</target>
+      <trans-unit id="featureLowerSimpleMappingsInComprehensionsToFastLoops">
+        <source>Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to calls fast loops when xs is a list or an array, respectively.</source>
+        <target state="new">Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to calls fast loops when xs is a list or an array, respectively.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
