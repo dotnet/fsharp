@@ -518,7 +518,7 @@
     IL_002c:  ldloc.3
     IL_002d:  box        [runtime]System.Char
     IL_0032:  call       string [runtime]System.String::Format(string,
-                                                                      object)
+                                                                object)
     IL_0037:  stloc.s    V_4
     IL_0039:  ldstr      "%O"
     IL_003e:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string>::.ctor(string)

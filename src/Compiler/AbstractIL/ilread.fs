@@ -930,8 +930,7 @@ let mkCacheGeneric lowMem _inbase _nm (sz: int) =
     if lowMem then
         (fun f x -> f x)
     else
-        let mutable cache = Unchecked.defaultof<_>
-
+        let mutable cache = null
 #if STATISTICS
         let mutable _count = 0
 
@@ -1155,6 +1154,7 @@ type ILMetadataReader =
         customAttrsReader_Module: ILAttributesStored
         customAttrsReader_Assembly: ILAttributesStored
         customAttrsReader_TypeDef: ILAttributesStored
+        customAttrsReader_InterfaceImpl: ILAttributesStored
         customAttrsReader_GenericParam: ILAttributesStored
         customAttrsReader_FieldDef: ILAttributesStored
         customAttrsReader_MethodDef: ILAttributesStored
@@ -1425,11 +1425,16 @@ let seekReadParamRow (ctxt: ILMetadataReader) mdv idx =
     (flags, seq, nameIdx)
 
 /// Read Table InterfaceImpl.
-let seekReadInterfaceImplRow (ctxt: ILMetadataReader) mdv idx =
+let private seekReadInterfaceImplRow (ctxt: ILMetadataReader) mdv idx =
     let mutable addr = ctxt.rowAddr TableNames.InterfaceImpl idx
     let tidx = seekReadUntaggedIdx TableNames.TypeDef ctxt mdv &addr
     let intfIdx = seekReadTypeDefOrRefOrSpecIdx ctxt mdv &addr
-    (tidx, intfIdx)
+
+    struct {|
+        TypeIdx = tidx
+        IntfIdx = intfIdx
+        IntImplIdx = idx
+    |}
 
 /// Read Table MemberRef.
 let seekReadMemberRefRow (ctxt: ILMetadataReader) mdv idx =
@@ -2192,7 +2197,10 @@ and typeDefReader ctxtH : ILTypeDefStored =
         let mdefs = seekReadMethods ctxt numTypars methodsIdx endMethodsIdx
         let fdefs = seekReadFields ctxt (numTypars, hasLayout) fieldsIdx endFieldsIdx
         let nested = seekReadNestedTypeDefs ctxt idx
-        let impls = seekReadInterfaceImpls ctxt mdv numTypars idx
+
+        let impls, intImplsAttrs =
+            seekReadInterfaceImpls ctxt mdv numTypars idx |> List.unzip
+
         let mimpls = seekReadMethodImpls ctxt numTypars idx
         let props = seekReadProperties ctxt numTypars idx
         let events = seekReadEvents ctxt numTypars idx
@@ -2204,6 +2212,7 @@ and typeDefReader ctxtH : ILTypeDefStored =
             layout = layout,
             nestedTypes = nested,
             implements = impls,
+            implementsCustomAttrs = Some intImplsAttrs,
             extends = super,
             methods = mdefs,
             securityDeclsStored = ctxt.securityDeclsReader_TypeDef,
@@ -2240,10 +2249,10 @@ and seekReadInterfaceImpls (ctxt: ILMetadataReader) mdv numTypars tidx =
     seekReadIndexedRows (
         ctxt.getNumRows TableNames.InterfaceImpl,
         seekReadInterfaceImplRow ctxt mdv,
-        fst,
+        (fun x -> x.TypeIdx),
         simpleIndexCompare tidx,
         isSorted ctxt TableNames.InterfaceImpl,
-        (snd >> seekReadTypeDefOrRef ctxt numTypars AsObject [])
+        (fun x -> (seekReadTypeDefOrRef ctxt numTypars AsObject [] x.IntfIdx), (ctxt.customAttrsReader_InterfaceImpl, x.IntImplIdx))
     )
 
 and seekReadGenericParams ctxt numTypars (a, b) : ILGenericParameterDefs =
@@ -4539,6 +4548,7 @@ let openMetadataReader
             customAttrsReader_Module = customAttrsReader ctxtH hca_Module
             customAttrsReader_Assembly = customAttrsReader ctxtH hca_Assembly
             customAttrsReader_TypeDef = customAttrsReader ctxtH hca_TypeDef
+            customAttrsReader_InterfaceImpl = customAttrsReader ctxtH hca_InterfaceImpl
             customAttrsReader_GenericParam = customAttrsReader ctxtH hca_GenericParam
             customAttrsReader_FieldDef = customAttrsReader ctxtH hca_FieldDef
             customAttrsReader_MethodDef = customAttrsReader ctxtH hca_MethodDef

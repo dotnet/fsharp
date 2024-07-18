@@ -372,7 +372,7 @@ module Query =
 
     let CallGenericStaticMethod (methHandle:System.RuntimeMethodHandle) =
         let methInfo = methHandle |> System.Reflection.MethodInfo.GetMethodFromHandle :?> MethodInfo
-        fun (tyargs: Type list, args: obj list) ->
+        fun (tyargs: Type list, args: objnull list) ->
             let methInfo = if methInfo.IsGenericMethod then methInfo.MakeGenericMethod(Array.ofList tyargs) else methInfo
             try
                methInfo.Invoke(null, Array.ofList args)
@@ -381,7 +381,7 @@ module Query =
 
     let CallGenericInstanceMethod (methHandle:System.RuntimeMethodHandle) =
         let methInfo = methHandle |> System.Reflection.MethodInfo.GetMethodFromHandle :?> MethodInfo
-        fun (objExpr:obj, tyargs: Type list, args: obj list) ->
+        fun (objExpr:obj, tyargs: Type list, args: objnull list) ->
             let methInfo = if methInfo.IsGenericMethod then methInfo.MakeGenericMethod(Array.ofList tyargs) else methInfo
             try
                methInfo.Invoke(objExpr, Array.ofList args)
@@ -467,7 +467,7 @@ module Query =
             else
                 ME ([srcItemTy], [src; key])
 
-        let Call (isIQ, srcItemTy, src:obj, key: Expr) =
+        let Call (isIQ, srcItemTy, src:objnull, key: Expr) =
             let key = key |> LeafExpressionConverter.EvaluateQuotation
             let C = if isIQ then CQ else CE
             C ([srcItemTy], [src; box key])
@@ -496,7 +496,7 @@ module Query =
             else
                 ME ([srcItemTy; keyElemTy], [src; valSelector])
 
-        let Call (isIQ, srcItemTy: Type, _keyItemTy: Type, src:obj, keyElemTy: Type, v: Var, res: Expr) =
+        let Call (isIQ, srcItemTy: Type, _keyItemTy: Type, src:objnull, keyElemTy: Type, v: Var, res: Expr) =
             if isIQ then
                 let selector = FuncExprToLinqFunc2Expression (srcItemTy, keyElemTy, v, res)
                 CQ ([srcItemTy; keyElemTy], [src; box selector])
@@ -505,7 +505,7 @@ module Query =
                 CE ([srcItemTy; keyElemTy], [src; selector])
         Make, Call
 
-    let (MakeMinBy: bool * Expr * Var * Expr -> Expr), (CallMinBy : bool * Type * Type * obj * Type * Var * Expr -> obj) =
+    let (MakeMinBy: bool * Expr * Var * Expr -> Expr), (CallMinBy : bool * Type * Type * objnull * Type * Var * Expr -> obj) =
         let FQ = methodhandleof (fun (x, y: Expression<Func<_, _>>) -> System.Linq.Queryable.Min(x, y))
         let FE = methodhandleof (fun (x, y: Func<_, 'Result>) -> Enumerable.Min(x, y))
         MakeOrCallMinByOrMaxBy FQ FE
@@ -539,7 +539,7 @@ module Query =
             else
                 ME ([srcItemTy], [src; predicate])
 
-        let Call (isIQ, srcItemTy: Type, src:obj, v: Var, res: Expr) =
+        let Call (isIQ, srcItemTy: Type, src:objnull, v: Var, res: Expr) =
             if isIQ then
                 let selector = FuncExprToLinqFunc2Expression (srcItemTy, boolTy, v, res)
                 CQ ([srcItemTy], [src; box selector])
@@ -612,7 +612,7 @@ module Query =
                     let selector = Expr.Lambda (v, res)
                     ME (qb, [srcItemTy; qTy; resTyNoNullable], [src; selector])
 
-        let Call (qb:obj, isIQ, srcItemTy: Type, resTyNoNullable: Type, src:obj, resTy: Type, v: Var, res: Expr) =
+        let Call (qb:obj, isIQ, srcItemTy: Type, resTyNoNullable: Type, src:objnull, resTy: Type, v: Var, res: Expr) =
             if isIQ then
                 let selector = FuncExprToLinqFunc2Expression (srcItemTy, resTy, v, res)
                 let caller =

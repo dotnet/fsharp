@@ -582,7 +582,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
         | TOp.ExnConstr tcref, _, args    ->
             let _rgtypR = ConvTyconRef cenv tcref m
-            let _typ = mkAppTy tcref []
+            let _typ = mkWoNullAppTy tcref []
             let parentTyconR = ConvTyconRef cenv tcref m
             let argTys = tcref |> recdFieldsOfExnDefRef  |> List.map (fun rfld -> rfld.FormalType)
             let methArgTypesR = ConvTypes cenv env m argTys
@@ -1221,7 +1221,7 @@ and ConvILType cenv env m ty =
 and TryElimErasableTyconRef cenv m (tcref: TyconRef) =
     match tcref.TypeReprInfo with
     // Get the base type
-    | TProvidedTypeRepr info when info.IsErased -> Some (info.BaseTypeForErased (m, cenv.g.obj_ty))
+    | TProvidedTypeRepr info when info.IsErased -> Some (info.BaseTypeForErased (m, cenv.g.obj_ty_withNulls))
     | _ -> None
 #endif
 
