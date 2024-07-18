@@ -43,7 +43,7 @@ module NumericLiterals =
         val FromString: text: string -> 'T
 
         /// Provides a default implementations of F# numeric literal syntax  for literals of the form 'dddI'
-        val FromInt64Dynamic: value: int64 -> obj
+        val FromInt64Dynamic: value: int64 -> objnull
 
         /// Provides a default implementations of F# numeric literal syntax  for literals of the form 'dddI'
-        val FromStringDynamic: text: string -> obj
+        val FromStringDynamic: text: string -> objnull

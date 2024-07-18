@@ -480,6 +480,9 @@ module rec Compiler =
         | FS fs -> FS { fs with OutputDirectory = path }
         | _ -> failwith "withOutputDirectory is only supported on F#"
 
+    let withCheckNulls (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper ["--checknulls+"] "checknulls is only supported in F#" cUnit
+
     let withBufferWidth (width: int)(cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ $"--bufferwidth:{width}" ] "withBufferWidth is only supported on F#" cUnit
 
@@ -1605,6 +1608,7 @@ Actual:
                 | null -> ()
                 | _ when expectedContent = actualErrors -> ()
                 | _ -> File.WriteAllText(path, actualErrors)
+                //File.WriteAllText(path, actualErrors)
 
                 match Assert.shouldBeSameMultilineStringSets expectedContent actualErrors with
                 | None -> ()

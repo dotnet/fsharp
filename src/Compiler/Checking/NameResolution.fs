@@ -1110,7 +1110,7 @@ let GetNestedTyconRefsOfType (infoReader: InfoReader) (amap: Import.ImportMap) (
 let MakeNestedType (ncenv: NameResolver) (tinst: TType list) m (tcrefNested: TyconRef) =
     let tps = match tcrefNested.Typars m with [] -> [] | l -> l[tinst.Length..]
     let tinstNested = ncenv.InstantiationGenerator m tps
-    mkAppTy tcrefNested (tinst @ tinstNested)
+    mkWoNullAppTy tcrefNested (tinst @ tinstNested)
 
 /// Get all the accessible nested types of an existing type.
 let GetNestedTypesOfType (ad, ncenv: NameResolver, optFilter, staticResInfo, checkForGenerated, m) ty =
@@ -1528,7 +1528,7 @@ let AddDeclaredTyparsToNameEnv check nenv typars =
 /// a fresh set of inference type variables for the type parameters.
 let FreshenTycon (ncenv: NameResolver) m (tcref: TyconRef) =
     let tinst = ncenv.InstantiationGenerator m (tcref.Typars m)
-    let improvedTy = ncenv.g.decompileType tcref tinst
+    let improvedTy = ncenv.g.decompileType tcref tinst ncenv.g.knownWithoutNull
     improvedTy
 
 /// Convert a reference to a named type into a type that includes
@@ -1536,7 +1536,7 @@ let FreshenTycon (ncenv: NameResolver) m (tcref: TyconRef) =
 let FreshenTyconWithEnclosingTypeInst (ncenv: NameResolver) m (tinstEnclosing: TypeInst) (tcref: TyconRef) =
     let tps = ncenv.InstantiationGenerator m (tcref.Typars m)
     let tinst = List.skip tinstEnclosing.Length tps
-    let improvedTy = ncenv.g.decompileType tcref (tinstEnclosing @ tinst)
+    let improvedTy = ncenv.g.decompileType tcref (tinstEnclosing @ tinst) ncenv.g.knownWithoutNull
     improvedTy
 
 /// Convert a reference to a union case into a UnionCaseInfo that includes
@@ -3403,7 +3403,7 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
                     | tcref :: _ when tcref.IsUnionTycon ->
                         let res = ResolutionInfo.Empty.AddEntity (id.idRange, tcref)
                         ResolutionInfo.SendEntityPathToSink (sink, ncenv, nenv, ItemOccurence.Pattern, ad, res, ResultTyparChecker(fun () -> true))
-                        Item.Types (id.idText, [ mkAppTy tcref [] ])
+                        Item.Types (id.idText, [ mkWoNullAppTy tcref [] ])
                     | _ ->
                         match ResolveLongIdentAsModuleOrNamespace sink ncenv.amap id.idRange true fullyQualified nenv ad id [] false ShouldNotifySink.Yes with
                         | Result ((_, mref, _) :: _) ->
@@ -4020,7 +4020,7 @@ let ResolveNestedField sink (ncenv: NameResolver) nenv ad recdTy lid =
                 match item with
                 | Item.RecdField info -> info.FieldType
                 | Item.AnonRecdField (_, tys, index, _) -> tys[index]
-                | _ -> g.obj_ty
+                | _ -> g.obj_ty_ambivalent
 
             idsBeforeField, (fieldId, item) :: (nestedFieldSearch [] fieldTy rest)
 
