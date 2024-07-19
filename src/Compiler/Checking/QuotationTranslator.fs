@@ -214,8 +214,6 @@ let (|ObjectInitializationCheck|_|) g expr =
             isUnitTy g resultTy -> ValueSome()
     | _ -> ValueNone
 
-let isSplice g vref = valRefEq g vref g.splice_expr_vref || valRefEq g vref g.splice_raw_expr_vref
-
 let rec EmitDebugInfoIfNecessary cenv env m astExpr : ExprData =
     // do not emit debug info if emitDebugInfoInQuotations = false or it was already written for the given expression
     if cenv.emitDebugInfoInQuotations && not (QP.isAttributedExpression astExpr) then
@@ -298,7 +296,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
     match expr with
     // Detect expression tree exprSplices
     | Expr.App (InnerExprPat(Expr.Val (vref, _, _)), _, _, x0 :: rest, m)
-           when isSplice g vref ->
+           when g.isSpliceOperator vref ->
         let idx = cenv.exprSplices.Count
         let ty = tyOfExpr g expr
 
@@ -311,7 +309,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         (hole, rest) ||> List.fold (fun fR arg -> QP.mkApp (fR, ConvExpr cenv env arg))
 
     | ModuleValueOrMemberUse g (vref, vFlags, _f, _fTy, tyargs, curriedArgs)
-        when not (isSplice g vref) ->
+        when not (g.isSpliceOperator vref) ->
         let m = expr.Range
 
         let numEnclTypeArgs, _, isNewObj, valUseFlags, isSelfInit, takesInstanceArg, isPropGet, isPropSet =
