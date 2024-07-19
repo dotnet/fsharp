@@ -611,7 +611,7 @@ let getDiscrimOfPattern (g: TcGlobals) tpinst t =
     | TPat_isinst (srcTy, tgtTy, _, _m) ->
         Some(DecisionTreeTest.IsInst (instType tpinst srcTy, instType tpinst tgtTy))
     | TPat_exnconstr(tcref, _, _m) ->
-        Some(DecisionTreeTest.IsInst (g.exn_ty, mkAppTy tcref []))
+        Some(DecisionTreeTest.IsInst (g.exn_ty, mkWoNullAppTy tcref []))
     | TPat_const (c, _m) ->
         Some(DecisionTreeTest.Const c)
     | TPat_unioncase (c, tyargs', _, _m) ->
@@ -1467,7 +1467,7 @@ let CompilePatternBasic
             | TPat_exnconstr (ecref, argpats, _) ->
 
                 let srcTy1 = g.exn_ty
-                let tgtTy1 = mkAppTy ecref []
+                let tgtTy1 = mkWoNullAppTy ecref []
                 if taken |> List.exists (discrimsEq g (DecisionTreeTest.IsInst (srcTy1, tgtTy1))) then [] else
 
                 match discrim with

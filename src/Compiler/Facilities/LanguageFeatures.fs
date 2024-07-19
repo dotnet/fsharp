@@ -38,6 +38,7 @@ type LanguageFeature =
     | StringInterpolation
     | OverloadsForCustomOperations
     | ExpandedMeasurables
+    | NullnessChecking
     | StructActivePattern
     | PrintfBinaryFormat
     | IndexerNotationWithoutDot
@@ -195,6 +196,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.PreferStringGetPinnableReference, languageVersion80
 
                 // F# preview
+                LanguageFeature.NullnessChecking, previewVersion
                 LanguageFeature.FromEndSlicing, previewVersion
                 LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion
                 LanguageFeature.ReuseSameFieldsInStructUnions, previewVersion
@@ -291,6 +293,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.FromEndSlicing -> FSComp.SR.featureFromEndSlicing ()
         | LanguageFeature.FixedIndexSlice3d4d -> FSComp.SR.featureFixedIndexSlice3d4d ()
         | LanguageFeature.AndBang -> FSComp.SR.featureAndBang ()
+        | LanguageFeature.NullnessChecking -> FSComp.SR.featureNullnessChecking ()
         | LanguageFeature.ResumableStateMachines -> FSComp.SR.featureResumableStateMachines ()
         | LanguageFeature.NullableOptionalInterop -> FSComp.SR.featureNullableOptionalInterop ()
         | LanguageFeature.DefaultInterfaceMemberConsumption -> FSComp.SR.featureDefaultInterfaceMemberConsumption ()
