@@ -760,6 +760,7 @@ type ProvidedMethodBase (x: MethodBase, ctxt) =
                 match meth with 
                 | null -> failwith (FSComp.SR.estApplyStaticArgumentsForMethodNotImplemented())
                 | meth -> 
+
                 let mbAsObj = 
                     try meth.Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x; box fullNameAfterArguments; box staticArgs  |], null) 
                     with err -> raise (StripException (StripException err))
@@ -841,6 +842,7 @@ type ProvidedMethodInfo (x: MethodInfo, ctxt) =
         match x with 
         | Null -> null
         | NonNull x -> ProvidedMethodInfo (x, ctxt)
+
 
     static member CreateArray ctxt (xs: MethodInfo[] MaybeNull) : ProvidedMethodInfo[] MaybeNull = 
         match xs with 

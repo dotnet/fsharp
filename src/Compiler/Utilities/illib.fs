@@ -19,6 +19,7 @@ type InterruptibleLazy<'T> private (value, valueFactory: unit -> 'T) =
     // TODO nullness - this is boxed to obj because of an attribute targets bug fixed in main, but not yet shipped (needs shipped 8.0.400)
     let mutable valueFactory : objnull = valueFactory
 
+
     let mutable value = value
 
     new(valueFactory: unit -> 'T) = InterruptibleLazy(Unchecked.defaultof<_>, valueFactory)

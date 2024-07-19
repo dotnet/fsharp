@@ -780,12 +780,7 @@ module rec Compiler =
 
         let references = TargetFrameworkUtil.getReferences csSource.TargetFramework
 
-        let lv =
-          match csSource.LangVersion with
-            | CSharpLanguageVersion.CSharp8 -> LanguageVersion.CSharp8
-            | CSharpLanguageVersion.CSharp9 -> LanguageVersion.CSharp9
-            | CSharpLanguageVersion.Preview -> LanguageVersion.Preview
-            | _ -> LanguageVersion.Default
+        let lv = CSharpLanguageVersion.toLanguageVersion csSource.LangVersion
 
         let outputKind, extension =
             match csSource.OutputType with
