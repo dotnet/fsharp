@@ -57,8 +57,7 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method public static valuetype MyTestModule/Myassembly 
-            get_A() cil managed
+    .method public static valuetype MyTestModule/Myassembly get_A() cil managed
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
                                                                                                   int32) = ( 01 00 08 00 00 00 00 00 00 00 00 00 ) 
@@ -69,8 +68,7 @@
       IL_0006:  ret
     } 
 
-    .method public hidebysig instance bool 
-            get_IsA() cil managed
+    .method public hidebysig instance bool get_IsA() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -83,11 +81,12 @@
       IL_0009:  ret
     } 
 
-    .method public static valuetype MyTestModule/Myassembly 
-            NewB(string _nonNullableString) cil managed
+    .method public static valuetype MyTestModule/Myassembly NewB(string _nonNullableString) cil managed
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
                                                                                                   int32) = ( 01 00 08 00 00 00 01 00 00 00 00 00 ) 
+      .param [1]
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
       
       .maxstack  2
       .locals init (valuetype MyTestModule/Myassembly V_0)
@@ -103,13 +102,8 @@
       IL_0019:  ret
     } 
 
-    .method public hidebysig instance bool 
-            get_IsB() cil managed
+    .method public hidebysig instance bool get_IsB() cil managed
     {
-      .custom instance void [runtime]System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute::.ctor(bool,
-                                                                                                              string[]) = ( 01 00 01 02 00 00 00 11 6E 6F 6E 4E 75 6C 6C 61   
-                                                                                                                            62 6C 65 53 74 72 69 6E 67 12 5F 6E 6F 6E 4E 75   
-                                                                                                                            6C 6C 61 62 6C 65 53 74 72 69 6E 67 00 00 )       
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -121,8 +115,7 @@
       IL_0009:  ret
     } 
 
-    .method public static valuetype MyTestModule/Myassembly 
-            NewC(string _nullableString) cil managed
+    .method public static valuetype MyTestModule/Myassembly NewC(string _nullableString) cil managed
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
                                                                                                   int32) = ( 01 00 08 00 00 00 02 00 00 00 00 00 ) 
@@ -143,8 +136,7 @@
       IL_0019:  ret
     } 
 
-    .method public hidebysig instance bool 
-            get_IsC() cil managed
+    .method public hidebysig instance bool get_IsC() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -157,8 +149,7 @@
       IL_0009:  ret
     } 
 
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(int32 _tag) cil managed
+    .method assembly specialname rtspecialname instance void  .ctor(int32 _tag) cil managed
     {
       .custom instance void [runtime]System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype [runtime]System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
                                                                                                               class [runtime]System.Type) = ( 01 00 60 06 00 00 17 4D 79 54 65 73 74 4D 6F 64   
@@ -173,13 +164,12 @@
       IL_0007:  ret
     } 
 
-    .method public hidebysig instance string 
-            get_nonNullableString() cil managed
+    .method public hidebysig instance string get_nonNullableString() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       .param [0]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0
@@ -187,8 +177,7 @@
       IL_0006:  ret
     } 
 
-    .method public hidebysig instance string 
-            get_nullableString() cil managed
+    .method public hidebysig instance string get_nullableString() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -201,8 +190,7 @@
       IL_0006:  ret
     } 
 
-    .method public hidebysig instance int32 
-            get_Tag() cil managed
+    .method public hidebysig instance int32 get_Tag() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -213,8 +201,7 @@
       IL_0006:  ret
     } 
 
-    .method assembly hidebysig specialname 
-            instance object  __DebugDisplay() cil managed
+    .method assembly hidebysig specialname instance object  __DebugDisplay() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -229,8 +216,7 @@
       IL_001a:  ret
     } 
 
-    .method public strict virtual instance string 
-            ToString() cil managed
+    .method public strict virtual instance string ToString() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -268,10 +254,6 @@
     } 
     .property instance bool IsB()
     {
-      .custom instance void [runtime]System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute::.ctor(bool,
-                                                                                                              string[]) = ( 01 00 01 02 00 00 00 11 6E 6F 6E 4E 75 6C 6C 61   
-                                                                                                                            62 6C 65 53 74 72 69 6E 67 12 5F 6E 6F 6E 4E 75   
-                                                                                                                            6C 6C 61 62 6C 65 53 74 72 69 6E 67 00 00 )       
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -286,10 +268,10 @@
     } 
     .property instance string nonNullableString()
     {
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
                                                                                                   int32,
                                                                                                   int32) = ( 01 00 04 00 00 00 01 00 00 00 00 00 00 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       .get instance string MyTestModule/Myassembly::get_nonNullableString()
@@ -341,7 +323,6 @@
        extends [runtime]System.Object
 {
 } 
-
 
 
 

@@ -7,7 +7,7 @@
 .assembly extern System.Collections
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         
-  .ver 8:0:0:0
+  .ver 0:0:0:0
 }
 .assembly extern FSharp.Core { }
 .assembly assembly
@@ -35,10 +35,9 @@
          extends class [System.Collections]System.Collections.Generic.List`1<string>
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8[]) = ( 01 00 02 00 00 00 01 02 00 00 ) 
+    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
-    .method public specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method public specialname rtspecialname instance void  .ctor() cil managed
     {
       
       .maxstack  8
@@ -49,11 +48,10 @@
       IL_0008:  ret
     } 
 
-    .method public hidebysig specialname 
-            instance string  get_FirstItem() cil managed
+    .method public hidebysig specialname instance string  get_FirstItem() cil managed
     {
       .param [0]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
       
       .maxstack  4
       .locals init (class MyTestModule/DerivedWhichAllowsNull V_0)
@@ -68,7 +66,7 @@
 
     .property instance string FirstItem()
     {
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
       .get instance string MyTestModule/DerivedWhichAllowsNull::get_FirstItem()
     } 
   } 
@@ -77,9 +75,9 @@
          extends class [System.Collections]System.Collections.Generic.List`1<string>
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
-    .method public specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method public specialname rtspecialname instance void  .ctor() cil managed
     {
       
       .maxstack  8
@@ -90,9 +88,10 @@
       IL_0008:  ret
     } 
 
-    .method public hidebysig specialname 
-            instance string  get_FirstItem() cil managed
+    .method public hidebysig specialname instance string  get_FirstItem() cil managed
     {
+      .param [0]
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
       
       .maxstack  4
       .locals init (class MyTestModule/DerivedWithoutNull V_0)
@@ -107,6 +106,7 @@
 
     .property instance string FirstItem()
     {
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
       .get instance string MyTestModule/DerivedWithoutNull::get_FirstItem()
     } 
   } 
@@ -117,8 +117,7 @@
     .custom instance void [runtime]System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
     .param type T 
       .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
-    .method public hidebysig abstract virtual 
-            instance !T  Get() cil managed
+    .method public hidebysig abstract virtual instance !T  Get() cil managed
     {
     } 
 
@@ -133,11 +132,12 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.NullableContextAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
     .interfaceimpl type class MyTestModule/ICanGetAnything`1<class [System.Collections]System.Collections.Generic.List`1<string>>
-    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8[]) = ( 01 00 03 00 00 00 01 02 02 00 00 ) 
+    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8[]) = ( 01 00 03 00 00 00 01 02 00 00 00 ) 
+    .interfaceimpl type class MyTestModule/ICanGetAnything`1<class [System.Collections]System.Collections.Generic.List`1<class [System.Collections]System.Collections.Generic.List`1<string>>>
+    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8[]) = ( 01 00 04 00 00 00 01 00 00 00 00 00 ) 
     .interfaceimpl type class MyTestModule/ICanGetAnything`1<string>
     .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8[]) = ( 01 00 02 00 00 00 01 02 00 00 ) 
-    .method public specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method public specialname rtspecialname instance void  .ctor() cil managed
     {
       
       .maxstack  8
@@ -148,8 +148,7 @@
       IL_0008:  ret
     } 
 
-    .method private hidebysig newslot virtual 
-            instance string  'MyTestModule.ICanGetAnything<System.String>.Get'() cil managed
+    .method private hidebysig newslot virtual instance string  'MyTestModule.ICanGetAnything<System.String>.Get'() cil managed
     {
       .param [0]
       .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
@@ -167,6 +166,8 @@
             instance class [System.Collections]System.Collections.Generic.List`1<class [System.Collections]System.Collections.Generic.List`1<string>> 
             'MyTestModule.ICanGetAnything<System.Collections.Generic.List<System.Collections.Generic.List<System.String>>>.Get'() cil managed
     {
+      .param [0]
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
       .override  method instance !0 class MyTestModule/ICanGetAnything`1<class [System.Collections]System.Collections.Generic.List`1<class [System.Collections]System.Collections.Generic.List`1<string>>>::Get()
       
       .maxstack  3
@@ -182,7 +183,7 @@
             'MyTestModule.ICanGetAnything<System.Collections.Generic.List<System.String>>.Get'() cil managed
     {
       .param [0]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8[]) = ( 01 00 02 00 00 00 02 00 00 00 ) 
       .override  method instance !0 class MyTestModule/ICanGetAnything`1<class [System.Collections]System.Collections.Generic.List`1<string>>::Get()
       
       .maxstack  3
@@ -201,7 +202,6 @@
        extends [runtime]System.Object
 {
 } 
-
 
 
 

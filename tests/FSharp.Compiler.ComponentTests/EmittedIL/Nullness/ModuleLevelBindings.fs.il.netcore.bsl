@@ -114,6 +114,7 @@
 
   .property string notNullStringField()
   {
+    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
     .get string MyTestModule::get_notNullStringField()
   } 
   .property string nullableStringField()
@@ -156,7 +157,6 @@
   } 
 
 } 
-
 
 
 
