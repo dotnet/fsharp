@@ -7,7 +7,7 @@
 .assembly extern System.Collections
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         
-  .ver 0:0:0:0
+  .ver 9:0:0:0
 }
 .assembly extern FSharp.Core { }
 .assembly assembly

@@ -26,16 +26,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -3646,7 +3636,7 @@
     IL_0243:  ldloc.s    V_34
     IL_0245:  ldloc.s    V_35
     IL_0247:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-    IL_024c:  callvirt   instance bool class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::Equals(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>,
+    IL_024c:  callvirt   instance bool class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::Equals(object,
                                                                                                                     class [runtime]System.Collections.IEqualityComparer)
     IL_0251:  ldc.i4.0
     IL_0252:  ceq
@@ -3852,7 +3842,6 @@
   } 
 
 } 
-
 
 
 
