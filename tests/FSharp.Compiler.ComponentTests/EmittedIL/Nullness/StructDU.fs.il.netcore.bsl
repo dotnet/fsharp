@@ -85,8 +85,6 @@
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
                                                                                                   int32) = ( 01 00 08 00 00 00 01 00 00 00 00 00 ) 
-      .param [1]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
       
       .maxstack  2
       .locals init (valuetype MyTestModule/Myassembly V_0)
@@ -104,6 +102,10 @@
 
     .method public hidebysig instance bool get_IsB() cil managed
     {
+      .custom instance void [runtime]System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute::.ctor(bool,
+                                                                                                              string[]) = ( 01 00 01 02 00 00 00 11 6E 6F 6E 4E 75 6C 6C 61   
+                                                                                                                            62 6C 65 53 74 72 69 6E 67 12 5F 6E 6F 6E 4E 75   
+                                                                                                                            6C 6C 61 62 6C 65 53 74 72 69 6E 67 00 00 )       
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -169,7 +171,7 @@
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       .param [0]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0
@@ -254,6 +256,10 @@
     } 
     .property instance bool IsB()
     {
+      .custom instance void [runtime]System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute::.ctor(bool,
+                                                                                                              string[]) = ( 01 00 01 02 00 00 00 11 6E 6F 6E 4E 75 6C 6C 61   
+                                                                                                                            62 6C 65 53 74 72 69 6E 67 12 5F 6E 6F 6E 4E 75   
+                                                                                                                            6C 6C 61 62 6C 65 53 74 72 69 6E 67 00 00 )       
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -268,10 +274,10 @@
     } 
     .property instance string nonNullableString()
     {
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
                                                                                                   int32,
                                                                                                   int32) = ( 01 00 04 00 00 00 01 00 00 00 00 00 00 00 00 00 ) 
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       .get instance string MyTestModule/Myassembly::get_nonNullableString()

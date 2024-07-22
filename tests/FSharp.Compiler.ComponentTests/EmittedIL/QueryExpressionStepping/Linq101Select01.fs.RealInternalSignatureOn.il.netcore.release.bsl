@@ -3466,7 +3466,7 @@
     IL_021d:  ldloc.s    V_13
     IL_021f:  ldloc.s    V_14
     IL_0221:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-    IL_0226:  callvirt   instance bool class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::Equals(object,
+    IL_0226:  callvirt   instance bool class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::Equals(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>,
                                                                                                                     class [runtime]System.Collections.IEqualityComparer)
     IL_022b:  ldc.i4.0
     IL_022c:  ceq

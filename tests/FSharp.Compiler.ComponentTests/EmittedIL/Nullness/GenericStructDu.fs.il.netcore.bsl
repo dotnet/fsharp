@@ -101,9 +101,7 @@
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
                                                                                                   int32) = ( 01 00 08 00 00 00 01 00 00 00 00 00 ) 
       .param [1]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
-      .param [2]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8[]) = ( 01 00 03 00 00 00 01 01 02 00 00 ) 
       .param [3]
       .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       
@@ -133,9 +131,11 @@
     .method public hidebysig instance bool get_IsMyStructSome() cil managed
     {
       .custom instance void [runtime]System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute::.ctor(bool,
-                                                                                                              string[]) = ( 01 00 01 02 00 00 00 0D 6E 6F 74 4E 75 6C 6C 46   
-                                                                                                                            69 65 6C 64 31 0E 5F 6E 6F 74 4E 75 6C 6C 46 69   
-                                                                                                                            65 6C 64 31 00 00 )                               
+                                                                                                              string[]) = ( 01 00 01 04 00 00 00 0D 6E 6F 74 4E 75 6C 6C 46   
+                                                                                                                            69 65 6C 64 32 0D 6E 6F 74 4E 75 6C 6C 46 69 65   
+                                                                                                                            6C 64 31 0E 5F 6E 6F 74 4E 75 6C 6C 46 69 65 6C   
+                                                                                                                            64 32 0E 5F 6E 6F 74 4E 75 6C 6C 46 69 65 6C 64   
+                                                                                                                            31 00 00 )                                        
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -168,7 +168,7 @@
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       .param [0]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8[]) = ( 01 00 03 00 00 00 02 01 02 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0
@@ -181,7 +181,7 @@
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       .param [0]
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0
@@ -280,9 +280,11 @@
     .property instance bool IsMyStructSome()
     {
       .custom instance void [runtime]System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute::.ctor(bool,
-                                                                                                              string[]) = ( 01 00 01 02 00 00 00 0D 6E 6F 74 4E 75 6C 6C 46   
-                                                                                                                            69 65 6C 64 31 0E 5F 6E 6F 74 4E 75 6C 6C 46 69   
-                                                                                                                            65 6C 64 31 00 00 )                               
+                                                                                                              string[]) = ( 01 00 01 04 00 00 00 0D 6E 6F 74 4E 75 6C 6C 46   
+                                                                                                                            69 65 6C 64 32 0D 6E 6F 74 4E 75 6C 6C 46 69 65   
+                                                                                                                            6C 64 31 0E 5F 6E 6F 74 4E 75 6C 6C 46 69 65 6C   
+                                                                                                                            64 32 0E 5F 6E 6F 74 4E 75 6C 6C 46 69 65 6C 64   
+                                                                                                                            31 00 00 )                                        
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -294,17 +296,17 @@
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
                                                                                                   int32,
                                                                                                   int32) = ( 01 00 04 00 00 00 01 00 00 00 00 00 00 00 00 00 ) 
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8[]) = ( 01 00 03 00 00 00 02 01 02 00 00 ) 
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       .get instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>> TestModule/MyStructOption`1::get_nestedGenericField()
     } 
     .property instance string notNullField2()
     {
+      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
                                                                                                   int32,
                                                                                                   int32) = ( 01 00 04 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
-      .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       .get instance string TestModule/MyStructOption`1::get_notNullField2()

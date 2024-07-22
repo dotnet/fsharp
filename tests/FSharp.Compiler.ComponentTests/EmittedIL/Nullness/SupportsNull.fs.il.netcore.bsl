@@ -67,8 +67,6 @@
   {
     .param type a 
       .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
-    .param [0]
-    .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 00 00 00 ) 
     
     .maxstack  8
     IL_0000:  ldarg.0
@@ -115,12 +113,13 @@
     .param [1]
     .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     
-    .maxstack  8
+    .maxstack  3
+    .locals init (!!a V_0)
     IL_0000:  ldarg.0
-    IL_0001:  box        !!a
-    IL_0006:  brfalse.s  IL_000a
-
-    IL_0008:  br.s       IL_000d
+    IL_0001:  stloc.0
+    IL_0002:  ldloc.0
+    IL_0003:  box        !!a
+    IL_0008:  brtrue.s   IL_000d
 
     IL_000a:  ldc.i4.1
     IL_000b:  br.s       IL_000e
@@ -140,12 +139,13 @@
     .param type T 
       .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 
     
-    .maxstack  8
+    .maxstack  3
+    .locals init (!!T V_0)
     IL_0000:  ldarg.0
-    IL_0001:  box        !!T
-    IL_0006:  brfalse.s  IL_000a
-
-    IL_0008:  br.s       IL_000d
+    IL_0001:  stloc.0
+    IL_0002:  ldloc.0
+    IL_0003:  box        !!T
+    IL_0008:  brtrue.s   IL_000d
 
     IL_000a:  ldc.i4.1
     IL_000b:  br.s       IL_000e
