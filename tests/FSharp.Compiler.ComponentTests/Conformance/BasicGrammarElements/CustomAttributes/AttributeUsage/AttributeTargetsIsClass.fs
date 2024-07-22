@@ -30,5 +30,21 @@ type ILTableName(idx: int) =
 type Record = { Prop: string }
 
 [<RequireQualifiedAccess>]
-[<Struct>]
-type StructRecord = { Prop: string }
+[<CustomClass>]
+type Record2 = { Prop: string }
+
+[<RequireQualifiedAccess>]
+type ClassUnion =
+    | StructUnionCase of int
+    | StructUnionCase2 of string
+
+[<RequireQualifiedAccess>]
+type ClassUnionId = Id
+
+[<CustomClass>]
+type ClassUnionId2 = Id
+
+[<CustomClass>]
+type UnionCase = 
+    | UnionCase of int
+    | UnionCase2 of string
