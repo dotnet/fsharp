@@ -2879,6 +2879,12 @@ module EstablishTypeDefinitionCores =
 
                 // Run InferTyconKind to raise errors on inconsistent attribute sets
                 InferTyconKind g (SynTypeDefnKind.Union, attrs, [], [], inSig, true, m) |> ignore
+                
+                if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
+                    if hasStructAttr then
+                        TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Struct synAttrs |> ignore
+                    else
+                        TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Class synAttrs |> ignore
 
                 // Note: the table of union cases is initially empty
                 Construct.MakeUnionRepr []
