@@ -22,4 +22,3 @@
 ### Changed
 
 * Lower interpolated strings to string concatenation. ([PR #16556](https://github.com/dotnet/fsharp/pull/16556))
-* Minor internal feature cleanup. ([PR #17421](https://github.com/dotnet/fsharp/pull/17421))
