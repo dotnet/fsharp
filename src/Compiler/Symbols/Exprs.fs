@@ -327,7 +327,7 @@ module FSharpExprConvert =
 
     let ConvILTypeRefApp (cenv: SymbolEnv) m tref tyargs = 
         let tcref = Import.ImportILTypeRef cenv.amap m tref
-        ConvType cenv (mkAppTy tcref tyargs)
+        ConvType cenv (mkWoNullAppTy tcref tyargs)
 
     let ConvUnionCaseRef cenv (ucref: UnionCaseRef) = FSharpUnionCase(cenv, ucref)
 
@@ -378,7 +378,7 @@ module FSharpExprConvert =
         // Large lists 
         | Expr.Op (TOp.UnionCase ucref, tyargs, [e1;e2], _) -> 
             let mkR = ConvUnionCaseRef cenv ucref 
-            let typR = ConvType cenv (mkAppTy ucref.TyconRef tyargs)
+            let typR = ConvType cenv (mkWoNullAppTy ucref.TyconRef tyargs)
             let e1R = ConvExpr cenv env e1
             // tail recursive 
             ConvExprLinear cenv env e2 (contF << (fun e2R -> E.NewUnionCase(typR, mkR, [e1R; e2R]) ))
@@ -622,7 +622,7 @@ module FSharpExprConvert =
             match op, tyargs, args with 
             | TOp.UnionCase ucref, _, _ -> 
                 let mkR = ConvUnionCaseRef cenv ucref 
-                let typR = ConvType cenv (mkAppTy ucref.TyconRef tyargs)
+                let typR = ConvType cenv (mkWoNullAppTy ucref.TyconRef tyargs)
                 let argsR = ConvExprs cenv env args
                 E.NewUnionCase(typR, mkR, argsR) 
 
@@ -637,13 +637,13 @@ module FSharpExprConvert =
                 E.NewTuple(tyR, argsR) 
 
             | TOp.Recd (_, tcref), _, _  -> 
-                let typR = ConvType cenv (mkAppTy tcref tyargs)
+                let typR = ConvType cenv (mkWoNullAppTy tcref tyargs)
                 let argsR = ConvExprs cenv env args
                 E.NewRecord(typR, argsR) 
 
             | TOp.UnionCaseFieldGet (ucref, n), tyargs, [e1] -> 
                 let mkR = ConvUnionCaseRef cenv ucref 
-                let typR = ConvType cenv (mkAppTy ucref.TyconRef tyargs)
+                let typR = ConvType cenv (mkWoNullAppTy ucref.TyconRef tyargs)
                 let projR = FSharpField(cenv, ucref, n)
                 E.UnionCaseGet(ConvExpr cenv env e1, typR, mkR, projR) 
 
@@ -653,7 +653,7 @@ module FSharpExprConvert =
 
             | TOp.UnionCaseFieldSet (ucref, n), tyargs, [e1;e2] -> 
                 let mkR = ConvUnionCaseRef cenv ucref 
-                let typR = ConvType cenv (mkAppTy ucref.TyconRef tyargs)
+                let typR = ConvType cenv (mkWoNullAppTy ucref.TyconRef tyargs)
                 let projR = FSharpField(cenv, ucref, n)
                 E.UnionCaseSet(ConvExpr cenv env e1, typR, mkR, projR, ConvExpr cenv env e2) 
 
@@ -665,13 +665,13 @@ module FSharpExprConvert =
 
             | TOp.ValFieldGet rfref, tyargs, [] ->
                 let projR = ConvRecdFieldRef cenv rfref 
-                let typR = ConvType cenv (mkAppTy rfref.TyconRef tyargs)
+                let typR = ConvType cenv (mkWoNullAppTy rfref.TyconRef tyargs)
                 E.FSharpFieldGet(None, typR, projR) 
 
             | TOp.ValFieldGet rfref, tyargs, [obj] ->
                 let objR = ConvLValueExpr cenv env obj
                 let projR = ConvRecdFieldRef cenv rfref 
-                let typR = ConvType cenv (mkAppTy rfref.TyconRef tyargs)
+                let typR = ConvType cenv (mkWoNullAppTy rfref.TyconRef tyargs)
                 E.FSharpFieldGet(Some objR, typR, projR) 
 
             | TOp.TupleFieldGet (tupInfo, n), tyargs, [e] -> 
@@ -775,7 +775,7 @@ module FSharpExprConvert =
                 let argTy2 = tyOfExpr g arg2
                 let resTy = 
                     match getMeasureOfType g argTy1, getMeasureOfType g argTy2 with
-                    | Some (tcref, ms1), Some (_tcref2, ms2)  ->  mkAppTy tcref [TType_measure (Measure.Prod(ms1, if isMul then ms2 else Measure.Inv ms2))]
+                    | Some (tcref, ms1), Some (_tcref2, ms2)  ->  mkWoNullAppTy tcref [TType_measure (Measure.Prod(ms1, if isMul then ms2 else Measure.Inv ms2))]
                     | Some _, None  -> argTy1
                     | None, Some _ -> argTy2
                     | None, None -> argTy1
@@ -805,18 +805,18 @@ module FSharpExprConvert =
                 E.ILAsm(sprintf "%+A" instrs, ConvTypes cenv tyargs, ConvExprs cenv env args)
 
             | TOp.ExnConstr tcref, tyargs, args              -> 
-                E.NewRecord(ConvType cenv (mkAppTy tcref tyargs), ConvExprs cenv env args) 
+                E.NewRecord(ConvType cenv (mkWoNullAppTy tcref tyargs), ConvExprs cenv env args) 
 
             | TOp.ValFieldSet rfref, _tinst, [obj;arg]     -> 
                 let objR = ConvLValueExpr cenv env obj
                 let argR = ConvExpr cenv env arg
-                let typR = ConvType cenv (mkAppTy rfref.TyconRef tyargs)
+                let typR = ConvType cenv (mkWoNullAppTy rfref.TyconRef tyargs)
                 let projR = ConvRecdFieldRef cenv rfref 
                 E.FSharpFieldSet(Some objR, typR, projR, argR) 
 
             | TOp.ValFieldSet rfref, _tinst, [arg]     -> 
                 let argR = ConvExpr cenv env arg
-                let typR = ConvType cenv (mkAppTy rfref.TyconRef tyargs)
+                let typR = ConvType cenv (mkWoNullAppTy rfref.TyconRef tyargs)
                 let projR = ConvRecdFieldRef cenv rfref 
                 E.FSharpFieldSet(None, typR, projR, argR) 
 
@@ -824,16 +824,16 @@ module FSharpExprConvert =
                 let exnc = stripExnEqns tcref
                 let fspec = exnc.TrueInstanceFieldsAsList[i]
                 let fref = mkRecdFieldRef tcref fspec.LogicalName
-                let typR = ConvType cenv (mkAppTy tcref tyargs)
-                let objR = ConvExpr cenv env (mkCoerceExpr (obj, mkAppTy tcref [], m, g.exn_ty))
+                let typR = ConvType cenv (mkWoNullAppTy tcref tyargs)
+                let objR = ConvExpr cenv env (mkCoerceExpr (obj, mkWoNullAppTy tcref [], m, g.exn_ty))
                 E.FSharpFieldGet(Some objR, typR, ConvRecdFieldRef cenv fref) 
 
             | TOp.ExnFieldSet (tcref, i), [], [obj;e2] -> 
                 let exnc = stripExnEqns tcref
                 let fspec = exnc.TrueInstanceFieldsAsList[i]
                 let fref = mkRecdFieldRef tcref fspec.LogicalName
-                let typR = ConvType cenv (mkAppTy tcref tyargs)
-                let objR = ConvExpr cenv env (mkCoerceExpr (obj, mkAppTy tcref [], m, g.exn_ty))
+                let typR = ConvType cenv (mkWoNullAppTy tcref tyargs)
+                let objR = ConvExpr cenv env (mkCoerceExpr (obj, mkWoNullAppTy tcref [], m, g.exn_ty))
                 E.FSharpFieldSet(Some objR, typR, ConvRecdFieldRef cenv fref, ConvExpr cenv env e2) 
 
             | TOp.Coerce, [tgtTy;srcTy], [x]  -> 
@@ -896,7 +896,7 @@ module FSharpExprConvert =
               
             | TOp.UnionCaseProof _, _, [e]       -> ConvExprPrim cenv env e  // Note: we erase the union case proof conversions when converting to quotations
             | TOp.UnionCaseTagGet tycr, tyargs, [arg1]          -> 
-                let typR = ConvType cenv (mkAppTy tycr tyargs)
+                let typR = ConvType cenv (mkWoNullAppTy tycr tyargs)
                 E.UnionCaseTag(ConvExpr cenv env arg1, typR) 
 
             | TOp.TraitCall traitInfo, _, _ ->
@@ -1019,7 +1019,7 @@ module FSharpExprConvert =
             | [v] -> 
                 makeFSCall isMember v
             | [] ->
-                let typR = ConvType cenv (mkAppTy tcref enclTypeArgs)
+                let typR = ConvType cenv (mkWoNullAppTy tcref enclTypeArgs)
                 if enclosingEntity.IsModuleOrNamespace then
                     let findModuleMemberByName = 
                         enclosingEntity.ModuleOrNamespaceType.AllValsAndMembers 
@@ -1149,9 +1149,12 @@ module FSharpExprConvert =
                 // TODO: this will not work for curried methods in F# classes.
                 // This is difficult to solve as the information in the ILMethodRef
                 // is not sufficient to resolve to a symbol unambiguously in these cases.
-                let argTys = [ ilMethRef.ArgTypes |> List.map (ImportILTypeFromMetadata cenv.amap m scoref tinst1 tinst2) ]
+
+                                                              // If this was an ILTycon with potential nullness, try1 is Some(..) and this branch not hit
+                let argTys = [ ilMethRef.ArgTypes |> List.map (ImportILTypeFromMetadataSkipNullness cenv.amap m scoref tinst1 tinst2) ]
                 let retTy = 
-                    match ImportReturnTypeFromMetadata cenv.amap m ilMethRef.ReturnType (fun _ -> emptyILCustomAttrs) scoref tinst1 tinst2 with 
+                    let nullableAttributes = Import.Nullness.NullableAttributesSource.Empty
+                    match ImportReturnTypeFromMetadata cenv.amap m nullableAttributes ilMethRef.ReturnType scoref tinst1 tinst2 with 
                     | None -> if isCtor then enclosingTy else g.unit_ty
                     | Some ty -> ty
 
@@ -1292,7 +1295,7 @@ module FSharpExprConvert =
         | DecisionTreeTest.UnionCase (ucref, tyargs) -> 
             let objR = ConvExpr cenv env inpExpr
             let ucR = ConvUnionCaseRef cenv ucref 
-            let utypR = ConvType cenv (mkAppTy ucref.TyconRef tyargs)
+            let utypR = ConvType cenv (mkWoNullAppTy ucref.TyconRef tyargs)
             E.IfThenElse (E.UnionCaseTest (objR, utypR, ucR) |> Mk cenv m g.bool_ty, ConvDecisionTree cenv env dtreeRetTy dtree m, acc) 
         | DecisionTreeTest.Const (Const.Bool true) -> 
             let e1R = ConvExpr cenv env inpExpr

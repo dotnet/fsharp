@@ -333,6 +333,13 @@ module internal PrintUtilities =
         | Some w -> Display.squashTo w layout
         | None -> layout
         
+    // When showing types in diagnostics, we don't show nullness annotations by default
+    // unless the diagnostic is specifically about nullness.
+    let suppressNullnessAnnotations denv =
+        match denv.showNullnessAnnotations with
+        | None -> { denv with showNullnessAnnotations = Some false }
+        | _ -> denv
+
 module PrintIL = 
 
     let fullySplitILTypeRef (tref: ILTypeRef) = 
@@ -794,6 +801,9 @@ module PrintTypes =
         | TyparConstraint.SupportsNull _ ->
             [wordL (tagKeyword "null") |> longConstraintPrefix]
 
+        | TyparConstraint.NotSupportsNull _ ->
+                [(wordL (tagKeyword "not null") (* ^^ wordL(tagKeyword "null") *) ) |> longConstraintPrefix]
+
         | TyparConstraint.IsNonNullableStruct _ ->
             if denv.shortConstraints then 
                 [wordL (tagText "value type")]
@@ -899,6 +909,16 @@ module PrintTypes =
             | [] -> tcL
             | [arg] -> layoutTypeWithInfoAndPrec denv env 2 arg ^^ tcL
             | args -> bracketIfL (prec <= 1) (bracketL (layoutTypesWithInfoAndPrec denv env 2 SepL.comma args) --- tcL)
+
+    and layoutNullness (denv: DisplayEnv) part2 (nullness: Nullness) =
+        // Show nullness annotations unless explicitly turned off
+        if denv.showNullnessAnnotations <> Some false then
+            match nullness.Evaluate() with
+            | NullnessInfo.WithNull -> part2 ^^ wordL (tagText "| null")
+            | NullnessInfo.WithoutNull -> part2
+            | NullnessInfo.AmbivalentToNull -> part2 //^^ wordL (tagText "__maybenull")
+        else
+            part2
     
     /// Layout a type, taking precedence into account to insert brackets where needed
     and layoutTypeWithInfoAndPrec denv env prec ty =
@@ -919,46 +939,52 @@ module PrintTypes =
 
         // Always prefer 'float' to 'float<1>'
         | TType_app (tc, args, _) when tc.IsMeasureableReprTycon && List.forall (isDimensionless g) args ->
-          layoutTypeWithInfoAndPrec denv env prec (reduceTyconRefMeasureableOrProvided g tc args)
+            layoutTypeWithInfoAndPrec denv env prec (reduceTyconRefMeasureableOrProvided g tc args)
 
         // Layout a type application
-        | TType_ucase (UnionCaseRef(tc, _), args)
-        | TType_app (tc, args, _) ->
-          let prefix = usePrefix denv tc
-          let demangledCompilationPathOpt, args =
-              if not denv.includeStaticParametersInTypeNames then
-                  None, args
-              else
-                  let regex = System.Text.RegularExpressions.Regex(@"\`\d+")
-                  let path, skip =
-                      (0, tc.CompilationPath.DemangledPath)
-                      ||> List.mapFold (fun skip path ->
-                          // Verify the path does not contain a generic parameter count.
-                          // For example Foo`3 indicates that there are three parameters in args that belong to this path.
-                          let m = regex.Match(path)
-                          if not m.Success then
-                              path, skip
-                          else
-                              let take = m.Value.Replace("`", "") |> int
-                              let genericArgs =
-                                  List.skip skip args
-                                  |> List.take take
-                                  |> List.map (layoutTypeWithInfoAndPrec denv env prec >> showL)
-                                  |> String.concat ","
-                                  |> sprintf "<%s>"
-                              String.Concat(path.Substring(0, m.Index), genericArgs), (skip + take)
-                      )
+        | TType_ucase (UnionCaseRef(tc, _), args) ->
+            let prefix = usePrefix denv tc
+            layoutTypeAppWithInfoAndPrec denv env (layoutTyconRefImpl false denv tc None) prec prefix args
+        | TType_app (tc, args, nullness) ->
+            let prefix = usePrefix denv tc
+            let demangledCompilationPathOpt, args =
+                if not denv.includeStaticParametersInTypeNames then
+                    None, args
+                else
+                    let regex = System.Text.RegularExpressions.Regex(@"\`\d+")
+                    let path, skip =
+                        (0, tc.CompilationPath.DemangledPath)
+                        ||> List.mapFold (fun skip path ->
+                            // Verify the path does not contain a generic parameter count.
+                            // For example Foo`3 indicates that there are three parameters in args that belong to this path.
+                            let m = regex.Match(path)
+                            if not m.Success then
+                                path, skip
+                            else
+                                let take = m.Value.Replace("`", "") |> int
+                                let genericArgs =
+                                    List.skip skip args
+                                    |> List.take take
+                                    |> List.map (layoutTypeWithInfoAndPrec denv env prec >> showL)
+                                    |> String.concat ","
+                                    |> sprintf "<%s>"
+                                String.Concat(path.Substring(0, m.Index), genericArgs), (skip + take)
+                        )
 
-                  Some path, List.skip skip args
+                    Some path, List.skip skip args
 
-          layoutTypeAppWithInfoAndPrec
-              denv
-              env
-              (layoutTyconRefImpl false denv tc demangledCompilationPathOpt)
-              prec
-              prefix
-              args
+            let part1 =
+                layoutTypeAppWithInfoAndPrec
+                    denv
+                    env
+                    (layoutTyconRefImpl false denv tc demangledCompilationPathOpt)
+                    prec
+                    prefix
+                    args
 
+            let part2 = layoutNullness denv part1 nullness
+
+            part2
         // Layout a tuple type 
         | TType_anon (anonInfo, tys) ->
             let core = sepListL RightL.semicolon (List.map2 (fun nm ty -> wordL (tagField nm) ^^ RightL.colon ^^ layoutTypeWithInfoAndPrec denv env prec ty) (Array.toList anonInfo.SortedNames) tys)
@@ -983,16 +1009,20 @@ module PrintTypes =
             | [h] -> layoutTyparRefWithInfo denv env h ^^ rightL dot --- tauL
             | h :: t -> spaceListL (List.map (layoutTyparRefWithInfo denv env) (h :: t)) ^^ rightL dot --- tauL
 
-        | TType_fun _ ->
+        | TType_fun (_, _, nullness) ->
             let argTys, retTy = stripFunTy g ty
             let retTyL = layoutTypeWithInfoAndPrec denv env 5 retTy
             let argTysL = argTys |> List.map (layoutTypeWithInfoAndPrec denv env 4)
             let funcTyL = curriedLayoutsL arrow argTysL retTyL
-            bracketIfL (prec <= 4) funcTyL
+            let part1 = bracketIfL (prec <= 4) funcTyL
+            let part2 = layoutNullness denv part1 nullness
+            part2
 
         // Layout a type variable . 
-        | TType_var (r, _) ->
-            layoutTyparRefWithInfo denv env r
+        | TType_var (r, nullness) ->
+            let part1 = layoutTyparRefWithInfo denv env r
+            let part2 = layoutNullness denv part1 nullness
+            part2
 
         | TType_measure unt -> layoutMeasure denv unt
 
@@ -1289,6 +1319,7 @@ module PrintTastMemberOrVals =
         else nameL
 
     let prettyLayoutOfMemberShortOption denv typarInst (v: Val) short =
+        let denv = suppressNullnessAnnotations denv
         let vref = mkLocalValRef v
         let membInfo = Option.get vref.MemberInfo
         let stat = layoutMemberFlags membInfo.MemberFlags
@@ -1630,14 +1661,14 @@ module InfoMemberPrinting =
 
     // Prettify an ILMethInfo
     let prettifyILMethInfo (amap: Import.ImportMap) m (minfo: MethInfo) typarInst ilMethInfo = 
-        let (ILMethInfo(_, apparentTy, dty, mdef, _)) = ilMethInfo
-        let (prettyTyparInst, prettyTys), _ = PrettyTypes.PrettifyInstAndTypes amap.g (typarInst, (apparentTy :: minfo.FormalMethodInst))
+        let (ILMethInfo(_, methodsType, mdef, _)) = ilMethInfo
+        let (prettyTyparInst, prettyTys), _ = PrettyTypes.PrettifyInstAndTypes amap.g (typarInst, (methodsType.ToType :: minfo.FormalMethodInst))
         match prettyTys with
         | prettyApparentTy :: prettyFormalMethInst ->
             let prettyMethInfo = 
-                match dty with 
-                | None -> MethInfo.CreateILMeth (amap, m, prettyApparentTy, mdef)
-                | Some declaringTyconRef -> MethInfo.CreateILExtensionMeth(amap, m, prettyApparentTy, declaringTyconRef, minfo.ExtensionMemberPriorityOption, mdef)
+                match methodsType with 
+                | IlType _ -> MethInfo.CreateILMeth (amap, m, prettyApparentTy, mdef)
+                | CSharpStyleExtension(declaring=declaringTyconRef) -> MethInfo.CreateILExtensionMeth(amap, m, prettyApparentTy, declaringTyconRef, minfo.ExtensionMemberPriorityOption, mdef)
             prettyTyparInst, prettyMethInfo, prettyFormalMethInst
         | _ -> failwith "prettifyILMethInfo - prettyTys empty"
 
@@ -2791,6 +2822,8 @@ let prettyLayoutOfInstAndSig denv x = PrintTypes.prettyLayoutOfInstAndSig denv x
 let minimalStringsOfTwoTypes denv ty1 ty2 =
     let (ty1, ty2), tpcs = PrettyTypes.PrettifyTypePair denv.g (ty1, ty2)
 
+    let denv = suppressNullnessAnnotations denv
+
     // try denv + no type annotations 
     let attempt1 = 
         let denv = { denv with showInferenceTyparAnnotations=false; showStaticallyResolvedTyparAnnotations=false }
@@ -2813,6 +2846,7 @@ let minimalStringsOfTwoTypes denv ty1 ty2 =
     | Some res -> res
     | None -> 
 
+    // try denv
     let attempt3 = 
         let min1 = stringOfTy denv ty1
         let min2 = stringOfTy denv ty2
@@ -2838,13 +2872,14 @@ let minimalStringsOfTwoTypes denv ty1 ty2 =
         let denv = denv.SetOpenPaths []
         let denv = { denv with includeStaticParametersInTypeNames=true }
         let makeName t =
-            let assemblyName = PrintTypes.layoutAssemblyName denv t |> fun name -> if String.IsNullOrEmpty(name) then "" else sprintf " (%s)" name
+            let assemblyName = PrintTypes.layoutAssemblyName denv t |> function null | "" -> "" | name -> sprintf " (%s)" name
             sprintf "%s%s" (stringOfTy denv t) assemblyName
 
         (makeName ty1, makeName ty2, stringOfTyparConstraints denv tpcs)
     
 // Note: Always show imperative annotations when comparing value signatures 
 let minimalStringsOfTwoValues denv infoReader vref1 vref2 = 
+    let denv = suppressNullnessAnnotations denv
     let denvMin = { denv with showInferenceTyparAnnotations=true; showStaticallyResolvedTyparAnnotations=false }
     let min1 = buildString (fun buf -> outputQualifiedValOrMember denvMin infoReader buf vref1)
     let min2 = buildString (fun buf -> outputQualifiedValOrMember denvMin infoReader buf vref2) 
@@ -2858,5 +2893,6 @@ let minimalStringsOfTwoValues denv infoReader vref1 vref2 =
     
 let minimalStringOfType denv ty = 
     let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
+    let denv = suppressNullnessAnnotations denv
     let denvMin = { denv with showInferenceTyparAnnotations=false; showStaticallyResolvedTyparAnnotations=false }
     showL (PrintTypes.layoutTypeWithInfoAndPrec denvMin SimplifyTypes.typeSimplificationInfo0 2 ty)

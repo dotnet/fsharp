@@ -131,7 +131,7 @@ type OptionModule() =
     member this.OfToObj() =
         Assert.True( Option.toObj (Some "3") = "3")
         Assert.True( Option.toObj (Some "") = "")
-        Assert.True( Option.toObj (Some null) = null)
+        Assert.True( Option.toObj (Some null) = null) // TODO NULLNESS: this type annotation should not be needed 
         Assert.True( Option.toObj None = null)     
      
         Assert.True( Option.ofObj "3" = Some "3")

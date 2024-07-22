@@ -234,7 +234,7 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison> =
     interface System.IComparable
     interface System.Collections.IStructuralEquatable
     interface IReadOnlyCollection<'T>
-    override Equals: obj -> bool
+    override Equals: objnull -> bool
 
 #if NETSTANDARD2_1_OR_GREATER
 /// <summary>Contains methods for compiler use related to sets.</summary>
