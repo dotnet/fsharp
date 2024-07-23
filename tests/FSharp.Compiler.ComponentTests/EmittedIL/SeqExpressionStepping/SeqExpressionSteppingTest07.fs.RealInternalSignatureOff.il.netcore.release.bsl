@@ -18,16 +18,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -101,102 +91,105 @@
     IL_003c:  ret
   } 
 
-  .method public static void  testSimpleForEachSeqLoopWithOneStatement(class [runtime]System.Collections.Generic.IEnumerable`1<object[]> inp) cil managed
+  .method public static void  testSimpleForEachSeqLoopWithOneStatement(class [runtime]System.Collections.Generic.IEnumerable`1<int32> inp) cil managed
   {
     
     .maxstack  4
-    .locals init (class [runtime]System.Collections.Generic.IEnumerable`1<object[]> V_0,
-             class [runtime]System.Collections.Generic.IEnumerator`1<object[]> V_1,
-             object[] V_2,
+    .locals init (class [runtime]System.Collections.Generic.IEnumerable`1<int32> V_0,
+             class [runtime]System.Collections.Generic.IEnumerator`1<int32> V_1,
+             int32 V_2,
              class [runtime]System.IDisposable V_3)
     IL_0000:  ldarg.0
     IL_0001:  stloc.0
     IL_0002:  ldloc.0
-    IL_0003:  callvirt   instance class [runtime]System.Collections.Generic.IEnumerator`1<!0> class [runtime]System.Collections.Generic.IEnumerable`1<object[]>::GetEnumerator()
+    IL_0003:  callvirt   instance class [runtime]System.Collections.Generic.IEnumerator`1<!0> class [runtime]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
     IL_0008:  stloc.1
     .try
     {
-      IL_0009:  br.s       IL_001d
+      IL_0009:  br.s       IL_0022
 
       IL_000b:  ldloc.1
-      IL_000c:  callvirt   instance !0 class [runtime]System.Collections.Generic.IEnumerator`1<object[]>::get_Current()
+      IL_000c:  callvirt   instance !0 class [runtime]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
       IL_0011:  stloc.2
       IL_0012:  ldstr      "{0}"
       IL_0017:  ldloc.2
-      IL_0018:  call       void [runtime]System.Console::WriteLine(string,
-                                                                          object[])
-      IL_001d:  ldloc.1
-      IL_001e:  callvirt   instance bool [runtime]System.Collections.IEnumerator::MoveNext()
-      IL_0023:  brtrue.s   IL_000b
+      IL_0018:  box        [runtime]System.Int32
+      IL_001d:  call       void [runtime]System.Console::WriteLine(string,
+                                                                          object)
+      IL_0022:  ldloc.1
+      IL_0023:  callvirt   instance bool [runtime]System.Collections.IEnumerator::MoveNext()
+      IL_0028:  brtrue.s   IL_000b
 
-      IL_0025:  leave.s    IL_0039
+      IL_002a:  leave.s    IL_003e
 
     }  
     finally
     {
-      IL_0027:  ldloc.1
-      IL_0028:  isinst     [runtime]System.IDisposable
-      IL_002d:  stloc.3
-      IL_002e:  ldloc.3
-      IL_002f:  brfalse.s  IL_0038
+      IL_002c:  ldloc.1
+      IL_002d:  isinst     [runtime]System.IDisposable
+      IL_0032:  stloc.3
+      IL_0033:  ldloc.3
+      IL_0034:  brfalse.s  IL_003d
 
-      IL_0031:  ldloc.3
-      IL_0032:  callvirt   instance void [runtime]System.IDisposable::Dispose()
-      IL_0037:  endfinally
-      IL_0038:  endfinally
+      IL_0036:  ldloc.3
+      IL_0037:  callvirt   instance void [runtime]System.IDisposable::Dispose()
+      IL_003c:  endfinally
+      IL_003d:  endfinally
     }  
-    IL_0039:  ret
+    IL_003e:  ret
   } 
 
-  .method public static void  testSimpleForEachSeqLoopWithTwoStatements(class [runtime]System.Collections.Generic.IEnumerable`1<object[]> inp) cil managed
+  .method public static void  testSimpleForEachSeqLoopWithTwoStatements(class [runtime]System.Collections.Generic.IEnumerable`1<int32> inp) cil managed
   {
     
     .maxstack  4
-    .locals init (class [runtime]System.Collections.Generic.IEnumerable`1<object[]> V_0,
-             class [runtime]System.Collections.Generic.IEnumerator`1<object[]> V_1,
-             object[] V_2,
+    .locals init (class [runtime]System.Collections.Generic.IEnumerable`1<int32> V_0,
+             class [runtime]System.Collections.Generic.IEnumerator`1<int32> V_1,
+             int32 V_2,
              class [runtime]System.IDisposable V_3)
     IL_0000:  ldarg.0
     IL_0001:  stloc.0
     IL_0002:  ldloc.0
-    IL_0003:  callvirt   instance class [runtime]System.Collections.Generic.IEnumerator`1<!0> class [runtime]System.Collections.Generic.IEnumerable`1<object[]>::GetEnumerator()
+    IL_0003:  callvirt   instance class [runtime]System.Collections.Generic.IEnumerator`1<!0> class [runtime]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
     IL_0008:  stloc.1
     .try
     {
-      IL_0009:  br.s       IL_0028
+      IL_0009:  br.s       IL_0032
 
       IL_000b:  ldloc.1
-      IL_000c:  callvirt   instance !0 class [runtime]System.Collections.Generic.IEnumerator`1<object[]>::get_Current()
+      IL_000c:  callvirt   instance !0 class [runtime]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
       IL_0011:  stloc.2
       IL_0012:  ldstr      "{0}"
       IL_0017:  ldloc.2
-      IL_0018:  call       void [runtime]System.Console::WriteLine(string,
-                                                                          object[])
-      IL_001d:  ldstr      "{0}"
-      IL_0022:  ldloc.2
-      IL_0023:  call       void [runtime]System.Console::WriteLine(string,
-                                                                          object[])
-      IL_0028:  ldloc.1
-      IL_0029:  callvirt   instance bool [runtime]System.Collections.IEnumerator::MoveNext()
-      IL_002e:  brtrue.s   IL_000b
+      IL_0018:  box        [runtime]System.Int32
+      IL_001d:  call       void [runtime]System.Console::WriteLine(string,
+                                                                          object)
+      IL_0022:  ldstr      "{0}"
+      IL_0027:  ldloc.2
+      IL_0028:  box        [runtime]System.Int32
+      IL_002d:  call       void [runtime]System.Console::WriteLine(string,
+                                                                          object)
+      IL_0032:  ldloc.1
+      IL_0033:  callvirt   instance bool [runtime]System.Collections.IEnumerator::MoveNext()
+      IL_0038:  brtrue.s   IL_000b
 
-      IL_0030:  leave.s    IL_0044
+      IL_003a:  leave.s    IL_004e
 
     }  
     finally
     {
-      IL_0032:  ldloc.1
-      IL_0033:  isinst     [runtime]System.IDisposable
-      IL_0038:  stloc.3
-      IL_0039:  ldloc.3
-      IL_003a:  brfalse.s  IL_0043
+      IL_003c:  ldloc.1
+      IL_003d:  isinst     [runtime]System.IDisposable
+      IL_0042:  stloc.3
+      IL_0043:  ldloc.3
+      IL_0044:  brfalse.s  IL_004d
 
-      IL_003c:  ldloc.3
-      IL_003d:  callvirt   instance void [runtime]System.IDisposable::Dispose()
-      IL_0042:  endfinally
-      IL_0043:  endfinally
+      IL_0046:  ldloc.3
+      IL_0047:  callvirt   instance void [runtime]System.IDisposable::Dispose()
+      IL_004c:  endfinally
+      IL_004d:  endfinally
     }  
-    IL_0044:  ret
+    IL_004e:  ret
   } 
 
   .method public static void  testSimpleForEachArrayLoopWithOneStatement(int32[] inp) cil managed
@@ -792,7 +785,6 @@
   } 
 
 } 
-
 
 
 
