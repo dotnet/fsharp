@@ -650,6 +650,11 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
              MethInfosEquivByNameAndSig EraseNone true g amap m,
              (fun minfo -> minfo.LogicalName)) 
 
+    static let PropsGetterSetterEquiv innerEquality (p1:PropInfo) (p2:PropInfo)  : bool =
+        p1.HasGetter = p2.HasGetter &&
+        p1.HasSetter = p2.HasSetter &&
+        innerEquality p1 p2
+
     /// Filter the overrides of properties, either keeping the overrides or keeping the dispatch slots.
     static let FilterOverridesOfPropInfos findFlag g amap m props = 
         props 
@@ -658,7 +663,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                (fun pinfo -> pinfo.IsNewSlot),
                (fun pinfo -> pinfo.IsDefiniteFSharpOverride),
                (fun _ -> false),
-               PropInfosEquivByNameAndSig EraseNone g amap m,
+               PropsGetterSetterEquiv (PropInfosEquivByNameAndSig EraseNone g amap m),
                (fun pinfo -> pinfo.PropertyName)) 
 
     //type A() =
@@ -714,7 +719,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     /// Exclude properties from super types which have the same name as a property in a more specific type.
     static let ExcludeHiddenOfPropInfosImpl g amap m pinfos = 
         pinfos 
-        |> ExcludeItemsInSuperTypesBasedOnEquivTestWithItemsInSubTypes (fun (pinfo: PropInfo) -> pinfo.PropertyName) (PropInfosEquivByNameAndPartialSig EraseNone g amap m) 
+        |> ExcludeItemsInSuperTypesBasedOnEquivTestWithItemsInSubTypes (fun (pinfo: PropInfo) -> pinfo.PropertyName) (PropsGetterSetterEquiv (PropInfosEquivByNameAndPartialSig EraseNone g amap m)) 
         |> List.concat
 
     /// Make a cache for function 'f' keyed by type (plus some additional 'flags') that only 
@@ -728,7 +733,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
               // a decent hash function for these.
               canMemoize=(fun (_flags, _: range, ty) -> 
                                     match stripTyEqns g ty with 
-                                    | TType_app(tcref, [], _) -> tcref.TypeContents.tcaug_closed 
+                                    | TType_app(tcref, [], _) -> tcref.TypeContents.tcaug_closed // TODO NULLNESS: consider whether ignoring _nullness is valid here
                                     | _ -> false),
               
               keyComparer=
@@ -737,13 +742,13 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                                     // Ignoring the ranges - that's OK.
                                     flagsEq.Equals(flags1, flags2) && 
                                     match stripTyEqns g ty1, stripTyEqns g ty2 with 
-                                    | TType_app(tcref1, [], _), TType_app(tcref2, [], _) -> tyconRefEq g tcref1 tcref2
+                                    | TType_app(tcref1, [], _),TType_app(tcref2, [], _) -> tyconRefEq g tcref1 tcref2  // TODO NULLNESS: consider whether ignoring _nullness is valid here
                                     | _ -> false
                        member _.GetHashCode((flags, _, ty)) =
                                     // Ignoring the ranges - that's OK.
                                     flagsEq.GetHashCode flags + 
                                     (match stripTyEqns g ty with 
-                                     | TType_app(tcref, [], _) -> hash tcref.LogicalName
+                                     | TType_app(tcref, [], _) -> hash tcref.LogicalName  // TODO NULLNESS: consider whether ignoring _nullness is valid here
                                      | _ -> 0) })
     
     let FindImplicitConversionsUncached (ad, m, ty) = 
@@ -1125,7 +1130,7 @@ let TryFindMetadataInfoOfExternalEntityRef (infoReader: InfoReader) m eref =
         // Generalize to get a formal signature 
         let formalTypars = eref.Typars m
         let formalTypeInst = generalizeTypars formalTypars
-        let ty = TType_app(eref, formalTypeInst, 0uy)
+        let ty = TType_app(eref, formalTypeInst, KnownAmbivalentToNull)
         if isILAppTy g ty then
             let formalTypeInfo = ILTypeInfo.FromType g ty
             Some(nlref.Ccu.FileName, formalTypars, formalTypeInfo)
@@ -1196,7 +1201,7 @@ let GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) =
         match TryFindMetadataInfoOfExternalEntityRef infoReader m ilminfo.DeclaringTyconRef  with 
         | None -> None
         | Some (ccuFileName, formalTypars, formalTypeInfo) ->
-            let filminfo = ILMethInfo(g, formalTypeInfo.ToType, None, ilminfo.RawMetadata, fmtps) 
+            let filminfo = ILMethInfo(g, IlType formalTypeInfo, ilminfo.RawMetadata, fmtps) 
             let args = 
                 if ilminfo.IsILExtensionMethod then
                     filminfo.GetRawArgTypes(amap, m, minfo.FormalMethodInst)

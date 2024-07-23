@@ -2629,6 +2629,7 @@ type ILTypeDef
         attributes: TypeAttributes,
         layout: ILTypeDefLayout,
         implements: ILTypes,
+        implementsCustomAttrs: (ILAttributesStored * int) list option,
         genericParams: ILGenericParameterDefs,
         extends: ILType option,
         methods: ILMethodDefs,
@@ -2651,6 +2652,7 @@ type ILTypeDef
         attributes,
         layout,
         implements,
+        implementsCustomAttrs,
         genericParams,
         extends,
         methods,
@@ -2667,6 +2669,7 @@ type ILTypeDef
             attributes,
             layout,
             implements,
+            implementsCustomAttrs,
             genericParams,
             extends,
             methods,
@@ -2677,7 +2680,7 @@ type ILTypeDef
             properties,
             additionalFlags,
             storeILSecurityDecls securityDecls,
-            customAttrs,
+            storeILCustomAttrs customAttrs,
             NoMetadataIdx
         )
 
@@ -2692,6 +2695,8 @@ type ILTypeDef
     member _.NestedTypes = nestedTypes
 
     member _.Implements = implements
+
+    member _.ImplementsCustomAttrs = implementsCustomAttrs
 
     member _.Extends = extends
 
@@ -2732,7 +2737,8 @@ type ILTypeDef
             ?properties,
             ?newAdditionalFlags,
             ?customAttrs,
-            ?securityDecls
+            ?securityDecls,
+            ?implementsCustomAttrs
         ) =
         ILTypeDef(
             name = defaultArg name x.Name,
@@ -2741,6 +2747,7 @@ type ILTypeDef
             genericParams = defaultArg genericParams x.GenericParams,
             nestedTypes = defaultArg nestedTypes x.NestedTypes,
             implements = defaultArg implements x.Implements,
+            implementsCustomAttrs = defaultArg implementsCustomAttrs x.ImplementsCustomAttrs,
             extends = defaultArg extends x.Extends,
             methods = defaultArg methods x.Methods,
             securityDecls = defaultArg securityDecls x.SecurityDecls,
@@ -2749,7 +2756,7 @@ type ILTypeDef
             events = defaultArg events x.Events,
             properties = defaultArg properties x.Properties,
             additionalFlags = defaultArg newAdditionalFlags additionalFlags,
-            customAttrs = defaultArg customAttrs (storeILCustomAttrs x.CustomAttrs)
+            customAttrs = defaultArg customAttrs (x.CustomAttrs)
         )
 
     member x.CustomAttrs: ILAttributes =
@@ -3439,6 +3446,11 @@ type ILGlobals(primaryScopeRef: ILScopeRef, equivPrimaryAssemblyRefs: ILAssembly
 
     let mkSysILTypeRef nm = mkILTyRef (primaryScopeRef, nm)
 
+    let byteIlType = ILType.Value(mkILNonGenericTySpec (mkSysILTypeRef tname_Byte))
+
+    let stringIlType =
+        mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_String))
+
     member _.primaryAssemblyScopeRef = primaryScopeRef
 
     member x.primaryAssemblyRef =
@@ -3456,7 +3468,7 @@ type ILGlobals(primaryScopeRef: ILScopeRef, equivPrimaryAssemblyRefs: ILAssembly
 
     member val typ_Object = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_Object))
 
-    member val typ_String = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_String))
+    member val typ_String = stringIlType
 
     member val typ_Array = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_Array))
 
@@ -3470,7 +3482,11 @@ type ILGlobals(primaryScopeRef: ILScopeRef, equivPrimaryAssemblyRefs: ILAssembly
 
     member val typ_Int64 = ILType.Value(mkILNonGenericTySpec (mkSysILTypeRef tname_Int64))
 
-    member val typ_Byte = ILType.Value(mkILNonGenericTySpec (mkSysILTypeRef tname_Byte))
+    member val typ_Byte = byteIlType
+
+    member val typ_ByteArray = ILType.Array(ILArrayShape.SingleDimensional, byteIlType)
+
+    member val typ_StringArray = ILType.Array(ILArrayShape.SingleDimensional, stringIlType)
 
     member val typ_UInt16 = ILType.Value(mkILNonGenericTySpec (mkSysILTypeRef tname_UInt16))
 
@@ -4231,12 +4247,13 @@ let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nes
         attributes = attributes,
         genericParams = genparams,
         implements = impl,
+        implementsCustomAttrs = None,
         layout = ILTypeDefLayout.Auto,
         extends = Some extends,
         methods = methods,
         fields = fields,
         nestedTypes = nestedTypes,
-        customAttrs = storeILCustomAttrs attrs,
+        customAttrs = attrs,
         methodImpls = emptyILMethodImpls,
         properties = props,
         events = events,
@@ -4255,12 +4272,13 @@ let mkRawDataValueTypeDef (iltyp_ValueType: ILType) (nm, size, pack) =
              ||| TypeAttributes.BeforeFieldInit
              ||| TypeAttributes.AnsiClass),
         implements = [],
+        implementsCustomAttrs = None,
         extends = Some iltyp_ValueType,
         layout = ILTypeDefLayout.Explicit { Size = Some size; Pack = Some pack },
         methods = emptyILMethods,
         fields = emptyILFields,
         nestedTypes = emptyILTypeDefs,
-        customAttrs = emptyILCustomAttrsStored,
+        customAttrs = emptyILCustomAttrs,
         methodImpls = emptyILMethodImpls,
         properties = emptyILProperties,
         events = emptyILEvents,

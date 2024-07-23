@@ -342,6 +342,14 @@ module CustomAttributes_AttributeUsage =
             (Error 842, Line 19, Col 3, Line 19, Col 14, "This attribute is not valid for use on this language element")
             (Error 842, Line 22, Col 11, Line 22, Col 22, "This attribute is not valid for use on this language element")
             (Error 842, Line 25, Col 3, Line 25, Col 14, "This attribute is not valid for use on this language element")
+            (Error 842, Line 34, Col 3, Line 34, Col 18, "This attribute is not valid for use on this language element")
+            (Error 842, Line 35, Col 3, Line 35, Col 15, "This attribute is not valid for use on this language element")
+            (Error 842, Line 40, Col 3, Line 40, Col 14, "This attribute is not valid for use on this language element")
+            (Error 842, Line 41, Col 3, Line 41, Col 18, "This attribute is not valid for use on this language element")
+            (Error 842, Line 49, Col 3, Line 49, Col 18, "This attribute is not valid for use on this language element")
+            (Error 842, Line 50, Col 3, Line 50, Col 15, "This attribute is not valid for use on this language element")
+            (Error 842, Line 53, Col 3, Line 53, Col 14, "This attribute is not valid for use on this language element")
+            (Error 842, Line 54, Col 3, Line 54, Col 18, "This attribute is not valid for use on this language element")
         ]
 
     // SOURCE=E_AttributeTargetIsClass.fs 	# E_AttributeTargetIsClass.fs
@@ -554,8 +562,8 @@ module CustomAttributes_AttributeUsage =
             (Error 842, Line 20, Col 3, Line 20, Col 14, "This attribute is not valid for use on this language element")
             (Error 842, Line 21, Col 3, Line 21, Col 18, "This attribute is not valid for use on this language element")
             (Error 842, Line 22, Col 3, Line 22, Col 17, "This attribute is not valid for use on this language element")
-        ]
-        
+        ]        
+
      // SOURCE=AttributeTargetsIsDelegate01.fs	# AttributeTargetsIsDelegate01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsDelegate01.fs"|])>]
     let ``AttributeTargetsIsDelegate01_fs`` compilation =
@@ -655,8 +663,16 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 842, Line 15, Col 3, Line 15, Col 18, "This attribute is not valid for use on this language element")
+            (Error 842, Line 15, Col 3, Line 15, Col 18, "This attribute is not valid for use on this language element");
             (Error 842, Line 16, Col 3, Line 16, Col 15, "This attribute is not valid for use on this language element")
             (Error 842, Line 20, Col 3, Line 20, Col 14, "This attribute is not valid for use on this language element")
             (Error 842, Line 21, Col 3, Line 21, Col 18, "This attribute is not valid for use on this language element")
+            (Error 842, Line 26, Col 3, Line 26, Col 14, "This attribute is not valid for use on this language element")
+            (Error 842, Line 27, Col 3, Line 27, Col 18, "This attribute is not valid for use on this language element")
+            (Error 842, Line 34, Col 3, Line 34, Col 14, "This attribute is not valid for use on this language element")
+            (Error 842, Line 35, Col 3, Line 35, Col 18, "This attribute is not valid for use on this language element")
+            (Error 842, Line 43, Col 3, Line 43, Col 18, "This attribute is not valid for use on this language element")
+            (Error 842, Line 44, Col 3, Line 44, Col 15, "This attribute is not valid for use on this language element")
+            (Error 842, Line 47, Col 3, Line 47, Col 14, "This attribute is not valid for use on this language element")
+            (Error 842, Line 48, Col 3, Line 48, Col 18, "This attribute is not valid for use on this language element")
         ]

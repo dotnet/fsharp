@@ -72,6 +72,10 @@ module ILChecker =
             |> unifyRuntimeAssemblyName
             |> unifyImageBase
 
+        let stripManagedResources (text: string) =
+            let result = Regex.Replace(text, "\.mresource public .*\r?\n{\s*}\r?\n", "", RegexOptions.Multiline)
+            result
+        
         // This lets the same test be used when targeting both netfx and netcore.
         let unifyNetStandardVersions (text: string) = text.Replace(".ver 2:0:0:0", ".ver 2:1:0:0")
 
@@ -84,6 +88,7 @@ module ILChecker =
         |> stripComments
         |> unifyingAssemblyNames
         |> unifyMethodLine
+        |> stripManagedResources
         |> unifyNetStandardVersions
         |> unifyResourceBlock
 
@@ -120,6 +125,7 @@ module ILChecker =
 
         let prepareLines (s: string) =
             s.Split('\n')
+                // Skip emitted managed resources
                 |> Array.map(fun e -> e.Trim('\r'))
                 |> Array.skipWhile(String.IsNullOrWhiteSpace)
                 |> Array.rev

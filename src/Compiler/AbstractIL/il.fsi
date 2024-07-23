@@ -869,7 +869,13 @@ type ILAttributes =
 
 /// Represents the efficiency-oriented storage of ILAttributes in another item.
 [<NoEquality; NoComparison>]
-type ILAttributesStored
+type ILAttributesStored =
+    /// Computed by ilread.fs based on metadata index
+    | Reader of (int32 -> ILAttribute[])
+    /// Already computed
+    | Given of ILAttributes
+
+    member GetCustomAttrs: int32 -> ILAttributes
 
 /// Method parameters and return values.
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
@@ -1070,6 +1076,8 @@ type ILMethodDef =
     member IsEntryPoint: bool
     member GenericParams: ILGenericParameterDefs
     member CustomAttrs: ILAttributes
+    member MetadataIndex: int32
+    member CustomAttrsStored: ILAttributesStored
     member ParameterTypes: ILTypes
     member IsIL: bool
     member Code: ILCode option
@@ -1243,6 +1251,10 @@ type ILFieldDef =
 
     member CustomAttrs: ILAttributes
 
+    member MetadataIndex: int32
+
+    member CustomAttrsStored: ILAttributesStored
+
     member IsStatic: bool
 
     member IsSpecialName: bool
@@ -1326,6 +1338,8 @@ type ILEventDef =
     member FireMethod: ILMethodRef option
     member OtherMethods: ILMethodRef list
     member CustomAttrs: ILAttributes
+    member MetadataIndex: int32
+    member CustomAttrsStored: ILAttributesStored
     member IsSpecialName: bool
     member IsRTSpecialName: bool
 
@@ -1388,6 +1402,8 @@ type ILPropertyDef =
     member Init: ILFieldInit option
     member Args: ILTypes
     member CustomAttrs: ILAttributes
+    member MetadataIndex: int32
+    member CustomAttrsStored: ILAttributesStored
     member IsSpecialName: bool
     member IsRTSpecialName: bool
 
@@ -1498,6 +1514,7 @@ type ILTypeDef =
         attributes: TypeAttributes *
         layout: ILTypeDefLayout *
         implements: ILTypes *
+        implementsCustomAttrs: (ILAttributesStored * int) list option *
         genericParams: ILGenericParameterDefs *
         extends: ILType option *
         methods: ILMethodDefs *
@@ -1518,6 +1535,7 @@ type ILTypeDef =
         attributes: TypeAttributes *
         layout: ILTypeDefLayout *
         implements: ILTypes *
+        implementsCustomAttrs: (ILAttributesStored * int) list option *
         genericParams: ILGenericParameterDefs *
         extends: ILType option *
         methods: ILMethodDefs *
@@ -1528,7 +1546,7 @@ type ILTypeDef =
         properties: ILPropertyDefs *
         additionalFlags: ILTypeDefAdditionalFlags *
         securityDecls: ILSecurityDecls *
-        customAttrs: ILAttributesStored ->
+        customAttrs: ILAttributes ->
             ILTypeDef
 
     member Name: string
@@ -1537,6 +1555,7 @@ type ILTypeDef =
     member Layout: ILTypeDefLayout
     member NestedTypes: ILTypeDefs
     member Implements: ILTypes
+    member ImplementsCustomAttrs: (ILAttributesStored * int) list option
     member Extends: ILType option
     member Methods: ILMethodDefs
     member SecurityDecls: ILSecurityDecls
@@ -1545,6 +1564,8 @@ type ILTypeDef =
     member Events: ILEventDefs
     member Properties: ILPropertyDefs
     member CustomAttrs: ILAttributes
+    member MetadataIndex: int32
+    member CustomAttrsStored: ILAttributesStored
     member IsClass: bool
     member IsStruct: bool
     member IsInterface: bool
@@ -1593,8 +1614,9 @@ type ILTypeDef =
         ?events: ILEventDefs *
         ?properties: ILPropertyDefs *
         ?newAdditionalFlags: ILTypeDefAdditionalFlags *
-        ?customAttrs: ILAttributesStored *
-        ?securityDecls: ILSecurityDecls ->
+        ?customAttrs: ILAttributes *
+        ?securityDecls: ILSecurityDecls *
+        ?implementsCustomAttrs: (ILAttributesStored * int) list option ->
             ILTypeDef
 
 /// Represents a prefix of information for ILTypeDef.
@@ -1890,11 +1912,13 @@ type internal ILGlobals =
     member typ_Enum: ILType
     member typ_Object: ILType
     member typ_String: ILType
+    member typ_StringArray: ILType
     member typ_Type: ILType
     member typ_Array: ILType
     member typ_IntPtr: ILType
     member typ_UIntPtr: ILType
     member typ_Byte: ILType
+    member typ_ByteArray: ILType
     member typ_Int16: ILType
     member typ_Int32: ILType
     member typ_Int64: ILType
