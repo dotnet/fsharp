@@ -15,8 +15,6 @@ Caching and reusing compilation results between compiler and tooling runs will b
 
 - **Better IDE cold start**. IDEs can provide faster IntelliSense, code navigation, and other features if they can quickly access cached compilation information.
 
-- **Error reduction**. Consistent compilation results help avoid scenarios where slight differences between runs could cause different errors or warnings to be produced.
-
 ### Example real-world scenarios
 
 The optimization will benefit the most in large and not very interdependent projects. For instance, a 100-files test project where a single test is changed. MSBuild will mark the project for recompilation but thanks to the improvement only one file would be recompiled in the full-blown manner.
@@ -230,28 +228,6 @@ That is, when rebuilding the project after modifying an independent file, only t
 
 That is, for either of the scenarios above, skip the `Import mscorlib+FSharp.Core` step. This logic is also done in `main1`, prior to parsing. Same ideas apply - if cached, deserialize the information - otherwise, follow the normal process and then cache the results. The data should be stored separately from the typecheck info, so that the information be reused partially.
 
-**Stage 4 - omit reoptimization**
-
-That is, for everything that doesn't need to be retypechecked, don't do reoptimization either. This happens in the `main3` phase of compilation. 
-
-### What else can be done
-
-**Omit rewriting .NET binaries**
-
-This means that if _for some reason_ the recompilation is triggered but there is nothing to retypecheck, reuse the binaries. This shouldn't be hard to do (just writing and reading existing files) - but it's unclear how often this happens in real life.
-
-**Omit all the other steps**
-
-If we have universal caching mechanism (see below), we can apply it to other steps (e.g. parsing). Those steps typically don't take much time each on their own, but can somewhat accummulate and maybe even peak in some edge cases. 
-
-**Integrate this into tooling**
-
-We can plug the feature into the tooling. This would lead to time savings in many more developer scenarios. However, this is not trivial and the tooling layer of the feature would need to do extra checks and invalidation calls, e.g. when the tooling and the compiler use different versions of the compiler service.
-
-**Omit recompilation for insignificant file changes**
-
-That is about getting smart after getting first parts of the compilation results. If we know that the code is IL-same, we can skip everything and reuse the binaries. This would be useful in scenarios like adding comments or removing unused opens. However, this might present a **hard** (albeit interesting) challenge - things like figuring out AST diffs seem to be unexplored yet.
-
 ## Open questions
 
 ### How to cache data?
@@ -261,7 +237,7 @@ We can store the data in the intermediate build directory (e.g. `obj` in case of
 However, serialization of the compiler data is non-trivial:
 - we don't have a **full** out-of-the-box solution in the repo (some parts are available, see below)
 - well-known serialization libraries (like `System.Text.Json`) won't work right away, because data is internal and libs can't handle some F# type easily (e.g. DUs)
-- we can't use F#-specific libraries (like [this](https://github.com/fsprojects/FSharp.Json) or [this](https://github.com/Tarmil/FSharp.SystemTextJson)) because they are not "official" enough
+- we can't use F#-specific libraries (like [this](https://github.com/fsprojects/FSharp.Json) or [this](https://github.com/Tarmil/FSharp.SystemTextJson)) because we strictly minimize 3-party dependencies
 
 It should be possible to hack things around, but the more compiler data we want to serialize, the harder it will be. Hence I see 2 ways to go:
 
@@ -312,6 +288,6 @@ This would mean doing all the data restoring either in `main1` or even in a new 
 
 ## Testing and benchmarking
 
-We should have a feature flag for this: applying it to current typechecking tests shouldn't make any difference in results. Unit tests should test that restored cached results + reusing them should be equivalent to fresh typecheck results.
+We should have a compiler switch for this: applying it to current typechecking tests shouldn't make any difference in results. Unit tests should test that restored cached results + reusing them should be equivalent to fresh typecheck results.
 
 Benchmarks can be added to the FCSBenchmarks project. A good inspiration can be workflow-style tests for updating files done by @0101 in Transparent Compiler.
