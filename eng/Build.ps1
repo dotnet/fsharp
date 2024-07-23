@@ -35,8 +35,8 @@ param (
     # Options
     [switch][Alias('proto')]$bootstrap,
     [string]$bootstrapConfiguration = "Proto",
-    [string]$bootstrapTfm = "net8.0",
-    [string]$fsharpNetCoreProductTfm = "net8.0",
+    [string]$bootstrapTfm = "net9.0",
+    [string]$fsharpNetCoreProductTfm = "net9.0",
     [switch][Alias('bl')]$binaryLog = $true,
     [switch][Alias('nobl')]$excludeCIBinaryLog = $false,
     [switch][Alias('nolog')]$noBinaryLog = $false,
@@ -80,7 +80,7 @@ $BuildCategory = ""
 $BuildMessage = ""
 
 $desktopTargetFramework = "net472"
-$coreclrTargetFramework = "net8.0"
+$coreclrTargetFramework = "net9.0"
 
 function Print-Usage() {
     Write-Host "Common settings:"
