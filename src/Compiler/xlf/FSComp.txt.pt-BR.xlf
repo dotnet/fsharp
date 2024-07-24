@@ -427,9 +427,9 @@
         <target state="translated">Otimiza determinados usos dos operadores de intervalo integral (...) e de etapa de intervalo (... ..) para loops while rápidos.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureLowerSimpleMappingsInComprehensionsToDirectCallsToMap">
-        <source>Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to calls to List.map and Array.map when xs is a list or an array, respectively.</source>
-        <target state="translated">Reduz [para x em xs -&gt; f x] e [|para x em xs -&gt; f x|] para chamadas em List.map e Array.map quando xs for uma lista ou uma matriz, respectivamente.</target>
+      <trans-unit id="featureLowerSimpleMappingsInComprehensionsToFastLoops">
+        <source>Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to fast loops when xs is a list or an array, respectively.</source>
+        <target state="new">Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to fast loops when xs is a list or an array, respectively.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">

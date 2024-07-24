@@ -28,7 +28,7 @@
         }
     },
     "remoteEnv": {
-        "TARGET": "net8.0"
+        "TARGET": "net9.0"
     },
     "postCreateCommand": [ "dotnet", "build", "FSharp.Compiler.Service.sln"]
 }

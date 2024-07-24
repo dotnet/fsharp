@@ -90,7 +90,7 @@ type LanguageFeature =
     | LowerInterpolatedStringToConcat
     | LowerIntegralRangesToFastLoops
     | AllowAccessModifiersToAutoPropertiesGettersAndSetters
-    | LowerSimpleMappingsInComprehensionsToDirectCallsToMap
+    | LowerSimpleMappingsInComprehensionsToFastLoops
     | ParsedHashDirectiveArgumentNonQuotes
     | EmptyBodiedComputationExpressions
 
@@ -210,7 +210,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.LowerInterpolatedStringToConcat, previewVersion
                 LanguageFeature.LowerIntegralRangesToFastLoops, previewVersion
                 LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, previewVersion
-                LanguageFeature.LowerSimpleMappingsInComprehensionsToDirectCallsToMap, previewVersion
+                LanguageFeature.LowerSimpleMappingsInComprehensionsToFastLoops, previewVersion
                 LanguageFeature.ParsedHashDirectiveArgumentNonQuotes, previewVersion
                 LanguageFeature.EmptyBodiedComputationExpressions, previewVersion
             ]
@@ -362,8 +362,8 @@ type LanguageVersion(versionText) =
         | LanguageFeature.LowerIntegralRangesToFastLoops -> FSComp.SR.featureLowerIntegralRangesToFastLoops ()
         | LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters ->
             FSComp.SR.featureAllowAccessModifiersToAutoPropertiesGettersAndSetters ()
-        | LanguageFeature.LowerSimpleMappingsInComprehensionsToDirectCallsToMap ->
-            FSComp.SR.featureLowerSimpleMappingsInComprehensionsToDirectCallsToMap ()
+        | LanguageFeature.LowerSimpleMappingsInComprehensionsToFastLoops ->
+            FSComp.SR.featureLowerSimpleMappingsInComprehensionsToFastLoops ()
         | LanguageFeature.ParsedHashDirectiveArgumentNonQuotes -> FSComp.SR.featureParsedHashDirectiveArgumentNonString ()
         | LanguageFeature.EmptyBodiedComputationExpressions -> FSComp.SR.featureEmptyBodiedComputationExpressions ()
 

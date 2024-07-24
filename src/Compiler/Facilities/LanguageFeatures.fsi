@@ -81,7 +81,7 @@ type LanguageFeature =
     | LowerInterpolatedStringToConcat
     | LowerIntegralRangesToFastLoops
     | AllowAccessModifiersToAutoPropertiesGettersAndSetters
-    | LowerSimpleMappingsInComprehensionsToDirectCallsToMap
+    | LowerSimpleMappingsInComprehensionsToFastLoops
     | ParsedHashDirectiveArgumentNonQuotes
     | EmptyBodiedComputationExpressions
 

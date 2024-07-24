@@ -427,9 +427,9 @@
         <target state="translated">정수 계열 범위(..) 및 범위 단계(.. ..) 연산자의 특정 사용을 빠른 while 루프에 최적화합니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureLowerSimpleMappingsInComprehensionsToDirectCallsToMap">
-        <source>Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to calls to List.map and Array.map when xs is a list or an array, respectively.</source>
-        <target state="translated">xs가 각각 목록 또는 배열인 경우 [for x in xs -&gt; f x] 및 [|for x in xs -&gt; f x|]를 List.map 및 Array.map에 대한 호출로 낮춥니다.</target>
+      <trans-unit id="featureLowerSimpleMappingsInComprehensionsToFastLoops">
+        <source>Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to fast loops when xs is a list or an array, respectively.</source>
+        <target state="new">Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to fast loops when xs is a list or an array, respectively.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
