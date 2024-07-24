@@ -510,7 +510,8 @@ type internal TransparentCompiler
                 tcConfig.primaryAssembly.Name,
                 tcConfig.GetTargetFrameworkDirectories(),
                 tcConfig.fsharpBinariesDir,
-                tcConfig.langVersion.SpecifiedVersion
+                tcConfig.langVersion.SpecifiedVersion,
+                tcConfig.checkNullness
             )
 
         caches.FrameworkImports.Get(
@@ -1319,7 +1320,7 @@ type internal TransparentCompiler
                     let! finisher =
                         CheckOneInputWithCallback
                             nodeToCheck
-                            ((fun () -> hadParseErrors || diagnosticsLogger.ErrorCount > 0),
+                            ((fun () -> hadParseErrors || diagnosticsLogger.CheckForRealErrorsIgnoringWarnings),
                              tcConfig,
                              tcImports,
                              tcGlobals,

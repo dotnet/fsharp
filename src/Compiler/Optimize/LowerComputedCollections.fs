@@ -36,7 +36,7 @@ let BuildDisposableCleanup tcVal (g: TcGlobals) infoReader m (v: Val) =
     else
         let disposeObjVar, disposeObjExpr = mkCompGenLocal m "objectToDispose" g.system_IDisposable_ty
         let disposeExpr, _ = BuildMethodCall tcVal g infoReader.amap PossiblyMutates m false disposeMethod NormalValUse [] [disposeObjExpr] [] None
-        let inputExpr = mkCoerceExpr(exprForVal v.Range v, g.obj_ty, m, v.Type)
+        let inputExpr = mkCoerceExpr(exprForVal v.Range v, g.obj_ty_ambivalent, m, v.Type)
         mkIsInstConditional g m g.system_IDisposable_ty inputExpr disposeObjVar disposeExpr (mkUnit g m)
 
 let mkCallCollectorMethod tcVal (g: TcGlobals) infoReader m name collExpr args =
@@ -640,7 +640,7 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap ilTyForTy overallExpr
             match overallSeqExpr with
             // [for … in xs -> …] (* When xs is a list. *)
             | SimpleMapping g (cont, (_, _, List g list, _, loopVal, body, ranges)) when
-                g.langVersion.SupportsFeature LanguageFeature.LowerSimpleMappingsInComprehensionsToDirectCallsToMap
+                g.langVersion.SupportsFeature LanguageFeature.LowerSimpleMappingsInComprehensionsToFastLoops
                 ->
                 Some (cont (List.mkMap tcVal g amap m ranges list overallElemTy loopVal body))
 
@@ -669,7 +669,7 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap ilTyForTy overallExpr
             match overallSeqExpr with
             // [|for … in xs -> …|] (* When xs is an array. *)
             | SimpleMapping g (cont, (ty1, ty2, Array g array, _, loopVal, body, ranges)) when
-                g.langVersion.SupportsFeature LanguageFeature.LowerSimpleMappingsInComprehensionsToDirectCallsToMap
+                g.langVersion.SupportsFeature LanguageFeature.LowerSimpleMappingsInComprehensionsToFastLoops
                 ->
                 Some (cont (Array.mkMap g m ranges array (ilTyForTy ty1) (ilTyForTy ty2) overallElemTy loopVal body))
 

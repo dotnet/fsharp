@@ -332,6 +332,8 @@ type SynTypeConstraint =
 
     | WhereTyparSupportsNull of typar: SynTypar * range: range
 
+    | WhereTyparNotSupportsNull of genericName: SynTypar * range: range
+
     | WhereTyparIsComparable of typar: SynTypar * range: range
 
     | WhereTyparIsEquatable of typar: SynTypar * range: range
@@ -354,6 +356,7 @@ type SynTypeConstraint =
         | WhereTyparIsReferenceType(range = range)
         | WhereTyparIsUnmanaged(range = range)
         | WhereTyparSupportsNull(range = range)
+        | WhereTyparNotSupportsNull(range = range)
         | WhereTyparIsComparable(range = range)
         | WhereTyparIsEquatable(range = range)
         | WhereTyparDefaultsToType(range = range)
@@ -456,9 +459,13 @@ type SynType =
 
     | StaticConstant of constant: SynConst * range: range
 
+    | StaticConstantNull of range: range
+
     | StaticConstantExpr of expr: SynExpr * range: range
 
     | StaticConstantNamed of ident: SynType * value: SynType * range: range
+
+    | WithNull of innerType: SynType * ambivalent: bool * range: range
 
     | Paren of innerType: SynType * range: range
 
@@ -482,9 +489,11 @@ type SynType =
         | SynType.Anon(range = m)
         | SynType.WithGlobalConstraints(range = m)
         | SynType.StaticConstant(range = m)
+        | SynType.StaticConstantNull(range = m)
         | SynType.StaticConstantExpr(range = m)
         | SynType.StaticConstantNamed(range = m)
         | SynType.HashConstraint(range = m)
+        | SynType.WithNull(range = m)
         | SynType.MeasurePower(range = m)
         | SynType.Paren(range = m)
         | SynType.SignatureParameter(range = m)

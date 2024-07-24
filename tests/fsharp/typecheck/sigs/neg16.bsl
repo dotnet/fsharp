@@ -3,8 +3,6 @@ neg16.fs(7,13,7,16): typecheck error FS0644: Namespaces cannot contain extension
 
 neg16.fs(23,10,23,11): typecheck error FS0935: Types with the 'AllowNullLiteral' attribute may only inherit from or implement types which also allow the use of the null literal
 
-neg16.fs(23,10,23,11): typecheck error FS0935: Types with the 'AllowNullLiteral' attribute may only inherit from or implement types which also allow the use of the null literal
-
 neg16.fs(35,10,35,11): typecheck error FS0934: Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute
 
 neg16.fs(38,10,38,11): typecheck error FS0934: Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute
