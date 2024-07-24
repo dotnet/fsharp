@@ -877,6 +877,11 @@
         <target state="translated">언어 버전에 허용되는 값을 표시합니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsGraphTypeChecking">
+        <source>Use graph typechecking.</source>
+        <target state="new">Use graph typechecking.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--standalone or --staticlink' with '--refonly or --refout'.</source>
         <target state="translated">참조 어셈블리 내보내기를 잘못 사용했습니다. '--refonly 또는 --refout'과 함께 '--standalone 또는 --staticlink'를 사용하지 마세요.</target>
@@ -890,6 +895,21 @@
       <trans-unit id="optsOptimizationData">
         <source>Specify included optimization information, the default is file. Important for distributed libraries.</source>
         <target state="translated">포함된 최적화 정보를 지정합니다. 기본값은 파일입니다. 분산 라이브러리에 중요합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsParallelIlxGen">
+        <source>Enable parallel IL generation.</source>
+        <target state="new">Enable parallel IL generation.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsParallelOptimization">
+        <source>Enable parallel optimization.</source>
+        <target state="new">Enable parallel optimization.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsParallelReferenceResolution">
+        <source>Enable parallel reference resolution.</source>
+        <target state="new">Enable parallel reference resolution.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPdbMatchesOutputFileName">

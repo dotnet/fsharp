@@ -877,6 +877,11 @@
         <target state="translated">言語バージョンで許可されている値を表示します。</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsGraphTypeChecking">
+        <source>Use graph typechecking.</source>
+        <target state="new">Use graph typechecking.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--standalone or --staticlink' with '--refonly or --refout'.</source>
         <target state="translated">参照アセンブリの出力の使用が無効です。'--standalone または --staticlink' を '--relabelly または --refout' と共に使用しないでください。</target>
@@ -890,6 +895,21 @@
       <trans-unit id="optsOptimizationData">
         <source>Specify included optimization information, the default is file. Important for distributed libraries.</source>
         <target state="translated">含まれる最適化情報を指定します。既定値は file です。分散ライブラリの場合は重要です。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsParallelIlxGen">
+        <source>Enable parallel IL generation.</source>
+        <target state="new">Enable parallel IL generation.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsParallelOptimization">
+        <source>Enable parallel optimization.</source>
+        <target state="new">Enable parallel optimization.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsParallelReferenceResolution">
+        <source>Enable parallel reference resolution.</source>
+        <target state="new">Enable parallel reference resolution.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPdbMatchesOutputFileName">

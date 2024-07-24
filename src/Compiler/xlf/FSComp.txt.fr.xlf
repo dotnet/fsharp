@@ -877,6 +877,11 @@
         <target state="translated">Affichez les valeurs autorisées pour la version du langage.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsGraphTypeChecking">
+        <source>Use graph typechecking.</source>
+        <target state="new">Use graph typechecking.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--standalone or --staticlink' with '--refonly or --refout'.</source>
         <target state="translated">Utilisation non valide de l’émission d’un assembly de référence, n’utilisez pas '--standalone ou --staticlink' avec '--refonly ou --refout'.</target>
@@ -890,6 +895,21 @@
       <trans-unit id="optsOptimizationData">
         <source>Specify included optimization information, the default is file. Important for distributed libraries.</source>
         <target state="translated">Spécifiez les informations d’optimisation incluses, la valeur par défaut est le fichier. Important pour les bibliothèques distribuées.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsParallelIlxGen">
+        <source>Enable parallel IL generation.</source>
+        <target state="new">Enable parallel IL generation.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsParallelOptimization">
+        <source>Enable parallel optimization.</source>
+        <target state="new">Enable parallel optimization.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsParallelReferenceResolution">
+        <source>Enable parallel reference resolution.</source>
+        <target state="new">Enable parallel reference resolution.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPdbMatchesOutputFileName">
