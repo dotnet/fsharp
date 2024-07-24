@@ -810,7 +810,7 @@ type TcConfigBuilder =
             sdkDirOverride = sdkDirOverride
             xmlDocInfoLoader = None
             exiter = QuitProcessExiter
-            parallelReferenceResolution = ParallelReferenceResolution.On
+            parallelReferenceResolution = ParallelReferenceResolution.Off
             captureIdentifiersWhenParsing = false
             typeCheckingConfig =
                 {

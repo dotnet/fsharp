@@ -98,7 +98,7 @@ type public Fsc() as this =
     let mutable graphTypeChecking: bool = true
     let mutable parallelOptimization: bool = true
     let mutable parallelIlxGen: bool = false
-    let mutable parallelReferenceResolution: bool = true
+    let mutable parallelReferenceResolution: bool = false
 
     /// Trim whitespace ... spaces, tabs, newlines,returns, Double quotes and single quotes
     let wsCharsToTrim = [| ' '; '\t'; '\"'; '\'' |]
