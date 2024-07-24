@@ -63,7 +63,10 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 --pathmap:<path=sourcePath;...>          Maps physical paths to source path names output by the compiler
 --crossoptimize[+|-]                     Enable or disable cross-module optimizations
 --reflectionfree                         Disable implicit generation of constructs using reflection
-
+--graphtypechecking[+|-]                 Use graph typechecking.
+--paralleloptimization[+|-]              Enable parallel optimization.
+--parallelilxgen[+|-]                    Enable parallel IL generation.
+--parallelreferenceresolution[+|-]       Enable parallel reference resolution.
 
                 - ERRORS AND WARNINGS -
 --warnaserror[+|-]                       Report all warnings as errors

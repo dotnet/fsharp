@@ -95,6 +95,10 @@ type public Fsc() as this =
     let mutable vslcid: string MaybeNull = null
     let mutable utf8output: bool = false
     let mutable useReflectionFreeCodeGen: bool = false
+    let mutable graphTypeChecking: bool = true
+    let mutable parallelOptimization: bool = true
+    let mutable parallelIlxGen: bool = false
+    let mutable parallelReferenceResolution: bool = true
 
     /// Trim whitespace ... spaces, tabs, newlines,returns, Double quotes and single quotes
     let wsCharsToTrim = [| ' '; '\t'; '\"'; '\'' |]
@@ -194,6 +198,30 @@ type public Fsc() as this =
             builder.AppendSwitch("--optimize+")
         else
             builder.AppendSwitch("--optimize-")
+
+        // graphbasedchecking
+        if graphTypeChecking then
+            builder.AppendSwitch("--graphtypechecking+")
+        else
+            builder.AppendSwitch("--graphtypechecking-")
+
+        // paralleloptimization
+        if parallelOptimization then
+            builder.AppendSwitch("--paralleloptimization+")
+        else
+            builder.AppendSwitch("--paralleloptimization-")
+
+        // parallelilxgen
+        if parallelIlxGen then
+            builder.AppendSwitch("--parallelilxgen+")
+        else
+            builder.AppendSwitch("--parallelilxgen-")
+
+        // parallelreferenceresolution
+        if parallelReferenceResolution then
+            builder.AppendSwitch("--parallelreferenceresolution+")
+        else
+            builder.AppendSwitch("--parallelreferenceresolution-")
 
         // realsig
         if realsig then

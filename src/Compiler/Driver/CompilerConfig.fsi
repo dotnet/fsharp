@@ -438,6 +438,8 @@ type TcConfigBuilder =
 
         mutable parallelIlxGen: bool
 
+        mutable graphTypeChecking: bool
+
         mutable emitMetadataAssembly: MetadataAssemblyGeneration
 
         mutable preferredUiLang: string option
@@ -771,6 +773,8 @@ type TcConfig =
     member concurrentBuild: bool
 
     member parallelIlxGen: bool
+
+    member graphTypeChecking: bool
 
     member emitMetadataAssembly: MetadataAssemblyGeneration
 

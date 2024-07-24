@@ -529,6 +529,7 @@ type TcConfigBuilder =
         mutable deterministic: bool
         mutable concurrentBuild: bool
         mutable parallelIlxGen: bool
+        mutable graphTypeChecking: bool
         mutable emitMetadataAssembly: MetadataAssemblyGeneration
         mutable preferredUiLang: string option
         mutable lcid: int option
@@ -762,18 +763,12 @@ type TcConfigBuilder =
             doTLR = false
             doFinalSimplify = false
             optsOn = false
-            optSettings =
-                { OptimizationSettings.Defaults with
-                    processingMode =
-                        if FSharpExperimentalFeaturesEnabledAutomatically then
-                            OptimizationProcessingMode.Parallel
-                        else
-                            OptimizationProcessingMode.Sequential
-                }
+            optSettings = OptimizationSettings.Defaults
             emitTailcalls = true
             deterministic = false
             concurrentBuild = true
-            parallelIlxGen = FSharpExperimentalFeaturesEnabledAutomatically
+            parallelIlxGen = false
+            graphTypeChecking = true
             emitMetadataAssembly = MetadataAssemblyGeneration.None
             preferredUiLang = None
             lcid = None
@@ -815,15 +810,11 @@ type TcConfigBuilder =
             sdkDirOverride = sdkDirOverride
             xmlDocInfoLoader = None
             exiter = QuitProcessExiter
-            parallelReferenceResolution = ParallelReferenceResolution.Off
+            parallelReferenceResolution = ParallelReferenceResolution.On
             captureIdentifiersWhenParsing = false
             typeCheckingConfig =
                 {
-                    TypeCheckingConfig.Mode =
-                        if FSharpExperimentalFeaturesEnabledAutomatically then
-                            TypeCheckingMode.Graph
-                        else
-                            TypeCheckingMode.Sequential
+                    TypeCheckingConfig.Mode = TypeCheckingMode.Graph
                     DumpGraph = false
                 }
             dumpSignatureData = false
@@ -1336,6 +1327,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.deterministic = data.deterministic
     member _.concurrentBuild = data.concurrentBuild
     member _.parallelIlxGen = data.parallelIlxGen
+    member _.graphTypeChecking = data.graphTypeChecking
     member _.emitMetadataAssembly = data.emitMetadataAssembly
     member _.pathMap = data.pathMap
     member _.langVersion = data.langVersion
