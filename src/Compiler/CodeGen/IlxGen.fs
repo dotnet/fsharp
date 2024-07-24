@@ -2082,14 +2082,7 @@ type AnonTypeGenerationTable() =
                 mkILFields
                     [
                         for _, fldName, fldTy in flds ->
-
-                            let access =
-                                if cenv.options.isInteractive && cenv.options.fsiMultiAssemblyEmit then
-                                    ILMemberAccess.Public
-                                else
-                                    ILMemberAccess.Private
-
-                            let fdef = mkILInstanceField (fldName, fldTy, None, access)
+                            let fdef = mkILInstanceField (fldName, fldTy, None, ILMemberAccess.Private)
                             let attrs = [ g.CompilerGeneratedAttribute; g.DebuggerBrowsableNeverAttribute ]
                             fdef.With(customAttrs = mkILCustomAttrs attrs)
                     ]
@@ -11059,13 +11052,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                         // The IL field is hidden if the property/field is hidden OR we're using a property
                         // AND the field is not mutable (because we can take the address of a mutable field).
                         // Otherwise fields are always accessed via their property getters/setters
-                        //
-                        // Additionally, don't hide fields for multiemit in F# Interactive
-                        let isFieldHidden =
-                            isPropHidden
-                            || (not useGenuineField
-                                && not isFSharpMutable
-                                && not (cenv.options.isInteractive && cenv.options.fsiMultiAssemblyEmit))
+                        let isFieldHidden = isPropHidden || (not useGenuineField && not isFSharpMutable)
 
                         let extraAttribs =
                             match tyconRepr with
