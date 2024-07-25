@@ -54,11 +54,11 @@ let ``Doesn't throw when the error range extends to the end of the source text``
     let code =
         """
 module Microsoft =
-module FSharp =
-    module Core =
-        module LanguagePrimitives =
-            module IntrinsicFunctions =
-                let GetArray2D _ _ = 99
+    module FSharp =
+        module Core =
+            module LanguagePrimitives =
+                module IntrinsicFunctions =
+                    let GetArray2D _ _ = 99
 
 let a = Array2D.init 10 10 (+)
 a[5, 5]"""
