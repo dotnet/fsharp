@@ -77,7 +77,7 @@ extends [runtime]System.Object
 
   }
 
-  .method assembly specialname static class [runtime]System.Tuple`2<bool,int32> get_patternInput@9() cil managed
+  .method public specialname static class [runtime]System.Tuple`2<bool,int32> get_patternInput@9() cil managed
   {
 
     .maxstack  8
@@ -102,7 +102,7 @@ extends [runtime]System.Object
     IL_0006:  ret
   }
 
-  .method assembly specialname static class [runtime]System.Tuple`2<bool,int32> 'get_patternInput@10-1'() cil managed
+  .method public specialname static class [runtime]System.Tuple`2<bool,int32> 'get_patternInput@10-1'() cil managed
   {
 
     .maxstack  8
@@ -256,7 +256,7 @@ let (_:bool), (_:int) = Thing.Do()
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly int32 'outArg@10-1'
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .method assembly specialname static class [runtime]System.Tuple`2<bool,int32> get_patternInput@9() cil managed
+  .method public specialname static class [runtime]System.Tuple`2<bool,int32> get_patternInput@9() cil managed
   {
     
     .maxstack  8
@@ -281,7 +281,7 @@ let (_:bool), (_:int) = Thing.Do()
     IL_0006:  ret
   } 
 
-  .method assembly specialname static class [runtime]System.Tuple`2<bool,int32> 'get_patternInput@10-1'() cil managed
+  .method public specialname static class [runtime]System.Tuple`2<bool,int32> 'get_patternInput@10-1'() cil managed
   {
     
     .maxstack  8
