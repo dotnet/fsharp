@@ -92,7 +92,6 @@ Module1.Struct(1, 2) = Module1.Struct(2, 3) |> ignore"""
   } 
 """ ]
 
-
     [<InlineData(true)>]        // RealSig
     [<InlineData(false)>]       // Regular
     [<Theory>]
@@ -119,8 +118,62 @@ open Module1
 
 Value.Zero = Value.Create 0 |> ignore"""
 
+            |> withReferences [module1]
+            |> withOptimize
+
+        module1
+        |> compile
+        |> shouldSucceed
+        |> withILContains ["""
+    .method public hidebysig instance bool Equals(class Module1/Value obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  brfalse.s  IL_0017
+
+      IL_0003:  ldarg.1
+      IL_0004:  brfalse.s  IL_0015
+
+      IL_0006:  ldarg.0
+      IL_0007:  ldfld      uint32 Module1/Value::value@
+      IL_000c:  ldarg.1
+      IL_000d:  ldfld      uint32 Module1/Value::value@
+      IL_0012:  ceq
+      IL_0014:  ret
+
+      IL_0015:  ldc.i4.0
+      IL_0016:  ret
+
+      IL_0017:  ldarg.1
+      IL_0018:  ldnull
+      IL_0019:  cgt.un
+      IL_001b:  ldc.i4.0
+      IL_001c:  ceq
+      IL_001e:  ret
+    } 
+        """]
+        
         module2
-        |> withReferences [module1]
-        |> withOptimize
         |> compileExeAndRun
         |> shouldSucceed
+        |> verifyIL ["""
+  .method assembly specialname static void staticInitialization@() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  call       class [module1]Module1/Value [module1]Module1/Value::get_Zero()
+    IL_0005:  stsfld     class [module1]Module1/Value Program::x@1
+    IL_000a:  ldc.i4.0
+    IL_000b:  call       class [module1]Module1/Value [module1]Module1/Value::Create(int32)
+    IL_0010:  stsfld     class [module1]Module1/Value Program::y@1
+    IL_0015:  call       class [module1]Module1/Value Program::get_x@1()
+    IL_001a:  call       class [module1]Module1/Value Program::get_y@1()
+    IL_001f:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
+    IL_0024:  callvirt   instance bool [module1]Module1/Value::Equals(class [module1]Module1/Value,
+                                                                      class [runtime]System.Collections.IEqualityComparer)
+    IL_0029:  stsfld     bool Program::arg@1
+    IL_002e:  ret
+  } 
+        """]
