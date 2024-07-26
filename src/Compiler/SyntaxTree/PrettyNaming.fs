@@ -363,8 +363,7 @@ let IsOperatorDisplayName (name: string) =
 
 let IsPossibleOpName (name: string) = name.StartsWithOrdinal(opNamePrefix)
 
-let ordinalStringComparer: IEqualityComparer<string> =
-    StringComparer.Ordinal
+let ordinalStringComparer: IEqualityComparer<string> = StringComparer.Ordinal
 
 /// Compiles a custom operator into a mangled operator name.
 /// For example, "!%" becomes "op_DereferencePercent".
