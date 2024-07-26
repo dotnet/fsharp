@@ -1699,7 +1699,6 @@ let deleteScriptingSymbols () =
     with _ ->
         ()
 
-//TODO nullness - this should not warn, since F# impl of Event.add is safe
 AppDomain.CurrentDomain.ProcessExit
 |> Event.add (fun _ -> deleteScriptingSymbols ())
 

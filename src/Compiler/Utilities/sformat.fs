@@ -15,8 +15,10 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 #endif
 
 #nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
-#nowarn "3261" // TODO nullness
-#nowarn "3262" // TODO nullness
+// 3261 and 3262 Nullness warnings - this waits for LKG update, since this file is included in fsharp.core and fsharp.compiler.service and goes via proto build.
+// Supporting all possible combinations of available library+compiler versions would complicate code in this source files too much at the moment.
+#nowarn "3261"
+#nowarn "3262"
 
 // Breakable block layout implementation.
 // This is a fresh implementation of pre-existing ideas.

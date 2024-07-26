@@ -100,7 +100,7 @@ module internal DiagnosticMessage =
         // validate that the message string exists
         let fmtString = fmt.Value
 
-        if isNull messageString then
+        if isNull (box messageString) then
             System.Diagnostics.Debug.Assert(false, sprintf "**DECLARED MESSAGE ERROR** String resource %s does not exist" messageID)
             messageString <- ""
 

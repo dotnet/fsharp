@@ -314,7 +314,7 @@ open Printf
         // PERF: this technique is a bit slow (e.g. in simple cases, like 'sprintf ""%x""')
         mkFunctionValue tys (fun inp -> impl rty inp)
 
-    static let capture1 (fmt:string) i args ty (go: obj list -> System.Type -> int -> obj) : obj =
+    static let capture1 (fmt:string) i args ty (go: objnull list -> System.Type -> int -> obj) : obj =
         match fmt.[i] with
         | '%' -> go args ty (i+1)
         | 'd'
