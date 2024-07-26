@@ -12,7 +12,7 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.BuildGraph
 
 
-let timeout = TimeSpan.FromSeconds 10
+let timeout = TimeSpan.FromSeconds 10.
 
 let waitFor (mre: ManualResetEvent) = 
     if not <| mre.WaitOne timeout then 

@@ -703,10 +703,6 @@ let CheckNoReraise cenv freesOpt (body: Expr) =
         if fvs.UsesUnboundRethrow then
             errorR(Error(FSComp.SR.chkErrorContainsCallToRethrow(), body.Range))
 
-/// Check if a function is a quotation splice operator
-let isSpliceOperator g v = valRefEq g v g.splice_expr_vref || valRefEq g v g.splice_raw_expr_vref
-
-
 /// Examples:
 /// I<int> & I<int> => ExactlyEqual.
 /// I<int> & I<string> => NotEqual.
@@ -776,8 +772,8 @@ let rec CheckExprNoByrefs cenv env expr =
 and CheckValRef (cenv: cenv) (env: env) v m (ctxt: PermitByRefExpr) =
 
     if cenv.reportErrors then
-        if isSpliceOperator cenv.g v && not env.quote then errorR(Error(FSComp.SR.chkSplicingOnlyInQuotations(), m))
-        if isSpliceOperator cenv.g v then errorR(Error(FSComp.SR.chkNoFirstClassSplicing(), m))
+        if cenv.g.isSpliceOperator v && not env.quote then errorR(Error(FSComp.SR.chkSplicingOnlyInQuotations(), m))
+        if cenv.g.isSpliceOperator v then errorR(Error(FSComp.SR.chkNoFirstClassSplicing(), m))
         if valRefEq cenv.g v cenv.g.addrof_vref  then errorR(Error(FSComp.SR.chkNoFirstClassAddressOf(), m))
         if valRefEq cenv.g v cenv.g.reraise_vref then errorR(Error(FSComp.SR.chkNoFirstClassRethrow(), m))
         if valRefEq cenv.g v cenv.g.nameof_vref then errorR(Error(FSComp.SR.chkNoFirstClassNameOf(), m))
@@ -1192,7 +1188,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (ctxt: PermitByRefExpr) : Limit =
         NoLimit
 
     // Allow '%expr' in quotations
-    | Expr.App (Expr.Val (vref, _, _), _, tinst, [arg], m) when isSpliceOperator g vref && env.quote ->
+    | Expr.App (Expr.Val (vref, _, _), _, tinst, [arg], m) when g.isSpliceOperator vref && env.quote ->
         CheckSpliceApplication cenv env (tinst, arg, m)
 
     // Check an application

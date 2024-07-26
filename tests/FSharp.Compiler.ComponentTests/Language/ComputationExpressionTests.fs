@@ -135,3 +135,20 @@ let _pythags = seqbuilder {{
         |> FSharp     
         |> typecheck
         |> shouldSucceed
+
+    [<Fact>]
+    let ``A CE returned from type member succeeds``() =
+        FSharp """
+module ComputationExpressionTests
+type Builder () =
+    member _.Bind(x, f) = f x
+    member _.Return(x) = x
+
+type A =
+    static member Prop = Builder ()
+
+let x = A.Prop { return 0 }
+        """
+        |> compile
+        |> shouldSucceed
+        |> ignore

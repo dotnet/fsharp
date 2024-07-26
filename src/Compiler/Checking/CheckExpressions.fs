@@ -2822,10 +2822,7 @@ let TcVal checkAttributes (cenv: cenv) env (tpenv: UnscopedTyparEnv) (vref: ValR
                   let exprForVal = Expr.Val (vref, vrefFlags, m)
                   let exprForVal = mkTyAppExpr m (exprForVal, vTy) tinst
                   let isSpecial =
-                      (match vrefFlags with NormalValUse | PossibleConstrainedCall _ -> false | _ -> true) ||
-                      valRefEq g vref g.splice_expr_vref ||
-                      valRefEq g vref g.splice_raw_expr_vref
-
+                      (match vrefFlags with NormalValUse | PossibleConstrainedCall _ -> false | _ -> true) || g.isSpliceOperator vref
                   let exprForVal = RecordUseOfRecValue cenv valRecInfo vref exprForVal m
 
                   tpsorig, exprForVal, isSpecial, tau, tinst, tpenv
