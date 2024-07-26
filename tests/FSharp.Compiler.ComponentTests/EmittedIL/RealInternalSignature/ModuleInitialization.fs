@@ -8,10 +8,6 @@ open FSharp.Test.Compiler
 
 module ModuleInitialization =
 
-    let withRealInternalSignature realSig compilation =
-        compilation
-        |> withOptions [if realSig then "--realsig+" else "--realsig-" ]
-
     let simplePublicModule =
         FSharp """
 namespace MyLibraryNamespace

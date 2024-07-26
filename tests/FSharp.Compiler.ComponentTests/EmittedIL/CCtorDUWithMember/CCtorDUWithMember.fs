@@ -81,10 +81,6 @@ module CCtorDUWithMember =
         |> withAdditionalSourceFile (SourceFromPath (__SOURCE_DIRECTORY__ ++ "CCtorDUWithMember04.fs"))
         |> verifyCompilation 
 
-    let withRealInternalSignature realSig compilation =
-        compilation
-        |> withOptions [if realSig then "--realsig+" else "--realsig-" ]
-
     [<InlineData(true)>]        // RealSig
     [<InlineData(false)>]       // Regular
     [<Theory>]

@@ -91,3 +91,36 @@ Module1.Struct(1, 2) = Module1.Struct(2, 3) |> ignore"""
     IL_0031:  ret
   } 
 """ ]
+
+
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let ``Another assembly with private type`` (realsig) =
+        let module1 =
+            FSharpWithFileName "Module1.fs"
+                """
+module Module1
+    
+type Value =
+    private { value: uint32 }
+
+    static member Zero = { value = 0u }
+    static member Create(value: int) = { value = uint value } """
+            |> withRealInternalSignature realsig
+            |> withOptimize
+            |> asLibrary
+            |> withName "module1"
+
+        let module2 = 
+            FSharpWithFileName "Program.fs"
+                """
+open Module1
+
+Value.Zero = Value.Create 0 |> ignore"""
+
+        module2
+        |> withReferences [module1]
+        |> withOptimize
+        |> compileExeAndRun
+        |> shouldSucceed

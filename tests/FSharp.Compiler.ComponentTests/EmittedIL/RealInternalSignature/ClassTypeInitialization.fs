@@ -8,10 +8,6 @@ open FSharp.Test.Compiler
 
 module ClassTypeInitialization =
 
-    let withRealInternalSignature realSig compilation =
-        compilation
-        |> withOptions [if realSig then "--realsig+" else "--realsig-" ]
-
     [<InlineData(true)>]        // RealSig
     [<InlineData(false)>]       // Regular
     [<Theory>]

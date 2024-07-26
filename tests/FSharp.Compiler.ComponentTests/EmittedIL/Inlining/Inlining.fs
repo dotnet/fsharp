@@ -16,10 +16,6 @@ module Inlining =
         |> ignoreWarnings
         |> verifyILBaseline
 
-    let withRealInternalSignature realSig compilation =
-        compilation
-        |> withOptions [if realSig then "--realsig+" else "--realsig-" ]
-
     // SOURCE=Match01.fs SCFLAGS="-a --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Match01.dll"	# Match01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Match01_RealInternalSignatureOn.fs"|])>]
     let ``Match01_RealInternalSignatureOn_fs`` compilation =
