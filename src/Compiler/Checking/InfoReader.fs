@@ -736,7 +736,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
               // It would matter for different generic instantiations of the same type, but we don't cache that here - TType_app is always matched for `[]` typars.
               canMemoize=(fun (_flags, _: range, ty) -> 
                                     match stripTyEqns g ty with 
-                                    | TType_app(tcref, [], _) -> tcref.TypeContents.tcaug_closed // TODO NULLNESS: consider whether ignoring _nullness is valid here
+                                    | TType_app(tcref, [], _) -> tcref.TypeContents.tcaug_closed
                                     | _ -> false),
               
               keyComparer=
@@ -745,13 +745,13 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                                     // Ignoring the ranges - that's OK.
                                     flagsEq.GetHashCode flags + 
                                     (match stripTyEqns g ty with 
-                                     | TType_app(tcref, [], _) -> hash tcref.LogicalName  // TODO NULLNESS: consider whether ignoring _nullness is valid here
+                                     | TType_app(tcref, [], _) -> hash tcref.LogicalName
                                      | _ -> 0)
                        member _.Equals((flags1, _, ty1), (flags2, _, ty2)) =
                                     // Ignoring the ranges - that's OK.
                                     flagsEq.Equals(flags1, flags2) && 
                                     match stripTyEqns g ty1, stripTyEqns g ty2 with 
-                                    | TType_app(tcref1, [], _),TType_app(tcref2, [], _) -> tyconRefEq g tcref1 tcref2  // TODO NULLNESS: consider whether ignoring _nullness is valid here
+                                    | TType_app(tcref1, [], _),TType_app(tcref2, [], _) -> tyconRefEq g tcref1 tcref2
                                     | _ -> false })
     
     let FindImplicitConversionsUncached (ad, m, ty) = 
