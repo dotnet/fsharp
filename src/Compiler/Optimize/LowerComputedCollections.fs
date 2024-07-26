@@ -673,7 +673,7 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap ilTyForTy overallExpr
             match overallSeqExpr with
             // [for … in xs -> …] (* When xs is a list. *)
             | SimpleMapping g (cont, (_, _, List g list, _, loopVal, body, ranges)) when
-                g.langVersion.SupportsFeature LanguageFeature.LowerSimpleMappingsInComprehensionsToDirectCallsToMap
+                g.langVersion.SupportsFeature LanguageFeature.LowerSimpleMappingsInComprehensionsToFastLoops
                 ->
                 Some (cont (List.mkMap tcVal g amap m ranges list overallElemTy loopVal body))
 
@@ -702,7 +702,7 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap ilTyForTy overallExpr
             match overallSeqExpr with
             // [|for … in xs -> …|] (* When xs is an array. *)
             | SimpleMapping g (cont, (ty1, ty2, Array g array, _, loopVal, body, ranges)) when
-                g.langVersion.SupportsFeature LanguageFeature.LowerSimpleMappingsInComprehensionsToDirectCallsToMap
+                g.langVersion.SupportsFeature LanguageFeature.LowerSimpleMappingsInComprehensionsToFastLoops
                 ->
                 Some (cont (Array.mkMap g m ranges array (ilTyForTy ty1) (ilTyForTy ty2) overallElemTy loopVal body))
 

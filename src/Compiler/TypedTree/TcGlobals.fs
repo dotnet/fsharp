@@ -15,7 +15,6 @@ open System.Diagnostics
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Features
 open FSharp.Compiler.IO
@@ -24,9 +23,7 @@ open FSharp.Compiler.Text.FileIndex
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
-
 open Internal.Utilities
-open System.Reflection
 
 let internal DummyFileNameForRangesWithoutASpecificLocation = startupFileName
 let private envRange = rangeN DummyFileNameForRangesWithoutASpecificLocation 0
@@ -65,7 +62,6 @@ module FSharpLib =
     let LanguagePrimitivesName     = Root + ".Core.LanguagePrimitives"
     let CompilerServicesName       = Root + ".Core.CompilerServices"
     let LinqRuntimeHelpersName     = Root + ".Linq.RuntimeHelpers"
-    let RuntimeHelpersName         = Root + ".Core.CompilerServices.RuntimeHelpers"
     let ExtraTopLevelOperatorsName = Root + ".Core.ExtraTopLevelOperators"
     let NativeInteropName          = Root + ".NativeInterop"
 
@@ -77,7 +73,6 @@ module FSharpLib =
     let NativeInteropPath          = splitNamespace NativeInteropName |> Array.ofList
     let CompilerServicesPath       = splitNamespace CompilerServicesName |> Array.ofList
     let LinqRuntimeHelpersPath     = splitNamespace LinqRuntimeHelpersName |> Array.ofList
-    let RuntimeHelpersPath         = splitNamespace RuntimeHelpersName |> Array.ofList
     let QuotationsPath             = splitNamespace QuotationsName |> Array.ofList
 
     let RootPathArray              = RootPath |> Array.ofList
@@ -218,7 +213,6 @@ type TcGlobals(
   let mk_MFLinq_tcref             ccu n = mkNonLocalTyconRef2 ccu LinqPathArray n
   let mk_MFCollections_tcref      ccu n = mkNonLocalTyconRef2 ccu CollectionsPathArray n
   let mk_MFCompilerServices_tcref ccu n = mkNonLocalTyconRef2 ccu CompilerServicesPath n
-  let mk_MFRuntimeHelpers_tcref   ccu n = mkNonLocalTyconRef2 ccu RuntimeHelpersPath n
   let mk_MFControl_tcref          ccu n = mkNonLocalTyconRef2 ccu ControlPathArray n
 
   let tryFindSysTypeCcu path nm =
@@ -843,7 +837,6 @@ type TcGlobals(
   let v_range_step_generic_op_info = makeIntrinsicValRef(fslib_MFOperatorIntrinsics_nleref,                    "RangeStepGeneric"                     , None                 , None          , [vara;varb], ([[varaTy];[varbTy];[varaTy]], mkSeqTy varaTy))
 
   let v_array_length_info          = makeIntrinsicValRef(fslib_MFArrayModule_nleref,                           "length"                               , None                 , Some "Length" , [vara],     ([[mkArrayType 1 varaTy]], v_int_ty))
-  let v_array_map_info             = makeIntrinsicValRef(fslib_MFArrayModule_nleref,                           "map"                                  , None                 , Some "Map"    , [vara; varb], ([[varaTy --> varbTy]; [mkArrayType 1 varaTy]], mkArrayType 1 varbTy))
   let v_array_get_info             = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "GetArray"                             , None                 , None          , [vara],     ([[mkArrayType 1 varaTy]; [v_int_ty]], varaTy))
   let v_array2D_get_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "GetArray2D"                           , None                 , None          , [vara],     ([[mkArrayType 2 varaTy];[v_int_ty]; [v_int_ty]], varaTy))
   let v_array3D_get_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "GetArray3D"                           , None                 , None          , [vara],     ([[mkArrayType 3 varaTy];[v_int_ty]; [v_int_ty]; [v_int_ty]], varaTy))
@@ -852,8 +845,6 @@ type TcGlobals(
   let v_array2D_set_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "SetArray2D"                           , None                 , None          , [vara],     ([[mkArrayType 2 varaTy];[v_int_ty]; [v_int_ty]; [varaTy]], v_unit_ty))
   let v_array3D_set_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "SetArray3D"                           , None                 , None          , [vara],     ([[mkArrayType 3 varaTy];[v_int_ty]; [v_int_ty]; [v_int_ty]; [varaTy]], v_unit_ty))
   let v_array4D_set_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "SetArray4D"                           , None                 , None          , [vara],     ([[mkArrayType 4 varaTy];[v_int_ty]; [v_int_ty]; [v_int_ty]; [v_int_ty]; [varaTy]], v_unit_ty))
-
-  let v_list_map_info              = makeIntrinsicValRef(fslib_MFListModule_nleref,                            "map"                                  , None                 , Some "Map"    , [vara; varb], ([[varaTy --> varbTy]; [mkListTy varaTy]], mkListTy varbTy))
 
   let v_option_toNullable_info     = makeIntrinsicValRef(fslib_MFOptionModule_nleref,                          "toNullable"                           , None                 , Some "ToNullable" , [vara],     ([[mkOptionTy varaTy]], mkNullableTy varaTy))
   let v_option_defaultValue_info   = makeIntrinsicValRef(fslib_MFOptionModule_nleref,                          "defaultValue"                         , None                 , Some "DefaultValue" , [vara],     ([[varaTy]; [mkOptionTy varaTy]], varaTy))
@@ -1756,11 +1747,9 @@ type TcGlobals(
   member val range_generic_op_vref      = ValRefForIntrinsic v_range_generic_op_info
   member val range_step_generic_op_vref = ValRefForIntrinsic v_range_step_generic_op_info
   member val array_get_vref             = ValRefForIntrinsic v_array_get_info
-  member val array_map_vref             = ValRefForIntrinsic v_array_map_info
   member val array2D_get_vref           = ValRefForIntrinsic v_array2D_get_info
   member val array3D_get_vref           = ValRefForIntrinsic v_array3D_get_info
   member val array4D_get_vref           = ValRefForIntrinsic v_array4D_get_info
-  member val list_map_vref              = ValRefForIntrinsic v_list_map_info
   member val seq_singleton_vref         = ValRefForIntrinsic v_seq_singleton_info
   member val seq_collect_vref           = ValRefForIntrinsic v_seq_collect_info
   member val nativeptr_tobyref_vref     = ValRefForIntrinsic v_nativeptr_tobyref_info
@@ -1821,7 +1810,6 @@ type TcGlobals(
   member _.seq_to_array_info          = v_seq_to_array_info
 
   member _.array_length_info          = v_array_length_info
-  member _.array_map_info             = v_array_map_info
   member _.array_get_info             = v_array_get_info
   member _.array2D_get_info           = v_array2D_get_info
   member _.array3D_get_info           = v_array3D_get_info
@@ -1830,8 +1818,6 @@ type TcGlobals(
   member _.array2D_set_info           = v_array2D_set_info
   member _.array3D_set_info           = v_array3D_set_info
   member _.array4D_set_info           = v_array4D_set_info
-
-  member _.list_map_info              = v_list_map_info
 
   member val option_toNullable_info     = v_option_toNullable_info
   member val option_defaultValue_info     = v_option_defaultValue_info
@@ -1892,6 +1878,10 @@ type TcGlobals(
 
   /// Indicates if we can use System.Array.Empty when emitting IL for empty array literals
   member val isArrayEmptyAvailable = v_Array_tcref.ILTyconRawMetadata.Methods.FindByName "Empty" |> List.isEmpty |> not
+
+  member g.isSpliceOperator v =
+    primValRefEq g.compilingFSharpCore g.fslibCcu v g.splice_expr_vref ||
+    primValRefEq g.compilingFSharpCore g.fslibCcu v g.splice_raw_expr_vref
 
   member _.FindSysTyconRef path nm = findSysTyconRef path nm
 

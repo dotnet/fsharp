@@ -302,7 +302,7 @@ let config configurationName envVars =
     let fsharpCoreArchitecture = "netstandard2.0"
     let fsharpBuildArchitecture = "netstandard2.0"
     let fsharpCompilerInteractiveSettingsArchitecture = "netstandard2.0"
-    let dotnetArchitecture = "net8.0"
+    let dotnetArchitecture = "net9.0"
 #if NET472
     let fscArchitecture = "net472"
     let fsiArchitecture = "net472"

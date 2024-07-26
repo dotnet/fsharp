@@ -80,7 +80,7 @@ type LanguageFeature =
     | EnforceAttributeTargets
     | LowerInterpolatedStringToConcat
     | LowerIntegralRangesToFastLoops
-    | LowerSimpleMappingsInComprehensionsToDirectCallsToMap
+    | LowerSimpleMappingsInComprehensionsToFastLoops
     | ParsedHashDirectiveArgumentNonQuotes
     | EmptyBodiedComputationExpressions
 
