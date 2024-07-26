@@ -8361,8 +8361,10 @@ and ComputeMethodAccessRestrictedBySig eenv vspec =
             vspec
 
     let isHiddenBySignatureVal =
-        if vspec.IsCompilerGenerated then false
-        else IsHiddenVal eenv.sigToImplRemapInfo vspec
+        if vspec.IsCompilerGenerated then
+            false
+        else
+            IsHiddenVal eenv.sigToImplRemapInfo vspec
 
     let isHidden =
         isHiddenBySignatureVal
