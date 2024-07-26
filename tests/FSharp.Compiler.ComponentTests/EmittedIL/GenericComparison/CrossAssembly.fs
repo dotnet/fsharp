@@ -154,6 +154,7 @@ Value.Zero = Value.Create 0 |> ignore"""
       IL_001e:  ret
     } 
         """]
+        |> ignore
         
         module2
         |> compileExeAndRun
