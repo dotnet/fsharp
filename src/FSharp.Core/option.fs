@@ -178,6 +178,18 @@ module Option =
         | Some x -> x
 #endif
 
+    [<CompiledName("OfValueOption")>]
+    let inline ofValueOption (voption: 'T voption) =
+        match voption with
+        | ValueNone -> None
+        | ValueSome x -> Some x
+
+    [<CompiledName("ToValueOption")>]
+    let inline toValueOption (option: 'T option) =
+        match option with
+        | None -> ValueNone
+        | Some x -> ValueSome x
+
 module ValueOption =
 
     [<CompiledName("GetValue")>]
@@ -355,3 +367,15 @@ module ValueOption =
         | ValueNone -> null
         | ValueSome x -> x
 #endif
+
+    [<CompiledName("OfOption")>]
+    let inline ofOption (option: 'T option) =
+        match option with
+        | None -> ValueNone
+        | Some x -> ValueSome x
+
+    [<CompiledName("ToOption")>]
+    let inline toOption (voption: 'T voption) =
+        match voption with
+        | ValueNone -> None
+        | ValueSome x -> Some x
