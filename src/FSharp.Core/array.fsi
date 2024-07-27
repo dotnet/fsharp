@@ -797,7 +797,7 @@ module Array =
     ///
     /// (inputs1, inputs2) ||> Array.exists2 (fun a b -> a > b)
     /// </code>
-    /// Evaluates to <c>false</c>
+    /// Throws <c>ArgumentException</c>
     /// </example>
     ///
     /// <example id="exists2-2">
