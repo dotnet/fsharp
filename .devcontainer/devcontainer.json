@@ -1,7 +1,7 @@
 // For format details, see https://aka.ms/vscode-remote/devcontainer.json or this file's README at:
 {
     "name": "F#",
-    "image": "mcr.microsoft.com/dotnet/sdk:9.0.100-preview.5",
+    "image": "mcr.microsoft.com/dotnet/sdk:9.0.100-preview.6",
     "features": {
         "ghcr.io/devcontainers/features/common-utils:2.4.3": {},
         "ghcr.io/devcontainers/features/git:1.2.0": {},
@@ -28,7 +28,7 @@
         }
     },
     "remoteEnv": {
-        "TARGET": "net8.0"
+        "TARGET": "net9.0"
     },
     "postCreateCommand": [ "dotnet", "build", "FSharp.Compiler.Service.sln"]
 }

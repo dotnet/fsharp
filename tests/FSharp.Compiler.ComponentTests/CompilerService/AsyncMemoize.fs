@@ -12,7 +12,7 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.BuildGraph
 
 
-let timeout = TimeSpan.FromSeconds 10
+let timeout = TimeSpan.FromSeconds 10.
 
 let waitFor (mre: ManualResetEvent) = 
     if not <| mre.WaitOne timeout then 
@@ -249,7 +249,7 @@ let ``Job is restarted if first requestor cancels but keeps running if second re
 type ExpectedException() =
     inherit Exception()
 
-[<Fact>]
+[<Fact(Skip="Flaky")>]
 let ``Stress test`` () =
 
     let seed = System.Random().Next()

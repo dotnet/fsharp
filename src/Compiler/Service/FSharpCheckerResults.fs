@@ -1358,7 +1358,8 @@ type internal TypeCheckInfo
                     match r.Item with
                     | Item.Types(_, ty :: _) when equals r.Range typeNameRange && isAppTy g ty ->
                         let superTy =
-                            (tcrefOfAppTy g ty).TypeContents.tcaug_super |> Option.defaultValue g.obj_ty
+                            (tcrefOfAppTy g ty).TypeContents.tcaug_super
+                            |> Option.defaultValue g.obj_ty_noNulls
 
                         Some(ty, superTy)
                     | _ -> None)
@@ -1368,7 +1369,7 @@ type internal TypeCheckInfo
                 |> ResizeArray.tryPick (fun r ->
                     match r.Item with
                     | Item.Types(_, ty :: _) when equals r.Range typeNameRange && isAppTy g ty ->
-                        let superTy = getTyFromTypeNamePos mTy.End |> Option.defaultValue g.obj_ty
+                        let superTy = getTyFromTypeNamePos mTy.End |> Option.defaultValue g.obj_ty_noNulls
                         Some(ty, superTy)
                     | _ -> None)
             | MethodOverrideCompletionContext.ObjExpr m ->
@@ -1376,7 +1377,7 @@ type internal TypeCheckInfo
 
                 quals
                 |> Array.tryFind (fun (_, _, _, r) -> posEq m.Start r.Start)
-                |> Option.map (fun (ty, _, _, _) -> ty, getTyFromTypeNamePos typeNameRange.End |> Option.defaultValue g.obj_ty)
+                |> Option.map (fun (ty, _, _, _) -> ty, getTyFromTypeNamePos typeNameRange.End |> Option.defaultValue g.obj_ty_noNulls)
 
         match ctx with
         | Some(ty, superTy) ->
