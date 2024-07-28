@@ -1214,15 +1214,15 @@ let slotImplMethod (final, c, slotsig) : ValMemberInfo =
         ApparentEnclosingEntity = c
     }
 
-let nonVirtualMethod mk c : ValMemberInfo =
+let nonSlotSigMethod mk c : ValMemberInfo =
     {
         ImplementedSlotSigs = []
         MemberFlags =
             {
                 IsInstance = true
                 IsDispatchSlot = false
-                IsFinal = false
-                IsOverrideOrExplicitImpl = false
+                IsFinal = true
+                IsOverrideOrExplicitImpl = true
                 GetterOrSetterIsCompilerGenerated = false
                 MemberKind = mk
             }
@@ -1248,7 +1248,7 @@ let mkValSpecAux g m (tcref: TyconRef) ty vis slotsig methn valTy argData isGett
                 else
                     SynMemberKind.Member
 
-            nonVirtualMethod mk tcref
+            nonSlotSigMethod mk tcref
         | Some slotsig ->
             let final = isUnionTy g ty || isRecdTy g ty || isStructTy g ty
             slotImplMethod (final, tcref, slotsig)
