@@ -212,7 +212,13 @@ module Hello
 open Consumer
 
 type Bar() =
-    inherit Foo(Value = "Fails")
+    inherit Foo(Value = "Works")
+    
+type Bar2() as this =
+    inherit Foo()
+    do this.Value <- "Works"
+
+{ new Foo(Value = "OK") with member x.ToString() = "OK" } |> ignore
 """
             |> withLangVersion80
             |> withName "FSLib"
