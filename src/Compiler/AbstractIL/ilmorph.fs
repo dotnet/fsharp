@@ -378,7 +378,7 @@ let rec tdef_ty2ty_ilmbody2ilmbody_mdefs2mdefs isInKnownSet enc fs (tdef: ILType
         methodImpls = mimpls_ty2ty fTyInCtxtR tdef.MethodImpls,
         events = edefs_ty2ty fTyInCtxtR tdef.Events,
         properties = pdefs_ty2ty fTyInCtxtR tdef.Properties,
-        customAttrs = storeILCustomAttrs (cattrs_ty2ty fTyInCtxtR tdef.CustomAttrs)
+        customAttrs = cattrs_ty2ty fTyInCtxtR tdef.CustomAttrs
     )
 
 and tdefs_ty2ty_ilmbody2ilmbody_mdefs2mdefs isInKnownSet enc fs tdefs =

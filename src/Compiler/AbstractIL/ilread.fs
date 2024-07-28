@@ -883,7 +883,7 @@ let tomdCompare (TaggedIndex(t1: TypeOrMethodDefTag, idx1)) (TaggedIndex(t2: Typ
     elif idx1 > idx2 then 1
     else compare t1.Tag t2.Tag
 
-let simpleIndexCompare (idx1: int) (idx2: int) = compare idx1 idx2
+let inline simpleIndexCompare (idx1: int) (idx2: int) = compare idx1 idx2
 
 //---------------------------------------------------------------------
 // The various keys for the various caches.
@@ -930,8 +930,7 @@ let mkCacheGeneric lowMem _inbase _nm (sz: int) =
     if lowMem then
         (fun f x -> f x)
     else
-        let mutable cache = Unchecked.defaultof<_>
-
+        let mutable cache = null
 #if STATISTICS
         let mutable _count = 0
 
@@ -1155,6 +1154,7 @@ type ILMetadataReader =
         customAttrsReader_Module: ILAttributesStored
         customAttrsReader_Assembly: ILAttributesStored
         customAttrsReader_TypeDef: ILAttributesStored
+        customAttrsReader_InterfaceImpl: ILAttributesStored
         customAttrsReader_GenericParam: ILAttributesStored
         customAttrsReader_FieldDef: ILAttributesStored
         customAttrsReader_MethodDef: ILAttributesStored
@@ -1425,11 +1425,16 @@ let seekReadParamRow (ctxt: ILMetadataReader) mdv idx =
     (flags, seq, nameIdx)
 
 /// Read Table InterfaceImpl.
-let seekReadInterfaceImplRow (ctxt: ILMetadataReader) mdv idx =
+let private seekReadInterfaceImplRow (ctxt: ILMetadataReader) mdv idx =
     let mutable addr = ctxt.rowAddr TableNames.InterfaceImpl idx
     let tidx = seekReadUntaggedIdx TableNames.TypeDef ctxt mdv &addr
     let intfIdx = seekReadTypeDefOrRefOrSpecIdx ctxt mdv &addr
-    (tidx, intfIdx)
+
+    struct {|
+        TypeIdx = tidx
+        IntfIdx = intfIdx
+        IntImplIdx = idx
+    |}
 
 /// Read Table MemberRef.
 let seekReadMemberRefRow (ctxt: ILMetadataReader) mdv idx =
@@ -2192,7 +2197,10 @@ and typeDefReader ctxtH : ILTypeDefStored =
         let mdefs = seekReadMethods ctxt numTypars methodsIdx endMethodsIdx
         let fdefs = seekReadFields ctxt (numTypars, hasLayout) fieldsIdx endFieldsIdx
         let nested = seekReadNestedTypeDefs ctxt idx
-        let impls = seekReadInterfaceImpls ctxt mdv numTypars idx
+
+        let impls, intImplsAttrs =
+            seekReadInterfaceImpls ctxt mdv numTypars idx |> List.unzip
+
         let mimpls = seekReadMethodImpls ctxt numTypars idx
         let props = seekReadProperties ctxt numTypars idx
         let events = seekReadEvents ctxt numTypars idx
@@ -2204,6 +2212,7 @@ and typeDefReader ctxtH : ILTypeDefStored =
             layout = layout,
             nestedTypes = nested,
             implements = impls,
+            implementsCustomAttrs = Some intImplsAttrs,
             extends = super,
             methods = mdefs,
             securityDeclsStored = ctxt.securityDeclsReader_TypeDef,
@@ -2240,10 +2249,10 @@ and seekReadInterfaceImpls (ctxt: ILMetadataReader) mdv numTypars tidx =
     seekReadIndexedRows (
         ctxt.getNumRows TableNames.InterfaceImpl,
         seekReadInterfaceImplRow ctxt mdv,
-        fst,
+        (fun x -> x.TypeIdx),
         simpleIndexCompare tidx,
         isSorted ctxt TableNames.InterfaceImpl,
-        (snd >> seekReadTypeDefOrRef ctxt numTypars AsObject [])
+        (fun x -> (seekReadTypeDefOrRef ctxt numTypars AsObject [] x.IntfIdx), (ctxt.customAttrsReader_InterfaceImpl, x.IntImplIdx))
     )
 
 and seekReadGenericParams ctxt numTypars (a, b) : ILGenericParameterDefs =
@@ -2305,6 +2314,8 @@ and seekReadTypeDefAsTypeUncached ctxtH (TypeDefAsTypIdx(boxity, ginst, idx)) =
     mkILTy boxity (ILTypeSpec.Create(seekReadTypeDefAsTypeRef ctxt idx, ginst))
 
 and seekReadTypeDefAsTypeRef (ctxt: ILMetadataReader) idx =
+    let mdv = ctxt.mdfile.GetView()
+
     let enc =
         if seekIsTopTypeDefOfIdx ctxt idx then
             []
@@ -2312,11 +2323,14 @@ and seekReadTypeDefAsTypeRef (ctxt: ILMetadataReader) idx =
             let enclIdx =
                 seekReadIndexedRow (
                     ctxt.getNumRows TableNames.Nested,
-                    seekReadNestedRow ctxt,
-                    fst,
-                    simpleIndexCompare idx,
+                    id,
+                    id,
+                    (fun i ->
+                        let mutable addr = ctxt.rowAddr TableNames.Nested i
+                        let nestedIdx = seekReadUntaggedIdx TableNames.TypeDef ctxt mdv &addr
+                        simpleIndexCompare idx nestedIdx),
                     isSorted ctxt TableNames.Nested,
-                    snd
+                    (fun i -> seekReadNestedRow ctxt i |> snd)
                 )
 
             let tref = seekReadTypeDefAsTypeRef ctxt enclIdx
@@ -3077,15 +3091,18 @@ and seekReadMethodImpls (ctxt: ILMetadataReader) numTypars tidx =
             let mimpls =
                 seekReadIndexedRows (
                     ctxt.getNumRows TableNames.MethodImpl,
-                    seekReadMethodImplRow ctxt mdv,
-                    (fun (a, _, _) -> a),
-                    simpleIndexCompare tidx,
+                    id,
+                    id,
+                    (fun i ->
+                        let mutable addr = ctxt.rowAddr TableNames.MethodImpl i
+                        let _tidx = seekReadUntaggedIdx TableNames.TypeDef ctxt mdv &addr
+                        simpleIndexCompare tidx _tidx),
                     isSorted ctxt TableNames.MethodImpl,
-                    (fun (_, b, c) -> b, c)
+                    seekReadMethodImplRow ctxt mdv
                 )
 
             mimpls
-            |> List.map (fun (b, c) ->
+            |> List.map (fun (_, b, c) ->
                 {
                     OverrideBy =
                         let (MethodData(enclTy, cc, nm, argTys, retTy, methInst)) =
@@ -3154,11 +3171,14 @@ and seekReadEvents (ctxt: ILMetadataReader) numTypars tidx =
             match
                 seekReadOptionalIndexedRow (
                     ctxt.getNumRows TableNames.EventMap,
-                    (fun i -> i, seekReadEventMapRow ctxt mdv i),
-                    (fun (_, row) -> fst row),
-                    compare tidx,
+                    id,
+                    id,
+                    (fun i ->
+                        let mutable addr = ctxt.rowAddr TableNames.EventMap i
+                        let _tidx = seekReadUntaggedIdx TableNames.TypeDef ctxt mdv &addr
+                        simpleIndexCompare tidx _tidx),
                     false,
-                    (fun (i, row) -> (i, snd row))
+                    (fun i -> i, seekReadEventMapRow ctxt mdv i |> snd)
                 )
             with
             | None -> []
@@ -3221,11 +3241,14 @@ and seekReadProperties (ctxt: ILMetadataReader) numTypars tidx =
             match
                 seekReadOptionalIndexedRow (
                     ctxt.getNumRows TableNames.PropertyMap,
-                    (fun i -> i, seekReadPropertyMapRow ctxt mdv i),
-                    (fun (_, row) -> fst row),
-                    compare tidx,
+                    id,
+                    id,
+                    (fun i ->
+                        let mutable addr = ctxt.rowAddr TableNames.PropertyMap i
+                        let _tidx = seekReadUntaggedIdx TableNames.TypeDef ctxt mdv &addr
+                        simpleIndexCompare tidx _tidx),
                     false,
-                    (fun (i, row) -> (i, snd row))
+                    (fun i -> i, seekReadPropertyMapRow ctxt mdv i |> snd)
                 )
             with
             | None -> []
@@ -3249,16 +3272,22 @@ and customAttrsReader ctxtH tag : ILAttributesStored =
         let (ctxt: ILMetadataReader) = getHole ctxtH
         let mdv = ctxt.mdfile.GetView()
 
+        let searchedKey = TaggedIndex(tag, idx)
+
         let reader =
-            { new ISeekReadIndexedRowReader<CustomAttributeRow, TaggedIndex<HasCustomAttributeTag>, ILAttribute> with
-                member _.GetRow(i, row) =
-                    seekReadCustomAttributeRow ctxt mdv i &row
+            { new ISeekReadIndexedRowReader<int, int, ILAttribute> with
+                member _.GetRow(i, rowIndex) = rowIndex <- i
+                member _.GetKey(rowIndex) = rowIndex
 
-                member _.GetKey(attrRow) = attrRow.parentIndex
+                member _.CompareKey(rowIndex) =
+                    let mutable addr = ctxt.rowAddr TableNames.CustomAttribute rowIndex
+                    // read parentIndex
+                    let key = seekReadHasCustomAttributeIdx ctxt mdv &addr
+                    hcaCompare searchedKey key
 
-                member _.CompareKey(key) = hcaCompare (TaggedIndex(tag, idx)) key
-
-                member _.ConvertRow(attrRow) =
+                member _.ConvertRow(rowIndex) =
+                    let mutable attrRow = Unchecked.defaultof<_>
+                    seekReadCustomAttributeRow ctxt mdv rowIndex &attrRow
                     seekReadCustomAttr ctxt (attrRow.typeIndex, attrRow.valueIndex)
             }
 
@@ -4539,6 +4568,7 @@ let openMetadataReader
             customAttrsReader_Module = customAttrsReader ctxtH hca_Module
             customAttrsReader_Assembly = customAttrsReader ctxtH hca_Assembly
             customAttrsReader_TypeDef = customAttrsReader ctxtH hca_TypeDef
+            customAttrsReader_InterfaceImpl = customAttrsReader ctxtH hca_InterfaceImpl
             customAttrsReader_GenericParam = customAttrsReader ctxtH hca_GenericParam
             customAttrsReader_FieldDef = customAttrsReader ctxtH hca_FieldDef
             customAttrsReader_MethodDef = customAttrsReader ctxtH hca_MethodDef

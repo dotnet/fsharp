@@ -6,7 +6,7 @@
     <LangVersion Condition="'$(FSharpLangVersion)' != ''">$(FSharpLangVersion)</LangVersion>
     <RepoRoot Condition="'$(RepoRoot)' == ''">$(MSBuildThisFileDirectory)</RepoRoot>
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
-    <FSharpNetCoreProductDefaultTargetFramework>net8.0</FSharpNetCoreProductDefaultTargetFramework>
+    <FSharpNetCoreProductDefaultTargetFramework>net9.0</FSharpNetCoreProductDefaultTargetFramework>
   </PropertyGroup>
 
   <!--
