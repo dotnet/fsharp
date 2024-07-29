@@ -161,7 +161,8 @@ let foo2 = { new Foo() with member __.ToString() = base.ToString() }
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
-             (Error 759, Line 7, Col 12, Line 7, Col 21, "Instances of this type cannot be created since it has been marked abstract or not all methods have been given implementations. Consider using an object expression '{ new ... with ... }' instead.")
+            (Error 738, Line 5, Col 17, Line 5, Col 20, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.");
+            (Error 759, Line 7, Col 12, Line 7, Col 21, "Instances of this type cannot be created since it has been marked abstract or not all methods have been given implementations. Consider using an object expression '{ new ... with ... }' instead.")
          ]
          
     [<Fact>]
