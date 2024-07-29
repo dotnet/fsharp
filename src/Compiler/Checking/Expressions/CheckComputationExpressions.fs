@@ -105,6 +105,20 @@ let (|JoinRelation|_|) cenv env (expr: SynExpr) =
 
     | _ -> ValueNone
 
+[<return:Struct>]
+let (|ForEachThen|_|) synExpr =
+    match synExpr with
+    | SynExpr.ForEach(_spFor,
+                      _spIn,
+                      SeqExprOnly false,
+                      isFromSource,
+                      pat1,
+                      expr1,
+                      SynExpr.Sequential(isTrueSeq = true; expr1 = clause; expr2 = rest),
+                      _) -> ValueSome(isFromSource, pat1, expr1, clause, rest)
+    | _ -> ValueNone
+
+
 let inline mkSynDelay2 (e: SynExpr) = mkSynDelay (e.Range.MakeSynthetic()) e
 
 /// Make a builder.Method(...) call
@@ -623,18 +637,6 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
                 let opName, _, _, _, _, _, _, _j, _ = opDatas[0]
                 errorR (Error(FSComp.SR.tcCustomOperationInvalid opName, nm.idRange))
                 false
-
-    let (|ForEachThen|_|) synExpr =
-        match synExpr with
-        | SynExpr.ForEach(_spFor,
-                          _spIn,
-                          SeqExprOnly false,
-                          isFromSource,
-                          pat1,
-                          expr1,
-                          SynExpr.Sequential(isTrueSeq = true; expr1 = clause; expr2 = rest),
-                          _) -> Some(isFromSource, pat1, expr1, clause, rest)
-        | _ -> None
 
     let (|CustomOpId|_|) predicate synExpr =
         match synExpr with
