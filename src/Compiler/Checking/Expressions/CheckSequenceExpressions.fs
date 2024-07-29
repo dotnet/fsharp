@@ -3,6 +3,7 @@
 /// Sequence expressions checking
 module internal FSharp.Compiler.CheckSequenceExpressions
 
+open Internal.Utilities.Library
 open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckExpressionsOps
@@ -14,6 +15,8 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.SyntaxTreeOps
 
 /// This case is used for computation expressions which are sequence expressions. Technically the code path is different because it
 /// typechecks rather than doing a shallow syntactic translation, and generates calls into the Seq.* library
@@ -437,7 +440,7 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
     let delayedExpr = mkSeqDelayedExpr coreExpr.Range coreExpr
     delayedExpr, tpenv
 
-let TcSequenceExpressionEntry (cenv: cenv) env (overallTy: OverallTy) tpenv (hasBuilder, comp) m =
+let TcSequenceExpressionEntry (cenv: TcFileState) env (overallTy: OverallTy) tpenv (hasBuilder, comp) m =
     match RewriteRangeExpr comp with
     | Some replacementExpr -> TcExpr cenv overallTy env tpenv replacementExpr
     | None ->

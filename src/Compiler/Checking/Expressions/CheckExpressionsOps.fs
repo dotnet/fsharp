@@ -2,6 +2,8 @@
 
 module internal FSharp.Compiler.CheckExpressionsOps
 
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticsLogger
@@ -14,8 +16,6 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler.SyntaxTreeOps
 
 let CopyAndFixupTypars g m rigid tpsorig =
