@@ -6791,8 +6791,8 @@ and TcRecordConstruction (cenv: cenv) (overallTy: TType) isObjExpr env tpenv wit
     UnifyTypes cenv env m overallTy objTy
 
     // Types with implicit constructors can't use record or object syntax: all constructions must go through the implicit constructor
-    // let supportsObjectExpressionWithoutOverrides = isObjExpr && g.langVersion.SupportsFeature(LanguageFeature.AllowObjectExpressionWithoutOverrides)
-    if tycon.MembersOfFSharpTyconByName |> NameMultiMap.existsInRange (fun v -> v.IsIncrClassConstructor) then
+    let supportsObjectExpressionWithoutOverrides = isObjExpr && g.langVersion.SupportsFeature(LanguageFeature.AllowObjectExpressionWithoutOverrides)
+    if tycon.MembersOfFSharpTyconByName |> NameMultiMap.existsInRange (fun v -> v.IsIncrClassConstructor) && not supportsObjectExpressionWithoutOverrides then
         errorR(Error(FSComp.SR.tcConstructorRequiresCall(tycon.DisplayName), m))
 
     let fspecs = tycon.TrueInstanceFieldsAsList
@@ -7217,11 +7217,8 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
 
             DispatchSlotChecking.CheckOverridesAreAllUsedOnce (env.DisplayEnv, g, cenv.infoReader, true, implTy, dispatchSlotsKeyed, availPriorOverrides, overrideSpecs)
 
-            if not hasStaticMembers then
-                DispatchSlotChecking.CheckDispatchSlotsAreImplemented (env.DisplayEnv, cenv.infoReader, m, env.NameEnv, cenv.tcSink, isAbstractClass, implTy, dispatchSlots, availPriorOverrides, overrideSpecs) |> ignore
-            
+            if not hasStaticMembers then            
                 DispatchSlotChecking.CheckDispatchSlotsAreImplemented (env.DisplayEnv, cenv.infoReader, m, env.NameEnv, cenv.tcSink, isOverallTyAbstract, true, implTy, dispatchSlots, availPriorOverrides, overrideSpecs) |> ignore
-            )
 
         // 3. create the specs of overrides
         let allTypeImpls =

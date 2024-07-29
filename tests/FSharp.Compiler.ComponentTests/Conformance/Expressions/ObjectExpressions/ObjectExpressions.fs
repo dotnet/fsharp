@@ -151,7 +151,6 @@ let implSomeDU someDu =
 type Foo() = class end
 
 let foo = { new Foo() }
-let foo = { new Foo() } // Approved suggestion to allow this https://github.com/fsharp/fslang-suggestions/issues/632
 
 let foo1 = new Foo()
 
@@ -162,7 +161,26 @@ let foo2 = { new Foo() with member __.ToString() = base.ToString() }
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
-             (Error 738, Line 5, Col 11, Line 5, Col 24, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
+             (Error 759, Line 7, Col 12, Line 7, Col 21, "Instances of this type cannot be created since it has been marked abstract or not all methods have been given implementations. Consider using an object expression '{ new ... with ... }' instead.")
+         ]
+         
+    [<Fact>]
+    let ``Object expression can implement an abstract class having no abstract members.`` () =
+        Fsx """
+[<AbstractClass>]
+type Foo() = class end
+
+let foo = { new Foo() }
+
+let foo1 = new Foo()
+
+// hacky workaround
+let foo2 = { new Foo() with member __.ToString() = base.ToString() }
+        """
+         |> withLangVersionPreview
+         |> typecheck
+         |> shouldFail
+         |> withDiagnostics [
              (Error 759, Line 7, Col 12, Line 7, Col 21, "Instances of this type cannot be created since it has been marked abstract or not all methods have been given implementations. Consider using an object expression '{ new ... with ... }' instead.")
          ] 
          
