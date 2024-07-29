@@ -252,7 +252,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
         // An unparameterized custom builder, e.g., `query`, `async`.
         | Expr.Val(vref, _, m)
         // A parameterized custom builder, e.g., `builder<…>`, `builder ()`.
-        | Expr.App(funcExpr = Expr.Val(vref, _, m)) ->
+        | Expr.App(funcExpr = Expr.Val(vref, _, m)) when not vref.IsMember || vref.IsConstructor ->
             let item = Item.CustomBuilder(vref.DisplayName, vref)
             CallNameResolutionSink cenv.tcSink (m, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
             valRefEq cenv.g vref cenv.g.query_value_vref
@@ -3454,13 +3454,6 @@ let TcSequenceExpressionEntry (cenv: cenv) env (overallTy: OverallTy) tpenv (has
         let validateObjectSequenceOrRecordExpression = not implicitYieldEnabled
 
         match comp with
-        | SynExpr.New _ ->
-            try
-                TcExprUndelayed cenv overallTy env tpenv comp |> ignore
-            with RecoverableException e ->
-                errorRecovery e m
-
-            errorR (Error(FSComp.SR.tcInvalidObjectExpressionSyntaxForm (), m))
         | SimpleSemicolonSequence cenv false _ when validateObjectSequenceOrRecordExpression ->
             errorR (Error(FSComp.SR.tcInvalidObjectSequenceOrRecordExpression (), m))
         | _ -> ()
