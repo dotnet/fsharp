@@ -168,6 +168,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %type <SynExpr> argExpr
 %type <SynExpr> declExprBlock
 %type <SynPat> headBindingPattern
+%type <SynType> appTypeNullableInParens
 %type <SynType> atomTypeNonAtomicDeprecated
 %type <SynExpr> atomicExprAfterType
 %type <SynExpr> typedSequentialExprBlock
@@ -2883,27 +2884,35 @@ unionCaseReprElements:
        field :: fields, unionRanges mStar mFields }
 
   | unionCaseReprElement %prec prec_toptuptyptail_prefix
-     { [$1], rhs parseState 1 }
+     { [$1], $1.Range }
 
 unionCaseReprElement:
   | ident COLON appTypeNullableInParens
-     { let xmlDoc = grabXmlDoc(parseState, [], 1)
-       let mWhole = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
+     { let xmlDoc = grabXmlDoc (parseState, [], 1)
+       let mId = rhs parseState 1
+       let mWhole = unionRanges mId $3.Range |> unionRangeWithXmlDoc xmlDoc
        mkSynNamedField ($1, $3, xmlDoc, mWhole) }
 
+  | ident COLON recover
+     { let xmlDoc = grabXmlDoc (parseState, [], 1)
+       let mColon = rhs parseState 2
+       let ty = SynType.FromParseError mColon.EndRange
+       let mWhole = rhs2 parseState 1 2 |> unionRangeWithXmlDoc xmlDoc
+       mkSynNamedField ($1, ty, xmlDoc, mWhole) }
+
   | appTypeNullableInParens
-     { let xmlDoc = grabXmlDoc(parseState, [], 1)
+     { let xmlDoc = grabXmlDoc (parseState, [], 1)
        mkSynAnonField ($1, xmlDoc) }
 
   | ident COLON invalidUseOfAppTypeFunction
-     { let xmlDoc = grabXmlDoc(parseState, [], 1)
+     { let xmlDoc = grabXmlDoc (parseState, [], 1)
        let mWhole = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
-       reportParseErrorAt ($3 : SynType).Range (FSComp.SR.tcUnexpectedFunTypeInUnionCaseField())
+       reportParseErrorAt ($3: SynType).Range (FSComp.SR.tcUnexpectedFunTypeInUnionCaseField ())
        mkSynNamedField ($1, $3, xmlDoc, mWhole) }
 
   | invalidUseOfAppTypeFunction
-     { let xmlDoc = grabXmlDoc(parseState, [], 1)
-       reportParseErrorAt ($1 : SynType).Range (FSComp.SR.tcUnexpectedFunTypeInUnionCaseField())
+     { let xmlDoc = grabXmlDoc (parseState, [], 1)
+       reportParseErrorAt ($1: SynType).Range (FSComp.SR.tcUnexpectedFunTypeInUnionCaseField ())
        mkSynAnonField ($1, xmlDoc) }
 
 unionCaseRepr:
@@ -5981,11 +5990,13 @@ invalidUseOfAppTypeFunction:
      { let mArrow = rhs parseState 2
        let m = unionRanges (rhs2 parseState 1 2) $3.Range
        SynType.Fun($1, $3, m, { ArrowRange = mArrow }) }
+
   | appTypeWithoutNull RARROW recover
      { let mArrow = rhs parseState 2
        let ty = SynType.FromParseError(mArrow.EndRange)
        let m = rhs2 parseState 1 2
        SynType.Fun($1, ty, m, { ArrowRange = mArrow }) }
+
   | appTypeWithoutNull RARROW RARROW invalidUseOfAppTypeFunction
      { let mArrow1 = rhs parseState 2
        let mArrow2 = rhs parseState 3
@@ -5994,6 +6005,7 @@ invalidUseOfAppTypeFunction:
        let m1 = unionRanges $1.Range $4.Range
        let m2 = unionRanges mArrow2 $4.Range
        SynType.Fun($1, SynType.Fun(ty, $4, m2, { ArrowRange = mArrow2 }), m1, { ArrowRange = mArrow1 }) }
+
   | appTypeWithoutNull RARROW appTypeWithoutNull
      { let mArrow = rhs parseState 2
        let m = rhs2 parseState 1 3
