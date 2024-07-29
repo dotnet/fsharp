@@ -143,6 +143,13 @@ type OptionModule() =
         Assert.True( Option.ofObj<int[]> null = None)
 
     [<Fact>]
+    member this.OfToValueOption() =
+        Assert.Equal(ValueSome 3, Option.toValueOption (Some 3))
+        Assert.Equal(ValueNone, Option.toValueOption (None: int option))
+        Assert.Equal(Some 3, Option.ofValueOption (ValueSome 3))
+        Assert.Equal(None, Option.ofValueOption (ValueNone: int voption))
+
+    [<Fact>]
     member this.DefaultValue() =
         Assert.AreEqual( Option.defaultValue 3 None, 3)
         Assert.AreEqual( Option.defaultValue 3 (Some 42), 42)
@@ -380,6 +387,13 @@ type ValueOptionTests() =
         Assert.True(ValueOption.ofObj<string[]> null = ValueNone)
         Assert.True(ValueOption.ofObj<int[]> null = ValueNone)
 
+    [<Fact>]
+    member this.OfToOption() =
+        Assert.Equal(Some 3, ValueOption.toOption (ValueSome 3))
+        Assert.Equal(None, ValueOption.toOption (ValueNone: int voption))
+        Assert.Equal(ValueSome 3, ValueOption.ofOption (Some 3))
+        Assert.Equal(ValueNone, ValueOption.ofOption (None: int option))
+     
     [<Fact>]
     member this.DefaultValue() =
         Assert.AreEqual(ValueOption.defaultValue 3 ValueNone, 3)
