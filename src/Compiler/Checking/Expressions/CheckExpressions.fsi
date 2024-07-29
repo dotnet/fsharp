@@ -623,10 +623,6 @@ val TcExpr:
 val CheckTupleIsCorrectLength:
     g: TcGlobals -> env: TcEnv -> m: range -> tupleTy: TType -> args: 'a list -> tcArgs: (TType list -> unit) -> unit
 
-/// Converts 'a..b' to a call to the '(..)' operator in FSharp.Core
-/// Converts 'a..b..c' to a call to the '(.. ..)' operator in FSharp.Core
-val RewriteRangeExpr: synExpr: SynExpr -> SynExpr option
-
 /// Check a syntactic expression and convert it to a typed tree expression
 val TcExprOfUnknownType:
     cenv: TcFileState -> env: TcEnv -> tpenv: UnscopedTyparEnv -> synExpr: SynExpr -> Expr * TType * UnscopedTyparEnv

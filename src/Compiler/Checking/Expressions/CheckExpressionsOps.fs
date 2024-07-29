@@ -138,16 +138,37 @@ let CompilePatternForMatchClauses (cenv: TcFileState) env mExpr mMatch warnOnUnu
         matchValueTmp, expr
 
 /// Constrain two types to be equal within this type checking context
-let UnifyTypes (cenv: TcFileState) (env: TcEnv) m expectedTy actualTy =
-    let g = cenv.g
-
+let inline UnifyTypes (cenv: TcFileState) (env: TcEnv) m expectedTy actualTy =
     AddCxTypeEqualsType
         env.eContextInfo
         env.DisplayEnv
         cenv.css
         m
-        (tryNormalizeMeasureInType g expectedTy)
-        (tryNormalizeMeasureInType g actualTy)
+        (tryNormalizeMeasureInType cenv.g expectedTy)
+        (tryNormalizeMeasureInType cenv.g actualTy)
+
+// Converts 'a..b' to a call to the '(..)' operator in FSharp.Core
+// Converts 'a..b..c' to a call to the '(.. ..)' operator in FSharp.Core
+//
+// NOTE: we could eliminate these more efficiently in LowerComputedCollections.fs, since
+//    [| 1..4 |]
+// becomes [| for i in (..) 1 4 do yield i |]
+// instead of generating the array directly from the ranges
+let RewriteRangeExpr synExpr =
+    match synExpr with
+    // a..b..c (parsed as (a..b)..c )
+    | SynExpr.IndexRange(Some (SynExpr.IndexRange(Some synExpr1, _, Some synStepExpr, _, _, _)), _, Some synExpr2, _m1, _m2, mWhole) ->
+        let mWhole = mWhole.MakeSynthetic()
+        Some (mkSynTrifix mWhole ".. .." synExpr1 synStepExpr synExpr2)
+    // a..b
+    | SynExpr.IndexRange (Some synExpr1, mOperator, Some synExpr2, _m1, _m2, mWhole) ->
+        let otherExpr =
+            let mWhole = mWhole.MakeSynthetic()
+            match mkSynInfix mOperator synExpr1 ".." synExpr2 with
+            | SynExpr.App (a, b, c, d, _) -> SynExpr.App (a, b, c, d, mWhole)
+            | _ -> failwith "impossible"
+        Some otherExpr
+    | _ -> None
 
 /// Check if a computation or sequence expression is syntactically free of 'yield' (though not yield!)
 let YieldFree (cenv: TcFileState) expr =
