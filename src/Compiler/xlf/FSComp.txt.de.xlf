@@ -422,9 +422,9 @@
         <target state="translated">Optimiert bestimmte Verwendungen der Operatoren des integralen Bereichs (..) und des Bereichsschritts (.. ..) für schnelle WHILE-Schleifen.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureLowerSimpleMappingsInComprehensionsToDirectCallsToMap">
-        <source>Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to calls to List.map and Array.map when xs is a list or an array, respectively.</source>
-        <target state="translated">Verringert [für x in xs -&gt; f x] und [|für x in xs -&gt; f x|] für Aufrufe von „List.map“ und „Array.map“, wenn xs eine Liste bzw. ein Array ist.</target>
+      <trans-unit id="featureLowerSimpleMappingsInComprehensionsToFastLoops">
+        <source>Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to fast loops when xs is a list or an array, respectively.</source>
+        <target state="new">Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to fast loops when xs is a list or an array, respectively.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
