@@ -118,6 +118,11 @@ let (|ForEachThen|_|) synExpr =
                       _) -> ValueSome(isFromSource, pat1, expr1, clause, rest)
     | _ -> ValueNone
 
+[<return:Struct>]
+let (|CustomOpId|_|) isCustomOperation predicate synExpr =
+    match synExpr with
+    | SingleIdent nm when isCustomOperation nm && predicate nm -> ValueSome nm
+    | _ -> ValueNone
 
 let inline mkSynDelay2 (e: SynExpr) = mkSynDelay (e.Range.MakeSynthetic()) e
 
@@ -638,11 +643,6 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
                 errorR (Error(FSComp.SR.tcCustomOperationInvalid opName, nm.idRange))
                 false
 
-    let (|CustomOpId|_|) predicate synExpr =
-        match synExpr with
-        | SingleIdent nm when isCustomOperation nm && predicate nm -> Some nm
-        | _ -> None
-
     // e1 in e2 ('in' is parsed as 'JOIN_IN')
     let (|InExpr|_|) synExpr =
         match synExpr with
@@ -703,13 +703,13 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
 
     let JoinOrGroupJoinOp detector synExpr =
         match synExpr with
-        | SynExpr.App(_, _, CustomOpId detector nm, ExprAsPat innerSourcePat, mJoinCore) -> Some(nm, innerSourcePat, mJoinCore, false)
+        | SynExpr.App(_, _, CustomOpId isCustomOperation detector nm, ExprAsPat innerSourcePat, mJoinCore) -> Some(nm, innerSourcePat, mJoinCore, false)
         // join with bad pattern (gives error on "join" and continues)
-        | SynExpr.App(_, _, CustomOpId detector nm, _innerSourcePatExpr, mJoinCore) ->
+        | SynExpr.App(_, _, CustomOpId isCustomOperation detector nm, _innerSourcePatExpr, mJoinCore) ->
             errorR (Error(FSComp.SR.tcBinaryOperatorRequiresVariable (nm.idText, Option.get (customOpUsageText nm)), nm.idRange))
             Some(nm, arbPat mJoinCore, mJoinCore, true)
         // join (without anything after - gives error on "join" and continues)
-        | CustomOpId detector nm ->
+        | CustomOpId isCustomOperation detector nm ->
             errorR (Error(FSComp.SR.tcBinaryOperatorRequiresVariable (nm.idText, Option.get (customOpUsageText nm)), nm.idRange))
             Some(nm, arbPat synExpr.Range, synExpr.Range, true)
         | _ -> None
@@ -770,16 +770,16 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
             Some(nm, innerSourcePat, innerSource, Some keySelectors, Some intoPat, mGroupJoinCore)
 
         // zip intoPat in secondSource
-        | InExpr(SynExpr.App(_, _, CustomOpId customOperationIsLikeZip nm, ExprAsPat secondSourcePat, _), secondSource, mZipCore) ->
+        | InExpr(SynExpr.App(_, _, CustomOpId isCustomOperation customOperationIsLikeZip nm, ExprAsPat secondSourcePat, _), secondSource, mZipCore) ->
             Some(nm, secondSourcePat, secondSource, None, None, mZipCore)
 
         // zip (without secondSource or in - gives error)
-        | CustomOpId customOperationIsLikeZip nm ->
+        | CustomOpId isCustomOperation customOperationIsLikeZip nm ->
             errorR (Error(FSComp.SR.tcOperatorIncorrectSyntax (nm.idText, Option.get (customOpUsageText nm)), nm.idRange))
             Some(nm, arbPat synExpr.Range, arbExpr ("_secondSource", synExpr.Range), None, None, synExpr.Range)
 
         // zip secondSource (without in - gives error)
-        | SynExpr.App(_, _, CustomOpId customOperationIsLikeZip nm, ExprAsPat secondSourcePat, mZipCore) ->
+        | SynExpr.App(_, _, CustomOpId isCustomOperation customOperationIsLikeZip nm, ExprAsPat secondSourcePat, mZipCore) ->
             errorR (Error(FSComp.SR.tcOperatorIncorrectSyntax (nm.idText, Option.get (customOpUsageText nm)), mZipCore))
             Some(nm, secondSourcePat, arbExpr ("_innerSource", synExpr.Range), None, None, mZipCore)
 
