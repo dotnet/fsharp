@@ -1214,7 +1214,23 @@ let slotImplMethod (final, c, slotsig) : ValMemberInfo =
         ApparentEnclosingEntity = c
     }
 
-let nonSlotSigMethod mk c : ValMemberInfo =
+let nonVirtualMethod mk c : ValMemberInfo =
+    {
+        ImplementedSlotSigs = []
+        MemberFlags =
+            {
+                IsInstance = true
+                IsDispatchSlot = false
+                IsFinal = false
+                IsOverrideOrExplicitImpl = false
+                GetterOrSetterIsCompilerGenerated = true
+                MemberKind = mk
+            }
+        IsImplemented = false
+        ApparentEnclosingEntity = c
+    }
+
+let nonSigSlotMethod mk c : ValMemberInfo =
     {
         ImplementedSlotSigs = []
         MemberFlags =
@@ -1223,7 +1239,7 @@ let nonSlotSigMethod mk c : ValMemberInfo =
                 IsDispatchSlot = false
                 IsFinal = true
                 IsOverrideOrExplicitImpl = true
-                GetterOrSetterIsCompilerGenerated = false
+                GetterOrSetterIsCompilerGenerated = true
                 MemberKind = mk
             }
         IsImplemented = false
@@ -1242,13 +1258,11 @@ let mkValSpecAux g m (tcref: TyconRef) ty vis slotsig methn valTy argData isGett
     let membInfo =
         match slotsig with
         | None ->
-            let mk =
-                if isGetter then
-                    SynMemberKind.PropertyGet
-                else
-                    SynMemberKind.Member
+            if isGetter then
+                nonVirtualMethod SynMemberKind.PropertyGet tcref
+            else
+                nonSigSlotMethod SynMemberKind.Member tcref
 
-            nonSlotSigMethod mk tcref
         | Some slotsig ->
             let final = isUnionTy g ty || isRecdTy g ty || isStructTy g ty
             slotImplMethod (final, tcref, slotsig)
