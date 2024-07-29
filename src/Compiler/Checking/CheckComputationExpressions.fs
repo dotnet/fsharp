@@ -3454,13 +3454,6 @@ let TcSequenceExpressionEntry (cenv: cenv) env (overallTy: OverallTy) tpenv (has
         let validateObjectSequenceOrRecordExpression = not implicitYieldEnabled
 
         match comp with
-        | SynExpr.New _ ->
-            try
-                TcExprUndelayed cenv overallTy env tpenv comp |> ignore
-            with RecoverableException e ->
-                errorRecovery e m
-
-            errorR (Error(FSComp.SR.tcInvalidObjectExpressionSyntaxForm (), m))
         | SimpleSemicolonSequence cenv false _ when validateObjectSequenceOrRecordExpression ->
             errorR (Error(FSComp.SR.tcInvalidObjectSequenceOrRecordExpression (), m))
         | _ -> ()
