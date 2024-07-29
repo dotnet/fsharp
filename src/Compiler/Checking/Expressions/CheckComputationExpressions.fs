@@ -105,7 +105,6 @@ let (|JoinRelation|_|) cenv env (expr: SynExpr) =
 
     | _ -> ValueNone
 
-[<return:Struct>]
 let (|ForEachThen|_|) synExpr =
     match synExpr with
     | SynExpr.ForEach(_spFor,
@@ -115,14 +114,13 @@ let (|ForEachThen|_|) synExpr =
                       pat1,
                       expr1,
                       SynExpr.Sequential(isTrueSeq = true; expr1 = clause; expr2 = rest),
-                      _) -> ValueSome(isFromSource, pat1, expr1, clause, rest)
-    | _ -> ValueNone
+                      _) -> Some(isFromSource, pat1, expr1, clause, rest)
+    | _ -> None
 
-[<return:Struct>]
 let (|CustomOpId|_|) isCustomOperation predicate synExpr =
     match synExpr with
-    | SingleIdent nm when isCustomOperation nm && predicate nm -> ValueSome nm
-    | _ -> ValueNone
+    | SingleIdent nm when isCustomOperation nm && predicate nm -> Some nm
+    | _ -> None
 
 let inline mkSynDelay2 (e: SynExpr) = mkSynDelay (e.Range.MakeSynthetic()) e
 
