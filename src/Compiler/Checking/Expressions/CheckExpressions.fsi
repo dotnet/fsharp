@@ -623,6 +623,10 @@ val TcExpr:
 val CheckTupleIsCorrectLength:
     g: TcGlobals -> env: TcEnv -> m: range -> tupleTy: TType -> args: 'a list -> tcArgs: (TType list -> unit) -> unit
 
+/// Check record names and types for cases like cases like `query { for ... join(for x in f(). }`
+val RecordNameAndTypeResolutions:
+    cenv: TcFileState -> env: TcEnv -> tpenv: UnscopedTyparEnv -> expr: SynExpr -> unit
+
 /// Check a syntactic expression and convert it to a typed tree expression
 val TcExprOfUnknownType:
     cenv: TcFileState -> env: TcEnv -> tpenv: UnscopedTyparEnv -> synExpr: SynExpr -> Expr * TType * UnscopedTyparEnv

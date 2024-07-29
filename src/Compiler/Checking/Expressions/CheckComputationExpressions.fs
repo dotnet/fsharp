@@ -105,33 +105,6 @@ let (|JoinRelation|_|) cenv env (expr: SynExpr) =
 
     | _ -> ValueNone
 
-let elimFastIntegerForLoop (spFor, spTo, id, start: SynExpr, dir, finish: SynExpr, innerExpr, m: range) =
-    let mOp = (unionRanges start.Range finish.Range).MakeSynthetic()
-
-    let pseudoEnumExpr =
-        if dir then
-            mkSynInfix mOp start ".." finish
-        else
-            mkSynTrifix mOp ".. .." start (SynExpr.Const(SynConst.Int32 -1, mOp)) finish
-
-    SynExpr.ForEach(spFor, spTo, SeqExprOnly false, true, mkSynPatVar None id, pseudoEnumExpr, innerExpr, m)
-
-let RecordNameAndTypeResolutions cenv env tpenv expr =
-    // This function is motivated by cases like
-    //    query { for ... join(for x in f(). }
-    // where there is incomplete code in a query, and we are current just dropping a piece of the AST on the floor (above, the bit inside the 'join').
-    //
-    // The problem with dropping the AST on the floor is that we get no captured resolutions, which means no Intellisense/QuickInfo/ParamHelp.
-    //
-    // We check this AST-fragment, to get resolutions captured.
-    //
-    // This may have effects from typechecking, producing side-effects on the typecheck environment.
-    suppressErrorReporting (fun () ->
-        try
-            ignore (TcExprOfUnknownType cenv env tpenv expr)
-        with _ ->
-            ())
-
 let inline mkSynDelay2 (e: SynExpr) = mkSynDelay (e.Range.MakeSynthetic()) e
 
 /// Make a builder.Method(...) call
@@ -146,6 +119,18 @@ let mkSynCall nm (m: range) args builderValName =
 
     let builderVal = mkSynIdGet m builderValName
     mkSynApp1 (SynExpr.DotGet(builderVal, range0, SynLongIdent([ mkSynId m nm ], [], [ None ]), m)) args m
+
+// Optionally wrap sources of "let!", "yield!", "use!" in "query.Source"
+let mkSourceExpr callExpr sourceMethInfo builderValName =
+    match sourceMethInfo with
+    | [] -> callExpr
+    | _ -> mkSynCall "Source" callExpr.Range [ callExpr ] builderValName
+
+let mkSourceExprConditional isFromSource callExpr sourceMethInfo builderValName =
+    if isFromSource then
+        mkSourceExpr callExpr sourceMethInfo builderValName
+    else
+        callExpr
 
 let hasMethInfo nm cenv env mBuilderVal ad builderTy =
     match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad nm builderTy with
@@ -176,15 +161,6 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
 
     let sourceMethInfo =
         TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad "Source" builderTy
-
-    // Optionally wrap sources of "let!", "yield!", "use!" in "query.Source"
-    let mkSourceExpr callExpr =
-        match sourceMethInfo with
-        | [] -> callExpr
-        | _ -> mkSynCall "Source" callExpr.Range [ callExpr ] builderValName
-
-    let mkSourceExprConditional isFromSource callExpr =
-        if isFromSource then mkSourceExpr callExpr else callExpr
 
     /// Decide if the builder is an auto-quote builder
     let isAutoQuote = hasMethInfo "Quote" cenv env mBuilderVal ad builderTy
@@ -1039,8 +1015,8 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
                 | CustomOperationsMode.Denied -> error (Error(FSComp.SR.tcCustomOperationMayNotBeUsedHere (), nm.idRange))
                 | CustomOperationsMode.Allowed ->
 
-                    let firstSource = mkSourceExprConditional isFromSource firstSource
-                    let secondSource = mkSourceExpr secondSource
+                    let firstSource = mkSourceExprConditional isFromSource firstSource sourceMethInfo builderValName
+                    let secondSource = mkSourceExpr secondSource sourceMethInfo builderValName
 
                     // Add the variables to the variable space, on demand
                     let varSpaceWithFirstVars =
@@ -1261,7 +1237,7 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
                     | Some e -> e
                     | None -> sourceExpr
 
-                let wrappedSourceExpr = mkSourceExprConditional isFromSource sourceExpr
+                let wrappedSourceExpr = mkSourceExprConditional isFromSource sourceExpr sourceMethInfo builderValName
 
                 let mFor =
                     match spFor with
@@ -1872,7 +1848,7 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
 
                         vspecs, envinner)
 
-                let rhsExpr = mkSourceExprConditional isFromSource rhsExpr
+                let rhsExpr = mkSourceExprConditional isFromSource rhsExpr sourceMethInfo builderValName
                 Some(transBind q varSpace mBind (addBindDebugPoint spBind) "Bind" [ rhsExpr ] pat innerComp translatedCtxt)
 
             // 'use! pat = e1 in e2' --> build.Bind(e1, (function  _argN -> match _argN with pat -> build.Using(x, (fun _argN -> match _argN with pat -> e2))))
@@ -1944,7 +1920,7 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
                             mBind
                         )
 
-                    let rhsExpr = mkSourceExprConditional isFromSource rhsExpr
+                    let rhsExpr = mkSourceExprConditional isFromSource rhsExpr sourceMethInfo builderValName
 
                     mkSynCall "Bind" mBind [ rhsExpr; consumeExpr ] builderValName
                     |> addBindDebugPoint spBind
@@ -1987,7 +1963,7 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
                 let sources =
                     (letRhsExpr
                      :: [ for SynExprAndBang(body = andExpr) in andBangBindings -> andExpr ])
-                    |> List.map (mkSourceExprConditional isFromSource)
+                    |> List.map (fun expr -> mkSourceExprConditional isFromSource expr sourceMethInfo builderValName)
 
                 let pats =
                     letPat :: [ for SynExprAndBang(pat = andPat) in andBangBindings -> andPat ]
@@ -2201,7 +2177,7 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
             // 'match! expr with pats ...' --> build.Bind(e1, (function pats ...))
             // FUTURE: consider allowing translation to BindReturn
             | SynExpr.MatchBang(spMatch, expr, clauses, _m, trivia) ->
-                let inputExpr = mkSourceExpr expr
+                let inputExpr = mkSourceExpr expr sourceMethInfo builderValName
 
                 if isQuery then
                     error (Error(FSComp.SR.tcMatchMayNotBeUsedWithQuery (), trivia.MatchBangKeyword))
@@ -2287,7 +2263,7 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
                 Some(translatedCtxt callExpr)
 
             | SynExpr.YieldOrReturnFrom((true, _), synYieldExpr, m) ->
-                let yieldFromExpr = mkSourceExpr synYieldExpr
+                let yieldFromExpr = mkSourceExpr synYieldExpr sourceMethInfo builderValName
 
                 if
                     isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "YieldFrom" builderTy)
@@ -2305,7 +2281,7 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
                 Some(translatedCtxt yieldFromCall)
 
             | SynExpr.YieldOrReturnFrom((false, _), synReturnExpr, m) ->
-                let returnFromExpr = mkSourceExpr synReturnExpr
+                let returnFromExpr = mkSourceExpr synReturnExpr sourceMethInfo builderValName
 
                 if isQuery then
                     error (Error(FSComp.SR.tcReturnMayNotBeUsedInQueries (), m))
@@ -2539,7 +2515,7 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
                 // "do! expr;" in final position is treated as { let! () = expr in return () } when Return is provided (and no Zero with Default attribute is available) or as { let! () = expr in zero } otherwise
                 | SynExpr.DoBang(rhsExpr, m) ->
                     let mUnit = rhsExpr.Range
-                    let rhsExpr = mkSourceExpr rhsExpr
+                    let rhsExpr = mkSourceExpr rhsExpr sourceMethInfo builderValName
 
                     if isQuery then
                         error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), m))
@@ -2617,7 +2593,7 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
 
                             translatedCtxt fillExpr)
 
-    and transBind q varSpace bindRange addBindDebugPoint bindName bindArgs (consumePat: SynPat) (innerComp: SynExpr) translatedCtxt =
+    and transBind q varSpace bindRange addBindDebugPoint bindName (bindArgs: SynExpr list) (consumePat: SynPat) (innerComp: SynExpr) translatedCtxt =
 
         let innerRange = innerComp.Range
 

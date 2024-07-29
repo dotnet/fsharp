@@ -139,6 +139,7 @@ let CompilePatternForMatchClauses (cenv: TcFileState) env mExpr mMatch warnOnUnu
 
 /// Constrain two types to be equal within this type checking context
 let inline UnifyTypes (cenv: TcFileState) (env: TcEnv) m expectedTy actualTy =
+
     AddCxTypeEqualsType
         env.eContextInfo
         env.DisplayEnv
