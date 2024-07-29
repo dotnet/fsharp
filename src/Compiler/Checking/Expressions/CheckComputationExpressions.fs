@@ -1015,7 +1015,9 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
                 | CustomOperationsMode.Denied -> error (Error(FSComp.SR.tcCustomOperationMayNotBeUsedHere (), nm.idRange))
                 | CustomOperationsMode.Allowed ->
 
-                    let firstSource = mkSourceExprConditional isFromSource firstSource sourceMethInfo builderValName
+                    let firstSource =
+                        mkSourceExprConditional isFromSource firstSource sourceMethInfo builderValName
+
                     let secondSource = mkSourceExpr secondSource sourceMethInfo builderValName
 
                     // Add the variables to the variable space, on demand
@@ -1237,7 +1239,8 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
                     | Some e -> e
                     | None -> sourceExpr
 
-                let wrappedSourceExpr = mkSourceExprConditional isFromSource sourceExpr sourceMethInfo builderValName
+                let wrappedSourceExpr =
+                    mkSourceExprConditional isFromSource sourceExpr sourceMethInfo builderValName
 
                 let mFor =
                     match spFor with
@@ -1848,7 +1851,9 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
 
                         vspecs, envinner)
 
-                let rhsExpr = mkSourceExprConditional isFromSource rhsExpr sourceMethInfo builderValName
+                let rhsExpr =
+                    mkSourceExprConditional isFromSource rhsExpr sourceMethInfo builderValName
+
                 Some(transBind q varSpace mBind (addBindDebugPoint spBind) "Bind" [ rhsExpr ] pat innerComp translatedCtxt)
 
             // 'use! pat = e1 in e2' --> build.Bind(e1, (function  _argN -> match _argN with pat -> build.Using(x, (fun _argN -> match _argN with pat -> e2))))
@@ -1920,7 +1925,8 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
                             mBind
                         )
 
-                    let rhsExpr = mkSourceExprConditional isFromSource rhsExpr sourceMethInfo builderValName
+                    let rhsExpr =
+                        mkSourceExprConditional isFromSource rhsExpr sourceMethInfo builderValName
 
                     mkSynCall "Bind" mBind [ rhsExpr; consumeExpr ] builderValName
                     |> addBindDebugPoint spBind
@@ -2593,7 +2599,17 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
 
                             translatedCtxt fillExpr)
 
-    and transBind q varSpace bindRange addBindDebugPoint bindName (bindArgs: SynExpr list) (consumePat: SynPat) (innerComp: SynExpr) translatedCtxt =
+    and transBind
+        q
+        varSpace
+        bindRange
+        addBindDebugPoint
+        bindName
+        (bindArgs: SynExpr list)
+        (consumePat: SynPat)
+        (innerComp: SynExpr)
+        translatedCtxt
+        =
 
         let innerRange = innerComp.Range
 
