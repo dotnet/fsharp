@@ -688,6 +688,8 @@ type TcGlobals(
   let v_or_info =                    makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    "or"                                   , None                 , Some "Or"     , [],         mk_rel_sig v_bool_ty)
   let v_or2_info =                   makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    CompileOpName "||"                     , None                 , None          , [],         mk_rel_sig v_bool_ty)
   let v_compare_operator_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                   "compare"                              , None                 , Some "Compare", [vara],     mk_compare_sig varaTy)
+  let v_max_operator_info                    = makeIntrinsicValRef(fslib_MFOperators_nleref,                   "max"                                  , None                 , Some "Max"    , [vara],     ([[varaTy];[varaTy]], varaTy))
+  let v_min_operator_info                    = makeIntrinsicValRef(fslib_MFOperators_nleref,                   "min"                                  , None                 , Some "Min"    , [vara],     ([[varaTy];[varaTy]], varaTy))
   let v_equals_operator_info                 = makeIntrinsicValRef(fslib_MFOperators_nleref,                   CompileOpName "="                      , None                 , None          , [vara],     mk_rel_sig varaTy)
   let v_equals_nullable_operator_info        = makeIntrinsicValRef(fslib_MFNullableOperators_nleref,           CompileOpName "=?"                     , None                 , None          , [vara],     ([[varaTy];[mkNullableTy varaTy]], v_bool_ty))
   let v_nullable_equals_operator_info        = makeIntrinsicValRef(fslib_MFNullableOperators_nleref,           CompileOpName "?="                     , None                 , None          , [vara],     ([[mkNullableTy varaTy];[varaTy]], v_bool_ty))
@@ -1702,6 +1704,8 @@ type TcGlobals(
   member val invalid_op_vref            = ValRefForIntrinsic v_invalid_op_info
   member val failwithf_vref             = ValRefForIntrinsic v_failwithf_info
 
+  member _.max_operator_info           = v_max_operator_info
+  member _.min_operator_info           = v_min_operator_info
   member _.equals_operator_info        = v_equals_operator_info
   member _.not_equals_operator         = v_not_equals_operator_info
   member _.less_than_operator          = v_less_than_operator_info
