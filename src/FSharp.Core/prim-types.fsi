@@ -2788,7 +2788,7 @@ namespace Microsoft.FSharp.Core
         /// <example id="addition-example-1">
         /// <code lang="fsharp">
         /// 2 + 2 //  Evaluates to 4
-        /// "Hello " + "Word" // Evaluates to "Hello World"
+        /// "Hello " + "World" // Evaluates to "Hello World"
         /// </code>
         /// </example>
         /// 
