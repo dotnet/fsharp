@@ -17,16 +17,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -308,11 +298,12 @@
     IL_000b:  ret
   } 
 
-  .method public hidebysig instance bool 
-          Equals(class XYZ.Expr obj,
-                 class [runtime]System.Collections.IEqualityComparer comp) cil managed
+  .method public hidebysig virtual final 
+          instance bool  Equals(class XYZ.Expr obj,
+                                class [runtime]System.Collections.IEqualityComparer comp) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     
     .maxstack  4
     .locals init (class XYZ.Expr V_0,
@@ -563,11 +554,12 @@
     IL_000b:  ret
   } 
 
-  .method public hidebysig instance bool 
-          Equals(class [runtime]System.Exception obj,
-                 class [runtime]System.Collections.IEqualityComparer comp) cil managed
+  .method public hidebysig virtual final 
+          instance bool  Equals(class [runtime]System.Exception obj,
+                                class [runtime]System.Collections.IEqualityComparer comp) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     
     .maxstack  4
     .locals init (class [runtime]System.Exception V_0,
@@ -639,9 +631,10 @@
     IL_0014:  ret
   } 
 
-  .method public hidebysig instance bool Equals(class [runtime]System.Exception obj) cil managed
+  .method public hidebysig virtual final instance bool  Equals(class [runtime]System.Exception obj) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     
     .maxstack  4
     .locals init (object V_0)
@@ -1018,11 +1011,12 @@
       IL_000b:  ret
     } 
 
-    .method public hidebysig instance bool 
-            Equals(class XYZ.ABC/Expr obj,
-                   class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig virtual final 
+            instance bool  Equals(class XYZ.ABC/Expr obj,
+                                  class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  4
       .locals init (class XYZ.ABC/Expr V_0,
@@ -1273,11 +1267,12 @@
       IL_000b:  ret
     } 
 
-    .method public hidebysig instance bool 
-            Equals(class [runtime]System.Exception obj,
-                   class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig virtual final 
+            instance bool  Equals(class [runtime]System.Exception obj,
+                                  class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  4
       .locals init (class [runtime]System.Exception V_0,
@@ -1349,9 +1344,10 @@
       IL_0014:  ret
     } 
 
-    .method public hidebysig instance bool Equals(class [runtime]System.Exception obj) cil managed
+    .method public hidebysig virtual final instance bool  Equals(class [runtime]System.Exception obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  4
       .locals init (object V_0)
@@ -1728,11 +1724,12 @@
         IL_000b:  ret
       } 
 
-      .method public hidebysig instance bool 
-              Equals(class XYZ.ABC/ABC/Expr obj,
-                     class [runtime]System.Collections.IEqualityComparer comp) cil managed
+      .method public hidebysig virtual final 
+              instance bool  Equals(class XYZ.ABC/ABC/Expr obj,
+                                    class [runtime]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         
         .maxstack  4
         .locals init (class XYZ.ABC/ABC/Expr V_0,
@@ -1983,11 +1980,12 @@
         IL_000b:  ret
       } 
 
-      .method public hidebysig instance bool 
-              Equals(class [runtime]System.Exception obj,
-                     class [runtime]System.Collections.IEqualityComparer comp) cil managed
+      .method public hidebysig virtual final 
+              instance bool  Equals(class [runtime]System.Exception obj,
+                                    class [runtime]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         
         .maxstack  4
         .locals init (class [runtime]System.Exception V_0,
@@ -2059,9 +2057,10 @@
         IL_0014:  ret
       } 
 
-      .method public hidebysig instance bool Equals(class [runtime]System.Exception obj) cil managed
+      .method public hidebysig virtual final instance bool  Equals(class [runtime]System.Exception obj) cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         
         .maxstack  4
         .locals init (object V_0)

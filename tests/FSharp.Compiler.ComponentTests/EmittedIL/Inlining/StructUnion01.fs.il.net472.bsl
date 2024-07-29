@@ -331,11 +331,12 @@
       IL_000b:  ret
     } 
 
-    .method public hidebysig instance bool 
-            Equals(valuetype assembly/U obj,
-                   class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig virtual final 
+            instance bool  Equals(valuetype assembly/U obj,
+                                  class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
       IL_0000:  ldarg.0

@@ -8,7 +8,7 @@
 .assembly extern netstandard
 {
   .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         
-  .ver 2:0:0:0
+  .ver 2:1:0:0
 }
 .assembly assembly
 {
@@ -21,16 +21,6 @@
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
-}
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
 }
 .module assembly.exe
 
@@ -157,11 +147,12 @@
       IL_000b:  ret
     } 
 
-    .method public hidebysig instance bool 
-            Equals(valuetype assembly/C obj,
-                   class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig virtual final 
+            instance bool  Equals(valuetype assembly/C obj,
+                                  class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  4
       .locals init (valuetype assembly/C& V_0,
