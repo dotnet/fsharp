@@ -741,18 +741,6 @@ module Span =
 
         state
 
-module ValueOptionInternal =
-
-    let inline ofOption x =
-        match x with
-        | Some x -> ValueSome x
-        | None -> ValueNone
-
-    let inline bind ([<InlineIfLambda>] f) x =
-        match x with
-        | ValueSome x -> f x
-        | ValueNone -> ValueNone
-
 module String =
     let make (n: int) (c: char) : string = String(c, n)
 

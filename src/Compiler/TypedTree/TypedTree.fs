@@ -2117,7 +2117,7 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
           |> List.tryFind (fun v -> match key.TypeForLinkage with 
                                     | None -> true
                                     | Some keyTy -> ccu.MemberSignatureEquality(keyTy, v.Type))
-          |> ValueOptionInternal.ofOption
+          |> ValueOption.ofOption
 
     /// Get a table of values indexed by logical name
     member _.AllValsByLogicalName = 
@@ -4229,7 +4229,7 @@ type UnionCaseRef =
     /// Try to dereference the reference 
     member x.TryUnionCase =
         x.TyconRef.TryDeref 
-        |> ValueOptionInternal.bind (fun tcref -> tcref.GetUnionCaseByName x.CaseName |> ValueOptionInternal.ofOption)
+        |> ValueOption.bind (fun tcref -> tcref.GetUnionCaseByName x.CaseName |> ValueOption.ofOption)
 
     /// Get the attributes associated with the union case
     member x.Attribs = x.UnionCase.Attribs
@@ -4292,7 +4292,7 @@ type RecdFieldRef =
     /// Try to dereference the reference 
     member x.TryRecdField = 
         x.TyconRef.TryDeref 
-        |> ValueOptionInternal.bind (fun tcref -> tcref.GetFieldByName x.FieldName |> ValueOptionInternal.ofOption)
+        |> ValueOption.bind (fun tcref -> tcref.GetFieldByName x.FieldName |> ValueOption.ofOption)
 
     /// Get the attributes associated with the compiled property of the record field 
     member x.PropertyAttribs = x.RecdField.PropertyAttribs

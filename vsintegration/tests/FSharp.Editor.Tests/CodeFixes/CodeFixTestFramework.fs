@@ -33,16 +33,6 @@ type Mode =
     | WithSettings of CodeFixesOptions
 
 module ValueOption =
-    let inline toOption o =
-        match o with
-        | ValueSome v -> Some v
-        | _ -> None
-
-    let inline ofOption o =
-        match o with
-        | Some v -> ValueSome v
-        | _ -> ValueNone
-
     let inline either f y o =
         match o with
         | ValueSome v -> f v

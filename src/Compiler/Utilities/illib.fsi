@@ -263,12 +263,6 @@ module internal ResizeArray =
 module internal Span =
     val inline exists: predicate: ('T -> bool) -> span: Span<'T> -> bool
 
-module internal ValueOptionInternal =
-
-    val inline ofOption: x: 'a option -> 'a voption
-
-    val inline bind: f: ('a -> 'b voption) -> x: 'a voption -> 'b voption
-
 module internal String =
 
     val make: n: int -> c: char -> string

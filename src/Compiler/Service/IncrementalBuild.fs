@@ -229,11 +229,6 @@ type TcInfoExtras =
     member x.TcSymbolUses =
         x.tcSymbolUses
 
-module ValueOption =
-    let toOption = function
-        | ValueSome x -> Some x
-        | _ -> None
-
 type private SingleFileDiagnostics = (PhasedDiagnostic * FSharpDiagnosticSeverity) array
 type private TypeCheck = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string * SingleFileDiagnostics
 
