@@ -701,7 +701,8 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
 
     let JoinOrGroupJoinOp detector synExpr =
         match synExpr with
-        | SynExpr.App(_, _, CustomOpId isCustomOperation detector nm, ExprAsPat innerSourcePat, mJoinCore) -> Some(nm, innerSourcePat, mJoinCore, false)
+        | SynExpr.App(_, _, CustomOpId isCustomOperation detector nm, ExprAsPat innerSourcePat, mJoinCore) ->
+            Some(nm, innerSourcePat, mJoinCore, false)
         // join with bad pattern (gives error on "join" and continues)
         | SynExpr.App(_, _, CustomOpId isCustomOperation detector nm, _innerSourcePatExpr, mJoinCore) ->
             errorR (Error(FSComp.SR.tcBinaryOperatorRequiresVariable (nm.idText, Option.get (customOpUsageText nm)), nm.idRange))
@@ -768,8 +769,9 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
             Some(nm, innerSourcePat, innerSource, Some keySelectors, Some intoPat, mGroupJoinCore)
 
         // zip intoPat in secondSource
-        | InExpr(SynExpr.App(_, _, CustomOpId isCustomOperation customOperationIsLikeZip nm, ExprAsPat secondSourcePat, _), secondSource, mZipCore) ->
-            Some(nm, secondSourcePat, secondSource, None, None, mZipCore)
+        | InExpr(SynExpr.App(_, _, CustomOpId isCustomOperation customOperationIsLikeZip nm, ExprAsPat secondSourcePat, _),
+                 secondSource,
+                 mZipCore) -> Some(nm, secondSourcePat, secondSource, None, None, mZipCore)
 
         // zip (without secondSource or in - gives error)
         | CustomOpId isCustomOperation customOperationIsLikeZip nm ->
