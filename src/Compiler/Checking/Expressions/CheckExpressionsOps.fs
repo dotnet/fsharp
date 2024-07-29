@@ -97,7 +97,7 @@ let CompilePatternForMatch
 
     mkAndSimplifyMatch DebugPointAtBinding.NoneAtInvisible mExpr mMatch resultTy dtree targets
 
-/// Compile a pattern
+/// Invoke pattern match compilation
 let CompilePatternForMatchClauses (cenv: TcFileState) env mExpr mMatch warnOnUnused actionOnFailure inputExprOpt inputTy resultTy tclauses =
     // Avoid creating a dummy in the common cases where we are about to bind a name for the expression
     // CLEANUP: avoid code duplication with code further below, i.e.all callers should call CompilePatternForMatch

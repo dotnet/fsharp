@@ -123,9 +123,6 @@ exception InvalidInternalsVisibleToAssemblyName of badName: string * fileName: s
 
 val TcFieldInit: range -> ILFieldInit -> Const
 
-val LightweightTcValForUsingInBuildMethodCall:
-    g: TcGlobals -> vref: ValRef -> vrefFlags: ValUseFlag -> vrefTypeInst: TTypes -> m: range -> Expr * TType
-
 /// Indicates whether a syntactic type is allowed to include new type variables
 /// not declared anywhere, e.g. `let f (x: 'T option) = x.Value`
 type ImplicitlyBoundTyparsAllowed =
@@ -441,20 +438,6 @@ val ComputeAccessAndCompPath:
 
 /// Get the expression resulting from turning an expression into an enumerable value, e.g. at 'for' loops
 val ConvertArbitraryExprToEnumerable: cenv: TcFileState -> ty: TType -> env: TcEnv -> expr: Expr -> Expr * TType
-
-/// Invoke pattern match compilation
-val CompilePatternForMatchClauses:
-    cenv: TcFileState ->
-    env: TcEnv ->
-    mExpr: range ->
-    mMatch: range ->
-    warnOnUnused: bool ->
-    actionOnFailure: ActionOnFailure ->
-    inputExprOpt: Expr option ->
-    inputTy: TType ->
-    resultTy: TType ->
-    tclauses: MatchClause list ->
-        Val * Expr
 
 /// Process recursive bindings so that initialization is through laziness and is checked.
 /// The bindings may be either plain 'let rec' bindings or mutually recursive nestings of modules and types.

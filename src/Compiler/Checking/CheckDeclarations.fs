@@ -20,6 +20,7 @@ open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckSequenceExpressions
 open FSharp.Compiler.CheckArrayOrListComputedExpressions
 open FSharp.Compiler.CheckBasics
+open FSharp.Compiler.CheckExpressionsOps
 open FSharp.Compiler.CheckIncrementalClasses
 open FSharp.Compiler.CheckPatterns
 open FSharp.Compiler.ConstraintSolver
