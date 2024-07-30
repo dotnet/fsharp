@@ -44,3 +44,5 @@ ImplFile
           (1,0--4,22), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
+
+(4,17)-(4,18) parse error Expecting union case field

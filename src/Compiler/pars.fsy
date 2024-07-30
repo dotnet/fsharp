@@ -2471,7 +2471,7 @@ braceFieldDeclList:
      { [] }
 
   | LBRACE rbrace
-     { errorR (Error(FSComp.SR.parsExpectingField(), rhs parseState 2))
+     { errorR (Error(FSComp.SR.parsExpectingRecordField (), rhs parseState 2))
        [] }
 
 anonRecdType:
@@ -2876,6 +2876,7 @@ unionCaseReprElements:
 
   | STAR unionCaseReprElements
      { let mStar = rhs parseState 1
+       errorR (Error(FSComp.SR.parsExpectingUnionCaseField (), rhs parseState 1))
        let fields, mFields = $2
        let ty = SynType.FromParseError mStar.StartRange
        let field = mkSynAnonField (ty, PreXmlDoc.Empty)
