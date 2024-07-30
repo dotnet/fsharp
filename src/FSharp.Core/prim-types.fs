@@ -1090,6 +1090,9 @@ namespace Microsoft.FSharp.Core
                        | _ ->
                            FailGenericComparison xobj
 
+                   | _ when GenericCompare comp (xobj.GetType().FullName,yobj.GetType().FullName) <> 0 ->
+                       GenericCompare comp (xobj.GetType().FullName, yobj.GetType().FullName)
+
                    // Check for IStructuralComparable
                    | (:? IStructuralComparable as x),_ ->
                        x.CompareTo(yobj,comp)
