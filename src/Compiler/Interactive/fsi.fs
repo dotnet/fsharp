@@ -71,6 +71,7 @@ open FSharp.Compiler.Tokenization
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.BuildGraph
+open FSharp.Compiler.CheckExpressionsOps
 
 //----------------------------------------------------------------------------
 // For the FSI as a service methods...
