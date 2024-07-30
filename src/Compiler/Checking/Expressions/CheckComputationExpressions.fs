@@ -883,17 +883,6 @@ let inline addVarsToVarSpace (varSpace: LazyWithContext<Val list * TcEnv, range>
         id
     )
 
-/// <summary>
-/// Try translate the syntax sugar
-/// </summary>
-/// <param name="cenv"></param>
-/// <param name="firstTry"></param>
-/// <param name="q">a flag indicating if custom operators are allowed. They are not allowed inside try/with, try/finally, if/then/else etc.</param>
-/// <param name="varSpace">a lazy data structure indicating the variables bound so far in the overall computation</param>
-/// <param name="comp">the computation expression being analyzed</param>
-/// <param name="translatedCtxt">represents the translation of the context in which the computation expression 'comp' occurs,
-/// up to a hole to be filled by (part of) the results of translating 'comp'.</param>
-/// <returns></returns>
 let rec TryTranslateComputationExpression
     (cenv: TcFileState)
     env
