@@ -490,7 +490,7 @@ stages:
             displayName: Build / Test
             env:
                 DOTNET_DbgEnableMiniDump: 1
-                DOTNET_DbgMiniDumpType: 2 # Heap dump, 1 for mini, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
+                DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
                 DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\dumps\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
           - task: PublishTestResults@2
             displayName: Publish Test Results
