@@ -4537,7 +4537,7 @@ and CheckIWSAM (cenv: cenv) (env: TcEnv) checkConstraints iwsam m tcref =
     let g = cenv.g
     let ty = generalizedTyconRef g tcref
 
-    if iwsam = WarnOnIWSAM.Yes && isInterfaceTy g ty && checkConstraints = CheckCxs then
+    if (iwsam = WarnOnIWSAM.Yes && isInterfaceTy g ty && not (cenv.g.langVersion.SupportsFeature LanguageFeature.StaticMembersInInterfaces) && checkConstraints = CheckCxs) then
         let meths = AllMethInfosOfTypeInScope ResultCollectionSettings.AllResults cenv.infoReader env.NameEnv None env.eAccessRights IgnoreOverrides m ty
 
         if meths |> List.exists (fun meth -> not meth.IsInstance && meth.IsDispatchSlot && not meth.IsExtensionMember) then
@@ -11830,7 +11830,7 @@ and CheckForNonAbstractInterface (g: TcGlobals) declKind tcref (memberFlags: Syn
             error(Error(FSComp.SR.tcStaticInitializersIllegalInInterface(), m))
         elif memberFlags.MemberKind = SynMemberKind.Constructor then
             error(Error(FSComp.SR.tcObjectConstructorsIllegalInInterface(), m))
-        elif memberFlags.IsOverrideOrExplicitImpl then
+        elif memberFlags.IsOverrideOrExplicitImpl && not (isMemberStatic && g.langVersion.SupportsFeature LanguageFeature.StaticMembersInInterfaces) then
             error(Error(FSComp.SR.tcMemberOverridesIllegalInInterface(), m))
         elif not (declKind = ExtrinsicExtensionBinding || memberFlags.IsDispatchSlot) then
             if not isMemberStatic then

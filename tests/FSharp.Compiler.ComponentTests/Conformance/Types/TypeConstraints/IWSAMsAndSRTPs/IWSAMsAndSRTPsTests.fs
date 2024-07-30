@@ -384,6 +384,7 @@ let main _ =
     let ``IWSAM warning`` () =
         Fsx "let fExpectAWarning(x: Types.ISinOperator<'T>) = ()"
         |> withReferences [typesModule]
+        |> withLangVersion70
         |> compile
         |> shouldFail
         |> withWarningCode 3536
@@ -790,6 +791,61 @@ let main _ =
             f 3.0 |> ignore"""
         |> withLangVersion70
         |> compile
+        |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``Interfaces can implement static methods`` () =
+        Fsx """
+            type IParent<'T> = static abstract GetOne : unit -> int
+            type [<Interface>]IDerived = interface IParent<IDerived> with static member GetOne () = 1
+            let getOne<'T when 'T :> IParent<'T>> () = 'T.GetOne()
+            let x = getOne<IDerived>()
+            if x <> 1 then
+                failwith "Unexpected result"
+        """
+        |> withLangVersion80
+        |> withOptions ["--nowarn:3535"]
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``Interfaces can use 'inherit' for instance members and 'interface .. with ..' for statics`` () =
+        Fsx """
+            open System
+            open System.Collections.Generic
+
+            type ISemigroup<'T> = static abstract op_AdditionAddition : 'T * 'T -> 'T
+
+            type private UnsafeOfSeq<'t> (seq: seq<'t>) =
+                static member op_AdditionAddition (x: UnsafeOfSeq<'t>, y) = UnsafeOfSeq (Seq.append x y)
+                interface NonEmptySeq<'t> with
+                    member _.First = Seq.head seq
+                    static member op_AdditionAddition (x: NonEmptySeq<'t>, y) =
+                        UnsafeOfSeq<'t>.op_AdditionAddition (UnsafeOfSeq x, UnsafeOfSeq y)
+                interface IEnumerable<'t> with
+                    member _.GetEnumerator() = seq.GetEnumerator()
+                    member _.GetEnumerator() = seq.GetEnumerator() :> Collections.IEnumerator
+
+            and [<Interface>]NonEmptySeq<'t> =
+                abstract member First: 't
+                static member unsafeOfSeq (source: 't seq) = UnsafeOfSeq source :> NonEmptySeq<'t>
+                inherit IEnumerable<'t>
+                interface ISemigroup<NonEmptySeq<'t>> with
+                    static member op_AdditionAddition (source1: NonEmptySeq<'t>, source2) =
+                        let x = UnsafeOfSeq source1
+                        let y = UnsafeOfSeq source2
+                        UnsafeOfSeq.op_AdditionAddition (x, y) :> NonEmptySeq<'t>
+
+            let (++) (x: 't :> ISemigroup<'t>) (y: 't :> ISemigroup<'t>) = 't.op_AdditionAddition (x, y)
+
+            let x = NonEmptySeq.unsafeOfSeq [1..3]
+            let xx = x ++ x
+            if Seq.toList xx <> [1; 2; 3; 1; 2; 3] then
+                failwith "Unexpected result"
+        """
+        |> withLangVersion80
+        |> withOptions ["--nowarn:3535"]
+        |> compileExeAndRun
         |> shouldSucceed
 
 #if !NETCOREAPP

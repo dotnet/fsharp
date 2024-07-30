@@ -3256,9 +3256,10 @@ module EstablishTypeDefinitionCores =
                         let inheritedTys = fst (List.mapFold (mapFoldFst (TcTypeAndRecover cenv NoNewTypars checkConstraints ItemOccurence.UseInType WarnOnIWSAM.No envinner)) tpenv inherits)
                         let implementedTys, inheritedTys =   
                             match kind with 
-                            | SynTypeDefnKind.Interface -> 
-                                explicitImplements |> List.iter (fun (_, m) -> errorR(Error(FSComp.SR.tcInterfacesShouldUseInheritNotInterface(), m)))
-                                (implementedTys @ inheritedTys), [] 
+                            | SynTypeDefnKind.Interface ->
+                                if not (cenv.g.langVersion.SupportsFeature LanguageFeature.StaticMembersInInterfaces) then
+                                    explicitImplements |> List.iter (fun (_, m) -> errorR(Error(FSComp.SR.tcInterfacesShouldUseInheritNotInterface(), m)))
+                                (implementedTys @ inheritedTys), []
                             | _ -> implementedTys, inheritedTys
                         implementedTys, inheritedTys 
                     | SynTypeDefnSimpleRepr.Enum _ | SynTypeDefnSimpleRepr.None _ | SynTypeDefnSimpleRepr.TypeAbbrev _
@@ -3602,7 +3603,7 @@ module EstablishTypeDefinitionCores =
                             let m = match inherits with | [] -> m | (_, m, _) :: _ -> m
                             if isSealedTy g ty then 
                                 errorR(Error(FSComp.SR.tcCannotInheritFromSealedType(), m))
-                            elif not (isClassTy g ty) then 
+                            elif not (isClassTy g ty) && not (isInterfaceTy g ty && cenv.g.langVersion.SupportsFeature LanguageFeature.StaticMembersInInterfaces) then
                                 errorR(Error(FSComp.SR.tcCannotInheritFromInterfaceType(), m)))
 
                         let abstractSlots = 

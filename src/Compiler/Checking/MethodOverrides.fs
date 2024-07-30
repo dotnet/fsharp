@@ -932,7 +932,9 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv
            && not tycon.IsTypeAbbrev
            && not tycon.IsMeasureableReprTycon
            && not tycon.IsAsmReprTycon
-           && not tycon.IsFSharpInterfaceTycon
+           && (not tycon.IsFSharpInterfaceTycon
+                || (g.langVersion.SupportsFeature LanguageFeature.StaticMembersInInterfaces
+                    && tycon.MembersOfFSharpTyconSorted |> List.exists (fun x -> not x.IsInstanceMember)))
            && not tycon.IsFSharpDelegateTycon then 
 
             DispatchSlotChecking.CheckImplementationRelationAtEndOfInferenceScope (infoReader, denv, nenv, sink, tycon, isImplementation) 
