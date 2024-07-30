@@ -411,6 +411,9 @@ stages:
 
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             env:
+              DOTNET_DbgEnableMiniDump: 1
+              DOTNET_DbgMiniDumpType: 2 # Heap dump, 1 for mini, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
+              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\dumps\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build / Integration Test
             continueOnError: true
@@ -431,6 +434,15 @@ stages:
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/$(_configuration)\Build.VisualFSharp.sln.binlog'
                 ArtifactName: 'Windows $(_configuration) $(_testKind) test binlogs'
+                ArtifactType: Container
+                parallel: true
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Dumps
+            condition: always()
+            continueOnError: true
+            inputs:
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\dumps\$(_configuration)'
+                ArtifactName: 'Windows $(_configuration) $(_testKind) process dumps'
                 ArtifactType: Container
                 parallel: true
           - task: PublishBuildArtifacts@1
@@ -476,6 +488,10 @@ stages:
             clean: true
           - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
             displayName: Build / Test
+            env:
+                DOTNET_DbgEnableMiniDump: 1
+                DOTNET_DbgMiniDumpType: 2 # Heap dump, 1 for mini, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
+                DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\dumps\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
@@ -484,6 +500,15 @@ stages:
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
             continueOnError: true
             condition: always()
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Dumps
+            condition: always()
+            continueOnError: true
+            inputs:
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\dumps\$(_configuration)'
+                ArtifactName: 'Windows $(_configuration) $(_testKind) process dumps'
+                ArtifactType: Container
+                parallel: true
           - task: PublishBuildArtifacts@1
             displayName: Publish Test Logs
             inputs:
@@ -516,6 +541,9 @@ stages:
             clean: true
           - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
             env:
+              DOTNET_DbgEnableMiniDump: 1
+              DOTNET_DbgMiniDumpType: 2 # Heap dump, 1 for mini, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
+              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\dumps\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
               COMPlus_DefaultStackSize: 1000000
             displayName: Build / Test
           - task: PublishTestResults@2
@@ -526,6 +554,15 @@ stages:
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
             continueOnError: true
             condition: always()
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Dumps
+            condition: always()
+            continueOnError: true
+            inputs:
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\dumps\$(_configuration)'
+                ArtifactName: 'Windows $(_configuration) $(_testKind) process dumps'
+                ArtifactType: Container
+                parallel: true
           - task: PublishBuildArtifacts@1
             displayName: Publish Test Logs
             inputs:
