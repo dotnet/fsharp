@@ -883,6 +883,30 @@ let inline addVarsToVarSpace (varSpace: LazyWithContext<Val list * TcEnv, range>
         id
     )
 
+/// <summary>
+/// Try translate the syntax sugar
+/// </summary>
+/// <param name="cenv">File typecheck state</param>
+/// <param name="env">Typechecking environment</param>
+/// <param name="tpenv">Unscoped type paramenters environment</param>
+/// <param name="customOperationMethodsIndexedByKeyword">Cache for custom operations, indexed by keyword</param>
+/// <param name="customOperationMethodsIndexedByMethodName">Cache for custom operations, indexed by method name</param>
+/// <param name="sourceMethInfo">Source method info</param>
+/// <param name="builderValName">Builder name</param>
+/// <param name="ad">Accessor domain</param>
+/// <param name="builderTy">Builder type</param>
+/// <param name="isQuery">Indicates if it's query</param>
+/// <param name="enableImplicitYield">Indicates if implicit yield is enabled</param>
+/// <param name="origComp">Original computation expression</param>
+/// <param name="mWhole">Range of the whole expression</param>
+/// <param name="firstTry">Flag if it's inital check</param>
+/// <param name="q">a flag indicating if custom operators are allowed. They are not allowed inside try/with, try/finally, if/then/else etc.</param>
+/// <param name="varSpace">a lazy data structure indicating the variables bound so far in the overall computation</param>
+/// <param name="comp">the computation expression being analyzed</param>
+/// <param name="translatedCtxt">represents the translation of the context in which the computation expression 'comp' occurs,
+/// up to a hole to be filled by (part of) the results of translating 'comp'.</param>
+/// <typeparam name="'a"></typeparam>
+/// <returns></returns>
 let rec TryTranslateComputationExpression
     (cenv: TcFileState)
     env
