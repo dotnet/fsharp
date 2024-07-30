@@ -26,63 +26,65 @@ ValueSome (1, 2) = ValueSome (2, 3) |> ignore"""
     [<InlineData(true)>]        // RealSig
     [<InlineData(false)>]       // Regular
     [<Theory>]
-    let ``Another Assembly``(realsig) =
-        let module1 =
+    let ``Another Assembly - record with private fields`` (realsig) =
+        let library =
             FSharpWithFileName "Module1.fs"
                 """
 module Module1
     
-    [<Struct>]
-    type Struct(v: int, u: int) =
-        member _.V = v
-        member _.U = u """
+type Value =
+    private { value: uint32 }
+
+    static member Zero = { value = 0u }
+    static member Create(value: int) = { value = uint value } """
             |> withRealInternalSignature realsig
             |> withOptimize
             |> asLibrary
             |> withName "module1"
 
-        let module2 = 
-            FSharpWithFileName "Program.fs"
-                """
-Module1.Struct(1, 2) = Module1.Struct(2, 3) |> ignore"""
-
-        module2
-        |> withReferences [module1]
-        |> withRealInternalSignature realsig
-        |> withOptimize
-        |> compileExeAndRun
-        |> shouldSucceed
-        |> withILContains [ """
-IL_0022: call class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-IL_0027: call instance bool [module1]Module1/Struct::Equals(valuetype [module1]Module1/Struct, class [mscorlib]System.Collections.IEqualityComparer)
-""" ]
-
-    [<InlineData(true)>]        // RealSig
-    [<InlineData(false)>]       // Regular
-    [<Theory>]
-    let ``Single Assembly``(realsig) =
         let mainModule = 
             FSharpWithFileName "Program.fs"
-                """
+                $"""
+open Module1
+Value.Zero = Value.Create 0 |> ignore"""
+
+        mainModule
+        |> withRealInternalSignature realsig
+        |> withReferences [ library ]
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<InlineData(false, "private",  "assembly")>]   // Legacy, private WrapType, private visibility in IL
+    [<InlineData(false, "internal", "assembly")>]   // RealSig, internal WrapType, assembly visibility in IL
+    [<InlineData(false, "public",   "public")>]     // Legacy, public WrapType, public visibility in IL
+    [<InlineData(true,  "private",  "private")>]    // RealSig, private WrapType, private visibility in IL
+    [<InlineData(true,  "internal", "assembly")>]   // RealSig, internal WrapType, assembly visibility in IL
+    [<InlineData(true,  "public",   "public")>]     // RealSig, public WrapType, public visibility in IL
+    [<Theory>]
+    let ``Generated typed Equals`` (realsig, typeScope, targetVisibility) =
+        let library = 
+            FSharpWithFileName "Program.fs"
+                $"""
 module Module1 =
 
     [<Struct>]
-    type Struct(v: int, u: int) =
+    type {typeScope} Struct(v: int, u: int) =
         member _.V = v
-        member _.U = u
+        member _.U = u"""
 
-module Module2 =
-    Module1.Struct(1, 2) = Module1.Struct(2, 3) |> ignore
-"""
-        mainModule
+        library
+        |> asExe
+        |> withNoWarn 988
         |> withRealInternalSignature realsig
         |> withOptimize
-        |> compileExeAndRun
+        |> compile
         |> shouldSucceed
         |> verifyIL [
-            """
-      .method public hidebysig virtual final instance bool  Equals(valuetype Program/Module1/Struct obj) cil managed
-      {
+            $"""
+      .method {targetVisibility} hidebysig instance bool 
+              Equals(valuetype Program/Module1/Struct obj,
+                     class [runtime]System.Collections.IEqualityComparer comp) cil managed
+      {{
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         
         .maxstack  8
@@ -101,112 +103,30 @@ module Module2 =
 
         IL_001f:  ldc.i4.0
         IL_0020:  ret
-      } """
-            """
-    IL_0022:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-    IL_0027:  call       instance bool Program/Module1/Struct::Equals(valuetype Program/Module1/Struct,
-                                                                      class [runtime]System.Collections.IEqualityComparer)
-""" ]
+      }} """ ]
 
 
-    [<InlineData(true)>]        // RealSig
-    [<InlineData(false)>]       // Regular
+    [<InlineData(false, "private")>]        // Legacy, private record fields, private visibility in IL
+    [<InlineData(false, "internal")>]       // RealSig, internal record fields, assembly visibility in IL
+    [<InlineData(false, "public")>]         // Legacy, public record fields, public visibility in IL
+    [<InlineData(true,  "private")>]        // RealSig, private record fields, private visibility in IL
+    [<InlineData(true,  "internal")>]       // RealSig, internal record fields, assembly visibility in IL
+    [<InlineData(true,  "public")>]         // RealSig, public record fields, public visibility in IL
     [<Theory>]
-    let ``Another Assembly - record with private fields`` (realsig) =
-        let module1 =
-            FSharpWithFileName "Module1.fs"
-                """
-module Module1
-    
-type Value =
-    private { value: uint32 }
-
-    static member Zero = { value = 0u }
-    static member Create(value: int) = { value = uint value } """
-            |> withRealInternalSignature realsig
-            |> withOptimize
-            |> asLibrary
-            |> withName "module1"
-
-        let module2 = 
-            FSharpWithFileName "Program.fs"
-                """
-open Module1
-
-Value.Zero = Value.Create 0 |> ignore"""
-
-            |> withRealInternalSignature realsig
-            |> withReferences [module1]
-            |> withOptimize
-
-        module1
-        |> withRealInternalSignature realsig
-        |> compile
-        |> shouldSucceed
-        |> withILContains ["""
-    .method public hidebysig virtual final 
-            instance bool  Equals(class Module1/Value obj,
-                                  class [runtime]System.Collections.IEqualityComparer comp) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  brfalse.s  IL_0017
-
-      IL_0003:  ldarg.1
-      IL_0004:  brfalse.s  IL_0015
-
-      IL_0006:  ldarg.0
-      IL_0007:  ldfld      uint32 Module1/Value::value@
-      IL_000c:  ldarg.1
-      IL_000d:  ldfld      uint32 Module1/Value::value@
-      IL_0012:  ceq
-      IL_0014:  ret
-
-      IL_0015:  ldc.i4.0
-      IL_0016:  ret
-
-      IL_0017:  ldarg.1
-      IL_0018:  ldnull
-      IL_0019:  cgt.un
-      IL_001b:  ldc.i4.0
-      IL_001c:  ceq
-      IL_001e:  ret
-    } 
-        """]
-        |> ignore
-        
-        module2
-        |> withRealInternalSignature realsig
-        |> compileExeAndRun
-        |> shouldSucceed
-        |> withILContains ["""
-IL_001f:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-IL_0024:  callvirt   instance bool [module1]Module1/Value::Equals(class [module1]Module1/Value,
-                                                                  class [runtime]System.Collections.IEqualityComparer)
-        """]
-
-    [<InlineData(true)>]        // RealSig
-    [<InlineData(false)>]       // Regular
-    [<Theory>]
-    let ``Single Assembly - record with private fields`` (realsig) =
+    let ``Record with various fields`` (realsig, fieldScope) =
 
         let mainModule = 
             FSharpWithFileName "Program.fs"
-                """
+                $"""
 module Module1 =
-
     type Value =
-        private { value: uint32 }
+        {fieldScope} {{ value: uint32 }}
 
-        static member Zero = { value = 0u }
-        static member Create(value: int) = { value = uint value }
+        static member Zero = {{ value = 0u }}
+        static member Create(value: int) = {{ value = uint value }}
 
-module Module2 =
-    open Module1
-
-    Value.Zero = Value.Create 0 |> ignore"""
+    Value.Zero = Value.Create 0 |> ignore
+    printfn "Hello, World" """
 
         mainModule
         |> withRealInternalSignature realsig
@@ -256,7 +176,7 @@ module Module2 =
     [<InlineData(true,  "internal", "assembly")>]   // RealSig, internal WrapType, assembly visibility in IL
     [<InlineData(true,  "public",   "public")>]     // RealSig, public WrapType, public visibility in IL
     [<Theory>]
-    let ``scoped type arg``(realsig, argScope, targetVisibility) =
+    let ``scoped type arg`` (realsig, argScope, targetVisibility) =
         let mainModule = 
             FSharpWithFileName "Program.fs"
                 $"""
@@ -322,5 +242,4 @@ module IPartialEqualityComparer =
         IL_002b:  ldc.i4.0
         IL_002c:  ceq
         IL_002e:  ret
-      }} 
-            """ ]
+      }} """ ]
