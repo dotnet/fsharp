@@ -606,6 +606,24 @@ myNullReturningFunction myValOfY                     |> ignore
                  Error 1, Line 20, Col 25, Line 20, Col 36, "The type '{| Anon: 'a |}' does not have 'null' as a proper value"
                  Error 1, Line 21, Col 26, Line 21, Col 31, "The type '('a * 'b * 'c)' does not have 'null' as a proper value"
                  Error 1, Line 23, Col 25, Line 23, Col 33, "The type 'Y' does not have 'null' as a proper value"]
+
+
+[<Fact>]
+let ``Match null with int`` () =
+    FSharp """module MyLibrary
+let test = 
+    match null with
+    | null -> true
+    | 42 -> false
+
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics 
+             [Error 1, Line 5, Col 7, Line 5, Col 9, "The type 'int' does not have 'null' as a proper value. See also test.fs(3,10)-(3,14)."
+              Error 25, Line 3, Col 11, Line 3, Col 15, "Incomplete pattern matches on this expression."]
+
                  
 [<Fact>]
 let ``Nullnesss support for F# types`` () = 
