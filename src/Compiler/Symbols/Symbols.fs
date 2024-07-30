@@ -26,6 +26,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeHierarchy
+open FSharp.Compiler.CheckExpressionsOps
 
 type FSharpAccessibility(a:Accessibility, ?isProtected) = 
     let isProtected = defaultArg isProtected  false
@@ -58,7 +59,7 @@ type FSharpAccessibility(a:Accessibility, ?isProtected) =
 
 type SymbolEnv(g: TcGlobals, thisCcu: CcuThunk, thisCcuTyp: ModuleOrNamespaceType option, tcImports: TcImports, amap: Import.ImportMap, infoReader: InfoReader) = 
 
-    let tcVal = CheckExpressions.LightweightTcValForUsingInBuildMethodCall g
+    let tcVal = LightweightTcValForUsingInBuildMethodCall g
 
     new(g: TcGlobals, thisCcu: CcuThunk, thisCcuTyp: ModuleOrNamespaceType option, tcImports: TcImports) =
         let amap = tcImports.GetImportMap()
@@ -2986,4 +2987,3 @@ type FSharpOpenDeclaration(target: SynOpenDeclTarget, range: range option, modul
     member _.AppliedScope = appliedScope
 
     member _.IsOwnNamespace = isOwnNamespace
-

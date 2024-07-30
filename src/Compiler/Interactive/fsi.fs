@@ -71,6 +71,7 @@ open FSharp.Compiler.Tokenization
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.BuildGraph
+open FSharp.Compiler.CheckExpressionsOps
 
 //----------------------------------------------------------------------------
 // For the FSI as a service methods...
@@ -1861,7 +1862,12 @@ type internal FsiDynamicCompiler
 
         let asm =
             match opts.pdbfile, pdbBytes with
-            | (Some pdbfile), (Some pdbBytes) -> File.WriteAllBytes(pdbfile, pdbBytes)
+            | (Some pdbfile), (Some pdbBytes) ->
+                File.WriteAllBytes(pdbfile, pdbBytes)
+#if FOR_TESTING
+                Directory.CreateDirectory(scriptingSymbolsPath.Value) |> ignore
+                File.WriteAllBytes(Path.ChangeExtension(pdbfile, ".dll"), assemblyBytes)
+#endif
             | _ -> ()
 
             match pdbBytes with
