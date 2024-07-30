@@ -4348,8 +4348,7 @@ and OptimizeModuleDefs cenv (env, bindInfosColl) defs =
     let defs, minfos = List.unzip defs
     (defs, UnionOptimizationInfos minfos), (env, bindInfosColl)
    
-and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit hidden implFile =
-    let g = cenv.g
+and OptimizeImplFileInternal cenv env isIncrementalFragment hidden implFile =
     let (CheckedImplFile (qname, pragmas, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) = implFile
     let env, contentsR, minfo, hidden = 
         // FSI compiles interactive fragments as if you're typing incrementally into one module.
@@ -4361,13 +4360,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit
             // This optimizes and builds minfo ignoring the signature
             let (defR, minfo), (_env, _bindInfosColl) = OptimizeModuleContents cenv (env, []) contents
             let hidden = ComputeImplementationHidingInfoAtAssemblyBoundary defR hidden
-            let minfo =
-                // In F# interactive multi-assembly mode, no internals are accessible across interactive fragments.
-                // In F# interactive single-assembly mode, internals are accessible across interactive fragments.
-                if fsiMultiAssemblyEmit then
-                    AbstractLazyModulInfoByHiding true hidden minfo
-                else
-                    AbstractLazyModulInfoByHiding false hidden minfo
+            let minfo = AbstractLazyModulInfoByHiding false hidden minfo
             let env = BindValsInModuleOrNamespace cenv minfo env
             env, defR, minfo, hidden
         else
@@ -4375,13 +4368,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit
             let mexprR, minfo = OptimizeModuleExprWithSig cenv env signature contents
             let hidden = ComputeSignatureHidingInfoAtAssemblyBoundary signature hidden
             let minfoExternal = AbstractLazyModulInfoByHiding true hidden minfo
-            let env =
-                // In F# interactive multi-assembly mode, internals are not accessible in the 'env' used intra-assembly
-                // In regular fsc compilation, internals are accessible in the 'env' used intra-assembly
-                if g.isInteractive && fsiMultiAssemblyEmit then
-                    BindValsInModuleOrNamespace cenv minfoExternal env
-                else
-                    BindValsInModuleOrNamespace cenv minfo env
+            let env = BindValsInModuleOrNamespace cenv minfo env
             env, mexprR, minfoExternal, hidden
 
     let implFileR = CheckedImplFile (qname, pragmas, signature, contentsR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
@@ -4389,7 +4376,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit
     env, implFileR, minfo, hidden
 
 /// Entry point
-let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncrementalFragment, fsiMultiAssemblyEmit, emitTailcalls, hidden, mimpls) =
+let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncrementalFragment,  emitTailcalls, hidden, mimpls) =
     let cenv = 
         { settings=settings
           scope=ccu 
@@ -4404,7 +4391,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           realsig = tcGlobals.realsig
         }
 
-    let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment fsiMultiAssemblyEmit hidden mimpls  
+    let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls
 
     let optimizeDuringCodeGen disableMethodSplitting expr =
         let env = { env with disableMethodSplitting = env.disableMethodSplitting || disableMethodSplitting }
