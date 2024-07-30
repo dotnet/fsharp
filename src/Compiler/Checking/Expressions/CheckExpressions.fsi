@@ -123,9 +123,6 @@ exception InvalidInternalsVisibleToAssemblyName of badName: string * fileName: s
 
 val TcFieldInit: range -> ILFieldInit -> Const
 
-val LightweightTcValForUsingInBuildMethodCall:
-    g: TcGlobals -> vref: ValRef -> vrefFlags: ValUseFlag -> vrefTypeInst: TTypes -> m: range -> Expr * TType
-
 /// Indicates whether a syntactic type is allowed to include new type variables
 /// not declared anywhere, e.g. `let f (x: 'T option) = x.Value`
 type ImplicitlyBoundTyparsAllowed =
@@ -442,20 +439,6 @@ val ComputeAccessAndCompPath:
 /// Get the expression resulting from turning an expression into an enumerable value, e.g. at 'for' loops
 val ConvertArbitraryExprToEnumerable: cenv: TcFileState -> ty: TType -> env: TcEnv -> expr: Expr -> Expr * TType
 
-/// Invoke pattern match compilation
-val CompilePatternForMatchClauses:
-    cenv: TcFileState ->
-    env: TcEnv ->
-    mExpr: range ->
-    mMatch: range ->
-    warnOnUnused: bool ->
-    actionOnFailure: ActionOnFailure ->
-    inputExprOpt: Expr option ->
-    inputTy: TType ->
-    resultTy: TType ->
-    tclauses: MatchClause list ->
-        Val * Expr
-
 /// Process recursive bindings so that initialization is through laziness and is checked.
 /// The bindings may be either plain 'let rec' bindings or mutually recursive nestings of modules and types.
 /// The functions must iterate the actual bindings and process them to the overall result.
@@ -640,9 +623,8 @@ val TcExpr:
 val CheckTupleIsCorrectLength:
     g: TcGlobals -> env: TcEnv -> m: range -> tupleTy: TType -> args: 'a list -> tcArgs: (TType list -> unit) -> unit
 
-/// Converts 'a..b' to a call to the '(..)' operator in FSharp.Core
-/// Converts 'a..b..c' to a call to the '(.. ..)' operator in FSharp.Core
-val RewriteRangeExpr: synExpr: SynExpr -> SynExpr option
+/// Check record names and types for cases like cases like `query { for ... join(for x in f(). }`
+val RecordNameAndTypeResolutions: cenv: TcFileState -> env: TcEnv -> tpenv: UnscopedTyparEnv -> expr: SynExpr -> unit
 
 /// Check a syntactic expression and convert it to a typed tree expression
 val TcExprOfUnknownType:
@@ -871,9 +853,6 @@ val TranslateSynValInfo:
 /// Given the declaration of a function or member, complete the processing of its ValReprInfo
 /// once type parameters have been fully inferred via generalization.
 val TranslatePartialValReprInfo: tps: Typar list -> PrelimValReprInfo -> ValReprInfo
-
-/// Constrain two types to be equal within this type checking context
-val UnifyTypes: cenv: TcFileState -> env: TcEnv -> m: range -> expectedTy: TType -> actualTy: TType -> unit
 
 val TcRuntimeTypeTest:
     isCast: bool ->
