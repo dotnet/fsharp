@@ -234,6 +234,23 @@ type MyClass() = class end
          |> shouldSucceed
          
     [<Fact>]
+    let ``Object expression can not implement an abstract class and interface having no abstract members preview`` () =
+        Fsx """
+type IFirst = interface end
+
+[<AbstractClass>]
+type MyClass() = class end
+
+{ new MyClass() with
+    member x.ToString() = "OK"
+    
+  interface IFirst } |> ignore
+        """
+         |> withLangVersionPreview
+         |> typecheck
+         |> shouldSucceed
+         
+    [<Fact>]
     let ``Object expression can implement an abstract class having no abstract members.`` () =
         Fsx """
 [<AbstractClass>]
