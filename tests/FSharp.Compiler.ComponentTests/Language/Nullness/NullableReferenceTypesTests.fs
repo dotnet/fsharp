@@ -458,7 +458,7 @@ let maybeAnon2 : {|Hello:string|} | null = null
     |> shouldFail
     |> withDiagnostics 
             [ Error 3260, Line 4, Col 18, Line 4, Col 41, "The type '{| Hello: string |}' does not support a nullness qualitification."
-              Error 3261, Line 4, Col 44, Line 4, Col 48, "Nullness warning: The type '{| Hello: string |}' does not support 'null'."]
+              Error 43, Line 4, Col 44, Line 4, Col 48, "The type '{| Hello: string |}' does not have 'null' as a proper value"]
     
     
 [<Fact>]
@@ -567,8 +567,8 @@ myGenericFunction myValOfX
     |> shouldFail
     |> withDiagnostics     
             [Error 3261, Line 13, Col 19, Line 13, Col 28, "Nullness warning: The type 'string' does not support 'null'."
-             Error 3261, Line 15, Col 20, Line 15, Col 39, "Nullness warning: The type 'System.DateTime' does not support 'null'."
-             Error 3261, Line 16, Col 19, Line 16, Col 22, "Nullness warning: The type 'int' does not support 'null'."]
+             Error 193, Line 15, Col 20, Line 15, Col 39, "The type 'System.DateTime' does not have 'null' as a proper value"
+             Error 1, Line 16, Col 19, Line 16, Col 22, "The type 'int' does not have 'null' as a proper value"]
 
 [<Fact>]
 let ``Null assignment in generic code`` () =
@@ -602,10 +602,10 @@ myNullReturningFunction myValOfY                     |> ignore
     |> shouldFail
     |> withDiagnostics     
                 [Error 3261, Line 17, Col 25, Line 17, Col 34, "Nullness warning: The type 'string' does not support 'null'."
-                 Error 3261, Line 19, Col 26, Line 19, Col 45, "Nullness warning: The type 'System.DateTime' does not support 'null'."
-                 Error 3261, Line 20, Col 25, Line 20, Col 36, "Nullness warning: The type '{| Anon: 'a |}' does not support 'null'."
-                 Error 3261, Line 21, Col 26, Line 21, Col 31, "Nullness warning: The type '('a * 'b * 'c)' does not support 'null'."
-                 Error 3261, Line 23, Col 25, Line 23, Col 33, "Nullness warning: The type 'Y' does not support 'null'."]
+                 Error 193, Line 19, Col 26, Line 19, Col 45, "The type 'System.DateTime' does not have 'null' as a proper value"
+                 Error 1, Line 20, Col 25, Line 20, Col 36, "The type '{| Anon: 'a |}' does not have 'null' as a proper value"
+                 Error 1, Line 21, Col 26, Line 21, Col 31, "The type '('a * 'b * 'c)' does not have 'null' as a proper value"
+                 Error 1, Line 23, Col 25, Line 23, Col 33, "The type 'Y' does not have 'null' as a proper value"]
                  
 [<Fact>]
 let ``Nullnesss support for F# types`` () = 
@@ -658,10 +658,10 @@ looseFunc(maybeTuple2) |> ignore
     |> withDiagnostics     
             [ Error 43, Line 21, Col 12, Line 21, Col 16, "The constraints 'null' and 'not null' are inconsistent"
               Error 3260, Line 27, Col 18, Line 27, Col 34, "The type '(int * int)' does not support a nullness qualitification."
-              Error 3261, Line 27, Col 37, Line 27, Col 41, "Nullness warning: The type '(int * int)' does not support 'null'."
+              Error 43, Line 27, Col 37, Line 27, Col 41, "The type '(int * int)' does not have 'null' as a proper value"
               Error 3261, Line 29, Col 12, Line 29, Col 19, "Nullness warning: The type 'MyDu | null' supports 'null' but a non-null type is expected."
               Error 3261, Line 30, Col 12, Line 30, Col 21, "Nullness warning: The type 'MyRecord | null' supports 'null' but a non-null type is expected."
-              Error 3261, Line 40, Col 36, Line 40, Col 40, "Nullness warning: The type 'Maybe<int * int>' does not support 'null'."]
+              Error 43, Line 40, Col 36, Line 40, Col 40, "The type 'Maybe<int * int>' does not have 'null' as a proper value"]
                 
 [<Fact>]
 let ``Static member on Record with null arg`` () =
