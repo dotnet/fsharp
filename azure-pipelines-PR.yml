@@ -438,7 +438,7 @@ stages:
                 parallel: true
           - task: PublishBuildArtifacts@1
             displayName: Publish Dumps
-            condition: always()
+            condition: failed()
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\dumps\$(_configuration)'
