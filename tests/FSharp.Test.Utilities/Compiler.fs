@@ -601,6 +601,12 @@ module rec Compiler =
         | FS fs -> FS { fs with Options = fs.Options @ ["--realsig+"] }
         | _ -> failwith "withRealInternalSignatureOn only supported by f#"
 
+    let withRealInternalSignature (realSig: bool) (cUnit: CompilationUnit) : CompilationUnit  =
+        if realSig then
+            cUnit |>  withRealInternalSignatureOn
+        else
+            cUnit |>  withRealInternalSignatureOff
+
     let asExe (cUnit: CompilationUnit) : CompilationUnit =
         withOutputType CompileOutput.Exe cUnit
 
