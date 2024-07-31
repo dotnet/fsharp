@@ -298,8 +298,6 @@ type internal TcGlobals =
 
     member array_length_info: IntrinsicValRef
 
-    member array_map_info: IntrinsicValRef
-
     member array_set_info: IntrinsicValRef
 
     member array_tcr_nice: FSharp.Compiler.TypedTree.EntityRef
@@ -846,8 +844,6 @@ type internal TcGlobals =
     member lift_value_with_defn_info: IntrinsicValRef
 
     member lift_value_with_name_info: IntrinsicValRef
-
-    member list_map_info: IntrinsicValRef
 
     member list_tcr_canon: FSharp.Compiler.TypedTree.EntityRef
 
