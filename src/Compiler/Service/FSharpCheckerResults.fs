@@ -20,7 +20,7 @@ open FSharp.Compiler
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckExpressionsOps
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics

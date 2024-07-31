@@ -21,7 +21,7 @@ src/Compiler/Checking/AttributeChecking.fs
 src/Compiler/Checking/AugmentWithHashCompare.fs
 src/Compiler/Checking/CheckBasics.fs
 src/Compiler/Checking/CheckDeclarations.fs
-src/Compiler/Checking/CheckExpressions.fs
+src/Compiler/Checking/Expressions/CheckExpressions.fs
 src/Compiler/Checking/CheckFormatStrings.fs
 src/Compiler/Checking/CheckIncrementalClasses.fs
 src/Compiler/Checking/CheckPatterns.fs

@@ -1237,7 +1237,7 @@ let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo: MethInfo)  =
                 AccessibleFrom(paths, None) 
         | _ -> ad
 
-    if not (IsTypeAndMethInfoAccessible amap m adOriginal ad minfo) then 
+    if not (minfo.IsProtectedAccessibility && minfo.LogicalName.StartsWithOrdinal("set_")) && not(IsTypeAndMethInfoAccessible amap m adOriginal ad minfo) then 
       error (Error (FSComp.SR.tcMethodNotAccessible(minfo.LogicalName), m))
 
     if isAnyTupleTy g minfo.ApparentEnclosingType && not minfo.IsExtensionMember &&
