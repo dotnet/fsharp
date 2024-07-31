@@ -475,6 +475,8 @@ stages:
           - checkout: self
             clean: true
           - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
+            env:
+              SKIP_NETCURRENT_FSC_BUILD: true
             displayName: Build / Test
           - task: PublishTestResults@2
             displayName: Publish Test Results
