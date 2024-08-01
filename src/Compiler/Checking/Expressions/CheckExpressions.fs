@@ -7118,12 +7118,14 @@ and CheckSuperType (cenv: cenv) ty m =
 and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraImpls, mObjTy, mNewExpr, mWholeExpr) =
 
     let g = cenv.g
-
     match tryTcrefOfAppTy g objTy with
     | ValueNone -> error(Error(FSComp.SR.tcNewMustBeUsedWithNamedType(), mNewExpr))
     | ValueSome tcref ->
     let isRecordTy = tcref.IsRecordTycon
-    if not isRecordTy && not (isInterfaceTy g objTy) && isSealedTy g objTy then errorR(Error(FSComp.SR.tcCannotCreateExtensionOfSealedType(), mNewExpr))
+    let isInterfaceTy = isInterfaceTy g objTy
+    let isFSharpObjModelTy = isFSharpObjModelTy g objTy
+    let isOverallTyAbstract = HasFSharpAttribute g g.attrib_AbstractClassAttribute tcref.Attribs
+    if not isRecordTy && not isInterfaceTy && isSealedTy g objTy then errorR(Error(FSComp.SR.tcCannotCreateExtensionOfSealedType(), mNewExpr))
 
     CheckSuperType cenv objTy mObjTy
 
@@ -7134,14 +7136,14 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
     let env = EnterFamilyRegion tcref env
     let ad = env.AccessRights
 
-    if // record construction ?
+    if // record construction ? e.g { A = 1; B = 2 }
        isRecordTy ||
-       // object construction?
-       (isFSharpObjModelTy g objTy && not (isInterfaceTy g objTy) && argopt.IsNone) then
+       // object construction?  e.g. new A() { ... }
+       (isFSharpObjModelTy && not isInterfaceTy && argopt.IsNone) then
 
         if argopt.IsSome then error(Error(FSComp.SR.tcNoArgumentsForRecordValue(), mWholeExpr))
         if not (isNil extraImpls) then error(Error(FSComp.SR.tcNoInterfaceImplementationForConstructionExpression(), mNewExpr))
-        if isFSharpObjModelTy g objTy && GetCtorShapeCounter env <> 1 then
+        if isFSharpObjModelTy && GetCtorShapeCounter env <> 1 then
             error(Error(FSComp.SR.tcObjectConstructionCanOnlyBeUsedInClassTypes(), mNewExpr))
         let fldsList =
             binds |> List.map (fun b ->
@@ -7151,8 +7153,9 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
 
         TcRecordConstruction cenv objTy true env tpenv None objTy fldsList mWholeExpr
     else
+        // object expression construction e.g. { new A() with ... } or { new IA with ... }
         let ctorCall, baseIdOpt, tpenv =
-            if isInterfaceTy g objTy then
+            if isInterfaceTy then
                 match argopt with
                 | None ->
                     BuildObjCtorCall g mWholeExpr, None, tpenv
@@ -7161,7 +7164,7 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
             else
                 let item = ForceRaise (ResolveObjectConstructor cenv.nameResolver env.DisplayEnv mObjTy ad objTy)
 
-                if isFSharpObjModelTy g objTy && GetCtorShapeCounter env = 1 then
+                if isFSharpObjModelTy && GetCtorShapeCounter env = 1 then
                     error(Error(FSComp.SR.tcObjectsMustBeInitializedWithObjectExpression(), mNewExpr))
 
                 match item, argopt with
@@ -7192,14 +7195,6 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
         overridesAndVirts |> List.iter (fun (m, implTy, dispatchSlots, dispatchSlotsKeyed, availPriorOverrides, overrides) ->
             let overrideSpecs = overrides |> List.map fst
             let hasStaticMembers = dispatchSlots |> List.exists (fun reqdSlot -> not reqdSlot.MethodInfo.IsInstance)
-            let isOverallTyAbstract =
-                match tryTcrefOfAppTy g objTy with
-                | ValueNone -> false
-                | ValueSome tcref -> HasFSharpAttribute g g.attrib_AbstractClassAttribute tcref.Attribs
-                
-            // if overrideSpecs.IsEmpty && not (isInterfaceTy g objTy) then
-            //     errorR (Error(FSComp.SR.tcInvalidObjectExpressionSyntaxForm (), mWholeExpr))
-
             if hasStaticMembers then
                 errorR(Error(FSComp.SR.chkStaticMembersOnObjectExpressions(), mObjTy))
 
@@ -7239,8 +7234,11 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
         let objtyR, overrides' = allTypeImpls.Head
         assert (typeEquiv g objTy objtyR)
         let extraImpls = allTypeImpls.Tail
+            
+        if not isInterfaceTy && (isOverallTyAbstract && overrides'.IsEmpty) && extraImpls.IsEmpty then
+           errorR (Error(FSComp.SR.tcInvalidObjectExpressionSyntaxForm (), mWholeExpr))
 
-        // 7. Build the implementation
+        // 4. Build the implementation
         let expr = mkObjExpr(objtyR, baseValOpt, ctorCall, overrides', extraImpls, mWholeExpr)
         let expr = mkCoerceIfNeeded g realObjTy objtyR expr
         expr, tpenv
