@@ -1762,7 +1762,7 @@ featureReuseSameFieldsInStructUnions,"Share underlying fields in a [<Struct>] di
 3860,chkStaticMembersOnObjectExpressions,"Object expressions cannot implement interfaces with static abstract members or declare static members."
 3861,chkTailCallAttrOnNonRec,"The TailCall attribute should only be applied to recursive functions."
 3862,parsStaticMemberImcompleteSyntax,"Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration."
-3863,parsExpectingField,"Expecting record field"
+3863,parsExpectingRecordField,"Expecting record field"
 3864,tooManyMethodsInDotNetTypeWritingAssembly,"The type '%s' has too many methods. Found: '%d', maximum: '%d'"
 3865,parsOnlySimplePatternsAreAllowedInConstructors,"Only simple patterns are allowed in primary constructors"
 3866,chkStaticAbstractInterfaceMembers,"A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.%s)."
@@ -1775,3 +1775,4 @@ featureParsedHashDirectiveArgumentNonString,"# directives with non-quoted string
 3869,featureParsedHashDirectiveUnexpectedInteger,"Unexpected integer literal '%d'."
 3869,featureParsedHashDirectiveUnexpectedIdentifier,"Unexpected identifier '%s'."
 featureEmptyBodiedComputationExpressions,"Support for computation expressions with empty bodies: builder {{ }}"
+3870,parsExpectingUnionCaseField,"Expecting union case field"
