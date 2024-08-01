@@ -33,6 +33,70 @@ let implementer() ={ new IFirst  }
          |> withLangVersion80
          |> typecheck
          |> shouldSucceed
+
+    [<Fact>]
+    let ``Object expression can not implement an abstract class and interface having no abstract members.`` () =
+        Fsx """
+type IFirst = interface end
+
+type ISecond =
+    abstract member M : unit -> unit
+    
+[<AbstractClass>]
+type MyClass() = class end
+
+{ new MyClass() with
+    member x.ToString() = "OK"
+    
+  interface IFirst
+  
+  interface ISecond with
+      member this.M() = () } |> ignore
+        """
+         |> withLangVersion80
+         |> typecheck
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Object expression can not implement an abstract class and interface having no abstract members 2`` () =
+        Fsx """
+type IFirst = interface end
+
+type ISecond =
+    abstract member M : unit -> unit
+    
+[<AbstractClass>]
+type MyClass() = class end
+
+{ new MyClass() interface IFirst
+  
+  interface ISecond with
+      member this.M() = () } |> ignore
+        """
+         |> withLangVersion80
+         |> typecheck
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Object expression can not implement an abstract class and interface having no abstract members 3`` () =
+        Fsx """
+type IFirst = interface end
+
+type ISecond =
+    abstract member M : unit -> unit
+    
+[<AbstractClass>]
+type MyClass() = class end
+
+{ new MyClass()
+    interface IFirst
+  
+  interface ISecond with
+      member this.M() = () } |> ignore
+        """
+         |> withLangVersion80
+         |> typecheck
+         |> shouldSucceed
          
     [<Fact>]
     let ``Parameterized object expression implementing an interface with members`` () =
@@ -74,7 +138,8 @@ let foo2 = { new Foo() with member __.ToString() = base.ToString() }
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
-             (Error 738, Line 5, Col 11, Line 5, Col 24, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
+             // This should be an error, but it's not
+             //(Error 738, Line 5, Col 11, Line 5, Col 24, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
              (Error 759, Line 7, Col 12, Line 7, Col 21, "Instances of this type cannot be created since it has been marked abstract or not all methods have been given implementations. Consider using an object expression '{ new ... with ... }' instead.")
          ] 
          

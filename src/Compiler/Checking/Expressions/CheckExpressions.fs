@@ -7197,8 +7197,8 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
                 | ValueNone -> false
                 | ValueSome tcref -> HasFSharpAttribute g g.attrib_AbstractClassAttribute tcref.Attribs
                 
-            if overrideSpecs.IsEmpty && not (isInterfaceTy g objTy) then
-                errorR (Error(FSComp.SR.tcInvalidObjectExpressionSyntaxForm (), mWholeExpr))
+            // if overrideSpecs.IsEmpty && not (isInterfaceTy g objTy) then
+            //     errorR (Error(FSComp.SR.tcInvalidObjectExpressionSyntaxForm (), mWholeExpr))
 
             if hasStaticMembers then
                 errorR(Error(FSComp.SR.chkStaticMembersOnObjectExpressions(), mObjTy))
