@@ -5755,8 +5755,8 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     | SynExpr.Match (spMatch, synInputExpr, synClauses, _m, _trivia) ->
         TcExprMatch cenv overallTy env tpenv synInputExpr spMatch synClauses
 
-    | SynExpr.MatchLambda (isExnMatch, mArg, clauses, spMatch, m) ->
-        TcExprMatchLambda cenv overallTy env tpenv (isExnMatch, mArg, clauses, spMatch, m)
+    | SynExpr.MatchLambda (isExnMatch, mFunction, clauses, spMatch, m) ->
+        TcExprMatchLambda cenv overallTy env tpenv (isExnMatch, mFunction, clauses, spMatch, m)
 
     | SynExpr.Assert (x, m) ->
         TcNonControlFlowExpr env <| fun env ->
@@ -6009,12 +6009,13 @@ and TcExprMatch (cenv: cenv) overallTy env tpenv synInputExpr spMatch synClauses
 //     <@ function x -> (x: int) @>
 // is
 //     Lambda (_arg2, Let (x, _arg2, x))
-and TcExprMatchLambda (cenv: cenv) overallTy env tpenv (isExnMatch, mArg, clauses, spMatch, m) =
+and TcExprMatchLambda (cenv: cenv) overallTy env tpenv (isExnMatch, mFunction, clauses, spMatch, m) =
     let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m overallTy.Commit
-    let idv1, idve1 = mkCompGenLocal mArg (cenv.synArgNameGenerator.New()) domainTy
+    let idv1, idve1 = mkCompGenLocal mFunction (cenv.synArgNameGenerator.New()) domainTy
+    CallExprHasTypeSink cenv.tcSink (mFunction.StartRange, env.NameEnv, domainTy, env.AccessRights)
     let envinner = ExitFamilyRegion env
     let envinner = { envinner with eIsControlFlow = true }
-    let idv2, matchExpr, tpenv = TcAndPatternCompileMatchClauses m mArg (if isExnMatch then Throw else ThrowIncompleteMatchException) cenv None domainTy (MustConvertTo (false, resultTy)) envinner tpenv clauses
+    let idv2, matchExpr, tpenv = TcAndPatternCompileMatchClauses m mFunction (if isExnMatch then Throw else ThrowIncompleteMatchException) cenv None domainTy (MustConvertTo (false, resultTy)) envinner tpenv clauses
     let overallExpr = mkMultiLambda m [idv1] ((mkLet spMatch m idv2 idve1 matchExpr), resultTy)
     overallExpr, tpenv
 
