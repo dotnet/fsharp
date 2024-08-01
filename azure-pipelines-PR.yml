@@ -230,7 +230,7 @@ stages:
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\dumps\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
+              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
 
@@ -248,7 +248,7 @@ stages:
             condition: failed()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\dumps\$(_configuration)'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\$(_configuration)'
                 ArtifactName: 'Windows $(_configuration) $(_testKind) process dumps'
                 ArtifactType: Container
                 parallel: true
@@ -270,7 +270,7 @@ stages:
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\dumps\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
+              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
 
@@ -288,7 +288,7 @@ stages:
             condition: failed()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\dumps\$(_configuration)'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\$(_configuration)'
                 ArtifactName: 'Windows $(_configuration) $(_testKind) process dumps'
                 ArtifactType: Container
                 parallel: true
@@ -310,7 +310,7 @@ stages:
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\dumps\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
+              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
 
@@ -328,7 +328,7 @@ stages:
             condition: failed()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\dumps\$(_configuration)'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\$(_configuration)'
                 ArtifactName: 'Windows $(_configuration) $(_testKind) process dumps'
                 ArtifactType: Container
                 parallel: true
@@ -350,7 +350,7 @@ stages:
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\dumps\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
+              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
 
@@ -368,7 +368,7 @@ stages:
             condition: failed()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\dumps\$(_configuration)'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\$(_configuration)'
                 ArtifactName: 'Windows $(_configuration) $(_testKind) process dumps'
                 ArtifactType: Container
                 parallel: true
@@ -386,7 +386,7 @@ stages:
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\dumps\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
+              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
 
@@ -404,7 +404,7 @@ stages:
             condition: failed()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\dumps\$(_configuration)'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\$(_configuration)'
                 ArtifactName: 'Windows $(_configuration) $(_testKind) process dumps'
                 ArtifactType: Container
                 parallel: true
@@ -460,7 +460,7 @@ stages:
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\dumps\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
+              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build / Test
             condition: and( ne(variables['_testKind'], 'testIntegration'), ne(variables['System.JobName'], 'transparent_compiler_release') )
@@ -469,7 +469,7 @@ stages:
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\dumps\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
+              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
               TEST_TRANSPARENT_COMPILER: 1
               NativeToolsOnMachine: true
             displayName: Build / Test Transparent Compiler
@@ -479,7 +479,7 @@ stages:
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\dumps\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
+              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build / Integration Test
             continueOnError: true
@@ -507,7 +507,7 @@ stages:
             condition: failed()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\dumps\$(_configuration)'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\$(_configuration)'
                 ArtifactName: 'Windows $(_configuration) $(_testKind) process dumps'
                 ArtifactType: Container
                 parallel: true
