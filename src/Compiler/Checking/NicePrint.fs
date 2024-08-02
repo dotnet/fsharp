@@ -1660,8 +1660,8 @@ module InfoMemberPrinting =
                     SepL.leftParen           
 
         let layout,paramLayouts =
-            match minfo with
-            | ILMeth(_g,mi,_e) -> 
+            match denv.showCsharpCodeAnalysisAttributes, minfo with
+            | true, ILMeth(_g,mi,_e) -> 
                 let methodLayout = 
                     // Render Method attributes and [return:..] attributes on separate lines above (@@) the method definition
                     PrintTypes.layoutCsharpCodeAnalysisIlAttributes denv (minfo.GetCustomAttrs()) (squareAngleL >> (@@)) layout
