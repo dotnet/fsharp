@@ -207,7 +207,7 @@ type public Fsc() as this =
             builder.AppendSwitch("--tailcalls-")
 
         match nullable with
-        | Some true -> 
+        | Some true ->
             builder.AppendSwitch("--checknulls+")
             builder.AppendSwitch("--define:NULLABLE")
         | Some false -> builder.AppendSwitch("--checknulls-")
@@ -658,12 +658,12 @@ type public Fsc() as this =
         and set (p) = subsystemVersion <- p
 
     member _.Nullable
-        with get () = 
+        with get () =
             match nullable with
             | None -> ""
             | Some true -> "enable"
             | Some false -> "disable"
-        and set(p) =
+        and set (p) =
             match p with
             | "enable" -> nullable <- Some true
             | "disable" -> nullable <- Some false
