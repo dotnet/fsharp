@@ -1253,3 +1253,56 @@ module Test6
         |> asLibrary
         |> compile
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Calling protected static base member from `static do` does not raise MethodAccessException when --realsig+`` () =
+        FSharp """
+#nowarn "44" // using Uri.EscapeString just because it's protected static
+
+type C(str : string) =
+    inherit System.Uri(str)
+    
+    static do 
+        System.Uri.EscapeString("http://www.myserver.com") |> ignore
+        printfn "Hello, World"
+
+module M =
+    [<EntryPoint>]
+    let main args =
+       let res = C("http://www.myserver.com")
+       0
+        """
+        |> withLangVersionPreview
+        |> withRealInternalSignature true
+        |> asLibrary
+        |> compile
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContainsAllInOrder [
+            "Hello, World"
+        ]
+
+    [<Fact>]
+    let ``Calling protected static base member from `static do` raises MethodAccessException with --realsig-`` () =
+        FSharp """
+#nowarn "44" // using Uri.EscapeString just because it's protected static
+
+type C(str : string) =
+    inherit System.Uri(str)
+    
+    static do 
+        System.Uri.EscapeString("http://www.myserver.com") |> ignore
+        printfn "Hello, World"
+
+module M =
+    [<EntryPoint>]
+    let main args =
+       let res = C("http://www.myserver.com")
+       0
+        """
+        |> withLangVersionPreview
+        |> withRealInternalSignature false
+        |> asLibrary
+        |> compile
+        |> compileExeAndRun
+        |> shouldFail
