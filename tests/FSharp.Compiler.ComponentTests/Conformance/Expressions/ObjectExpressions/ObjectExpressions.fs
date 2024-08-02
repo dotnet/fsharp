@@ -35,7 +35,7 @@ let implementer() ={ new IFirst  }
          |> shouldSucceed
 
     [<Fact>]
-    let ``Object expression can not implement an abstract class and interface having no abstract members.`` () =
+    let ``Object expression can construct an abstract class and also implement interfaces with and without abstract members.`` () =
         Fsx """
 type IFirst = interface end
 
@@ -58,7 +58,7 @@ type MyClass() = class end
          |> shouldSucceed
          
     [<Fact>]
-    let ``Object expression can not implement an abstract class and interface having no abstract members 2`` () =
+    let ``Object expression can construct an abstract class(missing with...) and also implement interfaces with and without abstract members.`` () =
         Fsx """
 type IFirst = interface end
 
@@ -78,7 +78,7 @@ type MyClass() = class end
          |> shouldSucceed
          
     [<Fact>]
-    let ``Object expression can not implement an abstract class and interface having no abstract members 3`` () =
+    let ``Object expression can construct an abstract class(missing with... and interface in the next line) and also implement interfaces with and without abstract members.`` () =
         Fsx """
 type IFirst = interface end
 
