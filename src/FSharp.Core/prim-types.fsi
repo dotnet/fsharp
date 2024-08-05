@@ -1,3 +1,4 @@
+
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 #nowarn "35" // This construct is deprecated: the treatment of this operator is now handled directly by the F# compiler and its meaning may not be redefined.
@@ -199,7 +200,7 @@ namespace Microsoft.FSharp.Core
     /// <summary>Adding this attribute to a type causes it to be represented using a CLI struct.</summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Struct ||| AttributeTargets.ReturnValue ,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct ||| AttributeTargets.ReturnValue ,AllowMultiple=false)>]  
     [<Sealed>]
     type StructAttribute =
         inherit Attribute
@@ -954,6 +955,24 @@ namespace Microsoft.FSharp.Core
         /// <returns>NoCompilerInliningAttribute</returns>
         new: unit -> NoCompilerInliningAttribute
 
+    /// <summary>When used in a compilation with null-checking enabled, indicates that a function is meant to be used only with potentially-nullable values and warns accordingly.</summary>
+    ///
+    /// <category>Attributes</category>
+    [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
+    [<Sealed>]
+    type WarnOnWithoutNullArgumentAttribute =
+        inherit Attribute
+
+        /// <summary>Creates an instance of the attribute</summary>
+        /// <param name="warningMessage">The message displayed when the annotated function is used with a value known to be without null</param>
+        /// <returns>WarnOnWithoutNullArgumentAttribute</returns>
+        new: warningMessage:string -> WarnOnWithoutNullArgumentAttribute
+
+        /// <summary>Warning message displayed when the annotated function is used with a value known to be without null</summary>
+        member WarningMessage: string
+
+        member internal Localize: bool with get,set 
+
     /// <summary>Indicates a function that should be called in a tail recursive way inside its recursive scope.
     /// A warning is emitted if the function is analyzed as not tail recursive after the optimization phase.</summary> 
     ///
@@ -1238,6 +1257,10 @@ namespace Microsoft.FSharp.Core
     /// <category>ByRef and Pointer Types</category>
     type outref<'T> = byref<'T, ByRefKinds.Out>
 
+    // This exists solely so that it can be used in the CollectionBuilderAttribute on List<'T> below.
+    module internal TypeOfUtils =
+        val inline typeof<'T>: Type
+
     /// <summary>Language primitives associated with the F# language</summary>
     ///
     /// <category index="9">Language Primitives</category>
@@ -1368,7 +1391,11 @@ namespace Microsoft.FSharp.Core
         val inline FastGenericComparer<'T> : System.Collections.Generic.IComparer<'T> when 'T: comparison 
 
         /// <summary>Make an F# comparer object for the given type, where it can be null if System.Collections.Generic.Comparer&lt;'T&gt;.Default</summary>
-        val internal FastGenericComparerCanBeNull<'T> : System.Collections.Generic.IComparer<'T> when 'T: comparison 
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
+        val internal FastGenericComparerCanBeNull<'T>  : System.Collections.Generic.IComparer<'T> when 'T : comparison 
+#else
+        val internal FastGenericComparerCanBeNull<'T>  : System.Collections.Generic.IComparer<'T> | null when 'T : comparison 
+#endif
 
         /// <summary>Make an F# hash/equality object for the given type</summary>
         val inline FastGenericEqualityComparer<'T> : System.Collections.Generic.IEqualityComparer<'T> when 'T: equality
@@ -1740,19 +1767,19 @@ namespace Microsoft.FSharp.Core
 
             /// <summary>A compiler intrinsic that implements the ':?>' operator</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val UnboxGeneric<'T> : source: obj -> 'T
+            val UnboxGeneric<'T> : source: objnull -> 'T
 
             /// <summary>A compiler intrinsic that implements the ':?>' operator</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline UnboxFast<'T> : source: obj -> 'T
+            val inline UnboxFast<'T> : source: objnull -> 'T
 
             /// <summary>A compiler intrinsic that implements the ':?' operator</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val TypeTestGeneric<'T> : source: obj -> bool
+            val TypeTestGeneric<'T> : source: objnull -> bool
 
             /// <summary>A compiler intrinsic that implements the ':?' operator</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline TypeTestFast<'T> : source: obj -> bool 
+            val inline TypeTestFast<'T> : source: objnull -> bool 
 
             /// <summary>Primitive used by pattern match compilation</summary>
             //[<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
@@ -2578,12 +2605,46 @@ namespace Microsoft.FSharp.Core
       /// Represents an Error or a Failure. The code failed with a value of 'TError representing what went wrong.
       | Error of ErrorValue:'TError
 
+// These attributes only exist in .NET 8 and up.
+namespace System.Runtime.CompilerServices
+    open System
+    open Microsoft.FSharp.Core
+
+    [<Sealed>]
+    [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Struct ||| AttributeTargets.Interface, Inherited = false)>]
+    type internal CollectionBuilderAttribute =
+        inherit Attribute
+
+        /// <summary>Initialize the attribute to refer to the <paramref name="methodName"/> method on the <paramref name="builderType"/> type.</summary>
+        /// <param name="builderType">The type of the builder to use to construct the collection.</param>
+        /// <param name="methodName">The name of the method on the builder to use to construct the collection.</param>
+        /// <remarks>
+        /// <paramref name="methodName"/> must refer to a static method that accepts a single parameter of
+        /// type <see cref="T:System.ReadOnlySpan`1"/> and returns an instance of the collection being built containing
+        /// a copy of the data from that span. In future releases of .NET, additional patterns may be supported.
+        /// </remarks>
+        new: builderType: Type * methodName: string -> CollectionBuilderAttribute
+
+        /// <summary>Gets the type of the builder to use to construct the collection.</summary>
+        member BuilderType: Type
+ 
+        /// <summary>Gets the name of the method on the builder to use to construct the collection.</summary>
+        /// <remarks>This should match the metadata name of the target method. For example, this might be ".ctor" if targeting the type's constructor.</remarks>
+        member MethodName: string
+
+    [<Sealed>]
+    [<AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)>]
+    type internal ScopedRefAttribute =
+        inherit Attribute
+        new: unit -> ScopedRefAttribute
+
 namespace Microsoft.FSharp.Collections
 
     open System
     open System.Collections
     open System.Collections.Generic
     open Microsoft.FSharp.Core
+    open Microsoft.FSharp.Core.TypeOfUtils
 
     /// <summary>The type of immutable singly-linked lists.</summary>
     ///
@@ -2593,6 +2654,9 @@ namespace Microsoft.FSharp.Collections
     /// </remarks>
     ///
     /// <exclude />
+#if NETSTANDARD2_1_OR_GREATER
+    [<System.Runtime.CompilerServices.CollectionBuilder(typeof<List>, "Create")>]
+#endif
     [<DefaultAugmentation(false)>]
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpList`1")>]
@@ -2646,7 +2710,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The list with head appended to the front of tail.</returns>
         static member Cons: head: 'T * tail: 'T list -> 'T list
-        
+
         interface IEnumerable<'T>
         interface IEnumerable
         interface IReadOnlyCollection<'T>
@@ -2663,6 +2727,21 @@ namespace Microsoft.FSharp.Collections
     ///  See also <a href="https://learn.microsoft.com/dotnet/fsharp/language-reference/lists">F# Language Guide - Lists</a>.
     /// </remarks>
     and 'T list = List<'T>
+
+#if NETSTANDARD2_1_OR_GREATER
+    /// <summary>Contains methods for compiler use related to lists.</summary>
+    and [<CompilerMessage("This type is for compiler use and should not be used directly", 1204, IsHidden=true);
+          Sealed;
+          AbstractClass;
+          CompiledName("FSharpList")>] List =
+        /// <summary>Creates a list with the specified items.</summary>
+        ///
+        /// <param name="items">The items to store in the list.</param>
+        ///
+        /// <returns>A list containing the specified items.</returns>
+        [<CompilerMessage("This method is for compiler use and should not be used directly", 1204, IsHidden=true)>]
+        static member Create: [<System.Runtime.CompilerServices.ScopedRef>] items: System.ReadOnlySpan<'T> -> 'T list
+#endif
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.Collections.Generic.List`1"/></summary>
     type ResizeArray<'T> = System.Collections.Generic.List<'T>
@@ -2709,7 +2788,7 @@ namespace Microsoft.FSharp.Core
         /// <example id="addition-example-1">
         /// <code lang="fsharp">
         /// 2 + 2 //  Evaluates to 4
-        /// "Hello " + "Word" // Evaluates to "Hello World"
+        /// "Hello " + "World" // Evaluates to "Hello World"
         /// </code>
         /// </example>
         /// 
@@ -3123,6 +3202,24 @@ namespace Microsoft.FSharp.Core
         /// 
         val inline (<|||): func: ('T1 -> 'T2 -> 'T3 -> 'U) -> arg1: 'T1 * arg2: 'T2 * arg3: 'T3 -> 'U
 
+#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
+        /// <summary>Used to specify a default value for a nullable reference argument in the implementation of a function</summary>
+        /// <param name="defaultValue">The default value of the argument.</param>
+        /// <param name="arg">A nullable value representing the argument.</param>
+        /// <returns>The argument value. If it is null, the defaultValue is returned.</returns>
+        [<CompiledName("DefaultIfNull")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val inline defaultIfNull : defaultValue:'T -> arg:'T | null -> 'T when 'T : not null and 'T : not struct 
+
+        /// <summary>Used to specify a default value for an nullable value argument in the implementation of a function</summary>
+        /// <param name="defaultValue">The default value of the argument.</param>
+        /// <param name="arg">A nullable value representing the argument.</param>
+        /// <returns>The argument value. If it is null, the defaultValue is returned.</returns>
+        [<CompiledName("DefaultIfNullV")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val inline defaultIfNullV : defaultValue:'T -> arg:Nullable<'T> -> 'T 
+#endif
+
         /// <summary>Used to specify a default value for an optional argument in the implementation of a function</summary>
         ///
         /// <param name="arg">An option representing the argument.</param>
@@ -3366,7 +3463,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Unbox")>]
-        val inline unbox: value: obj -> 'T
+        val inline unbox: value: objnull -> 'T
 
         /// <summary>Boxes a strongly typed value.</summary>
         ///
@@ -3384,7 +3481,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Box")>]
-        val inline box: value: 'T -> obj
+        val inline box: value: 'T -> objnull
 
         /// <summary>Try to unbox a strongly typed value.</summary>
         ///
@@ -3402,7 +3499,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("TryUnbox")>]
-        val inline tryUnbox: value: obj -> 'T option
+        val inline tryUnbox: value: objnull -> 'T option
 
         /// <summary>Determines whether the given value is null.</summary>
         ///
@@ -3420,13 +3517,102 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("IsNull")>]
         val inline isNull: value: 'T -> bool when 'T: null
         
+#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
+        /// <summary>Determines whether the given value is null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>A choice indicating whether the value is null or not-null.</returns>
+        [<CompiledName("NullMatchPattern")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        [<WarnOnWithoutNullArgument("tcPassingWithoutNullToNonNullAP", Localize=true)>]
+        val inline (|Null|NonNull|) : value: 'T | null -> Choice<unit, 'T>  when 'T : not null and 'T : not struct
+        
+        /// <summary>Determines whether the given value is null.</summary>
+        /// <remarks>In a future revision of nullness support this may be unified with 'Null|NonNull'.</remarks>
+        /// <param name="value">The value to check.</param>
+        /// <returns>A choice indicating whether the value is null or not-null.</returns>
+        [<CompiledName("NullValueMatchPattern")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val inline (|NullV|NonNullV|) : value: Nullable<'T> -> Choice<unit, 'T> 
+        
+        /// <summary>When used in a pattern checks the given value is not null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>The non-null value.</returns>
+        [<CompiledName("NonNullQuickPattern")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        [<WarnOnWithoutNullArgument("tcPassingWithoutNullToNonNullQuickAP", Localize=true)>]
+        val inline (|NonNullQuick|) : value: 'T | null -> 'T when 'T : not null and 'T : not struct
+        
+        /// <summary>When used in a pattern checks the given value is not null.</summary>
+        /// <remarks>In a future revision of nullness support this may be unified with 'NonNullQuick'.</remarks>
+        /// <param name="value">The value to check.</param>
+        /// <returns>The non-null value.</returns>
+        [<CompiledName("NonNullQuickValuePattern")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val inline (|NonNullQuickV|) : value: Nullable<'T> -> 'T 
+        
+        /// <summary>Determines whether the given value is null.</summary>
+        /// <remarks>In a future revision of nullness support this may be unified with 'isNull'.</remarks>
+        /// <param name="value">The value to check.</param>
+        /// <returns>True when value is null, false otherwise.</returns>
+        [<CompiledName("IsNullV")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val inline isNullV : value:Nullable<'T> -> bool
+#else
+        /// <summary>Determines whether the given value is null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>A choice indicating whether the value is null or not-null.</returns>
+        [<CompiledName("NullMatchPattern")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val inline (|Null|NonNull|) : value: 'T -> Choice<unit, 'T>  when 'T : null and 'T : not struct 
+#endif
+
         /// <summary>Determines whether the given value is not null.</summary>
         ///
         /// <param name="value">The value to check.</param>
         ///
         /// <returns>True when value is not null, false otherwise.</returns>
         [<CompiledName("IsNotNull")>]
-        val inline internal isNotNull: value: 'T -> bool when 'T: null
+        val inline internal isNotNull: value:'T -> bool when 'T : null
+
+#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
+        /// <summary>Get the null value for a value type.</summary>
+        /// <remarks>In a future revision of nullness support this may be unified with 'null'.</remarks>
+        /// <returns>The null value for a value type.</returns>
+        [<CompiledName("NullV")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val inline nullV<'T when 'T : struct and 'T : (new : unit -> 'T) and 'T :> ValueType> :  Nullable<'T>
+
+        /// <summary>Asserts that the value is non-null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>The value when it is not null. If the value is null an exception is raised.</returns>
+        [<CompiledName("NonNull")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        [<WarnOnWithoutNullArgument("tcPassingWithoutNullTononNullFunction", Localize=true)>]
+        val inline nonNull : value: 'T | null -> 'T when 'T : not null and 'T : not struct
+
+        /// <summary>Asserts that the value is non-null.</summary>
+        /// <remarks>In a future revision of nullness support this may be unified with 'nonNull'.</remarks>
+        /// <param name="value">The value to check.</param>
+        /// <returns>True when value is null, false otherwise.</returns>
+        [<CompiledName("NonNullV")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val inline nonNullV : value:Nullable<'T> -> 'T 
+
+        /// <summary>Asserts that the value is non-null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>True when value is null, false otherwise.</returns>
+        [<CompiledName("WithNull")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val inline withNull : value:'T -> 'T | null when 'T : not null and 'T : not struct
+
+        /// <summary>Asserts that the value is non-null.</summary>
+        /// <remarks>In a future revision of nullness support this may be unified with 'withNull'.</remarks>
+        /// <param name="value">The value to check.</param>
+        /// <returns>True when value is null, false otherwise.</returns>
+        [<CompiledName("WithNullV")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val inline withNullV : value:'T -> Nullable<'T> 
+#endif
 
         /// <summary>Throw a <see cref="T:System.Exception"/> exception.</summary>
         ///
@@ -3491,6 +3677,17 @@ namespace Microsoft.FSharp.Core
         /// 
         [<CompiledName("NullArg")>]
         val inline nullArg: argumentName: string -> 'T 
+
+#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
+        /// <summary>Throw a <c>System.ArgumentNullException if the given value is null</c> exception</summary>
+        /// 
+        /// <param name="argumentName">The argument name.</param>
+        /// 
+        /// <returns>The result value.</returns>
+        [<CompiledName("NullArgCheck")>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val inline nullArgCheck : argumentName:string -> 'T | null -> 'T when 'T : not null and 'T : not struct
+#endif
 
         /// <summary>Throw a <see cref="T:System.InvalidOperationException"/> exception</summary>
         ///
@@ -3666,7 +3863,7 @@ namespace Microsoft.FSharp.Core
         /// otherwise raise an exception. Calls <see cref="M:System.Environment.Exit"/>.</summary>
         ///
         /// <param name="exitcode">The exit code to use.</param>
-        /// 
+        ///
         /// <returns>Never returns.</returns>
         /// 
         /// <example id="exit-example">
@@ -5582,7 +5779,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("Unbox")>]
-            val inline unbox<'T> : value: obj -> 'T
+            val inline unbox<'T> : value: objnull -> 'T
 
             /// <summary>Generate a default value for any type. This is null for reference types, 
             /// For structs, this is struct value where all fields have the default value. 
@@ -5620,6 +5817,28 @@ namespace Microsoft.FSharp.Core
             /// 
             [<CompiledName("Hash")>]
             val inline hash: 'T -> int
+
+            /// <summary>Unsafely retypes the value from ('T | null) to 'T without doing any null check at runtime. This is an unsafe operation.</summary>
+            /// <param name="value">The possibly nullable value.</param>
+            /// <returns>The same value as in the input.</returns>
+            [<CompiledName("NonNull")>]
+            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+            #if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
+            val inline nonNull : value: 'T | null -> 'T when 'T : not null and 'T : not struct
+            #else
+            val inline nonNull : value: 'T  -> 'T
+            #endif
+
+            /// <summary>When used in a pattern forgets 'nullness' of the value without any runtime check. This is an unsafe operation, as null check is being skipped and null value can be returned.</summary>
+            /// <param name="value">The value to retype from ('T | null) to 'T .</param>
+            /// <returns>The non-null value.</returns>
+            [<CompiledName("NonNullQuickPattern")>]
+            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+            #if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
+            val inline (|NonNullQuick|) : value: 'T | null -> 'T when 'T : not null and 'T : not struct
+            #else
+            val inline (|NonNullQuick|) : value: 'T  -> 'T
+            #endif
 
         /// <summary>A module of comparison and equality operators that are statically resolved, but which are not fully generic and do not make structural comparison. Opening this
         /// module may make code that relies on structural or generic comparison no longer compile.</summary>
@@ -6040,7 +6259,7 @@ namespace Microsoft.FSharp.Control
     ///
     /// <category index="3">Events and Observables</category>
     [<CompiledName("FSharpHandler`1")>]
-    type Handler<'T> =  delegate of sender:obj * args:'T -> unit 
+    type Handler<'T> =  delegate of sender:objnull * args:'T -> unit 
 
     /// <summary>First-class listening points (i.e. objects that permit you to register a callback
     /// activated when the event is triggered). </summary>

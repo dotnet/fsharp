@@ -833,6 +833,7 @@ type Project() =
 
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``FsprojOutputWindow.ErrorOriginColumnsAreBase1``() =
         let (outputWindowPaneErrors : string list ref) = ref [] // output window pane errors
         let vso = VsMocks.vsOutputWindowPane(outputWindowPaneErrors)
@@ -856,6 +857,7 @@ type Project() =
         )
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``FsprojOutputWindow.HighUnicodeCharactersAreProperlyDisplayed``() =
         let (outputWindowPaneErrors : string list ref) = ref [] // output window pane errors
         let vso = VsMocks.vsOutputWindowPane(outputWindowPaneErrors)

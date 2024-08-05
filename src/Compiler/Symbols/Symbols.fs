@@ -26,6 +26,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeHierarchy
+open FSharp.Compiler.CheckExpressionsOps
 
 type FSharpAccessibility(a:Accessibility, ?isProtected) = 
     let isProtected = defaultArg isProtected  false
@@ -58,7 +59,7 @@ type FSharpAccessibility(a:Accessibility, ?isProtected) =
 
 type SymbolEnv(g: TcGlobals, thisCcu: CcuThunk, thisCcuTyp: ModuleOrNamespaceType option, tcImports: TcImports, amap: Import.ImportMap, infoReader: InfoReader) = 
 
-    let tcVal = CheckExpressions.LightweightTcValForUsingInBuildMethodCall g
+    let tcVal = LightweightTcValForUsingInBuildMethodCall g
 
     new(g: TcGlobals, thisCcu: CcuThunk, thisCcuTyp: ModuleOrNamespaceType option, tcImports: TcImports) =
         let amap = tcImports.GetImportMap()
@@ -1570,6 +1571,11 @@ type FSharpGenericParameterConstraint(cenv, cx: TyparConstraint) =
         | TyparConstraint.SupportsComparison _ -> true 
         | _ -> false
 
+    member _.IsNotSupportsNullConstraint = 
+        match cx with 
+        | TyparConstraint.NotSupportsNull _ -> true 
+        | _ -> false
+
     member _.IsEqualityConstraint = 
         match cx with 
         | TyparConstraint.SupportsEquality _ -> true 
@@ -2516,6 +2522,23 @@ type FSharpType(cenv, ty:TType) =
         | TType_measure (Measure.Inv _) ->  FSharpEntity(cenv, cenv.g.measureinverse_tcr) 
         | _ -> invalidOp "not a named type"
 
+    member _.HasNullAnnotation = 
+       protect <| fun () -> 
+        match stripTyparEqns ty with 
+        | TType_var (_, nullness) 
+        | TType_app (_, _, nullness) 
+        | TType_fun(_, _, nullness) -> match nullness.Evaluate() with NullnessInfo.WithNull -> true | _ -> false
+        | TType_tuple (_, _) -> false
+        | _ -> false
+
+    member _.IsNullAmbivalent = 
+       protect <| fun () -> 
+        match stripTyparEqns ty with 
+        | TType_app (_, _, nullness)
+        | TType_fun(_, _, nullness) -> match nullness.Evaluate() with NullnessInfo.AmbivalentToNull -> true | _ -> false
+        | TType_tuple (_, _) -> false
+        | _ -> false
+
     member _.GenericArguments = 
        protect <| fun () -> 
         match stripTyparEqns ty with 
@@ -2964,4 +2987,3 @@ type FSharpOpenDeclaration(target: SynOpenDeclTarget, range: range option, modul
     member _.AppliedScope = appliedScope
 
     member _.IsOwnNamespace = isOwnNamespace
-

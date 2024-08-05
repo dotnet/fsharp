@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project Sdk="Microsoft.NET.Sdk">
 
@@ -32,7 +32,7 @@
   <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
     <NoOptimizationData>false</NoOptimizationData>
     <NoInterfaceData>false</NoInterfaceData>
-    <CompressMetadata>false</CompressMetadata>
+    <CompressMetadata>true</CompressMetadata>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -310,6 +310,7 @@
     <Compile Include="TypedTree\TypedTree.fs" />
     <Compile Include="TypedTree\TypedTreeBasics.fsi" />
     <Compile Include="TypedTree\TypedTreeBasics.fs" />
+    <Compile Include="TypedTree\TcGlobals.fsi" />
     <Compile Include="TypedTree\TcGlobals.fs" />
     <Compile Include="TypedTree\TypedTreeOps.fsi" />
     <Compile Include="TypedTree\TypedTreeOps.fs" />
@@ -361,12 +362,15 @@
     <Compile Include="Checking\CheckBasics.fs" />
     <Compile Include="Checking\CheckRecordSyntaxHelpers.fsi" />
     <Compile Include="Checking\CheckRecordSyntaxHelpers.fs" />
-    <Compile Include="Checking\CheckExpressions.fsi" />
-    <Compile Include="Checking\CheckExpressions.fs" />
+    <Compile Include="Checking\Expressions\CheckExpressionsOps.fs" />
+    <Compile Include="Checking\Expressions\CheckExpressions.fsi" />
+    <Compile Include="Checking\Expressions\CheckExpressions.fs" />
     <Compile Include="Checking\CheckPatterns.fsi" />
     <Compile Include="Checking\CheckPatterns.fs" />
-    <Compile Include="Checking\CheckComputationExpressions.fsi" />
-    <Compile Include="Checking\CheckComputationExpressions.fs" />
+    <Compile Include="Checking\Expressions\CheckComputationExpressions.fsi" />
+    <Compile Include="Checking\Expressions\CheckComputationExpressions.fs" />
+    <Compile Include="Checking\Expressions\CheckSequenceExpressions.fs" />
+    <Compile Include="Checking\Expressions\CheckArrayOrListComputedExpressions.fs" />
     <Compile Include="Checking\CheckIncrementalClasses.fsi" />
     <Compile Include="Checking\CheckIncrementalClasses.fs" />
     <Compile Include="Checking\CheckDeclarations.fsi" />

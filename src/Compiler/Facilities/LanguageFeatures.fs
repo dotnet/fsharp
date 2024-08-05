@@ -38,6 +38,7 @@ type LanguageFeature =
     | StringInterpolation
     | OverloadsForCustomOperations
     | ExpandedMeasurables
+    | NullnessChecking
     | StructActivePattern
     | PrintfBinaryFormat
     | IndexerNotationWithoutDot
@@ -88,8 +89,9 @@ type LanguageFeature =
     | EnforceAttributeTargets
     | LowerInterpolatedStringToConcat
     | LowerIntegralRangesToFastLoops
-    | LowerSimpleMappingsInComprehensionsToDirectCallsToMap
+    | LowerSimpleMappingsInComprehensionsToFastLoops
     | ParsedHashDirectiveArgumentNonQuotes
+    | EmptyBodiedComputationExpressions
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -194,6 +196,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.PreferStringGetPinnableReference, languageVersion80
 
                 // F# preview
+                LanguageFeature.NullnessChecking, previewVersion
                 LanguageFeature.FromEndSlicing, previewVersion
                 LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion
                 LanguageFeature.ReuseSameFieldsInStructUnions, previewVersion
@@ -205,8 +208,9 @@ type LanguageVersion(versionText) =
                 LanguageFeature.EnforceAttributeTargets, previewVersion
                 LanguageFeature.LowerInterpolatedStringToConcat, previewVersion
                 LanguageFeature.LowerIntegralRangesToFastLoops, previewVersion
-                LanguageFeature.LowerSimpleMappingsInComprehensionsToDirectCallsToMap, previewVersion
+                LanguageFeature.LowerSimpleMappingsInComprehensionsToFastLoops, previewVersion
                 LanguageFeature.ParsedHashDirectiveArgumentNonQuotes, previewVersion
+                LanguageFeature.EmptyBodiedComputationExpressions, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -289,6 +293,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.FromEndSlicing -> FSComp.SR.featureFromEndSlicing ()
         | LanguageFeature.FixedIndexSlice3d4d -> FSComp.SR.featureFixedIndexSlice3d4d ()
         | LanguageFeature.AndBang -> FSComp.SR.featureAndBang ()
+        | LanguageFeature.NullnessChecking -> FSComp.SR.featureNullnessChecking ()
         | LanguageFeature.ResumableStateMachines -> FSComp.SR.featureResumableStateMachines ()
         | LanguageFeature.NullableOptionalInterop -> FSComp.SR.featureNullableOptionalInterop ()
         | LanguageFeature.DefaultInterfaceMemberConsumption -> FSComp.SR.featureDefaultInterfaceMemberConsumption ()
@@ -353,9 +358,10 @@ type LanguageVersion(versionText) =
         | LanguageFeature.EnforceAttributeTargets -> FSComp.SR.featureEnforceAttributeTargets ()
         | LanguageFeature.LowerInterpolatedStringToConcat -> FSComp.SR.featureLowerInterpolatedStringToConcat ()
         | LanguageFeature.LowerIntegralRangesToFastLoops -> FSComp.SR.featureLowerIntegralRangesToFastLoops ()
-        | LanguageFeature.LowerSimpleMappingsInComprehensionsToDirectCallsToMap ->
-            FSComp.SR.featureLowerSimpleMappingsInComprehensionsToDirectCallsToMap ()
+        | LanguageFeature.LowerSimpleMappingsInComprehensionsToFastLoops ->
+            FSComp.SR.featureLowerSimpleMappingsInComprehensionsToFastLoops ()
         | LanguageFeature.ParsedHashDirectiveArgumentNonQuotes -> FSComp.SR.featureParsedHashDirectiveArgumentNonString ()
+        | LanguageFeature.EmptyBodiedComputationExpressions -> FSComp.SR.featureEmptyBodiedComputationExpressions ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

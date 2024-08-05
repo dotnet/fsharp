@@ -860,7 +860,7 @@ namespace Microsoft.FSharp.Control
         /// <category index="5">Legacy .NET Async Interoperability</category>
         ///
         /// <example-tbd></example-tbd>
-        static member FromBeginEnd : beginAction:(System.AsyncCallback * obj -> System.IAsyncResult) * endAction:(System.IAsyncResult -> 'T) * ?cancelAction : (unit -> unit) -> Async<'T>
+        static member FromBeginEnd : beginAction:(System.AsyncCallback * objnull -> System.IAsyncResult) * endAction:(System.IAsyncResult -> 'T) * ?cancelAction : (unit -> unit) -> Async<'T>
 
         /// <summary>
         ///  Creates an asynchronous computation in terms of a Begin/End pair of actions in 
@@ -885,7 +885,7 @@ namespace Microsoft.FSharp.Control
         /// <category index="5">Legacy .NET Async Interoperability</category>
         ///
         /// <example-tbd></example-tbd>
-        static member FromBeginEnd : arg:'Arg1 * beginAction:('Arg1 * System.AsyncCallback * obj -> System.IAsyncResult) * endAction:(System.IAsyncResult -> 'T) * ?cancelAction : (unit -> unit) -> Async<'T>
+        static member FromBeginEnd : arg:'Arg1 * beginAction:('Arg1 * System.AsyncCallback * objnull -> System.IAsyncResult) * endAction:(System.IAsyncResult -> 'T) * ?cancelAction : (unit -> unit) -> Async<'T>
 
         /// <summary>
         /// Creates an asynchronous computation in terms of a Begin/End pair of actions in 
@@ -909,7 +909,7 @@ namespace Microsoft.FSharp.Control
         /// <category index="5">Legacy .NET Async Interoperability</category>
         ///
         /// <example-tbd></example-tbd>
-        static member FromBeginEnd : arg1:'Arg1 * arg2:'Arg2 * beginAction:('Arg1 * 'Arg2 * System.AsyncCallback * obj -> System.IAsyncResult) * endAction:(System.IAsyncResult -> 'T) * ?cancelAction : (unit -> unit) -> Async<'T>
+        static member FromBeginEnd : arg1:'Arg1 * arg2:'Arg2 * beginAction:('Arg1 * 'Arg2 * System.AsyncCallback * objnull -> System.IAsyncResult) * endAction:(System.IAsyncResult -> 'T) * ?cancelAction : (unit -> unit) -> Async<'T>
 
         /// <summary>Creates an asynchronous computation in terms of a Begin/End pair of actions in 
         /// the style used in .NET 2.0 APIs.</summary>
@@ -933,7 +933,7 @@ namespace Microsoft.FSharp.Control
         /// <category index="5">Legacy .NET Async Interoperability</category>
         ///
         /// <example-tbd></example-tbd>
-        static member FromBeginEnd : arg1:'Arg1 * arg2:'Arg2 * arg3:'Arg3 * beginAction:('Arg1 * 'Arg2 * 'Arg3 * System.AsyncCallback * obj -> System.IAsyncResult) * endAction:(System.IAsyncResult -> 'T) * ?cancelAction : (unit -> unit) -> Async<'T>
+        static member FromBeginEnd : arg1:'Arg1 * arg2:'Arg2 * arg3:'Arg3 * beginAction:('Arg1 * 'Arg2 * 'Arg3 * System.AsyncCallback * objnull -> System.IAsyncResult) * endAction:(System.IAsyncResult -> 'T) * ?cancelAction : (unit -> unit) -> Async<'T>
 
         /// <summary>Creates three functions that can be used to implement the .NET 1.0 Asynchronous 
         /// Programming Model (APM) for a given asynchronous computation.</summary>
@@ -948,7 +948,7 @@ namespace Microsoft.FSharp.Control
         /// <example-tbd></example-tbd>
         static member AsBeginEnd : computation:('Arg -> Async<'T>) -> 
                                      // The 'Begin' member
-                                     ('Arg * System.AsyncCallback * obj -> System.IAsyncResult) * 
+                                     ('Arg * System.AsyncCallback * objnull -> System.IAsyncResult) * 
                                      // The 'End' member
                                      (System.IAsyncResult -> 'T) * 
                                      // The 'Cancel' member
