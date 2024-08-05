@@ -310,6 +310,7 @@
     <Compile Include="TypedTree\TypedTree.fs" />
     <Compile Include="TypedTree\TypedTreeBasics.fsi" />
     <Compile Include="TypedTree\TypedTreeBasics.fs" />
+    <Compile Include="TypedTree\TcGlobals.fsi" />
     <Compile Include="TypedTree\TcGlobals.fs" />
     <Compile Include="TypedTree\TypedTreeOps.fsi" />
     <Compile Include="TypedTree\TypedTreeOps.fs" />

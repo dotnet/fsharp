@@ -90,7 +90,7 @@ type ValBaseOrThisInfo =
     /// Indicates a normal value
     | NormalVal  
 
-    /// Indicates the 'this' value specified in a memberm e.g. 'x' in 'member x.M() = 1'
+    /// Indicates the 'this' value specified in a member e.g. 'x' in 'member x.M() = 1'
     | MemberThisVal 
 
 /// Flags on values
