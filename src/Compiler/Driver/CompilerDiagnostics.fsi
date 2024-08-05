@@ -113,7 +113,8 @@ type FormattedDiagnosticCanonicalInformation =
 type FormattedDiagnosticDetailedInfo =
     { Location: FormattedDiagnosticLocation option
       Canonical: FormattedDiagnosticCanonicalInformation
-      Message: string }
+      Message: string
+      Context: string option }
 
 /// Used internally and in LegacyHostedCompilerForTesting
 [<RequireQualifiedAccess>]
