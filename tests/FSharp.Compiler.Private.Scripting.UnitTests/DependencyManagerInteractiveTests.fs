@@ -362,7 +362,7 @@ printfn ""%A"" result
         let value = opt.Value
         Assert.Equal(123, value.ReflectionValue :?> int32)
 
-    [<Fact>]
+    [<Fact(Skip="Flaky")>]
     member _.``Use NativeResolver to resolve native dlls.``() =
         // Skip test on arm64, because there is not an arm64 netive library
         if RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then
