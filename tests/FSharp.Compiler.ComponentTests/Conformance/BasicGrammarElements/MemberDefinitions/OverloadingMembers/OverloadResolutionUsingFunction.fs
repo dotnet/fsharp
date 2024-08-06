@@ -24,6 +24,7 @@ module M1 =
         static member M (_ : Func<int, exn, int>) = ()
 
     T.M (function _ -> function :? ArgumentException -> 3 | _ -> 4)
+    T.M (function 0 -> (function _ -> 3) | _ -> function :? ArgumentException -> 3 | _ -> 4)
 
 module M2 =
     type T =
