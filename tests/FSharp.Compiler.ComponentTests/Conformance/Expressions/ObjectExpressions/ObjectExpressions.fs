@@ -99,6 +99,29 @@ type MyClass() = class end
          |> shouldSucceed
          
     [<Fact>]
+    let ``Verifies that the object expression built type has the interface.`` () =
+        Fsx """
+type IFirst = interface end
+
+type ISecond =
+    abstract member M : unit -> unit
+    
+[<AbstractClass>]
+type MyClass() =
+    interface ISecond with
+        member this.M() = printfn "It works"
+
+let expr = { new MyClass() interface IFirst }
+(expr:> ISecond).M()
+        """
+         |> withLangVersion80
+         |> compileExeAndRun
+         |> shouldSucceed
+         |> withStdOutContainsAllInOrder [
+           "It works"
+        ]
+         
+    [<Fact>]
     let ``Parameterized object expression implementing an interface with members`` () =
         Fsx """
 type AsString =
