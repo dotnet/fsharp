@@ -15,6 +15,18 @@ let typeCheckWithStrictNullness cu =
     cu
     |> withNullnessOptions
     |> typecheck
+
+[<Fact>]
+let ``Does not duplicate warnings`` () =
+    FSharp """
+module MyLib
+let getLength (x: string | null) = x.Length
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [Error 3261, Line 3, Col 36, Line 3, Col 44, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."]
+
     
 [<Fact>]
 let ``Cannot pass possibly null value to a strict function``() =
