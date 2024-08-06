@@ -9690,6 +9690,8 @@ and GetNewInferenceTypeForMethodArg (cenv: cenv) x =
         | SynExpr.MatchLambda (matchClauses = SynMatchClause (resultExpr = a) :: clauses) ->
             let loopClause a = loopExpr a (cont << fun (depth, ty) -> depth + 1, mkFunTy g (NewInferenceType g) ty)
 
+            // Look at all branches, keeping the one
+            // that gives us the most syntactic information.
             (loopClause a, clauses)
             ||> List.fold (fun ((maxClauseDepth, _) as acc) (SynMatchClause (resultExpr = a)) ->
                 match loopClause a with
