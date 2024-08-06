@@ -510,6 +510,9 @@ module rec Compiler =
     let withLangVersion80 (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:8.0" ] "withLangVersion80 is only supported on F#" cUnit
 
+    let withLangVersion90 (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--langversion:9.0" ] "withLangVersion90 is only supported on F#" cUnit
+
     let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:preview" ] "withLangVersionPreview is only supported on F#" cUnit
 

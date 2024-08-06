@@ -30,7 +30,6 @@ let ``Single case active pattern returning bool should success`` () =
 let (|IsA|) x = x = "A"
 let (IsA r) = "A"
     """
-    |> withLangVersionPreview
     |> typecheck
     |> shouldSucceed
     
@@ -54,7 +53,6 @@ match "x" with
 | EqualTo "x" -> ()
 | _ -> fail "with argument"
         """
-    |> withLangVersionPreview
     |> runCode
     |> shouldSucceed
 
@@ -90,7 +88,6 @@ match "A" with
 | IsA "to match return value" -> "Matched"
 | _ -> "not Matched"
 """
-    |> withLangVersionPreview
     |> typecheck
     |> shouldFail
     |> withDiagnostics [

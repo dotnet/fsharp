@@ -656,7 +656,6 @@ module {kwrec} FileName
             (fsFromString myLibraryFsi) |> FS
             |> withAdditionalSourceFiles [myLibraryFs; myFileFs]
             |> asLibrary
-            |> withLangVersionPreview
             |> withName "MyLibrary"
 
         Fs """
@@ -667,7 +666,6 @@ printfn "%b %A %b" x y z
            """
             |> asExe
             |> withReferences [myLibrary]
-            |> withLangVersionPreview
             |> compileAndRun
             |> shouldSucceed
 

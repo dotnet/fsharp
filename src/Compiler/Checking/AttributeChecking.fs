@@ -265,7 +265,7 @@ let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m =
     | _ ->
         CompleteD
 
-let langVersionPrefix = "--langversion:preview"
+let langVersionPrefix = "--langversion:9.0"
 
 /// Check F# attributes for 'ObsoleteAttribute', 'CompilerMessageAttribute' and 'ExperimentalAttribute',
 /// returning errors and warnings as data
