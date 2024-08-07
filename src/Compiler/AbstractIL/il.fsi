@@ -1546,7 +1546,7 @@ type ILTypeDef =
         properties: ILPropertyDefs *
         additionalFlags: ILTypeDefAdditionalFlags *
         securityDecls: ILSecurityDecls *
-        customAttrs: ILAttributes ->
+        customAttrs: ILAttributesStored ->
             ILTypeDef
 
     member Name: string
@@ -1614,7 +1614,7 @@ type ILTypeDef =
         ?events: ILEventDefs *
         ?properties: ILPropertyDefs *
         ?newAdditionalFlags: ILTypeDefAdditionalFlags *
-        ?customAttrs: ILAttributes *
+        ?customAttrs: ILAttributesStored *
         ?securityDecls: ILSecurityDecls *
         ?implementsCustomAttrs: (ILAttributesStored * int) list option ->
             ILTypeDef

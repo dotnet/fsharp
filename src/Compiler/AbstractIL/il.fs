@@ -2680,7 +2680,7 @@ type ILTypeDef
             properties,
             additionalFlags,
             storeILSecurityDecls securityDecls,
-            storeILCustomAttrs customAttrs,
+            customAttrs,
             NoMetadataIdx
         )
 
@@ -2756,7 +2756,7 @@ type ILTypeDef
             events = defaultArg events x.Events,
             properties = defaultArg properties x.Properties,
             additionalFlags = defaultArg newAdditionalFlags additionalFlags,
-            customAttrs = defaultArg customAttrs (x.CustomAttrs)
+            customAttrs = defaultArg customAttrs (storeILCustomAttrs x.CustomAttrs)
         )
 
     member x.CustomAttrs: ILAttributes =
@@ -4253,7 +4253,7 @@ let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nes
         methods = methods,
         fields = fields,
         nestedTypes = nestedTypes,
-        customAttrs = attrs,
+        customAttrs = storeILCustomAttrs attrs,
         methodImpls = emptyILMethodImpls,
         properties = props,
         events = events,
@@ -4278,7 +4278,7 @@ let mkRawDataValueTypeDef (iltyp_ValueType: ILType) (nm, size, pack) =
         methods = emptyILMethods,
         fields = emptyILFields,
         nestedTypes = emptyILTypeDefs,
-        customAttrs = emptyILCustomAttrs,
+        customAttrs = emptyILCustomAttrsStored,
         methodImpls = emptyILMethodImpls,
         properties = emptyILProperties,
         events = emptyILEvents,
