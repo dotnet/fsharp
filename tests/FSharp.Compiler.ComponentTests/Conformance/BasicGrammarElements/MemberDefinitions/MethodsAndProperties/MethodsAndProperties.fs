@@ -11,7 +11,7 @@ module MemberDefinitions_MethodsAndProperties =
     let verifyCompile compilation =
         compilation
         |> asExe
-        |> withOptions ["--nowarn:988"]
+        |> withOptions ["--nowarn:988"; "--nowarn:FS3581"]
         |> compile
 
     let verifyCompileAndRun = verifyCompile >> run
