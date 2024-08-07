@@ -2756,7 +2756,7 @@ type ILTypeDef
             events = defaultArg events x.Events,
             properties = defaultArg properties x.Properties,
             additionalFlags = defaultArg newAdditionalFlags additionalFlags,
-            customAttrs = defaultArg customAttrs (storeILCustomAttrs x.CustomAttrs)
+            customAttrs = defaultArg customAttrs (x.CustomAttrsStored)
         )
 
     member x.CustomAttrs: ILAttributes =
