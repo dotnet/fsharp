@@ -104,7 +104,7 @@ type Foo() =
         |> shouldFail
         |> withDiagnostics [
             (Error 13, Line 4, Col 29, Line 4, Col 37,
-                "The static coercion from type\n    int    \nto \n    'a    \n involves an indeterminate type based on information prior to this program point. Static coercions are not allowed on some types. Further type annotations are needed.")
+            "The static coercion from type\n    int    \nto \n    'a    \n involves an indeterminate type based on information prior to this program point. Static coercions are not allowed on some types. Further type annotations are needed.")
             (Error 267, Line 4, Col 29, Line 4, Col 37,
-                "This is not a valid constant expression or custom attribute value")
+            "This is not a valid constant expression or custom attribute value")
         ]
