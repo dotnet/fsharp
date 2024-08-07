@@ -197,7 +197,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.ExtendedFixedBindings, languageVersion80
                 LanguageFeature.PreferStringGetPinnableReference, languageVersion80
 
-                // F# preview
+                // F# 9.0
                 LanguageFeature.NullnessChecking, languageVersion90
                 LanguageFeature.UnmanagedConstraintCsharpInterop, languageVersion90
                 LanguageFeature.ReuseSameFieldsInStructUnions, languageVersion90
