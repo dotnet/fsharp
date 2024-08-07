@@ -43,7 +43,10 @@
         <file src="FSharp.Build\$configuration$\netstandard2.0\Microsoft.FSharp.NetSdk.props"                        target="contentFiles\any\any" />
         <file src="FSharp.Build\$configuration$\netstandard2.0\Microsoft.FSharp.NetSdk.targets"                      target="contentFiles\any\any" />
         <file src="FSharp.Build\$configuration$\netstandard2.0\Microsoft.FSharp.Overrides.NetSdk.targets"            target="contentFiles\any\any" />
-
+        
+        <!-- PGO, MIBC -->
+        <file src="$mibcRoot$\**\*.mibc"            target="contentFiles\mibc" />
+        
         <!-- resources -->
         <file src="FSharp.Core\$configuration$\netstandard2.0\**\FSharp.Core.resources.dll"
                                                                                                              target="lib\$fSharpNetCoreProductTargetFramework$" />

@@ -1,4 +1,33 @@
 <Project>
   <Import Project="..\buildtools\buildtools.targets" />
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
+
+  <Target Name="Get MIBC data" BeforeTargets="Build" Condition="'$(Configuration)' == 'Release'">
+
+    <ItemGroup>
+      <MIBCPackage>
+        <PackagePath>$([System.IO.Path]::Combine($(NuGetPackageRoot), %(MIBCPackage.Identity), %(MIBCPackage.Version)))</PackagePath>
+      </MIBCPackage>
+
+      <MibcOriginalFiles
+        Include="%(MIBCPackage.PackagePath)/**/DotNet_FSharp.mibc"
+        SubdirectoryName="$([System.IO.Path]::Combine($(TargetOS), $(TargetArchitecture)))" />
+
+      <MibcFiles 
+        Include="@(MibcOriginalFiles->'$(MibcOptimizationDataDir)/%(SubdirectoryName)/%(RecursiveDir)%(Filename)%(Extension)')" />
+    </ItemGroup>
+
+    <Error 
+      Condition="'@(MibcOriginalFiles)' == ''"
+      Text="Failed to restore MIBC optimization data" />
+
+    <!-- Copy MIBC files to artifacts -->
+    <Copy
+      SourceFiles="@(MibcOriginalFiles)"
+      DestinationFiles="@(MibcFiles)"
+      SkipUnchangedFiles="true"
+      UseHardlinksIfPossible="true" />
+
+  </Target>
+
 </Project>
