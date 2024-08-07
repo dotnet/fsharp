@@ -9678,17 +9678,17 @@ and GetNewInferenceTypeForMethodArg (cenv: cenv) x =
 
     let g = cenv.g
 
-    let rec loopExpr expr cont =
+    let rec loopExpr expr cont : struct (_ * _) =
         match expr with
         | SynExprParen (a, _, _, _) ->
             loopExpr a cont
         | SynExpr.AddressOf (true, a, _, m) ->
-            loopExpr a (cont << fun (depth, ty) -> depth + 1, mkByrefTyWithInference g ty (NewByRefKindInferenceType g m))
+            loopExpr a (cont << fun struct (depth, ty) -> depth + 1, mkByrefTyWithInference g ty (NewByRefKindInferenceType g m))
         | SynExpr.Lambda (body = a)
         | SynExpr.DotLambda (expr = a) ->
-            loopExpr a (cont << fun (depth, ty) -> depth + 1, mkFunTy g (NewInferenceType g) ty)
+            loopExpr a (cont << fun struct (depth, ty) -> depth + 1, mkFunTy g (NewInferenceType g) ty)
         | SynExpr.MatchLambda (matchClauses = SynMatchClause (resultExpr = a) :: clauses) ->
-            let loopClause a = loopExpr a (cont << fun (depth, ty) -> depth + 1, mkFunTy g (NewInferenceType g) ty)
+            let loopClause a = loopExpr a (cont << fun struct (depth, ty) -> depth + 1, mkFunTy g (NewInferenceType g) ty)
 
             // Look at all branches, keeping the one
             // that gives us the most syntactic information.
@@ -9699,10 +9699,10 @@ and GetNewInferenceTypeForMethodArg (cenv: cenv) x =
                 | _ -> acc)
         | SynExpr.Quote (_, raw, a, _, _) ->
             if raw then cont (0, mkRawQuotedExprTy g)
-            else loopExpr a (cont << fun (depth, ty) -> depth + 1, mkQuotedExprTy g ty)
+            else loopExpr a (cont << fun struct (depth, ty) -> depth + 1, mkQuotedExprTy g ty)
         | _ -> cont (0, NewInferenceType g)
 
-    let _depth, ty = loopExpr x id
+    let struct (_depth, ty) = loopExpr x id
     ty
 
 and CalledMethHasSingleArgumentGroupOfThisLength n (calledMeth: MethInfo) =
