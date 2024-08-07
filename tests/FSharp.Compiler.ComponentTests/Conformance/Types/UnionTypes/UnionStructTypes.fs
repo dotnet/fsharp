@@ -778,6 +778,7 @@ type Foo =
 
 let foo = [Baz 42; Bat; Batman]
 printf "%A" foo"""
+        |> withLangVersionPreview
         |> asExe
         |> compile
         |> shouldSucceed

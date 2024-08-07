@@ -324,7 +324,7 @@ namespace Microsoft.FSharp.Core
     /// and accessor members for the generated CLI class for that type.</summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct,AllowMultiple=false)>]  
     [<Sealed>]
     type DefaultAugmentationAttribute =
         inherit Attribute
