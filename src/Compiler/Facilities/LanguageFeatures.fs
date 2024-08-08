@@ -213,8 +213,8 @@ type LanguageVersion(versionText) =
                 LanguageFeature.EmptyBodiedComputationExpressions, languageVersion90
 
                 // F# preview
-                LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion        // not enabled because: https://github.com/dotnet/fsharp/issues/17509
-                LanguageFeature.FromEndSlicing, previewVersion                          // Unfinished features --- needs work
+                LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion // not enabled because: https://github.com/dotnet/fsharp/issues/17509
+                LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
