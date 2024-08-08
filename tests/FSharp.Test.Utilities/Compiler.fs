@@ -588,6 +588,9 @@ module rec Compiler =
         | CS cs -> CS { cs with LangVersion = ver }
         | _ -> failwith "Only supported in C#"
 
+    let withCSharpLanguageVersionPreview =
+        withCSharpLanguageVersion CSharpLanguageVersion.Preview
+
     let withOutputType (outputType : CompileOutput) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS x -> FS { x with OutputType = outputType }
