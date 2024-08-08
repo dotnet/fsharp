@@ -347,6 +347,41 @@ let res = { new MyClass() }
          |> withDiagnostics [
              (Error 365, Line 11, Col 11, Line 11, Col 28, "No implementation was given for 'abstract MyClass.M: unit -> unit'")
          ] 
+    [<Fact>]
+    let ``C# abstract class with protected constructor can be implemented by F# object expression lang version preview`` () =
+
+        let csharp =
+            CSharp
+                """
+namespace CSLib
+{
+    using System;
+    public abstract class Animal
+    {
+        protected Animal()
+        {
+            Console.WriteLine("Animal is created");
+        }
+    }
+}
+"""
+            |> withName "CSLib"
+
+        let fsharp =
+            FSharp
+                """
+module FSLib
+open CSLib
+
+let res = { new Animal() }
+"""
+            |> withLangVersionPreview
+            |> withName "FSLib"
+            |> withReferences [ csharp ]
+
+        fsharp
+        |> compile
+        |> shouldSucceed
          
     [<Fact>]
     let ``Error when object expression does not implement all abstract members of the abstract class`` () =
