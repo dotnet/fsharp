@@ -205,7 +205,6 @@ type LanguageVersion(versionText) =
                 LanguageFeature.WarningWhenTailCallAttrOnNonRec, languageVersion90
                 LanguageFeature.UnionIsPropertiesVisible, languageVersion90
                 LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern, languageVersion90
-                LanguageFeature.EnforceAttributeTargets, languageVersion90
                 LanguageFeature.LowerInterpolatedStringToConcat, languageVersion90
                 LanguageFeature.LowerIntegralRangesToFastLoops, languageVersion90
                 LanguageFeature.LowerSimpleMappingsInComprehensionsToFastLoops, languageVersion90
@@ -214,6 +213,7 @@ type LanguageVersion(versionText) =
 
                 // F# preview
                 LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion // not enabled because: https://github.com/dotnet/fsharp/issues/17509
+                LanguageFeature.EnforceAttributeTargets, previewVersion // not enabled because: https://github.com/dotnet/fsharp/issues/17514
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
             ]
 
