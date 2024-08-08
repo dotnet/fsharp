@@ -444,20 +444,12 @@ let TcSequenceExpressionEntry (cenv: TcFileState) env (overallTy: OverallTy) tpe
     match RewriteRangeExpr comp with
     | Some replacementExpr -> TcExpr cenv overallTy env tpenv replacementExpr
     | None ->
-
         let implicitYieldEnabled =
             cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
 
         let validateObjectSequenceOrRecordExpression = not implicitYieldEnabled
 
         match comp with
-        | SynExpr.New _ ->
-            try
-                TcExprUndelayed cenv overallTy env tpenv comp |> ignore
-            with RecoverableException e ->
-                errorRecovery e m
-
-            errorR (Error(FSComp.SR.tcInvalidObjectExpressionSyntaxForm (), m))
         | SimpleSemicolonSequence cenv false _ when validateObjectSequenceOrRecordExpression ->
             errorR (Error(FSComp.SR.tcInvalidObjectSequenceOrRecordExpression (), m))
         | _ -> ()
