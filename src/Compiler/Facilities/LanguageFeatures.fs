@@ -197,9 +197,8 @@ type LanguageVersion(versionText) =
                 LanguageFeature.ExtendedFixedBindings, languageVersion80
                 LanguageFeature.PreferStringGetPinnableReference, languageVersion80
 
-                // F# preview
+                // F# 9.0
                 LanguageFeature.NullnessChecking, languageVersion90
-                LanguageFeature.UnmanagedConstraintCsharpInterop, languageVersion90
                 LanguageFeature.ReuseSameFieldsInStructUnions, languageVersion90
                 LanguageFeature.PreferExtensionMethodOverPlainProperty, languageVersion90
                 LanguageFeature.WarningIndexedPropertiesGetSetSameType, languageVersion90
@@ -213,8 +212,9 @@ type LanguageVersion(versionText) =
                 LanguageFeature.ParsedHashDirectiveArgumentNonQuotes, languageVersion90
                 LanguageFeature.EmptyBodiedComputationExpressions, languageVersion90
 
-                // Unfinished feature --- needs work
-                LanguageFeature.FromEndSlicing, previewVersion
+                // F# preview
+                LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion        // not enabled because: https://github.com/dotnet/fsharp/issues/17509
+                LanguageFeature.FromEndSlicing, previewVersion                          // Unfinished features --- needs work
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")

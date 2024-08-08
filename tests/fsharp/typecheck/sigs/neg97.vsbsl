@@ -1,4 +1,6 @@
 
+neg97.fs(4,10,4,20): typecheck error FS0842: This attribute is not valid for use on this language element
+
 neg97.fs(13,1,13,10): typecheck error FS0256: A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'
 
 neg97.fs(16,9,16,10): typecheck error FS0009: Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.

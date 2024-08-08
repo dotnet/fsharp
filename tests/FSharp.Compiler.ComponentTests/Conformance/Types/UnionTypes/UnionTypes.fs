@@ -135,6 +135,7 @@ module UnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
+            (Error 434, Line 7, Col 12, Line 7, Col 13, "The property 'IsC' has the same name as a method in type 'T'.")
             (Error 23, Line 9, Col 19, Line 9, Col 22, "The member 'IsC' can not be defined because the name 'IsC' clashes with the default augmentation of the union case 'C' in this type or module")
             (Error 23, Line 13, Col 24, Line 13, Col 27, "The member 'IsC' can not be defined because the name 'IsC' clashes with the default augmentation of the union case 'C' in this type or module")
         ]

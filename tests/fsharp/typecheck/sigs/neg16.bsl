@@ -3,13 +3,19 @@ neg16.fs(7,13,7,16): typecheck error FS0644: Namespaces cannot contain extension
 
 neg16.fs(23,10,23,11): typecheck error FS0935: Types with the 'AllowNullLiteral' attribute may only inherit from or implement types which also allow the use of the null literal
 
+neg16.fs(34,7,34,23): typecheck error FS0842: This attribute is not valid for use on this language element
+
 neg16.fs(35,10,35,11): typecheck error FS0934: Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute
 
 neg16.fs(38,10,38,11): typecheck error FS0934: Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute
 
 neg16.fs(41,10,41,11): typecheck error FS0934: Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute
 
+neg16.fs(43,7,43,23): typecheck error FS0842: This attribute is not valid for use on this language element
+
 neg16.fs(44,10,44,11): typecheck error FS0934: Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute
+
+neg16.fs(46,7,46,23): typecheck error FS0842: This attribute is not valid for use on this language element
 
 neg16.fs(47,10,47,13): typecheck error FS0934: Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute
 
@@ -76,6 +82,8 @@ neg16.fs(96,3,97,16): typecheck error FS0823: The 'VolatileField' attribute may 
 neg16.fs(99,3,100,14): typecheck error FS0823: The 'VolatileField' attribute may only be used on 'let' bindings in classes
 
 neg16.fs(99,3,100,14): typecheck error FS0879: Volatile fields must be marked 'mutable' and cannot be thread-static
+
+neg16.fs(99,5,99,18): typecheck error FS0842: This attribute is not valid for use on this language element
 
 neg16.fs(102,3,103,9): typecheck error FS0823: The 'VolatileField' attribute may only be used on 'let' bindings in classes
 

@@ -277,15 +277,25 @@ neg20.fs(301,8,301,16): typecheck error FS3132: This type definition may not hav
 
 neg20.fs(304,8,304,16): typecheck error FS3132: This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.
 
+neg20.fs(306,5,306,15): typecheck error FS0842: This attribute is not valid for use on this language element
+
 neg20.fs(307,8,307,20): typecheck error FS3132: This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.
 
 neg20.fs(310,8,310,17): typecheck error FS3132: This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.
 
+neg20.fs(312,5,312,15): typecheck error FS0842: This attribute is not valid for use on this language element
+
 neg20.fs(313,8,313,15): typecheck error FS3132: This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.
+
+neg20.fs(315,5,315,15): typecheck error FS0842: This attribute is not valid for use on this language element
 
 neg20.fs(316,8,316,19): typecheck error FS3132: This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.
 
+neg20.fs(318,5,318,15): typecheck error FS0842: This attribute is not valid for use on this language element
+
 neg20.fs(319,8,319,17): typecheck error FS3132: This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.
+
+neg20.fs(321,5,321,15): typecheck error FS0842: This attribute is not valid for use on this language element
 
 neg20.fs(322,8,322,18): typecheck error FS3132: This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.
 
