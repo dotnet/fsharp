@@ -46,21 +46,20 @@
 
   <ItemGroup>
     <!-- MIBC data to use when exact architecture match is available -->
-    <MIBCPackage Include="optimization.windows_nt-x86.mibc.runtime"   Version="$(optimizationwindows_ntx86MIBCRuntimeVersion)"   MibcArchitecture="windows/x86"   KeepDuplicates="false" GeneratePathProperty="true" />
-    <MIBCPackage Include="optimization.windows_nt-x64.mibc.runtime"   Version="$(optimizationwindows_ntx64MIBCRuntimeVersion)"   MibcArchitecture="windows/x64"   KeepDuplicates="false" GeneratePathProperty="true" />
-    <MIBCPackage Include="optimization.windows_nt-arm64.mibc.runtime" Version="$(optimizationwindows_ntarm64MIBCRuntimeVersion)" MibcArchitecture="windows/arm64" KeepDuplicates="false" GeneratePathProperty="true" />
-    <MIBCPackage Include="optimization.linux-x64.mibc.runtime"        Version="$(optimizationlinuxx64MIBCRuntimeVersion)"        MibcArchitecture="linux/x64"     KeepDuplicates="false" GeneratePathProperty="true" />
-    <MIBCPackage Include="optimization.linux-arm64.mibc.runtime"      Version="$(optimizationlinuxarm64MIBCRuntimeVersion)"      MibcArchitecture="linux/arm64"   KeepDuplicates="false" GeneratePathProperty="true" />
+    <MIBCPackage Include="optimization.windows_nt-x86.mibc.runtime"   Version="$(optimizationwindows_ntx86MIBCRuntimeVersion)"   MibcArchitecture="windows/x86"   KeepDuplicates="false" />
+    <MIBCPackage Include="optimization.windows_nt-x64.mibc.runtime"   Version="$(optimizationwindows_ntx64MIBCRuntimeVersion)"   MibcArchitecture="windows/x64"   KeepDuplicates="false" />
+    <MIBCPackage Include="optimization.windows_nt-arm64.mibc.runtime" Version="$(optimizationwindows_ntarm64MIBCRuntimeVersion)" MibcArchitecture="windows/arm64" KeepDuplicates="false" />
+    <MIBCPackage Include="optimization.linux-x64.mibc.runtime"        Version="$(optimizationlinuxx64MIBCRuntimeVersion)"        MibcArchitecture="linux/x64"     KeepDuplicates="false" />
+    <MIBCPackage Include="optimization.linux-arm64.mibc.runtime"      Version="$(optimizationlinuxarm64MIBCRuntimeVersion)"      MibcArchitecture="linux/arm64"   KeepDuplicates="false" />
 
     <!-- MIBC data to use when exact architecture match is not available -->
-    <MIBCPackage Include="optimization.windows_nt-x64.mibc.runtime" Version="$(optimizationwindows_ntx64MIBCRuntimeVersion)" MibcArchitecture="windows" KeepDuplicates="false" GeneratePathProperty="true" />
-    <MIBCPackage Include="optimization.linux-x64.mibc.runtime"      Version="$(optimizationlinuxx64MIBCRuntimeVersion)"      MibcArchitecture="linux"   KeepDuplicates="false" GeneratePathProperty="true" />
-    <MIBCPackage Include="optimization.linux-x64.mibc.runtime"      Version="$(optimizationlinuxx64MIBCRuntimeVersion)"      MibcArchitecture="osx"     KeepDuplicates="false" GeneratePathProperty="true" />
+    <MIBCPackage Include="optimization.windows_nt-x64.mibc.runtime"   Version="$(optimizationwindows_ntx64MIBCRuntimeVersion)" MibcArchitecture="windows" KeepDuplicates="false"  />
+    <MIBCPackage Include="optimization.linux-x64.mibc.runtime"        Version="$(optimizationlinuxx64MIBCRuntimeVersion)"      MibcArchitecture="linux"   KeepDuplicates="false"  />
+    <MIBCPackage Include="optimization.linux-x64.mibc.runtime"        Version="$(optimizationlinuxx64MIBCRuntimeVersion)"      MibcArchitecture="osx"     KeepDuplicates="false"  />
 
     <!-- Fallback in case no OS specific data is available -->
-    <MIBCPackage Include="optimization.linux-x64.mibc.runtime" Version="$(optimizationlinuxx64MIBCRuntimeVersion)" KeepDuplicates="false" GeneratePathProperty="true" />
+    <MIBCPackage Include="optimization.linux-x64.mibc.runtime"        Version="$(optimizationlinuxx64MIBCRuntimeVersion)" KeepDuplicates="false" />
   </ItemGroup>
-
 
   <ItemGroup>
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="$(SystemDiagnosticsDiagnosticSourceVersion)" />
@@ -76,17 +75,15 @@
   </ItemGroup>
 
   <Target Name="CopyPackageFiles" AfterTargets="Restore" BeforeTargets="Build;Pack">
-    <Message Text="Executing CopyPackageFiles task" Importance="High" />
+
+    <ItemGroup>
+      <CopyFiles Include="$(NuGetPackageRoot)%(MibcPackage.Identity)\%(MibcPackage.Version)\**\*" />
+    </ItemGroup>
 
     <Copy
-      SourceFiles="$(TargetDir)$(ProjectName).dll;$(TargetDir)$(ProjectName).pdb"
-      DestinationFolder="C:\Builds$(ProjectName)" />
-
-    <Message Text="Copied build files" Importance="High" />
+      SourceFiles="@(CopyFiles)"
+      DestinationFolder="$(ArtifactsDir)mibc\%(MibcPackage.Identity)\%(MibcPackage.Version)\"
+      SkipUnchangedFiles="true" />
   </Target>
-
-</Project>
-Code language: HTML, XML (xml)
-
 
 </Project>
