@@ -5,7 +5,6 @@ open FSharp.Test.Compiler
 
 let withNullnessOptions cu =
     cu
-    |> withLangVersionPreview
     |> withCheckNulls
     |> withWarnOn 3261
     |> withWarnOn 3262
