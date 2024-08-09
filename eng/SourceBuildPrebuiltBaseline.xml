@@ -27,6 +27,6 @@
     <UsagePattern IdentityGlob="Microsoft.VisualStudio.Setup.Configuration.Interop/3.2.2146" />
     
     <!-- MIBC -->
-    <UsagePattern IdentityGlob="optimization.*.MIBC.Runtime" />
+    <UsagePattern IdentityGlob="optimization.*.MIBC.Runtime.*" />
   </IgnorePatterns>
 </UsageData>
