@@ -10,7 +10,6 @@ type Optimize = Optimize | DoNotOptimize
 
 let verifyCompilation (o:Optimize) compilation =
     compilation
-    |> withLangVersionPreview
     |> withOptions ["--checknulls"]
     |> (match o with | Optimize -> withOptimize | DoNotOptimize -> withNoOptimize)
     |> withNoDebug
@@ -97,7 +96,6 @@ module Interop  =
     let fsharpLibCreator = 
         FSharp 
         >> asLibrary 
-        >> withLangVersionPreview 
         >> withName "MyFSharpLib" 
         >> withOptions ["--checknulls"]
 
