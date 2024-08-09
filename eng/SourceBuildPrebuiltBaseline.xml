@@ -25,8 +25,10 @@
 
     <!-- Tracked in https://github.com/dotnet/source-build/issues/3438 -->
     <UsagePattern IdentityGlob="Microsoft.VisualStudio.Setup.Configuration.Interop/3.2.2146" />
-    
-    <!-- MIBC -->
-    <UsagePattern IdentityGlob="optimization.*.MIBC.Runtime.*" />
   </IgnorePatterns>
+
+  <!-- MIBC -->
+  <Usages>
+    <Usage Id="optimization.linux-x64.MIBC.Runtime" Version="1.0.0-prerelease.23614.4" />
+  </Usages>
 </UsageData>
