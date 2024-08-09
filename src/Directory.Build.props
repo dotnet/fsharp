@@ -17,8 +17,6 @@
     <TargetArchitecture>$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant)</TargetArchitecture>
   </PropertyGroup>
 
-  <!-- MIBC -->
-  
   <PropertyGroup>
     <MibcOptimizationDataDir>$([System.IO.Path]::Combine($(ArtifactsDir), 'mibc'))</MibcOptimizationDataDir>
   </PropertyGroup>
