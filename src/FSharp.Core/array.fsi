@@ -3443,7 +3443,6 @@ module Array =
         /// </code>
         /// </example>
         [<CompiledName("ForAll")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val forall: predicate: ('T -> bool) -> array: 'T array -> bool
 
         /// <summary>Tests if any element of the array satisfies the given predicate.</summary>
@@ -3477,7 +3476,6 @@ module Array =
         /// Evaluates to <c>false</c>
         /// </example>
         [<CompiledName("Exists")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val exists: predicate: ('T -> bool) -> array: 'T array -> bool
 
         /// <summary>Returns the first element for which the given function returns <c>True</c>.
@@ -3508,7 +3506,6 @@ module Array =
         /// Evaluates to <c>None</c>
         /// </example>
         [<CompiledName("TryFind")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val tryFind: predicate: ('T -> bool) -> array: 'T array -> 'T option
 
         /// <summary>Returns the index of the first element in the array
@@ -3539,7 +3536,6 @@ module Array =
         /// Evaluates to <c>None</c>
         /// </example>
         [<CompiledName("TryFindIndex")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val tryFindIndex: predicate: ('T -> bool) -> array: 'T array -> int option
 
         /// <summary>Applies the given function to successive elements, returning the first
@@ -3572,7 +3568,6 @@ module Array =
         /// </example>
         ///
         [<CompiledName("TryPick")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val tryPick: chooser: ('T -> 'U option) -> array: 'T array -> 'U option
 
         /// <summary>Applies a function to each element of the array in parallel, threading an accumulator argument
@@ -3600,7 +3595,6 @@ module Array =
         /// </example>
 
         [<CompiledName("Reduce")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline reduce: reduction: ('T -> 'T -> 'T) -> array: 'T array -> 'T
 
         /// <summary>Applies a projection function to each element of the array in parallel, reducing elements in each thread with a dedicated 'reduction' function.
@@ -3628,7 +3622,6 @@ module Array =
         /// </example>
 
         [<CompiledName("ReduceBy")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val reduceBy: projection: ('T -> 'U) -> reduction: ('U -> 'U -> 'U) -> array: 'T array -> 'U
 
         /// <summary>Returns the greatest of all elements of the array, compared via Operators.max.</summary>
@@ -3660,7 +3653,6 @@ module Array =
         /// Throws <c>System.ArgumentException</c>.
         /// </example>
         [<CompiledName("Max")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline max: array: 'T array -> 'T when 'T: comparison
 
         /// <summary>Returns the greatest of all elements of the array, compared via Operators.max on the function result.</summary>
@@ -3693,7 +3685,6 @@ module Array =
         /// Throws <c>System.ArgumentException</c>.
         /// </example>
         [<CompiledName("MaxBy")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline maxBy: projection: ('T -> 'U) -> array: 'T array -> 'T when 'U: comparison
 
         /// <summary>Returns the smallest of all elements of the array, compared via Operators.min.</summary>
@@ -3725,7 +3716,6 @@ module Array =
         /// Throws <c>System.ArgumentException</c>.
         /// </example>
         [<CompiledName("Min")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline min: array: 'T array -> 'T when 'T: comparison
 
         /// <summary>Returns the lowest of all elements of the array, compared via Operators.min on the function result.</summary>
@@ -3758,7 +3748,6 @@ module Array =
         /// Throws <c>System.ArgumentException</c>.
         /// </example>
         [<CompiledName("MinBy")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline minBy: projection: ('T -> 'U) -> array: 'T array -> 'T when 'U: comparison
 
         /// <summary>Returns the sum of the elements in the array.</summary>
@@ -3778,7 +3767,6 @@ module Array =
         /// Evaluates to <c>11</c>.
         /// </example>
         [<CompiledName("Sum")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline sum:
             array: ^T array -> ^T when ^T: (static member (+): ^T * ^T -> ^T) and ^T: (static member Zero: ^T)
 
@@ -3800,7 +3788,6 @@ module Array =
         /// Evaluates to <c>7</c>.
         /// </example>
         [<CompiledName("SumBy")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline sumBy:
             projection: ('T -> ^U) -> array: 'T array -> ^U
                 when ^U: (static member (+): ^U * ^U -> ^U) and ^U: (static member Zero: ^U)
@@ -3828,7 +3815,6 @@ module Array =
         /// Throws <c>ArgumentException</c>
         /// </example>
         [<CompiledName("Average")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline average:
             array: ^T array -> ^T
                 when ^T: (static member (+): ^T * ^T -> ^T) and ^T: (static member DivideByInt: ^T * int -> ^T)
@@ -3866,7 +3852,6 @@ module Array =
         /// Throws <c>ArgumentException</c>
         /// </example>
         [<CompiledName("AverageBy")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline averageBy:
             projection: ('T -> ^U) -> array: 'T array -> ^U
                 when ^U: (static member (+): ^U * ^U -> ^U) and ^U: (static member DivideByInt: ^U * int -> ^U)
@@ -4012,7 +3997,6 @@ module Array =
         /// </example>
 
         [<CompiledName("GroupBy")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val groupBy: projection: ('T -> 'Key) -> array: 'T array -> ('Key * 'T array) array when 'Key: equality
 
         /// <summary>Apply the given function to each element of the array. </summary>
@@ -4132,7 +4116,6 @@ module Array =
         /// Evaluates to <c>[| 1; 1 3; 4; 6; 8 |]</c>.
         /// </example>
         [<CompiledName("Sort")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val sort: array: 'T array -> 'T array when 'T: comparison
 
         /// <summary>Sorts the elements of an array in parallel, using the given projection for the keys and returning a new array.
@@ -4158,7 +4141,6 @@ module Array =
         /// </example>
 
         [<CompiledName("SortBy")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val sortBy: projection: ('T -> 'Key) -> array: 'T array -> 'T array when 'Key: comparison
 
         /// <summary>Sorts the elements of an array in parallel, using the given comparison function as the order, returning a new array.</summary>
@@ -4187,7 +4169,6 @@ module Array =
         /// Evaluates to <c>[|(0, "aa"); (2, "cc"); (3, "dd"); (1, "bbb")|]</c>.
         /// </example>
         [<CompiledName("SortWith")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val sortWith: comparer: ('T -> 'T -> int) -> array: 'T array -> 'T array
 
         /// <summary>Sorts the elements of an array by mutating the array in-place in parallel, using the given projection for the keys.
@@ -4210,7 +4191,6 @@ module Array =
         /// After evaluation <c>array</c> contains <c>[|"a"; "dd"; "bbb"; "cccc"|]</c>.
         /// </example>
         [<CompiledName("SortInPlaceBy")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val sortInPlaceBy: projection: ('T -> 'Key) -> array: 'T array -> unit when 'Key: comparison
 
         /// <summary>Sorts the elements of an array by mutating the array in-place in parallel, using the given comparison function as the order.</summary>
@@ -4234,7 +4214,6 @@ module Array =
         /// After evaluation <c>array</c> contains <c>[|(0, "aa"); (2, "cc"); (3, "dd"); (1, "bbb")|]</c>.
         /// </example>
         [<CompiledName("SortInPlaceWith")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val sortInPlaceWith: comparer: ('T -> 'T -> int) -> array: 'T array -> unit
 
         /// <summary>Sorts the elements of an array by mutating the array in-place in parallel, using the given comparison function.
@@ -4253,7 +4232,6 @@ module Array =
         /// After evaluation <c>array</c> contains <c>[| 1; 1; 3; 4; 6; 8 |]</c>.
         /// </example>
         [<CompiledName("SortInPlace")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val sortInPlace: array: 'T array -> unit when 'T: comparison
 
         /// <summary>Sorts the elements of an array in parallel, in descending order, returning a new array. Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>. </summary>
@@ -4274,7 +4252,6 @@ module Array =
         /// Evaluates to <c>[| 8; 6; 4; 3; 1; 1 |]</c>.
         /// </example>
         [<CompiledName("SortDescending")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val sortDescending: array: 'T array -> 'T array when 'T: comparison
 
         /// <summary>Sorts the elements of an array in parallel, in descending order, using the given projection for the keys and returning a new array.
@@ -4297,7 +4274,6 @@ module Array =
         /// Evaluates to <c>[|"cccc"; "bbb"; "dd"; "a"|]</c>.
         /// </example>
         [<CompiledName("SortByDescending")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val sortByDescending: projection: ('T -> 'Key) -> array: 'T array -> 'T array when 'Key: comparison
 
         /// <summary>Combines the two arrays into an array of pairs. The two arrays must have equal lengths, otherwise an <c>ArgumentException</c> is
@@ -4321,7 +4297,6 @@ module Array =
         /// Evaluates to <c>[| (1, "one"); (2, "two") |]</c>.
         /// </example>
         [<CompiledName("Zip")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val zip: array1: 'T1 array -> array2: 'T2 array -> ('T1 * 'T2) array
 
         /// <summary>Returns a new collection containing only the elements of the collection
@@ -4343,5 +4318,4 @@ module Array =
         /// Evaluates to <c>[| 2; 4 |]</c>
         /// </example>
         [<CompiledName("Filter")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val filter: predicate: ('T -> bool) -> array: 'T array -> 'T array
