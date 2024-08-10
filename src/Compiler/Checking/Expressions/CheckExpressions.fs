@@ -9686,22 +9686,36 @@ and TcMethodApplicationThen
     PropagateThenTcDelayed cenv overallTy env tpenv mWholeExpr (MakeApplicableExprNoFlex cenv expr) exprTy atomicFlag delayed
 
 /// Infer initial type information at the callsite from the syntax of an argument, prior to overload resolution.
-and GetNewInferenceTypeForMethodArg (cenv: cenv) env tpenv x =
+and GetNewInferenceTypeForMethodArg (cenv: cenv) x =
 
     let g = cenv.g
 
-    match x with
-    | SynExprParen(a, _, _, _) ->
-        GetNewInferenceTypeForMethodArg cenv env tpenv a
-    | SynExpr.AddressOf (true, a, _, m) ->
-        mkByrefTyWithInference g (GetNewInferenceTypeForMethodArg cenv env tpenv a) (NewByRefKindInferenceType g m)
-    | SynExpr.Lambda (body = a)
-    | SynExpr.DotLambda (expr = a) ->
-        mkFunTy g (NewInferenceType g) (GetNewInferenceTypeForMethodArg cenv env tpenv a)
-    | SynExpr.Quote (_, raw, a, _, _) ->
-        if raw then mkRawQuotedExprTy g
-        else mkQuotedExprTy g (GetNewInferenceTypeForMethodArg cenv env tpenv a)
-    | _ -> NewInferenceType g
+    let rec loopExpr expr cont : struct (_ * _) =
+        match expr with
+        | SynExprParen (a, _, _, _) ->
+            loopExpr a cont
+        | SynExpr.AddressOf (true, a, _, m) ->
+            loopExpr a (cont << fun struct (depth, ty) -> depth + 1, mkByrefTyWithInference g ty (NewByRefKindInferenceType g m))
+        | SynExpr.Lambda (body = a)
+        | SynExpr.DotLambda (expr = a) ->
+            loopExpr a (cont << fun struct (depth, ty) -> depth + 1, mkFunTy g (NewInferenceType g) ty)
+        | SynExpr.MatchLambda (matchClauses = SynMatchClause (resultExpr = a) :: clauses) ->
+            let loopClause a = loopExpr a (cont << fun struct (depth, ty) -> depth + 1, mkFunTy g (NewInferenceType g) ty)
+
+            // Look at all branches, keeping the one
+            // that gives us the most syntactic information.
+            (loopClause a, clauses)
+            ||> List.fold (fun ((maxClauseDepth, _) as acc) (SynMatchClause (resultExpr = a)) ->
+                match loopClause a with
+                | clauseDepth, ty when clauseDepth > maxClauseDepth -> clauseDepth, ty
+                | _ -> acc)
+        | SynExpr.Quote (_, raw, a, _, _) ->
+            if raw then cont (0, mkRawQuotedExprTy g)
+            else loopExpr a (cont << fun struct (depth, ty) -> depth + 1, mkQuotedExprTy g ty)
+        | _ -> cont (0, NewInferenceType g)
+
+    let struct (_depth, ty) = loopExpr x id
+    ty
 
 and CalledMethHasSingleArgumentGroupOfThisLength n (calledMeth: MethInfo) =
     match calledMeth.NumArgs with
@@ -9736,7 +9750,7 @@ and UnifyMatchingSimpleArgumentTypes (cenv: cenv) (env: TcEnv) exprTy (calledMet
 and TcMethodApplication_SplitSynArguments
     (cenv: cenv)
     (env: TcEnv)
-    tpenv
+    _tpenv
     isProp
     (candidates: MethInfo list)
     (exprTy: OverallTy)
@@ -9764,7 +9778,7 @@ and TcMethodApplication_SplitSynArguments
             else
                 unnamedCurriedCallerArgs, namedCurriedCallerArgs
 
-        let MakeUnnamedCallerArgInfo x = (x, GetNewInferenceTypeForMethodArg cenv env tpenv x, x.Range)
+        let MakeUnnamedCallerArgInfo x = (x, GetNewInferenceTypeForMethodArg cenv x, x.Range)
 
         let singleMethodCurriedArgs =
             match candidates with
@@ -9803,7 +9817,7 @@ and TcMethodApplication_SplitSynArguments
         | _ ->
             let unnamedCurriedCallerArgs = unnamedCurriedCallerArgs |> List.mapSquared MakeUnnamedCallerArgInfo
             let namedCurriedCallerArgs = namedCurriedCallerArgs |> List.mapSquared (fun (isOpt, nm, x) ->
-                let ty = GetNewInferenceTypeForMethodArg cenv env tpenv x
+                let ty = GetNewInferenceTypeForMethodArg cenv x
                 // #435263: compiler crash with .net optional parameters and F# optional syntax
                 // named optional arguments should always have option type
                 // STRUCT OPTIONS: if we allow struct options as optional arguments then we should relax this and rely
