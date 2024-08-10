@@ -24,6 +24,7 @@ build -testFSharpQA -c Release -ci -nobl
 build -testFSharpCore -c Release
 build -testScripting -c Release
 build -testVs -c Release
+build -testAOT -c Release
 build -testAll -c Release
 ```
 
@@ -37,6 +38,7 @@ build -testAll -c Release
 | testCambridge | Windows | Runs the Cambridge suite tests |
 | testFSharpQA  | Windows | Runs the FSharpQA tests, requires Perl |
 | testVS        | Windows + VS | Runs all VS integration tests |
+| testAOT       | Windows | Run AOT/Trimming tests |
 | testCompiler  | Windows | Runs a few quick compiler tests |
 | testScripting | Windows | Runs scripting fsx and fsi commandline tests |
 | test          | Windows | Same as testDesktop |
@@ -102,7 +104,7 @@ The F# tests are split as follows:
 
 * [FSharp.Core.UnitTests](tests/FSharp.Core.UnitTests) - Validation of the core F# types and the public surface area of `FSharp.Core.dll`.
 
-* [FSharp.Compiler.UnitTests](tests/FSharp.Compiler.UnitTests) - Validation of compiler internals.
+* [FSharp.Compiler.Service.Tests](tests/FSharp.Compiler.Service.Tests) - Validation of compiler internals.
 
 * [FSharp.Compiler.ComponentTests](tests/FSharp.Compiler.ComponentTests) - Validation of compiler APIs.
 
@@ -149,7 +151,7 @@ Tags are in the left column, paths to to corresponding test folders are in the r
 
 If you want to re-run a particular test area, the easiest way to do so is to set a temporary tag for that area in test.lst (e.g. "RERUN") and adjust `ttags` [run.fsharpqa.test.fsx script](tests/fsharpqa/run.fsharpqa.test.fsx) and run it.
 
-### FSharp.Compiler.Service.Tests, VisualFSharp.UnitTests
+### VisualFSharp.UnitTests, FSharpSuite.Tests
 
 These are all currently NUnit tests (we hope to migrate them to xUnit). You can execute these tests individually via the Visual Studio NUnit3 runner
 extension or the command line via `nunit3-console.exe`.

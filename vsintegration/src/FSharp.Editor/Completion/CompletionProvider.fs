@@ -29,7 +29,8 @@ type internal FSharpCompletionProvider
     (
         workspace: Workspace,
         serviceProvider: SVsServiceProvider,
-        assemblyContentProvider: AssemblyContentProvider
+        assemblyContentProvider: AssemblyContentProvider,
+        editorOptions: EditorOptions
     ) =
 
     inherit FSharpCompletionProviderBase()
@@ -121,9 +122,8 @@ type internal FSharpCompletionProvider
                 Char.IsLetterOrDigit(sourceText.[triggerPosition]) || triggerChar = '.'
             elif not (trigger = CompletionTriggerKind.Insertion) then
                 false
-            else
-            // Do not trigger completion if it's not single dot, i.e. range expression
-            if
+            else if
+                // Do not trigger completion if it's not single dot, i.e. range expression
                 not intelliSenseOptions.ShowAfterCharIsTyped
                 && triggerPosition > 0
                 && sourceText.[triggerPosition - 1] = '.'
@@ -150,13 +150,13 @@ type internal FSharpCompletionProvider
         (
             document: Document,
             caretPosition: int,
-            getAllSymbols: FSharpCheckFileResults -> AssemblySymbol list
+            getAllSymbols: FSharpCheckFileResults -> AssemblySymbol array
         ) =
 
         cancellableTask {
-            let! parseResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("ProvideCompletionsAsyncAux")
-
             let! ct = CancellableTask.getCancellationToken ()
+
+            let! parseResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("ProvideCompletionsAsyncAux")
 
             let! sourceText = document.GetTextAsync(ct)
             let textLines = sourceText.Lines
@@ -194,9 +194,8 @@ type internal FSharpCompletionProvider
 
             let results = List<Completion.CompletionItem>()
 
-            declarationItems <-
-                declarations.Items
-                |> Array.sortWith (fun x y ->
+            Array.sortInPlaceWith
+                (fun (x: DeclarationListItem) (y: DeclarationListItem) ->
                     let mutable n = (not x.IsResolved).CompareTo(not y.IsResolved)
 
                     if n <> 0 then
@@ -220,6 +219,9 @@ type internal FSharpCompletionProvider
                                     n
                                 else
                                     x.MinorPriority.CompareTo(y.MinorPriority))
+                declarations.Items
+
+            declarationItems <- declarations.Items
 
             let maxHints =
                 if mruItems.Values.Count = 0 then
@@ -227,23 +229,16 @@ type internal FSharpCompletionProvider
                 else
                     Seq.max mruItems.Values
 
-            declarationItems
-            |> Array.iteri (fun number declarationItem ->
+            for number = 0 to declarationItems.Length - 1 do
+                let declarationItem = declarationItems[number]
+
                 let glyph =
                     Tokenizer.FSharpGlyphToRoslynGlyph(declarationItem.Glyph, declarationItem.Accessibility)
 
                 let namespaceName =
                     match declarationItem.NamespaceToOpen with
+                    | None -> null
                     | Some namespaceToOpen -> namespaceToOpen
-                    | _ -> null // Icky, but this is how roslyn handles it
-
-                let filterText =
-                    match declarationItem.NamespaceToOpen, declarationItem.NameInList.Split '.' with
-                    // There is no namespace to open and the item name does not contain dots, so we don't need to pass special FilterText to Roslyn.
-                    | None, [| _ |] -> null
-                    // Either we have a namespace to open ("DateTime (open System)") or item name contains dots ("Array.map"), or both.
-                    // We are passing last part of long ident as FilterText.
-                    | _, idents -> Array.last idents
 
                 let completionItem =
                     FSharpCommonCompletionItem
@@ -252,7 +247,7 @@ type internal FSharpCompletionProvider
                             null,
                             rules = noCommitOnSpaceRules,
                             glyph = Nullable glyph,
-                            filterText = filterText,
+                            filterText = declarationItem.NameInList,
                             inlineDescription = namespaceName
                         )
                         .AddProperty(FullNamePropName, declarationItem.FullName)
@@ -282,7 +277,7 @@ type internal FSharpCompletionProvider
 
                 let sortText = priority.ToString("D6")
                 let completionItem = completionItem.WithSortText(sortText)
-                results.Add(completionItem))
+                results.Add(completionItem)
 
             if
                 results.Count > 0
@@ -352,11 +347,11 @@ type internal FSharpCompletionProvider
                 )
 
             if shouldProvideCompetion then
-                let getAllSymbols (fileCheckResults: FSharpCheckFileResults) =
+                let inline getAllSymbols (fileCheckResults: FSharpCheckFileResults) =
                     if settings.IntelliSense.IncludeSymbolsFromUnopenedNamespacesOrModules then
                         assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies(fileCheckResults)
                     else
-                        []
+                        Array.empty
 
                 let! results = FSharpCompletionProvider.ProvideCompletionsAsyncAux(context.Document, context.Position, getAllSymbols)
 
@@ -369,31 +364,35 @@ type internal FSharpCompletionProvider
         (
             document: Document,
             completionItem: Completion.CompletionItem,
-            cancellationToken: CancellationToken
+            _cancellationToken: CancellationToken
         ) : Task<CompletionDescription> =
 
         match completionItem.Properties.TryGetValue IndexPropName with
         | true, completionItemIndexStr when int completionItemIndexStr >= declarationItems.Length ->
             Task.FromResult CompletionDescription.Empty
         | true, completionItemIndexStr ->
-            // TODO: Not entirely sure why do we use tasks here, since everything here is synchronous.
-            cancellableTask {
-                use _logBlock =
-                    Logger.LogBlockMessage document.Name LogEditorFunctionId.Completion_GetDescriptionAsync
+            use _logBlock =
+                Logger.LogBlockMessage document.Name LogEditorFunctionId.Completion_GetDescriptionAsync
 
-                let completionItemIndex = int completionItemIndexStr
+            let completionItemIndex = int completionItemIndexStr
 
-                let declarationItem = declarationItems.[completionItemIndex]
-                let description = declarationItem.Description
-                let documentation = List()
-                let collector = RoslynHelpers.CollectTaggedText documentation
-                // mix main description and xmldoc by using one collector
-                XmlDocumentation.BuildDataTipText(documentationBuilder, collector, collector, collector, collector, collector, description)
+            let declarationItem = declarationItems.[completionItemIndex]
+            let description = declarationItem.Description
+            let documentation = List()
+            let collector = RoslynHelpers.CollectTaggedText documentation
+            // mix main description and xmldoc by using one collector
+            XmlDocumentation.BuildDataTipText(
+                documentationBuilder,
+                collector,
+                collector,
+                collector,
+                collector,
+                collector,
+                description,
+                editorOptions.QuickInfo.ShowRemarks
+            )
 
-                return CompletionDescription.Create(documentation.ToImmutableArray())
-            }
-            |> CancellableTask.start cancellationToken
-
+            Task.FromResult(CompletionDescription.Create(documentation.ToImmutableArray()))
         | _ ->
             match completionItem.Properties.TryGetValue KeywordDescription with
             | true, keywordDescription -> Task.FromResult(CompletionDescription.FromText(keywordDescription))
@@ -406,8 +405,8 @@ type internal FSharpCompletionProvider
 
             let fullName =
                 match item.Properties.TryGetValue FullNamePropName with
-                | true, x -> Some x
-                | _ -> None
+                | true, x -> ValueSome x
+                | _ -> ValueNone
 
             // do not add extension members and unresolved symbols to the MRU list
             if
@@ -415,7 +414,7 @@ type internal FSharpCompletionProvider
                 && not (item.Properties.ContainsKey IsExtensionMemberPropName)
             then
                 match fullName with
-                | Some fullName ->
+                | ValueSome fullName ->
                     match mruItems.TryGetValue fullName with
                     | true, hints -> mruItems.[fullName] <- hints + 1
                     | _ -> mruItems.[fullName] <- 1
@@ -431,38 +430,64 @@ type internal FSharpCompletionProvider
             | true, ns ->
                 let! sourceText = document.GetTextAsync(cancellationToken)
 
-                let textWithItemCommitted =
-                    sourceText.WithChanges(TextChange(item.Span, nameInCode))
+                let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("ProvideCompletionsAsyncAux")
 
-                let line = sourceText.Lines.GetLineFromPosition(item.Span.Start)
+                let completionInsertRange =
+                    RoslynHelpers.TextSpanToFSharpRange(document.FilePath, item.Span, sourceText)
 
-                let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpCompletionProvider))
+                let isNamespaceOrModuleInserted =
+                    checkFileResults.OpenDeclarations
+                    |> Array.exists (fun i ->
+                        Range.rangeContainsPos i.AppliedScope completionInsertRange.Start
+                        && i.Modules
+                           |> List.distinct
+                           |> List.exists (fun i ->
+                               (i.IsNamespace || i.IsFSharpModule)
+                               && match i.Namespace with
+                                  | Some x -> $"{x}.{i.DisplayName}" = ns
+                                  | _ -> i.DisplayName = ns))
 
-                let fullNameIdents =
-                    fullName |> Option.map (fun x -> x.Split '.') |> Option.defaultValue [||]
+                if isNamespaceOrModuleInserted then
+                    return CompletionChange.Create(TextChange(item.Span, nameInCode))
+                else
+                    let textWithItemCommitted =
+                        sourceText.WithChanges(TextChange(item.Span, nameInCode))
 
-                let insertionPoint =
-                    if settings.CodeFixes.AlwaysPlaceOpensAtTopLevel then
-                        OpenStatementInsertionPoint.TopLevel
-                    else
-                        OpenStatementInsertionPoint.Nearest
+                    let line = sourceText.Lines.GetLineFromPosition(item.Span.Start)
 
-                let ctx =
-                    ParsedInput.FindNearestPointToInsertOpenDeclaration line.LineNumber parseResults.ParseTree fullNameIdents insertionPoint
+                    let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpCompletionProvider))
 
-                let finalSourceText, changedSpanStartPos =
-                    OpenDeclarationHelper.insertOpenDeclaration textWithItemCommitted ctx ns
+                    let fullNameIdents =
+                        fullName
+                        |> ValueOption.map (fun x -> x.Split '.')
+                        |> ValueOption.defaultValue [||]
 
-                let fullChangingSpan = TextSpan.FromBounds(changedSpanStartPos, item.Span.End)
+                    let insertionPoint =
+                        if settings.CodeFixes.AlwaysPlaceOpensAtTopLevel then
+                            OpenStatementInsertionPoint.TopLevel
+                        else
+                            OpenStatementInsertionPoint.Nearest
 
-                let changedSpan =
-                    TextSpan.FromBounds(changedSpanStartPos, item.Span.End + (finalSourceText.Length - sourceText.Length))
+                    let ctx =
+                        ParsedInput.FindNearestPointToInsertOpenDeclaration
+                            line.LineNumber
+                            parseResults.ParseTree
+                            fullNameIdents
+                            insertionPoint
 
-                let changedText = finalSourceText.ToString(changedSpan)
+                    let finalSourceText, changedSpanStartPos =
+                        OpenDeclarationHelper.insertOpenDeclaration textWithItemCommitted ctx ns
 
-                return
-                    CompletionChange
-                        .Create(TextChange(fullChangingSpan, changedText))
-                        .WithNewPosition(Nullable(changedSpan.End))
+                    let fullChangingSpan = TextSpan.FromBounds(changedSpanStartPos, item.Span.End)
+
+                    let changedSpan =
+                        TextSpan.FromBounds(changedSpanStartPos, item.Span.End + (finalSourceText.Length - sourceText.Length))
+
+                    let changedText = finalSourceText.ToString(changedSpan)
+
+                    return
+                        CompletionChange
+                            .Create(TextChange(fullChangingSpan, changedText))
+                            .WithNewPosition(Nullable(changedSpan.End))
         }
         |> CancellableTask.start cancellationToken

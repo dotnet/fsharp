@@ -15,61 +15,6 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
-/// Create a type variable representing the use of a "_" in F# code
-val NewAnonTypar: TyparKind * range * TyparRigidity * TyparStaticReq * TyparDynamicReq -> Typar
-
-/// Create an inference type variable
-val NewInferenceType: TcGlobals -> TType
-
-/// Create an inference type variable for the kind of a byref pointer
-val NewByRefKindInferenceType: TcGlobals -> range -> TType
-
-/// Create an inference type variable representing an error condition when checking an expression
-val NewErrorType: unit -> TType
-
-/// Create an inference type variable representing an error condition when checking a measure
-val NewErrorMeasure: unit -> Measure
-
-/// Create a list of inference type variables, one for each element in the input list
-val NewInferenceTypes: TcGlobals -> 'T list -> TType list
-
-/// Given a set of formal type parameters and their constraints, make new inference type variables for
-/// each and ensure that the constraints on the new type variables are adjusted to refer to these.
-///
-/// Returns
-///   1. the new type parameters
-///   2. the instantiation mapping old type parameters to inference variables
-///   3. the inference type variables as a list of types.
-val FreshenAndFixupTypars:
-    g: TcGlobals ->
-    m: range ->
-    rigid: TyparRigidity ->
-    Typars ->
-    TType list ->
-    Typars ->
-        Typars * TyparInstantiation * TType list
-
-/// Given a set of type parameters, make new inference type variables for
-/// each and ensure that the constraints on the new type variables are adjusted.
-///
-/// Returns
-///   1. the new type parameters
-///   2. the instantiation mapping old type parameters to inference variables
-///   3. the inference type variables as a list of types.
-val FreshenTypeInst: g: TcGlobals -> range -> Typars -> Typars * TyparInstantiation * TType list
-
-/// Given a set of type parameters, make new inference type variables for
-/// each and ensure that the constraints on the new type variables are adjusted.
-///
-/// Returns the inference type variables as a list of types.
-val FreshenTypars: g: TcGlobals -> range -> Typars -> TType list
-
-/// Given a method, which may be generic, make new inference type variables for
-/// its generic parameters, and ensure that the constraints the new type variables are adjusted.
-///
-/// Returns the inference type variables as a list of types.
-val FreshenMethInfo: range -> MethInfo -> TType list
-
 /// Information about the context of a type equation.
 [<RequireQualifiedAccess>]
 type ContextInfo =
@@ -174,6 +119,28 @@ exception ConstraintSolverTypesNotInSubsumptionRelation of
 
 exception ConstraintSolverMissingConstraint of displayEnv: DisplayEnv * Typar * TyparConstraint * range * range
 
+exception ConstraintSolverNullnessWarningEquivWithTypes of
+    DisplayEnv *
+    TType *
+    TType *
+    NullnessInfo *
+    NullnessInfo *
+    range *
+    range
+
+exception ConstraintSolverNullnessWarningWithTypes of
+    DisplayEnv *
+    TType *
+    TType *
+    NullnessInfo *
+    NullnessInfo *
+    range *
+    range
+
+exception ConstraintSolverNullnessWarningWithType of DisplayEnv * TType * NullnessInfo * range * range
+
+exception ConstraintSolverNullnessWarning of string * range * range
+
 exception ConstraintSolverError of string * range * range
 
 exception ErrorFromApplyingDefault of
@@ -221,8 +188,32 @@ exception ArgDoesNotMatchError of
 /// A function that denotes captured tcVal, Used in constraint solver and elsewhere to get appropriate expressions for a ValRef.
 type TcValF = ValRef -> ValUseFlag -> TType list -> range -> Expr * TType
 
-[<Sealed>]
 type ConstraintSolverState =
+    {
+        g: TcGlobals
+
+        amap: ImportMap
+
+        InfoReader: InfoReader
+
+        /// The function used to freshen values we encounter during trait constraint solving
+        TcVal: TcValF
+
+        /// This table stores all unsolved, ungeneralized trait constraints, indexed by free type variable.
+        /// That is, there will be one entry in this table for each free type variable in
+        /// each outstanding, unsolved, ungeneralized trait constraint. Constraints are removed from the table and resolved
+        /// each time a solution to an index variable is found.
+        mutable ExtraCxs: Internal.Utilities.Collections.HashMultiMap<Stamp, TraitConstraintInfo * range>
+
+        /// Checks to run after all inference is complete, but before defaults are applied and internal unknowns solved
+        PostInferenceChecksPreDefaults: ResizeArray<unit -> unit>
+
+        /// Checks to run after all inference is complete.
+        PostInferenceChecksFinal: ResizeArray<unit -> unit>
+
+        WarnWhenUsingWithoutNullOnAWithNullTarget: string option
+    }
+
     static member New: TcGlobals * ImportMap * InfoReader * TcValF -> ConstraintSolverState
 
     /// Add a post-inference check to run at the end of inference
@@ -296,7 +287,11 @@ val AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed:
 
 val AddCxMethodConstraint: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TraitConstraintInfo -> unit
 
+val AddCxTypeDefnNotSupportsNull: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
+
 val AddCxTypeUseSupportsNull: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
+
+val AddCxTypeCanCarryNullnessInfo: DisplayEnv -> ConstraintSolverState -> range -> TType -> Nullness -> unit
 
 val AddCxTypeMustSupportComparison: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
 

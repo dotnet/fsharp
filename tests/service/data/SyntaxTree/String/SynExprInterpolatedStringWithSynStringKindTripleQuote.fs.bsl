@@ -13,9 +13,8 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
-                     None), Named (SynIdent (s, None), false, None, (2,4--2,5)),
-                  None,
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
+                  Named (SynIdent (s, None), false, None, (2,4--2,5)), None,
                   InterpolatedString
                     ([String ("yo ", (2,8--2,16));
                       FillExpr (Const (Int32 42, (2,16--2,18)), None);

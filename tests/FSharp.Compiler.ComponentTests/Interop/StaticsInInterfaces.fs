@@ -193,8 +193,7 @@ extends [runtime]System.Object
 implements class [csLib]StaticsInInterfaces.IGetNext`1<class StaticsTesting/MyRepeatSequence>
     {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .method public specialname rtspecialname 
-instance void  .ctor() cil managed
+    .method public specialname rtspecialname instance void  .ctor() cil managed
     {
           
         .maxstack  8
@@ -205,8 +204,7 @@ instance void  .ctor() cil managed
         IL_0008:  ret
     } 
     
-    .method public hidebysig static class StaticsTesting/MyRepeatSequence 
-'StaticsInInterfaces.IGetNext<StaticsTesting.MyRepeatSequence>.Next'(class StaticsTesting/MyRepeatSequence other) cil managed
+    .method public hidebysig static class StaticsTesting/MyRepeatSequence 'StaticsInInterfaces.IGetNext<StaticsTesting.MyRepeatSequence>.Next'(class StaticsTesting/MyRepeatSequence other) cil managed
     {
         .override  method !0 class [csLib]StaticsInInterfaces.IGetNext`1<class StaticsTesting/MyRepeatSequence>::Next(!0)
           
@@ -222,8 +220,7 @@ extends [runtime]System.Object
 implements class [csLib]StaticsInInterfaces.IGetNext`1<class StaticsTesting/MyRepeatSequence2>
     {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .method public specialname rtspecialname 
-instance void  .ctor() cil managed
+    .method public specialname rtspecialname instance void  .ctor() cil managed
     {
           
         .maxstack  8
@@ -234,8 +231,7 @@ instance void  .ctor() cil managed
         IL_0008:  ret
     } 
     
-    .method public static class StaticsTesting/MyRepeatSequence2 
-Next(class StaticsTesting/MyRepeatSequence2 other) cil managed
+    .method public static class StaticsTesting/MyRepeatSequence2 Next(class StaticsTesting/MyRepeatSequence2 other) cil managed
     {
           
         .maxstack  8
@@ -243,8 +239,7 @@ Next(class StaticsTesting/MyRepeatSequence2 other) cil managed
         IL_0001:  ret
     } 
     
-    .method public hidebysig static class StaticsTesting/MyRepeatSequence2 
-'StaticsInInterfaces.IGetNext<StaticsTesting.MyRepeatSequence2>.Next'(class StaticsTesting/MyRepeatSequence2 other) cil managed
+    .method public hidebysig static class StaticsTesting/MyRepeatSequence2 'StaticsInInterfaces.IGetNext<StaticsTesting.MyRepeatSequence2>.Next'(class StaticsTesting/MyRepeatSequence2 other) cil managed
     {
         .override  method !0 class [csLib]StaticsInInterfaces.IGetNext`1<class StaticsTesting/MyRepeatSequence2>::Next(!0)
           
@@ -610,6 +605,49 @@ module Test =
             """
 #endif
         ]
+
+    [<FactForNETCOREAPP>]
+    let ``F# can call overwritten static virtual member from interface``() =
+        let CSharpLib =
+            CSharp """
+namespace Test;
+
+public interface I
+{
+    static virtual string Echo(string x) => $"I.Echo: {x}";
+}
+            """
+            |> withCSharpLanguageVersion CSharpLanguageVersion.CSharp11
+            |> withName "CsLibAssembly"
+
+        FSharp """
+type Imp() =
+    interface Test.I with
+        static member Echo (x: string) = $"Imp.I.Echo: {x}"
+
+    static member Echo (x: string) = $"Imp.Echo: {x}"
+
+let echo<'T when 'T :> Test.I> x = 'T.Echo(x)
+
+let inline echo_srtp<'T when 'T : (static member Echo: string -> string)> x = 'T.Echo(x)
+
+match echo<Imp> "a" with
+| "Imp.I.Echo: a" -> printfn "success"
+| "Imp.Echo: a" -> failwith "incorrectly invoked the class 'Echo'"
+| "I.Echo: a" -> failwith "incorrectly invoked the base interface 'Echo'"
+| _ -> failwith "incorrect value"
+
+match echo_srtp<Imp> "a" with
+| "Imp.Echo: a" -> printfn "success"
+| "Imp.I.Echo: a" -> failwith "incorrectly invoked the interface 'Echo'"
+| "I.Echo: a" -> failwith "incorrectly invoked the base interface 'Echo'"
+| _ -> failwith "incorrect value"
+"""
+        |> withReferences [CSharpLib]
+        |> withLangVersion80
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
 
     [<FactForNETCOREAPP>]
     let ``C# can call constrained method defined in F#`` () =

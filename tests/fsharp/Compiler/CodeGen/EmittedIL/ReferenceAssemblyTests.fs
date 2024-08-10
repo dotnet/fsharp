@@ -277,6 +277,17 @@ module Nested =
         IL_0001:  throw
       } 
 
+      .method public hidebysig instance bool 
+              Equals(class ReferenceAssembly/Nested/Test obj,
+                                    class [runtime]System.Collections.IEqualityComparer comp) cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+
+        .maxstack  8
+        IL_0000:  ldnull
+        IL_0001:  throw
+      }
+
       .method public hidebysig virtual final 
               instance bool  Equals(object obj,
                                     class [runtime]System.Collections.IEqualityComparer comp) cil managed
@@ -423,6 +434,17 @@ module Nested =
         IL_0000:  ldnull
         IL_0001:  throw
       } 
+
+      .method public hidebysig instance bool 
+              Equals(class ReferenceAssembly/Nested/Test obj,
+                                    class [runtime]System.Collections.IEqualityComparer comp) cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+
+        .maxstack  8
+        IL_0000:  ldnull
+        IL_0001:  throw
+      }
 
       .method public hidebysig virtual final 
               instance bool  Equals(object obj,
@@ -608,6 +630,104 @@ extends [runtime]System.Object
   }"""]
 
     [<Test>]
+    let ``Cli events are emitted even for CliEvent members which are not last in a file`` () = 
+        FSharp """
+module LibraryWithTwoClassesAndTwoEvents
+open System
+
+let event = new DelegateEvent<EventHandler<EventArgs>>()
+type MyClass() =
+    [<CLIEvent>]
+    member this.EventFromFirstType = event.Publish
+
+let event2 = new DelegateEvent<EventHandler<EventArgs>>()
+type MyClass2() =
+    [<CLIEvent>]
+    member this.EventFromSecondType = event2.Publish
+"""
+        |> withOptions ["--refonly"]
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            referenceAssemblyAttributeExpectedIL
+            """.class auto ansi serializable nested public MyClass 
+        extends [runtime]System.Object
+{
+.custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+.method public specialname rtspecialname 
+        instance void  .ctor() cil managed
+{
+          
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  throw
+} 
+    
+.method public hidebysig specialname 
+        instance void  add_EventFromFirstType(class [runtime]System.EventHandler`1<class [runtime]System.EventArgs> 'handler') cil managed
+{
+          
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  throw
+} 
+    
+.method public hidebysig specialname 
+        instance void  remove_EventFromFirstType(class [runtime]System.EventHandler`1<class [runtime]System.EventArgs> 'handler') cil managed
+{
+          
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  throw
+} 
+    
+.event class [runtime]System.EventHandler`1<class [runtime]System.EventArgs> EventFromFirstType
+{
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CLIEventAttribute::.ctor() = ( 01 00 00 00 ) 
+    .addon instance void LibraryWithTwoClassesAndTwoEvents/MyClass::add_EventFromFirstType(class [runtime]System.EventHandler`1<class [runtime]System.EventArgs>)
+    .removeon instance void LibraryWithTwoClassesAndTwoEvents/MyClass::remove_EventFromFirstType(class [runtime]System.EventHandler`1<class [runtime]System.EventArgs>)
+} 
+} 
+    
+.class auto ansi serializable nested public MyClass2
+        extends [runtime]System.Object
+{
+.custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+.method public specialname rtspecialname 
+        instance void  .ctor() cil managed
+{
+          
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  throw
+} 
+    
+.method public hidebysig specialname 
+        instance void  add_EventFromSecondType(class [runtime]System.EventHandler`1<class [runtime]System.EventArgs> 'handler') cil managed
+{
+          
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  throw
+} 
+    
+.method public hidebysig specialname 
+        instance void  remove_EventFromSecondType(class [runtime]System.EventHandler`1<class [runtime]System.EventArgs> 'handler') cil managed
+{
+          
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  throw
+} 
+    
+.event class [runtime]System.EventHandler`1<class [runtime]System.EventArgs> EventFromSecondType
+{
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CLIEventAttribute::.ctor() = ( 01 00 00 00 ) 
+    .addon instance void LibraryWithTwoClassesAndTwoEvents/MyClass2::add_EventFromSecondType(class [runtime]System.EventHandler`1<class [runtime]System.EventArgs>)
+    .removeon instance void LibraryWithTwoClassesAndTwoEvents/MyClass2::remove_EventFromSecondType(class [runtime]System.EventHandler`1<class [runtime]System.EventArgs>)
+""" ]
+
+    [<Test>]
     let ``Properties are emitted for CliMutable records`` () = 
         FSharp """
 namespace ReferenceAssembly
@@ -659,8 +779,7 @@ type [<CLIMutable;NoComparison;NoEquality>] MySecondRecord = { Name: string }
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoComparisonAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoEqualityAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 02 00 00 00 00 00 ) 
-  .method public hidebysig specialname instance string 
-          get_Name() cil managed
+  .method public hidebysig specialname instance string get_Name() cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -670,8 +789,7 @@ type [<CLIMutable;NoComparison;NoEquality>] MySecondRecord = { Name: string }
     IL_0001:  throw
   } 
 
-  .method public hidebysig specialname instance void 
-          set_Name(string 'value') cil managed
+  .method public hidebysig specialname instance void set_Name(string 'value') cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -681,8 +799,7 @@ type [<CLIMutable;NoComparison;NoEquality>] MySecondRecord = { Name: string }
     IL_0001:  throw
   } 
 
-  .method public specialname rtspecialname 
-          instance void  .ctor(string name) cil managed
+  .method public specialname rtspecialname instance void  .ctor(string name) cil managed
   {
     .custom instance void [runtime]System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype [runtime]System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
                                                                                                             class [runtime]System.Type) = ( 01 00 60 06 00 00 20 4E 65 74 37 46 53 68 61 72   
@@ -694,8 +811,7 @@ type [<CLIMutable;NoComparison;NoEquality>] MySecondRecord = { Name: string }
     IL_0001:  throw
   } 
 
-  .method public specialname rtspecialname 
-          instance void  .ctor() cil managed
+  .method public specialname rtspecialname instance void  .ctor() cil managed
   {
     
     .maxstack  8
@@ -703,8 +819,7 @@ type [<CLIMutable;NoComparison;NoEquality>] MySecondRecord = { Name: string }
     IL_0001:  throw
   } 
 
-  .method public strict virtual instance string 
-          ToString() cil managed
+  .method public strict virtual instance string ToString() cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     
@@ -729,8 +844,7 @@ type [<CLIMutable;NoComparison;NoEquality>] MySecondRecord = { Name: string }
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoComparisonAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoEqualityAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 02 00 00 00 00 00 ) 
-  .method public hidebysig specialname instance string 
-          get_Name() cil managed
+  .method public hidebysig specialname instance string get_Name() cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -740,8 +854,7 @@ type [<CLIMutable;NoComparison;NoEquality>] MySecondRecord = { Name: string }
     IL_0001:  throw
   } 
 
-  .method public hidebysig specialname instance void 
-          set_Name(string 'value') cil managed
+  .method public hidebysig specialname instance void set_Name(string 'value') cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -751,8 +864,7 @@ type [<CLIMutable;NoComparison;NoEquality>] MySecondRecord = { Name: string }
     IL_0001:  throw
   } 
 
-  .method public specialname rtspecialname 
-          instance void  .ctor(string name) cil managed
+  .method public specialname rtspecialname instance void  .ctor(string name) cil managed
   {
     .custom instance void System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
                                                                                             class [runtime]System.Type) = ( 01 00 60 06 00 00 20 4E 65 74 37 46 53 68 61 72   
@@ -764,8 +876,7 @@ type [<CLIMutable;NoComparison;NoEquality>] MySecondRecord = { Name: string }
     IL_0001:  throw
   } 
 
-  .method public specialname rtspecialname 
-          instance void  .ctor() cil managed
+  .method public specialname rtspecialname instance void  .ctor() cil managed
   {
     
     .maxstack  8
@@ -773,8 +884,7 @@ type [<CLIMutable;NoComparison;NoEquality>] MySecondRecord = { Name: string }
     IL_0001:  throw
   } 
 
-  .method public strict virtual instance string 
-          ToString() cil managed
+  .method public strict virtual instance string ToString() cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     
@@ -1072,8 +1182,7 @@ type Person(name : string, age : int) =
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.SealedAttribute::.ctor() = ( 01 00 00 00 )
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 )
     .field assembly bool smth
-    .method public specialname rtspecialname
-               instance void  .ctor(bool smth) cil managed
+    .method public specialname rtspecialname instance void  .ctor(bool smth) cil managed
     {
 
       .maxstack  8
@@ -1081,8 +1190,7 @@ type Person(name : string, age : int) =
       IL_0001:  throw
     }
 
-    .method assembly specialname rtspecialname
-               instance void  .ctor() cil managed
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
 
       .maxstack  8
@@ -1090,8 +1198,7 @@ type Person(name : string, age : int) =
       IL_0001:  throw
     }
 
-    .method public hidebysig specialname
-               instance bool  get_Something() cil managed
+    .method public hidebysig specialname instance bool  get_Something() cil managed
     {
 
       .maxstack  8
@@ -1119,8 +1226,7 @@ type Person(name : string, age : int) =
       IL_0001:  throw
     }
 
-    .method public hidebysig specialname
-               instance string  get_Name() cil managed
+    .method public hidebysig specialname instance string  get_Name() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
@@ -1130,8 +1236,7 @@ type Person(name : string, age : int) =
       IL_0001:  throw
     }
 
-    .method public hidebysig specialname
-               instance void  set_Name(string v) cil managed
+    .method public hidebysig specialname instance void  set_Name(string v) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
@@ -1141,8 +1246,7 @@ type Person(name : string, age : int) =
       IL_0001:  throw
     }
 
-    .method public hidebysig specialname
-               instance int32  get_Age() cil managed
+    .method public hidebysig specialname instance int32  get_Age() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
@@ -1152,8 +1256,7 @@ type Person(name : string, age : int) =
       IL_0001:  throw
     }
 
-    .method public hidebysig specialname
-               instance void  set_Age(int32 v) cil managed
+    .method public hidebysig specialname instance void  set_Age(int32 v) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
@@ -1306,5 +1409,135 @@ Console.WriteLine("Hello World!")"""
 """
         ]
         |> ignore
+#if NETCOREAPP
+    [<Test>]
+#endif
+    let ``Refassembly_emits_static_abstracts_implementations_the_same_way_it_does_for_instance_with_empty_signature`` () =
+
+        let signature = """namespace Foobar
+type IHasStaticAbstractBase<'a> =
+    static abstract BoomStatic: unit -> 'a
+    abstract BoomInstance: unit -> 'a
+
+type CompilerGoesBoom<'a> =
+    interface IHasStaticAbstractBase<'a>
+    new: unit -> CompilerGoesBoom<'a>"""
+
+        let implementation = """namespace Foobar
+type IHasStaticAbstractBase<'a> =
+    abstract BoomInstance: unit -> 'a
+    static abstract BoomStatic: unit -> 'a
+
+type CompilerGoesBoom<'a>() =
+    interface IHasStaticAbstractBase<'a> with
+        member (*virtual*) this.BoomInstance() = Unchecked.defaultof<'a>
+        static member (*non-virtual*) BoomStatic() = Unchecked.defaultof<'a>
+    """
+
+        Fsi signature
+        |> withAdditionalSourceFile (FsSource implementation)
+        |> withOptions [ "--refonly" ]
+        |> ignoreWarnings
+        |> compile
+        |> shouldSucceed
+        |> verifyIL
+            [
+                referenceAssemblyAttributeExpectedIL
+                """.class interface public abstract auto ansi serializable beforefieldinit Foobar.IHasStaticAbstractBase`1<a>
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 )
+  .method public hidebysig abstract virtual instance !a  BoomInstance() cil managed
+  {
+  }
+
+  .method public hidebysig static abstract virtual !a  BoomStatic() cil managed
+  {
+  }
+
+}"""
+                """.method private hidebysig newslot virtual instance !a  'Foobar.IHasStaticAbstractBase<\'a>.BoomInstance'() cil managed
+    {
+      .override  method instance !0 class Foobar.IHasStaticAbstractBase`1<!a>::BoomInstance()
+
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    }
+
+    .method assembly hidebysig static !a  'Foobar.IHasStaticAbstractBase<\'a>.BoomStatic'() cil managed
+    {
+      .override  method !0 class Foobar.IHasStaticAbstractBase`1<!a>::BoomStatic()
+
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    }"""
+        ]
+
+
+#if NETCOREAPP
+    [<Test>]
+#endif
+    let ``Refassembly_emits_static_abstracts_implementations_the_same_way_it_does_for_instance_with_signature`` () =
+        let signature = """namespace Foobar
+type IHasStaticAbstractBase<'a> =
+    static abstract BoomStatic: unit -> 'a
+    abstract BoomInstance: unit -> 'a
+
+type CompilerGoesBoom<'a> =
+    interface IHasStaticAbstractBase<'a>
+    new: unit -> CompilerGoesBoom<'a>"""
+
+        let implementation = """namespace Foobar
+type IHasStaticAbstractBase<'a> =
+    abstract BoomInstance: unit -> 'a
+    static abstract BoomStatic: unit -> 'a
+
+type CompilerGoesBoom<'a>() =
+    interface IHasStaticAbstractBase<'a> with
+        member (*virtual*) this.BoomInstance() = Unchecked.defaultof<'a>
+        static member (*non-virtual*) BoomStatic() = Unchecked.defaultof<'a>
+    """
+
+        Fsi signature
+        |> withAdditionalSourceFile (FsSource implementation)
+        |> withOptions ["--refonly"]
+        |> ignoreWarnings
+        |> compile
+        |> shouldSucceed
+        |> verifyIL
+            [
+                referenceAssemblyAttributeExpectedIL
+                """.class interface public abstract auto ansi serializable beforefieldinit Foobar.IHasStaticAbstractBase`1<a>
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 )
+  .method public hidebysig abstract virtual instance !a  BoomInstance() cil managed
+  {
+  }
+
+  .method public hidebysig static abstract virtual !a  BoomStatic() cil managed
+  {
+  }
+
+}"""
+                """.method private hidebysig newslot virtual instance !a  'Foobar.IHasStaticAbstractBase<\'a>.BoomInstance'() cil managed
+    {
+      .override  method instance !0 class Foobar.IHasStaticAbstractBase`1<!a>::BoomInstance()
+
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    }
+
+    .method assembly hidebysig static !a  'Foobar.IHasStaticAbstractBase<\'a>.BoomStatic'() cil managed
+    {
+      .override  method !0 class Foobar.IHasStaticAbstractBase`1<!a>::BoomStatic()
+
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    }"""
+            ]
+
 
     // TODO: Add tests for internal functions, types, interfaces, abstract types (with and without IVTs), (private, internal, public) fields, properties (+ different visibility for getters and setters), events.

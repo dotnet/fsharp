@@ -169,7 +169,7 @@ module internal IEnumerator =
                       f()
         }
 
-    let inline checkNonNull argName arg =
+    let inline checkNonNull argName (arg: 'T when 'T : null) =
         if isNull arg then
             nullArg argName
 
@@ -399,7 +399,7 @@ module RuntimeHelpers =
             | None -> originalSource.Value.Current
 
         let disposeOriginal() =
-            if shouldDisposeOriginalAtTheEnd = true then
+            if shouldDisposeOriginalAtTheEnd then
                 shouldDisposeOriginalAtTheEnd <- false
                 originalSource.Value.Dispose() 
 
@@ -451,7 +451,7 @@ module RuntimeHelpers =
                         // Enumeration has finished. In this case, we do NOT invoke the exception handlers for the .Dispose() call
                         | None -> disposeOriginal()}))
 
-    let CreateEvent (addHandler : 'Delegate -> unit) (removeHandler : 'Delegate -> unit) (createHandler : (obj -> 'Args -> unit) -> 'Delegate ) :IEvent<'Delegate,'Args> =
+    let CreateEvent (addHandler : 'Delegate -> unit) (removeHandler : 'Delegate -> unit) (createHandler : (objnull -> 'Args -> unit) -> 'Delegate ) :IEvent<'Delegate,'Args> =
         { new obj() with
               member x.ToString() = "<published event>"
           interface IEvent<'Delegate,'Args> with
@@ -553,7 +553,7 @@ type ListCollector<'T> =
     member this.AddMany (values: seq<'T>) =
         // cook a faster iterator for lists and arrays
         match values with 
-        | :? ('T[]) as valuesAsArray -> 
+        | :? ('T array) as valuesAsArray -> 
             for v in valuesAsArray do
                this.Add v
         | :? ('T list) as valuesAsList -> 
@@ -631,7 +631,7 @@ type ArrayCollector<'T> =
         else
             // cook a faster iterator for lists and arrays
             match values with 
-            | :? ('T[]) as valuesAsArray -> 
+            | :? ('T array) as valuesAsArray -> 
                 for v in valuesAsArray do
                    this.Add v
             | :? ('T list) as valuesAsList -> 

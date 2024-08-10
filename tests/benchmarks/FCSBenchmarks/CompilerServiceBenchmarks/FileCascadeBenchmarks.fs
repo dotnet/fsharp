@@ -2,18 +2,13 @@
 
 open System
 open System.IO
-open System.Text
 open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
-open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.ILBinaryReader
 open BenchmarkDotNet.Attributes
 open FSharp.Compiler.Benchmarks
-open Microsoft.CodeAnalysis.Text
 open BenchmarkDotNet.Order
 open BenchmarkDotNet.Mathematics
+open FSharp.Benchmarks.Common.Categories
 
 [<AutoOpen>]
 module private CascadeProjectHelpers =
@@ -68,7 +63,7 @@ let processFunc{number} (x) (func:MyFunctionType{number}) =
     }}
 //$COMMENTAREA$"""
 
-/// Code create using FSharpCheckFileResults.GenerateSignature()
+/// Code created using FSharpCheckFileResults.GenerateSignature()
     let generateFsi number = 
         $"""
 module Benchmark{number}
@@ -87,6 +82,7 @@ val processFunc{number}: x: MyType{number} -> func: MyFunctionType{number} -> As
 [<ShortRunJob>]
 [<Orderer(SummaryOrderPolicy.FastestToSlowest)>]
 [<RankColumn(NumeralSystem.Roman)>]
+[<BenchmarkCategory(ShortCategory)>]
 type FileCascadeBenchmarks() = 
     let mutable project : FSharpProjectOptions option = None   
     let filesToCreate = 128

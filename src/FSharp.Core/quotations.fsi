@@ -187,7 +187,7 @@ type Expr =
     /// </example>
     member CustomAttributes: Expr list
 
-    override Equals: obj: obj -> bool
+    override Equals: obj: objnull -> bool
 
     /// <summary>Builds an expression that represents getting the address of a value.</summary>
     ///
@@ -445,7 +445,7 @@ type Expr =
     ///
     /// Expr.ForIntegerRangeLoop(loopVariable, startExpr, endExpr, body)
     /// </code>
-    /// Evaluates to a quotation with the same structure as <c>&lt;@ if 1 > 3 then 6 else 7 @&gt;</c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ for x in 6..7 do System.Console.WriteLine("hello") @&gt;</c>.
     /// </example>
     static member ForIntegerRangeLoop: loopVariable: Var * start: Expr * endExpr: Expr * body: Expr -> Expr
 
@@ -1047,7 +1047,7 @@ type Expr =
     /// </code>
     /// Evaluates to a quotation with the same structure as <c>&lt;@ 1 @&gt;</c>.
     /// </example>
-    static member Value: value: obj * expressionType: Type -> Expr
+    static member Value: value: objnull * expressionType: Type -> Expr
 
     /// <summary>Builds an expression that represents a constant value </summary>
     ///
@@ -1096,7 +1096,7 @@ type Expr =
     /// </code>
     /// Evaluates to a quotation with the same structure as <c>&lt;@ 1 @&gt;</c> and associated information that the name of the value is <c>"name"</c>.
     /// </example>
-    static member ValueWithName: value: obj * expressionType: Type * name: string -> Expr
+    static member ValueWithName: value: objnull * expressionType: Type * name: string -> Expr
 
     /// <summary>Builds an expression that represents a value and its associated reflected definition as a quotation</summary>
     ///
@@ -1131,7 +1131,7 @@ type Expr =
     /// </code>
     /// Evaluates to a quotation that displays as <c>WithValue (1, Call (None, op_Subtraction, [Value (2), Value (1)]))</c>.
     /// </example>
-    static member WithValue: value: obj * expressionType: Type * definition: Expr -> Expr
+    static member WithValue: value: objnull * expressionType: Type * definition: Expr -> Expr
 
     /// <summary>Builds an expression that represents a variable</summary>
     ///
@@ -1269,7 +1269,7 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     static member Deserialize:
-        qualifyingType: Type * spliceTypes: Type list * spliceExprs: Expr list * bytes: byte[] -> Expr
+        qualifyingType: Type * spliceTypes: Type list * spliceExprs: Expr list * bytes: byte array -> Expr
 
     /// <summary>This function is called automatically when quotation syntax (&lt;@ @&gt;) and other sources of
     /// quotations are used. </summary>
@@ -1282,7 +1282,11 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     static member Deserialize40:
-        qualifyingType: Type * referencedTypes: Type[] * spliceTypes: Type[] * spliceExprs: Expr[] * bytes: byte[] ->
+        qualifyingType: Type *
+        referencedTypes: Type array *
+        spliceTypes: Type array *
+        spliceExprs: Expr array *
+        bytes: byte array ->
             Expr
 
     /// <summary>Permits interactive environments such as F# Interactive
@@ -1293,7 +1297,8 @@ type Expr =
     /// <param name="resource">The unique name for the resources being added.</param>
     /// <param name="serializedValue">The serialized resource to register with the environment.</param>
     ///
-    static member RegisterReflectedDefinitions: assembly: Assembly * resource: string * serializedValue: byte[] -> unit
+    static member RegisterReflectedDefinitions:
+        assembly: Assembly * resource: string * serializedValue: byte array -> unit
 
     /// <summary>Permits interactive environments such as F# Interactive
     /// to explicitly register new pickled resources that represent persisted
@@ -1305,7 +1310,7 @@ type Expr =
     /// <param name="serializedValue">The serialized resource to register with the environment.</param>
     ///
     static member RegisterReflectedDefinitions:
-        assembly: Assembly * resource: string * serializedValue: byte[] * referencedTypes: Type[] -> unit
+        assembly: Assembly * resource: string * serializedValue: byte array * referencedTypes: Type array -> unit
 
     /// <summary>Fetches or creates a new variable with the given name and type from a global pool of shared variables
     /// indexed by name and type. The type is given by the explicit or inferred type parameter</summary>
@@ -1704,7 +1709,7 @@ module Patterns =
     ///
     /// <example-tbd></example-tbd>
     [<CompiledName("ValuePattern")>]
-    val (|Value|_|): input: Expr -> (obj * Type) option
+    val (|Value|_|): input: Expr -> (objnull * Type) option
 
     /// <summary>An active pattern to recognize expressions that represent a constant value</summary>
     ///
@@ -1714,7 +1719,7 @@ module Patterns =
     ///
     /// <example-tbd></example-tbd>
     [<CompiledName("ValueWithNamePattern")>]
-    val (|ValueWithName|_|): input: Expr -> (obj * Type * string) option
+    val (|ValueWithName|_|): input: Expr -> (objnull * Type * string) option
 
     /// <summary>An active pattern to recognize expressions that are a value with an associated definition</summary>
     ///
@@ -1724,7 +1729,7 @@ module Patterns =
     ///
     /// <example-tbd></example-tbd>
     [<CompiledName("WithValuePattern")>]
-    val (|WithValue|_|): input: Expr -> (obj * Type * Expr) option
+    val (|WithValue|_|): input: Expr -> (objnull * Type * Expr) option
 
     /// <summary>An active pattern to recognize expressions that represent a variable</summary>
     ///
@@ -2264,7 +2269,7 @@ module ExprShape =
     ///
     /// <example-tbd></example-tbd>
     [<CompiledName("ShapePattern")>]
-    val (|ShapeVar|ShapeLambda|ShapeCombination|): input: Expr -> Choice<Var, (Var * Expr), (obj * Expr list)>
+    val (|ShapeVar|ShapeLambda|ShapeCombination|): input: Expr -> Choice<Var, (Var * Expr), (objnull * Expr list)>
 
     /// <summary>Re-build combination expressions. The first parameter should be an object
     /// returned by the <c>ShapeCombination</c> case of the active pattern in this module.</summary>
@@ -2275,4 +2280,4 @@ module ExprShape =
     /// <returns>The rebuilt expression.</returns>
     ///
     /// <example-tbd></example-tbd>
-    val RebuildShapeCombination: shape: obj * arguments: Expr list -> Expr
+    val RebuildShapeCombination: shape: objnull * arguments: Expr list -> Expr

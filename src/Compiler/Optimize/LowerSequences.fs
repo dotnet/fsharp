@@ -74,15 +74,16 @@ let tyConfirmsToSeq g ty =
         tyconRefEq g tcref g.tcref_System_Collections_Generic_IEnumerable
     | _ -> false 
 
+[<return: Struct>]
 let (|SeqElemTy|_|) g amap m ty =
     match SearchEntireHierarchyOfType (tyConfirmsToSeq g) g amap m ty with
     | None ->
         // printfn "FAILED - yield! did not yield a sequence! %s" (stringOfRange m)
-        None
+        ValueNone
     | Some seqTy ->
         // printfn "found yield!"
         let inpElemTy = List.head (argsOfAppTy g seqTy)
-        Some inpElemTy
+        ValueSome inpElemTy
 
 /// Analyze a TAST expression to detect the elaborated form of a sequence expression.
 /// Then compile it to a state machine represented as a TAST containing goto, return and label nodes.

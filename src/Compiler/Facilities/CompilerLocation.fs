@@ -28,8 +28,7 @@ module internal FSharpEnvironment =
     let FSharpCoreLibRunningVersion =
         try
             match versionOf<Unit> with
-            | null -> None
-            | "" -> None
+            | s when String.IsNullOrEmpty(s) -> None
             | s -> Some(s)
         with _ ->
             None
@@ -41,7 +40,8 @@ module internal FSharpEnvironment =
     let FSharpBinaryMetadataFormatRevision = "2.0.0.0"
 
     let isRunningOnCoreClr =
-        typeof<obj>.Assembly.FullName.StartsWith ("System.Private.CoreLib", StringComparison.InvariantCultureIgnoreCase)
+        typeof<obj>.Assembly.FullName
+            .StartsWith("System.Private.CoreLib", StringComparison.InvariantCultureIgnoreCase)
 
     module Option =
         /// Convert string into Option string where null and String.Empty result in None
@@ -118,6 +118,7 @@ module internal FSharpEnvironment =
             |]
         elif typeof<obj>.Assembly.GetName().Name = "System.Private.CoreLib" then
             [|
+                "net9.0"
                 "net8.0"
                 "net7.0"
                 "net6.0"
@@ -181,9 +182,9 @@ module internal FSharpEnvironment =
             seq {
                 match path with
                 | None -> ()
-                | Some (p: string) ->
+                | Some(p: string) ->
                     match Path.GetDirectoryName(p) with
-                    | s when s = "" || s = null || Path.GetFileName(p) = "packages" || s = p -> ()
+                    | s when String.IsNullOrEmpty(s) || Path.GetFileName(p) = "packages" || s = p -> ()
                     | parentDir -> yield! searchParentDirChain (Some parentDir) assemblyName
 
                 for p in searchToolPaths path compilerToolPaths do

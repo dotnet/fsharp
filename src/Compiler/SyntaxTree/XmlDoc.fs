@@ -23,13 +23,14 @@ type XmlDoc(unprocessedLines: string[], range: range) =
         | lineA :: rest as lines ->
             let lineAT = lineA.TrimStart([| ' ' |])
 
-            if lineAT = "" then
+            if String.IsNullOrEmpty(lineAT) then
                 processLines rest
             elif lineAT.StartsWithOrdinal("<") then
                 lines
             else
                 [ "<summary>" ]
-                @ (lines |> List.map Internal.Utilities.XmlAdapters.escape) @ [ "</summary>" ]
+                @ (lines |> List.map Internal.Utilities.XmlAdapters.escape)
+                @ [ "</summary>" ]
 
     /// Get the lines before insertion of implicit summary tags and encoding
     member _.UnprocessedLines = unprocessedLines
@@ -76,6 +77,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
             match paramNamesOpt with
             | None -> ()
             | Some paramNames ->
+
                 for p in xml.Descendants(XName.op_Implicit "param") do
                     match p.Attribute(XName.op_Implicit "name") with
                     | null -> warning (Error(FSComp.SR.xmlDocMissingParameterName (), doc.Range))
@@ -94,6 +96,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
                     ]
 
                 if paramsWithDocs.Length > 0 then
+
                     for p in paramNames do
                         if not (paramsWithDocs |> List.contains p) then
                             warning (Error(FSComp.SR.xmlDocMissingParameter (p), doc.Range))
@@ -114,46 +117,6 @@ type XmlDoc(unprocessedLines: string[], range: range) =
 
         with e ->
             warning (Error(FSComp.SR.xmlDocBadlyFormed (e.Message), doc.Range))
-
-#if CREF_ELABORATION
-    member doc.Elaborate(crefResolver) =
-        for see in
-            seq {
-                yield! xml.Descendants(XName.op_Implicit "see")
-                yield! xml.Descendants(XName.op_Implicit "seealso")
-                yield! xml.Descendants(XName.op_Implicit "exception")
-            } do
-            match see.Attribute(XName.op_Implicit "cref") with
-            | null -> warning (Error(FSComp.SR.xmlDocMissingCrossReference (), doc.Range))
-            | attr ->
-                let cref = attr.Value
-
-                if
-                    cref.StartsWith("T:")
-                    || cref.StartsWith("P:")
-                    || cref.StartsWith("M:")
-                    || cref.StartsWith("E:")
-                    || cref.StartsWith("F:")
-                then
-                    ()
-                else
-                    match crefResolver cref with
-                    | None -> warning (Error(FSComp.SR.xmlDocUnresolvedCrossReference (nm), doc.Range))
-                    | Some text ->
-                        attr.Value <- text
-                        modified <- true
-
-        if modified then
-            let m = doc.Range
-
-            let newLines =
-                [|
-                    for e in xml.Elements() do
-                        yield! e.ToString().Split([| '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries)
-                |]
-
-            lines <- newLines
-#endif
 
 // Discriminated unions can't contain statics, so we use a separate type
 and XmlDocStatics() =
@@ -249,10 +212,10 @@ type PreXmlDoc =
 
     member x.ToXmlDoc(check: bool, paramNamesOpt: string list option) =
         match x with
-        | PreXmlDirect (lines, m) -> XmlDoc(lines, m)
-        | PreXmlMerge (a, b) -> XmlDoc.Merge (a.ToXmlDoc(check, paramNamesOpt)) (b.ToXmlDoc(check, paramNamesOpt))
+        | PreXmlDirect(lines, m) -> XmlDoc(lines, m)
+        | PreXmlMerge(a, b) -> XmlDoc.Merge (a.ToXmlDoc(check, paramNamesOpt)) (b.ToXmlDoc(check, paramNamesOpt))
         | PreXmlDocEmpty -> XmlDoc.Empty
-        | PreXmlDoc (pos, collector) ->
+        | PreXmlDoc(pos, collector) ->
             let preLines = collector.LinesBefore pos
 
             if preLines.Length = 0 then
@@ -269,24 +232,24 @@ type PreXmlDoc =
 
     member x.Range =
         match x with
-        | PreXmlDirect (_, m) -> m
-        | PreXmlMerge (part1, part2) ->
+        | PreXmlDirect(_, m) -> m
+        | PreXmlMerge(part1, part2) ->
             if part1.IsEmpty then part2.Range
             elif part2.IsEmpty then part1.Range
             else unionRanges part1.Range part2.Range
         | PreXmlDocEmpty -> Range.Zero
-        | PreXmlDoc (pos, collector) -> collector.LinesRange pos
+        | PreXmlDoc(pos, collector) -> collector.LinesRange pos
 
     member x.IsEmpty =
         match x with
-        | PreXmlDirect (lines, _) -> lines |> Array.forall String.IsNullOrWhiteSpace
-        | PreXmlMerge (a, b) -> a.IsEmpty && b.IsEmpty
+        | PreXmlDirect(lines, _) -> lines |> Array.forall String.IsNullOrWhiteSpace
+        | PreXmlMerge(a, b) -> a.IsEmpty && b.IsEmpty
         | PreXmlDocEmpty -> true
-        | PreXmlDoc (pos, collector) -> not (collector.HasComments pos)
+        | PreXmlDoc(pos, collector) -> not (collector.HasComments pos)
 
     member x.MarkAsInvalid() =
         match x with
-        | PreXmlDoc (pos, collector) -> collector.SetXmlDocValidity(pos, false)
+        | PreXmlDoc(pos, collector) -> collector.SetXmlDocValidity(pos, false)
         | _ -> ()
 
     static member CreateFromGrabPoint(collector: XmlDocCollector, grabPointPos) =

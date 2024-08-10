@@ -124,71 +124,70 @@ let BindTypars g env (tps: Typar list) =
 let BindArgVals env (vs: Val list) =
     { env with argVals = ValMap.OfList (List.map (fun v -> (v, ())) vs) }
 
-/// Limit flags represent a type(s) returned from checking an expression(s) that is interesting to impose rules on.
-[<Flags>]
-type LimitFlags =
-    | None                          = 0b00000
-    | ByRef                         = 0b00001
-    | ByRefOfSpanLike               = 0b00011
-    | ByRefOfStackReferringSpanLike = 0b00101
-    | SpanLike                      = 0b01000
-    | StackReferringSpanLike        = 0b10000
+[<AutoOpen>]
+module Limit =
 
-[<Struct>]
-type Limit =
-    {
-        scope: int
-        flags: LimitFlags
-    }
+    [<Flags>]
+    type LimitFlags =
+        | None                          = 0b00000
+        | ByRef                         = 0b00001
+        | ByRefOfSpanLike               = 0b00011
+        | ByRefOfStackReferringSpanLike = 0b00101
+        | SpanLike                      = 0b01000
+        | StackReferringSpanLike        = 0b10000
 
-    member this.IsLocal = this.scope >= 1
+    [<Struct>]
+    type Limit =
+        {
+            scope: int
+            flags: LimitFlags
+        }
 
-/// Check if the limit has the target limit.
-let inline HasLimitFlag targetLimit (limit: Limit) =
-    limit.flags &&& targetLimit = targetLimit
+        member this.IsLocal = this.scope >= 1
 
-let NoLimit = { scope = 0; flags = LimitFlags.None }
+    /// Check if the limit has the target limit.
+    let inline HasLimitFlag targetLimit (limit: Limit) =
+        limit.flags &&& targetLimit = targetLimit
 
-// Combining two limits will result in both limit flags merged.
-// If none of the limits are limited by a by-ref or a stack referring span-like
-//   the scope will be 0.
-let CombineTwoLimits limit1 limit2 =
-    let isByRef1 = HasLimitFlag LimitFlags.ByRef limit1
-    let isByRef2 = HasLimitFlag LimitFlags.ByRef limit2
-    let isStackSpan1 = HasLimitFlag LimitFlags.StackReferringSpanLike limit1
-    let isStackSpan2 = HasLimitFlag LimitFlags.StackReferringSpanLike limit2
-    let isLimited1 = isByRef1 || isStackSpan1
-    let isLimited2 = isByRef2 || isStackSpan2
+    let NoLimit = { scope = 0; flags = LimitFlags.None }
 
-    // A limit that has a stack referring span-like but not a by-ref,
-    //   we force the scope to 1. This is to handle call sites
-    //   that return a by-ref and have stack referring span-likes as arguments.
-    //   This is to ensure we can only prevent out of scope at the method level rather than visibility.
-    let limit1 =
-        if isStackSpan1 && not isByRef1 then
-            { limit1 with scope = 1 }
-        else
-            limit1
+    let CombineTwoLimits limit1 limit2 =
+        let isByRef1 = HasLimitFlag LimitFlags.ByRef limit1
+        let isByRef2 = HasLimitFlag LimitFlags.ByRef limit2
+        let isStackSpan1 = HasLimitFlag LimitFlags.StackReferringSpanLike limit1
+        let isStackSpan2 = HasLimitFlag LimitFlags.StackReferringSpanLike limit2
+        let isLimited1 = isByRef1 || isStackSpan1
+        let isLimited2 = isByRef2 || isStackSpan2
 
-    let limit2 =
-        if isStackSpan2 && not isByRef2 then
-            { limit2 with scope = 1 }
-        else
-            limit2
+        // A limit that has a stack referring span-like but not a by-ref,
+        //   we force the scope to 1. This is to handle call sites
+        //   that return a by-ref and have stack referring span-likes as arguments.
+        //   This is to ensure we can only prevent out of scope at the method level rather than visibility.
+        let limit1 =
+            if isStackSpan1 && not isByRef1 then
+                { limit1 with scope = 1 }
+            else
+                limit1
 
-    match isLimited1, isLimited2 with
-    | false, false ->
-        { scope = 0; flags = limit1.flags ||| limit2.flags }
-    | true, true ->
-        { scope = Math.Max(limit1.scope, limit2.scope); flags = limit1.flags ||| limit2.flags }
-    | true, false ->
-        { limit1 with flags = limit1.flags ||| limit2.flags }
-    | false, true ->
-        { limit2 with flags = limit1.flags ||| limit2.flags }
+        let limit2 =
+            if isStackSpan2 && not isByRef2 then
+                { limit2 with scope = 1 }
+            else
+                limit2
 
-let CombineLimits limits =
-    (NoLimit, limits)
-    ||> List.fold CombineTwoLimits
+        match isLimited1, isLimited2 with
+        | false, false ->
+            { scope = 0; flags = limit1.flags ||| limit2.flags }
+        | true, true ->
+            { scope = Math.Max(limit1.scope, limit2.scope); flags = limit1.flags ||| limit2.flags }
+        | true, false ->
+            { limit1 with flags = limit1.flags ||| limit2.flags }
+        | false, true ->
+            { limit2 with flags = limit1.flags ||| limit2.flags }
+
+    let CombineLimits limits =
+        (NoLimit, limits)
+        ||> List.fold CombineTwoLimits
 
 type cenv =
     { boundVals: Dictionary<Stamp, int> // really a hash set
@@ -347,7 +346,7 @@ let rec CheckTypeDeep (cenv: cenv) (visitTy, visitTyconRefOpt, visitAppTyOpt, vi
     | TType_var (tp, _) when tp.Solution.IsSome ->
         for cx in tp.Constraints do
             match cx with
-            | TyparConstraint.MayResolveMember(TTrait(_, _, _, _, _, soln), _) ->
+            | TyparConstraint.MayResolveMember(TTrait(solution=soln), _) ->
                  match visitTraitSolutionOpt, soln.Value with
                  | Some visitTraitSolution, Some sln -> visitTraitSolution sln
                  | _ -> ()
@@ -428,16 +427,17 @@ and CheckTypeConstraintDeep cenv f g env x =
      | TyparConstraint.SupportsComparison _
      | TyparConstraint.SupportsEquality _
      | TyparConstraint.SupportsNull _
+     | TyparConstraint.NotSupportsNull _
      | TyparConstraint.IsNonNullableStruct _
      | TyparConstraint.IsUnmanaged _
      | TyparConstraint.IsReferenceType _
      | TyparConstraint.RequiresDefaultConstructor _ -> ()
 
-and CheckTraitInfoDeep cenv (_, _, _, visitTraitSolutionOpt, _ as f) g env (TTrait(tys, _, _, argTys, retTy, soln))  =
-    CheckTypesDeep cenv f g env tys
-    CheckTypesDeep cenv f g env argTys
-    Option.iter (CheckTypeDeep cenv f g env true ) retTy
-    match visitTraitSolutionOpt, soln.Value with
+and CheckTraitInfoDeep cenv (_, _, _, visitTraitSolutionOpt, _ as f) g env traitInfo =
+    CheckTypesDeep cenv f g env traitInfo.SupportTypes
+    CheckTypesDeep cenv f g env traitInfo.CompiledObjectAndArgumentTypes
+    Option.iter (CheckTypeDeep cenv f g env true ) traitInfo.CompiledReturnType
+    match visitTraitSolutionOpt, traitInfo.Solution with
     | Some visitTraitSolution, Some sln -> visitTraitSolution sln
     | _ -> ()
 
@@ -703,10 +703,6 @@ let CheckNoReraise cenv freesOpt (body: Expr) =
         if fvs.UsesUnboundRethrow then
             errorR(Error(FSComp.SR.chkErrorContainsCallToRethrow(), body.Range))
 
-/// Check if a function is a quotation splice operator
-let isSpliceOperator g v = valRefEq g v g.splice_expr_vref || valRefEq g v g.splice_raw_expr_vref
-
-
 /// Examples:
 /// I<int> & I<int> => ExactlyEqual.
 /// I<int> & I<string> => NotEqual.
@@ -776,8 +772,8 @@ let rec CheckExprNoByrefs cenv env expr =
 and CheckValRef (cenv: cenv) (env: env) v m (ctxt: PermitByRefExpr) =
 
     if cenv.reportErrors then
-        if isSpliceOperator cenv.g v && not env.quote then errorR(Error(FSComp.SR.chkSplicingOnlyInQuotations(), m))
-        if isSpliceOperator cenv.g v then errorR(Error(FSComp.SR.chkNoFirstClassSplicing(), m))
+        if cenv.g.isSpliceOperator v && not env.quote then errorR(Error(FSComp.SR.chkSplicingOnlyInQuotations(), m))
+        if cenv.g.isSpliceOperator v then errorR(Error(FSComp.SR.chkNoFirstClassSplicing(), m))
         if valRefEq cenv.g v cenv.g.addrof_vref  then errorR(Error(FSComp.SR.chkNoFirstClassAddressOf(), m))
         if valRefEq cenv.g v cenv.g.reraise_vref then errorR(Error(FSComp.SR.chkNoFirstClassRethrow(), m))
         if valRefEq cenv.g v cenv.g.nameof_vref then errorR(Error(FSComp.SR.chkNoFirstClassNameOf(), m))
@@ -975,7 +971,7 @@ and CheckCallWithReceiver cenv env m returnTy args ctxts ctxt =
                 limitArgs
         CheckCallLimitArgs cenv env m returnTy limitArgs ctxt
 
-and CheckExprLinear (cenv: cenv) (env: env) expr (ctxt: PermitByRefExpr) (contf : Limit -> Limit) =
+and CheckExprLinear (cenv: cenv) (env: env) expr (ctxt: PermitByRefExpr) (contf : Limit -> Limit) : Limit =
     match expr with
     | Expr.Sequential (e1, e2, NormalSeq, _) ->
         CheckExprNoByrefs cenv env e1
@@ -1008,14 +1004,15 @@ and CheckExprLinear (cenv: cenv) (env: env) expr (ctxt: PermitByRefExpr) (contf 
         CheckDecisionTree cenv env dtree
         let lim1 = CheckDecisionTreeTarget cenv env ctxt tg1
         // tailcall
-        CheckExprLinear cenv env e2 ctxt (fun lim2 -> contf (CombineLimits [ lim1; lim2 ]))
+        CheckExprLinear cenv env e2 ctxt (fun lim2 -> contf (CombineTwoLimits lim1 lim2))
 
     | Expr.DebugPoint (_, innerExpr) ->
         CheckExprLinear cenv env innerExpr ctxt contf
 
     | _ ->
         // not a linear expression
-        contf (CheckExpr cenv env expr ctxt)
+        CheckExpr cenv env expr ctxt
+        |> contf
 
 /// Check a resumable code expression (the body of a ResumableCode delegate or
 /// the body of the MoveNextMethod for a state machine)
@@ -1191,7 +1188,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (ctxt: PermitByRefExpr) : Limit =
         NoLimit
 
     // Allow '%expr' in quotations
-    | Expr.App (Expr.Val (vref, _, _), _, tinst, [arg], m) when isSpliceOperator g vref && env.quote ->
+    | Expr.App (Expr.Val (vref, _, _), _, tinst, [arg], m) when g.isSpliceOperator vref && env.quote ->
         CheckSpliceApplication cenv env (tinst, arg, m)
 
     // Check an application
@@ -1307,14 +1304,14 @@ and CheckILBaseCall cenv env (ilMethRef, enclTypeInst, methInst, retTypes, tyarg
     match tryTcrefOfAppTy g baseVal.Type with
     | ValueSome tcref when tcref.IsILTycon ->
         try
-            // This is awkward - we have to explicitly re-resolve back to the IL metadata to determine if the method is abstract.
-            // We believe this may be fragile in some situations, since we are using the Abstract IL code to compare
-            // type equality, and it would be much better to remove any F# dependency on that implementation of IL type
-            // equality. It would be better to make this check in tc.fs when we have the Abstract IL metadata for the method to hand.
-            let mdef = resolveILMethodRef tcref.ILTyconRawMetadata ilMethRef
+            let mdef =
+                match tcref.ILTyconInfo with
+                | TILObjectReprData(scoref, _, _) ->
+                    resolveILMethodRefWithRescope (rescopeILType scoref) tcref.ILTyconRawMetadata ilMethRef
+
             if mdef.IsAbstract then
                 errorR(Error(FSComp.SR.tcCannotCallAbstractBaseMember(mdef.Name), m))
-        with _ -> () // defensive coding
+        with _ -> ()
     | _ -> ()
 
     CheckTypeInstNoByrefs cenv env m tyargs
@@ -1970,7 +1967,8 @@ and AdjustAccess isHidden (cpath: unit -> CompilationPath) access =
         let (TAccess l) = access
         // FSharp 1.0 bug 1908: Values hidden by signatures are implicitly at least 'internal'
         let scoref = cpath().ILScopeRef
-        TAccess(CompPath(scoref, []) :: l)
+        let sa = cpath().SyntaxAccess
+        TAccess(CompPath(scoref, sa, []) :: l)
     else
         access
 
@@ -2076,7 +2074,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
         if cenv.reportErrors && isReturnsResumableCodeTy g v.TauType then
             if not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
                 error(Error(FSComp.SR.tcResumableCodeNotSupported(), bind.Var.Range))
-            if not v.MustInline then
+            if not v.ShouldInline then
                 warning(Error(FSComp.SR.tcResumableCodeFunctionMustBeInline(), v.Range))
 
         if isReturnsResumableCodeTy g v.TauType then
@@ -2084,7 +2082,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
         else
             env
 
-    CheckLambdas isTop (Some v) cenv env v.MustInline valReprInfo alwaysCheckNoReraise bindRhs v.Range v.Type ctxt
+    CheckLambdas isTop (Some v) cenv env v.ShouldInline valReprInfo alwaysCheckNoReraise bindRhs v.Range v.Type ctxt
 
 and CheckBindings cenv env binds =
     for bind in binds do
@@ -2143,10 +2141,6 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
 
                     error(Duplicate(kind, v.DisplayName, v.Range))
 
-#if CASES_IN_NESTED_CLASS
-                if tcref.IsUnionTycon && nm = "Cases" then
-                    errorR(NameClash(nm, kind, v.DisplayName, v.Range, "generated type", "Cases", tcref.Range))
-#endif
                 if tcref.IsUnionTycon then
                     match nm with
                     | "Tag" -> errorR(NameClash(nm, kind, v.DisplayName, v.Range, FSComp.SR.typeInfoGeneratedProperty(), "Tag", tcref.Range))
@@ -2178,8 +2172,8 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
 
                 // Default augmentation contains the nasty 'Is<UnionCase>' etc.
                 let prefix = "Is"
-                if nm.StartsWithOrdinal prefix && hasDefaultAugmentation then
-                    match tcref.GetUnionCaseByName(nm[prefix.Length ..]) with
+                if not v.IsImplied && nm.StartsWithOrdinal prefix && hasDefaultAugmentation then
+                    match tcref.GetUnionCaseByName(nm[prefix.Length ..]) with 
                     | Some uc -> error(NameClash(nm, kind, v.DisplayName, v.Range, FSComp.SR.chkUnionCaseDefaultAugmentation(), uc.DisplayName, uc.Range))
                     | None -> ()
 
@@ -2212,7 +2206,7 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
             match TryChopPropertyName v.DisplayName with
             | Some res -> check true res
             | None -> ()
-        with e -> errorRecovery e v.Range
+        with RecoverableException e -> errorRecovery e v.Range
     end
 
     CheckBinding cenv { env with returnScope = 1 } true PermitByRefExpr.Yes bind |> ignore
@@ -2283,7 +2277,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
             else MethInfosEquivByNameAndPartialSig eraseFlag true g cenv.amap m minfo minfo2 (* partial ignores return type *)
 
         let immediateMeths =
-            [ for v in tycon.AllGeneratedValues do yield FSMeth (g, ty, v, None)
+            [ for v in tycon.AllGeneratedInterfaceImplsAndOverrides do yield FSMeth (g, ty, v, None)
               yield! GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g cenv.amap m ty ]
 
         let immediateProps = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomewhere) g cenv.amap m ty
@@ -2414,11 +2408,14 @@ let CheckEntityDefn cenv env (tycon: Entity) =
 
             // Check to see if the signatures of the both getter and the setter imply the same property type
 
-            if pinfo.HasGetter && pinfo.HasSetter && not pinfo.IsIndexer then
+            if pinfo.HasGetter && pinfo.HasSetter then
                 let ty1 = pinfo.DropSetter().GetPropertyType(cenv.amap, m)
                 let ty2 = pinfo.DropGetter().GetPropertyType(cenv.amap, m)
                 if not (typeEquivAux EraseNone cenv.amap.g ty1 ty2) then
-                    errorR(Error(FSComp.SR.chkGetterAndSetterHaveSamePropertyType(pinfo.PropertyName, NicePrint.minimalStringOfType cenv.denv ty1, NicePrint.minimalStringOfType cenv.denv ty2), m))
+                    if g.langVersion.SupportsFeature(LanguageFeature.WarningIndexedPropertiesGetSetSameType) && pinfo.IsIndexer then
+                        warning(Error(FSComp.SR.chkIndexedGetterAndSetterHaveSamePropertyType(pinfo.PropertyName, NicePrint.minimalStringOfType cenv.denv ty1, NicePrint.minimalStringOfType cenv.denv ty2), m))
+                    if not pinfo.IsIndexer then
+                        errorR(Error(FSComp.SR.chkGetterAndSetterHaveSamePropertyType(pinfo.PropertyName, NicePrint.minimalStringOfType cenv.denv ty1, NicePrint.minimalStringOfType cenv.denv ty2), m))
 
             hashOfImmediateProps[nm] <- pinfo :: others
 
@@ -2532,13 +2529,30 @@ let CheckEntityDefn cenv env (tycon: Entity) =
 
         // Check fields. We check these late because we have to have first checked that the structs are
         // free of cycles
-        if tycon.IsStructOrEnumTycon then
+        if g.langFeatureNullness && g.checkNullness then
             for f in tycon.AllInstanceFieldsAsList do
+                let m = f.Range
                 // Check if it's marked unsafe
                 let zeroInitUnsafe = TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute f.FieldAttribs
                 if zeroInitUnsafe = Some true then
-                   if not (TypeHasDefaultValue g m ty) then
-                       errorR(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
+                    let ty = f.FormalType
+                    // If the condition is detected because of a variation in logic introduced because
+                    // of nullness checking, then only a warning is emitted.
+                    if not (TypeHasDefaultValueNew g m ty) then
+                        if not (TypeHasDefaultValue g m ty) then
+                            errorR(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
+                        else
+                            warning(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
+
+        // These are the old rules (not g.langFeatureNullness or not g.checkNullness), mistakenly only applied to structs
+        elif tycon.IsStructOrEnumTycon then
+            for f in tycon.AllInstanceFieldsAsList do
+                let m = f.Range
+                // Check if it's marked unsafe
+                let zeroInitUnsafe = TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute f.FieldAttribs
+                if zeroInitUnsafe = Some true then
+                    if not (TypeHasDefaultValue g m f.FormalType) then
+                        errorR(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
 
         // Check type abbreviations
         match tycon.TypeAbbrev with

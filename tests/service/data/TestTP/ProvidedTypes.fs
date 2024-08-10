@@ -3220,8 +3220,6 @@ module internal AssemblyReader =
           systemRuntimeScopeRef: ILScopeRef }
         override __.ToString() = "<ILGlobals>"
 
-    [<AutoOpen>]
-
     [<Struct>]
     type ILTableName(idx: int) =
         member __.Index = idx
@@ -5934,7 +5932,7 @@ module internal AssemblyReader =
                let tidx =
                  seekReadIndexedRow (getNumRows ILTableNames.TypeDef, 
                                         (fun i -> i, seekReadTypeDefRowWithExtents i), 
-                                        (fun r -> r), 
+                                        id, 
                                         (fun (_, ((_, _, _, _, _, methodsIdx), 
                                                   (_, endMethodsIdx)))  ->
                                                     if endMethodsIdx <= idx then 1

@@ -8,7 +8,8 @@ open FSharp.Test.Compiler
 [<TestFixture()>]
 module NullableOptionalRegressionTests =
 
-    [<Test>]
+    //Disabled, see RFC for nullable
+    //[<Test(Enabled=false)>]
     let ``Should compile with generic overloaded nullable methods``() =
         Fsx """
 open System
@@ -50,7 +51,7 @@ type Test with
     static member nullable codec z = Test.nullableE(codec, z)
             """
         FSharp fsSrc
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -71,7 +72,7 @@ type Test with
     static member nullable codec = Test.nullableE codec
             """
         FSharp fsSrc
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -92,7 +93,7 @@ type Test with
     static member nullable codec = Test.nullableE codec
             """
         FSharp fsSrc
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> typecheck
         |> shouldSucceed
         |> ignore

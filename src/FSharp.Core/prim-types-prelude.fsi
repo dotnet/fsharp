@@ -18,6 +18,16 @@ namespace Microsoft.FSharp.Core
     /// <category>Basic Types</category>
     type obj = System.Object
 
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.Object"/> or null.
+    /// With the 'nullable reference types' feature, this is an alias to 'obj | null'.</summary>
+    ///
+    /// <category>Basic Types</category>
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
+    type objnull = obj
+#else
+    type objnull = obj | null
+#endif
+
     /// <summary>An abbreviation for the CLI type <see cref="T:System.Exception"/>.</summary>
     ///
     /// <category>Basic Types</category>
@@ -133,7 +143,7 @@ namespace Microsoft.FSharp.Core
     /// <category>Basic Types</category>
     type uint = uint32
 
-    /// <summary>Single dimensional, zero-based arrays, written <c>int[]</c>, <c>string[]</c> etc.</summary>
+    /// <summary>Single dimensional, zero-based arrays, written <c>int array</c>, <c>string array</c> etc.</summary>
     ///
     /// <remarks>Use the values in the <c>Array</c> module to manipulate values 
     /// of this type, or the notation <c>arr.[x]</c> to get/set array
@@ -396,7 +406,7 @@ namespace Microsoft.FSharp.Core
     type 'T ``[,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,]`` =
         (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
 
-    /// <summary>Single dimensional, zero-based arrays, written <c>int[]</c>, <c>string[]</c> etc.</summary>
+    /// <summary>Single dimensional, zero-based arrays, written <c>int array</c>, <c>string array</c> etc.</summary>
     /// 
     /// <remarks>Use the values in the <see cref="T:Microsoft.FSharp.Collections.ArrayModule" /> module to manipulate values 
     /// of this type, or the notation <c>arr.[x]</c> to get/set array

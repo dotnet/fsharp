@@ -93,11 +93,9 @@ type internal FsiCommandFilter(serviceProvider: System.IServiceProvider) =
 [<Export(typeof<IWpfTextViewCreationListener>)>]
 [<ContentType(FSharpConstants.FSharpContentTypeName)>]
 [<TextViewRole(PredefinedTextViewRoles.PrimaryDocument)>]
-type internal FsiCommandFilterProvider [<ImportingConstructor>]
-    (
-        [<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider,
-        editorFactory: IVsEditorAdaptersFactoryService
-    ) =
+type internal FsiCommandFilterProvider
+    [<ImportingConstructor>]
+    ([<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider, editorFactory: IVsEditorAdaptersFactoryService) =
     interface IWpfTextViewCreationListener with
         member _.TextViewCreated(textView) =
             match editorFactory.GetViewAdapter(textView) with

@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="AdditionalTelemetry">
         <source>Additional performance telemetry (experimental)</source>
-        <target state="new">Additional performance telemetry (experimental)</target>
+        <target state="translated">추가 성능 원격 분석(실험적)</target>
         <note />
       </trans-unit>
       <trans-unit id="Always_place_opens_at_top_level">
@@ -14,22 +14,17 @@
       </trans-unit>
       <trans-unit id="Analyze_full_solution_on_background">
         <source>Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</source>
-        <target state="new">Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</target>
+        <target state="translated">진단에 대한 전체 솔루션을 낮은 우선 순위 백그라운드 작업으로 계속 분석(다시 시작해야 함)</target>
         <note />
       </trans-unit>
       <trans-unit id="Background_analysis">
         <source>Background analysis</source>
-        <target state="new">Background analysis</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Capture_Identifiers_When_Parsing">
-        <source>Capture identifiers while parsing</source>
-        <target state="new">Capture identifiers while parsing</target>
+        <target state="translated">백그라운드 분석</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Background_ItemKeyStore_And_Semantic_Classification">
         <source>Keep background symbol keys</source>
-        <target state="new">Keep background symbol keys</target>
+        <target state="translated">배경 기호 키 유지</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Fast_Find_References">
@@ -38,8 +33,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
-        <source>Use live (unsaved) buffers for checking (restart required)</source>
-        <target state="translated">확인에 라이브(저장되지 않은) 버퍼 사용(다시 시작 필요)</target>
+        <source>Use live (unsaved) buffers for analysis (restart required)</source>
+        <target state="translated">분석에 라이브(저장되지 않은) 버퍼 사용(다시 시작 필요)</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_partial_type_checking">
@@ -84,12 +79,12 @@
       </trans-unit>
       <trans-unit id="Keep_All_Background_Resolutions">
         <source>Keep all background intermediate resolutions (increases memory usage)</source>
-        <target state="new">Keep all background intermediate resolutions (increases memory usage)</target>
+        <target state="translated">모든 백그라운드 중간 해상도 유지(메모리 사용량 증가)</target>
         <note />
       </trans-unit>
       <trans-unit id="Keep_All_Background_Symbol_Uses">
         <source>Keep all background symbol uses (increases memory usage)</source>
-        <target state="new">Keep all background symbol uses (increases memory usage)</target>
+        <target state="translated">모든 배경 기호 사용 유지(메모리 사용량 증가)</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -109,12 +104,12 @@
       </trans-unit>
       <trans-unit id="Language_Service_Settings">
         <source>Language service settings (advanced)</source>
-        <target state="new">Language service settings (advanced)</target>
+        <target state="translated">언어 서비스 설정(고급)</target>
         <note />
       </trans-unit>
       <trans-unit id="LiveBuffers">
-        <source>Live Buffers (experimental)</source>
-        <target state="translated">라이브 버퍼(실험적)</target>
+        <source>Live Buffers</source>
+        <target state="translated">라이브 버퍼</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">
@@ -132,9 +127,14 @@
         <target state="translated">기본 설정 설명 너비(문자)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Remove_parens_code_fix">
+        <source>Remove unnecessary parentheses (experimental, might affect typing performance)</source>
+        <target state="translated">불필요한 괄호 제거(실험적, 입력 성능에 영향을 줄 수 있음)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Send_Additional_Telemetry">
         <source>Send additional performance telemetry</source>
-        <target state="new">Send additional performance telemetry</target>
+        <target state="translated">추가 성능 원격 분석 보내기</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
@@ -177,6 +177,11 @@
         <target state="translated">탐색 링크를 다음으로 표시(_H)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Show_remarks_in_Quick_Info">
+        <source>Show remarks in Quick Info</source>
+        <target state="translated">요약 정보에 설명 표시</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Simplify_name_code_fix">
         <source>Simplify names (remove unnecessary qualifiers)</source>
         <target state="translated">이름 단순화(불필요한 한정자 제거)</target>
@@ -195,6 +200,41 @@
       <trans-unit id="Tooltip_preferred_description_width_in_characters">
         <source>Format signature to the given width by adding line breaks conforming with F# syntax rules. </source>
         <target state="translated">F# 구문 규칙에 맞는 줄 바꿈을 추가하여 지정된 너비에 시그니처의 서식을 지정합니다. </target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler">
+        <source>Transparent Compiler (experimental)</source>
+        <target state="translated">투명한 컴파일러(실험적)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer1">
+        <source>WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</source>
+        <target state="translated">경고! 투명 컴파일러는 아직 모든 기능을 지원하지 않으며 충돌을 발생시키거나 잘못된 결과를 제공할 수 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer2">
+        <source>Use at your own risk!</source>
+        <target state="translated">본인 책임하에 사용하세요!</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer3">
+        <source>By checking this you also opt-in for additional performance telemetry</source>
+        <target state="translated">이를 확인하여 추가 성능 원격 분석을 옵트인합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Transparent_Compiler_Cache_Factor">
+        <source>Transparent Compiler Cache Factor</source>
+        <target state="translated">투명한 컴파일러 캐시 팩터</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Transparent_Compiler_Cache_Factor_Tooltip">
+        <source>Higher number means more memory will be used for caching. Changing the value wipes cache.</source>
+        <target state="translated">숫자가 높을수록 캐싱에 더 많은 메모리가 사용됩니다. 값을 변경하면 캐시가 초기화됩니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Transparent_Compiler_Snapshot_Reuse">
+        <source>Create new project snapshots from existing ones</source>
+        <target state="translated">기존 스냅샷에서 새 프로젝트 스냅샷 만들기</target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -280,6 +320,11 @@
       <trans-unit id="Suggest_names_for_errors_code_fix">
         <source>Suggest names for unresolved identifiers</source>
         <target state="translated">확인되지 않은 식별자의 이름 제안</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Use_Transparent_Compiler">
+        <source>Use Transparent Compiler (restart required)</source>
+        <target state="translated">투명한 컴파일러 사용(다시 시작해야 함)</target>
         <note />
       </trans-unit>
       <trans-unit id="Use_syntax_tree_cache">

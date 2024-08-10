@@ -22,6 +22,11 @@
         <target state="translated">Schlüsselwort "new" hinzufügen</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddReturnTypeAnnotation">
+        <source>Add return type annotation</source>
+        <target state="translated">Rückgabetypanmerkung hinzufügen</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddTypeAnnotation">
         <source>Add type annotation</source>
         <target state="translated">Typanmerkung hinzufügen</target>
@@ -36,23 +41,25 @@ Inline hints;
 Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
+Use Transparent Compiler (experimental);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
-        <target state="new">Block Structure Guides;
-Show structure guidelines for F# code;
-Outlining;
-Show outlining and collapsible nodes for F# code;
-Inline hints;
-Display inline type hints (preview);
-Display return type hints (preview);
-Display inline parameter name hints (preview);
-Live Buffers;
-Use live (unsaved) buffers for checking</target>
+Use live (unsaved) buffers for analysis</source>
+        <target state="translated">Führungslinien für Blockstruktur;
+Strukturführungstlinien für F#-Code anzeigen;
+Gliederung;
+Gliederung und reduzierbare Knoten für F#-Code anzeigen;
+Inline-Hinweise;
+Hinweise zu Inline-Typen anzeigen (Vorschau);
+Hinweise zu Rückgabetypen anzeigen (Vorschau);
+Hinweise zu Inline-Parameternamen anzeigen (Vorschau);
+Transparenten Compiler verwenden (experimentell);
+Live-Puffer;
+Live-Puffer (nicht gespeichert) zur Analyse verwenden</target>
         <note />
       </trans-unit>
       <trans-unit id="ChangeEqualsInFieldTypeToColon">
         <source>Use ':' for type in field declaration</source>
-        <target state="new">Use ':' for type in field declaration</target>
+        <target state="translated">":" für Typ in Felddeklaration verwenden</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">
@@ -167,18 +174,18 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
+Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="translated">F#-Projekt- und Cacheleistungsoptionen;
-Projektübergreifende Verweise im Arbeitsspeicher aktivieren;
-Enable_partial_type_checking;
-IntelliSense-Leistungsoptionen;
+        <target state="translated">Optionen zur F#-Projekt- und Cacheleistung;
+Proj_ektübergreifende Verweise im Arbeitsspeicher aktivieren;
+Aktivieren der partiellen Typüberprüfung;
+Optionen zur IntelliSense-Leistung;
 Veraltete Daten für IntelliSense-Features aktivieren;
 Zeit bis zur Verwendung veralteter Ergebnisse (in Millisekunden);
 Parallelisierung (Neustart erforderlich);
 Parallele Typüberprüfung mit Signaturdateien aktivieren;
 Parallele Verweisauflösung aktivieren;
-Schnellsuche und Umbenennen von Verweisen aktivieren (experimentell);
+Schnellsuche und Umbenennen von Verweisen aktivieren (Neustart erforderlich);
 Cacheanalyseergebnisse (experimentell)</target>
         <note />
       </trans-unit>
@@ -195,15 +202,22 @@ Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
-Dash underline;</source>
+Dash underline;
+Show remarks in Quick Info</source>
         <target state="translated">Formatierung;
 Bevorzugte Beschreibungsbreite in Zeichen;
-Signatur in der angegebenen Breite formatieren, indem Zeilenumbrüche hinzugefügt werden, die den F#-Syntaxregeln entsprechen;
+Formatieren Sie die Signatur in der angegebenen Breite, indem Sie Zeilenumbrüche hinzufügen, die F#-Syntaxregeln entsprechen;
 Navigationslinks;
 Navigationslinks anzeigen als;
-Unterstreichung einfarbig;
-Punkt unterstrichen;
-Strich unterstrichen;</target>
+Durchgezogene Unterstreichung;
+Gepunktete Unterstreichung;
+Gestrichelte Unterstreichung;
+Hinweise in QuickInfo anzeigen</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemarksHeader">
+        <source>Remarks:</source>
+        <target state="translated">Bemerkungen:</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
@@ -214,6 +228,11 @@ Strich unterstrichen;</target>
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
         <target state="translated">"return!" entfernen</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="translated">Unnötige Klammern entfernen</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -234,6 +253,11 @@ Strich unterstrichen;</target>
       <trans-unit id="RenameValueToUnderscore">
         <source>Rename '{0}' to '_'</source>
         <target state="translated">"{0}" in "_" umbenennen</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReturnsHeader">
+        <source>Returns:</source>
+        <target state="translated">Rückgabe:</target>
         <note />
       </trans-unit>
       <trans-unit id="SimplifyName">
@@ -268,7 +292,7 @@ Strich unterstrichen;</target>
       </trans-unit>
       <trans-unit id="UnexpectedEqualsInFieldExpectedColon">
         <source>Unexpected symbol '=' in field declaration. Expected ':' or other token.</source>
-        <target state="new">Unexpected symbol '=' in field declaration. Expected ':' or other token.</target>
+        <target state="translated">Unerwartetes Symbol "=" in der Felddeklaration. Erwartet wurde ":" oder ein anderes Token.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnusedOpens">

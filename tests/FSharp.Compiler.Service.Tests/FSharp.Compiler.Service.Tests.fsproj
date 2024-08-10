@@ -2,97 +2,84 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFrameworks>net472;net7.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">net7.0</TargetFrameworks>
-    <!-- Workaround to get rid of:
-        error NU1505: Duplicate 'PackageDownload' items found.
-        Remove the duplicate items or use the Update functionality to ensure a consistent restore behavior.
-        The duplicate 'PackageDownload' items are:
-          Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2].
-    -->
-    <NoWarn>$(NoWarn);NU1505</NoWarn>
-    <NoWarn>$(NoWarn);44;75;</NoWarn>
+    <TargetFrameworks>net472;$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <GenerateProgramFile>false</GenerateProgramFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <UnitTestType>nunit</UnitTestType>
+    <UnitTestType>xunit</UnitTestType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
+    <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="expected-help-output.bsl">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
+    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="SurfaceArea.fs" Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp'" />
     <Compile Include="..\service\FsUnit.fs">
       <Link>FsUnit.fs</Link>
     </Compile>
-    <Compile Include="..\service\Common.fs">
-      <Link>Common.fs</Link>
-    </Compile>
-    <Compile Include="..\service\AssemblyReaderShim.fs">
-      <Link>AssemblyReaderShim.fs</Link>
-    </Compile>
-    <Compile Include="..\service\EditorTests.fs">
-      <Link>EditorTests.fs</Link>
-    </Compile>
-    <Compile Include="..\service\Symbols.fs">
-      <Link>Symbols.fs</Link>
-    </Compile>
+    <Compile Include="Common.fs" />
+    <Compile Include="AssemblyReaderShim.fs" />
+    <Compile Include="ModuleReaderCancellationTests.fs" />
+    <Compile Include="EditorTests.fs" />
+    <Compile Include="Symbols.fs" />
     <Compile Include="TestDoubles.fs" />
     <Compile Include="ConsoleOnlyOptionsTests.fs" />
     <Compile Include="VisualStudioVersusConsoleContextTests.fs" />
-    <Compile Include="..\service\SyntaxTreeTests.fs" />
-    <Compile Include="..\service\FileSystemTests.fs">
-      <Link>FileSystemTests.fs</Link>
-    </Compile>
-    <Compile Include="..\service\ProjectAnalysisTests.fs">
-      <Link>ProjectAnalysisTests.fs</Link>
-    </Compile>
-    <Compile Include="..\service\MultiProjectAnalysisTests.fs">
-      <Link>MultiProjectAnalysisTests.fs</Link>
-    </Compile>
-    <Compile Include="..\service\PerfTests.fs">
-      <Link>PerfTests.fs</Link>
-    </Compile>
-    <Compile Include="..\service\InteractiveCheckerTests.fs">
-      <Link>InteractiveCheckerTests.fs</Link>
-    </Compile>
-    <Compile Include="..\service\ExprTests.fs">
-      <Link>ExprTests.fs</Link>
-    </Compile>
-    <Compile Include="..\service\CSharpProjectAnalysis.fs">
-      <Link>CSharpProjectAnalysis.fs</Link>
-    </Compile>
-    <Compile Include="..\service\ServiceUntypedParseTests.fs">
-      <Link>ServiceUntypedParseTests.fs</Link>
-    </Compile>
-    <Compile Include="..\service\PatternMatchCompilationTests.fs">
-      <Link>PatternMatchCompilationTests.fs</Link>
-    </Compile>
-    <Compile Include="..\service\CompletionTests.fs">
-      <Link>CompletionTests.fs</Link>
-    </Compile>
-    <Compile Include="..\service\ScriptOptionsTests.fs">
-      <Link>ScriptOptionsTests.fs</Link>
-    </Compile>
-    <Compile Include="..\service\ParserTests.fs">
-      <Link>ParserTests.fs</Link>
-    </Compile>
-    <Compile Include="..\service\XmlDocTests.fs">
-      <Link>XmlDocTests.fs</Link>
-    </Compile>
-    <Compile Include="..\service\XmlDocTests - Units of Measure.fs">
-      <Link>XmlDocTests - Units of Measure.fs</Link>
-    </Compile>
-    <Compile Include="..\service\RangeTests.fs">
-      <Link>RangeTests.fs</Link>
-    </Compile>
+    <Compile Include="SyntaxTreeTests.fs" />
+    <Compile Include="FileSystemTests.fs" />
+    <Compile Include="ProjectAnalysisTests.fs" />
+    <Compile Include="MultiProjectAnalysisTests.fs" />
+    <Compile Include="PerfTests.fs" />
+    <Compile Include="InteractiveCheckerTests.fs" />
+    <Compile Include="ExprTests.fs" />
+    <Compile Include="CSharpProjectAnalysis.fs" />
+    <Compile Include="ServiceUntypedParseTests.fs" />
+    <Compile Include="PatternMatchCompilationTests.fs" />
+    <Compile Include="CompletionTests.fs" />
+    <Compile Include="ScriptOptionsTests.fs" />
+    <Compile Include="ParserTests.fs" />
+    <Compile Include="XmlDocTests.fs" />
+    <Compile Include="XmlDocTests - Units of Measure.fs" />
+    <Compile Include="RangeTests.fs" />
     <Compile Include="TooltipTests.fs" />
-    <Compile Include="..\service\Program.fs">
-      <Link>Program.fs</Link>
-    </Compile>
+    <Compile Include="TokenizerTests.fs" />
+    <Compile Include="CompilerTestHelpers.fs" />
+    <Compile Include="ManglingNameOfProvidedTypes.fs" />
+    <Compile Include="HashIfExpression.fs" />
+    <Compile Include="ProductVersion.fs" />
+    <Compile Include="EditDistance.fs" />
+    <Compile Include="SuggestionBuffer.fs" />
+    <Compile Include="ByteMemoryTests.fs" />
+    <Compile Include="BlockTests.fs" />
+    <Compile Include="BuildGraphTests.fs" />
+    <Compile Include="FsiTests.fs" />
+    <Compile Include="FsiHelpTests.fs" />
+    <Compile Include="AssemblySigningAttributes.fs" />
+    <Compile Include="PostInferenceChecksTests.fs" />
+    <Compile Include="PrettyNaming.fs" />
+    <Compile Include="StructureTests.fs" />
+    <Compile Include="AssemblyContentProviderTests.fs" />
+    <Compile Include="TreeVisitorTests.fs" />
+    <Compile Include="ParsedInputModuleTests.fs" />
+    <Compile Include="ParsedInputModuleTests.VeryBigArrayExprTest.fs" />
+    <Compile Include="FSharpExprPatternsTests.fs" />
+    <Compile Include="SourceTextTests.fs" />
+    <Compile Include="SynExprTests.fs" />
+    <Compile Include="SynPatTests.fs" />
   </ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\service\data\SyntaxTree\**\*.*" Exclude="@(Compile)">
+			<Link>SyntaxTreeTestSource\%(RecursiveDir)\%(Extension)\%(Filename)%(Extension)</Link>
+		</None>
+	</ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Dotnet.ProjInfo" Version="0.37.0" />

@@ -124,7 +124,9 @@ type IResolveDependenciesResult =
     ///     #I @"c:\somepath\to\packages\1.1.1\ResolvedPackage"
     abstract Roots: seq<string>
 
+#if NO_CHECKNULLS
 [<AllowNullLiteral>]
+#endif
 type IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string
@@ -481,12 +483,8 @@ type ReflectionDependencyManagerProvider
 /// Provides DependencyManagement functions.
 /// Class is IDisposable
 type DependencyProvider
-    internal
-    (
-        assemblyProbingPaths: AssemblyResolutionProbe option,
-        nativeProbingRoots: NativeResolutionProbe option,
-        useResultsCache: bool
-    ) =
+    internal (assemblyProbingPaths: AssemblyResolutionProbe option, nativeProbingRoots: NativeResolutionProbe option, useResultsCache: bool)
+    =
 
     // Note: creating a NativeDllResolveHandler currently installs process-wide handlers
     let dllResolveHandler = new NativeDllResolveHandler(nativeProbingRoots)
@@ -616,7 +614,7 @@ type DependencyProvider
                 let managers =
                     RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError
 
-                match managers |> Seq.tryFind (fun kv -> path.StartsWith(kv.Value.Key + ":")) with
+                match managers |> Seq.tryFind (fun kv -> path.StartsWithOrdinal(kv.Value.Key + ":")) with
                 | None ->
                     let err, msg =
                         this.CreatePackageManagerUnknownError(compilerTools, outputDir, path.Split(':').[0], reportError)
@@ -709,7 +707,7 @@ type DependencyProvider
         | Ok res ->
             dllResolveHandler.RefreshPathsInEnvironment(res.Roots)
             res
-        | Error (errorNumber, errorData) ->
+        | Error(errorNumber, errorData) ->
             reportError.Invoke(ErrorReportType.Error, errorNumber, errorData)
             ReflectionDependencyManagerProvider.MakeResultFromFields(false, arrEmpty, arrEmpty, seqEmpty, seqEmpty, seqEmpty)
 

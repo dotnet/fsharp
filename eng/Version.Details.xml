@@ -1,43 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Dependencies>
   <ProductDependencies>
-    <Dependency Name="Microsoft.SourceBuild.Intermediate.source-build-reference-packages" Version="8.0.0-alpha.1.23421.1">
+    <Dependency Name="Microsoft.SourceBuild.Intermediate.source-build-reference-packages" Version="9.0.0-alpha.1.24405.2">
       <Uri>https://github.com/dotnet/source-build-reference-packages</Uri>
-      <Sha>f4903e46459e0348e3793055dd8b68b8b0264034</Sha>
+      <Sha>0d066e61a30c2599d0ced871ea45acf0e10571af</Sha>
       <SourceBuild RepoName="source-build-reference-packages" ManagedOnly="true" />
     </Dependency>
-    <Dependency Name="Microsoft.SourceBuild.Intermediate.msbuild" Version="17.7.0-preview-23217-02">
+    <!-- Intermediate is necessary for source build. -->
+    <Dependency Name="Microsoft.SourceBuild.Intermediate.msbuild" Version="17.11.0-preview-24178-03">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>2cbc8b6aef648cf21c6a68a0dab7fe09a614e475</Sha>
+      <Sha>2d02daa886f279e2ee749cad03db4b1b75bb9adb</Sha>
       <SourceBuild RepoName="msbuild" ManagedOnly="true" />
     </Dependency>
-    <Dependency Name="Microsoft.Build" Version="17.7.0-preview-23217-02">
+    <Dependency Name="Microsoft.Build" Version="17.11.0-preview-24178-03">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>2cbc8b6aef648cf21c6a68a0dab7fe09a614e475</Sha>
+      <Sha>2d02daa886f279e2ee749cad03db4b1b75bb9adb</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Framework" Version="17.7.0-preview-23217-02">
+    <Dependency Name="Microsoft.Build.Framework" Version="17.11.0-preview-24178-03">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>2cbc8b6aef648cf21c6a68a0dab7fe09a614e475</Sha>
+      <Sha>2d02daa886f279e2ee749cad03db4b1b75bb9adb</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Tasks.Core" Version="17.7.0-preview-23217-02">
+    <Dependency Name="Microsoft.Build.Tasks.Core" Version="17.11.0-preview-24178-03">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>2cbc8b6aef648cf21c6a68a0dab7fe09a614e475</Sha>
+      <Sha>2d02daa886f279e2ee749cad03db4b1b75bb9adb</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Utilities.Core" Version="17.7.0-preview-23217-02">
+    <Dependency Name="Microsoft.Build.Utilities.Core" Version="17.11.0-preview-24178-03">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>2cbc8b6aef648cf21c6a68a0dab7fe09a614e475</Sha>
+      <Sha>2d02daa886f279e2ee749cad03db4b1b75bb9adb</Sha>
+    </Dependency>
+    <Dependency Name="System.Reflection.Metadata" Version="8.0.0">
+      <Uri>https://github.com/dotnet/runtime</Uri>
+      <Sha>5535e31a712343a63f5d7d796cd874e563e5ac14</Sha>
+    </Dependency>
+    <Dependency Name="System.Collections.Immutable" Version="8.0.0">
+      <Uri>https://github.com/dotnet/runtime</Uri>
+      <Sha>5535e31a712343a63f5d7d796cd874e563e5ac14</Sha>
+    </Dependency>
+    <Dependency Name="System.Threading.Tasks.Dataflow" Version="8.0.0">
+      <Uri>https://github.com/dotnet/runtime</Uri>
+      <Sha>5535e31a712343a63f5d7d796cd874e563e5ac14</Sha>
     </Dependency>
   </ProductDependencies>
   <ToolsetDependencies>
-    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="8.0.0-beta.23419.1">
+    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="9.0.0-beta.24408.2">
       <Uri>https://github.com/dotnet/arcade</Uri>
-      <Sha>385129cbc980a515ddee2fa56f6b16f3183ed9bc</Sha>
+      <Sha>60ae233c3d77f11c5fdb53e570b64d503b13ba59</Sha>
+    </Dependency>
+    <!-- Intermediate is necessary for source build. -->
+    <Dependency Name="Microsoft.SourceBuild.Intermediate.arcade" Version="9.0.0-beta.24408.2">
+      <Uri>https://github.com/dotnet/arcade</Uri>
+      <Sha>60ae233c3d77f11c5fdb53e570b64d503b13ba59</Sha>
       <SourceBuild RepoName="arcade" ManagedOnly="true" />
     </Dependency>
-    <Dependency Name="Microsoft.DotNet.XliffTasks" Version="1.0.0-beta.23418.1" CoherentParentDependency="Microsoft.DotNet.Arcade.Sdk">
-      <Uri>https://github.com/dotnet/xliff-tasks</Uri>
-      <Sha>bb654cd4736e7e8cb99f1c355ce2b8f0a686ba74</Sha>
-      <SourceBuild RepoName="xliff-tasks" ManagedOnly="true" />
+    <Dependency Name="optimization.windows_nt-x64.MIBC.Runtime" Version="1.0.0-prerelease.23614.4">
+      <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
+      <Sha>15f6d606bfc7cbb65587dd7bc1ec6e9ef283f7e3</Sha>
+    </Dependency>
+    <Dependency Name="optimization.windows_nt-x86.MIBC.Runtime" Version="1.0.0-prerelease.23614.4">
+      <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
+      <Sha>15f6d606bfc7cbb65587dd7bc1ec6e9ef283f7e3</Sha>
+    </Dependency>
+    <Dependency Name="optimization.linux-x64.MIBC.Runtime" Version="1.0.0-prerelease.23614.4">
+      <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
+      <Sha>15f6d606bfc7cbb65587dd7bc1ec6e9ef283f7e3</Sha>
+    </Dependency>
+    <Dependency Name="optimization.windows_nt-arm64.MIBC.Runtime" Version="1.0.0-prerelease.23614.4">
+      <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
+      <Sha>15f6d606bfc7cbb65587dd7bc1ec6e9ef283f7e3</Sha>
+    </Dependency>
+    <Dependency Name="optimization.linux-arm64.MIBC.Runtime" Version="1.0.0-prerelease.23614.4">
+      <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
+      <Sha>15f6d606bfc7cbb65587dd7bc1ec6e9ef283f7e3</Sha>
     </Dependency>
   </ToolsetDependencies>
 </Dependencies>

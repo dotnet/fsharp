@@ -10,7 +10,7 @@ open FSharp.Test
 module StructActivePatternTests =
 
     let private pass = CompilerAssert.PassWithOptions [||]
-    let private fail = CompilerAssert.TypeCheckWithErrorsAndOptions [||]
+    let private fail = CompilerAssert.TypeCheckWithErrorsAndOptions [| "--langversion:8.0"|]
     let private run src = CompilerAssert.CompileExeAndRunWithOptions(
         [||],
         ("""
@@ -179,11 +179,8 @@ let (|Foo|_|) x = ValueNone
 """
             [|(FSharpDiagnosticSeverity.Error, 842, (2, 3, 2, 9),
                "This attribute is not valid for use on this language element");
-              (FSharpDiagnosticSeverity.Error, 1, (2, 1, 3, 16),
-               "This expression was expected to have type
-    ''a option'    
-but here has type
-    ''b voption'    ")|]
+              (FSharpDiagnosticSeverity.Error, 3350, (2, 1, 3, 16),
+               "Feature 'Boolean-returning and return-type-directed partial active patterns' is not available in F# 8.0. Please use language version 9.0 or greater.")|]
 
     [<Test>]
     let ``StructAttribute not allowed on other bindings than partial active pattern definitions`` () =

@@ -11,6 +11,7 @@ module RecordTypes =
     let verifyTypeCheckAsFsxAsLibrary compilation =
         compilation
         |> asLibrary
+        |> withOptions ["--nowarn:3560"]
         |> typecheck
         |> shouldSucceed
 
@@ -380,4 +381,166 @@ module RecordTypes =
         |> shouldFail
         |> withDiagnostics [
             (Warning 864, Line 11, Col 22, Line 11, Col 30, "This new member hides the abstract member 'System.Object.ToString() : string'. Rename the member or use 'override' instead.")
+        ]
+
+    [<Fact>]
+    let ``Records field appears multiple times in this record expressions``() =
+        FSharp """
+    type RecTy = { B: string }
+
+    let t1 = { B = "a"; B = "b" }
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 668, Line 4, Col 16, Line 4, Col 17, "The field 'B' appears multiple times in this record expression or pattern")
+        ]
+        
+    [<Fact>]
+    let ``Records field appears multiple times in this record expressions 2``() =
+        FSharp """
+    type RecTy = { B: string }
+
+    let t1 = { B = "a"; B = "b"; B = "c" }
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 668, Line 4, Col 16, Line 4, Col 17, "The field 'B' appears multiple times in this record expression or pattern")
+            (Error 668, Line 4, Col 25, Line 4, Col 26, "The field 'B' appears multiple times in this record expression or pattern")
+        ]
+    
+    [<Fact>]
+    let ``Records field appears multiple times in this record expressions 3``() =
+        FSharp """
+    type RecTy = { A: int; B: int }
+
+    let t1 = { A = 1; B = 4; A = 5; B = 4 }
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 668, Line 4, Col 16, Line 4, Col 17, "The field 'A' appears multiple times in this record expression or pattern")
+            (Error 668, Line 4, Col 23, Line 4, Col 24, "The field 'B' appears multiple times in this record expression or pattern")
+        ]
+    
+    [<Fact>]
+    let ``Records field appears multiple times in this record expressions 4``() =
+        FSharp """
+    type RecTy = { A: int; B: int; C: string }
+
+    let t1 = { A = 1; C = ""; A = 0; B = 5 }
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 668, Line 4, Col 16, Line 4, Col 17, "The field 'A' appears multiple times in this record expression or pattern")
+        ]
+        
+    [<Fact>]
+    let ``Records field appears multiple times in this record expressions 5``() =
+        FSharp """
+    type RecTy = { A: int; B: int; C: string }
+
+    let t1 = { A = 4; C = ""; A = 8; B = 4; A = 9 }
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 668, Line 4, Col 16, Line 4, Col 17, "The field 'A' appears multiple times in this record expression or pattern")
+            (Error 668, Line 4, Col 31, Line 4, Col 32, "The field 'A' appears multiple times in this record expression or pattern")
+        ]
+        
+    [<Fact>]
+    let ``Records field appears multiple times in this record expressions 6``() =
+        FSharp """
+    type RecTy = { ``A``: int; B: int; C: string }
+
+    let t1 = { ``A`` = 5; B = 6; A = 6; B = 6; C = "" }
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 668, Line 4, Col 16, Line 4, Col 21, "The field 'A' appears multiple times in this record expression or pattern")
+            (Error 668, Line 4, Col 27, Line 4, Col 28, "The field 'B' appears multiple times in this record expression or pattern")
+        ]
+    
+    [<Fact>]
+    let ``Records field appears multiple times in this record expressions 7``() =
+        FSharp """
+    type RecTy = { A: int; B: int; C: string }
+    let t1 = { A = 5;  B = 6; C = "" }
+    match t1 with
+    | { A = 5; A = 6; C = "" } -> ()
+    | _ -> ()
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 668, Line 5, Col 9, Line 5, Col 10, "The field 'A' appears multiple times in this record expression or pattern")
+        ]
+        
+    [<Fact>]
+    let ``Records field appears multiple times in this record expressions 8``() =
+        FSharp """
+    type RecTy = { A: int; B: int; C: string }
+    let t1 = { A = 5;  B = 6; C = "" }
+    match t1 with
+    | { A = 5; A = 6; A = 8 } -> ()
+    | _ -> ()
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 668, Line 5, Col 9, Line 5, Col 10, "The field 'A' appears multiple times in this record expression or pattern")
+            (Error 668, Line 5, Col 16, Line 5, Col 17, "The field 'A' appears multiple times in this record expression or pattern")
+        ]
+        
+    [<Fact>]
+    let ``Records field appears multiple times in this record expressions 9``() =
+        FSharp """
+    type RecTy = { A: int; B: int; C: string }
+    let t1 = { A = 5;  B = 6; C = "" }
+    match t1 with
+    | { A = 5; B = 6; A = 8; B = 9; C = "" } -> ()
+    | _ -> ()
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 668, Line 5, Col 9, Line 5, Col 10, "The field 'A' appears multiple times in this record expression or pattern")
+            (Error 668, Line 5, Col 16, Line 5, Col 17, "The field 'B' appears multiple times in this record expression or pattern")
+        ]
+        
+    [<Fact>]
+    let ``Records field appears multiple times in this record expressions 10``() =
+        FSharp """
+    type RecTy = { A: int; B: int; C: string }
+    let t1 = { A = 5;  B = 6; C = "" }
+    match t1 with
+    | { A = 4; C = ""; A = 8; B = 4; A = 9 } -> ()
+    | _ -> ()
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 668, Line 5, Col 9, Line 5, Col 10, "The field 'A' appears multiple times in this record expression or pattern")
+            (Error 668, Line 5, Col 24, Line 5, Col 25, "The field 'A' appears multiple times in this record expression or pattern")
+        ]
+        
+    [<Fact>]
+    let ``Records field appears multiple times in this record expressions 11``() =
+        FSharp """
+    type RecTy = { A: int; B: int; C: string }
+    let t1 = { A = 5;  B = 6; C = "" }
+    match t1 with
+    | { A = 4; C = ""; A = 8; B = 4; A = 9; B = 4 } -> ()
+    | _ -> ()
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 668, Line 5, Col 9, Line 5, Col 10, "The field 'A' appears multiple times in this record expression or pattern")
+            (Error 668, Line 5, Col 24, Line 5, Col 25, "The field 'A' appears multiple times in this record expression or pattern")
+            (Error 668, Line 5, Col 31, Line 5, Col 32, "The field 'B' appears multiple times in this record expression or pattern")
         ]

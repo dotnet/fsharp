@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="AdditionalTelemetry">
         <source>Additional performance telemetry (experimental)</source>
-        <target state="new">Additional performance telemetry (experimental)</target>
+        <target state="translated">Télémétrie de performance supplémentaire (expérimentale)</target>
         <note />
       </trans-unit>
       <trans-unit id="Always_place_opens_at_top_level">
@@ -14,22 +14,17 @@
       </trans-unit>
       <trans-unit id="Analyze_full_solution_on_background">
         <source>Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</source>
-        <target state="new">Keep analyzing the entire solution for diagnostics as a low priority background task (requires restart)</target>
+        <target state="translated">Continuez à analyser l'intégralité de la solution pour les diagnostics en tant que tâche en arrière-plan de basse priorité (nécessite un redémarrage)</target>
         <note />
       </trans-unit>
       <trans-unit id="Background_analysis">
         <source>Background analysis</source>
-        <target state="new">Background analysis</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Capture_Identifiers_When_Parsing">
-        <source>Capture identifiers while parsing</source>
-        <target state="new">Capture identifiers while parsing</target>
+        <target state="translated">Analyse de fond</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Background_ItemKeyStore_And_Semantic_Classification">
         <source>Keep background symbol keys</source>
-        <target state="new">Keep background symbol keys</target>
+        <target state="translated">Conserver les clés des symboles d'arrière-plan</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Fast_Find_References">
@@ -38,8 +33,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
-        <source>Use live (unsaved) buffers for checking (restart required)</source>
-        <target state="translated">Utiliser des tampons en direct (non enregistrés) pour la vérification (redémarrage requis)</target>
+        <source>Use live (unsaved) buffers for analysis (restart required)</source>
+        <target state="translated">Utiliser des tampons en direct (non enregistrés) pour l’analysye (redémarrage requis)</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_partial_type_checking">
@@ -84,12 +79,12 @@
       </trans-unit>
       <trans-unit id="Keep_All_Background_Resolutions">
         <source>Keep all background intermediate resolutions (increases memory usage)</source>
-        <target state="new">Keep all background intermediate resolutions (increases memory usage)</target>
+        <target state="translated">Conserver toutes les résolutions intermédiaires en arrière-plan (augmente l'utilisation de la mémoire)</target>
         <note />
       </trans-unit>
       <trans-unit id="Keep_All_Background_Symbol_Uses">
         <source>Keep all background symbol uses (increases memory usage)</source>
-        <target state="new">Keep all background symbol uses (increases memory usage)</target>
+        <target state="translated">Conserver toutes les utilisations des symboles d'arrière-plan (augmente l'utilisation de la mémoire)</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -109,12 +104,12 @@
       </trans-unit>
       <trans-unit id="Language_Service_Settings">
         <source>Language service settings (advanced)</source>
-        <target state="new">Language service settings (advanced)</target>
+        <target state="translated">Paramètres du service linguistique (avancés)</target>
         <note />
       </trans-unit>
       <trans-unit id="LiveBuffers">
-        <source>Live Buffers (experimental)</source>
-        <target state="translated">Live Buffers (expérimental)</target>
+        <source>Live Buffers</source>
+        <target state="translated">Tampons en direct</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">
@@ -132,9 +127,14 @@
         <target state="translated">Largeur de description préférée en caractères</target>
         <note />
       </trans-unit>
+      <trans-unit id="Remove_parens_code_fix">
+        <source>Remove unnecessary parentheses (experimental, might affect typing performance)</source>
+        <target state="translated">Supprimer les parenthèses inutiles (expérimental, peut affecter les performances de saisie)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Send_Additional_Telemetry">
         <source>Send additional performance telemetry</source>
-        <target state="new">Send additional performance telemetry</target>
+        <target state="translated">Envoyer une télémétrie de performances supplémentaire</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Inline_Parameter_Name_Hints">
@@ -177,6 +177,11 @@
         <target state="translated">Affic_her les liens de navigation en tant que</target>
         <note />
       </trans-unit>
+      <trans-unit id="Show_remarks_in_Quick_Info">
+        <source>Show remarks in Quick Info</source>
+        <target state="translated">Afficher les notes dans Info express</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Simplify_name_code_fix">
         <source>Simplify names (remove unnecessary qualifiers)</source>
         <target state="translated">Simplifier les noms (supprimer les qualificateurs inutiles)</target>
@@ -195,6 +200,41 @@
       <trans-unit id="Tooltip_preferred_description_width_in_characters">
         <source>Format signature to the given width by adding line breaks conforming with F# syntax rules. </source>
         <target state="translated">Formatez la signature à la largeur donnée en ajoutant des sauts de ligne conformes aux règles de syntaxe F#. </target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler">
+        <source>Transparent Compiler (experimental)</source>
+        <target state="translated">Transparent Compiler (expérience)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer1">
+        <source>WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</source>
+        <target state="translated">AVERTISSEMENT ! Transparent Compiler ne prend pas encore en charge toutes les fonctionnalités et peut provoquer des blocages ou donner des résultats incorrects.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer2">
+        <source>Use at your own risk!</source>
+        <target state="translated">Utilisez-le à vos propres risques !</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TransparentCompiler_Discalimer3">
+        <source>By checking this you also opt-in for additional performance telemetry</source>
+        <target state="translated">En cochant cette option, vous acceptez également d’autres données de télémétrie des performances</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Transparent_Compiler_Cache_Factor">
+        <source>Transparent Compiler Cache Factor</source>
+        <target state="translated">Facteur de cache du Transparent Compiler</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Transparent_Compiler_Cache_Factor_Tooltip">
+        <source>Higher number means more memory will be used for caching. Changing the value wipes cache.</source>
+        <target state="translated">Un nombre plus élevé signifie que davantage de mémoire va être utilisée pour la mise en cache. Modification du cache des effacements de valeur.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Transparent_Compiler_Snapshot_Reuse">
+        <source>Create new project snapshots from existing ones</source>
+        <target state="translated">Créer des instantanés de projet à partir de ceux existants</target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -280,6 +320,11 @@
       <trans-unit id="Suggest_names_for_errors_code_fix">
         <source>Suggest names for unresolved identifiers</source>
         <target state="translated">Suggérer des noms pour les identificateurs non résolus</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Use_Transparent_Compiler">
+        <source>Use Transparent Compiler (restart required)</source>
+        <target state="translated">Utiliser Transparent Compiler (redémarrage requis)</target>
         <note />
       </trans-unit>
       <trans-unit id="Use_syntax_tree_cache">

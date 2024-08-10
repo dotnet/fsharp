@@ -146,7 +146,9 @@ module private ParallelOptimization =
                 FirstLoopRes =
                     {
                         OptEnv = env0
-                        OptInfo = lazy failwith "This dummy value wrapped in a Lazy was not expected to be evaluated before being replaced."
+                        OptInfo =
+                            InterruptibleLazy(fun _ ->
+                                failwith "This dummy value wrapped in a Lazy was not expected to be evaluated before being replaced.")
                         HidingInfo = SignatureHidingInfo.Empty
                         // A no-op optimizer
                         OptDuringCodeGen = fun _ expr -> expr
@@ -265,9 +267,9 @@ let optimizeFilesSequentially optEnv (phases: PhaseInfo[]) implFiles =
                             {
                                 OptEnv = optEnvFirstLoop
                                 OptInfo =
-                                    lazy
+                                    InterruptibleLazy(fun _ ->
                                         failwith
-                                            "This dummy value wrapped in a Lazy was not expected to be evaluated before being replaced."
+                                            "This dummy value wrapped in a Lazy was not expected to be evaluated before being replaced.")
                                 HidingInfo = hidden
                                 // A no-op optimizer
                                 OptDuringCodeGen = fun _ expr -> expr
@@ -387,7 +389,6 @@ let ApplyAllOptimizations
                 importMap,
                 prevFile.FirstLoopRes.OptEnv,
                 isIncrementalFragment,
-                tcConfig.fsiMultiAssemblyEmit,
                 tcConfig.emitTailcalls,
                 prevFile.FirstLoopRes.HidingInfo,
                 file
@@ -434,7 +435,6 @@ let ApplyAllOptimizations
                 importMap,
                 prevFile.OptEnvExtraLoop,
                 isIncrementalFragment,
-                tcConfig.fsiMultiAssemblyEmit,
                 tcConfig.emitTailcalls,
                 prevPhase.FirstLoopRes.HidingInfo,
                 file
@@ -505,7 +505,6 @@ let ApplyAllOptimizations
                 importMap,
                 prevFile.OptEnvFinalSimplify,
                 isIncrementalFragment,
-                tcConfig.fsiMultiAssemblyEmit,
                 tcConfig.emitTailcalls,
                 prevPhase.FirstLoopRes.HidingInfo,
                 file

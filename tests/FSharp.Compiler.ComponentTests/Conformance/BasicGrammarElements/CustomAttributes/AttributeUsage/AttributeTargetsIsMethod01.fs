@@ -48,3 +48,10 @@ let test1 =
     |> (=) 6
     
 if not test1 then failwith "Failed: 1"
+
+[<AttributeUsage(AttributeTargets.Method)>]
+type MethodLevelAttribute() =
+    inherit Attribute()
+
+type SomeUnion =
+| [<MethodLevel>] Case1 of int

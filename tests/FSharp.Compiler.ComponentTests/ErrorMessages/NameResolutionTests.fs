@@ -72,7 +72,7 @@ module Lib =
     [<Fact>]
     let MultipleRecdTypeChoiceWarningWith1AlternativeLangPreview () =
         FSharp multipleRecdTypeChoiceWarningWith1AlternativeSource
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
@@ -129,7 +129,7 @@ module Lib =
     [<Fact>]
     let MultipleRecdTypeChoiceWarningWith2AlternativeLangPreview () =
         FSharp multipleRecdTypeChoiceWarningWith2AlternativeSource
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
@@ -186,7 +186,7 @@ module Lib =
     [<Fact>]
     let MultipleRecdTypeChoiceWarningNotRaisedWithCorrectOpenStmtsOrderingLangPreview () =
         FSharp multipleRecdTypeChoiceWarningNotRaisedWithCorrectOpenStmtsOrderingSource
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> typecheck
         |> shouldSucceed
 
@@ -235,7 +235,7 @@ module Lib =
     [<Fact>]
     let MultipleRecdTypeChoiceWarningNotRaisedWithoutOverlapsLangPreview () =
         FSharp multipleRecdTypeChoiceWarningNotRaisedWithoutOverlapsSource
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> typecheck
         |> shouldSucceed
     
@@ -284,7 +284,7 @@ module Lib =
     [<Fact>]
     let MultipleRecdTypeChoiceWarningNotRaisedWithTypeAnnotationsLangPreview () =
         FSharp multipleRecdTypeChoiceWarningNotRaisedWithTypeAnnotationsSource
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> typecheck
         |> shouldSucceed
     

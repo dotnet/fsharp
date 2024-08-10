@@ -285,7 +285,7 @@ type UsingMSBuild()  =
             foo((*Mark*)"""
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark*)",[["'a"]])
         
-    [<Test>]
+    // [<Test>] disabled for F#8, legacy service, covered in FCS tests instead
     member public this.``Single.DiscriminatedUnion.Construction``() =
         let fileContent = """
             type MyDU = 
@@ -305,7 +305,7 @@ type UsingMSBuild()  =
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark3*)",[["``Long Name`` : int"; "string"]])
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark4*)",[["int"]])
         
-    [<Test>]
+    // [<Test>] disabled for F#8, legacy service, covered in FCS tests instead
     member public this.``Single.Exception.Construction``() =
         let fileContent = """
             exception E1 of int * string
@@ -324,6 +324,7 @@ type UsingMSBuild()  =
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     //This test verifies that ParamInfo on a provided type that exposes one (static) method that takes one argument works normally.
     member public this.``TypeProvider.StaticMethodWithOneParam`` () =
         let fileContent = """
@@ -335,6 +336,7 @@ type UsingMSBuild()  =
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     //This test verifies that ParamInfo on a provided type that exposes a (static) method that takes >1 arguments works normally.
     member public this.``TypeProvider.StaticMethodWithMoreParam`` () =
         let fileContent = """
@@ -348,6 +350,7 @@ type UsingMSBuild()  =
     [<Category("TypeProvider.StaticParameters")>]
     //This test case verify the TypeProvider static method return type or colon content of the method
     //This test verifies that ParamInfo on a provided type that exposes one (static) method that takes one argument
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     //and returns something works correctly (more precisely, it checks that the return type is 'int')
     member public this.``TypeProvider.StaticMethodColonContent`` () =
         let fileContent = """
@@ -360,6 +363,7 @@ type UsingMSBuild()  =
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     //This test verifies that ParamInfo on a provided type that exposes a Constructor that takes no argument works normally.
     member public this.``TypeProvider.ConstructorWithNoParam`` () =
         let fileContent = """
@@ -371,6 +375,7 @@ type UsingMSBuild()  =
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     //This test verifies that ParamInfo on a provided type that exposes a Constructor that takes one argument works normally.
     member public this.``TypeProvider.ConstructorWithOneParam`` () =
         let fileContent = """
@@ -382,6 +387,7 @@ type UsingMSBuild()  =
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     //This test verifies that ParamInfo on a provided type that exposes a Constructor that takes >1 argument works normally.
     member public this.``TypeProvider.ConstructorWithMoreParam`` () =
         let fileContent = """
@@ -392,6 +398,7 @@ type UsingMSBuild()  =
          
     [<Test>]
     [<Category("TypeProvider")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test verifies that ParamInfo on a provided type that exposes a static parameter that takes >1 argument works normally.
     member public this.``TypeProvider.Type.WhenOpeningBracket`` () =
@@ -403,6 +410,7 @@ type UsingMSBuild()  =
         
     [<Test>]
     [<Category("TypeProvider")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("TypeProvider.StaticParameters")>]
     //This test verifies that after closing bracket ">" the ParamInfo isn't showing on a provided type that exposes a static parameter that takes >1 argument works normally.
     //This is a regression test for Bug DevDiv:181000
@@ -413,6 +421,7 @@ type UsingMSBuild()  =
         this.VerifyNoParameterInfoAtStartOfMarker(fileContent,"(*Marker*)",
             addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
     
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
@@ -1195,9 +1204,11 @@ We really need to rewrite some code paths here to use the real parse tree rather
             let r = ^FOO^(^42,^"$"^) """)
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``LocationOfParams.EvenWhenOverloadResolutionFails.Case1``() =        
         this.TestParameterInfoLocationOfParams("""let a = new ^System.IO.FileStream^(^$^)""")
 
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Test>]
     member public this.``LocationOfParams.EvenWhenOverloadResolutionFails.Case2``() =        
         this.TestParameterInfoLocationOfParams("""
@@ -1381,12 +1392,14 @@ We really need to rewrite some code paths here to use the real parse tree rather
         )
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``LocationOfParams.TypeProviders.Basic``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^<^ "fo$o",^ 42 ^>""", 
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``LocationOfParams.TypeProviders.BasicNamed``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^<^ "fo$o",^ ParamIgnored=42 ^>""", 
@@ -1472,6 +1485,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                 additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``LocationOfParams.TypeProviders.BasicWithinExpr.DoesNotInterfereWithOuterFunction``() =        
         this.TestParameterInfoLocationOfParams("""
             let f() =
@@ -1480,17 +1494,20 @@ We really need to rewrite some code paths here to use the real parse tree rather
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``LocationOfParams.TypeProviders.Bug199744.ExcessCommasShouldNotAssertAndShouldGiveInfo.Case1``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^<^ "fo$o",^ 42,^ ,^ ^>""", 
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``LocationOfParams.TypeProviders.Bug199744.ExcessCommasShouldNotAssertAndShouldGiveInfo.Case2``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^<^ "fo$o",^ ,^ ^>""", 
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.Bug199744.ExcessCommasShouldNotAssertAndShouldGiveInfo.Case3``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
@@ -1504,6 +1521,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             let x = new ^N1.T^<^ "fo$o",^ 42 ^>()""", 
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Test>]
     member public this.``TypeProvider.FormatOfNamesOfSystemTypes``() =
         let code = ["""type TTT = N1.T< "foo", ParamIgnored=42 > """]
@@ -1988,6 +2006,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
 (*------------------------------------------IDE Query automation start -------------------------------------------------*)
     [<Test>]   
     [<Category("Query")>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     // ParamInfo works normally for calls as query operator arguments
     // wroks fine In nested queries
     member public this.``Query.InNestedQuery``() = 
@@ -2010,6 +2029,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
     [<Category("Query")>]
     // ParamInfo works normally for calls as query operator arguments
     // ParamInfo Still works when an error exists
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Query.WithErrors``() = 
         let fileContents = """
         let tuples = [ (1, 8, 9); (56, 45, 3)] 
@@ -2024,6 +2044,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
     [<Test>]   
     [<Category("Query")>]
     // ParamInfo works normally for calls as query operator arguments
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Query.OperatorWithParentheses``() = 
         let fileContents = """
         type Product() =
@@ -2077,6 +2098,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
     [<Category("Query")>]
     // ParamInfo works normally for calls as query operator arguments
     // ParamInfo Still works when there are overload methods with the same param count
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Query.OverloadMethod.InQuery``() = 
         let fileContents = """
         let numbers = [ 1;2; 8; 9; 15; 23; 3; 42; 4;0; 55;]

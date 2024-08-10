@@ -782,7 +782,7 @@ module internal Tokenizer =
             ||> Array.foldi (fun (acc, lastToken: DraftTokenInfo voption) index token ->
                 match lastToken with
                 | ValueSome t when token.LeftColumn <= t.RightColumn -> acc, lastToken
-                | ValueSome ({ Kind = LexerSymbolKind.ActivePattern } as lastToken) when
+                | ValueSome({ Kind = LexerSymbolKind.ActivePattern } as lastToken) when
                     wholeActivePatterns
                     && (token.Tag = FSharpTokenTag.BAR
                         || token.Tag = FSharpTokenTag.IDENT
@@ -825,7 +825,7 @@ module internal Tokenizer =
                                     LeftColumn = token.LeftColumn - 1
                                     MatchedLength = 1
                                 }
-                            | ValueSome ({ Kind = LexerSymbolKind.ActivePattern } as ap) when
+                            | ValueSome({ Kind = LexerSymbolKind.ActivePattern } as ap) when
                                 wholeActivePatterns && token.Tag = FSharpTokenTag.RPAREN
                                 ->
                                 {
@@ -925,7 +925,7 @@ module internal Tokenizer =
 
         lineData, textLinePos, contents
 
-    let inline tokenizeLine (documentKey, sourceText, position, fileName, defines, langVersion, strictIndentation, cancellationToken) =
+    let tokenizeLine (documentKey, sourceText, position, fileName, defines, langVersion, strictIndentation, cancellationToken) =
         try
             let lineData, _, _ =
                 getCachedSourceLineData (

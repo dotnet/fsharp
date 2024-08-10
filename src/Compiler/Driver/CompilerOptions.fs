@@ -79,15 +79,15 @@ and CompilerOptionBlock =
 
 let GetOptionsOfBlock block =
     match block with
-    | PublicOptions (_, opts) -> opts
+    | PublicOptions(_, opts) -> opts
     | PrivateOptions opts -> opts
 
 let FilterCompilerOptionBlock pred block =
     match block with
-    | PublicOptions (heading, opts) -> PublicOptions(heading, List.filter pred opts)
+    | PublicOptions(heading, opts) -> PublicOptions(heading, List.filter pred opts)
     | PrivateOptions opts -> PrivateOptions(List.filter pred opts)
 
-let compilerOptionUsage (CompilerOption (s, tag, spec, _, _)) =
+let compilerOptionUsage (CompilerOption(s, tag, spec, _, _)) =
     let s =
         if s = "--" then
             ""
@@ -109,14 +109,14 @@ let compilerOptionUsage (CompilerOption (s, tag, spec, _, _)) =
     | OptionFloat _ -> sprintf "--%s:%s" s tag
     | OptionRest _ -> sprintf "--%s ..." s
     | OptionGeneral _ ->
-        if tag = "" then
+        if String.IsNullOrEmpty(tag) then
             sprintf "%s" s
         else
             sprintf "%s:%s" s tag (* still being decided *)
 
 let nl = Environment.NewLine
 
-let getCompilerOption (CompilerOption (_s, _tag, _spec, _, help) as compilerOption) width =
+let getCompilerOption (CompilerOption(_s, _tag, _spec, _, help) as compilerOption) width =
     let sb = StringBuilder()
 
     let flagWidth = 42 // fixed width for printing of flags, e.g. --debug:{full|pdbonly|portable|embedded}
@@ -178,7 +178,7 @@ let GetCompilerOptionBlocks blocks width =
         blocks
         |> List.choose (function
             | PrivateOptions _ -> None
-            | PublicOptions (heading, opts) -> Some(heading, opts))
+            | PublicOptions(heading, opts) -> Some(heading, opts))
 
     let consider doneHeadings (heading, _opts) =
         if Set.contains heading doneHeadings then
@@ -194,7 +194,7 @@ let GetCompilerOptionBlocks blocks width =
     sb.ToString()
 
 (* For QA *)
-let dumpCompilerOption prefix (CompilerOption (str, _, spec, _, _)) =
+let dumpCompilerOption prefix (CompilerOption(str, _, spec, _, _)) =
     printf "section='%-25s' ! option=%-30s kind=" prefix str
 
     match spec with
@@ -217,14 +217,14 @@ let dumpCompilerOption prefix (CompilerOption (str, _, spec, _, _)) =
 
 let dumpCompilerOptionBlock =
     function
-    | PublicOptions (heading, opts) -> List.iter (dumpCompilerOption heading) opts
+    | PublicOptions(heading, opts) -> List.iter (dumpCompilerOption heading) opts
     | PrivateOptions opts -> List.iter (dumpCompilerOption "NoSection") opts
 
 let DumpCompilerOptionBlocks blocks =
     List.iter dumpCompilerOptionBlock blocks
 
 let isSlashOpt (opt: string) =
-    opt[0] = '/' && (opt.Length = 1 || not (opt[ 1.. ].Contains "/"))
+    opt[0] = '/' && (opt.Length = 1 || not (opt[1..].Contains "/"))
 
 module ResponseFile =
 
@@ -270,7 +270,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
         let optArgs = String.Join(":", opts[1..])
 
         let opt =
-            if option = "" then
+            if String.IsNullOrEmpty(option) then
                 ""
             // if it doesn't start with a '-' or '/', reject outright
             elif option[0] <> '-' && option[0] <> '/' then
@@ -298,13 +298,13 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
         opt, token, optArgs
 
     let getOptionArg compilerOption (argString: string) =
-        if argString = "" then
+        if String.IsNullOrEmpty(argString) then
             errorR (Error(FSComp.SR.buildOptionRequiresParameter (compilerOptionUsage compilerOption), rangeCmdArgs))
 
         argString
 
     let getOptionArgList compilerOption (argString: string) =
-        if argString = "" then
+        if String.IsNullOrEmpty(argString) then
             errorR (Error(FSComp.SR.buildOptionRequiresParameter (compilerOptionUsage compilerOption), rangeCmdArgs))
             []
         else
@@ -371,27 +371,27 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 
             let rec attempt l =
                 match l with
-                | CompilerOption (s, _, OptionConsoleOnly f, d, _) :: _ when option = s ->
+                | CompilerOption(s, _, OptionConsoleOnly f, d, _) :: _ when option = s ->
                     reportDeprecatedOption d
                     f blocks
                     t
-                | CompilerOption (s, _, OptionUnit f, d, _) :: _ when optToken = s && argString = "" ->
+                | CompilerOption(s, _, OptionUnit f, d, _) :: _ when optToken = s && String.IsNullOrEmpty(argString) ->
                     reportDeprecatedOption d
                     f ()
                     t
-                | CompilerOption (s, _, OptionSwitch f, d, _) :: _ when getSwitchOpt optToken = s && argString = "" ->
+                | CompilerOption(s, _, OptionSwitch f, d, _) :: _ when getSwitchOpt optToken = s && String.IsNullOrEmpty(argString) ->
                     reportDeprecatedOption d
                     f (getSwitch opt)
                     t
-                | CompilerOption (s, _, OptionSet f, d, _) :: _ when optToken = s && argString = "" ->
+                | CompilerOption(s, _, OptionSet f, d, _) :: _ when optToken = s && String.IsNullOrEmpty(argString) ->
                     reportDeprecatedOption d
                     f.Value <- true
                     t
-                | CompilerOption (s, _, OptionClear f, d, _) :: _ when optToken = s && argString = "" ->
+                | CompilerOption(s, _, OptionClear f, d, _) :: _ when optToken = s && String.IsNullOrEmpty(argString) ->
                     reportDeprecatedOption d
                     f.Value <- false
                     t
-                | CompilerOption (s, _, OptionString f, d, _) as compilerOption :: _ when optToken = s ->
+                | CompilerOption(s, _, OptionString f, d, _) as compilerOption :: _ when optToken = s ->
                     reportDeprecatedOption d
                     let oa = getOptionArg compilerOption argString
 
@@ -399,7 +399,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
                         f (getOptionArg compilerOption oa)
 
                     t
-                | CompilerOption (s, _, OptionInt f, d, _) as compilerOption :: _ when optToken = s ->
+                | CompilerOption(s, _, OptionInt f, d, _) as compilerOption :: _ when optToken = s ->
                     reportDeprecatedOption d
                     let oa = getOptionArg compilerOption argString
 
@@ -413,7 +413,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
                         )
 
                     t
-                | CompilerOption (s, _, OptionFloat f, d, _) as compilerOption :: _ when optToken = s ->
+                | CompilerOption(s, _, OptionFloat f, d, _) as compilerOption :: _ when optToken = s ->
                     reportDeprecatedOption d
                     let oa = getOptionArg compilerOption argString
 
@@ -427,11 +427,11 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
                         )
 
                     t
-                | CompilerOption (s, _, OptionRest f, d, _) :: _ when optToken = s ->
+                | CompilerOption(s, _, OptionRest f, d, _) :: _ when optToken = s ->
                     reportDeprecatedOption d
                     List.iter f t
                     []
-                | CompilerOption (s, _, OptionIntList f, d, _) as compilerOption :: _ when optToken = s ->
+                | CompilerOption(s, _, OptionIntList f, d, _) as compilerOption :: _ when optToken = s ->
                     reportDeprecatedOption d
                     let al = getOptionArgList compilerOption argString
 
@@ -448,7 +448,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
                             al
 
                     t
-                | CompilerOption (s, _, OptionIntListSwitch f, d, _) as compilerOption :: _ when getSwitchOpt optToken = s ->
+                | CompilerOption(s, _, OptionIntListSwitch f, d, _) as compilerOption :: _ when getSwitchOpt optToken = s ->
                     reportDeprecatedOption d
                     let al = getOptionArgList compilerOption argString
 
@@ -468,7 +468,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 
                     t
                 // here
-                | CompilerOption (s, _, OptionStringList f, d, _) as compilerOption :: _ when optToken = s ->
+                | CompilerOption(s, _, OptionStringList f, d, _) as compilerOption :: _ when optToken = s ->
                     reportDeprecatedOption d
                     let al = getOptionArgList compilerOption argString
 
@@ -476,7 +476,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
                         List.iter f (getOptionArgList compilerOption argString)
 
                     t
-                | CompilerOption (s, _, OptionStringListSwitch f, d, _) as compilerOption :: _ when getSwitchOpt optToken = s ->
+                | CompilerOption(s, _, OptionStringListSwitch f, d, _) as compilerOption :: _ when getSwitchOpt optToken = s ->
                     reportDeprecatedOption d
                     let al = getOptionArgList compilerOption argString
 
@@ -485,7 +485,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
                         List.iter (fun s -> f s switch) (getOptionArgList compilerOption argString)
 
                     t
-                | CompilerOption (_, _, OptionGeneral (pred, exec), d, _) :: _ when pred args ->
+                | CompilerOption(_, _, OptionGeneral(pred, exec), d, _) :: _ when pred args ->
                     reportDeprecatedOption d
                     let rest = exec args in
                     rest // arguments taken, rest remaining
@@ -568,9 +568,12 @@ let SetTailcallSwitch (tcConfigB: TcConfigBuilder) switch =
 let SetDeterministicSwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.deterministic <- (switch = OptionSwitch.On)
 
+let SetRealsig (tcConfigB: TcConfigBuilder) switch =
+    tcConfigB.realsig <- (switch = OptionSwitch.On)
+
 let SetReferenceAssemblyOnlySwitch (tcConfigB: TcConfigBuilder) switch =
     match tcConfigB.emitMetadataAssembly with
-    | MetadataAssemblyGeneration.None when tcConfigB.standalone = false && tcConfigB.extraStaticLinkRoots.IsEmpty ->
+    | MetadataAssemblyGeneration.None when (not tcConfigB.standalone) && tcConfigB.extraStaticLinkRoots.IsEmpty ->
         tcConfigB.emitMetadataAssembly <-
             if (switch = OptionSwitch.On) then
                 MetadataAssemblyGeneration.ReferenceOnly
@@ -580,7 +583,7 @@ let SetReferenceAssemblyOnlySwitch (tcConfigB: TcConfigBuilder) switch =
 
 let SetReferenceAssemblyOutSwitch (tcConfigB: TcConfigBuilder) outputPath =
     match tcConfigB.emitMetadataAssembly with
-    | MetadataAssemblyGeneration.None when tcConfigB.standalone = false && tcConfigB.extraStaticLinkRoots.IsEmpty ->
+    | MetadataAssemblyGeneration.None when (not tcConfigB.standalone) && tcConfigB.extraStaticLinkRoots.IsEmpty ->
         if FileSystem.IsInvalidPathShim outputPath then
             error (Error(FSComp.SR.optsInvalidRefOut (), rangeCmdArgs))
         else
@@ -747,13 +750,7 @@ let inputFileFlagsBoth (tcConfigB: TcConfigBuilder) =
             None,
             Some(FSComp.SR.optsReference ())
         )
-        CompilerOption(
-            "compilertool",
-            tagFile,
-            OptionString(fun s -> tcConfigB.AddCompilerToolsByPath s),
-            None,
-            Some(FSComp.SR.optsCompilerTool ())
-        )
+        CompilerOption("compilertool", tagFile, OptionString tcConfigB.AddCompilerToolsByPath, None, Some(FSComp.SR.optsCompilerTool ()))
     ]
 
 let inputFileFlagsFsc tcConfigB = inputFileFlagsBoth tcConfigB
@@ -846,6 +843,14 @@ let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) =
             OptionStringList(fun n -> tcConfigB.TurnWarningOn(rangeCmdArgs, trimFS n)),
             None,
             Some(FSComp.SR.optsWarnOn ())
+        )
+
+        CompilerOption(
+            "checknulls",
+            tagNone,
+            OptionSwitch(fun switch -> tcConfigB.checkNullness <- switch = OptionSwitch.On),
+            None,
+            Some(FSComp.SR.optsCheckNulls ())
         )
 
         CompilerOption(
@@ -981,13 +986,7 @@ let resourcesFlagsFsc (tcConfigB: TcConfigBuilder) =
             Some(FSComp.SR.optsNowin32manifest ())
         )
 
-        CompilerOption(
-            "resource",
-            tagResInfo,
-            OptionString(fun s -> tcConfigB.AddEmbeddedResource s),
-            None,
-            Some(FSComp.SR.optsResource ())
-        )
+        CompilerOption("resource", tagResInfo, OptionString tcConfigB.AddEmbeddedResource, None, Some(FSComp.SR.optsResource ()))
 
         CompilerOption(
             "linkresource",
@@ -1019,13 +1018,7 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
         [
             CompilerOption("embed", tagNone, OptionSwitch(SetEmbedAllSourceSwitch tcConfigB), None, Some(FSComp.SR.optsEmbedAllSource ()))
 
-            CompilerOption(
-                "embed",
-                tagFileList,
-                OptionStringList(fun f -> tcConfigB.AddEmbeddedSourceFile f),
-                None,
-                Some(FSComp.SR.optsEmbedSource ())
-            )
+            CompilerOption("embed", tagFileList, OptionStringList tcConfigB.AddEmbeddedSourceFile, None, Some(FSComp.SR.optsEmbedSource ()))
 
             CompilerOption("sourcelink", tagFile, OptionString(fun f -> tcConfigB.sourceLink <- f), None, Some(FSComp.SR.optsSourceLink ()))
         ]
@@ -1043,6 +1036,8 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
                 None,
                 Some(FSComp.SR.optsDeterministic ())
             )
+
+            CompilerOption("realsig", tagNone, OptionSwitch(SetRealsig tcConfigB), None, Some(FSComp.SR.optsRealsig ()))
 
             CompilerOption("pathmap", tagPathMap, OptionStringList(AddPathMapping tcConfigB), None, Some(FSComp.SR.optsPathMap ()))
 
@@ -2186,8 +2181,8 @@ let GetAbbrevFlagSet tcConfigB isFsc =
 
     for c in ((if isFsc then abbreviatedFlagsFsc else abbreviatedFlagsFsi) tcConfigB) do
         match c with
-        | CompilerOption (arg, _, OptionString _, _, _)
-        | CompilerOption (arg, _, OptionStringList _, _, _) -> argList <- argList @ [ "-" + arg; "/" + arg ]
+        | CompilerOption(arg, _, OptionString _, _, _)
+        | CompilerOption(arg, _, OptionStringList _, _, _) -> argList <- argList @ [ "-" + arg; "/" + arg ]
         | _ -> ()
 
     Set.ofList argList
@@ -2217,7 +2212,7 @@ let PostProcessCompilerArgs (abbrevArgs: string Set) (args: string[]) =
 
 let testingAndQAFlags _tcConfigB =
     [
-        CompilerOption("dumpAllCommandLineOptions", tagNone, OptionConsoleOnly(fun blocks -> DumpCompilerOptionBlocks blocks), None, None) // "Command line options")
+        CompilerOption("dumpAllCommandLineOptions", tagNone, OptionConsoleOnly(DumpCompilerOptionBlocks), None, None) // "Command line options")
     ]
 
 // Core compiler options, overview
@@ -2279,7 +2274,7 @@ let GetCoreFscCompilerOptions (tcConfigB: TcConfigBuilder) =
 let GetCoreServiceCompilerOptions (tcConfigB: TcConfigBuilder) =
     let isConsoleOnlyOption =
         function
-        | CompilerOption (_, _, OptionConsoleOnly _, _, _) -> true
+        | CompilerOption(_, _, OptionConsoleOnly _, _, _) -> true
         | _ -> false
 
     List.map (FilterCompilerOptionBlock(isConsoleOnlyOption >> not)) (GetCoreFscCompilerOptions tcConfigB)
@@ -2334,7 +2329,7 @@ let ApplyCommandLineArgs (tcConfigB: TcConfigBuilder, sourceFiles: string list, 
 
         ParseCompilerOptions(collect, GetCoreServiceCompilerOptions tcConfigB, argv)
         sourceFilesAcc |> CheckAndReportSourceFileDuplicates
-    with e ->
+    with RecoverableException e ->
         errorRecovery e range0
         sourceFiles
 
@@ -2344,25 +2339,25 @@ let ApplyCommandLineArgs (tcConfigB: TcConfigBuilder, sourceFiles: string list, 
 
 let private SimulateException simulateConfig =
     match simulateConfig with
-    | Some ("fsc-oom") -> raise (OutOfMemoryException())
-    | Some ("fsc-an") -> raise (ArgumentNullException("simulated"))
-    | Some ("fsc-invop") -> raise (InvalidOperationException())
-    | Some ("fsc-av") -> raise (AccessViolationException())
-    | Some ("fsc-aor") -> raise (ArgumentOutOfRangeException())
-    | Some ("fsc-dv0") -> raise (DivideByZeroException())
-    | Some ("fsc-nfn") -> raise (NotFiniteNumberException())
-    | Some ("fsc-oe") -> raise (OverflowException())
-    | Some ("fsc-atmm") -> raise (ArrayTypeMismatchException())
-    | Some ("fsc-bif") -> raise (BadImageFormatException())
-    | Some ("fsc-knf") -> raise (System.Collections.Generic.KeyNotFoundException())
-    | Some ("fsc-ior") -> raise (IndexOutOfRangeException())
-    | Some ("fsc-ic") -> raise (InvalidCastException())
-    | Some ("fsc-ip") -> raise (InvalidProgramException())
-    | Some ("fsc-ma") -> raise (MemberAccessException())
-    | Some ("fsc-ni") -> raise (NotImplementedException())
-    | Some ("fsc-nr") -> raise (NullReferenceException())
-    | Some ("fsc-oc") -> raise (OperationCanceledException())
-    | Some ("fsc-fail") -> failwith "simulated"
+    | Some("fsc-oom") -> raise (OutOfMemoryException())
+    | Some("fsc-an") -> raise (ArgumentNullException("simulated"))
+    | Some("fsc-invop") -> raise (InvalidOperationException())
+    | Some("fsc-av") -> raise (AccessViolationException())
+    | Some("fsc-aor") -> raise (ArgumentOutOfRangeException())
+    | Some("fsc-dv0") -> raise (DivideByZeroException())
+    | Some("fsc-nfn") -> raise (NotFiniteNumberException())
+    | Some("fsc-oe") -> raise (OverflowException())
+    | Some("fsc-atmm") -> raise (ArrayTypeMismatchException())
+    | Some("fsc-bif") -> raise (BadImageFormatException())
+    | Some("fsc-knf") -> raise (System.Collections.Generic.KeyNotFoundException())
+    | Some("fsc-ior") -> raise (IndexOutOfRangeException())
+    | Some("fsc-ic") -> raise (InvalidCastException())
+    | Some("fsc-ip") -> raise (InvalidProgramException())
+    | Some("fsc-ma") -> raise (MemberAccessException())
+    | Some("fsc-ni") -> raise (NotImplementedException())
+    | Some("fsc-nr") -> raise (NullReferenceException())
+    | Some("fsc-oc") -> raise (OperationCanceledException())
+    | Some("fsc-fail") -> failwith "simulated"
     | _ -> ()
 
 let ReportTime =
@@ -2404,7 +2399,7 @@ let DoWithColor newColor f =
     | true, None ->
         // could not get console colours, so no attempt to change colours, can not set them back
         f ()
-    | true, Some (c, _) ->
+    | true, Some(c, _) ->
         try
             ignoreFailureOnMono1_1_16 (fun () -> Console.ForegroundColor <- newColor)
             f ()
@@ -2414,7 +2409,7 @@ let DoWithColor newColor f =
 let DoWithDiagnosticColor severity f =
     match foreBackColor () with
     | None -> f ()
-    | Some (_, backColor) ->
+    | Some(_, backColor) ->
         let infoColor =
             if backColor = ConsoleColor.White then
                 ConsoleColor.Blue

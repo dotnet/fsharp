@@ -35,7 +35,7 @@ module AttributeHelpers =
         | None -> None
         | Some attribRef ->
             match TryFindFSharpAttribute g attribRef attribs with
-            | Some (Attrib (_, _, [ AttribStringArg s ], _, _, _, _)) -> Some s
+            | Some(Attrib(_, _, [ AttribStringArg s ], _, _, _, _)) -> Some s
             | _ -> None
 
     let TryFindIntAttribute (g: TcGlobals) attrib attribs =
@@ -43,7 +43,7 @@ module AttributeHelpers =
         | None -> None
         | Some attribRef ->
             match TryFindFSharpAttribute g attribRef attribs with
-            | Some (Attrib (_, _, [ AttribInt32Arg i ], _, _, _, _)) -> Some i
+            | Some(Attrib(_, _, [ AttribInt32Arg i ], _, _, _, _)) -> Some i
             | _ -> None
 
     let TryFindBoolAttribute (g: TcGlobals) attrib attribs =
@@ -51,14 +51,15 @@ module AttributeHelpers =
         | None -> None
         | Some attribRef ->
             match TryFindFSharpAttribute g attribRef attribs with
-            | Some (Attrib (_, _, [ AttribBoolArg p ], _, _, _, _)) -> Some p
+            | Some(Attrib(_, _, [ AttribBoolArg p ], _, _, _, _)) -> Some p
             | _ -> None
 
+    [<return: Struct>]
     let (|ILVersion|_|) (versionString: string) =
         try
-            Some(parseILVersion versionString)
+            ValueSome(parseILVersion versionString)
         with e ->
-            None
+            ValueNone
 
 //----------------------------------------------------------------------------
 // ValidateKeySigningAttributes, GetStrongNameSigner
@@ -134,7 +135,7 @@ let ValidateKeySigningAttributes (tcConfig: TcConfig, tcGlobals, topAttrs) =
 
 /// Get the object used to perform strong-name signing
 let GetStrongNameSigner signingInfo =
-    let (StrongNameSigningInfo (delaysign, publicsign, signer, container)) = signingInfo
+    let (StrongNameSigningInfo(delaysign, publicsign, signer, container)) = signingInfo
     // REVIEW: favor the container over the key file - C# appears to do this
     match container with
     | Some container -> Some(ILStrongNameSigner.OpenKeyContainer container)
@@ -238,7 +239,7 @@ module MainModuleBuilder =
 
         match findStringAttr attrName with
         | None -> assemblyVersion
-        | Some (AttributeHelpers.ILVersion v) -> v
+        | Some(AttributeHelpers.ILVersion v) -> v
         | Some _ ->
             // Warning will be reported by CheckExpressions.fs
             assemblyVersion
@@ -252,7 +253,7 @@ module MainModuleBuilder =
         match findStringAttr attrName with
         | None
         | Some "" -> fileVersion |> toDotted
-        | Some (AttributeHelpers.ILVersion v) -> v |> toDotted
+        | Some(AttributeHelpers.ILVersion v) -> v |> toDotted
         | Some v ->
             // Warning will be reported by CheckExpressions.fs
             v
@@ -409,7 +410,7 @@ module MainModuleBuilder =
                     yield! codegenResults.ilAssemAttrs
 
                     if Option.isSome pdbfile then
-                        tcGlobals.mkDebuggableAttributeV2 (tcConfig.jitTracking, disableJitOptimizations, false (* enableEnC *) )
+                        tcGlobals.mkDebuggableAttributeV2 (tcConfig.jitTracking, disableJitOptimizations)
                     yield! reflectedDefinitionAttrs
                 ]
 
@@ -584,19 +585,22 @@ module MainModuleBuilder =
                 [ resource ]
 
         // a user cannot specify both win32res and win32manifest
-        if not (tcConfig.win32manifest = "") && not (tcConfig.win32res = "") then
+        if
+            not (String.IsNullOrEmpty(tcConfig.win32manifest))
+            && not (String.IsNullOrEmpty(tcConfig.win32res))
+        then
             error (Error(FSComp.SR.fscTwoResourceManifests (), rangeCmdArgs))
 
         let win32Manifest =
             // use custom manifest if provided
-            if not (tcConfig.win32manifest = "") then
+            if not (String.IsNullOrEmpty(tcConfig.win32manifest)) then
                 tcConfig.win32manifest
 
             // don't embed a manifest if target is not an exe, if manifest is specifically excluded, if another native resource is being included, or if running on mono
             elif
                 not (tcConfig.target.IsExe)
                 || not (tcConfig.includewin32manifest)
-                || not (tcConfig.win32res = "")
+                || not (String.IsNullOrEmpty(tcConfig.win32res))
             then
                 ""
             // otherwise, include the default manifest
@@ -618,9 +622,9 @@ module MainModuleBuilder =
             [
                 for av in assemblyVersionResources assemblyVersion do
                     ILNativeResource.Out av
-                if not (tcConfig.win32res = "") then
+                if not (String.IsNullOrEmpty(tcConfig.win32res)) then
                     ILNativeResource.Out(FileSystem.OpenFileForReadShim(tcConfig.win32res).ReadAllBytes())
-                if tcConfig.includewin32manifest && not (win32Manifest = "") then
+                if tcConfig.includewin32manifest && not (String.IsNullOrEmpty(win32Manifest)) then
                     ILNativeResource.Out
                         [|
                             yield! ResFileFormat.ResFileHeader()
@@ -631,8 +635,8 @@ module MainModuleBuilder =
                                 ))
                         |]
                 if
-                    tcConfig.win32res = ""
-                    && tcConfig.win32icon <> ""
+                    String.IsNullOrEmpty(tcConfig.win32res)
+                    && not (String.IsNullOrEmpty(tcConfig.win32icon))
                     && tcConfig.target <> CompilerTarget.Dll
                 then
                     use ms = new MemoryStream()

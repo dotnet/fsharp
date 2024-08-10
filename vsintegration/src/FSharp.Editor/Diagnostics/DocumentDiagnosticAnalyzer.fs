@@ -16,7 +16,7 @@ open FSharp.Compiler.Diagnostics
 open CancellableTasks
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
-[<RequireQualifiedAccess>]
+[<Struct; NoComparison; NoEquality; RequireQualifiedAccess>]
 type internal DiagnosticsType =
     | Syntax
     | Semantic
@@ -76,6 +76,8 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
 
             let! parseResults = document.GetFSharpParseResultsAsync("GetDiagnostics")
 
+            // Old logic, rollback once https://github.com/dotnet/fsharp/issues/15972 is fixed (likely on Roslyn side, since we're returning diagnostics, but they're not getting to VS).
+            (*
             match diagnosticType with
             | DiagnosticsType.Syntax ->
                 for diagnostic in parseResults.Diagnostics do
@@ -88,11 +90,34 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
                     errors.Add(diagnostic) |> ignore
 
                 errors.ExceptWith(parseResults.Diagnostics)
+            *)
 
-            if errors.Count = 0 then
+            // TODO: see comment above, this is a workaround for issue we have in current VS/Roslyn
+            match diagnosticType with
+            | DiagnosticsType.Syntax ->
+                for diagnostic in parseResults.Diagnostics do
+                    errors.Add(diagnostic) |> ignore
+
+            // We always add syntactic, and do not exclude them when semantic is requested
+            | DiagnosticsType.Semantic ->
+                for diagnostic in parseResults.Diagnostics do
+                    errors.Add(diagnostic) |> ignore
+
+                let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync("GetDiagnostics")
+
+                for diagnostic in checkResults.Diagnostics do
+                    errors.Add(diagnostic) |> ignore
+
+            let! unnecessaryParentheses =
+                match diagnosticType with
+                | DiagnosticsType.Syntax when document.Project.IsFsharpRemoveParensEnabled ->
+                    UnnecessaryParenthesesDiagnosticAnalyzer.GetDiagnostics document
+                | _ -> CancellableTask.singleton ImmutableArray.Empty
+
+            if errors.Count = 0 && unnecessaryParentheses.IsEmpty then
                 return ImmutableArray.Empty
             else
-                let iab = ImmutableArray.CreateBuilder(errors.Count)
+                let iab = ImmutableArray.CreateBuilder(errors.Count + unnecessaryParentheses.Length)
 
                 for diagnostic in errors do
                     if diagnostic.StartLine <> 0 && diagnostic.EndLine <> 0 then
@@ -116,6 +141,7 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
                         let location = Location.Create(filePath, correctedTextSpan, linePositionSpan)
                         iab.Add(RoslynHelpers.ConvertError(diagnostic, location))
 
+                iab.AddRange unnecessaryParentheses
                 return iab.ToImmutable()
         }
 
@@ -125,12 +151,12 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
             if document.Project.IsFSharpMetadata then
                 Task.FromResult ImmutableArray.Empty
             else
-                cancellableTask { return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax) }
+                FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
                 |> CancellableTask.start cancellationToken
 
         member _.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) : Task<ImmutableArray<Diagnostic>> =
             if document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript then
                 Task.FromResult ImmutableArray.Empty
             else
-                cancellableTask { return! FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic) }
+                FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
                 |> CancellableTask.start cancellationToken

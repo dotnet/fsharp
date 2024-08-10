@@ -134,15 +134,15 @@ module ByrefSafetyAnalysis =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3237, Line 23, Col 18, Line 23, Col 28, "Cannot call the byref extension method 'Test2. The first parameter requires the value to be mutable or a non-readonly byref type.")
+            (Error 3237, Line 23, Col 18, Line 23, Col 28, "Cannot call the byref extension method 'Test2. 'this' parameter requires the value to be mutable or a non-readonly byref type.")
             (Error 1, Line 24, Col 9, Line 24, Col 11, "Type mismatch. Expecting a
     'byref<DateTime>'    
 but given a
     'inref<DateTime>'    
 The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
-            (Error 3237, Line 28, Col 9, Line 28, Col 20, "Cannot call the byref extension method 'Change. The first parameter requires the value to be mutable or a non-readonly byref type.")
-            (Error 3237, Line 33, Col 19, Line 33, Col 30, "Cannot call the byref extension method 'Test2. The first parameter requires the value to be mutable or a non-readonly byref type.")
-            (Error 3237, Line 39, Col 9, Line 39, Col 21, "Cannot call the byref extension method 'Change. The first parameter requires the value to be mutable or a non-readonly byref type.")
+            (Error 3237, Line 28, Col 9, Line 28, Col 20, "Cannot call the byref extension method 'Change. 'this' parameter requires the value to be mutable or a non-readonly byref type.")
+            (Error 3237, Line 33, Col 19, Line 33, Col 30, "Cannot call the byref extension method 'Test2. 'this' parameter requires the value to be mutable or a non-readonly byref type.")
+            (Error 3237, Line 39, Col 9, Line 39, Col 21, "Cannot call the byref extension method 'Change. 'this' parameter requires the value to be mutable or a non-readonly byref type.")
             (Error 3239, Line 43, Col 17, Line 43, Col 29, "Cannot partially apply the extension method 'NotChange' because the first parameter is a byref type.")
             (Error 3239, Line 44, Col 17, Line 44, Col 24, "Cannot partially apply the extension method 'Test' because the first parameter is a byref type.")
             (Error 3239, Line 45, Col 17, Line 45, Col 26, "Cannot partially apply the extension method 'Change' because the first parameter is a byref type.")
@@ -490,7 +490,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         
         [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturnMember", Includes=[|"TestStructRecord.fs"|])>]
         let``TestStructRecord`` compilation =
-            compilation |> withNoWarn 988 |> verifyCompileAndRun |> shouldSucceed
+            compilation |> withNoWarn 988 |> withNoWarn 3560 |> verifyCompileAndRun |> shouldSucceed
     
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NoTailcallToByrefsWithModReq.fs"|])>]
     let``NoTailcallToByrefsWithModReq`` compilation =

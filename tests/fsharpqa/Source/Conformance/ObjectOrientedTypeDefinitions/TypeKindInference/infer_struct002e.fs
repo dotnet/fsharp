@@ -5,8 +5,8 @@
 //<Expects id="FS0926" status="error">multiple kinds</Expects>
 
 
-//infer_struct002e.fs(13,6): error FS0191: The kind of the type specified by its attributes does not match the kind implie
-//d by its definition.
+//infer_struct002e.fs(13,6): error FS0191: The kind of the type specified by
+//its attributes does not match the kind implied by its definition.
 //
 //infer_struct002e.fs(20,6): error FS0191: The attributes of this type specify multiple kinds for the type.
 

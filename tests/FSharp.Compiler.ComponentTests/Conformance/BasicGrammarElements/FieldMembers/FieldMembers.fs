@@ -34,8 +34,8 @@ module FieldMembers =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 880, Line 11, Col 20, Line 11, Col 33, "Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.")
-            (Error 881, Line 11, Col 20, Line 11, Col 33, "Static 'val' fields in types must be mutable, private and marked with the '[<DefaultValue>]' attribute. They are initialized to the 'null' or 'zero' value for their type. Consider also using a 'static let mutable' binding in a class type.")
+            (Error 880, Line 11, Col 20, Line 11, Col 27, "Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.")
+            (Error 881, Line 11, Col 20, Line 11, Col 27, "Static 'val' fields in types must be mutable, private and marked with the '[<DefaultValue>]' attribute. They are initialized to the 'null' or 'zero' value for their type. Consider also using a 'static let mutable' binding in a class type.")
         ]
 
     // SOURCE=E_StaticField02a.fs	# E_StaticField02a.fs
@@ -45,8 +45,8 @@ module FieldMembers =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 881, Line 7, Col 32, Line 7, Col 49, "Static 'val' fields in types must be mutable, private and marked with the '[<DefaultValue>]' attribute. They are initialized to the 'null' or 'zero' value for their type. Consider also using a 'static let mutable' binding in a class type.")
-            (Error 881, Line 16, Col 32, Line 16, Col 49, "Static 'val' fields in types must be mutable, private and marked with the '[<DefaultValue>]' attribute. They are initialized to the 'null' or 'zero' value for their type. Consider also using a 'static let mutable' binding in a class type.")
+            (Error 881, Line 7, Col 32, Line 7, Col 40, "Static 'val' fields in types must be mutable, private and marked with the '[<DefaultValue>]' attribute. They are initialized to the 'null' or 'zero' value for their type. Consider also using a 'static let mutable' binding in a class type.")
+            (Error 881, Line 16, Col 32, Line 16, Col 40, "Static 'val' fields in types must be mutable, private and marked with the '[<DefaultValue>]' attribute. They are initialized to the 'null' or 'zero' value for their type. Consider also using a 'static let mutable' binding in a class type.")
         ]
 
     // SOURCE=StaticField01.fs		# StaticField01.fs

@@ -6,7 +6,6 @@ open System
 open System.Composition
 open System.Threading
 
-open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
@@ -40,6 +39,8 @@ type internal FSharpAddExplicitTypeToParameterRefactoring [<ImportingConstructor
                     false,
                     nameof (FSharpAddExplicitTypeToParameterRefactoring)
                 )
+                |> CancellableTask.start ct
+                |> Async.AwaitTask
 
             let! parseFileResults, checkFileResults =
                 document.GetFSharpParseAndCheckResultsAsync(nameof (FSharpAddExplicitTypeToParameterRefactoring))

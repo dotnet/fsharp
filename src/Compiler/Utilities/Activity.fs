@@ -33,6 +33,13 @@ module internal Activity =
         let gc2 = "gc2"
         let outputDllFile = "outputDllFile"
         let buildPhase = "buildPhase"
+        let version = "version"
+        let stackGuardName = "stackGuardName"
+        let stackGuardCurrentDepth = "stackGuardCurrentDepth"
+        let stackGuardMaxDepth = "stackGuardMaxDepth"
+        let callerMemberName = "callerMemberName"
+        let callerFilePath = "callerFilePath"
+        let callerLineNumber = "callerLineNumber"
 
         let AllKnownTags =
             [|
@@ -49,25 +56,32 @@ module internal Activity =
                 gc2
                 outputDllFile
                 buildPhase
+                stackGuardName
+                stackGuardCurrentDepth
+                stackGuardMaxDepth
+                callerMemberName
+                callerFilePath
+                callerLineNumber
             |]
 
     module Events =
         let cacheHit = "cacheHit"
 
-    type System.Diagnostics.Activity with
+    type Diagnostics.Activity with
 
         member this.RootId =
             let rec rootID (act: Activity) =
-                if isNull act.ParentId then act.Id else rootID act.Parent
+                match act.Parent with
+                | null -> act.Id
+                | parent -> rootID parent
 
             rootID this
 
         member this.Depth =
             let rec depth (act: Activity) acc =
-                if isNull act.ParentId then
-                    acc
-                else
-                    depth act.Parent (acc + 1)
+                match act.Parent with
+                | null -> acc
+                | parent -> depth parent (acc + 1)
 
             depth this 0
 
@@ -84,11 +98,13 @@ module internal Activity =
 
             activity.Start()
 
-    let startNoTags (name: string) : IDisposable = activitySource.StartActivity(name)
+    let startNoTags (name: string) : IDisposable = activitySource.StartActivity name
 
     let addEvent name =
-        if Activity.Current <> null && Activity.Current.Source = activitySource then
-            Activity.Current.AddEvent(ActivityEvent(name)) |> ignore
+        match Activity.Current with
+        | null -> ()
+        | activity when activity.Source = activitySource -> activity.AddEvent(ActivityEvent name) |> ignore
+        | _ -> ()
 
     module Profiling =
 
@@ -214,7 +230,7 @@ module internal Activity =
             appendWithLeadingComma (a.RootId)
 
             Tags.AllKnownTags
-            |> Array.iter (fun t -> a.GetTagItem(t) |> escapeStringForCsv |> appendWithLeadingComma)
+            |> Array.iter (a.GetTagItem >> escapeStringForCsv >> appendWithLeadingComma)
 
             sb.ToString()
 
@@ -231,13 +247,12 @@ module internal Activity =
             let sw = new StreamWriter(path = pathToFile, append = true)
 
             let msgQueue =
-                MailboxProcessor<string>.Start
-                    (fun inbox ->
-                        async {
-                            while true do
-                                let! msg = inbox.Receive()
-                                do! sw.WriteLineAsync(msg) |> Async.AwaitTask
-                        })
+                MailboxProcessor<string>.Start(fun inbox ->
+                    async {
+                        while true do
+                            let! msg = inbox.Receive()
+                            do! sw.WriteLineAsync(msg) |> Async.AwaitTask
+                    })
 
             let l =
                 new ActivityListener(

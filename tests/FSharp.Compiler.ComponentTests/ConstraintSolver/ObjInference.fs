@@ -34,13 +34,14 @@ let x = deserialize "" |> f""", 3, 9, 3, 28
     [<Theory>]
     [<MemberData(nameof(warningCases))>]
     let ``Warning is emitted when type Obj is inferred``(code: string, line1: int, col1: int, line2: int, col2: int) =
+        let code = $"module M\n{code}"
         FSharp code
         |> withErrorRanges
         |> withWarnOn 3559
-        |> withLangVersionPreview
-        |> typecheck
+        |> withLangVersion80
+        |> compile
         |> shouldFail
-        |> withSingleDiagnostic (Information 3559, Line line1, Col col1, Line line2, Col col2, message)
+        |> withSingleDiagnostic (Warning 3559, Line (line1 + 1), Col col1, Line (line2 + 1), Col col2, message)
 
     let quotableNoWarningCases =
         [
@@ -76,7 +77,7 @@ let f () = x = x |> ignore""" // measure is inferred as 1, but that's not covere
     let ``Warning does not fire unless required``(code: string) =
         FSharp code
         |> withWarnOn 3559
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> typecheck
         |> shouldSucceed
 
@@ -93,7 +94,7 @@ let f () = x = x |> ignore""" // measure is inferred as 1, but that's not covere
         sprintf "%s |> ignore" expr
         |> FSharp
         |> withWarnOn 3559
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> typecheck
         |> shouldSucceed
 
@@ -103,20 +104,20 @@ let f () = x = x |> ignore""" // measure is inferred as 1, but that's not covere
         sprintf "<@ %s @> |> ignore" expr
         |> FSharp
         |> withWarnOn 3559
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> typecheck
         |> shouldSucceed
 
     [<Theory>]
     [<MemberData(nameof(quotableWarningCases))>]
     let ``Warn also inside quotations of acceptable code``(expr: string, line1: int, col1: int, line2: int, col2: int) =
-        sprintf "<@ %s @> |> ignore" expr
+        sprintf "module M\n<@ %s @> |> ignore" expr
         |> FSharp
         |> withWarnOn 3559
-        |> withLangVersionPreview
-        |> typecheck
+        |> withLangVersion80
+        |> compile
         |> shouldFail
-        |> withSingleDiagnostic (Information 3559, Line line1, Col (col1 + 3), Line line2, Col (col2 + 3), message)
+        |> withSingleDiagnostic (Warning 3559, Line (line1 + 1), Col (col1 + 3), Line (line2 + 1), Col (col2 + 3), message)
 
     [<Theory>]
     [<MemberData(nameof(quotableNoWarningCases))>]
@@ -124,7 +125,7 @@ let f () = x = x |> ignore""" // measure is inferred as 1, but that's not covere
         sprintf "<@ %s @> |> ignore" expr
         |> FSharp
         |> withWarnOn 3559
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> typecheck
         |> shouldSucceed
 
@@ -133,7 +134,7 @@ let f () = x = x |> ignore""" // measure is inferred as 1, but that's not covere
     let ``Warning is off by default``(expr: string, _: int, _: int, _: int, _: int) =
         expr
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> withOptions ["--warnaserror"]
         |> typecheck
         |> shouldSucceed

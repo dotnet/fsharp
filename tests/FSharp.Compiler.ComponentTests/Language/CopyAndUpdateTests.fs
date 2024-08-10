@@ -13,11 +13,43 @@ type RecTy = { D: NestdRecTy; E: string option }
 
 let t2 x = { x with D.B = "a"; D.B = "b" }
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Error 668, Line 6, Col 21, Line 6, Col 22, "The field 'B' appears twice in this record expression or pattern")
+        (Error 668, Line 6, Col 23, Line 6, Col 24, "The field 'B' appears multiple times in this record expression or pattern")
+    ]
+    
+[<Fact>]
+let ``Cannot update the same field appears multiple times in nested copy-and-update``() =
+    FSharp """
+type NestdRecTy = { B: string }
+
+type RecTy = { D: NestdRecTy; E: string option }
+
+let t2 x = { x with D.B = "a"; D.B = "b"; D.B = "c" }
+    """
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        (Error 668, Line 6, Col 23, Line 6, Col 24, "The field 'B' appears multiple times in this record expression or pattern")
+        (Error 668, Line 6, Col 34, Line 6, Col 35, "The field 'B' appears multiple times in this record expression or pattern")
+    ]
+    
+[<Fact>]
+let ``Cannot update the same field appears multiple times in nested copy-and-update 2``() =
+    FSharp """
+type NestdRecTy = { B: string; C: string }
+
+type RecTy = { D: NestdRecTy; E: string option }
+
+let t2 x = { x with D.B = "a"; D.C = ""; D.B = "c" ; D.C = "d" }
+    """
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        (Error 668, Line 6, Col 34, Line 6, Col 35, "The field 'C' appears multiple times in this record expression or pattern")
+        (Error 668, Line 6, Col 23, Line 6, Col 24, "The field 'B' appears multiple times in this record expression or pattern")
     ]
 
 [<Fact>]
@@ -33,7 +65,7 @@ let t2 x = { x with D.B = "a" }
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Error 3350, Line 6, Col 21, Line 6, Col 24, "Feature 'Nested record field copy-and-update' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.")
+        (Error 3350, Line 6, Col 21, Line 6, Col 24, "Feature 'Nested record field copy-and-update' is not available in F# 7.0. Please use language version 8.0 or greater.")
     ]
 
 [<Fact>]
@@ -49,7 +81,7 @@ type RecTy = { D: NestdRecTy; E: string option }
 
 let t2 x = { x with D.B.A = 1; D.C = "ads" }
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> withNoDebug
     |> withOptimize
     |> compile
@@ -106,7 +138,7 @@ if actual1 <> expected1 then
 if actual2 <> expected2 then
     failwith "actual2 does not equal expected2"
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> compileExeAndRun
     |> shouldSucceed
 
@@ -127,7 +159,7 @@ let expected = { ``A.B`` = "barAB"; A = { B = "barB" }; C = 42 }
 if actual <> expected then
     failwith "actual does not equal expected"
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> compileExeAndRun
     |> shouldSucceed
 
@@ -156,7 +188,7 @@ if actual1 <> expected1 then
 if actual2 <> expected2 then
     failwith "actual2 does not equal expected2"
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> compileExeAndRun
     |> shouldSucceed
 
@@ -187,7 +219,7 @@ if actual1 <> expected1 then
 if actual2 <> expected2 then
     failwith "actual2 does not equal expected2"
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> compileExeAndRun
     |> shouldSucceed
 
@@ -210,7 +242,7 @@ if actual1 <> expected1 then
 if actual2 <> expected2 then
     failwith "actual2 does not equal expected2"
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> compileExeAndRun
     |> shouldSucceed
 
@@ -247,7 +279,7 @@ let c3 = { U.G.U = Unchecked.defaultof<_>; I = 3 }
 
 let c4 = { U.U = Unchecked.defaultof<_>; I = 3 }
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldSucceed
 
@@ -268,7 +300,7 @@ let expected = { T = "a"; I = -1; U = {| a = { T = "a"; I = 2; U = {| a = { T = 
 if actual <> expected then
     failwith "actual does not equal expected"
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> compileExeAndRun
     |> shouldSucceed
 
@@ -289,7 +321,7 @@ let actual1 = { t1 with D.B = 1 }
 
 let actual2 = { t1 with D.C.A = 3; E = Some 1.0 }
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withResults [
@@ -333,7 +365,7 @@ let expected = {| R = { D = 2; E = None }; S = "May I be a string now?"; T = 4 |
 if actual <> expected then
     failwith "actual does not equal expected"
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> compileExeAndRun
     |> shouldSucceed
 
@@ -346,7 +378,7 @@ type RecTy = { D: int; E: {| A: int |} }
 
 let f x = { x with E.A = "May I be a string now?" }
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withResult {
@@ -378,7 +410,7 @@ let t5 (x: {| a: int; b: NestdRecTy |}) = {| x with b.C = "a" |}
 let t6 (x: {| a: int; b: NestdRecTy |}) = {| x with b.G.b = "a" |}
 let t7 (x: {| a: int; b: NestdRecTy |}) = {| x with c.D = "a" |}
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
@@ -390,3 +422,61 @@ let t7 (x: {| a: int; b: NestdRecTy |}) = {| x with c.D = "a" |}
         (Error 1129, Line 13, Col 57, Line 13, Col 58, "The record type '{| a: int |}' does not contain a label 'b'.")
         (Error 1129, Line 14, Col 53, Line 14, Col 54, "The record type '{| a: int; b: NestdRecTy |}' does not contain a label 'c'.")
     ]
+
+[<Fact>]
+let ``Nested copy-and-update works when the starting expression is not a simple identifier``() =
+    FSharp """
+module CopyAndUpdateTests
+
+type Record1 = { Foo: int; Bar: int; }
+
+[<AutoOpen>]
+module Module =
+    type Record2 = { Foo: Record1; G: string }
+    let item: Record2 = Unchecked.defaultof<Record2>
+
+ignore { Module.item with Foo.Foo = 3 }
+    """
+    |> withLangVersion80
+    |> typecheck
+    |> shouldSucceed
+
+[<Fact>]
+let ``Nested, anonymous copy-and-update works when the starting expression is not a simple identifier``() =
+    FSharp """
+module CopyAndUpdateTests
+
+type Record1 = { Foo: int; Bar: int; }
+
+[<AutoOpen>]
+module Module =
+    let item = {| Foo = Unchecked.defaultof<Record1> |}
+
+ignore {| Module.item with Foo.Foo = 3 |}
+    """
+    |> withLangVersion80
+    |> typecheck
+    |> shouldSucceed
+
+[<Fact>]
+let ``Nested copy-and-update evaluates the original expression once``() =
+    FSharp """
+module CopyAndUpdateTests
+
+type Record1 = { Foo: int; Bar: int; Baz: string }
+type Record2 = { Foo: Record1; A: int; B: int }
+
+let f () =
+    printf "once"
+    { A = 1; B = 2; Foo = { Foo = 99; Bar = 98; Baz = "a" } }
+
+let actual = { f () with Foo.Foo = 3; Foo.Baz = "b"; A = -1 }
+
+let expected = { A = -1; B = 2; Foo = { Foo = 3; Bar = 98; Baz = "b" } }
+
+if actual <> expected then
+    failwith "actual does not equal expected"
+    """
+    |> withLangVersion80
+    |> compileExeAndRun
+    |> verifyOutput "once"

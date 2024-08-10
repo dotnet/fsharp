@@ -13,13 +13,13 @@ ImplFile
                     (Class,
                      [ImplicitCtor
                         (Some (Private (3,7--3,14)), [],
-                         SimplePats ([], [], (3,15--3,17)), None,
+                         Const (Unit, (3,15--3,17)), None,
                          PreXmlDoc ((3,7), FSharp.Compiler.Xml.XmlDocCollector),
                          (3,5--3,6), { AsKeyword = None })], (4,4--5,7)), [],
                   Some
                     (ImplicitCtor
                        (Some (Private (3,7--3,14)), [],
-                        SimplePats ([], [], (3,15--3,17)), None,
+                        Const (Unit, (3,15--3,17)), None,
                         PreXmlDoc ((3,7), FSharp.Compiler.Xml.XmlDocCollector),
                         (3,5--3,6), { AsKeyword = None })), (3,5--5,7),
                   { LeadingKeyword = Type (3,0--3,4)

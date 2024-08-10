@@ -31,7 +31,7 @@ module ScriptRunner =
         let cu  = cu |> withDefines defaultDefines
         match cu with 
         | FS fsSource ->
-            File.Delete("test.ok")           
+            File.Delete("test.ok")
             let engine = createEngine (fsSource.Options |> Array.ofList,version)
             let res = evalScriptFromDiskInSharedSession engine cu
             match res with
@@ -79,6 +79,8 @@ module TestFrameworkAdapter =
         | LangVersion.V50 -> "5.0",bonusArgs
         | LangVersion.V60 -> "6.0",bonusArgs
         | LangVersion.V70 -> "7.0",bonusArgs
+        | LangVersion.V80 -> "8.0",bonusArgs
+        | LangVersion.V90 -> "9.0",bonusArgs
         | LangVersion.Preview -> "preview",bonusArgs
         | LangVersion.Latest  -> "latest", bonusArgs
         | LangVersion.SupportsMl -> "5.0",  "--mlcompatibility" :: bonusArgs       

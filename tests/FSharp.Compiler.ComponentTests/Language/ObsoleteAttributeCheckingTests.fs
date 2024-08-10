@@ -1,5 +1,6 @@
 namespace Language
 
+open FSharp.Test
 open Xunit
 open FSharp.Test.Compiler
 
@@ -347,6 +348,7 @@ type ButtonExtensions =
         { this with Text = text }
         """
         |> ignoreWarnings
+        |> withOptions ["--nowarn:3560"]
         |> compile
         |> shouldFail
         |> withDiagnostics [
@@ -590,6 +592,7 @@ let b = { Text = "Hello" }
 b.text("Hello 2") |> ignore
         """
         |> ignoreWarnings
+        |> withOptions ["--nowarn:3560"]
         |> compile
         |> shouldFail
         |> withDiagnostics [
@@ -1259,4 +1262,186 @@ let f (x: IFirst) = x.F()
             (Error 101, Line 9, Col 11, Line 9, Col 17, "This construct is deprecated. Use G instead")
             (Error 101, Line 13, Col 11, Line 13, Col 17, "This construct is deprecated. Use G instead")
             (Error 72, Line 13, Col 21, Line 13, Col 24, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute warning is taken into account in a constructor property assignment`` () =
+        Fsx """
+open System
+type JsonSerializerOptions() =
+    [<Obsolete("This is bad")>]
+    member val DefaultOptions = false with get, set
+    
+    member val UseCustomOptions = false with get, set
+    
+let options = JsonSerializerOptions(DefaultOptions = true, UseCustomOptions = false)
+let options2 = JsonSerializerOptions(DefaultOptions = true, DefaultOptions = false)
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 9, Col 37, Line 9, Col 51, "This construct is deprecated. This is bad")
+            (Error 364, Line 10, Col 16, Line 10, Col 84, "The named argument 'DefaultOptions' has been assigned more than one value")
+            (Warning 44, Line 10, Col 38, Line 10, Col 52, "This construct is deprecated. This is bad")
+            (Warning 44, Line 10, Col 61, Line 10, Col 75, "This construct is deprecated. This is bad")
+        ]
+        
+    [<Fact>]
+    let ``Obsolete attribute warning is not taken into account in prop setters that can be included in methods which are not constructors`` () =
+        Fsx """
+open System
+
+type JsonSerializerOptions() =
+    [<Obsolete("This is bad")>]
+    member val DefaultOptions = false with get, set
+    member val UseCustomOptions = false with get, set
+    member this.With() = this
+    
+let options = JsonSerializerOptions()
+let options2 =
+    options
+        .With(DefaultOptions = true)
+        .With(UseCustomOptions = false)
+        """
+        |> typecheck
+        |> withDiagnostics [
+            (Warning 44, Line 13, Col 15, Line 13, Col 29, "This construct is deprecated. This is bad")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute error is not taken into account in prop setters that can be included in methods which are not constructors`` () =
+        Fsx """
+open System
+
+type JsonSerializerOptions() =
+    [<Obsolete("This is bad", true)>]
+    member val DefaultOptions = false with get, set
+    member val UseCustomOptions = false with get, set
+    member this.With() = this
+    
+let options = JsonSerializerOptions()
+let options2 =
+    options
+        .With(DefaultOptions = true)
+        .With(UseCustomOptions = false)
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 13, Col 15, Line 13, Col 29, "This construct is deprecated. This is bad")
+        ]
+        
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account in a constructor property assignment`` () =
+        Fsx """
+open System
+type JsonSerializerOptions() =
+    [<Obsolete("This is bad", true)>]
+    member val DefaultOptions = false with get, set
+    
+    member val UseCustomOptions = false with get, set
+    
+let options = JsonSerializerOptions(DefaultOptions = true, UseCustomOptions = false)
+let options2 = JsonSerializerOptions(DefaultOptions = true, DefaultOptions = false)
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 9, Col 37, Line 9, Col 51, "This construct is deprecated. This is bad");
+            (Error 364, Line 10, Col 16, Line 10, Col 84, "The named argument 'DefaultOptions' has been assigned more than one value");
+            (Error 101, Line 10, Col 38, Line 10, Col 52, "This construct is deprecated. This is bad")
+        ]
+        
+    [<Fact>]
+    let ``Obsolete attribute warning is taken into account in a nested constructor property assignment`` () =
+        Fsx """
+open System
+type JsonSerializer1Options() =
+    [<Obsolete("This is bad")>]
+    member val DefaultOptions = false with get, set
+    
+    member val UseCustomOptions = false with get, set
+    
+type JsonSerializerOptions() =
+    member val DefaultOptions = JsonSerializer1Options() with get, set
+    
+    member val UseCustomOptions = false with get, set
+    
+let options = JsonSerializerOptions(DefaultOptions = JsonSerializer1Options(DefaultOptions = true), UseCustomOptions = false)
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 14, Col 77, Line 14, Col 91, "This construct is deprecated. This is bad")
+        ]
+        
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account in a nested constructor property assignment`` () =
+        Fsx """
+open System
+type JsonSerializer1Options() =
+    [<Obsolete("This is bad", true)>]
+    member val DefaultOptions = false with get, set
+    
+    member val UseCustomOptions = false with get, set
+    
+type JsonSerializerOptions() =
+    member val DefaultOptions = JsonSerializer1Options() with get, set
+    
+    member val UseCustomOptions = false with get, set
+    
+let options = JsonSerializerOptions(DefaultOptions = JsonSerializer1Options(DefaultOptions = true), UseCustomOptions = false)
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 14, Col 77, Line 14, Col 91, "This construct is deprecated. This is bad")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute warning is taken into account in a constructor property assignment from a csharp class`` () =
+        let CSLib =
+            CSharp """
+using System;
+public class JsonProtocolTestData {
+    [Obsolete("Use Json instead")]
+    public bool IgnoreNullValues { get; set; }
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ObsoleteStruct.FS
+let res = JsonProtocolTestData(IgnoreNullValues = false)
+        """ |> withReferences [CSLib]
+
+        app
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 3, Col 32, Line 3, Col 48, "This construct is deprecated. Use Json instead")
+        ]
+        
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account in a constructor property assignment from a csharp class`` () =
+        let CSLib =
+            CSharp """
+using System;
+public class JsonProtocolTestData {
+    [Obsolete("Use Json instead", true)]
+    public bool IgnoreNullValues { get; set; }
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ObsoleteStruct.FS
+let res = JsonProtocolTestData(IgnoreNullValues = false)
+        """ |> withReferences [CSLib]
+
+        app
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 3, Col 32, Line 3, Col 48, "This construct is deprecated. Use Json instead")
         ]

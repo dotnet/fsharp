@@ -451,13 +451,13 @@ module CancellableTasks =
 
         /// <summary>
         /// Builds a cancellableTask using computation expression syntax.
-        /// Default behaviour when binding (v)options is to return a cacnelled task.
+        /// Default behaviour when binding (v)options is to return a cancelled task.
         /// </summary>
         let foregroundCancellableTask = CancellableTaskBuilder(false)
 
         /// <summary>
         /// Builds a cancellableTask using computation expression syntax which switches to execute on a background thread if not already doing so.
-        /// Default behaviour when binding (v)options is to return a cacnelled task.
+        /// Default behaviour when binding (v)options is to return a cancelled task.
         /// </summary>
         let cancellableTask = CancellableTaskBuilder(true)
 
@@ -466,6 +466,10 @@ module CancellableTasks =
     module LowPriority =
         // Low priority extensions
         type CancellableTaskBuilderBase with
+
+            [<NoEagerConstraintApplication>]            
+            member inline _.Source(awaiter: CancellableTask<unit array>) = 
+                (fun (token) -> (awaiter token :> Task).GetAwaiter())
 
             /// <summary>
             /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
@@ -943,7 +947,7 @@ module CancellableTasks =
         /// for i in primes do
         ///     let computation =
         ///         cancellableTask {
-        ///             let! cancellationToken = CancellableTask.getCurrentCancellationToken()
+        ///             let! cancellationToken = CancellableTask.getCancellationToken()
         ///             do! Task.Delay(i * 1000, cancellationToken)
         ///             printfn $"{i}"
         ///         }
@@ -962,7 +966,6 @@ module CancellableTasks =
         /// <param name="item">The item to be the result of the CancellableTask.</param>
         /// <returns>A CancellableTask with the item as the result.</returns>
         let inline singleton (item: 'item) : CancellableTask<'item> = fun _ -> Task.FromResult(item)
-
 
         /// <summary>Allows chaining of CancellableTasks.</summary>
         /// <param name="binder">The continuation.</param>
@@ -1093,14 +1096,28 @@ module CancellableTasks =
         let inline whenAll (tasks: CancellableTask<'a> seq) =
             cancellableTask {
                 let! ct = getCancellationToken ()
-                return! Task.WhenAll (seq { for task in tasks do yield start ct task })
+                let tasks = seq { for task in tasks do yield start ct task }
+                return! Task.WhenAll (tasks)
             }
 
         let inline whenAllTasks (tasks: CancellableTask seq) =
             cancellableTask {
                 let! ct = getCancellationToken ()
-                return! Task.WhenAll (seq { for task in tasks do yield startTask ct task })
+                let tasks = seq { for task in tasks do yield startTask ct task }
+                return! Task.WhenAll (tasks)
             }
+
+        let inline sequential (tasks: CancellableTask<'a> seq) =
+            cancellableTask {
+                let! ct = getCancellationToken ()
+                let results = ResizeArray()
+                for task in tasks do
+                    let! result = start ct task
+                    results.Add(result)
+                return results
+            }
+
+        let inline ignore ([<InlineIfLambda>] ctask: CancellableTask<_>) = toUnit ctask
 
     /// <exclude />
     [<AutoOpen>]

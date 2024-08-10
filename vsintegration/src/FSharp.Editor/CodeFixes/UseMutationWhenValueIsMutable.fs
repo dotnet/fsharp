@@ -35,7 +35,11 @@ type internal UseMutationWhenValueIsMutableCodeFixProvider [<ImportingConstructo
 
                     let adjustedPosition =
                         let rec loop ch pos =
-                            if Char.IsWhiteSpace(ch) then
+                            if
+                                Char.IsWhiteSpace(ch)
+                                // edge case - end of file
+                                || pos = sourceText.Length - 1
+                            then
                                 pos
                             else
                                 loop sourceText[pos + 1] (pos + 1)
@@ -54,8 +58,7 @@ type internal UseMutationWhenValueIsMutableCodeFixProvider [<ImportingConstructo
                     match lexerSymbolOpt with
                     | None -> return ValueNone
                     | Some lexerSymbol ->
-                        let fcsTextLineNumber, textLine =
-                            MutableCodeFixHelper.getLineNumberAndText sourceText adjustedPosition
+                        let! fcsTextLineNumber, textLine = context.GetLineNumberAndText adjustedPosition
 
                         let! _, checkFileResults =
                             document.GetFSharpParseAndCheckResultsAsync(nameof UseMutationWhenValueIsMutableCodeFixProvider)

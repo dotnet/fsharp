@@ -20,7 +20,7 @@ type Flags =
     | B = (one <<< 1)
     | C = (one <<< (one * 2))
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> verifyIL [
@@ -38,7 +38,7 @@ type E =
     | A = (1L <<< 0)
     | B = (1 <<< 1)
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withResult {

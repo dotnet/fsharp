@@ -17,12 +17,12 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.assembly
+.mresource public FSharpSignatureCompressedData.assembly
 {
   
   
 }
-.mresource public FSharpOptimizationData.assembly
+.mresource public FSharpOptimizationCompressedData.assembly
 {
   
   
@@ -51,8 +51,7 @@
            extends [FSharp.Core]Microsoft.FSharp.Core.FSharpTypeFunc
     {
       .field static assembly initonly class assembly/M/f5@5 @_instance
-      .method assembly specialname rtspecialname 
-              instance void  .ctor() cil managed
+      .method assembly specialname rtspecialname instance void  .ctor() cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -65,8 +64,7 @@
         IL_0006:  ret
       } 
 
-      .method public strict virtual instance object 
-              Specialize<a>() cil managed
+      .method public strict virtual instance object Specialize<a>() cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -78,8 +76,7 @@
         IL_000b:  ret
       } 
 
-      .method private specialname rtspecialname static 
-              void  .cctor() cil managed
+      .method private specialname rtspecialname static void  .cctor() cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -99,8 +96,7 @@
       .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .method assembly specialname rtspecialname 
-              instance void  .ctor(class assembly/M/f5@5 self0@) cil managed
+      .method assembly specialname rtspecialname instance void  .ctor(class assembly/M/f5@5 self0@) cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -175,6 +171,45 @@
       IL_002a:  ret
     } 
 
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldc.i4.0
+      IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
+      IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
+      IL_000b:  pop
+      IL_000c:  ret
+    } 
+
+    .method assembly specialname static void staticInitialization@() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  call       char assembly/M::m()
+      IL_0005:  pop
+      IL_0006:  ret
+    } 
+
+  } 
+
+  .method private specialname rtspecialname static void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
+    IL_000b:  pop
+    IL_000c:  ret
+  } 
+
+  .method assembly specialname static void staticInitialization@() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  call       void assembly/M::staticInitialization@()
+    IL_0005:  ret
   } 
 
 } 
@@ -191,9 +226,8 @@
     .entrypoint
     
     .maxstack  8
-    IL_0000:  call       char assembly/M::m()
-    IL_0005:  pop
-    IL_0006:  ret
+    IL_0000:  call       void assembly::staticInitialization@()
+    IL_0005:  ret
   } 
 
 } 

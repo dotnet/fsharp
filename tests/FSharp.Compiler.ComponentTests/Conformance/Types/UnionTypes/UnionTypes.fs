@@ -135,6 +135,7 @@ module UnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
+            (Error 434, Line 7, Col 12, Line 7, Col 13, "The property 'IsC' has the same name as a method in type 'T'.")
             (Error 23, Line 9, Col 19, Line 9, Col 22, "The member 'IsC' can not be defined because the name 'IsC' clashes with the default augmentation of the union case 'C' in this type or module")
             (Error 23, Line 13, Col 24, Line 13, Col 27, "The member 'IsC' can not be defined because the name 'IsC' clashes with the default augmentation of the union case 'C' in this type or module")
         ]
@@ -595,7 +596,9 @@ module UnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 58, Line 9, Col 1, Line 9, Col 2, "Possible incorrect indentation: this token is offside of context started at position (8:19). Try indenting this token further or using standard formatting conventions.")
+            (Error 58, Line 9, Col 1, Line 9, Col 2, "Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (8:19). Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.")
+            (Error 547, Line 8, Col 24, Line 8, Col 33, "A type definition requires one or more members or other declarations. If you intend to define an empty class, struct or interface, then use 'type ... = class end', 'interface end' or 'struct end'.")
+            (Error 10, Line 9, Col 1, Line 9, Col 2, "Unexpected symbol '|' in implementation file")
         ]
 
     //SOURCE=W_UnionCaseProduction01.fsx SCFLAGS="-a --test:ErrorRanges"                          # W_UnionCaseProduction01.fsx
@@ -664,4 +667,144 @@ match x with
         |> shouldFail
         |> withDiagnostics [
             (Error 3176, Line 3, Col 12, Line 3, Col 13, "Named field 'a' is used more than once.")
+        ]
+
+    [<Theory>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    let ``UnionCaseIsTester inlined and SignatureData`` userec =
+
+        let kwrec = if userec then "rec" else ""
+        let myLibraryFsi =
+            SourceCodeFileKind.Create(
+                "myLibrary.fsi",
+                $"""
+module {kwrec} MyLibrary
+
+    [<RequireQualifiedAccess>]
+    type PrimaryAssembly =
+        | Mscorlib
+        | System_Runtime
+        | NetStandard""")
+
+        let myLibraryFs =
+            SourceCodeFileKind.Create(
+                "myLibrary.fs",
+                $"""
+module {kwrec} MyLibrary
+
+    [<RequireQualifiedAccess>]
+    type PrimaryAssembly =
+        | Mscorlib
+        | System_Runtime
+        | NetStandard
+                """)
+
+        let myFileFs =
+            SourceCodeFileKind.Create(
+                "myFile.fs",
+                $"""
+module {kwrec} FileName
+
+    open MyLibrary
+    let inline getAssemblyType () = PrimaryAssembly.NetStandard
+    let inline isNetStandard () = (PrimaryAssembly.NetStandard).IsNetStandard
+                """)
+
+        let myLibrary =
+            (fsFromString myLibraryFsi) |> FS
+            |> withAdditionalSourceFiles [myLibraryFs; myFileFs]
+            |> asLibrary
+            |> withName "MyLibrary"
+
+        Fs """
+let x = FileName.getAssemblyType().IsNetStandard
+let y = FileName.getAssemblyType()
+let z = FileName.isNetStandard()
+printfn "%b %A %b" x y z
+           """
+            |> asExe
+            |> withReferences [myLibrary]
+            |> compileAndRun
+            |> shouldSucceed
+
+    //SOURCE=W_UnionCaseProduction01.fsx SCFLAGS="-a --test:ErrorRanges"                          # W_UnionCaseProduction01.fsx
+    [<Fact>]
+    let ``UnionCaseInitialization_repro16431`` () =
+
+        let testFs =
+            SourceCodeFileKind.Create(
+                "testFs.fs",
+                $"""
+module Test
+
+type ABC =
+    | A
+    | B
+    | C of int
+
+    static let c75' = ABC.C 75
+    static member c75 = c75'
+
+    static let ab' = [ A; B ]
+    static member ab = ab'
+                 """)
+
+        let programFs =
+            SourceCodeFileKind.Create(
+                "programFs.fs",
+                $"""
+open Test
+
+if (sprintf "%%A" ABC.c75) <> "C 75" then failwith (sprintf "Failed: printing 'ABC.c75': Expected output: 'C 75'  Actual output: '%%A'" ABC.c75)
+if (sprintf "%%A" ABC.ab) <> "[A; B]" then failwith (sprintf "Failed: printing 'ABC.ab: Expected: '[A; B]'  Actual: '%%A'" ABC.ab)
+                 """)
+
+        (fsFromString testFs)
+        |> FS
+        |> withAdditionalSourceFiles [programFs]
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        
+    [<Fact>]
+    let ``Error when declaring an abstract member in union type`` () =
+        Fsx """
+type U = 
+  | A | B
+  abstract M : unit -> unit
+       """
+        |> typecheck 
+        |> shouldFail
+        |>  withSingleDiagnostic (Error 912, Line 4, Col 3, Line 4, Col 28, "This declaration element is not permitted in an augmentation")
+        
+        
+    [<Fact>]
+    let ``Error when property has same name as DU case`` () =
+        Fsx """
+type MyId =
+    | IdA of int
+    | IdB of string
+    | IdC of float
+
+    member this.IdA =
+        match this with
+        | IdA x -> Some x
+        | _ -> None
+        
+    member this.IdX =
+        match this with
+        | IdB x -> Some x
+        | _ -> None
+
+    member this.IdC =
+        match this with
+        | IdC x -> Some x
+        | _ -> None
+       """
+        |> typecheck 
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 23, Line 7, Col 17, Line 7, Col 20, "The member 'IdA' can not be defined because the name 'IdA' clashes with the union case 'IdA' in this type or module")
+            (Error 23, Line 17, Col 17, Line 17, Col 20, "The member 'IdC' can not be defined because the name 'IdC' clashes with the union case 'IdC' in this type or module")
         ]

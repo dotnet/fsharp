@@ -90,7 +90,8 @@ type AttribInfo =
          match x with 
          | FSAttribInfo(_g, Attrib(tcref, _, _, _, _, _, _)) -> tcref
          | ILAttribInfo (g, amap, scoref, a, m) -> 
-             let ty = RescopeAndImportILType scoref amap m [] a.Method.DeclaringType
+             // We are skipping nullness check here because this reference is an attribute usage, nullness does not apply.
+             let ty = RescopeAndImportILTypeSkipNullness scoref amap m [] a.Method.DeclaringType
              tcrefOfAppTy g ty
 
     member x.ConstructorArguments = 
@@ -104,7 +105,8 @@ type AttribInfo =
          | ILAttribInfo (_g, amap, scoref, cattr, m) -> 
               let parms, _args = decodeILAttribData cattr 
               [ for argTy, arg in Seq.zip cattr.Method.FormalArgTypes parms ->
-                    let ty = RescopeAndImportILType scoref amap m [] argTy
+                    // We are skipping nullness check here because this reference is an attribute usage, nullness does not apply.
+                    let ty = RescopeAndImportILTypeSkipNullness scoref amap m [] argTy
                     let obj = evalILAttribElem arg
                     ty, obj ]
 
@@ -119,7 +121,8 @@ type AttribInfo =
          | ILAttribInfo (_g, amap, scoref, cattr, m) -> 
               let _parms, namedArgs = decodeILAttribData cattr 
               [ for nm, argTy, isProp, arg in namedArgs ->
-                    let ty = RescopeAndImportILType scoref amap m [] argTy
+                    // We are skipping nullness check here because this reference is an attribute usage, nullness does not apply.
+                    let ty = RescopeAndImportILTypeSkipNullness scoref amap m [] argTy
                     let obj = evalILAttribElem arg
                     let isField = not isProp 
                     ty, nm, isField, obj ]
@@ -207,7 +210,7 @@ let TryBindMethInfoAttribute g (m: range) (AttribInfo(atref, _) as attribSpec) m
         (fun provAttribs -> 
             match provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), atref.FullName)), m) with
             | Some args -> f3 args
-            | None -> None)  
+            | None -> None)
 #else
         (fun _provAttribs -> None)
 #endif
@@ -281,7 +284,7 @@ let CheckFSharpAttributes (g:TcGlobals) attribs m =
             | Some _ -> 
                 do! WarnD(ObsoleteWarning("", m))
             | None -> 
-                do! CompleteD
+                ()
             
             match TryFindFSharpAttribute g g.attrib_CompilerMessageAttribute attribs with
             | Some(Attrib(_, _, [ AttribStringArg s ; AttribInt32Arg n ], namedArgs, _, _, _)) ->
@@ -292,11 +295,14 @@ let CheckFSharpAttributes (g:TcGlobals) attribs m =
                     | _ -> false 
                 // If we are using a compiler that supports nameof then error 3501 is always suppressed.
                 // See attribute on FSharp.Core 'nameof'
-                if n = 3501 then do! CompleteD
-                elif isError && (not g.compilingFSharpCore || n <> 1204) then do! ErrorD msg 
-                else do! WarnD msg
+                if n = 3501 then
+                    ()
+                elif isError && (not g.compilingFSharpCore || n <> 1204) then
+                    do! ErrorD msg 
+                else
+                    do! WarnD msg
             | _ -> 
-                do! CompleteD
+                ()
 
             match TryFindFSharpAttribute g g.attrib_ExperimentalAttribute attribs with
             | Some(Attrib(_, _, [ AttribStringArg(s) ], _, _, _, _)) ->
@@ -305,20 +311,18 @@ let CheckFSharpAttributes (g:TcGlobals) attribs m =
                         true
                     else
                         g.langVersion.IsPreviewEnabled && (s.IndexOf(langVersionPrefix, StringComparison.OrdinalIgnoreCase) >= 0)
-                if isExperimentalAttributeDisabled s then
-                    do! CompleteD
-                else
+                if not (isExperimentalAttributeDisabled s) then
                     do! WarnD(Experimental(s, m))
             | Some _ ->
                 do! WarnD(Experimental(FSComp.SR.experimentalConstruct (), m))
             | _ ->
-                do! CompleteD
+                ()
 
             match TryFindFSharpAttribute g g.attrib_UnverifiableAttribute attribs with
             | Some _ -> 
                 do! WarnD(PossibleUnverifiableCode(m))
             | _ ->  
-                do! CompleteD
+                ()
         }
 
 #if !NO_TYPEPROVIDERS
@@ -418,7 +422,8 @@ let CheckMethInfoAttributes g m tyargsOpt (minfo: MethInfo) =
     trackErrors {
         match stripTyEqns g minfo.ApparentEnclosingAppType with
         | TType_app(tcref, _, _) -> do! CheckEntityAttributes g tcref m 
-        | _ -> do! CompleteD
+        | _ -> ()
+
         let search =
             BindMethInfoAttributes m minfo 
                 (fun ilAttribs -> Some(CheckILAttributes g false ilAttribs m)) 
@@ -428,8 +433,6 @@ let CheckMethInfoAttributes g m tyargsOpt (minfo: MethInfo) =
                              do! CheckFSharpAttributes g fsAttribs m
                              if Option.isNone tyargsOpt && HasFSharpAttribute g g.attrib_RequiresExplicitTypeArgumentsAttribute fsAttribs then
                                 do! ErrorD(Error(FSComp.SR.tcFunctionRequiresExplicitTypeArguments(minfo.LogicalName), m))
-                             else
-                                do! CompleteD
                         }
                         
                     Some res) 
@@ -440,7 +443,7 @@ let CheckMethInfoAttributes g m tyargsOpt (minfo: MethInfo) =
 #endif 
         match search with
         | Some res -> do! res
-        | None -> do! CompleteD // no attribute = no errors 
+        | None -> () // no attribute = no errors 
 }
 
 /// Indicate if a method has 'Obsolete', 'CompilerMessageAttribute' or 'TypeProviderEditorHideMethodsAttribute'. 
@@ -537,7 +540,7 @@ let IsSecurityAttribute (g: TcGlobals) amap (casmap : IDictionary<Stamp, bool>) 
             match casmap.TryGetValue tcs with
             | true, c -> c
             | _ ->
-                let exists = ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkAppTy attr.TyconRef [])) g amap m AllowMultiIntfInstantiations.Yes (mkAppTy tcref [])          
+                let exists = ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkWoNullAppTy attr.TyconRef [])) g amap m AllowMultiIntfInstantiations.Yes (mkWoNullAppTy tcref [])          
                 casmap[tcs] <- exists
                 exists
         | ValueNone -> false  

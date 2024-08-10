@@ -28,11 +28,10 @@ let tryCreateTemporaryFileName () =
     filePath
 
 // Create a temporaryFileName -- newGuid is random --- there is no point validating the file alread exists because: threading and Path.ChangeExtension() is commonly used after this API
-let tryCreateTemporaryFileNameInDirectory (directory) =
+let tryCreateTemporaryFileNameInDirectory (directory: DirectoryInfo) =
     let fileName = ("Temp-" + Guid.NewGuid().ToString() + ".tmp").Replace('-', '_')
-    let filePath = Path.Combine(directory, fileName)
+    let filePath = Path.Combine(directory.FullName, fileName)
     filePath
-
 
 [<RequireQualifiedAccess>]
 module Commands =
@@ -303,7 +302,7 @@ let config configurationName envVars =
     let fsharpCoreArchitecture = "netstandard2.0"
     let fsharpBuildArchitecture = "netstandard2.0"
     let fsharpCompilerInteractiveSettingsArchitecture = "netstandard2.0"
-    let dotnetArchitecture = "net7.0"
+    let dotnetArchitecture = "net9.0"
 #if NET472
     let fscArchitecture = "net472"
     let fsiArchitecture = "net472"

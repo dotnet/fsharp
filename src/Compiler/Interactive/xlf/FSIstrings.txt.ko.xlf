@@ -17,6 +17,11 @@
         <target state="translated">화면 지우기</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiIntroTextHashhelpdocInfo">
+        <source>Display documentation for an identifier, e.g. #help \"List.map\";;</source>
+        <target state="translated">식별자에 대한 설명서 표시(예: #help \"List.map\";;)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
         <target state="translated">이전 오류로 인해 작업을 완료할 수 없습니다.</target>

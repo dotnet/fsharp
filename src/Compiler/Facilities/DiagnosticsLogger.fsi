@@ -6,6 +6,8 @@ open System
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Features
 open FSharp.Compiler.Text
+open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
 
 /// Represents the style being used to format errors
 [<RequireQualifiedAccess>]
@@ -37,7 +39,8 @@ val NoSuggestions: Suggestions
 /// Thrown when we stop processing the F# Interactive entry or #load.
 exception StopProcessingExn of exn option
 
-val (|StopProcessing|_|): exn: exn -> unit option
+[<return: Struct>]
+val (|StopProcessing|_|): exn: exn -> unit voption
 
 val StopProcessing<'T> : exn
 
@@ -55,6 +58,8 @@ exception DiagnosticEnabledWithLanguageFeature of
 val Error: (int * string) * range -> exn
 
 exception InternalError of message: string * range: range
+
+exception InternalException of exn: Exception * msg: string * range: range
 
 exception UserCompilerMessage of message: string * number: int * range: range
 
@@ -203,6 +208,9 @@ type DiagnosticsLogger =
     /// Checks if ErrorCount > 0
     member CheckForErrors: unit -> bool
 
+    abstract CheckForRealErrorsIgnoringWarnings: bool
+    default CheckForRealErrorsIgnoringWarnings: bool
+
 /// Represents a DiagnosticsLogger that discards diagnostics
 val DiscardErrorsLogger: DiagnosticsLogger
 
@@ -230,8 +238,6 @@ type DiagnosticsThreadStatics =
 
     static member BuildPhase: BuildPhase with get, set
 
-    static member BuildPhaseUnchecked: BuildPhase
-
     static member DiagnosticsLogger: DiagnosticsLogger with get, set
 
 [<AutoOpen>]
@@ -241,9 +247,6 @@ module DiagnosticsLoggerExtensions =
 
     /// Instruct the exception not to reset itself when thrown again.
     val PreserveStackTrace: exn: 'T -> unit
-
-    /// Reraise an exception if it is one we want to report to Watson.
-    val ReraiseIfWatsonable: exn: exn -> unit
 
     type DiagnosticsLogger with
 
@@ -279,7 +282,7 @@ module DiagnosticsLoggerExtensions =
 val UseBuildPhase: phase: BuildPhase -> IDisposable
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
-val UseTransformedDiagnosticsLogger: transformer: (DiagnosticsLogger -> #DiagnosticsLogger) -> IDisposable
+val UseTransformedDiagnosticsLogger: transformer: (DiagnosticsLogger -> DiagnosticsLogger) -> IDisposable
 
 val UseDiagnosticsLogger: newLogger: DiagnosticsLogger -> IDisposable
 
@@ -343,17 +346,19 @@ val CommitOperationResult: res: OperationResult<'T> -> 'T
 
 val RaiseOperationResult: res: OperationResult<unit> -> unit
 
-val ErrorD: err: exn -> OperationResult<'T>
+val inline ErrorD: err: exn -> OperationResult<'T>
 
-val WarnD: err: exn -> OperationResult<unit>
+val inline WarnD: err: exn -> OperationResult<unit>
 
 val CompleteD: OperationResult<unit>
 
-val ResultD: x: 'T -> OperationResult<'T>
+val inline ResultD: x: 'T -> OperationResult<'T>
 
 val CheckNoErrorsAndGetWarnings: res: OperationResult<'T> -> (exn list * 'T) option
 
-val (++): res: OperationResult<'T> -> f: ('T -> OperationResult<'b>) -> OperationResult<'b>
+/// The bind in the monad. Stop on first error. Accumulate warnings and continue.
+/// <remarks>Not meant for direct usage. Used in other inlined functions</remarks>
+val inline bind: f: ('T -> OperationResult<'b>) -> res: OperationResult<'T> -> OperationResult<'b>
 
 /// Stop on first error. Accumulate warnings and continue.
 val IterateD: f: ('T -> OperationResult<unit>) -> xs: 'T list -> OperationResult<unit>
@@ -366,23 +371,23 @@ type TrackErrorsBuilder =
 
     new: unit -> TrackErrorsBuilder
 
-    member Bind: res: OperationResult<'h> * k: ('h -> OperationResult<'i>) -> OperationResult<'i>
+    member inline Bind: res: OperationResult<'h> * k: ('h -> OperationResult<'i>) -> OperationResult<'i>
 
-    member Combine: expr1: OperationResult<'c> * expr2: ('c -> OperationResult<'d>) -> OperationResult<'d>
+    member inline Combine: expr1: OperationResult<'c> * expr2: ('c -> OperationResult<'d>) -> OperationResult<'d>
 
-    member Delay: fn: (unit -> 'b) -> (unit -> 'b)
+    member inline Delay: fn: (unit -> 'b) -> (unit -> 'b)
 
-    member For: seq: 'e list * k: ('e -> OperationResult<unit>) -> OperationResult<unit>
+    member inline For: seq: 'e list * k: ('e -> OperationResult<unit>) -> OperationResult<unit>
 
-    member Return: res: 'g -> OperationResult<'g>
+    member inline Return: res: 'g -> OperationResult<'g>
 
-    member ReturnFrom: res: 'f -> 'f
+    member inline ReturnFrom: res: 'f -> 'f
 
-    member Run: fn: (unit -> 'T) -> 'T
+    member inline Run: fn: (unit -> 'T) -> 'T
 
-    member While: gd: (unit -> bool) * k: (unit -> OperationResult<unit>) -> OperationResult<unit>
+    member inline While: gd: (unit -> bool) * k: (unit -> OperationResult<unit>) -> OperationResult<unit>
 
-    member Zero: unit -> OperationResult<unit>
+    member inline Zero: unit -> OperationResult<unit>
 
 val trackErrors: TrackErrorsBuilder
 
@@ -436,6 +441,8 @@ val languageFeatureError: langVersion: LanguageVersion -> langFeature: LanguageF
 
 val checkLanguageFeatureError: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
 
+val tryCheckLanguageFeatureAndRecover: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> bool
+
 val checkLanguageFeatureAndRecover: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
 
 val tryLanguageFeatureErrorOption:
@@ -447,7 +454,12 @@ type StackGuard =
     new: maxDepth: int * name: string -> StackGuard
 
     /// Execute the new function, on a new thread if necessary
-    member Guard: f: (unit -> 'T) -> 'T
+    member Guard:
+        f: (unit -> 'T) *
+        [<CallerMemberName; Optional; DefaultParameterValue("")>] memberName: string *
+        [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string *
+        [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int ->
+            'T
 
     static member GetDepthOption: string -> int
 
@@ -457,8 +469,21 @@ type StackGuard =
 type CompilationGlobalsScope =
     new: diagnosticsLogger: DiagnosticsLogger * buildPhase: BuildPhase -> CompilationGlobalsScope
 
+    /// When disposed, restores caller's diagnostics logger and build phase.
+    new: unit -> CompilationGlobalsScope
+
     interface IDisposable
 
     member DiagnosticsLogger: DiagnosticsLogger
 
     member BuildPhase: BuildPhase
+
+module MultipleDiagnosticsLoggers =
+
+    /// Run computations using Async.Parallel.
+    /// Captures the diagnostics from each computation and commits them to the caller's logger preserving their order.
+    /// When done, restores caller's build phase and diagnostics logger.
+    val Parallel: computations: Async<'T> seq -> Async<'T array>
+
+    /// Run computations sequentially starting immediately on the current thread.
+    val Sequential: computations: Async<'T> seq -> Async<'T array>

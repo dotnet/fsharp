@@ -10,18 +10,15 @@ open CodeFixTestFramework
 let private codeFix =
     RemoveSuperfluousCaptureForUnionCaseWithNoDataCodeFixProvider()
 
-[<Theory>]
-[<InlineData "_">]
-[<InlineData "__">]
-[<InlineData "a">]
-let ``Fixes FS3548 - DUs`` caseValue =
+[<Fact>]
+let ``Fixes FS3548 - DUs`` () =
     let code =
-        $"""
+        """
 type Type = | A | B of int
 
 let f x =
     match x with
-    | A {caseValue} -> 42
+    | A _ -> 42
     | B number -> number
 """
 
@@ -44,18 +41,40 @@ let f x =
 
     Assert.Equal(expected, actual)
 
-[<Theory>]
-[<InlineData "_">]
-[<InlineData "__">]
-[<InlineData "t">]
-let ``Fixes FS3548 - marker types`` caseValue =
+[<Fact>]
+let ``Fixes FS3548 - discarded argument in function`` () =
     let code =
-        $"""
+        """
+type C = | C
+        
+let myDiscardedArgFunc(C _) = ()
+"""
+
+    let expected =
+        Some
+            {
+                Message = "Remove unused binding"
+                FixedCode =
+                    """
+type C = | C
+        
+let myDiscardedArgFunc(C) = ()
+"""
+            }
+
+    let actual = codeFix |> tryFix code (WithOption "--langversion:preview")
+
+    Assert.Equal(expected, actual)
+
+[<Fact>]
+let ``Fixes FS3548 - marker types`` () =
+    let code =
+        """
 type Type = Type
 
 let f x =
     match x with
-    | Type {caseValue} -> ()
+    | Type _ -> ()
 """
 
     let expected =

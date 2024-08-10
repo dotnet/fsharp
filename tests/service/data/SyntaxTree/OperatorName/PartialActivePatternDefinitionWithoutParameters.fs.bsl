@@ -11,13 +11,12 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
-                     None),
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
                   Named
                     (SynIdent
                        (|Boolean|_|,
                         Some (HasParenthesis ((2,4--2,5), (2,16--2,17)))), false,
-                     None, (2,5--2,16)), None,
+                     None, (2,4--2,17)), None,
                   LongIdent
                     (false,
                      SynLongIdent

@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.SyntaxTreeOps
 
+open FSharp.Compiler.Features
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
 open FSharp.Compiler.Syntax
@@ -44,10 +45,12 @@ val mkSynCompGenSimplePatVar: id: Ident -> SynSimplePat
 val pushUnaryArg: expr: SynExpr -> arg: Ident -> SynExpr
 
 /// Match a long identifier, including the case for single identifiers which gets a more optimized node in the syntax tree.
+[<return: Struct>]
 val (|LongOrSingleIdent|_|):
-    inp: SynExpr -> (bool * SynLongIdent * SynSimplePatAlternativeIdInfo ref option * range) option
+    inp: SynExpr -> (bool * SynLongIdent * SynSimplePatAlternativeIdInfo ref option * range) voption
 
-val (|SingleIdent|_|): inp: SynExpr -> Ident option
+[<return: Struct>]
+val (|SingleIdent|_|): inp: SynExpr -> Ident voption
 
 /// This affects placement of debug points
 val IsControlFlowExpression: e: SynExpr -> bool
@@ -66,14 +69,17 @@ val mkSynThisPatVar: id: Ident -> SynPat
 
 val mkSynPatMaybeVar: lidwd: SynLongIdent -> vis: SynAccess option -> m: range -> SynPat
 
-val (|SynPatForConstructorDecl|_|): x: SynPat -> SynPat option
+[<return: Struct>]
+val (|SynPatForConstructorDecl|_|): x: SynPat -> SynPat voption
 
 /// Recognize the '()' in 'new()'
-val (|SynPatForNullaryArgs|_|): x: SynPat -> unit option
+[<return: Struct>]
+val (|SynPatForNullaryArgs|_|): x: SynPat -> unit voption
 
 val (|SynExprErrorSkip|): p: SynExpr -> SynExpr
 
-val (|SynExprParen|_|): e: SynExpr -> (SynExpr * range * range option * range) option
+[<return: Struct>]
+val (|SynExprParen|_|): e: SynExpr -> (SynExpr * range * range option * range) voption
 
 val (|SynPatErrorSkip|): p: SynPat -> SynPat
 
@@ -257,6 +263,8 @@ module SynInfo =
 
     val emptySynValData: SynValData
 
+    val emptySynArgInfo: SynArgInfo
+
     /// Infer the syntactic information for a 'let' or 'member' definition, based on the argument pattern,
     /// any declared return information (e.g. .NET attributes on the return element), and the r.h.s. expression
     /// in the case of 'let' definitions.
@@ -290,8 +298,6 @@ val mkSynBinding:
         trivia: SynBindingTrivia ->
             SynBinding
 
-val updatePropertyIdentInSynBinding: propertyIdent: Ident -> SynBinding -> SynBinding
-
 val NonVirtualMemberFlags: k: SynMemberKind -> SynMemberFlags
 
 val CtorMemberFlags: SynMemberFlags
@@ -314,22 +320,29 @@ val unionBindingAndMembers: bindings: SynBinding list -> members: SynMemberDefn 
 
 val synExprContainsError: inpExpr: SynExpr -> bool
 
-val (|ParsedHashDirectiveArguments|): ParsedHashDirectiveArgument list -> string list
+val parsedHashDirectiveArguments: ParsedHashDirectiveArgument list -> LanguageVersion -> string list
+
+val parsedHashDirectiveStringArguments: ParsedHashDirectiveArgument list -> LanguageVersion -> string list
 
 /// 'e1 && e2'
-val (|SynAndAlso|_|): SynExpr -> (SynExpr * SynExpr) option
+[<return: Struct>]
+val (|SynAndAlso|_|): SynExpr -> (SynExpr * SynExpr) voption
 
 /// 'e1 || e2'
-val (|SynOrElse|_|): SynExpr -> (SynExpr * SynExpr) option
+[<return: Struct>]
+val (|SynOrElse|_|): SynExpr -> (SynExpr * SynExpr) voption
 
 /// 'e1 |> e2'
-val (|SynPipeRight|_|): SynExpr -> (SynExpr * SynExpr) option
+[<return: Struct>]
+val (|SynPipeRight|_|): SynExpr -> (SynExpr * SynExpr) voption
 
 /// 'e1 ||> e2'
-val (|SynPipeRight2|_|): SynExpr -> (SynExpr * SynExpr * SynExpr) option
+[<return: Struct>]
+val (|SynPipeRight2|_|): SynExpr -> (SynExpr * SynExpr * SynExpr) voption
 
 /// 'e1 |||> e2'
-val (|SynPipeRight3|_|): SynExpr -> (SynExpr * SynExpr * SynExpr * SynExpr) option
+[<return: Struct>]
+val (|SynPipeRight3|_|): SynExpr -> (SynExpr * SynExpr * SynExpr * SynExpr) voption
 
 val prependIdentInLongIdentWithTrivia: ident: SynIdent -> mDot: range -> lid: SynLongIdent -> SynLongIdent
 
@@ -341,6 +354,14 @@ val desugarGetSetMembers: memberDefns: SynMemberDefns -> SynMemberDefns
 
 val getTypeFromTuplePath: path: SynTupleTypeSegment list -> SynType list
 
-val (|MultiDimensionArrayType|_|): t: SynType -> (int * SynType * range) option
+[<return: Struct>]
+val (|MultiDimensionArrayType|_|): t: SynType -> (int * SynType * range) voption
 
 val (|TypesForTypar|): t: SynType -> SynType list
+
+/// Generated get_XYZ or set_XYZ ident text
+[<return: Struct>]
+val (|Get_OrSet_Ident|_|): Ident -> unit voption
+
+/// Adds SynPat.Or pattern for unfinished empty clause above
+val addEmptyMatchClause: mBar1: range -> mBar2: range -> clauses: SynMatchClause list -> SynMatchClause list

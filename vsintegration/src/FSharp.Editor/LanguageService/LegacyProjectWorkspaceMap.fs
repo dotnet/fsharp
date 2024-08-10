@@ -21,11 +21,8 @@ open Microsoft.VisualStudio.Shell.Interop
 
 [<Sealed>]
 type internal LegacyProjectWorkspaceMap
-    (
-        solution: IVsSolution,
-        projectInfoManager: FSharpProjectOptionsManager,
-        projectContextFactory: FSharpWorkspaceProjectContextFactory
-    ) as this =
+    (solution: IVsSolution, projectInfoManager: FSharpProjectOptionsManager, projectContextFactory: FSharpWorkspaceProjectContextFactory) as this
+    =
 
     let invalidPathChars = set (Path.GetInvalidPathChars())
 

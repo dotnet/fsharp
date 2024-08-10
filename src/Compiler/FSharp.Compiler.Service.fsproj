@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project Sdk="Microsoft.NET.Sdk">
 
@@ -25,12 +25,14 @@
     <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>
     <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
-    <Configurations>Debug;Release;ReleaseCompressed</Configurations>
+    <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
 
   <!--  The FSharp.Compiler.Service dll provides a referencable public interface for tool builders -->
   <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
-    <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
+    <NoOptimizationData>false</NoOptimizationData>
+    <NoInterfaceData>false</NoInterfaceData>
+    <CompressMetadata>true</CompressMetadata>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -42,6 +44,11 @@
     <PackageTags>F#, fsharp, interactive, compiler, editor</PackageTags>
     <PreReleaseVersionLabel>preview</PreReleaseVersionLabel>
     <PackageIconFullPath>$(MSBuildThisFileDirectory)logo.png</PackageIconFullPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
+    <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -69,7 +76,6 @@
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
     <InternalsVisibleTo Include="FSharp.Compiler.ComponentTests" />
-    <InternalsVisibleTo Include="FSharp.Compiler.UnitTests" />
     <InternalsVisibleTo Include="FSharp.Compiler.Service.Tests" />
     <InternalsVisibleTo Include="HostedCompilerServer" />
     <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
@@ -77,6 +83,7 @@
     <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
     <InternalsVisibleTo Include="HistoricalBenchmark" />
     <InternalsVisibleTo Include="FSharp.Test.Utilities" />
+    <InternalsVisibleTo Include="FSharp.Editor" />
   </ItemGroup>
 
   <ItemGroup>
@@ -90,6 +97,7 @@
       <Link>FSStrings.resx</Link>
       <LogicalName>FSStrings.resources</LogicalName>
     </EmbeddedResource>
+
     <Compile Include="Utilities\Activity.fsi" />
     <Compile Include="Utilities\Activity.fs" />
     <Compile Include="Utilities\sformat.fsi" />
@@ -106,6 +114,8 @@
     <Compile Include="Utilities\TaggedCollections.fs" />
     <Compile Include="Utilities\illib.fsi" />
     <Compile Include="Utilities\illib.fs" />
+    <Compile Include="Utilities\Cancellable.fsi" />
+    <Compile Include="Utilities\Cancellable.fs" />
     <Compile Include="Utilities\FileSystem.fsi" />
     <Compile Include="Utilities\FileSystem.fs" />
     <Compile Include="Utilities\ildiag.fsi" />
@@ -122,6 +132,8 @@
     <Compile Include="Utilities\QueueList.fs" />
     <Compile Include="Utilities\lib.fsi" />
     <Compile Include="Utilities\lib.fs" />
+    <Compile Include="Utilities\LruCache.fsi" />
+    <Compile Include="Utilities\LruCache.fs" />
     <Compile Include="Utilities\ImmutableArray.fsi" />
     <Compile Include="Utilities\ImmutableArray.fs" />
     <Compile Include="Utilities\rational.fsi" />
@@ -142,6 +154,8 @@
     <Compile Include="Facilities\DiagnosticsLogger.fs" />
     <Compile Include="Facilities\DiagnosticResolutionHints.fsi" />
     <Compile Include="Facilities\DiagnosticResolutionHints.fs" />
+    <Compile Include="Facilities\Hashing.fsi" />
+    <Compile Include="Facilities\Hashing.fs" />
     <Compile Include="Facilities\prim-lexing.fsi" />
     <Compile Include="Facilities\prim-lexing.fs" />
     <Compile Include="Facilities\prim-parsing.fsi" />
@@ -154,6 +168,10 @@
     <Compile Include="Facilities\CompilerLocation.fs" />
     <Compile Include="Facilities\BuildGraph.fsi" />
     <Compile Include="Facilities\BuildGraph.fs" />
+    <Compile Include="Facilities\AsyncMemoize.fsi" />
+    <Compile Include="Facilities\AsyncMemoize.fs" />
+    <Compile Include="Utilities\ReadOnlySpan.fsi" />
+    <Compile Include="Utilities\ReadOnlySpan.fs" />
     <FsLex Include="AbstractIL\illex.fsl">
       <OtherFlags>--module FSharp.Compiler.AbstractIL.AsciiLexer --internal --open Internal.Utilities.Text.Lexing --open FSharp.Compiler.AbstractIL.AsciiParser --unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>AbstractIL\illex.fsl</Link>
@@ -221,7 +239,7 @@
       <Link>SyntaxTree\lex.fsl</Link>
     </FsLex>
     <FsYacc Include="pars.fsy">
-      <OtherFlags>-v --module FSharp.Compiler.Parser --open FSharp.Compiler --open FSharp.Compiler.Syntax --open FSharp.Compiler.Text --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing --buffer-type-argument char</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.Parser --open FSharp.Compiler --open FSharp.Compiler.Syntax --open FSharp.Compiler.Text --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing --buffer-type-argument char</OtherFlags>
       <Link>SyntaxTree\pars.fsy</Link>
     </FsYacc>
     <None Include="pplex.fsl">
@@ -292,6 +310,7 @@
     <Compile Include="TypedTree\TypedTree.fs" />
     <Compile Include="TypedTree\TypedTreeBasics.fsi" />
     <Compile Include="TypedTree\TypedTreeBasics.fs" />
+    <Compile Include="TypedTree\TcGlobals.fsi" />
     <Compile Include="TypedTree\TcGlobals.fs" />
     <Compile Include="TypedTree\TypedTreeOps.fsi" />
     <Compile Include="TypedTree\TypedTreeOps.fs" />
@@ -343,18 +362,21 @@
     <Compile Include="Checking\CheckBasics.fs" />
     <Compile Include="Checking\CheckRecordSyntaxHelpers.fsi" />
     <Compile Include="Checking\CheckRecordSyntaxHelpers.fs" />
-    <Compile Include="Checking\CheckExpressions.fsi" />
-    <Compile Include="Checking\CheckExpressions.fs" />
+    <Compile Include="Checking\Expressions\CheckExpressionsOps.fs" />
+    <Compile Include="Checking\Expressions\CheckExpressions.fsi" />
+    <Compile Include="Checking\Expressions\CheckExpressions.fs" />
     <Compile Include="Checking\CheckPatterns.fsi" />
     <Compile Include="Checking\CheckPatterns.fs" />
-    <Compile Include="Checking\CheckComputationExpressions.fsi" />
-    <Compile Include="Checking\CheckComputationExpressions.fs" />
+    <Compile Include="Checking\Expressions\CheckComputationExpressions.fsi" />
+    <Compile Include="Checking\Expressions\CheckComputationExpressions.fs" />
+    <Compile Include="Checking\Expressions\CheckSequenceExpressions.fs" />
+    <Compile Include="Checking\Expressions\CheckArrayOrListComputedExpressions.fs" />
     <Compile Include="Checking\CheckIncrementalClasses.fsi" />
     <Compile Include="Checking\CheckIncrementalClasses.fs" />
     <Compile Include="Checking\CheckDeclarations.fsi" />
     <Compile Include="Checking\CheckDeclarations.fs" />
-	<Compile Include="Checking\SignatureHash.fsi" />
-	<Compile Include="Checking\SignatureHash.fs" />
+    <Compile Include="Checking\SignatureHash.fsi" />
+    <Compile Include="Checking\SignatureHash.fs" />
     <Compile Include="Optimize\Optimizer.fsi" />
     <Compile Include="Optimize\Optimizer.fs" />
     <Compile Include="Optimize\DetupleArgs.fsi" />
@@ -440,12 +462,12 @@
     <Compile Include="Driver\fsc.fs" />
 
     <!-- the symbol API. -->
-    <Compile Include="Symbols\FSharpDiagnostic.fsi" />
-    <Compile Include="Symbols\FSharpDiagnostic.fs" />
     <Compile Include="Symbols\SymbolHelpers.fsi" />
     <Compile Include="Symbols\SymbolHelpers.fs" />
     <Compile Include="Symbols\Symbols.fsi" />
     <Compile Include="Symbols\Symbols.fs" />
+    <Compile Include="Symbols\FSharpDiagnostic.fsi" />
+    <Compile Include="Symbols\FSharpDiagnostic.fs" />
     <Compile Include="Symbols\Exprs.fsi" />
     <Compile Include="Symbols\Exprs.fs" />
     <Compile Include="Symbols\SymbolPatterns.fsi" />
@@ -471,6 +493,10 @@
     <Compile Include="Service\ServiceLexing.fs" />
     <Compile Include="Service\ServiceParseTreeWalk.fsi" />
     <Compile Include="Service\ServiceParseTreeWalk.fs" />
+    <Compile Include="Service\SynExpr.fsi" />
+    <Compile Include="Service\SynExpr.fs" />
+    <Compile Include="Service\SynPat.fsi" />
+    <Compile Include="Service\SynPat.fs" />
     <Compile Include="Service\ServiceNavigation.fsi" />
     <Compile Include="Service\ServiceNavigation.fs" />
     <Compile Include="Service\ServiceParamInfoLocations.fsi" />
@@ -489,6 +515,11 @@
     <Compile Include="Service\QuickParse.fs" />
     <Compile Include="Service\FSharpCheckerResults.fsi" />
     <Compile Include="Service\FSharpCheckerResults.fs" />
+    <Compile Include="Service\FSharpProjectSnapshot.fs" />
+    <Compile Include="Service\BackgroundCompiler.fsi" />
+    <Compile Include="Service\BackgroundCompiler.fs" />
+    <Compile Include="Service\TransparentCompiler.fsi" />
+    <Compile Include="Service\TransparentCompiler.fs" />
     <Compile Include="Service\service.fsi" />
     <Compile Include="Service\service.fs" />
     <Compile Include="Service\ServiceInterfaceStubGenerator.fsi" />
@@ -500,6 +531,8 @@
     <Compile Include="Interactive\FSharpInteractiveServer.fsi" />
     <Compile Include="Interactive\FSharpInteractiveServer.fs" />
     <Compile Include="Interactive\ControlledExecution.fs" />
+    <Compile Include="Interactive\fsihelp.fsi" />
+    <Compile Include="Interactive\fsihelp.fs" />
     <Compile Include="Interactive\fsi.fsi" />
     <Compile Include="Interactive\fsi.fs" />
     <!-- A legacy resolver used to help with scripting diagnostics in the Visual Studio tools -->
@@ -513,23 +546,18 @@
     </None>
   </ItemGroup>
 
-  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
-    <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
-    <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
-  </PropertyGroup>
-
   <ItemGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
     <!-- We are setting TFM explicitly here, since we are only using fslexyacc's dlls in msbuild -->
     <ProjectReference Include="$(RepoRoot)\buildtools\fslex\fslex.fsproj" ReferenceOutputAssembly="False">
-      <SetTargetFramework>TargetFramework=net7.0</SetTargetFramework>
+      <SetTargetFramework>TargetFramework=$(FSharpNetCoreProductTargetFramework)</SetTargetFramework>
       <ExcludeAssets>compile</ExcludeAssets>
     </ProjectReference>
     <ProjectReference Include="$(RepoRoot)\buildtools\fsyacc\fsyacc.fsproj" ReferenceOutputAssembly="False">
-      <SetTargetFramework>TargetFramework=net7.0</SetTargetFramework>
+      <SetTargetFramework>TargetFramework=$(FSharpNetCoreProductTargetFramework)</SetTargetFramework>
       <ExcludeAssets>compile</ExcludeAssets>
     </ProjectReference>
     <ProjectReference Include="$(RepoRoot)\buildtools\AssemblyCheck\AssemblyCheck.fsproj" ReferenceOutputAssembly="False">
-      <SetTargetFramework>TargetFramework=net7.0</SetTargetFramework>
+      <SetTargetFramework>TargetFramework=$(FSharpNetCoreProductTargetFramework)</SetTargetFramework>
       <ExcludeAssets>compile</ExcludeAssets>
     </ProjectReference>
   </ItemGroup>

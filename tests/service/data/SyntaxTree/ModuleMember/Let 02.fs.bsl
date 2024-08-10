@@ -9,8 +9,8 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
-                     None), Wild (3,4--3,5), None,
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
+                  Wild (3,4--3,5), None,
                   ArbitraryAfterError ("localBinding1", (3,7--3,7)), (3,4--3,5),
                   Yes (3,4--3,7), { LeadingKeyword = Let (3,0--3,3)
                                     InlineKeyword = None
@@ -21,5 +21,6 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(5,0)-(5,1) parse error Possible incorrect indentation: this token is offside of context started at position (3:1). Try indenting this token further or using standard formatting conventions.
+(5,0)-(5,1) parse error Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (3:1). Try indenting this further.
+To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
 (5,0)-(5,1) parse error Incomplete structured construct at or before this point in binding
