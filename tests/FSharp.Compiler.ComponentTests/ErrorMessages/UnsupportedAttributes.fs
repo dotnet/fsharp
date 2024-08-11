@@ -24,26 +24,19 @@ type C() =
         |> shouldFail
         |> withResults [
             { Error = Warning 202
-              Range = { StartLine = 3
-                        StartColumn = 13
-                        EndLine = 3
-                        EndColumn = 41 }
-              Message =
-               "This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect." }
-            { Error = Warning 202
               Range = { StartLine = 4
                         StartColumn = 7
                         EndLine = 4
                         EndColumn = 24 }
               Message =
                "This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect." }
-            { Error = Warning 202
+            { Error = Warning 1247
               Range = { StartLine = 6
-                        StartColumn = 22
+                        StartColumn = 14
                         EndLine = 6
-                        EndColumn = 82 }
+                        EndColumn = 15 }
               Message =
-               "This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect." }
+               "'CallerArgumentExpression \"w\"' can only be applied to optional arguments" }
             { Error = Warning 202
               Range = { StartLine = 7
                         StartColumn = 7
