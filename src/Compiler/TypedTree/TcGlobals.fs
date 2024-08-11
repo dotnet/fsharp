@@ -1083,7 +1083,6 @@ type TcGlobals(
   // Adding an unnecessary "let" instead of inlining into a muiti-line pipelined compute-once "member val" that is too complex for @dsyme
   let v_attribs_Unsupported = [
         tryFindSysAttrib "System.Runtime.CompilerServices.ModuleInitializerAttribute"
-        // tryFindSysAttrib "System.Runtime.CompilerServices.CallerArgumentExpressionAttribute"
         tryFindSysAttrib "System.Runtime.InteropServices.UnmanagedCallersOnlyAttribute"
         tryFindSysAttrib "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute"
         tryFindSysAttrib "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute"
@@ -1992,9 +1991,8 @@ type TcGlobals(
             |> String.concat "\n"
         | ValueNone -> 
             try
-                if FileSystem.IsInvalidPathShim m.FileName then
-                    System.String.Empty
-                elif not (FileSystem.FileExistsShim m.FileName) then
+                if FileSystem.IsInvalidPathShim m.FileName || 
+                   not (FileSystem.FileExistsShim m.FileName) then
                     System.String.Empty
                 else
                     FileSystem.OpenFileForReadShim(m.FileName).ReadLines()
