@@ -2614,7 +2614,8 @@ and [<Sealed>] TcImports
                     tcConfig.noDebugAttributes,
                     tcConfig.pathMap,
                     tcConfig.langVersion,
-                    tcConfig.realsig
+                    tcConfig.realsig,
+                    tcConfig.getLine
                 )
 
 #if DEBUG

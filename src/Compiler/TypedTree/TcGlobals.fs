@@ -190,7 +190,8 @@ type TcGlobals(
     noDebugAttributes: bool,
     pathMap: PathMap,
     langVersion: LanguageVersion,
-    realsig: bool) =
+    realsig: bool,
+    getLine: (string -> int -> string) voption) =
 
   let v_langFeatureNullness = langVersion.SupportsFeature LanguageFeature.NullnessChecking
 
@@ -1979,6 +1980,30 @@ type TcGlobals(
         Some (info, tyargs, argExprs)
     | _ ->
         None
+
+  member _.GetCodeText (m: Text.Range) =
+    let endCol = m.EndColumn - 1
+    let startCol = m.StartColumn - 1
+
+    let s = 
+        match getLine with
+        | ValueSome f -> 
+            [for i in m.StartLine..m.EndLine -> f m.FileName i]
+            |> String.concat "\n"
+        | ValueNone -> 
+            try
+                if FileSystem.IsInvalidPathShim m.FileName then
+                    System.String.Empty
+                elif not (FileSystem.FileExistsShim m.FileName) then
+                    System.String.Empty
+                else
+                    FileSystem.OpenFileForReadShim(m.FileName).ReadLines()
+                    |> Seq.skip (m.StartLine - 1)
+                    |> Seq.take (m.EndLine - m.StartLine + 1)
+                    |> String.concat "\n"
+            with e -> System.String.Empty
+    if System.String.IsNullOrEmpty s then ValueNone else
+    ValueSome <| s.Substring(startCol + 1, s.LastIndexOf("\n", System.StringComparison.Ordinal) + 1 - startCol + endCol)
 
 #if DEBUG
 // This global is only used during debug output

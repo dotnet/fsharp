@@ -4661,6 +4661,8 @@ type FsiEvaluationSession
         if List.isEmpty fsiOptions.SourceFiles then
             fsiConsolePrompt.PrintAhead()
 
+    do tcConfigB.getLine <- ValueSome fsiStdinSyphon.GetLine
+
     let fsiConsoleInput = FsiConsoleInput(fsi, fsiOptions, inReader, outWriter)
 
     /// The single, global interactive checker that can be safely used in conjunction with other operations

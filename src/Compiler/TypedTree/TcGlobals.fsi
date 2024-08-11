@@ -147,7 +147,8 @@ type internal TcGlobals =
         noDebugAttributes: bool *
         pathMap: Internal.Utilities.PathMap *
         langVersion: FSharp.Compiler.Features.LanguageVersion *
-        realsig: bool ->
+        realsig: bool *
+        getLine: (string -> int -> string) voption ->
             TcGlobals
 
     static member IsInEmbeddableKnownSet: name: string -> bool
@@ -319,6 +320,8 @@ type internal TcGlobals =
     member attrib_CallerFilePathAttribute: BuiltinAttribInfo
 
     member attrib_CallerLineNumberAttribute: BuiltinAttribInfo
+
+    member attrib_CallerArgumentExpressionAttribute: BuiltinAttribInfo option
 
     member attrib_CallerMemberNameAttribute: BuiltinAttribInfo
 
@@ -1364,6 +1367,8 @@ type internal TcGlobals =
     member valueoption_tcr_nice: FSharp.Compiler.TypedTree.EntityRef
 
     member voidptr_tcr: FSharp.Compiler.TypedTree.EntityRef
+
+    member GetCodeText: m: Text.Range -> string voption
 
 #if DEBUG
 // This global is only used during debug output
