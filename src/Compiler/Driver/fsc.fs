@@ -621,7 +621,7 @@ let main1
 
     // Register framework tcImports to be disposed in future
     disposables.Register frameworkTcImports
-    
+
     FileContent.readFiles sourceFiles
 
     // Parse sourceFiles

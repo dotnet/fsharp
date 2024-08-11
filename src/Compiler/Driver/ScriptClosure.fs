@@ -159,7 +159,7 @@ module ScriptPreprocessClosure =
             reduceMemoryUsage
         ) =
 
-        FileContent.readFiles [fileName]
+        FileContent.readFiles [ fileName ]
         let projectDir = Path.GetDirectoryName fileName
         let isInteractive = (codeContext = CodeContext.CompilationAndEvaluation)
         let isInvalidationSupported = (codeContext = CodeContext.Editing)

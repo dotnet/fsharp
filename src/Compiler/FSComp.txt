@@ -1776,4 +1776,4 @@ featureParsedHashDirectiveArgumentNonString,"# directives with non-quoted string
 3869,featureParsedHashDirectiveUnexpectedIdentifier,"Unexpected identifier '%s'."
 featureEmptyBodiedComputationExpressions,"Support for computation expressions with empty bodies: builder {{ }}"
 3870,parsExpectingUnionCaseField,"Expecting union case field"
-featureEmptyBodiedComputationExpressions,"Support `CallerArgumentExpression`"
+featureSupportCallerArgumentExpression,"Support `CallerArgumentExpression`"
