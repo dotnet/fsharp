@@ -809,7 +809,7 @@ type Exception with
 
         | ErrorFromAddingTypeEquation(error = ConstraintSolverError _ as e) -> e.Output(os, suggestNames)
 
-        | ErrorFromAddingTypeEquation(_g, denv, ty1, ty2, ConstraintSolverTupleDiffLengths(_, contextInfo, tl1, tl2, _, _), m) ->
+        | ErrorFromAddingTypeEquation(_g, denv, ty1, ty2, ConstraintSolverTupleDiffLengths(_, contextInfo, tl1, tl2, m1, m2), m) ->
             let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
             let messageArgs = tl1.Length, ty1, tl2.Length, ty2
 
@@ -826,6 +826,11 @@ type Exception with
                     else
                         os.AppendString(FSComp.SR.listElementHasWrongTypeTuple messageArgs)
                 | _ -> os.AppendString(ErrorFromAddingTypeEquationTuplesE().Format tl1.Length ty1 tl2.Length ty2 tpcs)
+            else
+                os.AppendString(ConstraintSolverTupleDiffLengthsE().Format tl1.Length tl2.Length)
+
+                if m1.StartLine <> m2.StartLine then
+                    os.AppendString(SeeAlsoE().Format(stringOfRange m1))
 
         | ErrorFromAddingTypeEquation(g, denv, ty1, ty2, e, _) ->
             if not (typeEquiv g ty1 ty2) then

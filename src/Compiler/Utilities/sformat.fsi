@@ -213,6 +213,7 @@ module internal TaggedText =
     val internal keywordInline: TaggedText
     val internal keywordModule: TaggedText
     val internal keywordNamespace: TaggedText
+    val internal keywordReturn: TaggedText
     val internal punctuationUnit: TaggedText
 
 type internal IEnvironment =
