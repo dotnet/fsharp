@@ -4661,7 +4661,7 @@ type FsiEvaluationSession
         if List.isEmpty fsiOptions.SourceFiles then
             fsiConsolePrompt.PrintAhead()
 
-    do tcConfigB.getLine <- ValueSome fsiStdinSyphon.GetLine
+    do tcConfigB.getLine <- fsiStdinSyphon.GetLine
 
     let fsiConsoleInput = FsiConsoleInput(fsi, fsiOptions, inReader, outWriter)
 

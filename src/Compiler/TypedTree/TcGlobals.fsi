@@ -148,7 +148,7 @@ type internal TcGlobals =
         pathMap: Internal.Utilities.PathMap *
         langVersion: FSharp.Compiler.Features.LanguageVersion *
         realsig: bool *
-        getLine: (string -> int -> string) voption ->
+        getLine: (string -> int -> string) ->
             TcGlobals
 
     static member IsInEmbeddableKnownSet: name: string -> bool

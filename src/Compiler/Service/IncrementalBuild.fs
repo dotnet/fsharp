@@ -1467,6 +1467,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
                 tcConfigB, sourceFilesNew
 
+            FileContent.readFiles sourceFiles
+
             // If this is a builder for a script, re-apply the settings inferred from the
             // script and its load closure to the configuration.
             //

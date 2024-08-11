@@ -566,3 +566,17 @@ module Range =
                     | None -> mkRange file (mkPos 1 0) (mkPos 1 80)
         with _ ->
             mkRange file (mkPos 1 0) (mkPos 1 80)
+
+module internal FileContent =
+    let private dict = ConcurrentDictionary<string, string array>()
+
+    let readFiles (fileNames: string list) =
+        for fileName in fileNames do
+            if FileSystem.FileExistsShim fileName then
+                use fileStream = FileSystem.OpenFileForReadShim(fileName)
+                dict[fileName] <- fileStream.ReadAllLines()
+
+    let getLine fileName line =
+        match dict.TryGetValue fileName with
+        | true, lines when lines.Length > line -> lines[line - 1]
+        | _ -> String.Empty

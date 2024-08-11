@@ -269,4 +269,11 @@ module Line =
     /// Convert a line number from one-based line counting (used internally in the F# compiler and in F# error messages) to zero-based line counting (used by Visual Studio)
     val toZ: int -> Line0 
 
+/// Store code file content. Use to implement `CallerArgumentExpression`
+module internal FileContent =
 
+    /// Read all file contents
+    val readFiles: fileNames: string list -> unit
+
+    /// Get a line string from already read files
+    val getLine: fileName: string -> line: int -> string

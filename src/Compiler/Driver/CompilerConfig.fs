@@ -620,7 +620,7 @@ type TcConfigBuilder =
 
         mutable realsig: bool
 
-        mutable getLine: (string -> int -> string) voption
+        mutable getLine: string -> int -> string
     }
 
     // Directories to start probing in
@@ -831,7 +831,7 @@ type TcConfigBuilder =
             dumpSignatureData = false
             realsig = true
             strictIndentation = None
-            getLine = ValueNone
+            getLine = FileContent.getLine
         }
 
     member tcConfigB.FxResolver =

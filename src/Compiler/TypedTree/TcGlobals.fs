@@ -191,7 +191,8 @@ type TcGlobals(
     pathMap: PathMap,
     langVersion: LanguageVersion,
     realsig: bool,
-    getLine: (string -> int -> string) voption) =
+    // Get a line string from a code file. Use to implement `CallerArgumentExpression`
+    getLine: string -> int -> string) =
 
   let v_langFeatureNullness = langVersion.SupportsFeature LanguageFeature.NullnessChecking
 
@@ -1985,21 +1986,9 @@ type TcGlobals(
     let startCol = m.StartColumn - 1
 
     let s = 
-        match getLine with
-        | ValueSome f -> 
-            [for i in m.StartLine..m.EndLine -> f m.FileName i]
-            |> String.concat "\n"
-        | ValueNone -> 
-            try
-                if FileSystem.IsInvalidPathShim m.FileName || 
-                   not (FileSystem.FileExistsShim m.FileName) then
-                    System.String.Empty
-                else
-                    FileSystem.OpenFileForReadShim(m.FileName).ReadLines()
-                    |> Seq.skip (m.StartLine - 1)
-                    |> Seq.take (m.EndLine - m.StartLine + 1)
-                    |> String.concat "\n"
-            with e -> System.String.Empty
+        [| for i in m.StartLine..m.EndLine -> getLine m.FileName i |]
+        |> String.concat "\n"
+    printfn "%A" (m, s)
     if System.String.IsNullOrEmpty s then ValueNone else
     ValueSome <| s.Substring(startCol + 1, s.LastIndexOf("\n", System.StringComparison.Ordinal) + 1 - startCol + endCol)
 
