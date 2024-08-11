@@ -598,7 +598,7 @@ let visitPat (p: SynPat) : FileContentEntry list =
         match p with
         | NameofPat moduleNameIdent -> continuation [ visitNameofResult moduleNameIdent ]
         | SynPat.Paren(pat = pat) -> visit pat continuation
-        | SynPat.Typed(pat = pat; targetType = t) -> visit pat (fun nodes -> nodes @ visitSynType t)
+        | SynPat.Typed(pat = pat; targetType = t) -> visit pat (fun nodes -> nodes @ visitSynType t |> continuation)
         | SynPat.Const _ -> continuation []
         | SynPat.Wild _ -> continuation []
         | SynPat.Named _ -> continuation []
