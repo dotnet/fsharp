@@ -33,6 +33,93 @@ let implementer() ={ new IFirst  }
          |> withLangVersion80
          |> typecheck
          |> shouldSucceed
+
+    [<Fact>]
+    let ``Object expression can construct an abstract class and also implement interfaces with and without abstract members.`` () =
+        Fsx """
+type IFirst = interface end
+
+type ISecond =
+    abstract member M : unit -> unit
+    
+[<AbstractClass>]
+type MyClass() = class end
+
+{ new MyClass() with
+    member x.ToString() = "OK"
+    
+  interface IFirst
+  
+  interface ISecond with
+      member this.M() = () } |> ignore
+        """
+         |> withLangVersion80
+         |> typecheck
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Object expression can construct an abstract class(missing with...) and also implement interfaces with and without abstract members.`` () =
+        Fsx """
+type IFirst = interface end
+
+type ISecond =
+    abstract member M : unit -> unit
+    
+[<AbstractClass>]
+type MyClass() = class end
+
+{ new MyClass() interface IFirst
+  
+  interface ISecond with
+      member this.M() = () } |> ignore
+        """
+         |> withLangVersion80
+         |> typecheck
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Object expression can construct an abstract class(missing with... and interface in the next line) and also implement interfaces with and without abstract members.`` () =
+        Fsx """
+type IFirst = interface end
+
+type ISecond =
+    abstract member M : unit -> unit
+    
+[<AbstractClass>]
+type MyClass() = class end
+
+{ new MyClass()
+    interface IFirst
+  
+  interface ISecond with
+      member this.M() = () } |> ignore
+        """
+         |> withLangVersion80
+         |> typecheck
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Verifies that the object expression built type has the interface.`` () =
+        Fsx """
+type IFirst = interface end
+
+type ISecond =
+    abstract member M : unit -> unit
+    
+[<AbstractClass>]
+type MyClass() =
+    interface ISecond with
+        member this.M() = printfn "It works"
+
+let expr = { new MyClass() interface IFirst }
+(expr:> ISecond).M()
+        """
+         |> withLangVersion80
+         |> compileExeAndRun
+         |> shouldSucceed
+         |> withStdOutContainsAllInOrder [
+           "It works"
+        ]
          
     [<Fact>]
     let ``Parameterized object expression implementing an interface with members`` () =

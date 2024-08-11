@@ -229,3 +229,9 @@ module MemberDefinitions_OverloadingMembers =
         |> withDefines ["TOO_GENERIC"]
         |> verifyCompileAndRun
         |> shouldSucceed
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"OverloadResolutionUsingFunction.fs"|])>]
+    let ``OverloadResolutionUsingFunction_fs`` compilation =
+        compilation
+        |> verifyCompileAndRun
+        |> shouldSucceed

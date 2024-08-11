@@ -90,7 +90,7 @@ namespace Microsoft.FSharp.Core
     type VolatileFieldAttribute() =
         inherit Attribute()
       
-    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple=false)>]  
     [<Sealed>]
     type DefaultAugmentationAttribute(value:bool) = 
         inherit Attribute()
@@ -106,7 +106,7 @@ namespace Microsoft.FSharp.Core
     type CLIMutableAttribute() = 
         inherit Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct , AllowMultiple=false)>]
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple=false)>]
     [<Sealed>]
     type AutoSerializableAttribute(value:bool) = 
         inherit Attribute()

@@ -9,6 +9,7 @@ Available overloads:
  - static member Zero.Zero: 'a array * Zero -> 'a array // Argument at index 1 doesn't match
  - static member Zero.Zero: 'a list * Zero -> 'a list // Argument at index 1 doesn't match
  - static member Zero.Zero: 'a option * Zero -> 'a option // Argument at index 1 doesn't match
+ - static member Zero.Zero: 'a seq * Zero -> 'a seq // Argument at index 1 doesn't match
  - static member Zero.Zero: ('T -> ^Monoid) * Zero -> ('T -> ^Monoid) when (Zero or ^Monoid) : (static member Zero: ^Monoid * Zero -> ^Monoid) // Argument at index 1 doesn't match
  - static member Zero.Zero: Async<^a> * Zero -> Async<^a> when (Zero or ^a) : (static member Zero: ^a * Zero -> ^a) // Argument at index 1 doesn't match
  - static member Zero.Zero: Lazy<^a> * Zero -> Lazy<^a> when (Zero or ^a) : (static member Zero: ^a * Zero -> ^a) // Argument at index 1 doesn't match
@@ -21,6 +22,5 @@ Available overloads:
  - static member Zero.Zero: ^t * Default2 -> ('a1 -> 'a1) when ^t: null and ^t: struct // Argument at index 1 doesn't match
  - static member Zero.Zero: ^t * Default2 -> ^t when (FromInt32 or ^t) : (static member FromInt32: ^t * FromInt32 -> (int32 -> ^t)) // Argument at index 1 doesn't match
  - static member Zero.Zero: ^t * Default3 -> ^t when ^t: (static member Empty: ^t) // Argument at index 1 doesn't match
- - static member Zero.Zero: 'a seq * Zero -> 'a seq // Argument at index 1 doesn't match
  - static member Zero.Zero: string * Zero -> string // Argument at index 1 doesn't match
  - static member Zero.Zero: unit * Zero -> unit // Argument at index 1 doesn't match
