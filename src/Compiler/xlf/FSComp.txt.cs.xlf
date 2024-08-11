@@ -1007,19 +1007,24 @@
         <target state="translated">Byl očekáván výraz.</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsExpectingField">
-        <source>Expecting record field</source>
-        <target state="translated">Očekává se pole záznamu.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsExpectingPattern">
         <source>Expecting pattern</source>
         <target state="translated">Očekává se vzorek.</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsExpectingRecordField">
+        <source>Expecting record field</source>
+        <target state="new">Expecting record field</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsExpectingType">
         <source>Expecting type</source>
         <target state="translated">Očekává se typ</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingUnionCaseField">
+        <source>Expecting union case field</source>
+        <target state="new">Expecting union case field</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">

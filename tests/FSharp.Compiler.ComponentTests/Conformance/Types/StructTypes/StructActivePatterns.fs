@@ -50,7 +50,7 @@ let rec (|IsOne|_|) someNumber =
         |> withOptions ["--warnaserror+"]
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 3350, Line 2, Col 9, Line 2, Col 31, "Feature 'Boolean-returning and return-type-directed partial active patterns' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+        |> withSingleDiagnostic (Error 3350, Line 2, Col 9, Line 2, Col 31, "Feature 'Boolean-returning and return-type-directed partial active patterns' is not available in F# 8.0. Please use language version 9.0 or greater.")
 
     [<Fact>]
     let ``Rec struct active pattern is possible`` () =

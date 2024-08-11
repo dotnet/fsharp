@@ -6,7 +6,6 @@ open FSharp.Test.Compiler
 
 let typeCheckWithStrictNullness cu =
     cu
-    |> withLangVersionPreview
     |> withCheckNulls
     |> withWarnOn 3261
     |> withOptions ["--warnaserror+"]

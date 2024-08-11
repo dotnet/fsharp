@@ -2179,9 +2179,8 @@ module Array =
             // Not exists $condition <==> (opposite of $condition is true forall)
             exists (predicate >> not) array |> not
 
-        [<CompiledName("TryFindIndex")>]
-        let tryFindIndex predicate (array: _ array) =
-            checkNonNull "array" array
+        let inline tryFindIndexAux predicate (array: _ array) =
+            checkNonNull (nameof array) array
 
             let pResult =
                 Parallel.For(
@@ -2192,16 +2191,24 @@ module Array =
                             pState.Break())
                 )
 
-            pResult.LowestBreakIteration |> Option.ofNullable |> Option.map int
+            pResult.LowestBreakIteration
+
+        [<CompiledName("TryFindIndex")>]
+        let tryFindIndex predicate (array: _ array) =
+            let i = tryFindIndexAux predicate array
+            if i.HasValue then Some (int (i.GetValueOrDefault()))
+            else None
 
         [<CompiledName("TryFind")>]
         let tryFind predicate (array: _ array) =
-            array |> tryFindIndex predicate |> Option.map (fun i -> array[i])
+            let i = tryFindIndexAux predicate array
+            if i.HasValue then Some array[int (i.GetValueOrDefault())]
+            else None
 
         [<CompiledName("TryPick")>]
         let tryPick chooser (array: _ array) =
             checkNonNull "array" array
-            let allChosen = new System.Collections.Concurrent.ConcurrentDictionary<_, _>()
+            let allChosen = System.Collections.Concurrent.ConcurrentDictionary()
 
             let pResult =
                 Parallel.For(
@@ -2215,9 +2222,8 @@ module Array =
                             pState.Break())
                 )
 
-            pResult.LowestBreakIteration
-            |> Option.ofNullable
-            |> Option.bind (fun i -> allChosen[int i])
+            if pResult.LowestBreakIteration.HasValue then allChosen[int (pResult.LowestBreakIteration.GetValueOrDefault())]
+            else None
 
         [<CompiledName("Choose")>]
         let choose chooser (array: 'T array) =
