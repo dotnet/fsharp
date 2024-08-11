@@ -37,6 +37,7 @@
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\PermittedLocations\PermittedLocations.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\AttributeInheritance\AttributeInheritance.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\AttributeUsage\AttributeUsage.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\CallerArgumentExpression.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\Basic\Basic.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\ImportedAttributes\ImportedAttributes.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\ArgumentsOfAllTypes\ArgumentsOfAllTypes.fs" />
@@ -338,6 +339,7 @@
   <ItemGroup>
     <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
     <EmbeddedResource Remove="Properties\**" />
+    <None Remove="Conformance\BasicGrammarElements\CustomAttributes\CallerArgumentExpression.fs" />
     <None Remove="EmittedIL\GenericComparison\CrossAssembly.fs" />
     <None Remove="ErrorMessages\ActivePatternArgCountMismatchTest.fs" />
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />

@@ -30,7 +30,7 @@ type C() =
                         EndColumn = 24 }
               Message =
                "This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect." }
-            { Error = Warning 1247
+            { Error = Error 1247
               Range = { StartLine = 6
                         StartColumn = 14
                         EndLine = 6

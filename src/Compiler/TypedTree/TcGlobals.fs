@@ -1988,7 +1988,6 @@ type TcGlobals(
     let s = 
         [| for i in m.StartLine..m.EndLine -> getLine m.FileName i |]
         |> String.concat "\n"
-    printfn "%A" (m, s)
     if System.String.IsNullOrEmpty s then ValueNone else
     ValueSome <| s.Substring(startCol + 1, s.LastIndexOf("\n", System.StringComparison.Ordinal) + 1 - startCol + endCol)
 
