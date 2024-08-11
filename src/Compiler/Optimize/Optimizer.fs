@@ -2245,7 +2245,7 @@ let TryDetectQueryQuoteAndRun cenv (expr: Expr) =
                 | QuerySelect g (qTy, _, resultElemTy, _, _) 
                 | QueryYield g (qTy, resultElemTy, _) 
                 | QueryYieldFrom g (qTy, resultElemTy, _) 
-                     when typeEquiv g qTy (mkAppTy g.tcref_System_Collections_IEnumerable []) -> 
+                     when typeEquiv g qTy (mkWoNullAppTy g.tcref_System_Collections_IEnumerable []) -> 
 
                     match tryRewriteToSeqCombinators g e with 
                     | Some newSource -> 
@@ -3137,9 +3137,12 @@ and OptimizeVal cenv env expr (v: ValRef, m) =
 
     | None ->
        if v.ShouldInline then
-           warning(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
+            match valInfoForVal.ValExprInfo with
+            | UnknownValue -> error(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
+            | _ -> warning(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
        if v.InlineIfLambda then 
            warning(Error(FSComp.SR.optFailedToInlineSuggestedValue(v.DisplayName), m))
+
        expr, (AddValEqualityInfo g m v 
                     { Info=valInfoForVal.ValExprInfo 
                       HasEffect=false 
@@ -3221,7 +3224,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
             // the target takes a tupled argument, so we need to reorder the arg expressions in the
             // arg list, and create a tuple of y & comp
             // push the comparer to the end and box the argument
-            let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty, m, ty) ; comp]]
+            let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty_ambivalent, m, ty) ; comp]]
             Some (DevirtualizeApplication cenv env vref ty tyargs args2 m)
         | _ -> None
         
@@ -3246,7 +3249,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
             Some (DevirtualizeApplication cenv env withcEqualsExactVal ty tyargs args2 m)
         | Some (_, _, withcEqualsVal, _ ), [comp; x; y] -> 
             // push the comparer to the end and box the argument
-            let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty, m, ty) ; comp]]
+            let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty_ambivalent, m, ty) ; comp]]
             Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
         | _ -> None 
       
@@ -3268,7 +3271,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
                let args2 = [x; mkRefTupledNoTypes g m [y; (mkCallGetGenericPEREqualityComparer g m)]]
                Some (DevirtualizeApplication cenv env equalsExact ty tyargs args2 m)
            | None ->
-               let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty, m, ty); (mkCallGetGenericPEREqualityComparer g m)]]
+               let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty_ambivalent, m, ty); (mkCallGetGenericPEREqualityComparer g m)]]
                Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
        | _ -> None     
     
@@ -4345,8 +4348,7 @@ and OptimizeModuleDefs cenv (env, bindInfosColl) defs =
     let defs, minfos = List.unzip defs
     (defs, UnionOptimizationInfos minfos), (env, bindInfosColl)
    
-and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit hidden implFile =
-    let g = cenv.g
+and OptimizeImplFileInternal cenv env isIncrementalFragment hidden implFile =
     let (CheckedImplFile (qname, pragmas, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) = implFile
     let env, contentsR, minfo, hidden = 
         // FSI compiles interactive fragments as if you're typing incrementally into one module.
@@ -4358,13 +4360,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit
             // This optimizes and builds minfo ignoring the signature
             let (defR, minfo), (_env, _bindInfosColl) = OptimizeModuleContents cenv (env, []) contents
             let hidden = ComputeImplementationHidingInfoAtAssemblyBoundary defR hidden
-            let minfo =
-                // In F# interactive multi-assembly mode, no internals are accessible across interactive fragments.
-                // In F# interactive single-assembly mode, internals are accessible across interactive fragments.
-                if fsiMultiAssemblyEmit then
-                    AbstractLazyModulInfoByHiding true hidden minfo
-                else
-                    AbstractLazyModulInfoByHiding false hidden minfo
+            let minfo = AbstractLazyModulInfoByHiding false hidden minfo
             let env = BindValsInModuleOrNamespace cenv minfo env
             env, defR, minfo, hidden
         else
@@ -4372,13 +4368,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit
             let mexprR, minfo = OptimizeModuleExprWithSig cenv env signature contents
             let hidden = ComputeSignatureHidingInfoAtAssemblyBoundary signature hidden
             let minfoExternal = AbstractLazyModulInfoByHiding true hidden minfo
-            let env =
-                // In F# interactive multi-assembly mode, internals are not accessible in the 'env' used intra-assembly
-                // In regular fsc compilation, internals are accessible in the 'env' used intra-assembly
-                if g.isInteractive && fsiMultiAssemblyEmit then
-                    BindValsInModuleOrNamespace cenv minfoExternal env
-                else
-                    BindValsInModuleOrNamespace cenv minfo env
+            let env = BindValsInModuleOrNamespace cenv minfo env
             env, mexprR, minfoExternal, hidden
 
     let implFileR = CheckedImplFile (qname, pragmas, signature, contentsR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
@@ -4386,7 +4376,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit
     env, implFileR, minfo, hidden
 
 /// Entry point
-let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncrementalFragment, fsiMultiAssemblyEmit, emitTailcalls, hidden, mimpls) =
+let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncrementalFragment,  emitTailcalls, hidden, mimpls) =
     let cenv = 
         { settings=settings
           scope=ccu 
@@ -4401,7 +4391,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           realsig = tcGlobals.realsig
         }
 
-    let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment fsiMultiAssemblyEmit hidden mimpls  
+    let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls
 
     let optimizeDuringCodeGen disableMethodSplitting expr =
         let env = { env with disableMethodSplitting = env.disableMethodSplitting || disableMethodSplitting }

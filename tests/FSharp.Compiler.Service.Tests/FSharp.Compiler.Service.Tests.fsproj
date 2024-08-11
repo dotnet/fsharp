@@ -60,6 +60,7 @@
     <Compile Include="BlockTests.fs" />
     <Compile Include="BuildGraphTests.fs" />
     <Compile Include="FsiTests.fs" />
+    <Compile Include="FsiHelpTests.fs" />
     <Compile Include="AssemblySigningAttributes.fs" />
     <Compile Include="PostInferenceChecksTests.fs" />
     <Compile Include="PrettyNaming.fs" />
@@ -73,6 +74,12 @@
     <Compile Include="SynExprTests.fs" />
     <Compile Include="SynPatTests.fs" />
   </ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\service\data\SyntaxTree\**\*.*" Exclude="@(Compile)">
+			<Link>SyntaxTreeTestSource\%(RecursiveDir)\%(Extension)\%(Filename)%(Extension)</Link>
+		</None>
+	</ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Dotnet.ProjInfo" Version="0.37.0" />

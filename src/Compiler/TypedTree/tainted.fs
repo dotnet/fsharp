@@ -101,11 +101,12 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
             | :? TypeProviderError -> reraise()
             | :? AggregateException as ae ->
                     let errNum,_ = FSComp.SR.etProviderError("", "")
-                    let messages = [for e in ae.InnerExceptions -> e.Message]
+                    let messages = [for e in ae.InnerExceptions -> if isNull e.InnerException then e.Message else (e.Message + ": " + e.GetBaseException().Message)]
                     raise <| TypeProviderError(errNum, this.TypeProviderDesignation, range, messages)
             | e -> 
                     let errNum,_ = FSComp.SR.etProviderError("", "")
-                    raise <| TypeProviderError((errNum, e.Message), this.TypeProviderDesignation, range)
+                    let error = if isNull e.InnerException then e.Message else (e.Message + ": " + e.GetBaseException().Message)
+                    raise <| TypeProviderError((errNum, error), this.TypeProviderDesignation, range)
 
     member _.TypeProvider = Tainted<_>(context, context.TypeProvider)
 
@@ -131,8 +132,8 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
         let u = this.Protect (fun x -> f (x, context.TypeProvider)) range
         Tainted(context, u)
 
-    member this.PApplyArray(f, methodName, range: range) =        
-        let a : 'U[] = this.Protect f range
+    member this.PApplyArray(f, methodName, range:range) =        
+        let a : 'U[] MaybeNull = this.Protect f range
         match a with 
         | Null -> raise <| TypeProviderError(FSComp.SR.etProviderReturnedNull(methodName), this.TypeProviderDesignation, range)
         | NonNull a -> a |> Array.map (fun u -> Tainted(context,u))
@@ -163,8 +164,14 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
         Tainted(context, this.Protect(fun value -> box value :?> 'U) range)
 
 module internal Tainted =
-    let (|Null|NonNull|) (p:Tainted<'T>) : Choice<unit,Tainted<'T>> when 'T : null and 'T : not struct =
+
+#if NO_CHECKNULLS
+    let (|Null|NonNull|) (p:Tainted<'T>) : Choice<unit, Tainted<'T>> when 'T : null and 'T : not struct =
         if p.PUntaintNoFailure isNull then Null else NonNull (p.PApplyNoFailure id)
+#else
+    let (|Null|NonNull|) (p:Tainted<'T | null>) : Choice<unit, Tainted<'T>> when 'T : not null and 'T : not struct =
+        if p.PUntaintNoFailure isNull then Null else NonNull (p.PApplyNoFailure nonNull)
+#endif
 
     let Eq (p:Tainted<'T>) (v:'T) = p.PUntaintNoFailure (fun pv -> pv = v)
 

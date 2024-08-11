@@ -179,13 +179,19 @@ type ILTypeInfo =
 
     member TypeInstOfRawMetadata: TypeInst
 
+[<NoComparison; NoEquality>]
+type ILMethParentTypeInfo =
+    | IlType of ILTypeInfo
+    | CSharpStyleExtension of declaring: TyconRef * apparent: TType
+
+    member ToType: TType
+
 /// Describes an F# use of an IL method.
 [<NoComparison; NoEquality>]
 type ILMethInfo =
     | ILMethInfo of
         g: TcGlobals *
-        ilApparentType: TType *
-        ilDeclaringTyconRefOpt: TyconRef option *
+        ilType: ILMethParentTypeInfo *
         ilMethodDef: ILMethodDef *
         ilGenericMethodTyArgs: Typars
 

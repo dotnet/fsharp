@@ -324,6 +324,7 @@ module DispatchSlotChecking =
     let CheckDispatchSlotsAreImplemented (denv, infoReader: InfoReader, m,
                                           nenv, sink: TcResultsSink,
                                           isOverallTyAbstract,
+                                          isObjExpr,
                                           reqdTy,
                                           dispatchSlots: RequiredSlot list,
                                           availPriorOverrides: OverrideInfo list,
@@ -332,7 +333,7 @@ module DispatchSlotChecking =
         let amap = infoReader.amap
 
         let isReqdTyInterface = isInterfaceTy g reqdTy
-        let showMissingMethodsAndRaiseErrors = (isReqdTyInterface || not isOverallTyAbstract)
+        let showMissingMethodsAndRaiseErrors = (isReqdTyInterface || not isOverallTyAbstract) || (isOverallTyAbstract && isObjExpr)
         
         let mutable res = true
         let fail exn =
@@ -824,7 +825,7 @@ module DispatchSlotChecking =
                 
                 if isImplementation && not (isInterfaceTy g overallTy) then 
                     let overrides = allImmediateMembersThatMightImplementDispatchSlots |> List.map snd
-                    let allCorrect = CheckDispatchSlotsAreImplemented (denv, infoReader, m, nenv, sink, tcaug.tcaug_abstract, reqdTy, dispatchSlots, availPriorOverrides, overrides)
+                    let allCorrect = CheckDispatchSlotsAreImplemented (denv, infoReader, m, nenv, sink, tcaug.tcaug_abstract, false, reqdTy, dispatchSlots, availPriorOverrides, overrides)
                     
                     // Tell the user to mark the thing abstract if it was missing implementations
                     if not allCorrect && not tcaug.tcaug_abstract && (isClassTy g reqdTy) then
@@ -893,7 +894,7 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv
 #endif
        Option.isNone tycon.GeneratedCompareToValues &&
        tycon.HasInterface g g.mk_IComparable_ty && 
-       not (tycon.HasOverride g "Equals" [g.obj_ty]) && 
+       not (tycon.HasOverride g "Equals" [g.obj_ty_ambivalent]) && 
        not tycon.IsFSharpInterfaceTycon
      then
         (* Warn when we're doing this for class types *)
@@ -912,7 +913,7 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv
         let tcaug = tycon.TypeContents
         let m = tycon.Range
         let hasExplicitObjectGetHashCode = tycon.HasOverride g "GetHashCode" []
-        let hasExplicitObjectEqualsOverride = tycon.HasOverride g "Equals" [g.obj_ty]
+        let hasExplicitObjectEqualsOverride = tycon.HasOverride g "Equals" [g.obj_ty_ambivalent]
 
         if (Option.isSome tycon.GeneratedHashAndEqualsWithComparerValues) && 
            (hasExplicitObjectGetHashCode || hasExplicitObjectEqualsOverride) then 

@@ -91,16 +91,19 @@ let ResolveFileUsingPaths (paths, m, fileName) =
         let searchMessage = String.concat "\n " paths
         raise (FileNameNotResolved(fileName, searchMessage, m))
 
-let GetWarningNumber (m, warningNumber: string) =
+let GetWarningNumber (m, warningNumber: string, prefixSupported) =
     try
-        // Okay so ...
-        //      #pragma strips FS of the #pragma "FS0004" and validates the warning number
-        //      therefore if we have warning id that starts with a numeric digit we convert it to Some (int32)
-        //      anything else is ignored None
+        let warningNumber =
+            if warningNumber.StartsWithOrdinal "FS" then
+                if prefixSupported then
+                    warningNumber.Substring 2
+                else
+                    raise (new ArgumentException())
+            else
+                warningNumber
+
         if Char.IsDigit(warningNumber[0]) then
             Some(int32 warningNumber)
-        elif warningNumber.StartsWithOrdinal "FS" then
-            raise (ArgumentException())
         else
             None
     with _ ->
@@ -194,11 +197,14 @@ type IRawFSharpAssemblyData =
     abstract TryGetILModuleDef: unit -> ILModuleDef option
 
     ///  The raw F# signature data in the assembly, if any
-    abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
+    abstract GetRawFSharpSignatureData:
+        range * ilShortAssemName: string * fileName: string ->
+            (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
 
     ///  The raw F# optimization data in the assembly, if any
     abstract GetRawFSharpOptimizationData:
-        range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
+        range * ilShortAssemName: string * fileName: string ->
+            (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
 
     ///  The table of type forwarders in the assembly
     abstract GetRawTypeForwarders: unit -> ILExportedTypesAndForwarders
@@ -440,6 +446,7 @@ type TcConfigBuilder =
         mutable embedResources: string list
         mutable diagnosticsOptions: FSharpDiagnosticOptions
         mutable mlCompatibility: bool
+        mutable checkNullness: bool
         mutable checkOverflow: bool
         mutable showReferenceResolutions: bool
         mutable outputDir: string option
@@ -678,6 +685,7 @@ type TcConfigBuilder =
             subsystemVersion = 4, 0 // per spec for 357994
             useHighEntropyVA = false
             mlCompatibility = false
+            checkNullness = false
             checkOverflow = false
             showReferenceResolutions = false
             outputDir = None
@@ -720,7 +728,7 @@ type TcConfigBuilder =
             metadataVersion = None
             standalone = false
             extraStaticLinkRoots = []
-            compressMetadata = false
+            compressMetadata = true
             noSignatureData = false
             onlyEssentialOptimizationData = false
             useOptimizationDataFile = false
@@ -819,7 +827,7 @@ type TcConfigBuilder =
                     DumpGraph = false
                 }
             dumpSignatureData = false
-            realsig = false
+            realsig = true
             strictIndentation = None
         }
 
@@ -918,7 +926,7 @@ type TcConfigBuilder =
     member tcConfigB.TurnWarningOff(m, s: string) =
         use _ = UseBuildPhase BuildPhase.Parameter
 
-        match GetWarningNumber(m, s) with
+        match GetWarningNumber(m, s, tcConfigB.langVersion.SupportsFeature(LanguageFeature.ParsedHashDirectiveArgumentNonQuotes)) with
         | None -> ()
         | Some n ->
             // nowarn:62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
@@ -933,7 +941,7 @@ type TcConfigBuilder =
     member tcConfigB.TurnWarningOn(m, s: string) =
         use _ = UseBuildPhase BuildPhase.Parameter
 
-        match GetWarningNumber(m, s) with
+        match GetWarningNumber(m, s, tcConfigB.langVersion.SupportsFeature(LanguageFeature.ParsedHashDirectiveArgumentNonQuotes)) with
         | None -> ()
         | Some n ->
             // warnon 62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
@@ -1254,6 +1262,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.embedResources = data.embedResources
     member _.diagnosticsOptions = data.diagnosticsOptions
     member _.mlCompatibility = data.mlCompatibility
+    member _.checkNullness = data.checkNullness
     member _.checkOverflow = data.checkOverflow
     member _.showReferenceResolutions = data.showReferenceResolutions
     member _.outputDir = data.outputDir

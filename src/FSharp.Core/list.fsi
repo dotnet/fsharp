@@ -821,7 +821,7 @@ module List =
     ///     | Tails, Tails -> acc + 1
     ///     | _ -> acc)
     /// </code>
-    /// Evaluates to <c>1</c>. Note <c>acc</c> is a commonly used abbreviation for "accumulator".
+    /// Evaluates to <c>2</c>. Note <c>acc</c> is a commonly used abbreviation for "accumulator".
     /// </example>
     [<CompiledName("Fold2")>]
     val fold2<'T1,'T2,'State> : folder:('State -> 'T1 -> 'T2 -> 'State) -> state:'State -> list1:'T1 list -> list2:'T2 list -> 'State
@@ -2694,3 +2694,258 @@ module List =
     /// </example>
     [<CompiledName("InsertManyAt")>]
     val insertManyAt: index: int -> values: seq<'T> -> source: 'T list -> 'T list
+
+    /// <summary>Return a new list shuffled in a random order.</summary>
+    ///
+    /// <param name="source">The input list.</param>
+    ///
+    /// <returns>The result list.</returns>
+    ///
+    /// <example id="randomShuffle-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 0; 1; 2; 3; 4 ]
+    ///
+    /// inputs |> List.randomShuffle
+    /// Can evaluate to <c>[ 0; 2; 4; 3; 1 ]</c>.
+    /// </code>
+    /// </example>
+    [<CompiledName("RandomShuffle")>]
+    val randomShuffle : source: 'T list -> 'T list
+
+    /// <summary>Return a new list shuffled in a random order with the specified <c>Random</c> instance.</summary>
+    ///
+    /// <param name="random">The <c>Random</c> instance.</param>
+    /// <param name="source">The input list.</param>
+    ///
+    /// <returns>The result list.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the random argument is null.</exception>
+    ///
+    /// <example id="randomShuffleWith-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 0; 1; 2; 3; 4 ]
+    ///
+    /// inputs |> List.randomShuffleWith Random.Shared
+    /// </code>
+    /// Can evaluate to <c>[ 0; 2; 4; 3; 1 ]</c>.
+    /// </example>
+    [<CompiledName("RandomShuffleWith")>]
+    val randomShuffleWith : random: Random -> source: 'T list -> 'T list
+
+    /// <summary>Return a new list shuffled in a random order using the specified <c>randomizer</c> function.</summary>
+    ///
+    /// <param name="randomizer">The randomizer function, must return a float number from [0.0..1.0) range.</param>
+    /// <param name="source">The input list.</param>
+    ///
+    /// <returns>The result list.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the randomizer function returns a value outside the range [0, 1).</exception>
+    ///
+    /// <example id="randomShuffleBy-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 0; 1; 2; 3; 4 ]
+    ///
+    /// inputs |> List.randomShuffleBy Random.Shared.NextDouble
+    /// </code>
+    /// Can evaluate to <c>[ 0; 2; 4; 3; 1 ]</c>.
+    /// </example>
+    [<CompiledName("RandomShuffleBy")>]
+    val randomShuffleBy : randomizer: (unit -> float) -> source: 'T list -> 'T list
+
+    /// <summary>Returns a random element from the given list.</summary>
+    ///
+    /// <param name="source">The input list.</param>
+    ///
+    /// <returns>A randomly selected element from the input list.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentException">Thrown when the input list is empty.</exception>
+    ///
+    /// <example id="randomChoice-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 0; 1; 2; 3; 4 ]
+    ///
+    /// inputs |> List.randomChoice
+    /// </code>
+    /// Can evaluate to <c>3</c>.
+    /// </example>
+    [<CompiledName("RandomChoice")>]
+    val randomChoice : source: 'T list -> 'T
+
+    /// <summary>Returns a random element from the given list with the specified <c>Random</c> instance, each element can be selected multiple times.</summary>
+    ///
+    /// <param name="random">The <c>Random</c> instance.</param>
+    /// <param name="source">The input list.</param>
+    ///
+    /// <returns>A randomly selected element from the input list.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the random argument is null.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input list is empty.</exception>
+    ///
+    /// <example id="randomChoiceWith-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 0; 1; 2; 3; 4 ]
+    ///
+    /// inputs |> List.randomChoiceWith Random.Shared
+    /// </code>
+    /// Can evaluate to <c>3</c>.
+    /// </example>
+    [<CompiledName("RandomChoiceWith")>]
+    val randomChoiceWith : random: Random -> source: 'T list -> 'T
+
+    /// <summary>Returns a random element from the given list using the specified <c>randomizer</c> function.</summary>
+    ///
+    /// <param name="randomizer">The randomizer function, must return a float number from [0.0..1.0) range.</param>
+    /// <param name="source">The input list.</param>
+    ///
+    /// <returns>A randomly selected element from the input list.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentException">Thrown when the input list is empty.</exception>
+    /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the randomizer function returns a value outside the range [0, 1).</exception>
+    ///
+    /// <example id="randomChoiceBy-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 0; 1; 2; 3; 4 ]
+    ///
+    /// inputs |> List.randomChoiceBy Random.Shared.NextDouble
+    /// </code>
+    /// Can evaluate to <c>3</c>.
+    /// </example>
+    [<CompiledName("RandomChoiceBy")>]
+    val randomChoiceBy : randomizer: (unit -> float) -> source: 'T list -> 'T
+
+    /// <summary>Returns a list of random elements from the given list.</summary>
+    ///
+    /// <param name="count">The number of elements to return.</param>
+    /// <param name="source">The input list.</param>
+    ///
+    /// <returns>A list of randomly selected elements from the input list.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentException">Thrown when the input list is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
+    ///
+    /// <example id="randomChoices-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 0; 1; 2; 3; 4 ]
+    ///
+    /// inputs |> List.randomChoices 3
+    /// </code>
+    /// Can evaluate to <c>[ 3; 1; 3 ]</c>.
+    /// </example>
+    [<CompiledName("RandomChoices")>]
+    val randomChoices : count: int -> source: 'T list -> 'T list
+
+    /// <summary>Returns a list of random elements from the given list with the specified <c>Random</c> instance, each element can be selected multiple times.</summary>
+    ///
+    /// <param name="random">The <c>Random</c> instance.</param>
+    /// <param name="count">The number of elements to return.</param>
+    /// <param name="source">The input list.</param>
+    ///
+    /// <returns>A list of randomly selected elements from the input list.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the random argument is null.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input list is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
+    ///
+    /// <example id="randomChoicesWith-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 0; 1; 2; 3; 4 ]
+    ///
+    /// inputs |> Array.randomChoicesWith Random.Shared 3
+    /// </code>
+    /// Can evaluate to <c>[ 3; 1; 3 ]</c>.
+    /// </example>
+    [<CompiledName("RandomChoicesWith")>]
+    val randomChoicesWith : random: Random -> count: int -> source: 'T list -> 'T list
+
+    /// <summary>Returns a list of random elements from the given list using the specified <c>randomizer</c> function.</summary>
+    ///
+    /// <param name="randomizer">The randomizer function, must return a float number from [0.0..1.0) range.</param>
+    /// <param name="count">The number of elements to return.</param>
+    /// <param name="source">The input list.</param>
+    ///
+    /// <returns>A list of randomly selected elements from the input list.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentException">Thrown when the input list is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
+    /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the randomizer function returns a value outside the range [0, 1).</exception>
+    ///
+    /// <example id="randomChoicesBy-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 0; 1; 2; 3; 4 ]
+    ///
+    /// inputs |> List.randomChoicesBy Random.Shared.NextDouble 3
+    /// </code>
+    /// Can evaluate to <c>[ 3; 1; 3 ]</c>.
+    /// </example>
+    [<CompiledName("RandomChoicesBy")>]
+    val randomChoicesBy : randomizer: (unit -> float) -> count: int -> source: 'T list -> 'T list
+
+    /// <summary>Returns a random sample of elements from the given list, each element can be selected only once.</summary>
+    ///
+    /// <param name="count">The number of elements to return.</param>
+    /// <param name="source">The input list.</param>
+    ///
+    /// <returns>A list of randomly selected elements from the input list.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentException">Thrown when the input list is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is greater than the length of the input list.</exception>
+    ///
+    /// <example id="randomSample-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 0; 1; 2; 3; 4 ]
+    ///
+    /// inputs |> List.randomSample 3
+    /// </code>
+    /// Can evaluate to <c>[ 3; 1; 2 ]</c>.
+    /// </example>
+    [<CompiledName("RandomSample")>]
+    val randomSample : count: int -> source: 'T list -> 'T list
+
+    /// <summary>Returns a random sample of elements from the given list with the specified <c>Random</c> instance, each element can be selected only once.</summary>
+    ///
+    /// <param name="random">The <c>Random</c> instance.</param>
+    /// <param name="count">The number of elements to return.</param>
+    /// <param name="source">The input list.</param>
+    ///
+    /// <returns>A list of randomly selected elements from the input list.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the random argument is null.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input list is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is greater than the length of the input list.</exception>
+    ///
+    /// <example id="randomSampleWith-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 0; 1; 2; 3; 4 ]
+    ///
+    /// inputs |> List.randomSampleWith Random.Shared 3
+    /// </code>
+    /// Can evaluate to <c>[ 3; 1; 2 ]</c>.
+    /// </example>
+    [<CompiledName("RandomSampleWith")>]
+    val randomSampleWith : random: Random -> count: int -> source: 'T list -> 'T list
+
+    /// <summary>Returns a random sample of elements from the given list using the specified <c>randomizer</c> function, each element can be selected only once.</summary>
+    ///
+    /// <param name="randomizer">The randomizer function, must return a float number from [0.0..1.0) range.</param>
+    /// <param name="count">The number of elements to return.</param>
+    /// <param name="source">The input list.</param>
+    ///
+    /// <returns>A list of randomly selected elements from the input list.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentException">Thrown when the input list is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is greater than the length of the input list.</exception>
+    /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the randomizer function returns a value outside the range [0, 1).</exception>
+    ///
+    /// <example id="randomSampleBy-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 0; 1; 2; 3; 4 ]
+    ///
+    /// inputs |> List.randomSampleBy Random.Shared.NextDouble 3
+    /// </code>
+    /// Can evaluate to <c>[ 3; 1; 2 ]</c>.
+    /// </example>
+    [<CompiledName("RandomSampleBy")>]
+    val randomSampleBy : randomizer: (unit -> float) -> count: int -> source: 'T list -> 'T list

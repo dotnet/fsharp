@@ -28,6 +28,7 @@ type LanguageFeature =
     | StringInterpolation
     | OverloadsForCustomOperations
     | ExpandedMeasurables
+    | NullnessChecking
     | StructActivePattern
     | PrintfBinaryFormat
     | IndexerNotationWithoutDot
@@ -79,7 +80,9 @@ type LanguageFeature =
     | EnforceAttributeTargets
     | LowerInterpolatedStringToConcat
     | LowerIntegralRangesToFastLoops
-    | LowerSimpleMappingsInComprehensionsToDirectCallsToMap
+    | LowerSimpleMappingsInComprehensionsToFastLoops
+    | ParsedHashDirectiveArgumentNonQuotes
+    | EmptyBodiedComputationExpressions
 
 /// LanguageVersion management
 type LanguageVersion =

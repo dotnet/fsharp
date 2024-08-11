@@ -47,7 +47,7 @@
   <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
     <NoOptimizationData>false</NoOptimizationData>
     <NoInterfaceData>false</NoInterfaceData>
-    <CompressMetadata>false</CompressMetadata>
+    <CompressMetadata>true</CompressMetadata>
   </PropertyGroup>
 
   <!-- When we build FCS solution and we include FSCore as reference, set path explicitly -->
@@ -90,6 +90,12 @@
     </Compile>
     <Compile Include="prim-types.fs">
       <Link>Primitives/prim-types.fs</Link>
+    </Compile>
+    <Compile Include="Random.fsi">
+      <Link>Random/Random.fsi</Link>
+    </Compile>
+    <Compile Include="Random.fs">
+      <Link>Random/Random.fs</Link>
     </Compile>
     <Compile Include="local.fsi">
       <Link>Collections/local.fsi</Link>

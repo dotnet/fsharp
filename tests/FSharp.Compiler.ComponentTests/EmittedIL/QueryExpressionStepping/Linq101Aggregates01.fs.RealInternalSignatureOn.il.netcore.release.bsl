@@ -12,7 +12,7 @@
 .assembly extern System.Linq
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         
-  .ver 8:0:0:0
+  .ver 9:0:0:0
 }
 .assembly extern netstandard
 {
@@ -30,16 +30,6 @@
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
-}
-.mresource public FSharpSignatureData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationData.assembly
-{
-  
-  
 }
 .module assembly.exe
 
@@ -7073,7 +7063,6 @@
   } 
 
 } 
-
 
 
 

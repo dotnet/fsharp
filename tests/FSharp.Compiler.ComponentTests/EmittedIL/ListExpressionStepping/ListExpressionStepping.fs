@@ -35,7 +35,6 @@ module ListExpressionStepping =
     let ``ListExpressionStepping02_RealInternalSignatureOn_fs`` compilation =
         compilation
         |> withRealInternalSignatureOn
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> verifyCompilation
 
     // SOURCE=ListExpressionSteppingTest2.fs SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ListExpressionSteppingTest2.exe"    # ListExpressionSteppingTest2.fs -

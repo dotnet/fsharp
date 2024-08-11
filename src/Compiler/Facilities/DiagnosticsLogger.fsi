@@ -208,6 +208,9 @@ type DiagnosticsLogger =
     /// Checks if ErrorCount > 0
     member CheckForErrors: unit -> bool
 
+    abstract CheckForRealErrorsIgnoringWarnings: bool
+    default CheckForRealErrorsIgnoringWarnings: bool
+
 /// Represents a DiagnosticsLogger that discards diagnostics
 val DiscardErrorsLogger: DiagnosticsLogger
 
@@ -437,6 +440,8 @@ type SuppressLanguageFeatureCheck =
 val languageFeatureError: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> exn
 
 val checkLanguageFeatureError: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
+
+val tryCheckLanguageFeatureAndRecover: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> bool
 
 val checkLanguageFeatureAndRecover: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
 
