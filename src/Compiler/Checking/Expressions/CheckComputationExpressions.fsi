@@ -8,24 +8,6 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
-val TcSequenceExpressionEntry:
-    cenv: TcFileState ->
-    env: TcEnv ->
-    overallTy: OverallTy ->
-    tpenv: UnscopedTyparEnv ->
-    hasBuilder: bool * comp: SynExpr ->
-        m: range ->
-            Expr * UnscopedTyparEnv
-
-val TcArrayOrListComputedExpression:
-    cenv: TcFileState ->
-    env: TcEnv ->
-    overallTy: OverallTy ->
-    tpenv: UnscopedTyparEnv ->
-    isArray: bool * comp: SynExpr ->
-        m: range ->
-            Expr * UnscopedTyparEnv
-
 val TcComputationExpression:
     cenv: TcFileState ->
     env: TcEnv ->

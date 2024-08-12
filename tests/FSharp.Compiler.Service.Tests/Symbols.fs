@@ -1,6 +1,5 @@
 module FSharp.Compiler.Service.Tests.Symbols
 
-open System
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
@@ -1090,18 +1089,31 @@ let builder = Builder ()
 let x = builder { return 3 }
 let y = builder
 let z = Builder () { return 3 }
+
+type A () =
+    let builder = Builder ()
+    let _ = builder { return 3 }
+
+    static member Builder = Builder ()
+
+type System.Object with
+    static member Builder = Builder ()
+
+let c = A.Builder { return 3 }
+let d = System.Object.Builder { return 3 }
 """
+        shouldEqual checkResults.Diagnostics [||]
 
         shouldEqual
             [
                 // type Builder () =
                 (2, 5), false
 
-                // … = Builder ()
-                (6, 14), false
-
                 // let builder = …
                 (6, 4), false
+
+                // … = Builder ()
+                (6, 14), false
 
                 // let x = builder { return 3 }
                 (8, 8), false   // Item.Value _
@@ -1112,9 +1124,37 @@ let z = Builder () { return 3 }
 
                 // let z = Builder () { return 3 }
                 (10, 8), false
+
+                // let builder = …
+                (13, 8), false
+
+                // … = Builder ()
+                (13, 18), false
+
+                // let x = builder { return 3 }
+                (14, 12), false   // Item.Value _
+                (14, 12), true    // Item.CustomBuilder _
+
+                // static member Builder = …
+                (16, 18), false
+
+                // … = Builder ()
+                (16, 28), false
+
+                // static member Builder = …
+                (19, 18), false
+
+                // … = Builder ()
+                (19, 28), false
+
+                // A.Builder { return 3 }
+                (21, 8), false
+
+                // System.Object.Builder { return 3 }
+                (22, 8), false
             ]
             [
-                for symbolUse in checkResults.GetAllUsesOfAllSymbolsInFile() do
+                for symbolUse in checkResults.GetAllUsesOfAllSymbolsInFile() |> Seq.sortBy (fun x -> x.Range.StartLine, x.Range.StartColumn) do
                     match symbolUse.Symbol.DisplayName with
                     | "Builder" | "builder" -> (symbolUse.Range.StartLine, symbolUse.Range.StartColumn), symbolUse.IsFromComputationExpression
                     | _ -> ()

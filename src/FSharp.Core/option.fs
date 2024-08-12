@@ -148,7 +148,7 @@ module Option =
     [<CompiledName("OfNullable")>]
     let inline ofNullable (value: System.Nullable<'T>) =
         if value.HasValue then
-            Some value.Value
+            Some (value.GetValueOrDefault())
         else
             None
 
@@ -177,6 +177,18 @@ module Option =
         | None -> null
         | Some x -> x
 #endif
+
+    [<CompiledName("OfValueOption")>]
+    let inline ofValueOption (voption: 'T voption) =
+        match voption with
+        | ValueNone -> None
+        | ValueSome x -> Some x
+
+    [<CompiledName("ToValueOption")>]
+    let inline toValueOption (option: 'T option) =
+        match option with
+        | None -> ValueNone
+        | Some x -> ValueSome x
 
 module ValueOption =
 
@@ -326,7 +338,7 @@ module ValueOption =
     [<CompiledName("OfNullable")>]
     let inline ofNullable (value: System.Nullable<'T>) =
         if value.HasValue then
-            ValueSome value.Value
+            ValueSome (value.GetValueOrDefault())
         else
             ValueNone
 
@@ -355,3 +367,15 @@ module ValueOption =
         | ValueNone -> null
         | ValueSome x -> x
 #endif
+
+    [<CompiledName("OfOption")>]
+    let inline ofOption (option: 'T option) =
+        match option with
+        | None -> ValueNone
+        | Some x -> ValueSome x
+
+    [<CompiledName("ToOption")>]
+    let inline toOption (voption: 'T voption) =
+        match voption with
+        | ValueNone -> None
+        | ValueSome x -> Some x

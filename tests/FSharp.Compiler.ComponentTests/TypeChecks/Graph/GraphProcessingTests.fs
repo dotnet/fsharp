@@ -10,7 +10,7 @@ let ``When processing a node throws an exception, an exception is raised with th
     let work (_processor : int -> ProcessedNode<int, string>) (_node : NodeInfo<int>) : string = failwith "Work exception"
     
     let exn =
-        Assert.Throws<System.Exception>(
+        Assert.Throws<GraphProcessingException>(
             fun () ->
                 processGraph
                     graph

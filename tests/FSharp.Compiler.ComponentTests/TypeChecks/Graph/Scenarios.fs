@@ -1022,4 +1022,24 @@ module Program =
 """
                     (set [| 0 |])
         ]
+        scenario
+            "fully qualified type in tuple constructor pattern"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace MyRootNamespace.A
+
+type Foo() = class end
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+namespace MyRootNamespace.A.B
+
+type Bar(foo: MyRootNamespace.A.Foo, s: string) = class end
+"""
+                    (set [| 0 |])
+            ]
     ]

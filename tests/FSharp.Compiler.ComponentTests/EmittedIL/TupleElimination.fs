@@ -8,7 +8,10 @@ open FSharp.Test.Compiler
 module ``TupleElimination`` =
 
 
-    let compile cu = cu |> withCheckNulls |> withLangVersionPreview |> compile
+    let compile cu =
+        cu 
+        |> withCheckNulls
+        |> compile
 
     [<Fact>]
     let ``Sequence expressions with potential side effects do not prevent tuple elimination``() =

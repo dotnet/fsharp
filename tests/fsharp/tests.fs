@@ -39,24 +39,24 @@ module CoreTests =
 
 #if !NETCOREAPP
     [<Test>]
-    let ``subtype-langversion-preview-checknulls`` () =
+    let ``subtype-langversion-checknulls`` () =
         let cfg = testConfig "core/subtype"
 
         use testOkFile = fileguard cfg "test.ok"
 
-        fsc cfg "%s -o:test-checknulls.exe -g --langversion:preview --checknulls" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -o:test-checknulls.exe -g --checknulls" cfg.fsc_flags ["test.fsx"]
 
         exec cfg ("." ++ "test-checknulls.exe") ""
 
         testOkFile.CheckExists()
 
     [<Test>]
-    let ``subtype-langversion-preview-no-checknulls`` () =
+    let ``subtype-langversion-no-checknulls`` () =
         let cfg = testConfig "core/subtype"
 
         use testOkFile = fileguard cfg "test.ok"
 
-        fsc cfg "%s -o:test-no-checknulls.exe -g --langversion:preview --checknulls-" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -o:test-no-checknulls.exe -g --checknulls-" cfg.fsc_flags ["test.fsx"]
 
         exec cfg ("." ++ "test-no-checknulls.exe") ""
 
@@ -162,7 +162,7 @@ module CoreTests =
 
         use testOkFile = fileguard cfg "test.ok"
 
-        fsc cfg "%s -o:test.exe -g --tailcalls- --optimize- --langversion:preview" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -o:test.exe -g --tailcalls- --optimize-" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 
@@ -176,7 +176,7 @@ module CoreTests =
 
         use testOkFile = fileguard cfg "test.ok"
 
-        fsc cfg "%s -o:test.exe -g --tailcalls+ --optimize+ --langversion:preview" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -o:test.exe -g --tailcalls+ --optimize+" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 
@@ -994,12 +994,12 @@ module CoreTests =
     let ``libtest-FSC_NETFX_TEST_ROUNDTRIP_AS_DLL`` () = singleTestBuildAndRun "core/libtest" FSC_NETFX_TEST_ROUNDTRIP_AS_DLL
 
     [<Test>]
-    let ``libtest-langversion-preview-checknulls`` () =
+    let ``libtest-langversion-checknulls`` () =
         let cfg = testConfig "core/libtest"
 
         use testOkFile = fileguard cfg "test.ok"
 
-        fsc cfg "%s -o:test-checknulls.exe -g --langversion:preview --checknulls" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -o:test-checknulls.exe -g --checknulls" cfg.fsc_flags ["test.fsx"]
 
         exec cfg ("." ++ "test-checknulls.exe") ""
 
@@ -2161,7 +2161,7 @@ module TypecheckTests =
     [<Test>]
     let ``sigs pos41`` () =
         let cfg = testConfig "typecheck/sigs"
-        fsc cfg "%s --target:library -o:pos41.dll --warnaserror --langversion:preview" cfg.fsc_flags ["pos41.fs"]
+        fsc cfg "%s --target:library -o:pos41.dll --warnaserror" cfg.fsc_flags ["pos41.fs"]
         peverify cfg "pos41.dll"
 
     [<Test>]

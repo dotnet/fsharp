@@ -1269,6 +1269,42 @@ type A () =
         |> withDiagnostics [
             (Error 3867, Line 3, Col 21, Line 3, Col 22, "Classes cannot contain static abstract members.")
         ]
+    
+    [<Fact>]
+    let ``Access modifiers cannot be applied to an SRTP constraint in preview`` () =
+        FSharp """
+let inline length (x: ^a when ^a: (member public Length: int)) = x.Length
+let inline length2 (x: ^a when ^a: (member Length: int with public get)) = x.Length
+let inline length3 (x: ^a when ^a: (member Length: int with public set)) = x.set_Length(1)
+let inline length4 (x: ^a when ^a: (member public get_Length: unit -> int)) = x.get_Length()
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3869, Line 2, Col 43, Line 2, Col 49, "Access modifiers cannot be applied to an SRTP constraint.")
+            (Error 3869, Line 3, Col 61, Line 3, Col 67, "Access modifiers cannot be applied to an SRTP constraint.")
+            (Error 3869, Line 4, Col 61, Line 4, Col 67, "Access modifiers cannot be applied to an SRTP constraint.")
+            (Error 3869, Line 5, Col 44, Line 5, Col 50, "Access modifiers cannot be applied to an SRTP constraint.")
+        ]
+        
+    [<Fact>]
+    let ``Access modifiers in an SRTP constraint generate warning in F# 8.0`` () =
+        FSharp """
+let inline length (x: ^a when ^a: (member public Length: int)) = x.Length
+let inline length2 (x: ^a when ^a: (member Length: int with public get)) = x.Length
+let inline length3 (x: ^a when ^a: (member Length: int with public set)) = x.set_Length(1)
+let inline length4 (x: ^a when ^a: (member public get_Length: unit -> int)) = x.get_Length()
+        """
+        |> withLangVersion80
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 3869, Line 2, Col 43, Line 2, Col 49, "Access modifiers cannot be applied to an SRTP constraint.")
+            (Warning 3869, Line 3, Col 61, Line 3, Col 67, "Access modifiers cannot be applied to an SRTP constraint.")
+            (Warning 3869, Line 4, Col 61, Line 4, Col 67, "Access modifiers cannot be applied to an SRTP constraint.")
+            (Warning 3869, Line 5, Col 44, Line 5, Col 50, "Access modifiers cannot be applied to an SRTP constraint.")
+        ]
 
     [<FactForNETCOREAPP>]
     let ``Error for partial implementation of interface with static abstract members`` () =
