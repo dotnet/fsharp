@@ -26,6 +26,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeHierarchy
+open FSharp.Compiler.CheckExpressionsOps
 
 type FSharpAccessibility(a:Accessibility, ?isProtected) = 
     let isProtected = defaultArg isProtected  false
@@ -58,7 +59,7 @@ type FSharpAccessibility(a:Accessibility, ?isProtected) =
 
 type SymbolEnv(g: TcGlobals, thisCcu: CcuThunk, thisCcuTyp: ModuleOrNamespaceType option, tcImports: TcImports, amap: Import.ImportMap, infoReader: InfoReader) = 
 
-    let tcVal = CheckExpressions.LightweightTcValForUsingInBuildMethodCall g
+    let tcVal = LightweightTcValForUsingInBuildMethodCall g
 
     new(g: TcGlobals, thisCcu: CcuThunk, thisCcuTyp: ModuleOrNamespaceType option, tcImports: TcImports) =
         let amap = tcImports.GetImportMap()
@@ -2388,18 +2389,54 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             | _ -> NicePrint.stringOfMethInfoFSharpStyle cenv.infoReader m displayEnv methInfo
 
         let stringValOfPropInfo (p: PropInfo) =
-            match p with
-            | DifferentGetterAndSetter(getValRef, setValRef) ->
-                let g = NicePrint.stringValOrMember displayEnv cenv.infoReader getValRef
-                let s = NicePrint.stringValOrMember displayEnv cenv.infoReader setValRef
-                $"{g}\n{s}"
-            | _ ->
-                let t = p.GetPropertyType(cenv.amap, m ) |> NicePrint.layoutType displayEnv |> LayoutRender.showL
+            let supportAccessModifiersBeforeGetSet =
+                cenv.g.langVersion.SupportsFeature Features.LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters
+            if not supportAccessModifiersBeforeGetSet then
+                match p with
+                | DifferentGetterAndSetter(getValRef, setValRef) ->
+                    let g = NicePrint.stringValOrMember displayEnv cenv.infoReader getValRef
+                    let s = NicePrint.stringValOrMember displayEnv cenv.infoReader setValRef
+                    $"{g}\n{s}"
+                | _ ->
+                    let t = p.GetPropertyType(cenv.amap, m) |> NicePrint.layoutType displayEnv |> LayoutRender.showL
+                    let withGetSet =
+                        if p.HasGetter && p.HasSetter then "with get, set"
+                        elif p.HasGetter then "with get"
+                        elif p.HasSetter then "with set"
+                        else ""
+
+                    $"member %s{p.DisplayName}: %s{t} %s{withGetSet}"
+            else
+                let layoutAccessibilityCore (denv: DisplayEnv) accessibility =
+                    let isInternalCompPath x = 
+                        match x with 
+                        | CompPath(ILScopeRef.Local, _, []) -> true 
+                        | _ -> false
+                    let (|Public|Internal|Private|) (TAccess p) = 
+                        match p with 
+                        | [] -> Public 
+                        | _ when List.forall isInternalCompPath p -> Internal 
+                        | _ -> Private
+                    match denv.contextAccessibility, accessibility with
+                    | Public, Internal -> "internal "
+                    | Public, Private -> "private "
+                    | Internal, Private -> "private "
+                    | _ -> String.Empty
+
+                let getterAccess, setterAccess = 
+                    layoutAccessibilityCore displayEnv (Option.defaultValue taccessPublic p.GetterAccessibility),
+                    layoutAccessibilityCore displayEnv (Option.defaultValue taccessPublic p.SetterAccessibility)
+                let t = p.GetPropertyType(cenv.amap, m) |> NicePrint.layoutType displayEnv |> LayoutRender.showL
                 let withGetSet =
-                    if p.HasGetter && p.HasSetter then "with get, set"
-                    elif p.HasGetter then "with get"
-                    elif p.HasSetter then "with set"
-                    else ""
+                    match p.HasGetter, p.HasSetter with
+                    | true, false ->
+                        $"with %s{getterAccess}get"
+                    | false, true ->
+                        $"with %s{setterAccess}set"
+                    | true, true ->
+                        $"with %s{getterAccess}get, %s{setterAccess}set"
+                    | false, false ->
+                        String.Empty
 
                 $"member %s{p.DisplayName}: %s{t} %s{withGetSet}"
 
@@ -2986,4 +3023,3 @@ type FSharpOpenDeclaration(target: SynOpenDeclTarget, range: range option, modul
     member _.AppliedScope = appliedScope
 
     member _.IsOwnNamespace = isOwnNamespace
-

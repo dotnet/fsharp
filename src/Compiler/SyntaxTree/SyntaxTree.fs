@@ -1331,6 +1331,24 @@ type SynComponentInfo =
         match this with
         | SynComponentInfo(range = m) -> m
 
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynValSigAccess =
+    | Single of accessibility: SynAccess option
+    | GetSet of accessibility: SynAccess option * getterAccessibility: SynAccess option * setterAccessibility: SynAccess option
+
+    member this.SingleAccess() =
+        match this with
+        | Single(access)
+        | GetSet(accessibility = access) -> access
+
+    member this.GetSetAccessNoCheck() =
+        match this with
+        | Single(access) -> access, access
+        | GetSet(access, getterAccess, setterAccess) ->
+            let getterAccess = getterAccess |> Option.orElse access
+            let setterAccess = setterAccess |> Option.orElse access
+            getterAccess, setterAccess
+
 [<NoEquality; NoComparison>]
 type SynValSig =
     | SynValSig of
@@ -1342,7 +1360,7 @@ type SynValSig =
         isInline: bool *
         isMutable: bool *
         xmlDoc: PreXmlDoc *
-        accessibility: SynAccess option *
+        accessibility: SynValSigAccess *
         synExpr: SynExpr option *
         range: range *
         trivia: SynValSigTrivia
@@ -1485,7 +1503,7 @@ type SynMemberDefn =
         memberFlags: SynMemberFlags *
         memberFlagsForSet: SynMemberFlags *
         xmlDoc: PreXmlDoc *
-        accessibility: SynAccess option *
+        accessibility: SynValSigAccess *
         synExpr: SynExpr *
         range: range *
         trivia: SynMemberDefnAutoPropertyTrivia

@@ -547,7 +547,7 @@ check "vcewweh20" $"x = %A{1}" "x = 1"
     [<Test>]
     let ``%B succeeds for langVersion preview`` () =
         CompilerAssert.CompileExeAndRunWithOptions(
-            [| "--langversion:preview" |],
+            [| |],
             """
 let check msg a b = 
     if a = b then printfn "test case '%s' succeeded" msg else failwithf "test case '%s' failed, expected %A, got %A" msg b a

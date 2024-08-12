@@ -1101,7 +1101,7 @@ and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: Option
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull ->             
             CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithNull -> 
-            if csenv.g.checkNullness then               
+            if csenv.g.checkNullness && not csenv.IsSpeculativeForMethodOverloading then               
                  WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2)) 
             else
                 CompleteD
@@ -2644,9 +2644,13 @@ and SolveNullnessSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: Opti
             | NullnessInfo.AmbivalentToNull -> ()
             | NullnessInfo.WithNull -> ()
             | NullnessInfo.WithoutNull ->   
-                if g.checkNullness then 
-                    // TODO nullness: Shouldn't this be an error? We have a 'must support null' situation which is not being met.
-                    return! WarnD(ConstraintSolverNullnessWarningWithType(denv, ty, n1, m, m2))
+                if g.checkNullness then
+                    // If a type would allow null in older rules of F#, we can just emit a warning.
+                    // In the opposite case, we keep this as an an error to avoid generating incorrect code (e.g. assigning null to an int)
+                    if (TypeNullIsExtraValue g m ty) then
+                        return! WarnD(ConstraintSolverNullnessWarningWithType(denv, ty, n1, m, m2))
+                    else
+                        return! ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotHaveNull(NicePrint.minimalStringOfType denv ty), m, m2))
     }
 
 and SolveTypeUseNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 trace ty =

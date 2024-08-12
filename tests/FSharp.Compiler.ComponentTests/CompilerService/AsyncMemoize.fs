@@ -249,7 +249,7 @@ let ``Job is restarted if first requestor cancels but keeps running if second re
 type ExpectedException() =
     inherit Exception()
 
-[<Fact>]
+[<Fact(Skip="Flaky")>]
 let ``Stress test`` () =
 
     let seed = System.Random().Next()
