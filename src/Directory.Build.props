@@ -9,4 +9,8 @@
     <ShouldUnsetParentConfigurationAndPlatform>false</ShouldUnsetParentConfigurationAndPlatform>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <MibcOptimizationDataDir>$([System.IO.Path]::Combine($(ArtifactsDir), 'mibc'))</MibcOptimizationDataDir>
+  </PropertyGroup>
+
 </Project>
