@@ -257,6 +257,11 @@
         <target state="translated">その他の型指定された変換</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAllowAccessModifiersToAutoPropertiesGettersAndSetters">
+        <source>Allow access modifiers to auto properties getters and setters</source>
+        <target state="new">Allow access modifiers to auto properties getters and setters</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAndBang">
         <source>applicative computation expressions</source>
         <target state="translated">適用できる計算式</target>
@@ -1175,6 +1180,11 @@
       <trans-unit id="suggestedName">
         <source>(Suggested name)</source>
         <target state="translated">(推奨される名前)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAccessModifiersNotAllowedInSRTPConstraint">
+        <source>Access modifiers cannot be applied to an SRTP constraint.</source>
+        <target state="new">Access modifiers cannot be applied to an SRTP constraint.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcActivePatternArgsCountNotMatchArgs">
