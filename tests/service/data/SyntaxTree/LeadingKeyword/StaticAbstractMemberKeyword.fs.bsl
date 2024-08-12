@@ -24,7 +24,7 @@ ImplFile
                               ([[SynArgInfo ([], false, None)]],
                                SynArgInfo ([], false, None)), false, false,
                             PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, None, (3,4--3,41),
+                            Single None, None, (3,4--3,41),
                             { LeadingKeyword =
                                StaticAbstractMember
                                  ((3,4--3,10), (3,11--3,19), (3,20--3,26))
