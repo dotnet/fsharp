@@ -10,7 +10,8 @@
 
   <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
     <MibcTargetOS>linux</MibcTargetOS>
-    <MibcTargetOS Condition="$([MSBuild]::IsOSPlatform('OSX'))">osx</MibcTargetOS>
+    <!-- We deliberately want to use linux mibc pgo data on macOS -->
+    <MibcTargetOS Condition="$([MSBuild]::IsOSPlatform('OSX'))">linux</MibcTargetOS>
     <MibcTargetOS Condition="$([MSBuild]::IsOSPlatform('WINDOWS'))">windows_nt</MibcTargetOS>
     <MibcTargetArchitecture>$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant)</MibcTargetArchitecture>
     <MibcCurrentMachineArcitecture>$(MibcTargetOS)-$(MibcTargetArchitecture)</MibcCurrentMachineArcitecture>
