@@ -26,7 +26,7 @@
     <NuspecProperty Include="artifactsPackagesDir=$(ArtifactsPackagesDir)" />
     <NuspecProperty Include="fSharpNetCoreProductTargetFramework=$(FSharpNetCoreProductTargetFramework)" />
     <NuspecProperty Include="configuration=$(Configuration)" />
-    <NuspecProperty Include="mibcRoot=$(MibcOptimizationDataDir)" />
+    <NuspecProperty Include="mibcRoot=$(ArtifactsDir)\mibc" />
   </ItemGroup>
 
   <ItemGroup>

@@ -9,16 +9,4 @@
     <ShouldUnsetParentConfigurationAndPlatform>false</ShouldUnsetParentConfigurationAndPlatform>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <TargetOS>linux</TargetOS>
-    <TargetOS Condition="$([MSBuild]::IsOSPlatform('OSX'))">osx</TargetOS>
-    <TargetOS Condition="$([MSBuild]::IsOSPlatform('WINDOWS'))">windows</TargetOS>
-
-    <TargetArchitecture>$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant)</TargetArchitecture>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <MibcOptimizationDataDir>$([System.IO.Path]::Combine($(ArtifactsDir), 'mibc'))</MibcOptimizationDataDir>
-  </PropertyGroup>
-
 </Project>
