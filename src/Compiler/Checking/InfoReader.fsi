@@ -34,6 +34,16 @@ val GetImmediateIntrinsicMethInfosOfType:
         ty: TType ->
             MethInfo list
 
+/// Query the immediate methods of an F# type, not taking into account inherited methods. The optFilter
+/// parameter is an optional name to restrict the set of properties returned.
+val GetImmediateIntrinsicMethInfosWithExplicitImplOfType:
+    optFilter: string option * ad: AccessorDomain ->
+        g: TcGlobals ->
+        amap: ImportMap ->
+        m: range ->
+        ty: TType ->
+            MethInfo list
+
 /// A helper type to help collect properties.
 ///
 /// Join up getters and setters which are not associated in the F# data structure
@@ -41,12 +51,23 @@ type PropertyCollector =
     new:
         g: TcGlobals * amap: ImportMap * m: range * ty: TType * optFilter: string option * ad: AccessorDomain ->
             PropertyCollector
+
     member Close: unit -> PropInfo list
     member Collect: membInfo: ValMemberInfo * vref: ValRef -> unit
 
 /// Query the immediate properties of an F# type, not taking into account inherited properties. The optFilter
 /// parameter is an optional name to restrict the set of properties returned.
 val GetImmediateIntrinsicPropInfosOfType:
+    optFilter: string option * ad: AccessorDomain ->
+        g: TcGlobals ->
+        amap: ImportMap ->
+        m: range ->
+        ty: TType ->
+            PropInfo list
+
+/// Query the immediate properties of an F# type, not taking into account inherited properties. The optFilter
+/// parameter is an optional name to restrict the set of properties returned.
+val GetImmediateIntrinsicPropInfosWithExplicitImplOfType:
     optFilter: string option * ad: AccessorDomain ->
         g: TcGlobals ->
         amap: ImportMap ->
@@ -109,6 +130,7 @@ type InfoReader =
     /// Read the IL fields of a type, including inherited ones. Cache the result for monomorphic types.
     member GetILFieldInfosOfType:
         optFilter: string option * ad: AccessorDomain * m: range * ty: TType -> ILFieldInfo list
+
     member GetImmediateIntrinsicEventsOfType:
         optFilter: string option * ad: AccessorDomain * m: range * ty: TType -> EventInfo list
 
@@ -258,6 +280,17 @@ val GetIntrinsicPropInfosOfType:
     m: range ->
     ty: TType ->
         PropInfo list
+
+/// Get the flattened list of intrinsic properties in the hierarchy. If the PropInfo is get-only or set-only, try to find its setter or getter from the hierarchy.
+val GetIntrinsicPropInfoWithOverriddenPropOfType:
+    infoReader: InfoReader ->
+    optFilter: string option ->
+    ad: AccessorDomain ->
+    allowMultiIntfInst: AllowMultiIntfInstantiations ->
+    findFlag: FindMemberFlag ->
+    m: range ->
+    ty: TType ->
+        struct (PropInfo * PropInfo voption) list
 
 /// Perform type-directed name resolution of a particular named member in an F# type
 val TryFindIntrinsicNamedItemOfType:

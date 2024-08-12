@@ -22,6 +22,11 @@
         <target state="translated">'new' anahtar sözcüğünü ekleme</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddReturnTypeAnnotation">
+        <source>Add return type annotation</source>
+        <target state="translated">Dönüş türü ek açıklaması ekle</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddTypeAnnotation">
         <source>Add type annotation</source>
         <target state="translated">Tür ek açıklaması ekle</target>
@@ -36,23 +41,25 @@ Inline hints;
 Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
+Use Transparent Compiler (experimental);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
-        <target state="new">Block Structure Guides;
-Show structure guidelines for F# code;
-Outlining;
-Show outlining and collapsible nodes for F# code;
-Inline hints;
-Display inline type hints (preview);
-Display return type hints (preview);
-Display inline parameter name hints (preview);
-Live Buffers;
-Use live (unsaved) buffers for checking</target>
+Use live (unsaved) buffers for analysis</source>
+        <target state="translated">Blok Yapısı Kılavuzları;
+F# kodu için yapı yönergelerini göster;
+Ana hat oluşturma;
+F# kodu için ana hattı ve daraltılabilir düğümleri göster;
+Satır içi ipuçları;
+Satır içi tür ipuçlarını görüntüle (önizleme);
+Dönüş türü ipuçlarını görüntüle (önizleme);
+Satır içi parametre adı ipuçlarını görüntüle (önizleme);
+Saydam Derleyiciyi kullan (deneysel);
+Canlı Arabellekler;
+Analiz için canlı (kaydedilmemiş) arabellekleri kullan</target>
         <note />
       </trans-unit>
       <trans-unit id="ChangeEqualsInFieldTypeToColon">
         <source>Use ':' for type in field declaration</source>
-        <target state="new">Use ':' for type in field declaration</target>
+        <target state="translated">Alan bildirimindeki tür için ':' kullan</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">
@@ -169,16 +176,16 @@ Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (restart required);
 Cache parsing results (experimental)</source>
-        <target state="needs-review-translation">F# Proje ve Önbelleğe Alma Performans Seçenekleri;
+        <target state="translated">F# Proje ve Önbelleğe Alma Performansı Seçenekleri;
 Bellek içi çapraz proje başvurularını etkinleştir;
-Enable_partial_type_checking;
+Kısmi_tür_denetlemeyi_etkinleştir;
 IntelliSense Performans Seçenekleri;
 IntelliSense özellikleri için eski verileri etkinleştir;
-Eski sonuçlar kullanılana kadar geçen süre (milisaniye olarak);
+Eski sonuçların kullanılması için geçecek süre (milisaniye cinsinden);
 Paralelleştirme (yeniden başlatma gerektirir);
 İmza dosyalarıyla paralel tür denetlemeyi etkinleştir;
 Paralel başvuru çözümlemeyi etkinleştir;
-Başvuruları hızlı bulma ve yeniden adlandırmayı etkinleştir (deneysel)
+Başvuruları hızlı bulmayı ve yeniden adlandırmayı etkinleştir (yeniden başlatma gerektirir);
 Ayrıştırma sonuçlarını önbelleğe al (deneysel)</target>
         <note />
       </trans-unit>
@@ -195,15 +202,22 @@ Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
-Dash underline;</source>
-        <target state="translated">Biçimlendirme; 
+Dash underline;
+Show remarks in Quick Info</source>
+        <target state="translated">Biçimlendirme;
 Karakter olarak tercih edilen açıklama genişliği;
-F# söz dizimi kurallarına uyan satır sonları ekleyerek imzayı verilen genişliğe biçimlendir;
+F# söz dizimi kurallarına uyan satır sonları ekleyerek imzayı belirtilen genişliğe biçimlendir;
 Gezinti bağlantıları;
-Gezinti bağlantılarını şöyle göster;
-Düz alt çizgi;
+Gezinti bağlantılarını farklı göster;
+Kesintisiz alt çizgi;
 Nokta alt çizgi;
-Tire alt çizgisi;</target>
+Tire alt çizgi;
+Açıklamaları Hızlı Bilgide göster</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemarksHeader">
+        <source>Remarks:</source>
+        <target state="translated">Açıklamalar:</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
@@ -214,6 +228,11 @@ Tire alt çizgisi;</target>
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
         <target state="translated">'return!' öğesini kaldır</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="translated">Gereksiz parantezleri kaldır</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -234,6 +253,11 @@ Tire alt çizgisi;</target>
       <trans-unit id="RenameValueToUnderscore">
         <source>Rename '{0}' to '_'</source>
         <target state="translated">'{0}' öğesini '_' olarak yeniden adlandırma</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReturnsHeader">
+        <source>Returns:</source>
+        <target state="translated">Şunu döndürür:</target>
         <note />
       </trans-unit>
       <trans-unit id="SimplifyName">
@@ -268,7 +292,7 @@ Tire alt çizgisi;</target>
       </trans-unit>
       <trans-unit id="UnexpectedEqualsInFieldExpectedColon">
         <source>Unexpected symbol '=' in field declaration. Expected ':' or other token.</source>
-        <target state="new">Unexpected symbol '=' in field declaration. Expected ':' or other token.</target>
+        <target state="translated">Alan bildiriminde beklenmeyen '=' sembolü. ':' veya başka bir belirteç bekleniyordu.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnusedOpens">

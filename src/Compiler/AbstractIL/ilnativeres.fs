@@ -54,7 +54,7 @@ type CvtResFile() =
         let mutable resourceNames = List<RESOURCE>()
 
         // The stream might be empty, so let's check
-        if not (reader.PeekChar() = -1) then
+        if reader.PeekChar() <> -1 then
             let mutable startPos = stream.Position
             let mutable initial32Bits = reader.ReadUInt32()
 
@@ -437,7 +437,7 @@ type VersionHelper() =
                                             if not (Char.IsDigit elements[i].[idx]) then
                                                 invalidFormat <- true
 
-                                                VersionHelper.TryGetValue((elements[ i ].Substring(0, idx)), ref values[i])
+                                                VersionHelper.TryGetValue((elements[i].Substring(0, idx)), ref values[i])
                                                 |> ignore<bool>
 
                                                 breakLoop <- true
@@ -697,7 +697,8 @@ type VersionResourceSerializer() =
             Array.zeroCreate (
                 VersionResourceSerializer.KEYBYTES VersionResourceSerializer.vsVersionInfoKey
                 - VersionResourceSerializer.vsVersionInfoKey.Length * 2
-            ): byte[]
+            )
+            : byte[]
         )
 
         Debug.Assert(writer.BaseStream.Position &&& 3L = 0L)
@@ -720,7 +721,8 @@ type VersionResourceSerializer() =
             Array.zeroCreate (
                 VersionResourceSerializer.KEYBYTES VersionResourceSerializer.varFileInfoKey
                 - VersionResourceSerializer.varFileInfoKey.Length * 2
-            ): byte[]
+            )
+            : byte[]
         )
 
         Debug.Assert(writer.BaseStream.Position &&& 3L = 0L)
@@ -741,7 +743,8 @@ type VersionResourceSerializer() =
             Array.zeroCreate (
                 VersionResourceSerializer.KEYBYTES VersionResourceSerializer.translationKey
                 - VersionResourceSerializer.translationKey.Length * 2
-            ): byte[]
+            )
+            : byte[]
         )
 
         Debug.Assert(writer.BaseStream.Position &&& 3L = 0L)
@@ -766,7 +769,8 @@ type VersionResourceSerializer() =
             Array.zeroCreate (
                 VersionResourceSerializer.KEYBYTES VersionResourceSerializer.stringFileInfoKey
                 - VersionResourceSerializer.stringFileInfoKey.Length * 2
-            ): byte[]
+            )
+            : byte[]
         )
 
         Debug.Assert(writer.BaseStream.Position &&& 3L = 0L)
@@ -787,7 +791,8 @@ type VersionResourceSerializer() =
             Array.zeroCreate (
                 VersionResourceSerializer.KEYBYTES this._langIdAndCodePageKey
                 - this._langIdAndCodePageKey.Length * 2
-            ): byte[]
+            )
+            : byte[]
         )
 
         Debug.Assert(writer.BaseStream.Position &&& 3L = 0L)
@@ -1019,7 +1024,7 @@ type NativeResourceWriter() =
             String.Compare(xString, yString, StringComparison.OrdinalIgnoreCase)
 
     static member SortResources(resources: IEnumerable<Win32Resource>) =
-        resources.OrderBy((fun d -> d), Comparer<_>.Create (Comparison<_> NativeResourceWriter.CompareResources))
+        resources.OrderBy((fun d -> d), Comparer<_>.Create(Comparison<_> NativeResourceWriter.CompareResources))
         :> IEnumerable<Win32Resource>
 
     static member SerializeWin32Resources(builder: BlobBuilder, theResources: IEnumerable<Win32Resource>, resourcesRva: int) =

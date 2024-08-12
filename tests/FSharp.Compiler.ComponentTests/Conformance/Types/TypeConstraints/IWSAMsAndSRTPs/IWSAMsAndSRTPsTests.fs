@@ -19,6 +19,18 @@ module TypesAndTypeConstraints_IWSAMsAndSRTPs =
         |> asExe
         |> withLangVersion70
         |> withReferences [typesModule]
+        
+    let verifyCompile compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--nowarn:988"]
+        |> compile
+
+    let verifyCompileAndRun compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--nowarn:988"]
+        |> compileAndRun
 
     [<Fact>]
     let ``Srtp call Zero property returns valid result`` () =
@@ -113,7 +125,6 @@ let main _ =
         let g0 (x: 'T) = f0 x"""
         |> withLangVersion60
         |> signaturesShouldContain "val g0: x: obj -> obj"
-
 
     [<Theory>]
     [<InlineData("let inline f_StaticProperty<'T when 'T : (static member StaticProperty: int) >() = (^T : (static member StaticProperty: int) ())")>]
@@ -724,8 +735,7 @@ let main _ =
         |> shouldSucceed
         |> verifyIL [
             """
-             .method public specialname static class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>
-                      '|GoodPotato|_|'<(class [Potato]Potato.Lib/IPotato`1<!!T>) T>(!!T x) cil managed
+             .method public specialname static class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> '|GoodPotato|_|'<(class [Potato]Potato.Lib/IPotato`1<!!T>) T>(!!T x) cil managed
               {
 
                 .maxstack  8
@@ -831,3 +841,597 @@ let main _ =
         |> compile
         |> shouldFail
         |> withErrorMessage $"The type 'float<potato>' is not compatible with the type '{potatoType}'"
+
+    [<FactForNETCOREAPP>]
+    let ``Interface A with static abstracts can be inherited in interface B and then implemented in type C which inherits B in lang version70`` () =
+        Fsx """
+            type IParseable<'T when 'T :> IParseable<'T>> =
+                static abstract member Parse : string -> 'T
+
+            type IAction<'T when 'T :> IAction<'T>> =
+                inherit IParseable<'T>
+
+            type SomeAction = A | B with
+                interface IAction<SomeAction> with
+                    static member Parse (s: string) : SomeAction =
+                        match s with
+                        | "A" -> A
+                        | "B" -> B
+                        | _ -> failwith "can't parse"
+
+            let parse<'T when 'T :> IParseable<'T>> (x: string) : 'T = 'T.Parse x
+
+            if parse<SomeAction> "A" <> A then
+                failwith "failed"
+        """
+        |> withNoWarn 3535
+        |> withLangVersion70
+        |> compile
+        |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``Static abstracts can be inherited through multiple levels in lang version70`` () =
+        Fsx """
+            type IParseable<'T when 'T :> IParseable<'T>> =
+                static abstract member Parse : string -> 'T
+
+            type IAction1<'T when 'T :> IAction1<'T>> =
+                inherit IParseable<'T>
+
+            type IAction2<'T when 'T :> IAction2<'T>> =
+                inherit IAction1<'T>
+                static abstract member AltParse : string -> 'T
+
+            type IAction3<'T when 'T :> IAction3<'T>> =
+                inherit IAction2<'T>
+
+            type SomeAction = A | B with
+                interface IAction3<SomeAction> with
+                    static member AltParse (s: string) : SomeAction = A
+                    static member Parse (s: string) : SomeAction =
+                        match s with
+                        | "A" -> A
+                        | "B" -> B
+                        | _ -> failwith "can't parse"
+
+            let parse<'T when 'T :> IParseable<'T>> (x: string) : 'T = 'T.Parse x
+            let altParse<'T when 'T :> IAction3<'T>> (x: string) : 'T = 'T.AltParse x
+
+            let x: SomeAction = parse "A"
+            let y: SomeAction = altParse "A"
+
+            if x <> A || y <> A then
+                failwith "failed"
+        """
+        |> withNoWarn 3535
+        |> withLangVersion70
+        |> compile
+        |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``Static abstracts from BCL can be inherited through multiple levels in lang version70`` () =
+        Fsx """
+            open System
+            open System.Globalization
+
+            type Person = Person with
+                interface ISpanParsable<Person> with
+                    static member Parse(_x: string, _provider: IFormatProvider) = Person
+                    static member TryParse(_x: string, _provider: IFormatProvider, _result: byref<Person>) = true
+
+                    static member Parse(_x: ReadOnlySpan<char>, _provider: IFormatProvider) = Person
+                    static member TryParse(_x: ReadOnlySpan<char>, _provider: IFormatProvider, _result: byref<Person>) = true
+
+            let parse<'T when 'T :> IParsable<'T>> (x: string) : 'T = 'T.Parse (x, CultureInfo.InvariantCulture)
+
+            let x: Person = parse "Something"
+            if x <> Person then
+                failwith "failed"
+        """
+        |> withNoWarn 3535
+        |> withLangVersion70
+        |> compile
+        |> shouldSucceed
+        
+    [<FactForNETCOREAPP>]
+    let ``Produce an error when one leaves out keyword "static" in an implementation of IWSAM`` () =
+        Fsx """
+module StaticAbstractBug =
+    type IOperation =
+        static abstract member Execute: unit -> unit
+        abstract member Execute2: unit -> unit
+        static abstract member Property: int
+        abstract member Property2: int
+        static abstract Property3 : int with get, set
+
+    type FaultyOperation() =
+        interface IOperation with
+            member _.Execute() = ()
+            member _.Execute2() = ()
+            member this.Property = 0
+            member this.Property2 = 0
+            member this.Property3 = 0
+            member this.Property3 with set value = ()
+        """
+         |> withOptions [ "--nowarn:3535" ]
+         |> withLangVersion80
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 855, Line 12, Col 22, Line 12, Col 29, "No abstract or interface member was found that corresponds to this override")
+             (Error 859, Line 14, Col 25, Line 14, Col 33, "No abstract property was found that corresponds to this override")
+             (Error 859, Line 16, Col 25, Line 16, Col 34, "No abstract property was found that corresponds to this override")
+             (Error 859, Line 17, Col 25, Line 17, Col 34, "No abstract property was found that corresponds to this override")
+         ]
+         
+    [<Fact>]
+    let ``Produce an error when one leaves out keyword "static" in an implementation of IWSAM with multiple overloads`` () =
+        Fsx """
+module StaticAbstractBug =
+    type IOperation =
+        static abstract member Execute: unit -> unit
+        abstract member Execute: unit -> bool
+        static abstract member Property: int
+        abstract member Property: int
+
+    type FaultyOperation() =
+        interface IOperation with
+            member _.Execute() = ()
+            member _.Execute() = false
+            member this.Property = 0
+            member this.Property = false
+        """
+         |> withOptions [ "--nowarn:3535" ]
+         |> withLangVersion80
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+            (Error 1, Line 11, Col 34, Line 11, Col 36, "This expression was expected to have type
+    'bool'    
+but here has type
+    'unit'    ")
+            (Error 1, Line 14, Col 36, Line 14, Col 41, "This expression was expected to have type
+    'int'    
+but here has type
+    'bool'    ")
+            ]
+         
+    [<Fact>]
+    let ``Produce an error for interface with static abstract member that is implemented as instance member`` () =
+        Fsx """
+module StaticAbstractBug =
+    type IFoo<'T> =
+       abstract DoIt: unit -> string
+       static abstract Other : int -> int
+       static abstract member Property: int
+       abstract member Property2: int
+       static abstract Property3 : int with get, set
+    type MyFoo = {
+       Value : int
+    } with
+      interface IFoo<MyFoo> with
+        member me.DoIt() = string me.Value
+        member _.Other(value) = value + 1
+        member this.Property = 0
+        member this.Property2 = 0
+        member this.Property3 = 0
+        member this.Property3 with set value = ()
+        """
+         |> withOptions [ "--nowarn:3535" ]
+         |> withLangVersion80
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+            (Error 855, Line 14, Col 18, Line 14, Col 23, "No abstract or interface member was found that corresponds to this override");   
+            (Error 859, Line 15, Col 21, Line 15, Col 29, "No abstract property was found that corresponds to this override");  
+            (Error 859, Line 17, Col 21, Line 17, Col 30, "No abstract property was found that corresponds to this override");  
+            (Error 859, Line 18, Col 21, Line 18, Col 30, "No abstract property was found that corresponds to this override")
+         ]
+         
+    [<Fact>]
+    let ``Produce an error for interface with static abstract member that is implemented as instance member with multiple overloads`` () =
+        Fsx """
+module StaticAbstractBug =
+    type IFoo<'T> =
+       abstract DoIt: unit -> string
+       static abstract Other : int -> int
+       abstract Other : int -> bool
+       static abstract member Property: int
+       abstract member Property: bool
+    type MyFoo = {
+       Value : int
+    } with
+      interface IFoo<MyFoo> with
+        member me.DoIt() = string me.Value
+        member _.Other(value) = value + 1
+        member _.Other(value) = value = 1
+        member this.Property = 0
+        member this.Property = false
+        """
+         |> withOptions [ "--nowarn:3535" ]
+         |> withLangVersion80
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+            (Error 1, Line 14, Col 41, Line 14, Col 42, "The type 'bool' does not match the type 'int'")
+            (Error 1, Line 16, Col 32, Line 16, Col 33, "This expression was expected to have type
+    'bool'    
+but here has type
+    'int'    ")
+         ]
+
+    [<Fact>]
+    let ``Produce an error when one leaves out keyword "static" in multiple IWSAM implementations`` () =
+        Fsx """
+module StaticAbstractBug =
+    type IOperation =
+        static abstract member Execute: unit -> int
+        abstract member Execute2: unit -> unit
+        
+    type IOperation2 =
+        static abstract member Execute: unit -> int
+        abstract member Execute2: unit -> unit
+
+    type FaultyOperation() =
+        interface IOperation with
+            member this.Execute() = 0
+            member _.Execute2() = ()
+            
+        interface IOperation2 with
+            member this.Execute() = 0
+            member this.Execute2() = ()
+        """
+         |> withOptions [ "--nowarn:3535" ]
+         |> withLangVersion80
+         |> compile
+         |> shouldFail
+         |> withDiagnostics [
+            (Error 855, Line 13, Col 25, Line 13, Col 32, "No abstract or interface member was found that corresponds to this override")
+            (Error 855, Line 17, Col 25, Line 17, Col 32, "No abstract or interface member was found that corresponds to this override")
+         ]
+
+    [<FactForNETCOREAPP>]
+    let ``Produces errors when includes keyword "static" when implementing a generic interface in a type`` () =
+        Fsx """
+module StaticAbstractBug =
+    type IFoo<'T> =
+       abstract DoIt: unit -> string
+       abstract Other : int -> int
+       abstract member Property: int
+       abstract member Property2: int
+       abstract Property3 : int with get, set
+    type MyFoo = {
+       Value : int
+    } with
+      interface IFoo<MyFoo> with
+        static member DoIt() = ""
+        static member Other(value) = value + 1
+        static member Property = 0
+        static member Property2 = 0
+        static member Property3 = 0
+        static member Property3 with set value = ()
+        """
+         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+         |> withLangVersion80
+         |> typecheck
+         |> shouldFail
+         |> withDiagnostics [
+            (Error 3855, Line 13, Col 23, Line 13, Col 27, "No static abstract member was found that corresponds to this override")
+            (Error 3855, Line 14, Col 23, Line 14, Col 28, "No static abstract member was found that corresponds to this override")
+            (Error 3859, Line 15, Col 23, Line 15, Col 31, "No static abstract property was found that corresponds to this override")
+            (Error 3859, Line 16, Col 23, Line 16, Col 32, "No static abstract property was found that corresponds to this override")
+            (Error 3859, Line 17, Col 23, Line 17, Col 32, "No static abstract property was found that corresponds to this override")
+            (Error 3859, Line 18, Col 23, Line 18, Col 32, "No static abstract property was found that corresponds to this override")
+         ]
+         
+    [<FactForNETCOREAPP>]
+    let ``Produces errors when includes keyword "static" when implementing an interface in a type`` () =
+        Fsx """
+module StaticAbstractBug =
+    type IOperation =
+        abstract member Execute: unit -> unit
+        abstract member Execute: unit -> bool
+        abstract member Property: int
+        abstract member Property: int
+
+    type FaultyOperation() =
+        interface IOperation with
+            static member Execute() = ()
+            static member Execute() = false
+            static member Property = 0
+            static member Property = false
+        """
+         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+         |> withLangVersion80
+         |> typecheck
+         |> shouldFail
+         |> withDiagnostics [
+            (Error 3855, Line 11, Col 27, Line 11, Col 34, "No static abstract member was found that corresponds to this override")
+            (Error 3855, Line 12, Col 27, Line 12, Col 34, "No static abstract member was found that corresponds to this override")
+            (Error 3859, Line 13, Col 27, Line 13, Col 35, "No static abstract property was found that corresponds to this override")
+            (Error 3859, Line 14, Col 27, Line 14, Col 35, "No static abstract property was found that corresponds to this override")
+         ]
+         
+    [<FactForNETCOREAPP>]
+    let ``No error when implementing interfaces with static members by using class types`` () =
+        Fsx """
+type IPrintable =
+    abstract member Print: unit -> unit
+    static abstract member Log: string -> string
+
+type SomeClass1(x: int, y: float) =
+    member this.GetPrint() = (this :> IPrintable).Print()
+    
+    interface IPrintable with
+        member this.Print() = printfn $"%d{x} %f{y}"
+        static member Log(s: string) = s
+        
+let someClass = SomeClass1(1, 2.0) :> IPrintable
+let someClass1 = SomeClass1(1, 2.0)
+
+someClass.Print()
+someClass1.GetPrint()
+        """
+         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+         |> withLangVersion80
+         |> typecheck
+         |> shouldSucceed
+         
+    [<FactForNETCOREAPP>]
+    let ``No error when implementing interfaces with static members and IWSAM by using class types`` () =
+        Fsx """
+[<Interface>]
+type IPrintable =
+    static abstract member Log: string -> string
+    static member Say(s: string) = s
+
+type SomeClass1() =    
+    interface IPrintable with
+        static member Log(s: string) = s
+        
+let someClass1 = SomeClass1()
+let execute = IPrintable.Say("hello")
+        """
+         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+         |> withLangVersion80
+         |> typecheck
+         |> shouldSucceed
+        
+    [<FactForNETCOREAPP>]
+    let ``Accessing to IWSAM(System.Numerics non virtual) produces a compilation error`` () =
+         Fsx """
+open System.Numerics
+
+IAdditionOperators.op_Addition (3, 6)
+         """
+          |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+          |> withLangVersion80
+          |> compile
+          |> shouldFail
+          |> withSingleDiagnostic (Error 3866, Line 4, Col 1, Line 4, Col 38, "A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.op_Addition).")
+
+    [<FactForNETCOREAPP>]
+    let ``Accessing to IWSAM(System.Numerics virtual member) compiles and runs`` () =
+         Fsx """
+open System.Numerics
+
+let res = IAdditionOperators.op_CheckedAddition (3, 6)
+
+printf "%A" res"""
+         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+         |> withLangVersion80
+         |> asExe
+         |> compile
+         |> shouldSucceed
+         |> run
+         |> verifyOutput "9"
+
+#if !NETCOREAPP
+    [<Theory(Skip = "IWSAMs are not supported by NET472.")>]
+#else
+    // SOURCE=ConstrainedAndInterfaceCalls.fs							# ConstrainedAndInterfaceCalls.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ConstrainedAndInterfaceCalls.fs"|])>]
+#endif
+    let ``ConstrainedAndInterfaceCalls.fs`` compilation =
+        compilation 
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3866, Line 12, Col 82, Line 12, Col 126, "A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.op_Addition).")
+            (Error 3866, Line 13, Col 82, Line 13, Col 126, "A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.op_Addition).")
+            (Error 3866, Line 15, Col 82, Line 15, Col 129, "A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.Parse).")
+        ]
+
+    [<FactForNETCOREAPP>]
+    let ``Error message that explicitly disallows static abstract methods in abstract classes.`` () =
+        Fsx """
+[<AbstractClass>]
+type A () =
+    static abstract M : unit -> unit
+        """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3867, Line 4, Col 21, Line 4, Col 22, "Classes cannot contain static abstract members.")
+        ]
+
+    [<FactForNETCOREAPP>]
+    let ``Error message that explicitly disallows static abstract methods in classes.`` () =
+        Fsx """
+type A () =
+    static abstract M : unit -> unit
+        """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3867, Line 3, Col 21, Line 3, Col 22, "Classes cannot contain static abstract members.")
+        ]
+    
+    [<Fact>]
+    let ``Access modifiers cannot be applied to an SRTP constraint in preview`` () =
+        FSharp """
+let inline length (x: ^a when ^a: (member public Length: int)) = x.Length
+let inline length2 (x: ^a when ^a: (member Length: int with public get)) = x.Length
+let inline length3 (x: ^a when ^a: (member Length: int with public set)) = x.set_Length(1)
+let inline length4 (x: ^a when ^a: (member public get_Length: unit -> int)) = x.get_Length()
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3869, Line 2, Col 43, Line 2, Col 49, "Access modifiers cannot be applied to an SRTP constraint.")
+            (Error 3869, Line 3, Col 61, Line 3, Col 67, "Access modifiers cannot be applied to an SRTP constraint.")
+            (Error 3869, Line 4, Col 61, Line 4, Col 67, "Access modifiers cannot be applied to an SRTP constraint.")
+            (Error 3869, Line 5, Col 44, Line 5, Col 50, "Access modifiers cannot be applied to an SRTP constraint.")
+        ]
+        
+    [<Fact>]
+    let ``Access modifiers in an SRTP constraint generate warning in F# 8.0`` () =
+        FSharp """
+let inline length (x: ^a when ^a: (member public Length: int)) = x.Length
+let inline length2 (x: ^a when ^a: (member Length: int with public get)) = x.Length
+let inline length3 (x: ^a when ^a: (member Length: int with public set)) = x.set_Length(1)
+let inline length4 (x: ^a when ^a: (member public get_Length: unit -> int)) = x.get_Length()
+        """
+        |> withLangVersion80
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 3869, Line 2, Col 43, Line 2, Col 49, "Access modifiers cannot be applied to an SRTP constraint.")
+            (Warning 3869, Line 3, Col 61, Line 3, Col 67, "Access modifiers cannot be applied to an SRTP constraint.")
+            (Warning 3869, Line 4, Col 61, Line 4, Col 67, "Access modifiers cannot be applied to an SRTP constraint.")
+            (Warning 3869, Line 5, Col 44, Line 5, Col 50, "Access modifiers cannot be applied to an SRTP constraint.")
+        ]
+
+    [<FactForNETCOREAPP>]
+    let ``Error for partial implementation of interface with static abstract members`` () =
+        Fsx """
+type IFace =
+    static abstract P1 : int
+    static abstract P2 : int
+
+type T =
+    interface IFace with
+        static member P1 = 1
+
+        """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 366, Line 7, Col 15, Line 7, Col 20, "No implementation was given for 'static abstract IFace.P2: int'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        ]
+        
+    [<FactForNETCOREAPP>]
+    let ``Error for no implementation of interface with static abstract members`` () =
+        Fsx """
+type IFace =
+    static abstract P1 : int
+    static abstract P2 : int
+
+type T =
+    interface IFace with
+        """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 366, Line 7, Col 15, Line 7, Col 20, "No implementation was given for those members: 
+	'static abstract IFace.P1: int'
+	'static abstract IFace.P2: int'
+Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        ]
+
+    [<FactForNETCOREAPP>]
+    let ``Error for partial implementation of interface with static and non static abstract members`` () =
+        Fsx """
+type IFace =
+    static abstract P1 : int
+    static abstract P2 : int
+    abstract member P3 : int
+    abstract member P4 : int
+
+type T =
+    interface IFace with
+        static member P1 = 1
+        member this.P3 = 3
+    
+        """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 366, Line 9, Col 15, Line 9, Col 20, "No implementation was given for those members: 
+	'static abstract IFace.P2: int'
+	'abstract IFace.P4: int'
+Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        ]
+        
+    [<FactForNETCOREAPP>]
+    let ``Error for no implementation of interface with static and non static abstract members`` () =
+        Fsx """
+type IFace =
+    static abstract P1 : int
+    static abstract P2 : int
+    abstract member P3 : int
+    abstract member P4 : int
+
+type T =
+    interface IFace with
+    
+        """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 366, Line 9, Col 15, Line 9, Col 20, "No implementation was given for those members: 
+	'static abstract IFace.P1: int'
+	'static abstract IFace.P2: int'
+	'abstract IFace.P3: int'
+	'abstract IFace.P4: int'
+Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        ]
+
+    [<FactForNETCOREAPP>]
+    let ``Error for partial implementation of interface with non static abstract members`` () =
+        Fsx """
+type IFace =
+    abstract member P3 : int
+    abstract member P4 : int
+
+type T =
+    interface IFace with
+        member this.P3 = 3
+    
+        """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 366, Line 7, Col 15, Line 7, Col 20, "No implementation was given for 'abstract IFace.P4: int'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        ]
+        
+    [<FactForNETCOREAPP>]
+    let ``Error for no implementation of interface with non static abstract members`` () =
+        Fsx """
+type IFace =
+    abstract member P3 : int
+    abstract member P4 : int
+
+type T =
+    interface IFace with
+
+        """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 366, Line 7, Col 15, Line 7, Col 20, "No implementation was given for those members: 
+	'abstract IFace.P3: int'
+	'abstract IFace.P4: int'
+Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        ]
+

@@ -16,7 +16,7 @@ ImplFile
                   ObjectModel
                     (Unspecified,
                      [ImplicitCtor
-                        (None, [], SimplePats ([], [], (2,8--2,10)), None,
+                        (None, [], Const (Unit, (2,8--2,10)), None,
                          PreXmlDoc ((2,8), FSharp.Compiler.Xml.XmlDocCollector),
                          (2,5--2,8), { AsKeyword = None });
                       AutoProperty
@@ -34,7 +34,7 @@ ImplFile
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertySet },
                          PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         None, Ident autoProp, (3,4--3,52),
+                         GetSet (None, None, None), Ident autoProp, (3,4--3,52),
                          { LeadingKeyword =
                             MemberVal ((3,4--3,10), (3,11--3,14))
                            WithKeyword = Some (3,39--3,43)
@@ -56,7 +56,7 @@ ImplFile
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertySet },
                          PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         None, Ident autoProp, (4,4--4,39),
+                         GetSet (None, None, None), Ident autoProp, (4,4--4,39),
                          { LeadingKeyword =
                             MemberVal ((4,4--4,10), (4,11--4,14))
                            WithKeyword = None
@@ -64,7 +64,7 @@ ImplFile
                            GetSetKeywords = None })], (3,4--4,39)), [],
                   Some
                     (ImplicitCtor
-                       (None, [], SimplePats ([], [], (2,8--2,10)), None,
+                       (None, [], Const (Unit, (2,8--2,10)), None,
                         PreXmlDoc ((2,8), FSharp.Compiler.Xml.XmlDocCollector),
                         (2,5--2,8), { AsKeyword = None })), (2,5--4,39),
                   { LeadingKeyword = Type (2,0--2,4)

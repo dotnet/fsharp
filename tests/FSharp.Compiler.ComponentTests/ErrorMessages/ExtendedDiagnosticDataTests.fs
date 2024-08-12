@@ -1,6 +1,7 @@
 ﻿module ErrorMessages.ExtendedDiagnosticData
 #nowarn "57"
 
+open FSharp.Compiler.Text
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Diagnostics.ExtendedData
 open FSharp.Test
@@ -143,8 +144,10 @@ if true then 1 else "a"
         Assert.Equal("int", typeMismatch.ExpectedType.Format(displayContext))
         Assert.Equal("string", typeMismatch.ActualType.Format(displayContext)))
 
-[<Fact>]
-let ``ArgumentsInSigAndImplMismatchExtendedData 01`` () =
+[<Theory>]
+[<InlineData true>]
+[<InlineData false>]
+let ``ArgumentsInSigAndImplMismatchExtendedData 01`` useTransparentCompiler =
     let encodeFsi =
         Fsi """
 module Test
@@ -157,7 +160,7 @@ let f (y: int) = ()
     """
     encodeFsi
     |> withAdditionalSourceFile encodeFs
-    |> typecheckProject true
+    |> typecheckProject true useTransparentCompiler
     |> checkDiagnostic
        (3218, "The argument names in the signature 'x' and implementation 'y' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.")
        (fun (argsMismatch: ArgumentsInSigAndImplMismatchExtendedData) ->
@@ -166,8 +169,10 @@ let f (y: int) = ()
         Assert.True(argsMismatch.SignatureRange.FileName.EndsWith("fsi"))
         Assert.True(argsMismatch.ImplementationRange.FileName.EndsWith("fs")))
 
-[<Fact>]
-let ``FieldNotContainedDiagnosticExtendedData 01`` () =
+[<Theory>]
+[<InlineData true>]
+[<InlineData false>]
+let ``FieldNotContainedDiagnosticExtendedData 01`` useTransparentCompiler =
     let encodeFsi =
         Fsi """
 namespace rec Foo
@@ -182,7 +187,7 @@ type A =
     """
     encodeFsi
     |> withAdditionalSourceFile encodeFs
-    |> typecheckProject true
+    |> typecheckProject true useTransparentCompiler
     |> checkDiagnostic
        (193, "The module contains the field\n    myStatic: int    \nbut its signature specifies\n    myStatic: int    \nthe accessibility specified in the signature is more than that specified in the implementation")
        (fun (fieldsData: FieldNotContainedDiagnosticExtendedData) ->
@@ -201,3 +206,38 @@ id
        (193, "This expression is a function value, i.e. is missing arguments. Its type is 'a -> 'a.")
        (fun (wrongType: ExpressionIsAFunctionExtendedData) ->
         Assert.Equal("type 'a -> 'a", wrongType.ActualType.ToString()))
+
+let private assertRange
+    (expectedStartLine: int, expectedStartColumn: int)
+    (expectedEndLine: int, expectedEndColumn: int)
+    (actualRange: range)
+    : unit =
+    Assert.Equal(Position.mkPos expectedStartLine expectedStartColumn, actualRange.Start)
+    Assert.Equal(Position.mkPos expectedEndLine expectedEndColumn, actualRange.End)
+
+[<Theory>]
+[<InlineData true>]
+[<InlineData false>]
+let ``DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferExtendedData 01`` useTransparentCompiler =
+    let signature =
+        Fsi """
+namespace Project
+
+type Foo = {| bar: int |}
+    """
+
+    let implementation =
+        FsSource """
+namespace Project
+
+type  Foo = {| bar: int; x: int |}
+    """
+
+    signature
+    |> withAdditionalSourceFile implementation
+    |> typecheckProject true useTransparentCompiler
+    |> checkDiagnostic
+       (318, "The type definitions for type 'Foo' in the signature and implementation are not compatible because the abbreviations differ:\n    {| bar: int; x: int |}\nversus\n    {| bar: int |}")
+       (fun (fieldsData: DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferExtendedData) ->
+        assertRange (4,5) (4,8) fieldsData.SignatureRange
+        assertRange (4,6) (4,9) fieldsData.ImplementationRange)

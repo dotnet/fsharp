@@ -288,6 +288,7 @@ let IsIdentifierName (name: string) =
        && IsIdentifierFirstCharacter name[0]
        && let rec loop i =
            (i >= nameLen || (IsIdentifierPartCharacter(name[i]) && loop (i + 1))) in
+
           loop 1
 
 let rec isCoreActivePatternName (name: string) idx seenNonOpChar =
@@ -388,29 +389,30 @@ let compileCustomOpName =
     /// They're typically used more than once so this avoids some CPU and GC overhead.
     let compiledOperators = ConcurrentDictionary<_, string> StringComparer.Ordinal
 
+    // Cache this as a delegate.
+    let compiledOperatorsAddDelegate =
+        Func<string, string>(fun (op: string) ->
+            let opLength = op.Length
+
+            let sb =
+                StringBuilder(opNamePrefix, opNamePrefix.Length + (opLength * maxOperatorNameLength))
+
+            for i = 0 to opLength - 1 do
+                let c = op[i]
+
+                match t2.TryGetValue c with
+                | true, x -> sb.Append(x) |> ignore
+                | false, _ -> sb.Append(c) |> ignore
+
+            /// The compiled (mangled) operator name.
+            let opName = sb.ToString()
+
+            // Cache the compiled name so it can be reused.
+            opName)
+
     fun opp ->
         // Has this operator already been compiled?
-        compiledOperators.GetOrAdd(
-            opp,
-            fun (op: string) ->
-                let opLength = op.Length
-
-                let sb =
-                    StringBuilder(opNamePrefix, opNamePrefix.Length + (opLength * maxOperatorNameLength))
-
-                for i = 0 to opLength - 1 do
-                    let c = op[i]
-
-                    match t2.TryGetValue c with
-                    | true, x -> sb.Append(x) |> ignore
-                    | false, _ -> sb.Append(c) |> ignore
-
-                /// The compiled (mangled) operator name.
-                let opName = sb.ToString()
-
-                // Cache the compiled name so it can be reused.
-                opName
-        )
+        compiledOperators.GetOrAdd(opp, compiledOperatorsAddDelegate)
 
 /// Maps the built-in F# operators to their mangled operator names.
 let standardOpNames =
@@ -484,7 +486,7 @@ let decompileCustomOpName =
                     | None ->
                         // Couldn't decompile, so just return the original 'opName'.
                         opName
-                    | Some (opChar, opCharName) ->
+                    | Some(opChar, opCharName) ->
                         // 'opCharName' matched the current position in 'opName'.
                         // Append the corresponding operator character to the StringBuilder
                         // and continue decompiling at the index following this instance of 'opCharName'.
@@ -569,7 +571,8 @@ let ConvertValLogicalNameToDisplayName isBaseVal name =
 let ConvertLogicalNameToDisplayLayout nonOpLayout name =
     if DoesIdentifierNeedBackticks name then
         leftL (TaggedText.tagPunctuation "``")
-        ^^ wordL (TaggedText.tagOperator name) ^^ rightL (TaggedText.tagPunctuation "``")
+        ^^ wordL (TaggedText.tagOperator name)
+        ^^ rightL (TaggedText.tagPunctuation "``")
     else
         nonOpLayout name
 
@@ -583,10 +586,12 @@ let ConvertValLogicalNameToDisplayLayout isBaseVal nonOpLayout name =
             ConvertLogicalNameToDisplayLayout nonOpLayout name
         elif nm.StartsWithOrdinal "*" || nm.EndsWithOrdinal "*" then
             wordL (TaggedText.tagPunctuation "(")
-            ^^ wordL (TaggedText.tagOperator nm) ^^ wordL (TaggedText.tagPunctuation ")")
+            ^^ wordL (TaggedText.tagOperator nm)
+            ^^ wordL (TaggedText.tagPunctuation ")")
         else
             leftL (TaggedText.tagPunctuation "(")
-            ^^ wordL (TaggedText.tagOperator nm) ^^ rightL (TaggedText.tagPunctuation ")")
+            ^^ wordL (TaggedText.tagOperator nm)
+            ^^ rightL (TaggedText.tagPunctuation ")")
     elif name = "get_Zero" then
         ConvertLogicalNameToDisplayLayout nonOpLayout "Zero"
     else
@@ -949,13 +954,13 @@ let IllegalCharactersInTypeAndNamespaceNames =
 type ActivePatternInfo =
     | APInfo of bool * (string * range) list * range
 
-    member x.IsTotal = let (APInfo (p, _, _)) = x in p
+    member x.IsTotal = let (APInfo(p, _, _)) = x in p
 
-    member x.ActiveTags = let (APInfo (_, tags, _)) = x in List.map fst tags
+    member x.ActiveTags = let (APInfo(_, tags, _)) = x in List.map fst tags
 
-    member x.ActiveTagsWithRanges = let (APInfo (_, tags, _)) = x in tags
+    member x.ActiveTagsWithRanges = let (APInfo(_, tags, _)) = x in tags
 
-    member x.Range = let (APInfo (_, _, m)) = x in m
+    member x.Range = let (APInfo(_, _, m)) = x in m
 
 let ActivePatternInfoOfValName nm (m: range) =
     // Note: The approximate range calculations in this code assume the name is of the form "(|A|B|)" not "(|  A   |   B   |)"
@@ -1001,7 +1006,7 @@ let tryDemangleStaticStringArg (mangledText: string) =
     match splitAroundQuotationWithCount mangledText '=' 2 with
     | [| nm; v |] ->
         if v.Length >= 2 then
-            Some(nm, v[ 1 .. v.Length - 2 ].Replace("\\\\", "\\").Replace("\\\"", "\""))
+            Some(nm, v[1 .. v.Length - 2].Replace("\\\\", "\\").Replace("\\\"", "\""))
         else
             Some(nm, v)
     | _ -> None
@@ -1030,7 +1035,7 @@ let MangleProvidedTypeName (typeLogicalName, nonDefaultArgs) =
     let nonDefaultArgsText =
         nonDefaultArgs |> Array.map mangleStaticStringArg |> String.concat ","
 
-    if nonDefaultArgsText = "" then
+    if String.IsNullOrEmpty(nonDefaultArgsText) then
         typeLogicalName
     else
         typeLogicalName + "," + nonDefaultArgsText
@@ -1093,11 +1098,20 @@ let FSharpOptimizationDataResourceName = "FSharpOptimizationData."
 
 let FSharpSignatureDataResourceName = "FSharpSignatureData."
 
+let FSharpOptimizationDataResourceNameB = "FSharpOptimizationDataB."
+
+let FSharpSignatureDataResourceNameB = "FSharpSignatureDataB."
+
 // Compressed OptimizationData/SignatureData name for embedded resource
 let FSharpOptimizationCompressedDataResourceName =
     "FSharpOptimizationCompressedData."
 
 let FSharpSignatureCompressedDataResourceName = "FSharpSignatureCompressedData."
+
+let FSharpOptimizationCompressedDataResourceNameB =
+    "FSharpOptimizationCompressedDataB."
+
+let FSharpSignatureCompressedDataResourceNameB = "FSharpSignatureCompressedDataB."
 
 // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers
 // don't complain when they see the resource. The prefix of these names must not be 'FSharpOptimizationData'

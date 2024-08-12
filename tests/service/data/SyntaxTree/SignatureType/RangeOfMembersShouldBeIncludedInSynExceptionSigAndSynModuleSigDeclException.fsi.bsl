@@ -15,13 +15,15 @@ SigFile
                             ([], false, None,
                              LongIdent (SynLongIdent ([obj], [], [None])), false,
                              PreXmlDoc ((4,25), FSharp.Compiler.Xml.XmlDocCollector),
-                             None, (4,25--4,28), { LeadingKeyword = None });
+                             None, (4,25--4,28), { LeadingKeyword = None
+                                                   MutableKeyword = None });
                           SynField
                             ([], false, Some range,
                              LongIdent (SynLongIdent ([range], [], [None])),
                              false,
                              PreXmlDoc ((4,31), FSharp.Compiler.Xml.XmlDocCollector),
-                             None, (4,31--4,43), { LeadingKeyword = None })],
+                             None, (4,31--4,43), { LeadingKeyword = None
+                                                   MutableKeyword = None })],
                        PreXmlDocEmpty, None, (4,10--4,43), { BarRange = None }),
                     None, PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
                     None, (4,0--4,43)), Some (4,44--4,48),
@@ -36,7 +38,7 @@ SigFile
                           ([[SynArgInfo ([], false, None)]],
                            SynArgInfo ([], false, None)), false, false,
                         PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
-                        None, None, (5,4--5,30),
+                        Single None, None, (5,4--5,30),
                         { LeadingKeyword = Member (5,4--5,10)
                           InlineKeyword = None
                           WithKeyword = None

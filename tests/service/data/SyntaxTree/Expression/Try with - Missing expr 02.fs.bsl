@@ -22,6 +22,7 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(5,0)-(5,0) parse error Possible incorrect indentation: this token is offside of context started at position (3:1). Try indenting this token further or using standard formatting conventions.
+(5,0)-(5,0) parse error Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (3:1). Try indenting this further.
+To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
 (5,0)-(5,0) parse error Incomplete structured construct at or before this point in pattern matching
 (4,0)-(4,4) parse error Expecting expression

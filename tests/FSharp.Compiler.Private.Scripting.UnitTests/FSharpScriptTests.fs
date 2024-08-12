@@ -247,6 +247,10 @@ System.Configuration.ConfigurationManager.AppSettings.Item "Environment" <- "LOC
 #if NETSTANDARD
     [<Fact>]
     member _.``ML - use assembly with native dependencies``() =
+        // Skip test on arm64, because there is not an arm64 netive library
+        if RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then
+            ()
+        else
         let code = @"
 #r ""nuget:Microsoft.ML,version=1.4.0-preview""
 #r ""nuget:Microsoft.ML.AutoML,version=0.16.0-preview""
@@ -285,7 +289,7 @@ let details = result.RunDetails
 printfn ""%A"" result
 123
 "
-        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
+        use script = new FSharpScript(additionalArgs=[| |])
         let opt = script.Eval(code)  |> getValue
         let value = opt.Value
         Assert.Equal(123, value.ReflectionValue :?> int32)
@@ -293,7 +297,7 @@ printfn ""%A"" result
 
     [<Fact>]
     member _.``Eval script with package manager invalid key``() =
-        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
+        use script = new FSharpScript(additionalArgs=[| |])
         let result, _errors = script.Eval(@"#r ""nugt:FSharp.Data""")
         match result with
         | Ok(_) -> Assert.False(true, "expected a failure")
@@ -302,7 +306,7 @@ printfn ""%A"" result
     [<Fact>]
     member _.``Eval script with invalid PackageName should fail immediately``() =
         use output = new RedirectConsoleOutput()
-        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
+        use script = new FSharpScript(additionalArgs=[| |])
         let mutable found = 0
         let outp = System.Collections.Generic.List<string>()
         output.OutputProduced.Add(
@@ -318,7 +322,7 @@ printfn ""%A"" result
     [<Fact>]
     member _.``Eval script with invalid PackageName should fail immediately and resolve one time only``() =
         use output = new RedirectConsoleOutput()
-        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
+        use script = new FSharpScript(additionalArgs=[| |])
         let mutable foundResolve = 0
         output.OutputProduced.Add (fun line -> if line.Contains("error NU1101:") then foundResolve <- foundResolve + 1)
         let result, errors =
@@ -343,7 +347,7 @@ let inputValues = [| 12.0; 10.0; 17.0; 5.0 |]
 let tInput = new DenseTensor<float>(inputValues.AsMemory(), new ReadOnlySpan<int>([|4|]))
 tInput.Length
 """
-        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
+        use script = new FSharpScript(additionalArgs=[| |])
         let opt = script.Eval(code)  |> getValue
         let value = opt.Value
         Assert.Equal(4L, downcast value.ReflectionValue)
@@ -354,7 +358,7 @@ tInput.Length
 #r "nuget:System.Device.Gpio, 1.0.0"
 typeof<System.Device.Gpio.GpioController>.Assembly.Location
 """
-        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
+        use script = new FSharpScript(additionalArgs=[| |])
         let opt = script.Eval(code)  |> getValue
         let value = opt.Value
 
@@ -386,7 +390,7 @@ else
     printfn ""Current process: %d"" (Imports.getpid())
 123
 "
-        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
+        use script = new FSharpScript(additionalArgs=[| |])
         let opt = script.Eval(code)  |> getValue
         let value = opt.Value
         Assert.Equal(123, value.ReflectionValue :?> int32)
@@ -478,7 +482,7 @@ let test p str =
         false
 test pfloat "1.234"
 """
-        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
+        use script = new FSharpScript(additionalArgs=[| |])
         let opt = script.Eval(code)  |> getValue
         let value = opt.Value
         Assert.True(true = downcast value.ReflectionValue)

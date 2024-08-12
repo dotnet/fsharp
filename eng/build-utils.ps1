@@ -14,6 +14,7 @@ $nodeReuse = if (Test-Path variable:nodeReuse) { $nodeReuse } else { $false }
 $bootstrapDir = if (Test-Path variable:bootstrapDir) { $bootstrapDir } else { "" }
 $bootstrapConfiguration = if (Test-Path variable:bootstrapConfiguration) { $bootstrapConfiguration } else { "Proto" }
 $bootstrapTfm = if (Test-Path variable:bootstrapTfm) { $bootstrapTfm } else { "net472" }
+$fsharpNetCoreProductTfm = if (Test-Path variable:fsharpNetCoreProductTfm) { $fsharpNetCoreProductTfm } else { "net9.0" }
 $properties = if (Test-Path variable:properties) { $properties } else { @() }
 
 function GetProjectOutputBinary([string]$fileName, [string]$projectName = "", [string]$configuration = $script:configuration, [string]$tfm = "net472", [string]$rid = "", [bool]$published = $false) {
@@ -179,7 +180,7 @@ function Get-PackageDir([string]$name, [string]$version = "") {
 }
 
 function Run-MSBuild([string]$projectFilePath, [string]$buildArgs = "", [string]$logFileName = "", [switch]$parallel = $true, [switch]$summary = $true, [switch]$warnAsError = $true, [string]$configuration = $script:configuration, [string]$verbosity = $script:verbosity) {
-    # Because we override the C#/VB toolset to build against our LKG package, it is important
+    # Because we override the C#/VB toolset to build against our LKG (Last Known Good) package, it is important
     # that we do not reuse MSBuild nodes from other jobs/builds on the machine. Otherwise,
     # we'll run into issues such as https://github.com/dotnet/roslyn/issues/6211.
     # MSBuildAdditionalCommandLineArgs=
@@ -230,7 +231,7 @@ function Run-MSBuild([string]$projectFilePath, [string]$buildArgs = "", [string]
 # Important to not set $script:bootstrapDir here yet as we're actually in the process of
 # building the bootstrap.
 function Make-BootstrapBuild() {
-    Write-Host "Building bootstrap '$bootstrapTfm' compiler"
+    Write-Host "Building bootstrap '$bootstrapTfm' compiler with '$fsharpNetCoreProductTfm' .NET Core product TFM"
 
     $dir = Join-Path $ArtifactsDir "Bootstrap"
     Remove-Item -re $dir -ErrorAction SilentlyContinue
@@ -239,33 +240,15 @@ function Make-BootstrapBuild() {
     # prepare FsLex and Fsyacc and AssemblyCheck
     $dotnetPath = InitializeDotNetCli
     $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
-    $buildToolsProject = "`"$RepoRoot\buildtools\buildtools.proj`""
-
-    $argNoRestore = if ($norestore) { " --no-restore" } else { "" }
-    $argNoIncremental = if ($rebuild) { " --no-incremental" } else { "" }
-
-    $args = "build $buildToolsProject -c $bootstrapConfiguration -v $verbosity" + $argNoRestore + $argNoIncremental
-    if ($binaryLog) {
-        $logFilePath = Join-Path $LogDir "toolsBootstrapLog.binlog"
-        $args += " /bl:`"$logFilePath`""
-    }
-    Exec-Console $dotnetExe $args
-
-    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\net8.0" -Destination "$dir\fslex" -Force -Recurse
-    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\net8.0" -Destination "$dir\fsyacc" -Force  -Recurse
-    Copy-Item "$ArtifactsDir\bin\AssemblyCheck\$bootstrapConfiguration\net8.0" -Destination "$dir\AssemblyCheck" -Force  -Recurse
 
     # prepare compiler
-    $protoProject = "`"$RepoRoot\proto.sln`""
-    $args = "build $protoProject -c $bootstrapConfiguration -v $verbosity " + $argNoRestore + $argNoIncremental
+    $projectpath = "$RepoRoot" + "proto.proj"
+    $args = "publish $projectpath -c $bootstrapConfiguration"
     if ($binaryLog) {
-        $logFilePath = Join-Path $LogDir "protoBootstrapLog.binlog"
+        $logFilePath = Join-Path $LogDir "bootstrap.binlog"
         $args += " /bl:`"$logFilePath`""
     }
+    Write-Host "$dotnetExe $args"
     Exec-Console $dotnetExe $args
-
-    Copy-Item "$ArtifactsDir\bin\fsc\$bootstrapConfiguration\$bootstrapTfm" -Destination "$dir\fsc" -Force -Recurse
-    Copy-Item "$ArtifactsDir\bin\fsi\$bootstrapConfiguration\$bootstrapTfm" -Destination "$dir\fsi" -Force -Recurse
-
     return $dir
 }

@@ -4,20 +4,11 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <!-- Workaround to get rid of:
-        error NU1505: Duplicate 'PackageDownload' items found.
-        Remove the duplicate items or use the Update functionality to ensure a consistent restore behavior.
-        The duplicate 'PackageDownload' items are:
-          Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2].
-    -->
-    <NoWarn>$(NoWarn);NU1505</NoWarn>
+    <Configurations>Debug;Release;Proto</Configurations>
     <NoWarn>$(NoWarn);44</NoWarn> <!-- Obsolete -->
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <Win32Resource>$(MSBuildThisFileDirectory)fsi.res</Win32Resource>
-    <NGenBinary>true</NGenBinary>
-    <UseAppHost>true</UseAppHost>
-    <UseAppHost Condition="'$(DotNetBuildFromSource)' == 'true'">false</UseAppHost>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'net472'">
@@ -25,10 +16,10 @@
   </PropertyGroup>
 
   <!--  The fsi application does not provide a referencable public interface  -->
-  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
-      <NoOptimizationData>true</NoOptimizationData>
-      <NoInterfaceData>true</NoInterfaceData>
-      <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
+  <PropertyGroup>
+    <NoOptimizationData>true</NoOptimizationData>
+    <NoInterfaceData>true</NoInterfaceData>
+    <CompressMetadata>true</CompressMetadata>
   </PropertyGroup>
 
   <ItemGroup>

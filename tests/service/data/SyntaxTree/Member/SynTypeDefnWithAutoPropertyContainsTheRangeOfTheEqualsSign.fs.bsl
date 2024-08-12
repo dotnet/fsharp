@@ -17,18 +17,23 @@ ImplFile
                     (Unspecified,
                      [ImplicitCtor
                         (None, [],
-                         SimplePats
-                           ([Typed
-                               (Id
-                                  (name, None, false, false, false, (3,12--3,16)),
-                                LongIdent (SynLongIdent ([string], [], [None])),
-                                (3,12--3,25));
-                             Typed
-                               (Id
-                                  (age, None, false, false, false, (3,27--3,30)),
-                                LongIdent (SynLongIdent ([int], [], [None])),
-                                (3,27--3,36))], [(3,25--3,26)], (3,11--3,37)),
-                         None,
+                         Paren
+                           (Tuple
+                              (false,
+                               [Typed
+                                  (Named
+                                     (SynIdent (name, None), false, None,
+                                      (3,12--3,16)),
+                                   LongIdent
+                                     (SynLongIdent ([string], [], [None])),
+                                   (3,12--3,25));
+                                Typed
+                                  (Named
+                                     (SynIdent (age, None), false, None,
+                                      (3,27--3,30)),
+                                   LongIdent (SynLongIdent ([int], [], [None])),
+                                   (3,27--3,36))], [(3,25--3,26)], (3,12--3,36)),
+                            (3,11--3,37)), None,
                          PreXmlDoc ((3,11), FSharp.Compiler.Xml.XmlDocCollector),
                          (3,5--3,11), { AsKeyword = None });
                       AutoProperty
@@ -46,7 +51,7 @@ ImplFile
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertySet },
                          PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         None, Ident name, (4,4--5,40),
+                         GetSet (None, None, None), Ident name, (4,4--5,40),
                          { LeadingKeyword =
                             MemberVal ((5,4--5,10), (5,11--5,14))
                            WithKeyword = Some (5,27--5,31)
@@ -57,17 +62,23 @@ ImplFile
                   Some
                     (ImplicitCtor
                        (None, [],
-                        SimplePats
-                          ([Typed
-                              (Id
-                                 (name, None, false, false, false, (3,12--3,16)),
-                               LongIdent (SynLongIdent ([string], [], [None])),
-                               (3,12--3,25));
-                            Typed
-                              (Id (age, None, false, false, false, (3,27--3,30)),
-                               LongIdent (SynLongIdent ([int], [], [None])),
-                               (3,27--3,36))], [(3,25--3,26)], (3,11--3,37)),
-                        None,
+                        Paren
+                          (Tuple
+                             (false,
+                              [Typed
+                                 (Named
+                                    (SynIdent (name, None), false, None,
+                                     (3,12--3,16)),
+                                  LongIdent
+                                    (SynLongIdent ([string], [], [None])),
+                                  (3,12--3,25));
+                               Typed
+                                 (Named
+                                    (SynIdent (age, None), false, None,
+                                     (3,27--3,30)),
+                                  LongIdent (SynLongIdent ([int], [], [None])),
+                                  (3,27--3,36))], [(3,25--3,26)], (3,12--3,36)),
+                           (3,11--3,37)), None,
                         PreXmlDoc ((3,11), FSharp.Compiler.Xml.XmlDocCollector),
                         (3,5--3,11), { AsKeyword = None })), (2,0--5,40),
                   { LeadingKeyword = Type (3,0--3,4)

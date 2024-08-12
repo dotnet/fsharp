@@ -27,6 +27,7 @@ open TestFramework
 
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
+open FSharp.Compiler.CodeAnalysis
 
 
 module rec Compiler =
@@ -206,7 +207,7 @@ module rec Compiler =
         | Arm = 5
         | Arm64 = 6
 
-    let private defaultOptions : string list = []
+    let public defaultOptions : string list = ["--realsig+"]
 
     let normalizePathSeparator (text:string) = text.Replace(@"\", "/")
 
@@ -365,6 +366,10 @@ module rec Compiler =
     let FSharp (source: string) : CompilationUnit =
         Fs source
 
+    let FSharpWithFileName name (source: string) : CompilationUnit =
+        fsFromString (SourceCodeFileKind.Fs({FileName=name; SourceText=Some source }))
+        |> FS
+
     let FsFromPath (path: string) : CompilationUnit =
         fsFromString (SourceFromPath path)
         |> FS
@@ -475,6 +480,9 @@ module rec Compiler =
         | FS fs -> FS { fs with OutputDirectory = path }
         | _ -> failwith "withOutputDirectory is only supported on F#"
 
+    let withCheckNulls (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper ["--checknulls+"] "checknulls is only supported in F#" cUnit
+
     let withBufferWidth (width: int)(cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ $"--bufferwidth:{width}" ] "withBufferWidth is only supported on F#" cUnit
 
@@ -501,6 +509,9 @@ module rec Compiler =
 
     let withLangVersion80 (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:8.0" ] "withLangVersion80 is only supported on F#" cUnit
+
+    let withLangVersion90 (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--langversion:9.0" ] "withLangVersion90 is only supported on F#" cUnit
 
     let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:preview" ] "withLangVersionPreview is only supported on F#" cUnit
@@ -577,11 +588,30 @@ module rec Compiler =
         | CS cs -> CS { cs with LangVersion = ver }
         | _ -> failwith "Only supported in C#"
 
+    let withCSharpLanguageVersionPreview =
+        withCSharpLanguageVersion CSharpLanguageVersion.Preview
+
     let withOutputType (outputType : CompileOutput) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS x -> FS { x with OutputType = outputType }
         | CS x -> CS { x with OutputType = outputType }
         | _ -> failwith "TODO: Implement where applicable."
+
+    let withRealInternalSignatureOff (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> FS { fs with Options = fs.Options @ ["--realsig-"] }
+        | _ -> failwith "withRealInternalSignatureOff only supported by f#"
+
+    let withRealInternalSignatureOn (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> FS { fs with Options = fs.Options @ ["--realsig+"] }
+        | _ -> failwith "withRealInternalSignatureOn only supported by f#"
+
+    let withRealInternalSignature (realSig: bool) (cUnit: CompilationUnit) : CompilationUnit  =
+        if realSig then
+            cUnit |>  withRealInternalSignatureOn
+        else
+            cUnit |>  withRealInternalSignatureOff
 
     let asExe (cUnit: CompilationUnit) : CompilationUnit =
         withOutputType CompileOutput.Exe cUnit
@@ -762,12 +792,7 @@ module rec Compiler =
 
         let references = TargetFrameworkUtil.getReferences csSource.TargetFramework
 
-        let lv =
-          match csSource.LangVersion with
-            | CSharpLanguageVersion.CSharp8 -> LanguageVersion.CSharp8
-            | CSharpLanguageVersion.CSharp9 -> LanguageVersion.CSharp9
-            | CSharpLanguageVersion.Preview -> LanguageVersion.Preview
-            | _ -> LanguageVersion.Default
+        let lv = CSharpLanguageVersion.toLanguageVersion csSource.LangVersion
 
         let outputKind, extension =
             match csSource.OutputType with
@@ -917,7 +942,7 @@ module rec Compiler =
             CompilerAssert.TypeCheck(options, fileName, source)
         | _ -> failwith "Typecheck only supports F#"
 
-    let typecheckProject enablePartialTypeChecking (cUnit: CompilationUnit) : FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults =
+    let typecheckProject enablePartialTypeChecking useTransparentCompiler (cUnit: CompilationUnit) : FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults =
         match cUnit with
         | FS fsSource ->
             let options = fsSource.Options |> Array.ofList
@@ -935,7 +960,8 @@ module rec Compiler =
                     |> async.Return
 
             let sourceFiles = Array.map fst sourceFiles
-            CompilerAssert.TypeCheckProject(options, sourceFiles, getSourceText, enablePartialTypeChecking)
+
+            CompilerAssert.TypeCheckProject(options, sourceFiles, getSourceText, enablePartialTypeChecking, useTransparentCompiler)
         | _ -> failwith "Typecheck only supports F#"
 
     let run (result: CompilationResult) : CompilationResult =
@@ -945,7 +971,14 @@ module rec Compiler =
             match s.OutputPath with
             | None -> failwith "Compilation didn't produce any output. Unable to run. (Did you forget to set output type to Exe?)"
             | Some p ->
-                let (exitCode, output, errors) = CompilerAssert.ExecuteAndReturnResult (p, s.Dependencies, false)
+                let isFsx =
+                    match s.Compilation with
+                    | FS fs ->
+                        match fs.Source with
+                        | SourceCodeFileKind.Fsx _ -> true
+                        | _ -> false
+                    | _ -> false
+                let exitCode, output, errors = CompilerAssert.ExecuteAndReturnResult (p, isFsx, s.Dependencies, false)
                 printfn "---------output-------\n%s\n-------"  output
                 printfn "---------errors-------\n%s\n-------"  errors
                 let executionResult = { s with Output = Some (ExecutionOutput { ExitCode = exitCode; StdOut = output; StdErr = errors }) }
@@ -1075,10 +1108,39 @@ module rec Compiler =
         | _ -> failwith "FSI running only supports F#."
 
 
-    let private createBaselineErrors (baselineFile: BaselineFile) (actualErrors: string) : unit =
-        FileSystem.OpenFileForWriteShim(baselineFile.FilePath + ".err").Write(actualErrors)
+    let convenienceBaselineInstructions baseline expected actual =
+        $"""to update baseline:
+$ cp {baseline.FilePath} {baseline.BslSource}
+to compare baseline:
+$ code --diff {baseline.FilePath} {baseline.BslSource}
+Expected:
+{expected}
+Actual:
+{actual}"""
+    let updateBaseline () =
+        snd (Int32.TryParse(Environment.GetEnvironmentVariable("TEST_UPDATE_BSL"))) <> 0
+    let updateBaseLineIfEnvironmentSaysSo baseline =
+        if updateBaseline () then
+            if FileSystem.FileExistsShim baseline.FilePath then
+                FileSystem.CopyShim(baseline.FilePath, baseline.BslSource, true)
 
-    let private verifyFSBaseline (fs) : unit =
+    let assertBaseline expected actual baseline fOnFail =
+        if expected <> actual then
+            fOnFail()
+            updateBaseLineIfEnvironmentSaysSo baseline
+            createBaselineErrors baseline actual
+            Assert.AreEqual(expected, actual, convenienceBaselineInstructions baseline expected actual)
+        elif FileSystem.FileExistsShim baseline.FilePath then
+            FileSystem.FileDeleteShim baseline.FilePath
+
+    
+    let private createBaselineErrors (baselineFile: BaselineFile) (actualErrors: string) : unit =
+        printfn $"creating baseline error file for convenience: {baselineFile.FilePath}, expected: {baselineFile.BslSource}"
+        let file = FileSystem.OpenFileForWriteShim(baselineFile.FilePath)
+        file.SetLength(0)
+        file.WriteAllText(actualErrors)
+
+    let private verifyFSBaseline fs : unit =
         match fs.Baseline with
         | None -> failwith "Baseline was not provided."
         | Some bsl ->
@@ -1089,15 +1151,20 @@ module rec Compiler =
 
             let typecheckDiagnostics = fs |> typecheckFSharpSourceAndReturnErrors
 
-            let errorsActual = (typecheckDiagnostics |> Array.map (sprintf "%A") |> String.concat "\n").Replace("\r\n","\n")
+            let errorsActual =
+                (typecheckDiagnostics
+                |> Array.map (sprintf "%A")
+                |> String.concat "\n"
+                ).Replace("\r\n","\n")
 
             if errorsExpectedBaseLine <> errorsActual then
                 fs.CreateOutputDirectory()
                 createBaselineErrors bsl.FSBaseline errorsActual
+                updateBaseLineIfEnvironmentSaysSo bsl.FSBaseline
+                let errorMsg = (convenienceBaselineInstructions bsl.FSBaseline errorsExpectedBaseLine errorsActual)
+                Assert.AreEqual(errorsExpectedBaseLine, errorsActual, errorMsg)
             elif FileSystem.FileExistsShim(bsl.FSBaseline.FilePath) then
                 FileSystem.FileDeleteShim(bsl.FSBaseline.FilePath)
-
-            Assert.AreEqual(errorsExpectedBaseLine, errorsActual, $"\nExpected:\n{errorsExpectedBaseLine}\nActual:\n{errorsActual}")
 
     /// Check the typechecker output against the baseline, if invoked with empty baseline, will expect no error/warnings output.
     let verifyBaseline (cUnit: CompilationUnit) : CompilationUnit =
@@ -1115,43 +1182,60 @@ module rec Compiler =
             | Some p -> func p il
         | CompilationResult.Failure f -> failwith $"Result should be \"Success\" in order to get IL. Failure: {Environment.NewLine}{f}"
 
+    let withILContains expected result : CompilationResult =
+        match result with
+        | CompilationResult.Success s ->
+            match s.OutputPath with
+            | None -> failwith "Operation didn't produce any output!"
+            | Some p ->
+                match ILChecker.verifyILAndReturnActual [] p expected with
+                | true, _, _ -> result
+                | false, errorMsg, _actualIL -> CompilationResult.Failure( {s with Output = Some (ExecutionOutput { StdOut = errorMsg; ExitCode = 0; StdErr = "" })} )
+
+        | CompilationResult.Failure f -> failwith $"Result should be \"Success\" in order to get IL. Failure: {Environment.NewLine}{f}"
+
     let verifyIL = doILCheck ILChecker.checkIL
 
     let verifyILNotPresent = doILCheck ILChecker.checkILNotPresent
 
     let verifyILBinary (il: string list) (dll: string)= ILChecker.checkIL dll il
 
-    let private verifyFSILBaseline (baseline: Baseline option) (result: CompilationOutput) : unit =
-        match baseline with
-        | None -> failwith "Baseline was not provided."
-        | Some bsl ->
-            match result.OutputPath with
-                | None -> failwith "Operation didn't produce any output!"
-                | Some p ->
-                    let expectedIL =
-                        match bsl.ILBaseline.Content with
-                        | Some b -> b
-                        | None ->  String.Empty
-                    let (success, errorMsg, actualIL) = ILChecker.verifyILAndReturnActual p expectedIL
+    let private verifyFSILBaseline (baseline: Baseline) (result: CompilationOutput) : unit =
+        match result.OutputPath with
+        | None -> failwith "Operation didn't produce any output!"
+        | Some p ->
+            let expectedIL =
+                match baseline.ILBaseline.Content with
+                | Some b -> b
+                | None ->  String.Empty
+            let success, errorMsg, actualIL = ILChecker.verifyILAndReturnActual [] p [expectedIL]
 
-                    if not success then
-                        // Failed try update baselines if required
-                        // If we are here then the il file has been produced we can write it back to the baseline location
-                        // if the environment variable TEST_UPDATE_BSL has been set
-                        if snd (Int32.TryParse(Environment.GetEnvironmentVariable("TEST_UPDATE_BSL"))) <> 0 then
-                            match baseline with
-                            | Some baseline -> System.IO.File.Copy(baseline.ILBaseline.FilePath, baseline.ILBaseline.BslSource, true)
-                            | None -> ()
-
-                        createBaselineErrors bsl.ILBaseline actualIL
-                        Assert.Fail(errorMsg)
+            if not success then
+                // Failed try update baselines if required
+                // If we are here then the il file has been produced we can write it back to the baseline location
+                // if the environment variable TEST_UPDATE_BSL has been set
+                updateBaseLineIfEnvironmentSaysSo baseline.ILBaseline
+                createBaselineErrors baseline.ILBaseline actualIL
+                let errorMsg = (convenienceBaselineInstructions baseline.ILBaseline expectedIL actualIL) + errorMsg
+                Assert.Fail(errorMsg)
 
     let verifyILBaseline (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS fs ->
-            match fs |> compileFSharp  with
-            | CompilationResult.Failure a -> failwith $"Build failure: {a}"
-            | CompilationResult.Success s -> verifyFSILBaseline fs.Baseline s
+            match fs |> compileFSharp, fs.Baseline with
+            | CompilationResult.Failure a, Some baseline ->
+                match baseline.ILBaseline.Content with
+                | Some "" -> ()
+                | Some il ->
+                    failwith $"Build failure: {a} while expected il\n{il}"
+                | None ->
+                    if not (FileSystem.FileExistsShim baseline.ILBaseline.BslSource) && updateBaseline () then
+                        File.WriteAllText(baseline.ILBaseline.BslSource, "")
+                    else
+                        failwith $"Build failure empty baseline at {baseline.ILBaseline.BslSource}: {a}"
+            | CompilationResult.Success s, Some baseline -> verifyFSILBaseline baseline s
+            | _, None ->
+                failwithf $"Baseline was not provided."
         | _ -> failwith "Baseline tests are only supported for F#."
 
         cUnit
@@ -1302,13 +1386,13 @@ module rec Compiler =
         if documents <> expectedDocuments then
             failwith $"Expected documents are different from PDB.\nExpected: %A{expectedDocuments}\nActual: %A{documents}"
 
-
-    let private verifyPdbOptions reader options =
+    let private verifyPdbOptions optOutputPath reader options =
+        let outputPath = Path.GetDirectoryName(optOutputPath |> Option.defaultValue ".")
         for option in options do
             match option with
             | VerifyImportScopes scopes -> verifyPdbImportTables reader scopes
             | VerifySequencePoints sp -> verifySequencePoints reader sp
-            | VerifyDocuments docs -> verifyDocuments reader docs
+            | VerifyDocuments docs -> verifyDocuments reader (docs |> List.map(fun doc -> Path.Combine(outputPath, doc)))
             | _ -> failwith $"Unknown verification option: {option.ToString()}"
 
     let private verifyPortablePdb (result: CompilationOutput) options : unit =
@@ -1327,7 +1411,7 @@ module rec Compiler =
                 | _ -> failwith "Only F# compilations are supported when verifying PDBs."
 
             verifyPdbFormat reader compilationType
-            verifyPdbOptions reader options
+            verifyPdbOptions result.OutputPath reader options
         | _ -> failwith "Output path is not set, please make sure compilation was successfull."
 
         ()
@@ -1372,7 +1456,7 @@ module rec Compiler =
         let private getErrorInfo (info: ErrorInfo) : string =
             sprintf "%A %A" info.Error info.Message
 
-        let inline private assertErrorsLength (source: ErrorInfo list) (expected: 'a list) : unit =
+        let private assertErrorsLength (source: ErrorInfo list) (expected: 'a list) : unit =
             if (List.length source) <> (List.length expected) then
                 failwith (sprintf "Expected list of issues differ from compilation result:\nExpected:\n %A\nActual:\n %A" expected (List.map getErrorInfo source))
             ()
@@ -1500,8 +1584,6 @@ module rec Compiler =
             let withResult (expectedResult: SimpleErrorInfo ) (result: CompilationResult) : CompilationResult =
                 withResults [expectedResult] result
 
-
-
         module TextBasedDiagnosticAsserts =
             open FSharp.Compiler.Text.Range
 
@@ -1538,6 +1620,7 @@ module rec Compiler =
                 | null -> ()
                 | _ when expectedContent = actualErrors -> ()
                 | _ -> File.WriteAllText(path, actualErrors)
+                //File.WriteAllText(path, actualErrors)
 
                 match Assert.shouldBeSameMultilineStringSets expectedContent actualErrors with
                 | None -> ()
@@ -1628,26 +1711,35 @@ module rec Compiler =
                 | _ -> failwith "Cannot check exit code on this run result."
             result
 
-        let private checkOutput (category: string) (substring: string) (selector: ExecutionOutput -> string) (result: CompilationResult) : CompilationResult =
+        let private checkOutputInOrder (category: string) (substrings: string list) (selector: ExecutionOutput -> string) (result: CompilationResult) : CompilationResult =
             match result.RunOutput with
             | None -> failwith (sprintf "Execution output is missing cannot check \"%A\"" category)
             | Some o ->
                 match o with
                 | ExecutionOutput e ->
                     let where = selector e
-                    if not (where.Contains(substring)) then
-                        failwith (sprintf "\nThe following substring:\n    %A\nwas not found in the %A\nOutput:\n    %A" substring category where)
+                    let mutable searchPos = 0
+                    for substring in substrings do
+                        match where.IndexOf(substring, searchPos) with
+                        | -1 -> failwith (sprintf "\nThe following substring:\n    %A\nwas not found in the %A\nOutput:\n    %A" substring category where)
+                        | pos -> searchPos <- pos + substring.Length
                 | _ -> failwith "Cannot check output on this run result."
             result
 
-        let withOutputContains (substring: string) (result: CompilationResult) : CompilationResult =
-            checkOutput "STDERR/STDOUT" substring (fun o -> o.StdOut + "\n" + o.StdErr) result
+        let withOutputContainsAllInOrder (substrings: string list) (result: CompilationResult) : CompilationResult =
+            checkOutputInOrder "STDERR/STDOUT" substrings (fun o -> o.StdOut + "\n" + o.StdErr) result
 
         let withStdOutContains (substring: string) (result: CompilationResult) : CompilationResult =
-            checkOutput "STDOUT" substring (fun o -> o.StdOut) result
+            checkOutputInOrder "STDOUT" [substring] (fun o -> o.StdOut) result
+
+        let withStdOutContainsAllInOrder (substrings: string list) (result: CompilationResult) : CompilationResult =
+            checkOutputInOrder "STDOUT" substrings (fun o -> o.StdOut) result
+
+        let withStdErrContainsAllInOrder (substrings: string list) (result: CompilationResult) : CompilationResult =
+            checkOutputInOrder "STDERR" substrings (fun o -> o.StdErr) result
 
         let withStdErrContains (substring: string) (result: CompilationResult) : CompilationResult =
-            checkOutput "STDERR" substring (fun o -> o.StdErr) result
+            checkOutputInOrder "STDERR" [substring] (fun o -> o.StdErr) result
 
         let private assertEvalOutput (selector: FsiValue -> 'T) (value: 'T) (result: CompilationResult) : CompilationResult =
             match result.RunOutput with
@@ -1706,5 +1798,3 @@ module rec Compiler =
         match hash with
         | Some h -> h
         | None -> failwith "Implied signature hash returned 'None' which should not happen"
-        
-          

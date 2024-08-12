@@ -20,7 +20,7 @@ ImplFile
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
                             PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, None, (4,4--4,19),
+                            Single None, None, (4,4--4,19),
                             { LeadingKeyword = Abstract (4,4--4,12)
                               InlineKeyword = None
                               WithKeyword = Some (4,20--4,24)
@@ -41,5 +41,6 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(6,0)-(6,1) parse error Possible incorrect indentation: this token is offside of context started at position (4:5). Try indenting this token further or using standard formatting conventions.
+(6,0)-(6,1) parse error Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (4:5). Try indenting this further.
+To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
 (4,20)-(4,24) parse error Identifier expected

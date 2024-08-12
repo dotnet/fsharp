@@ -7,9 +7,12 @@
     <GenerateProgramFile>false</GenerateProgramFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <NoWarn>$(NoWarn);FS3511</NoWarn> <!-- This state machine is not statically compilable. -->
+    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
+   
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
@@ -65,8 +68,12 @@
     <Compile Include="CodeFixes\RemoveUnusedOpensTests.fs" />
     <Compile Include="CodeFixes\SimplifyNameTests.fs" />
     <Compile Include="CodeFixes\RenameParamToMatchSignatureTests.fs" />
+    <Compile Include="CodeFixes\ImplementInterfaceTests.fs" />
     <Compile Include="CodeFixes\ConvertCSharpUsingToFSharpOpenTests.fs" />
     <Compile Include="CodeFixes\ReplaceWithSuggestionTests.fs" />
+    <Compile Include="CodeFixes\RemoveUnnecessaryParenthesesTests.fs" />
+    <Compile Include="Refactors\RefactorTestFramework.fs" />
+    <Compile Include="Refactors\AddReturnTypeTests.fs" />
     <Compile Include="Hints\HintTestFramework.fs" />
     <Compile Include="Hints\OptionParserTests.fs" />
     <Compile Include="Hints\InlineParameterNameHintTests.fs" />

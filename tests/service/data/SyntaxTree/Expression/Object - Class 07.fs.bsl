@@ -21,7 +21,7 @@ ImplFile
                                   MemberKind = Member },
                            SynValInfo
                              ([[SynArgInfo ([], false, None)]; []],
-                              SynArgInfo ([], false, None)), None, None),
+                              SynArgInfo ([], false, None)), None),
                         Named (SynIdent (this, None), false, None, (4,12--4,16)),
                         None, ArbitraryAfterError ("memberCore2", (4,16--4,16)),
                         (4,12--4,16), NoneAtInvisible,
@@ -35,4 +35,4 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(4,17)-(4,18) parse error Incomplete structured construct at or before this point in object expression. Expected 'with', '=' or other token.
+(4,17)-(4,18) parse error Expecting member body

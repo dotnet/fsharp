@@ -2,18 +2,22 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup Condition="'$(BUILD_PROTO)' != 'true'">
-    <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472;net8.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">net8.0</TargetFrameworks>
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+    <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472;$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
     <PlatformTarget Condition="'$(TargetFramework)' == 'net472'">x86</PlatformTarget>
-    <Configurations>Debug;Release;Proto;ReleaseCompressed</Configurations>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(BUILD_PROTO)' == 'true'">
-    <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">net8.0</TargetFrameworks>
-    <PlatformTarget Condition="'$(TargetFramework)' == 'net472'">x86</PlatformTarget>
+  <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
+    <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
+    <PublishReadyToRun>$(EnablePublishReadyToRun)</PublishReadyToRun>
+    <RuntimeIdentifier>$(NETCoreSdkRuntimeIdentifier)</RuntimeIdentifier>
   </PropertyGroup>
+
+  <ItemGroup Condition="'$(Configuration)' == 'Proto'">
+    <PublishReadyToRunExclude Include="FSharp.Build.dll" />
+    <PublishReadyToRunExclude Include="FSharp.Core.dll" />
+  </ItemGroup>
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
     <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>

@@ -178,13 +178,19 @@ type ILTypeInfo =
 
     member TypeInstOfRawMetadata: TypeInst
 
+[<NoComparison; NoEquality>]
+type ILMethParentTypeInfo =
+    | IlType of ILTypeInfo
+    | CSharpStyleExtension of declaring: TyconRef * apparent: TType
+
+    member ToType: TType
+
 /// Describes an F# use of an IL method.
 [<NoComparison; NoEquality>]
 type ILMethInfo =
     | ILMethInfo of
         g: TcGlobals *
-        ilApparentType: TType *
-        ilDeclaringTyconRefOpt: TyconRef option *
+        ilType: ILMethParentTypeInfo *
         ilMethodDef: ILMethodDef *
         ilGenericMethodTyArgs: Typars
 
@@ -419,6 +425,9 @@ type MethInfo =
 
     /// Indicates if this is an IL method.
     member IsILMethod: bool
+
+    /// Indicates if the method is a get_IsABC union case tester implied by a union case definition
+    member IsUnionCaseTester: bool
 
     /// Does the method appear to the user as an instance method?
     member IsInstance: bool
@@ -813,6 +822,12 @@ type PropInfo =
     /// Indicates if this property has an associated setter method.
     member HasSetter: bool
 
+    member GetterAccessibility: Accessibility option
+
+    member SetterAccessibility: Accessibility option
+
+    member IsProtectedAccessibility: struct (bool * bool)
+
     /// Indidcates whether IL property has an init-only setter (i.e. has the `System.Runtime.CompilerServices.IsExternalInit` modifer)
     member IsSetterInitOnly: bool
 
@@ -820,6 +835,9 @@ type PropInfo =
     member IsRequired: bool
 
     member ImplementedSlotSignatures: SlotSig list
+
+    /// Indicates if the property is a IsABC union case tester implied by a union case definition
+    member IsUnionCaseTester: bool
 
     /// Indicates if this property is marked 'override' and thus definitely overrides another property.
     member IsDefiniteFSharpOverride: bool
@@ -836,6 +854,11 @@ type PropInfo =
     member IsFSharpExplicitInterfaceImplementation: bool
 
     /// Indicates if this property is an indexer property, i.e. a property with arguments.
+    /// <code lang="fsharp">
+    /// member x.Prop with
+    ///     get (indexPiece1:int,indexPiece2: string) = ...
+    ///     and set (indexPiece1:int,indexPiece2: string) value = ...
+    /// </code>
     member IsIndexer: bool
 
     /// Indicates if the property is logically a 'newslot', i.e. hides any previous slots of the same name.
@@ -1090,4 +1113,5 @@ val SettersOfPropInfos: pinfos: PropInfo list -> (MethInfo * PropInfo option) li
 
 val GettersOfPropInfos: pinfos: PropInfo list -> (MethInfo * PropInfo option) list
 
-val (|DifferentGetterAndSetter|_|): pinfo: PropInfo -> (ValRef * ValRef) option
+[<return: Struct>]
+val (|DifferentGetterAndSetter|_|): pinfo: PropInfo -> (ValRef * ValRef) voption

@@ -84,6 +84,7 @@ type FSharpSymbol =
     static member internal Create:
         g: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType * tcImports: TcImports * item: Item ->
             FSharpSymbol
+
     static member internal Create: cenv: SymbolEnv * item: Item -> FSharpSymbol
 
     /// Computes if the symbol is accessible for the given accessibility rights
@@ -264,6 +265,10 @@ type FSharpEntity =
 
     /// Get the generic parameters, possibly including unit-of-measure parameters
     member GenericParameters: IList<FSharpGenericParameter>
+
+    /// Get the generic parameters, possibly including unit-of-measure parameters
+    member GenericArguments: IList<FSharpType>
+
 #if !NO_TYPEPROVIDERS
     /// Get the static parameters for a provided type
     member StaticParameters: IList<FSharpStaticParameter>
@@ -834,6 +839,9 @@ type FSharpMemberOrFunctionOrValue =
     /// Get an associated setter method of the property
     member SetterMethod: FSharpMemberOrFunctionOrValue
 
+    /// Indicates if the property or getter method is part of a IsABC union case tester implied by a union case definition
+    member IsUnionCaseTester: bool
+
     /// Get an associated add method of an event
     member EventAddMethod: FSharpMemberOrFunctionOrValue
 
@@ -1062,6 +1070,7 @@ type FSharpType =
     internal new:
         g: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType * tcImports: TcImports * ty: TType ->
             FSharpType
+
     internal new: SymbolEnv * ty: TType -> FSharpType
 
     /// Indicates this is a named type in an unresolved assembly
@@ -1078,6 +1087,12 @@ type FSharpType =
 
     /// Get the type definition for a type
     member TypeDefinition: FSharpEntity
+
+    /// Indicates this type is known to have a null annotation
+    member HasNullAnnotation: bool
+
+    /// Indicates this type is assumed to support the null value
+    member IsNullAmbivalent: bool
 
     /// Get the generic arguments for a tuple type, a function type or a type constructed using a named entity
     member GenericArguments: IList<FSharpType>

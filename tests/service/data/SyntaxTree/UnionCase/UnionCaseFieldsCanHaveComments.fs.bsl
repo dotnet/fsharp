@@ -21,13 +21,15 @@ ImplFile
                                   LongIdent
                                     (SynLongIdent ([string], [], [None])), false,
                                   PreXmlDoc ((6,2), FSharp.Compiler.Xml.XmlDocCollector),
-                                  None, (5,2--6,15), { LeadingKeyword = None });
+                                  None, (5,2--6,15), { LeadingKeyword = None
+                                                       MutableKeyword = None });
                                SynField
                                  ([], false, None,
                                   LongIdent (SynLongIdent ([bool], [], [None])),
                                   false,
                                   PreXmlDoc ((8,2), FSharp.Compiler.Xml.XmlDocCollector),
-                                  None, (7,2--8,6), { LeadingKeyword = None })],
+                                  None, (7,2--8,6), { LeadingKeyword = None
+                                                      MutableKeyword = None })],
                             PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
                             None, (3,0--8,6), { BarRange = Some (4,0--4,1) })],
                         (3,0--8,6)), (3,0--8,6)), [], None, (2,5--8,6),

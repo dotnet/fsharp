@@ -44,7 +44,7 @@ val internal p_int: int -> WriterState -> unit
 val internal p_string: string -> WriterState -> unit
 
 /// Serialize a lazy value (eagerly)
-val internal p_lazy: pickler<'T> -> Lazy<'T> pickler
+val internal p_lazy: pickler<'T> -> InterruptibleLazy<'T> pickler
 
 /// Serialize a tuple of data
 val inline internal p_tup2: pickler<'T1> -> pickler<'T2> -> pickler<'T1 * 'T2>
@@ -85,7 +85,7 @@ val internal pickleCcuInfo: pickler<PickledCcuInfo>
 
 /// Serialize an arbitrary object using the given pickler
 val pickleObjWithDanglingCcus:
-    inMem: bool -> file: string -> TcGlobals -> scope: CcuThunk -> pickler<'T> -> 'T -> ByteBuffer
+    inMem: bool -> file: string -> TcGlobals -> scope: CcuThunk -> pickler<'T> -> 'T -> ByteBuffer * ByteBuffer
 
 /// The type of state unpicklers read from
 type ReaderState
@@ -106,7 +106,7 @@ val internal u_int: ReaderState -> int
 val internal u_string: ReaderState -> string
 
 /// Deserialize a lazy value (eagerly)
-val internal u_lazy: unpickler<'T> -> unpickler<Lazy<'T>>
+val internal u_lazy: unpickler<'T> -> unpickler<InterruptibleLazy<'T>>
 
 /// Deserialize a tuple
 val inline internal u_tup2: unpickler<'T2> -> unpickler<'T3> -> unpickler<'T2 * 'T3>
@@ -151,5 +151,6 @@ val internal unpickleObjWithDanglingCcus:
     viewedScope: ILScopeRef ->
     ilModule: ILModuleDef option ->
     'T unpickler ->
+    ReadOnlyByteMemory ->
     ReadOnlyByteMemory ->
         PickledDataWithReferences<'T>

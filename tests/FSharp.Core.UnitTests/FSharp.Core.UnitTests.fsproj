@@ -3,8 +3,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net472</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net8.0</TargetFrameworks>
+    <TargetFrameworks>$(FSharpNetCoreProductTargetFramework);net472</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
     <OutputType>Library</OutputType>
 
     <AssemblyName>FSharp.Core.UnitTests</AssemblyName>
@@ -90,6 +90,7 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\EventModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Reflection\FSharpReflection.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Quotations\FSharpQuotations.fs" />
+    <Compile Include="Interop\CSharpCollectionExpressions.fs" />
     <Compile Include="StructTuples.fs" />
     <Compile Include="SurfaceArea.fs" />
   </ItemGroup>

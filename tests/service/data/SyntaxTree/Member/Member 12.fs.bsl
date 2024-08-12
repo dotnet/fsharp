@@ -24,12 +24,12 @@ ImplFile
                                       MemberKind = Member },
                                SynValInfo
                                  ([[SynArgInfo ([], false, None)]; []],
-                                  SynArgInfo ([], false, None)), None, None),
+                                  SynArgInfo ([], false, None)), None),
                             Named
                               (SynIdent (this, None), false, None, (4,11--4,15)),
                             None,
                             ArbitraryAfterError ("memberCore2", (4,15--4,15)),
-                            (4,11--6,1), NoneAtInvisible,
+                            (4,11--4,15), NoneAtInvisible,
                             { LeadingKeyword = Member (4,4--4,10)
                               InlineKeyword = None
                               EqualsRange = None }), (4,4--4,15))], (4,4--4,15)),
@@ -43,4 +43,4 @@ ImplFile
         CodeComments = [] }, set []))
 
 (6,0)-(6,1) parse error Identifier expected
-(6,0)-(6,1) parse error Incomplete structured construct at or before this point in member definition. Expected 'with', '=' or other token.
+(6,0)-(6,1) parse error Expecting member body

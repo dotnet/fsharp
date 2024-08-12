@@ -5,12 +5,14 @@ namespace FSharp.Test
 #nowarn "57"
 
 open System
+open System.Globalization
 open System.IO
 open System.Text
 open System.Reflection
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Text
 #if NETCOREAPP
@@ -22,6 +24,42 @@ open Microsoft.CodeAnalysis.CSharp
 open NUnit.Framework
 open TestFramework
 open System.Collections.Immutable
+
+
+#if !NETCOREAPP
+module AssemblyResolver =
+
+    let probingPaths = [|
+        AppDomain.CurrentDomain.BaseDirectory
+        Path.GetDirectoryName(typeof<FactForDESKTOPAttribute>.Assembly.Location)
+    |]
+
+    let addResolver () =
+        AppDomain.CurrentDomain.add_AssemblyResolve(fun h args ->
+            let found () =
+                (probingPaths ) |> Seq.tryPick(fun p ->
+                    try
+                        let name = AssemblyName(args.Name)
+                        let codebase = Path.GetFullPath(Path.Combine(p, name.Name))
+                        if File.Exists(codebase + ".dll") then
+                            name.CodeBase <- codebase  + ".dll"
+                            name.CultureInfo <- Unchecked.defaultof<CultureInfo>
+                            name.Version <- Unchecked.defaultof<Version>
+                            Some (name)
+                        elif File.Exists(codebase + ".exe") then
+                                name.CodeBase <- codebase + ".exe"
+                                name.CultureInfo <- Unchecked.defaultof<CultureInfo>
+                                name.Version <- Unchecked.defaultof<Version>
+                                Some (name)
+                        else None
+                    with | _ -> None
+                    )
+            match found() with
+            | None -> Unchecked.defaultof<Assembly>
+            | Some name -> Assembly.Load(name) )
+
+    do addResolver()
+#endif
 
 [<Sealed>]
 type ILVerifier (dllFilePath: string) =
@@ -134,20 +172,25 @@ type CSharpLanguageVersion =
     | CSharp8 = 0
     | CSharp9 = 1
     | CSharp11 = 11
+    | CSharp12 = 12
     | Preview = 99
+
+module CSharpLanguageVersion =
+    /// Converts the given C# language version to a Roslyn language version value.
+    let toLanguageVersion lv =
+        match lv with
+        | CSharpLanguageVersion.CSharp8 -> LanguageVersion.CSharp8
+        | CSharpLanguageVersion.CSharp9 -> LanguageVersion.CSharp9
+        | CSharpLanguageVersion.CSharp11 -> LanguageVersion.CSharp11
+        | CSharpLanguageVersion.CSharp12 -> LanguageVersion.CSharp12
+        | CSharpLanguageVersion.Preview -> LanguageVersion.Preview
+        | _ -> LanguageVersion.Default
 
 [<AbstractClass; Sealed>]
 type CompilationUtil private () =
 
     static let createCSharpCompilation (source: SourceCodeFileKind, lv, tf, additionalReferences, name) =
-        let lv =
-            match lv with
-                | CSharpLanguageVersion.CSharp8 -> LanguageVersion.CSharp8
-                | CSharpLanguageVersion.CSharp9 -> LanguageVersion.CSharp9
-                | CSharpLanguageVersion.CSharp11 -> LanguageVersion.CSharp11
-                | CSharpLanguageVersion.Preview -> LanguageVersion.Preview
-                | _ -> LanguageVersion.Default
-
+        let lv = CSharpLanguageVersion.toLanguageVersion lv
         let tf = defaultArg tf TargetFramework.NetStandard20
         let source =
             match source.GetSourceText with
@@ -258,21 +301,34 @@ and Compilation =
 
 module rec CompilerAssertHelpers =
 
-    let checker = FSharpChecker.Create(suggestNamesForErrors=true)
+    let UseTransparentCompiler =
+        FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically ||
+        not (String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TEST_TRANSPARENT_COMPILER")))
+
+    let checker = FSharpChecker.Create(suggestNamesForErrors=true, useTransparentCompiler=UseTransparentCompiler)
 
     // Unlike C# whose entrypoint is always string[] F# can make an entrypoint with 0 args, or with an array of string[]
-    let mkDefaultArgs (entryPoint:MethodInfo) : obj[] = [|
+    let mkDefaultArgs (entryPoint:MethodBase) : obj[] = [|
         if entryPoint.GetParameters().Length = 1 then
             yield Array.empty<string>
     |]
 
-    let executeAssemblyEntryPoint (asm: Assembly) =
-        let entryPoint = asm.EntryPoint
+    let executeAssemblyEntryPoint (asm: Assembly) isFsx =
+        let entryPoint : MethodBase = asm.EntryPoint
+        let entryPoint =
+            if isNull entryPoint && isFsx then
+                // lookup the last static constructor
+                // of the assembly types, which should match
+                // the equivalent of a .fsx entry point
+                let moduleInitType = asm.GetTypes() |> Array.last
+                moduleInitType.GetConstructors(BindingFlags.Static ||| BindingFlags.NonPublic).[0] :> MethodBase
+            else
+                entryPoint
         let args = mkDefaultArgs entryPoint
         captureConsoleOutputs (fun () -> entryPoint.Invoke(Unchecked.defaultof<obj>, args) |> ignore)
 
 #if NETCOREAPP
-    let executeBuiltApp assembly deps =
+    let executeBuiltApp assembly deps isFsx =
         let ctxt = AssemblyLoadContext("ContextName", true)
         try
             ctxt.add_Resolving(fun ctxt name ->
@@ -281,14 +337,14 @@ module rec CompilerAssertHelpers =
                 |> Option.map ctxt.LoadFromAssemblyPath
                 |> Option.defaultValue null)
 
-            ctxt.LoadFromAssemblyPath assembly |> executeAssemblyEntryPoint
+            executeAssemblyEntryPoint (ctxt.LoadFromAssemblyPath assembly) isFsx 
         finally
             ctxt.Unload()
 #else
     type Worker () =
         inherit MarshalByRefObject()
 
-        member x.ExecuteTestCase assemblyPath (deps: string[]) =
+        member x.ExecuteTestCase assemblyPath (deps: string[]) isFsx =
             AppDomain.CurrentDomain.add_AssemblyResolve(ResolveEventHandler(fun _ args ->
                 deps
                 |> Array.tryFind (fun (x: string) -> Path.GetFileNameWithoutExtension x = AssemblyName(args.Name).Name)
@@ -296,7 +352,8 @@ module rec CompilerAssertHelpers =
                 |> Option.map Assembly.LoadFile
                 |> Option.defaultValue null))
 
-            Assembly.LoadFrom assemblyPath |> executeAssemblyEntryPoint
+            let assembly = Assembly.LoadFrom assemblyPath
+            executeAssemblyEntryPoint assembly isFsx
 
     let adSetup =
         let setup = new System.AppDomainSetup ()
@@ -376,7 +433,7 @@ module rec CompilerAssertHelpers =
         let name =
             match nameOpt with
             | Some name -> name
-            | _ -> tryCreateTemporaryFileName()
+            | _ -> tryCreateTemporaryFileNameInDirectory(outputDirectory)
 
         let outputFilePath = Path.ChangeExtension (Path.Combine(outputDirectory.FullName, name), if isExe then ".exe" else ".dll")
         disposals.Add(disposeFile outputFilePath)
@@ -387,9 +444,10 @@ module rec CompilerAssertHelpers =
                     | Some text ->
                         // In memory source file copy it to the build directory
                         let source = item.ChangeExtension
-                        File.WriteAllText (source.GetSourceFileName, text)
-                        disposals.Add(disposeFile source.GetSourceFileName)
-                        yield source
+                        let destFileName = Path.Combine(outputDirectory.FullName, Path.GetFileName(source.GetSourceFileName))
+                        File.WriteAllText (destFileName, text)
+                        disposals.Add(disposeFile destFileName)
+                        yield source.WithFileName(destFileName)
                     | None ->
                         // On Disk file
                         let sourceFileName = item.GetSourceFileName
@@ -577,8 +635,8 @@ module rec CompilerAssertHelpers =
 
         succeeded, stdout.ToString(), stderr.ToString(), exn
 
-    let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) : (int * string * string) =
-        let succeeded, stdout, stderr, _ = executeBuiltApp outputFilePath deps
+    let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) isFsx : (int * string * string) =
+        let succeeded, stdout, stderr, _ = executeBuiltApp outputFilePath deps isFsx
         let exitCode = if succeeded then 0 else -1
         exitCode, stdout, stderr
 
@@ -593,7 +651,7 @@ module rec CompilerAssertHelpers =
         let runtimeconfig = """
 {
     "runtimeOptions": {
-        "tfm": "net8.0",
+        "tfm": "net9.0",
         "framework": {
             "name": "Microsoft.NETCore.App",
             "version": "7.0"
@@ -609,6 +667,7 @@ module rec CompilerAssertHelpers =
         let timeout = 30000
         let exitCode, output, errors = Commands.executeProcess (Some fileName) arguments (Path.GetDirectoryName(outputFilePath)) timeout
         (exitCode, output |> String.concat "\n", errors |> String.concat "\n")
+
 open CompilerAssertHelpers
 
 [<Sealed;AbstractClass>]
@@ -620,7 +679,7 @@ type CompilerAssert private () =
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
 
-            executeBuiltApp outputExe [] |> ignore
+            executeBuiltApp outputExe [] false |> ignore<bool * string * string * exn option>
         )
 
     static let compileLibraryAndVerifyILWithOptions options (source: SourceCodeFileKind) (f: ILVerifier -> unit) =
@@ -681,10 +740,10 @@ Updated automatically, please check diffs in your pull request, changes must be 
     static member CompileRaw(cmpl: Compilation, ?ignoreWarnings) =
         returnCompilation cmpl (defaultArg ignoreWarnings false)
 
-    static member ExecuteAndReturnResult (outputFilePath: string, deps: string list, newProcess: bool) =
+    static member ExecuteAndReturnResult (outputFilePath: string, isFsx: bool, deps: string list, newProcess: bool) =
         // If we execute in-process (true by default), then the only way of getting STDOUT is to redirect it to SB, and STDERR is from catching an exception.
        if not newProcess then
-           executeBuiltAppAndReturnResult outputFilePath deps
+           executeBuiltAppAndReturnResult outputFilePath deps isFsx
        else
            executeBuiltAppNewProcessAndReturnResult outputFilePath
 
@@ -710,7 +769,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
                     Assert.Fail errors
                 onOutput output
             else
-                let _succeeded, _stdout, _stderr, exn = executeBuiltApp outputFilePath deps 
+                let _succeeded, _stdout, _stderr, exn = executeBuiltApp outputFilePath deps false 
                 exn |> Option.iter raise)
 
     static member ExecutionHasOutput(cmpl: Compilation, expectedOutput: string) =
@@ -876,14 +935,31 @@ Updated automatically, please check diffs in your pull request, changes must be 
     static member TypeCheckSingleError (source: string) (expectedSeverity: FSharpDiagnosticSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
         CompilerAssert.TypeCheckWithErrors source [| expectedSeverity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
 
-    static member TypeCheckProject(options: string array, sourceFiles: string array, getSourceText, enablePartialTypeChecking) : FSharpCheckProjectResults =
-        let checker = FSharpChecker.Create(documentSource = DocumentSource.Custom getSourceText, enablePartialTypeChecking = enablePartialTypeChecking)
+    static member TypeCheckProject(options: string array, sourceFiles: string array, getSourceText, enablePartialTypeChecking, useTransparentCompiler) : FSharpCheckProjectResults =
+        let checker = FSharpChecker.Create(documentSource = DocumentSource.Custom getSourceText, enablePartialTypeChecking = enablePartialTypeChecking, useTransparentCompiler = useTransparentCompiler)
         let defaultOptions = defaultProjectOptions TargetFramework.Current
         let projectOptions = { defaultOptions with OtherOptions = Array.append options defaultOptions.OtherOptions; SourceFiles = sourceFiles }
 
-        checker.ParseAndCheckProject(projectOptions)
+        if useTransparentCompiler then
+            let getFileSnapshot _ fileName =
+                async.Return
+                    (FSharpFileSnapshot(
+                        FileName = fileName,
+                        Version = "1",
+                        GetSource = fun () -> task {
+                            match! getSourceText fileName with
+                            | Some source -> return SourceTextNew.ofISourceText source
+                            | None -> return failwith $"couldn't get source for {fileName}"
+                        }
+                    ))
+
+            let snapshot = FSharpProjectSnapshot.FromOptions(projectOptions, getFileSnapshot) |> Async.RunSynchronously
+
+            checker.ParseAndCheckProject(snapshot)
+        else
+            checker.ParseAndCheckProject(projectOptions)
         |> Async.RunImmediate
-    
+
     static member CompileExeWithOptions(options, (source: SourceCodeFileKind)) =
         compile true options source (fun (errors, _, _) ->
             if errors.Length > 0 then

@@ -17,7 +17,7 @@ ImplFile
                              SynValData
                                (None,
                                 SynValInfo ([], SynArgInfo ([], false, None)),
-                                None, None), Const (Unit, (5,4--5,6)), None,
+                                None), Const (Unit, (5,4--5,6)), None,
                              ArbitraryAfterError
                                ("hardwhiteDoBinding1", (5,6--5,6)), (5,4--5,6),
                              NoneAtDo, { LeadingKeyword = Do (5,4--5,6)
@@ -30,7 +30,7 @@ ImplFile
                              SynValData
                                (None,
                                 SynValInfo ([], SynArgInfo ([], false, None)),
-                                None, None), Const (Unit, (7,4--7,9)), None,
+                                None), Const (Unit, (7,4--7,9)), None,
                              Const (Unit, (7,7--7,9)), (7,4--7,9), NoneAtDo,
                              { LeadingKeyword = Do (7,4--7,6)
                                InlineKeyword = None
@@ -44,5 +44,6 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(7,4)-(7,6) parse error Possible incorrect indentation: this token is offside of context started at position (5:5). Try indenting this token further or using standard formatting conventions.
+(7,4)-(7,6) parse error Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (5:5). Try indenting this further.
+To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
 (7,4)-(7,6) parse error Expecting expression

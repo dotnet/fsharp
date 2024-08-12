@@ -4,7 +4,32 @@
     <body>
       <trans-unit id="ArgumentsInSigAndImplMismatch">
         <source>The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</source>
-        <target state="new">The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</target>
+        <target state="translated">Nazwy argumentów w podpisie „{0}” i implementacji „{1}” nie są zgodne. Używana będzie nazwa argumentu z pliku podpisu. Może to spowodować problemy podczas debugowania lub profilowania.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
+        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</source>
+        <target state="translated">Definicje {0} dla typu „{1}” w sygnaturze i implementacji są niezgodne, ponieważ skróty są różne:\n    {2}\nversus\n    {3}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarning">
+        <source>Nullness warning: {0}.</source>
+        <target state="new">Nullness warning: {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningEquivWithTypes">
+        <source>Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</source>
+        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningWithType">
+        <source>Nullness warning: The type '{0}' does not support 'null'.</source>
+        <target state="new">Nullness warning: The type '{0}' does not support 'null'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningWithTypes">
+        <source>Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</source>
+        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
@@ -20,6 +45,21 @@
       <trans-unit id="NotUpperCaseConstructorWithoutRQA">
         <source>Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</source>
         <target state="translated">Przypadki unii z dyskryminatorem z małymi literami są dozwolone tylko w przypadku używania atrybutu RequireQualifiedAccess</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OverrideShouldBeInstance">
+        <source> Non-static member is expected.</source>
+        <target state="translated"> Oczekiwano elementu członkowskiego innego niż statyczny.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OverrideShouldBeStatic">
+        <source> Static member is expected.</source>
+        <target state="translated"> Oczekiwano statycznego elementu członkowskiego.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR_JUST_BEFORE_NULL">
+        <source>symbol '|' (directly before 'null')</source>
+        <target state="new">symbol '|' (directly before 'null')</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
@@ -49,7 +89,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.WHILE.BANG">
         <source>keyword 'while!'</source>
-        <target state="new">keyword 'while!'</target>
+        <target state="translated">słowo kluczowe „while!”</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeAlso">
@@ -192,6 +232,16 @@
         <target state="translated">Pola „{0}” i „{1}” są polami różnego typu</target>
         <note />
       </trans-unit>
+      <trans-unit id="ValueRestriction">
+        <source>Value restriction: The value '{0}' has an inferred generic type\n    {1}\nHowever, values cannot have generic type variables like '_a in "let x: '_a". You can do one of the following:\n- Define it as a simple data term like an integer literal, a string literal or a union case like "let x = 1"\n- Add an explicit type annotation like "let x : int"\n- Use the value as a non-generic type in later code for type inference like "do x"\nor if you still want type-dependent results, you can define '{2}' as a function instead by doing either:\n- Add a unit parameter like "let x()"\n- Write explicit type parameters like "let x&lt;'a&gt;".\nThis error is because a let binding without parameters defines a value, not a function. Values cannot be generic because reading a value is assumed to result in the same everywhere but generic type parameters may invalidate this assumption by enabling type-dependent results.</source>
+        <target state="translated">Ograniczenie wartości: wartość „{0}” ma wywnioskowany typ ogólny\n    {1}\nWartości nie mogą mieć zmiennych typu ogólnego, takich jak „_a w „let x: „_a”. Możesz wykonać jedną z następujących czynności:\n- Zdefiniuj go jako prosty termin danych, taki jak literał liczby całkowitej, literał ciągu lub przypadek unii, taki jak „let x = 1”\n- Dodaj jawną adnotację typu, taką jak „let x : int”\n- Użyj wartości jako typu nie generycznego w późniejszym kodzie dla wnioskowania typu, takiego jak „do x”,\n jeśli nadal chcesz uzyskać wyniki zależne od typu, Można zdefiniować „{2}” jako funkcję, wykonując jedną z następujących czynności:\n- Dodaj parametr jednostkowy, taki jak „let x()”\n- Zapisz jawne parametry typu, takie jak „let x&lt;'a&gt;”.\nTen błąd jest spowodowany tym, że powiązanie let bez parametrów definiuje wartość, a nie funkcję. Wartości nie mogą być ogólne, ponieważ zakłada się, że odczytanie wartości skutkuje tym samym wszędzie, ale parametry typu ogólnego mogą unieważnić to założenie, umożliwiając uzyskanie wyników zależnych od typu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValueRestrictionFunction">
+        <source>Value restriction: The value '{0}' has an inferred generic function type\n    {1}\nHowever, values cannot have generic type variables like '_a in "let f: '_a". You should define '{2}' as a function instead by doing one of the following:\n- Add an explicit parameter that is applied instead of using a partial application "let f param"\n- Add a unit parameter like "let f()"\n- Write explicit type parameters like "let f&lt;'a&gt;"\nor if you do not intend for it to be generic, either:\n- Add an explicit type annotation like "let f : obj -&gt; obj"\n- Apply arguments of non-generic types to the function value in later code for type inference like "do f()".\nThis error is because a let binding without parameters defines a value, not a function. Values cannot be generic because reading a value is assumed to result in the same everywhere but generic type parameters may invalidate this assumption by enabling type-dependent results.</source>
+        <target state="translated">Ograniczenie wartości: wartość „{0}” ma wywnioskowany typ funkcji ogólnej\n    {1}\nJako wartości nie mogą mieć zmiennych typu ogólnego, takich jak „_a w „let f: '_a”. Zamiast tego należy zdefiniować „{2}” jako funkcję, wykonując jedną z następujących czynności:\n- Dodaj jawny parametr, który jest stosowany zamiast używania częściowej aplikacji „let f param”\n- Dodaj parametr jednostkowy, taki jak „let f()”\n- Zapisz jawne parametry typu, takie jak „let f&lt;'a&gt;”\nor, jeśli nie zamierzasz, aby był ogólny, either:\n- Dodaj jawną adnotację typu, taką jak „let f : obj -&gt; obj”\n- Zastosuj argumenty typów nie generycznych do wartości funkcji w późniejszym kodzie dla wnioskowania typu, takiego jak „do f()”.\nTen błąd jest spowodowany tym, że powiązanie let bez parametrów definiuje wartość, a nie funkcję. Wartości nie mogą być ogólne, ponieważ zakłada się, że odczytanie wartości skutkuje tym samym wszędzie, ale parametry typu ogólnego mogą unieważnić to założenie, umożliwiając uzyskanie wyników zależnych od typu.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="VarBoundTwice">
         <source>'{0}' is bound twice in this pattern</source>
         <target state="translated">Zmienna „{0}” została powiązana dwa razy w tym wzorcu</target>
@@ -223,8 +273,8 @@
         <note />
       </trans-unit>
       <trans-unit id="TypeIsImplicitlyAbstract">
-        <source>This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
-        <target state="translated">Ten typ ma wartość „abstract”, ponieważ niektóre abstrakcyjne składowe nie mają określonej implementacji. Jeśli jest to zamierzone działanie, dodaj atrybut „[&lt;AbstractClass&gt;]” do typu.</target>
+        <source>Non-abstract classes cannot contain abstract members. Either provide a default member implementation or add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
+        <target state="translated">Klasy nieabstrakcyjne nie mogą zawierać abstrakcyjnych składowych. Podaj domyślną implementację składowej lub dodaj atrybut „[&lt;AbstractClass&gt;]” do typu.</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar1">
@@ -1522,31 +1572,6 @@
         <target state="translated">Następujące pola wymagają wartości: {0}</target>
         <note />
       </trans-unit>
-      <trans-unit id="ValueRestriction1">
-        <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">Ograniczenie wartości. Wartość „{0}” jest wartością typu ogólnego\n    {1}    \nOkreśl argumenty elementu „{2}” jako jawne lub dodaj adnotację typu, jeśli nie chcesz, aby wartość była ogólna.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction2">
-        <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make '{2}' into a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">Ograniczenie wartości. Wartość „{0}” jest wartością typu ogólnego\n    {1}    \nUstaw element „{2}” jako funkcję z jawnymi argumentami lub dodaj adnotację typu, jeśli nie chcesz, aby wartość była ogólna.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction3">
-        <source>Value restriction. This member has been inferred to have generic type\n    {0}    \nConstructors and property getters/setters cannot be more generic than the enclosing type.  Add a type annotation to indicate the exact types involved.</source>
-        <target state="translated">Ograniczenie wartości. Wywnioskowano, że ten element członkowski jest elementem typu ogólnego\n    {0}    \nKonstruktory i metody pobierające/ustawiające właściwości nie mogą być bardziej ogólne niż typ otaczający. Dodaj adnotację typu, aby dokładnie wskazać uwzględnione typy.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction4">
-        <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">Ograniczenie wartości. Wywnioskowano, że wartość „{0}” jest wartością typu ogólnego\n    {1}    \nOkreśl argumenty elementu „{2}” jako jawne lub dodaj adnotację typu, jeśli nie chcesz, aby wartość była ogólna.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction5">
-        <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither define '{2}' as a simple data term, make it a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">Ograniczenie wartości. Wywnioskowano, że wartość „{0}” jest wartością typu ogólnego\n    {1}    \nZdefiniuj element „{2}” jako prosty termin danych, określ go jako funkcję z jawnymi argumentami lub dodaj adnotację typu, jeśli nie chcesz, aby wartość była ogólna.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="RecoverableParseError">
         <source>syntax error</source>
         <target state="translated">błąd składni</target>
@@ -1573,8 +1598,8 @@
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInIntrinsicAugmentation">
-        <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.</source>
-        <target state="translated">Implementacje interfejsu powinny być zwykle podane w początkowej deklaracji typu. Implementacje interfejsu w rozszerzeniach mogą prowadzić do uzyskania dostępu do powiązań statycznych przed ich zainicjowaniem, chociaż tylko wtedy, gdy implementacja interfejsu jest wywoływana podczas inicjowania danych statycznych i z kolei uzyskuje dostęp do danych statycznych. To ostrzeżenie można usunąć przy użyciu #nowarn "69" jeśli zaznaczono, że tak nie jest.</target>
+        <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using '#nowarn "69"' if you have checked this is not the case.</source>
+        <target state="translated">Implementacje interfejsu powinny być zwykle podane w początkowej deklaracji typu. Implementacje interfejsu w rozszerzeniach mogą prowadzić do uzyskania dostępu do powiązań statycznych przed ich zainicjowaniem, chociaż tylko wtedy, gdy implementacja interfejsu jest wywoływana podczas inicjowania danych statycznych i z kolei uzyskuje dostęp do danych statycznych. To ostrzeżenie można usunąć przy użyciu #nowarn „69” jeśli zaznaczono, że tak nie jest.</target>
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInExtrinsicAugmentation">
@@ -1593,13 +1618,13 @@
         <note />
       </trans-unit>
       <trans-unit id="HashIncludeNotAllowedInNonScript">
-        <source>#I directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">Dyrektywy #I mogą występować tylko w plikach skryptu języka F# (rozszerzenie fsx lub fsscript). Przenieś ten kod do pliku skryptu, dodaj opcję kompilatora „-I” dla tego odwołania lub rozdziel dyrektywę przy użyciu elementu „#if INTERACTIVE”/„#endif”.</target>
+        <source>#I directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
+        <target state="translated">Dyrektywy #I mogą być używane tylko w plikach skryptów języka F# (rozszerzenia FSX lub FSSCRIPT). Przenieś ten kod do pliku skryptu, dodaj opcję kompilatora „-I” dla tego odwołania lub rozdziel dyrektywę przy użyciu elementu „#if INTERACTIVE'/'#endif”.</target>
         <note />
       </trans-unit>
       <trans-unit id="HashReferenceNotAllowedInNonScript">
-        <source>#r directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">Dyrektywy #r mogą występować tylko w plikach skryptu języka F# (rozszerzenie fsx lub fsscript). Przenieś ten kod do pliku skryptu lub zastąp to odwołanie za pomocą opcji kompilatora „-r”. Jeśli ta dyrektywa jest wykonywana jako dane wejściowe użytkownika, możesz ją ograniczyć przy użyciu elementu „#if INTERACTIVE”/„#endif”.</target>
+        <source>#r directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
+        <target state="translated">Dyrektywy #r mogą być używane tylko w plikach skryptów języka F# (rozszerzenia FSX lub FSSCRIPT). Przenieś ten kod do pliku skryptu lub zastąp to odwołanie za pomocą opcji kompilatora „-r”. Jeśli ta dyrektywa jest wykonywana jako dane wejściowe użytkownika, możesz ją ograniczyć przy użyciu elementu „#if INTERACTIVE'/'#endif”.</target>
         <note />
       </trans-unit>
       <trans-unit id="HashDirectiveNotAllowedInNonScript">

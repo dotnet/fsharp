@@ -1,36 +1,49 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
     <OutputType>Exe</OutputType>
-    <!-- Workaround to get rid of:
-        error NU1505: Duplicate 'PackageDownload' items found.
-        Remove the duplicate items or use the Update functionality to ensure a consistent restore behavior.
-        The duplicate 'PackageDownload' items are:
-          Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2].
-    -->
-    <NoWarn>$(NoWarn);NU1505</NoWarn>
-    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <!-- Turn off "This function is for use by compiled F# code and should not be used directly" -->
-    <OtherFlags>$(OtherFlags) --nowarn:1204</OtherFlags>
     <!-- Turn off "Experimental" -->
-    <OtherFlags>$(OtherFlags) --nowarn:57</OtherFlags>
-    <OtherFlags>$(OtherFlags) --langversion:preview</OtherFlags>
-    <OtherFlags>$(OtherFlags) --define:PREVIEW</OtherFlags>
-    <!-- By default this project will compile with the proto compiler -->
-    <!-- Uncommenting this will build with a previous installed compiler  -->
-    <!--
-    <FscToolPath>C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\CommonExtensions\Microsoft\FSharp</FscToolPath>
-    <FscToolExe>fsc.exe</FscToolExe>
-    <DotnetFscCompilerPath></DotnetFscCompilerPath>
-    -->
+    <NoWarn>$(NoWarn);1204;57</NoWarn>
+    <Optimize>true</Optimize>
   </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Preview'">
+    <DotnetFscCompilerPath>$(MSBuildThisFileDirectory)../../../../artifacts/bin/fsc/Release/$(TargetFramework)/fsc.dll</DotnetFscCompilerPath>
+    <LangVersion>preview</LangVersion>
+  </PropertyGroup>
+
   <ItemGroup>
+    <Compile Include="ComputedCollections\Arrays\IntegralRanges.fs" />
+    <Compile Include="Equality\BasicTypes.fs" />
+    <Compile Include="Equality\FSharpCoreFunctions.fs" />
+    <Compile Include="Equality\Arrays.fs" />
+    <Compile Include="Equality\Floats.fs" />
+    <Compile Include="Equality\Tuples.fs" />
+    <Compile Include="Equality\ValueTypes.fs" />
+    <Compile Include="Equality\Misc.fs" />
+    <Compile Include="Equality\Structs.fs" />
+    <Compile Include="Equality\OptionsAndCo.fs" />
+    <Compile Include="Equality\ExactEquals.fs" />
     <Compile Include="Async.fs" />
     <Compile Include="Conditions.fs" />
     <Compile Include="Collections.fs" />
-    <Compile Include="Benchmarks.fs" />
-    <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
-    <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
-    <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.12.1" />
+    <Compile Include="Program.fs" />
+    <ProjectReference Include="CS\MicroPerfCSharp.csproj" />
+    <PackageReference Include="BenchmarkDotNet" Version="$(BenchmarkDotNetVersion)" />
   </ItemGroup>
+
+  <Choose>
+    <When Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
+      <ItemGroup>
+        <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
+
 </Project>

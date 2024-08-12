@@ -285,7 +285,7 @@ open Printf
     static let GetString(name:string) =
         let s = resources.Value.GetString(name, System.Globalization.CultureInfo.CurrentUICulture)
     #if DEBUG
-        if null = s then
+        if isNull s then
             System.Diagnostics.Debug.Assert(false, sprintf ""**RESOURCE ERROR**: Resource token %s does not exist!"" name)
     #endif
         s
@@ -361,6 +361,8 @@ open Printf
             messageString <- postProcessString messageString
             createMessageString messageString fmt
 
+    static member GetTextOpt(key:string) = GetString(key) |> Option.ofObj
+
     /// If set to true, then all error messages will just return the filled 'holes' delimited by ',,,'s - this is for language-neutral testing (e.g. localization-invariant baselines).
     static member SwallowResourceText with get () = swallowResourceText
                                         and set (b) = swallowResourceText <- b
@@ -369,6 +371,9 @@ open Printf
 
     let StringBoilerPlateSignature =
         "    // BEGIN BOILERPLATE
+
+    static member GetTextOpt: key:string -> string option
+
     /// If set to true, then all error messages will just return the filled 'holes' delimited by ',,,'s - this is for language-neutral testing (e.g. localization-invariant baselines).
     static member SwallowResourceText: bool with get, set
     // END BOILERPLATE"

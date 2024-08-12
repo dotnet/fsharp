@@ -4,7 +4,32 @@
     <body>
       <trans-unit id="ArgumentsInSigAndImplMismatch">
         <source>The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</source>
-        <target state="new">The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</target>
+        <target state="translated">Názvy argumentů v signatuře {0} a implementaci {1} si neodpovídají. Použije se název argumentu ze souboru signatury. To může způsobit problémy při ladění nebo profilování.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
+        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</source>
+        <target state="translated">Definice {0} pro typ {1} v signatuře a implementaci nejsou kompatibilní, protože se liší zkratky:\n    {2}\noproti\n    {3}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarning">
+        <source>Nullness warning: {0}.</source>
+        <target state="new">Nullness warning: {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningEquivWithTypes">
+        <source>Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</source>
+        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningWithType">
+        <source>Nullness warning: The type '{0}' does not support 'null'.</source>
+        <target state="new">Nullness warning: The type '{0}' does not support 'null'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningWithTypes">
+        <source>Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</source>
+        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
@@ -20,6 +45,21 @@
       <trans-unit id="NotUpperCaseConstructorWithoutRQA">
         <source>Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</source>
         <target state="translated">Případy sjednocení s malými písmeny jsou povolené jenom při použití atributu RequireQualifiedAccess.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OverrideShouldBeInstance">
+        <source> Non-static member is expected.</source>
+        <target state="translated"> Očekává se nestatický člen.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OverrideShouldBeStatic">
+        <source> Static member is expected.</source>
+        <target state="translated"> Očekává se statický člen.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR_JUST_BEFORE_NULL">
+        <source>symbol '|' (directly before 'null')</source>
+        <target state="new">symbol '|' (directly before 'null')</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
@@ -49,7 +89,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.WHILE.BANG">
         <source>keyword 'while!'</source>
-        <target state="new">keyword 'while!'</target>
+        <target state="translated">klíčové slovo „while!“</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeAlso">
@@ -192,6 +232,16 @@
         <target state="translated">Pole {0} a {1} jsou odlišného typu.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ValueRestriction">
+        <source>Value restriction: The value '{0}' has an inferred generic type\n    {1}\nHowever, values cannot have generic type variables like '_a in "let x: '_a". You can do one of the following:\n- Define it as a simple data term like an integer literal, a string literal or a union case like "let x = 1"\n- Add an explicit type annotation like "let x : int"\n- Use the value as a non-generic type in later code for type inference like "do x"\nor if you still want type-dependent results, you can define '{2}' as a function instead by doing either:\n- Add a unit parameter like "let x()"\n- Write explicit type parameters like "let x&lt;'a&gt;".\nThis error is because a let binding without parameters defines a value, not a function. Values cannot be generic because reading a value is assumed to result in the same everywhere but generic type parameters may invalidate this assumption by enabling type-dependent results.</source>
+        <target state="translated">Omezení hodnoty: Hodnota {0} má odvozený obecný typ\n    {1}\nNicméně hodnoty nemohou mít proměnné obecného typu jako '_a v "let x: '_a". Můžete provést jednu z následujících akcí:\n- Definujte jej jako jednoduchý datový termín, například celočíselný literál, řetězcový literál nebo případ sjednocení, například let x = 1\n- Přidejte explicitní typovou anotaci, například let x : int\n- Použijte hodnotu jako negenerický typ v pozdějším kódu pro typovou inferenci, jako například do x\nebo pokud přesto chcete typové výsledky, můžete místo toho {2} definovat jako funkci, a to buď:\n- Přidejte jednotkový parametr, jako například let x()\n- Napište explicitní typové parametry, jako například let x&lt;'a&gt;.\nTato chyba je způsobena tím, že vazba let bez parametrů definuje hodnotu, nikoli funkci. Hodnoty nemůžou být generické, protože se předpokládá, že výsledkem čtení hodnoty bude všude totéž, ale generické typové parametry mohou tento předpoklad zrušit tím, že umožní získat výsledky závislé na typu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValueRestrictionFunction">
+        <source>Value restriction: The value '{0}' has an inferred generic function type\n    {1}\nHowever, values cannot have generic type variables like '_a in "let f: '_a". You should define '{2}' as a function instead by doing one of the following:\n- Add an explicit parameter that is applied instead of using a partial application "let f param"\n- Add a unit parameter like "let f()"\n- Write explicit type parameters like "let f&lt;'a&gt;"\nor if you do not intend for it to be generic, either:\n- Add an explicit type annotation like "let f : obj -&gt; obj"\n- Apply arguments of non-generic types to the function value in later code for type inference like "do f()".\nThis error is because a let binding without parameters defines a value, not a function. Values cannot be generic because reading a value is assumed to result in the same everywhere but generic type parameters may invalidate this assumption by enabling type-dependent results.</source>
+        <target state="translated">Omezení hodnoty: Hodnota {0} má odvozený obecný typ funkce.\n    {1}\n Hodnoty ale nemůžou mít proměnné obecného typu, například _a v let f: _a. Místo toho byste měli {2} definovat jako funkci některým z následujících postupů:\n- Přidejte explicitní parametr, který se použije místo částečné aplikace let f param\n- Přidejte jednotkový parametr jako let f()\n- Napište explicitní typové parametry jako let f&lt;'a&gt;\nebo pokud nemáte v úmyslu, aby byl generický:\n- Přidejte explicitní typovou anotaci jako let f : obj -&gt; obj\n- Použijte argumenty negenerických typů na hodnotu funkce v pozdějším kódu pro typovou inferenci jako do f().\nTato chyba je způsobena tím, že vazba let bez parametrů definuje hodnotu, nikoli funkci. Hodnoty nemůžou být generické, protože se předpokládá, že výsledkem čtení hodnoty bude všude totéž, ale generické typové parametry mohou tento předpoklad zrušit tím, že umožní získat výsledky závislé na typu.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="VarBoundTwice">
         <source>'{0}' is bound twice in this pattern</source>
         <target state="translated">{0} má v tomto vzoru dvě vazby.</target>
@@ -223,8 +273,8 @@
         <note />
       </trans-unit>
       <trans-unit id="TypeIsImplicitlyAbstract">
-        <source>This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
-        <target state="translated">Tento typ je abstract, protože se neimplementovali někteří abstraktní členové. Pokud je to záměr, pak k typu přidejte atribut [&lt;AbstractClass&gt;].</target>
+        <source>Non-abstract classes cannot contain abstract members. Either provide a default member implementation or add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
+        <target state="translated">Neabstraktní třídy nemohou obsahovat abstraktní členy. Poskytněte výchozí implementaci členů nebo přidejte k danému typu atribut [&lt;AbstractClass&gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar1">
@@ -1522,31 +1572,6 @@
         <target state="translated">Následující pole vyžadují hodnoty: {0}</target>
         <note />
       </trans-unit>
-      <trans-unit id="ValueRestriction1">
-        <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">Omezení hodnoty. Hodnota {0} je obecného typu\n    {1}.    \nBuď změňte argumenty pro {2} na explicitní, nebo (pokud hodnota nemá být obecná) přidejte poznámku typu.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction2">
-        <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make '{2}' into a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">Omezení hodnoty. Hodnota {0} je obecného typu\n    {1}.    \nZměňte {2} na funkci s explicitními argumenty nebo (pokud hodnota nemá být obecná) přidejte poznámku typu.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction3">
-        <source>Value restriction. This member has been inferred to have generic type\n    {0}    \nConstructors and property getters/setters cannot be more generic than the enclosing type.  Add a type annotation to indicate the exact types involved.</source>
-        <target state="translated">Omezení hodnoty. Tento člen se odvodil jako člen obecného typu\n    {0}.    \nKonstruktory a metody getter nebo setter vlastnosti nemůžou být obecnější než nadřazený typ. Přidejte poznámku typu, abyste přesně určili, které typy se mají zahrnout.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction4">
-        <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">Omezení hodnoty. Hodnota {0} se odvodila jako hodnota obecného typu\n    {1}.    \nBuď změňte argumenty pro {2} na explicitní, nebo (pokud hodnota nemá být obecná) přidejte poznámku typu.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction5">
-        <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither define '{2}' as a simple data term, make it a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">Omezení hodnoty. Hodnota {0} se odvodila jako hodnota obecného typu\n    {1}.    \nDefinujte {2} jako jednoduchý datový výraz, změňte ji na funkci s explicitními argumenty nebo (pokud hodnota nemá být obecná) přidejte poznámku typu.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="RecoverableParseError">
         <source>syntax error</source>
         <target state="translated">chyba syntaxe</target>
@@ -1573,8 +1598,8 @@
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInIntrinsicAugmentation">
-        <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.</source>
-        <target state="translated">Implementace rozhraní by obvykle měly být zadány pro počáteční deklaraci typu. Implementace rozhraní v rozšířeních mohou vést k přístupu ke statickým vazbám před jejich inicializací, ale pouze v případě, že je implementace rozhraní vyvolána během inicializace statických dat a následně umožní přístup ke statickým datům. Toto upozornění můžete odebrat pomocí #nowarn „69“, pokud jste ověřili, že tomu tak není.</target>
+        <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using '#nowarn "69"' if you have checked this is not the case.</source>
+        <target state="translated">Implementace rozhraní by se měly normálně provádět při počáteční deklaraci typu. Implementace rozhraní v postupných krocích mohou vést k přístupu ke statickým vazbám před jejich inicializací, ale pouze v případě, že je implementace rozhraní vyvolána během inicializace statických dat, a následně může dojít k přístupu ke statickým datům. Toto upozornění můžete odebrat pomocí #nowarn "69", pokud jste zkontrolovali, že tomu tak není.</target>
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInExtrinsicAugmentation">
@@ -1593,13 +1618,13 @@
         <note />
       </trans-unit>
       <trans-unit id="HashIncludeNotAllowedInNonScript">
-        <source>#I directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">Direktivy #I se můžou vyskytovat jenom v souborech skriptu F# (s příponou .fsx nebo .fsscript). Přesuňte tento kód do souboru skriptu nebo přidejte pro tento odkaz možnost kompilátoru -I anebo direktivu ohraničte pomocí notace #if INTERACTIVE/#endif.</target>
+        <source>#I directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
+        <target state="translated">Direktivy #I se můžou používat jenom v souborech skriptu F# (s příponou .fsx nebo .fsscript). Přesuňte tento kód do souboru skriptu nebo přidejte pro tento odkaz možnost kompilátoru -I anebo direktivu ohraničte pomocí notace #if INTERACTIVE/#endif.</target>
         <note />
       </trans-unit>
       <trans-unit id="HashReferenceNotAllowedInNonScript">
-        <source>#r directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">Direktivy #r se můžou vyskytovat jenom v souborech skriptu F# (s příponou .fsx nebo .fsscript). Buď přesuňte tento kód do souboru skriptu, nebo nahraďte tento odkaz možností kompilátoru -r. Pokud se tato direktiva provádí jako uživatelský vstup, můžete ji ohraničit pomocí notace #if INTERACTIVE'/'#endif.</target>
+        <source>#r directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
+        <target state="translated">Direktivy #r se můžou vyskytovat jenom v souborech skriptu F# (s příponou .fsx nebo .fsscript). Buď tento kód přesuňte do souboru skriptu, nebo nahraďte tento odkaz možností kompilátoru -r. Pokud se tato direktiva spouští jako uživatelský vstup, můžete ji oddělit #if INTERACTIVE / #endif.</target>
         <note />
       </trans-unit>
       <trans-unit id="HashDirectiveNotAllowedInNonScript">

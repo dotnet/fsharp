@@ -248,25 +248,25 @@ module RestrictedRecordsAndUnionsUsingPrivateAndInternalTypes =
                     
             let public getInt (data:Data): int = HelperModule.handle data.Thing               
 
-    module Test7 = 
-        module internal HelperModule = 
-            
-            type Data = 
-                    {
-                        Datum: int
-                    }
-                    
-            let handle (data:Data): int = data.Datum
-            
-        module Module =
-            
-            type Data = 
-                internal
-                    {
-                        Thing: HelperModule.Data
-                    }
-                    
-            let getInt (data:Data): int = HelperModule.handle data.Thing               
+//    module Test7 = 
+//        module internal HelperModule = 
+//            
+//            type Data = 
+//                    {
+//                        Datum: int
+//                    }
+//                    
+//            let handle (data:Data): int = data.Datum
+//            
+//        module Module =
+//            
+//            type Data = 
+//                internal
+//                    {
+//                        Thing: HelperModule.Data
+//                    }
+//                    
+//            let getInt (data:Data): int = HelperModule.handle data.Thing               
 
 
     (*--------------------*)  

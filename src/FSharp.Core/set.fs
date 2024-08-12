@@ -669,7 +669,7 @@ module internal SetTree =
 
         loop t []
 
-    let copyToArray s (arr: _[]) i =
+    let copyToArray s (arr: _ array) i =
         let mutable j = i
 
         iter
@@ -697,6 +697,9 @@ module internal SetTree =
     let ofArray comparer l =
         Array.fold (fun acc k -> add comparer k acc) empty l
 
+#if NETSTANDARD2_1_OR_GREATER
+[<System.Runtime.CompilerServices.CollectionBuilder(typeof<Set>, "Create")>]
+#endif
 [<Sealed>]
 [<CompiledName("FSharpSet`1")>]
 [<DebuggerTypeProxy(typedefof<SetDebugView<_>>)>]
@@ -834,7 +837,7 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'
             Set(a.Comparer, SetTree.intersection a.Comparer a.Tree b.Tree)
 
     static member Union(sets: seq<Set<'T>>) : Set<'T> =
-        Seq.fold (fun s1 s2 -> s1 + s2) Set<'T>.Empty sets
+        Seq.fold (+) Set<'T>.Empty sets
 
     static member Intersection(sets: seq<Set<'T>>) : Set<'T> =
         Seq.reduce (fun s1 s2 -> Set.Intersection(s1, s2)) sets
@@ -901,7 +904,7 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'
         | _ -> false
 
     interface System.IComparable with
-        member this.CompareTo(that: obj) =
+        member this.CompareTo(that: objnull) =
             SetTree.compare this.Comparer this.Tree ((that :?> Set<'T>).Tree)
 
     interface IStructuralEquatable with
@@ -1023,6 +1026,22 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'
                 .Append("; ... ]")
                 .ToString()
 
+#if NETSTANDARD2_1_OR_GREATER
+and [<CompilerMessage("This type is for compiler use and should not be used directly", 1204, IsHidden = true);
+      Sealed;
+      AbstractClass;
+      CompiledName("FSharpSet")>] Set =
+    [<CompilerMessage("This method is for compiler use and should not be used directly", 1204, IsHidden = true)>]
+    static member Create([<System.Runtime.CompilerServices.ScopedRef>] items: System.ReadOnlySpan<'T>) =
+        let comparer = LanguagePrimitives.FastGenericComparer<'T>
+        let mutable acc = SetTree.empty
+
+        for item in items do
+            acc <- SetTree.add comparer item acc
+
+        Set(comparer, acc)
+#endif
+
 and [<Sealed>] SetDebugView<'T when 'T: comparison>(v: Set<'T>) =
 
     [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
@@ -1062,7 +1081,7 @@ module Set =
 
     [<CompiledName("Intersect")>]
     let intersect (set1: Set<'T>) (set2: Set<'T>) =
-        Set<'T>.Intersection (set1, set2)
+        Set<'T>.Intersection(set1, set2)
 
     [<CompiledName("IntersectMany")>]
     let intersectMany sets =

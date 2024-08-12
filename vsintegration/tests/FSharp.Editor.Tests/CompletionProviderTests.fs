@@ -29,12 +29,12 @@ module CompletionProviderTests =
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
         let document =
-            RoslynTestHelpers.CreateSolution(fileContents)
+            RoslynTestHelpers.CreateSolution(fileContents, extraFSharpProjectOtherOptions = Array.ofSeq opts)
             |> RoslynTestHelpers.GetSingleDocument
 
         let results =
             let task =
-                FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []))
+                FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [||]))
                 |> CancellableTask.start CancellationToken.None
 
             task.Result |> Seq.map (fun result -> result.DisplayText)
@@ -77,12 +77,12 @@ module CompletionProviderTests =
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
         let document =
-            RoslynTestHelpers.CreateSolution(fileContents)
+            RoslynTestHelpers.CreateSolution(fileContents, extraFSharpProjectOtherOptions = Array.ofSeq opts)
             |> RoslynTestHelpers.GetSingleDocument
 
         let actual =
             let task =
-                FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []))
+                FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [||]))
                 |> CancellableTask.start CancellationToken.None
 
             task.Result
@@ -423,7 +423,7 @@ xVal**y
             Assert.True(triggered, "Completion should trigger after typing an identifier that follows a mathematical operation")
 
     [<Fact>]
-    let ShouldTriggerCompletionAtStartOfFileWithInsertion =
+    let ShouldTriggerCompletionAtStartOfFileWithInsertion () =
         let fileContents =
             """
 l"""
@@ -888,7 +888,7 @@ type T() =
         VerifyNoCompletionList(fileContents, "member this.M(p")
 
     [<Fact>]
-    let ``Completion list on abstract member type signature contains modules and types but not keywords or functions`` =
+    let ``Completion list on abstract member type signature contains modules and types but not keywords or functions`` () =
         let fileContents =
             """
 type Interface =
@@ -1853,35 +1853,49 @@ type B () =
     inherit System.Dynamic.DynamicMetaObjectBinder ()
 
     override x.
+
+let _ =
+    { new System.Dynamic.SetIndexBinder (null) with
+        member x.
+    }
+
+let _ =
+    { new System.Dynamic.DynamicMetaObjectBinder () with
+        member this.
+    }
 """
 
         // SetIndexBinder inherits from DynamicMetaObjectBinder, but overrides and seals Bind and the ReturnType property
-        VerifyCompletionListExactly(
-            fileContents,
-            "override _.a",
-            [
-                "BindDelegate"
-                "Equals"
-                "FallbackSetIndex"
-                "Finalize"
-                "GetHashCode"
-                "ToString"
-            ]
-        )
+        [ "override _.a"; "member x." ]
+        |> List.iter (fun i ->
+            VerifyCompletionListExactly(
+                fileContents,
+                i,
+                [
+                    "BindDelegate (site: System.Runtime.CompilerServices.CallSite<'T>, args: obj array): 'T"
+                    "Equals (obj: obj): bool"
+                    "FallbackSetIndex (target: System.Dynamic.DynamicMetaObject, indexes: System.Dynamic.DynamicMetaObject array, value: System.Dynamic.DynamicMetaObject, errorSuggestion: System.Dynamic.DynamicMetaObject): System.Dynamic.DynamicMetaObject"
+                    "Finalize (): unit"
+                    "GetHashCode (): int"
+                    "ToString (): string"
+                ]
+            ))
 
-        VerifyCompletionListExactly(
-            fileContents,
-            "override x.",
-            [
-                "Bind"
-                "BindDelegate"
-                "Equals"
-                "Finalize"
-                "GetHashCode"
-                "get_ReturnType"
-                "ToString"
-            ]
-        )
+        [ "override x."; "member this." ]
+        |> List.iter (fun i ->
+            VerifyCompletionListExactly(
+                fileContents,
+                i,
+                [
+                    "ReturnType with get (): System.Type"
+                    "Bind (target: System.Dynamic.DynamicMetaObject, args: System.Dynamic.DynamicMetaObject array): System.Dynamic.DynamicMetaObject"
+                    "BindDelegate (site: System.Runtime.CompilerServices.CallSite<'T>, args: obj array): 'T"
+                    "Equals (obj: obj): bool"
+                    "Finalize (): unit"
+                    "GetHashCode (): int"
+                    "ToString (): string"
+                ]
+            ))
 
     [<Fact>]
     let ``Completion list for override does not contain virtual method if it is already overridden in the same type`` () =
@@ -1914,9 +1928,83 @@ type C () =
     override A1 s = ()
 """
 
-        VerifyCompletionListExactly(fileContents, "override _.", [ "Equals"; "Finalize"; "GetHashCode" ])
-        VerifyCompletionListExactly(fileContents, "override x.b", [ "A1"; "A2"; "Equals"; "Finalize"; "GetHashCode"; "ToString" ])
-        VerifyCompletionListExactly(fileContents, "override x.c", [ "A2"; "Equals"; "Finalize"; "GetHashCode"; "ToString" ])
+        VerifyCompletionListExactly(fileContents, "override _.", [ "Equals (obj: obj): bool"; "Finalize (): unit"; "GetHashCode (): int" ])
+
+        VerifyCompletionListExactly(
+            fileContents,
+            "override x.b",
+            [
+                "A1 (arg: string): unit"
+                "A2 (): unit"
+                "Equals (obj: obj): bool"
+                "Finalize (): unit"
+                "GetHashCode (): int"
+                "ToString (): string"
+            ]
+        )
+
+        VerifyCompletionListExactly(
+            fileContents,
+            "override x.c",
+            [
+                "A2 (): unit"
+                "Equals (obj: obj): bool"
+                "Finalize (): unit"
+                "GetHashCode (): int"
+                "ToString (): string"
+            ]
+        )
+
+    [<Fact>]
+    let ``Completion list for override in interface implements does not contain method which is already overridden in the same type`` () =
+        let fileContents =
+            """
+type IA =
+    static abstract member A3: unit -> unit
+    static abstract member A4: unit -> unit
+    static abstract member P1: value: int -> int with get, set
+    static abstract member P2: int with get, set
+    
+type IB =
+    abstract member A1: unit -> unit
+    abstract member A1: string -> unit
+    abstract member A2: unit -> unit
+    abstract member P1: int * bool -> int with get, set
+    abstract member P2: int with get, set
+
+type TA() =
+    interface IA with
+        static member 
+        static member A3 (): unit = ()
+        static member P2
+            with get (): int = raise (System.NotImplementedException())
+    interface IB with
+        member this.A1 (arg1: string): unit = ()
+        member this.P2
+            with get (): int = raise (System.NotImplementedException())
+        member thisTA.
+"""
+
+        VerifyCompletionListExactly(
+            fileContents,
+            "static member ",
+            [
+                "P1 with get (value: int): int and set (value: int) (value_1: int)"
+                "P2 with set (value: int)"
+                "A4 (): unit"
+            ]
+        )
+
+        VerifyCompletionListExactly(
+            fileContents,
+            "member thisTA.",
+            [
+                "P1 with get (arg: int, arg_1: bool): int and set (arg: int, arg_1: bool) (value: int)"
+                "P2 with set (value: int)"
+                "A1 (): unit"
+                "A2 (): unit"
+            ]
+        )
 
     [<Fact>]
     let ``Completion list for override is empty when the caret is on the self identifier`` () =
@@ -1990,3 +2078,20 @@ match { A = 1; B = 2 } with
 """
 
         VerifyCompletionList(fileContents, "| { f = ()", [ "A"; "B"; "C"; "D" ], [])
+
+    [<Fact>]
+    let ``issue #16260 [TO-BE-IMPROVED] operators are fumbling for now`` () =
+        let fileContents =
+            """
+module Ops =
+let (|>>) a b = a + b
+module Foo =
+  let (|>>) a b = a + b
+Ops.Foo.()
+Ops.Foo.(
+Ops.(
+Ops.()
+"""
+
+        VerifyCompletionList(fileContents, "Ops.Foo.(", [], [ "|>>"; "(|>>)" ])
+        VerifyCompletionList(fileContents, "Ops.(", [], [ "|>>"; "(|>>)" ])

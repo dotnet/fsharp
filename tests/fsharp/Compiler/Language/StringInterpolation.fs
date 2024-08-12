@@ -547,7 +547,7 @@ check "vcewweh20" $"x = %A{1}" "x = 1"
     [<Test>]
     let ``%B succeeds for langVersion preview`` () =
         CompilerAssert.CompileExeAndRunWithOptions(
-            [| "--langversion:preview" |],
+            [| |],
             """
 let check msg a b = 
     if a = b then printfn "test case '%s' succeeded" msg else failwithf "test case '%s' failed, expected %A, got %A" msg b a
@@ -830,9 +830,9 @@ let TripleInterpolatedInVerbatimInterpolated = $\"123{456}789{$\"\"\"012\"\"\"}3
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:5.0" |]
             code
             [|(FSharpDiagnosticSeverity.Warning, 58, (1, 1, 1, 17),
-               "Possible incorrect indentation: this token is offside of context started at position (1:1). Try indenting this token further or using standard formatting conventions.");
+               "Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (1:1). Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.");
               (FSharpDiagnosticSeverity.Warning, 58, (1, 17, 1, 17),
-               "Possible incorrect indentation: this token is offside of context started at position (1:1). Try indenting this token further or using standard formatting conventions.");
+               "Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (1:1). Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.");
               (FSharpDiagnosticSeverity.Error, 10, (1, 1, 1, 17),
                "Incomplete structured construct at or before this point in binding");
               (FSharpDiagnosticSeverity.Error, 3381, (1, 10, 1, 14),

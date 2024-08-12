@@ -4,6 +4,7 @@
 /// Implements the offside rule and a couple of other lexical transformations.
 module internal FSharp.Compiler.LexFilter
 
+open System
 open System.Collections.Generic
 open Internal.Utilities.Text.Lexing
 open FSharp.Compiler
@@ -181,18 +182,20 @@ let infixTokenLength token =
 //
 // LBRACK_LESS and GREATER_RBRACK are not here because adding them in these active patterns
 // causes more offside warnings, while removing them doesn't add offside warnings in attributes.
+[<return: Struct>]
 let (|TokenLExprParen|_|) token =
     match token with
     | BEGIN | LPAREN | LBRACE _ | LBRACE_BAR | LBRACK | LBRACK_BAR | LQUOTE _ | LESS true
-        -> Some ()
-    | _ -> None
+        -> ValueSome ()
+    | _ -> ValueNone
 
 /// Matches against a right-parenthesis-like token that is valid in expressions.
+[<return: Struct>]
 let (|TokenRExprParen|_|) token =
     match token with
     | END | RPAREN | RBRACE _ | BAR_RBRACE | RBRACK | BAR_RBRACK | RQUOTE _ | GREATER true
-        -> Some ()
-    | _ -> None
+        -> ValueSome ()
+    | _ -> ValueNone
 
 /// Determine the tokens that may align with the 'if' of an 'if/then/elif/else' without closing
 /// the construct
@@ -511,55 +514,69 @@ type TokenTupPool() =
 // Utilities for the tokenizer that are needed in other places
 //--------------------------------------------------------------------------*)
 
+[<return: Struct>]
+let (|Equals|_|) (s: string) (span: ReadOnlySpan<char>) =
+    if span.SequenceEqual(s.AsSpan()) then ValueSome Equals
+    else ValueNone
+
+[<return: Struct>]
+let (|StartsWith|_|) (s: string) (span: ReadOnlySpan<char>) =
+    if span.StartsWith(s.AsSpan()) then ValueSome StartsWith
+    else ValueNone
+
 // Strip a bunch of leading '>' of a token, at the end of a typar application
 // Note: this is used in the 'service.fs' to do limited postprocessing
+[<return: Struct>]
 let (|TyparsCloseOp|_|) (txt: string) =
-    let angles = txt |> Seq.takeWhile (fun c -> c = '>') |> Seq.toList
-    let afterAngles = txt |> Seq.skipWhile (fun c -> c = '>') |> Seq.toList
-    if List.isEmpty angles then None else
+    if not (txt.StartsWith ">") then
+        ValueNone
+    else
+        match txt.AsSpan().IndexOfAnyExcept '>' with
+        | -1 -> ValueSome(struct (Array.init txt.Length (fun _ -> GREATER), ValueNone))
+        | angles ->
+            let afterAngles = txt.AsSpan angles
 
-    let afterOp =
-        match (System.String(Array.ofSeq afterAngles)) with
-         | "." -> Some DOT
-         | "]" -> Some RBRACK
-         | "-" -> Some MINUS
-         | ".." -> Some DOT_DOT
-         | "?" -> Some QMARK
-         | "??" -> Some QMARK_QMARK
-         | ":=" -> Some COLON_EQUALS
-         | "::" -> Some COLON_COLON
-         | "*" -> Some STAR
-         | "&" -> Some AMP
-         | "->" -> Some RARROW
-         | "<-" -> Some LARROW
-         | "=" -> Some EQUALS
-         | "<" -> Some (LESS false)
-         | "$" -> Some DOLLAR
-         | "%" -> Some (PERCENT_OP("%") )
-         | "%%" -> Some (PERCENT_OP("%%"))
-         | "" -> None
-         | s ->
-             match List.ofSeq afterAngles with
-              | '=' :: _
-              | '!' :: '=' :: _
-              | '<' :: _
-              | '>' :: _
-              | '$' :: _ -> Some (INFIX_COMPARE_OP s)
-              | '&' :: _ -> Some (INFIX_AMP_OP s)
-              | '|' :: _ -> Some (INFIX_BAR_OP s)
-              | '!' :: _
-              | '?' :: _
-              | '~' :: _ -> Some (PREFIX_OP s)
-              | '@' :: _
-              | '^' :: _ -> Some (INFIX_AT_HAT_OP s)
-              | '+' :: _
-              | '-' :: _ -> Some (PLUS_MINUS_OP s)
-              | '*' :: '*' :: _ -> Some (INFIX_STAR_STAR_OP s)
-              | '*' :: _
-              | '/' :: _
-              | '%' :: _ -> Some (INFIX_STAR_DIV_MOD_OP s)
-              | _ -> None
-    Some([| for _c in angles do yield GREATER |], afterOp)
+            let afterOp =
+                match afterAngles with
+                | Equals "." -> ValueSome DOT
+                | Equals "]" -> ValueSome RBRACK
+                | Equals "-" -> ValueSome MINUS
+                | Equals ".." -> ValueSome DOT_DOT
+                | Equals "?" -> ValueSome QMARK
+                | Equals "??" -> ValueSome QMARK_QMARK
+                | Equals ":=" -> ValueSome COLON_EQUALS
+                | Equals "::" -> ValueSome COLON_COLON
+                | Equals "*" -> ValueSome STAR
+                | Equals "&" -> ValueSome AMP
+                | Equals "->" -> ValueSome RARROW
+                | Equals "<-" -> ValueSome LARROW
+                | Equals "=" -> ValueSome EQUALS
+                | Equals "<" -> ValueSome (LESS false)
+                | Equals "$" -> ValueSome DOLLAR
+                | Equals "%" -> ValueSome (PERCENT_OP "%")
+                | Equals "%%" -> ValueSome (PERCENT_OP "%%")
+                | Equals "" -> ValueNone
+                | StartsWith "="
+                | StartsWith "!="
+                | StartsWith "<"
+                | StartsWith ">"
+                | StartsWith "$" -> ValueSome (INFIX_COMPARE_OP (afterAngles.ToString()))
+                | StartsWith "&" -> ValueSome (INFIX_AMP_OP (afterAngles.ToString()))
+                | StartsWith "|" -> ValueSome (INFIX_BAR_OP (afterAngles.ToString()))
+                | StartsWith "!"
+                | StartsWith "?"
+                | StartsWith "~"  -> ValueSome (PREFIX_OP (afterAngles.ToString()))
+                | StartsWith "@"
+                | StartsWith "^" -> ValueSome (INFIX_AT_HAT_OP (afterAngles.ToString()))
+                | StartsWith "+"
+                | StartsWith "-" -> ValueSome (PLUS_MINUS_OP (afterAngles.ToString()))
+                | StartsWith "**" -> ValueSome (INFIX_STAR_STAR_OP (afterAngles.ToString()))
+                | StartsWith "*"
+                | StartsWith "/"
+                | StartsWith "%" -> ValueSome (INFIX_STAR_DIV_MOD_OP (afterAngles.ToString()))
+                | _ -> ValueNone
+        
+            ValueSome(struct (Array.init angles (fun _ -> GREATER), afterOp))
 
 [<Struct>]
 type PositionWithColumn =
@@ -1128,7 +1145,9 @@ type LexFilterImpl (
                     //      f<{| C : int |}>x
                     //      f<x # x>x
                     //      f<x ' x>x
+                    //      f<x | null>x
                     | DEFAULT | COLON | COLON_GREATER | STRUCT | NULL | DELEGATE | AND | WHEN | AMP
+                    | BAR_JUST_BEFORE_NULL | BAR
                     | DOT_DOT
                     | NEW
                     | LBRACE_BAR
@@ -1172,6 +1191,11 @@ type LexFilterImpl (
                             delayToken (pool.UseShiftedLocation(tokenTup, INFIX_AT_HAT_OP "^", 1, 0))
                             delayToken (pool.UseShiftedLocation(tokenTup, LESS res, 0, -1))
                             pool.Return tokenTup
+                            
+                        | INFIX_COMPARE_OP ">:" ->
+                            delayToken (pool.UseShiftedLocation(tokenTup, COLON, 1, 0))
+                            delayToken (pool.UseShiftedLocation(tokenTup, GREATER res, 0, -1))
+                            pool.Return tokenTup
                         // NOTE: this is "<@"
                         | LQUOTE ("<@ @>", false) ->
                             delayToken (pool.UseShiftedLocation(tokenTup, INFIX_AT_HAT_OP "@", 1, 0))
@@ -1190,8 +1214,8 @@ type LexFilterImpl (
                             pool.Return tokenTup
                         | INFIX_COMPARE_OP (TyparsCloseOp(greaters, afterOp) as opstr) ->
                             match afterOp with
-                            | None -> ()
-                            | Some tok -> delayToken (pool.UseShiftedLocation(tokenTup, tok, greaters.Length, 0))
+                            | ValueNone -> ()
+                            | ValueSome tok -> delayToken (pool.UseShiftedLocation(tokenTup, tok, greaters.Length, 0))
                             for i = greaters.Length - 1 downto 0 do
                                 delayToken (pool.UseShiftedLocation(tokenTup, greaters[i] res, i, -opstr.Length + i + 1))
                             pool.Return tokenTup
@@ -2460,6 +2484,9 @@ type LexFilterImpl (
             if debug then dprintf "skipping dummy token as no offside rules apply\n"
             pool.Return tokenTup
             hwTokenFetch useBlockRule
+
+        | BAR, _ when (lexbuf.SupportsFeature(LanguageFeature.NullnessChecking) && match peekNextToken() with NULL -> true | _ -> false) ->
+            returnToken tokenLexbufState BAR_JUST_BEFORE_NULL            
 
         // Ordinary tokens start a vanilla block
         | _, CtxtSeqBlock _ :: _ ->

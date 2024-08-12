@@ -4,7 +4,32 @@
     <body>
       <trans-unit id="ArgumentsInSigAndImplMismatch">
         <source>The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</source>
-        <target state="new">The argument names in the signature '{0}' and implementation '{1}' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.</target>
+        <target state="translated">签名“{0}”和实现“{1}”中的参数名称不匹配。将使用签名文件中的参数名称。在进行调试或分析时这可能会导致问题。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
+        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</source>
+        <target state="translated">签名和实现中类型“{1}”的 {0} 定义不兼容，因为缩写不同:\n    {2}\nversus\n    {3}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarning">
+        <source>Nullness warning: {0}.</source>
+        <target state="new">Nullness warning: {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningEquivWithTypes">
+        <source>Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</source>
+        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningWithType">
+        <source>Nullness warning: The type '{0}' does not support 'null'.</source>
+        <target state="new">Nullness warning: The type '{0}' does not support 'null'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningWithTypes">
+        <source>Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</source>
+        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
@@ -20,6 +45,21 @@
       <trans-unit id="NotUpperCaseConstructorWithoutRQA">
         <source>Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</source>
         <target state="translated">仅当使用 RequireQualifiedAccess 属性时才允许区分小写的联合事例</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OverrideShouldBeInstance">
+        <source> Non-static member is expected.</source>
+        <target state="translated"> 应为非静态成员。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OverrideShouldBeStatic">
+        <source> Static member is expected.</source>
+        <target state="translated"> 应为静态成员。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR_JUST_BEFORE_NULL">
+        <source>symbol '|' (directly before 'null')</source>
+        <target state="new">symbol '|' (directly before 'null')</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
@@ -49,7 +89,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.WHILE.BANG">
         <source>keyword 'while!'</source>
-        <target state="new">keyword 'while!'</target>
+        <target state="translated">关键字 "while!"</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeAlso">
@@ -192,6 +232,16 @@
         <target state="translated">字段“{0}”和“{1}”来自不同的类型</target>
         <note />
       </trans-unit>
+      <trans-unit id="ValueRestriction">
+        <source>Value restriction: The value '{0}' has an inferred generic type\n    {1}\nHowever, values cannot have generic type variables like '_a in "let x: '_a". You can do one of the following:\n- Define it as a simple data term like an integer literal, a string literal or a union case like "let x = 1"\n- Add an explicit type annotation like "let x : int"\n- Use the value as a non-generic type in later code for type inference like "do x"\nor if you still want type-dependent results, you can define '{2}' as a function instead by doing either:\n- Add a unit parameter like "let x()"\n- Write explicit type parameters like "let x&lt;'a&gt;".\nThis error is because a let binding without parameters defines a value, not a function. Values cannot be generic because reading a value is assumed to result in the same everywhere but generic type parameters may invalidate this assumption by enabling type-dependent results.</source>
+        <target state="translated">值限制: 值“{0}”具有推断的泛型类型\n    {1}\n但是，值不能具有泛型类型变量，如“let x: '_a”中的 '_a。可以执行下列操作之一:\n- 将其定义为简单数据词，如整数文本、字符串文本或联合大小写(如“let x = 1”)\n- 添加显式类型批注(如“let x : int”)\n- 在后面的代码中将该值用作非泛型类型，以进行类型推理(如“do x”)\n如果仍需要依赖类型的结果，可以改为通过执行以下任一操作来定义“{2}”:\n- 添加单元参数(如“let x（）”)\n- 编写显式类型参数，如“let x&lt;'a&gt;”。\n此错误是因为没有参数的 let 绑定定义了一个值，而不是函数。值不能是泛型的，因为会假定读取值会导致所有位置都相同，但泛型类型参数可能通过启用依赖类型的结果来使此假设失效。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValueRestrictionFunction">
+        <source>Value restriction: The value '{0}' has an inferred generic function type\n    {1}\nHowever, values cannot have generic type variables like '_a in "let f: '_a". You should define '{2}' as a function instead by doing one of the following:\n- Add an explicit parameter that is applied instead of using a partial application "let f param"\n- Add a unit parameter like "let f()"\n- Write explicit type parameters like "let f&lt;'a&gt;"\nor if you do not intend for it to be generic, either:\n- Add an explicit type annotation like "let f : obj -&gt; obj"\n- Apply arguments of non-generic types to the function value in later code for type inference like "do f()".\nThis error is because a let binding without parameters defines a value, not a function. Values cannot be generic because reading a value is assumed to result in the same everywhere but generic type parameters may invalidate this assumption by enabling type-dependent results.</source>
+        <target state="translated">值限制: 值“{0}”具有推断的泛型函数类型\n    {1}\n但是，值不能具有泛型类型变量，如“let f: '_a”中的 '_a。你应该将“{2}”定义为一个函数，而不是通过以下方式之一进行定义:\n- 添加一个显式参数，以替代使用部分应用“let f param”\n- 添加一个单位参数，如“let f()”\n- 编写显式类型参数，如“let f&lt;'a&gt;”\n如果不打算使其成为泛型的话，则可以选择:\n- 添加显式类型注释，如“let f : obj -&gt; obj”\n- 在后续代码中对非泛型类型的参数应用于函数值以进行类型推断，例如“do f()”。\n此错误是因为没有参数的 let 绑定定义了一个值，而不是函数。值不能是泛型的，因为会假定读取值会导致所有位置都相同，但泛型类型参数可能通过启用依赖类型的结果来使此假设失效。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="VarBoundTwice">
         <source>'{0}' is bound twice in this pattern</source>
         <target state="translated">“{0}”在此模式中绑定了两次</target>
@@ -223,8 +273,8 @@
         <note />
       </trans-unit>
       <trans-unit id="TypeIsImplicitlyAbstract">
-        <source>This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
-        <target state="translated">由于未向一些抽象成员提供实现，因此该类型为 "abstract"。如果是故意如此，请向你的类型添加 "[&lt;AbstractClass&gt;]" 属性。</target>
+        <source>Non-abstract classes cannot contain abstract members. Either provide a default member implementation or add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
+        <target state="translated">非抽象类不能包含抽象成员。提供默认成员实现或将 “[&lt;AbstractClass&gt;]” 属性添加到类型。</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar1">
@@ -1522,31 +1572,6 @@
         <target state="translated">以下字段需要值: {0}</target>
         <note />
       </trans-unit>
-      <trans-unit id="ValueRestriction1">
-        <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">值限制。值“{0}”具有泛型类型\n    {1}    \n使“{2}”的参数成为显式参数，或添加类型批注(如果您不希望它是泛型的)。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction2">
-        <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make '{2}' into a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">值限制。值“{0}”具有泛型类型\n    {1}    \n使“{2}”成为具有显式参数的函数，或添加类型批注(如果您不希望它是泛型的)。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction3">
-        <source>Value restriction. This member has been inferred to have generic type\n    {0}    \nConstructors and property getters/setters cannot be more generic than the enclosing type.  Add a type annotation to indicate the exact types involved.</source>
-        <target state="translated">值限制。已推理出此成员具有泛型类型\n    {0}    \n构造函数和属性 Getter/Setter 不能比封闭类型更通用。    添加类型批注以指示涉及到的确切类型。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction4">
-        <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">值限制。已推理出值“{0}”具有泛型类型\n    {1}    \n使“{2}”的参数成为显式参数，或添加类型批注(如果您不希望它是泛型的)。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueRestriction5">
-        <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither define '{2}' as a simple data term, make it a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">值限制。已推理出值“{0}”具有泛型类型\n    {1}    \n将“{2}”定义为简单的数据条目，使其成为具有显式参数的函数，或添加类型批注(如果您不希望它是泛型的)。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="RecoverableParseError">
         <source>syntax error</source>
         <target state="translated">语法错误</target>
@@ -1573,8 +1598,8 @@
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInIntrinsicAugmentation">
-        <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.</source>
-        <target state="translated">通常应在类型的初始声明中提供接口实现。扩充中的接口实现可能会导致在初始化静态绑定之前访问静态绑定，尽管只有在静态数据初始化期间调用了接口实现，并进而访问静态数据时才会发生这种情况。如果已经核实并非如此，则可以使用 #nowarn "69" 移除此警告。</target>
+        <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using '#nowarn "69"' if you have checked this is not the case.</source>
+        <target state="translated">通常应在类型的初始声明中提供接口实现。扩充中的接口实现可能会导致在初始化静态绑定之前访问静态绑定，尽管只有在静态数据初始化期间调用了接口实现，并进而访问静态数据时才会发生这种情况。如果已经核实并非如此，则可以使用 '#nowarn "69"' 移除此警告。</target>
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInExtrinsicAugmentation">
@@ -1593,13 +1618,13 @@
         <note />
       </trans-unit>
       <trans-unit id="HashIncludeNotAllowedInNonScript">
-        <source>#I directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">#I 指令只能出现在 F# 脚本文件(扩展名为 .fsx 或 .fsscript)中。请将此代码添加到脚本文件中、添加此引用的“-I”编译器选项或使用“#if INTERACTIVE”/“#endif”分隔此指令。</target>
+        <source>#I directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
+        <target state="translated">#I 指令只能用于 F# 脚本文件中(文件扩展名为 .fsx 或 .fsscript)。请将此代码添加到脚本文件中、添加此引用的 "-I" 编译器选项或使用 "#if INTERACTIVE"/"#endif" 分隔此指令。</target>
         <note />
       </trans-unit>
       <trans-unit id="HashReferenceNotAllowedInNonScript">
-        <source>#r directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">#r 指令只能出现在 F# 脚本文件(扩展名为 .fsx 或 .fsscript)中。请将此代码移动到脚本文件或使用 "-r" 编译器选项替换此引用。如果该指令作为用户输入执行，则可以使用 "#if INTERACTIVE'/'#endif" 分隔它。</target>
+        <source>#r directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
+        <target state="translated">#r 指令只能用于 F# 脚本文件中(文件扩展名为 .fsx 或 .fsscript)。请将此代码移动到脚本文件或使用 "-r" 编译器选项替换此引用。如果该指令作为用户输入执行，则可以使用 "#if INTERACTIVE"/"#endif" 分隔它。</target>
         <note />
       </trans-unit>
       <trans-unit id="HashDirectiveNotAllowedInNonScript">

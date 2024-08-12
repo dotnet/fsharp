@@ -1,3 +1,4 @@
+
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 #nowarn "35" // This construct is deprecated: the treatment of this operator is now handled directly by the F# compiler and its meaning may not be redefined.
@@ -129,7 +130,7 @@ namespace Microsoft.FSharp.Core
     /// for use at runtime.</summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Parameter ||| AttributeTargets.Method ||| AttributeTargets.Property ||| AttributeTargets.Constructor,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct ||| AttributeTargets.Parameter ||| AttributeTargets.Method ||| AttributeTargets.Property ||| AttributeTargets.Constructor ||| AttributeTargets.Delegate, AllowMultiple=false)>]  
     [<Sealed>]
     type ReflectedDefinitionAttribute =
         inherit Attribute
@@ -199,7 +200,7 @@ namespace Microsoft.FSharp.Core
     /// <summary>Adding this attribute to a type causes it to be represented using a CLI struct.</summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Struct ||| AttributeTargets.ReturnValue ,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct ||| AttributeTargets.ReturnValue ,AllowMultiple=false)>]  
     [<Sealed>]
     type StructAttribute =
         inherit Attribute
@@ -263,7 +264,7 @@ namespace Microsoft.FSharp.Core
     /// interface types.</summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface, AllowMultiple=false)>]  
     [<Sealed>]
     type AllowNullLiteralAttribute =
         inherit Attribute
@@ -323,7 +324,7 @@ namespace Microsoft.FSharp.Core
     /// and accessor members for the generated CLI class for that type.</summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct,AllowMultiple=false)>]  
     [<Sealed>]
     type DefaultAugmentationAttribute =
         inherit Attribute
@@ -385,7 +386,7 @@ namespace Microsoft.FSharp.Core
     /// 'System.Object.GetHashCode()' for the type. </summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple=false)>]  
     [<Sealed>]
     type StructuralEqualityAttribute =
         inherit Attribute
@@ -398,7 +399,7 @@ namespace Microsoft.FSharp.Core
     /// automatic generation of implementations for 'System.IComparable' for the type.</summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple=false)>]  
     [<Sealed>]
     type StructuralComparisonAttribute =
         inherit Attribute
@@ -419,6 +420,10 @@ namespace Microsoft.FSharp.Core
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>CustomOperationAttribute</returns>
         new: name:string -> CustomOperationAttribute
+
+        /// <summary>Create an instance of attribute with empty name</summary>
+        /// <returns>CustomOperationAttribute</returns>
+        new: unit -> CustomOperationAttribute
 
         /// <summary>Get the name of the custom operation when used in a query or other computation expression</summary>
         member Name: string
@@ -600,7 +605,7 @@ namespace Microsoft.FSharp.Core
     /// type Serializable by default.</summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple=false)>]  
     [<Sealed>]
     type AutoSerializableAttribute =
         inherit Attribute
@@ -687,7 +692,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="resourceName">The name of the resource needed to resolve the source construct.</param>
         ///
         /// <returns>CompilationMappingAttribute</returns>
-        new: resourceName:string * typeDefinitions:System.Type[] -> CompilationMappingAttribute
+        new: resourceName:string * typeDefinitions:System.Type array -> CompilationMappingAttribute
 
         /// <summary>Indicates the relationship between the compiled entity and F# source code</summary>
         member SourceConstructFlags: SourceConstructFlags
@@ -702,7 +707,7 @@ namespace Microsoft.FSharp.Core
         member ResourceName: string
 
         /// <summary>Indicates the type definitions needed to resolve the source construct</summary>
-        member TypeDefinitions: System.Type[]
+        member TypeDefinitions: System.Type array
 
     /// <summary>This attribute is inserted automatically by the F# compiler to tag 
     /// methods which are given the 'CompiledName' attribute.</summary>
@@ -805,7 +810,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="counts">Indicates the number of arguments in each argument group.</param>
         ///
         /// <returns>CompilationArgumentCountsAttribute</returns>
-        new: counts:int[] -> CompilationArgumentCountsAttribute
+        new: counts:int array -> CompilationArgumentCountsAttribute
 
         /// <summary>Indicates the number of arguments in each argument group </summary>
         member Counts: System.Collections.Generic.IEnumerable<int>
@@ -894,7 +899,7 @@ namespace Microsoft.FSharp.Core
     /// type require explicit qualified access.</summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct ||| AttributeTargets.Enum, AllowMultiple=false)>]  
     [<Sealed>]
     type RequireQualifiedAccessAttribute =
         inherit Attribute
@@ -916,7 +921,7 @@ namespace Microsoft.FSharp.Core
     /// </remarks>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Assembly, AllowMultiple=true)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct ||| AttributeTargets.Assembly, AllowMultiple=true)>]  
     [<Sealed>]
     type AutoOpenAttribute =
         inherit Attribute
@@ -949,6 +954,24 @@ namespace Microsoft.FSharp.Core
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>NoCompilerInliningAttribute</returns>
         new: unit -> NoCompilerInliningAttribute
+
+    /// <summary>When used in a compilation with null-checking enabled, indicates that a function is meant to be used only with potentially-nullable values and warns accordingly.</summary>
+    ///
+    /// <category>Attributes</category>
+    [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
+    [<Sealed>]
+    type WarnOnWithoutNullArgumentAttribute =
+        inherit Attribute
+
+        /// <summary>Creates an instance of the attribute</summary>
+        /// <param name="warningMessage">The message displayed when the annotated function is used with a value known to be without null</param>
+        /// <returns>WarnOnWithoutNullArgumentAttribute</returns>
+        new: warningMessage:string -> WarnOnWithoutNullArgumentAttribute
+
+        /// <summary>Warning message displayed when the annotated function is used with a value known to be without null</summary>
+        member WarningMessage: string
+
+        member internal Localize: bool with get,set 
 
     /// <summary>Indicates a function that should be called in a tail recursive way inside its recursive scope.
     /// A warning is emitted if the function is analyzed as not tail recursive after the optimization phase.</summary> 
@@ -1234,6 +1257,10 @@ namespace Microsoft.FSharp.Core
     /// <category>ByRef and Pointer Types</category>
     type outref<'T> = byref<'T, ByRefKinds.Out>
 
+    // This exists solely so that it can be used in the CollectionBuilderAttribute on List<'T> below.
+    module internal TypeOfUtils =
+        val inline typeof<'T>: Type
+
     /// <summary>Language primitives associated with the F# language</summary>
     ///
     /// <category index="9">Language Primitives</category>
@@ -1364,7 +1391,11 @@ namespace Microsoft.FSharp.Core
         val inline FastGenericComparer<'T> : System.Collections.Generic.IComparer<'T> when 'T: comparison 
 
         /// <summary>Make an F# comparer object for the given type, where it can be null if System.Collections.Generic.Comparer&lt;'T&gt;.Default</summary>
-        val internal FastGenericComparerCanBeNull<'T> : System.Collections.Generic.IComparer<'T> when 'T: comparison 
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
+        val internal FastGenericComparerCanBeNull<'T>  : System.Collections.Generic.IComparer<'T> when 'T : comparison 
+#else
+        val internal FastGenericComparerCanBeNull<'T>  : System.Collections.Generic.IComparer<'T> | null when 'T : comparison 
+#endif
 
         /// <summary>Make an F# hash/equality object for the given type</summary>
         val inline FastGenericEqualityComparer<'T> : System.Collections.Generic.IEqualityComparer<'T> when 'T: equality
@@ -1736,19 +1767,19 @@ namespace Microsoft.FSharp.Core
 
             /// <summary>A compiler intrinsic that implements the ':?>' operator</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val UnboxGeneric<'T> : source: obj -> 'T
+            val UnboxGeneric<'T> : source: objnull -> 'T
 
             /// <summary>A compiler intrinsic that implements the ':?>' operator</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline UnboxFast<'T> : source: obj -> 'T
+            val inline UnboxFast<'T> : source: objnull -> 'T
 
             /// <summary>A compiler intrinsic that implements the ':?' operator</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val TypeTestGeneric<'T> : source: obj -> bool
+            val TypeTestGeneric<'T> : source: objnull -> bool
 
             /// <summary>A compiler intrinsic that implements the ':?' operator</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline TypeTestFast<'T> : source: obj -> bool 
+            val inline TypeTestFast<'T> : source: objnull -> bool 
 
             /// <summary>Primitive used by pattern match compilation</summary>
             //[<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
@@ -1781,7 +1812,7 @@ namespace Microsoft.FSharp.Core
 
             /// <summary>The standard overloaded associative (indexed) lookup operator</summary>
             //[<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline GetArray: source: 'T[] -> index: int -> 'T                           
+            val inline GetArray: source: 'T array -> index: int -> 'T                           
             
             /// <summary>The standard overloaded associative (2-indexed) lookup operator</summary>
             //[<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
@@ -1797,7 +1828,7 @@ namespace Microsoft.FSharp.Core
             
             /// <summary>The standard overloaded associative (indexed) mutation operator</summary>
             //[<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline SetArray: target: 'T[] -> index: int -> value: 'T -> unit      
+            val inline SetArray: target: 'T array -> index: int -> value: 'T -> unit      
             
             /// <summary>The standard overloaded associative (2-indexed) mutation operator</summary>
             //[<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
@@ -2574,12 +2605,46 @@ namespace Microsoft.FSharp.Core
       /// Represents an Error or a Failure. The code failed with a value of 'TError representing what went wrong.
       | Error of ErrorValue:'TError
 
+// These attributes only exist in .NET 8 and up.
+namespace System.Runtime.CompilerServices
+    open System
+    open Microsoft.FSharp.Core
+
+    [<Sealed>]
+    [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Struct ||| AttributeTargets.Interface, Inherited = false)>]
+    type internal CollectionBuilderAttribute =
+        inherit Attribute
+
+        /// <summary>Initialize the attribute to refer to the <paramref name="methodName"/> method on the <paramref name="builderType"/> type.</summary>
+        /// <param name="builderType">The type of the builder to use to construct the collection.</param>
+        /// <param name="methodName">The name of the method on the builder to use to construct the collection.</param>
+        /// <remarks>
+        /// <paramref name="methodName"/> must refer to a static method that accepts a single parameter of
+        /// type <see cref="T:System.ReadOnlySpan`1"/> and returns an instance of the collection being built containing
+        /// a copy of the data from that span. In future releases of .NET, additional patterns may be supported.
+        /// </remarks>
+        new: builderType: Type * methodName: string -> CollectionBuilderAttribute
+
+        /// <summary>Gets the type of the builder to use to construct the collection.</summary>
+        member BuilderType: Type
+ 
+        /// <summary>Gets the name of the method on the builder to use to construct the collection.</summary>
+        /// <remarks>This should match the metadata name of the target method. For example, this might be ".ctor" if targeting the type's constructor.</remarks>
+        member MethodName: string
+
+    [<Sealed>]
+    [<AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)>]
+    type internal ScopedRefAttribute =
+        inherit Attribute
+        new: unit -> ScopedRefAttribute
+
 namespace Microsoft.FSharp.Collections
 
     open System
     open System.Collections
     open System.Collections.Generic
     open Microsoft.FSharp.Core
+    open Microsoft.FSharp.Core.TypeOfUtils
 
     /// <summary>The type of immutable singly-linked lists.</summary>
     ///
@@ -2589,6 +2654,9 @@ namespace Microsoft.FSharp.Collections
     /// </remarks>
     ///
     /// <exclude />
+#if NETSTANDARD2_1_OR_GREATER
+    [<System.Runtime.CompilerServices.CollectionBuilder(typeof<List>, "Create")>]
+#endif
     [<DefaultAugmentation(false)>]
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpList`1")>]
@@ -2642,7 +2710,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The list with head appended to the front of tail.</returns>
         static member Cons: head: 'T * tail: 'T list -> 'T list
-        
+
         interface IEnumerable<'T>
         interface IEnumerable
         interface IReadOnlyCollection<'T>
@@ -2659,6 +2727,21 @@ namespace Microsoft.FSharp.Collections
     ///  See also <a href="https://learn.microsoft.com/dotnet/fsharp/language-reference/lists">F# Language Guide - Lists</a>.
     /// </remarks>
     and 'T list = List<'T>
+
+#if NETSTANDARD2_1_OR_GREATER
+    /// <summary>Contains methods for compiler use related to lists.</summary>
+    and [<CompilerMessage("This type is for compiler use and should not be used directly", 1204, IsHidden=true);
+          Sealed;
+          AbstractClass;
+          CompiledName("FSharpList")>] List =
+        /// <summary>Creates a list with the specified items.</summary>
+        ///
+        /// <param name="items">The items to store in the list.</param>
+        ///
+        /// <returns>A list containing the specified items.</returns>
+        [<CompilerMessage("This method is for compiler use and should not be used directly", 1204, IsHidden=true)>]
+        static member Create: [<System.Runtime.CompilerServices.ScopedRef>] items: System.ReadOnlySpan<'T> -> 'T list
+#endif
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.Collections.Generic.List`1"/></summary>
     type ResizeArray<'T> = System.Collections.Generic.List<'T>
@@ -2705,7 +2788,7 @@ namespace Microsoft.FSharp.Core
         /// <example id="addition-example-1">
         /// <code lang="fsharp">
         /// 2 + 2 //  Evaluates to 4
-        /// "Hello " + "Word" // Evaluates to "Hello World"
+        /// "Hello " + "World" // Evaluates to "Hello World"
         /// </code>
         /// </example>
         /// 
@@ -3119,6 +3202,22 @@ namespace Microsoft.FSharp.Core
         /// 
         val inline (<|||): func: ('T1 -> 'T2 -> 'T3 -> 'U) -> arg1: 'T1 * arg2: 'T2 * arg3: 'T3 -> 'U
 
+#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
+        /// <summary>Used to specify a default value for a nullable reference argument in the implementation of a function</summary>
+        /// <param name="defaultValue">The default value of the argument.</param>
+        /// <param name="arg">A nullable value representing the argument.</param>
+        /// <returns>The argument value. If it is null, the defaultValue is returned.</returns>
+        [<CompiledName("DefaultIfNull")>]
+        val inline defaultIfNull : defaultValue:'T -> arg:'T | null -> 'T when 'T : not null and 'T : not struct 
+
+        /// <summary>Used to specify a default value for an nullable value argument in the implementation of a function</summary>
+        /// <param name="defaultValue">The default value of the argument.</param>
+        /// <param name="arg">A nullable value representing the argument.</param>
+        /// <returns>The argument value. If it is null, the defaultValue is returned.</returns>
+        [<CompiledName("DefaultIfNullV")>]
+        val inline defaultIfNullV : defaultValue:'T -> arg:Nullable<'T> -> 'T 
+#endif
+
         /// <summary>Used to specify a default value for an optional argument in the implementation of a function</summary>
         ///
         /// <param name="arg">An option representing the argument.</param>
@@ -3362,7 +3461,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Unbox")>]
-        val inline unbox: value: obj -> 'T
+        val inline unbox: value: objnull -> 'T
 
         /// <summary>Boxes a strongly typed value.</summary>
         ///
@@ -3380,7 +3479,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Box")>]
-        val inline box: value: 'T -> obj
+        val inline box: value: 'T -> objnull
 
         /// <summary>Try to unbox a strongly typed value.</summary>
         ///
@@ -3398,7 +3497,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("TryUnbox")>]
-        val inline tryUnbox: value: obj -> 'T option
+        val inline tryUnbox: value: objnull -> 'T option
 
         /// <summary>Determines whether the given value is null.</summary>
         ///
@@ -3416,13 +3515,91 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("IsNull")>]
         val inline isNull: value: 'T -> bool when 'T: null
         
+#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
+        /// <summary>Determines whether the given value is null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>A choice indicating whether the value is null or not-null.</returns>
+        [<CompiledName("NullMatchPattern")>]
+        [<WarnOnWithoutNullArgument("tcPassingWithoutNullToNonNullAP", Localize=true)>]
+        val inline (|Null|NonNull|) : value: 'T | null -> Choice<unit, 'T>  when 'T : not null and 'T : not struct
+        
+        /// <summary>Determines whether the given value is null.</summary>
+        /// <remarks>In a future revision of nullness support this may be unified with 'Null|NonNull'.</remarks>
+        /// <param name="value">The value to check.</param>
+        /// <returns>A choice indicating whether the value is null or not-null.</returns>
+        [<CompiledName("NullValueMatchPattern")>]
+        val inline (|NullV|NonNullV|) : value: Nullable<'T> -> Choice<unit, 'T> 
+        
+        /// <summary>When used in a pattern checks the given value is not null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>The non-null value.</returns>
+        [<CompiledName("NonNullQuickPattern")>]
+        [<WarnOnWithoutNullArgument("tcPassingWithoutNullToNonNullQuickAP", Localize=true)>]
+        val inline (|NonNullQuick|) : value: 'T | null -> 'T when 'T : not null and 'T : not struct
+        
+        /// <summary>When used in a pattern checks the given value is not null.</summary>
+        /// <remarks>In a future revision of nullness support this may be unified with 'NonNullQuick'.</remarks>
+        /// <param name="value">The value to check.</param>
+        /// <returns>The non-null value.</returns>
+        [<CompiledName("NonNullQuickValuePattern")>]
+        val inline (|NonNullQuickV|) : value: Nullable<'T> -> 'T 
+        
+        /// <summary>Determines whether the given value is null.</summary>
+        /// <remarks>In a future revision of nullness support this may be unified with 'isNull'.</remarks>
+        /// <param name="value">The value to check.</param>
+        /// <returns>True when value is null, false otherwise.</returns>
+        [<CompiledName("IsNullV")>]
+        val inline isNullV : value:Nullable<'T> -> bool
+#else
+        /// <summary>Determines whether the given value is null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>A choice indicating whether the value is null or not-null.</returns>
+        [<CompiledName("NullMatchPattern")>]
+        val inline (|Null|NonNull|) : value: 'T -> Choice<unit, 'T>  when 'T : null and 'T : not struct 
+#endif
+
         /// <summary>Determines whether the given value is not null.</summary>
         ///
         /// <param name="value">The value to check.</param>
         ///
         /// <returns>True when value is not null, false otherwise.</returns>
         [<CompiledName("IsNotNull")>]
-        val inline internal isNotNull: value: 'T -> bool when 'T: null
+        val inline internal isNotNull: value:'T -> bool when 'T : null
+
+#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
+        /// <summary>Get the null value for a value type.</summary>
+        /// <remarks>In a future revision of nullness support this may be unified with 'null'.</remarks>
+        /// <returns>The null value for a value type.</returns>
+        [<CompiledName("NullV")>]
+        val inline nullV<'T when 'T : struct and 'T : (new : unit -> 'T) and 'T :> ValueType> :  Nullable<'T>
+
+        /// <summary>Asserts that the value is non-null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>The value when it is not null. If the value is null an exception is raised.</returns>
+        [<CompiledName("NonNull")>]
+        [<WarnOnWithoutNullArgument("tcPassingWithoutNullTononNullFunction", Localize=true)>]
+        val inline nonNull : value: 'T | null -> 'T when 'T : not null and 'T : not struct
+
+        /// <summary>Asserts that the value is non-null.</summary>
+        /// <remarks>In a future revision of nullness support this may be unified with 'nonNull'.</remarks>
+        /// <param name="value">The value to check.</param>
+        /// <returns>True when value is null, false otherwise.</returns>
+        [<CompiledName("NonNullV")>]
+        val inline nonNullV : value:Nullable<'T> -> 'T 
+
+        /// <summary>Asserts that the value is non-null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>True when value is null, false otherwise.</returns>
+        [<CompiledName("WithNull")>]
+        val inline withNull : value:'T -> 'T | null when 'T : not null and 'T : not struct
+
+        /// <summary>Asserts that the value is non-null.</summary>
+        /// <remarks>In a future revision of nullness support this may be unified with 'withNull'.</remarks>
+        /// <param name="value">The value to check.</param>
+        /// <returns>True when value is null, false otherwise.</returns>
+        [<CompiledName("WithNullV")>]
+        val inline withNullV : value:'T -> Nullable<'T> 
+#endif
 
         /// <summary>Throw a <see cref="T:System.Exception"/> exception.</summary>
         ///
@@ -3488,6 +3665,16 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("NullArg")>]
         val inline nullArg: argumentName: string -> 'T 
 
+#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
+        /// <summary>Throw a <c>System.ArgumentNullException if the given value is null</c> exception</summary>
+        /// 
+        /// <param name="argumentName">The argument name.</param>
+        /// 
+        /// <returns>The result value.</returns>
+        [<CompiledName("NullArgCheck")>]
+        val inline nullArgCheck : argumentName:string -> 'T | null -> 'T when 'T : not null and 'T : not struct
+#endif
+
         /// <summary>Throw a <see cref="T:System.InvalidOperationException"/> exception</summary>
         ///
         /// <param name="message">The exception message.</param>
@@ -3520,8 +3707,8 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="id-example">
         /// <code lang="fsharp">
-        /// id 12     //  Evaulates to 12
-        /// id "abc"  //  Evaulates to "abc"
+        /// id 12     //  Evaluates to 12
+        /// id "abc"  //  Evaluates to "abc"
         /// </code>
         /// </example>
         /// 
@@ -3662,7 +3849,7 @@ namespace Microsoft.FSharp.Core
         /// otherwise raise an exception. Calls <see cref="M:System.Environment.Exit"/>.</summary>
         ///
         /// <param name="exitcode">The exit code to use.</param>
-        /// 
+        ///
         /// <returns>Never returns.</returns>
         /// 
         /// <example id="exit-example">
@@ -4740,7 +4927,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish">The end index.</param>
             ///
             /// <returns>The sub array from the input indices.</returns>
-            val inline GetArraySlice: source:'T[] -> start:int option -> finish:int option -> 'T[] 
+            val inline GetArraySlice: source:'T array -> start:int option -> finish:int option -> 'T array 
 
             /// <summary>Sets a slice of an array</summary>
             ///
@@ -4748,7 +4935,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="start">The start index.</param>
             /// <param name="finish">The end index.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice: target:'T[] -> start:int option -> finish:int option -> source:'T[] -> unit
+            val inline SetArraySlice: target:'T array -> start:int option -> finish:int option -> source:'T array -> unit
 
             /// <summary>Gets a region slice of an array</summary>
             ///
@@ -4769,7 +4956,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish2">The end index of the second dimension.</param>
             ///
             /// <returns>The sub array from the input indices.</returns>
-            val inline GetArraySlice2DFixed1: source:'T[,] -> index1:int -> start2:int option -> finish2:int option -> 'T[]
+            val inline GetArraySlice2DFixed1: source:'T[,] -> index1:int -> start2:int option -> finish2:int option -> 'T array
 
             /// <summary>Gets a vector slice of a 2D array. The index of the second dimension is fixed.</summary>
             ///
@@ -4779,7 +4966,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index2">The fixed index of the second dimension.</param>
             ///
             /// <returns>The sub array from the input indices.</returns>
-            val inline GetArraySlice2DFixed2: source:'T[,] -> start1:int option -> finish1:int option -> index2: int -> 'T[]
+            val inline GetArraySlice2DFixed2: source:'T[,] -> start1:int option -> finish1:int option -> index2: int -> 'T array
 
             /// <summary>Sets a region slice of an array</summary>
             ///
@@ -4798,7 +4985,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="start2">The start index of the second dimension.</param>
             /// <param name="finish2">The end index of the second dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice2DFixed1: target:'T[,] -> index1:int -> start2:int option -> finish2:int option -> source:'T[] -> unit
+            val inline SetArraySlice2DFixed1: target:'T[,] -> index1:int -> start2:int option -> finish2:int option -> source:'T array -> unit
 
             /// <summary>Sets a vector slice of a 2D array. The index of the second dimension is fixed.</summary>
             ///
@@ -4807,7 +4994,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish1">The end index of the first dimension.</param>
             /// <param name="index2">The index of the second dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice2DFixed2: target:'T[,] -> start1:int option -> finish1:int option -> index2:int -> source:'T[] -> unit
+            val inline SetArraySlice2DFixed2: target:'T[,] -> start1:int option -> finish1:int option -> index2:int -> source:'T array -> unit
 
             /// <summary>Gets a slice of an array</summary>
             ///
@@ -4867,7 +5054,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish3">The end index of the third dimension.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice3DFixedDouble1: source:'T[,,] ->  index1:int -> index2:int -> start3:int option -> finish3:int option -> 'T[]
+            val inline GetArraySlice3DFixedDouble1: source:'T[,,] ->  index1:int -> index2:int -> start3:int option -> finish3:int option -> 'T array
 
             /// <summary>Gets a 1D slice of a 3D array.</summary>
             ///
@@ -4878,7 +5065,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index3">The fixed index of the third dimension.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice3DFixedDouble2: source:'T[,,] ->  index1:int -> start2:int option -> finish2:int option -> index3:int -> 'T[]
+            val inline GetArraySlice3DFixedDouble2: source:'T[,,] ->  index1:int -> start2:int option -> finish2:int option -> index3:int -> 'T array
 
             /// <summary>Gets a 1D slice of a 3D array.</summary>
             ///
@@ -4889,7 +5076,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index3">The fixed index of the third dimension.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice3DFixedDouble3: source:'T[,,] ->  start1:int option -> finish1:int option -> index2:int -> index3:int -> 'T[]
+            val inline GetArraySlice3DFixedDouble3: source:'T[,,] ->  start1:int option -> finish1:int option -> index2:int -> index3:int -> 'T array
 
             /// <summary>Sets a slice of an array</summary>
             ///
@@ -4952,7 +5139,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="source">The source array.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline SetArraySlice3DFixedDouble1: target: 'T[,,] -> index1: int -> index2: int -> start3: int option -> finish3: int option -> source: 'T[] -> unit
+            val inline SetArraySlice3DFixedDouble1: target: 'T[,,] -> index1: int -> index2: int -> start3: int option -> finish3: int option -> source: 'T array -> unit
 
             /// <summary>Sets a 1D slice of a 3D array.</summary>
             ///
@@ -4964,7 +5151,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="source">The source array.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline SetArraySlice3DFixedDouble2: target: 'T[,,] -> index1: int -> start2: int option -> finish2: int option -> index3: int -> source: 'T[] -> unit
+            val inline SetArraySlice3DFixedDouble2: target: 'T[,,] -> index1: int -> start2: int option -> finish2: int option -> index3: int -> source: 'T array -> unit
 
             /// <summary>Sets a 1D slice of a 3D array.</summary>
             ///
@@ -4976,7 +5163,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="source">The source array.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline SetArraySlice3DFixedDouble3: target: 'T[,,] -> start1: int option -> finish1: int option ->  index2: int -> index3: int -> source: 'T[] -> unit
+            val inline SetArraySlice3DFixedDouble3: target: 'T[,,] -> start1: int option -> finish1: int option ->  index2: int -> index3: int -> source: 'T array -> unit
 
             /// <summary>Gets a slice of an array</summary>
             ///
@@ -5137,7 +5324,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish4">The end index of the fourth dimension.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice4DFixedTriple4: source: 'T[,,,] -> index1: int -> index2: int -> index3: int -> start4: int option -> finish4: int option -> 'T[]
+            val inline GetArraySlice4DFixedTriple4: source: 'T[,,,] -> index1: int -> index2: int -> index3: int -> start4: int option -> finish4: int option -> 'T array
 
             /// <summary>Gets a 1D slice of a 4D array</summary>
             ///
@@ -5149,7 +5336,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index4">The fixed index of the fourth dimension.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice4DFixedTriple3: source: 'T[,,,] -> index1: int -> index2: int -> start3: int option -> finish3: int option -> index4: int -> 'T[]
+            val inline GetArraySlice4DFixedTriple3: source: 'T[,,,] -> index1: int -> index2: int -> start3: int option -> finish3: int option -> index4: int -> 'T array
             
             /// <summary>Gets a 1D slice of a 4D array</summary>
             ///
@@ -5161,7 +5348,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index4">The fixed index of the fourth dimension.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice4DFixedTriple2: source:'T[,,,] -> index1: int -> start2: int option -> finish2: int option -> index3: int -> index4: int -> 'T[]
+            val inline GetArraySlice4DFixedTriple2: source:'T[,,,] -> index1: int -> start2: int option -> finish2: int option -> index3: int -> index4: int -> 'T array
 
             /// <summary>Gets a 1D slice of a 4D array</summary>
             ///
@@ -5173,7 +5360,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index4">The fixed index of the fourth dimension.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice4DFixedTriple1: source: 'T[,,,] -> start1: int option -> finish1: int option -> index2: int -> index3: int -> index4: int -> 'T[]
+            val inline GetArraySlice4DFixedTriple1: source: 'T[,,,] -> start1: int option -> finish1: int option -> index2: int -> index3: int -> index4: int -> 'T array
             
             /// <summary>Sets a 3D slice of a 4D array</summary>
             ///
@@ -5308,7 +5495,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="start4">The start index of the fourth dimension.</param>
             /// <param name="finish4">The end index of the fourth dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice4DFixedTriple4: target:'T[,,,] -> index1:int -> index2:int -> index3:int -> start4:int option -> finish4:int option -> source: 'T[] -> unit
+            val inline SetArraySlice4DFixedTriple4: target:'T[,,,] -> index1:int -> index2:int -> index3:int -> start4:int option -> finish4:int option -> source: 'T array -> unit
 
             /// <summary>Sets a 1D slice of a 4D array</summary>
             ///
@@ -5319,7 +5506,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish3">The end index of the third dimension.</param>
             /// <param name="index4">The fixed index of the fourth dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice4DFixedTriple3: target:'T[,,,] -> index1:int -> index2:int -> start3:int option -> finish3:int option -> index4:int -> source: 'T[] -> unit
+            val inline SetArraySlice4DFixedTriple3: target:'T[,,,] -> index1:int -> index2:int -> start3:int option -> finish3:int option -> index4:int -> source: 'T array -> unit
             
             /// <summary>Sets a 1D slice of a 4D array</summary>
             ///
@@ -5330,7 +5517,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index3">The fixed index of the third dimension.</param>
             /// <param name="index4">The fixed index of the fourth dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice4DFixedTriple2: target:'T[,,,] -> index1:int -> start2: int option -> finish2:int option -> index3:int -> index4:int -> source: 'T[] -> unit
+            val inline SetArraySlice4DFixedTriple2: target:'T[,,,] -> index1:int -> start2: int option -> finish2:int option -> index3:int -> index4:int -> source: 'T array -> unit
 
             /// <summary>Sets a 1D slice of a 4D array</summary>
             ///
@@ -5341,7 +5528,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index3">The fixed index of the third dimension.</param>
             /// <param name="index4">The fixed index of the fourth dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice4DFixedTriple1: target:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> index3:int -> index4:int -> source: 'T[] -> unit
+            val inline SetArraySlice4DFixedTriple1: target:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> index3:int -> index4:int -> source: 'T array -> unit
 
             /// <summary>Sets a slice of an array</summary>
             ///
@@ -5578,7 +5765,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("Unbox")>]
-            val inline unbox<'T> : value: obj -> 'T
+            val inline unbox<'T> : value: objnull -> 'T
 
             /// <summary>Generate a default value for any type. This is null for reference types, 
             /// For structs, this is struct value where all fields have the default value. 
@@ -5616,6 +5803,26 @@ namespace Microsoft.FSharp.Core
             /// 
             [<CompiledName("Hash")>]
             val inline hash: 'T -> int
+
+            /// <summary>Unsafely retypes the value from ('T | null) to 'T without doing any null check at runtime. This is an unsafe operation.</summary>
+            /// <param name="value">The possibly nullable value.</param>
+            /// <returns>The same value as in the input.</returns>
+            [<CompiledName("NonNull")>]
+            #if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
+            val inline nonNull : value: 'T | null -> 'T when 'T : not null and 'T : not struct
+            #else
+            val inline nonNull : value: 'T  -> 'T
+            #endif
+
+            /// <summary>When used in a pattern forgets 'nullness' of the value without any runtime check. This is an unsafe operation, as null check is being skipped and null value can be returned.</summary>
+            /// <param name="value">The value to retype from ('T | null) to 'T .</param>
+            /// <returns>The non-null value.</returns>
+            [<CompiledName("NonNullQuickPattern")>]
+            #if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
+            val inline (|NonNullQuick|) : value: 'T | null -> 'T when 'T : not null and 'T : not struct
+            #else
+            val inline (|NonNullQuick|) : value: 'T  -> 'T
+            #endif
 
         /// <summary>A module of comparison and equality operators that are statically resolved, but which are not fully generic and do not make structural comparison. Opening this
         /// module may make code that relies on structural or generic comparison no longer compile.</summary>
@@ -6036,7 +6243,7 @@ namespace Microsoft.FSharp.Control
     ///
     /// <category index="3">Events and Observables</category>
     [<CompiledName("FSharpHandler`1")>]
-    type Handler<'T> =  delegate of sender:obj * args:'T -> unit 
+    type Handler<'T> =  delegate of sender:objnull * args:'T -> unit 
 
     /// <summary>First-class listening points (i.e. objects that permit you to register a callback
     /// activated when the event is triggered). </summary>

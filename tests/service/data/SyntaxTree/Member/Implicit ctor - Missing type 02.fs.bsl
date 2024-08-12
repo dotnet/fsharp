@@ -14,23 +14,32 @@ ImplFile
                     (Class,
                      [ImplicitCtor
                         (None, [],
-                         SimplePats
-                           ([Typed
-                               (Id (i, None, false, false, false, (3,7--3,8)),
-                                FromParseError (3,9--3,9), (3,7--3,9));
-                             Id (j, None, false, false, false, (3,11--3,12))],
-                            [(3,9--3,10)], (3,6--3,13)), None,
+                         Paren
+                           (Tuple
+                              (false,
+                               [Typed
+                                  (Named
+                                     (SynIdent (i, None), false, None,
+                                      (3,7--3,8)), FromParseError (3,9--3,9),
+                                   (3,7--3,9));
+                                Named
+                                  (SynIdent (j, None), false, None, (3,11--3,12))],
+                               [(3,9--3,10)], (3,7--3,12)), (3,6--3,13)), None,
                          PreXmlDoc ((3,6), FSharp.Compiler.Xml.XmlDocCollector),
                          (3,5--3,6), { AsKeyword = None })], (3,16--3,25)), [],
                   Some
                     (ImplicitCtor
                        (None, [],
-                        SimplePats
-                          ([Typed
-                              (Id (i, None, false, false, false, (3,7--3,8)),
-                               FromParseError (3,9--3,9), (3,7--3,9));
-                            Id (j, None, false, false, false, (3,11--3,12))],
-                           [(3,9--3,10)], (3,6--3,13)), None,
+                        Paren
+                          (Tuple
+                             (false,
+                              [Typed
+                                 (Named
+                                    (SynIdent (i, None), false, None, (3,7--3,8)),
+                                  FromParseError (3,9--3,9), (3,7--3,9));
+                               Named
+                                 (SynIdent (j, None), false, None, (3,11--3,12))],
+                              [(3,9--3,10)], (3,7--3,12)), (3,6--3,13)), None,
                         PreXmlDoc ((3,6), FSharp.Compiler.Xml.XmlDocCollector),
                         (3,5--3,6), { AsKeyword = None })), (3,5--3,25),
                   { LeadingKeyword = Type (3,0--3,4)
@@ -41,4 +50,4 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(3,9)-(3,10) parse error Unexpected symbol ',' in type definition
+(3,9)-(3,10) parse error Unexpected symbol ',' in pattern

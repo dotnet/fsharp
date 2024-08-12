@@ -750,4 +750,296 @@ let main _ =
 """
                     (set [| 0 |])
             ]
+        scenario
+            "Ghost dependency via top-level namespace"
+            [
+                sourceFile
+                    "Graph.fs"
+                    """
+namespace Graphoscope.Graph
+
+type UndirectedGraph = obj
+"""
+                    Set.empty
+                sourceFile
+                    "DiGraph.fs"
+                    """
+namespace Graphoscope
+
+open Graphoscope
+
+type DiGraph = obj
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Unused namespace should be detected"
+            [
+                sourceFile
+                    "File1.fs"
+                    """
+namespace My.Great.Namespace
+"""
+                    Set.empty
+
+                sourceFile
+                    "File2.fs"
+                    """
+namespace My.Great.Namespace
+
+open My.Great.Namespace
+
+type Foo = class end
+"""
+                    (set [| 0 |])
+                    
+                sourceFile
+                    "Program"
+                    """
+module RunMe
+printfn "Hello"
+"""
+                    Set.empty
+            ]
+        scenario
+            "Nameof module with namespace"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace X.Y.Z
+
+module Foo =
+    let x = 2
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+namespace X.Y.Z
+
+module Point =
+    let y = nameof Foo
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Nameof module without namespace"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+module Foo
+
+let x = 2
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Point
+
+let y = nameof Foo
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Single module name should always be checked, regardless of own namespace"
+            [
+                sourceFile "X.fs" "namespace X.Y" Set.empty
+                sourceFile
+                    "A.fs"
+                    """
+module Foo
+
+let x = 2
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+namespace X.Y
+
+type T() =
+    let _ = nameof Foo
+"""
+                    (set [| 1 |])
+            ]
+        scenario
+            "nameof pattern"
+            [
+                sourceFile "A.fs" "module Foo" Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Bar
+
+do
+    match "" with
+    | nameof Foo -> ()
+    | _ -> ()
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "parentheses around module name in nameof pattern"
+            [
+                sourceFile "A.fs" "module Foo" Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Bar
+
+do
+    match "" with
+    | nameof ((Foo)) -> ()
+    | _ -> ()
+"""
+                    (set [| 0 |])
+            ]
+            
+        scenario
+            "parentheses around module name in nameof expression"
+            [
+                sourceFile "A.fs" "module Foo" Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Bar
+
+let _ = nameof ((Foo))
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "prefixed module name in nameof expression"
+            [
+                sourceFile "A.fs" "module X.Y.Z" Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module B
+
+open System.ComponentModel
+
+[<Description(nameof X.Y.Z)>]
+let v = 2
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "prefixed module name in nameof pattern"
+            [
+                sourceFile "A.fs" "module X.Y.Z" Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module B
+
+do ignore (match "" with | nameof X.Y.Z -> () | _ -> ())
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "nameof type with generic parameters"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace A
+
+module B =
+    module C =
+        type D = class end
+"""
+                    Set.empty
+                sourceFile
+                    "Z.fs"
+                    """
+module Z
+
+open System.Threading.Tasks
+
+let _ = nameof Task<A.B.C.D>
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "exception syntax in namespace"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace Foo
+
+exception internal Blah
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+namespace Foo
+
+module Program =
+
+    [<EntryPoint>]
+    let main _ =
+        raise Blah
+        0
+"""
+                    (set [| 0 |])
+        ]
+        scenario
+            "exception syntax in namespace signature"
+            [
+                sourceFile
+                    "A.fsi"
+                    """
+namespace Foo
+
+exception internal Blah
+"""
+                    Set.empty
+                sourceFile
+                    "A.fs"
+                    """
+namespace Foo
+
+exception internal Blah
+"""
+                    (set [| 0 |])
+                sourceFile
+                    "B.fs"
+                    """
+namespace Foo
+
+module Program =
+
+    [<EntryPoint>]
+    let main _ =
+        raise Blah
+        0
+"""
+                    (set [| 0 |])
+        ]
+        scenario
+            "fully qualified type in tuple constructor pattern"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace MyRootNamespace.A
+
+type Foo() = class end
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+namespace MyRootNamespace.A.B
+
+type Bar(foo: MyRootNamespace.A.Foo, s: string) = class end
+"""
+                    (set [| 0 |])
+            ]
     ]

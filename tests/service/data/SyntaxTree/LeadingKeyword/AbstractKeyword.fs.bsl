@@ -20,7 +20,7 @@ ImplFile
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
                             PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, None, (3,4--3,20),
+                            Single None, None, (3,4--3,20),
                             { LeadingKeyword = Abstract (3,4--3,12)
                               InlineKeyword = None
                               WithKeyword = None

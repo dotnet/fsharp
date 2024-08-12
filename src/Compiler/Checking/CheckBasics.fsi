@@ -6,6 +6,7 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open FSharp.Compiler.Diagnostics
 open Internal.Utilities.Library
+open Internal.Utilities.Collections
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ConstraintSolver
@@ -128,6 +129,10 @@ type TcEnv =
         eLambdaArgInfos: ArgReprInfo list list
 
         eIsControlFlow: bool
+
+        // In order to avoid checking implicit-yield expressions multiple times, we cache the resulting checked expressions.
+        // This avoids exponential behavior in the type checker when nesting implicit-yield expressions.
+        eCachedImplicitYieldExpressions: HashMultiMap<range, SynExpr * TType * Expr>
     }
 
     member DisplayEnv: DisplayEnv
@@ -270,51 +275,44 @@ type TcFileState =
         argInfoCache: ConcurrentDictionary<(string * range), ArgReprInfo>
 
         // forward call
-        TcPat: WarnOnUpperFlag
-            -> TcFileState
-            -> TcEnv
-            -> PrelimValReprInfo option
-            -> TcPatValFlags
-            -> TcPatLinearEnv
-            -> TType
-            -> SynPat
-            -> (TcPatPhase2Input -> Pattern) * TcPatLinearEnv
+        TcPat:
+            WarnOnUpperFlag
+                -> TcFileState
+                -> TcEnv
+                -> PrelimValReprInfo option
+                -> TcPatValFlags
+                -> TcPatLinearEnv
+                -> TType
+                -> SynPat
+                -> (TcPatPhase2Input -> Pattern) * TcPatLinearEnv
 
         // forward call
-        TcSimplePats: TcFileState
-            -> bool
-            -> CheckConstraints
-            -> TType
-            -> TcEnv
-            -> TcPatLinearEnv
-            -> SynSimplePats
-            -> string list * TcPatLinearEnv
+        TcSimplePats:
+            TcFileState
+                -> bool
+                -> CheckConstraints
+                -> TType
+                -> TcEnv
+                -> TcPatLinearEnv
+                -> SynSimplePats
+                -> string list * TcPatLinearEnv
 
         // forward call
-        TcSequenceExpressionEntry: TcFileState
-            -> TcEnv
-            -> OverallTy
-            -> UnscopedTyparEnv
-            -> bool * SynExpr
-            -> range
-            -> Expr * UnscopedTyparEnv
+        TcSequenceExpressionEntry:
+            TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
 
         // forward call
-        TcArrayOrListComputedExpression: TcFileState
-            -> TcEnv
-            -> OverallTy
-            -> UnscopedTyparEnv
-            -> bool * SynExpr
-            -> range
-            -> Expr * UnscopedTyparEnv
+        TcArrayOrListComputedExpression:
+            TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
 
         // forward call
-        TcComputationExpression: TcFileState
-            -> TcEnv
-            -> OverallTy
-            -> UnscopedTyparEnv
-            -> range * Expr * TType * SynExpr
-            -> Expr * UnscopedTyparEnv
+        TcComputationExpression:
+            TcFileState
+                -> TcEnv
+                -> OverallTy
+                -> UnscopedTyparEnv
+                -> range * Expr * TType * SynExpr
+                -> Expr * UnscopedTyparEnv
     }
 
     static member Create:
@@ -329,9 +327,34 @@ type TcFileState =
         tcVal: TcValF *
         isInternalTestSpanStackReferring: bool *
         diagnosticOptions: FSharpDiagnosticOptions *
-        tcPat: (WarnOnUpperFlag -> TcFileState -> TcEnv -> PrelimValReprInfo option -> TcPatValFlags -> TcPatLinearEnv -> TType -> SynPat -> (TcPatPhase2Input -> Pattern) * TcPatLinearEnv) *
-        tcSimplePats: (TcFileState -> bool -> CheckConstraints -> TType -> TcEnv -> TcPatLinearEnv -> SynSimplePats -> string list * TcPatLinearEnv) *
-        tcSequenceExpressionEntry: (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv) *
-        tcArrayOrListSequenceExpression: (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv) *
-        tcComputationExpression: (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv) ->
+        tcPat:
+            (WarnOnUpperFlag
+                -> TcFileState
+                -> TcEnv
+                -> PrelimValReprInfo option
+                -> TcPatValFlags
+                -> TcPatLinearEnv
+                -> TType
+                -> SynPat
+                -> (TcPatPhase2Input -> Pattern) * TcPatLinearEnv) *
+        tcSimplePats:
+            (TcFileState
+                -> bool
+                -> CheckConstraints
+                -> TType
+                -> TcEnv
+                -> TcPatLinearEnv
+                -> SynSimplePats
+                -> string list * TcPatLinearEnv) *
+        tcSequenceExpressionEntry:
+            (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv) *
+        tcArrayOrListSequenceExpression:
+            (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv) *
+        tcComputationExpression:
+            (TcFileState
+                -> TcEnv
+                -> OverallTy
+                -> UnscopedTyparEnv
+                -> range * Expr * TType * SynExpr
+                -> Expr * UnscopedTyparEnv) ->
             TcFileState

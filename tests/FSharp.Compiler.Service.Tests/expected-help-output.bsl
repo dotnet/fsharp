@@ -91,6 +91,9 @@
 --deterministic[+|-]                     Produce a deterministic assembly
                                          (including module version GUID and
                                          timestamp)
+--realsig[+|-]                           Generate assembly with IL visibility
+                                         that matches the source code
+                                         visibility
 --pathmap:<path=sourcePath;...>          Maps physical paths to source path
                                          names output by the compiler
 --crossoptimize[+|-]                     Enable or disable cross-module
@@ -106,6 +109,8 @@
 --nowarn:<warn;...>                      Disable specific warning messages
 --warnon:<warn;...>                      Enable specific warnings that may be
                                          off by default
+--checknulls[+|-]                        Enable nullness declarations and
+                                         checks
 --consolecolors[+|-]                     Output warning and error messages in
                                          color
 

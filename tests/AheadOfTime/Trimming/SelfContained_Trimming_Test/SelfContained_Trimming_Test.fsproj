@@ -2,10 +2,9 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net8.0</TargetFrameworks>
+    <TargetFrameworks>net9.0</TargetFrameworks>
     <LangVersion>preview</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <DotNetBuildOffline>true</DotNetBuildOffline>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -17,8 +16,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <DotnetFscCompilerPath>$(MSBuildThisFileDirectory)../../../../artifacts/bin/fsc/Release/net8.0/fsc.dll</DotnetFscCompilerPath>
-    <Fsc_DotNET_DotnetFscCompilerPath>$(MSBuildThisFileDirectory)../../../../artifacts/bin/fsc/Release/net8.0/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
+    <DotnetFscCompilerPath>$(MSBuildThisFileDirectory)../../../../artifacts/bin/fsc/Release/net9.0/fsc.dll</DotnetFscCompilerPath>
+    <Fsc_DotNET_DotnetFscCompilerPath>$(MSBuildThisFileDirectory)../../../../artifacts/bin/fsc/Release/net9.0/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
     <FSharpPreferNetFrameworkTools>False</FSharpPreferNetFrameworkTools>
     <FSharpPrefer64BitTools>True</FSharpPrefer64BitTools>
   </PropertyGroup>

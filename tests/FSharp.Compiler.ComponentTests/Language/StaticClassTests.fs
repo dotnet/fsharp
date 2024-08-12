@@ -650,8 +650,8 @@ type B() =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Error 880, Line 4, Col 9, Line 4, Col 16, "Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.")
-             (Error 880, Line 5, Col 17, Line 5, Col 24, "Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.")
+             (Error 880, Line 4, Col 9, Line 4, Col 10, "Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.")
+             (Error 880, Line 5, Col 17, Line 5, Col 18, "Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.")
          ]
 
     [<Fact>]
@@ -682,8 +682,8 @@ type B() =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Error 880, Line 4, Col 9, Line 4, Col 16, "Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.")
-             (Error 880, Line 5, Col 17, Line 5, Col 24, "Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.")
+             (Error 880, Line 4, Col 9, Line 4, Col 10, "Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.")
+             (Error 880, Line 5, Col 17, Line 5, Col 18, "Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.")
              (Warning 3558, Line 4, Col 9, Line 4, Col 10, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
              (Warning 3558, Line 5, Col 17, Line 5, Col 18, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
          ]

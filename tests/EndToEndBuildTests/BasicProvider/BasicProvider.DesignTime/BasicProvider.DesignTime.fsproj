@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net8.0;net472</TargetFrameworks>
+    <TargetFrameworks>net9.0;net472</TargetFrameworks>
     <FSharpToolsDirectory>typeproviders</FSharpToolsDirectory>
     <DefineConstants>NO_GENERATIVE</DefineConstants>
     <DefineConstants>IS_DESIGNTIME</DefineConstants>
@@ -14,7 +14,7 @@
     <Compile Include="..\BasicProvider\BasicProvider.Runtime.fs">
       <Link>BasicProvider.Runtime.fs</Link>
     </Compile>
- 
+
      <!-- The design-time component contains a copy of the TPSDK core files -->
     <Compile Include="..\..\ProvidedTypes\ProvidedTypes.fsi">
       <Link>ProvidedTypes\ProvidedTypes.fsi</Link>

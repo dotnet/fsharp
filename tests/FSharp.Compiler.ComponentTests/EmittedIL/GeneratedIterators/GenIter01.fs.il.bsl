@@ -17,12 +17,12 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.assembly
+.mresource public FSharpSignatureCompressedData.assembly
 {
   
   
 }
-.mresource public FSharpOptimizationData.assembly
+.mresource public FSharpOptimizationCompressedData.assembly
 {
   
   
@@ -43,65 +43,46 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
-          squaresOfOneToTen() cil managed
+  .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> squaresOfOneToTen() cil managed
   {
     
     .maxstack  5
     .locals init (valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_0,
-             class [runtime]System.Collections.Generic.IEnumerator`1<int32> V_1,
-             class [runtime]System.Collections.Generic.IEnumerable`1<int32> V_2,
-             int32 V_3,
-             class [runtime]System.IDisposable V_4)
-    IL_0000:  nop
-    IL_0001:  ldc.i4.0
-    IL_0002:  ldc.i4.1
-    IL_0003:  ldc.i4.2
-    IL_0004:  call       class [runtime]System.Collections.Generic.IEnumerable`1<int32> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeInt32(int32,
-                                                                                                                                                                           int32,
-                                                                                                                                                                           int32)
-    IL_0009:  callvirt   instance class [runtime]System.Collections.Generic.IEnumerator`1<!0> class [runtime]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
-    IL_000e:  stloc.1
-    .try
-    {
-      IL_000f:  br.s       IL_0023
+             uint64 V_1,
+             int32 V_2,
+             int32 V_3)
+    IL_0000:  ldc.i4.0
+    IL_0001:  conv.i8
+    IL_0002:  stloc.1
+    IL_0003:  ldc.i4.0
+    IL_0004:  stloc.2
+    IL_0005:  br.s       IL_001d
 
-      IL_0011:  ldloc.1
-      IL_0012:  callvirt   instance !0 class [runtime]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
-      IL_0017:  stloc.3
-      IL_0018:  ldloca.s   V_0
-      IL_001a:  ldloc.3
-      IL_001b:  ldloc.3
-      IL_001c:  mul
-      IL_001d:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
-      IL_0022:  nop
-      IL_0023:  ldloc.1
-      IL_0024:  callvirt   instance bool [runtime]System.Collections.IEnumerator::MoveNext()
-      IL_0029:  brtrue.s   IL_0011
+    IL_0007:  ldloca.s   V_0
+    IL_0009:  ldloc.2
+    IL_000a:  stloc.3
+    IL_000b:  ldloc.3
+    IL_000c:  ldloc.3
+    IL_000d:  mul
+    IL_000e:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
+    IL_0013:  nop
+    IL_0014:  ldloc.2
+    IL_0015:  ldc.i4.1
+    IL_0016:  add
+    IL_0017:  stloc.2
+    IL_0018:  ldloc.1
+    IL_0019:  ldc.i4.1
+    IL_001a:  conv.i8
+    IL_001b:  add
+    IL_001c:  stloc.1
+    IL_001d:  ldloc.1
+    IL_001e:  ldc.i4.3
+    IL_001f:  conv.i8
+    IL_0020:  blt.un.s   IL_0007
 
-      IL_002b:  ldnull
-      IL_002c:  stloc.2
-      IL_002d:  leave.s    IL_0044
-
-    }  
-    finally
-    {
-      IL_002f:  ldloc.1
-      IL_0030:  isinst     [runtime]System.IDisposable
-      IL_0035:  stloc.s    V_4
-      IL_0037:  ldloc.s    V_4
-      IL_0039:  brfalse.s  IL_0043
-
-      IL_003b:  ldloc.s    V_4
-      IL_003d:  callvirt   instance void [runtime]System.IDisposable::Dispose()
-      IL_0042:  endfinally
-      IL_0043:  endfinally
-    }  
-    IL_0044:  ldloc.2
-    IL_0045:  pop
-    IL_0046:  ldloca.s   V_0
-    IL_0048:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
-    IL_004d:  ret
+    IL_0022:  ldloca.s   V_0
+    IL_0024:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+    IL_0029:  ret
   } 
 
 } 

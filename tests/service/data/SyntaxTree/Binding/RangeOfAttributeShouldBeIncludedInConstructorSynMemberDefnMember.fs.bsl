@@ -34,7 +34,7 @@ ImplFile
                                       GetterOrSetterIsCompilerGenerated = false
                                       MemberKind = Constructor },
                                SynValInfo ([[]], SynArgInfo ([], false, None)),
-                               None, None),
+                               None),
                             LongIdent
                               (SynLongIdent ([new], [], [None]), None,
                                Some (SynValTyparDecls (None, false)),

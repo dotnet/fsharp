@@ -44,7 +44,7 @@ type PackageBuildResolutionResult =
 module internal Utilities =
 
     let verifyFilesExist files =
-        files |> List.tryFind (fun f -> not (File.Exists(f))) |> Option.isNone
+        files |> List.tryFind (File.Exists >> not) |> Option.isNone
 
     let findLoadsFromResolutions (resolutions: Resolution[]) =
         resolutions
@@ -98,7 +98,7 @@ module internal Utilities =
                 File
                     .ReadAllText(resolutionsFile)
                     .Split([| '\r'; '\n' |], StringSplitOptions.None)
-                |> Array.filter (fun line -> not (String.IsNullOrEmpty(line)))
+                |> Array.filter (String.IsNullOrEmpty >> not)
             with _ ->
                 [||]
 
@@ -169,7 +169,7 @@ module internal Utilities =
                 insideSQ <- not insideSQ // keep reading
             | _ -> ()
 
-        result |> List.ofSeq |> List.map (fun option -> split option)
+        result |> List.ofSeq |> List.map split
 
     let executeTool pathToExe arguments workingDir environment timeout =
         match pathToExe with
@@ -197,7 +197,7 @@ module internal Utilities =
             psi.EnvironmentVariables.Remove("MSBuildSDKsPath") // Host can sometimes add this, and it can break things
 
             for varname, value in environment do
-                psi.EnvironmentVariables[ varname ] <- value
+                psi.EnvironmentVariables[varname] <- value
 
             psi.UseShellExecute <- false
 
@@ -224,7 +224,7 @@ module internal Utilities =
     let buildProject projectPath binLogPath timeout =
         let binLoggingArguments =
             match binLogPath with
-            | Some (path) ->
+            | Some(path) ->
                 let path =
                     match path with
                     | Some path -> path // specific file
@@ -235,7 +235,7 @@ module internal Utilities =
 
         let timeout =
             match timeout with
-            | Some (timeout) -> timeout
+            | Some(timeout) -> timeout
             | None -> -1
 
         let arguments prefix =
@@ -320,10 +320,9 @@ module internal Utilities =
             //      https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet5/nuget/v3/index.json
             // Use enabled feeds only (see NuGet.Commands.ListSourceRunner.Run) and strip off the flags.
             let pattern =
-                @"(\s*\d+\.+\s*)(?'name'\S*)(\s*)\[(?'enabled'Enabled|Disabled)\](\s*)$(\s*)(?'uri'\S*)"
+                @"(\s*\d+\.+\s*)(?'name'\S*)(\s*)\[(?'enabled'Enabled|Disabled)\](\s*)(?'uri'[^\0\r\n]*)"
 
-            let regex =
-                new Regex(pattern, RegexOptions.Multiline ||| RegexOptions.ExplicitCapture)
+            let regex = new Regex(pattern, RegexOptions.ExplicitCapture)
 
             let sourcelist = String.concat Environment.NewLine stdOut
 

@@ -172,6 +172,7 @@ type UsingMSBuild()  =
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.DefinitionLocationAttribute")>]
     // This test case check the GotoDefinition (i.e. the TypeProviderDefinitionLocation Attribute)
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     // We expect the correct FilePath, Line and Column on provided: Type, Event, Method, and Property
     // TODO: add a case for a provided Field
     member public this.``GotoDefinition.TypeProvider.DefinitionLocationAttribute``() =
@@ -337,6 +338,7 @@ type UsingMSBuild()  =
             )
         
     [<Test>]
+    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``GotoDefinition.ProvidedMemberNoDefinitionLocationAttribute``() = 
         let useCases = 
             [
@@ -560,12 +562,12 @@ type UsingMSBuild()  =
     [<Test>]
     member this.``GotoDefinition.OverloadResolutionForProperties``() =
         let lines = [ "type D() ="
-                      "  member this.Foo"
-                      "    with #1##2#get(i:int) = 1"
+                      "  member this.#1##2#Foo"
+                      "    with get(i:int) = 1"
                       "    and set (i:int) v = ()"
                       ""
-                      "  member this.Foo"
-                      "    with #3##4#get (s:string) = 1"
+                      "  member this.#3##4#Foo"
+                      "    with get (s:string) = 1"
                       "    and  set (s:string) v = ()"
                       ""
                       "D().$1$Foo 1"

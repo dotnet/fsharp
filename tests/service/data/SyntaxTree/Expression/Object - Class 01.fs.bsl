@@ -21,7 +21,7 @@ ImplFile
                                   MemberKind = Member },
                            SynValInfo
                              ([[SynArgInfo ([], false, None)]; []],
-                              SynArgInfo ([], false, None)), None, None),
+                              SynArgInfo ([], false, None)), None),
                         LongIdent
                           (SynLongIdent ([_; P1], [(4,14--4,15)], [None; None]),
                            None, None, Pats [], None, (4,13--4,17)), None,

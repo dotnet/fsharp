@@ -12,7 +12,7 @@ ImplFile
                   ObjectModel
                     (Unspecified,
                      [ImplicitCtor
-                        (None, [], SimplePats ([], [], (3,6--3,8)), None,
+                        (None, [], Const (Unit, (3,6--3,8)), None,
                          PreXmlDoc ((3,6), FSharp.Compiler.Xml.XmlDocCollector),
                          (3,5--3,6), { AsKeyword = None });
                       AutoProperty
@@ -32,7 +32,8 @@ ImplFile
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertySet },
                          PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         None, Const (Int32 7, (4,24--4,25)), (4,4--4,38),
+                         GetSet (None, None, None),
+                         Const (Int32 7, (4,24--4,25)), (4,4--4,38),
                          { LeadingKeyword =
                             MemberVal ((4,4--4,10), (4,11--4,14))
                            WithKeyword = Some (4,26--4,30)
@@ -42,7 +43,7 @@ ImplFile
                      (4,4--4,38)), [],
                   Some
                     (ImplicitCtor
-                       (None, [], SimplePats ([], [], (3,6--3,8)), None,
+                       (None, [], Const (Unit, (3,6--3,8)), None,
                         PreXmlDoc ((3,6), FSharp.Compiler.Xml.XmlDocCollector),
                         (3,5--3,6), { AsKeyword = None })), (3,5--4,38),
                   { LeadingKeyword = Type (3,0--3,4)

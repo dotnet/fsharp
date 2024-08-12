@@ -1072,6 +1072,46 @@ module ForLoopRegularCode =
             printfn $"hello, x = {x}"
             printfn $"hello, x = {x}"
 
+    let testSimpleForEachIntRangeStepLoopWithOneStatement (start, step, stop) =
+        for x in start .. step .. stop do
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachIntRangeStepLoopWithTwoStatements (start, step, stop) =
+        for x in start .. step .. stop do
+            printfn $"hello, x = {x}"
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachInt64RangeLoopWithOneStatement (start: int64, stop) =
+        for x in start .. stop do
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachInt64RangeLoopWithTwoStatements (start: int64, stop) =
+        for x in start .. stop do
+            printfn $"hello, x = {x}"
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachInt64RangeLoopDownWithOneStatement (start: int64, stop) =
+        for x in start .. -1L .. stop do
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachInt64RangeLoopDownWithTwoStatements (start: int64, stop) =
+        for x in start .. -1L .. stop do
+            printfn $"hello, x = {x}"
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachInt64RangeStepLoopWithOneStatement (start: int64, step, stop) =
+        for x in start .. step .. stop do
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachInt64RangeStepLoopWithTwoStatements (start: int64, step, stop) =
+        for x in start .. step .. stop do
+            printfn $"hello, x = {x}"
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachInt64RangeStepLoopWithConstCount () =
+        for x in 1L .. 3L .. 9L do
+            printfn $"hello, x = {x}"
+
     let testSimpleForEachIntLoopWithOneStatement (start, stop) =
         for x = start to stop do
             printfn $"hello, x = {x}"
@@ -1102,6 +1142,17 @@ module ForLoopRegularCode =
     testSimpleForEachIntRangeLoopWithTwoStatements (1, 3)
     testSimpleForEachIntRangeLoopDownWithOneStatement (1, 3)
     testSimpleForEachIntRangeLoopDownWithTwoStatements (1, 3)
+
+    testSimpleForEachIntRangeStepLoopWithOneStatement (-1, 5, 10)
+    testSimpleForEachIntRangeStepLoopWithTwoStatements (-1, 5, 10)
+    testSimpleForEachInt64RangeLoopWithOneStatement (3L, 7L)
+    testSimpleForEachInt64RangeLoopWithTwoStatements (-4L, 0L)
+    testSimpleForEachInt64RangeLoopDownWithOneStatement (3L, -1L)
+    testSimpleForEachInt64RangeLoopDownWithTwoStatements (3L, -1L)
+    testSimpleForEachInt64RangeStepLoopWithOneStatement (0L, 2L, 5L)
+    testSimpleForEachInt64RangeStepLoopWithTwoStatements (0L, 2L, 5L)
+    testSimpleForEachInt64RangeStepLoopWithConstCount ()
+
     testSimpleForEachIntLoopWithOneStatement (1, 3)
     testSimpleForEachIntLoopWithTwoStatements (1, 3)
     testSimpleForEachIntLoopDownWithOneStatement (1, 3)
@@ -1143,6 +1194,20 @@ module ForLoopInGeneratedList =
         [ for x in inp do
             yield x + 1 ]
 
+    let testSimpleListEachListLoopWithInitialLetBindings f g (inp:int list) =
+        [ let y = f ()
+          let z = g ()
+          for x in inp do
+            printfn $"hello, x = {x}"
+            yield x + y + z ]
+
+    let testSimpleListEachListLoopWithInitialSequentialExpression f g (inp:int list) =
+        [ f ()
+          g ()
+          for x in inp do
+            printfn $"hello, x = {x}"
+            yield x + 1 ]
+
     let testSimpleListEachListLoopWithTwoStatements (inp:int list) =
         [ for x in inp do
             printfn $"hello, x = {x}"
@@ -1159,6 +1224,19 @@ module ForLoopInGeneratedList =
 
     let testSimpleListEachIntRangeLoopWithOneStatement (start, stop) =
         [ for x in start .. stop do
+            yield x + 1 ]
+
+    let testSimpleListEachIntRangeLoopWithInitialLetBindings f g (start, stop) =
+        [ let y = f ()
+          let z = g ()
+          for x in start .. stop do
+            printfn $"hello, x = {x}"
+            yield x + y + z ]
+
+    let testSimpleListEachIntRangeLoopWithInitialSequentialExpression f g (start, stop) =
+        [ f ()
+          g ()
+          for x in start .. stop do
             yield x + 1 ]
 
     let testSimpleListEachIntRangeLoopWithTwoStatements (start, stop) =
@@ -1198,10 +1276,14 @@ module ForLoopInGeneratedList =
     testSimpleListEachArrayLoopWithOneStatement [|1;2;3|]
     testSimpleListEachArrayLoopWithTwoStatements [|1;2;3|]
     testSimpleListEachListLoopWithOneStatement [1;2;3]
+    testSimpleListEachListLoopWithInitialLetBindings (fun () -> 7) (fun () -> 8) [1;2;3]
+    testSimpleListEachListLoopWithInitialSequentialExpression (fun () -> printfn "7") (fun () -> printfn "8") [1;2;3]
     testSimpleListEachListLoopWithTwoStatements [1;2;3]
     testSimpleListEachStringLoopWithOneStatement "123"
     testSimpleListEachStringLoopWithTwoStatements "123"
     testSimpleListEachIntRangeLoopWithOneStatement (1, 3)
+    testSimpleListEachIntRangeLoopWithInitialLetBindings (fun () -> 7) (fun () -> 8) (1, 3)
+    testSimpleListEachIntRangeLoopWithInitialSequentialExpression (fun () -> printfn "7") (fun () -> printfn "8") (1, 3)
     testSimpleListEachIntRangeLoopWithTwoStatements (1, 3)
     testSimpleListEachIntRangeLoopDownWithOneStatement (1, 3)
     testSimpleListEachIntRangeLoopDownWithTwoStatements (1, 3)
@@ -1209,6 +1291,127 @@ module ForLoopInGeneratedList =
     testSimpleListEachIntLoopWithTwoStatements (1, 3)
     testSimpleListEachIntLoopDownWithOneStatement (1, 3)
     testSimpleListEachIntLoopDownWithTwoStatements (1, 3)
+
+module ForLoopInGeneratedArray =
+    let testSimpleArrayEachSeqLoopWithOneStatement inp =
+        [| for x in inp do
+             yield x+1 |]
+
+    let testSimpleArrayEachSeqLoopWithTwoStatements inp =
+        [| for x in inp do
+            printfn $"hello, x = {x}"
+            yield x + 1 |]
+
+    let testSimpleArrayEachArrayLoopWithOneStatement (inp:int array) =
+        [| for x in inp do
+            yield x + 1 |]
+
+    let testSimpleArrayEachArrayLoopWithTwoStatements (inp:int array) =
+        [| for x in inp do
+            printfn $"hello, x = {x}"
+            yield x + 1 |]
+
+    let testSimpleArrayEachListLoopWithOneStatement (inp:int list) =
+        [| for x in inp do
+            yield x + 1 |]
+
+    let testSimpleArrayEachListLoopWithInitialLetBindings f g (inp:int array) =
+        [| let y = f ()
+           let z = g ()
+           for x in inp do
+            printfn $"hello, x = {x}"
+            yield x + y + z |]
+
+    let testSimpleArrayEachListLoopWithInitialSequentialExpression f g (inp:int array) =
+        [| f ()
+           g ()
+           for x in inp do
+            printfn $"hello, x = {x}"
+            yield x + 1 |]
+
+    let testSimpleArrayEachListLoopWithTwoStatements (inp:int list) =
+        [| for x in inp do
+            printfn $"hello, x = {x}"
+            yield x + 1 |]
+
+    let testSimpleArrayEachStringLoopWithOneStatement (inp:string) =
+        [| for x in inp do
+            yield x |]
+
+    let testSimpleArrayEachStringLoopWithTwoStatements (inp:string) =
+        [| for x in inp do
+            printfn $"hello, x = {x}"
+            yield x |]
+
+    let testSimpleArrayEachIntRangeLoopWithOneStatement (start, stop) =
+        [| for x in start .. stop do
+            yield x + 1 |]
+
+    let testSimpleArrayEachIntRangeLoopWithInitialLetBindings f g (start, stop) =
+        [| let y = f ()
+           let z = g ()
+           for x in start .. stop do
+            printfn $"hello, x = {x}"
+            yield x + y + z |]
+
+    let testSimpleArrayEachIntRangeLoopWithInitialSequentialExpression f g (start, stop) =
+        [| f ()
+           g ()
+           for x in start .. stop do
+            yield x + 1 |]
+
+    let testSimpleArrayEachIntRangeLoopWithTwoStatements (start, stop) =
+        [| for x in start .. stop do
+            printfn $"hello, x = {x}"
+            yield x + 1 |]
+
+    let testSimpleArrayEachIntRangeLoopDownWithOneStatement (start, stop) =
+        [| for x in stop .. -1 .. start do
+            yield x + 1 |]
+
+    let testSimpleArrayEachIntRangeLoopDownWithTwoStatements (start, stop) =
+        [| for x in stop .. -1 .. stop do
+            printfn $"hello, x = {x}"
+            yield x + 1 |]
+
+    let testSimpleArrayEachIntLoopWithOneStatement (start, stop) =
+        [| for x = start to stop do
+            yield x + 1 |]
+
+    let testSimpleArrayEachIntLoopWithTwoStatements (start, stop) =
+        [| for x = start to stop do
+            printfn $"hello, x = {x}"
+            yield x + 1 |]
+
+    let testSimpleArrayEachIntLoopDownWithOneStatement (start, stop) =
+        [| for x = stop downto start do
+            yield x + 1 |]
+
+    let testSimpleArrayEachIntLoopDownWithTwoStatements (start, stop) =
+        [| for x = stop downto start do
+            printfn $"hello, x = {x}"
+            yield x + 1 |]
+
+    testSimpleArrayEachSeqLoopWithOneStatement [1;2;3]
+    testSimpleArrayEachSeqLoopWithTwoStatements [1;2;3]
+    testSimpleArrayEachArrayLoopWithOneStatement [|1;2;3|]
+    testSimpleArrayEachArrayLoopWithTwoStatements [|1;2;3|]
+    testSimpleArrayEachListLoopWithOneStatement [1;2;3]
+    testSimpleArrayEachListLoopWithInitialLetBindings (fun () -> 7) (fun () -> 8) [|1;2;3|]
+    testSimpleArrayEachListLoopWithInitialSequentialExpression (fun () -> printfn "7") (fun () -> printfn "8") [|1;2;3|]
+    testSimpleArrayEachListLoopWithTwoStatements [1;2;3]
+    testSimpleArrayEachStringLoopWithOneStatement "123"
+    testSimpleArrayEachStringLoopWithTwoStatements "123"
+    testSimpleArrayEachIntRangeLoopWithOneStatement (1, 3)
+    testSimpleArrayEachIntRangeLoopWithInitialLetBindings (fun () -> 7) (fun () -> 8) (1, 3)
+    testSimpleArrayEachIntRangeLoopWithInitialSequentialExpression (fun () -> printfn "7") (fun () -> printfn "8") (1, 3)
+    testSimpleArrayEachIntRangeLoopWithTwoStatements (1, 3)
+    testSimpleArrayEachIntRangeLoopDownWithOneStatement (1, 3)
+    testSimpleArrayEachIntRangeLoopDownWithTwoStatements (1, 3)
+    testSimpleArrayEachIntLoopWithOneStatement (1, 3)
+    testSimpleArrayEachIntLoopWithTwoStatements (1, 3)
+    testSimpleArrayEachIntLoopDownWithOneStatement (1, 3)
+    testSimpleArrayEachIntLoopDownWithTwoStatements (1, 3)
 
 #if NETCOREAPP
     let testSimpleListEachReadOnlySpanLoopWithOneStatement (inp: System.ReadOnlySpan<char>) =

@@ -21,7 +21,7 @@ ImplFile
                                   MemberKind = Member },
                            SynValInfo
                              ([[SynArgInfo ([], false, None)]; []],
-                              SynArgInfo ([], false, None)), None, None),
+                              SynArgInfo ([], false, None)), None),
                         LongIdent
                           (SynLongIdent
                              ([this; P1], [(4,16--4,17)], [None; None]), None,
@@ -45,7 +45,7 @@ ImplFile
                                   MemberKind = Member },
                            SynValInfo
                              ([[SynArgInfo ([], false, None)]; []],
-                              SynArgInfo ([], false, None)), None, None),
+                              SynArgInfo ([], false, None)), None),
                         LongIdent
                           (SynLongIdent
                              ([this; P2], [(5,16--5,17)], [None; None]), None,
@@ -61,5 +61,6 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(5,5)-(5,11) parse error Possible incorrect indentation: this token is offside of context started at position (4:6). Try indenting this token further or using standard formatting conventions.
+(5,5)-(5,11) parse error Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (4:6). Try indenting this further.
+To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
 (5,5)-(5,11) parse error Expecting expression

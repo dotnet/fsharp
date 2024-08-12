@@ -21,12 +21,7 @@ open FSharp.Compiler.EditorServices
 open CancellableTasks
 
 type internal FSharpAsyncQuickInfoSource
-    (
-        xmlMemberIndexService,
-        metadataAsSource: FSharpMetadataAsSourceService,
-        textBuffer: ITextBuffer,
-        editorOptions: EditorOptions
-    ) =
+    (xmlMemberIndexService, metadataAsSource: FSharpMetadataAsSourceService, textBuffer: ITextBuffer, editorOptions: EditorOptions) =
 
     let getQuickInfoItem (sourceText, (document: Document), (lexerSymbol: LexerSymbol), (ToolTipText elements)) =
         cancellableTask {
@@ -36,7 +31,12 @@ type internal FSharpAsyncQuickInfoSource
             let getSingleContent (data: ToolTipElement) =
 
                 let symbol, description, documentation =
-                    XmlDocumentation.BuildSingleTipText(documentationBuilder, data, XmlDocumentation.DefaultLineLimits)
+                    XmlDocumentation.BuildSingleTipText(
+                        documentationBuilder,
+                        data,
+                        XmlDocumentation.DefaultLineLimits,
+                        editorOptions.QuickInfo.ShowRemarks
+                    )
 
                 let getLinkTooltip filePath =
                     let solutionDir = Path.GetDirectoryName(document.Project.Solution.FilePath)
@@ -44,7 +44,8 @@ type internal FSharpAsyncQuickInfoSource
 
                     [
                         Path.GetRelativePath(projectDir, filePath)
-                        Path.GetRelativePath(solutionDir, filePath)
+                        if not (isNull solutionDir) then
+                            Path.GetRelativePath(solutionDir, filePath)
                     ]
                     |> List.minBy String.length
 
@@ -64,8 +65,8 @@ type internal FSharpAsyncQuickInfoSource
                 let textSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, lexerSymbol.Range)
 
                 match textSpan with
-                | None -> return None
-                | Some textSpan ->
+                | ValueNone -> return None
+                | ValueSome textSpan ->
                     let trackingSpan =
                         textBuffer.CurrentSnapshot.CreateTrackingSpan(textSpan.Start, textSpan.Length, SpanTrackingMode.EdgeInclusive)
 
@@ -144,7 +145,8 @@ type internal FSharpAsyncQuickInfoSource
 [<Name("F# Quick Info Provider")>]
 [<ContentType(FSharpConstants.FSharpLanguageName)>]
 [<Order>]
-type internal FSharpAsyncQuickInfoSourceProvider [<ImportingConstructor>]
+type internal FSharpAsyncQuickInfoSourceProvider
+    [<ImportingConstructor>]
     (
         [<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider,
         metadataAsSource: FSharpMetadataAsSourceService,

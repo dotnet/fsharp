@@ -26,7 +26,7 @@ let mkRational p q =
 
     let p, q = if q > BigInteger.Zero then p, q else -p, -q
 
-     in
+    in
 
     { numerator = p; denominator = q }
 

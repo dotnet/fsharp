@@ -32,6 +32,7 @@ type Win32Resource =
     new:
         data: byte[] * codePage: DWORD * languageId: DWORD * id: int * name: string * typeId: int * typeName: string ->
             Win32Resource
+
     member CodePage: DWORD
     member Data: byte[]
     member Id: int
@@ -47,6 +48,7 @@ type CvtResFile =
 [<Class>]
 type Win32ResourceConversions =
     static member AppendIconToResourceStream: resStream: Stream * iconStream: Stream -> unit
+
     static member AppendVersionToResourceStream:
         resStream: Stream *
         isDll: Boolean *
@@ -62,12 +64,14 @@ type Win32ResourceConversions =
         ?comments: string *
         ?companyName: string ->
             unit
+
     static member AppendManifestToResourceStream: resStream: Stream * manifestStream: Stream * isDll: Boolean -> unit
 
 // Write native resources
 [<Class>]
 type NativeResourceWriter =
     static member SortResources: resources: IEnumerable<Win32Resource> -> IEnumerable<Win32Resource>
+
     static member SerializeWin32Resources:
         builder: BlobBuilder * theResources: IEnumerable<Win32Resource> * resourcesRva: int -> unit
 (*

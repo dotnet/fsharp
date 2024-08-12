@@ -22,7 +22,7 @@ let nugetCache =
     | null -> Path.Combine(System.Environment.GetEnvironmentVariable "USERPROFILE", ".nuget", "packages")
     | path -> path
 let rootFolder = Path.Combine(__SOURCE_DIRECTORY__, "..", "..")
-let compilerBinFolder = Path.Combine(rootFolder, "artifacts", "bin", "fsc", releaseOrDebug, "net472")
+let compilerBinFolder = Path.Combine(rootFolder, "artifacts", "bin", "fsc", releaseOrDebug, "net9.0")
 setEnvVar "CSC_PIPE"      (Path.Combine(nugetCache, "Microsoft.Net.Compilers", "4.3.0-1.22220.8", "tools", "csc.exe"))
 setEnvVar "FSC"           (Path.Combine(compilerBinFolder, "fsc.exe"))
 setEnvVar "FSCOREDLLPATH" (Path.Combine(compilerBinFolder, "FSharp.Core.dll"))

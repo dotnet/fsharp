@@ -27,6 +27,7 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.CheckExpressionsOps
 
 type cenv = TcFileState
 
@@ -171,11 +172,13 @@ and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synS
         let ps', patEnvR = (patEnv, List.zip ptys ps) ||> List.mapFold (fun patEnv (ty, pat) -> TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnv pat)
         ps', patEnvR
 
-and TcSimplePatsOfUnknownType (cenv: cenv) optionalArgsOK checkConstraints env tpenv synSimplePats =
+and TcSimplePatsOfUnknownType (cenv: cenv) optionalArgsOK checkConstraints env tpenv (pat: SynPat) =
     let g = cenv.g
     let argTy = NewInferenceType g
     let patEnv = TcPatLinearEnv (tpenv, NameMap.empty, Set.empty)
-    TcSimplePats cenv optionalArgsOK checkConstraints argTy env patEnv synSimplePats
+    let spats, _ = SimplePatsOfPat cenv.synArgNameGenerator pat
+    let names, patEnv = TcSimplePats cenv optionalArgsOK checkConstraints argTy env patEnv spats
+    names, patEnv, spats
 
 and TcPatBindingName cenv env id ty isMemberThis vis1 valReprInfo (vFlags: TcPatValFlags) (names, takenNames: Set<string>) =
     let (TcPatValFlags(inlineFlag, declaredTypars, argAttribs, isMutable, vis2, isCompGen)) = vFlags
@@ -216,7 +219,7 @@ and TcPatBindingName cenv env id ty isMemberThis vis1 valReprInfo (vFlags: TcPat
 and TcPatAndRecover warnOnUpper cenv (env: TcEnv) valReprInfo (vFlags: TcPatValFlags) patEnv ty (synPat: SynPat) =
     try
        TcPat warnOnUpper cenv env valReprInfo vFlags patEnv ty synPat
-    with e ->
+    with RecoverableException e ->
         // Error recovery - return some rubbish expression, but replace/annotate
         // the type of the current expression with a type variable that indicates an error
         let m = synPat.Range
@@ -291,7 +294,11 @@ and TcPat warnOnUpper (cenv: cenv) env valReprInfo vFlags (patEnv: TcPatLinearEn
         TcPatAnds warnOnUpper cenv env vFlags patEnv ty pats m
 
     | SynPat.LongIdent (longDotId=longDotId; typarDecls=tyargs; argPats=args; accessibility=vis; range=m) ->
-        TcPatLongIdent warnOnUpper cenv env ad valReprInfo vFlags patEnv ty (longDotId, tyargs, args, vis, m)
+        try
+            TcPatLongIdent warnOnUpper cenv env ad valReprInfo vFlags patEnv ty (longDotId, tyargs, args, vis, m)
+        with RecoverableException e ->
+            errorRecovery e m
+            (fun _ -> TPat_error m), patEnv
 
     | SynPat.QuoteExpr(_, m) ->
         errorR (Error(FSComp.SR.tcInvalidPattern(), m))
@@ -335,7 +342,7 @@ and TcConstPat warnOnUpper cenv env vFlags patEnv ty synConst m =
         try
             let c = TcConst cenv ty m env synConst
             (fun _ -> TPat_const (c, m)), patEnv
-        with e ->
+        with RecoverableException e ->
             errorRecovery e m
             (fun _ -> TPat_error m), patEnv
 
@@ -387,14 +394,14 @@ and TcPatOr warnOnUpper cenv env vFlags patEnv ty pat1 pat2 m =
     let pat2R, patEnv2 = TcPat warnOnUpper cenv env None vFlags (TcPatLinearEnv(tpenv, names, takenNames)) ty pat2
     let (TcPatLinearEnv(tpenv, names2, takenNames2)) = patEnv2
 
-    if not (takenNames1 = takenNames2) then
+    if takenNames1 <> takenNames2 then
         errorR (UnionPatternsBindDifferentNames m)
 
     names1 |> Map.iter (fun _ (PrelimVal1 (id=id1; prelimType=ty1)) ->
         match names2.TryGetValue id1.idText with
         | true, PrelimVal1 (id=id2; prelimType=ty2) ->
             try UnifyTypes cenv env id2.idRange ty1 ty2
-            with exn -> errorRecovery exn m
+            with RecoverableException exn -> errorRecovery exn m
         | _ -> ())
 
     let namesR = NameMap.layer names1 names2
@@ -417,7 +424,7 @@ and TcPatTuple warnOnUpper cenv env vFlags patEnv ty isExplicitStruct args m =
         let argsR, acc = TcPatterns warnOnUpper cenv env vFlags patEnv argTys args
         let phase2 values = TPat_tuple(tupInfo, List.map (fun f -> f values) argsR, argTys, m)
         phase2, acc
-    with e ->
+    with RecoverableException e ->
         errorRecovery e m
         let _, acc = TcPatterns warnOnUpper cenv env vFlags patEnv (NewInferenceTypes g args) args
         let phase2 _ = TPat_error m
@@ -440,7 +447,7 @@ and TcRecordPat warnOnUpper cenv env vFlags patEnv ty fieldPats m =
     | None -> (fun _ -> TPat_error m), patEnv
     | Some(tinst, tcref, fldsmap, _fldsList) ->
 
-    let gtyp = mkAppTy tcref tinst
+    let gtyp = mkWoNullAppTy tcref tinst
     let inst = List.zip (tcref.Typars m) tinst
 
     UnifyTypes cenv env m ty gtyp
@@ -462,7 +469,7 @@ and TcRecordPat warnOnUpper cenv env vFlags patEnv ty fieldPats m =
 and TcNullPat cenv env patEnv ty m =
     try
         AddCxTypeUseSupportsNull env.DisplayEnv cenv.css m NoTrace ty
-    with exn ->
+    with RecoverableException exn ->
         errorRecovery exn m
     (fun _ -> TPat_null m), patEnv
 
@@ -486,7 +493,7 @@ and IsNameOf (cenv: cenv) (env: TcEnv) ad m (id: Ident) =
     let g = cenv.g
     id.idText = "nameof" &&
     try
-        match ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.NameEnv TypeNameResolutionInfo.Default [id] with
+        match ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.NameEnv TypeNameResolutionInfo.Default [id] None with
         | Result (_, Item.Value vref, _) -> valRefEq g vref g.nameof_vref
         | _ -> false
     with _ -> false
@@ -579,9 +586,14 @@ and ApplyUnionCaseOrExn m (cenv: cenv) env overallTy item =
         CheckUnionCaseAccessible cenv.amap m ad ucref |> ignore
         let resTy = actualResultTyOfUnionCase ucinfo.TypeInst ucref
         let inst = mkTyparInst ucref.TyconRef.TyparsNoRange ucinfo.TypeInst
-        UnifyTypes cenv env m overallTy resTy
-        let mkf mArgs args = TPat_unioncase(ucref, ucinfo.TypeInst, args, unionRanges m mArgs)
-        mkf, actualTysOfUnionCaseFields inst ucref, [ for f in ucref.AllFieldsAsList -> f]
+        let mkf =
+            try
+                UnifyTypes cenv env m overallTy resTy
+                fun mArgs args -> TPat_unioncase(ucref, ucinfo.TypeInst, args, unionRanges m mArgs)
+            with RecoverableException e ->
+                errorRecovery e m
+                fun _ _ -> TPat_error m
+        mkf, actualTysOfUnionCaseFields inst ucref, [ for f in ucref.AllFieldsAsList -> f ]
 
     | _ ->
         invalidArg "item" "not a union case or exception reference"
@@ -776,4 +788,3 @@ and TcPatLongIdentLiteral warnOnUpper (cenv: cenv) env vFlags patEnv ty (mLongId
 and TcPatterns warnOnUpper cenv env vFlags s argTys args =
     assert (List.length args = List.length argTys)
     List.mapFold (fun s (ty, pat) -> TcPat warnOnUpper cenv env None vFlags s ty pat) s (List.zip argTys args)
-

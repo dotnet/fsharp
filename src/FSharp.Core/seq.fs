@@ -33,7 +33,7 @@ module Internal =
     let inline addToBuilder (item: 'T) (builder: byref<ArrayBuilder<'T>>) =
         match builder.currentCount = builder.currentArray.Length with
         | false ->
-            builder.currentArray[ builder.currentCount ] <- item
+            builder.currentArray[builder.currentCount] <- item
             builder.currentCount <- builder.currentCount + 1
         | true ->
             let newArr = Array.zeroCreateUnchecked (builder.currentArray.Length * 2)
@@ -138,7 +138,7 @@ module Internal =
                 }
 
         let mapi f (e: IEnumerator<_>) : IEnumerator<_> =
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (f)
+            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(f)
             let mutable i = -1
 
             upcast
@@ -157,7 +157,7 @@ module Internal =
                 }
 
         let map2 f (e1: IEnumerator<_>) (e2: IEnumerator<_>) : IEnumerator<_> =
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (f)
+            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(f)
 
             upcast
                 { new MapEnumerator<_>() with
@@ -179,7 +179,7 @@ module Internal =
                 }
 
         let mapi2 f (e1: IEnumerator<_>) (e2: IEnumerator<_>) : IEnumerator<_> =
-            let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt (f)
+            let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(f)
             let mutable i = -1
 
             upcast
@@ -201,7 +201,7 @@ module Internal =
                 }
 
         let map3 f (e1: IEnumerator<_>) (e2: IEnumerator<_>) (e3: IEnumerator<_>) : IEnumerator<_> =
-            let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt (f)
+            let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(f)
 
             upcast
                 { new MapEnumerator<_>() with
@@ -299,7 +299,7 @@ module Internal =
                     member _.DoMoveNext curr =
                         match f state with
                         | None -> false
-                        | Some (r, s) ->
+                        | Some(r, s) ->
                             curr <- r
                             state <- s
                             true
@@ -344,7 +344,7 @@ module Internal =
                         alreadyFinished ()
 
                     match box current with
-                    | null -> current <- Lazy<_>.Create (fun () -> f index)
+                    | null -> current <- Lazy<_>.Create(fun () -> f index)
                     | _ -> ()
                     // forced or re-forced immediately.
                     current.Force()
@@ -471,18 +471,19 @@ module Internal =
 
                         | Yield _ as res -> res
 
-                        | Goto next -> Goto(GenerateThen<_>.Bind (next, cont)))
+                        | Goto next -> Goto(GenerateThen<_>.Bind(next, cont)))
 
                 member _.Disposer = g.Disposer
 
             static member Bind(g: Generator<'T>, cont) =
                 match g with
                 | :? GenerateThen<'T> as g ->
-                    GenerateThen<_>.Bind (g.Generator, (fun () -> GenerateThen<_>.Bind (g.Cont(), cont)))
+                    GenerateThen<_>
+                        .Bind(g.Generator, (fun () -> GenerateThen<_>.Bind(g.Cont(), cont)))
                 | g -> (new GenerateThen<'T>(g, cont) :> Generator<'T>)
 
         let bindG g cont =
-            GenerateThen<_>.Bind (g, cont)
+            GenerateThen<_>.Bind(g, cont)
 
         // Internal type. Drive an underlying generator. Crucially when the generator returns
         // a new generator we simply update our current generator and continue. Thus the enumerator
@@ -659,7 +660,7 @@ module Seq =
     let iteri action (source: seq<'T>) =
         checkNonNull "source" source
         use e = source.GetEnumerator()
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (action)
+        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(action)
         let mutable i = 0
 
         while e.MoveNext() do
@@ -872,7 +873,7 @@ module Seq =
         checkNonNull "source" source
 
         match source with
-        | :? ('T[]) as a -> a.Length = 0
+        | :? ('T array) as a -> a.Length = 0
         | :? ('T list) as a -> a.IsEmpty
         | :? ICollection<'T> as a -> a.Count = 0
         | _ ->
@@ -889,7 +890,7 @@ module Seq =
         checkNonNull "source" source
 
         match source with
-        | :? ('T[]) as a -> a.Length
+        | :? ('T array) as a -> a.Length
         | :? ('T list) as a -> a.Length
         | :? ICollection<'T> as a -> a.Count
         | _ ->
@@ -1013,7 +1014,7 @@ module Seq =
         checkNonNull "source" source
 
         match source with
-        | :? ('T[]) as res -> (res.Clone() :?> 'T[])
+        | :? ('T array) as res -> (res.Clone() :?> 'T array)
         | :? ('T list) as res -> List.toArray res
         | :? ICollection<'T> as res ->
             // Directly create an array and copy ourselves.
@@ -1036,7 +1037,7 @@ module Seq =
             else
                 [||]
 
-    let foldArraySubRight (f: OptimizedClosures.FSharpFunc<'T, _, _>) (arr: 'T[]) start fin acc =
+    let foldArraySubRight (f: OptimizedClosures.FSharpFunc<'T, _, _>) (arr: 'T array) start fin acc =
         let mutable state = acc
 
         for i = fin downto start do
@@ -1180,7 +1181,7 @@ module Seq =
         checkNonNull "source" source
         source |> toArray |> Array.findIndexBack predicate
 
-    // windowed : int -> seq<'T> -> seq<'T[]>
+    // windowed : int -> seq<'T> -> seq<'T array>
     [<CompiledName("Windowed")>]
     let windowed windowSize (source: seq<_>) =
         checkNonNull "source" source
@@ -1274,7 +1275,7 @@ module Seq =
                 prefix.Clear()
 
                 match enumeratorR with
-                | Some (Some e) -> IEnumerator.dispose e
+                | Some(Some e) -> IEnumerator.dispose e
                 | _ -> ()
 
                 enumeratorR <- None)
@@ -1339,10 +1340,7 @@ module Seq =
     // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
     let groupByRefType (keyf: 'T -> 'Key) (seq: seq<'T>) =
         seq
-        |> groupByImpl
-            RuntimeHelpers.StructBox<'Key>.Comparer
-            (fun t -> RuntimeHelpers.StructBox(keyf t))
-            (fun sb -> sb.Value)
+        |> groupByImpl RuntimeHelpers.StructBox<'Key>.Comparer (keyf >> RuntimeHelpers.StructBox) (fun sb -> sb.Value)
 
     [<CompiledName("GroupBy")>]
     let groupBy (projection: 'T -> 'Key) (source: seq<'T>) =
@@ -1455,10 +1453,7 @@ module Seq =
     // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
     let countByRefType (keyf: 'T -> 'Key) (seq: seq<'T>) =
         seq
-        |> countByImpl
-            RuntimeHelpers.StructBox<'Key>.Comparer
-            (fun t -> RuntimeHelpers.StructBox(keyf t))
-            (fun sb -> sb.Value)
+        |> countByImpl RuntimeHelpers.StructBox<'Key>.Comparer (keyf >> RuntimeHelpers.StructBox) (fun sb -> sb.Value)
 
     [<CompiledName("CountBy")>]
     let countBy (projection: 'T -> 'Key) (source: seq<'T>) =
@@ -1943,3 +1938,187 @@ module Seq =
             if i < index then
                 invalidArg "index" "index must be within bounds of the array"
         }
+
+    [<CompiledName("RandomShuffleWith")>]
+    let randomShuffleWith (random: Random) (source: seq<'T>) : seq<'T> =
+        checkNonNull "random" random
+        checkNonNull "source" source
+
+        let tempArray = toArray source
+        Microsoft.FSharp.Primitives.Basics.Random.shuffleArrayInPlaceWith random tempArray
+        ofArray tempArray
+
+    [<CompiledName("RandomShuffleBy")>]
+    let randomShuffleBy (randomizer: unit -> float) (source: seq<'T>) : seq<'T> =
+        checkNonNull "source" source
+
+        let tempArray = toArray source
+        Microsoft.FSharp.Primitives.Basics.Random.shuffleArrayInPlaceBy randomizer tempArray
+        ofArray tempArray
+
+    [<CompiledName("RandomShuffle")>]
+    let randomShuffle (source: seq<'T>) : seq<'T> =
+        randomShuffleWith ThreadSafeRandom.Shared source
+
+    [<CompiledName("RandomChoiceWith")>]
+    let randomChoiceWith (random: Random) (source: seq<'T>) : 'T =
+        checkNonNull "random" random
+        checkNonNull "source" source
+
+        let tempArray = toArray source
+        let inputLength = tempArray.Length
+
+        if inputLength = 0 then
+            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+
+        let i = random.Next(0, inputLength)
+        tempArray[i]
+
+    [<CompiledName("RandomChoiceBy")>]
+    let randomChoiceBy (randomizer: unit -> float) (source: seq<'T>) : 'T =
+        checkNonNull "source" source
+
+        let tempArray = toArray source
+        let inputLength = tempArray.Length
+
+        if inputLength = 0 then
+            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+
+        let i = Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 inputLength
+        tempArray[i]
+
+    [<CompiledName("RandomChoice")>]
+    let randomChoice (source: seq<'T>) : 'T =
+        randomChoiceWith ThreadSafeRandom.Shared source
+
+    [<CompiledName("RandomChoicesWith")>]
+    let randomChoicesWith (random: Random) (count: int) (source: seq<'T>) : seq<'T> =
+        checkNonNull "random" random
+        checkNonNull "source" source
+
+        if count < 0 then
+            invalidArgInputMustBeNonNegative "count" count
+
+        let tempArray = toArray source
+        let inputLength = tempArray.Length
+
+        if inputLength = 0 then
+            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+
+        seq {
+            for _ = 0 to count - 1 do
+                let j = random.Next(0, inputLength)
+                tempArray[j]
+        }
+
+    [<CompiledName("RandomChoicesBy")>]
+    let randomChoicesBy (randomizer: unit -> float) (count: int) (source: seq<'T>) : seq<'T> =
+        checkNonNull "source" source
+
+        if count < 0 then
+            invalidArgInputMustBeNonNegative "count" count
+
+        let tempArray = toArray source
+        let inputLength = tempArray.Length
+
+        if inputLength = 0 then
+            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+
+        seq {
+            for _ = 0 to count - 1 do
+                let j = Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 inputLength
+                tempArray[j]
+        }
+
+    [<CompiledName("RandomChoices")>]
+    let randomChoices (count: int) (source: seq<'T>) : seq<'T> =
+        randomChoicesWith ThreadSafeRandom.Shared count source
+
+    [<CompiledName("RandomSampleWith")>]
+    let randomSampleWith (random: Random) (count: int) (source: seq<'T>) : seq<'T> =
+        checkNonNull "random" random
+        checkNonNull "source" source
+
+        if count < 0 then
+            invalidArgInputMustBeNonNegative "count" count
+
+        let tempArray = toArray source
+        let inputLength = tempArray.Length
+
+        if inputLength = 0 then
+            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+
+        if count > inputLength then
+            invalidArg "count" (SR.GetString(SR.notEnoughElements))
+
+        // algorithm taken from https://github.com/python/cpython/blob/69b3e8ea569faabccd74036e3d0e5ec7c0c62a20/Lib/random.py#L363-L456
+        let setSize =
+            Microsoft.FSharp.Primitives.Basics.Random.getMaxSetSizeForSampling count
+
+        if inputLength <= setSize then
+            seq {
+                for i = 0 to count - 1 do
+                    let j = random.Next(0, inputLength - i)
+                    let item = tempArray[j]
+                    tempArray[j] <- tempArray[inputLength - i - 1]
+                    item
+            }
+        else
+            let selected = HashSet()
+
+            seq {
+                for _ = 0 to count - 1 do
+                    let mutable j = random.Next(0, inputLength)
+
+                    while not (selected.Add j) do
+                        j <- random.Next(0, inputLength)
+
+                    tempArray[j]
+            }
+
+    [<CompiledName("RandomSampleBy")>]
+    let randomSampleBy (randomizer: unit -> float) (count: int) (source: seq<'T>) : seq<'T> =
+        checkNonNull "source" source
+
+        if count < 0 then
+            invalidArgInputMustBeNonNegative "count" count
+
+        let tempArray = toArray source
+        let inputLength = tempArray.Length
+
+        if inputLength = 0 then
+            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+
+        if count > inputLength then
+            invalidArg "count" (SR.GetString(SR.notEnoughElements))
+
+        let setSize =
+            Microsoft.FSharp.Primitives.Basics.Random.getMaxSetSizeForSampling count
+
+        if inputLength <= setSize then
+            seq {
+                for i = 0 to count - 1 do
+                    let j =
+                        Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 (inputLength - i)
+
+                    let item = tempArray[j]
+                    tempArray[j] <- tempArray[inputLength - i - 1]
+                    item
+            }
+        else
+            let selected = HashSet()
+
+            seq {
+                for _ = 0 to count - 1 do
+                    let mutable j =
+                        Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 inputLength
+
+                    while not (selected.Add j) do
+                        j <- Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 inputLength
+
+                    tempArray[j]
+            }
+
+    [<CompiledName("RandomSample")>]
+    let randomSample (count: int) (source: seq<'T>) : seq<'T> =
+        randomSampleWith ThreadSafeRandom.Shared count source

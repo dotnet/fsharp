@@ -1,5 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-
+// Copyright © 2001-2023 Python Software Foundation.  All Rights Reserved. License: https://docs.python.org/3/license.html#psf-license. Code for getMaxSetSizeForSampling is taken from https://github.com/python/cpython/blob/69b3e8ea569faabccd74036e3d0e5ec7c0c62a20/Lib/random.py#L363-L456
 
 namespace Microsoft.FSharp.Core
 
@@ -13,6 +13,11 @@ module internal DetailedExceptions =
     let inline invalidArgFmt (arg:string) (format:string) paramArray =
         let msg = String.Format (format, paramArray)
         raise (new ArgumentException (msg, arg))
+
+    /// takes an argument, a formatting string, a param array to splice into the formatting string
+    let inline invalidArgOutOfRangeFmt (arg:string) (format:string) paramArray =
+        let msg = String.Format (format, paramArray)
+        raise (new ArgumentOutOfRangeException (arg, msg))
 
     /// takes a formatting string and a param array to splice into the formatting string
     let inline invalidOpFmt (format:string) paramArray =
@@ -38,7 +43,6 @@ module internal DetailedExceptions =
             "{0}\nThe list was {1} {2} shorter than the index"
             [|SR.GetString SR.notEnoughElements; index; (if index=1 then "element" else "elements")|]
 
-
     /// eg. tried to {skip} {2} {elements} past the end of the seq. Seq.Length = {10}
     let invalidOpExceededSeqLength (fnName:string) (diff:int) (len:int) =
         invalidOpFmt "{0}\ntried to {1} {2} {3} past the end of the seq\nSeq.Length = {4}"
@@ -52,11 +56,11 @@ module internal DetailedExceptions =
     let inline invalidArgInputMustBePositive (arg:string) (count:int) =
         invalidArgFmt arg "{0}\n{1} = {2}" [|SR.GetString SR.inputMustBePositive; arg; count|]
 
-    /// throws an invalid argument exception and returns the out of range index,
+    /// throws an invalid argument out of range exception and returns the out of range index,
     /// a text description of the range, and the bound of the range
     /// e.g. sourceIndex = -4, source axis-0 lower bound = 0"
     let invalidArgOutOfRange (arg:string) (index:int) (text:string) (bound:int) =
-        invalidArgFmt arg
+        invalidArgOutOfRangeFmt arg
             "{0}\n{1} = {2}, {3} = {4}"
             [|SR.GetString SR.outOfRange; arg; index; text; bound|]
 
@@ -193,7 +197,7 @@ module internal List =
                 cons
 
     let groupBy (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (list: 'T list) =
-        let dict = Dictionary<_, _ list []> comparer
+        let dict = Dictionary<_, _ list  array> comparer
 
         // Build the groupings
         let rec loop list =
@@ -1086,7 +1090,11 @@ module internal Array =
         if array.Length > 1 then 
             Array.Sort<_>(array, fastComparerForArraySort())
 
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
     let stableSortWithKeysAndComparer (cFast:IComparer<'Key>) (c:IComparer<'Key>) (array:'T array) (keys: 'Key array)  =
+#else
+    let stableSortWithKeysAndComparer (cFast:IComparer<'Key> | null) (c:IComparer<'Key>) (array:array<'T>) (keys:array<'Key>)  =
+#endif
         // 'places' is an array or integers storing the permutation performed by the sort        
         let len = array.Length
         let places = zeroCreateUnchecked len
@@ -1196,3 +1204,43 @@ module internal Seq =
                 ValueSome(res)
             else
                 ValueNone
+
+module internal Random =
+    open System
+
+    let private executeRandomizer (randomizer: unit -> float) =
+        let value = randomizer()
+        if value >= 0.0 && value < 1.0 then
+            value
+        else
+            let argName = nameof randomizer
+            invalidArgOutOfRangeFmt argName
+                "{0}\n{1} returned {2}, should be in range [0.0, 1.0)."
+                [|SR.GetString SR.outOfRange; argName; value|]
+
+    let next (randomizer: unit -> float) (minValue: int) (maxValue: int) =
+        int ((executeRandomizer randomizer) * float (maxValue - minValue)) + minValue
+
+    let shuffleArrayInPlaceWith (random: Random) (array: array<'T>) =
+        let inputLength = array.Length
+        for i = 0 to inputLength - 2 do
+            let j = random.Next(i, inputLength)
+            if j <> i then
+                let temp = array[i]
+                array[i] <- array[j]
+                array[j] <- temp
+
+    let shuffleArrayInPlaceBy (randomizer: unit -> float) (array: array<'T>) =
+        let inputLength = array.Length
+        for i = 0 to inputLength - 2 do
+            let j = next randomizer i inputLength
+            if j <> i then
+                let temp = array[i]
+                array[i] <- array[j]
+                array[j] <- temp
+
+    let getMaxSetSizeForSampling count =
+        let mutable setSize = 21
+        if count > 5 then
+            setSize <- setSize + (4.0 ** ceil (Math.Log(count * 3 |> float, 4)) |> int)
+        setSize

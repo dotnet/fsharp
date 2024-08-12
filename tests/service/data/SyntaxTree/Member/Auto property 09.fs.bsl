@@ -27,7 +27,8 @@ ImplFile
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertySet },
                          PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         None, Const (Int32 1, (4,20--4,21)), (4,4--4,30),
+                         GetSet (None, None, None),
+                         Const (Int32 1, (4,20--4,21)), (4,4--4,30),
                          { LeadingKeyword =
                             MemberVal ((4,4--4,10), (4,11--4,14))
                            WithKeyword = Some (4,22--4,26)
@@ -46,7 +47,7 @@ ImplFile
                                       MemberKind = Member },
                                SynValInfo
                                  ([[SynArgInfo ([], false, None)]; []],
-                                  SynArgInfo ([], false, None)), None, None),
+                                  SynArgInfo ([], false, None)), None),
                             LongIdent
                               (SynLongIdent
                                  ([this; P2], [(5,15--5,16)], [None; None]),
@@ -66,5 +67,6 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(5,4)-(5,10) parse error Possible incorrect indentation: this token is offside of context started at position (4:23). Try indenting this token further or using standard formatting conventions.
-(5,4)-(5,10) parse error Incomplete structured construct at or before this point in member definition. Expected identifier, '(', '(*)' or other token.
+(5,4)-(5,10) parse error Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (4:23). Try indenting this further.
+To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
+(5,4)-(5,10) parse error Incomplete structured construct at or before this point. Expected identifier, '(', '(*)' or other token.

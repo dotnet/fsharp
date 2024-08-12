@@ -49,7 +49,7 @@ Install the latest released [Visual Studio](https://visualstudio.microsoft.com/v
 * .NET desktop development (also check F# desktop support, as this will install some legacy templates)
 * Visual Studio extension development
 
-You will also need the latest .NET 7 SDK installed from [here](https://dotnet.microsoft.com/download/dotnet/7.0).
+You will also need .NET SDK installed from [here](https://dotnet.microsoft.com/download/dotnet), exact version can be found in the global.json file in the root of the repository.
 
 Building is simple:
 
@@ -76,7 +76,7 @@ If you are just developing the core compiler and library then building ``FSharp.
 We recommend installing the latest Visual Studio preview and using that if you are on Windows. However, if you prefer not to do that, you will need to install the following:
 
 * [.NET Framework 4.7.2](https://dotnet.microsoft.com/download/dotnet-framework/net472)
-* [.NET 7](https://dotnet.microsoft.com/download/dotnet/7.0)
+* [.NET SDK](https://dotnet.microsoft.com/download/dotnet) (see exact version in global.json file in the repository root).
 
 You'll need to pass an additional flag to the build script:
 
@@ -122,16 +122,41 @@ You can find all test options as separate flags. For example `build -testAll`:
 
 Running any of the above will build the latest changes and run tests against them.
 
+## Using your custom compiler to build this repository
+
+By removing all the subfolders called `Bootstrap` or `Proto` under `artifacts` and running the `build` script again, the proto compiler will include your changes.
+
+Once the "proto" compiler is built, it won't be built again, so you may want to perform those steps again to ensure your changes don't break building the compiler itself.
+
 ## Using your custom compiler to build other projects
 
-Building the compiler using `build.cmd` or `build.sh` will output artifacts in `artifacts\bin`. 
+Building the compiler using `build.cmd` or `build.sh` will output artifacts in `artifacts\bin`.
 
 To use your custom build of `Fsc`, add the `DotnetFscCompilerPath` property to your project's `.fsproj` file, adjusted to point at your local build directory, build configuration, and target framework as appropriate:
 
 ```xml
 <PropertyGroup>
-    <DotnetFscCompilerPath>D:\Git\fsharp\artifacts\bin\fsc\Debug\net8.0\fsc.dll</DotnetFscCompilerPath>
+    <DotnetFscCompilerPath>D:\Git\fsharp\artifacts\bin\fsc\Debug\net9.0\fsc.dll</DotnetFscCompilerPath>
 </PropertyGroup>
+```
+
+### Changes in FSharp.Core
+
+The FSharp compiler uses an implicit FSharp.Core. This means that if you introduce changes to FSharp.Core and want to use it in a project, you need to disable the implicit version used by the compiler, and add a reference to your custom FSharp.Core dll. Both are done in the `.fsproj` file of your project.
+
+Disabling the implicit FSharp.Core is done with
+```
+  <PropertyGroup>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+  </PropertyGroup>
+```
+and referencing your custom FSharp.Core, available after you build the compiler, is done with
+```
+  <ItemGroup>
+    <Reference Include="FSharp.Core">
+      <HintPath>D:\Git\fsharp\artifacts\bin\FSharp.Core\Debug\netstandard2.1\FSharp.Core.dll<\HintPath>
+    </Reference>
+  </ItemGroup>
 ```
 
 ## Updating FSComp.fs, FSComp.resx and XLF
@@ -195,13 +220,13 @@ or
 Some of the code in this repository is formatted automatically by [Fantomas](https://github.com/fsprojects/fantomas). To format all files use:
 
 ```cmd
-dotnet fantomas . -r
+dotnet fantomas .
 ```
 
 The formatting is checked automatically by CI:
 
 ```cmd
-dotnet fantomas . -r --check
+dotnet fantomas . --check
 ```
 
 At the time of writing only a subset of signature files (`*.fsi`) are formatted. See the settings in `.fantomasignore` and `.editorconfig`.
@@ -269,9 +294,25 @@ Where `<version>` corresponds to the latest Visual Studio version on your machin
 
 Use the `Debug` configuration to test your changes locally. It is the default. Do not use the `Release` configuration! Local development and testing of Visual Studio tooling is not designed for the `Release` configuration.
 
-### Writing and running benchmarks
+### Benchmarking
 
-Existing compiler benchmarks can be found in `tests\benchmarks\`.
+Existing compiler benchmarks can be found in `tests\benchmarks\`. The folder contains READMEs describing specific benchmark projects as well as guidelines for creating new benchmarks. There is also `FSharp.Benchmarks.sln` solution containing all the benchmark project and their dependencies.
+
+To exercise the benchmarking infrastructure locally, run:
+
+(Windows)
+```cmd
+build.cmd -configuration Release -testBenchmarks
+```
+
+(Linux/Mac)
+```shell
+./build.sh --configuration Release --testBenchmarks
+```
+
+This is executed in CI as well. It does the following:
+- builds all the benchmarking projects
+- does smoke testing for fast benchmarks (executes them once to check they don't fail in the runtime)
 
 ### Benchmarking and profiling the compiler
 
@@ -279,151 +320,6 @@ Existing compiler benchmarks can be found in `tests\benchmarks\`.
 
 * Always build both versions of compiler/FCS from source and not use pre-built binaries from SDK (SDK binaries are crossgen'd, which can affect performance).
 * To run `Release` build of compiler/FCS.
-
-### Example benchmark setup using [BenchmarkDotNet](https://github.com/dotnet/BenchmarkDotNet)
-
-1. Perform a clean build of the compiler and FCS from source (as described in this document, build can be done with `-noVisualStudio` in case if FCS/FSharp.Core is being benchmarked/profiled).
-
-2. Create a benchmark project (in this example, the project will be created in `tests\benchmarks\FCSBenchmarks`).
-
-      ```shell
-      cd tests\benchmarks\FCSBenchmarks
-      dotnet new console -o FcsBench --name FcsBench -lang F#
-      ```
-
-3. Add needed packages and project references.
-
-    ```shell
-    cd FcsBench
-    dotnet add package BenchmarkDotNet
-    dotnet add reference ..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj
-    ```
-
-4. Additionally, if you want to test changes to the FSharp.Core (note that the relative path can be different)
-
-     ```shell
-     dotnet add reference ..\..\..\src\FSharp.Core\FSharp.Core.fsproj
-     ```
-
-    > as well as the following property have to be added to `FcsBench.fsproj`:
-
-    ```xml
-    <PropertyGroup>
-        <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    </PropertyGroup>
-    ```
-
-5. Add a new benchmark for FCS/FSharp.Core by editing `Program.fs`.
-
-      ```fsharp
-      open System.IO
-      open FSharp.Compiler.CodeAnalysis
-      open FSharp.Compiler.Diagnostics
-      open FSharp.Compiler.Text
-      open BenchmarkDotNet.Attributes
-      open BenchmarkDotNet.Running
-
-      [<MemoryDiagnoser>]
-      type CompilerService() =
-          let mutable checkerOpt = None
-          let mutable sourceOpt = None
-
-          let parsingOptions =
-              {
-                  SourceFiles = [|"CheckExpressions.fs"|]
-                  ConditionalDefines = []
-                  DiagnosticOptions = FSharpDiagnosticOptions.Default
-                  LangVersionText = "default"
-                  IsInteractive = false
-                  LightSyntax = None
-                  CompilingFsLib = false
-                  IsExe = false
-              }
-
-          [<GlobalSetup>]
-          member _.Setup() =
-              match checkerOpt with
-              | None ->
-                  checkerOpt <- Some(FSharpChecker.Create(projectCacheSize = 200))
-              | _ -> ()
-
-              match sourceOpt with
-              | None ->
-                  sourceOpt <- Some <| SourceText.ofString(File.ReadAllText("""C:\Users\vlza\code\fsharp\src\Compiler\Checking\CheckExpressions.fs"""))
-              | _ -> ()
-
-
-          [<Benchmark>]
-          member _.ParsingTypeCheckerFs() =
-              match checkerOpt, sourceOpt with
-              | None, _ -> failwith "no checker"
-              | _, None -> failwith "no source"
-              | Some(checker), Some(source) ->
-                  let results = checker.ParseFile("CheckExpressions.fs",  source, parsingOptions) |> Async.RunSynchronously
-                  if results.ParseHadErrors then failwithf "parse had errors: %A" results.Diagnostics
-
-          [<IterationCleanup(Target = "ParsingTypeCheckerFs")>]
-          member _.ParsingTypeCheckerFsSetup() =
-              match checkerOpt with
-              | None -> failwith "no checker"
-              | Some(checker) ->
-                  checker.InvalidateAll()
-                  checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-                  checker.ParseFile("dummy.fs", SourceText.ofString "dummy", parsingOptions) |> Async.RunSynchronously |> ignore
-
-      [<EntryPoint>]
-      let main _ =
-          BenchmarkRunner.Run<CompilerService>() |> ignore
-          0
-      ```
-
-      > For more detailed information about available BenchmarkDotNet options, please refer to [BenchmarkDotNet Documentation](https://benchmarkdotnet.org/articles/overview.html).
-
-6. Build and run the benchmark.
-
-      ```shell
-      dotnet build -c Release
-      dotnet run -c Release
-      ```
-
-7. You can find results in `.\BenchmarkDotNet.Artifacts\results\` in the current benchmark project directory.
-
-    ```shell
-    > ls .\BenchmarkDotNet.Artifacts\results\
-
-        Directory: C:\Users\vlza\code\fsharp\tests\benchmarks\FCSBenchmarks\FcsBench\BenchmarkDotNet.Artifacts\results
-
-    Mode                 LastWriteTime         Length Name
-    ----                 -------------         ------ ----
-    -a---           4/25/2022  1:42 PM            638 Program.CompilerService-report-github.md
-    -a---           4/25/2022  1:42 PM           1050 Program.CompilerService-report.csv
-    -a---           4/25/2022  1:42 PM           1169 Program.CompilerService-report.html
-    ```
-
-    > *-report-github.md can be used to post benchmark results to GitHub issue/PR/discussion or RFC.
-    >
-    >*-report.csv can be used for comparison purposes.
-
-    **Example output:**
-
-    ``` ini
-
-    BenchmarkDotNet=v0.13.1, OS=Windows 10.0.25102
-    Intel Core i7-8750H CPU 2.20GHz (Coffee Lake), 1 CPU, 12 logical and 6 physical cores
-    .NET SDK=6.0.200
-      [Host]     : .NET 6.0.3 (6.0.322.12309), X64 RyuJIT DEBUG
-      Job-GDIBXX : .NET 6.0.3 (6.0.322.12309), X64 RyuJIT
-
-    InvocationCount=1  UnrollFactor=1
-
-    ```
-
-    |               Method |     Mean |   Error |  StdDev |   Median |     Gen 0 |     Gen 1 | Allocated |
-    |--------------------- |---------:|--------:|--------:|---------:|----------:|----------:|----------:|
-    | ParsingTypeCheckerFs | 199.4 ms | 3.84 ms | 9.78 ms | 195.5 ms | 4000.0000 | 1000.0000 |     28 MB |
-
-8. Repeat for any number of changes you would like to test.
-9. **Optionally:** benchmark code and results can be included as part of the PR for future reference.
 
 ## Additional resources
 
