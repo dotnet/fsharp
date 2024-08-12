@@ -34,10 +34,6 @@
     <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
   </PropertyGroup>
 
-  <Target Name="ValidateMibcFile" AfterTargets="Restore" BeforeTargets="Build;Pack">
-    <Error Condition="'$(Configuration)' == 'Proto' AND !Exists('$(MibcFile)')" Text="Mibc file '$(MibcFile)' does not exist." />
-  </Target>
-
   <Import Project="$([MSBuild]::GetPathOfFileAbove('fsc.targets', '$(MSBuildThisFileDirectory)../'))" />
 
 </Project>

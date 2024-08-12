@@ -16,11 +16,12 @@
     <PackageReference Include="@(MIBCPackage)" />
   </ItemGroup>
 
-  <!-- We copy all packages to the output (per architecture) -->
+  <!-- Copy all packages to the output (per architecture) -->
   <Target
     Name="CopyPackageFiles"
     AfterTargets="Restore"
-    BeforeTargets="Build;Pack">
+    BeforeTargets="CopyPackageFilesToProto">
+
     <ItemGroup>
       <MibcFiles Include="$(NuGetPackageRoot)%(MibcPackage.Identity)\%(MibcPackage.Version)\**\DotNet_FSharp.mibc" />
     </ItemGroup>
@@ -29,7 +30,18 @@
       SourceFiles="@(MibcFiles)"
       DestinationFolder="$(ArtifactsDir)\mibc\%(MibcPackage.Identity)\"
       SkipUnchangedFiles="true" />
-
+  </Target>
+  
+  <!-- Copy all packages to the output (per architecture) - now for proto, sequentially, to avoid locking -->
+  <Target
+    Name="CopyPackageFilesToProto"
+    AfterTargets="CopyPackageFiles"
+    BeforeTargets="Build;Pack">
+    
+    <ItemGroup>
+      <MibcFiles Include="$(NuGetPackageRoot)%(MibcPackage.Identity)\%(MibcPackage.Version)\**\DotNet_FSharp.mibc" />
+    </ItemGroup>
+    
     <Copy
       SourceFiles="@(MibcFiles)"
       DestinationFolder="$(ArtifactsDir)\mibc-proto\%(MibcPackage.Identity)\"
