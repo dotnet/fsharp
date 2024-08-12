@@ -105,7 +105,7 @@ type C() =
   [<ReflectedDefinition>]
   static member F x = (C(), System.DateTime.Now)
                 """
-            Compilation.Create(source, Library, options = [|"--langversion:preview"|])
+            Compilation.Create(source, Library, options = [| |])
 
         let module2 =
             let source =
