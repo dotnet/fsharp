@@ -8,7 +8,6 @@ module ComputedCollections =
     let verifyCompilation compilation =
         compilation
         |> asExe
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withOptimize
         |> withEmbeddedPdb
         |> withEmbedAllSource

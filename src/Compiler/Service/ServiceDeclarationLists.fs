@@ -157,7 +157,7 @@ module DeclarationListHelpers =
     let rec FormatItemDescriptionToToolTipElement displayFullName (infoReader: InfoReader) ad m denv (item: ItemWithInst) symbol (width: int option) = 
         let g = infoReader.g
         let amap = infoReader.amap
-        let denv = SimplerDisplayEnv denv 
+        let denv = {SimplerDisplayEnv denv with showCsharpCodeAnalysisAttributes = true } 
         let xml = GetXmlCommentForItem infoReader m item.Item
 
         match item.Item with

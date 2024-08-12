@@ -268,6 +268,7 @@ module TaggedText =
     let keywordInline = tagKeyword "inline"
     let keywordModule = tagKeyword "module"
     let keywordNamespace = tagKeyword "namespace"
+    let keywordReturn = tagKeyword "return"
     let punctuationUnit = tagPunctuation "()"
 #endif
 

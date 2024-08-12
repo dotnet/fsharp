@@ -1333,7 +1333,7 @@ let MakeValsForEqualsAugmentation g (tcref: TyconRef) =
             g
             tcref
             ty
-            vis
+            tcref.Accessibility
             (if tcref.Deref.IsFSharpException then
                  None
              else
@@ -1376,7 +1376,7 @@ let MakeValsForEqualityWithComparerAugmentation g (tcref: TyconRef) =
             g 
             tcref 
             ty
-            vis
+            tcref.Accessibility
             // This doesn't implement any interface.
             None 
             "Equals" 

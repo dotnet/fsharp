@@ -3158,6 +3158,7 @@ type DisplayEnv =
       shortConstraints: bool
       useColonForReturnType: bool
       showAttributes: bool
+      showCsharpCodeAnalysisAttributes: bool
       showOverrides: bool
       showStaticallyResolvedTyparAnnotations: bool
       showNullnessAnnotations: bool option
@@ -3193,6 +3194,7 @@ type DisplayEnv =
         suppressMutableKeyword = false
         showMemberContainers = false
         showAttributes = false
+        showCsharpCodeAnalysisAttributes = false
         showOverrides = true
         showStaticallyResolvedTyparAnnotations = true
         showNullnessAnnotations = None

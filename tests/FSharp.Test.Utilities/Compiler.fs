@@ -510,6 +510,9 @@ module rec Compiler =
     let withLangVersion80 (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:8.0" ] "withLangVersion80 is only supported on F#" cUnit
 
+    let withLangVersion90 (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--langversion:9.0" ] "withLangVersion90 is only supported on F#" cUnit
+
     let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:preview" ] "withLangVersionPreview is only supported on F#" cUnit
 
@@ -585,6 +588,9 @@ module rec Compiler =
         | CS cs -> CS { cs with LangVersion = ver }
         | _ -> failwith "Only supported in C#"
 
+    let withCSharpLanguageVersionPreview =
+        withCSharpLanguageVersion CSharpLanguageVersion.Preview
+
     let withOutputType (outputType : CompileOutput) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS x -> FS { x with OutputType = outputType }
@@ -600,6 +606,12 @@ module rec Compiler =
         match cUnit with
         | FS fs -> FS { fs with Options = fs.Options @ ["--realsig+"] }
         | _ -> failwith "withRealInternalSignatureOn only supported by f#"
+
+    let withRealInternalSignature (realSig: bool) (cUnit: CompilationUnit) : CompilationUnit  =
+        if realSig then
+            cUnit |>  withRealInternalSignatureOn
+        else
+            cUnit |>  withRealInternalSignatureOff
 
     let asExe (cUnit: CompilationUnit) : CompilationUnit =
         withOutputType CompileOutput.Exe cUnit
