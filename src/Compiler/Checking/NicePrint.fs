@@ -38,6 +38,8 @@ module internal PrintUtilities =
 
     let squareAngleL x = LeftL.leftBracketAngle ^^ x ^^ RightL.rightBracketAngle
 
+    let squareAngleReturn x = LeftL.leftBracketAngle ^^ WordL.keywordReturn ^^ SepL.colon ^^ x ^^ RightL.rightBracketAngle
+
     let angleL x = SepL.leftAngle ^^ x ^^ RightL.rightAngle
 
     let braceL x = wordL leftBrace ^^ x ^^ wordL rightBrace
@@ -641,6 +643,23 @@ module PrintTypes =
     and layoutILAttrib denv (ty, args) = 
         let argsL = bracketL (sepListL RightL.comma (List.map (layoutILAttribElement denv) args))
         PrintIL.layoutILType denv [] ty ++ argsL
+
+    /// Layout nullness attributes for C# flow-analysis
+    /// F# does not process them, this way we can at least show them.
+    and layoutCsharpCodeAnalysisIlAttributes denv (attrs:ILAttributes)  (layoutCombinator: Layout -> Layout -> Layout) restL =
+        let denvShortNames() = { denv with shortTypeNames = true }
+        let attrsL = 
+            [ for a in attrs.AsArray() do
+                let name =  a.Method.DeclaringType.BasicQualifiedName
+                if name.StartsWith("System.Diagnostics.CodeAnalysis") then
+                    let parms, _args = decodeILAttribData a 
+                    layoutILAttrib (denvShortNames()) (a.Method.DeclaringType, parms)
+            ]
+        match attrsL with
+        | [] -> restL
+        | _ ->
+            let separated = sepListL RightL.semicolon attrsL 
+            layoutCombinator separated restL
 
     /// Layout '[<attribs>]' above another block 
     and layoutAttribs denv startOpt isLiteral kind attrs restL = 
@@ -1653,11 +1672,33 @@ module InfoMemberPrinting =
                     let idL = ConvertValLogicalNameToDisplayLayout false (tagMethod >> tagNavArbValRef minfo.ArbitraryValRef >> wordL) minfo.LogicalName
                     SepL.dot ^^
                     PrintTypes.layoutTyparDecls denv idL true minfo.FormalMethodTypars ^^
-                    SepL.leftParen
+                    SepL.leftParen           
 
-        let paramDatas = minfo.GetParamDatas (amap, m, minst)
-        let layout = layout ^^ sepListL RightL.comma ((List.concat >> List.map (layoutParamData denv)) paramDatas)
-        layout ^^ RightL.rightParen ^^ WordL.colon ^^ PrintTypes.layoutType denv retTy
+        let layout,paramLayouts =
+            match denv.showCsharpCodeAnalysisAttributes, minfo with
+            | true, ILMeth(_g,mi,_e) -> 
+                let methodLayout = 
+                    // Render Method attributes and [return:..] attributes on separate lines above (@@) the method definition
+                    PrintTypes.layoutCsharpCodeAnalysisIlAttributes denv (minfo.GetCustomAttrs()) (squareAngleL >> (@@)) layout
+                    |> PrintTypes.layoutCsharpCodeAnalysisIlAttributes denv (mi.RawMetadata.Return.CustomAttrs) (squareAngleReturn >> (@@))
+                let paramLayouts = 
+                    minfo.GetParamDatas (amap, m, minst)
+                    |> List.head
+                    |> List.zip (mi.ParamMetadata)
+                    |> List.map(fun (ilParams,paramData) -> 
+                        layoutParamData denv paramData
+                        // Render parameter attributes next to (^^) the parameter definition
+                        |> PrintTypes.layoutCsharpCodeAnalysisIlAttributes denv (ilParams.CustomAttrs) (squareAngleL >> (^^)) )
+                methodLayout,paramLayouts
+            | _ ->
+                layout,
+                minfo.GetParamDatas (amap, m, minst) 
+                |> List.concat 
+                |> List.map (layoutParamData denv)
+
+
+        let layout = layout ^^ sepListL RightL.comma paramLayouts
+        layout ^^ RightL.rightParen ^^ WordL.colon ^^ PrintTypes.layoutType denv retTy // Todo enrich return type
 
     // Prettify an ILMethInfo
     let prettifyILMethInfo (amap: Import.ImportMap) m (minfo: MethInfo) typarInst ilMethInfo = 
