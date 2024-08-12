@@ -16,7 +16,7 @@
     <MibcTargetArchitecture>$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant)</MibcTargetArchitecture>
     <MibcCurrentMachineArcitecture>$(MibcTargetOS)-$(MibcTargetArchitecture)</MibcCurrentMachineArcitecture>
 
-    <MibcFile>$(ArtifactsDir)\mibc\optimization.$(MibcCurrentMachineArcitecture).mibc.runtime\DotNet_FSharp.mibc</MibcFile>
+    <MibcFile>$(ArtifactsDir)\mibc-proto\optimization.$(MibcCurrentMachineArcitecture).mibc.runtime\DotNet_FSharp.mibc</MibcFile>
 
     <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
     <PublishReadyToRun>$(EnablePublishReadyToRun)</PublishReadyToRun>

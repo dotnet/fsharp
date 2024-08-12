@@ -29,6 +29,11 @@
       SourceFiles="@(MibcFiles)"
       DestinationFolder="$(ArtifactsDir)\mibc\%(MibcPackage.Identity)\"
       SkipUnchangedFiles="true" />
+
+    <Copy
+      SourceFiles="@(MibcFiles)"
+      DestinationFolder="$(ArtifactsDir)\mibc-proto\%(MibcPackage.Identity)\"
+      SkipUnchangedFiles="true" />
   </Target>
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
