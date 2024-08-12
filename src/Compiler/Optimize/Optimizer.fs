@@ -2245,7 +2245,7 @@ let TryDetectQueryQuoteAndRun cenv (expr: Expr) =
                 | QuerySelect g (qTy, _, resultElemTy, _, _) 
                 | QueryYield g (qTy, resultElemTy, _) 
                 | QueryYieldFrom g (qTy, resultElemTy, _) 
-                     when typeEquiv g qTy (mkAppTy g.tcref_System_Collections_IEnumerable []) -> 
+                     when typeEquiv g qTy (mkWoNullAppTy g.tcref_System_Collections_IEnumerable []) -> 
 
                     match tryRewriteToSeqCombinators g e with 
                     | Some newSource -> 
@@ -2314,7 +2314,7 @@ let IsILMethodRefSystemStringConcatArray (mref: ILMethodRef) =
                                               ilTy.IsNominal &&
                                               ilTy.TypeRef.Name = "System.String" -> true
             | _ -> false))
-    
+
 let rec IsDebugPipeRightExpr cenv expr =
     let g = cenv.g
     match expr with
@@ -2327,6 +2327,13 @@ let rec IsDebugPipeRightExpr cenv expr =
             | OpPipeRight3 g _  -> true
             | _ -> false
         else false
+    | _ -> false
+
+let inline IsStateMachineExpr g overallExpr =
+    //printfn "%s" (DebugPrint.showExpr overallExpr)
+    match overallExpr with
+    | Expr.App(funcExpr = Expr.Val(valRef = valRef)) ->
+        isReturnsResumableCodeTy g valRef.TauType
     | _ -> false
 
 /// Optimize/analyze an expression
@@ -2343,6 +2350,10 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
 
     if IsDebugPipeRightExpr cenv expr then OptimizeDebugPipeRights cenv env expr else 
 
+    let isStateMachineE = IsStateMachineExpr g expr
+
+    let env = { env with disableMethodSplitting = env.disableMethodSplitting || isStateMachineE }
+
     match expr with
     // treat the common linear cases to avoid stack overflows, using an explicit continuation 
     | LinearOpExpr _
@@ -2356,15 +2367,7 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
         OptimizeConst cenv env expr (c, m, ty)
 
     | Expr.Val (v, _vFlags, m) ->
-        if not (v.Accessibility.IsPrivate) then
-            OptimizeVal cenv env expr (v, m)
-        else
-            expr,
-            { TotalSize = 10
-              FunctionSize = 1
-              HasEffect = false  
-              MightMakeCriticalTailcall=false
-              Info=UnknownValue }
+        OptimizeVal cenv env expr (v, m)
 
 
     | Expr.Quote (ast, splices, isFromQueryExpression, m, ty) -> 
@@ -2509,13 +2512,6 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
         | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _, _, _), _, args, _), _ 
           when IsILMethodRefSystemStringConcat ilMethRef ->
             optimizeArgs args accArgs
-
-// String constant folding requires a bit more work as we cannot quadratically concat strings at compile time.
-#if STRING_CONSTANT_FOLDING
-        // Optimize string constants, e.g. "1" + "2" will turn into "12"
-        | Expr.Const (Const.String str1, _, _), Expr.Const (Const.String str2, _, _) :: accArgs ->
-            mkString g m (str1 + str2) :: accArgs
-#endif
 
         | arg, _ -> arg :: accArgs
 
@@ -3082,9 +3078,6 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, 
         let fvs = freeInExpr CollectLocals expr
         if fvs.UsesMethodLocalConstructs then
             // Discarding lambda for binding because uses protected members --- TBD: Should we warn or error here
-            None 
-        elif fvs.FreeLocals |> Seq.exists(fun v -> v.Accessibility.IsPrivate ) then
-            // Discarding lambda for binding because uses private members --- TBD: Should we warn or error here
             None
         else
             let exprCopy = CopyExprForInlining cenv inlineIfLambda expr m
@@ -3144,9 +3137,12 @@ and OptimizeVal cenv env expr (v: ValRef, m) =
 
     | None ->
        if v.ShouldInline then
-           warning(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
+            match valInfoForVal.ValExprInfo with
+            | UnknownValue -> error(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
+            | _ -> warning(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
        if v.InlineIfLambda then 
            warning(Error(FSComp.SR.optFailedToInlineSuggestedValue(v.DisplayName), m))
+
        expr, (AddValEqualityInfo g m v 
                     { Info=valInfoForVal.ValExprInfo 
                       HasEffect=false 
@@ -3228,7 +3224,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
             // the target takes a tupled argument, so we need to reorder the arg expressions in the
             // arg list, and create a tuple of y & comp
             // push the comparer to the end and box the argument
-            let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty, m, ty) ; comp]]
+            let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty_ambivalent, m, ty) ; comp]]
             Some (DevirtualizeApplication cenv env vref ty tyargs args2 m)
         | _ -> None
         
@@ -3243,30 +3239,47 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
         | Some (_, vref) -> Some (DevirtualizeApplication cenv env vref ty tyargs args m)
         | _ -> None
         
-    // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityWithComparerFast
+    // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityWithComparerIntrinsic
     | Expr.Val (v, _, _), [ty], _ when CanDevirtualizeApplication cenv v g.generic_equality_withc_inner_vref ty args ->
         let tcref, tyargs = StripToNominalTyconRef cenv ty
         match tcref.GeneratedHashAndEqualsWithComparerValues, args with
-        | Some (_, _, withcEqualsVal), [comp; x; y] -> 
+        | Some (_, _, _, Some withcEqualsExactVal), [comp; x; y] -> 
+            // push the comparer to the end
+            let args2 = [x; mkRefTupledNoTypes g m [y; comp]]
+            Some (DevirtualizeApplication cenv env withcEqualsExactVal ty tyargs args2 m)
+        | Some (_, _, withcEqualsVal, _ ), [comp; x; y] -> 
             // push the comparer to the end and box the argument
-            let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty, m, ty) ; comp]]
+            let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty_ambivalent, m, ty) ; comp]]
             Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
         | _ -> None 
       
-    // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityWithComparer
+    // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityIntrinsic
     | Expr.Val (v, _, _), [ty], _ when CanDevirtualizeApplication cenv v g.generic_equality_per_inner_vref ty args && not(isRefTupleTy g ty) ->
        let tcref, tyargs = StripToNominalTyconRef cenv ty
        match tcref.GeneratedHashAndEqualsWithComparerValues, args with
-       | Some (_, _, withcEqualsVal), [x; y] -> 
-           let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty, m, ty); (mkCallGetGenericPEREqualityComparer g m)]]
-           Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
+       | Some (_, _, _, Some withcEqualsExactVal), [x; y] ->
+           let args2 = [x; mkRefTupledNoTypes g m [y; (mkCallGetGenericPEREqualityComparer g m)]]
+           Some (DevirtualizeApplication cenv env withcEqualsExactVal ty tyargs args2 m)
+       | Some (_, _, withcEqualsVal, _), [x; y] -> 
+           let equalsExactOpt = 
+               tcref.MembersOfFSharpTyconByName.TryFind("Equals")
+               |> Option.map (List.where (fun x -> x.IsCompilerGenerated))
+               |> Option.bind List.tryExactlyOne
+
+           match equalsExactOpt with
+           | Some equalsExact ->
+               let args2 = [x; mkRefTupledNoTypes g m [y; (mkCallGetGenericPEREqualityComparer g m)]]
+               Some (DevirtualizeApplication cenv env equalsExact ty tyargs args2 m)
+           | None ->
+               let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty_ambivalent, m, ty); (mkCallGetGenericPEREqualityComparer g m)]]
+               Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
        | _ -> None     
     
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericHashIntrinsic
     | Expr.Val (v, _, _), [ty], _ when CanDevirtualizeApplication cenv v g.generic_hash_inner_vref ty args ->
         let tcref, tyargs = StripToNominalTyconRef cenv ty
         match tcref.GeneratedHashAndEqualsWithComparerValues, args with
-        | Some (_, withcGetHashCodeVal, _), [x] -> 
+        | Some (_, withcGetHashCodeVal, _, _), [x] -> 
             let args2 = [x; mkCallGetGenericEREqualityComparer g m]
             Some (DevirtualizeApplication cenv env withcGetHashCodeVal ty tyargs args2 m)
         | _ -> None 
@@ -3275,7 +3288,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
     | Expr.Val (v, _, _), [ty], _ when CanDevirtualizeApplication cenv v g.generic_hash_withc_inner_vref ty args ->
         let tcref, tyargs = StripToNominalTyconRef cenv ty
         match tcref.GeneratedHashAndEqualsWithComparerValues, args with
-        | Some (_, withcGetHashCodeVal, _), [comp; x] -> 
+        | Some (_, withcGetHashCodeVal, _, _), [comp; x] -> 
             let args2 = [x; comp]
             Some (DevirtualizeApplication cenv env withcGetHashCodeVal ty tyargs args2 m)
         | _ -> None 
@@ -4123,10 +4136,10 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                     let fvs = freeInExpr CollectLocals body
                     if fvs.UsesMethodLocalConstructs then
                         // Discarding lambda for binding because uses protected members
-                        UnknownValue 
+                        UnknownValue
                     elif fvs.FreeLocals.ToArray() |> Seq.fold(fun acc v -> if not acc then v.Accessibility.IsPrivate else acc) false then
                         // Discarding lambda for binding because uses private members
-                        UnknownValue 
+                        UnknownValue
                     else
                         ivalue
 
@@ -4335,8 +4348,7 @@ and OptimizeModuleDefs cenv (env, bindInfosColl) defs =
     let defs, minfos = List.unzip defs
     (defs, UnionOptimizationInfos minfos), (env, bindInfosColl)
    
-and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit hidden implFile =
-    let g = cenv.g
+and OptimizeImplFileInternal cenv env isIncrementalFragment hidden implFile =
     let (CheckedImplFile (qname, pragmas, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) = implFile
     let env, contentsR, minfo, hidden = 
         // FSI compiles interactive fragments as if you're typing incrementally into one module.
@@ -4348,13 +4360,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit
             // This optimizes and builds minfo ignoring the signature
             let (defR, minfo), (_env, _bindInfosColl) = OptimizeModuleContents cenv (env, []) contents
             let hidden = ComputeImplementationHidingInfoAtAssemblyBoundary defR hidden
-            let minfo =
-                // In F# interactive multi-assembly mode, no internals are accessible across interactive fragments.
-                // In F# interactive single-assembly mode, internals are accessible across interactive fragments.
-                if fsiMultiAssemblyEmit then
-                    AbstractLazyModulInfoByHiding true hidden minfo
-                else
-                    AbstractLazyModulInfoByHiding false hidden minfo
+            let minfo = AbstractLazyModulInfoByHiding false hidden minfo
             let env = BindValsInModuleOrNamespace cenv minfo env
             env, defR, minfo, hidden
         else
@@ -4362,13 +4368,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit
             let mexprR, minfo = OptimizeModuleExprWithSig cenv env signature contents
             let hidden = ComputeSignatureHidingInfoAtAssemblyBoundary signature hidden
             let minfoExternal = AbstractLazyModulInfoByHiding true hidden minfo
-            let env =
-                // In F# interactive multi-assembly mode, internals are not accessible in the 'env' used intra-assembly
-                // In regular fsc compilation, internals are accessible in the 'env' used intra-assembly
-                if g.isInteractive && fsiMultiAssemblyEmit then
-                    BindValsInModuleOrNamespace cenv minfoExternal env
-                else
-                    BindValsInModuleOrNamespace cenv minfo env
+            let env = BindValsInModuleOrNamespace cenv minfo env
             env, mexprR, minfoExternal, hidden
 
     let implFileR = CheckedImplFile (qname, pragmas, signature, contentsR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
@@ -4376,7 +4376,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit
     env, implFileR, minfo, hidden
 
 /// Entry point
-let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncrementalFragment, fsiMultiAssemblyEmit, emitTailcalls, hidden, mimpls) =
+let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncrementalFragment,  emitTailcalls, hidden, mimpls) =
     let cenv = 
         { settings=settings
           scope=ccu 
@@ -4391,7 +4391,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           realsig = tcGlobals.realsig
         }
 
-    let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment fsiMultiAssemblyEmit hidden mimpls  
+    let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls
 
     let optimizeDuringCodeGen disableMethodSplitting expr =
         let env = { env with disableMethodSplitting = env.disableMethodSplitting || disableMethodSplitting }

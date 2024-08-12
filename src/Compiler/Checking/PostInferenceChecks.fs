@@ -427,6 +427,7 @@ and CheckTypeConstraintDeep cenv f g env x =
      | TyparConstraint.SupportsComparison _
      | TyparConstraint.SupportsEquality _
      | TyparConstraint.SupportsNull _
+     | TyparConstraint.NotSupportsNull _
      | TyparConstraint.IsNonNullableStruct _
      | TyparConstraint.IsUnmanaged _
      | TyparConstraint.IsReferenceType _
@@ -702,10 +703,6 @@ let CheckNoReraise cenv freesOpt (body: Expr) =
         if fvs.UsesUnboundRethrow then
             errorR(Error(FSComp.SR.chkErrorContainsCallToRethrow(), body.Range))
 
-/// Check if a function is a quotation splice operator
-let isSpliceOperator g v = valRefEq g v g.splice_expr_vref || valRefEq g v g.splice_raw_expr_vref
-
-
 /// Examples:
 /// I<int> & I<int> => ExactlyEqual.
 /// I<int> & I<string> => NotEqual.
@@ -775,8 +772,8 @@ let rec CheckExprNoByrefs cenv env expr =
 and CheckValRef (cenv: cenv) (env: env) v m (ctxt: PermitByRefExpr) =
 
     if cenv.reportErrors then
-        if isSpliceOperator cenv.g v && not env.quote then errorR(Error(FSComp.SR.chkSplicingOnlyInQuotations(), m))
-        if isSpliceOperator cenv.g v then errorR(Error(FSComp.SR.chkNoFirstClassSplicing(), m))
+        if cenv.g.isSpliceOperator v && not env.quote then errorR(Error(FSComp.SR.chkSplicingOnlyInQuotations(), m))
+        if cenv.g.isSpliceOperator v then errorR(Error(FSComp.SR.chkNoFirstClassSplicing(), m))
         if valRefEq cenv.g v cenv.g.addrof_vref  then errorR(Error(FSComp.SR.chkNoFirstClassAddressOf(), m))
         if valRefEq cenv.g v cenv.g.reraise_vref then errorR(Error(FSComp.SR.chkNoFirstClassRethrow(), m))
         if valRefEq cenv.g v cenv.g.nameof_vref then errorR(Error(FSComp.SR.chkNoFirstClassNameOf(), m))
@@ -1191,7 +1188,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (ctxt: PermitByRefExpr) : Limit =
         NoLimit
 
     // Allow '%expr' in quotations
-    | Expr.App (Expr.Val (vref, _, _), _, tinst, [arg], m) when isSpliceOperator g vref && env.quote ->
+    | Expr.App (Expr.Val (vref, _, _), _, tinst, [arg], m) when g.isSpliceOperator vref && env.quote ->
         CheckSpliceApplication cenv env (tinst, arg, m)
 
     // Check an application
@@ -2144,10 +2141,6 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
 
                     error(Duplicate(kind, v.DisplayName, v.Range))
 
-#if CASES_IN_NESTED_CLASS
-                if tcref.IsUnionTycon && nm = "Cases" then
-                    errorR(NameClash(nm, kind, v.DisplayName, v.Range, "generated type", "Cases", tcref.Range))
-#endif
                 if tcref.IsUnionTycon then
                     match nm with
                     | "Tag" -> errorR(NameClash(nm, kind, v.DisplayName, v.Range, FSComp.SR.typeInfoGeneratedProperty(), "Tag", tcref.Range))
@@ -2284,7 +2277,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
             else MethInfosEquivByNameAndPartialSig eraseFlag true g cenv.amap m minfo minfo2 (* partial ignores return type *)
 
         let immediateMeths =
-            [ for v in tycon.AllGeneratedValues do yield FSMeth (g, ty, v, None)
+            [ for v in tycon.AllGeneratedInterfaceImplsAndOverrides do yield FSMeth (g, ty, v, None)
               yield! GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g cenv.amap m ty ]
 
         let immediateProps = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomewhere) g cenv.amap m ty
@@ -2536,13 +2529,30 @@ let CheckEntityDefn cenv env (tycon: Entity) =
 
         // Check fields. We check these late because we have to have first checked that the structs are
         // free of cycles
-        if tycon.IsStructOrEnumTycon then
+        if g.langFeatureNullness && g.checkNullness then
             for f in tycon.AllInstanceFieldsAsList do
+                let m = f.Range
                 // Check if it's marked unsafe
                 let zeroInitUnsafe = TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute f.FieldAttribs
                 if zeroInitUnsafe = Some true then
-                   if not (TypeHasDefaultValue g m ty) then
-                       errorR(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
+                    let ty = f.FormalType
+                    // If the condition is detected because of a variation in logic introduced because
+                    // of nullness checking, then only a warning is emitted.
+                    if not (TypeHasDefaultValueNew g m ty) then
+                        if not (TypeHasDefaultValue g m ty) then
+                            errorR(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
+                        else
+                            warning(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
+
+        // These are the old rules (not g.langFeatureNullness or not g.checkNullness), mistakenly only applied to structs
+        elif tycon.IsStructOrEnumTycon then
+            for f in tycon.AllInstanceFieldsAsList do
+                let m = f.Range
+                // Check if it's marked unsafe
+                let zeroInitUnsafe = TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute f.FieldAttribs
+                if zeroInitUnsafe = Some true then
+                    if not (TypeHasDefaultValue g m f.FormalType) then
+                        errorR(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
 
         // Check type abbreviations
         match tycon.TypeAbbrev with

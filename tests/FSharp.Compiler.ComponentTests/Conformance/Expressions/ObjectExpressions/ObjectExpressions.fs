@@ -33,6 +33,93 @@ let implementer() ={ new IFirst  }
          |> withLangVersion80
          |> typecheck
          |> shouldSucceed
+
+    [<Fact>]
+    let ``Object expression can construct an abstract class and also implement interfaces with and without abstract members.`` () =
+        Fsx """
+type IFirst = interface end
+
+type ISecond =
+    abstract member M : unit -> unit
+    
+[<AbstractClass>]
+type MyClass() = class end
+
+{ new MyClass() with
+    member x.ToString() = "OK"
+    
+  interface IFirst
+  
+  interface ISecond with
+      member this.M() = () } |> ignore
+        """
+         |> withLangVersion80
+         |> typecheck
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Object expression can construct an abstract class(missing with...) and also implement interfaces with and without abstract members.`` () =
+        Fsx """
+type IFirst = interface end
+
+type ISecond =
+    abstract member M : unit -> unit
+    
+[<AbstractClass>]
+type MyClass() = class end
+
+{ new MyClass() interface IFirst
+  
+  interface ISecond with
+      member this.M() = () } |> ignore
+        """
+         |> withLangVersion80
+         |> typecheck
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Object expression can construct an abstract class(missing with... and interface in the next line) and also implement interfaces with and without abstract members.`` () =
+        Fsx """
+type IFirst = interface end
+
+type ISecond =
+    abstract member M : unit -> unit
+    
+[<AbstractClass>]
+type MyClass() = class end
+
+{ new MyClass()
+    interface IFirst
+  
+  interface ISecond with
+      member this.M() = () } |> ignore
+        """
+         |> withLangVersion80
+         |> typecheck
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Verifies that the object expression built type has the interface.`` () =
+        Fsx """
+type IFirst = interface end
+
+type ISecond =
+    abstract member M : unit -> unit
+    
+[<AbstractClass>]
+type MyClass() =
+    interface ISecond with
+        member this.M() = printfn "It works"
+
+let expr = { new MyClass() interface IFirst }
+(expr:> ISecond).M()
+        """
+         |> withLangVersion80
+         |> compileExeAndRun
+         |> shouldSucceed
+         |> withStdOutContainsAllInOrder [
+           "It works"
+        ]
          
     [<Fact>]
     let ``Parameterized object expression implementing an interface with members`` () =
@@ -65,17 +152,66 @@ type Foo() = class end
 
 let foo = { new Foo() } // Approved suggestion to allow this https://github.com/fsharp/fslang-suggestions/issues/632
 
+let foo1 = new Foo()
+
 // hacky workaround
-let foo = { new Foo() with member __.ToString() = base.ToString() }
+let foo2 = { new Foo() with member __.ToString() = base.ToString() }
         """
          |> withLangVersion80
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
-            (Error 759, Line 5, Col 13, Line 5, Col 22, "Instances of this type cannot be created since it has been marked abstract or not all methods have been given implementations. Consider using an object expression '{ new ... with ... }' instead.");
-            (Error 738, Line 5, Col 11, Line 5, Col 24, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
-            (Error 740, Line 5, Col 11, Line 5, Col 24, "Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq { ... }'")
-         ]     
+             (Error 738, Line 5, Col 11, Line 5, Col 24, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
+             (Error 759, Line 7, Col 12, Line 7, Col 21, "Instances of this type cannot be created since it has been marked abstract or not all methods have been given implementations. Consider using an object expression '{ new ... with ... }' instead.")
+         ] 
+         
+    [<Fact>]
+    let ``Error when object expression does not implement all abstract members of the abstract class`` () =
+        Fsx """
+[<AbstractClass>]
+type B() = 
+    abstract M : int -> float
+    abstract M : string -> unit
+and [<AbstractClass>]
+    C() = 
+    inherit B()
+    static let v = { new C() with 
+                         member x.M(a:int) : float  = 1.0 }
+    default x.M(a:int) : float  = 1.0
+    
+let y = { new C() with 
+              member x.M(a:int) : float  = 1.0 }
+        """
+         |> withLangVersion80
+         |> typecheck
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 365, Line 9, Col 20, Line 10, Col 60, "No implementation was given for 'abstract B.M: string -> unit'")
+             (Error 365, Line 13, Col 9, Line 14, Col 49, "No implementation was given for 'abstract B.M: string -> unit'")
+         ]
+         
+    [<Fact>]
+    let ``Error when object expression does not implement all abstract members of a generic abstract class`` () =
+        Fsx """
+[<AbstractClass>]
+type BaseHashtable<'Entry, 'Key>(initialCapacity) =
+    abstract member Next : entries : 'Entry array -> int
+
+[<Struct>]    
+type StrongToWeakEntry<'Value when 'Value : not struct> =
+    val mutable public next : int
+
+let f() = { new BaseHashtable<_,_>(2) with
+            override this.Next (entries:StrongToWeakEntry<_> array) = 1
+            override this.Next entries = 1
+          }
+        """
+         |> withLangVersion80
+         |> typecheck
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 359, Line 10, Col 11, Line 13, Col 12, "More than one override implements 'Next: StrongToWeakEntry<'a> array -> int when 'a: not struct'")
+         ]
          
     [<Fact>]
     let ``Object expression can not implementing an interface when it contains a method with no types that can refer to the type for which the implementation is being used`` () =
@@ -331,3 +467,31 @@ consoleLogger.Log("Hello World")
          |> withLangVersion80
          |> compileExeAndRun
          |> shouldSucceed
+
+    [<Fact>]
+    let ``Error reporting ambiguous override method in object expression`` () =
+        Fsx """
+type IExample =
+    abstract member Overloaded : string -> bool
+    abstract member Overloaded : int -> bool
+
+let failingExample x =
+    { new IExample with
+        member __.Overloaded (_ : string) = x
+        member __.Overloaded (_ : int)    = x }
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3213, Line 8, Col 19, Line 8, Col 29, "The member 'Overloaded: string -> 'a' matches multiple overloads of the same method.
+Please restrict it to one of the following:
+   Overloaded: int -> bool
+   Overloaded: string -> bool.")
+            (Error 3213, Line 9, Col 19, Line 9, Col 29, "The member 'Overloaded: int -> 'a' matches multiple overloads of the same method.
+Please restrict it to one of the following:
+   Overloaded: int -> bool
+   Overloaded: string -> bool.")
+            (Error 358, Line 8, Col 19, Line 8, Col 29, "The override for 'Overloaded: int -> bool' was ambiguous")
+            (Error 358, Line 8, Col 19, Line 8, Col 29, "The override for 'Overloaded: string -> bool' was ambiguous")
+            (Error 783, Line 7, Col 11, Line 7, Col 19, "At least one override did not correctly implement its corresponding abstract member")
+        ]

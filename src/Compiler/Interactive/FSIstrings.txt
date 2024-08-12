@@ -32,6 +32,7 @@ fsiIntroPackageSourceUriInfo,"Include package source uri when searching for pack
 fsiIntroTextHashloadInfo,"Load the given file(s) as if compiled and referenced"
 fsiIntroTextHashtimeInfo,"Toggle timing on/off"
 fsiIntroTextHashhelpInfo,"Display help"
+fsiIntroTextHashhelpdocInfo,"Display documentation for an identifier, e.g. #help \"List.map\";;"
 fsiIntroTextHashquitInfo,"Exit"
 fsiIntroTextHashclearInfo,"Clear screen"
 fsiIntroTextHeader2commandLine,"  F# Interactive command line options:"

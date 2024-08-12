@@ -1,0 +1,42 @@
+<Project ToolsVersion="4.0" DefaultTargets="Test" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- Initialize Variables -->
+  <PropertyGroup>
+    <FSharpCompilerPath></FSharpCompilerPath>
+  </PropertyGroup>
+
+  <!-- Expected Values -->
+  <PropertyGroup>
+    <ExpectedFSharpShimPresent>true</ExpectedFSharpShimPresent>
+    <ExpectedFSharpCompilerPath>/Common7/IDE/CommonExtensions/Microsoft/FSharp/Tools/</ExpectedFSharpCompilerPath>
+    <ExpectedFscToolExe>fscAnyCpu.exe</ExpectedFscToolExe>
+    <ExpectedFscToolPath>_VsInstallRoot_/Common7/IDE/CommonExtensions/Microsoft/FSharp/Tools/</ExpectedFscToolPath>
+    <ExpectedDotnetFscCompilerPath></ExpectedDotnetFscCompilerPath>
+    <ExpectedCompile>One;Two;Three;Four;Five;Six;Seven;Eight;Nine;Ten;Eleven;Twelve;Thirteen;Fourteen</ExpectedCompile>
+  </PropertyGroup>
+
+  <Import Project="ToolsTest.props" />
+
+  <PropertyGroup>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <CompileAfter Include="Eleven" />
+    <Compile Include="Thirteen" CompileOrder="CompileLast" />
+    <CompileBefore Include="Three" />
+    <CompileAfter Include="Twelve" />
+    <CompileBefore Include="Four" />
+    <Compile Include="Seven" />
+    <Compile Include="Eight" />
+    <Compile Include="Five" CompileOrder="CompileBefore" />
+    <Compile Include="One" CompileOrder="CompileFirst" />
+    <Compile Include="Nine" CompileOrder="CompileAfter" />
+    <Compile Include="Fourteen" CompileOrder="CompileLast" />
+    <Compile Include="Ten" CompileOrder="CompileAfter" />
+    <Compile Include="Two" CompileOrder="CompileFirst" />
+    <Compile Include="Six" CompileOrder="CompileBefore" />
+  </ItemGroup>
+
+  <Import Project="ToolsTest.targets" />
+
+</Project>

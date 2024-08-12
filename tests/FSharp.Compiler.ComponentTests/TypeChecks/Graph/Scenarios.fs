@@ -940,4 +940,106 @@ do ignore (match "" with | nameof X.Y.Z -> () | _ -> ())
 """
                     (set [| 0 |])
             ]
+        scenario
+            "nameof type with generic parameters"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace A
+
+module B =
+    module C =
+        type D = class end
+"""
+                    Set.empty
+                sourceFile
+                    "Z.fs"
+                    """
+module Z
+
+open System.Threading.Tasks
+
+let _ = nameof Task<A.B.C.D>
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "exception syntax in namespace"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace Foo
+
+exception internal Blah
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+namespace Foo
+
+module Program =
+
+    [<EntryPoint>]
+    let main _ =
+        raise Blah
+        0
+"""
+                    (set [| 0 |])
+        ]
+        scenario
+            "exception syntax in namespace signature"
+            [
+                sourceFile
+                    "A.fsi"
+                    """
+namespace Foo
+
+exception internal Blah
+"""
+                    Set.empty
+                sourceFile
+                    "A.fs"
+                    """
+namespace Foo
+
+exception internal Blah
+"""
+                    (set [| 0 |])
+                sourceFile
+                    "B.fs"
+                    """
+namespace Foo
+
+module Program =
+
+    [<EntryPoint>]
+    let main _ =
+        raise Blah
+        0
+"""
+                    (set [| 0 |])
+        ]
+        scenario
+            "fully qualified type in tuple constructor pattern"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace MyRootNamespace.A
+
+type Foo() = class end
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+namespace MyRootNamespace.A.B
+
+type Bar(foo: MyRootNamespace.A.Foo, s: string) = class end
+"""
+                    (set [| 0 |])
+            ]
     ]

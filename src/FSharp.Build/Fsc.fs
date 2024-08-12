@@ -27,7 +27,7 @@ type public Fsc() as this =
     let mutable codePage: string MaybeNull = null
     let mutable commandLineArgs: ITaskItem list = []
     let mutable compilerTools: ITaskItem[] = [||]
-    let mutable compressMetadata = false
+    let mutable compressMetadata = true
     let mutable debugSymbols = false
     let mutable debugType: string MaybeNull = null
     let mutable defineConstants: ITaskItem[] = [||]
@@ -56,6 +56,7 @@ type public Fsc() as this =
     let mutable preferredUILang: string MaybeNull = null
     let mutable publicSign: bool = false
     let mutable provideCommandLineArgs: bool = false
+    let mutable realsig: bool = true
     let mutable references: ITaskItem[] = [||]
     let mutable referencePath: string MaybeNull = null
     let mutable refOnly: bool = false
@@ -194,6 +195,12 @@ type public Fsc() as this =
         else
             builder.AppendSwitch("--optimize-")
 
+        // realsig
+        if realsig then
+            builder.AppendSwitch("--realsig+")
+        else
+            builder.AppendSwitch("--realsig-")
+
         // Tailcalls
         if not tailcalls then
             builder.AppendSwitch("--tailcalls-")
@@ -223,16 +230,13 @@ type public Fsc() as this =
         // checksumAlgorithm
         builder.AppendSwitchIfNotNull(
             "--checksumalgorithm:",
-            let ToUpperInvariant (s: string) =
-                if isNull s then
-                    null
-                else
-                    s.ToUpperInvariant()
-
-            match ToUpperInvariant(checksumAlgorithm) with
-            | "SHA1" -> "Sha1"
-            | "SHA256" -> "Sha256"
-            | _ -> null
+            match checksumAlgorithm with
+            | Null -> null
+            | NonNull checksumAlgorithm ->
+                match checksumAlgorithm.ToUpperInvariant() with
+                | "SHA1" -> "Sha1"
+                | "SHA256" -> "Sha256"
+                | _ -> null
         )
 
         // Resources
@@ -529,6 +533,11 @@ type public Fsc() as this =
     member _.PublicSign
         with get () = publicSign
         and set (s) = publicSign <- s
+
+    // --realsig[+-]
+    member _.RealSig
+        with get () = realsig
+        and set (b) = realsig <- b
 
     // -r <string>: Reference an F# or .NET assembly.
     member _.References

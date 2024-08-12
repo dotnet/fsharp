@@ -379,6 +379,31 @@ module SyntaxTraversal =
         and traverseSynExpr origPath (expr: SynExpr) =
             let pick = pick expr.Range
 
+            /// Sequential expressions are more likely than
+            /// most other expression kinds to be deeply nested,
+            /// e.g., in very large list or array expressions.
+            /// We treat them specially to avoid blowing the stack,
+            /// since traverseSynExpr itself is not tail-recursive.
+            let rec traverseSequentials path expr =
+                seq {
+                    match expr with
+                    | SynExpr.Sequential(expr1 = expr1; expr2 = SynExpr.Sequential _ as expr2) ->
+                        // It's a nested sequential expression.
+                        // Visit it, but make defaultTraverse do nothing,
+                        // since we're going to traverse its descendants ourselves.
+                        yield dive expr expr.Range (fun expr -> visitor.VisitExpr(path, traverseSynExpr path, (fun _ -> None), expr))
+
+                        // Now traverse its descendants.
+                        let path = SyntaxNode.SynExpr expr :: path
+                        yield dive expr1 expr1.Range (traverseSynExpr path)
+                        yield! traverseSequentials path expr2
+
+                    | _ ->
+                        // It's not a nested sequential expression.
+                        // Traverse it normally.
+                        yield dive expr expr.Range (traverseSynExpr path)
+                }
+
             let defaultTraverse e =
                 let path = SyntaxNode.SynExpr e :: origPath
                 let traverseSynExpr = traverseSynExpr path
@@ -574,9 +599,16 @@ module SyntaxTraversal =
                             | _ -> ()
                             for b in binds do
                                 yield dive b b.RangeOfBindingWithRhs (traverseSynBinding path)
-                            for SynInterfaceImpl(bindings = binds) in ifaces do
+                            for SynInterfaceImpl(ty, withKeyword, binds, members, range) in ifaces do
+                                let path =
+                                    SyntaxNode.SynMemberDefn(SynMemberDefn.Interface(ty, withKeyword, Some members, range))
+                                    :: path
+
                                 for b in binds do
                                     yield dive b b.RangeOfBindingWithRhs (traverseSynBinding path)
+
+                                for m in members do
+                                    yield dive m m.Range (traverseSynMemberDefn path (fun _ -> None))
                         ]
                         |> pick expr
 
@@ -680,11 +712,19 @@ module SyntaxTraversal =
                     ]
                     |> pick expr
 
+                // Nested sequentials.
+                | SynExpr.Sequential(expr1 = synExpr1; expr2 = synExpr2 & SynExpr.Sequential _) ->
+                    [
+                        dive synExpr1 synExpr1.Range traverseSynExpr
+                        yield! traverseSequentials path synExpr2
+                    ]
+                    |> pick expr
+
+                | SynExpr.Sequential(expr1 = synExpr1; expr2 = synExpr2)
                 | SynExpr.Set(targetExpr = synExpr1; rhsExpr = synExpr2)
                 | SynExpr.DotSet(targetExpr = synExpr1; rhsExpr = synExpr2)
                 | SynExpr.TryFinally(tryExpr = synExpr1; finallyExpr = synExpr2)
                 | SynExpr.SequentialOrImplicitYield(expr1 = synExpr1; expr2 = synExpr2)
-                | SynExpr.Sequential(expr1 = synExpr1; expr2 = synExpr2)
                 | SynExpr.While(whileExpr = synExpr1; doExpr = synExpr2)
                 | SynExpr.WhileBang(whileExpr = synExpr1; doExpr = synExpr2)
                 | SynExpr.DotIndexedGet(objectExpr = synExpr1; indexArgs = synExpr2)
@@ -798,6 +838,7 @@ module SyntaxTraversal =
                 | SynType.Fun(argType = ty1; returnType = ty2) -> [ ty1; ty2 ] |> List.tryPick (traverseSynType path)
                 | SynType.MeasurePower(ty, _, _)
                 | SynType.HashConstraint(ty, _)
+                | SynType.WithNull(ty, _, _)
                 | SynType.WithGlobalConstraints(ty, _, _)
                 | SynType.Array(_, ty, _) -> traverseSynType path ty
                 | SynType.StaticConstantNamed(ty1, ty2, _)
@@ -807,6 +848,7 @@ module SyntaxTraversal =
                 | SynType.Paren(innerType = t)
                 | SynType.SignatureParameter(usedType = t) -> traverseSynType path t
                 | SynType.Intersection(types = types) -> List.tryPick (traverseSynType path) types
+                | SynType.StaticConstantNull _
                 | SynType.Anon _
                 | SynType.AnonRecd _
                 | SynType.LongIdent _
@@ -951,6 +993,7 @@ module SyntaxTraversal =
                                 x
                                 |> normalizeMembersToDealWithPeculiaritiesOfGettersAndSetters path (fun _ -> None)
                         ]
+
                         |> pick x
                 | ok -> ok
             | SynMemberDefn.Inherit(synType, _identOption, range) -> traverseInherit (synType, range)

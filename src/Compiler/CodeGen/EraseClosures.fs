@@ -573,6 +573,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                         genericParams = td.GenericParams,
                         attributes = td.Attributes,
                         implements = [],
+                        implementsCustomAttrs = None,
                         nestedTypes = emptyILTypeDefs,
                         layout = ILTypeDefLayout.Auto,
                         extends = Some cenv.mkILTyFuncTy,
@@ -582,7 +583,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                         methodImpls = emptyILMethodImpls,
                         properties = emptyILProperties,
                         events = emptyILEvents,
-                        isKnownToBeAttribute = false,
+                        additionalFlags = ILTypeDefAdditionalFlags.None,
                         securityDecls = emptyILSecurityDecls
                     )
                         .WithSpecialName(false)
@@ -707,6 +708,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                         genericParams = td.GenericParams,
                         attributes = td.Attributes,
                         implements = [],
+                        implementsCustomAttrs = None,
                         layout = ILTypeDefLayout.Auto,
                         nestedTypes = emptyILTypeDefs,
                         extends = Some nowEnvParentClass,
@@ -716,7 +718,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                         methodImpls = emptyILMethodImpls,
                         properties = emptyILProperties,
                         events = emptyILEvents,
-                        isKnownToBeAttribute = false,
+                        additionalFlags = ILTypeDefAdditionalFlags.None,
                         securityDecls = emptyILSecurityDecls
                     )
                         .WithHasSecurity(false)

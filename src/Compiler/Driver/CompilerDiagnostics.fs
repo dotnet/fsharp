@@ -79,6 +79,7 @@ type Exception with
 
     member exn.DiagnosticRange =
         match exn with
+        | DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer(range = m) -> Some m
         | ArgumentsInSigAndImplMismatch(_, implArg) -> Some implArg.idRange
         | ErrorFromAddingConstraint(_, exn2, _) -> exn2.DiagnosticRange
 #if !NO_TYPEPROVIDERS
@@ -176,6 +177,10 @@ type Exception with
         | ConstraintSolverTupleDiffLengths(_, _, _, _, m, _)
         | ConstraintSolverInfiniteTypes(_, _, _, _, m, _)
         | ConstraintSolverMissingConstraint(_, _, _, m, _)
+        | ConstraintSolverNullnessWarningEquivWithTypes(_, _, _, _, _, m, _)
+        | ConstraintSolverNullnessWarningWithTypes(_, _, _, _, _, m, _)
+        | ConstraintSolverNullnessWarningWithType(_, _, _, m, _)
+        | ConstraintSolverNullnessWarning(_, m, _)
         | ConstraintSolverTypesNotInEqualityRelation(_, _, _, m, _, _)
         | ConstraintSolverError(_, m, _)
         | ConstraintSolverTypesNotInSubsumptionRelation(_, _, _, m, _)
@@ -320,7 +325,7 @@ type Exception with
         | BadEventTransformation _ -> 91
         | HashLoadedScriptConsideredSource _ -> 92
         | UnresolvedConversionOperator _ -> 93
-        | ArgumentsInSigAndImplMismatch _ -> 3218
+
         // avoid 94-100 for safety
         | ObsoleteError _ -> 101
 #if !NO_TYPEPROVIDERS
@@ -328,6 +333,9 @@ type Exception with
         | TypeProviders.ProvidedTypeResolution _ -> 103
 #endif
         | PatternMatchCompilation.EnumMatchIncomplete _ -> 104
+        | Failure _ -> 192
+        | DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer _ -> 318
+        | ArgumentsInSigAndImplMismatch _ -> 3218
 
         // Strip TargetInvocationException wrappers
         | :? TargetInvocationException as e -> e.InnerException.DiagnosticNumber
@@ -335,13 +343,16 @@ type Exception with
         | DiagnosticWithText(n, _, _) -> n
         | DiagnosticWithSuggestions(n, _, _, _, _) -> n
         | DiagnosticEnabledWithLanguageFeature(n, _, _, _) -> n
-        | Failure _ -> 192
         | IllegalFileNameChar(fileName, invalidChar) -> fst (FSComp.SR.buildUnexpectedFileNameCharacter (fileName, string invalidChar))
 #if !NO_TYPEPROVIDERS
         | :? TypeProviderError as e -> e.Number
 #endif
         | ErrorsFromAddingSubsumptionConstraint(_, _, _, _, _, ContextInfo.DowncastUsedInsteadOfUpcast _, _) ->
             fst (FSComp.SR.considerUpcast ("", ""))
+        | ConstraintSolverNullnessWarningEquivWithTypes _ -> 3261
+        | ConstraintSolverNullnessWarningWithTypes _ -> 3261
+        | ConstraintSolverNullnessWarningWithType _ -> 3261
+        | ConstraintSolverNullnessWarning _ -> 3261
         | _ -> 193
 
 type PhasedDiagnostic with
@@ -449,6 +460,10 @@ module OldStyleMessages =
     let ConstraintSolverTupleDiffLengthsE () = Message("ConstraintSolverTupleDiffLengths", "%d%d")
     let ConstraintSolverInfiniteTypesE () = Message("ConstraintSolverInfiniteTypes", "%s%s")
     let ConstraintSolverMissingConstraintE () = Message("ConstraintSolverMissingConstraint", "%s")
+    let ConstraintSolverNullnessWarningEquivWithTypesE () = Message("ConstraintSolverNullnessWarningEquivWithTypes", "%s%s")
+    let ConstraintSolverNullnessWarningWithTypesE () = Message("ConstraintSolverNullnessWarningWithTypes", "%s%s")
+    let ConstraintSolverNullnessWarningWithTypeE () = Message("ConstraintSolverNullnessWarningWithType", "%s")
+    let ConstraintSolverNullnessWarningE () = Message("ConstraintSolverNullnessWarning", "%s")
     let ConstraintSolverTypesNotInEqualityRelation1E () = Message("ConstraintSolverTypesNotInEqualityRelation1", "%s%s")
     let ConstraintSolverTypesNotInEqualityRelation2E () = Message("ConstraintSolverTypesNotInEqualityRelation2", "%s%s")
     let ConstraintSolverTypesNotInSubsumptionRelationE () = Message("ConstraintSolverTypesNotInSubsumptionRelation", "%s%s%s")
@@ -606,14 +621,18 @@ module OldStyleMessages =
     let TargetInvocationExceptionWrapperE () = Message("TargetInvocationExceptionWrapper", "%s")
     let ArgumentsInSigAndImplMismatchE () = Message("ArgumentsInSigAndImplMismatch", "%s%s")
 
+    let DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferE () =
+        Message("DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer", "%s%s%s%s")
+
 #if DEBUG
 let mutable showParserStackOnParseError = false
 #endif
 
+[<return: Struct>]
 let (|InvalidArgument|_|) (exn: exn) =
     match exn with
-    | :? ArgumentException as e -> Some e.Message
-    | _ -> None
+    | :? ArgumentException as e -> ValueSome e.Message
+    | _ -> ValueNone
 
 let OutputNameSuggestions (os: StringBuilder) suggestNames suggestionsF idText =
     if suggestNames then
@@ -670,6 +689,57 @@ type Exception with
 
             if m.StartLine <> m2.StartLine then
                 os.AppendString(SeeAlsoE().Format(stringOfRange m))
+
+        | ConstraintSolverNullnessWarningEquivWithTypes(denv, ty1, ty2, _nullness1, _nullness2, m, m2) ->
+
+            // Turn on nullness annotations for messages about nullness
+            let denv =
+                { denv with
+                    showNullnessAnnotations = Some true
+                }
+
+            let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+
+            os.Append(ConstraintSolverNullnessWarningEquivWithTypesE().Format t1 t2)
+            |> ignore
+
+            if m.StartLine <> m2.StartLine then
+                os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
+
+        | ConstraintSolverNullnessWarningWithTypes(denv, ty1, ty2, _nullness1, _nullness2, m, m2) ->
+
+            // Turn on nullness annotations for messages about nullness
+            let denv =
+                { denv with
+                    showNullnessAnnotations = Some true
+                }
+
+            let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+
+            os.Append(ConstraintSolverNullnessWarningWithTypesE().Format t1 t2) |> ignore
+
+            if m.StartLine <> m2.StartLine then
+                os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
+
+        | ConstraintSolverNullnessWarningWithType(denv, ty, _, m, m2) ->
+
+            // Turn on nullness annotations for messages about nullness
+            let denv =
+                { denv with
+                    showNullnessAnnotations = Some true
+                }
+
+            let t = NicePrint.minimalStringOfType denv ty
+            os.Append(ConstraintSolverNullnessWarningWithTypeE().Format(t)) |> ignore
+
+            if m.StartLine <> m2.StartLine then
+                os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
+
+        | ConstraintSolverNullnessWarning(msg, m, m2) ->
+            os.Append(ConstraintSolverNullnessWarningE().Format(msg)) |> ignore
+
+            if m.StartLine <> m2.StartLine then
+                os.AppendString(SeeAlsoE().Format(stringOfRange m2))
 
         | ConstraintSolverMissingConstraint(denv, tpr, tpc, m, m2) ->
             os.AppendString(
@@ -739,7 +809,7 @@ type Exception with
 
         | ErrorFromAddingTypeEquation(error = ConstraintSolverError _ as e) -> e.Output(os, suggestNames)
 
-        | ErrorFromAddingTypeEquation(_g, denv, ty1, ty2, ConstraintSolverTupleDiffLengths(_, contextInfo, tl1, tl2, _, _), m) ->
+        | ErrorFromAddingTypeEquation(_g, denv, ty1, ty2, ConstraintSolverTupleDiffLengths(_, contextInfo, tl1, tl2, m1, m2), m) ->
             let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
             let messageArgs = tl1.Length, ty1, tl2.Length, ty2
 
@@ -756,6 +826,11 @@ type Exception with
                     else
                         os.AppendString(FSComp.SR.listElementHasWrongTypeTuple messageArgs)
                 | _ -> os.AppendString(ErrorFromAddingTypeEquationTuplesE().Format tl1.Length ty1 tl2.Length ty2 tpcs)
+            else
+                os.AppendString(ConstraintSolverTupleDiffLengthsE().Format tl1.Length tl2.Length)
+
+                if m1.StartLine <> m2.StartLine then
+                    os.AppendString(SeeAlsoE().Format(stringOfRange m1))
 
         | ErrorFromAddingTypeEquation(g, denv, ty1, ty2, e, _) ->
             if not (typeEquiv g ty1 ty2) then
@@ -823,7 +898,8 @@ type Exception with
             let argsMessage, returnType, genericParametersMessage =
 
                 let retTy =
-                    knownReturnType |> Option.defaultValue (TType_var(Typar.NewUnlinked(), 0uy))
+                    knownReturnType
+                    |> Option.defaultValue (TType.TType_var(Typar.NewUnlinked(), KnownAmbivalentToNull))
 
                 let argRepr =
                     callerArgs.ArgumentNamesAndTypes
@@ -1230,9 +1306,9 @@ type Exception with
                 | Parser.TOKEN_INTERP_STRING_BEGIN_PART -> SR.GetString("Parser.TOKEN.INTERP.STRING.BEGIN.PART")
                 | Parser.TOKEN_INTERP_STRING_PART -> SR.GetString("Parser.TOKEN.INTERP.STRING.PART")
                 | Parser.TOKEN_INTERP_STRING_END -> SR.GetString("Parser.TOKEN.INTERP.STRING.END")
+                | Parser.TOKEN_BAR_JUST_BEFORE_NULL -> SR.GetString("Parser.TOKEN.BAR_JUST_BEFORE_NULL")
                 | unknown ->
-                    Debug.Assert(false, "unknown token tag")
-                    let result = sprintf "%+A" unknown
+                    let result = sprintf "unknown token tag %+A" unknown
                     Debug.Assert(false, result)
                     result
 
@@ -1857,6 +1933,17 @@ type Exception with
         | ArgumentsInSigAndImplMismatch(sigArg, implArg) ->
             os.AppendString(ArgumentsInSigAndImplMismatchE().Format sigArg.idText implArg.idText)
 
+        | DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer(denv, implTycon, _sigTycon, implTypeAbbrev, sigTypeAbbrev, _m) ->
+            let s1, s2, _ = NicePrint.minimalStringsOfTwoTypes denv implTypeAbbrev sigTypeAbbrev
+
+            os.AppendString(
+                DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferE().Format
+                    (implTycon.TypeOrMeasureKind.ToString())
+                    implTycon.DisplayName
+                    s1
+                    s2
+            )
+
         // Strip TargetInvocationException wrappers
         | :? TargetInvocationException as exn -> exn.InnerException.Output(os, suggestNames)
 
@@ -2154,8 +2241,11 @@ type DiagnosticsLoggerFilteringByScopedPragmas
     (checkFile, scopedPragmas, diagnosticOptions: FSharpDiagnosticOptions, diagnosticsLogger: DiagnosticsLogger) =
     inherit DiagnosticsLogger("DiagnosticsLoggerFilteringByScopedPragmas")
 
+    let mutable realErrorPresent = false
+
     override _.DiagnosticSink(diagnostic: PhasedDiagnostic, severity) =
         if severity = FSharpDiagnosticSeverity.Error then
+            realErrorPresent <- true
             diagnosticsLogger.DiagnosticSink(diagnostic, severity)
         else
             let report =
@@ -2182,6 +2272,8 @@ type DiagnosticsLoggerFilteringByScopedPragmas
                     diagnosticsLogger.DiagnosticSink(diagnostic, severity)
 
     override _.ErrorCount = diagnosticsLogger.ErrorCount
+
+    override _.CheckForRealErrorsIgnoringWarnings = realErrorPresent
 
 let GetDiagnosticsLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, diagnosticOptions, diagnosticsLogger) =
     DiagnosticsLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, diagnosticOptions, diagnosticsLogger) :> DiagnosticsLogger

@@ -324,7 +324,7 @@ module DispatchSlotChecking =
     let CheckDispatchSlotsAreImplemented (denv, infoReader: InfoReader, m,
                                           nenv, sink: TcResultsSink,
                                           isOverallTyAbstract,
-                                          isObjExpr: bool,
+                                          isObjExpr,
                                           reqdTy,
                                           dispatchSlots: RequiredSlot list,
                                           availPriorOverrides: OverrideInfo list,
@@ -333,7 +333,7 @@ module DispatchSlotChecking =
         let amap = infoReader.amap
 
         let isReqdTyInterface = isInterfaceTy g reqdTy
-        let showMissingMethodsAndRaiseErrors = (isReqdTyInterface || not isOverallTyAbstract)
+        let showMissingMethodsAndRaiseErrors = (isReqdTyInterface || not isOverallTyAbstract) || (isOverallTyAbstract && isObjExpr)
         
         let mutable res = true
         let fail exn =
@@ -380,8 +380,7 @@ module DispatchSlotChecking =
                     let compiledSig = CompiledSigOfMeth g amap m dispatchSlot
                     
                     let noimpl() =
-                        if dispatchSlot.IsInstance then
-                            missingOverloadImplementation.Add((isReqdTyInterface, lazy NicePrint.stringOfMethInfo infoReader m denv dispatchSlot))
+                        missingOverloadImplementation.Add((isReqdTyInterface, lazy NicePrint.stringOfMethInfo infoReader m denv dispatchSlot))
                     
                     match overrides |> List.filter (IsPartialMatch g dispatchSlot compiledSig) with 
                     | [] -> 
@@ -404,10 +403,8 @@ module DispatchSlotChecking =
                             
                             let (CompiledSig (vargTys, _, fvmethTypars, _)) = compiledSig
                             
-                            // Object expressions can only implement instance members
-                            let isObjExprWithInstanceMembers = (isObjExpr && isInstance)
-                            if isObjExprWithInstanceMembers || isInstance then
-                                if moreThanOnePossibleDispatchSlot then
+                            if isInstance then
+                                if moreThanOnePossibleDispatchSlot  then
                                     noimpl()
 
                                 elif (argTys.Length <> vargTys.Length) then
@@ -416,7 +413,7 @@ module DispatchSlotChecking =
                                     fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfTypeParameters(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
                                 elif not (IsTyparKindMatch compiledSig overrideBy) then
                                     fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectKindsOfGenericParameters(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
-                                else 
+                                else
                                     fail(Error(FSComp.SR.typrelMemberCannotImplement(FormatOverride denv overrideBy, NicePrint.stringOfMethInfo infoReader m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
                         | overrideBy :: _ -> 
                             errorR(Error(FSComp.SR.typrelOverloadNotFound(FormatMethInfoSig g amap m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
@@ -427,8 +424,8 @@ module DispatchSlotChecking =
                         else
                             // Error will be reported below in CheckOverridesAreAllUsedOnce 
                             ()
-                    | _ -> 
-                        fail(Error(FSComp.SR.typrelOverrideWasAmbiguous(FormatMethInfoSig g amap m denv dispatchSlot), m))
+                    | ambiguousOverride :: _ ->
+                        fail(Error(FSComp.SR.typrelOverrideWasAmbiguous(FormatMethInfoSig g amap ambiguousOverride.Range denv dispatchSlot), ambiguousOverride.Range))
             | _ -> fail(Error(FSComp.SR.typrelMoreThenOneOverride(FormatMethInfoSig g amap m denv dispatchSlot), m))
         
         if missingOverloadImplementation.Count > 0 then
@@ -776,7 +773,7 @@ module DispatchSlotChecking =
 
         // Get all the members that are immediately part of this type
         // Include the auto-generated members
-        let allImmediateMembers = tycon.MembersOfFSharpTyconSorted @ tycon.AllGeneratedValues
+        let allImmediateMembers = tycon.MembersOfFSharpTyconSorted @ tycon.AllGeneratedInterfaceImplsAndOverrides
 
         // Get all the members we have to implement, organized by each type we explicitly implement
         let slotImplSets = GetSlotImplSets infoReader denv AccessibleFromSomewhere false allReqdTys
@@ -831,7 +828,7 @@ module DispatchSlotChecking =
                     let allCorrect = CheckDispatchSlotsAreImplemented (denv, infoReader, m, nenv, sink, tcaug.tcaug_abstract, false, reqdTy, dispatchSlots, availPriorOverrides, overrides)
                     
                     // Tell the user to mark the thing abstract if it was missing implementations
-                    if not allCorrect && not tcaug.tcaug_abstract && not (isInterfaceTy g reqdTy) then 
+                    if not allCorrect && not tcaug.tcaug_abstract && (isClassTy g reqdTy) then
                         errorR(TypeIsImplicitlyAbstract(m))
                     
                     let overridesToCheck = 
@@ -897,7 +894,7 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv
 #endif
        Option.isNone tycon.GeneratedCompareToValues &&
        tycon.HasInterface g g.mk_IComparable_ty && 
-       not (tycon.HasOverride g "Equals" [g.obj_ty]) && 
+       not (tycon.HasOverride g "Equals" [g.obj_ty_ambivalent]) && 
        not tycon.IsFSharpInterfaceTycon
      then
         (* Warn when we're doing this for class types *)
@@ -916,7 +913,7 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv
         let tcaug = tycon.TypeContents
         let m = tycon.Range
         let hasExplicitObjectGetHashCode = tycon.HasOverride g "GetHashCode" []
-        let hasExplicitObjectEqualsOverride = tycon.HasOverride g "Equals" [g.obj_ty]
+        let hasExplicitObjectEqualsOverride = tycon.HasOverride g "Equals" [g.obj_ty_ambivalent]
 
         if (Option.isSome tycon.GeneratedHashAndEqualsWithComparerValues) && 
            (hasExplicitObjectGetHashCode || hasExplicitObjectEqualsOverride) then 

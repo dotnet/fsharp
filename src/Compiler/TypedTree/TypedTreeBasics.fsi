@@ -118,6 +118,20 @@ val ccuOfValRef: vref: ValRef -> CcuThunk option
 
 val ccuOfTyconRef: eref: EntityRef -> CcuThunk option
 
+val NewNullnessVar: unit -> Nullness
+
+val KnownAmbivalentToNull: Nullness
+
+val KnownWithNull: Nullness
+
+val KnownWithoutNull: Nullness
+
+val combineNullness: Nullness -> Nullness -> Nullness
+
+val tryAddNullnessToTy: Nullness -> TType -> TType option
+
+val addNullnessToTy: Nullness -> TType -> TType
+
 val mkTyparTy: tp: Typar -> TType
 
 val copyTypars: clearStaticReq: bool -> tps: Typar list -> Typar list
@@ -126,14 +140,17 @@ val tryShortcutSolvedUnitPar: canShortcut: bool -> r: Typar -> Measure
 
 val stripUnitEqnsAux: canShortcut: bool -> unt: Measure -> Measure
 
-val stripTyparEqnsAux: canShortcut: bool -> ty: TType -> TType
+val stripTyparEqnsAux: nullness0: Nullness -> canShortcut: bool -> ty: TType -> TType
+
+val replaceNullnessOfTy: nullness: Nullness -> ty: TType -> TType
 
 val stripTyparEqns: ty: TType -> TType
 
 val stripUnitEqns: unt: Measure -> Measure
 
 /// Detect a use of a nominal type, including type abbreviations.
-val (|AbbrevOrAppTy|_|): ty: TType -> (TyconRef * TypeInst) option
+[<return: Struct>]
+val (|AbbrevOrAppTy|_|): ty: TType -> (TyconRef * TypeInst) voption
 
 val mkLocalValRef: v: Val -> ValRef
 

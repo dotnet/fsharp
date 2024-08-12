@@ -68,7 +68,6 @@ let main _args =
     printf "BasicThreeLongs=%i;GenericOfInt=%i;GenericOfString=%i;MixWithBool=%i;MixWithString=%i;Erasure=%i" structUnionSize genericSizeForInt genericSizeForString sizeForMixingWithBool sizeForMixingWithString sizeForSharingAfterErasure
     0
         """   
-        |> withLangVersionPreview
         |> asExe
         |> compile
         |> shouldSucceed
@@ -215,7 +214,6 @@ type StructUnion =
     | B of string
     | C of string
         """
-        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
         
@@ -288,7 +286,6 @@ type StructUnion =
     | A of Item: int
     | B of Item: string
         """
-        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
@@ -305,7 +302,6 @@ type StructUnion =
     | A of Item: int
     | B of item : string
         """
-        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
         
@@ -352,7 +348,6 @@ type StructUnion =
     | A of Item: int * item: string
     | B of string
         """
-        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withDiagnostics  [
@@ -368,7 +363,6 @@ type StructUnion =
     | A of Item: int * item: string
     | B of item: string
         """
-        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
             
@@ -527,7 +521,6 @@ namespace Foo
 [<Struct>]
 type StructUnion = A of int | B of string
         """
-        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
@@ -556,7 +549,6 @@ type StructUnion =
     | B of string
     | C of string
         """
-        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
 
@@ -571,7 +563,6 @@ type StructUnion =
     | B of string
     | C of string
         """
-        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
         
@@ -585,7 +576,6 @@ type StructUnion =
     | B of string
     | C of string
         """
-        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
         
@@ -599,7 +589,6 @@ type StructUnion =
     | B of string
     | C of string
         """
-        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
 
@@ -652,7 +641,6 @@ type StructUnion =
     | B of string * b: string
     | C of c: string * string * c3: int
         """
-        |> withLangVersionPreview
         |> typecheck        
         |> shouldSucceed
         
@@ -752,6 +740,18 @@ type GenericStructDu<'T> = EmptyFirst | SingleVal of f:'T | DoubleVal of f2:'T *
         """
         |> compile
         |> shouldSucceed
+        
+    [<Fact>]
+    let ``Error when declaring an abstract member in union struct type`` () =
+        Fsx """
+[<Struct>]
+type U = 
+  | A | B
+  abstract M : unit -> unit
+       """
+        |> typecheck 
+        |> shouldFail
+        |> withSingleDiagnostic (Error 912, Line 5, Col 3, Line 5, Col 28, "This declaration element is not permitted in an augmentation")
 
     [<Fact>]
     let ``Regression 16282 DefaultAugment false on a struct union with fields`` ()  =
@@ -766,6 +766,7 @@ type Foo =
 
 let foo = [Baz 42; Bat; Batman]
 printf "%A" foo"""
+        |> withLangVersionPreview
         |> asExe
         |> compile
         |> shouldSucceed

@@ -10,7 +10,7 @@ module ``Cast to Units Tests`` =
     
     [<Test>]
     let ``Casting to Measures should compile``() =
-        CompilerAssert.PassWithOptions [| "--langversion:preview" |]
+        CompilerAssert.PassWithOptions [| |]
             """
 module M
 

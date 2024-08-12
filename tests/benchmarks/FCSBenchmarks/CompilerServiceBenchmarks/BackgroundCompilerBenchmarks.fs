@@ -6,6 +6,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 open FSharp.Compiler.Diagnostics
 open FSharp.Test.ProjectGeneration
+open BenchmarkDotNet.Engines
 open FSharp.Benchmarks.Common.Categories
 
 [<MemoryDiagnoser>]
@@ -105,7 +106,7 @@ type ParsingBenchmark() =
     let mutable checker: FSharpChecker = Unchecked.defaultof<_>
     let mutable parsingOptions: FSharpParsingOptions = Unchecked.defaultof<_>
 
-    let filePath = __SOURCE_DIRECTORY__ ++ ".." ++ ".." ++ ".." ++ ".." ++ "src" ++ "Compiler" ++ "Checking" ++ "CheckExpressions.fs"
+    let filePath = __SOURCE_DIRECTORY__ ++ ".." ++ ".." ++ ".." ++ ".." ++ "src" ++ "Compiler" ++ "Checking" ++ "Expressions" ++ "CheckExpressions.fs"
     let source = File.ReadAllText filePath |> SourceText.ofString
 
     [<ParamsAllValues>]

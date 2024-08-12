@@ -4,13 +4,17 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <UseAppHost Condition="'$(DotNetBuildFromSource)' == 'true'">false</UseAppHost>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PublishReadyToRun>$(EnablePublishReadyToRun)</PublishReadyToRun>
+    <RuntimeIdentifier>$(NETCoreSdkRuntimeIdentifier)</RuntimeIdentifier>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="AssemblyCheck.fs" />
     <Content Include="SkipVerifyEmbeddedPdb.txt">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 

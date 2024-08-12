@@ -38,6 +38,8 @@ module internal PrintUtilities =
 
     let squareAngleL x = LeftL.leftBracketAngle ^^ x ^^ RightL.rightBracketAngle
 
+    let squareAngleReturn x = LeftL.leftBracketAngle ^^ WordL.keywordReturn ^^ SepL.colon ^^ x ^^ RightL.rightBracketAngle
+
     let angleL x = SepL.leftAngle ^^ x ^^ RightL.rightAngle
 
     let braceL x = wordL leftBrace ^^ x ^^ wordL rightBrace
@@ -333,6 +335,13 @@ module internal PrintUtilities =
         | Some w -> Display.squashTo w layout
         | None -> layout
         
+    // When showing types in diagnostics, we don't show nullness annotations by default
+    // unless the diagnostic is specifically about nullness.
+    let suppressNullnessAnnotations denv =
+        match denv.showNullnessAnnotations with
+        | None -> { denv with showNullnessAnnotations = Some false }
+        | _ -> denv
+
 module PrintIL = 
 
     let fullySplitILTypeRef (tref: ILTypeRef) = 
@@ -492,7 +501,7 @@ module PrintTypes =
             | Const.Zero -> tagKeyword(if isRefTy g ty then "null" else "default")
         wordL str
 
-    let layoutAccessibilityCore (denv: DisplayEnv) accessibility =
+    let layoutAccessibilityCoreWithProtected (denv: DisplayEnv) isProtected accessibility =
         let isInternalCompPath x = 
             match x with 
             | CompPath(ILScopeRef.Local, _, []) -> true 
@@ -503,11 +512,15 @@ module PrintTypes =
             | _ when List.forall isInternalCompPath p -> Internal 
             | _ -> Private
         match denv.contextAccessibility, accessibility with
+        | _ when isProtected -> wordL (tagKeyword "protected")
         | Public, Internal -> WordL.keywordInternal
         | Public, Private -> WordL.keywordPrivate
         | Internal, Private -> WordL.keywordPrivate
         | _ -> emptyL
-    
+
+    let layoutAccessibilityCore (denv: DisplayEnv) accessibility = 
+        layoutAccessibilityCoreWithProtected denv false accessibility
+
     let layoutAccessibility (denv: DisplayEnv) accessibility itemL =
         layoutAccessibilityCore denv accessibility ++ itemL
 
@@ -630,6 +643,23 @@ module PrintTypes =
     and layoutILAttrib denv (ty, args) = 
         let argsL = bracketL (sepListL RightL.comma (List.map (layoutILAttribElement denv) args))
         PrintIL.layoutILType denv [] ty ++ argsL
+
+    /// Layout nullness attributes for C# flow-analysis
+    /// F# does not process them, this way we can at least show them.
+    and layoutCsharpCodeAnalysisIlAttributes denv (attrs:ILAttributes)  (layoutCombinator: Layout -> Layout -> Layout) restL =
+        let denvShortNames() = { denv with shortTypeNames = true }
+        let attrsL = 
+            [ for a in attrs.AsArray() do
+                let name =  a.Method.DeclaringType.BasicQualifiedName
+                if name.StartsWith("System.Diagnostics.CodeAnalysis") then
+                    let parms, _args = decodeILAttribData a 
+                    layoutILAttrib (denvShortNames()) (a.Method.DeclaringType, parms)
+            ]
+        match attrsL with
+        | [] -> restL
+        | _ ->
+            let separated = sepListL RightL.semicolon attrsL 
+            layoutCombinator separated restL
 
     /// Layout '[<attribs>]' above another block 
     and layoutAttribs denv startOpt isLiteral kind attrs restL = 
@@ -790,6 +820,9 @@ module PrintTypes =
         | TyparConstraint.SupportsNull _ ->
             [wordL (tagKeyword "null") |> longConstraintPrefix]
 
+        | TyparConstraint.NotSupportsNull _ ->
+                [(wordL (tagKeyword "not null") (* ^^ wordL(tagKeyword "null") *) ) |> longConstraintPrefix]
+
         | TyparConstraint.IsNonNullableStruct _ ->
             if denv.shortConstraints then 
                 [wordL (tagText "value type")]
@@ -895,6 +928,16 @@ module PrintTypes =
             | [] -> tcL
             | [arg] -> layoutTypeWithInfoAndPrec denv env 2 arg ^^ tcL
             | args -> bracketIfL (prec <= 1) (bracketL (layoutTypesWithInfoAndPrec denv env 2 SepL.comma args) --- tcL)
+
+    and layoutNullness (denv: DisplayEnv) part2 (nullness: Nullness) =
+        // Show nullness annotations unless explicitly turned off
+        if denv.showNullnessAnnotations <> Some false then
+            match nullness.Evaluate() with
+            | NullnessInfo.WithNull -> part2 ^^ wordL (tagText "| null")
+            | NullnessInfo.WithoutNull -> part2
+            | NullnessInfo.AmbivalentToNull -> part2 //^^ wordL (tagText "__maybenull")
+        else
+            part2
     
     /// Layout a type, taking precedence into account to insert brackets where needed
     and layoutTypeWithInfoAndPrec denv env prec ty =
@@ -915,46 +958,52 @@ module PrintTypes =
 
         // Always prefer 'float' to 'float<1>'
         | TType_app (tc, args, _) when tc.IsMeasureableReprTycon && List.forall (isDimensionless g) args ->
-          layoutTypeWithInfoAndPrec denv env prec (reduceTyconRefMeasureableOrProvided g tc args)
+            layoutTypeWithInfoAndPrec denv env prec (reduceTyconRefMeasureableOrProvided g tc args)
 
         // Layout a type application
-        | TType_ucase (UnionCaseRef(tc, _), args)
-        | TType_app (tc, args, _) ->
-          let prefix = usePrefix denv tc
-          let demangledCompilationPathOpt, args =
-              if not denv.includeStaticParametersInTypeNames then
-                  None, args
-              else
-                  let regex = System.Text.RegularExpressions.Regex(@"\`\d+")
-                  let path, skip =
-                      (0, tc.CompilationPath.DemangledPath)
-                      ||> List.mapFold (fun skip path ->
-                          // Verify the path does not contain a generic parameter count.
-                          // For example Foo`3 indicates that there are three parameters in args that belong to this path.
-                          let m = regex.Match(path)
-                          if not m.Success then
-                              path, skip
-                          else
-                              let take = m.Value.Replace("`", "") |> int
-                              let genericArgs =
-                                  List.skip skip args
-                                  |> List.take take
-                                  |> List.map (layoutTypeWithInfoAndPrec denv env prec >> showL)
-                                  |> String.concat ","
-                                  |> sprintf "<%s>"
-                              String.Concat(path.Substring(0, m.Index), genericArgs), (skip + take)
-                      )
+        | TType_ucase (UnionCaseRef(tc, _), args) ->
+            let prefix = usePrefix denv tc
+            layoutTypeAppWithInfoAndPrec denv env (layoutTyconRefImpl false denv tc None) prec prefix args
+        | TType_app (tc, args, nullness) ->
+            let prefix = usePrefix denv tc
+            let demangledCompilationPathOpt, args =
+                if not denv.includeStaticParametersInTypeNames then
+                    None, args
+                else
+                    let regex = System.Text.RegularExpressions.Regex(@"\`\d+")
+                    let path, skip =
+                        (0, tc.CompilationPath.DemangledPath)
+                        ||> List.mapFold (fun skip path ->
+                            // Verify the path does not contain a generic parameter count.
+                            // For example Foo`3 indicates that there are three parameters in args that belong to this path.
+                            let m = regex.Match(path)
+                            if not m.Success then
+                                path, skip
+                            else
+                                let take = m.Value.Replace("`", "") |> int
+                                let genericArgs =
+                                    List.skip skip args
+                                    |> List.take take
+                                    |> List.map (layoutTypeWithInfoAndPrec denv env prec >> showL)
+                                    |> String.concat ","
+                                    |> sprintf "<%s>"
+                                String.Concat(path.Substring(0, m.Index), genericArgs), (skip + take)
+                        )
 
-                  Some path, List.skip skip args
+                    Some path, List.skip skip args
 
-          layoutTypeAppWithInfoAndPrec
-              denv
-              env
-              (layoutTyconRefImpl false denv tc demangledCompilationPathOpt)
-              prec
-              prefix
-              args
+            let part1 =
+                layoutTypeAppWithInfoAndPrec
+                    denv
+                    env
+                    (layoutTyconRefImpl false denv tc demangledCompilationPathOpt)
+                    prec
+                    prefix
+                    args
 
+            let part2 = layoutNullness denv part1 nullness
+
+            part2
         // Layout a tuple type 
         | TType_anon (anonInfo, tys) ->
             let core = sepListL RightL.semicolon (List.map2 (fun nm ty -> wordL (tagField nm) ^^ RightL.colon ^^ layoutTypeWithInfoAndPrec denv env prec ty) (Array.toList anonInfo.SortedNames) tys)
@@ -979,16 +1028,20 @@ module PrintTypes =
             | [h] -> layoutTyparRefWithInfo denv env h ^^ rightL dot --- tauL
             | h :: t -> spaceListL (List.map (layoutTyparRefWithInfo denv env) (h :: t)) ^^ rightL dot --- tauL
 
-        | TType_fun _ ->
+        | TType_fun (_, _, nullness) ->
             let argTys, retTy = stripFunTy g ty
             let retTyL = layoutTypeWithInfoAndPrec denv env 5 retTy
             let argTysL = argTys |> List.map (layoutTypeWithInfoAndPrec denv env 4)
             let funcTyL = curriedLayoutsL arrow argTysL retTyL
-            bracketIfL (prec <= 4) funcTyL
+            let part1 = bracketIfL (prec <= 4) funcTyL
+            let part2 = layoutNullness denv part1 nullness
+            part2
 
         // Layout a type variable . 
-        | TType_var (r, _) ->
-            layoutTyparRefWithInfo denv env r
+        | TType_var (r, nullness) ->
+            let part1 = layoutTyparRefWithInfo denv env r
+            let part2 = layoutNullness denv part1 nullness
+            part2
 
         | TType_measure unt -> layoutMeasure denv unt
 
@@ -1259,7 +1312,7 @@ module PrintTastMemberOrVals =
         else 
             nameL
 
-    let layoutMemberName (denv: DisplayEnv) (vref: ValRef) niceMethodTypars argInfos tagFunction name =
+    let layoutMemberName (denv: DisplayEnv) (vref: ValRef) niceMethodTypars argInfos tagFunction name withAccessibility =
         let nameL = ConvertValLogicalNameToDisplayLayout vref.IsBaseVal (tagFunction >> mkNav vref.DefinitionRange >> wordL) name
         let nameL =
             if denv.showMemberContainers then 
@@ -1281,10 +1334,11 @@ module PrintTastMemberOrVals =
                 layoutTyparDecls denv nameL true niceMethodTypars
             else
                 nameL
-        let nameL = layoutAccessibility denv vref.Accessibility nameL
-        nameL
+        if withAccessibility then layoutAccessibility denv vref.Accessibility nameL
+        else nameL
 
     let prettyLayoutOfMemberShortOption denv typarInst (v: Val) short =
+        let denv = suppressNullnessAnnotations denv
         let vref = mkLocalValRef v
         let membInfo = Option.get vref.MemberInfo
         let stat = layoutMemberFlags membInfo.MemberFlags
@@ -1295,6 +1349,8 @@ module PrintTastMemberOrVals =
                 for _,info in argInfo do
                     info.Attribs <- []
                     info.Name <- None
+        let supportAccessModifiersBeforeGetSet =
+            denv.g.langVersion.SupportsFeature Features.LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters
 
         let prettyTyparInst, memberL =
             match membInfo.MemberFlags.MemberKind with
@@ -1303,7 +1359,7 @@ module PrintTastMemberOrVals =
                 let resL =
                     if short then tauL
                     else
-                        let nameL = layoutMemberName denv vref niceMethodTypars argInfos tagMember vref.DisplayNameCoreMangled
+                        let nameL = layoutMemberName denv vref niceMethodTypars argInfos tagMember vref.DisplayNameCoreMangled true
                         let nameL = if short then nameL else mkInlineL denv vref.Deref nameL
                         stat --- ((nameL  |> addColonL) ^^ tauL)
                 prettyTyparInst, resL
@@ -1322,14 +1378,19 @@ module PrintTastMemberOrVals =
                 emptyTyparInst, stat
 
             | SynMemberKind.PropertyGet ->
+                let prefixAccessModifier, withGet = 
+                    if supportAccessModifiersBeforeGetSet then
+                        false, WordL.keywordWith ^^ layoutAccessibilityCore denv vref.Accessibility ^^ wordL (tagText "get")
+                    else
+                        true, WordL.keywordWith ^^ wordL (tagText "get")
                 if isNil argInfos then
                     // use error recovery because intellisense on an incomplete file will show this
                     errorR(Error(FSComp.SR.tastInvalidFormForPropertyGetter(), vref.Id.idRange))
-                    let nameL = layoutMemberName denv vref [] argInfos tagProperty vref.DisplayNameCoreMangled
+                    let nameL = layoutMemberName denv vref [] argInfos tagProperty vref.DisplayNameCoreMangled prefixAccessModifier
                     let nameL = if short then nameL else mkInlineL denv vref.Deref nameL
                     let resL =
-                        if short then nameL --- (WordL.keywordWith ^^ WordL.keywordGet)
-                        else stat --- nameL --- (WordL.keywordWith ^^ WordL.keywordGet)
+                        if short then nameL --- withGet
+                        else stat --- nameL --- withGet
                     emptyTyparInst, resL
                 else
                     let argInfos =
@@ -1339,21 +1400,25 @@ module PrintTastMemberOrVals =
                     let prettyTyparInst, niceMethodTypars,tauL = prettyLayoutOfMemberType denv vref typarInst argInfos retTy
                     let resL =
                         if short then
-                            if isNil argInfos then tauL
-                            else tauL --- (WordL.keywordWith ^^ WordL.keywordGet)
+                            tauL --- withGet
                         else
-                            let nameL = layoutMemberName denv vref niceMethodTypars argInfos tagProperty vref.DisplayNameCoreMangled
+                            let nameL = layoutMemberName denv vref niceMethodTypars argInfos tagProperty vref.DisplayNameCoreMangled prefixAccessModifier
                             let nameL = if short then nameL else mkInlineL denv vref.Deref nameL
-                            stat --- ((nameL  |> addColonL) ^^ (if isNil argInfos then tauL else tauL --- (WordL.keywordWith ^^ WordL.keywordGet)))
+                            stat --- ((nameL |> addColonL) ^^ (if isNil argInfos && not supportAccessModifiersBeforeGetSet then tauL else tauL --- withGet))
                     prettyTyparInst, resL
 
             | SynMemberKind.PropertySet ->
+                let prefixAccessModifier, withSet = 
+                    if supportAccessModifiersBeforeGetSet then
+                        false, WordL.keywordWith ^^ layoutAccessibilityCore denv vref.Accessibility ^^ wordL (tagText "set")
+                    else
+                        true, WordL.keywordWith ^^ wordL (tagText "set")
                 if argInfos.Length <> 1 || isNil argInfos.Head then
                     // use error recovery because intellisense on an incomplete file will show this
                     errorR(Error(FSComp.SR.tastInvalidFormForPropertySetter(), vref.Id.idRange))
-                    let nameL = layoutMemberName denv vref [] argInfos tagProperty vref.DisplayNameCoreMangled
+                    let nameL = layoutMemberName denv vref [] argInfos tagProperty vref.DisplayNameCoreMangled prefixAccessModifier
                     let nameL = if short then nameL else mkInlineL denv vref.Deref nameL
-                    let resL = stat --- nameL --- (WordL.keywordWith ^^ WordL.keywordSet)
+                    let resL = stat --- nameL --- withSet
                     emptyTyparInst, resL
                 else
                     let curriedArgInfos = argInfos
@@ -1361,11 +1426,11 @@ module PrintTastMemberOrVals =
                     let prettyTyparInst, niceMethodTypars, tauL = prettyLayoutOfMemberType denv vref typarInst (if isNil argInfos then [] else [argInfos]) (fst valueInfo)
                     let resL =
                         if short then
-                            (tauL --- (WordL.keywordWith ^^ WordL.keywordSet))
+                            (tauL --- withSet)
                         else
-                            let nameL = layoutMemberName denv vref niceMethodTypars curriedArgInfos tagProperty vref.DisplayNameCoreMangled
+                            let nameL = layoutMemberName denv vref niceMethodTypars curriedArgInfos tagProperty vref.DisplayNameCoreMangled prefixAccessModifier
                             let nameL = if short then nameL else mkInlineL denv vref.Deref nameL
-                            stat --- ((nameL |> addColonL) ^^ (tauL --- (WordL.keywordWith ^^ WordL.keywordSet)))
+                            stat --- ((nameL |> addColonL) ^^ (tauL --- withSet))
                     prettyTyparInst, resL
 
         prettyTyparInst, memberL
@@ -1607,22 +1672,44 @@ module InfoMemberPrinting =
                     let idL = ConvertValLogicalNameToDisplayLayout false (tagMethod >> tagNavArbValRef minfo.ArbitraryValRef >> wordL) minfo.LogicalName
                     SepL.dot ^^
                     PrintTypes.layoutTyparDecls denv idL true minfo.FormalMethodTypars ^^
-                    SepL.leftParen
+                    SepL.leftParen           
 
-        let paramDatas = minfo.GetParamDatas (amap, m, minst)
-        let layout = layout ^^ sepListL RightL.comma ((List.concat >> List.map (layoutParamData denv)) paramDatas)
-        layout ^^ RightL.rightParen ^^ WordL.colon ^^ PrintTypes.layoutType denv retTy
+        let layout,paramLayouts =
+            match denv.showCsharpCodeAnalysisAttributes, minfo with
+            | true, ILMeth(_g,mi,_e) -> 
+                let methodLayout = 
+                    // Render Method attributes and [return:..] attributes on separate lines above (@@) the method definition
+                    PrintTypes.layoutCsharpCodeAnalysisIlAttributes denv (minfo.GetCustomAttrs()) (squareAngleL >> (@@)) layout
+                    |> PrintTypes.layoutCsharpCodeAnalysisIlAttributes denv (mi.RawMetadata.Return.CustomAttrs) (squareAngleReturn >> (@@))
+                let paramLayouts = 
+                    minfo.GetParamDatas (amap, m, minst)
+                    |> List.head
+                    |> List.zip (mi.ParamMetadata)
+                    |> List.map(fun (ilParams,paramData) -> 
+                        layoutParamData denv paramData
+                        // Render parameter attributes next to (^^) the parameter definition
+                        |> PrintTypes.layoutCsharpCodeAnalysisIlAttributes denv (ilParams.CustomAttrs) (squareAngleL >> (^^)) )
+                methodLayout,paramLayouts
+            | _ ->
+                layout,
+                minfo.GetParamDatas (amap, m, minst) 
+                |> List.concat 
+                |> List.map (layoutParamData denv)
+
+
+        let layout = layout ^^ sepListL RightL.comma paramLayouts
+        layout ^^ RightL.rightParen ^^ WordL.colon ^^ PrintTypes.layoutType denv retTy // Todo enrich return type
 
     // Prettify an ILMethInfo
     let prettifyILMethInfo (amap: Import.ImportMap) m (minfo: MethInfo) typarInst ilMethInfo = 
-        let (ILMethInfo(_, apparentTy, dty, mdef, _)) = ilMethInfo
-        let (prettyTyparInst, prettyTys), _ = PrettyTypes.PrettifyInstAndTypes amap.g (typarInst, (apparentTy :: minfo.FormalMethodInst))
+        let (ILMethInfo(_, methodsType, mdef, _)) = ilMethInfo
+        let (prettyTyparInst, prettyTys), _ = PrettyTypes.PrettifyInstAndTypes amap.g (typarInst, (methodsType.ToType :: minfo.FormalMethodInst))
         match prettyTys with
         | prettyApparentTy :: prettyFormalMethInst ->
             let prettyMethInfo = 
-                match dty with 
-                | None -> MethInfo.CreateILMeth (amap, m, prettyApparentTy, mdef)
-                | Some declaringTyconRef -> MethInfo.CreateILExtensionMeth(amap, m, prettyApparentTy, declaringTyconRef, minfo.ExtensionMemberPriorityOption, mdef)
+                match methodsType with 
+                | IlType _ -> MethInfo.CreateILMeth (amap, m, prettyApparentTy, mdef)
+                | CSharpStyleExtension(declaring=declaringTyconRef) -> MethInfo.CreateILExtensionMeth(amap, m, prettyApparentTy, declaringTyconRef, minfo.ExtensionMemberPriorityOption, mdef)
             prettyTyparInst, prettyMethInfo, prettyFormalMethInst
         | _ -> failwith "prettifyILMethInfo - prettyTys empty"
 
@@ -1673,14 +1760,20 @@ module InfoMemberPrinting =
         let retTy = if pinfo.IsIndexer then mkFunTy g (mkRefTupledTy g (pinfo.GetParamTypes(amap, m))) retTy else  retTy 
         let retTy, _ = PrettyTypes.PrettifyType g retTy
         let nameL = ConvertValLogicalNameToDisplayLayout false (tagProperty >> tagNavArbValRef pinfo.ArbitraryValRef >> wordL) pinfo.PropertyName
+        let struct(isGetterProtect, isSetterProtect) = pinfo.IsProtectedAccessibility
+        let getterAccess, setterAccess = 
+            if denv.g.langVersion.SupportsFeature Features.LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters then
+                PrintTypes.layoutAccessibilityCoreWithProtected denv isGetterProtect (Option.defaultValue taccessPublic pinfo.GetterAccessibility),
+                PrintTypes.layoutAccessibilityCoreWithProtected denv isSetterProtect (Option.defaultValue taccessPublic pinfo.SetterAccessibility)
+            else emptyL, emptyL
         let getterSetter =
             match pinfo.HasGetter, pinfo.HasSetter with
             | true, false ->
-                WordL.keywordWith ^^ WordL.keywordGet
+                WordL.keywordWith ^^ getterAccess ^^ wordL (tagText "get")
             | false, true ->
-                WordL.keywordWith ^^ WordL.keywordSet
+                WordL.keywordWith ^^ setterAccess ^^ wordL (tagText "set")
             | true, true ->
-                WordL.keywordWith ^^ wordL (tagText "get, set")
+                WordL.keywordWith ^^ getterAccess ^^ wordL (tagText "get") ^^ RightL.comma ++ setterAccess ^^ wordL (tagText "set")
             | false, false ->
                 emptyL
 
@@ -1817,14 +1910,11 @@ module TastDefinitionPrinting =
     let layoutPropInfo denv (infoReader: InfoReader) m (pinfo: PropInfo) : Layout list =
         let amap = infoReader.amap
 
-        let isPublicGetterSetter (getter: MethInfo) (setter: MethInfo) =
-            let isPublicAccess access = access = TAccess []
-            match getter.ArbitraryValRef, setter.ArbitraryValRef with
-            | Some gRef, Some sRef -> isPublicAccess gRef.Accessibility && isPublicAccess sRef.Accessibility
-            | _ -> false
-        
+        let supportAccessModifiersBeforeGetSet =
+            denv.g.langVersion.SupportsFeature Features.LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters
+
         match pinfo.ArbitraryValRef with
-        | Some vref ->
+        | Some vref when not supportAccessModifiersBeforeGetSet ->
             match pinfo with
             | DifferentGetterAndSetter(getValRef, setValRef) ->
                 let getSuffix = if pinfo.IsIndexer then emptyL else WordL.keywordWith ^^ WordL.keywordGet
@@ -1833,11 +1923,37 @@ module TastDefinitionPrinting =
                     PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader setValRef
                 ]
             | _ ->
+                let isPublicGetterSetter (getter: MethInfo) (setter: MethInfo) =
+                    let isPublicAccess access = access = TAccess []
+                    match getter.ArbitraryValRef, setter.ArbitraryValRef with
+                    | Some gRef, Some sRef -> isPublicAccess gRef.Accessibility && isPublicAccess sRef.Accessibility
+                    | _ -> false
+
                 let propL = PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader vref
-                if pinfo.HasGetter && pinfo.HasSetter && not pinfo.IsIndexer && isPublicGetterSetter pinfo.GetterMethod pinfo.SetterMethod then
+                if pinfo.HasGetter && pinfo.HasSetter && not pinfo.IsIndexer && isPublicGetterSetter pinfo.GetterMethod pinfo.SetterMethod  then
                     [ propL ^^ WordL.keywordWith ^^ wordL (tagText "get, set") ]
                 else
                     [ propL ]
+
+        | Some vref ->
+            let propL = PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader vref
+            if pinfo.HasGetter && pinfo.HasSetter then
+                let rec ``replace 'with'`` layout newLayout =
+                    match layout with
+                    | Node(Leaf (text = text), _, _) when text.Text = "with" -> newLayout
+                    | Node(l, r, i) -> Node(l, ``replace 'with'`` r newLayout , i)
+                    | Attr(text, attr, l) -> Attr(text, attr, ``replace 'with'`` l newLayout )
+                    | Leaf _
+                    | ObjLeaf _ -> layout
+
+                let getterAccess, setterAccess =
+                    pinfo.GetterMethod.ArbitraryValRef |> Option.map _.Accessibility |> Option.defaultValue taccessPublic,
+                    pinfo.SetterMethod.ArbitraryValRef |> Option.map _.Accessibility |> Option.defaultValue taccessPublic
+                let getSet =
+                    WordL.keywordWith ^^ layoutAccessibilityCore denv getterAccess ^^ wordL (tagText "get") ^^ RightL.comma --- layoutAccessibilityCore denv setterAccess ^^ wordL (tagText "set")
+                [ ``replace 'with'`` propL getSet ]
+            else
+                [ propL ]
         | None ->
 
             let modifierAndMember =
@@ -1909,6 +2025,7 @@ module TastDefinitionPrinting =
             match vrefOpt with
             | None -> true
             | Some vref ->
+                (not vref.IsCompilerGenerated) &&
                 (denv.showObsoleteMembers || not (CheckFSharpAttributesForObsolete denv.g vref.Attribs)) &&
                 (denv.showHiddenMembers || not (CheckFSharpAttributesForHidden denv.g vref.Attribs))
                 
@@ -2746,6 +2863,8 @@ let prettyLayoutOfInstAndSig denv x = PrintTypes.prettyLayoutOfInstAndSig denv x
 let minimalStringsOfTwoTypes denv ty1 ty2 =
     let (ty1, ty2), tpcs = PrettyTypes.PrettifyTypePair denv.g (ty1, ty2)
 
+    let denv = suppressNullnessAnnotations denv
+
     // try denv + no type annotations 
     let attempt1 = 
         let denv = { denv with showInferenceTyparAnnotations=false; showStaticallyResolvedTyparAnnotations=false }
@@ -2768,6 +2887,7 @@ let minimalStringsOfTwoTypes denv ty1 ty2 =
     | Some res -> res
     | None -> 
 
+    // try denv
     let attempt3 = 
         let min1 = stringOfTy denv ty1
         let min2 = stringOfTy denv ty2
@@ -2793,13 +2913,14 @@ let minimalStringsOfTwoTypes denv ty1 ty2 =
         let denv = denv.SetOpenPaths []
         let denv = { denv with includeStaticParametersInTypeNames=true }
         let makeName t =
-            let assemblyName = PrintTypes.layoutAssemblyName denv t |> fun name -> if String.IsNullOrEmpty(name) then "" else sprintf " (%s)" name
+            let assemblyName = PrintTypes.layoutAssemblyName denv t |> function null | "" -> "" | name -> sprintf " (%s)" name
             sprintf "%s%s" (stringOfTy denv t) assemblyName
 
         (makeName ty1, makeName ty2, stringOfTyparConstraints denv tpcs)
     
 // Note: Always show imperative annotations when comparing value signatures 
 let minimalStringsOfTwoValues denv infoReader vref1 vref2 = 
+    let denv = suppressNullnessAnnotations denv
     let denvMin = { denv with showInferenceTyparAnnotations=true; showStaticallyResolvedTyparAnnotations=false }
     let min1 = buildString (fun buf -> outputQualifiedValOrMember denvMin infoReader buf vref1)
     let min2 = buildString (fun buf -> outputQualifiedValOrMember denvMin infoReader buf vref2) 
@@ -2813,5 +2934,6 @@ let minimalStringsOfTwoValues denv infoReader vref1 vref2 =
     
 let minimalStringOfType denv ty = 
     let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
+    let denv = suppressNullnessAnnotations denv
     let denvMin = { denv with showInferenceTyparAnnotations=false; showStaticallyResolvedTyparAnnotations=false }
     showL (PrintTypes.layoutTypeWithInfoAndPrec denvMin SimplifyTypes.typeSimplificationInfo0 2 ty)

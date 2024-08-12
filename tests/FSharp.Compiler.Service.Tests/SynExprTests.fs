@@ -1,9 +1,9 @@
-﻿module FSharp.Compiler.Syntax.Tests.SynExpr
+﻿module FSharp.Compiler.Service.Tests.SynExprTests
 
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
-open NUnit.Framework
+open Xunit
 
 type Parenthesization = Needed | Unneeded
 
@@ -69,7 +69,7 @@ type String with
 #endif
 
 // `expected` represents whether each parenthesized expression, from the inside outward, requires its parentheses.
-[<Theory; TestCaseSource(nameof exprs)>]
+[<Theory; MemberData(nameof exprs)>]
 let shouldBeParenthesizedInContext (expected: Parenthesization list) src =
     let ast = getParseResults src
 
@@ -85,4 +85,38 @@ let shouldBeParenthesizedInContext (expected: Parenthesization list) src =
                 Parenthesization.ofBool (SynExpr.shouldBeParenthesizedInContext getSourceLineStr path expr) :: actual
             | _ -> actual)
 
-    CollectionAssert.AreEqual(expected, actual)
+    Assert.Equal<Parenthesization list>(expected, actual)
+
+[<Theory>]
+[<InlineData("9")>]
+[<InlineData("9 |> ignore")>]
+[<InlineData("
+let x =
+    do ()
+    9
+")>]
+[<InlineData("
+let x =
+    do ()
+    9 |> ignore
+")>]
+[<InlineData("
+for x in 1..10 do
+    9 |> ignore
+")>]
+let ``shouldBeParenthesizedInContext handles an unparenthesized hypothetical`` src =
+    let ast = getParseResults src
+
+    let getSourceLineStr =
+        let lines = src.ReplaceLineEndings().Split '\n'
+        Line.toZ >> Array.get lines
+
+    let expr, path =
+        (None, ast)
+        ||> ParsedInput.foldWhile (fun acc path node ->
+            match node with
+            | SyntaxNode.SynExpr (SynExpr.Const(SynConst.Int32 9, _)  as expr) -> Some(Some(expr, path))
+            | _ -> Some acc)
+        |> Option.defaultWith (fun () -> invalidOp "Expected a 9 but did not find one.")
+
+    Assert.False(SynExpr.shouldBeParenthesizedInContext getSourceLineStr path expr)

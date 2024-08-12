@@ -439,7 +439,7 @@ let private renderFsProj (p: SyntheticProject) =
 
         <PropertyGroup>
             <OutputType>Exe</OutputType>
-            <TargetFramework>net8.0</TargetFramework>
+            <TargetFramework>net9.0</TargetFramework>
         </PropertyGroup>
 
         <ItemGroup>
@@ -725,6 +725,19 @@ module ProjectOperations =
             then
                 failwith "Expected errors, but there were none"
 
+    let expectErrorCodes codes parseAndCheckResults _ =
+        let (parseResult: FSharpParseFileResults), _checkResult = parseAndCheckResults
+
+        if not parseResult.ParseHadErrors then
+            let checkResult = getTypeCheckResult parseAndCheckResults
+            let actualCodes = checkResult.Diagnostics |> Seq.map (fun d -> d.ErrorNumberText) |> Set
+            let codes = Set.ofSeq codes
+            if actualCodes <> codes then
+                failwith $"Expected error codes {codes} but got {actualCodes}. \n%A{checkResult.Diagnostics}"
+
+        else
+            failwith $"There were parse errors: %A{parseResult.Diagnostics}"
+
     let expectSignatureChanged result (oldSignature: string, newSignature: string) =
         expectOk result ()
         Assert.NotEqual<string>(oldSignature, newSignature)
@@ -934,7 +947,8 @@ type ProjectWorkflowBuilder
         ?useTransparentCompiler,
         ?runTimeout,
         ?autoStart,
-        ?isExistingProject
+        ?isExistingProject,
+        ?enablePartialTypeChecking
     ) =
 
     let useTransparentCompiler = defaultArg useTransparentCompiler CompilerAssertHelpers.UseTransparentCompiler
@@ -955,7 +969,7 @@ type ProjectWorkflowBuilder
             (FSharpChecker.Create(
                 keepAllBackgroundSymbolUses = true,
                 enableBackgroundItemKeyStoreAndSemanticClassification = true,
-                enablePartialTypeChecking = true,
+                enablePartialTypeChecking = defaultArg enablePartialTypeChecking true,
                 captureIdentifiersWhenParsing = true,
                 documentSource = (if useGetSource then DocumentSource.Custom getSource else DocumentSource.FileSystem),
                 useSyntaxTreeCache = defaultArg useSyntaxTreeCache false,

@@ -7,6 +7,31 @@
         <target state="translated">Os nomes de argumento na assinatura '{0}' e na implementação '{1}' não coincidem. O nome do argumento do arquivo da assinatura será usado. Isso pode causar problemas durante a depuração ou a criação de perfil.</target>
         <note />
       </trans-unit>
+      <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
+        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ:\n    {2}\nversus\n    {3}</source>
+        <target state="translated">As definições {0} para o tipo '{1}' na assinatura e na implementação não são compatíveis porque as abreviações são diferentes:\n    {2}\nversus\n    {3}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarning">
+        <source>Nullness warning: {0}.</source>
+        <target state="new">Nullness warning: {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningEquivWithTypes">
+        <source>Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</source>
+        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningWithType">
+        <source>Nullness warning: The type '{0}' does not support 'null'.</source>
+        <target state="new">Nullness warning: The type '{0}' does not support 'null'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningWithTypes">
+        <source>Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</source>
+        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
         <source>Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</source>
         <target state="translated">Tipo incompatível. Esperando uma tupla de comprimento {0} do tipo\n    {1}    \nmas recebeu uma tupla de comprimento {2} do tipo\n    {3}{4}\n</target>
@@ -30,6 +55,11 @@
       <trans-unit id="OverrideShouldBeStatic">
         <source> Static member is expected.</source>
         <target state="translated"> O membro estático é esperado.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR_JUST_BEFORE_NULL">
+        <source>symbol '|' (directly before 'null')</source>
+        <target state="new">symbol '|' (directly before 'null')</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
@@ -243,8 +273,8 @@
         <note />
       </trans-unit>
       <trans-unit id="TypeIsImplicitlyAbstract">
-        <source>This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
-        <target state="translated">Esse tipo é 'abstrato', pois alguns membros abstratos não receberam uma implementação. Se isso for intencional, adicione o atributo '[&lt;AbstractClass&gt;]' ao seu tipo.</target>
+        <source>Non-abstract classes cannot contain abstract members. Either provide a default member implementation or add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
+        <target state="translated">Classes não abstratas não podem conter membros abstratos. Forneça uma implantação de membro padrão ou adicione o atributo '[&lt;AbstractClass&gt;]' ao seu tipo.</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar1">
@@ -1568,8 +1598,8 @@
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInIntrinsicAugmentation">
-        <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.</source>
-        <target state="translated">As implementações de interface normalmente devem ser fornecidas na declaração inicial de um tipo. As implementações de interface em aumentos podem levar ao acesso a associações estáticas antes de serem inicializadas, embora somente se a implementação de interface for chamada durante a inicialização dos dados estáticos e, por sua vez, o acesso aos dados estáticos. Você pode remover este aviso usando #nowarn "69" se tiver verificado que não é o caso.</target>
+        <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using '#nowarn "69"' if you have checked this is not the case.</source>
+        <target state="translated">As implementações de interface normalmente devem ser fornecidas na declaração inicial de um tipo. As implementações de interface em aumentos podem levar ao acesso a associações estáticas antes de serem inicializadas, embora somente se a implementação de interface for chamada durante a inicialização dos dados estáticos e, por sua vez, o acesso aos dados estáticos. Você poderá remover este aviso usando #nowarn "69" se tiver verificado que este não é o caso.</target>
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInExtrinsicAugmentation">
@@ -1588,13 +1618,13 @@
         <note />
       </trans-unit>
       <trans-unit id="HashIncludeNotAllowedInNonScript">
-        <source>#I directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">Diretivas #I só podem ocorrer em arquivos de script F# (extensões .fsx ou .fsscript). Mova este código para o arquivo de script e adicione uma opção de compilador '-I' para esta referência, ou então, delimite a diretiva com '#if INTERACTIVE'/'#endif'.</target>
+        <source>#I directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
+        <target state="translated">Diretivas #I só podem ser usadas em arquivos de script F# (extensões .fsx ou .fsscript). Mova este código para o arquivo de script e adicione uma opção de compilador "-I" para esta referência, ou então, delimite a diretiva com "#if INTERACTIVE"/"#endif".</target>
         <note />
       </trans-unit>
       <trans-unit id="HashReferenceNotAllowedInNonScript">
-        <source>#r directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">Diretivas #r só podem ocorrer em arquivos de script F# (extensões .fsx ou .fsscript). Mova este código para um arquivo de script ou substitua essa referência com a opção do compilador '-r'. Se essa diretiva estiver sendo executada como uma entrada do usuário, você poderá delimitá-lo com '#if INTERACTIVE'/'#endif'.</target>
+        <source>#r directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
+        <target state="translated">Diretivas #r só podem ser usadas em arquivos de script F# (extensões .fsx ou .fsscript). Mova este código para um arquivo de script ou substitua essa referência com a opção do compilador "-r". Se essa diretiva estiver sendo executada como uma entrada do usuário, você poderá delimitá-lo com "#if INTERACTIVE"/"#endif".</target>
         <note />
       </trans-unit>
       <trans-unit id="HashDirectiveNotAllowedInNonScript">

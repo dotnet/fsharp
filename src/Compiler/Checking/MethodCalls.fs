@@ -430,14 +430,7 @@ let AdjustCalledArgType (infoReader: InfoReader) ad isConstraint enforceNullable
 
         // If the called method argument is an inref type, then the caller may provide a byref or value
         if isInByrefTy g calledArgTy then
-#if IMPLICIT_ADDRESS_OF
-            if isByrefTy g callerArgTy then 
-                calledArgTy
-            else 
-                destByrefTy g calledArgTy
-#else
             calledArgTy, TypeDirectedConversionUsed.No, None
-#endif
 
         // If the called method argument is a (non inref) byref type, then the caller may provide a byref or ref.
         elif isByrefTy g calledArgTy then
@@ -487,7 +480,7 @@ let MakeCalledArgs amap m (minfo: MethInfo) minst =
         IsOutArg=isOutArg
         ReflArgInfo=reflArgInfo
         NameOpt=nmOpt
-        CalledArgumentType=calledArgTy })
+        CalledArgumentType= changeWithNullReqTyToVariable amap.g calledArgTy})
 
 /// <summary>
 /// Represents the syntactic matching between a caller of a method and the called method.
@@ -906,8 +899,8 @@ let IsBaseCall objArgs =
 /// For example, when calling an interface method on a struct, or a method on a constrained 
 /// variable type. 
 let ComputeConstrainedCallInfo g amap m staticTyOpt args (minfo: MethInfo) =
-    match args, staticTyOpt with 
-    | _, Some staticTy when not minfo.IsExtensionMember && not minfo.IsInstance && minfo.IsAbstract -> Some staticTy
+    match args, staticTyOpt with
+    | _, Some staticTy when not minfo.IsExtensionMember && not minfo.IsInstance && (minfo.IsAbstract || minfo.IsVirtual) -> Some staticTy
 
     | (objArgExpr :: _), _ when minfo.IsInstance && not minfo.IsExtensionMember -> 
         let methObjTy = minfo.ApparentEnclosingType
@@ -1190,8 +1183,17 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
 
         // Build a 'call' to a struct default constructor 
         | DefaultStructCtor (g, ty) -> 
-            if not (TypeHasDefaultValue g m ty) then 
-                errorR(Error(FSComp.SR.tcDefaultStructConstructorCall(), m))
+            if g.langFeatureNullness && g.checkNullness then
+                if not (TypeHasDefaultValueNew g m ty) then
+                    // If the condition is detected because of a variation in logic introduced because
+                    // of nullness checking, then only a warning is emitted.
+                    if not (TypeHasDefaultValue g m ty) then 
+                        errorR(Error(FSComp.SR.tcDefaultStructConstructorCall(), m))
+                    else
+                        warning(Error(FSComp.SR.tcDefaultStructConstructorCall(), m))
+            else
+                if not (TypeHasDefaultValue g m ty) then 
+                    errorR(Error(FSComp.SR.tcDefaultStructConstructorCall(), m))
             mkDefault (m, ty), ty)
 
 let ILFieldStaticChecks g amap infoReader ad m (finfo : ILFieldInfo) =
@@ -1235,7 +1237,7 @@ let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo: MethInfo)  =
                 AccessibleFrom(paths, None) 
         | _ -> ad
 
-    if not (IsTypeAndMethInfoAccessible amap m adOriginal ad minfo) then 
+    if not (minfo.IsProtectedAccessibility && minfo.LogicalName.StartsWithOrdinal("set_")) && not(IsTypeAndMethInfoAccessible amap m adOriginal ad minfo) then 
       error (Error (FSComp.SR.tcMethodNotAccessible(minfo.LogicalName), m))
 
     if isAnyTupleTy g minfo.ApparentEnclosingType && not minfo.IsExtensionMember &&
@@ -1251,7 +1253,7 @@ let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo: MethInfo)  =
 /// Build a call to the System.Object constructor taking no arguments,
 let BuildObjCtorCall (g: TcGlobals) m =
     let ilMethRef = (mkILCtorMethSpecForTy(g.ilg.typ_Object, [])).MethodRef
-    Expr.Op (TOp.ILCall (false, false, false, false, CtorValUsedAsSuperInit, false, true, ilMethRef, [], [], [g.obj_ty]), [], [], m)
+    Expr.Op (TOp.ILCall (false, false, false, false, CtorValUsedAsSuperInit, false, true, ilMethRef, [], [], [g.obj_ty_noNulls]), [], [], m)
 
 /// Implements the elaborated form of adhoc conversions from functions to delegates at member callsites
 let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, delInvokeMeth: MethInfo, delArgTys, delFuncExpr, delFuncTy, m) =
@@ -1371,12 +1373,6 @@ let AdjustCallerArgExpr tcVal (g: TcGlobals) amap infoReader ad isOutArg calledA
    if isByrefTy g calledArgTy && isRefCellTy g callerArgTy then 
        None, Expr.Op (TOp.RefAddrGet false, [destRefCellTy g callerArgTy], [callerArgExpr], m) 
 
-#if IMPLICIT_ADDRESS_OF
-   elif isInByrefTy g calledArgTy && not (isByrefTy g callerArgTy) then 
-       let wrap, callerArgExprAddress, _readonly, _writeonly = mkExprAddrOfExpr g true false NeverMutates callerArgExpr None m
-       Some wrap, callerArgExprAddress
-#endif
-
    // auto conversions to quotations (to match auto conversions to LINQ expressions)
    elif reflArgInfo.AutoQuote && isQuotedExprTy g calledArgTy && not (isQuotedExprTy g callerArgTy) then 
        match reflArgInfo with 
@@ -1438,7 +1434,7 @@ let rec GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g (calledArg: C
         | Some tref ->
             let ty = mkILNonGenericBoxedTy tref
             let mref = mkILCtorMethSpecForTy(ty, [g.ilg.typ_Object]).MethodRef
-            let expr = Expr.Op (TOp.ILCall (false, false, false, true, NormalValUse, false, false, mref, [], [], [g.obj_ty]), [], [mkDefault(mMethExpr, currCalledArgTy)], mMethExpr)
+            let expr = Expr.Op (TOp.ILCall (false, false, false, true, NormalValUse, false, false, mref, [], [], [g.obj_ty_noNulls]), [], [mkDefault(mMethExpr, currCalledArgTy)], mMethExpr)
             emptyPreBinder, expr
 
     | WrapperForIUnknown ->
@@ -1447,7 +1443,7 @@ let rec GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g (calledArg: C
         | Some tref ->
             let ty = mkILNonGenericBoxedTy tref
             let mref = mkILCtorMethSpecForTy(ty, [g.ilg.typ_Object]).MethodRef
-            let expr = Expr.Op (TOp.ILCall (false, false, false, true, NormalValUse, false, false, mref, [], [], [g.obj_ty]), [], [mkDefault(mMethExpr, currCalledArgTy)], mMethExpr)
+            let expr = Expr.Op (TOp.ILCall (false, false, false, true, NormalValUse, false, false, mref, [], [], [g.obj_ty_noNulls]), [], [mkDefault(mMethExpr, currCalledArgTy)], mMethExpr)
             emptyPreBinder, expr
 
     | PassByRef (ty, dfltVal2) ->
@@ -1943,13 +1939,6 @@ module ProvidedMethodCalls =
                 let infoReader = InfoReader(g, amap)
                 let exprR = CoerceFromFSharpFuncToDelegate g amap infoReader AccessorDomain.AccessibleFromSomewhere lambdaExprTy m lambdaExpr delegateTyR
                 None, (exprR, tyOfExpr g exprR)
-#if PROVIDED_ADDRESS_OF
-            | ProvidedAddressOfExpr e ->
-                let eR =  exprToExpr (exprType.PApply((fun _ -> e), m))
-                let wrap,exprR, _readonly, _writeonly = mkExprAddrOfExpr g true false DefinitelyMutates eR None m
-                let exprR = wrap exprR
-                None, (exprR, tyOfExpr g exprR)
-#endif
             | ProvidedDefaultExpr pty ->
                 let ty = Import.ImportProvidedType amap m (exprType.PApply((fun _ -> pty), m))
                 let exprR = mkDefault (m, ty)

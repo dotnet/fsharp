@@ -125,6 +125,8 @@ type internal CompilerCaches =
     member ParseFile:
         AsyncMemoize<((string * string) * string), (string * string * bool), ProjectSnapshot.FSharpParsedFile>
 
+    member ParseFileWithoutProject: AsyncMemoize<string, string, FSharpParseFileResults>
+
     member ProjectExtras: AsyncMemoizeDisabled<obj, obj, obj>
 
     member SemanticClassification: AsyncMemoize<(string * (string * string)), string, SemanticClassificationView option>
@@ -159,19 +161,19 @@ type internal TransparentCompiler =
 
     member FindReferencesInFile:
         fileName: string * projectSnapshot: ProjectSnapshot.ProjectSnapshot * symbol: FSharpSymbol * userOpName: string ->
-            NodeCode<range seq>
+            Async<range seq>
 
     member GetAssemblyData:
         projectSnapshot: ProjectSnapshot.ProjectSnapshot * fileName: string * _userOpName: string ->
-            NodeCode<ProjectAssemblyDataResult>
+            Async<ProjectAssemblyDataResult>
 
     member ParseAndCheckFileInProject:
         fileName: string * projectSnapshot: ProjectSnapshot.ProjectSnapshot * userOpName: string ->
-            NodeCode<FSharpParseFileResults * FSharpCheckFileAnswer>
+            Async<FSharpParseFileResults * FSharpCheckFileAnswer>
 
     member ParseFile:
         fileName: string * projectSnapshot: ProjectSnapshot.ProjectSnapshot * _userOpName: 'a ->
-            NodeCode<FSharpParseFileResults>
+            Async<FSharpParseFileResults>
 
     member SetCacheSizeFactor: sizeFactor: int -> unit
 

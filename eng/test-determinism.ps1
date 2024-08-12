@@ -25,31 +25,43 @@ if ($help) {
 # List of binary names that should be skipped because they have a known issue that
 # makes them non-deterministic.
 $script:skipList = @()
-function Run-Build([string]$rootDir, [string]$logFileName) {
+function Run-Build([string]$rootDir, [string]$increment) {
+
+  $logFileName = $increment
 
   # Clean out the previous run
   Write-Host "Cleaning binaries in $rootDir"
-  $binDir = Get-BinDir $rootDir
-  $objDir = Get-ObjDir $rootDir
+  $binDir = Get-BinDir (Get-ArtifactsDir $rootDir)
+  $objDir = Get-ObjDir (Get-ArtifactsDir $rootDir)
+  $incrementDir = Get-LeafDir (Get-ArtifactsDir $rootDir) $increment
+
   $stopWatch = [System.Diagnostics.StopWatch]::StartNew()
+
   Write-Host "Cleaning binaries in $binDir"
   Remove-Item -Recurse $binDir -ErrorAction SilentlyContinue
+
   Write-Host "Cleaning binaries in $objDir"
   Remove-Item -Recurse $objDir -ErrorAction SilentlyContinue
+
+  Write-Host "Cleaning binaries in $incrementDir"
+  Remove-Item -Recurse $incrementDir -ErrorAction SilentlyContinue
+
   $stopWatch.Stop()
+
   Write-Host "Cleaning took $($stopWatch.Elapsed)"
 
   $solution = Join-Path $rootDir "Microsoft.FSharp.Compiler.sln"
 
   if ($logFileName -eq "") {
-    $logFileName = [IO.Path]::GetFileNameWithoutExtension($projectFilePath)
+    $logFileName = [IO.Path]::GetFileNameWithoutExtension($solution)
   }
+
   $logFileName = [IO.Path]::ChangeExtension($logFileName, ".binlog")
   $logFilePath = Join-Path $LogDir $logFileName
 
   Stop-Processes
 
-  Write-Host "Building $solution using $bootstrapDir"
+  Write-Host "Building $solution using $bootstrapDir into '$increment' $incrementDir"
   MSBuild $toolsetBuildProj `
     /p:Configuration=$configuration `
     /p:Projects=$solution `
@@ -71,27 +83,39 @@ function Run-Build([string]$rootDir, [string]$logFileName) {
     /p:DebugDeterminism=true `
     /p:Features="debug-determinism" `
     /p:DeployExtension=false `
-    /p:BootstrapBuildPath=$bootstrapDir `
     /p:RunAnalyzers=false `
     /p:RunAnalyzersDuringBuild=false `
     /p:BUILDING_USING_DOTNET=false `
     /bl:$logFilePath
 
+  Write-Host "Copy-Item -Path $binDir -Destination $incrementDir -ErrorAction SilentlyContinue -Recurse"
+  Copy-Item -Path $binDir -Destination $incrementDir -ErrorAction SilentlyContinue -Recurse 
+
   Stop-Processes
 }
 
-function Get-ObjDir([string]$rootDir) {
-  return Join-Path $rootDir "artifacts\obj"
+
+function Get-LeafDir([string]$dir, [string]$leaf) {
+  return Join-Path $dir $leaf
 }
 
-function Get-BinDir([string]$rootDir) {
-  return Join-Path $rootDir "artifacts\bin"
+function Get-ArtifactsDir([string]$dir) {
+  return Get-LeafDir $dir "artifacts"
+}
+
+function Get-ObjDir([string]$dir) {
+  return Get-LeafDir $dir "obj"
+}
+
+function Get-BinDir([string]$dir) {
+  return Get-LeafDir $dir "bin"
 }
 
 # Return all of the files that need to be processed for determinism under the given
 # directory.
-function Get-FilesToProcess([string]$rootDir) {
-  $objDir = Get-ObjDir $rootDir
+function Get-FilesToProcess([string]$rootDir, [string]$increment) {
+  $objDir = Get-LeafDir (Get-ArtifactsDir $rootDir) $increment
+
   foreach ($item in Get-ChildItem -re -in *.dll, *.exe, *.pdb, *.sourcelink.json $objDir) {
     $filePath = $item.FullName
     $fileName = Split-Path -leaf $filePath
@@ -132,12 +156,13 @@ function Get-FilesToProcess([string]$rootDir) {
 }
 
 # This will build up the map of all of the binaries and their respective hashes.
-function Record-Binaries([string]$rootDir) {
+function Record-Binaries([string]$rootDir, [string]$increment) {
   $stopWatch = [System.Diagnostics.StopWatch]::StartNew()
   Write-Host "Recording file hashes"
 
   $map = @{ }
-  foreach ($fileData in Get-FilesToProcess $rootDir) {
+  Write-Host "Get-FilesToProcess $rootDir $increment"
+  foreach ($fileData in Get-FilesToProcess $rootDir $increment) {
     Write-Host "`t$($fileData.FileId) = $($fileData.Hash)"
     $map[$fileData.FileId] = $fileData
   }
@@ -177,15 +202,16 @@ function Test-MapContents($dataMap) {
   }
 }
 
-function Test-Build([string]$rootDir, $dataMap, [string]$logFileName) {
-  Run-Build $rootDir -logFile $logFileName
+function Test-Build([string]$rootDir, $dataMap, [string]$increment) {
+  $logFileName = $increment
+  Run-Build $rootDir -increment $increment
 
   $errorList = @()
   $allGood = $true
 
-  Write-Host "Testing the binaries"
+  Write-Host "Testing the binaries: $rootDir"
   $stopWatch = [System.Diagnostics.StopWatch]::StartNew()
-  foreach ($fileData in Get-FilesToProcess $rootDir) {
+  foreach ($fileData in Get-FilesToProcess $rootDir $increment) {
     $fileId = $fileData.FileId
     $fileName = $fileData.FileName
     $filePath = $fileData.FilePath
@@ -248,12 +274,13 @@ function Test-Build([string]$rootDir, $dataMap, [string]$logFileName) {
 
 function Run-Test() {
   # Run the initial build so that we can populate the maps
-  Run-Build $RepoRoot -logFileName "Initial" -useBootstrap
-  $dataMap = Record-Binaries $RepoRoot
+  Run-Build $RepoRoot -increment "Initial" -useBootstrap
+
+  $dataMap = Record-Binaries $RepoRoot "Initial"
   Test-MapContents $dataMap
 
   # Run a test against the source in the same directory location
-  Test-Build -rootDir $RepoRoot -dataMap $dataMap -logFileName "test1"
+  Test-Build -rootDir $RepoRoot -dataMap $dataMap -increment "Test1"
 
   # Run another build in a different source location and verify that path mapping
   # allows the build to be identical.  To do this we'll copy the entire source
@@ -377,12 +404,8 @@ try {
 
   $script:bootstrap = $true
   $script:bootstrapConfiguration = "Proto"
-  $script:bootstrapTfm = "net472"
-  $script:fsharpNetCoreProductTfm = "net8.0"
-
-  if ($script:msbuildEngine -eq "dotnet") {
-    $script.bootstrapTfm = $script:fsharpNetCoreProductTfm
-  }
+  $script:fsharpNetCoreProductTfm = "net9.0"
+  $script:bootstrapTfm = $script:fsharpNetCoreProductTfm
 
   $bootstrapDir = Make-BootstrapBuild
 

@@ -37,13 +37,20 @@ exception MSBuildReferenceResolutionError of message: string * warningCode: stri
 /// Determine if an IL resource attached to an F# assembly is an F# signature data resource
 val IsSignatureDataResource: ILResource -> bool
 
+/// Determine if an IL resource attached to an F# assembly is an F# signature data resource (data stream B)
+val IsSignatureDataResourceB: ILResource -> bool
+
 /// Determine if an IL resource attached to an F# assembly is an F# optimization data resource
 val IsOptimizationDataResource: ILResource -> bool
+
+/// Determine if an IL resource attached to an F# assembly is an F# optimization data resource (data sream B)
+val IsOptimizationDataResourceB: ILResource -> bool
 
 /// Determine if an IL resource attached to an F# assembly is an F# quotation data resource for reflected definitions
 val IsReflectedDefinitionsResource: ILResource -> bool
 
-val GetResourceNameAndSignatureDataFunc: ILResource -> string * (unit -> ReadOnlyByteMemory)
+val GetResourceNameAndSignatureDataFuncs:
+    ILResource list -> (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
 
 /// Encode the F# interface data into a set of IL attributes and resources
 val EncodeSignatureData:
@@ -199,14 +206,14 @@ type TcImports =
     member internal Base: TcImports option
 
     static member BuildFrameworkTcImports:
-        TcConfigProvider * AssemblyResolution list * AssemblyResolution list -> NodeCode<TcGlobals * TcImports>
+        TcConfigProvider * AssemblyResolution list * AssemblyResolution list -> Async<TcGlobals * TcImports>
 
     static member BuildNonFrameworkTcImports:
         TcConfigProvider * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list * DependencyProvider ->
-            NodeCode<TcImports>
+            Async<TcImports>
 
     static member BuildTcImports:
-        tcConfigP: TcConfigProvider * dependencyProvider: DependencyProvider -> NodeCode<TcGlobals * TcImports>
+        tcConfigP: TcConfigProvider * dependencyProvider: DependencyProvider -> Async<TcGlobals * TcImports>
 
 /// Process a group of #r in F# Interactive.
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.

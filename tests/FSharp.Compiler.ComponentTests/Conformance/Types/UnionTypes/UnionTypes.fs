@@ -135,6 +135,7 @@ module UnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
+            (Error 434, Line 7, Col 12, Line 7, Col 13, "The property 'IsC' has the same name as a method in type 'T'.")
             (Error 23, Line 9, Col 19, Line 9, Col 22, "The member 'IsC' can not be defined because the name 'IsC' clashes with the default augmentation of the union case 'C' in this type or module")
             (Error 23, Line 13, Col 24, Line 13, Col 27, "The member 'IsC' can not be defined because the name 'IsC' clashes with the default augmentation of the union case 'C' in this type or module")
         ]
@@ -656,7 +657,6 @@ module {kwrec} FileName
             (fsFromString myLibraryFsi) |> FS
             |> withAdditionalSourceFiles [myLibraryFs; myFileFs]
             |> asLibrary
-            |> withLangVersionPreview
             |> withName "MyLibrary"
 
         Fs """
@@ -667,7 +667,6 @@ printfn "%b %A %b" x y z
            """
             |> asExe
             |> withReferences [myLibrary]
-            |> withLangVersionPreview
             |> compileAndRun
             |> shouldSucceed
 
@@ -709,3 +708,45 @@ if (sprintf "%%A" ABC.ab) <> "[A; B]" then failwith (sprintf "Failed: printing '
         |> asExe
         |> compileAndRun
         |> shouldSucceed
+        
+    [<Fact>]
+    let ``Error when declaring an abstract member in union type`` () =
+        Fsx """
+type U = 
+  | A | B
+  abstract M : unit -> unit
+       """
+        |> typecheck 
+        |> shouldFail
+        |>  withSingleDiagnostic (Error 912, Line 4, Col 3, Line 4, Col 28, "This declaration element is not permitted in an augmentation")
+        
+        
+    [<Fact>]
+    let ``Error when property has same name as DU case`` () =
+        Fsx """
+type MyId =
+    | IdA of int
+    | IdB of string
+    | IdC of float
+
+    member this.IdA =
+        match this with
+        | IdA x -> Some x
+        | _ -> None
+        
+    member this.IdX =
+        match this with
+        | IdB x -> Some x
+        | _ -> None
+
+    member this.IdC =
+        match this with
+        | IdC x -> Some x
+        | _ -> None
+       """
+        |> typecheck 
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 23, Line 7, Col 17, Line 7, Col 20, "The member 'IdA' can not be defined because the name 'IdA' clashes with the union case 'IdA' in this type or module")
+            (Error 23, Line 17, Col 17, Line 17, Col 20, "The member 'IdC' can not be defined because the name 'IdC' clashes with the union case 'IdC' in this type or module")
+        ]
