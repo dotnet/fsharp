@@ -29,7 +29,7 @@ module TaskGeneratedCode =
     [<Test>]
     let ``check MoveNext of simple task debug``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/langversion:preview";"/optimize-";"/debug:portable";"/tailcalls-" |],
+            [| "/optimize-"; "/debug:portable"; "/tailcalls-" |],
             """
 module Test
 
@@ -116,7 +116,7 @@ let testTask() = task { return 1 }
     [<Test>]
     let ``check MoveNext of simple task optimized``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/langversion:preview";"/optimize+";"/debug:portable";"/tailcalls+" |],
+            [| "/optimize+"; "/debug:portable"; "/tailcalls+" |],
             """
 module Test
 
@@ -190,7 +190,7 @@ let testTask() = task { return 1 }
     [<Test>]
     let ``check MoveNext of simple binding task debug``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/langversion:preview"; "/debug:portable"; "/optimize-"; "/tailcalls-" |],
+            [| "/debug:portable"; "/optimize-"; "/tailcalls-" |],
             """
 module Test
 open System.Threading.Tasks
@@ -370,7 +370,7 @@ module TaskTryFinallyGeneration =
     [<Test>]
     let ``check MoveNext of task try/finally optimized``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/langversion:preview";"/optimize+";"/debug:portable";"/tailcalls+" |],
+            [| "/optimize+"; "/debug:portable"; "/tailcalls+" |],
             """
 module Test
 
@@ -479,7 +479,7 @@ let testTask() = task { try 1+1 finally System.Console.WriteLine("finally") }
     [<Test>]
     let ``check MoveNext of task try/finally debug``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/langversion:preview";"/optimize-";"/debug:portable";"/tailcalls-" |],
+            [| "/optimize-"; "/debug:portable"; "/tailcalls-" |],
             """
 module Test
 
@@ -596,7 +596,7 @@ module TaskTryWithGeneration =
     [<Test>]
     let ``check MoveNext of task try/with optimized``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/langversion:preview";"/optimize+";"/debug:portable";"/tailcalls+" |],
+            [| "/optimize+"; "/debug:portable"; "/tailcalls+" |],
             """
 module Test
 
@@ -709,7 +709,7 @@ let testTask() = task { try 1 with e -> System.Console.WriteLine("finally"); 2 }
     [<Test>]
     let ``check MoveNext of task try/with debug``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/langversion:preview";"/optimize-";"/debug:portable";"/tailcalls-" |],
+            [| "/optimize-"; "/debug:portable"; "/tailcalls-" |],
             """
 module Test
 
@@ -829,7 +829,7 @@ module TaskWhileLoopGeneration =
     [<Test>]
     let ``check MoveNext of task while loop optimized``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/langversion:preview";"/optimize+";"/debug:portable";"/tailcalls+" |],
+            [| "/optimize+"; "/debug:portable"; "/tailcalls+" |],
             """
 module Test
 
@@ -927,7 +927,7 @@ let testTask() = task { while x > 4 do System.Console.WriteLine("loop") }
     [<Test>]
     let ``check MoveNext of task while loop debug``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/langversion:preview";"/optimize-";"/debug:portable";"/tailcalls-" |],
+            [| "/optimize-"; "/debug:portable"; "/tailcalls-" |],
             """
 module Test
 
@@ -1030,7 +1030,7 @@ module TaskTypeInference =
     [<Test>]
     let ``check initially ambiguous SRTP task code ``() =
         CompilerAssert.CompileExeAndRunWithOptions(
-            [| "/langversion:preview"; "/optimize-"; "/debug:portable";"/tailcalls-" |],
+            [| "/optimize-"; "/debug:portable"; "/tailcalls-" |],
             """
 module Test
 
@@ -1050,7 +1050,7 @@ let myTuple : (string -> Task<unit>) * int = (fun (_s: string) -> Task.FromResul
     [<Test>]
     let ``check generic task code ``() =
         CompilerAssert.CompileExeAndRunWithOptions(
-            [| "/langversion:preview";"/optimize-";"/debug:portable";"/tailcalls-" |],
+            [| "/optimize-"; "/debug:portable"; "/tailcalls-" |],
             """
 module Test
 
@@ -1083,7 +1083,7 @@ printfn "test passed"
     [<Test>]
     let ``check generic task exact code``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/langversion:preview";"/optimize-";"/debug:portable";"/tailcalls-" |],
+            [| "/optimize-"; "/debug:portable"; "/tailcalls-" |],
             """
 module Test
 

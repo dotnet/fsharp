@@ -1079,6 +1079,7 @@ type DisplayEnv =
         shortConstraints: bool
         useColonForReturnType: bool
         showAttributes: bool
+        showCsharpCodeAnalysisAttributes: bool
         showOverrides: bool
         showStaticallyResolvedTyparAnnotations: bool
         showNullnessAnnotations: bool option
