@@ -500,18 +500,26 @@ module TcRecdUnionAndEnumDeclarations =
             if not (String.isLeadingIdentifierCharacterUpperCase name) && name <> opNameCons && name <> opNameNil then
                 errorR(NotUpperCaseConstructor(id.idRange))
 
-    let ValidateFieldNames (synFields: SynField list, tastFields: RecdField list) = 
+    let private CheckUnionDuplicateFields (elems: Ident list) =
+        elems |> List.iteri (fun i (uc1: Ident) -> 
+            elems |> List.iteri (fun j (uc2: Ident) -> 
+                if j > i && uc1.idText = uc2.idText then 
+                   errorR(Error(FSComp.SR.tcFieldNameIsUsedModeThanOnce(uc1.idText), uc1.idRange))))
+
+    let ValidateFieldNames (synFields: SynField list, tastFields: RecdField list) =
+        let fields = synFields |> List.choose (function SynField(idOpt = Some ident) -> Some ident | _ -> None)
+        if fields.Length > 1 then
+            CheckUnionDuplicateFields fields
+        
         let seen = Dictionary()
         (synFields, tastFields) ||> List.iter2 (fun sf f ->
             match seen.TryGetValue f.LogicalName with
             | true, synField ->
                 match sf, synField with
-                | SynField(idOpt = Some id), SynField(idOpt = Some _) ->
-                    error(Error(FSComp.SR.tcFieldNameIsUsedModeThanOnce(id.idText), id.idRange))
                 | SynField(idOpt = Some id), SynField(idOpt = None)
                 | SynField(idOpt = None), SynField(idOpt = Some id) ->
-                    error(Error(FSComp.SR.tcFieldNameConflictsWithGeneratedNameForAnonymousField(id.idText), id.idRange))
-                | _ -> assert false
+                    errorR(Error(FSComp.SR.tcFieldNameConflictsWithGeneratedNameForAnonymousField(id.idText), id.idRange))
+                | _ -> ()
             | _ ->
                 seen.Add(f.LogicalName, sf))
                 
