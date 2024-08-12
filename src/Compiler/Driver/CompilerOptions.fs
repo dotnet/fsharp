@@ -576,8 +576,16 @@ let SetGraphTypeCheckingSwitch (tcConfigB: TcConfigBuilder) switch =
 
 let SetParallelOptimizationSwitch (tcConfigB: TcConfigBuilder) switch =
     match switch with
-    | OptionSwitch.On -> tcConfigB.optSettings <- { tcConfigB.optSettings with processingMode = OptimizationProcessingMode.Parallel }
-    | OptionSwitch.Off -> tcConfigB.optSettings <- { tcConfigB.optSettings with processingMode = OptimizationProcessingMode.Sequential }
+    | OptionSwitch.On ->
+        tcConfigB.optSettings <-
+            { tcConfigB.optSettings with
+                processingMode = OptimizationProcessingMode.Parallel
+            }
+    | OptionSwitch.Off ->
+        tcConfigB.optSettings <-
+            { tcConfigB.optSettings with
+                processingMode = OptimizationProcessingMode.Sequential
+            }
 
 let SetParallelIlxGenSwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.parallelIlxGen <- (switch = OptionSwitch.On)

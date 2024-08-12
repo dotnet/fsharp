@@ -41,6 +41,11 @@
     <EnablePublishReadyToRun Condition="'$(SourceBuildUseMonoRuntime)' == 'true'">false</EnablePublishReadyToRun>
   </PropertyGroup>
 
+  <!-- Set parallel options on by default for compiler. Once compiler with new options is shipped, they need to be used -->
+  <PropertyGroup>
+    <OtherFlags>$(OtherFlags) --test:ParallelOptimization --test:GraphBasedChecking</OtherFlags>
+  </PropertyGroup>
+
   <Import Project="$(RepoRoot)/Directory.Build.props.user" Condition="Exists('$(RepoRoot)/Directory.Build.props.user')" />
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
