@@ -529,7 +529,6 @@ type TcConfigBuilder =
         mutable deterministic: bool
         mutable concurrentBuild: bool
         mutable parallelIlxGen: bool
-        mutable graphTypeChecking: bool
         mutable emitMetadataAssembly: MetadataAssemblyGeneration
         mutable preferredUiLang: string option
         mutable lcid: int option
@@ -768,7 +767,6 @@ type TcConfigBuilder =
             deterministic = false
             concurrentBuild = true
             parallelIlxGen = false
-            graphTypeChecking = true
             emitMetadataAssembly = MetadataAssemblyGeneration.None
             preferredUiLang = None
             lcid = None
@@ -1327,7 +1325,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.deterministic = data.deterministic
     member _.concurrentBuild = data.concurrentBuild
     member _.parallelIlxGen = data.parallelIlxGen
-    member _.graphTypeChecking = data.graphTypeChecking
     member _.emitMetadataAssembly = data.emitMetadataAssembly
     member _.pathMap = data.pathMap
     member _.langVersion = data.langVersion

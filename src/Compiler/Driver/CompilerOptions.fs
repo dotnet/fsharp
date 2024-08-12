@@ -572,7 +572,18 @@ let SetRealsig (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.realsig <- (switch = OptionSwitch.On)
 
 let SetGraphTypeCheckingSwitch (tcConfigB: TcConfigBuilder) switch =
-    tcConfigB.graphTypeChecking <- (switch = OptionSwitch.On)
+    match switch with
+    | OptionSwitch.On ->
+        tcConfigB.typeCheckingConfig <-
+            { tcConfigB.typeCheckingConfig with
+                TypeCheckingConfig.Mode = TypeCheckingMode.Graph
+            }
+
+    | OptionSwitch.Off ->
+        tcConfigB.typeCheckingConfig <-
+            { tcConfigB.typeCheckingConfig with
+                TypeCheckingConfig.Mode = TypeCheckingMode.Sequential
+            }
 
 let SetParallelOptimizationSwitch (tcConfigB: TcConfigBuilder) switch =
     match switch with
