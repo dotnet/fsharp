@@ -755,6 +755,10 @@ type Build() =
             "--compressmetadata" + Environment.NewLine +
             "--optimize+" + Environment.NewLine +
             "--realsig+" + Environment.NewLine +
+            "--graphtypechecking+" + Environment.NewLine +
+            "--paralleloptimization+" + Environment.NewLine +
+            "--parallelilxgen-" + Environment.NewLine +
+            "--parallelreferenceresolution-" + Environment.NewLine +
             "--nowarn:52,109,110,73,85" + Environment.NewLine +
             "--fullpaths" + Environment.NewLine +
             "--flaterrors" + Environment.NewLine +
@@ -762,4 +766,3 @@ type Build() =
             "--nocopyfsharpcore"
 
         AssertEqual expected cmd
-

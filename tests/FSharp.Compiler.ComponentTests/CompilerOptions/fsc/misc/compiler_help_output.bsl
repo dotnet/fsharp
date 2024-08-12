@@ -1,4 +1,4 @@
-Microsoft (R) F# Compiler version 12.5.0.0 for F# 7.0
+
 Copyright (c) Microsoft Corporation. All Rights Reserved.
 
 
@@ -67,6 +67,7 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 --paralleloptimization[+|-]              Enable parallel optimization.
 --parallelilxgen[+|-]                    Enable parallel IL generation.
 --parallelreferenceresolution[+|-]       Enable parallel reference resolution.
+
 
                 - ERRORS AND WARNINGS -
 --warnaserror[+|-]                       Report all warnings as errors
