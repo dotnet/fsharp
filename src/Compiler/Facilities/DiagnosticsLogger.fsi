@@ -349,7 +349,7 @@ val RaiseOperationResult: res: OperationResult<unit> -> unit
 
 val inline ErrorD: err: exn -> OperationResult<'T>
 
-val inline ErrorRecoveredD: err: exn -> OperationResult<'T>
+val inline ErrorRecoveredD: err: exn -> OperationResult<unit>
 
 val inline WarnD: err: exn -> OperationResult<unit>
 
