@@ -252,7 +252,7 @@ let foo2 = { new Foo() with member __.ToString() = base.ToString() }
          |> shouldSucceed
       
     [<Fact>]
-    let ``Object expression can not implement an abstract class and interface having no abstract members.`` () =
+    let ``Object expression can implement an abstract class and interface having no abstract members.`` () =
         Fsx """
 type IFirst = interface end
 
@@ -306,7 +306,7 @@ let foo2 = { new Foo() with member __.ToString() = base.ToString() }
          ]
 
     [<Fact>]
-    let ``Object expression can not implement an abstract class having no abstract members. But error when object expression does not implement all abstract members of the abstract class`` () =
+    let ``Object expression shows error when object expression does not implement all abstract members of the abstract class`` () =
         Fsx """
 type ISecond =
     abstract member M : unit -> unit
@@ -328,7 +328,7 @@ let res = { new MyClass() }
          ] 
 
     [<Fact>]
-    let ``Object expression can implement an abstract class having no abstract members. But error when object expression does not implement all abstract members of the abstract class`` () =
+    let ``Object expression shows error when object expression does not implement all abstract members of the abstract class preview`` () =
         Fsx """
 type ISecond =
     abstract member M : unit -> unit
@@ -347,6 +347,45 @@ let res = { new MyClass() }
          |> withDiagnostics [
              (Error 365, Line 11, Col 11, Line 11, Col 28, "No implementation was given for 'abstract MyClass.M: unit -> unit'")
          ]
+         
+    [<Fact>]
+    let ``C# abstract class with protected constructor can not be implemented by F# object expression`` () =
+
+        let csharp =
+            CSharp
+                """
+namespace CSLib
+{
+    using System;
+    public abstract class Animal
+    {
+        protected Animal()
+        {
+            Console.WriteLine("Animal is created");
+        }
+    }
+}
+"""
+            |> withName "CSLib"
+
+        let fsharp =
+            FSharp
+                """
+module FSLib
+open CSLib
+
+let res = { new Animal() }
+"""
+            |> withLangVersion80
+            |> withName "FSLib"
+            |> withReferences [ csharp ]
+
+        fsharp
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            // Error missing
+        ]
 
     [<Fact>]
     let ``C# abstract class with protected constructor can be implemented by F# object expression lang version preview`` () =
@@ -463,6 +502,7 @@ let res = { new Animal() }
         |> compile
         |> shouldFail
         |> withDiagnostics [
+            // Error missing
             (Error 365, Line 5, Col 11, Line 5, Col 27, "No implementation was given for 'Animal.M() : unit'")
         ]
 
