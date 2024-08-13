@@ -3129,7 +3129,7 @@ and SolveTypeEqualsTypeWithReport (csenv: ConstraintSolverEnv) ndeep m trace cxs
         (fun () -> SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m trace cxsln expectedTy actualTy)
         (function
         | AbortForFailedMemberConstraintResolution as err -> ErrorD err
-        | res -> ErrorD (ErrorFromAddingTypeEquation(csenv.g, csenv.DisplayEnv, expectedTy, actualTy, res, m)))
+        | res -> ErrorRecoveredD (ErrorFromAddingTypeEquation(csenv.g, csenv.DisplayEnv, expectedTy, actualTy, res, m)))
   
 and ArgsMustSubsumeOrConvert 
         (csenv: ConstraintSolverEnv)

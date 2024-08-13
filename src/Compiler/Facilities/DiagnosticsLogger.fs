@@ -637,6 +637,7 @@ let conditionallySuppressErrorReporting cond f =
 type OperationResult<'T> =
     | OkResult of warnings: exn list * result: 'T
     | ErrorResult of warnings: exn list * error: exn
+    | ErrorRecoveredResult of warnings: exn list * error: exn
 
 type ImperativeOperationResult = OperationResult<unit>
 
@@ -653,10 +654,15 @@ let CommitOperationResult res =
     | ErrorResult(warns, err) ->
         ReportWarnings warns
         error err
+    | ErrorRecoveredResult(warns, err) ->
+        ReportWarnings warns
+        errorR err
 
 let RaiseOperationResult res : unit = CommitOperationResult res
 
 let inline ErrorD err = ErrorResult([], err)
+
+let inline ErrorRecoveredD err = ErrorRecoveredResult([], err)
 
 let inline WarnD err = OkResult([ err ], ())
 
@@ -668,6 +674,7 @@ let CheckNoErrorsAndGetWarnings res =
     match res with
     | OkResult(warns, res2) -> Some(warns, res2)
     | ErrorResult _ -> None
+    | ErrorRecoveredResult _ -> None
 
 [<DebuggerHidden; DebuggerStepThrough>]
 let inline bind f res =
@@ -677,7 +684,9 @@ let inline bind f res =
         match f res with
         | OkResult(warns2, res2) -> OkResult(warns @ warns2, res2)
         | ErrorResult(warns2, err) -> ErrorResult(warns @ warns2, err)
+        | ErrorRecoveredResult(warns2, err) -> ErrorRecoveredResult(warns @ warns2, err)
     | ErrorResult(warns, err) -> ErrorResult(warns, err)
+    | ErrorRecoveredResult(warns, err) -> ErrorRecoveredResult(warns, err)
 
 /// Stop on first error. Accumulate warnings and continue.
 [<DebuggerHidden; DebuggerStepThrough>]
@@ -784,6 +793,7 @@ module OperationResult =
         match res with
         | OkResult(warnings, _) -> OkResult(warnings, ())
         | ErrorResult(warnings, err) -> ErrorResult(warnings, err)
+        | ErrorRecoveredResult(warnings, err) -> ErrorRecoveredResult(warnings, err)
 
 // Code below is for --flaterrors flag that is only used by the IDE
 let stringThatIsAProxyForANewlineInFlatErrors = String [| char 29 |]

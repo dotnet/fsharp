@@ -337,6 +337,7 @@ val conditionallySuppressErrorReporting: cond: bool -> f: (unit -> 'T) -> 'T
 type OperationResult<'T> =
     | OkResult of warnings: exn list * result: 'T
     | ErrorResult of warnings: exn list * error: exn
+    | ErrorRecoveredResult of warnings: exn list * error: exn
 
 type ImperativeOperationResult = OperationResult<unit>
 
@@ -347,6 +348,8 @@ val CommitOperationResult: res: OperationResult<'T> -> 'T
 val RaiseOperationResult: res: OperationResult<unit> -> unit
 
 val inline ErrorD: err: exn -> OperationResult<'T>
+
+val inline ErrorRecoveredD: err: exn -> OperationResult<'T>
 
 val inline WarnD: err: exn -> OperationResult<unit>
 
