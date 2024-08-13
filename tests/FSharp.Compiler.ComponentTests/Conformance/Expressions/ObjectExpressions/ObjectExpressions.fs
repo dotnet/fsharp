@@ -450,7 +450,7 @@ let res = { new Animal() }
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            // FIXME
+            (Error 738, Line 5, Col 11, Line 5, Col 27, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
         ]
 
     [<Fact>]
@@ -568,8 +568,8 @@ let res = { new Animal() }
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            // Error missing
-            (Error 365, Line 5, Col 11, Line 5, Col 27, "No implementation was given for 'Animal.M() : unit'")
+            (Error 365, Line 5, Col 11, Line 5, Col 27, "No implementation was given for 'Animal.M() : unit'");
+            (Error 738, Line 5, Col 11, Line 5, Col 27, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
         ]
 
     [<Fact>]
