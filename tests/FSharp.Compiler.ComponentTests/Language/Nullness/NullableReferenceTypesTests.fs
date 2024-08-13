@@ -929,3 +929,44 @@ let v3WithNull = f3 (null: obj | null)
               Error 3261, Line 10, Col 11, Line 10, Col 15, "Nullness warning: The type 'obj' does not support 'null'."
               Error 3261, Line 11, Col 35, Line 11, Col 37, "Nullness warning: The type 'String | null' supports 'null' but a non-null type is expected."
               Error 3261, Line 13, Col 22, Line 13, Col 38, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."]
+
+
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``Option type detected as null for NullabilityInfoContext`` () =
+
+    FSharp """module Test
+
+open System
+open System.Reflection
+
+type MyClass(StringOrNull: string | null, StringOption: string option, ObjNull: objnull, ObjOrNull: obj | null) =
+    member val StringOrNull = StringOrNull
+    member val StringOption = StringOption
+    member val ObjNull = ObjNull
+    member val ObjOrNull = ObjOrNull
+
+let classType = typeof<MyClass>
+let ctor = classType.GetConstructors() |> Seq.exactlyOne
+let paramInfos = ctor.GetParameters()
+
+
+let nrtContext = NullabilityInfoContext()
+for paramInfo in paramInfos do
+    let nrtInfo = nrtContext.Create(paramInfo)
+    let readState = nrtInfo.ReadState
+    let writeState = nrtInfo.WriteState
+    printfn $"{paramInfo.Name} => {readState} / {writeState}" """
+    |> withNullnessOptions
+    |> compile
+    |> run
+    |> verifyOutputContains [|"StringOption => Nullable / Nullable"|]
+
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``Option type has WithNull annotation in IL`` () =
+    FSharp """
+module Test
+
+let myOption () : option<string> = None  """
+    |> withNullnessOptions
+    |> compile
+    |> verifyIL ["xxz"]
