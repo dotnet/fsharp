@@ -113,6 +113,33 @@ module Interop  =
         |> fsharpLibCreator
 
     [<Fact>]
+    let ``Csharp understands option like type using UseNullAsTrueValue`` () = 
+        let csharpCode = """
+using System;
+using static TestModule;
+#nullable enable
+public class C {
+    // MyNullableOption has [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>] applied on it
+    public void M(MyNullableOption<string> customOption) {
+
+        Console.WriteLine(customOption.ToString());  // should warn
+
+        var thisIsNone = MyNullableOption<string>.MyNone;
+        Console.WriteLine(thisIsNone.ToString());  // should warn
+
+        if(customOption != null)
+            Console.WriteLine(customOption.ToString());  // should NOT warn
+
+        Console.WriteLine(MyOptionWhichCannotHaveNullInTheInside<string>.NewMyNotNullSome("").ToString());  // should NOT warn
+
+    }
+}"""
+        csharpCode
+        |> csharpLibCompile (FsharpFromFile "NullAsTrueValue.fs")       
+        |> withDiagnostics [
+                    Warning 8600, Line 6, Col 35, Line 6, Col 57, "xxx"]
+
+    [<Fact>]
     let ``Csharp understands Fsharp-produced struct unions via IsXXX flow analysis`` () = 
         let csharpCode = """
 #nullable enable
