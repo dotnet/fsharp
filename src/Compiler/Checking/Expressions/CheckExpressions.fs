@@ -4132,6 +4132,20 @@ and TcPseudoMemberSpec cenv newOk env synTypes tpenv synMemberSig m =
         let members, tpenv = TcValSpec cenv env ModuleOrMemberBinding newOk ExprContainerInfo (Some memberFlags) (Some (List.head tys)) tpenv synValSig []
         match members with
         | [ValSpecResult(_, _, id, _, _, memberConstraintTy, prelimValReprInfo, _)] ->
+
+            match synValSig with
+            | SynValSig(accessibility = access) ->
+                match access with
+                | SynValSigAccess.Single(Some access)
+                | SynValSigAccess.GetSet(Some access, _, _)
+                | SynValSigAccess.GetSet(_, Some access, _)
+                | SynValSigAccess.GetSet(_, _, Some access) ->
+                    if g.langVersion.SupportsFeature(LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters) then
+                        errorR(Error(FSComp.SR.tcAccessModifiersNotAllowedInSRTPConstraint(), access.Range))
+                    else
+                        warning(Error(FSComp.SR.tcAccessModifiersNotAllowedInSRTPConstraint(), access.Range))
+                | _ -> ()
+
             let memberConstraintTypars, _ = tryDestForallTy g memberConstraintTy
             let valReprInfo = TranslatePartialValReprInfo memberConstraintTypars prelimValReprInfo
             let _, _, curriedArgInfos, returnTy, _ = GetValReprTypeInCompiledForm g valReprInfo 0 memberConstraintTy m
@@ -12702,8 +12716,22 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
 
     let valinfos, tpenv = TcValSpec cenv env declKind newOk containerInfo memFlagsOpt None tpenv synValSig attrs
     let denv = env.DisplayEnv
+    let viss = 
+        match memFlagsOpt with
+        | Some ({MemberKind = SynMemberKind.PropertyGetSet as propKind}) ->
+            let getterAccess, setterAccess = getGetterSetterAccess vis propKind g.langVersion
+            List.init valinfos.Length (fun i -> if i = 0 then getterAccess else setterAccess)
+        | Some ({MemberKind = SynMemberKind.PropertyGet as propKind}) ->
+            let getterAccess, _ = getGetterSetterAccess vis propKind g.langVersion
+            List.init valinfos.Length (fun _ -> getterAccess)
+        | Some ({MemberKind = SynMemberKind.PropertySet as propKind}) ->
+            let _, setterAccess = getGetterSetterAccess vis propKind g.langVersion
+            List.init valinfos.Length (fun _ -> setterAccess)
+        | _ ->
+            List.init valinfos.Length (fun _ -> vis.SingleAccess())
+    let valinfos = List.zip valinfos viss
 
-    (tpenv, valinfos) ||> List.mapFold (fun tpenv valSpecResult ->
+    (tpenv, valinfos) ||> List.mapFold (fun tpenv (valSpecResult, vis) ->
 
         let (ValSpecResult (altActualParent, memberInfoOpt, id, enclosingDeclaredTypars, declaredTypars, ty, prelimValReprInfo, declKind)) = valSpecResult
 
