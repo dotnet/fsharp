@@ -29,11 +29,12 @@ SigFile
                    ([[SynArgInfo ([], false, Some e1)];
                      [SynArgInfo ([], false, Some e2)]],
                     SynArgInfo ([], false, None)), false, false,
-                 PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector), None,
-                 None, (3,0--3,37), { LeadingKeyword = Val (3,0--3,3)
-                                      InlineKeyword = None
-                                      WithKeyword = None
-                                      EqualsRange = None }), (3,0--3,37))],
+                 PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
+                 Single None, None, (3,0--3,37),
+                 { LeadingKeyword = Val (3,0--3,3)
+                   InlineKeyword = None
+                   WithKeyword = None
+                   EqualsRange = None }), (3,0--3,37))],
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (2,0--3,37), { LeadingKeyword = Module (2,0--2,6) })],
       { ConditionalDirectives = []

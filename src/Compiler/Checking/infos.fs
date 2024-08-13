@@ -1832,6 +1832,38 @@ type PropInfo =
         | ProvidedProp(_, pi, m) -> pi.PUntaint((fun pi -> pi.CanWrite), m)
 #endif
 
+    member x.GetterAccessibility =
+        match x with
+        | ILProp ilpinfo when ilpinfo.HasGetter -> Some taccessPublic
+        | ILProp _ -> None
+
+        | FSProp(_, _, Some getter, _) -> Some getter.Accessibility
+        | FSProp _ -> None
+
+#if !NO_TYPEPROVIDERS
+        | ProvidedProp(_, pi, m) -> pi.PUntaint((fun pi -> if pi.CanWrite then Some taccessPublic else None), m)
+#endif
+
+    member x.SetterAccessibility =
+        match x with
+        | ILProp ilpinfo when ilpinfo.HasSetter -> Some taccessPublic
+        | ILProp _ -> None
+
+        | FSProp(_, _, _, Some setter) -> Some setter.Accessibility
+        | FSProp _ -> None
+
+#if !NO_TYPEPROVIDERS
+        | ProvidedProp(_, pi, m) -> pi.PUntaint((fun pi -> if pi.CanWrite then Some taccessPublic else None), m)
+#endif
+
+    member x.IsProtectedAccessibility =
+        match x with
+        | ILProp ilpinfo when ilpinfo.HasGetter && ilpinfo.HasSetter -> 
+            struct(ilpinfo.GetterMethod.IsProtectedAccessibility, ilpinfo.SetterMethod.IsProtectedAccessibility)
+        | ILProp ilpinfo when ilpinfo.HasGetter -> struct(ilpinfo.GetterMethod.IsProtectedAccessibility, false)
+        | ILProp ilpinfo when ilpinfo.HasSetter -> struct(false, ilpinfo.SetterMethod.IsProtectedAccessibility)
+        | _ -> struct(false, false)
+
     member x.IsSetterInitOnly =
         match x with
         | ILProp ilpinfo -> ilpinfo.IsSetterInitOnly

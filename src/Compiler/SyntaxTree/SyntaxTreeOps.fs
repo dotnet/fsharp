@@ -1103,6 +1103,46 @@ let (|Get_OrSet_Ident|_|) (ident: Ident) =
     elif ident.idText.StartsWithOrdinal("set_") then ValueSome()
     else ValueNone
 
+let getGetterSetterAccess synValSigAccess memberKind (langVersion: Features.LanguageVersion) =
+    match synValSigAccess with
+    | SynValSigAccess.Single(access) -> access, access
+    | SynValSigAccess.GetSet(access, getterAccess, setterAccess) ->
+        let checkAccess (access: SynAccess option) (accessBeforeGetSet: SynAccess option) =
+            match accessBeforeGetSet, access with
+            | None, _ -> access
+            | Some x, Some _ ->
+                errorR (Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet (), x.Range))
+                None
+            | Some x, None ->
+                checkLanguageFeatureAndRecover
+                    langVersion
+                    Features.LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters
+                    x.Range
+
+                accessBeforeGetSet
+
+        match memberKind with
+        | SynMemberKind.PropertyGetSet ->
+            match access, (getterAccess, setterAccess) with
+            | _, (None, None) -> access, access
+            | None, (Some x, _)
+            | None, (_, Some x) ->
+                checkLanguageFeatureAndRecover
+                    langVersion
+                    Features.LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters
+                    x.Range
+
+                getterAccess, setterAccess
+            | _, (Some x, _)
+            | _, (_, Some x) ->
+                errorR (Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet (), x.Range))
+                None, None
+
+        | SynMemberKind.PropertySet -> None, checkAccess access setterAccess
+        | SynMemberKind.Member
+        | SynMemberKind.PropertyGet
+        | _ -> checkAccess access getterAccess, None
+
 let addEmptyMatchClause (mBar1: range) (mBar2: range) (clauses: SynMatchClause list) =
     let rec addOrPat (pat: SynPat) =
         match pat with
