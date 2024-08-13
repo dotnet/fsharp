@@ -1281,7 +1281,7 @@ Actual:
         | None -> cResult
         | Some actual ->
             let expected = stripVersion (normalizeNewlines expected)
-            if expected <> actual then
+            if expected <> (normalizeNewlines actual) then
                 failwith $"""Output does not match expected: ------------{Environment.NewLine}{expected}{Environment.NewLine}Actual: ------------{Environment.NewLine}{actual}{Environment.NewLine}"""
             else
                 cResult
