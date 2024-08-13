@@ -1809,6 +1809,8 @@ val TypeNullIsTrueValue: TcGlobals -> TType -> bool
 
 val TypeNullIsExtraValue: TcGlobals -> range -> TType -> bool
 
+val TypeHasAllowNull: TyconRef -> TcGlobals -> range -> bool
+
 val TypeNullIsExtraValueNew: TcGlobals -> range -> TType -> bool
 
 val TypeNullNever: TcGlobals -> TType -> bool

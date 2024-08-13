@@ -9185,16 +9185,18 @@ let reqTyForArgumentNullnessInference g actualTy reqTy =
         changeWithNullReqTyToVariable g reqTy       
     | _ -> reqTy
 
+let TypeHasAllowNull (tcref:TyconRef) g m =
+    not tcref.IsStructOrEnumTycon &&
+    not (isByrefLikeTyconRef g m tcref) && 
+    (TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true)
+
 /// The new logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValueNew g m ty = 
     let sty = stripTyparEqns ty
     
     // Check if the type has AllowNullLiteral
     (match tryTcrefOfAppTy g sty with 
-     | ValueSome tcref -> 
-        not tcref.IsStructOrEnumTycon &&
-        not (isByrefLikeTyconRef g m tcref) && 
-        (TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true)
+     | ValueSome tcref -> TypeHasAllowNull tcref g m
      | _ -> false) 
     ||
     // Check if the type has a nullness annotation

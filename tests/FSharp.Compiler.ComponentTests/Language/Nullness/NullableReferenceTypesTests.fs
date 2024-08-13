@@ -934,7 +934,7 @@ let v3WithNull = f3 (null: obj | null)
 [<FSharp.Test.FactForNETCOREAPPAttribute>]
 let ``Option type detected as null for NullabilityInfoContext`` () =
 
-    FSharp """module Test
+    Fsx """
 
 open System
 open System.Reflection
@@ -969,4 +969,14 @@ module Test
 let myOption () : option<string> = None  """
     |> withNullnessOptions
     |> compile
-    |> verifyIL ["xxz"]
+    // The option<> itself is nullable (2), the string inside is not (1)
+    |> verifyIL ["      
+      .method public static class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string> myOption() cil managed
+      {
+        .param [0]
+        .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8[]) = ( 01 00 02 00 00 00 02 01 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldnull
+        IL_0001:  ret
+      }"]
