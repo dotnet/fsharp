@@ -218,6 +218,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.EnforceAttributeTargets, previewVersion // not enabled because: https://github.com/dotnet/fsharp/issues/17514
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
                 LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, previewVersion
+                LanguageFeature.AllowObjectExpressionWithoutOverrides, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")

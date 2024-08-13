@@ -235,6 +235,72 @@ let foo2 = { new Foo() with member __.ToString() = base.ToString() }
          |> withDiagnostics [
                 (Error 738, Line 5, Col 11, Line 5, Col 24, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.");
                 (Error 759, Line 7, Col 12, Line 7, Col 21, "Instances of this type cannot be created since it has been marked abstract or not all methods have been given implementations. Consider using an object expression '{ new ... with ... }' instead.")
+         ]         
+    
+    [<Fact>]
+    let ``Object expression can not implement an abstract class having no abstract members`` () =
+        Fsx """
+[<AbstractClass>]
+type AbstractClass() =
+    do printfn "AbstractClass constructor"
+    
+let res = { new AbstractClass() }
+        """
+         |> withLangVersion80
+         |> typecheck
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 738, Line 6, Col 11, Line 6, Col 34, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
+         ]
+
+    [<Fact>]
+    let ``Object expression can not implement an abstract class having abstract members`` () =
+        Fsx """
+[<AbstractClass>]
+type AbstractClass() =
+    do printfn "AbstractClass constructor"
+    abstract member M : unit -> unit
+    
+let res = { new AbstractClass() }
+        """
+         |> withLangVersion80
+         |> typecheck
+         |> shouldFail
+         |> withDiagnostics [
+            (Error 365, Line 7, Col 11, Line 7, Col 34, "No implementation was given for 'abstract AbstractClass.M: unit -> unit'");
+            (Error 738, Line 7, Col 11, Line 7, Col 34, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
+         ]
+         
+    [<Fact>]
+    let ``Object expression can implement an abstract class having no abstract members preview`` () =
+        Fsx """
+[<AbstractClass>]
+type AbstractClass() =
+    do printfn "AbstractClass constructor"
+    
+let res = { new AbstractClass() }
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> withStdOutContainsAllInOrder [
+            "AbstractClass constructor"
+        ]
+        
+    [<Fact>]
+    let ``Object expression can not implement an abstract class having abstract members preview.`` () =
+        Fsx """
+[<AbstractClass>]
+type AbstractClass() =
+    do printfn "AbstractClass constructor"
+    abstract member M : unit -> unit
+    
+let res = { new AbstractClass() }
+        """
+         |> withLangVersionPreview
+         |> typecheck
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 365, Line 7, Col 11, Line 7, Col 34, "No implementation was given for 'abstract AbstractClass.M: unit -> unit'")
          ]
 
     [<Fact>]
@@ -384,7 +450,7 @@ let res = { new Animal() }
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            // Error missing
+            // FIXME
         ]
 
     [<Fact>]
