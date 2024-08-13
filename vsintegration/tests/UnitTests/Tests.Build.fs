@@ -80,6 +80,10 @@ type Build() =
         AssertEqual ("--codepage:65001" + Environment.NewLine +
                      "--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -97,6 +101,10 @@ type Build() =
         AssertEqual ("-g" + Environment.NewLine +
                      "--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -114,6 +122,10 @@ type Build() =
         AssertEqual ("--debug:pdbonly" + Environment.NewLine +
                      "--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -133,6 +145,10 @@ type Build() =
                      "--define:FOO=3" + Environment.NewLine +
                      "--define:BAR=4" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -149,6 +165,10 @@ type Build() =
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--nowarn:52,109" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -166,6 +186,10 @@ type Build() =
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -182,6 +206,10 @@ type Build() =
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--warnaserror-:52,109" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -199,6 +227,10 @@ type Build() =
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--versionfile:src/version" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -217,6 +249,10 @@ type Build() =
         AssertEqual ("--compressmetadata" + Environment.NewLine +
                      "--doc:foo.xml" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -234,6 +270,10 @@ type Build() =
         AssertEqual ("--compressmetadata" + Environment.NewLine +
                      "--sig:foo.fsi" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -251,6 +291,10 @@ type Build() =
         AssertEqual ("--compressmetadata" + Environment.NewLine +
                      "--keyfile:key.txt" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -268,6 +312,10 @@ type Build() =
         AssertEqual ("--noframework" + Environment.NewLine +
                      "--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -284,6 +332,10 @@ type Build() =
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--compressmetadata" + Environment.NewLine +
                      "--optimize-" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -301,6 +353,10 @@ type Build() =
         // REVIEW we don't put the default, is that desired?
         AssertEqual ("--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -317,6 +373,10 @@ type Build() =
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -336,6 +396,10 @@ type Build() =
         AssertEqual ("-o:oUt.dll" + Environment.NewLine +
                      "--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -352,6 +416,10 @@ type Build() =
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--pdb:out.pdb" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -369,6 +437,10 @@ type Build() =
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--platform:x64" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -386,6 +458,10 @@ type Build() =
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--platform:x86" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -404,6 +480,10 @@ type Build() =
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "-r:" + dll + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -422,6 +502,10 @@ type Build() =
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--lib:c:\\sd\\staging\\tools\\nunit\\,c:\\Foo" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -440,6 +524,10 @@ type Build() =
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--lib:c:\\program files,c:\\sd\\staging\\tools\\nunit,c:\\Foo" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -457,6 +545,10 @@ type Build() =
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--resource:Foo.resources" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -476,6 +568,10 @@ type Build() =
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -495,6 +591,10 @@ type Build() =
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--target:library" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -512,6 +612,10 @@ type Build() =
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--target:winexe" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -529,6 +633,10 @@ type Build() =
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--target:module" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -545,6 +653,13 @@ type Build() =
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--utf8output" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -561,6 +676,10 @@ type Build() =
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--win32res:foo.res" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -577,6 +696,10 @@ type Build() =
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--win32manifest:foo.manifest" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -593,6 +716,10 @@ type Build() =
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -608,6 +735,10 @@ type Build() =
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
+                     "--graphtypechecking+" + Environment.NewLine +
+                     "--paralleloptimization+" + Environment.NewLine +
+                     "--parallelilxgen-" + Environment.NewLine +
+                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -664,6 +795,10 @@ type Build() =
             "--sig:foo.fsi" + Environment.NewLine +
             "--keyfile:key.txt" + Environment.NewLine +
             "--optimize+" + Environment.NewLine +
+            "--graphtypechecking+" + Environment.NewLine +
+            "--paralleloptimization+" + Environment.NewLine +
+            "--parallelilxgen-" + Environment.NewLine +
+            "--parallelreferenceresolution-" + Environment.NewLine +
             "--realsig+" + Environment.NewLine +
             "--pdb:out.pdb" + Environment.NewLine +
             "--platform:anycpu" + Environment.NewLine +
@@ -709,6 +844,10 @@ type Build() =
             "--sig:foo.fsi"
             "--keyfile:key.txt"
             "--optimize+"
+            "--graphtypechecking+"
+            "--paralleloptimization+"
+            "--parallelilxgen-"
+            "--parallelreferenceresolution-"
             "--realsig+"
             "--pdb:out.pdb"
             "--platform:anycpu"
@@ -754,11 +893,11 @@ type Build() =
         let expected =
             "--compressmetadata" + Environment.NewLine +
             "--optimize+" + Environment.NewLine +
-            "--realsig+" + Environment.NewLine +
             "--graphtypechecking+" + Environment.NewLine +
             "--paralleloptimization+" + Environment.NewLine +
             "--parallelilxgen-" + Environment.NewLine +
             "--parallelreferenceresolution-" + Environment.NewLine +
+            "--realsig+" + Environment.NewLine +
             "--nowarn:52,109,110,73,85" + Environment.NewLine +
             "--fullpaths" + Environment.NewLine +
             "--flaterrors" + Environment.NewLine +
