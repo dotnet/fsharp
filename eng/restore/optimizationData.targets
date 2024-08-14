@@ -17,7 +17,7 @@
     Name="CopyPackageFiles"
     AfterTargets="Restore"
     BeforeTargets="Build;Pack">
-    
+
     <ItemGroup>
       <MibcFiles Include="$(NuGetPackageRoot)%(MibcPackage.Identity)\%(MibcPackage.Version)\**\DotNet_FSharp.mibc" />
     </ItemGroup>  
