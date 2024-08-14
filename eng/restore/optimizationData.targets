@@ -13,11 +13,7 @@
   </ItemGroup>  
 
   <!-- We copy all packages to the output (per architecture) -->
-  <Target
-    Name="CopyPackageFiles"
-    AfterTargets="Restore"
-    BeforeTargets="Build;Pack">
-
+  <Target Name="CopyMIBC">
     <ItemGroup>
       <MibcFiles Include="$(NuGetPackageRoot)%(MibcPackage.Identity)\%(MibcPackage.Version)\**\DotNet_FSharp.mibc" />
     </ItemGroup>  

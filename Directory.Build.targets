@@ -2,6 +2,7 @@
   <Import Project="FSharpBuild.Directory.Build.targets" Condition = " '$(FSharpTestCompilerVersion)' == '' "/>
   <Import Project="FSharpTests.Directory.Build.targets" Condition = " '$(FSharpTestCompilerVersion)' != '' "/>
   <Import Project="CoordinateXliff.targets" Condition = " '$(FSharpBuildAssemblyFile)' != '' and '$(XliffTasksAssembly)' != '' "/>
+  <Import Project="eng\restore\optimizationData.targets" />
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
     <!-- Note, that default framework is used here (the one we use for development in the current cycle),
@@ -36,5 +37,6 @@
         Condition="'%(TargetFramework)' == '$(NetCurrent)'">%(Crossgen2RuntimeIdentifiers);$(NETCoreSdkRuntimeIdentifier)</Crossgen2RuntimeIdentifiers>
     </KnownCrossgen2Pack>
   </ItemGroup>
-
+  
+  <Target DependsOnTargets="CopyMIBC" RemoveProperties="TargetFramework" />
 </Project>
