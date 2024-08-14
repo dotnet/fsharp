@@ -252,7 +252,68 @@ let res = { new AbstractClass() }
          |> withDiagnostics [
              (Error 738, Line 6, Col 11, Line 6, Col 34, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
          ]
+         
+    [<Fact>]
+    let ``Object expression can not implement an abstract class having abstract members with default implementation`` () =
+        Fsx """
+[<AbstractClass>]
+type AbstractClass() =
+    abstract member M : unit -> unit
+    default this.M() = printfn "Im a default implementation"
+    
+let res = { new AbstractClass() }
+        """
+         |> withLangVersion80
+         |> typecheck
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 738, Line 7, Col 11, Line 7, Col 34, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
+         ]
+         
+    [<Fact>]
+    let ``Object expression can implement an abstract class having abstract members with default implementation preview`` () =
+        Fsx """
+[<AbstractClass>]
+type AbstractClass() =
+    abstract member M : unit -> unit
+    default this.M() = printfn "Im a default implementation"
+    
+let res = { new AbstractClass() }
+        """
+         |> withLangVersionPreview
+         |> typecheck
+         |> shouldSucceed
 
+    [<Fact>]
+    let ``Object expression can implement an abstract class(overriding a member) having abstract members with default implementation`` () =
+        Fsx """
+[<AbstractClass>]
+type AbstractClass() =
+    abstract member M : unit -> unit
+    default this.M() = printfn "Im a default implementation"
+    
+let res = { new AbstractClass() with
+                override this.ToString() = "ConcreteMethod" }
+        """
+         |> withLangVersion80
+         |> typecheck
+         |> shouldSucceed
+
+    [<Fact>]
+    let ``Object expression can implement an abstract class(overriding a member) having abstract members with default implementation preview`` () =
+        Fsx """
+[<AbstractClass>]
+type AbstractClass() =
+    abstract member M : unit -> unit
+    default this.M() = printfn "Im a default implementation"
+    
+let res = { new AbstractClass() with
+                override this.ToString() = "ConcreteMethod" }
+        """
+         |> withLangVersionPreview
+         |> typecheck
+         |> shouldSucceed
+         
     [<Fact>]
     let ``Object expression can not implement an abstract class having abstract members`` () =
         Fsx """

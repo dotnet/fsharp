@@ -6792,7 +6792,7 @@ and TcRecordConstruction (cenv: cenv) (overallTy: TType) isObjExpr env tpenv wit
 
     // Types with implicit constructors can't use record or object syntax: all constructions must go through the implicit constructor
     let supportsObjectExpressionWithoutOverrides = isObjExpr && g.langVersion.SupportsFeature(LanguageFeature.AllowObjectExpressionWithoutOverrides)
-    if tycon.MembersOfFSharpTyconByName |> NameMultiMap.existsInRange (fun v -> v.IsIncrClassConstructor) && not supportsObjectExpressionWithoutOverrides then
+    if not supportsObjectExpressionWithoutOverrides && tycon.MembersOfFSharpTyconByName |> NameMultiMap.existsInRange (fun v -> v.IsIncrClassConstructor) then
         errorR(Error(FSComp.SR.tcConstructorRequiresCall(tycon.DisplayName), m))
 
     let fspecs = tycon.TrueInstanceFieldsAsList
@@ -7140,7 +7140,8 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
     let isRecordTy = tcref.IsRecordTycon
     let isInterfaceTy = isInterfaceTy g objTy
     let isFSharpObjModelTy = isFSharpObjModelTy g objTy
-    let isOverallTyAbstract = HasFSharpAttribute g g.attrib_AbstractClassAttribute tcref.Attribs
+    let isOverallTyAbstract = HasFSharpAttribute g g.attrib_AbstractClassAttribute tcref.Attribs || isAbstractTycon tcref.Deref
+
     if not isRecordTy && not isInterfaceTy && isSealedTy g objTy then errorR(Error(FSComp.SR.tcCannotCreateExtensionOfSealedType(), mNewExpr))
 
     CheckSuperType cenv objTy mObjTy
@@ -7251,7 +7252,6 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
         assert (typeEquiv g objTy objtyR)
         let extraImpls = allTypeImpls.Tail
         let supportsObjectExpressionWithoutOverrides = g.langVersion.SupportsFeature(LanguageFeature.AllowObjectExpressionWithoutOverrides)
-        let isOverallTyAbstract = isOverallTyAbstract || isAbstractTycon tcref.Deref
 
         if not supportsObjectExpressionWithoutOverrides && not isInterfaceTy && (isOverallTyAbstract && overrides'.IsEmpty) && extraImpls.IsEmpty then
            errorR (Error(FSComp.SR.tcInvalidObjectExpressionSyntaxForm (), mWholeExpr))
