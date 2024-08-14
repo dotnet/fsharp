@@ -47,7 +47,7 @@ let GetSuperTypeOfType g amap m ty =
 #if !NO_TYPEPROVIDERS
         | ProvidedTypeMetadata info ->
             let st = info.ProvidedType
-            let superOpt = st.PApplyOption((fun st -> match st.BaseType with null -> None | t -> Some (nonNull t)), m)
+            let superOpt = st.PApplyOption((fun st -> match st.BaseType with null -> None | t -> Some t), m)
             match superOpt with
             | None -> None
             | Some super -> Some(ImportProvidedType amap m super)

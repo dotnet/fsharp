@@ -17,7 +17,8 @@ type InterruptibleLazy<'T> private (value, valueFactory: unit -> 'T) =
 
     [<VolatileField>]
     // TODO nullness - this is boxed to obj because of an attribute targets bug fixed in main, but not yet shipped (needs shipped 8.0.400)
-    let mutable valueFactory : obj = valueFactory
+    let mutable valueFactory : objnull = valueFactory
+
 
     let mutable value = value
 
@@ -86,35 +87,6 @@ module internal PervasiveAutoOpens =
         | [ _ ] -> true
         | _ -> false
 
-    let inline isNotNull (x: 'T) = not (isNull x)
-
-#if NO_CHECKNULLS
-    type 'T MaybeNull when 'T: null and 'T: not struct = 'T
-
-    let inline (|NonNullQuick|) (x: 'T MaybeNull) =
-        match x with
-        | null -> raise (NullReferenceException())
-        | v -> v
-
-    let inline nonNull (x: 'T MaybeNull) =
-        match x with
-        | null -> raise (NullReferenceException())
-        | v -> v
-
-    let inline (|Null|NonNull|) (x: 'T MaybeNull) : Choice<unit, 'T> =
-        match x with
-        | null -> Null
-        | v -> NonNull v
-
-    let inline nullArgCheck paramName (x: 'T MaybeNull) =
-        match x with
-        | null -> raise (ArgumentNullException(paramName))
-        | v -> v
-#else
-    type 'T MaybeNull when 'T: not null and 'T: not struct = 'T | null
-
-#endif
-
     let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
     /// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://learn.microsoft.com/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
@@ -132,7 +104,7 @@ module internal PervasiveAutoOpens =
         member inline x.EndsWithOrdinalIgnoreCase value =
             x.EndsWith(value, StringComparison.OrdinalIgnoreCase)
 
-        member inline x.IndexOfOrdinal value =
+        member inline x.IndexOfOrdinal (value:string) =
             x.IndexOf(value, StringComparison.Ordinal)
 
         member inline x.IndexOfOrdinal(value, startIndex) =
@@ -182,8 +154,8 @@ module internal PervasiveAutoOpens =
 type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
     let syncObj = obj ()
 
-    let mutable arrayStore = null
-    let mutable dictStore = null
+    let mutable arrayStore : _ array MaybeNull = null
+    let mutable dictStore : _ MaybeNull = null
 
     let mutable func = f
 
@@ -197,11 +169,11 @@ type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
                 match arrayStore with
                 | NonNull value -> value
                 | _ ->
-
-                    arrayStore <- func ()
+                    let freshArray = func ()
+                    arrayStore <- freshArray
 
                     func <- Unchecked.defaultof<_>
-                    arrayStore
+                    freshArray
             finally
                 Monitor.Exit(syncObj)
 
@@ -216,9 +188,9 @@ type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
                 match dictStore with
                 | NonNull value -> value
                 | _ ->
-
-                    dictStore <- this.CreateDictionary(array)
-                    dictStore
+                    let dict = this.CreateDictionary(array)
+                    dictStore <- dict
+                    dict
             finally
                 Monitor.Exit(syncObj)
 
@@ -231,7 +203,7 @@ type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>(f: unit -> 'T[]) =
 module Order =
     let orderBy (p: 'T -> 'U) =
         { new IComparer<'T> with
-            member _.Compare(x, xx) = compare (p x) (p xx)
+            member _.Compare(x, xx) = compare (p !!x) (p !!xx)
         }
 
     let orderOn p (pxOrder: IComparer<'U>) =
@@ -270,6 +242,7 @@ module Array =
     let order (eltOrder: IComparer<'T>) =
         { new IComparer<'T array> with
             member _.Compare(xs, ys) =
+                let xs,ys = nullArgCheck "xs" xs, nullArgCheck "ys" ys
                 let c = compare xs.Length ys.Length
 
                 if c <> 0 then
@@ -566,6 +539,7 @@ module List =
     let order (eltOrder: IComparer<'T>) =
         { new IComparer<'T list> with
             member _.Compare(xs, ys) =
+                let xs,ys = nullArgCheck "xs" xs, nullArgCheck "ys" ys
                 let rec loop xs ys =
                     match xs, ys with
                     | [], [] -> 0
@@ -831,13 +805,16 @@ module String =
 
     let (|StartsWith|_|) pattern value =
         if String.IsNullOrWhiteSpace value then None
-        elif value.StartsWithOrdinal pattern then Some()
+        elif (!!value).StartsWithOrdinal pattern then Some()
         else None
 
-    let (|Contains|_|) pattern value =
-        if String.IsNullOrWhiteSpace value then None
-        elif value.Contains pattern then Some()
-        else None
+    let (|Contains|_|) (pattern:string) value =
+        match value with        
+        | value when String.IsNullOrWhiteSpace value -> None
+        | null -> None
+        | value ->
+            if value.Contains pattern then Some()
+            else None
 
     let getLines (str: string) =
         use reader = new StringReader(str)
@@ -976,7 +953,11 @@ module ResultOrException =
         | Exception _err -> f ()
 
 /// Generates unique stamps
-type UniqueStampGenerator<'T when 'T: equality>() =
+type UniqueStampGenerator<'T when 'T: equality
+#if !NO_CHECKNULLS
+    and 'T:not null
+#endif
+    >() =
     let encodeTable = ConcurrentDictionary<'T, Lazy<int>>(HashIdentity.Structural)
     let mutable nItems = -1
 
@@ -988,7 +969,11 @@ type UniqueStampGenerator<'T when 'T: equality>() =
     member _.Table = encodeTable.Keys
 
 /// memoize tables (all entries cached, never collected)
-type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<'T>, ?canMemoize) =
+type MemoizationTable<'T, 'U
+#if !NO_CHECKNULLS
+    when 'T:not null
+#endif
+    >(compute: 'T -> 'U, keyComparer: IEqualityComparer<'T>, ?canMemoize) =
 
     let table = new ConcurrentDictionary<'T, Lazy<'U>>(keyComparer)
     let computeFunc = Func<_, _>(fun key -> lazy (compute key))
@@ -1004,7 +989,11 @@ type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<
             compute x
 
 /// A thread-safe lookup table which is assigning an auto-increment stamp with each insert
-type internal StampedDictionary<'T, 'U>(keyComparer: IEqualityComparer<'T>) =
+type internal StampedDictionary<'T, 'U
+#if !NO_CHECKNULLS
+    when 'T:not null
+#endif
+    >(keyComparer: IEqualityComparer<'T>) =
     let table = new ConcurrentDictionary<'T, Lazy<int * 'U>>(keyComparer)
     let mutable count = -1
 
@@ -1046,7 +1035,7 @@ type LazyWithContext<'T, 'Ctxt> =
 
         /// This field holds either the function to run or a LazyWithContextFailure object recording the exception raised
         /// from running the function. It is null if the thunk has been evaluated successfully.
-        mutable funcOrException: obj
+        mutable funcOrException: objnull
 
         /// A helper to ensure we rethrow the "original" exception
         findOriginalException: exn -> exn
@@ -1133,7 +1122,7 @@ module IPartialEqualityComparer =
     let On f (c: IPartialEqualityComparer<_>) =
         { new IPartialEqualityComparer<_> with
             member _.InEqualityRelation x = c.InEqualityRelation(f x)
-            member _.Equals(x, y) = c.Equals(f x, f y)
+            member _.Equals(x, y) = c.Equals(f !!x, f !!y)
             member _.GetHashCode x = c.GetHashCode(f x)
         }
 
