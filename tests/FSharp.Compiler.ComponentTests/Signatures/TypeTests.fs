@@ -282,7 +282,7 @@ let f = bar.get_IsBar
     |> withLangVersionPreview
     |> typecheckResults
     |> fun results ->
-        let isBarSymbolUse = results.GetSymbolUseAtLocation(12, 21, "let f = bar.get_IsBar", [ "get_IsP" ]).Value
+        let isBarSymbolUse = results.GetSymbolUseAtLocation(12, 21, "let f = bar.get_IsBar", [ "get_IsBar" ]).Value
         match isBarSymbolUse.Symbol with
         | :? FSharpMemberOrFunctionOrValue as mfv ->
             Assert.False(mfv.IsUnionCaseTester, "IsUnionCaseTester returned true")

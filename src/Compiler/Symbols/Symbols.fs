@@ -1788,7 +1788,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match d with
         | P p -> p.IsUnionCaseTester
         | M m -> m.IsUnionCaseTester
-        | E _ | C _ | V _ -> invalidOp "the value or member is not a property"
+        | E _ | C _ | V _ -> false
 
     member _.EventAddMethod =
         checkIsResolved()
