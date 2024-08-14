@@ -493,13 +493,14 @@ module Keywords =
                         fileName
                         |> FileSystem.GetFullPathShim (* asserts that path is already absolute *)
                         |> System.IO.Path.GetDirectoryName
+                        |> (!!)
 
                 if String.IsNullOrEmpty dirname then
                     dirname
                 else
                     PathMap.applyDir args.pathMap dirname
                 |> fun dir -> KEYWORD_STRING(s, dir)
-            | "__SOURCE_FILE__" -> KEYWORD_STRING(s, System.IO.Path.GetFileName(FileIndex.fileOfFileIndex lexbuf.StartPos.FileIndex))
+            | "__SOURCE_FILE__" -> KEYWORD_STRING(s, !! System.IO.Path.GetFileName(FileIndex.fileOfFileIndex lexbuf.StartPos.FileIndex))
             | "__LINE__" -> KEYWORD_STRING(s, string lexbuf.StartPos.Line)
             | _ -> IdentifierToken args lexbuf s
 

@@ -237,6 +237,8 @@ type ILTypeRef =
 
     member internal EqualsWithPrimaryScopeRef: ILScopeRef * obj -> bool
 
+    override ToString: unit -> string
+
     interface System.IComparable
 
 /// Type specs and types.
@@ -664,7 +666,7 @@ type ILFieldInit =
     | Double of double
     | Null
 
-    member AsObject: unit -> obj
+    member AsObject: unit -> objnull
 
 [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
 type internal ILNativeVariant =

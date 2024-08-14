@@ -275,10 +275,10 @@ printfn "Hello, World"
         |> asExe
         |> compile
         |> shouldFail
-        |> withDiagnostics[
+        |> withDiagnostics [
             (Warning 3353, Line 2, Col 9, Line 2, Col 11, "Invalid directive '#r '")
             (Warning 213, Line 3, Col 9, Line 3, Col 14, "'' is not a valid assembly name")
-            (Error 3870, Line 4, Col 12, Line 4, Col 17, "Unexpected identifier 'Ident'.")
-            (Error 3870, Line 5, Col 12, Line 5, Col 22, "Unexpected identifier 'Long.Ident'.")
-            (Error 3870, Line 6, Col 12, Line 6, Col 15, "Unexpected integer literal '123'.")
-            ]
+            (Error 3869, Line 4, Col 12, Line 4, Col 17, "Unexpected identifier 'Ident'.")
+            (Error 3869, Line 5, Col 12, Line 5, Col 22, "Unexpected identifier 'Long.Ident'.")
+            (Error 3869, Line 6, Col 12, Line 6, Col 15, "Unexpected integer literal '123'.")
+        ]

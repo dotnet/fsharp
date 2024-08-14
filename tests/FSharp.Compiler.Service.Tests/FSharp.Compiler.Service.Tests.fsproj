@@ -85,7 +85,10 @@
     <PackageReference Include="Dotnet.ProjInfo" Version="0.37.0" />
     <!-- Force a newer Newtonsoft.Json version to avoid conflicts. -->
     <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersion)" />
-    <ProjectReference Include="..\..\src\Compiler\FSharp.Compiler.Service.fsproj" />
+	<ProjectReference Include="..\..\src\Compiler\FSharp.Compiler.Service.fsproj">
+		<!-- If tests would use net9.0, the surface area changes because of different set of Assembly references -->
+		<SetTargetFramework>TargetFramework=netstandard2.0</SetTargetFramework>
+	</ProjectReference>
     <ProjectReference Include="..\..\tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
     <ProjectReference Include="..\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />
   </ItemGroup>

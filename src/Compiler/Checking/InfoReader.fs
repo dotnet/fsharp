@@ -731,25 +731,28 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
               // Only cache closed, monomorphic types (closed = all members for the type
               // have been processed). Generic type instantiations could be processed if we had 
               // a decent hash function for these.
+
+              // Nullness of `ty` (TType_app) is not considered here, as the info is used to load members of the type
+              // It would matter for different generic instantiations of the same type, but we don't cache that here - TType_app is always matched for `[]` typars.
               canMemoize=(fun (_flags, _: range, ty) -> 
                                     match stripTyEqns g ty with 
-                                    | TType_app(tcref, [], _) -> tcref.TypeContents.tcaug_closed // TODO NULLNESS: consider whether ignoring _nullness is valid here
+                                    | TType_app(tcref, [], _) -> tcref.TypeContents.tcaug_closed
                                     | _ -> false),
               
               keyComparer=
                  { new IEqualityComparer<_> with 
-                       member _.Equals((flags1, _, ty1), (flags2, _, ty2)) =
-                                    // Ignoring the ranges - that's OK.
-                                    flagsEq.Equals(flags1, flags2) && 
-                                    match stripTyEqns g ty1, stripTyEqns g ty2 with 
-                                    | TType_app(tcref1, [], _),TType_app(tcref2, [], _) -> tyconRefEq g tcref1 tcref2  // TODO NULLNESS: consider whether ignoring _nullness is valid here
-                                    | _ -> false
                        member _.GetHashCode((flags, _, ty)) =
                                     // Ignoring the ranges - that's OK.
                                     flagsEq.GetHashCode flags + 
                                     (match stripTyEqns g ty with 
-                                     | TType_app(tcref, [], _) -> hash tcref.LogicalName  // TODO NULLNESS: consider whether ignoring _nullness is valid here
-                                     | _ -> 0) })
+                                     | TType_app(tcref, [], _) -> hash tcref.LogicalName
+                                     | _ -> 0)
+                       member _.Equals((flags1, _, ty1), (flags2, _, ty2)) =
+                                    // Ignoring the ranges - that's OK.
+                                    flagsEq.Equals(flags1, flags2) && 
+                                    match stripTyEqns g ty1, stripTyEqns g ty2 with 
+                                    | TType_app(tcref1, [], _),TType_app(tcref2, [], _) -> tyconRefEq g tcref1 tcref2
+                                    | _ -> false })
     
     let FindImplicitConversionsUncached (ad, m, ty) = 
         if isTyparTy g ty then 
@@ -791,7 +794,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     let hashFlags3 = 
         { new IEqualityComparer<AccessorDomain> with 
                member _.GetHashCode((ad: AccessorDomain)) = AccessorDomain.CustomGetHashCode ad
-               member _.Equals((ad1), (ad2)) = AccessorDomain.CustomEquals(g, ad1, ad2) }
+               member _.Equals((ad1), (ad2)) = nullSafeEquality ad1 ad2 (fun ad1 ad2 -> AccessorDomain.CustomEquals(g, ad1, ad2)) }
                          
     let hashFlags4 = 
         { new IEqualityComparer<AccessorDomain * string> with 
