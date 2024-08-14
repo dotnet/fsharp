@@ -3392,7 +3392,7 @@ type NonLocalValOrMemberRef =
     member x.DebugText = x.ToString()
 
     /// For debugging
-    override x.ToString() = x.EnclosingEntity.nlr.ToString() + "::" + x.ItemKey.PartialKey.LogicalName
+    override x.ToString() = !! x.EnclosingEntity.nlr.ToString() + "::" + x.ItemKey.PartialKey.LogicalName
       
 /// Represents the path information for a reference to a value or member in another assembly, disassociated
 /// from any particular reference.
@@ -5112,11 +5112,11 @@ type Expr =
 
     override expr.ToString() = expr.ToDebugString(3)
 
-    member expr.ToDebugString(depth: int) = 
+    member expr.ToDebugString(depth: int) : string = 
         if depth = 0 then ".." else
         let depth = depth - 1
         match expr with 
-        | Const (c, _, _) -> c.ToString()
+        | Const (c, _, _) -> string c
         | Val (v, _, _) -> v.LogicalName
         | Sequential (e1, e2, _, _) -> "Sequential(" + e1.ToDebugString(depth) + ", " + e2.ToDebugString(depth) + ")"
         | Lambda (_, _, _, vs, body, _, _) -> sprintf "Lambda(%+A, " vs + body.ToDebugString(depth) + ")" 
@@ -5695,13 +5695,13 @@ module CcuTypeForwarderTable =
             if remainingPath.Count = 0 then
                 finalKey
             else
-                remainingPath.Array.[remainingPath.Offset]
+                (!!remainingPath.Array).[remainingPath.Offset]
         match nodes.TryGetValue searchTerm with
         | true, innerTree ->
             if remainingPath.Count = 0 then
                 innerTree.Value
             else
-                 findInTree (ArraySegment<string>(remainingPath.Array, remainingPath.Offset + 1, remainingPath.Count - 1)) finalKey innerTree
+                 findInTree (ArraySegment<string>((!!remainingPath.Array), remainingPath.Offset + 1, remainingPath.Count - 1)) finalKey innerTree
         | false, _ -> None
 
 /// Represents a table of .NET CLI type forwarders for an assembly
@@ -6011,7 +6011,7 @@ type Construct() =
         let lazyBaseTy = 
             LazyWithContext.Create 
                 ((fun (m, objTy) -> 
-                      let baseSystemTy = st.PApplyOption((fun st -> match st.BaseType with null -> None | ty -> Some (nonNull ty)), m)
+                      let baseSystemTy = st.PApplyOption((fun st -> match st.BaseType with null -> None | ty -> Some (ty)), m)
                       match baseSystemTy with 
                       | None -> objTy 
                       | Some t -> importProvidedType t),
@@ -6334,5 +6334,5 @@ type Construct() =
             // Coordinates from type provider are 1-based for lines and columns
             // Coordinates internally in the F# compiler are 1-based for lines and 0-based for columns
             let pos = Position.mkPos line (max 0 (column - 1)) 
-            mkRange filePath pos pos |> Some
+            mkRange !!filePath pos pos |> Some
 #endif

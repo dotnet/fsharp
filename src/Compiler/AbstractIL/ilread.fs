@@ -941,11 +941,11 @@ let mkCacheGeneric lowMem _inbase _nm (sz: int) =
         fun f (idx: 'T) ->
             let cache =
                 match cache with
-                | Null ->
+                | null ->
                     let v = ConcurrentDictionary<_, _>(Environment.ProcessorCount, sz)
                     cache <- v
                     v
-                | NonNull v -> v
+                | v -> v
 
             match cache.TryGetValue idx with
             | true, v ->
