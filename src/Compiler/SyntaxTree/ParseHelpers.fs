@@ -43,7 +43,11 @@ let posOfLexPosition (p: Position) = mkPos p.Line p.Column
 
 /// Get an F# compiler range from a lexer range
 let mkSynRange (p1: Position) (p2: Position) =
-    mkFileIndexRange p1.FileIndex (posOfLexPosition p1) (posOfLexPosition p2)
+    if p1.FileIndex = p2.FileIndex then
+        mkFileIndexRange p1.FileIndex (posOfLexPosition p1) (posOfLexPosition p2)
+    else
+        // This means we had a #line directive in the middle of this syntax element.
+        mkFileIndexRange p1.FileIndex (posOfLexPosition p1) (posOfLexPosition (p1.ShiftColumnBy 1))
 
 type LexBuffer<'Char> with
 
