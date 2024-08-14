@@ -1,4 +1,4 @@
-﻿
+
 
                 - OUTPUT FILES -
 --out:<file>                             Name of the output file (Short form:
@@ -100,6 +100,11 @@
                                          optimizations
 --reflectionfree                         Disable implicit generation of
                                          constructs using reflection
+--graphtypechecking[+|-]                 Use graph typechecking.
+--paralleloptimization[+|-]              Enable parallel optimization.
+--parallelilxgen[+|-]                    Enable parallel IL generation.
+--parallelreferenceresolution[+|-]       Enable parallel reference
+                                         resolution.
 
 
                 - ERRORS AND WARNINGS -

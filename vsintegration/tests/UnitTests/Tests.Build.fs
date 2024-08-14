@@ -657,9 +657,6 @@ type Build() =
                      "--paralleloptimization+" + Environment.NewLine +
                      "--parallelilxgen-" + Environment.NewLine +
                      "--parallelreferenceresolution-" + Environment.NewLine +
-                     "--paralleloptimization+" + Environment.NewLine +
-                     "--parallelilxgen-" + Environment.NewLine +
-                     "--parallelreferenceresolution-" + Environment.NewLine +
                      "--realsig+" + Environment.NewLine +
                      "--utf8output" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
