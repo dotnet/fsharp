@@ -3,6 +3,7 @@
 %{
 
 #nowarn "1182"  // generated code has lots of unused "parseState"
+#nowarn "3261"  // the generated code would need to properly annotate nulls, e.g. changing System.Object to `obj|null`
 
 open System
 
@@ -21,6 +22,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml

@@ -159,7 +159,7 @@ module ScriptPreprocessClosure =
             reduceMemoryUsage
         ) =
 
-        let projectDir = Path.GetDirectoryName fileName
+        let projectDir = !! Path.GetDirectoryName(fileName)
         let isInteractive = (codeContext = CodeContext.CompilationAndEvaluation)
         let isInvalidationSupported = (codeContext = CodeContext.Editing)
 
@@ -460,7 +460,7 @@ module ScriptPreprocessClosure =
 
                         let diagnosticsLogger = CapturingDiagnosticsLogger("FindClosureMetaCommands")
                         use _ = UseDiagnosticsLogger diagnosticsLogger
-                        let pathOfMetaCommandSource = Path.GetDirectoryName fileName
+                        let pathOfMetaCommandSource = !! Path.GetDirectoryName(fileName)
                         let preSources = tcConfig.GetAvailableLoadedSources()
 
                         let tcConfigResult, noWarns =
