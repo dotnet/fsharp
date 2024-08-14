@@ -89,7 +89,7 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
         | _ -> ()
 
     member _.TypeProviderDesignation = 
-        context.TypeProvider.GetType().FullName
+        !! context.TypeProvider.GetType().FullName
 
     member _.TypeProviderAssemblyRef = 
         context.TypeProviderAssemblyRef
