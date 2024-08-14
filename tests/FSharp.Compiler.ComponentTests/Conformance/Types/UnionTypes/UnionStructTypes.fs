@@ -402,7 +402,9 @@ type StructUnion =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3176, Line 5, Col 27, Line 5, Col 31, "Named field 'item' is used more than once.")
+            (Error 3176, Line 5, Col 12, Line 5, Col 16, "Named field 'item' is used more than once.");
+            (Error 3585, Line 5, Col 12, Line 5, Col 16, "If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields.");
+            (Error 3585, Line 5, Col 27, Line 5, Col 31, "If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields.")
         ]
         
     [<Fact>]
@@ -417,7 +419,10 @@ type StructUnion =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3176, Line 5, Col 27, Line 5, Col 31, "Named field 'Item' is used more than once.")
+            (Error 3176, Line 5, Col 12, Line 5, Col 16, "Named field 'Item' is used more than once.");
+            (Error 3585, Line 5, Col 12, Line 5, Col 16, "If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields.");
+            (Error 3585, Line 5, Col 27, Line 5, Col 31, "If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields.");
+            (Error 3585, Line 6, Col 12, Line 6, Col 18, "If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields.")
         ]
 
     [<Fact>]

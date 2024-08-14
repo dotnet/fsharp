@@ -359,10 +359,10 @@ let parseFormatStringInternal
             let acc = if widthArg then (Option.map ((+)1) posi, g.int_ty) :: acc else acc
 
             let checkOtherFlags c =
-                if info.precision then failwith (FSComp.SR.forFormatDoesntSupportPrecision(c.ToString()))
-                if info.addZeros then failwith (FSComp.SR.forDoesNotSupportZeroFlag(c.ToString()))
+                if info.precision then failwith (FSComp.SR.forFormatDoesntSupportPrecision(c.ToString() |> string))
+                if info.addZeros then failwith (FSComp.SR.forDoesNotSupportZeroFlag(c.ToString() |> string))
                 match info.numPrefixIfPos with
-                | Some n -> failwith (FSComp.SR.forDoesNotSupportPrefixFlag(c.ToString(), n.ToString()))
+                | Some n -> failwith (FSComp.SR.forDoesNotSupportPrefixFlag(c.ToString() |> string, n.ToString()))
                 | None -> ()
 
             let skipPossibleInterpolationHole pos = Parse.skipPossibleInterpolationHole isInterpolated isFormattableString fmt pos

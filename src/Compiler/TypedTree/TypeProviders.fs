@@ -49,7 +49,7 @@ let GetTypeProviderImplementationTypes (
     // Report an error, blaming the particular type provider component
     let raiseError designTimeAssemblyPathOpt (e: exn) =
         let attrName = typeof<TypeProviderAssemblyAttribute>.Name
-        let exnTypeName = e.GetType().FullName
+        let exnTypeName = !! e.GetType().FullName
         let exnMsg = e.Message
         match designTimeAssemblyPathOpt with 
         | None -> 
@@ -69,16 +69,13 @@ let GetTypeProviderImplementationTypes (
                 [
                     for t in exportedTypes do 
                         let ca = t.GetCustomAttributes(typeof<TypeProviderAttribute>, true)
-                        match ca with 
-                        | Null -> ()
-                        | NonNull ca -> 
-                            if ca.Length > 0 then 
-                                yield t
+                        if ca.Length > 0 then 
+                            yield t
                 ]
             filtered
         with e ->
-            let folder = Path.GetDirectoryName loadedDesignTimeAssembly.Location
-            let exnTypeName = e.GetType().FullName
+            let folder = !! Path.GetDirectoryName(loadedDesignTimeAssembly.Location)
+            let exnTypeName = !! e.GetType().FullName
             let exnMsg = e.Message
             match e with 
             | :? FileLoadException -> 
@@ -92,8 +89,8 @@ let GetTypeProviderImplementationTypes (
 
 let StripException (e: exn) =
     match e with
-    | :? TargetInvocationException as e -> e.InnerException
-    | :? TypeInitializationException as e -> e.InnerException
+    | :? TargetInvocationException as e when isNotNull e.InnerException -> !! e.InnerException
+    | :? TypeInitializationException as e when isNotNull e.InnerException  -> !! e.InnerException
     | _ -> e
 
 /// Create an instance of a type provider from the implementation type for the type provider in the
@@ -116,7 +113,7 @@ let CreateTypeProvider (
             f ()
         with err ->
             let e = StripException (StripException err)
-            raise (TypeProviderError(FSComp.SR.etTypeProviderConstructorException(e.Message), typeProviderImplementationType.FullName, m))
+            raise (TypeProviderError(FSComp.SR.etTypeProviderConstructorException(e.Message), !! typeProviderImplementationType.FullName, m))
 
     let getReferencedAssemblies () =
         resolutionEnvironment.GetReferencedAssemblies() |> Array.distinct
@@ -151,7 +148,7 @@ let CreateTypeProvider (
 
     else
         // No appropriate constructor found
-        raise (TypeProviderError(FSComp.SR.etProviderDoesNotHaveValidConstructor(), typeProviderImplementationType.FullName, m))
+        raise (TypeProviderError(FSComp.SR.etProviderDoesNotHaveValidConstructor(), !! typeProviderImplementationType.FullName, m))
 
 let GetTypeProvidersOfAssembly (
         runtimeAssemblyFilename: string, 
@@ -171,7 +168,7 @@ let GetTypeProvidersOfAssembly (
             let designTimeAssemblyName = 
                 try
                     if designTimeName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then
-                        Some (AssemblyName (Path.GetFileNameWithoutExtension designTimeName))
+                        Some (AssemblyName (!!Path.GetFileNameWithoutExtension(designTimeName)))
                     else
                         Some (AssemblyName designTimeName)
                 with :? ArgumentException ->
@@ -193,7 +190,7 @@ let GetTypeProvidersOfAssembly (
                             CreateTypeProvider (t, runtimeAssemblyFilename, resolutionEnvironment, isInvalidationSupported,
                                 isInteractive, systemRuntimeContainsType, systemRuntimeAssemblyVersion, m)
                         match box resolver with 
-                        | Null -> ()
+                        | null -> ()
                         | _ -> yield (resolver, ilScopeRefOfRuntimeAssembly)
 
                 | None, _ -> 
@@ -292,7 +289,7 @@ type ProvidedTypeComparer() =
 
     interface IEqualityComparer<ProvidedType> with
         member _.GetHashCode(ty: ProvidedType) = hash (key ty)
-        member _.Equals(ty1: ProvidedType, ty2: ProvidedType) = (key ty1 = key ty2)
+        member _.Equals(ty1: ProvidedType, ty2: ProvidedType) = nullSafeEquality ty1 ty2 (fun ty1 ty2 -> key ty1 = key ty2)
 
 /// The context used to interpret information in the closure of System.Type, System.MethodInfo and other 
 /// info objects coming from the type provider.
@@ -355,7 +352,7 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
     let isMeasure = 
         lazy
             x.CustomAttributes 
-            |> Seq.exists (fun a -> a.Constructor.DeclaringType.FullName = typeof<MeasureAttribute>.FullName)
+            |> Seq.exists (fun a -> (!! a.Constructor.DeclaringType).FullName = typeof<MeasureAttribute>.FullName)
 
     let provide () = ProvidedCustomAttributeProvider (fun _ -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
 
@@ -423,7 +420,7 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
 
     member _.GetGenericArguments() = x.GetGenericArguments() |> ProvidedType.CreateArray ctxt
 
-    member _.ApplyStaticArguments(provider: ITypeProvider, fullTypePathAfterArguments, staticArgs: obj[]) = 
+    member _.ApplyStaticArguments(provider: ITypeProvider, fullTypePathAfterArguments, staticArgs: objnull[]) = 
         provider.ApplyStaticArguments(x, fullTypePathAfterArguments,  staticArgs) |> ProvidedType.Create ctxt
 
     member _.IsVoid = (Type.op_Equality(x, typeof<Void>) || (x.Namespace = "System" && x.Name = "Void"))
@@ -484,9 +481,9 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
 
     static member CreateNonNull ctxt x = ProvidedType (x, ctxt)
 
-    static member CreateWithNullCheck ctxt name x = 
+    static member CreateWithNullCheck ctxt name (x:Type MaybeNull) = 
         match x with
-        | Null -> nullArg name 
+        | null -> nullArg name 
         | t -> ProvidedType (t, ctxt)
 
     static member CreateArray ctxt (xs: Type[] MaybeNull) : ProvidedType[] MaybeNull = 
@@ -535,7 +532,8 @@ type ProvidedCustomAttributeProvider (attributes :ITypeProvider -> seq<CustomAtt
     [<return: Struct>]
     let (|Arg|_|) (x: CustomAttributeTypedArgument) = match x.Value with null -> ValueNone | v -> ValueSome v
 
-    let findAttribByName tyFullName (a: CustomAttributeData) = (a.Constructor.DeclaringType.FullName = tyFullName)  
+    let findAttribByName tyFullName (a: CustomAttributeData) = ((!!a.Constructor.DeclaringType).FullName = tyFullName)
+
     let findAttrib (ty: Type) a = findAttribByName ty.FullName a
     interface IProvidedCustomAttributeProvider with 
         member _.GetAttributeConstructorArgs (provider, attribName) = 
@@ -545,11 +543,11 @@ type ProvidedCustomAttributeProvider (attributes :ITypeProvider -> seq<CustomAtt
                 let ctorArgs = 
                     a.ConstructorArguments 
                     |> Seq.toList 
-                    |> List.map (function Arg null -> None | Arg obj -> Some obj | _ -> None)
+                    |> List.map (function Arg obj -> Some obj | _ -> None)
                 let namedArgs = 
                     a.NamedArguments 
                     |> Seq.toList 
-                    |> List.map (fun arg -> arg.MemberName, match arg.TypedValue with Arg null -> None | Arg obj -> Some obj | _ -> None)
+                    |> List.map (fun arg -> arg.MemberName, match arg.TypedValue with Arg obj -> Some obj | _ -> None)
                 ctorArgs, namedArgs)
 
         member _.GetHasTypeProviderEditorHideMethodsAttribute provider = 
@@ -608,7 +606,7 @@ type ProvidedMemberInfo (x: MemberInfo, ctxt) =
 type ProvidedParameterInfo (x: ParameterInfo, ctxt) = 
     let provide () = ProvidedCustomAttributeProvider (fun _ -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
 
-    member _.Name = let nm = x.Name in match box nm with null -> "" | _ -> nm
+    member _.Name = let nm = x.Name in match box nm with null -> "" | _ -> !!nm
 
     member _.IsOut = x.IsOut
 
@@ -667,11 +665,11 @@ type ProvidedAssembly (x: Assembly) =
 
     member _.GetName() = x.GetName()
 
-    member _.FullName = x.FullName
+    member _.FullName = !!x.FullName
 
     member _.GetManifestModuleContents(provider: ITypeProvider) = provider.GetGeneratedAssemblyContents x
 
-    static member Create x : ProvidedAssembly MaybeNull = match x with null -> null | t -> ProvidedAssembly (t)
+    static member Create (x: Assembly MaybeNull) : ProvidedAssembly MaybeNull = match x with null -> null | t -> ProvidedAssembly (t)
 
     member _.Handle = x
 
@@ -739,13 +737,13 @@ type ProvidedMethodBase (x: MethodBase, ctxt) =
                         [| typeof<MethodBase> |], null)  
                 if isNull meth then [| |] else
                 let paramsAsObj = 
-                    try meth.Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x |], null) 
+                    try (!!meth).Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x |], null) 
                     with err -> raise (StripException (StripException err))
                 paramsAsObj :?> ParameterInfo[] 
 
         staticParams |> ProvidedParameterInfo.CreateArrayNonNull ctxt
 
-    member _.ApplyStaticArgumentsForMethod(provider: ITypeProvider, fullNameAfterArguments: string, staticArgs: obj[]) = 
+    member _.ApplyStaticArgumentsForMethod(provider: ITypeProvider, fullNameAfterArguments: string, staticArgs: objnull[]) = 
         let bindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.InvokeMethod
 
         let mb = 
@@ -760,8 +758,9 @@ type ProvidedMethodBase (x: MethodBase, ctxt) =
                         [| typeof<MethodBase>; typeof<string>; typeof<obj[]> |], null)  
 
                 match meth with 
-                | Null -> failwith (FSComp.SR.estApplyStaticArgumentsForMethodNotImplemented())
-                | _ -> 
+                | null -> failwith (FSComp.SR.estApplyStaticArgumentsForMethodNotImplemented())
+                | meth -> 
+
                 let mbAsObj = 
                     try meth.Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x; box fullNameAfterArguments; box staticArgs  |], null) 
                     with err -> raise (StripException (StripException err))
@@ -843,6 +842,7 @@ type ProvidedMethodInfo (x: MethodInfo, ctxt) =
         match x with 
         | Null -> null
         | NonNull x -> ProvidedMethodInfo (x, ctxt)
+
 
     static member CreateArray ctxt (xs: MethodInfo[] MaybeNull) : ProvidedMethodInfo[] MaybeNull = 
         match xs with 
@@ -1096,14 +1096,14 @@ let GetInvokerExpression (provider: ITypeProvider, methodBase: ProvidedMethodBas
 
 /// Compute the Name or FullName property of a provided type, reporting appropriate errors
 let CheckAndComputeProvidedNameProperty(m, st: Tainted<ProvidedType>, proj, propertyString) =
-    let name = 
+    let name : string MaybeNull = 
         try st.PUntaint(proj, m) 
         with :? TypeProviderError as tpe -> 
             let newError = tpe.MapText((fun msg -> FSComp.SR.etProvidedTypeWithNameException(propertyString, msg)), st.TypeProviderDesignation, m)
             raise newError
     if String.IsNullOrEmpty name then
         raise (TypeProviderError(FSComp.SR.etProvidedTypeWithNullOrEmptyName propertyString, st.TypeProviderDesignation, m))
-    name
+    !!name
 
 /// Verify that this type provider has supported attributes
 let ValidateAttributesOfProvidedType (m, st: Tainted<ProvidedType>) =         
@@ -1191,7 +1191,7 @@ let ValidateProvidedTypeAfterStaticInstantiation(m, st: Tainted<ProvidedType>, e
                     let miDeclaringTypeFullName = 
                         TryMemberMember (miDeclaringType, fullName, memberName, "FullName", m,
                             "invalid declaring type full name",
-                            fun miDeclaringType -> miDeclaringType.FullName)
+                            fun miDeclaringType -> !!miDeclaringType.FullName)
                         |> unmarshal
 
                     if not (ProvidedType.TaintedEquals (st, miDeclaringType)) then 
@@ -1345,7 +1345,7 @@ let ComputeMangledNameForApplyStaticParameters(nm, staticArgs, staticParams: Tai
     PrettyNaming.ComputeMangledNameWithoutDefaultArgValues(nm, staticArgs, defaultArgValues)
 
 /// Apply the given provided method to the given static arguments (the arguments are assumed to have been sorted into application order)
-let TryApplyProvidedMethod(methBeforeArgs: Tainted<ProvidedMethodBase>, staticArgs: obj[], m: range) =
+let TryApplyProvidedMethod(methBeforeArgs: Tainted<ProvidedMethodBase>, staticArgs: objnull[], m: range) =
     if staticArgs.Length = 0 then 
         Some methBeforeArgs
     else
@@ -1364,7 +1364,7 @@ let TryApplyProvidedMethod(methBeforeArgs: Tainted<ProvidedMethodBase>, staticAr
 
 
 /// Apply the given provided type to the given static arguments (the arguments are assumed to have been sorted into application order
-let TryApplyProvidedType(typeBeforeArguments: Tainted<ProvidedType>, optGeneratedTypePath: string list option, staticArgs: obj[], m: range) =
+let TryApplyProvidedType(typeBeforeArguments: Tainted<ProvidedType>, optGeneratedTypePath: string list option, staticArgs: objnull[], m: range) =
     if staticArgs.Length = 0 then 
         Some (typeBeforeArguments, (fun () -> ()))
     else 
@@ -1427,7 +1427,7 @@ let TryLinkProvidedType(resolver: Tainted<ITypeProvider>, moduleOrNamespace: str
                         sp.PUntaint((fun sp -> 
                             let pt = sp.ParameterType
                             let uet = if pt.IsEnum then pt.GetEnumUnderlyingType() else pt
-                            uet.FullName), range)
+                            !!uet.FullName), range)
 
                     match spReprTypeName with 
                     | "System.SByte" -> box (sbyte arg)
@@ -1449,8 +1449,8 @@ let TryLinkProvidedType(resolver: Tainted<ITypeProvider>, moduleOrNamespace: str
                 | _ ->
                     if sp.PUntaint ((fun sp -> sp.IsOptional), range) then 
                         match sp.PUntaint((fun sp -> sp.RawDefaultValue), range) with
-                        | Null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, typeBeforeArgumentsName, typeBeforeArgumentsName, spName), range0))
-                        | NonNull v -> v
+                        | null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, typeBeforeArgumentsName, typeBeforeArgumentsName, spName), range0))
+                        | v -> v
                     else
                         error(Error(FSComp.SR.etProvidedTypeReferenceMissingArgument spName, range0)))
                 
@@ -1467,7 +1467,7 @@ let GetPartsOfNamespaceRecover(namespaceName: string MaybeNull) =
     | Null -> [] 
     | NonNull namespaceName -> 
         if namespaceName.Length = 0 then ["<NonExistentNamespace>"]
-        else splitNamespace (nonNull namespaceName)
+        else splitNamespace namespaceName
 
 /// Get the parts of a .NET namespace. Special rules: null means global, empty is not allowed.
 let GetProvidedNamespaceAsPath (m, resolver: Tainted<ITypeProvider>, namespaceName:string MaybeNull) =
