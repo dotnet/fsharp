@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.ComponentTests.Language.InterfaceTests
+﻿module Language.InterfaceTests
 
 open Xunit
 open FSharp.Test.Compiler

@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.ComponentTests.TypeChecks.Graph.TrieMappingTests
+﻿module TypeChecks.TrieMappingTests
 
 open NUnit.Framework
 open FSharp.Compiler.GraphChecking

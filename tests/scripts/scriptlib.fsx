@@ -99,7 +99,7 @@ module Scripting =
                 | "" -> exe
                 | _ -> Path.Combine(baseDir,exe) |> Path.GetFullPath
 
-        let exec cmdArgs (workDir: FilePath) envs (path: FilePath) arguments =
+        let exec cmdArgs (workDir: FilePath) envs (path: FilePath) (arguments: string) =
 
             let exePath = path |> processExePath workDir
             let processInfo = new ProcessStartInfo(exePath, arguments)

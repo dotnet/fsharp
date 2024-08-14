@@ -2,8 +2,6 @@
 
 %{
 open FSharp.Compiler.DiagnosticsLogger
-open FSharp.Compiler.ParseHelpers
-open FSharp.Compiler.Syntax
 
 let dummy       = IfdefId("DUMMY")
 

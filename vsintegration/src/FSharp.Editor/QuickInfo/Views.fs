@@ -11,7 +11,6 @@ open Microsoft.VisualStudio.Text.Adornments
 open Microsoft.VisualStudio.FSharp.Editor
 
 module internal QuickInfoViewProvider =
-
     let layoutTagToClassificationTag (layoutTag: TextTag) =
         match layoutTag with
         | TextTag.ActivePatternCase
@@ -56,27 +55,19 @@ module internal QuickInfoViewProvider =
         | TaggedText (TextTag.LineBreak, _) -> Some()
         | _ -> None
 
-    let (|DocSeparator|_|) =
-        function
-        | LineBreak :: TaggedText (TextTag.Text, "-------------") :: LineBreak :: rest -> Some rest
-        | _ -> None
+    let wrapContent (elements: obj seq) =
+        ContainerElement(ContainerElementStyle.Wrapped, elements)
 
-    let wrapContent (elements: obj list) =
-        ContainerElement(ContainerElementStyle.Wrapped, elements |> Seq.map box)
+    let stackContent (elements: obj seq) =
+        ContainerElement(ContainerElementStyle.Stacked, elements)
 
-    let stackContent (elements: obj list) =
-        ContainerElement(ContainerElementStyle.Stacked, elements |> Seq.map box)
-
-    let encloseRuns runs = wrapContent (runs |> List.rev) |> box
-
-    let emptyLine =
-        wrapContent [ ClassifiedTextRun(ClassificationTypeNames.WhiteSpace, "") |> box ]
+    let encloseRuns runs : obj = ClassifiedTextElement(runs |> List.rev)
 
     let provideContent
         (
             imageId: ImageId option,
             description: TaggedText list,
-            documentation: TaggedText list list,
+            documentation: TaggedText list,
             navigation: FSharpNavigation,
             getTooltip
         ) =
@@ -84,14 +75,14 @@ module internal QuickInfoViewProvider =
         let encloseText text =
             let rec loop text runs stack =
                 match (text: TaggedText list) with
+                | [] when runs |> List.isEmpty -> stackContent (stack |> List.rev)
                 | [] -> stackContent (encloseRuns runs :: stack |> List.rev)
-                | DocSeparator (LineBreak :: rest)
-                | DocSeparator rest -> loop rest [] (box Separator :: encloseRuns runs :: stack)
-                | LineBreak :: rest when runs |> List.isEmpty -> loop rest [] (emptyLine :: stack)
+                // smaller paragraph spacing instead of huge double line break
+                | LineBreak :: rest when runs |> List.isEmpty -> loop rest [] (Paragraph :: stack)
                 | LineBreak :: rest -> loop rest [] (encloseRuns runs :: stack)
                 | :? NavigableTaggedText as item :: rest when navigation.IsTargetValid item.Range ->
                     let classificationTag = layoutTagToClassificationTag item.Tag
-                    let action = fun () -> navigation.NavigateTo(item.Range, CancellationToken.None)
+                    let action = fun () -> navigation.NavigateTo(item.Range)
 
                     let run =
                         ClassifiedTextRun(classificationTag, item.Text, action, getTooltip item.Range.FileName)
@@ -101,13 +92,14 @@ module internal QuickInfoViewProvider =
                     let run = ClassifiedTextRun(layoutTagToClassificationTag item.Tag, item.Text)
                     loop rest (run :: runs) stack
 
-            loop text [] [] |> box
+            loop text [] []
 
         let innerElement =
             match imageId with
             | Some imageId -> wrapContent [ stackContent [ ImageElement(imageId) ]; encloseText description ]
             | None -> ContainerElement(ContainerElementStyle.Wrapped, encloseText description)
 
-        let separated = stackContent (documentation |> List.map encloseText)
+        wrapContent [ stackContent [ innerElement; encloseText documentation ]; CustomLinkStyle ]
 
-        wrapContent [ stackContent [ innerElement; separated ] ]
+    let stackWithSeparators elements =
+        elements |> List.map box |> List.intersperse Separator |> stackContent

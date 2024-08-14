@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.Conformance.LexicalFiltering.Basic
+namespace Conformance.LexicalFiltering
 
 open Xunit
 open FSharp.Test
@@ -474,6 +474,12 @@ raise (new Exception("exit 1"))
                         EndColumn = 40 }
               Message =
                "Unexpected end of quotation in expression. Expected incomplete structured construct at or before this point or other token." }
+            { Error = Error 3567
+              Range = { StartLine = 5
+                        StartColumn = 30
+                        EndLine = 5
+                        EndColumn = 31 }
+              Message = "Expecting member body" }
         ] |> ignore
 
     [<Theory; File "RelaxWhitespace2.fs">]

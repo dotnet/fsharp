@@ -16,7 +16,7 @@ open Internal.Utilities.FSharpEnvironment
 
 open Unchecked
 
-type internal ControlledExecution () =
+type internal ControlledExecution(isInteractive: bool) =
 
     let mutable cts: CancellationTokenSource voption = ValueNone
     let mutable thread: Thread voption = ValueNone
@@ -24,41 +24,49 @@ type internal ControlledExecution () =
     static let ceType: Type option =
         Option.ofObj (Type.GetType("System.Runtime.ControlledExecution, System.Private.CoreLib", false))
 
-    static let threadType: Type option =
-        Option.ofObj (typeof<Threading.Thread>)
+    static let threadType: Type option = Option.ofObj (typeof<Threading.Thread>)
 
     static let ceRun: MethodInfo option =
         match ceType with
         | None -> None
-        | Some t -> Option.ofObj (t.GetMethod("Run", BindingFlags.Static ||| BindingFlags.Public, defaultof<Binder>, [|typeof<System.Action>; typeof<System.Threading.CancellationToken>|], [||] ))
+        | Some t ->
+            Option.ofObj (
+                t.GetMethod(
+                    "Run",
+                    BindingFlags.Static ||| BindingFlags.Public,
+                    defaultof<Binder>,
+                    [| typeof<System.Action>; typeof<System.Threading.CancellationToken> |],
+                    [||]
+                )
+            )
 
     static let threadResetAbort: MethodInfo option =
         match isRunningOnCoreClr, threadType with
         | false, Some t -> Option.ofObj (t.GetMethod("ResetAbort", [||]))
         | _ -> None
 
-    member _.Run (action: Action) =
-        match ceRun with
-        | Some run ->
-            cts <- ValueSome (new CancellationTokenSource())
-            run.Invoke(null, [|action; cts.Value.Token|]) |> ignore
+    member _.Run(action: Action) =
+        match isInteractive, ceRun with
+        | true, Some run ->
+            cts <- ValueSome(new CancellationTokenSource())
+            run.Invoke(null, [| action; cts.Value.Token |]) |> ignore
         | _ ->
-            thread <- ValueSome (Thread.CurrentThread)
+            thread <- ValueSome(Thread.CurrentThread)
             action.Invoke()
 
-    member _.TryAbort(): unit =
-        match isRunningOnCoreClr, cts, thread with
-        | true, ValueSome cts, _ ->  cts.Cancel()
-        | false, _, ValueSome thread -> thread.Abort(); ()
+    member _.TryAbort() : unit =
+        match isInteractive, isRunningOnCoreClr, cts, thread with
+        | true, true, ValueSome cts, _ -> cts.Cancel()
+        | true, false, _, ValueSome thread -> thread.Abort()
         | _ -> ()
 
     member _.ResetAbort() =
-        match thread, threadResetAbort with
-        | thread, Some threadResetAbort -> threadResetAbort.Invoke(thread, [||]) |> ignore
+        match isInteractive, thread, threadResetAbort with
+        | true, thread, Some threadResetAbort -> threadResetAbort.Invoke(thread, [||]) |> ignore
         | _ -> ()
 
     static member StripTargetInvocationException(exn: Exception) =
-       match exn with
-       | :? TargetInvocationException as e when not(isNull e.InnerException) ->
+        match exn with
+        | :? TargetInvocationException as e when not (isNull e.InnerException) ->
             ControlledExecution.StripTargetInvocationException(e.InnerException)
-       | _ -> exn
+        | _ -> exn

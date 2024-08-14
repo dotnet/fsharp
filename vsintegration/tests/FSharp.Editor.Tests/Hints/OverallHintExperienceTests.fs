@@ -1,18 +1,20 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Editor.Tests.Hints
+module FSharp.Editor.Tests.Hints.OverallHintExperienceTests
 
 open Xunit
-open HintTestFramework
+
 open FSharp.Test
+open FSharp.Editor.Tests.Helpers
+
+open HintTestFramework
 
 // just some kind of higher level testing
-module OverallHintExperienceTests =
 
-    [<Fact>]
-    let ``Current baseline hints`` () =
-        let code =
-            """
+[<Fact>]
+let ``Baseline hints`` () =
+    let code =
+        """
 type Song = { Artist: string; Title: string }
 let whoSings song = song.Artist
 
@@ -32,65 +34,82 @@ let a = C 1
 let cc = a.Normal "hmm"
 """
 
-        let document = getFsDocument code
+    let document = RoslynTestHelpers.GetFsDocument code
 
-        let expected =
-            [
-                {
-                    Content = ": Song"
-                    Location = (2, 18)
-                }
-                {
-                    Content = ": string "
-                    Location = (2, 19)
-                }
-                {
-                    Content = "song = "
-                    Location = (4, 23)
-                }
-                {
-                    Content = ": string"
-                    Location = (4, 11)
-                }
-                {
-                    Content = "side = "
-                    Location = (10, 16)
-                }
-                {
-                    Content = ": Shape"
-                    Location = (10, 6)
-                }
-                {
-                    Content = "width = "
-                    Location = (11, 20)
-                }
-                {
-                    Content = "height = "
-                    Location = (11, 23)
-                }
-                {
-                    Content = ": Shape"
-                    Location = (11, 6)
-                }
-                {
-                    Content = ": int "
-                    Location = (14, 36)
-                }
-                {
-                    Content = "blahFirst = "
-                    Location = (16, 11)
-                }
-                { Content = ": C"; Location = (16, 6) }
-                {
-                    Content = "what = "
-                    Location = (17, 19)
-                }
-                {
-                    Content = ": int"
-                    Location = (17, 7)
-                }
-            ]
+    let expected =
+        [
+            {
+                Content = ": Song"
+                Location = (2, 18)
+                Tooltip = "type Song"
+            }
+            {
+                Content = ": string "
+                Location = (2, 19)
+                Tooltip = "type string"
+            }
+            {
+                Content = "song = "
+                Location = (4, 23)
+                Tooltip = "parameter song"
+            }
+            {
+                Content = ": string"
+                Location = (4, 11)
+                Tooltip = "type string"
+            }
+            {
+                Content = "side = "
+                Location = (10, 16)
+                Tooltip = "field side"
+            }
+            {
+                Content = ": Shape"
+                Location = (10, 6)
+                Tooltip = "type Shape"
+            }
+            {
+                Content = "width = "
+                Location = (11, 20)
+                Tooltip = "field width"
+            }
+            {
+                Content = "height = "
+                Location = (11, 23)
+                Tooltip = "field height"
+            }
+            {
+                Content = ": Shape"
+                Location = (11, 6)
+                Tooltip = "type Shape"
+            }
+            {
+                Content = ": int "
+                Location = (14, 36)
+                Tooltip = "type int"
+            }
+            {
+                Content = "blahFirst = "
+                Location = (16, 11)
+                Tooltip = "parameter blahFirst"
+            }
+            {
+                Content = ": C"
+                Location = (16, 6)
+                Tooltip = "type C"
+            }
+            {
+                Content = "what = "
+                Location = (17, 19)
+                Tooltip = "parameter what"
+            }
+            {
+                Content = ": int"
+                Location = (17, 7)
+                Tooltip = "type int"
+            }
+        ]
 
-        let actual = getAllHints document
+    let actual = getAllHints document
 
-        actual |> Assert.shouldBeEquivalentTo expected
+    actual |> Assert.shouldBeEquivalentTo expected

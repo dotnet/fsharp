@@ -412,7 +412,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                     | SynBinding(expr = SynExpr.Lambda _) when skipLambdas -> defaultTraverse binding
 
                     // Skip manually type-annotated bindings
-                    | SynBinding(returnInfo = Some (SynBindingReturnInfo(typeName = SynType.LongIdent _))) -> defaultTraverse binding
+                    | SynBinding(returnInfo = Some (SynBindingReturnInfo _)) -> defaultTraverse binding
 
                     // Let binding
                     | SynBinding (trivia = { EqualsRange = Some equalsRange }; range = range) when range.Start = symbolUseStart ->

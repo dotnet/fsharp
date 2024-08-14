@@ -10,6 +10,7 @@ type LanguageFeature =
     | WildCardInForLoop
     | RelaxWhitespace
     | RelaxWhitespace2
+    | StrictIndentation
     | NameOf
     | ImplicitYield
     | OpenTypeDeclaration
@@ -56,6 +57,10 @@ type LanguageFeature =
     | StaticMembersInInterfaces
     | NonInlineLiteralsAsPrintfFormat
     | NestedCopyAndUpdate
+    | ExtendedStringInterpolation
+    | WarningWhenMultipleRecdTypeChoice
+    | ImprovedImpliedArgumentNames
+    | DiagnosticForObjInference
 
 /// LanguageVersion management
 type LanguageVersion =

@@ -748,7 +748,7 @@ type ArrayModule() =
 
             array
 
-        let checkFilter filter (array:array<_>) =
+        let checkFilter filter (array: _ array) =
             let filtered = array |> filter (fun n -> n > 0)
 
             let mutable idx = 0
@@ -1588,7 +1588,7 @@ type ArrayModule() =
     member this.``pairwise should not work on null``() =
         CheckThrowsArgumentNullException(fun () -> Array.pairwise null |> ignore)
 
-    member private this.MapTester mapInt (mapString : (string -> int) -> array<string> -> array<int>) =
+    member private this.MapTester mapInt (mapString : (string -> int) -> string array -> int array) =
         // empty array 
         let f x = x + 1
         let result = mapInt f [| |]
@@ -1635,11 +1635,11 @@ type ArrayModule() =
         if result <> [| |] then Assert.Fail ()
         
         // int array
-        let result : array<int*int> = mapiInt f [| 1..2 |]
+        let result : (int*int) array = mapiInt f [| 1..2 |]
         if result <> [| (0,2); (1,3) |] then Assert.Fail ()
         
         // string array
-        let result : array<int*int> = [| "a"; "aa"; "aaa" |] |> mapiString (fun i (s:string) -> i, s.Length) 
+        let result : (int*int) array = [| "a"; "aa"; "aaa" |] |> mapiString (fun i (s:string) -> i, s.Length) 
         if result <> [| (0,1); (1,2); (2,3) |] then Assert.Fail ()
         
         // null array

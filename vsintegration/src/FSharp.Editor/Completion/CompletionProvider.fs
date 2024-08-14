@@ -13,6 +13,7 @@ open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Completion
 
+open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 open Microsoft.VisualStudio.Shell
 
 open FSharp.Compiler.CodeAnalysis
@@ -20,6 +21,7 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
+open CancellableTasks
 
 module Logger = Microsoft.VisualStudio.FSharp.Editor.Logger
 
@@ -102,8 +104,9 @@ type internal FSharpCompletionProvider
             sourceText: SourceText,
             caretPosition: int,
             trigger: CompletionTriggerKind,
-            getInfo: (unit -> DocumentId * string * string list),
-            intelliSenseOptions: IntelliSenseOptions
+            getInfo: (unit -> DocumentId * string * string list * string option),
+            intelliSenseOptions: IntelliSenseOptions,
+            cancellationToken: CancellationToken
         ) =
         if caretPosition = 0 then
             false
@@ -127,9 +130,17 @@ type internal FSharpCompletionProvider
             then
                 false
             else
-                let documentId, filePath, defines = getInfo ()
+                let documentId, filePath, defines, langVersion = getInfo ()
 
-                CompletionUtils.shouldProvideCompletion (documentId, filePath, defines, sourceText, triggerPosition)
+                CompletionUtils.shouldProvideCompletion (
+                    documentId,
+                    filePath,
+                    defines,
+                    langVersion,
+                    sourceText,
+                    triggerPosition,
+                    cancellationToken
+                )
                 && (triggerChar = '.'
                     || (intelliSenseOptions.ShowAfterCharIsTyped
                         && CompletionUtils.isStartingNewWord (sourceText, triggerPosition)))
@@ -141,12 +152,12 @@ type internal FSharpCompletionProvider
             getAllSymbols: FSharpCheckFileResults -> AssemblySymbol list
         ) =
 
-        asyncMaybe {
-            let! parseResults, checkFileResults =
-                document.GetFSharpParseAndCheckResultsAsync("ProvideCompletionsAsyncAux")
-                |> liftAsync
+        cancellableTask {
+            let! parseResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("ProvideCompletionsAsyncAux")
 
-            let! sourceText = document.GetTextAsync()
+            let! ct = CancellableTask.getCurrentCancellationToken ()
+
+            let! sourceText = document.GetTextAsync(ct)
             let textLines = sourceText.Lines
             let caretLinePos = textLines.GetLinePosition(caretPosition)
             let caretLine = textLines.GetLineFromPosition(caretPosition)
@@ -287,36 +298,63 @@ type internal FSharpCompletionProvider
         let getInfo () =
             let documentId = workspace.GetDocumentIdInCurrentContext(sourceText.Container)
             let document = workspace.CurrentSolution.GetDocument(documentId)
-            let defines = document.GetFSharpQuickDefines()
-            (documentId, document.FilePath, defines)
+            let defines, langVersion = document.GetFSharpQuickDefinesAndLangVersion()
+            (documentId, document.FilePath, defines, Some langVersion)
 
-        FSharpCompletionProvider.ShouldTriggerCompletionAux(sourceText, caretPosition, trigger.Kind, getInfo, settings.IntelliSense)
+        FSharpCompletionProvider.ShouldTriggerCompletionAux(
+            sourceText,
+            caretPosition,
+            trigger.Kind,
+            getInfo,
+            settings.IntelliSense,
+            CancellationToken.None
+        )
 
     override _.ProvideCompletionsAsync(context: Completion.CompletionContext) =
-        asyncMaybe {
+        cancellableTask {
             use _logBlock =
                 Logger.LogBlockMessage context.Document.Name LogEditorFunctionId.Completion_ProvideCompletionsAsync
 
-            let document = context.Document
-            let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            let defines = document.GetFSharpQuickDefines()
+            let! ct = CancellableTask.getCurrentCancellationToken ()
 
-            do!
-                Option.guard (
-                    CompletionUtils.shouldProvideCompletion (document.Id, document.FilePath, defines, sourceText, context.Position)
+            let document = context.Document
+
+            let eventProps: (string * obj) array =
+                [|
+                    "context.document.project.id", document.Project.Id.Id.ToString()
+                    "context.document.id", document.Id.Id.ToString()
+                |]
+
+            use _eventDuration =
+                TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.ProvideCompletions, eventProps)
+
+            let! sourceText = context.Document.GetTextAsync(ct)
+            let defines, langVersion = document.GetFSharpQuickDefinesAndLangVersion()
+
+            let shouldProvideCompetion =
+                CompletionUtils.shouldProvideCompletion (
+                    document.Id,
+                    document.FilePath,
+                    defines,
+                    Some langVersion,
+                    sourceText,
+                    context.Position,
+                    ct
                 )
 
-            let getAllSymbols (fileCheckResults: FSharpCheckFileResults) =
-                if settings.IntelliSense.IncludeSymbolsFromUnopenedNamespacesOrModules then
-                    assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies(fileCheckResults)
-                else
-                    []
+            if shouldProvideCompetion then
+                let getAllSymbols (fileCheckResults: FSharpCheckFileResults) =
+                    if settings.IntelliSense.IncludeSymbolsFromUnopenedNamespacesOrModules then
+                        assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies(fileCheckResults)
+                    else
+                        []
 
-            let! results = FSharpCompletionProvider.ProvideCompletionsAsyncAux(context.Document, context.Position, getAllSymbols)
-            context.AddItems(results)
+                let! results = FSharpCompletionProvider.ProvideCompletionsAsyncAux(context.Document, context.Position, getAllSymbols)
+
+                context.AddItems results
+
         }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
+        |> CancellableTask.startAsTask context.CancellationToken
 
     override _.GetDescriptionAsync
         (
@@ -324,7 +362,7 @@ type internal FSharpCompletionProvider
             completionItem: Completion.CompletionItem,
             cancellationToken: CancellationToken
         ) : Task<CompletionDescription> =
-        async {
+        cancellableTask {
             use _logBlock =
                 Logger.LogBlockMessage document.Name LogEditorFunctionId.Completion_GetDescriptionAsync
 
@@ -357,10 +395,10 @@ type internal FSharpCompletionProvider
                 | true, keywordDescription -> return CompletionDescription.FromText(keywordDescription)
                 | false, _ -> return CompletionDescription.Empty
         }
-        |> RoslynHelpers.StartAsyncAsTask cancellationToken
+        |> CancellableTask.start cancellationToken
 
     override _.GetChangeAsync(document, item, _, cancellationToken) : Task<CompletionChange> =
-        async {
+        cancellableTask {
             use _logBlock =
                 Logger.LogBlockMessage document.Name LogEditorFunctionId.Completion_GetChangeAsync
 
@@ -386,56 +424,43 @@ type internal FSharpCompletionProvider
                 | true, x -> x
                 | _ -> item.DisplayText
 
-            return!
-                asyncMaybe {
-                    let! ns =
-                        match item.Properties.TryGetValue NamespaceToOpenPropName with
-                        | true, ns -> Some ns
-                        | _ -> None
+            match item.Properties.TryGetValue NamespaceToOpenPropName with
+            | false, _ -> return CompletionChange.Create(TextChange(item.Span, nameInCode))
+            | true, ns ->
+                let! sourceText = document.GetTextAsync(cancellationToken)
 
-                    let! sourceText = document.GetTextAsync(cancellationToken)
+                let textWithItemCommitted =
+                    sourceText.WithChanges(TextChange(item.Span, nameInCode))
 
-                    let textWithItemCommitted =
-                        sourceText.WithChanges(TextChange(item.Span, nameInCode))
+                let line = sourceText.Lines.GetLineFromPosition(item.Span.Start)
 
-                    let line = sourceText.Lines.GetLineFromPosition(item.Span.Start)
+                let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpCompletionProvider))
 
-                    let! parseResults =
-                        document.GetFSharpParseResultsAsync(nameof (FSharpCompletionProvider))
-                        |> liftAsync
+                let fullNameIdents =
+                    fullName |> Option.map (fun x -> x.Split '.') |> Option.defaultValue [||]
 
-                    let fullNameIdents =
-                        fullName |> Option.map (fun x -> x.Split '.') |> Option.defaultValue [||]
+                let insertionPoint =
+                    if settings.CodeFixes.AlwaysPlaceOpensAtTopLevel then
+                        OpenStatementInsertionPoint.TopLevel
+                    else
+                        OpenStatementInsertionPoint.Nearest
 
-                    let insertionPoint =
-                        if settings.CodeFixes.AlwaysPlaceOpensAtTopLevel then
-                            OpenStatementInsertionPoint.TopLevel
-                        else
-                            OpenStatementInsertionPoint.Nearest
+                let ctx =
+                    ParsedInput.FindNearestPointToInsertOpenDeclaration line.LineNumber parseResults.ParseTree fullNameIdents insertionPoint
 
-                    let ctx =
-                        ParsedInput.FindNearestPointToInsertOpenDeclaration
-                            line.LineNumber
-                            parseResults.ParseTree
-                            fullNameIdents
-                            insertionPoint
+                let finalSourceText, changedSpanStartPos =
+                    OpenDeclarationHelper.insertOpenDeclaration textWithItemCommitted ctx ns
 
-                    let finalSourceText, changedSpanStartPos =
-                        OpenDeclarationHelper.insertOpenDeclaration textWithItemCommitted ctx ns
+                let fullChangingSpan = TextSpan.FromBounds(changedSpanStartPos, item.Span.End)
 
-                    let fullChangingSpan = TextSpan.FromBounds(changedSpanStartPos, item.Span.End)
+                let changedSpan =
+                    TextSpan.FromBounds(changedSpanStartPos, item.Span.End + (finalSourceText.Length - sourceText.Length))
 
-                    let changedSpan =
-                        TextSpan.FromBounds(changedSpanStartPos, item.Span.End + (finalSourceText.Length - sourceText.Length))
+                let changedText = finalSourceText.ToString(changedSpan)
 
-                    let changedText = finalSourceText.ToString(changedSpan)
-
-                    return
-                        CompletionChange
-                            .Create(TextChange(fullChangingSpan, changedText))
-                            .WithNewPosition(Nullable(changedSpan.End))
-                }
-                |> Async.map (Option.defaultValue (CompletionChange.Create(TextChange(item.Span, nameInCode))))
-
+                return
+                    CompletionChange
+                        .Create(TextChange(fullChangingSpan, changedText))
+                        .WithNewPosition(Nullable(changedSpan.End))
         }
-        |> RoslynHelpers.StartAsyncAsTask cancellationToken
+        |> CancellableTask.start cancellationToken

@@ -352,7 +352,7 @@ module TcResolutionsExtensions =
 
                         | Item.Event _, _, m -> add m SemanticClassificationType.Event
 
-                        | Item.ArgName _, _, m -> add m SemanticClassificationType.NamedArgument
+                        | Item.OtherName _, _, m -> add m SemanticClassificationType.NamedArgument
 
                         | Item.SetterArg _, _, m -> add m SemanticClassificationType.NamedArgument
 

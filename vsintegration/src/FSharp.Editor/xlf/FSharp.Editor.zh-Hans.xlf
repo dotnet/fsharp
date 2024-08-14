@@ -35,7 +35,7 @@ Show outlining and collapsible nodes for F# code;
 Inline hints;
 Display inline type hints (preview);
 Display return type hints (preview);
-Display inline parameter name hints (preview);Beer;
+Display inline parameter name hints (preview);
 Live Buffers;
 Use live (unsaved) buffers for checking</source>
         <target state="translated">块结构指南;
@@ -45,7 +45,7 @@ Use live (unsaved) buffers for checking</source>
 内联提示;
 显示内联类型提示(预览);
 显示返回类型提示(预览);
-显示内联参数名称提示(预览);啤酒;
+显示内联参数名称提示(预览);
 实时缓冲区;
 使用实时(未保存)缓冲区进行检查</target>
         <note />

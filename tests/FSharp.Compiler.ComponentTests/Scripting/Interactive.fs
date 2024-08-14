@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.Scripting
+namespace Scripting
 
 open Xunit
 open System
@@ -14,6 +14,13 @@ module ``Interactive tests`` =
         |> shouldSucceed
         |> withEvalTypeEquals typeof<int>
         |> withEvalValueEquals 2
+
+    [<Fact>]
+    let ``Pretty print void pointer``() =
+        Fsx "System.IntPtr.Zero.ToPointer()"
+        |> runFsi
+        |> shouldSucceed
+        |> withStdOutContains "val it: voidptr = 0n"
 
     [<Fact>]
     let ``EntryPoint attribute in FSI should produce a compiler warning`` () =

@@ -59,6 +59,7 @@ let main argv =
                 TextSpan.FromBounds(0, sourceText.Length),
                 Some(fileName),
                 defines,
+                None,
                 CancellationToken.None
             )
 

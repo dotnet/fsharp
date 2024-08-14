@@ -16,41 +16,57 @@ type GeneratorState =
       generatedModuleName: string option
       disableLightMode: bool option
       generateInternalModule: bool
+      opens: string list
       lexerLibraryName: string
       domain : Domain }
 
 type PerRuleData = list<DfaNode * seq<Code>>
 type DfaNodes = list<DfaNode>
 
-type Writer(fileName) =
-    let os = File.CreateText fileName
+type Writer(outputFileName, outputFileInterface) =
+    let os = File.CreateText outputFileName :> TextWriter
     let mutable lineCount = 0
+    let osi = File.CreateText outputFileInterface :> TextWriter
+    let mutable interfaceLineCount = 0
     let incr () =
         lineCount <- lineCount + 1
 
-    member x.writeLine fmt =
+    member x.WriteLine fmt =
         Printf.kfprintf (fun () -> incr(); os.WriteLine()) os fmt
 
-    member x.write fmt =
+    member x.Write fmt =
         Printf.fprintf os fmt
 
-    member x.writeCode (code, pos: Position) =
+    member x.WriteCode (code, pos: Position) =
         if pos <> Position.Empty  // If bottom code is unspecified, then position is empty.
         then
-            x.writeLine "# %d \"%s\"" pos.Line pos.FileName
-            x.writeLine "%s" code
+            x.WriteLine "# %d \"%s\"" pos.Line pos.FileName
+            x.WriteLine "%s" code
             let numLines = code.Replace("\r","").Split([| '\n' |]).Length
             lineCount  <- lineCount + numLines
-            x.writeLine "# %d \"%s\"" lineCount fileName
-
-    member x.LineCount = lineCount
+            x.WriteLine "# %d \"%s\"" lineCount outputFileName
 
     member x.WriteUint16 (n: int) =
         os.Write n;
         os.Write "us;"
 
+    member x.LineCount = lineCount
+    
+    member x.WriteInterface format = 
+        fprintf osi format
+    
+    member x.WriteLineInterface format = 
+        Printf.kfprintf (fun _ -> 
+            interfaceLineCount <- interfaceLineCount + 1
+            osi.WriteLine ()
+        ) osi format
+        
+    member x.InterfaceLineCount = interfaceLineCount
+
     interface IDisposable with
-        member x.Dispose() = os.Dispose()
+        member x.Dispose() =
+            os.Dispose()
+            osi.Dispose()
 
 let sentinel = 255 * 256 + 255
 
@@ -68,23 +84,36 @@ let readSpecFromFile fileName codePage =
 let writeLightMode lightModeDisabled (fileName: string) (writer: Writer) =
     if lightModeDisabled = Some false || (lightModeDisabled = None && (Path.HasExtension(fileName) && Path.GetExtension(fileName) = ".ml"))
     then
-        writer.write "#light \"off\""
+        writer.Write "#light \"off\""
 
 let writeModuleExpression genModuleName isInternal (writer: Writer) =
     match genModuleName with
     | None -> ()
     | Some s ->
         let internal_tag = if isInternal then "internal " else ""
-        writer.writeLine "module %s%s" internal_tag s
+        writer.WriteLine "module %s%s" internal_tag s
+        writer.WriteLineInterface "module %s%s" internal_tag s
 
-let writeTopCode code (writer: Writer) = writer.writeCode code
+let writeOpens opens (writer: Writer) =
+    writer.WriteLine ""
+    writer.WriteLineInterface ""
+    
+    for s in opens do
+        writer.WriteLine "open %s" s
+        writer.WriteLineInterface "open %s" s
+
+    if not (Seq.isEmpty opens) then
+        writer.WriteLine ""
+        writer.WriteLineInterface ""
+
+let writeTopCode code (writer: Writer) = writer.WriteCode code
 
 let writeUnicodeTranslationArray dfaNodes domain (writer: Writer) =
     let parseContext = 
         { unicode = match domain with | Unicode -> true | ASCII -> false
           caseInsensitive = false }
-    writer.writeLine "let trans : uint16[] array = "
-    writer.writeLine "    [| "
+    writer.WriteLine "let trans : uint16[] array = "
+    writer.WriteLine "    [| "
     match domain with
     | Unicode ->
         let specificUnicodeChars = GetSpecificUnicodeChars()
@@ -100,8 +129,8 @@ let writeUnicodeTranslationArray dfaNodes domain (writer: Writer) =
         //
         // For the SpecificUnicodeChars the entries are char/next-state pairs.
         for state in dfaNodes do
-            writer.writeLine "    (* State %d *)" state.Id
-            writer.write  "     [| "
+            writer.WriteLine "    (* State %d *)" state.Id
+            writer.Write  "     [| "
             let trans =
                 let dict = Dictionary()
                 state.Transitions |> List.iter dict.Add
@@ -120,7 +149,7 @@ let writeUnicodeTranslationArray dfaNodes domain (writer: Writer) =
             for i = 0 to NumUnicodeCategories-1 do
                 emit (EncodeUnicodeCategoryIndex i)
             emit Eof
-            writer.writeLine  "|];"
+            writer.WriteLine  "|];"
         done
 
     | ASCII ->
@@ -132,8 +161,8 @@ let writeUnicodeTranslationArray dfaNodes domain (writer: Writer) =
 
         // This emits a (256+1) * #states array of encoded UInt16 values
         for state in dfaNodes do
-            writer.writeLine "   (* State %d *)" state.Id
-            writer.write " [|"
+            writer.WriteLine "   (* State %d *)" state.Id
+            writer.Write " [|"
             let trans =
                 let dict = Dictionary()
                 state.Transitions |> List.iter dict.Add
@@ -147,56 +176,82 @@ let writeUnicodeTranslationArray dfaNodes domain (writer: Writer) =
                 let c = char i
                 emit (EncodeChar c parseContext)
             emit Eof
-            writer.writeLine "|];"
+            writer.WriteLine "|];"
         done
 
-    writer.writeLine "    |] "
+    writer.WriteLine "    |] "
 
 let writeUnicodeActionsArray dfaNodes (writer: Writer) =
-    writer.write "let actions : uint16[] = [|"
+    writer.Write "let actions : uint16[] = [|"
     for state in dfaNodes do
         if state.Accepted.Length > 0 then
           writer.WriteUint16 (snd state.Accepted.Head)
         else
           writer.WriteUint16 sentinel
     done
-    writer.writeLine  "|]"
+    writer.WriteLine  "|]"
 
 let writeUnicodeTables lexerLibraryName domain dfaNodes (writer: Writer) =
     writeUnicodeTranslationArray dfaNodes domain writer
     writeUnicodeActionsArray dfaNodes writer
-    writer.writeLine  "let _fslex_tables = %s.%sTables.Create(trans,actions)" lexerLibraryName (match domain with | Unicode -> "Unicode" | ASCII -> "Ascii")
+    writer.WriteLine  "let _fslex_tables = %s.%sTables.Create(trans,actions)" lexerLibraryName (match domain with | Unicode -> "Unicode" | ASCII -> "Ascii")
 
 let writeRules (rules: Rule list) (perRuleData: PerRuleData) outputFileName (writer: Writer) =
-    writer.writeLine  "let rec _fslex_dummy () = _fslex_dummy() "
+    writer.WriteLine  "let rec _fslex_dummy () = _fslex_dummy() "
 
     // These actions push the additional start state and come first, because they are then typically inlined into later
     // rules. This means more tailcalls are taken as direct branches, increasing efficiency and
     // improving stack usage on platforms that do not take tailcalls.
     for (startNode, actions),(ident,args,_) in List.zip perRuleData rules do
-        writer.writeLine "// Rule %s" ident
-        writer.writeLine "and %s %s lexbuf =" ident (String.Join(" ", Array.ofList args))
-        writer.writeLine "  match _fslex_tables.Interpret(%d,lexbuf) with" startNode.Id
+        writer.WriteLine "// Rule %s" ident
+        writer.WriteLineInterface "/// Rule %s" ident
+        let arguments =
+            args
+            |> List.map (function
+                | RuleArgument.Ident ident -> ident
+                | RuleArgument.Typed(ident, typ) -> sprintf "(%s: %s)" ident typ)
+            |> String.concat " "
+
+        writer.WriteLine "and %s %s lexbuf =" ident arguments
+        
+        let signature =
+            if List.isEmpty args then
+                sprintf "val %s: lexbuf: LexBuffer<char> -> token" ident
+            else
+                args
+                |> List.map (function
+                    | RuleArgument.Ident ident ->
+                        // This is not going to lead to a valid signature file, the only workaround is that the caller will specify the type.
+                        sprintf "%s: obj" ident
+                    | RuleArgument.Typed(ident, typ) -> sprintf"%s: %s" ident typ)
+                |> String.concat " -> "
+                |> sprintf "val %s: %s -> lexbuf: LexBuffer<char> -> token" ident
+
+        writer.WriteLineInterface "%s" signature
+        
+        writer.WriteLine "  match _fslex_tables.Interpret(%d,lexbuf) with" startNode.Id
         actions |> Seq.iteri (fun i (code:string, pos) ->
-            writer.writeLine "  | %d -> ( " i
-            writer.writeLine "# %d \"%s\"" pos.Line pos.FileName
+            writer.WriteLine "  | %d -> ( " i
+            writer.WriteLine "# %d \"%s\"" pos.Line pos.FileName
             let lines = code.Split([| '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries)
             for line in lines do
-                writer.writeLine "               %s" line
-            writer.writeLine "# %d \"%s\"" writer.LineCount outputFileName
-            writer.writeLine "          )")
-        writer.writeLine "  | _ -> failwith \"%s\"" ident
+                writer.WriteLine "               %s" line
+            writer.WriteLine "# %d \"%s\"" writer.LineCount outputFileName
+            writer.WriteLine "          )")
+        writer.WriteLine "  | _ -> failwith \"%s\"" ident
 
-    writer.writeLine ""
+    writer.WriteLine ""
 
-let writeBottomCode code (writer: Writer) = writer.writeCode code
+let writeBottomCode code (writer: Writer) = writer.WriteCode code
 
-let writeFooter outputFileName (writer: Writer) = writer.writeLine "# 3000000 \"%s\"" outputFileName
+let writeFooter outputFileName (writer: Writer) = writer.WriteLine "# 3000000 \"%s\"" outputFileName
 
 let writeSpecToFile (state: GeneratorState) (spec: Spec) (perRuleData: PerRuleData) (dfaNodes: DfaNodes) =
-    use writer = new Writer(state.outputFileName)
+    let output, outputi = state.outputFileName, String.Concat(state.outputFileName, "i")
+    use writer = new Writer(output, outputi)
     writeLightMode state.disableLightMode state.outputFileName writer
     writeModuleExpression state.generatedModuleName state.generateInternalModule writer
+    writeOpens state.opens writer
     writeTopCode spec.TopCode writer
     writeUnicodeTables state.lexerLibraryName state.domain dfaNodes writer
     writeRules spec.Rules perRuleData state.outputFileName writer

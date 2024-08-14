@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.ComponentTests.TypeChecks.Graph.CompilationTests
+﻿module TypeChecks.CompilationTests
 
 open FSharp.Test
 open FSharp.Test.Compiler
@@ -13,7 +13,7 @@ type Method =
 let methodOptions (method: Method) =
     match method with
     | Method.Sequential -> []
-    | Method.Graph -> [ "--test:GraphBasedChecking"; "--test:DumpCheckingGraph"; "--deterministic-" ]
+    | Method.Graph -> [ "--test:GraphBasedChecking"; "--test:DumpCheckingGraph" ]
 
 let withMethod (method: Method) (cu: CompilationUnit) : CompilationUnit =
     match cu with

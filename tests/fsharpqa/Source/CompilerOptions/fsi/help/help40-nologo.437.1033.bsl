@@ -94,8 +94,6 @@ Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
                                          Default - mscorlib
 --clearResultsCache                      Clear the package manager results
                                          cache
---noframework                            Do not reference the default CLI
-                                         assemblies by default
 --exec                                   Exit fsi after loading the files or
                                          running the .fsx script given on the
                                          command line

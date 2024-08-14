@@ -13,7 +13,7 @@ ImplFile
                   ObjectModel
                     (Unspecified,
                      [ImplicitCtor
-                        (None, [], SimplePats ([], (2,6--2,8)), None,
+                        (None, [], SimplePats ([], [], (2,6--2,8)), None,
                          PreXmlDoc ((2,6), FSharp.Compiler.Xml.XmlDocCollector),
                          (2,5--2,6), { AsKeyword = None });
                       GetSetMember
@@ -104,7 +104,7 @@ ImplFile
                      (3,4--3,62)), [],
                   Some
                     (ImplicitCtor
-                       (None, [], SimplePats ([], (2,6--2,8)), None,
+                       (None, [], SimplePats ([], [], (2,6--2,8)), None,
                         PreXmlDoc ((2,6), FSharp.Compiler.Xml.XmlDocCollector),
                         (2,5--2,6), { AsKeyword = None })), (2,5--3,62),
                   { LeadingKeyword = Type (2,0--2,4)

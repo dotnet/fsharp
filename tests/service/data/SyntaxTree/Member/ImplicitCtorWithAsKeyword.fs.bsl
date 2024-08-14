@@ -35,7 +35,8 @@ ImplFile
                                 LongIdent
                                   (SynLongIdent
                                      ([FSharpProjectOptions], [], [None])),
-                                (2,65--2,101))], (2,32--2,102)), Some this,
+                                (2,65--2,101))], [(2,63--2,64)], (2,32--2,102)),
+                         Some this,
                          PreXmlDoc ((2,32), FSharp.Compiler.Xml.XmlDocCollector),
                          (2,14--2,32), { AsKeyword = Some (4,4--4,6) })],
                      (8,4--8,13)), [],
@@ -63,7 +64,8 @@ ImplFile
                                LongIdent
                                  (SynLongIdent
                                     ([FSharpProjectOptions], [], [None])),
-                               (2,65--2,101))], (2,32--2,102)), Some this,
+                               (2,65--2,101))], [(2,63--2,64)], (2,32--2,102)),
+                        Some this,
                         PreXmlDoc ((2,32), FSharp.Compiler.Xml.XmlDocCollector),
                         (2,14--2,32), { AsKeyword = Some (4,4--4,6) })),
                   (2,5--8,13), { LeadingKeyword = Type (2,0--2,4)

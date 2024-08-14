@@ -1,7 +1,7 @@
-﻿module FSharp.Compiler.ComponentTests.Signatures.SignatureTests
+﻿module Signatures.ArrayTests
 
 open Xunit
-open FSharp.Compiler.ComponentTests.Signatures.TestHelpers
+open Signatures.TestHelpers
 
 [<Theory>]
 [<InlineData("let a : int[] = [| 1 |]",

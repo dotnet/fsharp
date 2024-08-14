@@ -3293,6 +3293,12 @@ let destILArrTy ty =
 let tname_Attribute = "System.Attribute"
 
 [<Literal>]
+let tname_Enum = "System.Enum"
+
+[<Literal>]
+let tname_SealedAttribute = "System.SealedAttribute"
+
+[<Literal>]
 let tname_Object = "System.Object"
 
 [<Literal>]
@@ -3366,6 +3372,10 @@ type ILGlobals(primaryScopeRef: ILScopeRef, equivPrimaryAssemblyRefs: ILAssembly
     member x.primaryAssemblyName = x.primaryAssemblyRef.Name
 
     member val typ_Attribute = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_Attribute))
+
+    member val typ_Enum = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_Enum))
+
+    member val typ_SealedAttribute = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_SealedAttribute))
 
     member val typ_Object = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_Object))
 
@@ -3984,6 +3994,9 @@ let mkILInstanceField (nm, ty, init, access) =
 
 let mkILStaticField (nm, ty, init, at, access) =
     mkILField (true, nm, ty, init, at, access, false)
+
+let mkILStaticLiteralField (nm, ty, init, at, access) =
+    mkILField (true, nm, ty, Some init, at, access, true)
 
 let mkILLiteralField (nm, ty, init, at, access) =
     mkILField (true, nm, ty, Some init, at, access, true)
