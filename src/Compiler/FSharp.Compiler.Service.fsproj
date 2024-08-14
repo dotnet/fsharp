@@ -13,6 +13,15 @@
     <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
+    <CheckNulls>true</CheckNulls>
+	<!-- Nullness checking againts ns20 base class libraries is very weak, the APIs were not updated with annotations. 
+	     Therefore we want to use the latest BCL APIs from NetCurrent.
+		 We are still not building the actual product in NetCurrent, so for official builds we remain as ns2.0.
+		 For 'BUILDING_USING_DOTNET' builds, we still want latest BCL annotations, so that contributors can get related warnings locally.
+
+     On CI, OSX has problems with Xliff targets for net9, skipping via SKIP_NETCURRENT_FSC_BUILD until resolved ( The target "UpdateXlf" does not exist in the project.)
+	-->
+    <TargetFrameworks Condition=" '$(OfficialBuildId)' == '' AND '$(FSharpNetCoreProductDefaultTargetFramework)' != '' AND '$(Configuration)' != 'Proto' AND '$(SKIP_NETCURRENT_FSC_BUILD)' != 'true' ">$(FSharpNetCoreProductDefaultTargetFramework);$(TargetFrameworks)</TargetFrameworks>
     <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);FSHARPCORE_USE_PACKAGE</DefineConstants>
     <OtherFlags>$(OtherFlags) --extraoptimizationloops:1</OtherFlags>
     <!-- 1182: Unused variables -->
@@ -87,6 +96,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="Utilities\NullnessShims.fs" />
     <EmbeddedText Include="FSComp.txt">
       <Link>FSComp.txt</Link>
     </EmbeddedText>
@@ -96,10 +106,11 @@
     <EmbeddedResource Include="FSStrings.resx">
       <Link>FSStrings.resx</Link>
       <LogicalName>FSStrings.resources</LogicalName>
-    </EmbeddedResource>
-
+    </EmbeddedResource>    
     <Compile Include="Utilities\Activity.fsi" />
     <Compile Include="Utilities\Activity.fs" />
+    <Compile Include="Utilities\illib.fsi" />
+    <Compile Include="Utilities\illib.fs" />
     <Compile Include="Utilities\sformat.fsi" />
     <Compile Include="Utilities\sformat.fs" />
     <Compile Include="Utilities\sr.fsi" />
@@ -112,8 +123,6 @@
     <Compile Include="Utilities\EditDistance.fs" />
     <Compile Include="Utilities\TaggedCollections.fsi" />
     <Compile Include="Utilities\TaggedCollections.fs" />
-    <Compile Include="Utilities\illib.fsi" />
-    <Compile Include="Utilities\illib.fs" />
     <Compile Include="Utilities\Cancellable.fsi" />
     <Compile Include="Utilities\Cancellable.fs" />
     <Compile Include="Utilities\FileSystem.fsi" />

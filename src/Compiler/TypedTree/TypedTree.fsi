@@ -3139,7 +3139,7 @@ type TType =
 
     /// For now, used only as a discriminant in error message.
     /// See https://github.com/dotnet/fsharp/issues/2561
-    member GetAssemblyName: unit -> string
+    member GetAssemblyName: unit -> string MaybeNull
 
     override ToString: unit -> string
 
