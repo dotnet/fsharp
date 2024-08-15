@@ -214,7 +214,7 @@ type ProvidedType =
 type IProvidedCustomAttributeProvider =
     abstract GetHasTypeProviderEditorHideMethodsAttribute: provider: ITypeProvider -> bool
 
-    abstract GetDefinitionLocationAttribute: provider: ITypeProvider -> (string * int * int) option
+    abstract GetDefinitionLocationAttribute: provider: ITypeProvider -> (string MaybeNull * int * int) option
 
     abstract GetXmlDocAttributes: provider: ITypeProvider -> string[]
 
@@ -313,7 +313,7 @@ type ProvidedParameterInfo =
 
     member IsOptional: bool
 
-    member RawDefaultValue: obj
+    member RawDefaultValue: objnull
 
     member HasDefaultValue: bool
 
@@ -482,12 +482,12 @@ val ValidateProvidedTypeAfterStaticInstantiation:
 /// to check the type name is as expected (this function is called by the caller of TryApplyProvidedType
 /// after other checks are made).
 val TryApplyProvidedType:
-    typeBeforeArguments: Tainted<ProvidedType> * optGeneratedTypePath: string list option * staticArgs: obj[] * range ->
+    typeBeforeArguments: Tainted<ProvidedType> * optGeneratedTypePath: string list option * staticArgs: objnull[] * range ->
         (Tainted<ProvidedType> * (unit -> unit)) option
 
 /// Try to apply a provided method to the given static arguments.
 val TryApplyProvidedMethod:
-    methBeforeArgs: Tainted<ProvidedMethodBase> * staticArgs: obj[] * range -> Tainted<ProvidedMethodBase> option
+    methBeforeArgs: Tainted<ProvidedMethodBase> * staticArgs: objnull[] * range -> Tainted<ProvidedMethodBase> option
 
 /// Try to resolve a type in the given extension type resolver
 val TryResolveProvidedType: Tainted<ITypeProvider> * range * string[] * typeName: string -> Tainted<ProvidedType> option

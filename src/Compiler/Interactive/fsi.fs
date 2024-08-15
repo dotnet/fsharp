@@ -374,7 +374,7 @@ type ILMultiInMemoryAssemblyEmitEnv
         let typT = convTypeRef tref
         let tyargs = List.map convTypeAux tspec.GenericArgs
 
-        let res =
+        let res: Type MaybeNull =
             match isNil tyargs, typT.IsGenericType with
             | _, true -> typT.MakeGenericType(List.toArray tyargs)
             | true, false -> typT
@@ -389,7 +389,7 @@ type ILMultiInMemoryAssemblyEmitEnv
 
     and convTypeAux ty =
         match ty with
-        | ILType.Void -> Type.GetType("System.Void")
+        | ILType.Void -> !! Type.GetType("System.Void")
         | ILType.Array(shape, eltType) ->
             let baseT = convTypeAux eltType
 
@@ -397,8 +397,8 @@ type ILMultiInMemoryAssemblyEmitEnv
                 baseT.MakeArrayType()
             else
                 baseT.MakeArrayType shape.Rank
-        | ILType.Value tspec -> convTypeSpec tspec
-        | ILType.Boxed tspec -> convTypeSpec tspec
+        | ILType.Value tspec -> !!(convTypeSpec tspec)
+        | ILType.Boxed tspec -> !!(convTypeSpec tspec)
         | ILType.Ptr eltType ->
             let baseT = convTypeAux eltType
             baseT.MakePointerType()
@@ -436,7 +436,7 @@ type ILMultiInMemoryAssemblyEmitEnv
         let ltref = mkRefForNestedILTypeDef ILScopeRef.Local (enc, tdef)
         let tref = mkRefForNestedILTypeDef ilScopeRef (enc, tdef)
         let key = tref.BasicQualifiedName
-        let typ = asm.GetType(key)
+        let typ = !! asm.GetType(key)
         //printfn "Adding %s --> %s" key typ.FullName
         let rtref = rescopeILTypeRef dynamicCcuScopeRef tref
         typeMap.Add(ltref, (typ, tref))
@@ -511,7 +511,7 @@ type FsiEvaluationSessionHostConfig() =
     abstract FloatingPointFormat: string
 
     /// Called by the evaluation session to ask the host for parameters to format text for output
-    abstract AddedPrinters: Choice<Type * (obj -> string), Type * (obj -> obj)> list
+    abstract AddedPrinters: Choice<Type * (objnull -> string), Type * (objnull -> objnull)> list
 
     /// Called by the evaluation session to ask the host for parameters to format text for output
     abstract ShowDeclarationValues: bool
@@ -588,7 +588,7 @@ type FsiEvaluationSessionHostConfig() =
 type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, outWriter: TextWriter) =
 
     /// This printer is used by F# Interactive if no other printers apply.
-    let DefaultPrintingIntercept (ienv: IEnvironment) (obj: obj) =
+    let DefaultPrintingIntercept (ienv: IEnvironment) (obj: objnull) =
         match obj with
         | null -> None
         | :? System.Collections.IDictionary as ie ->
@@ -630,10 +630,10 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, outWriter: Te
                         match x with
                         | Choice1Of2(aty: Type, printer) ->
                             yield
-                                (fun _ienv (obj: obj) ->
+                                (fun _ienv (obj: objnull) ->
                                     match obj with
                                     | null -> None
-                                    | _ when aty.IsAssignableFrom(obj.GetType()) ->
+                                    | obj when aty.IsAssignableFrom(obj.GetType()) ->
                                         let text = printer obj
 
                                         match box text with
@@ -643,10 +643,10 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, outWriter: Te
 
                         | Choice2Of2(aty: Type, converter) ->
                             yield
-                                (fun ienv (obj: obj) ->
+                                (fun ienv (obj: objnull) ->
                                     match obj with
                                     | null -> None
-                                    | _ when aty.IsAssignableFrom(obj.GetType()) ->
+                                    | obj when aty.IsAssignableFrom(obj.GetType()) ->
                                         match converter obj with
                                         | null -> None
                                         | res -> Some(ienv.GetLayout res)
@@ -938,8 +938,8 @@ let internal directoryName (s: string) =
         "."
     else
         match Path.GetDirectoryName s with
-        | null -> if FileSystem.IsPathRootedShim s then s else "."
-        | res -> if String.IsNullOrEmpty(res) then "." else res
+        | Null -> if FileSystem.IsPathRootedShim s then s else "."
+        | NonNull res -> if String.IsNullOrEmpty(res) then "." else res
 
 //----------------------------------------------------------------------------
 // cmd line - state for options
@@ -976,10 +976,11 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
     let executableFileNameWithoutExtension =
         lazy
             let getFsiCommandLine () =
-                let fileNameWithoutExtension path = Path.GetFileNameWithoutExtension(path)
+                let fileNameWithoutExtension (path: string MaybeNull) = Path.GetFileNameWithoutExtension(path)
 
                 let currentProcess = Process.GetCurrentProcess()
-                let processFileName = fileNameWithoutExtension currentProcess.MainModule.FileName
+                let mainModule = currentProcess.MainModule
+                let processFileName = fileNameWithoutExtension (mainModule ^ _.FileName)
 
                 let commandLineExecutableFileName =
                     try
@@ -994,7 +995,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                     | _ -> StringComparison.OrdinalIgnoreCase
 
                 if String.Compare(processFileName, commandLineExecutableFileName, stringComparison) = 0 then
-                    processFileName
+                    !!processFileName
                 else
                     sprintf "%s %s" processFileName commandLineExecutableFileName
 
@@ -1530,7 +1531,7 @@ let ConvReflectionTypeToILTypeRef (reflectionTy: Type) =
     let aref = ILAssemblyRef.FromAssemblyName(reflectionTy.Assembly.GetName())
     let scoref = ILScopeRef.Assembly aref
 
-    let fullName = reflectionTy.FullName
+    let fullName = reflectionTy.FullName |> nullArgCheck "reflectionTy.FullName"
     let index = fullName.IndexOfOrdinal("[")
 
     let fullName =
@@ -1569,10 +1570,10 @@ let rec ConvReflectionTypeToILType (reflectionTy: Type) =
                 && IsCompilerGeneratedName reflectionTy.Name
             then
                 let rec get (typ: Type) =
-                    if FSharp.Reflection.FSharpType.IsFunction typ.BaseType then
-                        get typ.BaseType
-                    else
-                        typ
+                    match typ.BaseType with
+                    | null -> typ
+                    | baseTyp when FSharp.Reflection.FSharpType.IsFunction baseTyp -> get baseTyp
+                    | _ -> typ
 
                 get reflectionTy
             else
@@ -1582,7 +1583,7 @@ let rec ConvReflectionTypeToILType (reflectionTy: Type) =
 
     let elementOrItemTref =
         if reflectionTy.HasElementType then
-            reflectionTy.GetElementType()
+            !! reflectionTy.GetElementType()
         else
             reflectionTy
         |> ConvReflectionTypeToILTypeRef
@@ -1675,7 +1676,7 @@ let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
     entity, v, CheckedImplFile.CheckedImplFile(qname, [], mty, contents, false, false, StampMap.Empty, Map.empty)
 
 let scriptingSymbolsPath =
-    let createDirectory path =
+    let createDirectory (path: string) =
         lazy
             try
                 if not (Directory.Exists(path)) then
@@ -1906,7 +1907,7 @@ type internal FsiDynamicCompiler
                     if edef.ArgCount = 0 then
                         yield
                             (fun () ->
-                                let typ = asm.GetType(edef.DeclaringTypeRef.BasicQualifiedName)
+                                let typ = !! asm.GetType(edef.DeclaringTypeRef.BasicQualifiedName)
 
                                 try
                                     ignore (
@@ -1924,8 +1925,8 @@ type internal FsiDynamicCompiler
                                     )
 
                                     None
-                                with :? TargetInvocationException as e ->
-                                    Some e.InnerException)
+                                with :? TargetInvocationException as e when isNotNull e.InnerException ->
+                                    Some !!e.InnerException)
             ]
 
         emEnv.AddModuleDef asm ilScopeRef ilxMainModule
@@ -2418,7 +2419,7 @@ type internal FsiDynamicCompiler
     member _.DynamicAssemblies = dynamicAssemblies.ToArray()
 
     member _.FindDynamicAssembly(name, useFullName: bool) =
-        let getName (assemblyName: AssemblyName) =
+        let getName (assemblyName: AssemblyName) : string MaybeNull =
             if useFullName then
                 assemblyName.FullName
             else
@@ -2847,7 +2848,7 @@ type internal FsiDynamicCompiler
 
                      st),
                  (fun _ _ -> ()))
-                (tcConfigB, input, Path.GetDirectoryName sourceFile, istate))
+                (tcConfigB, input, !! Path.GetDirectoryName(sourceFile), istate))
 
     member fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, sourceFiles, lexResourceManager, diagnosticsLogger: DiagnosticsLogger) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
@@ -2942,11 +2943,9 @@ type internal FsiDynamicCompiler
             | _ -> None
         | _ -> None
 
-    member _.AddBoundValue(ctok, diagnosticsLogger: DiagnosticsLogger, istate, name: string, value: obj) =
+    member _.AddBoundValue(ctok, diagnosticsLogger: DiagnosticsLogger, istate, name: string, value: objnull) =
         try
-            match value with
-            | null -> nullArg "value"
-            | _ -> ()
+            let value = value |> nullArgCheck (nameof value)
 
             if String.IsNullOrWhiteSpace name then
                 invalidArg "name" "Name cannot be null or white-space."
@@ -3539,7 +3538,7 @@ type FsiStdinLexerProvider
 
                     0
                 | Some(NonNull input) ->
-                    let input = nonNull input + "\n"
+                    let input = input + "\n"
 
                     if input.Length > len then
                         fprintf fsiConsoleOutput.Error "%s" (FSIstrings.SR.fsiLineTooLong ())
@@ -5063,8 +5062,8 @@ module Settings =
         let runSignal = new AutoResetEvent(false)
         let exitSignal = new AutoResetEvent(false)
         let doneSignal = new AutoResetEvent(false)
-        let mutable queue = ([]: (unit -> obj) list)
-        let mutable result = (None: obj option)
+        let mutable queue = ([]: (unit -> objnull) list)
+        let mutable result = (None: objnull option)
 
         let setSignal (signal: AutoResetEvent) =
             while not (signal.Set()) do
