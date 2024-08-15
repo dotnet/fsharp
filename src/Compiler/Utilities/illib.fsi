@@ -41,31 +41,6 @@ module internal PervasiveAutoOpens =
     /// Returns true if the list contains exactly 1 element. Otherwise false.
     val inline isSingleton: l: 'a list -> bool
 
-    /// Returns true if the argument is non-null.
-    val inline isNotNull: x: 'T -> bool when 'T: null
-
-#if NO_CHECKNULLS
-    /// Indicates that a type may be null. 'MaybeNull<string>' is used internally in the F# compiler as
-    /// replacement for 'string?' to align with FS-1060.
-    type 'T MaybeNull when 'T: null and 'T: not struct = 'T
-
-    /// Asserts the argument is non-null and raises an exception if it is
-    val inline (|NonNullQuick|): 'T MaybeNull -> 'T
-
-    /// Match on the nullness of an argument.
-    val inline (|Null|NonNull|): 'T MaybeNull -> Choice<unit, 'T>
-
-    /// Asserts the argument is non-null and raises an exception if it is
-    val inline nonNull: x: 'T MaybeNull -> 'T
-
-    /// Checks the argument is non-null
-    val inline nullArgCheck: paramName: string -> x: 'T MaybeNull -> 'T
-#else
-    /// Indicates that a type may be null. 'MaybeNull<string>' used internally in the F# compiler as unchecked
-    /// replacement for 'string?'
-    type 'T MaybeNull when 'T: not null and 'T: not struct = 'T | null
-#endif
-
     val inline (===): x: 'a -> y: 'a -> bool when 'a: not struct
 
     /// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://learn.microsoft.com/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
@@ -111,7 +86,12 @@ type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue> =
 
 module internal Order =
 
-    val orderBy: p: ('T -> 'U) -> IComparer<'T> when 'U: comparison
+    val orderBy: p: ('T -> 'U) -> IComparer<'T> 
+        when 'U: comparison
+#if !NO_CHECKNULLS
+        and 'T:not null
+        and 'T:not struct
+#endif
 
     val orderOn: p: ('T -> 'U) -> pxOrder: IComparer<'U> -> IComparer<'T>
 
@@ -403,7 +383,11 @@ module internal ResultOrException =
     val otherwise: f: (unit -> ResultOrException<'a>) -> x: ResultOrException<'a> -> ResultOrException<'a>
 
 /// Generates unique stamps
-type internal UniqueStampGenerator<'T when 'T: equality> =
+type internal UniqueStampGenerator<'T when 'T: equality
+#if !NO_CHECKNULLS
+    and 'T:not null
+#endif
+    > =
 
     new: unit -> UniqueStampGenerator<'T>
 
@@ -412,7 +396,11 @@ type internal UniqueStampGenerator<'T when 'T: equality> =
     member Table: ICollection<'T>
 
 /// Memoize tables (all entries cached, never collected unless whole table is collected)
-type internal MemoizationTable<'T, 'U> =
+type internal MemoizationTable<'T, 'U
+#if !NO_CHECKNULLS
+    when 'T:not null
+#endif
+    > =
 
     new:
         compute: ('T -> 'U) * keyComparer: IEqualityComparer<'T> * ?canMemoize: ('T -> bool) -> MemoizationTable<'T, 'U>
@@ -420,7 +408,11 @@ type internal MemoizationTable<'T, 'U> =
     member Apply: x: 'T -> 'U
 
 /// A thread-safe lookup table which is assigning an auto-increment stamp with each insert
-type internal StampedDictionary<'T, 'U> =
+type internal StampedDictionary<'T, 'U
+#if !NO_CHECKNULLS
+    when 'T:not null
+#endif
+    > =
 
     new: keyComparer: IEqualityComparer<'T> -> StampedDictionary<'T, 'U>
 
@@ -453,7 +445,11 @@ type internal LazyWithContext<'T, 'ctxt> =
 
 /// Intern tables to save space.
 module internal Tables =
-    val memoize: f: ('a -> 'b) -> ('a -> 'b) when 'a: equality
+    val memoize: f: ('a -> 'b) -> ('a -> 'b) 
+        when 'a: equality
+#if !NO_CHECKNULLS && NET8_0_OR_GREATER
+        and 'a:not null
+#endif
 
 /// Interface that defines methods for comparing objects using partial equality relation
 type internal IPartialEqualityComparer<'T> =
@@ -463,6 +459,10 @@ type internal IPartialEqualityComparer<'T> =
 /// Interface that defines methods for comparing objects using partial equality relation
 module internal IPartialEqualityComparer =
     val On: f: ('a -> 'b) -> c: IPartialEqualityComparer<'b> -> IPartialEqualityComparer<'a>
+#if !NO_CHECKNULLS
+        when 'a:not null
+        and 'a:not struct
+#endif
 
     /// Like Seq.distinctBy but only filters out duplicates for some of the elements
     val partialDistinctBy: per: IPartialEqualityComparer<'T> -> seq: 'T list -> 'T list
