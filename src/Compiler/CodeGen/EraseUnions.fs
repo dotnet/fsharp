@@ -956,10 +956,14 @@ let convAlternativeDef
                             && g.langFeatureNullness
                             && repr.RepresentAlternativeAsNull(info, alt)
                         then
-                            let noTypars = td.GenericParams.Length                  
-                            GetNullableAttribute g 
-                                [ yield NullnessInfo.WithNull                  // The top-level value itself, e.g. option, is nullable
-                                  yield! List.replicate noTypars NullnessInfo.AmbivalentToNull ] // The typars are not (i.e. do not change option<string> into option<string?>                          
+                            let noTypars = td.GenericParams.Length
+
+                            GetNullableAttribute
+                                g
+                                [
+                                    yield NullnessInfo.WithNull // The top-level value itself, e.g. option, is nullable
+                                    yield! List.replicate noTypars NullnessInfo.AmbivalentToNull
+                                ] // The typars are not (i.e. do not change option<string> into option<string?>
                             |> Array.singleton
                             |> mkILCustomAttrsFromArray
                         else
@@ -1369,8 +1373,7 @@ let mkClassUnionDef
                                         match nullableIdx with
                                         | None ->
                                             existingAttrs
-                                            |> Array.append
-                                                [| GetNullableAttribute g [ NullnessInfo.WithNull ] |]
+                                            |> Array.append [| GetNullableAttribute g [ NullnessInfo.WithNull ] |]
                                         | Some idx ->
                                             let replacementAttr =
                                                 match existingAttrs[idx] with
