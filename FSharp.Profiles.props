@@ -23,7 +23,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(CheckNulls)' == 'true'">
-    <OtherFlags>$(OtherFlags) /checknulls</OtherFlags>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(CheckNulls)' == 'false'">
