@@ -831,6 +831,15 @@ type internal FsiStdinSyphon(errorWriter: TextWriter) =
             let lines = text.Split '\n'
             if 0 < i && i <= lines.Length then lines[i - 1] else ""
 
+    /// Gets the indicated line in the syphon text
+    member _.GetLineNoPrune fileName i =
+        if fileName <> stdinMockFileName then
+            ""
+        else
+            let text = syphonText.ToString()
+            let lines = text.Split '\n'
+            if 0 < i && i <= lines.Length then lines[i - 1] else ""
+
     /// Display the given error.
     member syphon.PrintDiagnostic(tcConfig: TcConfig, diagnostic: PhasedDiagnostic) =
         ignoreAllErrors (fun () ->
@@ -4661,7 +4670,7 @@ type FsiEvaluationSession
         if List.isEmpty fsiOptions.SourceFiles then
             fsiConsolePrompt.PrintAhead()
 
-    do tcConfigB.getLine <- fsiStdinSyphon.GetLine
+    do FileContent.getLineDynamic <- fsiStdinSyphon.GetLineNoPrune
 
     let fsiConsoleInput = FsiConsoleInput(fsi, fsiOptions, inReader, outWriter)
 

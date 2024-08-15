@@ -190,9 +190,7 @@ type TcGlobals(
     noDebugAttributes: bool,
     pathMap: PathMap,
     langVersion: LanguageVersion,
-    realsig: bool,
-    // Get a line string from a code file. Use to implement `CallerArgumentExpression`
-    getLine: string -> int -> string) =
+    realsig: bool) =
 
   let v_langFeatureNullness = langVersion.SupportsFeature LanguageFeature.NullnessChecking
 
@@ -1980,16 +1978,6 @@ type TcGlobals(
         Some (info, tyargs, argExprs)
     | _ ->
         None
-
-  member _.GetCodeText (m: Text.Range) =
-    let endCol = m.EndColumn - 1
-    let startCol = m.StartColumn - 1
-
-    let s = 
-        [| for i in m.StartLine..m.EndLine -> getLine m.FileName i |]
-        |> String.concat "\n"
-    if System.String.IsNullOrEmpty s then ValueNone else
-    ValueSome <| s.Substring(startCol + 1, s.LastIndexOf("\n", System.StringComparison.Ordinal) + 1 - startCol + endCol)
 
 #if DEBUG
 // This global is only used during debug output

@@ -525,8 +525,6 @@ type TcConfigBuilder =
         mutable dumpSignatureData: bool
 
         mutable realsig: bool
-
-        mutable getLine: string -> int -> string
     }
 
     static member CreateNew:
@@ -905,8 +903,6 @@ type TcConfig =
     member dumpSignatureData: bool
 
     member realsig: bool
-
-    member getLine: (string -> int -> string)
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
 /// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.

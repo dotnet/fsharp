@@ -818,7 +818,7 @@ type internal TransparentCompiler
             tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
             tcConfigB.captureIdentifiersWhenParsing <- captureIdentifiersWhenParsing
 
-            FileContent.readFiles sourceFilesNew
+            FileContent.readFileContents sourceFilesNew
 
             return tcConfigB, sourceFilesNew, loadClosureOpt
         }

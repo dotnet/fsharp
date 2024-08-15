@@ -40,10 +40,15 @@ let warningStringOfPos (p: pos) = warningStringOfCoords p.Line p.Column
 
 /// Get an F# compiler position from a lexer position
 let posOfLexPosition (p: Position) = mkPos p.Line p.Column
+let posOfLexOriginalPosition (p: Position) = mkPos p.OriginalLine p.Column
 
 /// Get an F# compiler range from a lexer range
 let mkSynRange (p1: Position) (p2: Position) =
-    mkFileIndexRange p1.FileIndex (posOfLexPosition p1) (posOfLexPosition p2)
+    if p1.OriginalFileIndex <> p1.FileIndex || p1.OriginalLine <> p2.Line then
+        mkFileIndexRangeWithOriginRange
+            p1.FileIndex (posOfLexPosition p1) (posOfLexPosition p2)
+            p1.OriginalFileIndex (posOfLexOriginalPosition p1) (posOfLexOriginalPosition p2)
+    else mkFileIndexRange p1.FileIndex (posOfLexPosition p1) (posOfLexPosition p2)
 
 type LexBuffer<'Char> with
 

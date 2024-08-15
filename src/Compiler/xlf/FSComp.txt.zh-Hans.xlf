@@ -587,6 +587,11 @@
         <target state="translated">活动模式的结构表示形式</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureSupportCallerArgumentExpression">
+        <source>Support `CallerArgumentExpression`</source>
+        <target state="new">Support `CallerArgumentExpression`</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureUnionIsPropertiesVisible">
         <source>Union case test properties</source>
         <target state="translated">联合用例测试属性</target>

@@ -587,6 +587,11 @@
         <target state="translated">アクティブなパターンの構造体表現</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureSupportCallerArgumentExpression">
+        <source>Support `CallerArgumentExpression`</source>
+        <target state="new">Support `CallerArgumentExpression`</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureUnionIsPropertiesVisible">
         <source>Union case test properties</source>
         <target state="translated">ユニオン ケースのテスト プロパティ</target>

@@ -206,15 +206,17 @@ open System.Collections.Generic
 [<Struct>]
 type internal Position =
     val FileIndex: int
+    val OriginalFileIndex: int
     val Line: int
     val OriginalLine: int
     val AbsoluteOffset: int
     val StartOfLineAbsoluteOffset: int
     member x.Column = x.AbsoluteOffset - x.StartOfLineAbsoluteOffset
 
-    new(fileIndex: int, line: int, originalLine: int, startOfLineAbsoluteOffset: int, absoluteOffset: int) =
+    new(fileIndex: int, originalFileIndex: int, line: int, originalLine: int, startOfLineAbsoluteOffset: int, absoluteOffset: int) =
         {
             FileIndex = fileIndex
+            OriginalFileIndex = originalFileIndex
             Line = line
             OriginalLine = originalLine
             AbsoluteOffset = absoluteOffset
@@ -222,25 +224,25 @@ type internal Position =
         }
 
     member x.NextLine =
-        Position(x.FileIndex, x.Line + 1, x.OriginalLine + 1, x.AbsoluteOffset, x.AbsoluteOffset)
+        Position(x.FileIndex, x.OriginalFileIndex, x.Line + 1, x.OriginalLine + 1, x.AbsoluteOffset, x.AbsoluteOffset)
 
     member x.EndOfToken n =
-        Position(x.FileIndex, x.Line, x.OriginalLine, x.StartOfLineAbsoluteOffset, x.AbsoluteOffset + n)
+        Position(x.FileIndex, x.OriginalFileIndex, x.Line, x.OriginalLine, x.StartOfLineAbsoluteOffset, x.AbsoluteOffset + n)
 
     member x.ShiftColumnBy by =
-        Position(x.FileIndex, x.Line, x.OriginalLine, x.StartOfLineAbsoluteOffset, x.AbsoluteOffset + by)
+        Position(x.FileIndex, x.OriginalFileIndex, x.Line, x.OriginalLine, x.StartOfLineAbsoluteOffset, x.AbsoluteOffset + by)
 
     member x.ColumnMinusOne =
-        Position(x.FileIndex, x.Line, x.OriginalLine, x.StartOfLineAbsoluteOffset, x.StartOfLineAbsoluteOffset - 1)
+        Position(x.FileIndex, x.OriginalFileIndex, x.Line, x.OriginalLine, x.StartOfLineAbsoluteOffset, x.StartOfLineAbsoluteOffset - 1)
 
     member x.ApplyLineDirective(fileIdx, line) =
-        Position(fileIdx, line, x.OriginalLine, x.AbsoluteOffset, x.AbsoluteOffset)
+        Position(fileIdx, x.OriginalFileIndex, line, x.OriginalLine + 1, x.AbsoluteOffset, x.AbsoluteOffset)
 
     override p.ToString() = $"({p.Line},{p.Column})"
 
     static member Empty = Position()
 
-    static member FirstLine fileIdx = Position(fileIdx, 1, 0, 0, 0)
+    static member FirstLine fileIdx = Position(fileIdx, fileIdx, 1, 1, 0, 0)
 
 type internal LexBufferFiller<'Char> = LexBuffer<'Char> -> unit
 

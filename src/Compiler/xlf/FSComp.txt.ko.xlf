@@ -587,6 +587,11 @@
         <target state="translated">활성 패턴에 대한 구조체 표현</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureSupportCallerArgumentExpression">
+        <source>Support `CallerArgumentExpression`</source>
+        <target state="new">Support `CallerArgumentExpression`</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureUnionIsPropertiesVisible">
         <source>Union case test properties</source>
         <target state="translated">공용 구조체 사례 테스트 속성</target>

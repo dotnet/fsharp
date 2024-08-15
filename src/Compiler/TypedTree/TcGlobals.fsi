@@ -147,8 +147,7 @@ type internal TcGlobals =
         noDebugAttributes: bool *
         pathMap: Internal.Utilities.PathMap *
         langVersion: FSharp.Compiler.Features.LanguageVersion *
-        realsig: bool *
-        getLine: (string -> int -> string) ->
+        realsig: bool ->
             TcGlobals
 
     static member IsInEmbeddableKnownSet: name: string -> bool

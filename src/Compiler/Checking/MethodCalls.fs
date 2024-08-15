@@ -1431,9 +1431,9 @@ let rec GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g (calledArg: C
                     |> List.tryPick (fun { CalledArg=called; CallerArg=caller } -> 
                         match called.NameOpt with
                         | Some x when x.idText = param ->
-                            match g.GetCodeText caller.Range with
-                            | ValueSome code -> Some (Const.String code)
-                            | ValueNone -> None
+                            let code = FileContent.getCodeText caller.Range
+                            if System.String.IsNullOrEmpty code then None
+                            else Some (Const.String code)
                         | _ -> None)
                     |> Option.defaultWith (fun _ -> tcFieldInit mMethExpr fieldInit)
                 emptyPreBinder, Expr.Const (str, mMethExpr, currCalledArgTy)
