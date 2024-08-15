@@ -79,7 +79,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
             | Some paramNames ->
 
                 for p in xml.Descendants(XName.op_Implicit "param") do
-                    match p.Attribute(XName.op_Implicit "name") with
+                    match p.Attribute(!!(XName.op_Implicit "name")) with
                     | null -> warning (Error(FSComp.SR.xmlDocMissingParameterName (), doc.Range))
                     | attr ->
                         let nm = attr.Value
@@ -90,9 +90,9 @@ type XmlDoc(unprocessedLines: string[], range: range) =
                 let paramsWithDocs =
                     [
                         for p in xml.Descendants(XName.op_Implicit "param") do
-                            match p.Attribute(XName.op_Implicit "name") with
-                            | null -> ()
-                            | attr -> attr.Value
+                            match p.Attribute(!!(XName.op_Implicit "name")) with
+                            | Null -> ()
+                            | NonNull attr -> attr.Value
                     ]
 
                 if paramsWithDocs.Length > 0 then
@@ -107,7 +107,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
                     warning (Error(FSComp.SR.xmlDocDuplicateParameter (d), doc.Range))
 
                 for pref in xml.Descendants(XName.op_Implicit "paramref") do
-                    match pref.Attribute(XName.op_Implicit "name") with
+                    match pref.Attribute(!!(XName.op_Implicit "name")) with
                     | null -> warning (Error(FSComp.SR.xmlDocMissingParameterName (), doc.Range))
                     | attr ->
                         let nm = attr.Value
@@ -307,7 +307,7 @@ type XmlDocumentationInfo private (tryGetXmlDocument: unit -> XmlDocument option
             let lines = Array.zeroCreate childNodes.Count
 
             for i = 0 to childNodes.Count - 1 do
-                let childNode = childNodes[i]
+                let childNode = !!childNodes[i]
                 lines[i] <- childNode.OuterXml
 
             XmlDoc(lines, range0))

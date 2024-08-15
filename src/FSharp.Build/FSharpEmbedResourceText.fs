@@ -288,7 +288,8 @@ open Printf
         if isNull s then
             System.Diagnostics.Debug.Assert(false, sprintf ""**RESOURCE ERROR**: Resource token %s does not exist!"" name)
     #endif
-        s
+        Unchecked.nonNull s
+
 
     static let mkFunctionValue (tys: System.Type[]) (impl:obj->obj) =
         FSharpValue.MakeFunction(FSharpType.MakeFunctionType(tys.[0],tys.[1]), impl)
@@ -313,7 +314,7 @@ open Printf
         // PERF: this technique is a bit slow (e.g. in simple cases, like 'sprintf ""%x""')
         mkFunctionValue tys (fun inp -> impl rty inp)
 
-    static let capture1 (fmt:string) i args ty (go: obj list -> System.Type -> int -> obj) : obj =
+    static let capture1 (fmt:string) i args ty (go: objnull list -> System.Type -> int -> obj) : obj =
         match fmt.[i] with
         | '%' -> go args ty (i+1)
         | 'd'
@@ -335,7 +336,7 @@ open Printf
             if i >= len ||  (fmt.[i] = '%' && i+1 >= len) then
                 let b = new System.Text.StringBuilder()
                 b.AppendFormat(messageString, [| for x in List.rev args -> x |]) |> ignore
-                box(b.ToString())
+                box(b.ToString()) |> Unchecked.nonNull
             // REVIEW: For these purposes, this should be a nop, but I'm leaving it
             // in incase we ever decide to support labels for the error format string
             // E.g., ""<name>%s<foo>%d""
