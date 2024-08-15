@@ -75,7 +75,7 @@ type IParseState with
             match bls.TryGetValue key with
             | true, gen -> gen
             | _ ->
-                let gen = box (SynArgNameGenerator())
+                let gen = !!(box (SynArgNameGenerator()))
                 bls[key] <- gen
                 gen
 
@@ -97,7 +97,7 @@ module LexbufLocalXmlDocStore =
         match lexbuf.BufferLocalStore.TryGetValue xmlDocKey with
         | true, collector -> collector
         | _ ->
-            let collector = box (XmlDocCollector())
+            let collector = !!(box (XmlDocCollector()))
             lexbuf.BufferLocalStore[xmlDocKey] <- collector
             collector
 
@@ -188,7 +188,7 @@ module LexbufIfdefStore =
         match lexbuf.BufferLocalStore.TryGetValue ifDefKey with
         | true, store -> store
         | _ ->
-            let store = box (ResizeArray<ConditionalDirectiveTrivia>())
+            let store = !!(box (ResizeArray<ConditionalDirectiveTrivia>()))
             lexbuf.BufferLocalStore[ifDefKey] <- store
             store
         |> unbox<ResizeArray<ConditionalDirectiveTrivia>>
@@ -237,7 +237,7 @@ module LexbufCommentStore =
         match lexbuf.BufferLocalStore.TryGetValue commentKey with
         | true, store -> store
         | _ ->
-            let store = box (ResizeArray<CommentTrivia>())
+            let store = !!(box (ResizeArray<CommentTrivia>()))
             lexbuf.BufferLocalStore[commentKey] <- store
             store
         |> unbox<ResizeArray<CommentTrivia>>
@@ -894,7 +894,7 @@ let mkRecdField (lidwd: SynLongIdent) = lidwd, true
 // Used for 'do expr' in a class.
 let mkSynDoBinding (vis: SynAccess option, mDo, expr, m) =
     match vis with
-    | Some vis -> errorR (Error(FSComp.SR.parsDoCannotHaveVisibilityDeclarations (vis.ToString()), m))
+    | Some vis -> errorR (Error(FSComp.SR.parsDoCannotHaveVisibilityDeclarations (vis |> string), m))
     | None -> ()
 
     SynBinding(
@@ -1101,7 +1101,8 @@ let mkSynUnionCase attributes (access: SynAccess option) id kind mDecl (xmlDoc, 
     SynUnionCase(attributes, id, kind, xmlDoc, None, mDecl, trivia)
 
 let mkAutoPropDefn mVal access ident typ mEquals (expr: SynExpr) accessors xmlDoc attribs flags rangeStart =
-    let mWith, (getSet, getSetOpt) = accessors
+    let mWith, (getSet, getSetOpt, getterAccess, setterAccess) = accessors
+    let access = SynValSigAccess.GetSet(access, getterAccess, setterAccess)
 
     let memberRange =
         match getSetOpt with

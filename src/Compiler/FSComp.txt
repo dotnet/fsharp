@@ -1776,3 +1776,5 @@ featureParsedHashDirectiveArgumentNonString,"# directives with non-quoted string
 3869,featureParsedHashDirectiveUnexpectedIdentifier,"Unexpected identifier '%s'."
 featureEmptyBodiedComputationExpressions,"Support for computation expressions with empty bodies: builder {{ }}"
 3870,parsExpectingUnionCaseField,"Expecting union case field"
+featureAllowAccessModifiersToAutoPropertiesGettersAndSetters,"Allow access modifiers to auto properties getters and setters"
+3871,tcAccessModifiersNotAllowedInSRTPConstraint,"Access modifiers cannot be applied to an SRTP constraint."

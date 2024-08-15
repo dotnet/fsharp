@@ -344,12 +344,12 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
 type ILFieldInit with
 
     /// Compute the ILFieldInit for the given provided constant value for a provided enum type.
-    static member FromProvidedObj m (v: obj) =
+    static member FromProvidedObj m (v: obj MaybeNull) =
         match v with
         | Null -> ILFieldInit.Null
         | NonNull v ->
             let objTy = v.GetType()
-            let v = if objTy.IsEnum then objTy.GetField("value__").GetValue v else v
+            let v = if objTy.IsEnum then !!(!!objTy.GetField("value__")).GetValue v else v
             match v with
             | :? single as i -> ILFieldInit.Single i
             | :? double as i -> ILFieldInit.Double i
@@ -364,7 +364,7 @@ type ILFieldInit with
             | :? uint32 as i -> ILFieldInit.UInt32 i
             | :? int64 as i -> ILFieldInit.Int64 i
             | :? uint64 as i -> ILFieldInit.UInt64 i
-            | _ -> error(Error(FSComp.SR.infosInvalidProvidedLiteralValue(try v.ToString() with _ -> "?"), m))
+            | _ -> error(Error(FSComp.SR.infosInvalidProvidedLiteralValue(try !!v.ToString() with _ -> "?"), m))
 
 
 /// Compute the OptionalArgInfo for a provided parameter.
@@ -1259,10 +1259,10 @@ type MethInfo =
         | ProvidedMeth(amap, mi, _, _) ->
             // A single group of tupled arguments
             [ [for p in mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m) do
-                let isParamArrayArg = p.PUntaint((fun px -> (px :> IProvidedCustomAttributeProvider).GetAttributeConstructorArgs(p.TypeProvider.PUntaintNoFailure id, typeof<ParamArrayAttribute>.FullName).IsSome), m)
+                let isParamArrayArg = p.PUntaint((fun px -> (px :> IProvidedCustomAttributeProvider).GetAttributeConstructorArgs(p.TypeProvider.PUntaintNoFailure id, !! typeof<ParamArrayAttribute>.FullName).IsSome), m)
                 let optArgInfo =  OptionalArgInfoOfProvidedParameter amap m p
                 let reflArgInfo =
-                    match p.PUntaint((fun px -> (px :> IProvidedCustomAttributeProvider).GetAttributeConstructorArgs(p.TypeProvider.PUntaintNoFailure id, typeof<ReflectedDefinitionAttribute>.FullName)), m) with
+                    match p.PUntaint((fun px -> (px :> IProvidedCustomAttributeProvider).GetAttributeConstructorArgs(p.TypeProvider.PUntaintNoFailure id, !! typeof<ReflectedDefinitionAttribute>.FullName)), m) with
                     | Some ([ Some (:? bool as b) ], _) -> ReflectedArgInfo.Quote b
                     | Some _ -> ReflectedArgInfo.Quote false
                     | None -> ReflectedArgInfo.None
@@ -1726,7 +1726,7 @@ type ILPropInfo =
         let nullness = {DirectAttributes = AttributesFromIL(pdef.MetadataIndex,pdef.CustomAttrsStored); Fallback = tinfo.NullableClassSource}
         ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] nullness pdef.PropertyType
 
-    override x.ToString() = x.ILTypeInfo.ToString() + "::" + x.PropertyName
+    override x.ToString() = !!x.ILTypeInfo.ToString() + "::" + x.PropertyName
 
 /// Describes an F# use of a property
 [<NoComparison; NoEquality>]
@@ -1831,6 +1831,38 @@ type PropInfo =
 #if !NO_TYPEPROVIDERS
         | ProvidedProp(_, pi, m) -> pi.PUntaint((fun pi -> pi.CanWrite), m)
 #endif
+
+    member x.GetterAccessibility =
+        match x with
+        | ILProp ilpinfo when ilpinfo.HasGetter -> Some taccessPublic
+        | ILProp _ -> None
+
+        | FSProp(_, _, Some getter, _) -> Some getter.Accessibility
+        | FSProp _ -> None
+
+#if !NO_TYPEPROVIDERS
+        | ProvidedProp(_, pi, m) -> pi.PUntaint((fun pi -> if pi.CanWrite then Some taccessPublic else None), m)
+#endif
+
+    member x.SetterAccessibility =
+        match x with
+        | ILProp ilpinfo when ilpinfo.HasSetter -> Some taccessPublic
+        | ILProp _ -> None
+
+        | FSProp(_, _, _, Some setter) -> Some setter.Accessibility
+        | FSProp _ -> None
+
+#if !NO_TYPEPROVIDERS
+        | ProvidedProp(_, pi, m) -> pi.PUntaint((fun pi -> if pi.CanWrite then Some taccessPublic else None), m)
+#endif
+
+    member x.IsProtectedAccessibility =
+        match x with
+        | ILProp ilpinfo when ilpinfo.HasGetter && ilpinfo.HasSetter -> 
+            struct(ilpinfo.GetterMethod.IsProtectedAccessibility, ilpinfo.SetterMethod.IsProtectedAccessibility)
+        | ILProp ilpinfo when ilpinfo.HasGetter -> struct(ilpinfo.GetterMethod.IsProtectedAccessibility, false)
+        | ILProp ilpinfo when ilpinfo.HasSetter -> struct(false, ilpinfo.SetterMethod.IsProtectedAccessibility)
+        | _ -> struct(false, false)
 
     member x.IsSetterInitOnly =
         match x with
@@ -2152,7 +2184,7 @@ type ILEventInfo =
     /// Indicates if the property is static
     member x.IsStatic = x.AddMethod.IsStatic
 
-    override x.ToString() = x.ILTypeInfo.ToString() + "::" + x.EventName
+    override x.ToString() = !!x.ILTypeInfo.ToString() + "::" + x.EventName
 
 //-------------------------------------------------------------------------
 // Helpers for EventInfo
