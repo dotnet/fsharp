@@ -117,15 +117,22 @@ module Interop  =
         let csharpCode = """
 using System;
 using static TestModule;
+using static Microsoft.FSharp.Core.FuncConvert;
 #nullable enable
 public class C {
     // MyNullableOption has [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>] applied on it
     public void M(MyNullableOption<string> customOption) {
 
-        Console.WriteLine(customOption.ToString());  // should warn
+        Console.WriteLine(customOption.ToString());  // should not warn
 
-        var thisIsNone = MyNullableOption<string>.MyNone;
-        Console.WriteLine(thisIsNone.ToString());  // should warn
+        var thisIsNone = MyNullableOption<string>.MyNone; 
+        Console.WriteLine(thisIsNone.ToString());  //   !! should warn !!
+
+        var mapped = mapPossiblyNullable<string,string>(ToFSharpFunc<string,string>(x => x.ToString()), customOption); // should not warn, because null will not be passed
+        var mapped2 = mapPossiblyNullable<string,string>(ToFSharpFunc<string,string>(x => x + ".."), thisIsNone); // should NOT warn for passing in none, this is allowed
+
+        if(thisIsNone != null)
+            Console.WriteLine(thisIsNone.ToString());  // should NOT warn
 
         if(customOption != null)
             Console.WriteLine(customOption.ToString());  // should NOT warn
@@ -136,8 +143,7 @@ public class C {
 }"""
         csharpCode
         |> csharpLibCompile (FsharpFromFile "NullAsTrueValue.fs")       
-        |> withDiagnostics [
-                    Warning 8600, Line 6, Col 35, Line 6, Col 57, "xxx"]
+        |> withDiagnostics [ Warning 8602, Line 12, Col 27, Line 12, Col 37, "Dereference of a possibly null reference."]
 
     [<Fact>]
     let ``Csharp understands Fsharp-produced struct unions via IsXXX flow analysis`` () = 
