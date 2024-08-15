@@ -22,6 +22,35 @@ let x = { new _ with member this.MyMember() = 42 }
          |> withDiagnostics [
              (Error 772, Line 5, Col 11, Line 5, Col 16, "'new' must be used with a named type")
          ]
+         
+    [<Fact>]
+    let ``Object expression can not implement a class class end`` () =
+        Fsx """
+type Class() = class end
+
+let implementer = { new Class()  }
+        """
+         |> withLangVersion80
+         |> typecheck
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 738, Line 4, Col 19, Line 4, Col 35, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
+         ]
+         
+    [<Fact>]
+    let ``Object expression can not implement a class without members`` () =
+        Fsx """
+type Class() =
+    member this.Do() = ()
+
+let implementer = { new Class()  }
+        """
+         |> withLangVersion90
+         |> typecheck
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 738, Line 5, Col 19, Line 5, Col 35, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
+         ]
   
     [<Fact>]
     let ``Object expression implementing an interface without members`` () =
@@ -723,6 +752,29 @@ Please restrict it to one of the following:
         ]
     
 module AllowObjectExpressionWithoutOverrides =
+    [<Fact>]
+    let ``Object expression can implement a class class end`` () =
+        Fsx """
+type Class() = class end
+
+let implementer = { new Class()  }
+        """
+         |> withLangVersionPreview
+         |> typecheck
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Object expression can implement a class without members`` () =
+        Fsx """
+type Class() =
+    member this.Do() = ()
+
+let implementer = { new Class()  }
+        """
+         |> withLangVersionPreview
+         |> typecheck
+         |> shouldSucceed
+
     [<Fact>]
     let ``Object expression cannot implement unnamed interface`` () =
         Fsx """

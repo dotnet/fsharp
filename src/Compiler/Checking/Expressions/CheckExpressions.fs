@@ -7253,7 +7253,7 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
         let extraImpls = allTypeImpls.Tail
         let supportsObjectExpressionWithoutOverrides = g.langVersion.SupportsFeature(LanguageFeature.AllowObjectExpressionWithoutOverrides)
 
-        if not supportsObjectExpressionWithoutOverrides && not isInterfaceTy && (isOverallTyAbstract && overrides'.IsEmpty) && extraImpls.IsEmpty then
+        if not supportsObjectExpressionWithoutOverrides && not isInterfaceTy && overrides'.IsEmpty && extraImpls.IsEmpty then
            errorR (Error(FSComp.SR.tcInvalidObjectExpressionSyntaxForm (), mWholeExpr))
 
         // 4. Build the implementation
