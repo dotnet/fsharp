@@ -1199,7 +1199,7 @@ let convAlternativeDef
 
                         let attrs =
                             if g.checkNullness && g.langFeatureNullness then
-                                GetNullableContextAttribute g :: debugAttrs
+                                GetNullableContextAttribute g 1uy :: debugAttrs
                             else
                                 debugAttrs
 

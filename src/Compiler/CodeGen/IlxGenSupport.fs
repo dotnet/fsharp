@@ -319,7 +319,7 @@ let GetDynamicDependencyAttribute (g: TcGlobals) memberTypes (ilType: ILType) =
 /// Nested items not being annotated with Nullable attribute themselves are interpreted as being withoutnull
 /// Doing it that way is a heuristical decision supporting limited usage of (| null) annotations and not allowing nulls in >50% of F# code
 /// (if majority of fields/parameters/return values would be nullable, this heuristic would lead to bloat of generated metadata)
-let GetNullableContextAttribute (g: TcGlobals) =
+let GetNullableContextAttribute (g: TcGlobals) flagValue =
     let tref = g.attrib_NullableContextAttribute.TypeRef
 
     g.TryEmbedILType(
@@ -329,7 +329,7 @@ let GetNullableContextAttribute (g: TcGlobals) =
             mkLocalPrivateAttributeWithPropertyConstructors (g, tref.Name, fields, PublicFields))
     )
 
-    mkILCustomAttribute (tref, [ g.ilg.typ_Byte ], [ ILAttribElem.Byte 1uy ], [])
+    mkILCustomAttribute (tref, [ g.ilg.typ_Byte ], [ ILAttribElem.Byte flagValue ], [])
 
 let GetNotNullWhenTrueAttribute (g: TcGlobals) (propNames: string array) =
     let tref = g.attrib_MemberNotNullWhenAttribute.TypeRef
