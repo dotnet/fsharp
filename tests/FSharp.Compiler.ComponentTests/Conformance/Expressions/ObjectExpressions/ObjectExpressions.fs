@@ -16,28 +16,13 @@ type IFirst =
 
 let x = { new _ with member this.MyMember() = 42 }
         """
-         |> withLangVersion80
+         |> withLangVersion90
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
              (Error 772, Line 5, Col 11, Line 5, Col 16, "'new' must be used with a named type")
          ]
-         
-    [<Fact>]
-    let ``Object expression cannot implement unnamed interface preview`` () =
-        Fsx """
-type IFirst =
-    abstract member MyMember: unit -> int
-
-let x = { new _ with member this.MyMember() = 42 }
-        """
-         |> withLangVersionPreview
-         |> typecheck
-         |> shouldFail
-         |> withDiagnostics [
-             (Error 772, Line 5, Col 11, Line 5, Col 16, "'new' must be used with a named type")
-         ]       
-         
+  
     [<Fact>]
     let ``Object expression implementing an interface without members`` () =
         Fsx """
@@ -45,7 +30,7 @@ type IFirst = interface end
 
 let implementer() ={ new IFirst  }
         """
-         |> withLangVersion80
+         |> withLangVersion90
          |> typecheck
          |> shouldSucceed
 
@@ -68,7 +53,7 @@ type MyClass() = class end
   interface ISecond with
       member this.M() = () } |> ignore
         """
-         |> withLangVersion80
+         |> withLangVersion90
          |> typecheck
          |> shouldSucceed
          
@@ -88,7 +73,7 @@ type MyClass() = class end
   interface ISecond with
       member this.M() = () } |> ignore
         """
-         |> withLangVersion80
+         |> withLangVersion90
          |> typecheck
          |> shouldSucceed
          
@@ -109,7 +94,7 @@ type MyClass() = class end
   interface ISecond with
       member this.M() = () } |> ignore
         """
-         |> withLangVersion80
+         |> withLangVersion90
          |> typecheck
          |> shouldSucceed
          
@@ -129,46 +114,12 @@ type MyClass() =
 let expr = { new MyClass() interface IFirst }
 (expr:> ISecond).M()
         """
-         |> withLangVersion80
+         |> withLangVersion90
          |> compileExeAndRun
          |> shouldSucceed
          |> withStdOutContainsAllInOrder [
            "It works"
         ]
-         
-    [<Fact>]
-    let ``Verifies that the object expression built type has the interface in preview lang version.`` () =
-        Fsx """
-type IFirst = interface end
-
-type ISecond =
-    abstract member M : unit -> unit
-
-[<AbstractClass>]
-type MyClass() =
-    interface ISecond with
-        member this.M() = printfn "It works"
-
-let expr = { new MyClass() }
-(expr:> ISecond).M()
-        """
-         |> withLangVersionPreview
-         |> compileExeAndRun
-         |> shouldSucceed
-         |> withStdOutContainsAllInOrder [
-           "It works"
-        ]
-         
-    [<Fact>]
-    let ``Object expression implementing an interface without members preview`` () =
-        Fsx """
-type IFirst = interface end
-
-let implementer() ={ new IFirst  }
-        """
-         |> withLangVersionPreview
-         |> typecheck
-         |> shouldSucceed
          
     [<Fact>]
     let ``Parameterized object expression implementing an interface with members`` () =
@@ -189,30 +140,7 @@ let implSomeDU someDu =
           | B b -> b
           | C c -> string c }
         """
-         |> withLangVersion80
-         |> typecheck
-         |> shouldSucceed
-         
-    [<Fact>]
-    let ``Parameterized object expression implementing an interface with members preview`` () =
-        Fsx """
-type AsString =
-  abstract member asString: unit -> string
-
-type SomeDu =
-  | A of int
-  | B of string
-  | C of float
-
-let implSomeDU someDu = 
-  { new AsString with
-      member self.asString () =
-          match someDu with
-          | A a -> string a
-          | B b -> b
-          | C c -> string c }
-        """
-         |> withLangVersionPreview
+         |> withLangVersion90
          |> typecheck
          |> shouldSucceed
          
@@ -229,7 +157,7 @@ let foo1 = new Foo()
 // hacky workaround
 let foo2 = { new Foo() with member __.ToString() = base.ToString() }
         """
-         |> withLangVersion80
+         |> withLangVersion90
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
@@ -246,7 +174,7 @@ type AbstractClass() =
     
 let res = { new AbstractClass() }
         """
-         |> withLangVersion80
+         |> withLangVersion90
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
@@ -263,26 +191,12 @@ type AbstractClass() =
     
 let res = { new AbstractClass() }
         """
-         |> withLangVersion80
+         |> withLangVersion90
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
              (Error 738, Line 7, Col 11, Line 7, Col 34, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
          ]
-         
-    [<Fact>]
-    let ``Object expression can implement an abstract class having abstract members with default implementation preview`` () =
-        Fsx """
-[<AbstractClass>]
-type AbstractClass() =
-    abstract member M : unit -> unit
-    default this.M() = printfn "Im a default implementation"
-    
-let res = { new AbstractClass() }
-        """
-         |> withLangVersionPreview
-         |> typecheck
-         |> shouldSucceed
 
     [<Fact>]
     let ``Object expression can implement an abstract class(overriding a member) having abstract members with default implementation`` () =
@@ -295,22 +209,7 @@ type AbstractClass() =
 let res = { new AbstractClass() with
                 override this.ToString() = "ConcreteMethod" }
         """
-         |> withLangVersion80
-         |> typecheck
-         |> shouldSucceed
-
-    [<Fact>]
-    let ``Object expression can implement an abstract class(overriding a member) having abstract members with default implementation preview`` () =
-        Fsx """
-[<AbstractClass>]
-type AbstractClass() =
-    abstract member M : unit -> unit
-    default this.M() = printfn "Im a default implementation"
-    
-let res = { new AbstractClass() with
-                override this.ToString() = "ConcreteMethod" }
-        """
-         |> withLangVersionPreview
+         |> withLangVersion90
          |> typecheck
          |> shouldSucceed
          
@@ -324,59 +223,13 @@ type AbstractClass() =
     
 let res = { new AbstractClass() }
         """
-         |> withLangVersion80
+         |> withLangVersion90
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
             (Error 365, Line 7, Col 11, Line 7, Col 34, "No implementation was given for 'abstract AbstractClass.M: unit -> unit'");
             (Error 738, Line 7, Col 11, Line 7, Col 34, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
          ]
-         
-    [<Fact>]
-    let ``Object expression can implement an abstract class having no abstract members preview`` () =
-        Fsx """
-[<AbstractClass>]
-type AbstractClass() =
-    do printfn "AbstractClass constructor"
-    
-let res = { new AbstractClass() }
-        """
-        |> withLangVersionPreview
-        |> compileExeAndRun
-        |> withStdOutContainsAllInOrder [
-            "AbstractClass constructor"
-        ]
-        
-    [<Fact>]
-    let ``Object expression can not implement an abstract class having abstract members preview.`` () =
-        Fsx """
-[<AbstractClass>]
-type AbstractClass() =
-    do printfn "AbstractClass constructor"
-    abstract member M : unit -> unit
-    
-let res = { new AbstractClass() }
-        """
-         |> withLangVersionPreview
-         |> typecheck
-         |> shouldFail
-         |> withDiagnostics [
-             (Error 365, Line 7, Col 11, Line 7, Col 34, "No implementation was given for 'abstract AbstractClass.M: unit -> unit'")
-         ]
-
-    [<Fact>]
-    let ``Object expression can implement an abstract class having no abstract members in preview lang version.`` () =
-        Fsx """
-[<AbstractClass>]
-type Foo() = class end
-
-let foo = { new Foo() }
-
-let foo2 = { new Foo() with member __.ToString() = base.ToString() }
-        """
-         |> withLangVersionPreview
-         |> typecheck
-         |> shouldSucceed
       
     [<Fact>]
     let ``Object expression can implement an abstract class and interface having no abstract members.`` () =
@@ -391,46 +244,9 @@ type MyClass() = class end
     
   interface IFirst } |> ignore
         """
-         |> withLangVersion80
+         |> withLangVersion90
          |> typecheck
          |> shouldSucceed
-         
-    [<Fact>]
-    let ``Object expression can not implement an abstract class and interface having no abstract members preview`` () =
-        Fsx """
-type IFirst = interface end
-
-[<AbstractClass>]
-type MyClass() = class end
-
-{ new MyClass() with
-    member x.ToString() = "OK"
-    
-  interface IFirst } |> ignore
-        """
-         |> withLangVersionPreview
-         |> typecheck
-         |> shouldSucceed
-         
-    [<Fact>]
-    let ``Object expression can implement an abstract class having no abstract members.`` () =
-        Fsx """
-[<AbstractClass>]
-type Foo() = class end
-
-let foo = { new Foo() }
-
-let foo1 = new Foo()
-
-// hacky workaround
-let foo2 = { new Foo() with member __.ToString() = base.ToString() }
-        """
-         |> withLangVersionPreview
-         |> typecheck
-         |> shouldFail
-         |> withDiagnostics [
-             (Error 759, Line 7, Col 12, Line 7, Col 21, "Instances of this type cannot be created since it has been marked abstract or not all methods have been given implementations. Consider using an object expression '{ new ... with ... }' instead.")
-         ]
 
     [<Fact>]
     let ``Object expression shows error when object expression does not implement all abstract members of the abstract class`` () =
@@ -446,34 +262,13 @@ type MyClass() =
 
 let res = { new MyClass() }
         """
-         |> withLangVersion80
+         |> withLangVersion90
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
             (Error 365, Line 11, Col 11, Line 11, Col 28, "No implementation was given for 'abstract MyClass.M: unit -> unit'");
             (Error 738, Line 11, Col 11, Line 11, Col 28, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
          ] 
-
-    [<Fact>]
-    let ``Object expression shows error when object expression does not implement all abstract members of the abstract class preview`` () =
-        Fsx """
-type ISecond =
-    abstract member M : unit -> unit
-    
-[<AbstractClass>]
-type MyClass() =
-    abstract member M : unit -> unit
-    interface ISecond with
-        member this.M() = printfn "It works"
-
-let res = { new MyClass() }
-        """
-         |> withLangVersionPreview
-         |> typecheck
-         |> shouldFail
-         |> withDiagnostics [
-             (Error 365, Line 11, Col 11, Line 11, Col 28, "No implementation was given for 'abstract MyClass.M: unit -> unit'")
-         ]
          
     [<Fact>]
     let ``C# abstract class with protected constructor can not be implemented by F# object expression`` () =
@@ -503,7 +298,7 @@ open CSLib
 
 let res = { new Animal() }
 """
-            |> withLangVersion80
+            |> withLangVersion90
             |> withName "FSLib"
             |> withReferences [ csharp ]
 
@@ -513,46 +308,9 @@ let res = { new Animal() }
         |> withDiagnostics [
             (Error 738, Line 5, Col 11, Line 5, Col 27, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
         ]
-
+        
     [<Fact>]
-    let ``C# abstract class with protected constructor can be implemented by F# object expression lang version preview`` () =
-
-        let csharp =
-            CSharp
-                """
-namespace CSLib
-{
-    using System;
-    public abstract class Animal
-    {
-        protected Animal()
-        {
-            Console.WriteLine("Animal is created");
-        }
-    }
-}
-"""
-            |> withName "CSLib"
-
-        let fsharp =
-            FSharp
-                """
-module FSLib
-open CSLib
-
-let res = { new Animal() }
-"""
-            |> withLangVersionPreview
-            |> withName "FSLib"
-            |> withReferences [ csharp ]
-
-        fsharp
-        |> compile
-        |> shouldSucceed
-         
-    [<Fact>]
-    let ``C# abstract class with protected constructor and abstract method can not be implemented by F# object expression unless the abstract method is implemented in lang version preview.`` () =
-
+    let ``C# abstract class with protected constructor and abstract method and default implementation can be implemented by F# object expression unless the abstract method is implemented.`` () =
         let csharp =
             CSharp
                 """
@@ -580,7 +338,7 @@ open CSLib
 
 let res = { new Animal() }
 """
-            |> withLangVersionPreview
+            |> withLangVersion90
             |> withName "FSLib"
             |> withReferences [ csharp ]
 
@@ -588,12 +346,12 @@ let res = { new Animal() }
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 365, Line 5, Col 11, Line 5, Col 27, "No implementation was given for 'Animal.M() : unit'")
+            (Error 365, Line 5, Col 11, Line 5, Col 27, "No implementation was given for 'Animal.M() : unit'");
+            (Error 738, Line 5, Col 11, Line 5, Col 27, "Invalid object expression. Objects without overrides or interfaces should use the expression form 'new Type(args)' without braces.")
         ]
         
     [<Fact>]
     let ``C# abstract class with protected constructor and abstract method can not be implemented by F# object expression unless the abstract method is implemented.`` () =
-
         let csharp =
             CSharp
                 """
@@ -621,7 +379,7 @@ open CSLib
 
 let res = { new Animal() }
 """
-            |> withLangVersion80
+            |> withLangVersion90
             |> withName "FSLib"
             |> withReferences [ csharp ]
 
@@ -650,7 +408,7 @@ and [<AbstractClass>]
 let y = { new C() with 
               member x.M(a:int) : float  = 1.0 }
         """
-         |> withLangVersion80
+         |> withLangVersion90
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
@@ -658,31 +416,6 @@ let y = { new C() with
              (Error 365, Line 13, Col 9, Line 14, Col 49, "No implementation was given for 'abstract B.M: string -> unit'")
          ]
 
-    [<Fact>]
-    let ``Error when object expression does not implement all abstract members of the abstract class preview`` () =
-        Fsx """
-[<AbstractClass>]
-type B() = 
-    abstract M : int -> float
-    abstract M : string -> unit
-and [<AbstractClass>]
-    C() = 
-    inherit B()
-    static let v = { new C() with 
-                         member x.M(a:int) : float  = 1.0 }
-    default x.M(a:int) : float  = 1.0
-    
-let y = { new C() with 
-              member x.M(a:int) : float  = 1.0 }
-        """
-         |> withLangVersionPreview
-         |> typecheck
-         |> shouldFail
-         |> withDiagnostics [
-             (Error 365, Line 9, Col 20, Line 10, Col 60, "No implementation was given for 'abstract B.M: string -> unit'")
-             (Error 365, Line 13, Col 9, Line 14, Col 49, "No implementation was given for 'abstract B.M: string -> unit'")
-         ]
-         
     [<Fact>]
     let ``Error when object expression does not implement all abstract members of a generic abstract class`` () =
         Fsx """
@@ -699,30 +432,7 @@ let f() = { new BaseHashtable<_,_>(2) with
             override this.Next entries = 1
           }
         """
-         |> withLangVersion80
-         |> typecheck
-         |> shouldFail
-         |> withDiagnostics [
-             (Error 359, Line 10, Col 11, Line 13, Col 12, "More than one override implements 'Next: StrongToWeakEntry<'a> array -> int when 'a: not struct'")
-         ]
-         
-    [<Fact>]
-    let ``Error when object expression does not implement all abstract members of a generic abstract class preview`` () =
-        Fsx """
-[<AbstractClass>]
-type BaseHashtable<'Entry, 'Key>(initialCapacity) =
-    abstract member Next : entries : 'Entry array -> int
-
-[<Struct>]    
-type StrongToWeakEntry<'Value when 'Value : not struct> =
-    val mutable public next : int
-
-let f() = { new BaseHashtable<_,_>(2) with
-            override this.Next (entries:StrongToWeakEntry<_> array) = 1
-            override this.Next entries = 1
-          }
-        """
-         |> withLangVersionPreview
+         |> withLangVersion90
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
@@ -765,7 +475,7 @@ let implSomeDU =
             | B b -> b
             | C c -> string c}
         """
-         |> withLangVersion80
+         |> withLangVersion90
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
@@ -805,7 +515,7 @@ let implementer() =
         member this.F() = ()
         member this.G() = () }
         """
-         |> withLangVersion80
+         |> withLangVersion90
          |> typecheck
          |> shouldSucceed
          
@@ -823,7 +533,7 @@ let objExpr =
         member this.Execute1() = false
         member this.Property = 0 }
         """
-         |> withLangVersion80
+         |> withLangVersion90
          |> typecheck
          |> shouldSucceed
 
@@ -840,7 +550,7 @@ let objExpr =
         member _.Execute2() = () }
         """
          |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
-         |> withLangVersion80
+         |> withLangVersion90
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
@@ -863,7 +573,7 @@ let _ =
     }
         """
          |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
-         |> withLangVersion80
+         |> withLangVersion90
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
@@ -885,7 +595,7 @@ let _ =
     }
         """
          |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
-         |> withLangVersion80
+         |> withLangVersion90
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
@@ -912,7 +622,7 @@ let _ =
     }
         """
          |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
-         |> withLangVersion80
+         |> withLangVersion90
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
@@ -937,7 +647,7 @@ let consoleLogger =
 consoleLogger.Log("Hello World")
         """
          |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
-         |> withLangVersion80
+         |> withLangVersion90
          |> compile
          |> shouldFail
          |> withSingleDiagnostic (Error 3860, Line 7, Col 11, Line 7, Col 18, "Object expressions cannot implement interfaces with static abstract members or declare static members.")
@@ -959,7 +669,7 @@ let consoleLogger =
 consoleLogger.Log("Hello World")
         """
          |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
-         |> withLangVersion80
+         |> withLangVersion90
          |> compile
          |> shouldFail
          |> withSingleDiagnostic (Error 3860, Line 8, Col 11, Line 8, Col 18, "Object expressions cannot implement interfaces with static abstract members or declare static members.")
@@ -980,7 +690,7 @@ let consoleLogger =
     
 consoleLogger.Log("Hello World")
         """
-         |> withLangVersion80
+         |> withLangVersion90
          |> compileExeAndRun
          |> shouldSucceed
 
@@ -1011,3 +721,261 @@ Please restrict it to one of the following:
             (Error 358, Line 8, Col 19, Line 8, Col 29, "The override for 'Overloaded: string -> bool' was ambiguous")
             (Error 783, Line 7, Col 11, Line 7, Col 19, "At least one override did not correctly implement its corresponding abstract member")
         ]
+    
+module AllowObjectExpressionWithoutOverrides =
+    [<Fact>]
+    let ``Object expression cannot implement unnamed interface`` () =
+        Fsx """
+type IFirst =
+    abstract member MyMember: unit -> int
+
+let x = { new _ with member this.MyMember() = 42 }
+        """
+         |> withLangVersionPreview
+         |> typecheck
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 772, Line 5, Col 11, Line 5, Col 16, "'new' must be used with a named type")
+         ]
+         
+    [<Fact>]
+    let ``Verifies that the object expression built type has the interface`` () =
+        Fsx """
+type IFirst = interface end
+
+type ISecond =
+    abstract member M : unit -> unit
+
+[<AbstractClass>]
+type MyClass() =
+    interface ISecond with
+        member this.M() = printfn "It works"
+
+let expr = { new MyClass() }
+(expr:> ISecond).M()
+        """
+         |> withLangVersionPreview
+         |> compileExeAndRun
+         |> shouldSucceed
+         |> withStdOutContainsAllInOrder [
+           "It works"
+        ]
+         
+    [<Fact>]
+    let ``Object expression implementing an interface without members`` () =
+        Fsx """
+type IFirst = interface end
+
+let implementer() ={ new IFirst  }
+        """
+         |> withLangVersionPreview
+         |> typecheck
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Object expression can implement an abstract class having abstract members with default implementation`` () =
+        Fsx """
+[<AbstractClass>]
+type AbstractClass() =
+    abstract member M : unit -> unit
+    default this.M() = printfn "Im a default implementation"
+    
+let res = { new AbstractClass() }
+        """
+         |> withLangVersionPreview
+         |> typecheck
+         |> shouldSucceed
+
+    [<Fact>]
+    let ``Object expression can implement an abstract class(overriding a member) having abstract members with default implementation`` () =
+        Fsx """
+[<AbstractClass>]
+type AbstractClass() =
+    abstract member M : unit -> unit
+    default this.M() = printfn "Im a default implementation"
+    
+let res = { new AbstractClass() with
+                override this.ToString() = "ConcreteMethod" }
+        """
+         |> withLangVersionPreview
+         |> typecheck
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Object expression can implement an abstract class with a protected constructor`` () =
+        Fsx """
+[<AbstractClass>]
+type AbstractClass() =
+    do printfn "AbstractClass constructor"
+    
+let res = { new AbstractClass() }
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> withStdOutContainsAllInOrder [
+            "AbstractClass constructor"
+        ]
+        
+    [<Fact>]
+    let ``Object expression can not implement an abstract class having abstract members, unless the abstract members are implemented`` () =
+        Fsx """
+[<AbstractClass>]
+type AbstractClass() =
+    do printfn "AbstractClass constructor"
+    abstract member M : unit -> unit
+    
+let res = { new AbstractClass() }
+        """
+         |> withLangVersionPreview
+         |> typecheck
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 365, Line 7, Col 11, Line 7, Col 34, "No implementation was given for 'abstract AbstractClass.M: unit -> unit'")
+         ]
+
+    [<Fact>]
+    let ``Object expression can implement an abstract class having no abstract members, only if the object expression has an override`` () =
+        Fsx """
+[<AbstractClass>]
+type Foo() = class end
+
+let foo = { new Foo() }
+
+let foo2 = { new Foo() with member __.ToString() = base.ToString() }
+        """
+         |> withLangVersionPreview
+         |> typecheck
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Object expression can not implement an abstract class and interface having no abstract members`` () =
+        Fsx """
+type IFirst = interface end
+
+[<AbstractClass>]
+type MyClass() = class end
+
+{ new MyClass() with
+    member x.ToString() = "OK"
+    
+  interface IFirst } |> ignore
+        """
+         |> withLangVersionPreview
+         |> typecheck
+         |> shouldSucceed
+         
+    [<Fact>]
+    let ``Object expression can implement an abstract class having no abstract members. But trying to instantiate an abstract class will fail`` () =
+        Fsx """
+[<AbstractClass>]
+type Foo() = class end
+
+let foo = { new Foo() }
+
+let foo1 = new Foo()
+        """
+         |> withLangVersionPreview
+         |> typecheck
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 759, Line 7, Col 12, Line 7, Col 21, "Instances of this type cannot be created since it has been marked abstract or not all methods have been given implementations. Consider using an object expression '{ new ... with ... }' instead.")
+         ]
+         
+    [<Fact>]
+    let ``Object expression shows error when object expression does not implement all abstract members of the abstract class`` () =
+        Fsx """
+type ISecond =
+    abstract member M : unit -> unit
+    
+[<AbstractClass>]
+type MyClass() =
+    abstract member M : unit -> unit
+    interface ISecond with
+        member this.M() = printfn "It works"
+
+let res = { new MyClass() }
+        """
+         |> withLangVersionPreview
+         |> typecheck
+         |> shouldFail
+         |> withDiagnostics [
+             (Error 365, Line 11, Col 11, Line 11, Col 28, "No implementation was given for 'abstract MyClass.M: unit -> unit'")
+         ]  
+
+    [<Fact>]
+    let ``C# abstract class with protected constructor can be implemented by F# object expression`` () =
+
+        let csharp =
+            CSharp
+                """
+namespace CSLib
+{
+    using System;
+    public abstract class Animal
+    {
+        protected Animal()
+        {
+            Console.WriteLine("Animal is created");
+        }
+    }
+}
+"""
+            |> withName "CSLib"
+
+        let fsharp =
+            FSharp
+                """
+module FSLib
+open CSLib
+
+let res = { new Animal() }
+"""
+            |> withLangVersionPreview
+            |> withName "FSLib"
+            |> withReferences [ csharp ]
+
+        fsharp
+        |> compile
+        |> shouldSucceed
+        
+    [<Fact>]
+    let ``C# abstract class with protected constructor and abstract method can not be implemented by F# object expression unless the abstract method is implemented`` () =
+
+        let csharp =
+            CSharp
+                """
+namespace CSLib
+{
+    using System;
+    public abstract class Animal
+    {
+        protected Animal()
+        {
+            Console.WriteLine("Animal is created");
+        }
+        
+        public abstract void M();
+    }
+}
+"""
+            |> withName "CSLib"
+
+        let fsharp =
+            FSharp
+                """
+module FSLib
+open CSLib
+
+let res = { new Animal() }
+"""
+            |> withLangVersionPreview
+            |> withName "FSLib"
+            |> withReferences [ csharp ]
+
+        fsharp
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 365, Line 5, Col 11, Line 5, Col 27, "No implementation was given for 'Animal.M() : unit'")
+        ]
+         
