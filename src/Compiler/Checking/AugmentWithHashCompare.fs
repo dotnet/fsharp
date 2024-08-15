@@ -81,6 +81,9 @@ let mkGetHashCodeSlotSig (g: TcGlobals) =
 let mkEqualsSlotSig (g: TcGlobals) =
     TSlotSig("Equals", g.obj_ty_noNulls, [], [], [ [ TSlotParam(Some("obj"), g.obj_ty_withNulls, false, false, false, []) ] ], Some g.bool_ty)
 
+let mkToStringSlotSig (g: TcGlobals) =
+    TSlotSig("ToString", g.obj_ty_noNulls, [], [], [ [] ], Some g.string_ty)
+
 //-------------------------------------------------------------------------
 // Helpers associated with code-generation of comparison/hash augmentations
 //-------------------------------------------------------------------------
@@ -111,6 +114,9 @@ let mkEqualsWithComparerTyExact g ty =
 
 let mkHashTy g ty =
     mkFunTy g (mkThisTy g ty) (mkFunTy g g.unit_ty g.int_ty)
+
+let mkToStringTy g ty =
+    mkFunTy g (mkThisTy g ty) (mkFunTy g g.unit_ty g.string_ty)
 
 let mkHashWithComparerTy g ty =
     mkFunTy g (mkThisTy g ty) (mkFunTy g g.IEqualityComparer_ty g.int_ty)
@@ -1683,14 +1689,22 @@ let MakeValsForUnionAugmentation g (tcref: TyconRef) =
     let vis = tcref.TypeReprAccessibility
     let tps = tcref.Typars m
 
-    tcref.UnionCasesAsList
-    |> List.map (fun uc ->
-        // Unlike other generated items, the 'IsABC' propeties are visible, not considered compiler-generated
-        let v =
-            mkImpliedValSpec g uc.Range tcref tmty vis None ("get_Is" + uc.CompiledName) (tps +-> (mkIsCaseTy g tmty)) unitArg true
+    let isTesters = 
 
-        g.AddValGeneratedAttributes v m
-        v)
+        tcref.UnionCasesAsList
+        |> List.map (fun uc ->
+            // Unlike other generated items, the 'IsABC' propeties are visible, not considered compiler-generated
+            let v =
+                mkImpliedValSpec g uc.Range tcref tmty vis None ("get_Is" + uc.CompiledName) (tps +-> (mkIsCaseTy g tmty)) unitArg true
+
+            g.AddValGeneratedAttributes v m
+            v)
+
+    let toString =
+        mkValSpec g tcref tmty vis (Some(mkToStringSlotSig g)) "ToString" (tps +-> (mkToStringTy g tmty)) unitArg false
+
+
+    [ yield toString;yield! isTesters]
 
 let MakeBindingsForUnionAugmentation g (tycon: Tycon) (vals: ValRef list) =
     let tcref = mkLocalTyconRef tycon
@@ -1700,7 +1714,9 @@ let MakeBindingsForUnionAugmentation g (tycon: Tycon) (vals: ValRef list) =
     let thisv, thise = mkThisVar g m ty
     let unitv, _ = mkCompGenLocal m "unitArg" g.unit_ty
 
-    (tcref.UnionCasesAsRefList, vals)
+    let _ToStringVal,isVals = List.headAndTail vals
+
+    (tcref.UnionCasesAsRefList, isVals)
     ||> List.map2 (fun ucr v ->
         let isdata = mkUnionCaseTest g (thise, ucr, tinst, m)
         let expr = mkLambdas g m tps [ thisv; unitv ] (isdata, g.bool_ty)

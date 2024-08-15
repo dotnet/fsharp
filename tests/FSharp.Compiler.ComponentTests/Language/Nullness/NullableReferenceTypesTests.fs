@@ -8,6 +8,7 @@ let withNullnessOptions cu =
     |> withCheckNulls
     |> withWarnOn 3261
     |> withWarnOn 3262
+    |> withNoWarn 52 //The value has been copied to ensure the original..
     |> withOptions ["--warnaserror+"]
 
 let typeCheckWithStrictNullness cu =
@@ -294,6 +295,27 @@ let onlyWantNotNullString(x:string) = ()
 let processBool (b:bool) : string =
     let asString = b.ToString()  
     asString
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Theory>]
+[<InlineData("A | B ")>]
+[<InlineData("{F : int} ")>]
+[<InlineData(" {| F : string |} ")>]
+[<InlineData(" (struct{| F : string |}) ")>]
+[<InlineData(" int * string ")>]
+[<InlineData(" (struct(string * int)) ")>]
+let ``Generated ToString() methods are not nullable`` (myTypeDef) = 
+    FSharp $"""module MyLibrary
+
+type MyCustomType = {myTypeDef}
+
+let onlyWantNotNullString(x:string) = ()
+
+let processBool (x:MyCustomType) =
+    onlyWantNotNullString(x.ToString())
 """
     |> asLibrary
     |> typeCheckWithStrictNullness
