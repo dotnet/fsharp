@@ -44,11 +44,16 @@ let posOfLexOriginalPosition (p: Position) = mkPos p.OriginalLine p.Column
 
 /// Get an F# compiler range from a lexer range
 let mkSynRange (p1: Position) (p2: Position) =
-    if p1.OriginalFileIndex <> p1.FileIndex || p1.OriginalLine <> p2.Line then
+    if p1.OriginalFileIndex <> p1.FileIndex || p1.OriginalLine <> p1.Line then
         mkFileIndexRangeWithOriginRange
-            p1.FileIndex (posOfLexPosition p1) (posOfLexPosition p2)
-            p1.OriginalFileIndex (posOfLexOriginalPosition p1) (posOfLexOriginalPosition p2)
-    else mkFileIndexRange p1.FileIndex (posOfLexPosition p1) (posOfLexPosition p2)
+            p1.FileIndex
+            (posOfLexPosition p1)
+            (posOfLexPosition p2)
+            p1.OriginalFileIndex
+            (posOfLexOriginalPosition p1)
+            (posOfLexOriginalPosition p2)
+    else
+        mkFileIndexRange p1.FileIndex (posOfLexPosition p1) (posOfLexPosition p2)
 
 type LexBuffer<'Char> with
 
