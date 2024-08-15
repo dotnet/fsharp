@@ -11,13 +11,16 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open Internal.Utilities.Library.ResultOrException
-open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler
+open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CheckComputationExpressions
 open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckSequenceExpressions
+open FSharp.Compiler.CheckArrayOrListComputedExpressions
 open FSharp.Compiler.CheckBasics
+open FSharp.Compiler.CheckExpressionsOps
 open FSharp.Compiler.CheckIncrementalClasses
 open FSharp.Compiler.CheckPatterns
 open FSharp.Compiler.ConstraintSolver
@@ -413,6 +416,7 @@ let private CheckDuplicatesAbstractMethodParmsSig (typeSpecs:  SynTypeDefnSig li
         | _ -> ()
         
 module TcRecdUnionAndEnumDeclarations =
+    open CheckExpressionsOps
 
     let CombineReprAccess parent vis = 
         match parent with 
@@ -428,6 +432,7 @@ module TcRecdUnionAndEnumDeclarations =
         let g = cenv.g
         let m = id.idRange
         let attrs, _ = TcAttributesWithPossibleTargets false cenv env AttributeTargets.FieldDecl synAttrs
+
         let attrsForProperty, attrsForField = attrs |> List.partition (fun (attrTargets, _) -> (attrTargets &&& AttributeTargets.Property) <> enum 0) 
         let attrsForProperty = (List.map snd attrsForProperty) 
         let attrsForField = (List.map snd attrsForField)
@@ -495,18 +500,26 @@ module TcRecdUnionAndEnumDeclarations =
             if not (String.isLeadingIdentifierCharacterUpperCase name) && name <> opNameCons && name <> opNameNil then
                 errorR(NotUpperCaseConstructor(id.idRange))
 
-    let ValidateFieldNames (synFields: SynField list, tastFields: RecdField list) = 
+    let private CheckUnionDuplicateFields (elems: Ident list) =
+        elems |> List.iteri (fun i (uc1: Ident) -> 
+            elems |> List.iteri (fun j (uc2: Ident) -> 
+                if j > i && uc1.idText = uc2.idText then 
+                   errorR(Error(FSComp.SR.tcFieldNameIsUsedModeThanOnce(uc1.idText), uc1.idRange))))
+
+    let ValidateFieldNames (synFields: SynField list, tastFields: RecdField list) =
+        let fields = synFields |> List.choose (function SynField(idOpt = Some ident) -> Some ident | _ -> None)
+        if fields.Length > 1 then
+            CheckUnionDuplicateFields fields
+        
         let seen = Dictionary()
         (synFields, tastFields) ||> List.iter2 (fun sf f ->
             match seen.TryGetValue f.LogicalName with
             | true, synField ->
                 match sf, synField with
-                | SynField(idOpt = Some id), SynField(idOpt = Some _) ->
-                    error(Error(FSComp.SR.tcFieldNameIsUsedModeThanOnce(id.idText), id.idRange))
                 | SynField(idOpt = Some id), SynField(idOpt = None)
                 | SynField(idOpt = None), SynField(idOpt = Some id) ->
-                    error(Error(FSComp.SR.tcFieldNameConflictsWithGeneratedNameForAnonymousField(id.idText), id.idRange))
-                | _ -> assert false
+                    errorR(Error(FSComp.SR.tcFieldNameConflictsWithGeneratedNameForAnonymousField(id.idText), id.idRange))
+                | _ -> ()
             | _ ->
                 seen.Add(f.LogicalName, sf))
                 
@@ -611,7 +624,7 @@ module TcRecdUnionAndEnumDeclarations =
         | _ ->
             let expr, actualTy, _ = TcExprOfUnknownType cenv env tpenv valueExpr
             UnifyTypes cenv env valueRange fieldTy actualTy
-            
+
             match EvalLiteralExprOrAttribArg cenv.g expr with
             | Expr.Const (konst, _, _) -> MakeEnumCaseSpec g cenv env parent attrs thisTy caseRange id xmldoc konst
             | _ -> error(Error(FSComp.SR.tcInvalidEnumerationLiteral(), valueRange))
@@ -776,7 +789,7 @@ module AddAugmentationDeclarations =
             let tcaug = tycon.TypeContents
             let ty = if tcref.Deref.IsFSharpException then g.exn_ty else generalizedTyconRef g tcref
             let m = tycon.Range
-            let genericIComparableTy = mkAppTy g.system_GenericIComparable_tcref [ty]
+            let genericIComparableTy = mkWoNullAppTy g.system_GenericIComparable_tcref [ty]
 
 
             let hasExplicitIComparable = tycon.HasInterface g g.mk_IComparable_ty 
@@ -866,7 +879,7 @@ module AddAugmentationDeclarations =
             let m = tycon.Range
 
             // Note: tycon.HasOverride only gives correct results after we've done the type augmentation 
-            let hasExplicitObjectEqualsOverride = tycon.HasOverride g "Equals" [g.obj_ty]
+            let hasExplicitObjectEqualsOverride = tycon.HasOverride g "Equals" [g.obj_ty_ambivalent]
             let hasExplicitGenericIEquatable = tcaugHasNominalInterface g tcaug g.system_GenericIEquatable_tcref
 
             if hasExplicitGenericIEquatable then 
@@ -880,7 +893,7 @@ module AddAugmentationDeclarations =
                  let vspec1, vspec2 = AugmentTypeDefinitions.MakeValsForEqualsAugmentation g tcref
                  tcaug.SetEquals (mkLocalValRef vspec1, mkLocalValRef vspec2)
                  if not tycon.IsFSharpException then 
-                    PublishInterface cenv env.DisplayEnv tcref m true (mkAppTy g.system_GenericIEquatable_tcref [ty])
+                    PublishInterface cenv env.DisplayEnv tcref m true (mkWoNullAppTy g.system_GenericIEquatable_tcref [ty])
                  PublishValueDefn cenv env ModuleOrMemberBinding vspec1
                  PublishValueDefn cenv env ModuleOrMemberBinding vspec2
                  AugmentTypeDefinitions.MakeBindingsForEqualsAugmentation g tycon
@@ -1591,7 +1604,7 @@ module MutRecBindingChecking =
                             if tcref.IsStructOrEnumTycon then 
                                 Some (incrCtorInfo, mkUnit g tcref.Range, false), defnCs
                             else
-                                let inheritsExpr, _ = TcNewExpr cenv envForDecls tpenv g.obj_ty None true (SynExpr.Const (SynConst.Unit, tcref.Range)) tcref.Range
+                                let inheritsExpr, _ = TcNewExpr cenv envForDecls tpenv g.obj_ty_noNulls None true (SynExpr.Const (SynConst.Unit, tcref.Range)) tcref.Range
 
                                 // If there is no 'inherits' and no simple non-static 'let' of a non-method then add a debug point at the entry to the constructor over the type name itself.
                                 let addDebugPointAtImplicitCtorArguments =
@@ -1973,8 +1986,8 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
                   
                   if (generatedCompareToValues && typeEquiv g intfTyR g.mk_IComparable_ty) || 
                       (generatedCompareToWithComparerValues && typeEquiv g intfTyR g.mk_IStructuralComparable_ty) ||
-                      (generatedCompareToValues && typeEquiv g intfTyR (mkAppTy g.system_GenericIComparable_tcref [ty])) ||
-                      (generatedHashAndEqualsWithComparerValues && typeEquiv g intfTyR (mkAppTy g.system_GenericIEquatable_tcref [ty])) ||
+                      (generatedCompareToValues && typeEquiv g intfTyR (mkWoNullAppTy g.system_GenericIComparable_tcref [ty])) ||
+                      (generatedHashAndEqualsWithComparerValues && typeEquiv g intfTyR (mkWoNullAppTy g.system_GenericIEquatable_tcref [ty])) ||
                       (generatedHashAndEqualsWithComparerValues && typeEquiv g intfTyR g.mk_IStructuralEquatable_ty) then
                       errorR(Error(FSComp.SR.tcDefaultImplementationForInterfaceHasAlreadyBeenAdded(), intfTy.Range))
            
@@ -2840,6 +2853,7 @@ module EstablishTypeDefinitionCores =
         // Allow failure of constructor resolution because Vals for members in the same recursive group are not yet available
         let attrs, getFinalAttrs = TcAttributesCanFail cenv envinner AttributeTargets.TyconDecl synAttrs
         let hasMeasureAttr = HasFSharpAttribute g g.attrib_MeasureAttribute attrs
+        let hasStructAttr = HasFSharpAttribute g g.attrib_StructAttribute attrs
 
         let isStructRecordOrUnionType = 
             match synTyconRepr with
@@ -2877,6 +2891,12 @@ module EstablishTypeDefinitionCores =
 
                 // Run InferTyconKind to raise errors on inconsistent attribute sets
                 InferTyconKind g (SynTypeDefnKind.Union, attrs, [], [], inSig, true, m) |> ignore
+                
+                if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
+                    if hasStructAttr then
+                        TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Struct synAttrs |> ignore
+                    else
+                        TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Class synAttrs |> ignore
 
                 // Note: the table of union cases is initially empty
                 Construct.MakeUnionRepr []
@@ -2896,6 +2916,12 @@ module EstablishTypeDefinitionCores =
 
                 // Run InferTyconKind to raise errors on inconsistent attribute sets
                 InferTyconKind g (SynTypeDefnKind.Record, attrs, [], [], inSig, true, m) |> ignore
+                
+                if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
+                    if hasStructAttr then
+                        TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Struct synAttrs |> ignore
+                    else
+                        TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Class synAttrs |> ignore
 
                 // Note: the table of record fields is initially empty
                 TFSharpTyconRepr (Construct.NewEmptyFSharpTyconData TFSharpRecord)
@@ -3297,7 +3323,7 @@ module EstablishTypeDefinitionCores =
                           if isTyparTy g ty then 
                               if firstPass then 
                                   errorR(Error(FSComp.SR.tcCannotInheritFromVariableType(), m)) 
-                              Some g.obj_ty // a "super" that is a variable type causes grief later
+                              Some g.obj_ty_noNulls // a "super" that is a variable type causes grief later
                           else                          
                               Some ty 
                       | _ -> 
@@ -3312,7 +3338,7 @@ module EstablishTypeDefinitionCores =
                   super |> Option.map (fun ty -> 
                      if isFunTy g ty then  
                          let a,b = destFunTy g ty
-                         mkAppTy g.fastFunc_tcr [a; b] 
+                         mkWoNullAppTy g.fastFunc_tcr [a; b] 
                      else ty)
 
               // Publish the super type
@@ -3362,7 +3388,6 @@ module EstablishTypeDefinitionCores =
                 if hasAllowNullLiteralAttr then 
                     tycon.TypeContents.tcaug_super |> Option.iter (fun ty -> if not (TypeNullIsExtraValue g m ty) then errorR (Error(FSComp.SR.tcAllowNullTypesMayOnlyInheritFromAllowNullTypes(), m)))
                     tycon.ImmediateInterfaceTypesOfFSharpTycon |> List.iter (fun ty -> if not (TypeNullIsExtraValue g m ty) then errorR (Error(FSComp.SR.tcAllowNullTypesMayOnlyInheritFromAllowNullTypes(), m)))
-                
                 
             let structLayoutAttributeCheck allowed = 
                 let explicitKind = int32 System.Runtime.InteropServices.LayoutKind.Explicit
@@ -3715,7 +3740,7 @@ module EstablishTypeDefinitionCores =
             // validate ConditionalAttribute, should it be applied (it's only valid on a type if the type is an attribute type)
             match attrs |> List.tryFind (IsMatchingFSharpAttribute g g.attrib_ConditionalAttribute) with
             | Some _ ->
-                if not(ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkAppTy g.tcref_System_Attribute [])) g cenv.amap m AllowMultiIntfInstantiations.Yes thisTy) then
+                if not(ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkWoNullAppTy g.tcref_System_Attribute [])) g cenv.amap m AllowMultiIntfInstantiations.Yes thisTy) then
                     errorR(Error(FSComp.SR.tcConditionalAttributeUsage(), m))
             | _ -> ()         
                    
@@ -4308,7 +4333,7 @@ module TcDeclarations =
             | _ -> ()
 
     /// Split auto-properties into 'let' and 'member' bindings
-    let private SplitAutoProps members =
+    let private SplitAutoProps (g: TcGlobals) members =
         let membersIncludingAutoProps, vals_Inherits_Abstractslots = 
             members |> List.partition (fun memb -> 
                 match memb with 
@@ -4358,7 +4383,7 @@ module TcDeclarations =
         let rec postAutoProps memb =
             match memb with 
             | SynMemberDefn.AutoProperty(ident = id) when String.IsNullOrEmpty(id.idText) -> []
-            | SynMemberDefn.AutoProperty(attributes=Attributes attribs; isStatic=isStatic; ident=id; typeOpt=tyOpt; propKind=propKind; memberFlags=memberFlags; memberFlagsForSet=memberFlagsForSet; xmlDoc=xmlDoc; accessibility=access; trivia = { GetSetKeywords = mGetSetOpt }) ->
+            | SynMemberDefn.AutoProperty(attributes=Attributes attribs; isStatic=isStatic; ident=id; typeOpt=tyOpt; propKind=propKind; memberFlags=memberFlags; memberFlagsForSet=memberFlagsForSet; xmlDoc=xmlDoc; trivia = { GetSetKeywords = mGetSetOpt }; accessibility = access) ->
                 let mMemberPortion = id.idRange
                 // Only the keep the non-field-targeted attributes
                 let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> false | _ -> true)
@@ -4371,7 +4396,8 @@ module TcDeclarations =
                 match propKind, mGetSetOpt with 
                 | SynMemberKind.PropertySet, Some getSetKeywords -> errorR(Error(FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSetNotJustSet(), getSetKeywords.Range))
                 | _ -> ()
-       
+
+                let getterAccess, setterAccess = getGetterSetterAccess access propKind g.langVersion
                 [ 
                     match propKind with 
                     | SynMemberKind.Member
@@ -4381,7 +4407,7 @@ module TcDeclarations =
                             let rhsExpr = SynExpr.Ident fldId
                             let retInfo = match tyOpt with None -> None | Some ty -> Some (None, SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
                             let attribs = mkAttributeList attribs mMemberPortion
-                            let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, rhsExpr, rhsExpr.Range, [], attribs, Some memberFlags, SynBindingTrivia.Zero)
+                            let binding = mkSynBinding (xmlDoc, headPat) (getterAccess, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, rhsExpr, rhsExpr.Range, [], attribs, Some memberFlags, SynBindingTrivia.Zero)
                             SynMemberDefn.Member (binding, mMemberPortion) 
                         yield getter
                     | _ -> ()
@@ -4393,7 +4419,7 @@ module TcDeclarations =
                             let vId = ident("v", mMemberPortion)
                             let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, Some noInferredTypars, SynArgPats.Pats [mkSynPatVar None vId], None, mMemberPortion)
                             let rhsExpr = mkSynAssign (SynExpr.Ident fldId) (SynExpr.Ident vId)
-                            let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, None, rhsExpr, rhsExpr.Range, [], [], Some memberFlagsForSet, SynBindingTrivia.Zero)
+                            let binding = mkSynBinding (xmlDoc, headPat) (setterAccess, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, None, rhsExpr, rhsExpr.Range, [], [], Some memberFlagsForSet, SynBindingTrivia.Zero)
                             SynMemberDefn.Member (binding, mMemberPortion)
                         yield setter 
                     | _ -> ()]
@@ -4417,9 +4443,9 @@ module TcDeclarations =
     ///        where simpleRepr can contain inherit type, declared fields and virtual slots.
     /// body = members
     ///        where members contain methods/overrides, also implicit ctor, inheritCall and local definitions.
-    let rec private SplitTyconDefn (SynTypeDefn(typeInfo=synTyconInfo;typeRepr=trepr; members=extraMembers)) =
+    let rec private SplitTyconDefn g (SynTypeDefn(typeInfo=synTyconInfo;typeRepr=trepr; members=extraMembers)) =
         let extraMembers = desugarGetSetMembers extraMembers
-        let extraMembers, extra_vals_Inherits_Abstractslots = SplitAutoProps extraMembers
+        let extraMembers, extra_vals_Inherits_Abstractslots = SplitAutoProps g extraMembers
         let implements1 = extraMembers |> List.choose (function SynMemberDefn.Interface (interfaceType=ty) -> Some(ty, ty.Range) | _ -> None)
 
         match trepr with
@@ -4440,7 +4466,7 @@ module TcDeclarations =
 
             let slotsigs = members |> List.choose (function  SynMemberDefn.AbstractSlot (slotSig = x; flags = y) -> Some(x, y) | _ -> None)
            
-            let members, _vals_Inherits_Abstractslots = SplitAutoProps members
+            let members, _vals_Inherits_Abstractslots = SplitAutoProps g members
 
             let isConcrete = 
                 members |> List.exists (function 
@@ -4502,7 +4528,7 @@ module TcDeclarations =
 
         // Split the definitions into "core representations" and "members". The code to process core representations
         // is shared between processing of signature files and implementation files.
-        let mutRecDefnsAfterSplit = mutRecDefns |> MutRecShapes.mapTycons SplitTyconDefn
+        let mutRecDefnsAfterSplit = mutRecDefns |> MutRecShapes.mapTycons (fun i -> SplitTyconDefn g i)
 
         // Create the entities for each module and type definition, and process the core representation of each type definition.
         let tycons, envMutRecPrelim, mutRecDefnsAfterCore = 

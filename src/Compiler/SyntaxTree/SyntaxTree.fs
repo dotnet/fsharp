@@ -281,13 +281,9 @@ type DebugPointAtWhile =
 [<RequireQualifiedAccess>]
 type DebugPointAtBinding =
     | Yes of range: range
-
     | NoneAtDo
-
     | NoneAtLet
-
     | NoneAtSticky
-
     | NoneAtInvisible
 
     member x.Combine(y: DebugPointAtBinding) =
@@ -336,6 +332,8 @@ type SynTypeConstraint =
 
     | WhereTyparSupportsNull of typar: SynTypar * range: range
 
+    | WhereTyparNotSupportsNull of genericName: SynTypar * range: range
+
     | WhereTyparIsComparable of typar: SynTypar * range: range
 
     | WhereTyparIsEquatable of typar: SynTypar * range: range
@@ -358,6 +356,7 @@ type SynTypeConstraint =
         | WhereTyparIsReferenceType(range = range)
         | WhereTyparIsUnmanaged(range = range)
         | WhereTyparSupportsNull(range = range)
+        | WhereTyparNotSupportsNull(range = range)
         | WhereTyparIsComparable(range = range)
         | WhereTyparIsEquatable(range = range)
         | WhereTyparDefaultsToType(range = range)
@@ -460,9 +459,13 @@ type SynType =
 
     | StaticConstant of constant: SynConst * range: range
 
+    | StaticConstantNull of range: range
+
     | StaticConstantExpr of expr: SynExpr * range: range
 
     | StaticConstantNamed of ident: SynType * value: SynType * range: range
+
+    | WithNull of innerType: SynType * ambivalent: bool * range: range
 
     | Paren of innerType: SynType * range: range
 
@@ -486,9 +489,11 @@ type SynType =
         | SynType.Anon(range = m)
         | SynType.WithGlobalConstraints(range = m)
         | SynType.StaticConstant(range = m)
+        | SynType.StaticConstantNull(range = m)
         | SynType.StaticConstantExpr(range = m)
         | SynType.StaticConstantNamed(range = m)
         | SynType.HashConstraint(range = m)
+        | SynType.WithNull(range = m)
         | SynType.MeasurePower(range = m)
         | SynType.Paren(range = m)
         | SynType.SignatureParameter(range = m)
@@ -1326,6 +1331,24 @@ type SynComponentInfo =
         match this with
         | SynComponentInfo(range = m) -> m
 
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynValSigAccess =
+    | Single of accessibility: SynAccess option
+    | GetSet of accessibility: SynAccess option * getterAccessibility: SynAccess option * setterAccessibility: SynAccess option
+
+    member this.SingleAccess() =
+        match this with
+        | Single(access)
+        | GetSet(accessibility = access) -> access
+
+    member this.GetSetAccessNoCheck() =
+        match this with
+        | Single(access) -> access, access
+        | GetSet(access, getterAccess, setterAccess) ->
+            let getterAccess = getterAccess |> Option.orElse access
+            let setterAccess = setterAccess |> Option.orElse access
+            getterAccess, setterAccess
+
 [<NoEquality; NoComparison>]
 type SynValSig =
     | SynValSig of
@@ -1337,7 +1360,7 @@ type SynValSig =
         isInline: bool *
         isMutable: bool *
         xmlDoc: PreXmlDoc *
-        accessibility: SynAccess option *
+        accessibility: SynValSigAccess *
         synExpr: SynExpr option *
         range: range *
         trivia: SynValSigTrivia
@@ -1480,7 +1503,7 @@ type SynMemberDefn =
         memberFlags: SynMemberFlags *
         memberFlagsForSet: SynMemberFlags *
         xmlDoc: PreXmlDoc *
-        accessibility: SynAccess option *
+        accessibility: SynValSigAccess *
         synExpr: SynExpr *
         range: range *
         trivia: SynMemberDefnAutoPropertyTrivia
@@ -1647,13 +1670,19 @@ type SynModuleOrNamespaceSig =
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedHashDirectiveArgument =
+    | Ident of value: Ident * range: range
+    | Int32 of value: Int32 * range: range
+    | LongIdent of value: SynLongIdent * range: range
     | String of value: string * stringKind: SynStringKind * range: range
     | SourceIdentifier of constant: string * value: string * range: range
 
     member this.Range =
         match this with
+        | ParsedHashDirectiveArgument.Ident(range = m)
+        | ParsedHashDirectiveArgument.Int32(range = m)
         | ParsedHashDirectiveArgument.String(range = m)
-        | ParsedHashDirectiveArgument.SourceIdentifier(range = m) -> m
+        | ParsedHashDirectiveArgument.SourceIdentifier(range = m)
+        | ParsedHashDirectiveArgument.LongIdent(range = m) -> m
 
 [<NoEquality; NoComparison>]
 type ParsedHashDirective = ParsedHashDirective of ident: string * args: ParsedHashDirectiveArgument list * range: range

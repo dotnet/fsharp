@@ -142,7 +142,7 @@ module IncrementalBuildSyntaxTree =
                     Activity.start "IncrementalBuildSyntaxTree.parse"
                         [|
                             Activity.Tags.fileName, fileName
-                            Activity.Tags.buildPhase, BuildPhase.Parse.ToString()
+                            Activity.Tags.buildPhase, !! BuildPhase.Parse.ToString()
                         |]
 
                 try
@@ -264,7 +264,7 @@ type BoundModel private (
 
             beforeFileChecked.Trigger fileName
                     
-            ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName fileName, tcImports.DependencyProvider) |> ignore
+            ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, !! Path.GetDirectoryName(fileName), tcImports.DependencyProvider) |> ignore
             let sink = TcResultsSinkImpl(tcGlobals)
             let hadParseErrors = not (Array.isEmpty parseErrors)
             let input, moduleNamesDict = DeduplicateParsedInputModuleName prevTcInfo.moduleNamesDict input
@@ -487,14 +487,14 @@ type BoundModel private (
 
 /// Global service state
 type FrameworkImportsCacheKey = 
-    | FrameworkImportsCacheKey of resolvedpath: string list * assemblyName: string * targetFrameworkDirectories: string list * fsharpBinaries: string * langVersion: decimal
+    | FrameworkImportsCacheKey of resolvedpath: string list * assemblyName: string * targetFrameworkDirectories: string list * fsharpBinaries: string * langVersion: decimal * checkNulls: bool
 
     interface ICacheKey<string, FrameworkImportsCacheKey> with
         member this.GetKey() =
-            this |> function FrameworkImportsCacheKey(assemblyName=a) -> a
+            this |> function FrameworkImportsCacheKey(assemblyName=a;checkNulls=c) -> if c then a + "CheckNulls" else a
 
         member this.GetLabel() = 
-            this |> function FrameworkImportsCacheKey(assemblyName=a) -> a
+            this |> function FrameworkImportsCacheKey(assemblyName=a;checkNulls=c) -> if c then a + "CheckNulls" else a
 
         member this.GetVersion() = this
         
@@ -529,7 +529,8 @@ type FrameworkImportsCache(size) =
                     tcConfig.primaryAssembly.Name,
                     tcConfig.GetTargetFrameworkDirectories(),
                     tcConfig.fsharpBinariesDir,
-                    tcConfig.langVersion.SpecifiedVersion)
+                    tcConfig.langVersion.SpecifiedVersion,
+                    tcConfig.checkNullness)
 
         let node =
             lock gate (fun () ->
@@ -609,9 +610,7 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generate
 
     let sigData =
         let _sigDataAttributes, sigDataResources = EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, true)
-        [ for r in sigDataResources  do
-            GetResourceNameAndSignatureDataFunc r
-        ]
+        GetResourceNameAndSignatureDataFuncs sigDataResources
 
     let autoOpenAttrs = topAttrs.assemblyAttrs |> List.choose (List.singleton >> TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_AutoOpenAttribute)
 
@@ -806,7 +805,7 @@ module IncrementalBuilderHelpers =
                         let hasTypeProviderAssemblyAttrib =
                             topAttrs.assemblyAttrs |> List.exists (fun (Attrib(tcref, _, _, _, _, _, _)) ->
                                 let nm = tcref.CompiledRepresentationForNamedType.BasicQualifiedName
-                                nm = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName)
+                                nm = !! typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName)
 
                         if tcState.CreatesGeneratedProvidedTypes || hasTypeProviderAssemblyAttrib then
                             ProjectAssemblyDataResult.Unavailable true
@@ -1456,7 +1455,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     { new IXmlDocumentationInfoLoader with
                         /// Try to load xml documentation associated with an assembly by the same file path with the extension ".xml".
                         member _.TryLoad(assemblyFileName) =
-                            let xmlFileName = Path.ChangeExtension(assemblyFileName, ".xml")
+                            let xmlFileName = !! Path.ChangeExtension(assemblyFileName, ".xml")
 
                             // REVIEW: File IO - Will eventually need to change this to use a file system interface of some sort.
                             XmlDocumentationInfo.TryCreateFromFile(xmlFileName)

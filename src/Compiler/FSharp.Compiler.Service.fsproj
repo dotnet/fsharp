@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project Sdk="Microsoft.NET.Sdk">
 
@@ -13,6 +13,15 @@
     <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
+    <CheckNulls>true</CheckNulls>
+	<!-- Nullness checking againts ns20 base class libraries is very weak, the APIs were not updated with annotations. 
+	     Therefore we want to use the latest BCL APIs from NetCurrent.
+		 We are still not building the actual product in NetCurrent, so for official builds we remain as ns2.0.
+		 For 'BUILDING_USING_DOTNET' builds, we still want latest BCL annotations, so that contributors can get related warnings locally.
+
+     On CI, OSX has problems with Xliff targets for net9, skipping via SKIP_NETCURRENT_FSC_BUILD until resolved ( The target "UpdateXlf" does not exist in the project.)
+	-->
+    <TargetFrameworks Condition=" '$(OfficialBuildId)' == '' AND '$(FSharpNetCoreProductDefaultTargetFramework)' != '' AND '$(Configuration)' != 'Proto' AND '$(SKIP_NETCURRENT_FSC_BUILD)' != 'true' ">$(FSharpNetCoreProductDefaultTargetFramework);$(TargetFrameworks)</TargetFrameworks>
     <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);FSHARPCORE_USE_PACKAGE</DefineConstants>
     <OtherFlags>$(OtherFlags) --extraoptimizationloops:1</OtherFlags>
     <!-- 1182: Unused variables -->
@@ -32,7 +41,7 @@
   <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
     <NoOptimizationData>false</NoOptimizationData>
     <NoInterfaceData>false</NoInterfaceData>
-    <CompressMetadata>false</CompressMetadata>
+    <CompressMetadata>true</CompressMetadata>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -88,6 +97,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="Utilities\NullnessShims.fs" />
     <EmbeddedText Include="FSComp.txt">
       <Link>FSComp.txt</Link>
     </EmbeddedText>
@@ -97,10 +107,11 @@
     <EmbeddedResource Include="FSStrings.resx">
       <Link>FSStrings.resx</Link>
       <LogicalName>FSStrings.resources</LogicalName>
-    </EmbeddedResource>
-
+    </EmbeddedResource>    
     <Compile Include="Utilities\Activity.fsi" />
     <Compile Include="Utilities\Activity.fs" />
+    <Compile Include="Utilities\illib.fsi" />
+    <Compile Include="Utilities\illib.fs" />
     <Compile Include="Utilities\sformat.fsi" />
     <Compile Include="Utilities\sformat.fs" />
     <Compile Include="Utilities\sr.fsi" />
@@ -113,8 +124,6 @@
     <Compile Include="Utilities\EditDistance.fs" />
     <Compile Include="Utilities\TaggedCollections.fsi" />
     <Compile Include="Utilities\TaggedCollections.fs" />
-    <Compile Include="Utilities\illib.fsi" />
-    <Compile Include="Utilities\illib.fs" />
     <Compile Include="Utilities\Cancellable.fsi" />
     <Compile Include="Utilities\Cancellable.fs" />
     <Compile Include="Utilities\FileSystem.fsi" />
@@ -311,6 +320,7 @@
     <Compile Include="TypedTree\TypedTree.fs" />
     <Compile Include="TypedTree\TypedTreeBasics.fsi" />
     <Compile Include="TypedTree\TypedTreeBasics.fs" />
+    <Compile Include="TypedTree\TcGlobals.fsi" />
     <Compile Include="TypedTree\TcGlobals.fs" />
     <Compile Include="TypedTree\TypedTreeOps.fsi" />
     <Compile Include="TypedTree\TypedTreeOps.fs" />
@@ -362,12 +372,15 @@
     <Compile Include="Checking\CheckBasics.fs" />
     <Compile Include="Checking\CheckRecordSyntaxHelpers.fsi" />
     <Compile Include="Checking\CheckRecordSyntaxHelpers.fs" />
-    <Compile Include="Checking\CheckExpressions.fsi" />
-    <Compile Include="Checking\CheckExpressions.fs" />
+    <Compile Include="Checking\Expressions\CheckExpressionsOps.fs" />
+    <Compile Include="Checking\Expressions\CheckExpressions.fsi" />
+    <Compile Include="Checking\Expressions\CheckExpressions.fs" />
     <Compile Include="Checking\CheckPatterns.fsi" />
     <Compile Include="Checking\CheckPatterns.fs" />
-    <Compile Include="Checking\CheckComputationExpressions.fsi" />
-    <Compile Include="Checking\CheckComputationExpressions.fs" />
+    <Compile Include="Checking\Expressions\CheckComputationExpressions.fsi" />
+    <Compile Include="Checking\Expressions\CheckComputationExpressions.fs" />
+    <Compile Include="Checking\Expressions\CheckSequenceExpressions.fs" />
+    <Compile Include="Checking\Expressions\CheckArrayOrListComputedExpressions.fs" />
     <Compile Include="Checking\CheckIncrementalClasses.fsi" />
     <Compile Include="Checking\CheckIncrementalClasses.fs" />
     <Compile Include="Checking\CheckDeclarations.fsi" />

@@ -216,17 +216,26 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, fileName, intf) 
 
         SynModuleOrNamespaceSig(lid, isRecursive, kind, decls, xmlDoc, attributes, None, range, trivia)
 
-let GetScopedPragmasForHashDirective hd =
+let GetScopedPragmasForHashDirective hd (langVersion: LanguageVersion) =
+    let supportsNonStringArguments =
+        langVersion.SupportsFeature(LanguageFeature.ParsedHashDirectiveArgumentNonQuotes)
+
     [
         match hd with
         | ParsedHashDirective("nowarn", numbers, m) ->
             for s in numbers do
-                match s with
-                | ParsedHashDirectiveArgument.SourceIdentifier _ -> ()
-                | ParsedHashDirectiveArgument.String(s, _, _) ->
-                    match GetWarningNumber(m, s) with
-                    | None -> ()
-                    | Some n -> ScopedPragma.WarningOff(m, n)
+                let warningNumber =
+                    match supportsNonStringArguments, s with
+                    | _, ParsedHashDirectiveArgument.SourceIdentifier _ -> None
+                    | true, ParsedHashDirectiveArgument.LongIdent _ -> None
+                    | true, ParsedHashDirectiveArgument.Int32(n, _) -> GetWarningNumber(m, string n, true)
+                    | true, ParsedHashDirectiveArgument.Ident(s, _) -> GetWarningNumber(m, s.idText, true)
+                    | _, ParsedHashDirectiveArgument.String(s, _, _) -> GetWarningNumber(m, s, true)
+                    | _ -> None
+
+                match warningNumber with
+                | None -> ()
+                | Some n -> ScopedPragma.WarningOff(m, n)
         | _ -> ()
     ]
 
@@ -272,10 +281,10 @@ let PostParseModuleImpls
             for SynModuleOrNamespace(decls = decls) in impls do
                 for d in decls do
                     match d with
-                    | SynModuleDecl.HashDirective(hd, _) -> yield! GetScopedPragmasForHashDirective hd
+                    | SynModuleDecl.HashDirective(hd, _) -> yield! GetScopedPragmasForHashDirective hd lexbuf.LanguageVersion
                     | _ -> ()
             for hd in hashDirectives do
-                yield! GetScopedPragmasForHashDirective hd
+                yield! GetScopedPragmasForHashDirective hd lexbuf.LanguageVersion
         ]
 
     let conditionalDirectives = LexbufIfdefStore.GetTrivia(lexbuf)
@@ -323,10 +332,10 @@ let PostParseModuleSpecs
             for SynModuleOrNamespaceSig(decls = decls) in specs do
                 for d in decls do
                     match d with
-                    | SynModuleSigDecl.HashDirective(hd, _) -> yield! GetScopedPragmasForHashDirective hd
+                    | SynModuleSigDecl.HashDirective(hd, _) -> yield! GetScopedPragmasForHashDirective hd lexbuf.LanguageVersion
                     | _ -> ()
             for hd in hashDirectives do
-                yield! GetScopedPragmasForHashDirective hd
+                yield! GetScopedPragmasForHashDirective hd lexbuf.LanguageVersion
         ]
 
     let conditionalDirectives = LexbufIfdefStore.GetTrivia(lexbuf)
@@ -343,8 +352,8 @@ let PostParseModuleSpecs
 type ModuleNamesDict = Map<string, Map<string, QualifiedNameOfFile>>
 
 /// Checks if a module name is already given and deduplicates the name if needed.
-let DeduplicateModuleName (moduleNamesDict: ModuleNamesDict) fileName (qualNameOfFile: QualifiedNameOfFile) =
-    let path = Path.GetDirectoryName fileName
+let DeduplicateModuleName (moduleNamesDict: ModuleNamesDict) (fileName: string) (qualNameOfFile: QualifiedNameOfFile) =
+    let path = !! Path.GetDirectoryName(fileName)
 
     let path =
         if FileSystem.IsPathRootedShim path then
@@ -425,7 +434,7 @@ let ParseInput
             "ParseAndCheckFile.parseFile"
             [|
                 Activity.Tags.fileName, fileName
-                Activity.Tags.buildPhase, BuildPhase.Parse.ToString()
+                Activity.Tags.buildPhase, !! BuildPhase.Parse.ToString()
                 Activity.Tags.userOpName, userOpName |> Option.defaultValue ""
             |]
 
@@ -875,7 +884,7 @@ let ProcessMetaCommandsFromInput
 
         match args with
         | [ path ] ->
-            let p = if String.IsNullOrWhiteSpace(path) then "" else path
+            let p = if String.IsNullOrWhiteSpace(path) then "" else !!path
 
             hashReferenceF state (m, p, directive)
 
@@ -888,55 +897,90 @@ let ProcessMetaCommandsFromInput
 
         try
             match hash with
-            | ParsedHashDirective("I", ParsedHashDirectiveArguments args, m) ->
+            | ParsedHashDirective("I", [ path ], m) ->
                 if not canHaveScriptMetaCommands then
                     errorR (HashIncludeNotAllowedInNonScript m)
+                else
+                    let arguments = parsedHashDirectiveStringArguments [ path ] tcConfig.langVersion
 
-                match args with
-                | [ path ] ->
-                    matchedm <- m
-                    tcConfig.AddIncludePath(m, path, pathOfMetaCommandSource)
-                    state
-                | _ ->
-                    errorR (Error(FSComp.SR.buildInvalidHashIDirective (), m))
-                    state
-            | ParsedHashDirective("nowarn", ParsedHashDirectiveArguments numbers, m) ->
-                List.fold (fun state d -> nowarnF state (m, d)) state numbers
-
-            | ParsedHashDirective(("reference" | "r"), ParsedHashDirectiveArguments args, m) ->
-                matchedm <- m
-                ProcessDependencyManagerDirective Directive.Resolution args m state
-
-            | ParsedHashDirective("i", ParsedHashDirectiveArguments args, m) ->
-                matchedm <- m
-                ProcessDependencyManagerDirective Directive.Include args m state
-
-            | ParsedHashDirective("load", ParsedHashDirectiveArguments args, m) ->
-                if not canHaveScriptMetaCommands then
-                    errorR (HashDirectiveNotAllowedInNonScript m)
-
-                match args with
-                | _ :: _ ->
-                    matchedm <- m
-                    args |> List.iter (fun path -> loadSourceF state (m, path))
-                | _ -> errorR (Error(FSComp.SR.buildInvalidHashloadDirective (), m))
+                    match arguments with
+                    | [ path ] ->
+                        matchedm <- m
+                        tcConfig.AddIncludePath(m, path, pathOfMetaCommandSource)
+                    | _ -> errorR (Error(FSComp.SR.buildInvalidHashIDirective (), m))
 
                 state
-            | ParsedHashDirective("time", ParsedHashDirectiveArguments args, m) ->
+
+            | ParsedHashDirective("nowarn", hashArguments, m) ->
+                let arguments = parsedHashDirectiveArguments hashArguments tcConfig.langVersion
+                List.fold (fun state d -> nowarnF state (m, d)) state arguments
+
+            | ParsedHashDirective(("reference" | "r") as c, [], m) ->
                 if not canHaveScriptMetaCommands then
                     errorR (HashDirectiveNotAllowedInNonScript m)
+                else
+                    let arg = (parsedHashDirectiveArguments [] tcConfig.langVersion)
+                    warning (Error((FSComp.SR.fsiInvalidDirective (c, String.concat " " arg)), m))
 
-                match args with
-                | [] -> ()
-                | [ "on" | "off" ] -> ()
-                | _ -> errorR (Error(FSComp.SR.buildInvalidHashtimeDirective (), m))
+                state
+
+            | ParsedHashDirective(("reference" | "r"), [ reference ], m) ->
+                if not canHaveScriptMetaCommands then
+                    errorR (HashDirectiveNotAllowedInNonScript m)
+                    state
+                else
+                    let arguments =
+                        parsedHashDirectiveStringArguments [ reference ] tcConfig.langVersion
+
+                    match arguments with
+                    | [ reference ] ->
+                        matchedm <- m
+                        ProcessDependencyManagerDirective Directive.Resolution [ reference ] m state
+                    | _ -> state
+
+            | ParsedHashDirective("i", [ path ], m) ->
+                if not canHaveScriptMetaCommands then
+                    errorR (HashDirectiveNotAllowedInNonScript m)
+                    state
+                else
+                    matchedm <- m
+                    let arguments = parsedHashDirectiveStringArguments [ path ] tcConfig.langVersion
+
+                    match arguments with
+                    | [ path ] -> ProcessDependencyManagerDirective Directive.Include [ path ] m state
+                    | _ -> state
+
+            | ParsedHashDirective("load", paths, m) ->
+                if not canHaveScriptMetaCommands then
+                    errorR (HashDirectiveNotAllowedInNonScript m)
+                else
+                    let arguments = parsedHashDirectiveArguments paths tcConfig.langVersion
+
+                    match arguments with
+                    | _ :: _ ->
+                        matchedm <- m
+                        arguments |> List.iter (fun path -> loadSourceF state (m, path))
+                    | _ -> errorR (Error(FSComp.SR.buildInvalidHashloadDirective (), m))
+
+                state
+
+            | ParsedHashDirective("time", switch, m) ->
+                if not canHaveScriptMetaCommands then
+                    errorR (HashDirectiveNotAllowedInNonScript m)
+                else
+                    let arguments = parsedHashDirectiveArguments switch tcConfig.langVersion
+
+                    match arguments with
+                    | [] -> matchedm <- m
+                    | [ "on" | "off" ] -> matchedm <- m
+                    | _ -> errorR (Error(FSComp.SR.buildInvalidHashtimeDirective (), m))
 
                 state
 
             | _ ->
-
                 (* warning(Error("This meta-command has been ignored", m)) *)
                 state
+
         with RecoverableException e ->
             errorRecovery e matchedm
             state

@@ -1,15 +1,15 @@
 module FSharp.Compiler.Interactive.FsiHelp
 
-[<assembly: System.Runtime.InteropServices.ComVisible(false)>]
-[<assembly: System.CLSCompliant(true)>]
-do ()
-
 open System
 open System.Collections.Generic
 open System.IO
 open System.Text
 open System.Reflection
 open FSharp.Compiler.IO
+
+// 3261 Is the nullness warning. I really tried to properly check all accesses, but the chosen xml API has nulles everywhere and is not a good fit for compiler nullness checking.
+// Even basic constructs like `n.Attributes.GetNamedItem("name").Value` have `| null| on every single dot access.
+#nowarn "3261"
 
 module Parser =
 

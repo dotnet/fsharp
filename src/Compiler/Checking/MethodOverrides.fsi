@@ -113,6 +113,7 @@ module DispatchSlotChecking =
         nenv: NameResolutionEnv *
         sink: TcResultsSink *
         isOverallTyAbstract: bool *
+        isObjExpr: bool *
         reqdTy: TType *
         dispatchSlots: RequiredSlot list *
         availPriorOverrides: OverrideInfo list *

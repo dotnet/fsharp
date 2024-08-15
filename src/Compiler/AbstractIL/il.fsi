@@ -4,6 +4,7 @@
 
 module rec FSharp.Compiler.AbstractIL.IL
 
+open System
 open FSharp.Compiler.IO
 open System.Collections.Generic
 open System.Reflection
@@ -235,6 +236,8 @@ type ILTypeRef =
     member QualifiedName: string
 
     member internal EqualsWithPrimaryScopeRef: ILScopeRef * obj -> bool
+
+    override ToString: unit -> string
 
     interface System.IComparable
 
@@ -663,7 +666,7 @@ type ILFieldInit =
     | Double of double
     | Null
 
-    member AsObject: unit -> obj
+    member AsObject: unit -> objnull
 
 [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
 type internal ILNativeVariant =
@@ -868,7 +871,13 @@ type ILAttributes =
 
 /// Represents the efficiency-oriented storage of ILAttributes in another item.
 [<NoEquality; NoComparison>]
-type ILAttributesStored
+type ILAttributesStored =
+    /// Computed by ilread.fs based on metadata index
+    | Reader of (int32 -> ILAttribute[])
+    /// Already computed
+    | Given of ILAttributes
+
+    member GetCustomAttrs: int32 -> ILAttributes
 
 /// Method parameters and return values.
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
@@ -1069,6 +1078,8 @@ type ILMethodDef =
     member IsEntryPoint: bool
     member GenericParams: ILGenericParameterDefs
     member CustomAttrs: ILAttributes
+    member MetadataIndex: int32
+    member CustomAttrsStored: ILAttributesStored
     member ParameterTypes: ILTypes
     member IsIL: bool
     member Code: ILCode option
@@ -1242,6 +1253,10 @@ type ILFieldDef =
 
     member CustomAttrs: ILAttributes
 
+    member MetadataIndex: int32
+
+    member CustomAttrsStored: ILAttributesStored
+
     member IsStatic: bool
 
     member IsSpecialName: bool
@@ -1325,6 +1340,8 @@ type ILEventDef =
     member FireMethod: ILMethodRef option
     member OtherMethods: ILMethodRef list
     member CustomAttrs: ILAttributes
+    member MetadataIndex: int32
+    member CustomAttrsStored: ILAttributesStored
     member IsSpecialName: bool
     member IsRTSpecialName: bool
 
@@ -1387,6 +1404,8 @@ type ILPropertyDef =
     member Init: ILFieldInit option
     member Args: ILTypes
     member CustomAttrs: ILAttributes
+    member MetadataIndex: int32
+    member CustomAttrsStored: ILAttributesStored
     member IsSpecialName: bool
     member IsRTSpecialName: bool
 
@@ -1481,6 +1500,12 @@ type ILTypeDefs =
     /// Calls to <c>ExistsByName</c> will result in all the ILPreTypeDefs being read.
     member internal ExistsByName: string -> bool
 
+[<Flags>]
+type ILTypeDefAdditionalFlags =
+    | None = 0
+    | IsKnownToBeAttribute = 1
+    | CanContainExtensionMethods = 2
+
 /// Represents IL Type Definitions.
 [<NoComparison; NoEquality>]
 type ILTypeDef =
@@ -1491,6 +1516,7 @@ type ILTypeDef =
         attributes: TypeAttributes *
         layout: ILTypeDefLayout *
         implements: ILTypes *
+        implementsCustomAttrs: (ILAttributesStored * int) list option *
         genericParams: ILGenericParameterDefs *
         extends: ILType option *
         methods: ILMethodDefs *
@@ -1499,7 +1525,7 @@ type ILTypeDef =
         methodImpls: ILMethodImplDefs *
         events: ILEventDefs *
         properties: ILPropertyDefs *
-        isKnownToBeAttribute: bool *
+        additionalFlags: ILTypeDefAdditionalFlags *
         securityDeclsStored: ILSecurityDeclsStored *
         customAttrsStored: ILAttributesStored *
         metadataIndex: int32 ->
@@ -1511,6 +1537,7 @@ type ILTypeDef =
         attributes: TypeAttributes *
         layout: ILTypeDefLayout *
         implements: ILTypes *
+        implementsCustomAttrs: (ILAttributesStored * int) list option *
         genericParams: ILGenericParameterDefs *
         extends: ILType option *
         methods: ILMethodDefs *
@@ -1519,7 +1546,7 @@ type ILTypeDef =
         methodImpls: ILMethodImplDefs *
         events: ILEventDefs *
         properties: ILPropertyDefs *
-        isKnownToBeAttribute: bool *
+        additionalFlags: ILTypeDefAdditionalFlags *
         securityDecls: ILSecurityDecls *
         customAttrs: ILAttributes ->
             ILTypeDef
@@ -1530,6 +1557,7 @@ type ILTypeDef =
     member Layout: ILTypeDefLayout
     member NestedTypes: ILTypeDefs
     member Implements: ILTypes
+    member ImplementsCustomAttrs: (ILAttributesStored * int) list option
     member Extends: ILType option
     member Methods: ILMethodDefs
     member SecurityDecls: ILSecurityDecls
@@ -1538,6 +1566,8 @@ type ILTypeDef =
     member Events: ILEventDefs
     member Properties: ILPropertyDefs
     member CustomAttrs: ILAttributes
+    member MetadataIndex: int32
+    member CustomAttrsStored: ILAttributesStored
     member IsClass: bool
     member IsStruct: bool
     member IsInterface: bool
@@ -1556,6 +1586,7 @@ type ILTypeDef =
     member HasSecurity: bool
     member Encoding: ILDefaultPInvokeEncoding
     member IsKnownToBeAttribute: bool
+    member CanContainExtensionMethods: bool
 
     member internal WithAccess: ILTypeDefAccess -> ILTypeDef
     member internal WithNestedAccess: ILMemberAccess -> ILTypeDef
@@ -1584,9 +1615,10 @@ type ILTypeDef =
         ?methodImpls: ILMethodImplDefs *
         ?events: ILEventDefs *
         ?properties: ILPropertyDefs *
-        ?isKnownToBeAttribute: bool *
+        ?newAdditionalFlags: ILTypeDefAdditionalFlags *
         ?customAttrs: ILAttributes *
-        ?securityDecls: ILSecurityDecls ->
+        ?securityDecls: ILSecurityDecls *
+        ?implementsCustomAttrs: (ILAttributesStored * int) list option ->
             ILTypeDef
 
 /// Represents a prefix of information for ILTypeDef.
@@ -1882,11 +1914,13 @@ type internal ILGlobals =
     member typ_Enum: ILType
     member typ_Object: ILType
     member typ_String: ILType
+    member typ_StringArray: ILType
     member typ_Type: ILType
     member typ_Array: ILType
     member typ_IntPtr: ILType
     member typ_UIntPtr: ILType
     member typ_Byte: ILType
+    member typ_ByteArray: ILType
     member typ_Int16: ILType
     member typ_Int32: ILType
     member typ_Int64: ILType
@@ -2212,8 +2246,10 @@ val internal mkILTypeForGlobalFunctions: ILScopeRef -> ILType
 val mkILCustomAttrs: ILAttribute list -> ILAttributes
 val mkILCustomAttrsFromArray: ILAttribute[] -> ILAttributes
 val storeILCustomAttrs: ILAttributes -> ILAttributesStored
+val mkILCustomAttrsComputed: (unit -> ILAttribute[]) -> ILAttributesStored
 val internal mkILCustomAttrsReader: (int32 -> ILAttribute[]) -> ILAttributesStored
 val emptyILCustomAttrs: ILAttributes
+val emptyILCustomAttrsStored: ILAttributesStored
 
 val mkILSecurityDecls: ILSecurityDecl list -> ILSecurityDecls
 val emptyILSecurityDecls: ILSecurityDecls

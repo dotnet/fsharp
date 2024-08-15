@@ -475,7 +475,6 @@ type ProjectRequest = ProjectAction * AsyncReplyChannel<SyntheticProject>
 
 type FuzzingEvent = StartedChecking | FinishedChecking of bool | AbortedChecking of string | ModifiedImplFile | ModifiedSigFile
 
-[<RequireQualifiedAccess>]
 type SignatureFiles = Yes = 1 | No = 2 | Some = 3
 
 let fuzzingTest seed (project: SyntheticProject) = task {
@@ -1013,7 +1012,7 @@ printfn "Hello from F#"
         checkFile "As 01" expectTwoWarnings
     }
 
-[<Fact>]
+[<Fact(Skip="Flaky. See https://github.com/dotnet/fsharp/issues/16766")>]
 let ``Transparent Compiler ScriptClosure cache is populated after GetProjectOptionsFromScript`` () =
     async {
         let transparentChecker = FSharpChecker.Create(useTransparentCompiler = true)

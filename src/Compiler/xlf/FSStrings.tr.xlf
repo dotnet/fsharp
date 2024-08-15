@@ -12,6 +12,26 @@
         <target state="translated">Kısaltmalar \n    {2}\nile\n    {3} olarak farklı olduğundan imzadaki ve uygulamadaki '{1}' türü için {0} tanımları uyumlu değil</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarning">
+        <source>Nullness warning: {0}.</source>
+        <target state="new">Nullness warning: {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningEquivWithTypes">
+        <source>Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</source>
+        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningWithType">
+        <source>Nullness warning: The type '{0}' does not support 'null'.</source>
+        <target state="new">Nullness warning: The type '{0}' does not support 'null'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningWithTypes">
+        <source>Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</source>
+        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
         <source>Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</source>
         <target state="translated">Tür uyuşmazlığı. {0} uzunluğunda türü\n {1} \nolan bir demet bekleniyordu ancak {2} uzunluğunda türü\n    {3}{4}\nolan bir demet verildi</target>
@@ -35,6 +55,11 @@
       <trans-unit id="OverrideShouldBeStatic">
         <source> Static member is expected.</source>
         <target state="translated"> Statik üye bekleniyor.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR_JUST_BEFORE_NULL">
+        <source>symbol '|' (directly before 'null')</source>
+        <target state="new">symbol '|' (directly before 'null')</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
@@ -249,7 +274,7 @@
       </trans-unit>
       <trans-unit id="TypeIsImplicitlyAbstract">
         <source>Non-abstract classes cannot contain abstract members. Either provide a default member implementation or add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
-        <target state="needs-review-translation">Bazı soyut üyelere bir uygulama verilmediğinden bu bir 'abstract' türdür. Bu bilerek yapıldıysa türünüze '[&lt;AbstractClass&gt;]' özniteliğini ekleyin.</target>
+        <target state="translated">Soyut olmayan sınıflar soyut üyeler içeremez. Varsayılan bir üye uygulaması belirtin veya türünüze '[&lt;AbstractClass&gt;]' özniteliğini ekleyin.</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar1">
@@ -1573,7 +1598,7 @@
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInIntrinsicAugmentation">
-        <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.</source>
+        <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using '#nowarn "69"' if you have checked this is not the case.</source>
         <target state="translated">Arabirim uygulamaları normalde bir türün ilk bildiriminde verilmelidir. Genişletmelerdeki arabirim uygulamaları, başlatılmadan önce statik bağlamalara erişilmesine neden olabilirse de bu yalnızca arabirim uygulaması statik verilerin başlatılması sırasında çağrılmışsa ve buna bağlı olarak statik verilere erişiyorsa olur. Bunun söz konusu olmadığından eminseniz #nowarn "69" seçeneğini kullanarak bu uyarıyı kaldırabilirsiniz.</target>
         <note />
       </trans-unit>
@@ -1593,13 +1618,13 @@
         <note />
       </trans-unit>
       <trans-unit id="HashIncludeNotAllowedInNonScript">
-        <source>#I directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">#I yönergeleri yalnızca F# betik dosyalarında (.fsx veya .fsscript uzantılı) görülebilir. Ya bu kodu bir betik dosyasına taşıyıp bu başvuru için bir '-I' derleyici seçeneği ekleyin ya da yönergeyi '#if INTERACTIVE'/'#endif' ile sınırlandırın.</target>
+        <source>#I directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
+        <target state="translated">#I yönergeleri yalnızca F# betik dosyalarında (.fsx veya .fsscript uzantılı) kullanılabilir. Ya bu kodu bir betik dosyasına taşıyıp bu başvuru için bir '-I' derleyici seçeneği ekleyin ya da yönergeyi '#if INTERACTIVE'/'#endif' ile sınırlandırın.</target>
         <note />
       </trans-unit>
       <trans-unit id="HashReferenceNotAllowedInNonScript">
-        <source>#r directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">#r yönergeleri yalnızca F# betik dosyalarında (.fsx veya .fsscript uzantılı) görülebilir. Bu kodu bir betik dosyasına taşıyın veya bu başvuruyu '-r' derleyici seçeneği ile değiştirin. Yönerge kullanıcı girişi olarak yürütülüyorsa, yönergeyi '#if INTERACTIVE'/'#endif' ile sınırlandırabilirsiniz.</target>
+        <source>#r directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
+        <target state="translated">#I yönergeleri yalnızca F# betik dosyalarında (.fsx veya .fsscript uzantılı) kullanılabilir. Bu kodu bir betik dosyasına taşıyın veya bu başvuruyu '-r' derleyici seçeneği ile değiştirin. Yönerge kullanıcı girişi olarak yürütülüyorsa, yönergeyi '#if INTERACTIVE'/'#endif' ile sınırlandırabilirsiniz.</target>
         <note />
       </trans-unit>
       <trans-unit id="HashDirectiveNotAllowedInNonScript">
