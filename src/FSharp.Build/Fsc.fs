@@ -99,6 +99,7 @@ type public Fsc() as this =
     let mutable parallelOptimization: bool = true
     let mutable parallelIlxGen: bool = false
     let mutable parallelReferenceResolution: bool = false
+    let mutable nullable: bool option = None
 
     /// Trim whitespace ... spaces, tabs, newlines,returns, Double quotes and single quotes
     let wsCharsToTrim = [| ' '; '\t'; '\"'; '\'' |]
@@ -232,6 +233,13 @@ type public Fsc() as this =
         // Tailcalls
         if not tailcalls then
             builder.AppendSwitch("--tailcalls-")
+
+        match nullable with
+        | Some true ->
+            builder.AppendSwitch("--checknulls+")
+            builder.AppendSwitch("--define:NULLABLE")
+        | Some false -> builder.AppendSwitch("--checknulls-")
+        | None -> ()
 
         // PdbFile
         builder.AppendSwitchIfNotNull("--pdb:", pdbFile)
@@ -676,6 +684,18 @@ type public Fsc() as this =
     member _.SubsystemVersion
         with get () = subsystemVersion
         and set (p) = subsystemVersion <- p
+
+    member _.Nullable
+        with get () =
+            match nullable with
+            | None -> ""
+            | Some true -> "enable"
+            | Some false -> "disable"
+        and set (p) =
+            match p with
+            | "enable" -> nullable <- Some true
+            | "disable" -> nullable <- Some false
+            | _ -> ()
 
     member _.HighEntropyVA
         with get () = highEntropyVA
