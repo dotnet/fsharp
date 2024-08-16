@@ -300,8 +300,29 @@ let processBool (b:bool) : string =
     |> typeCheckWithStrictNullness
     |> shouldSucceed
 
+[<Literal>]
+let duWithExtensionProvidedToString = """A | B 
+module Functions =
+    let printMyType (x:MyCustomType) : string = "xxx" 
+type MyCustomType with
+    override x.ToString() : string = WhatEver.print x
+    """
+
+[<Literal>]
+let duWithExtensionProvidedNullableToString = """A | B 
+module Functions =
+    let printMyType (x:MyCustomType) : string = "xxx" 
+type MyCustomType with
+    override x.ToString() = null
+    """
+
+
 [<Theory>]
 [<InlineData("A | B ")>]
+[<InlineData( """A | B with override this.ToString() : string = "xx" """)>]
+[<InlineData( """A | B with override this.ToString() : (string|null) = null """)>]
+[<InlineData(duWithExtensionProvidedToString)>]
+[<InlineData(duWithExtensionProvidedNullableToString)>]
 [<InlineData("{F : int} ")>]
 [<InlineData(" {| F : string |} ")>]
 [<InlineData(" (struct{| F : string |}) ")>]

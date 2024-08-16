@@ -1700,11 +1700,12 @@ let MakeValsForUnionAugmentation g (tcref: TyconRef) =
             g.AddValGeneratedAttributes v m
             v)
 
-    let toString =
+    let toStringSpec() =
         mkValSpec g tcref tmty vis (Some(mkToStringSlotSig g)) "ToString" (tps +-> (mkToStringTy g tmty)) unitArg false
 
-
-    [ yield toString;yield! isTesters]
+    [ if tcref.HasOverride g "ToString" [] |> not then
+        yield toStringSpec()
+      yield! isTesters]
 
 let MakeBindingsForUnionAugmentation g (tycon: Tycon) (vals: ValRef list) =
     let tcref = mkLocalTyconRef tycon
