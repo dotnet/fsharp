@@ -9,7 +9,7 @@ module CustomAttributes_CallerArgumentExpression =
 
     [<Fact>]
     let ``Can consume CallerArgumentExpression in BCL methods`` () =
-        FSharp """
+        FSharp """module Program
 try System.ArgumentNullException.ThrowIfNullOrWhiteSpace(Seq.init 50 (fun _ -> " ")
   (* comment *) 
   |> String.concat " ")
@@ -23,10 +23,11 @@ with :? System.ArgumentException as ex ->
 
     [<Fact>]
     let ``Can define in F#`` () =
-        FSharp """# 1 "C:\\Program.fs"
+        FSharp """module Program
+# 1 "C:\\Program.fs"
 open System.Runtime.InteropServices
 type A() =
-static member aa (
+  static member aa (
     a,
     [<CallerMemberName; Optional; DefaultParameterValue "no value">]b: string, 
     [<CallerLineNumber; Optional; DefaultParameterValue 0>]c: int, 
