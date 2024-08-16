@@ -54,11 +54,11 @@ Value.Zero = Value.Create 0 |> ignore"""
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<InlineData(false, "private",  "assembly")>]   // Legacy, private WrapType, private visibility in IL
+    [<InlineData(false, "private",  "assembly")>]   // Legacy, private WrapType, assembly visibility in IL
     [<InlineData(false, "internal", "assembly")>]   // RealSig, internal WrapType, assembly visibility in IL
     [<InlineData(false, "public",   "public")>]     // Legacy, public WrapType, public visibility in IL
-    [<InlineData(true,  "private",  "private")>]    // RealSig, private WrapType, private visibility in IL
-    [<InlineData(true,  "internal", "assembly")>]   // RealSig, internal WrapType, assembly visibility in IL
+    [<InlineData(true,  "private",  "public")>]     // RealSig, private WrapType, public visibility in IL
+    [<InlineData(true,  "internal", "public")>]     // RealSig, internal WrapType, public visibility in IL
     [<InlineData(true,  "public",   "public")>]     // RealSig, public WrapType, public visibility in IL
     [<Theory>]
     let ``Generated typed Equals`` (realsig, typeScope, targetVisibility) =
@@ -81,9 +81,7 @@ module Module1 =
         |> shouldSucceed
         |> verifyIL [
             $"""
-      .method {targetVisibility} hidebysig instance bool 
-              Equals(valuetype Program/Module1/Struct obj,
-                     class [runtime]System.Collections.IEqualityComparer comp) cil managed
+      .method {targetVisibility} hidebysig instance bool Equals(valuetype Program/Module1/Struct obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
       {{
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         
@@ -106,24 +104,24 @@ module Module1 =
       }} """ ]
 
 
-    [<InlineData(false, "private")>]        // Legacy, private record fields, private visibility in IL
-    [<InlineData(false, "internal")>]       // RealSig, internal record fields, assembly visibility in IL
-    [<InlineData(false, "public")>]         // Legacy, public record fields, public visibility in IL
-    [<InlineData(true,  "private")>]        // RealSig, private record fields, private visibility in IL
-    [<InlineData(true,  "internal")>]       // RealSig, internal record fields, assembly visibility in IL
-    [<InlineData(true,  "public")>]         // RealSig, public record fields, public visibility in IL
+    [<InlineData(false, "private")>]   // Legacy, private WrapType
+    [<InlineData(false, "internal")>]   // RealSig, internal WrapType
+    [<InlineData(false, "public")>]     // Legacy, public WrapType
+    [<InlineData(true,  "private")>]     // RealSig, private WrapType
+    [<InlineData(true,  "internal")>]     // RealSig, internal WrapType
+    [<InlineData(true,  "public")>]     // RealSig, public WrapType
     [<Theory>]
-    let ``Record with various fields`` (realsig, fieldScope) =
+    let ``Record with various scoped fields`` (realsig, fieldScope) =
 
         let mainModule = 
             FSharpWithFileName "Program.fs"
-                $"""
+                $$"""
 module Module1 =
     type Value =
-        {fieldScope} {{ value: uint32 }}
+        {{fieldScope}} { value: uint32 }
 
-        static member Zero = {{ value = 0u }}
-        static member Create(value: int) = {{ value = uint value }}
+        static member Zero = { value = 0u }
+        static member Create(value: int) = { value = uint value }
 
     Value.Zero = Value.Create 0 |> ignore
     printfn "Hello, World" """
@@ -134,7 +132,7 @@ module Module1 =
         |> shouldSucceed
         |> verifyIL [
             """
-      .method public hidebysig virtual final instance bool  Equals(class Program/Module1/Value obj) cil managed
+      .method public hidebysig instance bool Equals(class Program/Module1/Value obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         
@@ -161,26 +159,27 @@ module Module1 =
         IL_001b:  ldc.i4.0
         IL_001c:  ceq
         IL_001e:  ret
-      } """
-            """
-    IL_0020:  call       class [runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-    IL_0025:  callvirt   instance bool Program/Module1/Value::Equals(class Program/Module1/Value,
-                                                                     class [runtime]System.Collections.IEqualityComparer)
-        """ ]
+      } """ ]
 
 
-    [<InlineData(false, "private",  "assembly")>]   // Legacy, private WrapType, private visibility in IL
-    [<InlineData(false, "internal", "assembly")>]   // RealSig, internal WrapType, assembly visibility in IL
-    [<InlineData(false, "public",   "public")>]     // Legacy, public WrapType, public visibility in IL
-    [<InlineData(true,  "private",  "private")>]    // RealSig, private WrapType, private visibility in IL
-    [<InlineData(true,  "internal", "assembly")>]   // RealSig, internal WrapType, assembly visibility in IL
-    [<InlineData(true,  "public",   "public")>]     // RealSig, public WrapType, public visibility in IL
+    [<InlineData(false, "public", "private",  "assembly")>]   // public module - Legacy, private WrapType, private visibility in IL
+    [<InlineData(false, "public", "internal", "assembly")>]   // public module - RealSig, internal WrapType, assembly visibility in IL
+    [<InlineData(false, "public", "public",   "public")>]     // public module - Legacy, public WrapType, public visibility in IL
+    [<InlineData(true,  "public", "private",  "public")>]     // public module - RealSig, private WrapType, public visibility in IL
+    [<InlineData(true,  "public", "internal", "public")>]     // public module - RealSig, internal WrapType, public visibility in IL
+    [<InlineData(true,  "public", "public",   "public")>]     // public module - RealSig, public WrapType, public visibility in IL
+    [<InlineData(false, "private", "private",  "assembly")>]  // private module - Legacy, private WrapType, private visibility in IL
+    [<InlineData(false, "private", "internal", "assembly")>]  // private module - RealSig, internal WrapType, assembly visibility in IL
+    [<InlineData(false, "private", "public",   "assembly")>]  // private module - Legacy, public WrapType, assembly visibility in IL
+    [<InlineData(true,  "private", "private",  "public")>]    // private module - RealSig, private WrapType, public visibility in IL
+    [<InlineData(true,  "private", "internal", "public")>]    // private module - RealSig, internal WrapType, public visibility in IL
+    [<InlineData(true,  "private", "public",   "public")>]    // private module - RealSig, public WrapType, public visibility in IL
     [<Theory>]
-    let ``scoped type arg`` (realsig, argScope, targetVisibility) =
+    let ``scoped main and scoped type Equals`` (realsig, moduleScope, argScope, targetVisibility) =
         let mainModule = 
             FSharpWithFileName "Program.fs"
                 $"""
-module IPartialEqualityComparer =
+module {moduleScope} IPartialEqualityComparer =
     open System.Collections.Generic
 
     [<StructuralEquality; NoComparison>]
@@ -195,9 +194,7 @@ module IPartialEqualityComparer =
         |> shouldSucceed
         |> verifyIL [
             $"""
-      .method {targetVisibility} hidebysig instance bool 
-              Equals(class Program/IPartialEqualityComparer/WrapType`1<!T> obj,
-                     class [runtime]System.Collections.IEqualityComparer comp) cil managed
+      .method {targetVisibility} hidebysig instance bool Equals(class Program/IPartialEqualityComparer/WrapType`1<!T> obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
       {{
         .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         
