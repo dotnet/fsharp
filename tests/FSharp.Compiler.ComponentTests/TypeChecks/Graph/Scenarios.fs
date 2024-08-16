@@ -256,7 +256,7 @@ module Y.C
 
 // This open statement does not do anything.
 // It can safely be removed, but because of its presence we need to link it to something that exposes the namespace X.
-// We try and pick the file with the lowest index 
+// We try and pick the file with the lowest index
 open X
 
 let c = 0
@@ -572,7 +572,7 @@ type Bar() =
     static member Foo () : unit =
         failwith ""
 
-let Foo () : unit = 
+let Foo () : unit =
     Bar.Foo ()
 """
                     (set [| 0 |])
@@ -792,7 +792,7 @@ open My.Great.Namespace
 type Foo = class end
 """
                     (set [| 0 |])
-                    
+
                 sourceFile
                     "Program"
                     """
@@ -897,7 +897,7 @@ do
 """
                     (set [| 0 |])
             ]
-            
+
         scenario
             "parentheses around module name in nameof expression"
             [
@@ -1041,5 +1041,32 @@ namespace MyRootNamespace.A.B
 type Bar(foo: MyRootNamespace.A.Foo, s: string) = class end
 """
                     (set [| 0 |])
+            ]
+        scenario
+            "Library with using global namespace"
+            [
+                sourceFile
+                    "Library.fs"
+                    """
+namespace Lib
+module File1 =
+    let mutable discState = System.DateTime.Now
+
+module File2 =
+    [<Struct>]
+    type DiscState(rep : int) =
+        member this.Rep = rep
+
+    let mutable discState = DiscState(0)
+                    """
+                    Set.empty
+                sourceFile
+                    "App.fs"
+                    """
+module X
+let v = global.Lib.File1.discState.Second
+let v2 = global.Lib.File2.discState.Rep
+                    """
+                    Set.empty
             ]
     ]
