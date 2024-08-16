@@ -260,8 +260,8 @@ module FileIndex =
 
 [<Struct; CustomEquality; NoComparison>]
 [<System.Diagnostics.DebuggerDisplay("({StartLine},{StartColumn}-{EndLine},{EndColumn}) {ShortFileName} -> {DebugCode}")>]
-type _Range(code1: int64, code2: int64) =
-    static member Zero = _range (0L, 0L)
+type _RangeBackground(code1: int64, code2: int64) =
+    static member Zero = _rangeBackground (0L, 0L)
 
     new(fIdx, bl, bc, el, ec) =
         let code1 =
@@ -273,9 +273,9 @@ type _Range(code1: int64, code2: int64) =
             ((int64 bl <<< startLineShift) &&& startLineMask)
             ||| ((int64 (el - bl) <<< heightShift) &&& heightMask)
 
-        _range (code1, code2)
+        _rangeBackground (code1, code2)
 
-    new(fIdx, b: pos, e: pos) = _range (fIdx, b.Line, b.Column, e.Line, e.Column)
+    new(fIdx, b: pos, e: pos) = _rangeBackground (fIdx, b.Line, b.Column, e.Line, e.Column)
 
     member _.StartLine = int32 (uint64 (code2 &&& startLineMask) >>> startLineShift)
 
@@ -307,18 +307,18 @@ type _Range(code1: int64, code2: int64) =
 
     member _.FileIndex = int32 (code1 &&& fileIndexMask)
 
-    member m.StartRange = _range (m.FileIndex, m.Start, m.Start)
+    member m.StartRange = _rangeBackground (m.FileIndex, m.Start, m.Start)
 
-    member m.EndRange = _range (m.FileIndex, m.End, m.End)
+    member m.EndRange = _rangeBackground (m.FileIndex, m.End, m.End)
 
     member m.FileName = fileOfFileIndex m.FileIndex
 
     member m.ShortFileName = Path.GetFileName(fileOfFileIndex m.FileIndex)
 
     member _.MakeSynthetic() =
-        _range (code1, code2 ||| isSyntheticMask)
+        _rangeBackground (code1, code2 ||| isSyntheticMask)
 
-    member m.IsAdjacentTo(otherRange: _Range) =
+    member m.IsAdjacentTo(otherRange: _RangeBackground) =
         m.FileIndex = otherRange.FileIndex && m.End.Encoding = otherRange.Start.Encoding
 
     member _.NoteSourceConstruct(kind) =
@@ -335,7 +335,7 @@ type _Range(code1: int64, code2: int64) =
             | NotedSourceConstruct.Combine -> 8
             | NotedSourceConstruct.DelayOrQuoteOrRun -> 9
 
-        _range (code1, (code2 &&& ~~~debugPointKindMask) ||| (int64 code <<< debugPointKindShift))
+        _rangeBackground (code1, (code2 &&& ~~~debugPointKindMask) ||| (int64 code <<< debugPointKindShift))
 
     member _.Code1 = code1
 
@@ -369,14 +369,14 @@ type _Range(code1: int64, code2: int64) =
             with e ->
                 e.ToString()
 
-    member _.Equals(m2: _range) =
+    member _.Equals(m2: _rangeBackground) =
         let code2 = code2 &&& ~~~(debugPointKindMask ||| isSyntheticMask)
         let rcode2 = m2.Code2 &&& ~~~(debugPointKindMask ||| isSyntheticMask)
         code1 = m2.Code1 && code2 = rcode2
 
     override m.Equals(obj) =
         match obj with
-        | :? _range as m2 -> m.Equals(m2)
+        | :? _rangeBackground as m2 -> m.Equals(m2)
         | _ -> false
 
     override _.GetHashCode() =
@@ -386,23 +386,23 @@ type _Range(code1: int64, code2: int64) =
     override r.ToString() =
         sprintf "(%d,%d--%d,%d)" r.StartLine r.StartColumn r.EndLine r.EndColumn
 
-    member m.IsZero = m.Equals _range.Zero
+    member m.IsZero = m.Equals _rangeBackground.Zero
 
-and _range = _Range
+and _rangeBackground = _RangeBackground
 
 [<Struct; CustomEquality; NoComparison>]
 [<System.Diagnostics.DebuggerDisplay("({OriginalStartLine},{OriginalStartColumn}-{OriginalEndLine},{OriginalEndColumn}) {OriginalShortFileName} -> ({StartLine},{StartColumn}-{EndLine},{EndColumn}) {ShortFileName} -> {DebugCode}")>]
-type Range(range1: _range, range2: _range) =
-    static member Zero = range (_range.Zero, _range.Zero)
+type Range(range1: _rangeBackground, range2: _rangeBackground) =
+    static member Zero = range (_rangeBackground.Zero, _rangeBackground.Zero)
 
-    new(fIdx, bl, bc, el, ec) = range (_range (fIdx, bl, bc, el, ec), _Range.Zero)
+    new(fIdx, bl, bc, el, ec) = range (_rangeBackground (fIdx, bl, bc, el, ec), _RangeBackground.Zero)
 
-    new(fIdx, bl, bc, el, ec, fIdx2, bl2, bc2, el2, ec2) = range (_range (fIdx, bl, bc, el, ec), _range (fIdx2, bl2, bc2, el2, ec2))
+    new(fIdx, bl, bc, el, ec, fIdx2, bl2, bc2, el2, ec2) = range (_rangeBackground (fIdx, bl, bc, el, ec), _rangeBackground (fIdx2, bl2, bc2, el2, ec2))
 
-    new(fIdx, b: pos, e: pos) = range (_range (fIdx, b.Line, b.Column, e.Line, e.Column), _range.Zero)
+    new(fIdx, b: pos, e: pos) = range (_rangeBackground (fIdx, b.Line, b.Column, e.Line, e.Column), _rangeBackground.Zero)
 
     new(fIdx, b: pos, e: pos, fIdx2, b2: pos, e2: pos) =
-        range (_range (fIdx, b.Line, b.Column, e.Line, e.Column), _range (fIdx2, b2.Line, b2.Column, e2.Line, e2.Column))
+        range (_rangeBackground (fIdx, b.Line, b.Column, e.Line, e.Column), _rangeBackground (fIdx2, b2.Line, b2.Column, e2.Line, e2.Column))
 
     member _.StartLine = range1.StartLine
 
@@ -693,20 +693,36 @@ module Range =
             mkRange file (mkPos 1 0) (mkPos 1 80)
 
 module internal FileContent =
-    let private dict = ConcurrentDictionary<string, string array>()
+    let private fileContentDict = ConcurrentDictionary<string, string array>()
+    let private newlineMarkDict = ConcurrentDictionary<string, string>()
 
     let readFileContents (fileNames: string list) =
         for fileName in fileNames do
             if FileSystem.FileExistsShim fileName then
                 use fileStream = FileSystem.OpenFileForReadShim(fileName)
-                dict[fileName] <- fileStream.ReadAllLines()
+                let text = fileStream.ReadAllText()
+                let newlineMark =
+                    if text.IndexOf('\n') > -1 && text.IndexOf('\r') = -1 then
+                        "\n"
+                    else "\r\n"
+                newlineMarkDict[fileName] <- newlineMark
+                fileContentDict[fileName] <- text.Split([|newlineMark|], StringSplitOptions.None)
 
-    let getLine fileName line =
-        match dict.TryGetValue fileName with
-        | true, lines when lines.Length > line -> lines[line - 1]
-        | _ -> String.Empty
+    type IFileContentGetLine =
+        abstract GetLine: fileName: string -> line: int -> string
+        abstract GetLineNewLineMark: fileName: string -> string
 
-    let mutable getLineDynamic = getLine
+    let mutable getLineDynamic = 
+        { new IFileContentGetLine with
+              member this.GetLine(fileName: string) (line: int): string = 
+                  match fileContentDict.TryGetValue fileName with
+                  | true, lines when lines.Length > line -> lines[line - 1]
+                  | _ -> String.Empty
+
+              member this.GetLineNewLineMark(fileName: string): string = 
+                match newlineMarkDict.TryGetValue fileName with
+                | true, res -> res
+                | _ -> String.Empty }
 
     let getCodeText (m: range) =
         let endCol = m.EndColumn - 1
@@ -719,8 +735,8 @@ module internal FileContent =
                 else
                     m.FileName, m.StartLine, m.EndLine
 
-            [| for i in startLine..endLine -> getLineDynamic filename i |]
-            |> String.concat "\n"
+            [| for i in startLine..endLine -> getLineDynamic.GetLine filename i |]
+            |> String.concat (getLineDynamic.GetLineNewLineMark filename)
 
         if String.IsNullOrEmpty s then
             s

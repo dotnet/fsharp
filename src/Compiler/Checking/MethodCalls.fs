@@ -1466,7 +1466,7 @@ let rec GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g (calledArg: C
 /// Get the expression that must be inserted on the caller side for a CalleeSide optional arg where
 /// no caller argument has been provided. Normally this is 'None', however CallerMemberName and friends
 /// can be used with 'CalleeSide' optional arguments
-let GetDefaultExpressionForCalleeSideOptionalArg g (calledArg: CalledArg) eCallerMemberName (mMethExpr: range) =
+let GetDefaultExpressionForCalleeSideOptionalArg g (calledArg: CalledArg) eCallerMemberName (mMethExpr: range) unnamedArgs =
     let calledArgTy = calledArg.CalledArgumentType
     let calledNonOptTy = 
         if isOptionTy g calledArgTy then 
@@ -1485,6 +1485,22 @@ let GetDefaultExpressionForCalleeSideOptionalArg g (calledArg: CalledArg) eCalle
     | CallerMemberName, Some(callerName) when typeEquiv g calledNonOptTy g.string_ty ->
         let memberNameExpr = Expr.Const (Const.String callerName, mMethExpr, calledNonOptTy)
         mkSome g calledNonOptTy memberNameExpr mMethExpr
+
+    | CallerArgumentExpression param, _ when g.langVersion.SupportsFeature LanguageFeature.SupportCallerArgumentExpression && typeEquiv g calledNonOptTy g.string_ty ->
+        let exprOpt =
+            unnamedArgs
+            |> List.tryPick (fun { CalledArg=called; CallerArg=caller } -> 
+                match called.NameOpt with
+                | Some x when x.idText = param ->
+                    let code = FileContent.getCodeText caller.Range
+                    if System.String.IsNullOrEmpty code then None
+                    else Some (Expr.Const(Const.String code, mMethExpr, calledNonOptTy))
+                | _ -> None)
+
+        match exprOpt with
+        | Some expr -> mkSome g calledNonOptTy expr mMethExpr
+        | None -> mkNone g calledNonOptTy mMethExpr
+
     | _ ->
         mkNone g calledNonOptTy mMethExpr
 
@@ -1501,7 +1517,7 @@ let GetDefaultExpressionForOptionalArg tcFieldInit g (calledArg: CalledArg) eCal
             GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g calledArg calledArgTy dfltVal eCallerMemberName mMethExpr unnamedArgs
 
         | CalleeSide ->
-            emptyPreBinder, GetDefaultExpressionForCalleeSideOptionalArg g calledArg eCallerMemberName mMethExpr
+            emptyPreBinder, GetDefaultExpressionForCalleeSideOptionalArg g calledArg eCallerMemberName mMethExpr unnamedArgs
 
     // Combine the variable allocators (if any)
     let callerArg = CallerArg(calledArgTy, mMethExpr, false, expr)

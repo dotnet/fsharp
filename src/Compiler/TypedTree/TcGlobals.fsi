@@ -1367,8 +1367,6 @@ type internal TcGlobals =
 
     member voidptr_tcr: FSharp.Compiler.TypedTree.EntityRef
 
-    member GetCodeText: m: Text.Range -> string voption
-
 #if DEBUG
 // This global is only used during debug output
 val mutable internal global_g: TcGlobals option

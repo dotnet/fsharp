@@ -1282,6 +1282,16 @@
         <target state="translated">Öznitelikler tür uzantılarına uygulanamaz.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcCallerArgumentExpressionHasInvalidParameterName">
+        <source>This CallerArgumentExpression with argument '{0}' will have no effect because it's applied with an invalid parameter name.</source>
+        <target state="new">This CallerArgumentExpression with argument '{0}' will have no effect because it's applied with an invalid parameter name.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCallerArgumentExpressionSelfReferential">
+        <source>This CallerArgumentExpression with argument '{0}' will have no effect because it's self-referential.</source>
+        <target state="new">This CallerArgumentExpression with argument '{0}' will have no effect because it's self-referential.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
         <source>This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</source>
         <target state="translated">Bu kopyalama ve güncelleştirme kayıt ifadesi, '{0}' kayıt türündeki tüm alanları değiştirir. Bunun yerine kayıt oluşturma söz dizimini kullanmayı deneyin.</target>

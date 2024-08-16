@@ -2333,15 +2333,34 @@ let CheckEntityDefn cenv env (tycon: Entity) =
             if numCurriedArgSets > 1 && others |> List.exists (fun minfo2 -> not (IsAbstractDefaultPair2 minfo minfo2)) then
                 errorR(Error(FSComp.SR.chkDuplicateMethodCurried(nm, NicePrint.minimalStringOfType cenv.denv ty), m))
 
+            let paramDatas = minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst)
+
             if numCurriedArgSets > 1 &&
-               (minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst)
+               (paramDatas
                 |> List.existsSquared (fun (ParamData(isParamArrayArg, _isInArg, isOutArg, optArgInfo, callerInfo, _, reflArgInfo, ty)) ->
                     isParamArrayArg || isOutArg || reflArgInfo.AutoQuote || optArgInfo.IsOptional || callerInfo <> NoCallerInfo || isByrefLikeTy g m ty)) then
                 errorR(Error(FSComp.SR.chkCurriedMethodsCantHaveOutParams(), m))
 
             if numCurriedArgSets = 1 then
-                minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst)
-                |> List.iterSquared (fun (ParamData(_, isInArg, _, optArgInfo, callerInfo, _, _, ty)) ->
+                let paramNames =
+                    paramDatas 
+                    |> List.concat
+                    |> List.choose (fun (ParamData(_, _, _, _, _, nameOpt, _, _)) -> nameOpt)
+
+                let checkCallerArgumentExpression name (nameOpt: Ident option) =
+                    match nameOpt with
+                    | Some ident when name = ident.idText -> 
+                        warning(Error(FSComp.SR.tcCallerArgumentExpressionSelfReferential(name), m))
+                    | _ -> ()
+
+                    if
+                        paramNames
+                        |> List.exists (fun i -> name = i.idText)
+                        |> not
+                    then warning(Error(FSComp.SR.tcCallerArgumentExpressionHasInvalidParameterName(name), m))
+
+                paramDatas
+                |> List.iterSquared (fun (ParamData(_, isInArg, _, optArgInfo, callerInfo, nameOpt, _, ty)) ->
                     ignore isInArg
                     match (optArgInfo, callerInfo) with
                     | _, NoCallerInfo -> ()
@@ -2364,12 +2383,18 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                     | CalleeSide, CallerMemberName ->
                         if not ((isOptionTy g ty) && (typeEquiv g g.string_ty (destOptionTy g ty))) then
                             errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m))
-                    | CallerSide _, CallerArgumentExpression _ ->
+                    | CallerSide _, CallerArgumentExpression name ->
                         if not (typeEquiv g g.string_ty ty) then
                             errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv ty), m))
-                    | CalleeSide, CallerArgumentExpression _ ->
+
+                        checkCallerArgumentExpression name nameOpt
+
+                    | CalleeSide, CallerArgumentExpression name ->
                         if not ((isOptionTy g ty) && (typeEquiv g g.string_ty (destOptionTy g ty))) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m)))
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m))
+
+                        checkCallerArgumentExpression name nameOpt
+                )
 
         for pinfo in immediateProps do
             let nm = pinfo.PropertyName

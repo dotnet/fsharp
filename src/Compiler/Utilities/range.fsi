@@ -315,13 +315,14 @@ module internal FileContent =
     /// Read all file contents
     val readFileContents: fileNames: string list -> unit
 
-    /// Get a line string from already read files
-    val getLine: fileName: string -> line: int -> string
+    type IFileContentGetLine =
+        abstract GetLine: fileName: string -> line: int -> string
+        abstract GetLineNewLineMark: fileName: string -> string
 
     /// Get a line string from already read files.
     ///
     /// Used by `getCodeText` to support `CallerArgumentExpression` in F# Interactive 
-    val mutable getLineDynamic: (string -> int -> string)
+    val mutable getLineDynamic: IFileContentGetLine
 
     /// Get code text of the specific `range`
     val getCodeText: range -> string

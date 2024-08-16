@@ -1282,6 +1282,16 @@
         <target state="translated">형식 확장에 특성을 적용할 수 없습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcCallerArgumentExpressionHasInvalidParameterName">
+        <source>This CallerArgumentExpression with argument '{0}' will have no effect because it's applied with an invalid parameter name.</source>
+        <target state="new">This CallerArgumentExpression with argument '{0}' will have no effect because it's applied with an invalid parameter name.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCallerArgumentExpressionSelfReferential">
+        <source>This CallerArgumentExpression with argument '{0}' will have no effect because it's self-referential.</source>
+        <target state="new">This CallerArgumentExpression with argument '{0}' will have no effect because it's self-referential.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
         <source>This copy-and-update record expression changes all fields of record type '{0}'. Consider using the record construction syntax instead.</source>
         <target state="translated">이 레코드 복사 및 업데이트 식은 '{0}' 레코드 형식의 모든 필드를 변경합니다. 레코드 생성 구문을 대신 사용하는 것이 좋습니다.</target>
