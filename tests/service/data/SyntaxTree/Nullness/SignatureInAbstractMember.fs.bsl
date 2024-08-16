@@ -34,7 +34,7 @@ ImplFile
                               ([[SynArgInfo ([], false, None)]],
                                SynArgInfo ([], false, None)), false, false,
                             PreXmlDoc ((2,3), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, None, (2,3--2,61),
+                            Single None, None, (2,3--2,61),
                             { LeadingKeyword =
                                AbstractMember ((2,3--2,11), (2,12--2,18))
                               InlineKeyword = None

@@ -2364,34 +2364,34 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                     ignore isInArg
                     match (optArgInfo, callerInfo) with
                     | _, NoCallerInfo -> ()
-                    | NotOptional, _ -> errorR(Error(FSComp.SR.tcCallerInfoNotOptional(callerInfo.ToString()), m))
+                    | NotOptional, _ -> errorR(Error(FSComp.SR.tcCallerInfoNotOptional(callerInfo |> string), m))
                     | CallerSide _, CallerLineNumber ->
                         if not (typeEquiv g g.int32_ty ty) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo.ToString(), "int", NicePrint.minimalStringOfType cenv.denv ty), m))
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "int", NicePrint.minimalStringOfType cenv.denv ty), m))
                     | CalleeSide, CallerLineNumber ->
                         if not ((isOptionTy g ty) && (typeEquiv g g.int32_ty (destOptionTy g ty))) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo.ToString(), "int", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m))
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "int", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m))
                     | CallerSide _, CallerFilePath ->
                         if not (typeEquiv g g.string_ty ty) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv ty), m))
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv ty), m))
                     | CalleeSide, CallerFilePath ->
                         if not ((isOptionTy g ty) && (typeEquiv g g.string_ty (destOptionTy g ty))) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m))
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m))
                     | CallerSide _, CallerMemberName ->
                         if not (typeEquiv g g.string_ty ty) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv ty), m))
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv ty), m))
                     | CalleeSide, CallerMemberName ->
                         if not ((isOptionTy g ty) && (typeEquiv g g.string_ty (destOptionTy g ty))) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m))
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m)))
                     | CallerSide _, CallerArgumentExpression name ->
                         if not (typeEquiv g g.string_ty ty) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv ty), m))
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv ty), m))
 
                         checkCallerArgumentExpression name nameOpt
 
                     | CalleeSide, CallerArgumentExpression name ->
                         if not ((isOptionTy g ty) && (typeEquiv g g.string_ty (destOptionTy g ty))) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m))
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m))
 
                         checkCallerArgumentExpression name nameOpt
                 )

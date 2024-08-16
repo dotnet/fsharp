@@ -148,7 +148,7 @@ module Option =
     [<CompiledName("OfNullable")>]
     let inline ofNullable (value: System.Nullable<'T>) =
         if value.HasValue then
-            Some value.Value
+            Some (value.GetValueOrDefault())
         else
             None
 
@@ -338,7 +338,7 @@ module ValueOption =
     [<CompiledName("OfNullable")>]
     let inline ofNullable (value: System.Nullable<'T>) =
         if value.HasValue then
-            ValueSome value.Value
+            ValueSome (value.GetValueOrDefault())
         else
             ValueNone
 

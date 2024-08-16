@@ -27,7 +27,8 @@ ImplFile
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertySet },
                          PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         None, Const (Int32 1, (4,19--4,20)), (4,4--4,29),
+                         GetSet (None, None, None),
+                         Const (Int32 1, (4,19--4,20)), (4,4--4,29),
                          { LeadingKeyword =
                             MemberVal ((4,4--4,10), (4,11--4,14))
                            WithKeyword = Some (4,21--4,25)
@@ -45,4 +46,4 @@ ImplFile
 
 (6,0)-(6,1) parse error Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (4:22). Try indenting this further.
 To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
-(6,0)-(6,1) parse error Incomplete structured construct at or before this point in member definition. Expected identifier, '(', '(*)' or other token.
+(6,0)-(6,1) parse error Incomplete structured construct at or before this point. Expected identifier, '(', '(*)' or other token.
