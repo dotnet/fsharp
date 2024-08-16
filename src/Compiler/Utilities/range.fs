@@ -464,11 +464,13 @@ type Range(range1: _rangeBackground, range2: _rangeBackground) =
         range1.GetHashCode() + range2.GetHashCode()
 
     override _.ToString() =
-        range1.ToString()
-        + if range2.IsZero then
-              String.Empty
-          else
-              $"(from: {range2.ToString()})"
+        let fromText =
+            if range2.IsZero then
+                String.Empty
+            else
+                $"(from: {range2.ToString()})"
+
+        $"{range1} {fromText}"
 
     member _.HasOriginalRange = not range2.IsZero
 

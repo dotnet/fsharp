@@ -1425,6 +1425,7 @@ let rec GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g (calledArg: C
                 emptyPreBinder, Expr.Const (Const.String fileName, mMethExpr, currCalledArgTy)
             | CallerMemberName, Some callerName when (typeEquiv g currCalledArgTy g.string_ty) ->
                 emptyPreBinder, Expr.Const (Const.String callerName, mMethExpr, currCalledArgTy)
+            
             | CallerArgumentExpression param, _ when g.langVersion.SupportsFeature LanguageFeature.SupportCallerArgumentExpression && typeEquiv g currCalledArgTy g.string_ty ->
                 let str =
                     unnamedArgs
@@ -1437,6 +1438,7 @@ let rec GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g (calledArg: C
                         | _ -> None)
                     |> Option.defaultWith (fun _ -> tcFieldInit mMethExpr fieldInit)
                 emptyPreBinder, Expr.Const (str, mMethExpr, currCalledArgTy)
+            
             | _ ->
                 emptyPreBinder, Expr.Const (tcFieldInit mMethExpr fieldInit, mMethExpr, currCalledArgTy)
                 

@@ -2351,13 +2351,9 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                     match nameOpt with
                     | Some ident when name = ident.idText -> 
                         warning(Error(FSComp.SR.tcCallerArgumentExpressionSelfReferential(name), m))
+                    | _ when paramNames |> List.forall (fun i -> name <> i.idText) -> 
+                        warning(Error(FSComp.SR.tcCallerArgumentExpressionHasInvalidParameterName(name), m))
                     | _ -> ()
-
-                    if
-                        paramNames
-                        |> List.exists (fun i -> name = i.idText)
-                        |> not
-                    then warning(Error(FSComp.SR.tcCallerArgumentExpressionHasInvalidParameterName(name), m))
 
                 paramDatas
                 |> List.iterSquared (fun (ParamData(_, isInArg, _, optArgInfo, callerInfo, nameOpt, _, ty)) ->
@@ -2382,7 +2378,8 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                             errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv ty), m))
                     | CalleeSide, CallerMemberName ->
                         if not ((isOptionTy g ty) && (typeEquiv g g.string_ty (destOptionTy g ty))) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m)))
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m))
+                    
                     | CallerSide _, CallerArgumentExpression name ->
                         if not (typeEquiv g g.string_ty ty) then
                             errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv ty), m))
