@@ -44,4 +44,6 @@ val TypeDefinitelyHasEquality: TcGlobals -> TType -> bool
 
 val MakeValsForUnionAugmentation: TcGlobals -> TyconRef -> Val list
 
+val MakeValForNonNullableToStringOverride: TcGlobals -> TyconRef -> Val list
+
 val MakeBindingsForUnionAugmentation: TcGlobals -> Tycon -> ValRef list -> Binding list

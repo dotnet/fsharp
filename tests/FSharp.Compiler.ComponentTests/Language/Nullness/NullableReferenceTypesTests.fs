@@ -9,6 +9,7 @@ let withNullnessOptions cu =
     |> withWarnOn 3261
     |> withWarnOn 3262
     |> withNoWarn 52 //The value has been copied to ensure the original..
+    |> withNoWarn 60 // Override implementations in augmentations are now deprecated...
     |> withOptions ["--warnaserror+"]
 
 let typeCheckWithStrictNullness cu =
@@ -305,7 +306,7 @@ let duWithExtensionProvidedToString = """A | B
 module Functions =
     let printMyType (x:MyCustomType) : string = "xxx" 
 type MyCustomType with
-    override x.ToString() : string = WhatEver.print x
+    override x.ToString() : string = "hi"
     """
 
 [<Literal>]

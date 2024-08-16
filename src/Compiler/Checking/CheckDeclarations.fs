@@ -5699,6 +5699,19 @@ let MakeInitialEnv env =
     let moduleTyAcc = ref (Construct.NewEmptyModuleOrNamespaceType (Namespace false))
     { env with eModuleOrNamespaceTypeAccumulator = moduleTyAcc }, moduleTyAcc
 
+let ChangeFsharpTypesToNonNullToString (g:TcGlobals) checkForErrors moduleOrNsContents cenv env m =
+    if g.checkNullness then
+        conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
+            try
+                moduleOrNsContents |> IterTyconsOfModuleOrNamespaceType (fun tycon ->
+                    if tycon.IsRecordTycon || tycon.IsUnionTycon then
+                        let tcref = mkLocalTyconRef tycon
+                        AugmentTypeDefinitions.MakeValForNonNullableToStringOverride g tcref
+                        |> List.iter (fun v -> PublishValueDefnMaybeInclCompilerGenerated cenv env true ModuleOrMemberBinding v))
+
+            with RecoverableException exn ->
+                errorRecovery exn m)
+
 /// Check an entire implementation file
 /// Typecheck, then close the inference scope and then check the file meets its signature (if any)
 let CheckOneImplFile 
@@ -5774,12 +5787,15 @@ let CheckOneImplFile
         conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
             ApplyDefaults cenv g denvAtEnd m moduleContents extraAttribs)
 
+        ChangeFsharpTypesToNonNullToString g checkForErrors implFileTypePriorToSig cenv env m
+
         // Check completion of all classes defined across this file. 
         // NOTE: this is not a great technique if inner signatures are permitted to hide 
         // virtual dispatch slots. 
         conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
             try
                 implFileTypePriorToSig |> IterTyconsOfModuleOrNamespaceType (fun tycon ->
+                    //AugmentTypeDefinitions.MakeValForNonNullableToStringOverride g 
                     FinalTypeDefinitionChecksAtEndOfInferenceScope (cenv.infoReader, envAtEnd.NameEnv, cenv.tcSink, true, denvAtEnd, tycon))
 
             with RecoverableException exn ->
@@ -5882,12 +5898,13 @@ let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSin
             tcComputationExpression=TcComputationExpression)
 
     let envinner, moduleTyAcc = MakeInitialEnv tcEnv 
-
+    let m = sigFile.QualifiedName.Range
     let specs = [ for x in sigFile.Contents -> SynModuleSigDecl.NamespaceFragment x ]
-    let! tcEnv = TcSignatureElements cenv ParentNone sigFile.QualifiedName.Range envinner PreXmlDoc.Empty None specs
+    let! tcEnv = TcSignatureElements cenv ParentNone m envinner PreXmlDoc.Empty None specs
     
     let sigFileType = moduleTyAcc.Value
     
+    ChangeFsharpTypesToNonNullToString g checkForErrors sigFileType cenv tcEnv m
     if not (checkForErrors()) then  
         try
             sigFileType |> IterTyconsOfModuleOrNamespaceType (fun tycon ->

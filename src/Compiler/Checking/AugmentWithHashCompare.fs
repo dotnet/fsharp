@@ -1689,23 +1689,24 @@ let MakeValsForUnionAugmentation g (tcref: TyconRef) =
     let vis = tcref.TypeReprAccessibility
     let tps = tcref.Typars m
 
-    let isTesters = 
+    tcref.UnionCasesAsList
+    |> List.map (fun uc ->
+        // Unlike other generated items, the 'IsABC' propeties are visible, not considered compiler-generated
+        let v =
+            mkImpliedValSpec g uc.Range tcref tmty vis None ("get_Is" + uc.CompiledName) (tps +-> (mkIsCaseTy g tmty)) unitArg true
 
-        tcref.UnionCasesAsList
-        |> List.map (fun uc ->
-            // Unlike other generated items, the 'IsABC' propeties are visible, not considered compiler-generated
-            let v =
-                mkImpliedValSpec g uc.Range tcref tmty vis None ("get_Is" + uc.CompiledName) (tps +-> (mkIsCaseTy g tmty)) unitArg true
+        g.AddValGeneratedAttributes v m
+        v)
 
-            g.AddValGeneratedAttributes v m
-            v)
-
-    let toStringSpec() =
+let MakeValForNonNullableToStringOverride (g:TcGlobals) (tcref: TyconRef) =    
+    if g.checkNullness && not (tcref.HasOverride g "ToString" []) && (tcref.IsRecordTycon || tcref.IsUnionTycon) then
+        let _, tmty = mkMinimalTy g tcref
+        let tps = tcref.Typars tcref.Range
+        let vis = tcref.TypeReprAccessibility
         mkValSpec g tcref tmty vis (Some(mkToStringSlotSig g)) "ToString" (tps +-> (mkToStringTy g tmty)) unitArg false
-
-    [ if tcref.HasOverride g "ToString" [] |> not then
-        yield toStringSpec()
-      yield! isTesters]
+        |> List.singleton
+    else
+        []
 
 let MakeBindingsForUnionAugmentation g (tycon: Tycon) (vals: ValRef list) =
     let tcref = mkLocalTyconRef tycon
@@ -1715,9 +1716,7 @@ let MakeBindingsForUnionAugmentation g (tycon: Tycon) (vals: ValRef list) =
     let thisv, thise = mkThisVar g m ty
     let unitv, _ = mkCompGenLocal m "unitArg" g.unit_ty
 
-    let _ToStringVal,isVals = List.headAndTail vals
-
-    (tcref.UnionCasesAsRefList, isVals)
+    (tcref.UnionCasesAsRefList, vals)
     ||> List.map2 (fun ucr v ->
         let isdata = mkUnionCaseTest g (thise, ucr, tinst, m)
         let expr = mkLambdas g m tps [ thisv; unitv ] (isdata, g.bool_ty)
