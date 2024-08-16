@@ -1581,7 +1581,7 @@ let mkClassUnionDef
                     events = emptyILEvents,
                     properties = emptyILProperties,
                     additionalFlags = ILTypeDefAdditionalFlags.None,
-                    customAttrs = emptyILCustomAttrs
+                    customAttrs = emptyILCustomAttrsStored
                 )
                     .WithNestedAccess(cud.UnionCasesAccessibility)
                     .WithAbstract(true)
@@ -1628,8 +1628,9 @@ let mkClassUnionDef
                         td.CustomAttrs.AsArray()
                         |> Array.append [| GetNullableAttribute g [ NullnessInfo.WithNull ] |]
                         |> mkILCustomAttrsFromArray
+                        |> storeILCustomAttrs
                     else
-                        td.CustomAttrs
+                        td.CustomAttrsStored
             )
         // The .cctor goes on the Cases type since that's where the constant fields for nullary constructors live
         |> addConstFieldInit
