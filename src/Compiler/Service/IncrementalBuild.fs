@@ -142,7 +142,7 @@ module IncrementalBuildSyntaxTree =
                     Activity.start "IncrementalBuildSyntaxTree.parse"
                         [|
                             Activity.Tags.fileName, fileName
-                            Activity.Tags.buildPhase, BuildPhase.Parse.ToString()
+                            Activity.Tags.buildPhase, !! BuildPhase.Parse.ToString()
                         |]
 
                 try
@@ -264,7 +264,7 @@ type BoundModel private (
 
             beforeFileChecked.Trigger fileName
                     
-            ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName fileName, tcImports.DependencyProvider) |> ignore
+            ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, !! Path.GetDirectoryName(fileName), tcImports.DependencyProvider) |> ignore
             let sink = TcResultsSinkImpl(tcGlobals)
             let hadParseErrors = not (Array.isEmpty parseErrors)
             let input, moduleNamesDict = DeduplicateParsedInputModuleName prevTcInfo.moduleNamesDict input
@@ -805,7 +805,7 @@ module IncrementalBuilderHelpers =
                         let hasTypeProviderAssemblyAttrib =
                             topAttrs.assemblyAttrs |> List.exists (fun (Attrib(tcref, _, _, _, _, _, _)) ->
                                 let nm = tcref.CompiledRepresentationForNamedType.BasicQualifiedName
-                                nm = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName)
+                                nm = !! typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName)
 
                         if tcState.CreatesGeneratedProvidedTypes || hasTypeProviderAssemblyAttrib then
                             ProjectAssemblyDataResult.Unavailable true
@@ -1455,7 +1455,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     { new IXmlDocumentationInfoLoader with
                         /// Try to load xml documentation associated with an assembly by the same file path with the extension ".xml".
                         member _.TryLoad(assemblyFileName) =
-                            let xmlFileName = Path.ChangeExtension(assemblyFileName, ".xml")
+                            let xmlFileName = !! Path.ChangeExtension(assemblyFileName, ".xml")
 
                             // REVIEW: File IO - Will eventually need to change this to use a file system interface of some sort.
                             XmlDocumentationInfo.TryCreateFromFile(xmlFileName)

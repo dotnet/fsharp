@@ -57,6 +57,7 @@
     <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\MemberDefinitions.fs" />
     <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\ImplementingDispatchSlots\ImplementingDispatchSlots.fs" />
     <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\MethodsAndProperties\MethodsAndProperties.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\MethodsAndProperties\AutoPropsWithModifierBeforeGetSet.fs" />
     <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\NamedArguments\NamedArguments.fs" />
     <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\OptionalArguments\OptionalArguments.fs" />
     <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\OptionalDefaultParamArgs\OptionalDefaultParamArgs.fs" />
