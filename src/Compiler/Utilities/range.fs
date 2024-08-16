@@ -397,12 +397,16 @@ type Range(range1: _rangeBackground, range2: _rangeBackground) =
 
     new(fIdx, bl, bc, el, ec) = range (_rangeBackground (fIdx, bl, bc, el, ec), _RangeBackground.Zero)
 
-    new(fIdx, bl, bc, el, ec, fIdx2, bl2, bc2, el2, ec2) = range (_rangeBackground (fIdx, bl, bc, el, ec), _rangeBackground (fIdx2, bl2, bc2, el2, ec2))
+    new(fIdx, bl, bc, el, ec, fIdx2, bl2, bc2, el2, ec2) =
+        range (_rangeBackground (fIdx, bl, bc, el, ec), _rangeBackground (fIdx2, bl2, bc2, el2, ec2))
 
     new(fIdx, b: pos, e: pos) = range (_rangeBackground (fIdx, b.Line, b.Column, e.Line, e.Column), _rangeBackground.Zero)
 
     new(fIdx, b: pos, e: pos, fIdx2, b2: pos, e2: pos) =
-        range (_rangeBackground (fIdx, b.Line, b.Column, e.Line, e.Column), _rangeBackground (fIdx2, b2.Line, b2.Column, e2.Line, e2.Column))
+        range (
+            _rangeBackground (fIdx, b.Line, b.Column, e.Line, e.Column),
+            _rangeBackground (fIdx2, b2.Line, b2.Column, e2.Line, e2.Column)
+        )
 
     member _.StartLine = range1.StartLine
 
@@ -701,28 +705,32 @@ module internal FileContent =
             if FileSystem.FileExistsShim fileName then
                 use fileStream = FileSystem.OpenFileForReadShim(fileName)
                 let text = fileStream.ReadAllText()
+
                 let newlineMark =
                     if text.IndexOf('\n') > -1 && text.IndexOf('\r') = -1 then
                         "\n"
-                    else "\r\n"
+                    else
+                        "\r\n"
+
                 newlineMarkDict[fileName] <- newlineMark
-                fileContentDict[fileName] <- text.Split([|newlineMark|], StringSplitOptions.None)
+                fileContentDict[fileName] <- text.Split([| newlineMark |], StringSplitOptions.None)
 
     type IFileContentGetLine =
         abstract GetLine: fileName: string -> line: int -> string
         abstract GetLineNewLineMark: fileName: string -> string
 
-    let mutable getLineDynamic = 
+    let mutable getLineDynamic =
         { new IFileContentGetLine with
-              member this.GetLine(fileName: string) (line: int): string = 
-                  match fileContentDict.TryGetValue fileName with
-                  | true, lines when lines.Length > line -> lines[line - 1]
-                  | _ -> String.Empty
+            member this.GetLine (fileName: string) (line: int) : string =
+                match fileContentDict.TryGetValue fileName with
+                | true, lines when lines.Length > line -> lines[line - 1]
+                | _ -> String.Empty
 
-              member this.GetLineNewLineMark(fileName: string): string = 
+            member this.GetLineNewLineMark(fileName: string) : string =
                 match newlineMarkDict.TryGetValue fileName with
                 | true, res -> res
-                | _ -> String.Empty }
+                | _ -> String.Empty
+        }
 
     let getCodeText (m: range) =
         let endCol = m.EndColumn - 1

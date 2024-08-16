@@ -4670,13 +4670,14 @@ type FsiEvaluationSession
         if List.isEmpty fsiOptions.SourceFiles then
             fsiConsolePrompt.PrintAhead()
 
-    do FileContent.getLineDynamic <- 
-        { new FileContent.IFileContentGetLine with
-              member this.GetLine(fileName: string) (line: int): string = 
-                  fsiStdinSyphon.GetLineNoPrune fileName line
+    do
+        FileContent.getLineDynamic <-
+            { new FileContent.IFileContentGetLine with
+                member this.GetLine (fileName: string) (line: int) : string =
+                    fsiStdinSyphon.GetLineNoPrune fileName line
 
-              member this.GetLineNewLineMark _: string = 
-                  "\n" }
+                member this.GetLineNewLineMark _ : string = "\n"
+            }
 
     let fsiConsoleInput = FsiConsoleInput(fsi, fsiOptions, inReader, outWriter)
 
