@@ -4065,7 +4065,11 @@ let private ResolveExprDotLongIdent (ncenv: NameResolver) m ad nenv ty (id: Iden
 
 let ComputeItemRange (item: Item) wholem (lid: Ident list) rest =
     match item, lid with
-    | Item.MethodGroup _, [ methodIdent ] -> methodIdent.idRange
+    | Item.MethodGroup _, methodIdents -> 
+        methodIdents
+        |> List.tryLast
+        |> Option.map(fun x -> x.idRange)
+        |> Option.defaultValue(wholem)
     | _ ->
 
     match rest with

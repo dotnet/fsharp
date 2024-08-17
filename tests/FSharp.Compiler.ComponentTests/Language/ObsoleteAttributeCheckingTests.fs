@@ -205,7 +205,7 @@ C.Update()
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 9, Col 1, Line 9, Col 9, "This construct is deprecated. Use B instead")
+            (Error 101, Line 9, Col 3, Line 9, Col 9, "This construct is deprecated. Use B instead")
         ]
         
     [<Fact>]
@@ -989,7 +989,7 @@ Class.ObsoleteEvent |> ignore
         |> shouldFail
         |> withDiagnostics [
             (Warning 44, Line 3, Col 1, Line 3, Col 20, "This construct is deprecated. Field is obsolete");
-            (Warning 44, Line 4, Col 1, Line 4, Col 21, "This construct is deprecated. Method is obsolete");
+            (Warning 44, Line 4, Col 7, Line 4, Col 21, "This construct is deprecated. Method is obsolete");
             (Warning 44, Line 5, Col 1, Line 5, Col 23, "This construct is deprecated. Property is obsolete")
             (Warning 44, Line 6, Col 1, Line 6, Col 20, "This construct is deprecated. Event is obsolete")
         ]
@@ -1028,7 +1028,7 @@ Class.ObsoleteEvent |> ignore
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 3, Col 1, Line 3, Col 20, "This construct is deprecated. Field is obsolete");
-            (Error 101, Line 4, Col 1, Line 4, Col 21, "This construct is deprecated. Method is obsolete");
+            (Error 101, Line 4, Col 7, Line 4, Col 21, "This construct is deprecated. Method is obsolete");
             (Error 101, Line 5, Col 1, Line 5, Col 23, "This construct is deprecated. Property is obsolete")
             (Error 101, Line 6, Col 1, Line 6, Col 20, "This construct is deprecated. Event is obsolete")
         ]
