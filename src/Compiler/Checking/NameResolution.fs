@@ -4063,7 +4063,11 @@ let private ResolveExprDotLongIdent (ncenv: NameResolver) m ad nenv ty (id: Iden
     | _ ->
         ForceRaise adhocDotSearchAccessible
 
-let ComputeItemRange wholem (lid: Ident list) rest =
+let ComputeItemRange (item: Item) wholem (lid: Ident list) rest =
+    match item, lid with
+    | Item.MethodGroup _, [ methodIdent ] -> methodIdent.idRange
+    | _ ->
+
     match rest with
     | [] -> wholem
     | _ ->
@@ -4118,7 +4122,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
     match ResolveExprLongIdent sink ncenv wholem ad nenv typeNameResInfo lid maybeAppliedArgExpr with 
     | Exception e -> Exception e 
     | Result (tinstEnclosing, item1, rest) ->
-    let itemRange = ComputeItemRange wholem lid rest
+    let itemRange = ComputeItemRange item1 wholem lid rest
 
     let item = FilterMethodGroups ncenv itemRange item1 true
 
@@ -4188,7 +4192,7 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
             | id :: rest ->
                 ResolveExprDotLongIdent ncenv wholem ad nenv ty id rest typeNameResInfo findFlag maybeAppliedArgExpr
             | _ -> error(InternalError("ResolveExprDotLongIdentAndComputeRange", wholem))
-        let itemRange = ComputeItemRange wholem lid rest
+        let itemRange = ComputeItemRange item wholem lid rest
         resInfo, item, rest, itemRange
 
     // "true" resolution
