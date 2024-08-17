@@ -1208,7 +1208,7 @@ IAdditionOperators.op_Addition (3, 6)
           |> withLangVersion80
           |> compile
           |> shouldFail
-          |> withSingleDiagnostic (Error 3866, Line 4, Col 1, Line 4, Col 38, "A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.op_Addition).")
+          |> withSingleDiagnostic (Error 3866, Line 4, Col 20, Line 4, Col 31, "A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.op_Addition).")
 
     [<FactForNETCOREAPP>]
     let ``Accessing to IWSAM(System.Numerics virtual member) compiles and runs`` () =
@@ -1238,9 +1238,9 @@ printf "%A" res"""
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3866, Line 12, Col 82, Line 12, Col 126, "A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.op_Addition).")
-            (Error 3866, Line 13, Col 82, Line 13, Col 126, "A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.op_Addition).")
-            (Error 3866, Line 15, Col 82, Line 15, Col 129, "A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.Parse).")
+            (Error 3866, Line 12, Col 101, Line 12, Col 112, "A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.op_Addition).")
+            (Error 3866, Line 13, Col 102, Line 13, Col 103, "A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.op_Addition).")
+            (Error 3866, Line 15, Col 92, Line 15, Col 97, "A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.Parse).")
         ]
 
     [<FactForNETCOREAPP>]

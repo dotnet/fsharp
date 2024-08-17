@@ -7,9 +7,9 @@ using-nullness-syntax-positive.fs (19,26)-(19,28) typecheck error Nullness warni
 using-nullness-syntax-positive.fs (27,14)-(27,17) typecheck error Nullness warning: The types 'C' and 'C | null' do not have compatible nullability.
 using-nullness-syntax-positive.fs (27,14)-(27,17) typecheck error Nullness warning: The types 'C' and 'C | null' do not have compatible nullability.
 using-nullness-syntax-positive.fs (28,14)-(28,19) typecheck error Nullness warning: The types 'C' and 'C | null' do not have compatible nullability.
-using-nullness-syntax-positive.fs (28,14)-(28,19) typecheck error Nullness warning: The types 'C' and 'C | null' do not have compatible nullability.
+using-nullness-syntax-positive.fs (28,16)-(28,17) typecheck error Nullness warning: The types 'C' and 'C | null' do not have compatible nullability.
 using-nullness-syntax-positive.fs (29,14)-(29,17) typecheck error Nullness warning: The types 'C' and 'C | null' do not have compatible nullability.
-using-nullness-syntax-positive.fs (29,14)-(29,17) typecheck error Nullness warning: The types 'C' and 'C | null' do not have compatible nullability.
+using-nullness-syntax-positive.fs (29,16)-(29,17) typecheck error Nullness warning: The types 'C' and 'C | null' do not have compatible nullability.
 using-nullness-syntax-positive.fs (43,26)-(43,30) typecheck error Nullness warning: The type 'String' does not support 'null'.
 using-nullness-syntax-positive.fs (85,63)-(85,70) typecheck error Nullness warning: The types 'C' and 'C | null' do not have compatible nullability.
 using-nullness-syntax-positive.fs (85,63)-(85,70) typecheck error Nullness warning: The types 'C' and 'C | null' do not have compatible nullability.
@@ -24,8 +24,8 @@ using-nullness-syntax-positive.fs (92,72)-(92,81) typecheck error Nullness warni
 using-nullness-syntax-positive.fs (92,83)-(92,93) typecheck error Nullness warning: The types 'C' and 'C | null' do not have compatible nullability.
 using-nullness-syntax-positive.fs (92,83)-(92,93) typecheck error Nullness warning: The types 'C' and 'C | null' do not have compatible nullability.
 using-nullness-syntax-positive.fs (120,32)-(120,36) typecheck error Nullness warning: The type 'obj array' does not support 'null'.
-using-nullness-syntax-positive.fs (129,4)-(129,34) typecheck error Nullness warning: The type 'String' does not support 'null'.
-using-nullness-syntax-positive.fs (134,5)-(134,44) typecheck error Nullness warning: The type 'String' does not support 'null'.
+using-nullness-syntax-positive.fs (129,19)-(129,28) typecheck error Nullness warning: The type 'String' does not support 'null'.
+using-nullness-syntax-positive.fs (134,20)-(134,29) typecheck error Nullness warning: The type 'String' does not support 'null'.
 using-nullness-syntax-positive.fs (144,39)-(144,43) typecheck error Nullness warning: The type 'String' does not support 'null'.
 using-nullness-syntax-positive.fs (154,40)-(154,44) typecheck error Nullness warning: The type 'string' does not support 'null'.
 using-nullness-syntax-positive.fs (159,36)-(159,40) typecheck error Nullness warning: The type 'String' does not support 'null'.
