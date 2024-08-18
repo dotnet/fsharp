@@ -688,6 +688,22 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
             (Error 842, Line 48, Col 3, Line 48, Col 18, "This attribute is not valid for use on this language element")
         ]
         
+    // SOURCE= CLIMutableAttribute01.fs	# CLIMutableAttribute01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CLIMutableAttribute01.fs"|])>]
+    let ``CLIMutableAttribute01 8.0`` compilation =
+        compilation
+        |> withLangVersion80
+        |> verifyCompile
+        |> shouldSucceed
+    
+    // SOURCE=CLIMutableAttribute01.fs	# CLIMutableAttribute01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CLIMutableAttribute01.fs"|])>]
+    let ``CLIMutableAttribute01 preview`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldSucceed
+        
     // SOURCE= E_CLIMutableAttribute.fs	# E_CLIMutableAttribute.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_CLIMutableAttribute.fs"|])>]
     let ``E_CLIMutableAttribute 8.0`` compilation =
