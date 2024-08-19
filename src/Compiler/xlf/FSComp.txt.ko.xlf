@@ -758,13 +758,13 @@
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidAsciiByteLiteral">
-        <source>This is not a valid ASCII byte literal. Value must be &lt; 128y.</source>
-        <target state="new">This is not a valid ASCII byte literal. Value must be &lt; 128y.</target>
+        <source>This is not a valid byte character literal. The value must be less than or equal to '\\127'B.</source>
+        <target state="new">This is not a valid byte character literal. The value must be less than or equal to '\\127'B.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidCharLiteralInString">
-        <source>'{0}' is not a valid character literal.\nNote: Currently the value is wrapped around byte range to '{1}'. In a future F# version this Warning will be promoted to Error!</source>
-        <target state="new">'{0}' is not a valid character literal.\nNote: Currently the value is wrapped around byte range to '{1}'. In a future F# version this Warning will be promoted to Error!</target>
+        <source>'{0}' is not a valid character literal.\nNote: Currently the value is wrapped around byte range to '{1}'. In a future F# version this warning will be promoted to an error.</source>
+        <target state="new">'{0}' is not a valid character literal.\nNote: Currently the value is wrapped around byte range to '{1}'. In a future F# version this warning will be promoted to an error.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidIdentifier">
@@ -773,8 +773,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidTrigraphAsciiByteLiteral">
-        <source>This is not a valid ASCII byte literal. Value should be &lt; 128y.\nNote: In a future F# version this Warning will be promoted to Error!</source>
-        <target state="new">This is not a valid ASCII byte literal. Value should be &lt; 128y.\nNote: In a future F# version this Warning will be promoted to Error!</target>
+        <source>This is not a valid byte character literal. The value must be less than or equal to '\\127'B.\nNote: In a future F# version this warning will be promoted to an error.</source>
+        <target state="new">This is not a valid byte character literal. The value must be less than or equal to '\\127'B.\nNote: In a future F# version this warning will be promoted to an error.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
