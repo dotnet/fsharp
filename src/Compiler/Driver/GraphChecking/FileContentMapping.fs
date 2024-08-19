@@ -8,10 +8,14 @@ type Continuations = ((FileContentEntry list -> FileContentEntry list) -> FileCo
 /// Collect a list of 'U from option 'T via a mapping function.
 let collectFromOption (mapping: 'T -> 'U list) (t: 'T option) : 'U list = List.collect mapping (Option.toList t)
 
-let longIdentToPath (skipLast: bool) (longId: LongIdent) : LongIdentifier =
+let rec longIdentToPath (skipLast: bool) (longId: LongIdent) : LongIdentifier =
     match skipLast, longId with
-    | true, _ :: _ -> List.take (longId.Length - 1) longId
-    | _ -> longId
+    | true, h :: t when h.idText = "`global`" ->
+        List.take (t.Length - 1) t
+    | true, _ :: _ ->
+        List.take (longId.Length - 1) longId
+    | _ ->
+        longId
     |> List.map (fun ident -> ident.idText)
 
 let synLongIdentToPath (skipLast: bool) (synLongIdent: SynLongIdent) =

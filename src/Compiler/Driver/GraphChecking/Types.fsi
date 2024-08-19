@@ -55,6 +55,7 @@ type internal TrieNode =
 
 /// A significant construct found in the syntax tree of a file.
 /// This construct needs to be processed in order to deduce potential links to other files in the project.
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type internal FileContentEntry =
     /// Any toplevel namespace a file might have.
     /// In case a file has `module X.Y.Z`, then `X.Y` is considered to be the toplevel namespace
