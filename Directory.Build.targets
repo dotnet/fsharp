@@ -38,9 +38,6 @@
   </ItemGroup>
 
   <Target Name="CopyMIBCWrapper" BeforeTargets="Restore">
-    <MSBuild
-      Projects="$(RepositoryEngineeringDir)restore\optimizationData.targets"
-      Targets="CopyMIBC"
-      RemoveProperties="TargetFramework" />
+    <MSBuild Projects="$(RepositoryEngineeringDir)restore\optimizationData.targets" Targets="CopyMIBC" />
   </Target>
 </Project>

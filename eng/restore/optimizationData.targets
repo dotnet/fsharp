@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="@(MIBCPackage)" />
-  </ItemGroup>  
+  </ItemGroup>
 
   <!-- We copy all packages to the output (per architecture) -->
   <Target Name="CopyMIBC">
@@ -20,12 +20,12 @@
 
     <Copy
       SourceFiles="@(MibcFiles)"
-      DestinationFolder="$(ArtifactsDir)\mibc\%(MibcPackage.Identity)\"
+      DestinationFolder="$(ArtifactsDir)mibc\%(MibcPackage.Identity)\"
       SkipUnchangedFiles="true" />  
 
     <Copy
       SourceFiles="@(MibcFiles)"
-      DestinationFolder="$(ArtifactsDir)\mibc-proto\%(MibcPackage.Identity)\"
+      DestinationFolder="$(ArtifactsDir)mibc-proto\%(MibcPackage.Identity)\"
       SkipUnchangedFiles="true" />
   </Target>
 </Project>
