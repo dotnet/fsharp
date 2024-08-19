@@ -37,12 +37,19 @@
     </KnownCrossgen2Pack>
   </ItemGroup>
 
-  <Target Name="CopyMIBCWrapper" AfterTargets="Restore" BeforeTargets="Build">
+  <!-- We want to restore ALL the MIBCs when we build anything, since in the future it will contain different profiles, not only the FSC one we got from building Giraffe -->
+  <Import Project="$(MSBuildThisFileDirectory)\eng\restore\optimizationData.targets"/>
+  <ItemGroup>
+    <PackageReference Include="@(MIBCPackage)" />
+  </ItemGroup>
+
+  <Target Name="CopyMIBCWrapper" AfterTargets="Restore" BeforeTargets="Build;Pack">
     <MSBuild
-      Projects="$(MSBuildThisFileDirectory)\eng\restore\optimizationData.targets"
-      Properties="ArtifactsDir=$(ArtifactsDir);NuGetPackageRoot=$(NuGetPackageRoot);optimizationwindows_ntx86MIBCRuntimeVersion=$(optimizationwindows_ntx86MIBCRuntimeVersion);optimizationwindows_ntx64MIBCRuntimeVersion=$(optimizationwindows_ntx64MIBCRuntimeVersion);optimizationwindows_ntarm64MIBCRuntimeVersion=$(optimizationwindows_ntarm64MIBCRuntimeVersion);optimizationlinuxx64MIBCRuntimeVersion=$(optimizationlinuxx64MIBCRuntimeVersion);optimizationlinuxarm64MIBCRuntimeVersion=$(optimizationlinuxarm64MIBCRuntimeVersion)"
+      Projects="$(MSBuildThisFileDirectory)eng\restore\optimizationData.targets"
+      Properties="ArtifactsDir=$(MSBuildThisFileDirectory)artifacts\;NuGetPackageRoot=$(NuGetPackageRoot);MibcFiles=$(MibcFiles);optimizationwindows_ntx86MIBCRuntimeVersion=$(optimizationwindows_ntx86MIBCRuntimeVersion);optimizationwindows_ntx64MIBCRuntimeVersion=$(optimizationwindows_ntx64MIBCRuntimeVersion);optimizationwindows_ntarm64MIBCRuntimeVersion=$(optimizationwindows_ntarm64MIBCRuntimeVersion);optimizationlinuxx64MIBCRuntimeVersion=$(optimizationlinuxx64MIBCRuntimeVersion);optimizationlinuxarm64MIBCRuntimeVersion=$(optimizationlinuxarm64MIBCRuntimeVersion)"
       Targets="CopyMIBC"
       RemoveProperties="TargetFramework"
       StopOnFirstFailure="True" />
   </Target>
+
 </Project>

@@ -8,10 +8,6 @@
     <MIBCPackage Include="optimization.linux-arm64.mibc.runtime"      Version="$(optimizationlinuxarm64MIBCRuntimeVersion)" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="@(MIBCPackage)" />
-  </ItemGroup>
-
   <!-- We copy all packages to the output (per architecture) -->
   <Target Name="CopyMIBC">
     <ItemGroup>
