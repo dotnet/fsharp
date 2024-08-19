@@ -1069,4 +1069,25 @@ let v2 = global.Lib.File2.discState.Rep
                     """
                     (set [| 0 |])
             ]
+        scenario
+            "Library with using global namespace as module alias"
+            [
+                sourceFile
+                    "Library.fs"
+                    """
+namespace Z
+
+module N =
+    let mutable discState = System.DateTime.Now
+                    """
+                    Set.empty
+                sourceFile
+                    "App.fs"
+                    """
+module X
+
+module Y = global.Z.N
+                    """
+                    (set [| 0 |])
+            ]
     ]
