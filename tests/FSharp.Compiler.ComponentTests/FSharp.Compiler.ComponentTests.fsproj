@@ -31,6 +31,8 @@
     <Compile Include="..\service\FsUnit.fs">
       <Link>FsUnit.fs</Link>
     </Compile>
+    <Compile Include="CompilerDirectives\Line.fs" />
+    <Compile Include="CompilerDirectives\NonStringArgs.fs" />
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\Basic\Basic.fs" />
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\OnOverridesAndIFaceImpl\OnOverridesAndIFaceImpl.fs" />
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\OnTypeMembers\OnTypeMembers.fs" />
@@ -177,9 +179,9 @@
     <Compile Include="EmittedIL\TestFunctions\TestFunctions.fs" />
     <Compile Include="EmittedIL\Tuples\Tuples.fs" />
     <Compile Include="EmittedIL\Nullness\NullnessMetadata.fs" />
+    <Compile Include="EmittedIL\FixedBindings\FixedBindings.fs" />
     <Compile Include="ErrorMessages\TypedInterpolatedStringsTests.fs" />
     <!--<Compile Include="EmittedIL\StructDefensiveCopy\StructDefensiveCopy.fs" />-->
-    <Compile Include="EmittedIL\FixedBindings\FixedBindings.fs" />
     <Compile Include="ErrorMessages\UnsupportedAttributes.fs" />
     <Compile Include="ErrorMessages\TailCallAttribute.fs" />
     <Compile Include="ErrorMessages\IndexingSyntax.fs" />
@@ -196,7 +198,6 @@
     <Compile Include="ErrorMessages\MissingExpressionTests.fs" />
     <Compile Include="ErrorMessages\ModuleTests.fs" />
     <Compile Include="ErrorMessages\NameResolutionTests.fs" />
-    <Compile Include="ErrorMessages\Directives.fs" />
     <Compile Include="ErrorMessages\SuggestionsTests.fs" />
     <Compile Include="ErrorMessages\TypeMismatchTests.fs" />
     <Compile Include="ErrorMessages\UnitGenericAbstactType.fs" />
