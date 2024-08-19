@@ -30,7 +30,7 @@ type Class() = class end
 
 let implementer = { new Class()  }
         """
-         |> withLangVersion80
+         |> withLangVersion90
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
