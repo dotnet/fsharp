@@ -687,3 +687,55 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
             (Error 842, Line 47, Col 3, Line 47, Col 14, "This attribute is not valid for use on this language element")
             (Error 842, Line 48, Col 3, Line 48, Col 18, "This attribute is not valid for use on this language element")
         ]
+        
+    // SOURCE= CLIMutableAttribute01.fs	# CLIMutableAttribute01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CLIMutableAttribute01.fs"|])>]
+    let ``CLIMutableAttribute01 8.0`` compilation =
+        compilation
+        |> withLangVersion80
+        |> verifyCompile
+        |> shouldSucceed
+    
+    // SOURCE=CLIMutableAttribute01.fs	# CLIMutableAttribute01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CLIMutableAttribute01.fs"|])>]
+    let ``CLIMutableAttribute01 preview`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldSucceed
+        
+    // SOURCE= E_CLIMutableAttribute.fs	# E_CLIMutableAttribute.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_CLIMutableAttribute.fs"|])>]
+    let ``E_CLIMutableAttribute 8.0`` compilation =
+        compilation
+        |> withLangVersion80
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3132, Line 4, Col 8, Line 4, Col 16, "This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.")
+            (Error 3132, Line 7, Col 8, Line 7, Col 16, "This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.")
+            (Error 3132, Line 10, Col 8, Line 10, Col 20, "This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.")
+            (Error 3132, Line 13, Col 8, Line 13, Col 17, "This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.")
+            (Error 3132, Line 16, Col 8, Line 16, Col 15, "This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.")
+            (Error 3132, Line 19, Col 8, Line 19, Col 19, "This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.")
+            (Error 3132, Line 22, Col 8, Line 22, Col 17, "This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.")
+            (Error 3132, Line 25, Col 8, Line 25, Col 18, "This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.")
+        ]
+    
+    // SOURCE=E_CLIMutableAttribute.fs	# E_CLIMutableAttribute.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_CLIMutableAttribute.fs"|])>]
+    let ``E_CLIMutableAttribute preview`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3132, Line 4, Col 8, Line 4, Col 16, "This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.")
+            (Error 3132, Line 7, Col 8, Line 7, Col 16, "This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.")
+            (Error 3132, Line 10, Col 8, Line 10, Col 20, "This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.")
+            (Error 3132, Line 13, Col 8, Line 13, Col 17, "This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.")
+            (Error 3132, Line 16, Col 8, Line 16, Col 15, "This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.")
+            (Error 3132, Line 19, Col 8, Line 19, Col 19, "This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.")
+            (Error 3132, Line 22, Col 8, Line 22, Col 17, "This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.")
+            (Error 3132, Line 25, Col 8, Line 25, Col 18, "This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.")
+        ]

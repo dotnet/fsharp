@@ -203,8 +203,7 @@ module Nested =
         IL_0001:  throw
       } 
 
-      .method public specialname rtspecialname 
-              instance void  .ctor(int32 x) cil managed
+      .method public specialname rtspecialname instance void  .ctor(int32 x) cil managed
       {
         .custom instance void [runtime]System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute::.ctor(valuetype [runtime]System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes,
                                                                                                                 class [runtime]System.Type) = ( 01 00 60 06 00 00 1D 52 65 66 65 72 65 6E 63 65   
@@ -1216,9 +1215,7 @@ type Person(name : string, age : int) =
             extends [runtime]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 )
-    .method public specialname rtspecialname
-               instance void  .ctor(string name,
-                                    int32 age) cil managed
+    .method public specialname rtspecialname instance void  .ctor(string name, int32 age) cil managed
     {
 
       .maxstack  8
