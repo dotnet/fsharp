@@ -10,14 +10,16 @@ let collectFromOption (mapping: 'T -> 'U list) (t: 'T option) : 'U list = List.c
 
 let longIdentToPath (skipLast: bool) (longId: LongIdent) : LongIdentifier =
 
-    let rec loop skipLast (longId: LongIdent) : LongIdent =
-        match skipLast, longId with
-        | _, h :: t when h.idText = "`global`" -> loop true t
-        | true, _ :: _ -> List.take (longId.Length - 1) longId
+    // We always skip the "special" `global` identifier.
+    let longId =
+        match longId with
+        | h :: t when h.idText = "`global`" -> t
         | _ -> longId
 
-    let longId = loop skipLast longId
-    longId |> List.map (fun ident -> ident.idText)
+    match skipLast, longId with
+    | true, _ :: _ -> List.take (longId.Length - 1) longId
+    | _ -> longId
+    |> List.map (fun ident -> ident.idText)
 
 let synLongIdentToPath (skipLast: bool) (synLongIdent: SynLongIdent) =
     longIdentToPath skipLast synLongIdent.LongIdent
