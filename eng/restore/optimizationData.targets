@@ -6,7 +6,7 @@
     <MIBCPackage Include="optimization.windows_nt-arm64.mibc.runtime" Version="$(optimizationwindows_ntarm64MIBCRuntimeVersion)" />
     <MIBCPackage Include="optimization.linux-x64.mibc.runtime"        Version="$(optimizationlinuxx64MIBCRuntimeVersion)" />
     <MIBCPackage Include="optimization.linux-arm64.mibc.runtime"      Version="$(optimizationlinuxarm64MIBCRuntimeVersion)" />
-  </ItemGroup>  
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="@(MIBCPackage)" />
@@ -16,12 +16,12 @@
   <Target Name="CopyMIBC">
     <ItemGroup>
       <MibcFiles Include="$(NuGetPackageRoot)%(MibcPackage.Identity)\%(MibcPackage.Version)\**\DotNet_FSharp.mibc" />
-    </ItemGroup>  
+    </ItemGroup>
 
     <Copy
       SourceFiles="@(MibcFiles)"
       DestinationFolder="$(ArtifactsDir)mibc\%(MibcPackage.Identity)\"
-      SkipUnchangedFiles="true" />  
+      SkipUnchangedFiles="true" />
 
     <Copy
       SourceFiles="@(MibcFiles)"
