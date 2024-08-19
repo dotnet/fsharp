@@ -877,8 +877,7 @@ let main args =
       IL_0002:  newobj     instance void Foo/StructUnion::.ctor(int32)
       IL_0007:  ret
     }""";(*This is a 'maker method' New{CaseName} used for cases which do have fields associated with them, + the _tag gets initialized*)"""
-            NewCase3(string _field1_3,
-                     string _field2_3) cil managed
+            NewCase3(string _field1_3, string _field2_3) cil managed
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
                                                                                                   int32) = ( 01 00 08 00 00 00 02 00 00 00 00 00 ) 

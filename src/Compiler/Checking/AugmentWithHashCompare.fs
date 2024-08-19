@@ -1322,7 +1322,7 @@ let MakeValsForCompareWithComparerAugmentation g (tcref: TyconRef) =
 let MakeValsForEqualsAugmentation g (tcref: TyconRef) =
     let m = tcref.Range
     let _, ty = mkMinimalTy g tcref
-    let vis = tcref.TypeReprAccessibility
+    let vis = tcref.Accessibility
     let tps = tcref.Typars m
 
     let objEqualsVal =
@@ -1333,7 +1333,7 @@ let MakeValsForEqualsAugmentation g (tcref: TyconRef) =
             g
             tcref
             ty
-            tcref.Accessibility
+            vis
             (if tcref.Deref.IsFSharpException then
                  None
              else
@@ -1347,16 +1347,13 @@ let MakeValsForEqualsAugmentation g (tcref: TyconRef) =
 
 let MakeValsForEqualityWithComparerAugmentation g (tcref: TyconRef) =
     let _, ty = mkMinimalTy g tcref
-    let vis =
-        // Equality method for union types match the union type visibility rather than the TypeReprAccessibility
-        if tcref.IsUnionTycon then tcref.Accessibility
-        else tcref.TypeReprAccessibility
+    let vis = tcref.Accessibility
     let tps = tcref.Typars tcref.Range
 
     let objGetHashCodeVal =
         mkValSpec g tcref ty vis (Some(mkGetHashCodeSlotSig g)) "GetHashCode" (tps +-> (mkHashTy g ty)) unitArg false
 
-    let withcGetHashCodeVal =
+    let withGetHashCodeVal =
         mkValSpec
             g
             tcref
@@ -1368,27 +1365,27 @@ let MakeValsForEqualityWithComparerAugmentation g (tcref: TyconRef) =
             unaryArg
             false
 
-    let withcEqualsVal =
+    let withEqualsVal =
         mkValSpec g tcref ty vis (Some(mkIStructuralEquatableEqualsSlotSig g)) "Equals" (tps +-> (mkEqualsWithComparerTy g ty)) tupArg false
 
-    let withcEqualsValExact =
+    let withEqualsExactWithComparer =
+        let vis = TAccess (updateSyntaxAccessForCompPath (vis.CompilationPaths) SyntaxAccess.Public)
         mkValSpec
             g 
             tcref 
             ty
-            tcref.Accessibility
+            vis
             // This doesn't implement any interface.
             None 
             "Equals" 
             (tps +-> (mkEqualsWithComparerTyExact g ty)) 
             tupArg 
             false
-
     {
         GetHashCode = objGetHashCodeVal
-        GetHashCodeWithComparer = withcGetHashCodeVal
-        EqualsWithComparer = withcEqualsVal
-        EqualsExactWithComparer = withcEqualsValExact
+        GetHashCodeWithComparer = withGetHashCodeVal
+        EqualsWithComparer = withEqualsVal
+        EqualsExactWithComparer = withEqualsExactWithComparer
     }    
 
 let MakeBindingsForCompareAugmentation g (tycon: Tycon) =
