@@ -12,7 +12,7 @@ let longIdentToPath (skipLast: bool) (longId: LongIdent) : LongIdentifier =
 
     let rec loop skipLast (longId: LongIdent) : LongIdent =
         match skipLast, longId with
-        | true, h :: t when h.idText = "`global`" -> loop true t
+        | _, h :: t when h.idText = "`global`" -> loop true t
         | true, _ :: _ -> List.take (longId.Length - 1) longId
         | _ -> longId
 
