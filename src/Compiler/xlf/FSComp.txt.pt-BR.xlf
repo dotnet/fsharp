@@ -758,8 +758,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidAsciiByteLiteral">
-        <source>This is not a valid byte character literal. The value must be less than or equal to '\\127'B.</source>
-        <target state="new">This is not a valid byte character literal. The value must be less than or equal to '\\127'B.</target>
+        <source>This is not a valid byte character literal. The value must be less than or equal to '\127'B.</source>
+        <target state="new">This is not a valid byte character literal. The value must be less than or equal to '\127'B.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidCharLiteralInString">
@@ -773,8 +773,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidTrigraphAsciiByteLiteral">
-        <source>This is not a valid byte character literal. The value must be less than or equal to '\\127'B.\nNote: In a future F# version this warning will be promoted to an error.</source>
-        <target state="new">This is not a valid byte character literal. The value must be less than or equal to '\\127'B.\nNote: In a future F# version this warning will be promoted to an error.</target>
+        <source>This is not a valid byte character literal. The value must be less than or equal to '\127'B.\nNote: In a future F# version this warning will be promoted to an error.</source>
+        <target state="new">This is not a valid byte character literal. The value must be less than or equal to '\127'B.\nNote: In a future F# version this warning will be promoted to an error.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
