@@ -54,7 +54,7 @@ let private SimulatedMSBuildResolver =
         let isDesktop = typeof<int>.Assembly.GetName().Name = "mscorlib"
 
         if isDesktop then
-            match System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory() with
+            match (System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(): string MaybeNull) with
             | null -> []
             | x -> [ x ]
         else
@@ -82,7 +82,7 @@ let private SimulatedMSBuildResolver =
             if Environment.OSVersion.Platform = PlatformID.Win32NT then
                 let PF =
                     match Environment.GetEnvironmentVariable("ProgramFiles(x86)") with
-                    | null -> Environment.GetEnvironmentVariable("ProgramFiles") // if PFx86 is null, then we are 32-bit and just get PF
+                    | null -> !! Environment.GetEnvironmentVariable("ProgramFiles") // if PFx86 is null, then we are 32-bit and just get PF
                     | s -> s
 
                 PF + @"\Reference Assemblies\Microsoft\Framework\.NETFramework"
@@ -150,14 +150,14 @@ let private SimulatedMSBuildResolver =
                         let fscoreDir0 =
                             let PF =
                                 match Environment.GetEnvironmentVariable("ProgramFiles(x86)") with
-                                | null -> Environment.GetEnvironmentVariable("ProgramFiles")
+                                | null -> !! Environment.GetEnvironmentVariable("ProgramFiles")
                                 | s -> s
 
                             PF
                             + @"\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\"
-                            + n.Version.ToString()
+                            + (!!n.Version).ToString()
 
-                        let trialPath = Path.Combine(fscoreDir0, n.Name + ".dll")
+                        let trialPath = Path.Combine(fscoreDir0, !!n.Name + ".dll")
 
                         if FileSystem.FileExistsShim trialPath then
                             success trialPath
@@ -173,7 +173,7 @@ let private SimulatedMSBuildResolver =
                         r
                     else
                         try
-                            AssemblyName(r).Name + ".dll"
+                            !!AssemblyName(r).Name + ".dll"
                         with _ ->
                             r + ".dll"
 
@@ -198,7 +198,7 @@ let private SimulatedMSBuildResolver =
                         let netFx = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
 
                         let gac =
-                            Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(netFx.TrimEnd('\\'))), "assembly")
+                            Path.Combine(!! Path.GetDirectoryName(Path.GetDirectoryName(netFx.TrimEnd('\\'))), "assembly")
 
                         match n.Version, n.GetPublicKeyToken() with
                         | null, _
@@ -207,7 +207,7 @@ let private SimulatedMSBuildResolver =
                                 [
                                     if FileSystem.DirectoryExistsShim gac then
                                         for gacDir in FileSystem.EnumerateDirectoriesShim gac do
-                                            let assemblyDir = Path.Combine(gacDir, n.Name)
+                                            let assemblyDir = Path.Combine(gacDir, !!n.Name)
 
                                             if FileSystem.DirectoryExistsShim assemblyDir then
                                                 for tdir in FileSystem.EnumerateDirectoriesShim assemblyDir do
@@ -228,7 +228,7 @@ let private SimulatedMSBuildResolver =
                             if FileSystem.DirectoryExistsShim gac then
                                 for gacDir in Directory.EnumerateDirectories gac do
                                     //printfn "searching GAC directory: %s" gacDir
-                                    let assemblyDir = Path.Combine(gacDir, n.Name)
+                                    let assemblyDir = Path.Combine(gacDir, !!n.Name)
 
                                     if FileSystem.DirectoryExistsShim assemblyDir then
                                         //printfn "searching GAC directory: %s" assemblyDir

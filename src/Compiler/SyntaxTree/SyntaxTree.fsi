@@ -1489,7 +1489,7 @@ type SynComponentInfo =
     /// Gets the syntax range of this construct
     member Range: range
 
-/// Represents two access
+/// Represents one or two access modifier(s) in a property signature
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynValSigAccess =
     | Single of accessibility: SynAccess option

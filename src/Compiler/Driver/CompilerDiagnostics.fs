@@ -210,7 +210,7 @@ type Exception with
         | HashLoadedSourceHasIssues(_, _, _, m)
         | HashLoadedScriptConsideredSource m -> Some m
         // Strip TargetInvocationException wrappers
-        | :? System.Reflection.TargetInvocationException as e -> e.InnerException.DiagnosticRange
+        | :? System.Reflection.TargetInvocationException as e when isNotNull e.InnerException -> (!!e.InnerException).DiagnosticRange
 #if !NO_TYPEPROVIDERS
         | :? TypeProviderError as e -> e.Range |> Some
 #endif
@@ -338,7 +338,7 @@ type Exception with
         | ArgumentsInSigAndImplMismatch _ -> 3218
 
         // Strip TargetInvocationException wrappers
-        | :? TargetInvocationException as e -> e.InnerException.DiagnosticNumber
+        | :? TargetInvocationException as e when isNotNull e.InnerException -> (!!e.InnerException).DiagnosticNumber
         | WrappedError(e, _) -> e.DiagnosticNumber
         | DiagnosticWithText(n, _, _) -> n
         | DiagnosticWithSuggestions(n, _, _, _, _) -> n
@@ -1945,7 +1945,7 @@ type Exception with
             )
 
         // Strip TargetInvocationException wrappers
-        | :? TargetInvocationException as exn -> exn.InnerException.Output(os, suggestNames)
+        | :? TargetInvocationException as e when isNotNull e.InnerException -> (!!e.InnerException).Output(os, suggestNames)
 
         | :? FileNotFoundException as exn -> Printf.bprintf os "%s" exn.Message
 
