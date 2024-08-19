@@ -1132,7 +1132,7 @@ lexIfOCaml,"IF-FSHARP/IF-CAML regions are no longer supported"
 1249,lexUnmatchedRBracesInTripleQuote,"The interpolated string contains unmatched closing braces."
 1250,lexTooManyPercentsInTripleQuote,"The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive '%%' characters."
 1251,lexExtendedStringInterpolationNotSupported,"Extended string interpolation is not supported in this version of F#."
-1252,lexInvalidCharLiteralInString,"'%s' is not a valid character literal.\nNote: Currently the value is wrapped around byte range to '%s'. In a future F# version this Warning will be promoted to Error!"
+1252,lexInvalidCharLiteralInString,"'%s' is not a valid character literal.\nNote: Currently the value is wrapped around byte range to '%s'. In a future F# version this warning will be promoted to an error."
 1253,lexByteArrayOutisdeAscii,"This byte array literal contains %d non-ASCII characters. All characters should be < 128y."
 # reshapedmsbuild.fs
 1300,toolLocationHelperUnsupportedFrameworkVersion,"The specified .NET Framework version '%s' is not supported. Please specify a value from the enumeration Microsoft.Build.Utilities.TargetDotNetFrameworkVersion."
