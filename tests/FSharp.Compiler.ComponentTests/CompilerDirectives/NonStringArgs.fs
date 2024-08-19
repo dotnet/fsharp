@@ -1,10 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-namespace ErrorMessages
+namespace CompilerDirectives
 
 open Xunit
 open FSharp.Test.Compiler
 
-module HashDirectives =
+module NonStringArgs =
 
     [<InlineData("8.0")>]
     [<InlineData("9.0")>]
