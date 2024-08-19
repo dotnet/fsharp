@@ -7,15 +7,18 @@
 // The one implementation file is used because we keep the implementations of
 // structured formatting the same for fsi.exe and '%A' printing. However F# Interactive has
 // a richer feature set.
-
-#nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
-
 #if COMPILER
 namespace FSharp.Compiler.Text
 #else
 // FSharp.Core.dll:
 namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 #endif
+
+#nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
+// 3261 and 3262 Nullness warnings - this waits for LKG update, since this file is included in fsharp.core and fsharp.compiler.service and goes via proto build.
+// Supporting all possible combinations of available library+compiler versions would complicate code in this source files too much at the moment.
+#nowarn "3261"
+#nowarn "3262"
 
 // Breakable block layout implementation.
 // This is a fresh implementation of pre-existing ideas.
@@ -29,6 +32,9 @@ open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Reflection
 open Microsoft.FSharp.Collections
+#if COMPILER
+open Internal.Utilities.Library
+#endif
 
 [<StructuralEquality; NoComparison>]
 type TextTag =
@@ -417,7 +423,7 @@ type FormatOptions =
         FloatingPointFormat: string
         AttributeProcessor: string -> (string * string) list -> bool -> unit
 #if COMPILER // This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
-        PrintIntercepts: (IEnvironment -> obj -> Layout option) list
+        PrintIntercepts: (IEnvironment -> objnull -> Layout option) list
         StringLimit: int
 #endif
         FormatProvider: IFormatProvider
@@ -1592,7 +1598,7 @@ module Display =
 
                     match text with
                     | null -> ""
-                    | _ -> text
+                    | text -> text
                 with e ->
                     // If a .ToString() call throws an exception, catch it and use the message as the result.
                     // This may be informative, e.g. division by zero etc...

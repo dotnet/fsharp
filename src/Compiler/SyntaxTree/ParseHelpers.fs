@@ -43,7 +43,11 @@ let posOfLexPosition (p: Position) = mkPos p.Line p.Column
 
 /// Get an F# compiler range from a lexer range
 let mkSynRange (p1: Position) (p2: Position) =
-    mkFileIndexRange p1.FileIndex (posOfLexPosition p1) (posOfLexPosition p2)
+    if p1.FileIndex = p2.FileIndex then
+        mkFileIndexRange p1.FileIndex (posOfLexPosition p1) (posOfLexPosition p2)
+    else
+        // This means we had a #line directive in the middle of this syntax element.
+        mkFileIndexRange p1.FileIndex (posOfLexPosition p1) (posOfLexPosition (p1.ShiftColumnBy 1))
 
 type LexBuffer<'Char> with
 
@@ -75,7 +79,7 @@ type IParseState with
             match bls.TryGetValue key with
             | true, gen -> gen
             | _ ->
-                let gen = box (SynArgNameGenerator())
+                let gen = !!(box (SynArgNameGenerator()))
                 bls[key] <- gen
                 gen
 
@@ -97,7 +101,7 @@ module LexbufLocalXmlDocStore =
         match lexbuf.BufferLocalStore.TryGetValue xmlDocKey with
         | true, collector -> collector
         | _ ->
-            let collector = box (XmlDocCollector())
+            let collector = !!(box (XmlDocCollector()))
             lexbuf.BufferLocalStore[xmlDocKey] <- collector
             collector
 
@@ -188,7 +192,7 @@ module LexbufIfdefStore =
         match lexbuf.BufferLocalStore.TryGetValue ifDefKey with
         | true, store -> store
         | _ ->
-            let store = box (ResizeArray<ConditionalDirectiveTrivia>())
+            let store = !!(box (ResizeArray<ConditionalDirectiveTrivia>()))
             lexbuf.BufferLocalStore[ifDefKey] <- store
             store
         |> unbox<ResizeArray<ConditionalDirectiveTrivia>>
@@ -237,7 +241,7 @@ module LexbufCommentStore =
         match lexbuf.BufferLocalStore.TryGetValue commentKey with
         | true, store -> store
         | _ ->
-            let store = box (ResizeArray<CommentTrivia>())
+            let store = !!(box (ResizeArray<CommentTrivia>()))
             lexbuf.BufferLocalStore[commentKey] <- store
             store
         |> unbox<ResizeArray<CommentTrivia>>
@@ -894,7 +898,7 @@ let mkRecdField (lidwd: SynLongIdent) = lidwd, true
 // Used for 'do expr' in a class.
 let mkSynDoBinding (vis: SynAccess option, mDo, expr, m) =
     match vis with
-    | Some vis -> errorR (Error(FSComp.SR.parsDoCannotHaveVisibilityDeclarations (vis.ToString()), m))
+    | Some vis -> errorR (Error(FSComp.SR.parsDoCannotHaveVisibilityDeclarations (vis |> string), m))
     | None -> ()
 
     SynBinding(

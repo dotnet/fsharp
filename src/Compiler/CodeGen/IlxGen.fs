@@ -1924,7 +1924,7 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             properties = mkILProperties (tdef.Properties.AsList() @ HashRangeSorted gproperties),
             events = mkILEvents (ResizeArray.toList gevents),
             nestedTypes = mkILTypeDefs (tdef.NestedTypes.AsList() @ gnested.Close(g)),
-            customAttrs = attrs
+            customAttrs = storeILCustomAttrs attrs
         )
 
     member _.AddEventDef edef = gevents.Add edef
@@ -6237,6 +6237,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
             mkCompilationMappingAttr g (int SourceConstructFlags.Closure)
         ]
         |> mkILCustomAttrs
+        |> storeILCustomAttrs
 
     let cloTypeDef =
         ILTypeDef(
@@ -6670,6 +6671,7 @@ and GenClosureTypeDefs
     let customAttrs =
         attrs @ [ mkCompilationMappingAttr g (int SourceConstructFlags.Closure) ]
         |> mkILCustomAttrs
+        |> storeILCustomAttrs
 
     let tdef =
         ILTypeDef(
@@ -11370,7 +11372,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                 | TILObjectRepr _ ->
                     let tdef = tycon.ILTyconRawMetadata.WithAccess tyconAccess
 
-                    let customAttrs = ilCustomAttrs |> mkILCustomAttrs
+                    let customAttrs = ilCustomAttrs |> mkILCustomAttrs |> storeILCustomAttrs
 
                     let tdef = tdef.With(customAttrs = customAttrs, genericParams = ilGenParams)
 
@@ -11594,6 +11596,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                 ))
                         ]
                         |> mkILCustomAttrs
+                        |> storeILCustomAttrs
 
                     let tdef =
                         ILTypeDef(
@@ -12078,14 +12081,14 @@ let LookupGeneratedValue (cenv: cenv) (ctxt: ExecutionContext) eenv (v: Val) =
                 if hasLiteralAttr then
                     let staticTy = ctxt.LookupTypeRef fspec.DeclaringTypeRef
                     // Checked: This FieldInfo (FieldBuilder) supports GetValue().
-                    staticTy.GetField(fspec.Name).GetValue(null: obj)
+                    (!! staticTy.GetField(fspec.Name)).GetValue(null: obj MaybeNull)
                 else
                     let staticTy = ctxt.LookupTypeRef ilContainerTy.TypeRef
                     // We can't call .Invoke on the ILMethodRef's MethodInfo,
                     // because it is the MethodBuilder and that does not support Invoke.
                     // Rather, we look for the getter MethodInfo from the built type and .Invoke on that.
                     let methInfo =
-                        staticTy.GetMethod(ilGetterMethRef.Name, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
+                        !! staticTy.GetMethod(ilGetterMethRef.Name, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
 
                     methInfo.Invoke(null, null)
 
@@ -12098,7 +12101,7 @@ let LookupGeneratedValue (cenv: cenv) (ctxt: ExecutionContext) eenv (v: Val) =
                 // because it is the MethodBuilder and that does not support Invoke.
                 // Rather, we look for the getter MethodInfo from the built type and .Invoke on that.
                 let methInfo =
-                    staticTy.GetMethod(ilGetterMethSpec.Name, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
+                    !! staticTy.GetMethod(ilGetterMethSpec.Name, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
 
                 methInfo.Invoke(null, null)
 
@@ -12125,14 +12128,14 @@ let SetGeneratedValue (ctxt: ExecutionContext) eenv isForced (v: Val) (value: ob
                     let staticTy = ctxt.LookupTypeRef fspec.DeclaringTypeRef
 
                     let fieldInfo =
-                        staticTy.GetField(fspec.Name, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
+                        !! staticTy.GetField(fspec.Name, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
 
                     fieldInfo.SetValue(null, value)
                 else
                     let staticTy = ctxt.LookupTypeRef ilSetterMethRef.DeclaringTypeRef
 
                     let methInfo =
-                        staticTy.GetMethod(ilSetterMethRef.Name, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
+                        !! staticTy.GetMethod(ilSetterMethRef.Name, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
 
                     methInfo.Invoke(null, [| value |]) |> ignore
         | _ -> ()
