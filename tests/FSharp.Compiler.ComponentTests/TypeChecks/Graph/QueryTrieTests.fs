@@ -36,7 +36,7 @@ let private nestedModule name content =
 
 let private prefIdent (lid: string) =
     let parts = lid.Split(".")
-    Array.take (parts.Length - 1) parts |> List.ofArray |> PrefixedIdentifier
+    Array.take (parts.Length - 1) parts |> List.ofArray |> FileContentEntry.PrefixedIdentifier
 
 // Some hardcoded files that reflect the file content of the first files in the Fantomas.Core project.
 // See https://github.com/fsprojects/fantomas/tree/0938a3daabec80a22d2e17f82aba38456bb793df/src/Fantomas.Core
