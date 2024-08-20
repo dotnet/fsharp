@@ -3,6 +3,17 @@
 namespace Internal.Utilities.Collections
 
 open System.Collections.Generic
+open System.Collections.Concurrent
+
+[<AutoOpen>]
+module HashMultiMap =
+    type IDictionary<'K, 'V> with
+        // We only call it on `.Copy()` so it should be fine.
+        member this.GetComparer() =
+            match this with
+            | :? Dictionary<'K, 'V> as d -> d.Comparer
+            | :? ConcurrentDictionary<'K, 'V> as d -> d.Comparer
+            | _ -> failwith "Unknown dictionary type"
 
 // Each entry in the HashMultiMap dictionary has at least one entry. Under normal usage each entry has _only_
 // one entry. So use two hash tables: one for the main entries and one for the overflow.
@@ -11,40 +22,49 @@ type internal HashMultiMap<'Key, 'Value
 #if !NO_CHECKNULLS
     when 'Key:not null
 #endif
-    >(size: int, comparer: IEqualityComparer<'Key>) =
+    >(size: int, comparer: IEqualityComparer<'Key>, ?useConcurrentDictionary: bool) =
 
-    let firstEntries = Dictionary<_, _>(size, comparer)
+    let firstEntries: IDictionary<_, _> =
+        if defaultArg useConcurrentDictionary false then
+            ConcurrentDictionary<_, _>(comparer)
+        else
+            Dictionary<_, _>(size, comparer)
 
-    let rest = Dictionary<_, _>(3, comparer)
+    let rest: IDictionary<_, _> =
+        if defaultArg useConcurrentDictionary false then
+            ConcurrentDictionary<_, _>(comparer)
+        else
+            Dictionary<_, _>(3, comparer)
 
-    new(comparer: IEqualityComparer<'Key>) = HashMultiMap<'Key, 'Value>(11, comparer)
+    new(comparer: IEqualityComparer<'Key>, ?useConcurrentDictionary: bool) =
+        HashMultiMap<'Key, 'Value>(11, comparer, defaultArg useConcurrentDictionary false)
 
-    new(entries: seq<'Key * 'Value>, comparer: IEqualityComparer<'Key>) as x =
-        new HashMultiMap<'Key, 'Value>(11, comparer)
-        then entries |> Seq.iter (fun (k, v) -> x.Add(k, v))
+    new(entries: seq<'Key * 'Value>, comparer: IEqualityComparer<'Key>, ?useConcurrentDictionary: bool) as this =
+        HashMultiMap<'Key, 'Value>(11, comparer,  defaultArg useConcurrentDictionary false)
+        then entries |> Seq.iter (fun (k, v) -> this.Add(k, v))
 
-    member x.GetRest(k) =
+    member _.GetRest(k) =
         match rest.TryGetValue k with
         | true, res -> res
         | _ -> []
 
-    member x.Add(y, z) =
+    member this.Add(y, z) =
         match firstEntries.TryGetValue y with
-        | true, res -> rest[y] <- res :: x.GetRest(y)
+        | true, res -> rest[y] <- res :: this.GetRest(y)
         | _ -> ()
 
         firstEntries[y] <- z
 
-    member x.Clear() =
+    member _.Clear() =
         firstEntries.Clear()
         rest.Clear()
 
-    member x.FirstEntries = firstEntries
+    member _.FirstEntries = firstEntries
 
-    member x.Rest = rest
+    member _.Rest = rest
 
-    member x.Copy() =
-        let res = HashMultiMap<'Key, 'Value>(firstEntries.Count, firstEntries.Comparer)
+    member _.Copy() =
+        let res = HashMultiMap<'Key, 'Value>(firstEntries.Count, firstEntries.GetComparer())
 
         for kvp in firstEntries do
             res.FirstEntries.Add(kvp.Key, kvp.Value)
@@ -90,11 +110,11 @@ type internal HashMultiMap<'Key, 'Value
                 for z in rest do
                     f kvp.Key z
 
-    member x.Contains(y) = firstEntries.ContainsKey(y)
+    member _.Contains(y) = firstEntries.ContainsKey(y)
 
-    member x.ContainsKey(y) = firstEntries.ContainsKey(y)
+    member _.ContainsKey(y) = firstEntries.ContainsKey(y)
 
-    member x.Remove(y) =
+    member _.Remove(y) =
         match firstEntries.TryGetValue y with
         // NOTE: If not ok then nothing to remove - nop
         | true, _res ->
@@ -112,14 +132,14 @@ type internal HashMultiMap<'Key, 'Value
             | _ -> firstEntries.Remove(y) |> ignore
         | _ -> ()
 
-    member x.Replace(y, z) = firstEntries[y] <- z
+    member _.Replace(y, z) = firstEntries[y] <- z
 
-    member x.TryFind(y) =
+    member _.TryFind(y) =
         match firstEntries.TryGetValue y with
         | true, res -> Some res
         | _ -> None
 
-    member x.Count = firstEntries.Count
+    member _.Count = firstEntries.Count
 
     interface IEnumerable<KeyValuePair<'Key, 'Value>> with
 
@@ -188,6 +208,6 @@ type internal HashMultiMap<'Key, 'Value
         member s.CopyTo(arr, arrIndex) =
             s |> Seq.iteri (fun j x -> arr[arrIndex + j] <- x)
 
-        member s.IsReadOnly = false
+        member _.IsReadOnly = false
 
         member s.Count = s.Count
