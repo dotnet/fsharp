@@ -821,7 +821,7 @@ module List =
     ///     | Tails, Tails -> acc + 1
     ///     | _ -> acc)
     /// </code>
-    /// Evaluates to <c>1</c>. Note <c>acc</c> is a commonly used abbreviation for "accumulator".
+    /// Evaluates to <c>2</c>. Note <c>acc</c> is a commonly used abbreviation for "accumulator".
     /// </example>
     [<CompiledName("Fold2")>]
     val fold2<'T1,'T2,'State> : folder:('State -> 'T1 -> 'T2 -> 'State) -> state:'State -> list1:'T1 list -> list2:'T2 list -> 'State

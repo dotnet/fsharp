@@ -836,12 +836,21 @@ module Array =
 
             count
 
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
         let private createMask<'a>
             (f: 'a -> bool)
             (src: 'a array)
             (maskArrayOut: byref<uint32 array>)
             (leftoverMaskOut: byref<uint32>)
             =
+#else
+        let private createMask<'a>
+            (f: 'a -> bool)
+            (src: array<'a>)
+            (maskArrayOut: byref<array<uint32> | null>)
+            (leftoverMaskOut: byref<uint32>)
+            =
+#endif
             let maskArrayLength = src.Length / 0x20
 
             // null when there are less than 32 items in src array.
@@ -1031,7 +1040,11 @@ module Array =
 
             dstIdx
 
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
         let private filterViaMask (maskArray: uint32 array) (leftoverMask: uint32) (count: int) (src: _ array) =
+#else
+        let private filterViaMask (maskArray: uint32 array | null) (leftoverMask: uint32) (count: int) (src: _ array) =
+#endif
             let dst = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
 
             let mutable dstIdx = 0
@@ -2166,9 +2179,8 @@ module Array =
             // Not exists $condition <==> (opposite of $condition is true forall)
             exists (predicate >> not) array |> not
 
-        [<CompiledName("TryFindIndex")>]
-        let tryFindIndex predicate (array: _ array) =
-            checkNonNull "array" array
+        let inline tryFindIndexAux predicate (array: _ array) =
+            checkNonNull (nameof array) array
 
             let pResult =
                 Parallel.For(
@@ -2179,16 +2191,24 @@ module Array =
                             pState.Break())
                 )
 
-            pResult.LowestBreakIteration |> Option.ofNullable |> Option.map int
+            pResult.LowestBreakIteration
+
+        [<CompiledName("TryFindIndex")>]
+        let tryFindIndex predicate (array: _ array) =
+            let i = tryFindIndexAux predicate array
+            if i.HasValue then Some (int (i.GetValueOrDefault()))
+            else None
 
         [<CompiledName("TryFind")>]
         let tryFind predicate (array: _ array) =
-            array |> tryFindIndex predicate |> Option.map (fun i -> array[i])
+            let i = tryFindIndexAux predicate array
+            if i.HasValue then Some array[int (i.GetValueOrDefault())]
+            else None
 
         [<CompiledName("TryPick")>]
         let tryPick chooser (array: _ array) =
             checkNonNull "array" array
-            let allChosen = new System.Collections.Concurrent.ConcurrentDictionary<_, _>()
+            let allChosen = System.Collections.Concurrent.ConcurrentDictionary()
 
             let pResult =
                 Parallel.For(
@@ -2202,9 +2222,8 @@ module Array =
                             pState.Break())
                 )
 
-            pResult.LowestBreakIteration
-            |> Option.ofNullable
-            |> Option.bind (fun i -> allChosen[int i])
+            if pResult.LowestBreakIteration.HasValue then allChosen[int (pResult.LowestBreakIteration.GetValueOrDefault())]
+            else None
 
         [<CompiledName("Choose")>]
         let choose chooser (array: 'T array) =

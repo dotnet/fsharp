@@ -29,13 +29,11 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
-open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CreateILModule
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
@@ -47,7 +45,6 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.ScriptClosure
-open FSharp.Compiler.Syntax
 open FSharp.Compiler.StaticLinking
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
@@ -55,7 +52,7 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.XmlDocFileWriter
-open FSharp.Compiler.BuildGraph
+open FSharp.Compiler.CheckExpressionsOps
 
 //----------------------------------------------------------------------------
 // Reporting - warnings, errors
@@ -374,7 +371,7 @@ module InterfaceFileWriter =
         let writeToSeparateFiles (declaredImpls: CheckedImplFile list) =
             for CheckedImplFile(qualifiedNameOfFile = name) as impl in declaredImpls do
                 let fileName =
-                    Path.ChangeExtension(name.Range.FileName, extensionForFile name.Range.FileName)
+                    !! Path.ChangeExtension(name.Range.FileName, extensionForFile name.Range.FileName)
 
                 printfn "writing impl file to %s" fileName
                 use os = FileSystem.OpenFileForWriteShim(fileName, FileMode.Create).GetWriter()
@@ -395,7 +392,7 @@ module InterfaceFileWriter =
 // 2) If not, but FSharp.Core.dll exists beside the compiler binaries, it will copy it to output directory.
 // 3) If not, it will produce an error.
 let CopyFSharpCore (outFile: string, referencedDlls: AssemblyReference list) =
-    let outDir = Path.GetDirectoryName outFile
+    let outDir = !! Path.GetDirectoryName(outFile)
     let fsharpCoreAssemblyName = GetFSharpCoreLibraryName() + ".dll"
     let fsharpCoreDestinationPath = Path.Combine(outDir, fsharpCoreAssemblyName)
 
@@ -415,7 +412,7 @@ let CopyFSharpCore (outFile: string, referencedDlls: AssemblyReference list) =
     | Some referencedFsharpCoreDll -> copyFileIfDifferent referencedFsharpCoreDll.Text fsharpCoreDestinationPath
     | None ->
         let executionLocation = Assembly.GetExecutingAssembly().Location
-        let compilerLocation = Path.GetDirectoryName executionLocation
+        let compilerLocation = !! Path.GetDirectoryName(executionLocation)
 
         let compilerFsharpCoreDllPath =
             Path.Combine(compilerLocation, fsharpCoreAssemblyName)

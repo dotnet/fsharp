@@ -9,11 +9,12 @@ SigFile
                 ([], SynIdent (s, None), SynValTyparDecls (None, true),
                  LongIdent (SynLongIdent ([string], [], [None])),
                  SynValInfo ([], SynArgInfo ([], false, None)), false, false,
-                 PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector), None,
-                 None, (5,0--5,14), { LeadingKeyword = Val (5,0--5,3)
-                                      InlineKeyword = None
-                                      WithKeyword = None
-                                      EqualsRange = None }), (5,0--5,14))],
+                 PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector),
+                 Single None, None, (5,0--5,14),
+                 { LeadingKeyword = Val (5,0--5,3)
+                   InlineKeyword = None
+                   WithKeyword = None
+                   EqualsRange = None }), (5,0--5,14))],
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
           [{ Attributes = [{ TypeName = SynLongIdent ([Foo], [], [None])
                              ArgExpr = Const (Unit, (2,4--2,7))

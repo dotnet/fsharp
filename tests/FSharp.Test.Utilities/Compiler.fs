@@ -480,6 +480,9 @@ module rec Compiler =
         | FS fs -> FS { fs with OutputDirectory = path }
         | _ -> failwith "withOutputDirectory is only supported on F#"
 
+    let withCheckNulls (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper ["--checknulls+"] "checknulls is only supported in F#" cUnit
+
     let withBufferWidth (width: int)(cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ $"--bufferwidth:{width}" ] "withBufferWidth is only supported on F#" cUnit
 
@@ -506,6 +509,9 @@ module rec Compiler =
 
     let withLangVersion80 (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:8.0" ] "withLangVersion80 is only supported on F#" cUnit
+
+    let withLangVersion90 (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--langversion:9.0" ] "withLangVersion90 is only supported on F#" cUnit
 
     let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:preview" ] "withLangVersionPreview is only supported on F#" cUnit
@@ -582,6 +588,9 @@ module rec Compiler =
         | CS cs -> CS { cs with LangVersion = ver }
         | _ -> failwith "Only supported in C#"
 
+    let withCSharpLanguageVersionPreview =
+        withCSharpLanguageVersion CSharpLanguageVersion.Preview
+
     let withOutputType (outputType : CompileOutput) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS x -> FS { x with OutputType = outputType }
@@ -597,6 +606,12 @@ module rec Compiler =
         match cUnit with
         | FS fs -> FS { fs with Options = fs.Options @ ["--realsig+"] }
         | _ -> failwith "withRealInternalSignatureOn only supported by f#"
+
+    let withRealInternalSignature (realSig: bool) (cUnit: CompilationUnit) : CompilationUnit  =
+        if realSig then
+            cUnit |>  withRealInternalSignatureOn
+        else
+            cUnit |>  withRealInternalSignatureOff
 
     let asExe (cUnit: CompilationUnit) : CompilationUnit =
         withOutputType CompileOutput.Exe cUnit
@@ -777,12 +792,7 @@ module rec Compiler =
 
         let references = TargetFrameworkUtil.getReferences csSource.TargetFramework
 
-        let lv =
-          match csSource.LangVersion with
-            | CSharpLanguageVersion.CSharp8 -> LanguageVersion.CSharp8
-            | CSharpLanguageVersion.CSharp9 -> LanguageVersion.CSharp9
-            | CSharpLanguageVersion.Preview -> LanguageVersion.Preview
-            | _ -> LanguageVersion.Default
+        let lv = CSharpLanguageVersion.toLanguageVersion csSource.LangVersion
 
         let outputKind, extension =
             match csSource.OutputType with
@@ -1610,6 +1620,7 @@ Actual:
                 | null -> ()
                 | _ when expectedContent = actualErrors -> ()
                 | _ -> File.WriteAllText(path, actualErrors)
+                //File.WriteAllText(path, actualErrors)
 
                 match Assert.shouldBeSameMultilineStringSets expectedContent actualErrors with
                 | None -> ()

@@ -26,31 +26,4 @@ To continue using non-conforming indentation, pass the '--strict-indentation-' f
 neg82.fsx(138,1,138,4): parse error FS0058: Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (102:1). Try indenting this further.
 To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
 
-neg82.fsx(84,5,84,6): parse error FS0010: Unexpected symbol '|' in expression
-
-neg82.fsx(88,1,88,4): parse error FS0058: Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (81:9). Try indenting this further.
-To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
-
-neg82.fsx(90,5,90,8): parse error FS0010: Incomplete structured construct at or before this point in expression. Expected incomplete structured construct at or before this point or other token.
-
-neg82.fsx(95,1,95,4): parse error FS0058: Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (88:1). Try indenting this further.
-To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
-
-neg82.fsx(95,1,95,4): parse error FS0010: Unexpected keyword 'let' or 'use' in implementation file
-
-neg82.fsx(96,1,96,4): parse error FS0058: Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (95:1). Try indenting this further.
-To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
-
-neg82.fsx(97,1,97,4): parse error FS0058: Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (96:1). Try indenting this further.
-To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
-
-neg82.fsx(100,1,100,4): parse error FS0058: Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (97:1). Try indenting this further.
-To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
-
-neg82.fsx(102,1,102,4): parse error FS0058: Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (100:1). Try indenting this further.
-To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
-
-neg82.fsx(138,1,138,4): parse error FS0058: Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (102:1). Try indenting this further.
-To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
-
 neg82.fsx(93,5,93,7): typecheck error FS0039: The value, namespace, type or module 'sb' is not defined.

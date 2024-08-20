@@ -343,10 +343,7 @@ let scopeSorter (scope1: PdbMethodScope) (scope2: PdbMethodScope) =
 type PortablePdbGenerator
     (embedAllSource: bool, embedSourceList: string list, sourceLink: string, checksumAlgorithm, info: PdbData, pathMap: PathMap) =
 
-    let docs =
-        match info.Documents with
-        | Null -> Array.empty
-        | NonNull docs -> docs
+    let docs = info.Documents
 
     // The metadata to wite to the PoortablePDB (Roslyn = _debugMetadataOpt)
 
@@ -393,7 +390,7 @@ type PortablePdbGenerator
     /// </summary>
     let sourceCompressionThreshold = 200
 
-    let includeSource file =
+    let includeSource (file: string) =
         let isInList =
             embedSourceList
             |> List.exists (fun f -> String.Compare(file, f, StringComparison.OrdinalIgnoreCase) = 0)
@@ -654,12 +651,9 @@ type PortablePdbGenerator
     let emitMethod minfo =
         let docHandle, sequencePointBlob =
             let sps =
-                match minfo.DebugPoints with
-                | Null -> Array.empty
-                | NonNull pts ->
-                    match minfo.DebugRange with
-                    | None -> Array.empty
-                    | Some _ -> pts
+                match minfo.DebugRange with
+                | None -> Array.empty
+                | Some _ -> minfo.DebugPoints
 
             let builder = BlobBuilder()
             builder.WriteCompressedInteger(minfo.LocalSignatureToken)
@@ -872,7 +866,7 @@ let getInfoForEmbeddedPortablePdb
     (uncompressedLength: int64)
     (contentId: BlobContentId)
     (compressedStream: MemoryStream)
-    pdbfile
+    (pdbfile: string)
     cvChunk
     pdbChunk
     deterministicPdbChunk
@@ -886,7 +880,7 @@ let getInfoForEmbeddedPortablePdb
     pdbGetDebugInfo
         (contentId.Guid.ToByteArray())
         (int32 contentId.Stamp)
-        fn
+        !!fn
         cvChunk
         (Some pdbChunk)
         deterministicPdbChunk

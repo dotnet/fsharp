@@ -7,7 +7,11 @@ open System.Collections.Generic
 /// Hash tables, by default based on F# structural "hash" and (=) functions.
 /// The table may map a single key to multiple bindings.
 [<Sealed>]
-type internal HashMultiMap<'Key, 'Value> =
+type internal HashMultiMap<'Key, 'Value
+#if !NO_CHECKNULLS
+    when 'Key:not null
+#endif
+    > =
     /// Create a new empty mutable HashMultiMap with the given key hash/equality functions.
     new: comparer: IEqualityComparer<'Key> -> HashMultiMap<'Key, 'Value>
 

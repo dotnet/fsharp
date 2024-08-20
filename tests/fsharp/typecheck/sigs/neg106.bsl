@@ -172,11 +172,3 @@ neg106.fs(147,34,147,44): typecheck error FS1204: This construct is for use in t
 neg106.fs(148,34,148,44): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
 
 neg106.fs(149,34,149,44): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
-
-neg106.fs(146,34,146,47): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
-
-neg106.fs(147,34,147,44): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
-
-neg106.fs(148,34,148,44): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
-
-neg106.fs(149,34,149,44): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
