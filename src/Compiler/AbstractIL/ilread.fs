@@ -2262,6 +2262,7 @@ and seekReadGenericParamsUncached ctxtH (GenericParamsIdx(numTypars, a, b)) =
     let mdv = ctxt.mdfile.GetView()
 
     let key = TaggedIndex(a, b)
+
     let pars =
         seekReadIndexedRows (
             ctxt.getNumRows TableNames.GenericParam,
