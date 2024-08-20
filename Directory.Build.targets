@@ -39,6 +39,9 @@
 
   <!-- We want to restore ALL the MIBCs when we build anything, since in the future it will contain different profiles, not only the FSC one we got from building Giraffe -->
   <Import Project="$(MSBuildThisFileDirectory)\eng\restore\optimizationData.targets"/>
+  <ItemGroup>
+    <PackageReference Include="@(MIBCPackage)" />
+  </ItemGroup>
 
   <Target Name="CopyMIBCWrapper" AfterTargets="Restore" BeforeTargets="Build;Pack">
     <MSBuild
