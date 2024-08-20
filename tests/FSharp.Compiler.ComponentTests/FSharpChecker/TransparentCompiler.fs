@@ -475,7 +475,6 @@ type ProjectRequest = ProjectAction * AsyncReplyChannel<SyntheticProject>
 
 type FuzzingEvent = StartedChecking | FinishedChecking of bool | AbortedChecking of string | ModifiedImplFile | ModifiedSigFile
 
-[<RequireQualifiedAccess>]
 type SignatureFiles = Yes = 1 | No = 2 | Some = 3
 
 let fuzzingTest seed (project: SyntheticProject) = task {

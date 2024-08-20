@@ -176,7 +176,7 @@ let rec AttachRange m (exn: exn) =
     else
         match exn with
         // Strip TargetInvocationException wrappers
-        | :? TargetInvocationException -> AttachRange m exn.InnerException
+        | :? TargetInvocationException as e when isNotNull e.InnerException -> AttachRange m !!exn.InnerException
         | UnresolvedReferenceNoRange a -> UnresolvedReferenceError(a, m)
         | UnresolvedPathReferenceNoRange(a, p) -> UnresolvedPathReference(a, p, m)
         | :? NotSupportedException -> exn
@@ -351,6 +351,9 @@ type DiagnosticsLogger(nameForDebugging: string) =
 
     member x.CheckForErrors() = (x.ErrorCount > 0)
 
+    abstract CheckForRealErrorsIgnoringWarnings: bool
+    default x.CheckForRealErrorsIgnoringWarnings = x.CheckForErrors()
+
     member _.DebugDisplay() =
         sprintf "DiagnosticsLogger(%s)" nameForDebugging
 
@@ -423,7 +426,7 @@ module DiagnosticsLoggerExtensions =
         try
             if not tryAndDetectDev15 then
                 let preserveStackTrace =
-                    typeof<Exception>
+                    !!typeof<Exception>
                         .GetMethod("InternalPreserveStackTrace", BindingFlags.Instance ||| BindingFlags.NonPublic)
 
                 preserveStackTrace.Invoke(exn, null) |> ignore

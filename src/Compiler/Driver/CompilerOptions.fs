@@ -248,7 +248,7 @@ module ResponseFile =
             let data =
                 seq {
                     while not reader.EndOfStream do
-                        reader.ReadLine()
+                        !! reader.ReadLine()
                 }
                 |> Seq.choose parseLine
                 |> List.ofSeq
@@ -680,8 +680,8 @@ let SetEmbedAllSourceSwitch (tcConfigB: TcConfigBuilder) switch =
     else
         tcConfigB.embedAllSource <- false
 
-let setOutFileName tcConfigB path =
-    let outputDir = Path.GetDirectoryName(path)
+let setOutFileName tcConfigB (path: string) =
+    let outputDir = !! Path.GetDirectoryName(path)
     tcConfigB.outputDir <- Some outputDir
     tcConfigB.outputFile <- Some path
 
@@ -843,6 +843,14 @@ let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) =
             OptionStringList(fun n -> tcConfigB.TurnWarningOn(rangeCmdArgs, trimFS n)),
             None,
             Some(FSComp.SR.optsWarnOn ())
+        )
+
+        CompilerOption(
+            "checknulls",
+            tagNone,
+            OptionSwitch(fun switch -> tcConfigB.checkNullness <- switch = OptionSwitch.On),
+            None,
+            Some(FSComp.SR.optsCheckNulls ())
         )
 
         CompilerOption(

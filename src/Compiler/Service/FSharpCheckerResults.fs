@@ -20,7 +20,7 @@ open FSharp.Compiler
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckExpressionsOps
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
@@ -203,7 +203,10 @@ module internal FSharpCheckerResultsSettings =
     // Look for DLLs in the location of the service DLL first.
     let defaultFSharpBinariesDir =
         FSharpEnvironment
-            .BinFolderOfDefaultFSharpCompiler(Some(Path.GetDirectoryName(typeof<IncrementalBuilder>.Assembly.Location)))
+            .BinFolderOfDefaultFSharpCompiler(
+                Path.GetDirectoryName(typeof<IncrementalBuilder>.Assembly.Location)
+                |> Option.ofObj
+            )
             .Value
 
 [<Sealed>]
@@ -987,7 +990,7 @@ type internal TypeCheckInfo
         if String.IsNullOrWhiteSpace name then
             None
         else
-            let name = String.lowerCaseFirstChar name
+            let name = String.lowerCaseFirstChar !!name
 
             let unused =
                 sResolutions.CapturedNameResolutions
@@ -1358,7 +1361,8 @@ type internal TypeCheckInfo
                     match r.Item with
                     | Item.Types(_, ty :: _) when equals r.Range typeNameRange && isAppTy g ty ->
                         let superTy =
-                            (tcrefOfAppTy g ty).TypeContents.tcaug_super |> Option.defaultValue g.obj_ty
+                            (tcrefOfAppTy g ty).TypeContents.tcaug_super
+                            |> Option.defaultValue g.obj_ty_noNulls
 
                         Some(ty, superTy)
                     | _ -> None)
@@ -1368,7 +1372,7 @@ type internal TypeCheckInfo
                 |> ResizeArray.tryPick (fun r ->
                     match r.Item with
                     | Item.Types(_, ty :: _) when equals r.Range typeNameRange && isAppTy g ty ->
-                        let superTy = getTyFromTypeNamePos mTy.End |> Option.defaultValue g.obj_ty
+                        let superTy = getTyFromTypeNamePos mTy.End |> Option.defaultValue g.obj_ty_noNulls
                         Some(ty, superTy)
                     | _ -> None)
             | MethodOverrideCompletionContext.ObjExpr m ->
@@ -1376,7 +1380,7 @@ type internal TypeCheckInfo
 
                 quals
                 |> Array.tryFind (fun (_, _, _, r) -> posEq m.Start r.Start)
-                |> Option.map (fun (ty, _, _, _) -> ty, getTyFromTypeNamePos typeNameRange.End |> Option.defaultValue g.obj_ty)
+                |> Option.map (fun (ty, _, _, _) -> ty, getTyFromTypeNamePos typeNameRange.End |> Option.defaultValue g.obj_ty_noNulls)
 
         match ctx with
         | Some(ty, superTy) ->
@@ -3018,7 +3022,7 @@ module internal ParseAndCheckFile =
     let parseFile
         (
             sourceText: ISourceText,
-            fileName,
+            fileName: string,
             options: FSharpParsingOptions,
             userOpName: string,
             suggestNamesForErrors: bool,
@@ -3073,7 +3077,7 @@ module internal ParseAndCheckFile =
         (
             tcConfig,
             parsedMainInput,
-            mainInputFileName,
+            mainInputFileName: string,
             loadClosure: LoadClosure option,
             tcImports: TcImports,
             backgroundDiagnostics
@@ -3165,7 +3169,7 @@ module internal ParseAndCheckFile =
             ApplyMetaCommandsFromInputToTcConfig(
                 tcConfig,
                 parsedMainInput,
-                Path.GetDirectoryName mainInputFileName,
+                !! Path.GetDirectoryName(mainInputFileName),
                 tcImports.DependencyProvider
             )
             |> ignore
@@ -3216,7 +3220,7 @@ module internal ParseAndCheckFile =
 
             // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
             let tcConfig =
-                ApplyNoWarnsToTcConfig(tcConfig, parsedMainInput, Path.GetDirectoryName mainInputFileName)
+                ApplyNoWarnsToTcConfig(tcConfig, parsedMainInput, !! Path.GetDirectoryName(mainInputFileName))
 
             // update the error handler with the modified tcConfig
             errHandler.DiagnosticOptions <- tcConfig.diagnosticsOptions
