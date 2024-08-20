@@ -181,7 +181,7 @@ let main _ =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            Error 810, Line 9, Col 5, Line 9, Col 17, "Init-only property 'GetInit' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization"
+            Error 810, Line 9, Col 10, Line 9, Col 17, "Init-only property 'GetInit' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization"
         ]
 
     [<FactForNETCOREAPP>]

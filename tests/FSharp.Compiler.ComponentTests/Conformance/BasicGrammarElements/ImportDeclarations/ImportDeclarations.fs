@@ -142,7 +142,7 @@ let main _ =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 1201, Line 15, Col 59, Line 15, Col 101, "Cannot call an abstract base member: 'Write'")
+            (Error 1201, Line 15, Col 64, Line 15, Col 101, "Cannot call an abstract base member: 'Write'")
         ]
 
 
@@ -178,5 +178,5 @@ let main _ =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 1201, Line 13, Col 59, Line 13, Col 101, "Cannot call an abstract base member: 'Write'")
+            (Error 1201, Line 13, Col 64, Line 13, Col 101, "Cannot call an abstract base member: 'Write'")
         ]
