@@ -139,7 +139,7 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
         let template = @"<Project Sdk='Microsoft.NET.Sdk'>
 
   <PropertyGroup>
-    <DisableAutoImports>true</DisableAutoImports>
+    <NoWarn>$(NoWarn);NU1604;NU1103</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>
