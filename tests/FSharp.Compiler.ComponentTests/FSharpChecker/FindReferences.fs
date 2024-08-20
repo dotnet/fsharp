@@ -150,8 +150,8 @@ let bar x = Library.foo x""" })
     project.Workflow {
         placeCursor "Library" "foo"
         findAllReferences (expectToFind [
-            "FileFirst.fs", 4, 12, 23
-            "FileLibrary.fs", 5, 8, 11
+            ("FileFirst.fs", 4, 20, 23)
+            ("FileLibrary.fs", 5, 8, 11)
         ])
     }
 
@@ -165,7 +165,7 @@ let ``We find back-ticked identifiers`` () =
             placeCursor "Second" 6 35 "let foo x = ModuleFirst.``foo bar`` x" ["``foo bar``"]
             findAllReferences (expectToFind [
                 "FileFirst.fs", 6, 4, 15
-                "FileSecond.fs", 6, 12, 35
+                "FileSecond.fs", 6, 24, 35
             ])
         }
 
@@ -326,9 +326,9 @@ let ``We find values of a type that has been aliased`` () =
     project.Workflow {
         placeCursor "First" "myNum"
         findAllReferences (expectToFind [
-            "FileFirst.fs", 7, 4, 9
-            "FileFirst.fsi", 3, 4, 9
-            "FileSecond.fs", 6, 12, 29
+            ("FileFirst.fs", 7, 4, 9)
+            ("FileFirst.fsi", 3, 4, 9)
+            ("FileSecond.fs", 6, 24, 29)
         ])
     }
 
@@ -566,7 +566,7 @@ type internal SomeType() =
     let property1Locations() = [
         "FileFirst.fs", 4, 20, 29
         "FileSecond.fs", 7, 17, 26
-        "FileSecond.fs", 13, 12, 43 // Not sure why we get the whole range here, but it seems to work fine.
+        "FileSecond.fs", 13, 34, 43 // Not sure why we get the whole range here, but it seems to work fine.
     ]
 
     let method1Locations() = [

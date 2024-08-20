@@ -185,14 +185,14 @@ namespace N
         |> withResults [
             { Error = Warning 3569
               Range = { StartLine = 8
-                        StartColumn = 32
+                        StartColumn = 37
                         EndLine = 8
                         EndColumn = 41 }
               Message =
                "The member or function 'M1' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3569
               Range = { StartLine = 12
-                        StartColumn = 44
+                        StartColumn = 49
                         EndLine = 12
                         EndColumn = 61 }
               Message =
@@ -268,14 +268,14 @@ namespace N
         |> withResults [
             { Error = Warning 3569
               Range = { StartLine = 10
-                        StartColumn = 17
+                        StartColumn = 22
                         EndLine = 10
                         EndColumn = 26 }
               Message =
                "The member or function 'M2' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
             { Error = Warning 3569
               Range = { StartLine = 15
-                        StartColumn = 17
+                        StartColumn = 22
                         EndLine = 15
                         EndColumn = 26 }
               Message =

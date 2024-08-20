@@ -24,7 +24,7 @@ let getLength (x: string | null) = x.Length
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics [Error 3261, Line 3, Col 36, Line 3, Col 44, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."]
+    |> withDiagnostics [Error 3261, Line 3, Col 38, Line 3, Col 44, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."]
 
     
 [<Fact>]
@@ -578,7 +578,7 @@ myGenericFunction myValOfX
     |> shouldFail
     |> withDiagnostics     
             [Error 3261, Line 13, Col 19, Line 13, Col 28, "Nullness warning: The type 'string' does not support 'null'."
-             Error 193, Line 15, Col 20, Line 15, Col 39, "The type 'System.DateTime' does not have 'null' as a proper value"
+             Error 193, Line 15, Col 36, Line 15, Col 39, "The type 'System.DateTime' does not have 'null' as a proper value"
              Error 1, Line 16, Col 19, Line 16, Col 22, "The type 'int' does not have 'null' as a proper value"]
 
 [<Fact>]
@@ -613,7 +613,7 @@ myNullReturningFunction myValOfY                     |> ignore
     |> shouldFail
     |> withDiagnostics     
                 [Error 3261, Line 17, Col 25, Line 17, Col 34, "Nullness warning: The type 'string' does not support 'null'."
-                 Error 193, Line 19, Col 26, Line 19, Col 45, "The type 'System.DateTime' does not have 'null' as a proper value"
+                 Error 193, Line 19, Col 42, Line 19, Col 45, "The type 'System.DateTime' does not have 'null' as a proper value"
                  Error 1, Line 20, Col 25, Line 20, Col 36, "The type '{| Anon: 'a |}' does not have 'null' as a proper value"
                  Error 1, Line 21, Col 26, Line 21, Col 31, "The type '('a * 'b * 'c)' does not have 'null' as a proper value"
                  Error 1, Line 23, Col 25, Line 23, Col 33, "The type 'Y' does not have 'null' as a proper value"]

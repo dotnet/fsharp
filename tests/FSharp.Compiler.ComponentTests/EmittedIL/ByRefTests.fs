@@ -86,13 +86,13 @@ let f5 () =
                 (
                     FSharpDiagnosticSeverity.Error,
                     3228,
-                    (12, 6, 12, 25),
+                    (12, 19, 12, 25),
                     "The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope."
                 )
                 (
                     FSharpDiagnosticSeverity.Error,
                     3228,
-                    (17, 10, 17, 19),
+                    (17, 13, 17, 19),
                     "The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope."
                 )
                 (

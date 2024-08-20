@@ -379,9 +379,9 @@ but here has type
         |> withDiagnostics [
             (Error 827, Line 8, Col 5, Line 8, Col 64, "This is not a valid name for an active pattern")
             (Error 39, Line 20, Col 7, Line 20, Col 15, "The pattern discriminator 'Sentence' is not defined.")
-            (Error 72, Line 20, Col 25, Line 20, Col 37, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
+            (Error 72, Line 20, Col 31, Line 20, Col 37, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
             (Error 39, Line 21, Col 7, Line 21, Col 11, "The pattern discriminator 'Word' is not defined.")
-            (Error 72, Line 21, Col 20, Line 21, Col 31, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
+            (Error 72, Line 21, Col 25, Line 21, Col 31, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
             (Warning 49, Line 22, Col 7, Line 22, Col 17, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
             (Error 39, Line 23, Col 7, Line 23, Col 18, "The pattern discriminator 'Punctuation' is not defined.")
             (Warning 26, Line 23, Col 7, Line 23, Col 20, "This rule will never be matched")
