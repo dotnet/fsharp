@@ -9,14 +9,14 @@ open System.Collections.Generic
 [<Sealed>]
 type internal HashMultiMap<'Key, 'Value> =
     /// Create a new empty mutable HashMultiMap with the given key hash/equality functions.
-    new: comparer: IEqualityComparer<'Key> -> HashMultiMap<'Key, 'Value>
+    new: comparer: IEqualityComparer<'Key> * ?useConcurrentDictionary: bool -> HashMultiMap<'Key, 'Value>
 
     /// Create a new empty mutable HashMultiMap with an internal bucket array of the given approximate size
     /// and with the given key hash/equality functions.
-    new: size: int * comparer: IEqualityComparer<'Key> -> HashMultiMap<'Key, 'Value>
+    new: size: int * comparer: IEqualityComparer<'Key> * ?useConcurrentDictionary: bool -> HashMultiMap<'Key, 'Value>
 
     /// Build a map that contains the bindings of the given IEnumerable.
-    new: entries: seq<'Key * 'Value> * comparer: IEqualityComparer<'Key> -> HashMultiMap<'Key, 'Value>
+    new: entries: seq<'Key * 'Value> * comparer: IEqualityComparer<'Key> * ?useConcurrentDictionary: bool -> HashMultiMap<'Key, 'Value>
 
     /// Make a shallow copy of the collection.
     member Copy: unit -> HashMultiMap<'Key, 'Value>
