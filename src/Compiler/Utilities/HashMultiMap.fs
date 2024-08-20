@@ -5,16 +5,6 @@ namespace Internal.Utilities.Collections
 open System.Collections.Generic
 open System.Collections.Concurrent
 
-[<AutoOpen>]
-module HashMultiMap =
-    type IDictionary<'K, 'V> with
-        // We only call it on `.Copy()` so it should be fine.
-        member this.GetComparer() =
-            match this with
-            | :? Dictionary<'K, 'V> as d -> d.Comparer
-            | :? ConcurrentDictionary<'K, 'V> as d -> d.Comparer
-            | _ -> failwith "Unknown dictionary type"
-
 // Each entry in the HashMultiMap dictionary has at least one entry. Under normal usage each entry has _only_
 // one entry. So use two hash tables: one for the main entries and one for the overflow.
 [<Sealed>]
@@ -23,6 +13,8 @@ type internal HashMultiMap<'Key, 'Value
     when 'Key:not null
 #endif
     >(size: int, comparer: IEqualityComparer<'Key>, ?useConcurrentDictionary: bool) =
+
+    let comparer = comparer
 
     let firstEntries: IDictionary<_, _> =
         if defaultArg useConcurrentDictionary false then
@@ -40,7 +32,7 @@ type internal HashMultiMap<'Key, 'Value
         HashMultiMap<'Key, 'Value>(11, comparer, defaultArg useConcurrentDictionary false)
 
     new(entries: seq<'Key * 'Value>, comparer: IEqualityComparer<'Key>, ?useConcurrentDictionary: bool) as this =
-        HashMultiMap<'Key, 'Value>(11, comparer,  defaultArg useConcurrentDictionary false)
+        HashMultiMap<'Key, 'Value>(11, comparer, defaultArg useConcurrentDictionary false)
         then entries |> Seq.iter (fun (k, v) -> this.Add(k, v))
 
     member _.GetRest(k) =
@@ -64,7 +56,7 @@ type internal HashMultiMap<'Key, 'Value
     member _.Rest = rest
 
     member _.Copy() =
-        let res = HashMultiMap<'Key, 'Value>(firstEntries.Count, firstEntries.GetComparer())
+        let res = HashMultiMap<'Key, 'Value>(firstEntries.Count, comparer)
 
         for kvp in firstEntries do
             res.FirstEntries.Add(kvp.Key, kvp.Value)
