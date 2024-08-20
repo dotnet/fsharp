@@ -139,6 +139,10 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
         let template = @"<Project Sdk='Microsoft.NET.Sdk'>
 
   <PropertyGroup>
+    <DisableAutoImports>true</DisableAutoImports>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <OutputType>$(OUTPUTTYPE)</OutputType>
     <TargetFramework>$(TARGETFRAMEWORK)</TargetFramework>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
