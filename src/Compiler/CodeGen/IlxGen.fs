@@ -1912,7 +1912,7 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
                     if attrsBefore |> TryFindILAttribute g.attrib_AllowNullLiteralAttribute then
                         yield GetNullableAttribute g [ NullnessInfo.WithNull ]
                     if (gmethods.Count + gfields.Count + gproperties.Count) > 0 then
-                        yield GetNullableContextAttribute g
+                        yield GetNullableContextAttribute g 1uy
                 |]
                 |> mkILCustomAttrsFromArray
             else

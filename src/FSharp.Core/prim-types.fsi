@@ -310,7 +310,7 @@ namespace Microsoft.FSharp.Core
     /// with a default constructor with property getters and setters.</summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct,AllowMultiple=false)>]  
     [<Sealed>]
     type CLIMutableAttribute =
         inherit Attribute

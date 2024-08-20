@@ -101,7 +101,7 @@ namespace Microsoft.FSharp.Core
     type CLIEventAttribute() = 
         inherit Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class, AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple=false)>]  
     [<Sealed>]
     type CLIMutableAttribute() = 
         inherit Attribute()

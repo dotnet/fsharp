@@ -2854,12 +2854,19 @@ module EstablishTypeDefinitionCores =
         let attrs, getFinalAttrs = TcAttributesCanFail cenv envinner AttributeTargets.TyconDecl synAttrs
         let hasMeasureAttr = HasFSharpAttribute g g.attrib_MeasureAttribute attrs
         let hasStructAttr = HasFSharpAttribute g g.attrib_StructAttribute attrs
+        let hasCLIMutable = HasFSharpAttribute g g.attrib_CLIMutableAttribute attrs
+        // CLIMutableAttribute has a special treatment(specific error FS3132) in the case of records(Only record types may have this attribute.)
+        // So we want to keep these special treatment for records and avoid having two errors for the same attribute.
+        let reportAttributeTargetsErrors = g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) && not hasCLIMutable
+        
+        let noCLIMutableAttributeCheck() =
+            if hasCLIMutable then errorR (Error(FSComp.SR.tcThisTypeMayNotHaveACLIMutableAttribute(), m))
 
         let isStructRecordOrUnionType = 
             match synTyconRepr with
             | SynTypeDefnSimpleRepr.Record _ 
             | TyconCoreAbbrevThatIsReallyAUnion (hasMeasureAttr, envinner, id) _
-            | SynTypeDefnSimpleRepr.Union _ -> 
+            | SynTypeDefnSimpleRepr.Union _ ->
                 HasFSharpAttribute g g.attrib_StructAttribute attrs
             | _ -> 
                 false
@@ -2888,11 +2895,11 @@ module EstablishTypeDefinitionCores =
 
             | TyconCoreAbbrevThatIsReallyAUnion (hasMeasureAttr, envinner, id) (_, m)
             | SynTypeDefnSimpleRepr.Union (_, _, m) -> 
-
+                noCLIMutableAttributeCheck()
                 // Run InferTyconKind to raise errors on inconsistent attribute sets
                 InferTyconKind g (SynTypeDefnKind.Union, attrs, [], [], inSig, true, m) |> ignore
                 
-                if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
+                if reportAttributeTargetsErrors then
                     if hasStructAttr then
                         TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Struct synAttrs |> ignore
                     else
@@ -2908,16 +2915,16 @@ module EstablishTypeDefinitionCores =
 
             | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (s, m) -> 
                 let s = (s :?> ILType)
+                noCLIMutableAttributeCheck()
                 // Run InferTyconKind to raise errors on inconsistent attribute sets
                 InferTyconKind g (SynTypeDefnKind.IL, attrs, [], [], inSig, true, m) |> ignore
                 TAsmRepr s
 
             | SynTypeDefnSimpleRepr.Record (_, _, m) -> 
-
                 // Run InferTyconKind to raise errors on inconsistent attribute sets
                 InferTyconKind g (SynTypeDefnKind.Record, attrs, [], [], inSig, true, m) |> ignore
                 
-                if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
+                if reportAttributeTargetsErrors then
                     if hasStructAttr then
                         TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Struct synAttrs |> ignore
                     else
@@ -2928,6 +2935,7 @@ module EstablishTypeDefinitionCores =
 
             | SynTypeDefnSimpleRepr.General (kind, _, slotsigs, fields, isConcrete, _, _, _) ->
                 let kind = InferTyconKind g (kind, attrs, slotsigs, fields, inSig, isConcrete, m)
+                noCLIMutableAttributeCheck()
                 match kind with 
                 | SynTypeDefnKind.Opaque -> 
                     TNoRepr
@@ -2935,19 +2943,19 @@ module EstablishTypeDefinitionCores =
                     let kind = 
                         match kind with
                         | SynTypeDefnKind.Class ->
-                            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
+                            if reportAttributeTargetsErrors then
                                 TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Class synAttrs |> ignore
                             TFSharpClass
                         | SynTypeDefnKind.Interface ->
-                            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
+                            if reportAttributeTargetsErrors then
                                 TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Interface synAttrs |> ignore
                             TFSharpInterface
                         | SynTypeDefnKind.Delegate _ ->
-                            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
+                            if reportAttributeTargetsErrors then
                                 TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Delegate synAttrs |> ignore
                             TFSharpDelegate (MakeSlotSig("Invoke", g.unit_ty, [], [], [], None))
                         | SynTypeDefnKind.Struct ->
-                            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
+                            if reportAttributeTargetsErrors then
                                 TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Struct synAttrs |> ignore
                             TFSharpStruct 
                         | _ -> error(InternalError("should have inferred tycon kind", m))
@@ -2955,7 +2963,8 @@ module EstablishTypeDefinitionCores =
                     TFSharpTyconRepr (Construct.NewEmptyFSharpTyconData kind)
 
             | SynTypeDefnSimpleRepr.Enum _ ->
-                if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
+                noCLIMutableAttributeCheck()
+                if reportAttributeTargetsErrors then
                     TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Enum synAttrs |> ignore
                 TFSharpTyconRepr (Construct.NewEmptyFSharpTyconData TFSharpEnum)
 
@@ -3368,7 +3377,6 @@ module EstablishTypeDefinitionCores =
             // REVIEW: for hasMeasureableAttr we need to be stricter about checking these
             // are only used on exactly the right kinds of type definitions and not in conjunction with other attributes.
             let hasMeasureableAttr = HasFSharpAttribute g g.attrib_MeasureableAttribute attrs
-            let hasCLIMutable = HasFSharpAttribute g g.attrib_CLIMutableAttribute attrs
             
             let structLayoutAttr = TryFindFSharpInt32Attribute g g.attrib_StructLayoutAttribute attrs
             let hasAllowNullLiteralAttr = TryFindFSharpBoolAttribute g g.attrib_AllowNullLiteralAttribute attrs = Some true
@@ -3411,9 +3419,6 @@ module EstablishTypeDefinitionCores =
 
             let noMeasureAttributeCheck() = 
                 if hasMeasureAttr then errorR (Error(FSComp.SR.tcOnlyTypesRepresentingUnitsOfMeasureCanHaveMeasure(), m))
-
-            let noCLIMutableAttributeCheck() = 
-                if hasCLIMutable then errorR (Error(FSComp.SR.tcThisTypeMayNotHaveACLIMutableAttribute(), m))
 
             let noSealedAttributeCheck k = 
                 if hasSealedAttr = Some true then errorR (Error(k(), m))
@@ -3528,7 +3533,6 @@ module EstablishTypeDefinitionCores =
                         TNoRepr, None, NoSafeInitInfo
 
                 | SynTypeDefnSimpleRepr.Union (_, unionCases, mRepr) -> 
-                    noCLIMutableAttributeCheck()
                     noMeasureAttributeCheck()
                     noSealedAttributeCheck FSComp.SR.tcTypesAreAlwaysSealedDU
                     noAbstractClassAttributeCheck()
@@ -3568,7 +3572,6 @@ module EstablishTypeDefinitionCores =
 
                 | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (s, _) -> 
                     let s = (s :?> ILType)
-                    noCLIMutableAttributeCheck()
                     noMeasureAttributeCheck()
                     noSealedAttributeCheck FSComp.SR.tcTypesAreAlwaysSealedAssemblyCode
                     noAllowNullLiteralAttributeCheck()
@@ -3634,7 +3637,6 @@ module EstablishTypeDefinitionCores =
                         let kind = 
                             match kind with 
                               | SynTypeDefnKind.Struct -> 
-                                  noCLIMutableAttributeCheck()
                                   noSealedAttributeCheck FSComp.SR.tcTypesAreAlwaysSealedStruct
                                   noAbstractClassAttributeCheck()
                                   noAllowNullLiteralAttributeCheck()
@@ -3645,14 +3647,12 @@ module EstablishTypeDefinitionCores =
                                   TFSharpStruct
                               | SynTypeDefnKind.Interface -> 
                                   if hasSealedAttr = Some true then errorR (Error(FSComp.SR.tcInterfaceTypesCannotBeSealed(), m))
-                                  noCLIMutableAttributeCheck()
                                   structLayoutAttributeCheck false
                                   noAbstractClassAttributeCheck()
                                   allowNullLiteralAttributeCheck()
                                   noFieldsCheck userFields
                                   TFSharpInterface
                               | SynTypeDefnKind.Class -> 
-                                  noCLIMutableAttributeCheck()
                                   structLayoutAttributeCheck(not isIncrClass)
                                   allowNullLiteralAttributeCheck()
                                   for slot in abstractSlots do
@@ -3660,7 +3660,6 @@ module EstablishTypeDefinitionCores =
                                           errorR(Error(FSComp.SR.chkStaticAbstractMembersOnClasses(), slot.Range))
                                   TFSharpClass
                               | SynTypeDefnKind.Delegate (ty, arity) -> 
-                                  noCLIMutableAttributeCheck()
                                   noSealedAttributeCheck FSComp.SR.tcTypesAreAlwaysSealedDelegate
                                   structLayoutAttributeCheck false
                                   noAllowNullLiteralAttributeCheck()
@@ -3711,7 +3710,6 @@ module EstablishTypeDefinitionCores =
                     let fieldTy, fields' = TcRecdUnionAndEnumDeclarations.TcEnumDecls cenv envinner tpenv innerParent thisTy decls
                     let kind = TFSharpEnum
                     structLayoutAttributeCheck false
-                    noCLIMutableAttributeCheck()
                     noSealedAttributeCheck FSComp.SR.tcTypesAreAlwaysSealedEnum
                     noAllowNullLiteralAttributeCheck()
                     let vid = ident("value__", m)
@@ -5566,7 +5564,7 @@ let emptyTcEnv g =
       eCallerMemberName = None 
       eLambdaArgInfos = []
       eIsControlFlow = false
-      eCachedImplicitYieldExpressions = HashMultiMap(HashIdentity.Structural) }
+      eCachedImplicitYieldExpressions = HashMultiMap(HashIdentity.Structural, useConcurrentDictionary = true) }
 
 let CreateInitialTcEnv(g, amap, scopem, assemblyName, ccus) =
     (emptyTcEnv g, ccus) ||> List.collectFold (fun env (ccu, autoOpens, internalsVisible) -> 
