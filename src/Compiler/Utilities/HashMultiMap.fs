@@ -8,11 +8,7 @@ open System.Collections.Concurrent
 // Each entry in the HashMultiMap dictionary has at least one entry. Under normal usage each entry has _only_
 // one entry. So use two hash tables: one for the main entries and one for the overflow.
 [<Sealed>]
-type internal HashMultiMap<'Key, 'Value
-#if !NO_CHECKNULLS
-    when 'Key:not null
-#endif
-    >(size: int, comparer: IEqualityComparer<'Key>, ?useConcurrentDictionary: bool) =
+type internal HashMultiMap<'Key, 'Value>(size: int, comparer: IEqualityComparer<'Key>, ?useConcurrentDictionary: bool) =
 
     let comparer = comparer
 

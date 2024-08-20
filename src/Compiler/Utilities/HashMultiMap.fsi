@@ -16,7 +16,9 @@ type internal HashMultiMap<'Key, 'Value> =
     new: size: int * comparer: IEqualityComparer<'Key> * ?useConcurrentDictionary: bool -> HashMultiMap<'Key, 'Value>
 
     /// Build a map that contains the bindings of the given IEnumerable.
-    new: entries: seq<'Key * 'Value> * comparer: IEqualityComparer<'Key> * ?useConcurrentDictionary: bool -> HashMultiMap<'Key, 'Value>
+    new:
+        entries: seq<'Key * 'Value> * comparer: IEqualityComparer<'Key> * ?useConcurrentDictionary: bool ->
+            HashMultiMap<'Key, 'Value>
 
     /// Make a shallow copy of the collection.
     member Copy: unit -> HashMultiMap<'Key, 'Value>
