@@ -11,6 +11,8 @@
 * Allow #nowarn to support the FS prefix on error codes to disable warnings ([Issue #17206](https://github.com/dotnet/fsharp/issues/16447), [PR #17209](https://github.com/dotnet/fsharp/pull/17209))
 * Allow ParsedHashDirectives to have argument types other than strings ([Issue #17240](https://github.com/dotnet/fsharp/issues/16447), [PR #17209](https://github.com/dotnet/fsharp/pull/17209))
 * Support empty-bodied computation expressions. ([Language suggestion #1232](https://github.com/fsharp/fslang-suggestions/issues/1232), [PR #17352](https://github.com/dotnet/fsharp/pull/17352))
+* Allow object expression without overrides. ([Language suggestion #632](https://github.com/fsharp/fslang-suggestions/issues/632), [PR #17387](https://github.com/dotnet/fsharp/pull/17387))
+
 
 ### Fixed
 
