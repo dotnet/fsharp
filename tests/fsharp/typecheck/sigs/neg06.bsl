@@ -2,11 +2,17 @@
 neg06.fs(3,40,3,45): typecheck error FS0039: The type 'Encoding' does not define the field, constructor or member 'Ascii'. Maybe you want one of the following:
    ASCII
 
+neg06.fs(11,3,11,9): typecheck error FS0842: This attribute is not valid for use on this language element
+
 neg06.fs(12,6,12,31): typecheck error FS0942: Struct types are always sealed
+
+neg06.fs(17,3,17,9): typecheck error FS0842: This attribute is not valid for use on this language element
 
 neg06.fs(18,6,18,24): typecheck error FS0948: Interface types cannot be sealed
 
 neg06.fs(24,6,24,30): typecheck error FS0944: Abbreviated types cannot be given the 'Sealed' attribute
+
+neg06.fs(26,3,26,9): typecheck error FS0842: This attribute is not valid for use on this language element
 
 neg06.fs(27,6,27,33): typecheck error FS0942: Delegate types are always sealed
 
@@ -88,13 +94,19 @@ neg06.fs(223,13,223,21): typecheck error FS0800: Invalid use of a type name
 
 neg06.fs(300,10,300,12): typecheck error FS0009: Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.
 
+neg06.fs(303,7,303,104): typecheck error FS0842: This attribute is not valid for use on this language element
+
 neg06.fs(304,10,304,12): typecheck error FS0937: Only structs and classes without primary constructors may be given the 'StructLayout' attribute
 
 neg06.fs(310,10,310,12): typecheck error FS0937: Only structs and classes without primary constructors may be given the 'StructLayout' attribute
 
 neg06.fs(314,10,314,12): typecheck error FS0937: Only structs and classes without primary constructors may be given the 'StructLayout' attribute
 
+neg06.fs(316,7,316,104): typecheck error FS0842: This attribute is not valid for use on this language element
+
 neg06.fs(317,10,317,12): typecheck error FS0937: Only structs and classes without primary constructors may be given the 'StructLayout' attribute
+
+neg06.fs(319,7,319,104): typecheck error FS0842: This attribute is not valid for use on this language element
 
 neg06.fs(320,10,320,12): typecheck error FS0937: Only structs and classes without primary constructors may be given the 'StructLayout' attribute
 
