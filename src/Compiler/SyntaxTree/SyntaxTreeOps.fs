@@ -301,28 +301,24 @@ let rec SimplePatsOfPat synArgNameGenerator p =
     match p with
     | SynPat.FromParseError (p, _) -> SimplePatsOfPat synArgNameGenerator p
 
-    | SynPat.Typed (p', ty, m) ->
-        let p2, laterF = SimplePatsOfPat synArgNameGenerator p'
-        SynSimplePats.Typed(p2, ty, m), laterF
+    | SynPat.Tuple (false, ps, commas, m)
 
-    | SynPat.Tuple (false, ps, m)
-
-    | SynPat.Paren (SynPat.Tuple (false, ps, _), m) ->
+    | SynPat.Paren (SynPat.Tuple (false, ps, commas, _), m) ->
         let sps = List.map (SimplePatOfPat synArgNameGenerator) ps
 
         let ps2, laterF =
             List.foldBack (fun (p', rhsf) (ps', rhsf') -> p' :: ps', (composeFunOpt rhsf rhsf')) sps ([], None)
 
-        SynSimplePats.SimplePats(ps2, m), laterF
+        SynSimplePats.SimplePats(ps2, commas, m), laterF
 
     | SynPat.Paren (SynPat.Const (SynConst.Unit, m), _)
 
-    | SynPat.Const (SynConst.Unit, m) -> SynSimplePats.SimplePats([], m), None
+    | SynPat.Const (SynConst.Unit, m) -> SynSimplePats.SimplePats([], [], m), None
 
     | _ ->
         let m = p.Range
         let sp, laterF = SimplePatOfPat synArgNameGenerator p
-        SynSimplePats.SimplePats([ sp ], m), laterF
+        SynSimplePats.SimplePats([ sp ], [], m), laterF
 
 let PushPatternToExpr synArgNameGenerator isMember pat (rhs: SynExpr) =
     let nowPats, laterF = SimplePatsOfPat synArgNameGenerator pat
@@ -443,7 +439,7 @@ let mkSynUnitPat m = SynPat.Const(SynConst.Unit, m)
 
 let mkSynDelay m e =
     let svar = mkSynCompGenSimplePatVar (mkSynId m "unitVar")
-    SynExpr.Lambda(false, false, SynSimplePats.SimplePats([ svar ], m), e, None, m, SynExprLambdaTrivia.Zero)
+    SynExpr.Lambda(false, false, SynSimplePats.SimplePats([ svar ], [], m), e, None, m, SynExprLambdaTrivia.Zero)
 
 let mkSynAssign (l: SynExpr) (r: SynExpr) =
     let m = unionRanges l.Range r.Range
@@ -582,8 +578,7 @@ module SynInfo =
     /// Infer the syntactic argument info for one or more arguments one or more simple patterns.
     let rec InferSynArgInfoFromSimplePats x =
         match x with
-        | SynSimplePats.SimplePats (ps, _) -> List.map (InferSynArgInfoFromSimplePat []) ps
-        | SynSimplePats.Typed (ps, _, _) -> InferSynArgInfoFromSimplePats ps
+        | SynSimplePats.SimplePats (pats = ps) -> List.map (InferSynArgInfoFromSimplePat []) ps
 
     /// Infer the syntactic argument info for one or more arguments a pattern.
     let InferSynArgInfoFromPat p =
@@ -944,21 +939,14 @@ let mkDynamicArgExpr expr =
     | SynExpr.Paren (expr = e) -> e
     | e -> e
 
-let rec normalizeTupleExpr exprs commas : SynExpr list * range list =
-    match exprs with
-    | SynExpr.Tuple (false, innerExprs, innerCommas, _) :: rest ->
-        let innerExprs, innerCommas =
-            normalizeTupleExpr (List.rev innerExprs) (List.rev innerCommas)
-
-        innerExprs @ rest, innerCommas @ commas
-    | _ -> exprs, commas
-
-let rec normalizeTuplePat pats : SynPat list =
+let rec normalizeTuplePat pats commas : SynPat list * range List =
     match pats with
-    | SynPat.Tuple (false, innerPats, _) :: rest ->
-        let innerExprs = normalizeTuplePat (List.rev innerPats)
-        innerExprs @ rest
-    | _ -> pats
+    | SynPat.Tuple (false, innerPats, innerCommas, _) :: rest ->
+        let innerPats, innerCommas =
+            normalizeTuplePat (List.rev innerPats) (List.rev innerCommas)
+
+        innerPats @ rest, innerCommas @ commas
+    | _ -> pats, commas
 
 /// Remove all members that were captures as SynMemberDefn.GetSetMember
 let rec desugarGetSetMembers (memberDefns: SynMemberDefns) =

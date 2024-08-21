@@ -1,5 +1,24 @@
+<!-- Whenever altering this or other Source Build files, please include @dotnet/source-build-internal as a reviewer. -->
+<!-- See aka.ms/dotnet/prebuilts for guidance on what pre-builts are and how to eliminate them. -->
+
 <UsageData>
   <IgnorePatterns>
-    <UsagePattern IdentityGlob="*/*" />
+    <UsagePattern IdentityGlob="Microsoft.SourceBuild.Intermediate.*/*" />
+
+    <!-- Ignoring the known prebuilts. -->
+    
+    <!--
+      These will go away when repo updates targeting to net8.0
+      Tracked with https://github.com/dotnet/fsharp/issues/14765
+    -->
+    <UsagePattern IdentityGlob="Microsoft.AspNetCore.App.Ref/7.0.5" />
+    <UsagePattern IdentityGlob="Microsoft.NETCore.App.Host.linux-x64/7.0.5" />
+    <UsagePattern IdentityGlob="Microsoft.NETCore.App.Ref/7.0.5" />
+    <UsagePattern IdentityGlob="System.Configuration.ConfigurationManager/7.0.0" />
+    <UsagePattern IdentityGlob="System.Diagnostics.EventLog/7.0.0" />
+    <UsagePattern IdentityGlob="System.Security.Cryptography.ProtectedData/7.0.0" />
+
+    <!-- Tracked in https://github.com/dotnet/source-build/issues/3438 -->
+    <UsagePattern IdentityGlob="Microsoft.VisualStudio.Setup.Configuration.Interop/3.2.2146" />
   </IgnorePatterns>
 </UsageData>

@@ -310,25 +310,25 @@ let f1 () : obj = 1
 let f2 () : obj = if true then 1 else 3.0
 
 module TestComputedListExpressionsAtList = 
-    let x1 : list<int64>  = [ yield 1 ]
-    let x2 : list<int64>  = [ yield 1;
+    let x1 : int64 list   = [ yield 1 ]
+    let x2 : int64 list   = [ yield 1;
                               if true then yield 2L ]
-    let x3 : list<int64>  = [ yield 1L;
+    let x3 : int64 list   = [ yield 1L;
                               if true then yield 2 ]
-    let x4 : list<int64>  = [ yield 1L;
+    let x4 : int64 list   = [ yield 1L;
                               while false do yield 2 ]
-    let x5 : list<int64>  = [ yield 1;
+    let x5 : int64 list   = [ yield 1;
                               while false do yield 2L ]
-    let x6 : list<int64>  = [ while false do yield 2L ]
-    let x7 : list<int64>  = [ for i in 0 .. 10 do yield 2 ]
-    let x8 : list<int64>  = [ yield 1L
+    let x6 : int64 list   = [ while false do yield 2L ]
+    let x7 : int64 list   = [ for i in 0 .. 10 do yield 2 ]
+    let x8 : int64 list   = [ yield 1L
                               for i in 0 .. 10 do yield 2 ]
-    let x9 : list<int64>  = [ yield 1
+    let x9 : int64 list   = [ yield 1
                               for i in 0 .. 10 do yield 2L ]
-    let x10 : list<int64>  = [ try yield 2 finally () ]
-    let x11 : list<int64>  = [ yield 1L
+    let x10 : int64 list   = [ try yield 2 finally () ]
+    let x11 : int64 list   = [ yield 1L
                                try yield 2 finally ()  ]
-    let x12 : list<int64>  = [ yield 1
+    let x12 : int64 list   = [ yield 1
                                try yield 2L finally ()  ]
 
 module TestComputedListExpressionsAtSeq = 
@@ -365,25 +365,25 @@ module TestComputedListExpressionsAtSeq =
           try yield 2L finally ()  ]
 
 module TestComputedArrayExpressionsAtArray = 
-    let x1 : array<int64>  = [| yield 1 |]
-    let x2 : array<int64>  = [| yield 1;
+    let x1 : int64 array   = [| yield 1 |]
+    let x2 : int64 array   = [| yield 1;
                                 if true then yield 2L |]
-    let x3 : array<int64>  = [| yield 1L;
+    let x3 : int64 array   = [| yield 1L;
                                 if true then yield 2 |]
-    let x4 : array<int64>  = [| yield 1L;
+    let x4 : int64 array   = [| yield 1L;
                                 while false do yield 2 |]
-    let x5 : array<int64>  = [| yield 1;
+    let x5 : int64 array   = [| yield 1;
                                 while false do yield 2L |]
-    let x6 : array<int64>  = [| while false do yield 2L |]
-    let x7 : array<int64>  = [| for i in 0 .. 10 do yield 2 |]
-    let x8 : array<int64>  = [| yield 1L
+    let x6 : int64 array   = [| while false do yield 2L |]
+    let x7 : int64 array   = [| for i in 0 .. 10 do yield 2 |]
+    let x8 : int64 array   = [| yield 1L
                                 for i in 0 .. 10 do yield 2 |]
-    let x9 : array<int64>  = [| yield 1
+    let x9 : int64 array   = [| yield 1
                                 for i in 0 .. 10 do yield 2L |]
-    let x10 : array<int64>  = [| try yield 2 finally () |]
-    let x11 : array<int64>  = [| yield 1L
+    let x10 : int64 array   = [| try yield 2 finally () |]
+    let x11 : int64 array   = [| yield 1L
                                  try yield 2 finally ()  |]
-    let x12 : array<int64>  = [| yield 1
+    let x12 : int64 array   = [| yield 1
                                  try yield 2L finally ()  |]
 
 module TestComputedArrayExpressionsAtSeq = 

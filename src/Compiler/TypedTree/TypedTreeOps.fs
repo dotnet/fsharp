@@ -2841,6 +2841,12 @@ module PrettyTypes =
                           
         choose tps (0, 0) []
 
+    let AssignPrettyTyparNames typars prettyNames =
+        (typars, prettyNames)
+        ||> List.iter2 (fun tp nm -> 
+            if NeedsPrettyTyparName tp  then 
+                tp.typar_id <- ident (nm, tp.Range))  
+    
     let PrettifyThings g foldTys mapTys things = 
         let ftps = foldTys (accFreeInTypeLeftToRight g true false) emptyFreeTyparsLeftToRight things
         let ftps = List.rev ftps
@@ -3111,7 +3117,8 @@ type DisplayEnv =
                suppressInlineKeyword = false
                showDocumentation = true
                shrinkOverloads = false
-               escapeKeywordNames = true }
+               escapeKeywordNames = true
+               includeStaticParametersInTypeNames = true }
         denv.SetOpenPaths
             [ FSharpLib.RootPath
               FSharpLib.CorePath
@@ -5445,9 +5452,9 @@ let InferValReprInfoOfExpr g allowTypeDirectedDetupling ty partialArgAttribsL re
             let attribs = 
                 if partialAttribs.Length = tys.Length then partialAttribs 
                 else tys |> List.map (fun _ -> [])
-            (ids, attribs) ||> List.map2 (fun id attribs -> { Name = id; Attribs = attribs }: ArgReprInfo ))
+            (ids, attribs) ||> List.map2 (fun id attribs -> { Name = id; Attribs = attribs; OtherRange = None }: ArgReprInfo ))
 
-    let retInfo: ArgReprInfo = { Attribs = retAttribs; Name = None }
+    let retInfo: ArgReprInfo = { Attribs = retAttribs; Name = None; OtherRange = None }
     let info = ValReprInfo (ValReprInfo.InferTyparInfo tps, curriedArgInfos, retInfo)
     if ValReprInfo.IsEmpty info then ValReprInfo.emptyValData else info
 
@@ -5638,7 +5645,7 @@ and remapPossibleForallTyImpl ctxt tmenv ty =
     remapTypeFull (remapAttribs ctxt tmenv) tmenv ty
 
 and remapArgData ctxt tmenv (argInfo: ArgReprInfo) : ArgReprInfo =
-    { Attribs = remapAttribs ctxt tmenv argInfo.Attribs; Name = argInfo.Name }
+    { Attribs = remapAttribs ctxt tmenv argInfo.Attribs; Name = argInfo.Name; OtherRange = argInfo.OtherRange }
 
 and remapValReprInfo ctxt tmenv (ValReprInfo(tpNames, arginfosl, retInfo)) =
     ValReprInfo(tpNames, List.mapSquared (remapArgData ctxt tmenv) arginfosl, remapArgData ctxt tmenv retInfo)
@@ -10600,3 +10607,58 @@ let rec serializeEntity path (entity: Entity) =
     let json = sw.ToString()
     use out = FileSystem.OpenFileForWriteShim(path, fileMode = System.IO.FileMode.Create)
     out.WriteAllText(json)
+
+let updateSeqTypeIsPrefix (fsharpCoreMSpec: ModuleOrNamespace) =
+    let findModuleOrNamespace (name: string) (entity: Entity) =
+        if not entity.IsModuleOrNamespace then
+            None
+        else
+            entity.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName
+            |> Map.tryFind name
+
+    findModuleOrNamespace "Microsoft" fsharpCoreMSpec
+    |> Option.bind (findModuleOrNamespace "FSharp")
+    |> Option.bind (findModuleOrNamespace "Collections")
+    |> Option.iter (fun collectionsEntity ->
+        collectionsEntity.ModuleOrNamespaceType.AllEntitiesByLogicalMangledName
+        |> Map.tryFind "seq`1"
+        |> Option.iter (fun seqEntity ->
+            seqEntity.entity_flags <-
+                EntityFlags(
+                    false,
+                    seqEntity.entity_flags.IsModuleOrNamespace,
+                    seqEntity.entity_flags.PreEstablishedHasDefaultConstructor,
+                    seqEntity.entity_flags.HasSelfReferentialConstructor,
+                    seqEntity.entity_flags.IsStructRecordOrUnionType
+                )
+        )
+    )
+
+let isTyparOrderMismatch (tps: Typars) (argInfos: CurriedArgInfos) =
+    let rec getTyparName (ty: TType) : string list =
+        match ty with
+        | TType_var (typar = tp) ->
+            if tp.Id.idText <> unassignedTyparName then
+                [ tp.Id.idText ]
+            else
+                match tp.Solution with
+                | None -> []
+                | Some solutionType -> getTyparName solutionType
+        | TType_fun(domainType, rangeType, _) -> [ yield! getTyparName domainType; yield! getTyparName rangeType ]
+        | TType_anon(tys = ti)
+        | TType_app (typeInstantiation = ti)
+        | TType_tuple (elementTypes = ti) -> List.collect getTyparName ti 
+        | _ -> []
+
+    let typarNamesInArguments =
+        argInfos
+        |> List.collect (fun argInfos ->
+                argInfos
+                |> List.collect (fun (ty, _) -> getTyparName ty))
+        |> List.distinct
+
+    let typarNamesInDefinition =
+        tps |> List.map (fun (tp: Typar) -> tp.Id.idText) |> List.distinct
+
+    typarNamesInArguments.Length = typarNamesInDefinition.Length
+    && typarNamesInArguments <> typarNamesInDefinition

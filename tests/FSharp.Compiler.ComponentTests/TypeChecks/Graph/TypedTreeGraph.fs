@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.ComponentTests.TypeChecks.Graph.TypedTreeGraphTests
+﻿module TypeChecks.TypedTreeGraphTests
 
 open System
 open System.Collections.Concurrent
@@ -9,7 +9,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Symbols
 open NUnit.Framework
 open FSharp.Compiler.GraphChecking
-open FSharp.Compiler.ComponentTests.TypeChecks.Graph.TestUtils
+open TypeChecks.TestUtils
 
 let localProjects = CompilationFromCmdlineArgsTests.localProjects
 
@@ -156,7 +156,7 @@ let ``Create Graph from typed tree`` (projectArgumentsFilePath: string) =
 
             let filePairs = files.Values |> Seq.map TestFileWithAST.Map |> Seq.toArray |> FilePairMap
 
-            let graphFromHeuristic =
+            let graphFromHeuristic, _trie =
                 let isFSharpCore = Path.GetFileNameWithoutExtension(projectArgumentsFilePath).StartsWith("FSharp.Core")
                 files.Values |> Seq.map TestFileWithAST.Map |> Seq.toArray |> DependencyResolution.mkGraph isFSharpCore filePairs
 

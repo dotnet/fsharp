@@ -518,6 +518,9 @@ type SynType =
     /// F# syntax: ^a or ^b, used in trait calls
     | Or of lhsType: SynType * rhsType: SynType * range: range * trivia: SynTypeOrTrivia
 
+    /// A type arising from a parse error
+    | FromParseError of range: range
+
     /// Gets the syntax range of this construct
     member Range: range
 
@@ -1014,9 +1017,7 @@ type SynStaticOptimizationConstraint =
 /// "fun v -> match v with ..."
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynSimplePats =
-    | SimplePats of pats: SynSimplePat list * range: range
-
-    | Typed of pats: SynSimplePats * targetType: SynType * range: range
+    | SimplePats of pats: SynSimplePat list * commaRanges: range list * range: range
 
     member Range: range
 
@@ -1025,7 +1026,7 @@ type SynSimplePats =
 type SynArgPats =
     | Pats of pats: SynPat list
 
-    | NamePatPairs of pats: (Ident * range * SynPat) list * range: range * trivia: SynArgPatsNamePatPairsTrivia
+    | NamePatPairs of pats: (Ident * range option * SynPat) list * range: range * trivia: SynArgPatsNamePatPairsTrivia
 
     member Patterns: SynPat list
 
@@ -1070,7 +1071,7 @@ type SynPat =
         range: range
 
     /// A tuple pattern
-    | Tuple of isStruct: bool * elementPats: SynPat list * range: range
+    | Tuple of isStruct: bool * elementPats: SynPat list * commaRanges: range list * range: range
 
     /// A parenthesized pattern
     | Paren of pat: SynPat * range: range
@@ -1502,7 +1503,10 @@ type SynValTyparDecls = SynValTyparDecls of typars: SynTyparDecls option * canIn
 
 /// Represents the syntactic elements associated with the "return" of a function or method.
 [<NoEquality; NoComparison>]
-type SynReturnInfo = SynReturnInfo of returnType: (SynType * SynArgInfo) * range: range
+type SynReturnInfo =
+    | SynReturnInfo of returnType: (SynType * SynArgInfo) * range: range
+
+    member Range: range
 
 /// Represents the right hand side of an exception declaration 'exception E = ... '
 [<NoEquality; NoComparison>]

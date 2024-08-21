@@ -290,6 +290,11 @@ let [<Literal>] crossAssemblyOptimizationDefault = true
 
 let [<Literal>] debugPointsForPipeRightDefault = true
 
+[<RequireQualifiedAccess>]
+type OptimizationProcessingMode =
+    | Sequential
+    | Parallel
+
 type OptimizationSettings = 
     { 
       abstractBigTargets : bool
@@ -321,6 +326,8 @@ type OptimizationSettings =
       reportHasEffect : bool 
       
       reportTotalSizes : bool
+      
+      processingMode : OptimizationProcessingMode
     }
 
     static member Defaults = 
@@ -337,6 +344,7 @@ type OptimizationSettings =
           reportFunctionSizes = false
           reportHasEffect = false
           reportTotalSizes = false
+          processingMode = OptimizationProcessingMode.Sequential
         }
 
     /// Determines if JIT optimizations are enabled
@@ -397,7 +405,10 @@ type OptimizationSettings =
 
     /// Determines if we should expand "let x = (exp1, exp2, ...)" bindings as prior tmps 
     /// Also if we should expand "let x = Some exp1" bindings as prior tmps 
-    member x.ExpandStructuralValues() = x.LocalOptimizationsEnabled 
+    member x.ExpandStructuralValues() = x.LocalOptimizationsEnabled
+    
+    /// Determines how to process optimization of multiple files and individual optimization phases
+    member x.ProcessingMode() = x.processingMode
 
 type cenv =
     { g: TcGlobals
@@ -604,9 +615,7 @@ let BindTyparsToUnknown (tps: Typar list) env =
     // However here we mutate to provide better names for generalized type parameters 
     // The names chosen are 'a', 'b' etc. These are also the compiled names in the IL code
     let nms = PrettyTypes.PrettyTyparNames (fun _ -> true) (env.typarInfos |> List.map (fun (tp, _) -> tp.Name) ) tps
-    (tps, nms) ||> List.iter2 (fun tp nm -> 
-            if PrettyTypes.NeedsPrettyTyparName tp then 
-                tp.typar_id <- ident (nm, tp.Range))      
+    PrettyTypes.AssignPrettyTyparNames tps nms
     List.fold (fun sofar arg -> BindTypar arg UnknownTypeValue sofar) env tps 
 
 let BindCcu (ccu: CcuThunk) mval env (_g: TcGlobals) = 

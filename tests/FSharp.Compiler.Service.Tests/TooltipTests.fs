@@ -20,7 +20,7 @@ let testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource line colAtEn
                "A.fs",
                SourceText.ofString implSource |]
 
-    let documentSource fileName = Map.tryFind fileName files
+    let documentSource fileName = Map.tryFind fileName files |> async.Return
 
     let projectOptions =
         let _, projectOptions = mkTestFileAndOptions "" Array.empty
@@ -267,7 +267,7 @@ let testToolTipSquashing source line colAtEndOfNames lineText names tokenTag =
             [| "A.fs",
                SourceText.ofString source |]
     
-    let documentSource fileName = Map.tryFind fileName files
+    let documentSource fileName = Map.tryFind fileName files |> async.Return
 
     let projectOptions =
         let _, projectOptions = mkTestFileAndOptions "" Array.empty

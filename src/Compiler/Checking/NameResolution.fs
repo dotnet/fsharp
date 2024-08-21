@@ -229,7 +229,7 @@ type Item =
 
     /// Represents the resolution of a name to a named argument
     //
-    // In the FCS API, Item.ArgName corresponds to FSharpParameter symbols.
+    // In the FCS API, Item.OtherName corresponds to FSharpParameter symbols.
     // Not all parameters have names, e.g. for 'g' in this:
     //
     //    let f (g: int -> int) x = ...
@@ -238,7 +238,7 @@ type Item =
     // based on analyzing the type of g as a function type.
     //
     // For these parameters, the identifier will be missing.
-    | ArgName of ident: Ident option * argType: TType * container: ArgumentContainer option * range: range
+    | OtherName of ident: Ident option * argType: TType * argInfo: ArgReprInfo option * container: ArgumentContainer option * range: range
 
     /// Represents the resolution of a name to a named property setter
     | SetterArg of Ident * Item
@@ -283,8 +283,8 @@ type Item =
         | Item.TypeVar (nm, _) -> nm 
         | Item.Trait traitInfo -> traitInfo.MemberDisplayNameCore
         | Item.ModuleOrNamespaces(modref :: _) -> modref.DisplayNameCore
-        | Item.ArgName (Some id, _, _, _)  -> id.idText 
-        | Item.ArgName (None, _, _, _)  -> ""
+        | Item.OtherName (ident = Some id)  -> id.idText 
+        | Item.OtherName (ident = None)  -> ""
         | Item.SetterArg (id, _) -> id.idText 
         | Item.CustomOperation (customOpName, _, _) -> customOpName 
         | Item.CustomBuilder (nm, _) -> nm 
@@ -310,8 +310,8 @@ type Item =
         | Item.UnqualifiedType(tcref :: _) -> tcref.DisplayName
         | Item.ModuleOrNamespaces(modref :: _) -> modref.DisplayName
         | Item.TypeVar (nm, _) -> nm |> ConvertLogicalNameToDisplayName
-        | Item.ArgName (Some id, _, _, _)  -> id.idText |> ConvertValLogicalNameToDisplayName false
-        | Item.ArgName (None, _, _, _)  -> ""
+        | Item.OtherName (ident = Some id)  -> id.idText |> ConvertValLogicalNameToDisplayName false
+        | Item.OtherName (ident = None)  -> ""
         | _ ->  d.DisplayNameCore |> ConvertLogicalNameToDisplayName
 
 let valRefHash (vref: ValRef) =
@@ -539,14 +539,18 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.Impor
     if g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) then
         let ty = generalizedTyconRef g tcrefOfStaticClass
       
-        let minfos =
-            GetImmediateIntrinsicMethInfosOfType (None, AccessorDomain.AccessibleFromSomeFSharpCode) g amap m ty
-            |> List.filter (IsMethInfoPlainCSharpStyleExtensionMember g m true)
+        let csharpStyleExtensionMembers = 
+            if IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass || tcrefOfStaticClass.IsLocalRef then
+                protectAssemblyExploration [] (fun () ->
+                    GetImmediateIntrinsicMethInfosOfType (None, AccessorDomain.AccessibleFromSomeFSharpCode) g amap m ty
+                    |> List.filter (IsMethInfoPlainCSharpStyleExtensionMember g m true))
+            else
+                []
 
-        if IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass || not minfos.IsEmpty then
+        if not csharpStyleExtensionMembers.IsEmpty then
             let pri = NextExtensionMethodPriority()
 
-            [ for minfo in minfos do
+            [ for minfo in csharpStyleExtensionMembers do
                 let ilExtMem = ILExtMem (tcrefOfStaticClass, minfo, pri)
 
                 // The results are indexed by the TyconRef of the first 'this' argument, if any.
@@ -1907,10 +1911,10 @@ let ItemsAreEffectivelyEqual g orig other =
         | Some vref1, Some vref2 -> valRefDefnEq g vref1 vref2
         | _ -> false
 
-    | Item.ArgName (Some id1, _, _, m1), Item.ArgName (Some id2, _, _, m2) ->
+    | Item.OtherName (ident = Some id1; range = m1), Item.OtherName (ident = Some id2; range = m2) ->
         (id1.idText = id2.idText && equals m1 m2)
 
-    | Item.ArgName (Some id, _, _, _), ValUse vref | ValUse vref, Item.ArgName (Some id, _, _, _) ->
+    | Item.OtherName (ident = Some id), ValUse vref | ValUse vref, Item.OtherName (ident = Some id) ->
         ((equals id.idRange vref.DefinitionRange || equals id.idRange vref.SigRange) && id.idText = vref.DisplayName)
 
     | Item.AnonRecdField(anon1, _, i1, _), Item.AnonRecdField(anon2, _, i2, _) -> anonInfoEquiv anon1 anon2 && i1 = i2
@@ -1952,7 +1956,7 @@ let ItemsAreEffectivelyEqualHash (g: TcGlobals) orig =
     | ActivePatternCaseUse (_, _, idx)-> hash idx
     | MethodUse minfo -> minfo.ComputeHashCode()
     | PropertyUse pinfo -> pinfo.ComputeHashCode()
-    | Item.ArgName (Some id, _, _, _) -> hash id.idText
+    | Item.OtherName (ident = Some id) -> hash id.idText
     | ILFieldUse ilfinfo -> ilfinfo.ComputeHashCode()
     | UnionCaseUse ucase ->  hash ucase.CaseName
     | RecordFieldUse (name, _) -> hash name
@@ -2075,8 +2079,14 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
 
         let keyOpt =
             match item with
-            | Item.Value vref -> Some (endPos, vref.DisplayName)
-            | Item.ArgName (Some id, _, _, _) -> Some (endPos, id.idText)
+            | Item.Value vref ->
+                if (vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod)
+                   && not (System.String.IsNullOrWhiteSpace vref.Id.idText) then
+                    // We don't want to skip a symbol if both getter and setter are present.
+                    Some (endPos, vref.Id.idText)
+                else
+                    Some (endPos, vref.DisplayName)
+            | Item.OtherName (ident = Some id) -> Some (endPos, id.idText)
             | _ -> None
 
         match keyOpt with
@@ -2128,14 +2138,16 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
             if allowedRange m then
                 if replace then
                     remove m
-                elif not (isAlreadyDone endPos item m) then
+
+                if not (isAlreadyDone endPos item m) then
                     capturedNameResolutions.Add(CapturedNameResolution(item, tpinst, occurenceType, nenv, ad, m))
 
         member sink.NotifyMethodGroupNameResolution(endPos, item, itemMethodGroup, tpinst, occurenceType, nenv, ad, m, replace) =
             if allowedRange m then
                 if replace then
                     remove m
-                elif not (isAlreadyDone endPos item m) then
+
+                if not (isAlreadyDone endPos item m) then
                     capturedNameResolutions.Add(CapturedNameResolution(item, tpinst, occurenceType, nenv, ad, m))
                     capturedMethodGroupResolutions.Add(CapturedNameResolution(itemMethodGroup, [], occurenceType, nenv, ad, m))
 
@@ -2244,7 +2256,7 @@ let CheckAllTyparsInferrable amap m item =
     | Item.CustomOperation _
     | Item.CustomBuilder _
     | Item.TypeVar _
-    | Item.ArgName _
+    | Item.OtherName _
     | Item.ActivePatternResult _
     | Item.Value _
     | Item.ActivePatternCase _
@@ -2715,6 +2727,36 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
 
         let errorTextF s =
             match tryTcrefOfAppTy g ty with
+            | ValueSome tcref when tcref.IsRecordTycon ->
+                let alternative = nenv.eFieldLabels |> Map.tryFind nm
+                match alternative with
+                | Some fieldLabels ->
+                    let fieldsOfResolvedType = tcref.AllFieldsArray  |> Array.map (fun f -> f.LogicalName) |> Set.ofArray
+                    let fieldsOfAlternatives =
+                        fieldLabels
+                        |> Seq.collect (fun l -> l.Tycon.AllFieldsArray |> Array.map (fun f -> f.LogicalName))
+                        |> Set.ofSeq
+                    let intersect = Set.intersect fieldsOfAlternatives fieldsOfResolvedType
+
+                    if not intersect.IsEmpty then
+                        let resolvedTypeName = NicePrint.fqnOfEntityRef g tcref
+                        let namesOfAlternatives =
+                            fieldLabels
+                            |> List.map (fun l -> $"    %s{NicePrint.fqnOfEntityRef g l.TyconRef}")
+                            |> fun names -> $"    %s{resolvedTypeName}" :: names
+                        let candidates = System.String.Join("\n", namesOfAlternatives)
+                        let overlappingNames =
+                            intersect
+                            |> Set.toArray
+                            |> Array.sort
+                            |> Array.map (fun s -> $"    %s{s}")
+                            |> fun a -> System.String.Join("\n", a)
+                        if g.langVersion.SupportsFeature(LanguageFeature.WarningWhenMultipleRecdTypeChoice) then
+                            warning(Error(FSComp.SR.tcMultipleRecdTypeChoice(candidates, resolvedTypeName, overlappingNames), m))
+                        else
+                            informationalWarning(Error(FSComp.SR.tcMultipleRecdTypeChoice(candidates, resolvedTypeName, overlappingNames), m))
+                | _ -> ()
+                FSComp.SR.undefinedNameFieldConstructorOrMemberWhenTypeIsKnown(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars, s)
             | ValueSome tcref ->
                 FSComp.SR.undefinedNameFieldConstructorOrMemberWhenTypeIsKnown(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars, s)
             | _ ->

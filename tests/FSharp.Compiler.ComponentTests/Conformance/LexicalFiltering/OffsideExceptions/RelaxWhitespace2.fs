@@ -3568,7 +3568,7 @@ and             ^a
          > () = 
             member inline __.X = ()
         with
-        static member inline Y = ()
+            static member inline Y = ()
         
 type TypeWithALongName< ^a
     when ^a:(static member(+):'a * 'a -> 'a )

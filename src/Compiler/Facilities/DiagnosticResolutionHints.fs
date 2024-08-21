@@ -76,7 +76,9 @@ type SuggestionBuffer(idText: string) =
                         data[i] <- data[i + 1]
 
                 data[pos - 1] <- KeyValuePair(k, v)
-                if tail > 0 then tail <- tail - 1
+
+                if tail > 0 then
+                    tail <- tail - 1
 
     member _.Add(suggestion: string) =
         if not disableSuggestions then
@@ -95,10 +97,12 @@ type SuggestionBuffer(idText: string) =
                 let suggestedText = suggestion.ToUpperInvariant()
                 let similarity = EditDistance.JaroWinklerDistance uppercaseText suggestedText
 
-                if similarity >= highConfidenceThreshold
-                   || suggestion.EndsWithOrdinal dotIdText
-                   || (similarity >= minThresholdForSuggestions
-                       && IsInEditDistanceProximity uppercaseText suggestedText) then
+                if
+                    similarity >= highConfidenceThreshold
+                    || suggestion.EndsWithOrdinal dotIdText
+                    || (similarity >= minThresholdForSuggestions
+                        && IsInEditDistanceProximity uppercaseText suggestedText)
+                then
                     insert (similarity, suggestion)
 
     member _.Disabled = disableSuggestions

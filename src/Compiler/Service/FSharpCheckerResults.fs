@@ -62,8 +62,7 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 type FSharpUnresolvedReferencesSet = FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list
 
 [<Sealed>]
-type internal DelayedILModuleReader =
-
+type DelayedILModuleReader =
     val private name: string
     val private gate: obj
     val mutable private getStream: (CancellationToken -> Stream option)
@@ -76,6 +75,8 @@ type internal DelayedILModuleReader =
             getStream = getStream
             result = Unchecked.defaultof<_>
         }
+
+    member this.OutputFile = this.name
 
     member this.TryGetILModuleReader() =
         // fast path
@@ -117,23 +118,14 @@ type internal DelayedILModuleReader =
 [<RequireQualifiedAccess; NoComparison; CustomEquality>]
 type FSharpReferencedProject =
     | FSharpReference of projectOutputFile: string * options: FSharpProjectOptions
-    | PEReference of projectOutputFile: string * getStamp: (unit -> DateTime) * delayedReader: DelayedILModuleReader
+    | PEReference of getStamp: (unit -> DateTime) * delayedReader: DelayedILModuleReader
     | ILModuleReference of projectOutputFile: string * getStamp: (unit -> DateTime) * getReader: (unit -> ILModuleReader)
 
     member this.OutputFile =
         match this with
         | FSharpReference (projectOutputFile = projectOutputFile)
-        | PEReference (projectOutputFile = projectOutputFile)
         | ILModuleReference (projectOutputFile = projectOutputFile) -> projectOutputFile
-
-    static member CreateFSharp(projectOutputFile, options) =
-        FSharpReference(projectOutputFile, options)
-
-    static member CreatePortableExecutable(projectOutputFile, getStamp, getStream) =
-        PEReference(projectOutputFile, getStamp, DelayedILModuleReader(projectOutputFile, getStream))
-
-    static member CreateFromILModuleReader(projectOutputFile, getStamp, getReader) =
-        ILModuleReference(projectOutputFile, getStamp, getReader)
+        | PEReference (delayedReader = reader) -> reader.OutputFile
 
     override this.Equals(o) =
         match o with
@@ -141,8 +133,8 @@ type FSharpReferencedProject =
             match this, o with
             | FSharpReference (projectOutputFile1, options1), FSharpReference (projectOutputFile2, options2) ->
                 projectOutputFile1 = projectOutputFile2 && options1 = options2
-            | PEReference (projectOutputFile1, getStamp1, _), PEReference (projectOutputFile2, getStamp2, _) ->
-                projectOutputFile1 = projectOutputFile2 && (getStamp1 ()) = (getStamp2 ())
+            | PEReference (getStamp1, reader1), PEReference (getStamp2, reader2) ->
+                reader1.OutputFile = reader2.OutputFile && (getStamp1 ()) = (getStamp2 ())
             | ILModuleReference (projectOutputFile1, getStamp1, _), ILModuleReference (projectOutputFile2, getStamp2, _) ->
                 projectOutputFile1 = projectOutputFile2 && (getStamp1 ()) = (getStamp2 ())
             | _ -> false
@@ -192,8 +184,8 @@ and FSharpProjectOptions =
                    match r1, r2 with
                    | FSharpReferencedProject.FSharpReference (n1, a), FSharpReferencedProject.FSharpReference (n2, b) ->
                        n1 = n2 && FSharpProjectOptions.AreSameForChecking(a, b)
-                   | FSharpReferencedProject.PEReference (n1, getStamp1, _), FSharpReferencedProject.PEReference (n2, getStamp2, _) ->
-                       n1 = n2 && (getStamp1 ()) = (getStamp2 ())
+                   | FSharpReferencedProject.PEReference (getStamp1, reader1), FSharpReferencedProject.PEReference (getStamp2, reader2) ->
+                       reader1.OutputFile = reader2.OutputFile && (getStamp1 ()) = (getStamp2 ())
                    | _ -> false)
             && options1.LoadTime = options2.LoadTime
 
@@ -259,9 +251,30 @@ type FSharpSymbolUse(denv: DisplayEnv, symbol: FSharpSymbol, inst: TyparInstanti
 
     member _.Range = range
 
+    member this.IsPrivateToFileAndSignatureFile =
+
+        let couldBeParameter, declarationLocation =
+            match this.Symbol with
+            | :? FSharpParameter as p -> true, Some p.DeclarationLocation
+            | :? FSharpMemberOrFunctionOrValue as m when not m.IsModuleValueOrMember -> true, Some m.DeclarationLocation
+            | _ -> false, None
+
+        let thisIsSignature = SourceFileImpl.IsSignatureFile this.Range.FileName
+
+        let signatureLocation = this.Symbol.SignatureLocation
+
+        couldBeParameter
+        && (thisIsSignature
+            || (signatureLocation.IsSome && signatureLocation <> declarationLocation))
+
     member this.IsPrivateToFile =
+
         let isPrivate =
             match this.Symbol with
+            | _ when this.IsPrivateToFileAndSignatureFile -> false
+            | :? FSharpMemberOrFunctionOrValue as m when not m.IsModuleValueOrMember ->
+                // local binding or parameter
+                true
             | :? FSharpMemberOrFunctionOrValue as m ->
                 let fileSignatureLocation =
                     m.DeclaringEntity |> Option.bind (fun e -> e.SignatureLocation)
@@ -271,10 +284,9 @@ type FSharpSymbolUse(denv: DisplayEnv, symbol: FSharpSymbol, inst: TyparInstanti
 
                 let fileHasSignatureFile = fileSignatureLocation <> fileDeclarationLocation
 
-                fileHasSignatureFile && not m.HasSignatureFile
-                || not m.IsModuleValueOrMember
-                || m.Accessibility.IsPrivate
+                fileHasSignatureFile && not m.HasSignatureFile || m.Accessibility.IsPrivate
             | :? FSharpEntity as m -> m.Accessibility.IsPrivate
+            | :? FSharpParameter -> true
             | :? FSharpGenericParameter -> true
             | :? FSharpUnionCase as m -> m.Accessibility.IsPrivate
             | :? FSharpField as m -> m.Accessibility.IsPrivate
@@ -577,7 +589,7 @@ type internal TypeCheckInfo
                 x
                 |> List.choose (fun (ParamData (_isParamArray, _isInArg, _isOutArg, _optArgInfo, _callerInfo, name, _, ty)) ->
                     match name with
-                    | Some id -> Some(Item.ArgName(Some id, ty, Some(ArgumentContainer.Method meth), id.idRange))
+                    | Some id -> Some(Item.OtherName(Some id, ty, None, Some(ArgumentContainer.Method meth), id.idRange))
                     | None -> None)
             | _ -> [])
 
@@ -817,6 +829,7 @@ type internal TypeCheckInfo
                        ||
 #endif
                        nameMatchesResidue tcref.DisplayName)
+            | Item.Value v when (v.IsPropertyGetterMethod || v.IsPropertySetterMethod) -> residue = v.Id.idText || residue = n1
             | _ -> residue = n1)
 
     /// Post-filter items to make sure they have precisely the right name
@@ -876,6 +889,7 @@ type internal TypeCheckInfo
                 match minfos with
                 | [] -> CompletionItemKind.Method false
                 | minfo :: _ -> CompletionItemKind.Method minfo.IsExtensionMember
+            | Item.AnonRecdField _
             | Item.RecdField _
             | Item.Property _ -> CompletionItemKind.Property
             | Item.Event _ -> CompletionItemKind.Event
@@ -883,7 +897,6 @@ type internal TypeCheckInfo
             | Item.Value _ -> CompletionItemKind.Field
             | Item.CustomOperation _ -> CompletionItemKind.CustomOperation
             // These items are not given a completion kind. This could be reviewed
-            | Item.AnonRecdField _
             | Item.ActivePatternResult _
             | Item.CustomOperation _
             | Item.CtorGroup _
@@ -900,7 +913,7 @@ type internal TypeCheckInfo
             | Item.NewDef _
             | Item.SetterArg _
             | Item.CustomBuilder _
-            | Item.ArgName _
+            | Item.OtherName _
             | Item.ActivePatternCase _ -> CompletionItemKind.Other
 
         let isUnresolved =
@@ -1726,7 +1739,7 @@ type internal TypeCheckInfo
             }
 
         let toolTipElement =
-            FormatStructuredDescriptionOfItem displayFullName infoReader accessorDomain m denv itemWithInst None
+            FormatStructuredDescriptionOfItem displayFullName infoReader accessorDomain m denv itemWithInst (Some symbol) None
 
         ToolTipText [ toolTipElement ]
 
@@ -1757,7 +1770,8 @@ type internal TypeCheckInfo
                         ToolTipText(
                             items
                             |> List.map (fun x ->
-                                FormatStructuredDescriptionOfItem false infoReader tcAccessRights m denv x.ItemWithInst width)
+                                let symbol = Some(FSharpSymbol.Create(cenv, x.Item))
+                                FormatStructuredDescriptionOfItem false infoReader tcAccessRights m denv x.ItemWithInst symbol width)
                         ))
 
                 (fun err ->
@@ -2075,6 +2089,36 @@ type internal TypeCheckInfo
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetSymbolUseAtLocation: '%s'" msg)
                 None)
 
+    member _.GetSymbolUsesAtLocation(line, lineStr, colAtEndOfNames, names) =
+        DiagnosticsScope.Protect
+            range0
+            (fun () ->
+                let declItemsOpt =
+                    GetDeclItemsForNamesAtPosition(
+                        None,
+                        Some names,
+                        None,
+                        None,
+                        line,
+                        lineStr,
+                        colAtEndOfNames,
+                        ResolveTypeNamesToCtors,
+                        ResolveOverloads.Yes,
+                        None,
+                        (fun () -> [])
+                    )
+
+                match declItemsOpt with
+                | None -> List.empty
+                | Some (items, denv, _, m) ->
+                    items
+                    |> List.map (fun item ->
+                        let symbol = FSharpSymbol.Create(cenv, item.Item)
+                        symbol, item.ItemWithInst, denv, m))
+            (fun msg ->
+                Trace.TraceInformation(sprintf "FCS: recovering from error in GetSymbolUsesAtLocation: '%s'" msg)
+                List.empty)
+
     member _.PartialAssemblySignatureForFile =
         FSharpAssemblySignature(g, thisCcu, ccuSigForFile, tcImports, None, ccuSigForFile)
 
@@ -2185,7 +2229,8 @@ module internal ParseAndCheckFile =
             mainInputFileName,
             diagnosticsOptions: FSharpDiagnosticOptions,
             sourceText: ISourceText,
-            suggestNamesForErrors: bool
+            suggestNamesForErrors: bool,
+            flatErrors: bool
         ) =
         let mutable options = diagnosticsOptions
         let diagnosticsCollector = ResizeArray<_>()
@@ -2196,7 +2241,16 @@ module internal ParseAndCheckFile =
 
         let collectOne severity diagnostic =
             for diagnostic in
-                DiagnosticHelpers.ReportDiagnostic(options, false, mainInputFileName, fileInfo, diagnostic, severity, suggestNamesForErrors) do
+                DiagnosticHelpers.ReportDiagnostic(
+                    options,
+                    false,
+                    mainInputFileName,
+                    fileInfo,
+                    diagnostic,
+                    severity,
+                    suggestNamesForErrors,
+                    flatErrors
+                ) do
                 diagnosticsCollector.Add diagnostic
 
                 if severity = FSharpDiagnosticSeverity.Error then
@@ -2286,7 +2340,7 @@ module internal ParseAndCheckFile =
             )
 
         let tokenizer =
-            LexFilter.LexFilter(indentationSyntaxStatus, options.CompilingFSharpCore, Lexer.token lexargs true, lexbuf)
+            LexFilter.LexFilter(indentationSyntaxStatus, options.CompilingFSharpCore, Lexer.token lexargs true, lexbuf, false)
 
         (fun _ -> tokenizer.GetToken())
 
@@ -2305,7 +2359,7 @@ module internal ParseAndCheckFile =
 
         usingLexbufForParsing (createLexbuf options.LangVersionText sourceText, fileName) (fun lexbuf ->
             let errHandler =
-                DiagnosticsHandler(false, fileName, options.DiagnosticOptions, sourceText, suggestNamesForErrors)
+                DiagnosticsHandler(false, fileName, options.DiagnosticOptions, sourceText, suggestNamesForErrors, false)
 
             let lexfun = createLexerFunction fileName options lexbuf errHandler
 
@@ -2331,7 +2385,7 @@ module internal ParseAndCheckFile =
 
             let rec matchBraces stack =
                 match lexfun lexbuf, stack with
-                | tok2, (tok1, m1) :: stackAfterMatch when parenTokensBalance tok1 tok2 ->
+                | tok2, (tok1, braceOffset, m1) :: stackAfterMatch when parenTokensBalance tok1 tok2 ->
                     let m2 = lexbuf.LexemeRange
 
                     // For INTERP_STRING_PART and INTERP_STRING_END grab the one character
@@ -2339,7 +2393,11 @@ module internal ParseAndCheckFile =
                     let m2Start =
                         match tok2 with
                         | INTERP_STRING_PART _
-                        | INTERP_STRING_END _ -> mkFileIndexRange m2.FileIndex m2.Start (mkPos m2.Start.Line (m2.Start.Column + 1))
+                        | INTERP_STRING_END _ ->
+                            mkFileIndexRange
+                                m2.FileIndex
+                                (mkPos m2.Start.Line (m2.Start.Column - braceOffset))
+                                (mkPos m2.Start.Line (m2.Start.Column + 1))
                         | _ -> m2
 
                     matchingBraces.Add(m1, m2Start)
@@ -2350,15 +2408,15 @@ module internal ParseAndCheckFile =
                         match tok2 with
                         | INTERP_STRING_PART _ ->
                             let m2End =
-                                mkFileIndexRange m2.FileIndex (mkPos m2.End.Line (max (m2.End.Column - 1) 0)) m2.End
+                                mkFileIndexRange m2.FileIndex (mkPos m2.End.Line (max (m2.End.Column - 1 - braceOffset) 0)) m2.End
 
-                            (tok2, m2End) :: stackAfterMatch
+                            (tok2, braceOffset, m2End) :: stackAfterMatch
                         | _ -> stackAfterMatch
 
                     matchBraces stackAfterMatch
 
                 | LPAREN | LBRACE _ | LBRACK | LBRACE_BAR | LBRACK_BAR | LQUOTE _ | LBRACK_LESS as tok, _ ->
-                    matchBraces ((tok, lexbuf.LexemeRange) :: stack)
+                    matchBraces ((tok, 0, lexbuf.LexemeRange) :: stack)
 
                 // INTERP_STRING_BEGIN_PART corresponds to $"... {" at the start of an interpolated string
                 //
@@ -2368,12 +2426,18 @@ module internal ParseAndCheckFile =
                 //
                 // Either way we start a new potential match at the last character
                 | INTERP_STRING_BEGIN_PART _ | INTERP_STRING_PART _ as tok, _ ->
+                    let braceOffset =
+                        match tok with
+                        | INTERP_STRING_BEGIN_PART (_, SynStringKind.TripleQuote, (LexerContinuation.Token (_, (_, _, dl, _) :: _))) ->
+                            dl - 1
+                        | _ -> 0
+
                     let m = lexbuf.LexemeRange
 
                     let m2 =
-                        mkFileIndexRange m.FileIndex (mkPos m.End.Line (max (m.End.Column - 1) 0)) m.End
+                        mkFileIndexRange m.FileIndex (mkPos m.End.Line (max (m.End.Column - 1 - braceOffset) 0)) m.End
 
-                    matchBraces ((tok, m2) :: stack)
+                    matchBraces ((tok, braceOffset, m2) :: stack)
 
                 | (EOF _ | LEX_FAILURE _), _ -> ()
                 | _ -> matchBraces stack
@@ -2389,6 +2453,7 @@ module internal ParseAndCheckFile =
             options: FSharpParsingOptions,
             userOpName: string,
             suggestNamesForErrors: bool,
+            flatErrors: bool,
             identCapture: bool
         ) =
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "parseFile", fileName)
@@ -2397,7 +2462,7 @@ module internal ParseAndCheckFile =
             Activity.start "ParseAndCheckFile.parseFile" [| Activity.Tags.fileName, fileName |]
 
         let errHandler =
-            DiagnosticsHandler(true, fileName, options.DiagnosticOptions, sourceText, suggestNamesForErrors)
+            DiagnosticsHandler(true, fileName, options.DiagnosticOptions, sourceText, suggestNamesForErrors, flatErrors)
 
         use _ = UseDiagnosticsLogger errHandler.DiagnosticsLogger
 
@@ -2564,7 +2629,14 @@ module internal ParseAndCheckFile =
 
             // Initialize the error handler
             let errHandler =
-                DiagnosticsHandler(true, mainInputFileName, tcConfig.diagnosticsOptions, sourceText, suggestNamesForErrors)
+                DiagnosticsHandler(
+                    true,
+                    mainInputFileName,
+                    tcConfig.diagnosticsOptions,
+                    sourceText,
+                    suggestNamesForErrors,
+                    tcConfig.flatErrors
+                )
 
             use _ = UseDiagnosticsLogger errHandler.DiagnosticsLogger
 
@@ -2716,12 +2788,7 @@ type FSharpCheckFileResults
                     | None -> ()
                     | Some kwDescription ->
                         let kwText = kw |> TaggedText.tagKeyword |> wordL |> LayoutRender.toArray
-                        let kwTip = ToolTipElementData.Create(kwText, FSharpXmlDoc.None)
-
-                        let descText = kwDescription |> TaggedText.tagText |> wordL |> LayoutRender.toArray
-                        let descTip = ToolTipElementData.Create(descText, FSharpXmlDoc.None)
-
-                        yield ToolTipElement.Group [ kwTip; descTip ]
+                        yield ToolTipElement.Single(kwText, FSharpXmlDoc.FromXmlText(Xml.XmlDoc([| kwDescription |], range.Zero)))
             ]
 
     /// Resolve the names at the given location to give a data tip
@@ -2759,12 +2826,16 @@ type FSharpCheckFileResults
         | None -> emptyFindDeclResult
         | Some (scope, _builderOpt) -> scope.GetDeclarationLocation(line, lineText, colAtEndOfNames, names, preferFlag)
 
-    member _.GetSymbolUseAtLocation(line, colAtEndOfNames, lineText, names) =
+    member this.GetSymbolUseAtLocation(line, colAtEndOfNames, lineText, names) =
+        this.GetSymbolUsesAtLocation(line, colAtEndOfNames, lineText, names)
+        |> List.tryHead
+
+    member _.GetSymbolUsesAtLocation(line, colAtEndOfNames, lineText, names) =
         match details with
-        | None -> None
+        | None -> List.empty
         | Some (scope, _builderOpt) ->
-            scope.GetSymbolUseAtLocation(line, lineText, colAtEndOfNames, names)
-            |> Option.map (fun (sym, itemWithInst, denv, m) ->
+            scope.GetSymbolUsesAtLocation(line, lineText, colAtEndOfNames, names)
+            |> List.map (fun (sym, itemWithInst, denv, m) ->
                 FSharpSymbolUse(denv, sym, itemWithInst.TyparInstantiation, ItemOccurence.Use, m))
 
     member _.GetMethodsAsSymbols(line, colAtEndOfNames, lineText, names) =
@@ -3233,6 +3304,7 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
                     parsingOptions,
                     userOpName,
                     suggestNamesForErrors,
+                    tcConfig.flatErrors,
                     tcConfig.captureIdentifiersWhenParsing
                 )
 

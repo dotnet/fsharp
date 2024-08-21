@@ -230,9 +230,10 @@ let TryTypeMemberArray (st: Tainted<_>, fullName, memberName, m, f) =
 let TryTypeMemberNonNull<'T, 'U when 'U : null and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, recover: 'U, (f: 'T -> 'U)) : Tainted<'U> =
     match TryTypeMember(st, fullName, memberName, m, recover, f) with 
     | Tainted.Null -> 
-        errorR(Error(FSComp.SR.etUnexpectedNullFromProvidedTypeMember(fullName, memberName), m)); 
+        errorR(Error(FSComp.SR.etUnexpectedNullFromProvidedTypeMember(fullName, memberName), m))
         st.PApplyNoFailure(fun _ -> recover)
-    | Tainted.NonNull r -> r
+    | Tainted.NonNull r ->
+        r
 
 /// Try to access a property or method on a provided member, catching and reporting errors
 let TryMemberMember (mi: Tainted<_>, typeName, memberName, memberMemberName, m, recover, f) = 
@@ -346,7 +347,7 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
             x.CustomAttributes 
             |> Seq.exists (fun a -> a.Constructor.DeclaringType.FullName = typeof<MeasureAttribute>.FullName)
 
-    let provide () = ProvidedCustomAttributeProvider (fun _provider -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
+    let provide () = ProvidedCustomAttributeProvider (fun _ -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
 
     interface IProvidedCustomAttributeProvider with 
         member _.GetHasTypeProviderEditorHideMethodsAttribute provider = provide().GetHasTypeProviderEditorHideMethodsAttribute provider
@@ -366,13 +367,13 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
 
     member _.IsGenericType = x.IsGenericType
 
-    member _.Namespace = x.Namespace
+    member _.Namespace : string MaybeNull = x.Namespace
 
     member _.FullName = x.FullName
 
     member _.IsArray = x.IsArray
 
-    member _.Assembly: ProvidedAssembly = x.Assembly |> ProvidedAssembly.Create
+    member _.Assembly: ProvidedAssembly MaybeNull = x.Assembly |> ProvidedAssembly.Create
 
     member _.GetInterfaces() = x.GetInterfaces() |> ProvidedType.CreateArray ctxt
 
@@ -546,7 +547,7 @@ type ProvidedCustomAttributeProvider (attributes :ITypeProvider -> seq<CustomAtt
 
 [<AllowNullLiteral; AbstractClass>] 
 type ProvidedMemberInfo (x: MemberInfo, ctxt) = 
-    let provide () = ProvidedCustomAttributeProvider (fun _provider -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
+    let provide () = ProvidedCustomAttributeProvider (fun _ -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
 
     member _.Name = x.Name
 
@@ -568,7 +569,7 @@ type ProvidedMemberInfo (x: MemberInfo, ctxt) =
 
 [<AllowNullLiteral; Sealed>] 
 type ProvidedParameterInfo (x: ParameterInfo, ctxt) = 
-    let provide () = ProvidedCustomAttributeProvider (fun _provider -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
+    let provide () = ProvidedCustomAttributeProvider (fun _ -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
 
     member _.Name = x.Name
 

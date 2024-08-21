@@ -284,6 +284,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
             checkFileResults: FSharpCheckFileResults,
             documentId: DocumentId,
             defines: string list,
+            langVersion: string option,
             documentationBuilder: IDocumentationBuilder,
             sourceText: SourceText,
             caretPosition: int,
@@ -320,6 +321,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                     SymbolLookupKind.Greedy,
                     false,
                     false,
+                    langVersion,
                     ct
                 )
 
@@ -595,6 +597,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
         (
             document: Document,
             defines: string list,
+            langVersion: string option,
             documentationBuilder: IDocumentationBuilder,
             caretPosition: int,
             triggerTypedChar: char option,
@@ -636,6 +639,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                         checkFileResults,
                         document.Id,
                         defines,
+                        langVersion,
                         documentationBuilder,
                         sourceText,
                         caretPosition,
@@ -653,6 +657,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                         checkFileResults,
                         document.Id,
                         defines,
+                        langVersion,
                         documentationBuilder,
                         sourceText,
                         caretPosition,
@@ -683,7 +688,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
 
         member _.GetItemsAsync(document, position, triggerInfo, cancellationToken) =
             asyncMaybe {
-                let defines = document.GetFSharpQuickDefines()
+                let defines, langVersion = document.GetFSharpQuickDefinesAndLangVersion()
 
                 let triggerTypedChar =
                     if
@@ -700,6 +705,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                             FSharpSignatureHelpProvider.ProvideSignatureHelp(
                                 document,
                                 defines,
+                                Some langVersion,
                                 documentationBuilder,
                                 position,
                                 triggerTypedChar,

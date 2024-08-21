@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.ComponentTests.TypeChecks.Graph.QueryTrieTests
+﻿module TypeChecks.QueryTrieTests
 
 open System.Collections.Generic
 open NUnit.Framework
@@ -636,7 +636,7 @@ let private fantomasCoreTrie: TrieNode =
                 [|
                     "System",
                     {
-                        Current = TrieNodeInfo.Namespace("System", emptyHS ())
+                        Current = TrieNodeInfo.Namespace("System", emptyHS (), emptyHS ())
                         Children =
                             dictionary
                                 [|
@@ -649,13 +649,35 @@ let private fantomasCoreTrie: TrieNode =
                     }
                     "Fantomas",
                     {
-                        Current = TrieNodeInfo.Namespace("Fantomas", emptyHS ())
+                        Current =
+                            TrieNodeInfo.Namespace(
+                                "Fantomas",
+                                emptyHS (),
+                                HashSet([|
+                                    indexOf "ISourceTextExtensions.fs"
+                                    indexOf "RangeHelpers.fs"
+                                    indexOf "AstExtensions.fs"
+                                    indexOf "TriviaTypes.fs"
+                                    indexOf "Utils.fs"
+                                    indexOf "SourceParser.fs"
+                                |]))
                         Children =
                             dictionary
                                 [|
                                     "Core",
                                     {
-                                        Current = TrieNodeInfo.Namespace("Core", emptyHS ())
+                                        Current =
+                                            TrieNodeInfo.Namespace(
+                                                "Core",
+                                                emptyHS (),
+                                                HashSet([|
+                                                    indexOf "ISourceTextExtensions.fs"
+                                                    indexOf "RangeHelpers.fs"
+                                                    indexOf "AstExtensions.fs"
+                                                    indexOf "TriviaTypes.fs"
+                                                    indexOf "Utils.fs"
+                                                    indexOf "SourceParser.fs"
+                                                |]))
                                         Children =
                                             dictionary
                                                 [|
@@ -785,7 +807,7 @@ let ``ProcessOpenStatement full path match`` () =
             Set.empty
 
     let result =
-        processOpenPath (queryTrie fantomasCoreTrie) [ "Fantomas"; "Core"; "AstExtensions" ] state
+        processOpenPath fantomasCoreTrie [ "Fantomas"; "Core"; "AstExtensions" ] state
 
     let dep = Seq.exactlyOne result.FoundDependencies
     Assert.AreEqual(indexOf "AstExtensions.fsi", dep)

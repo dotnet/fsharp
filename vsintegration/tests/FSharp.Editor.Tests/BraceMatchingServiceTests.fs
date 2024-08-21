@@ -14,13 +14,18 @@ type BraceMatchingServiceTests() =
 
     let fileName = "C:\\test.fs"
 
-    member private this.VerifyNoBraceMatch(fileContents: string, marker: string) =
+    member private this.VerifyNoBraceMatch(fileContents: string, marker: string, ?langVersion: string) =
         let sourceText = SourceText.From(fileContents)
         let position = fileContents.IndexOf(marker)
         Assert.True(position >= 0, $"Cannot find marker '{marker}' in file contents")
 
-        let parsingOptions, _ =
-            checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
+        let parsingOptions =
+            let parsingOptions, _ =
+                checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
+
+            { parsingOptions with
+                LangVersionText = langVersion |> Option.defaultValue "preview"
+            }
 
         match
             FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, position, "UnitTest")
@@ -29,7 +34,7 @@ type BraceMatchingServiceTests() =
         | None -> ()
         | Some (left, right) -> failwith $"Found match for brace '{marker}'"
 
-    member private this.VerifyBraceMatch(fileContents: string, startMarker: string, endMarker: string) =
+    member private this.VerifyBraceMatch(fileContents: string, startMarker: string, endMarker: string, ?langVersion: string) =
         let sourceText = SourceText.From(fileContents)
         let startMarkerPosition = fileContents.IndexOf(startMarker)
         let endMarkerPosition = fileContents.IndexOf(endMarker)
@@ -37,8 +42,13 @@ type BraceMatchingServiceTests() =
         Assert.True(startMarkerPosition >= 0, $"Cannot find start marker '{startMarkerPosition}' in file contents")
         Assert.True(endMarkerPosition >= 0, $"Cannot find end marker '{endMarkerPosition}' in file contents")
 
-        let parsingOptions, _ =
-            checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
+        let parsingOptions =
+            let parsingOptions, _ =
+                checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
+
+            { parsingOptions with
+                LangVersionText = langVersion |> Option.defaultValue "preview"
+            }
 
         match
             FSharpBraceMatchingService.GetBraceMatchingResult(
@@ -91,6 +101,64 @@ type BraceMatchingServiceTests() =
     [<Fact>]
     member this.BraceInInterpolatedStringSimple() =
         this.VerifyBraceMatch("let x = $\"abc{1}def\"", "{1", "}def")
+
+    [<Fact>]
+    member this.BraceInInterpolatedStringWith2Dollars() =
+        this.VerifyBraceMatch("let x = $$\"\"\"abc{{1}}}def\"\"\"", "{{", "}}")
+
+    [<Fact>]
+    member this.BraceInInterpolatedStringWith3Dollars() =
+        this.VerifyBraceMatch("let x = $$$\"\"\"abc{{{1}}}def\"\"\"", "{{{", "}}}")
+
+    [<Theory>]
+    [<InlineData("{{not")>]
+    [<InlineData("}}match")>]
+    [<InlineData("f{")>]
+    [<InlineData("6}")>]
+    member this.BraceNoMatchInNestedInterpolatedStrings3Dollars(marker) =
+        let source =
+            "let x = $$$\"\"\"{{not a }}match
+e{{{4$\"f{56}g\"}}}h
+\"\"\""
+
+        this.VerifyNoBraceMatch(source, marker)
+
+    [<Theory>]
+    [<InlineData("{not")>]
+    [<InlineData("}match")>]
+    [<InlineData("f{")>]
+    [<InlineData("6}")>]
+    member this.BraceNoMatchInNestedInterpolatedStrings2Dollars(marker) =
+        let source =
+            "let x = $$\"\"\"{not a }match
+e{{{4$\"f{56}g\"}}}h
+\"\"\""
+
+        this.VerifyNoBraceMatch(source, marker)
+
+    [<Theory>]
+    [<InlineData("{{{23", "}}}d")>]
+    [<InlineData("{{{4$", "}}}h")>]
+    [<InlineData("{56", "}g")>]
+    member this.BraceMatchInNestedInterpolatedStrings3Dollars(startMark, endMark) =
+        let source =
+            "let x = $$$\"\"\"a{{{01}}}b --- c{{{23}}}d
+e{{{4$\"f{56}g\"}}}h
+\"\"\""
+
+        this.VerifyBraceMatch(source, startMark, endMark)
+
+    [<Theory>]
+    [<InlineData("{{23", "}}}d")>]
+    [<InlineData("{{4$", "}}}h")>]
+    [<InlineData("{56", "}g")>]
+    member this.BraceMatchInNestedInterpolatedStrings2Dollars(startMark, endMark) =
+        let source =
+            "let x = $$\"\"\"a{{{01}}}b --- c{{{23}}}d
+e{{{4$\"f{56}g\"}}}h
+\"\"\""
+
+        this.VerifyBraceMatch(source, startMark, endMark)
 
     [<Fact>]
     member this.BraceInInterpolatedStringTwoHoles() =

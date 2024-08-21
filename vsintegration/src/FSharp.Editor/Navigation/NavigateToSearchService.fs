@@ -17,6 +17,7 @@ open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.Text.PatternMatching
 
 open FSharp.Compiler.EditorServices
+open CancellableTasks
 
 [<Export(typeof<IFSharpNavigateToSearchService>); Shared>]
 type internal FSharpNavigateToSearchService [<ImportingConstructor>]
@@ -35,8 +36,9 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
                     cache.Clear()
 
     let getNavigableItems (document: Document) =
-        async {
-            let! currentVersion = document.GetTextVersionAsync() |> Async.AwaitTask
+        cancellableTask {
+            let! ct = CancellableTask.getCurrentCancellationToken ()
+            let! currentVersion = document.GetTextVersionAsync(ct)
 
             match cache.TryGetValue document.Id with
             | true, (version, items) when version = currentVersion -> return items
@@ -143,12 +145,14 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
                 patternMatcher.TryMatch $"{item.Container.FullName}.{name}" |> Option.ofNullable
 
     let processDocument (tryMatch: NavigableItem -> PatternMatch option) (kinds: IImmutableSet<string>) (document: Document) =
-        async {
-            let! ct = Async.CancellationToken
-            let! sourceText = document.GetTextAsync ct |> Async.AwaitTask
+        cancellableTask {
+            let! ct = CancellableTask.getCurrentCancellationToken ()
 
-            let processItem item =
-                asyncMaybe {
+            let! sourceText = document.GetTextAsync ct
+
+            let processItem (item: NavigableItem) =
+                asyncMaybe { // TODO: make a flat cancellable task
+
                     do! Option.guard (kinds.Contains(navigateToItemKindToRoslynKind item.Kind))
 
                     let! m = tryMatch item
@@ -182,14 +186,19 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
                 kinds,
                 cancellationToken
             ) : Task<ImmutableArray<FSharpNavigateToSearchResult>> =
-            async {
+            cancellableTask {
                 let tryMatch = createMatcherFor searchPattern
 
-                let! results = project.Documents |> Seq.map (processDocument tryMatch kinds) |> Async.Parallel
+                let! ct = CancellableTask.getCurrentCancellationToken ()
+
+                let tasks =
+                    Seq.map (fun doc -> processDocument tryMatch kinds doc ct) project.Documents
+
+                let! results = Task.WhenAll(tasks)
 
                 return results |> Array.concat |> Array.toImmutableArray
             }
-            |> RoslynHelpers.StartAsyncAsTask cancellationToken
+            |> CancellableTask.start cancellationToken
 
         member _.SearchDocumentAsync
             (
@@ -198,11 +207,11 @@ type internal FSharpNavigateToSearchService [<ImportingConstructor>]
                 kinds,
                 cancellationToken
             ) : Task<ImmutableArray<FSharpNavigateToSearchResult>> =
-            async {
+            cancellableTask {
                 let! result = processDocument (createMatcherFor searchPattern) kinds document
                 return result |> Array.toImmutableArray
             }
-            |> RoslynHelpers.StartAsyncAsTask cancellationToken
+            |> CancellableTask.start cancellationToken
 
         member _.KindsProvided = kindsProvided
 

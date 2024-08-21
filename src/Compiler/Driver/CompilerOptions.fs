@@ -7,6 +7,7 @@ module internal FSharp.Compiler.CompilerOptions
 open System
 open System.Diagnostics
 open System.IO
+open FSharp.Compiler.Optimizer
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL.IL
@@ -1232,9 +1233,10 @@ let noFrameworkFlag isFsc tcConfigB =
         "noframework",
         tagNone,
         OptionUnit(fun () ->
-            tcConfigB.implicitlyReferenceDotNetAssemblies <- false
-
+            // When the compilation is not fsi do nothing.
+            // It is just not a usefull option when running fsi on the coreclr or the desktop framework really.
             if isFsc then
+                tcConfigB.implicitlyReferenceDotNetAssemblies <- false
                 tcConfigB.implicitlyResolveAssemblies <- false),
         None,
         Some(FSComp.SR.optsNoframework ())
@@ -1250,7 +1252,6 @@ let advancedFlagsFsi tcConfigB =
             None,
             Some(FSComp.SR.optsClearResultsCache ())
         )
-        noFrameworkFlag false tcConfigB
     ]
 
 let advancedFlagsFsc tcConfigB =
@@ -1384,6 +1385,11 @@ let testFlag tcConfigB =
                         DumpGraph = true
                     }
             | "DumpSignatureData" -> tcConfigB.dumpSignatureData <- true
+            | "ParallelOptimization" ->
+                tcConfigB.optSettings <-
+                    { tcConfigB.optSettings with
+                        processingMode = OptimizationProcessingMode.Parallel
+                    }
 #if DEBUG
             | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
 #endif
@@ -1552,6 +1558,14 @@ let internalFlags (tcConfigB: TcConfigBuilder) =
             tagNone,
             OptionUnit(fun () -> tcConfigB.tokenize <- TokenizeOption.Only),
             Some(InternalCommandLineOption("--tokenize", rangeCmdArgs)),
+            None
+        )
+
+        CompilerOption(
+            "tokenize-debug",
+            tagNone,
+            OptionUnit(fun () -> tcConfigB.tokenize <- TokenizeOption.Debug),
+            Some(InternalCommandLineOption("--tokenize-debug", rangeCmdArgs)),
             None
         )
 
@@ -1846,7 +1860,8 @@ let deprecatedFlagsBoth tcConfigB =
         )
     ]
 
-let deprecatedFlagsFsi tcConfigB = deprecatedFlagsBoth tcConfigB
+let deprecatedFlagsFsi tcConfigB =
+    [ noFrameworkFlag false tcConfigB; yield! deprecatedFlagsBoth tcConfigB ]
 
 let deprecatedFlagsFsc tcConfigB =
     deprecatedFlagsBoth tcConfigB

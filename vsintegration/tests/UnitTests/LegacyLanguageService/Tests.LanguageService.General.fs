@@ -133,7 +133,7 @@ type UsingMSBuild() =
                         let fileName = "test.fs"
                         let defines = [ "COMPILED"; "EDITING" ]
             
-                        FSharpSourceTokenizer(defines,Some(fileName)).CreateLineTokenizer(source))
+                        FSharpSourceTokenizer(defines,Some(fileName),None).CreateLineTokenizer(source))
         
         let cm = Microsoft.VisualStudio.FSharp.LanguageService.TokenColor.Comment
         let kw = Microsoft.VisualStudio.FSharp.LanguageService.TokenColor.Keyword

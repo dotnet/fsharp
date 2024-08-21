@@ -43,7 +43,7 @@ namespace CSharpTest
                 |> Some
 
         let stamp = DateTime.UtcNow
-        let csRefProj = FSharpReferencedProject.CreatePortableExecutable("""Z:\csharp_test.dll""", (fun () -> stamp), getStream)
+        let csRefProj = FSharpReferencedProject.PEReference((fun () -> stamp), DelayedILModuleReader("""Z:\csharp_test.dll""", getStream))
 
         let fsOptions = CompilerAssert.DefaultProjectOptions TargetFramework.Current
         let fsOptions =
