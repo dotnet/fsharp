@@ -262,6 +262,11 @@
         <target state="new">Allow access modifiers to auto properties getters and setters</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAllowObjectExpressionWithoutOverrides">
+        <source>Allow object expressions without overrides</source>
+        <target state="new">Allow object expressions without overrides</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAndBang">
         <source>applicative computation expressions</source>
         <target state="translated">expressions de calcul applicatives</target>
@@ -533,7 +538,7 @@
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
-        <source>whitespace relexation</source>
+        <source>whitespace relaxation</source>
         <target state="translated">assouplissement de la mise en retrait avec des espaces blancs</target>
         <note />
       </trans-unit>
@@ -737,6 +742,11 @@
         <target state="translated">Utilisé dans les expressions de calcul pour introduire une construction en boucle où la condition est le résultat d'une autre expression de calcul.</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexByteArrayOutisdeAscii">
+        <source>This byte array literal contains {0} non-ASCII characters. All characters should be &lt; 128y.</source>
+        <target state="new">This byte array literal contains {0} non-ASCII characters. All characters should be &lt; 128y.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexByteStringMayNotBeInterpolated">
         <source>a byte string may not be interpolated</source>
         <target state="translated">une chaîne d'octets ne peut pas être interpolée</target>
@@ -752,9 +762,24 @@
         <target state="translated">Les régions IF-FSHARP/IF-CAML ne sont plus prises en charge.</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexInvalidAsciiByteLiteral">
+        <source>This is not a valid byte character literal. The value must be less than or equal to '\127'B.</source>
+        <target state="new">This is not a valid byte character literal. The value must be less than or equal to '\127'B.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexInvalidCharLiteralInString">
+        <source>'{0}' is not a valid character literal.\nNote: Currently the value is wrapped around byte range to '{1}'. In a future F# version this warning will be promoted to an error.</source>
+        <target state="new">'{0}' is not a valid character literal.\nNote: Currently the value is wrapped around byte range to '{1}'. In a future F# version this warning will be promoted to an error.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexInvalidIdentifier">
         <source>This is not a valid identifier</source>
         <target state="translated">Ceci n'est pas un identifiant valide</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexInvalidTrigraphAsciiByteLiteral">
+        <source>This is not a valid byte character literal. The value must be less than or equal to '\127'B.\nNote: In a future F# version this warning will be promoted to an error.</source>
+        <target state="new">This is not a valid byte character literal. The value must be less than or equal to '\127'B.\nNote: In a future F# version this warning will be promoted to an error.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
@@ -1098,7 +1123,7 @@
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
-        <source>A constrained generic construct occured in the resumable code specification</source>
+        <source>A constrained generic construct occurred in the resumable code specification</source>
         <target state="translated">Une construction générique contrainte s'est produite dans la spécification de code de reprise</target>
         <note />
       </trans-unit>
@@ -1113,7 +1138,7 @@
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsLetRec">
-        <source>A 'let rec' occured in the resumable code specification</source>
+        <source>A 'let rec' occurred in the resumable code specification</source>
         <target state="translated">Un «let rec» s’est produit dans la spécification de code pouvant être repris</target>
         <note />
       </trans-unit>
@@ -1418,7 +1443,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcMissingRequiredMembers">
-        <source>The following required properties have to be initalized:{0}</source>
+        <source>The following required properties have to be initialized:{0}</source>
         <target state="translated">Les propriétés requises suivantes doivent être initialisées :{0}</target>
         <note />
       </trans-unit>
@@ -1543,7 +1568,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeContainsLetRec">
-        <source>Invalid resumable code. A 'let rec' occured in the resumable code specification</source>
+        <source>Invalid resumable code. A 'let rec' occurred in the resumable code specification</source>
         <target state="translated">Code pouvant être reprise non valide. Un «let rec» s’est produit dans la spécification de code pouvant être repris</target>
         <note />
       </trans-unit>
@@ -1613,8 +1638,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcTypeDoesNotHaveAnyNull">
-        <source>The type '{0}' does not support a nullness qualitification.</source>
-        <target state="new">The type '{0}' does not support a nullness qualitification.</target>
+        <source>The type '{0}' does not support a nullness qualification.</source>
+        <target state="new">The type '{0}' does not support a nullness qualification.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
@@ -5863,7 +5888,7 @@
         <note />
       </trans-unit>
       <trans-unit id="optsDebug">
-        <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debuggging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
+        <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debugging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
         <target state="translated">Spécifiez le type de débogage : full, portable, embedded, pdbonly. ('{0}' est la valeur par défaut si aucun type de débogage n'est spécifié. Cette valeur permet d'attacher un débogueur à un programme en cours d'exécution, 'portable' est un format multiplateforme, 'embedded' est un format multiplateforme incorporé dans le fichier de sortie).</target>
         <note />
       </trans-unit>
@@ -6483,8 +6508,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexByteArrayCannotEncode">
-        <source>This byte array literal contains characters that do not encode as a single byte</source>
-        <target state="translated">Ce littéral de tableau d'octets contient des caractères qui ne sont pas encodés sous forme d'octet unique</target>
+        <source>This byte array literal contains {0} characters that do not encode as a single byte</source>
+        <target state="new">This byte array literal contains {0} characters that do not encode as a single byte</target>
         <note />
       </trans-unit>
       <trans-unit id="lexIdentEndInMarkReserved">
@@ -6565,11 +6590,6 @@
       <trans-unit id="lexInvalidNumericLiteral">
         <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).</source>
         <target state="translated">Il ne s’agit pas d’un littéral numérique valide. Les littéraux numériques valides incluent 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1,0 (float/double), 1,0f (float32/single), 1,0 m (décimal), 1I (bigint).</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="lexInvalidByteLiteral">
-        <source>This is not a valid byte literal</source>
-        <target state="translated">Littéral d'octet non valide</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidCharLiteral">
@@ -7123,7 +7143,7 @@
         <note />
       </trans-unit>
       <trans-unit id="fscRemotingError">
-        <source>The resident compilation service was not used because a problem occured in communicating with the server.</source>
+        <source>The resident compilation service was not used because a problem occurred in communicating with the server.</source>
         <target state="translated">Le service de compilation résident n'a pas été utilisé en raison d'un problème lors de la communication avec le serveur.</target>
         <note />
       </trans-unit>
@@ -7323,7 +7343,7 @@
         <note />
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToType">
-        <source>An error occured applying the static arguments to a provided type</source>
+        <source>An error occurred applying the static arguments to a provided type</source>
         <target state="translated">Une erreur s'est produite lors de l'application des arguments statiques à un type fourni</target>
         <note />
       </trans-unit>
@@ -7388,7 +7408,7 @@
         <note />
       </trans-unit>
       <trans-unit id="etInvalidTypeProviderAssemblyName">
-        <source>Assembly '{0}' hase TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</source>
+        <source>Assembly '{0}' has TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</source>
         <target state="translated">L'assembly '{0}' a un attribut TypeProviderAssembly comportant la valeur non valide '{1}'. La valeur doit être un nom d'assembly valide</target>
         <note />
       </trans-unit>
@@ -7973,7 +7993,7 @@
         <note />
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToMethod">
-        <source>An error occured applying the static arguments to a provided method</source>
+        <source>An error occurred applying the static arguments to a provided method</source>
         <target state="translated">Une erreur s'est produite durant l'application des arguments statiques à une méthode fournie</target>
         <note />
       </trans-unit>
@@ -8102,7 +8122,7 @@
         <target state="translated">Si un type d’union multi-cas est un struct, alors tous les cas d’union doivent avoir des noms uniques. Par exemple : 'type A = B de b : int | C de c : int'.</target>
         <note />
       </trans-unit>
-      <trans-unit id="CallerMemberNameIsOverriden">
+      <trans-unit id="CallerMemberNameIsOverridden">
         <source>The CallerMemberNameAttribute applied to parameter '{0}' will have no effect. It is overridden by the CallerFilePathAttribute.</source>
         <target state="translated">CallerMemberNameAttribute, qui est appliqué au paramètre '{0}', n'aura aucun effet. Il est remplacé par CallerFilePathAttribute.</target>
         <note />
@@ -8418,8 +8438,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionTry">
-        <source>Used to introduce a block of code that might generate an exception. Used together with with or finally.</source>
-        <target state="translated">Permet d'introduire un bloc de code pouvant générer une exception. Utilisé avec with ou finally.</target>
+        <source>Used to introduce a block of code that might generate an exception. Used together with 'with' or 'finally'.</source>
+        <target state="needs-review-translation">Permet d'introduire un bloc de code pouvant générer une exception. Utilisé avec with ou finally.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionType">

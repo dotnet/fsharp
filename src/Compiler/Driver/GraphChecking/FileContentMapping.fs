@@ -9,6 +9,13 @@ type Continuations = ((FileContentEntry list -> FileContentEntry list) -> FileCo
 let collectFromOption (mapping: 'T -> 'U list) (t: 'T option) : 'U list = List.collect mapping (Option.toList t)
 
 let longIdentToPath (skipLast: bool) (longId: LongIdent) : LongIdentifier =
+
+    // We always skip the "special" `global` identifier.
+    let longId =
+        match longId with
+        | h :: t when h.idText = "`global`" -> t
+        | _ -> longId
+
     match skipLast, longId with
     | true, _ :: _ -> List.take (longId.Length - 1) longId
     | _ -> longId

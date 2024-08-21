@@ -16,7 +16,7 @@ let test s b = stderr.Write(s:string);  if b then stderr.WriteLine " OK" else re
 
 // Address of incremental  local mutable
   
-module AddresOfIncrementalClassLocalMutable = 
+module AddressOfIncrementalClassLocalMutable = 
 
     open System.Drawing
     open System.Windows.Forms
@@ -30,7 +30,7 @@ module AddresOfIncrementalClassLocalMutable =
 
 // Address of mutable record field (related to above)
 
-module AddresOfMutableRecordField = 
+module AddressOfMutableRecordField = 
     open System.Drawing
     open System.Windows.Forms
 
@@ -78,7 +78,7 @@ module Misc =
 
 
 
-// Wire prevously
+// Wire previously
     
 (* accepted *)
 module WireOld = 
@@ -567,7 +567,7 @@ module StaticMemberScopeTest =
     type StaticTestA1(argA,argB) = 
       let         locval = 1 + argA
       let mutable locmut = 2 + argB
-      static member M = 12 (* can not use: locval + locmut + argA  *)
+      static member M = 12 (* cannot use: locval + locmut + argA  *)
     
 
 

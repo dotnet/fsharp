@@ -9,7 +9,7 @@ open Microsoft.FSharp.Collections
 /// result in the generation of unverifiable code.</summary>
 ///
 /// <namespacedoc><summary>
-///   Library functionality for native interopability. See
+///   Library functionality for native interoperability. See
 ///   also <a href="https://learn.microsoft.com/dotnet/fsharp/language-reference/functions/external-functions">F# External Functions</a> in
 ///   the F# Language Guide.
 /// </summary></namespacedoc>

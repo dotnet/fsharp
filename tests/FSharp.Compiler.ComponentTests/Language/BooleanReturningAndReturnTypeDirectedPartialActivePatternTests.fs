@@ -72,7 +72,7 @@ let (|OddVOption|_|) x = if x % 2 = 1 then ValueSome() else ValueNone
     ]
 
 [<Fact>]
-let ``Can not receive result from bool active pattern`` () =
+let ``Cannot receive result from bool active pattern`` () =
     FSharp """#nowarn "20"
 let (|IsA|_|) x = x = "A"
 

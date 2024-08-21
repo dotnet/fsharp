@@ -27,7 +27,7 @@ type public Fsc() as this =
     let mutable codePage: string MaybeNull = null
     let mutable commandLineArgs: ITaskItem list = []
     let mutable compilerTools: ITaskItem[] = [||]
-    let mutable compressMetadata = true
+    let mutable compressmetadata: bool option = None
     let mutable debugSymbols = false
     let mutable debugType: string MaybeNull = null
     let mutable defineConstants: ITaskItem[] = [||]
@@ -56,7 +56,7 @@ type public Fsc() as this =
     let mutable preferredUILang: string MaybeNull = null
     let mutable publicSign: bool = false
     let mutable provideCommandLineArgs: bool = false
-    let mutable realsig: bool = true
+    let mutable realsig: bool option = None
     let mutable references: ITaskItem[] = [||]
     let mutable referencePath: string MaybeNull = null
     let mutable refOnly: bool = false
@@ -168,8 +168,7 @@ type public Fsc() as this =
         builder.AppendSwitchIfNotNull("--baseaddress:", baseAddress)
 
         // CompressMetadata
-        if compressMetadata then
-            builder.AppendSwitch("--compressmetadata")
+        builder.AppendOptionalSwitch("--compressmetadata", compressmetadata)
 
         // DefineConstants
         for item in defineConstants do
@@ -197,10 +196,7 @@ type public Fsc() as this =
             builder.AppendSwitch("--optimize-")
 
         // realsig
-        if realsig then
-            builder.AppendSwitch("--realsig+")
-        else
-            builder.AppendSwitch("--realsig-")
+        builder.AppendOptionalSwitch("--realsig", realsig)
 
         // Tailcalls
         if not tailcalls then
@@ -385,10 +381,13 @@ type public Fsc() as this =
         with get () = compilerTools
         and set (a) = compilerTools <- a
 
-    // CompressMetadata
+    // compressmetadata[+-]
     member _.CompressMetadata
-        with get () = compressMetadata
-        and set (v) = compressMetadata <- v
+        with get () =
+            match compressmetadata with
+            | Some true -> true
+            | _ -> false
+        and set (v) = compressmetadata <- Some v
 
     // -g: Produce debug file. Disables optimizations if a -O flag is not given.
     member _.DebugSymbols
@@ -544,8 +543,11 @@ type public Fsc() as this =
 
     // --realsig[+-]
     member _.RealSig
-        with get () = realsig
-        and set (b) = realsig <- b
+        with get () =
+            match realsig with
+            | Some true -> true
+            | _ -> false
+        and set (b) = realsig <- Some b
 
     // -r <string>: Reference an F# or .NET assembly.
     member _.References

@@ -37,7 +37,7 @@ type ResolutionEnvironment =
       GetReferencedAssemblies: unit -> string[]
       TemporaryFolder: string }
 
-/// Load a the design-time part of a type-provider into the host process, and look for types
+/// Load the design-time part of a type-provider into the host process, and look for types
 /// marked with the TypeProviderAttribute attribute.
 let GetTypeProviderImplementationTypes (
         runTimeAssemblyFileName,

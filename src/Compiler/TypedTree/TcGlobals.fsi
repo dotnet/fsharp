@@ -182,7 +182,7 @@ type internal TcGlobals =
 
     member HasTailCallAttrib: attribs: FSharp.Compiler.TypedTree.Attribs -> bool
 
-    /// Find an FSharp.Core LaguagePrimitives dynamic function that corresponds to a trait witness, e.g.
+    /// Find an FSharp.Core LanguagePrimitives dynamic function that corresponds to a trait witness, e.g.
     /// AdditionDynamic for op_Addition.  Also work out the type instantiation of the dynamic function.
     member MakeBuiltInWitnessInfo:
         t: FSharp.Compiler.TypedTree.TraitConstraintInfo -> IntrinsicValRef * FSharp.Compiler.TypedTree.TType list

@@ -72,7 +72,7 @@
         <target state="translated">Um arquivo com o nome '{0}' já existe e está aberto em um editor. Dê um nome exclusivo ao item que você está adicionando ou exclua o item existente primeiro.</target>
         <note />
       </trans-unit>
-      <trans-unit id="CanNotSaveFileNotOpeneInEditor">
+      <trans-unit id="CannotSaveFileNotOpenInEditor">
         <source>Cannot save '{0}' as it is not open in the editor.</source>
         <target state="translated">Não é possível salvar '{0}' porque não está aberto no editor.</target>
         <note />

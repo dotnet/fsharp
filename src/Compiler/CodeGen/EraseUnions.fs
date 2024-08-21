@@ -8,6 +8,7 @@ open FSharp.Compiler.IlxGenSupport
 open System.Collections.Generic
 open System.Reflection
 open Internal.Utilities.Library
+open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.Features
 open FSharp.Compiler.TcGlobals
@@ -955,7 +956,14 @@ let convAlternativeDef
                             && g.langFeatureNullness
                             && repr.RepresentAlternativeAsNull(info, alt)
                         then
-                            GetNullableAttribute g [ FSharp.Compiler.TypedTree.NullnessInfo.WithNull ]
+                            let noTypars = td.GenericParams.Length
+
+                            GetNullableAttribute
+                                g
+                                [
+                                    yield NullnessInfo.WithNull // The top-level value itself, e.g. option, is nullable
+                                    yield! List.replicate noTypars NullnessInfo.AmbivalentToNull
+                                ] // The typars are not (i.e. do not change option<string> into option<string?>
                             |> Array.singleton
                             |> mkILCustomAttrsFromArray
                         else
@@ -1199,7 +1207,7 @@ let convAlternativeDef
 
                         let attrs =
                             if g.checkNullness && g.langFeatureNullness then
-                                GetNullableContextAttribute g :: debugAttrs
+                                GetNullableContextAttribute g 1uy :: debugAttrs
                             else
                                 debugAttrs
 
@@ -1365,8 +1373,7 @@ let mkClassUnionDef
                                         match nullableIdx with
                                         | None ->
                                             existingAttrs
-                                            |> Array.append
-                                                [| GetNullableAttribute g [ FSharp.Compiler.TypedTree.NullnessInfo.WithNull ] |]
+                                            |> Array.append [| GetNullableAttribute g [ NullnessInfo.WithNull ] |]
                                         | Some idx ->
                                             let replacementAttr =
                                                 match existingAttrs[idx] with
@@ -1619,7 +1626,7 @@ let mkClassUnionDef
                 customAttrs =
                     if cud.IsNullPermitted && g.checkNullness && g.langFeatureNullness then
                         td.CustomAttrs.AsArray()
-                        |> Array.append [| GetNullableAttribute g [ FSharp.Compiler.TypedTree.NullnessInfo.WithNull ] |]
+                        |> Array.append [| GetNullableAttribute g [ NullnessInfo.WithNull ] |]
                         |> mkILCustomAttrsFromArray
                         |> storeILCustomAttrs
                     else

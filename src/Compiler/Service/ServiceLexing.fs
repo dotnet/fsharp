@@ -439,7 +439,7 @@ module internal TestExpose =
 /// many allocated objects.
 ///
 /// The encoding is lossy so some incremental lexing scenarios such as deeply nested #if
-/// or accurate error messages from lexing for mismtached #if are not supported.
+/// or accurate error messages from lexing for mismatched #if are not supported.
 [<Struct; CustomEquality; NoComparison>]
 type FSharpTokenizerLexState =
     {

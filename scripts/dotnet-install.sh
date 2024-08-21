@@ -11,7 +11,7 @@ set -u
 # This is causing it to fail
 set -o pipefail
 
-# Use in the the functions: eval $invocation
+# Use in the functions: eval $invocation
 invocation='say_verbose "Calling: ${yellow:-}${FUNCNAME[0]} ${green:-}$*${normal:-}"'
 
 # standard output may be used as a return value in the functions
@@ -740,7 +740,7 @@ calculate_vars() {
     if [ "$valid_legacy_download_link" = true ]; then
         say_verbose "legacy_download_link=$legacy_download_link"
     else
-        say_verbose "Cound not construct a legacy_download_link; omitting..."
+        say_verbose "Could not construct a legacy_download_link; omitting..."
     fi
 
     install_root="$(resolve_installation_path "$install_dir")"

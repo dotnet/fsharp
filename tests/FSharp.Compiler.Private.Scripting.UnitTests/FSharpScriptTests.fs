@@ -247,7 +247,7 @@ System.Configuration.ConfigurationManager.AppSettings.Item "Environment" <- "LOC
 #if NETSTANDARD
     [<Fact>]
     member _.``ML - use assembly with native dependencies``() =
-        // Skip test on arm64, because there is not an arm64 netive library
+        // Skip test on arm64, because there is not an arm64 native library
         if RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then
             ()
         else

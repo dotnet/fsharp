@@ -1967,7 +1967,7 @@ and [<Sealed>] TcImports
 
 #if DEBUG
                 if typeProviderEnvironment.ShowResolutionMessages then
-                    dprintfn "Found extension type hosting hosting assembly '%s' with the following extensions:" fileNameOfRuntimeAssembly
+                    dprintfn "Found extension type hosting assembly '%s' with the following extensions:" fileNameOfRuntimeAssembly
 
                     providers
                     |> List.iter (fun provider -> dprintfn " %s" (DisplayNameOfTypeProvider(provider.TypeProvider, m)))

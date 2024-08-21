@@ -1,9 +1,9 @@
 /// BenchmarkDotNet Notes:
-/// Docs/Github: https://github.com/PerfDotNet/BenchmarkDotNet#getting-started
+/// Docs/GitHub: https://github.com/PerfDotNet/BenchmarkDotNet#getting-started
 ///
 /// This benchmarking suite will perform JIT warmups, collect system environment data
 /// run multiple trials, and produce convenient reports.  
-/// You will find csv, markdown, and and html versions of the reports in .\BenchmarkDotNet.Artifacts\results
+/// You will find csv, markdown, and html versions of the reports in .\BenchmarkDotNet.Artifacts\results
 /// after running the tests.
 ///
 /// Be sure to run tests in Release mode, optimizations on, etc.
@@ -46,7 +46,7 @@ let inline checkNonNull argName arg =
 
 
 /// Here you can add the functions you want to test against.
-/// Below I use Parrallel.Partition as an example
+/// Below I use Parallel.Partition as an example
 
 
 // Original partition
@@ -135,7 +135,7 @@ type ArrayBenchmark () =
     
 
 
-    //When the test runs, it will run once per each each param.
+    //When the test runs, it will run once per each param.
     //This is used to run the test on arrays of size 10, 100, etc
     //You can create a 2nd Params section and the test will run over all permutations
     [<Params (10,100,10000,1000000,10000000)>] 

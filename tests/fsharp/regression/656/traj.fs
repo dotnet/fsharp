@@ -81,7 +81,7 @@ let AddGraph (form:Form) rangeFun drawFun pinUp =
     let OnPaint() = 
     	let vertRange, horizRange = rangeFun() in
     	vlabel := vertRange.name; hlabel := horizRange.name;
-		// Create tranformation
+		// Create transformation
 		let width = (float32 (panel.Size.Width)) in let height = (float32 panel.Size.Height) in
 		let source = new RectangleF(horizRange.min, vertRange.min, horizRange.distance, vertRange.distance) in
 		let dest = new RectangleF(margin.Width - (!panX * width), height - margin.Height - (!panY*height), 
@@ -217,7 +217,7 @@ let DrawBarGraph (gr:Graphics) (transform:Transformation2d) (brush:#Brush) (valu
 		gr.DrawRectangle(border, tx, ty, bx - tx, by - ty );
 	)
 
-/// Draw bar graph to grahics surface
+/// Draw bar graph to graphics surface
 let DrawLabelledBarGraph (gr:Graphics) (transform:Transformation2d) (pairs:(string * float) array) =
 	let blue = new SolidBrush(Colour.Blue) in
 	let black = new Pen(Colour.Black) in		 	
