@@ -49,7 +49,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
 
             /// <summary>
-            /// Defines the file change cookie that is returned when listenning on file changes on the nested project item.
+            /// Defines the file change cookie that is returned when listening on file changes on the nested project item.
             /// </summary>
             public uint FileChangeCookie
             {

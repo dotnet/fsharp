@@ -87,5 +87,5 @@ module FsxCompletionProviderTests =
                 ]
             )
 
-        // We execute in a seperate appdomain so that we can set BaseDirectory to a non-existent location
+        // We execute in a separate appdomain so that we can set BaseDirectory to a nonexistent location
         getWorker().VerifyCompletionListExactly(fileContents, "fsi.", expected)

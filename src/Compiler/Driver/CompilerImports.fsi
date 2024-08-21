@@ -43,7 +43,7 @@ val IsSignatureDataResourceB: ILResource -> bool
 /// Determine if an IL resource attached to an F# assembly is an F# optimization data resource
 val IsOptimizationDataResource: ILResource -> bool
 
-/// Determine if an IL resource attached to an F# assembly is an F# optimization data resource (data sream B)
+/// Determine if an IL resource attached to an F# assembly is an F# optimization data resource (data stream B)
 val IsOptimizationDataResourceB: ILResource -> bool
 
 /// Determine if an IL resource attached to an F# assembly is an F# quotation data resource for reflected definitions

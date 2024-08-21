@@ -342,4 +342,4 @@ See the "Debugging The Compiler" section of this [article](https://medium.com/@w
 
 If you are behind a proxy server, NuGet client tool must be configured to use it:
 
-See the Nuget config file documention for use with a proxy server [https://learn.microsoft.com/nuget/reference/nuget-config-file](https://learn.microsoft.com/nuget/reference/nuget-config-file)
+See the Nuget config file documentation for use with a proxy server [https://learn.microsoft.com/nuget/reference/nuget-config-file](https://learn.microsoft.com/nuget/reference/nuget-config-file)

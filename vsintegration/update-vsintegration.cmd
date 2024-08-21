@@ -15,7 +15,7 @@
 @rem * Parts of this batch file require administrator permission. If such permissions aren't
 @rem   available, a warning will be issued and relevant parts will not be executed.
 @rem
-@rem * Currently, only one paramter is parsed and combinations are not possible
+@rem * Currently, only one parameter is parsed and combinations are not possible
 @rem
 @rem * Installation of F# FSC compiler and FSI are done in the SHARED SDK directory. Henceforth
 @rem   each installation of Visual Studio 2017 will use the updated FSC.exe and the commandline
@@ -135,7 +135,7 @@ if not "%DEPLOY%" == "yes" echo Starting %ACTION%
 echo.
 
 rem This check whether we're started with administrator rights
-CALL :checkPrequisites
+CALL :checkPrerequisites
 
 if /i "%PROCESSOR_ARCHITECTURE%"=="x86" set X86_PROGRAMFILES=%ProgramFiles%
 if /I "%PROCESSOR_ARCHITECTURE%"=="AMD64" set X86_PROGRAMFILES=%ProgramFiles(x86)%
@@ -184,7 +184,7 @@ set COMPILER47ASSEMBLIESPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\F
 rem Try to create target and backup folders, if needed
 set RESTOREBASE=%RESTOREDIR%
 
-rem Only create backup dirs if we are backupping or restoring 
+rem Only create backup dirs if we are backing-up or restoring 
 rem (in the latter case, the directories should already be there, but if not, it prevents errors later on)
 if "!DEPLOY!" == "no" (
     CALL :tryCreateFolder "!RESTOREBASE!\compiler_sdk"
@@ -578,7 +578,7 @@ echo.
 rem Return non-zero error code for use-cases where this script is called from other scripts
 EXIT /B 1
 
-:checkPrequisites
+:checkPrerequisites
 rem Whether or not we have administrator rights
 
 SET ISADMIN=yes

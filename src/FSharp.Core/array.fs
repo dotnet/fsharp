@@ -2719,12 +2719,12 @@ module Array =
                 | _ ->
                     let left, right = partitioningFunc segment
                     // If either of the two is too small, sort small segments straight away.
-                    // If the other happens to be big, leave it with all workes in it's recursive step
+                    // If the other happens to be big, leave it with all works in its recursive step
                     if left.Count <= minChunkSize || right.Count <= minChunkSize then
                         sortChunk left freeWorkers
                         sortChunk right freeWorkers
                     else
-                        // Pivot-based partitions might be inbalanced. Split  free workers for left/right proportional to their size
+                        // Pivot-based partitions might be unbalanced. Split  free workers for left/right proportional to their size
                         let itemsPerWorker = Operators.max ((left.Count + right.Count) / freeWorkers) 1
 
                         let workersForLeftTask =
@@ -2796,8 +2796,8 @@ module Array =
             let sortingComparer: IComparer<'T> =
                 LanguagePrimitives.FastGenericComparerCanBeNull<'T>
 
-            let partioningFunc = compare
-            sortInPlaceWithHelper partioningFunc sortingComparer array
+            let partitioningFunc = compare
+            sortInPlaceWithHelper partitioningFunc sortingComparer array
 
         [<CompiledName("SortWith")>]
         let sortWith (comparer: 'T -> 'T -> int) (array: 'T array) =

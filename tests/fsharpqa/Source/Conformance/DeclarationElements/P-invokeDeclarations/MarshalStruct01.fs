@@ -14,7 +14,7 @@ type SequentialPoint = struct
     val Y : int
 end   
 
-// Define the same point structre but using an explicit layout
+// Define the same point structure but using an explicit layout
 [<StructLayout(LayoutKind.Explicit)>]
 type ExplicitPoint = struct
     // Randomize elements, the end result is:
@@ -76,7 +76,7 @@ extern bool PointInRect_Explicit_Sequential(ExplicitRect& rect, SequentialPoint 
 let seqA = new SequentialPoint(-1, -1)
 let seqB = new SequentialPoint(17, 8)
 
-// 0xFFFFFF : int16 = -1, 0xFF : byte = -1 if arithmatic is NOT checked
+// 0xFFFFFF : int16 = -1, 0xFF : byte = -1 if arithmetic is NOT checked
 let expA = new ExplicitPoint(0xFFFFs, 0xFFFFs, 0xFFuy, 0xFFuy, 0xFFuy, 0xFFuy)
 let expB = new ExplicitPoint(0s, 17s, 0uy, 0uy, 0uy, 8uy)
 

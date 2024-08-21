@@ -9,7 +9,7 @@ open FSharp.Test.Compiler
 module ``Unit generic abstract Type`` =
 
     [<Fact>]
-    let ``Unit can not be used as return type of abstract method paramete on return type``() =
+    let ``Unit cannot be used as return type of abstract method parameter on return type``() =
         FSharp """
 type EDF<'S> =
     abstract member Apply : int -> 'S

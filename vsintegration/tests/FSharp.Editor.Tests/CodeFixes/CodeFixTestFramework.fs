@@ -165,7 +165,7 @@ let multiFix (code: string) mode (fixProvider: 'T when 'T :> IFSharpMultiCodeFix
     }
     |> CancellableTask.runSynchronouslyWithoutCancellation
 
-/// Contains types and functions for coveniently making code fix assertions using xUnit.
+/// Contains types and functions for conveniently making code fix assertions using xUnit.
 [<AutoOpen>]
 module Xunit =
     open System.Threading.Tasks

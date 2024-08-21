@@ -17,7 +17,7 @@ open UnitTests.TestLib.ProjectSystem
 type UsingMSBuild()  = 
     inherit LanguageServiceBaseTests()
 
-    //Verify the error list containd the expected string
+    //Verify the error list contained the expected string
     member private this.VerifyErrorListContainedExpectedString(fileContents : string, expectedStr : string) =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents)       
         let errorList = GetErrors(project)

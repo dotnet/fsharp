@@ -66,7 +66,7 @@ Xpath_get()
     XML_FILE=$2
     RESULT=$(xmllint --xpath $XPATH $XML_FILE)
     if [[ -z ${RESULT// } ]]; then
-        Error "Can not find target from $XML_FILE"
+        Error "Cannot find target from $XML_FILE"
         Debug "Xpath = $XPATH"
         exit 1
     fi

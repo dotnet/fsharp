@@ -252,9 +252,9 @@ module ExceptionDefinition =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 23, Line 9, Col 17, Line 9, Col 22, "The member 'Data0' can not be defined because the name 'Data0' clashes with the field 'Data0' in this type or module")
-            (Error 23, Line 10, Col 17, Line 10, Col 22, "The member 'Data1' can not be defined because the name 'Data1' clashes with the field 'Data1' in this type or module")
-            (Error 23, Line 11, Col 17, Line 11, Col 19, "The member 'V3' can not be defined because the name 'V3' clashes with the field 'V3' in this type or module")
+            (Error 23, Line 9, Col 17, Line 9, Col 22, "The member 'Data0' cannot be defined because the name 'Data0' clashes with the field 'Data0' in this type or module")
+            (Error 23, Line 10, Col 17, Line 10, Col 22, "The member 'Data1' cannot be defined because the name 'Data1' clashes with the field 'Data1' in this type or module")
+            (Error 23, Line 11, Col 17, Line 11, Col 19, "The member 'V3' cannot be defined because the name 'V3' clashes with the field 'V3' in this type or module")
         ]
 
     // SOURCE=E_GeneratedTypeName01.fsx                    SCFLAGS="--test:ErrorRanges"        # E_GeneratedTypeName01.fsx

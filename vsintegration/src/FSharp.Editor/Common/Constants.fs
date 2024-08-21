@@ -87,7 +87,7 @@ module internal Guids =
 
     [<Literal>]
     /// "9007718C-357A-4327-A193-AB3EC38D7EE8"
-    let advancedSettingsPageIdSring = "9007718C-357A-4327-A193-AB3EC38D7EE8"
+    let advancedSettingsPageIdString = "9007718C-357A-4327-A193-AB3EC38D7EE8"
 
     [<Literal>]
     /// "9EBEBCE8-A79B-46B0-A8C5-A9818AEED17D"
