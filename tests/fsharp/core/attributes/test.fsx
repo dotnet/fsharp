@@ -42,7 +42,7 @@ open System.Diagnostics
 [<LoaderOptimization(LoaderOptimization.MultiDomainHost)>] 
 #endif
 
-let main = ()
+let main () = ()
 
     
 (* attribute on a type *)
