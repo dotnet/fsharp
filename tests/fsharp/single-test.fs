@@ -137,6 +137,7 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
     let debug = if pc.Optimize then "True" else "False"
     let generateProjBody =
         let template = @"<Project Sdk='Microsoft.NET.Sdk'>
+
   <PropertyGroup>
     <OutputType>$(OUTPUTTYPE)</OutputType>
     <TargetFramework>$(TARGETFRAMEWORK)</TargetFramework>
