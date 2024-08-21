@@ -374,7 +374,7 @@ let rec tdef_ty2ty_ilmbody2ilmbody_mdefs2mdefs isInKnownSet enc fs (tdef: ILType
         |> InterruptibleLazy.FromValue
 
     tdef.With(
-        newImplements = implements,
+        implements = implements,
         genericParams = gparams_ty2ty fTyInCtxtR tdef.GenericParams,
         extends = Option.map fTyInCtxtR tdef.Extends,
         methods = mdefsR,

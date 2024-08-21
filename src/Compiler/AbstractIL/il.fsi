@@ -1615,7 +1615,7 @@ type ILTypeDef =
         ?name: string *
         ?attributes: TypeAttributes *
         ?layout: ILTypeDefLayout *
-        ?newImplements: InterruptibleLazy<InterfaceImpl list> *
+        ?implements: InterruptibleLazy<InterfaceImpl list> *
         ?genericParams: ILGenericParameterDefs *
         ?extends: ILType option *
         ?methods: ILMethodDefs *

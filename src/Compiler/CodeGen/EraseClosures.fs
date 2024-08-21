@@ -766,7 +766,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
 
             let cloTypeDef =
                 td.With(
-                    newImplements = td.Implements,
+                    implements = td.Implements,
                     extends =
                         (match td.Extends with
                          | None -> Some cenv.ilg.typ_Object
