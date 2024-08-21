@@ -137,11 +137,6 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
     let debug = if pc.Optimize then "True" else "False"
     let generateProjBody =
         let template = @"<Project Sdk='Microsoft.NET.Sdk'>
-
-  <PropertyGroup>
-    <NoWarn>$(NoWarn);NU1604;NU1103</NoWarn>
-  </PropertyGroup>
-
   <PropertyGroup>
     <OutputType>$(OUTPUTTYPE)</OutputType>
     <TargetFramework>$(TARGETFRAMEWORK)</TargetFramework>
@@ -158,6 +153,7 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
     <RestoreAdditionalProjectSources Condition = "" '$(RestoreAdditionalProjectSources)' == ''"">$(RestoreFromArtifactsPath)</RestoreAdditionalProjectSources>
     <RestoreAdditionalProjectSources Condition = "" '$(RestoreAdditionalProjectSources)' != ''"">$(RestoreAdditionalProjectSources);$(RestoreFromArtifactsPath)</RestoreAdditionalProjectSources>
     <RollForward>LatestMajor</RollForward>
+    <IgnoreMIBC>true</IgnoreMIBC>
   </PropertyGroup>
 
   <!-- FSharp.Core reference -->

@@ -1,6 +1,6 @@
 <Project>
   <!-- We want to restore ALL the MIBCs when we build anything, since in the future it will contain different profiles, not only the FSC one we got from building Giraffe -->
-  <ItemGroup>
+  <ItemGroup Condition="'$(IgnoreMIBC)' != 'true'">
     <MIBCPackage Include="optimization.windows_nt-x86.mibc.runtime"   Version="$(optimizationwindows_ntx86MIBCRuntimeVersion)" />
     <MIBCPackage Include="optimization.windows_nt-x64.mibc.runtime"   Version="$(optimizationwindows_ntx64MIBCRuntimeVersion)" />
     <MIBCPackage Include="optimization.windows_nt-arm64.mibc.runtime" Version="$(optimizationwindows_ntarm64MIBCRuntimeVersion)" />
