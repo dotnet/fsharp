@@ -1910,8 +1910,8 @@ let inline conditionalAdd condition flagToAdd source =
 let NoMetadataIdx = -1
 
 type InterfaceImpl =
-    {Idx: int; Type: ILType; mutable CustomAttrsStored: ILAttributesStored}
-    with 
+    { Idx: int; Type: ILType; mutable CustomAttrsStored: ILAttributesStored }
+
     member x.CustomAttrs =
         match x.CustomAttrsStored with
         | ILAttributesStored.Reader f ->
