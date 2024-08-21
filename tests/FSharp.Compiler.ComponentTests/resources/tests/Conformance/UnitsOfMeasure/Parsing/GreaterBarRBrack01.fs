@@ -1,6 +1,6 @@
 // #Regression #Conformance #UnitsOfMeasure 
 // Regression test for FSHARP1.0:2791
-// Make sure we can parse arrays of dimensioned numbers without needing a a space between > and |]
+// Make sure we can parse arrays of dimensioned numbers without needing a space between > and |]
 //
 #light
 

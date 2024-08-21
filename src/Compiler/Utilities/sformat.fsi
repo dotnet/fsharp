@@ -395,7 +395,7 @@ module internal Display =
     val output_layout_tagged: options: FormatOptions -> writer: TaggedTextWriter -> layout: Layout -> unit
 #else
 
-    // Most functions aren't needed in FSharp.Core.dll, but we add one inernal entry for printf
+    // Most functions aren't needed in FSharp.Core.dll, but we add one internal entry for printf
     val anyToStringForPrintf:
         options: FormatOptions -> bindingFlags: System.Reflection.BindingFlags -> value: 'T * Type -> string
 #endif

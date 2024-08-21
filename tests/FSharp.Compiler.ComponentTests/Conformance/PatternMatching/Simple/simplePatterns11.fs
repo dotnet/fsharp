@@ -1,8 +1,8 @@
 // #Conformance #PatternMatching 
 #light
 
-let sumEvenValues (tupel:int*int) =
-    match tupel with
+let sumEvenValues (tuple:int*int) =
+    match tuple with
     | x, y when x % 2 = 0 && y % 2 = 0 -> x + y
     | x, _ when x % 2 = 0              -> x
     | _, y when y % 2 = 0              -> y

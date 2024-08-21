@@ -100,7 +100,7 @@ type CompletionTests() =
         Assert.Equal(0, matchingCompletions.Length)
 
         // Strange names like ``+`` and ``-`` are just normal text and not operators
-        // and are present in competion lists
+        // and are present in completion lists
         let matchingCompletions = completions |> Array.filter (fun d -> d.NameInList = "-")
         Assert.Equal(1, matchingCompletions.Length)
         Assert.Equal("``-``", matchingCompletions.[0].NameInCode)
@@ -139,7 +139,7 @@ type CompletionTests() =
         Assert.Equal(0, matchingCompletions.Length)
 
         // Strange names like ``+`` and ``-`` are just normal text and not operators
-        // and are present in competion lists
+        // and are present in completion lists
         let matchingCompletions = completions |> Array.filter (fun d -> d.NameInList = "-")
         Assert.Equal(1, matchingCompletions.Length)
         Assert.Equal("``-``", matchingCompletions.[0].NameInCode)

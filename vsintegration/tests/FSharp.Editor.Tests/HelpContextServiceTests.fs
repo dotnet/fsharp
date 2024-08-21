@@ -344,7 +344,7 @@ type HelpContextServiceTests() =
     member _.``F1 help keyword Regression.NewInstance.854367.2``() =
         let file =
             [
-                "let q1 = new System.Runtime.Remoting.Type$Entry()" // this consutrctor exists but is not accessible (it is protected), but the help entry still goes to the type
+                "let q1 = new System.Runtime.Remoting.Type$Entry()" // this constructor exists but is not accessible (it is protected), but the help entry still goes to the type
             ]
 
         let keywords = [ Some "System.Runtime.Remoting.TypeEntry" ]

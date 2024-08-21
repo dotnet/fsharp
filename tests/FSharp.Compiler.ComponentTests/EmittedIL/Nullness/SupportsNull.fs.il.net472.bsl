@@ -81,7 +81,7 @@
     IL_0015:  ret
   } 
 
-  .method public static int32  iAcceptNullPartiallyInferedFromUnderscore<class a>(!!a arg) cil managed
+  .method public static int32  iAcceptNullPartiallyInferredFromUnderscore<class a>(!!a arg) cil managed
   {
     .param type a 
       .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
@@ -93,7 +93,7 @@
     IL_0001:  ret
   } 
 
-  .method public static int32  iAcceptNullPartiallyInferedFromNamedTypar<class a>(!!a arg) cil managed
+  .method public static int32  iAcceptNullPartiallyInferredFromNamedTypar<class a>(!!a arg) cil managed
   {
     .param type a 
       .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 01 00 00 ) 
@@ -159,7 +159,7 @@
     IL_0013:  ret
   } 
 
-  .method public static !!b  fullyInferedTestCase<class a,class b>(!!a arg1,
+  .method public static !!b  fullyInferredTestCase<class a,class b>(!!a arg1,
                                                                    !!b arg2) cil managed
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
@@ -173,7 +173,7 @@
     .maxstack  3
     .locals init (!!b V_0)
     IL_0000:  ldarg.0
-    IL_0001:  call       int32 MyTestModule::iAcceptNullPartiallyInferedFromUnderscore<!!0>(!!0)
+    IL_0001:  call       int32 MyTestModule::iAcceptNullPartiallyInferredFromUnderscore<!!0>(!!0)
     IL_0006:  call       void [runtime]System.Console::Write(int32)
     IL_000b:  ldarg.1
     IL_000c:  call       !!0 MyTestModule::iCanProduceNullSometimes<!!1>(!!0)
@@ -193,7 +193,7 @@
     IL_0001:  box        !!a
     IL_0006:  stloc.0
     IL_0007:  ldloc.0
-    IL_0008:  call       int32 MyTestModule::iAcceptNullPartiallyInferedFromUnderscore<object>(!!0)
+    IL_0008:  call       int32 MyTestModule::iAcceptNullPartiallyInferredFromUnderscore<object>(!!0)
     IL_000d:  ret
   } 
 

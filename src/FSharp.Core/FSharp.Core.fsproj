@@ -68,7 +68,7 @@
     <EmbeddedResource Include="ILLink.Substitutions.xml" LogicalName="ILLink.Substitutions.xml" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)' == 'Proto' or '$(BUILDING_USING_DOTNET)' == 'true'">
-    <!-- This can be removed once CompileBefore support is shipped in an rtm relase -->
+    <!-- This can be removed once CompileBefore support is shipped in an rtm release -->
     <CompileBefore Include="prim-types-prelude.fsi">
       <Link>Primitives/prim-types-prelude.fsi</Link>
     </CompileBefore>

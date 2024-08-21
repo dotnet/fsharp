@@ -149,7 +149,7 @@ module LexbufLocalXmlDocStore =
         collector.CheckInvalidXmlDocPositions()
 
 //------------------------------------------------------------------------
-// Parsing/lexing: status of #if/#endif processing in lexing, used for continutations
+// Parsing/lexing: status of #if/#endif processing in lexing, used for continuations
 // for whitespace tokens in parser specification.
 //------------------------------------------------------------------------
 

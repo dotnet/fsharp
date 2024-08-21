@@ -28,7 +28,7 @@ open System.Collections.Generic
 
 type cenv = TcFileState
 
-/// Used to flag if this is the first or a sebsequent translation pass through a computation expression
+/// Used to flag if this is the first or a subsequent translation pass through a computation expression
 [<RequireQualifiedAccess; Struct; NoComparison>]
 type CompExprTranslationPass =
     | Initial
@@ -640,7 +640,7 @@ let (|OnExpr|_|) ceenv nm synExpr =
 
             CallNameResolutionSink
                 ceenv.cenv.tcSink
-                (opName.idRange, ceenv.env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, ceenv.env.AccessRights)
+                (opName.idRange, ceenv.env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, ceenv.env.AccessRights)
 
             Some(e1, e2)
         | _ -> None
@@ -685,7 +685,7 @@ let MatchIntoSuffixOrRecover ceenv alreadyGivenError (nm: Ident) synExpr =
 
         CallNameResolutionSink
             ceenv.cenv.tcSink
-            (intoWordRange, ceenv.env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, ceenv.env.eAccessRights)
+            (intoWordRange, ceenv.env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, ceenv.env.eAccessRights)
 
         (x, intoPat, alreadyGivenError)
     | _ ->
@@ -836,7 +836,7 @@ let (|CustomOperationClause|_|) ceenv e =
 
                 CallNameResolutionSink
                     ceenv.cenv.tcSink
-                    (intoWordRange, ceenv.env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, ceenv.env.eAccessRights)
+                    (intoWordRange, ceenv.env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, ceenv.env.eAccessRights)
 
                 Some intoInfo
             | None -> None
@@ -1033,7 +1033,7 @@ let rec TryTranslateComputationExpression
                     // of type variables in the quick info provided in the IDE.
                     CallNameResolutionSink
                         cenv.tcSink
-                        (nm.idRange, ceenv.env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, ceenv.env.eAccessRights)
+                        (nm.idRange, ceenv.env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, ceenv.env.eAccessRights)
 
                     let mkJoinExpr keySelector1 keySelector2 innerPat e =
                         let mSynthetic = mOpCore.MakeSynthetic()
@@ -2501,7 +2501,7 @@ and ConsumeCustomOpClauses
         // of type variables in the quick info provided in the IDE.
         CallNameResolutionSink
             ceenv.cenv.tcSink
-            (nm.idRange, ceenv.env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, ceenv.env.eAccessRights)
+            (nm.idRange, ceenv.env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, ceenv.env.eAccessRights)
 
         if isLikeZip || isLikeJoin || isLikeGroupJoin then
             errorR (Error(FSComp.SR.tcBinaryOperatorRequiresBody (nm.idText, Option.get (customOpUsageText ceenv nm)), nm.idRange))
@@ -2979,7 +2979,7 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
         // A parameterized custom builder, e.g., `builder<…>`, `builder ()`.
         | Expr.App(funcExpr = Expr.Val(vref, _, m)) when not vref.IsMember || vref.IsConstructor ->
             let item = Item.CustomBuilder(vref.DisplayName, vref)
-            CallNameResolutionSink cenv.tcSink (m, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
+            CallNameResolutionSink cenv.tcSink (m, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, env.eAccessRights)
             valRefEq cenv.g vref cenv.g.query_value_vref
         | _ -> false
 

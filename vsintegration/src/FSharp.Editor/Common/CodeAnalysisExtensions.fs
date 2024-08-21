@@ -22,7 +22,7 @@ type Project with
             this.Id
         |> Seq.map this.Solution.GetProject
 
-    /// Returns the ProjectIds of all of the projects that this project directly or transitively depneds on
+    /// Returns the ProjectIds of all of the projects that this project directly or transitively depends on
     member this.GetProjectIdsOfAllProjectsThisProjectDependsOn() =
         let graph = this.Solution.GetProjectDependencyGraph()
 
@@ -32,7 +32,7 @@ type Project with
         let directDependencies = graph.GetProjectsThatThisProjectDirectlyDependsOn this.Id
         Seq.append directDependencies transitiveDependencies
 
-    /// The list all of the projects that this project directly or transitively depneds on
+    /// The list all of the projects that this project directly or transitively depends on
     member this.GetAllProjectsThisProjectDependsOn() =
         this.GetProjectIdsOfAllProjectsThisProjectDependsOn()
         |> Seq.map this.Solution.GetProject
@@ -50,7 +50,7 @@ type Solution with
 
     /// Try to find the document corresponding to the provided filepath within this solution
     member self.TryGetDocumentFromPath filePath =
-        // It's crucial to normalize file path here (specificaly, remove relative parts),
+        // It's crucial to normalize file path here (specifically, remove relative parts),
         // otherwise Roslyn does not find documents.
         self.GetDocumentIdsWithFilePath(Path.GetFullPath filePath)
         |> ImmutableArray.tryHeadV

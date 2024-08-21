@@ -28,7 +28,7 @@ type public PartialLongName =
 ///
 /// These methods are very old and are mostly to do with extracting "long identifier islands"
 ///     A.B.C
-/// from F# source code, an approach taken from pre-F# VS samples for implementing intelliense.
+/// from F# source code, an approach taken from pre-F# VS samples for implementing intellisense.
 ///
 /// This code should really no longer be needed since the language service has access to
 /// parsed F# source code ASTs.  However, the long identifiers are still passed back to GetDeclarations and friends in the

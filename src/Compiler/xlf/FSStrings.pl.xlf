@@ -203,7 +203,7 @@
         <note />
       </trans-unit>
       <trans-unit id="NameClash2">
-        <source>The {0} '{1}' can not be defined because the name '{2}' clashes with the {3} '{4}' in this type or module</source>
+        <source>The {0} '{1}' cannot be defined because the name '{2}' clashes with the {3} '{4}' in this type or module</source>
         <target state="translated">Nie można zdefiniować elementu {0} „{1}”, ponieważ nazwa „{2}” powoduje konflikt z elementem {3} „{4}” w tym typie lub module</target>
         <note />
       </trans-unit>
