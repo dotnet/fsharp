@@ -33,7 +33,7 @@ module ``DefaultOf Tests`` =
 
     [<Test>]
     let `` Unchecked defaultof reference types``() =
-        Assert.areEqual Unchecked.defaultof<ClassType> null
+        Assert.areEqual Unchecked.defaultof<ClassType|null> null
         Assert.areEqual (box Unchecked.defaultof<DUType>) null
         Assert.areEqual (box Unchecked.defaultof<RecordType>) null
         Assert.areEqual (box Unchecked.defaultof<InterfaceType>) null

@@ -44,7 +44,7 @@ SigFile
                                 ([[SynArgInfo ([], false, None)]],
                                  SynArgInfo ([], false, None)), false, false,
                               PreXmlDoc ((12,43), FSharp.Compiler.Xml.XmlDocCollector),
-                              None, None, (12,43--12,73),
+                              Single None, None, (12,43--12,73),
                               { LeadingKeyword =
                                  StaticMember ((12,43--12,49), (12,50--12,56))
                                 InlineKeyword = None
@@ -64,11 +64,12 @@ SigFile
                  SynValInfo
                    ([[SynArgInfo ([], false, Some n)]],
                     SynArgInfo ([], false, None)), true, false,
-                 PreXmlDoc ((12,4), FSharp.Compiler.Xml.XmlDocCollector), None,
-                 None, (4,4--12,94), { LeadingKeyword = Val (12,4--12,7)
-                                       InlineKeyword = Some (12,8--12,14)
-                                       WithKeyword = None
-                                       EqualsRange = None }), (4,4--12,94))],
+                 PreXmlDoc ((12,4), FSharp.Compiler.Xml.XmlDocCollector),
+                 Single None, None, (4,4--12,94),
+                 { LeadingKeyword = Val (12,4--12,7)
+                   InlineKeyword = Some (12,8--12,14)
+                   WithKeyword = None
+                   EqualsRange = None }), (4,4--12,94))],
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
           [{ Attributes = [{ TypeName = SynLongIdent ([AutoOpen], [], [None])
                              ArgExpr = Const (Unit, (2,2--2,10))

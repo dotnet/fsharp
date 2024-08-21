@@ -136,7 +136,7 @@ To use your custom build of `Fsc`, add the `DotnetFscCompilerPath` property to y
 
 ```xml
 <PropertyGroup>
-    <DotnetFscCompilerPath>D:\Git\fsharp\artifacts\bin\fsc\Debug\net8.0\fsc.dll</DotnetFscCompilerPath>
+    <DotnetFscCompilerPath>D:\Git\fsharp\artifacts\bin\fsc\Debug\net9.0\fsc.dll</DotnetFscCompilerPath>
 </PropertyGroup>
 ```
 
@@ -214,6 +214,17 @@ or
 
 > **Note**
 > Please note, that by default, **Release** version of IL baseline tests will be running in CI, so when updating baseline (.bsl) files, make sure to add `-c Release` flag to the build command.
+
+
+### Updating FCS surface area baselines
+
+```bash
+$env:TEST_UPDATE_BSL=1
+dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --filter "SurfaceAreaTest" /p:BUILDING_USING_DOTNET=true
+dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --filter "SurfaceAreaTest" /p:BUILDING_USING_DOTNET=true
+dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --filter "SurfaceAreaTest" -c Release /p:BUILDING_USING_DOTNET=true
+dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --filter "SurfaceAreaTest" -c Release /p:BUILDING_USING_DOTNET=true
+```
 
 ## Automated Source Code Formatting
 

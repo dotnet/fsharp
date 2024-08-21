@@ -180,7 +180,7 @@ type VersionFlag =
             else
                 use fs = FileSystem.OpenFileForReadShim(s)
                 use is = new StreamReader(fs)
-                is.ReadLine()
+                !! is.ReadLine()
         | VersionNone -> "0.0.0.0"
 
 /// Represents a reference to an assembly. May be backed by a real assembly on disk, or a cross-project
@@ -197,11 +197,14 @@ type IRawFSharpAssemblyData =
     abstract TryGetILModuleDef: unit -> ILModuleDef option
 
     ///  The raw F# signature data in the assembly, if any
-    abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
+    abstract GetRawFSharpSignatureData:
+        range * ilShortAssemName: string * fileName: string ->
+            (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
 
     ///  The raw F# optimization data in the assembly, if any
     abstract GetRawFSharpOptimizationData:
-        range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
+        range * ilShortAssemName: string * fileName: string ->
+            (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
 
     ///  The table of type forwarders in the assembly
     abstract GetRawTypeForwarders: unit -> ILExportedTypesAndForwarders
@@ -443,6 +446,7 @@ type TcConfigBuilder =
         mutable embedResources: string list
         mutable diagnosticsOptions: FSharpDiagnosticOptions
         mutable mlCompatibility: bool
+        mutable checkNullness: bool
         mutable checkOverflow: bool
         mutable showReferenceResolutions: bool
         mutable outputDir: string option
@@ -631,7 +635,11 @@ type TcConfigBuilder =
         seq {
             yield! tcConfigB.includes
             yield! tcConfigB.compilerToolPaths
-            yield! (tcConfigB.referencedDLLs |> Seq.map (fun ref -> Path.GetDirectoryName(ref.Text)))
+
+            yield!
+                (tcConfigB.referencedDLLs
+                 |> Seq.map (fun ref -> !! Path.GetDirectoryName(ref.Text)))
+
             tcConfigB.implicitIncludeDir
         }
         |> Seq.distinct
@@ -650,8 +658,8 @@ type TcConfigBuilder =
             rangeForErrors
         ) =
 
-        if (String.IsNullOrEmpty defaultFSharpBinariesDir) then
-            failwith "Expected a valid defaultFSharpBinariesDir"
+        let defaultFSharpBinariesDir =
+            nullArgCheck "defaultFSharpBinariesDir" defaultFSharpBinariesDir
 
         // These are all default values, many can be overridden using the command line switch
         {
@@ -681,6 +689,7 @@ type TcConfigBuilder =
             subsystemVersion = 4, 0 // per spec for 357994
             useHighEntropyVA = false
             mlCompatibility = false
+            checkNullness = false
             checkOverflow = false
             showReferenceResolutions = false
             outputDir = None
@@ -723,7 +732,7 @@ type TcConfigBuilder =
             metadataVersion = None
             standalone = false
             extraStaticLinkRoots = []
-            compressMetadata = false
+            compressMetadata = true
             noSignatureData = false
             onlyEssentialOptimizationData = false
             useOptimizationDataFile = false
@@ -822,7 +831,7 @@ type TcConfigBuilder =
                     DumpGraph = false
                 }
             dumpSignatureData = false
-            realsig = false
+            realsig = true
             strictIndentation = None
         }
 
@@ -1102,7 +1111,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     // clone the input builder to ensure nobody messes with it.
     let data = { data with pause = data.pause }
 
-    let computeKnownDllReference libraryName =
+    let computeKnownDllReference (libraryName: string) =
         let defaultCoreLibraryReference =
             AssemblyReference(range0, libraryName + ".dll", None)
 
@@ -1154,7 +1163,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                 ComputeMakePathAbsolute data.implicitIncludeDir primaryAssemblyFilename
 
             try
-                let clrRoot = Some(Path.GetDirectoryName(FileSystem.GetFullPathShim fileName))
+                let clrRoot = Some(!! Path.GetDirectoryName(FileSystem.GetFullPathShim fileName))
                 clrRoot, data.legacyReferenceResolver.Impl.HighestInstalledNetFrameworkVersion()
             with e ->
                 // We no longer expect the above to fail but leaving this just in case
@@ -1257,6 +1266,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.embedResources = data.embedResources
     member _.diagnosticsOptions = data.diagnosticsOptions
     member _.mlCompatibility = data.mlCompatibility
+    member _.checkNullness = data.checkNullness
     member _.checkOverflow = data.checkOverflow
     member _.showReferenceResolutions = data.showReferenceResolutions
     member _.outputDir = data.outputDir
@@ -1453,7 +1463,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     /// 'framework' reference set that is potentially shared across multiple compilations.
     member tcConfig.IsSystemAssembly(fileName: string) =
         try
-            let dirName = Path.GetDirectoryName fileName
+            let dirName = !! Path.GetDirectoryName(fileName)
             let baseName = FileSystemUtils.fileNameWithoutExtension fileName
 
             FileSystem.FileExistsShim fileName

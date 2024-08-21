@@ -2,7 +2,7 @@
 
 open FSharp.Test
 open FSharp.Test.Compiler
-open NUnit.Framework
+open Xunit;
 open Scenarios
 
 [<Struct>]
@@ -44,12 +44,14 @@ let compileAValidScenario (scenario: Scenario) (method: Method) =
     |> shouldSucceed
     |> ignore
 
-let scenarios = codebases
+let scenarios = codebases |> List.map (fun c -> [| box c |]) |> Array.ofList
 
-[<TestCaseSource(nameof scenarios)>]
-let ``Compile a valid scenario using graph-based type-checking`` (scenario: Scenario) =
+[<Theory>]
+[<MemberData(nameof scenarios)>]
+let ``Compile a valid scenario using graph-based type-checking`` (scenario) =
     compileAValidScenario scenario Method.Graph
 
-[<TestCaseSource(nameof scenarios)>]
-let ``Compile a valid scenario using sequential type-checking`` (scenario: Scenario) =
+[<Theory>]
+[<MemberData(nameof scenarios)>]
+let ``Compile a valid scenario using sequential type-checking`` (scenario) =
     compileAValidScenario scenario Method.Sequential

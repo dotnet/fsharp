@@ -38,6 +38,7 @@ type LanguageFeature =
     | StringInterpolation
     | OverloadsForCustomOperations
     | ExpandedMeasurables
+    | NullnessChecking
     | StructActivePattern
     | PrintfBinaryFormat
     | IndexerNotationWithoutDot
@@ -88,8 +89,11 @@ type LanguageFeature =
     | EnforceAttributeTargets
     | LowerInterpolatedStringToConcat
     | LowerIntegralRangesToFastLoops
-    | LowerSimpleMappingsInComprehensionsToDirectCallsToMap
+    | AllowAccessModifiersToAutoPropertiesGettersAndSetters
+    | LowerSimpleMappingsInComprehensionsToFastLoops
     | ParsedHashDirectiveArgumentNonQuotes
+    | EmptyBodiedComputationExpressions
+    | AllowObjectExpressionWithoutOverrides
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -101,10 +105,11 @@ type LanguageVersion(versionText) =
     static let languageVersion60 = 6.0m
     static let languageVersion70 = 7.0m
     static let languageVersion80 = 8.0m
+    static let languageVersion90 = 9.0m
     static let previewVersion = 9999m // Language version when preview specified
-    static let defaultVersion = languageVersion80 // Language version when default specified
+    static let defaultVersion = languageVersion90 // Language version when default specified
     static let latestVersion = defaultVersion // Language version when latest specified
-    static let latestMajorVersion = languageVersion80 // Language version when latestmajor specified
+    static let latestMajorVersion = languageVersion90 // Language version when latestmajor specified
 
     static let validOptions = [| "preview"; "default"; "latest"; "latestmajor" |]
 
@@ -117,6 +122,7 @@ type LanguageVersion(versionText) =
                 languageVersion60
                 languageVersion70
                 languageVersion80
+                languageVersion90
             |]
 
     static let features =
@@ -193,20 +199,26 @@ type LanguageVersion(versionText) =
                 LanguageFeature.ExtendedFixedBindings, languageVersion80
                 LanguageFeature.PreferStringGetPinnableReference, languageVersion80
 
+                // F# 9.0
+                LanguageFeature.NullnessChecking, languageVersion90
+                LanguageFeature.ReuseSameFieldsInStructUnions, languageVersion90
+                LanguageFeature.PreferExtensionMethodOverPlainProperty, languageVersion90
+                LanguageFeature.WarningIndexedPropertiesGetSetSameType, languageVersion90
+                LanguageFeature.WarningWhenTailCallAttrOnNonRec, languageVersion90
+                LanguageFeature.UnionIsPropertiesVisible, languageVersion90
+                LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern, languageVersion90
+                LanguageFeature.LowerInterpolatedStringToConcat, languageVersion90
+                LanguageFeature.LowerIntegralRangesToFastLoops, languageVersion90
+                LanguageFeature.LowerSimpleMappingsInComprehensionsToFastLoops, languageVersion90
+                LanguageFeature.ParsedHashDirectiveArgumentNonQuotes, languageVersion90
+                LanguageFeature.EmptyBodiedComputationExpressions, languageVersion90
+
                 // F# preview
-                LanguageFeature.FromEndSlicing, previewVersion
-                LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion
-                LanguageFeature.ReuseSameFieldsInStructUnions, previewVersion
-                LanguageFeature.PreferExtensionMethodOverPlainProperty, previewVersion
-                LanguageFeature.WarningIndexedPropertiesGetSetSameType, previewVersion
-                LanguageFeature.WarningWhenTailCallAttrOnNonRec, previewVersion
-                LanguageFeature.UnionIsPropertiesVisible, previewVersion
-                LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern, previewVersion
-                LanguageFeature.EnforceAttributeTargets, previewVersion
-                LanguageFeature.LowerInterpolatedStringToConcat, previewVersion
-                LanguageFeature.LowerIntegralRangesToFastLoops, previewVersion
-                LanguageFeature.LowerSimpleMappingsInComprehensionsToDirectCallsToMap, previewVersion
-                LanguageFeature.ParsedHashDirectiveArgumentNonQuotes, previewVersion
+                LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion // not enabled because: https://github.com/dotnet/fsharp/issues/17509
+                LanguageFeature.EnforceAttributeTargets, previewVersion // not enabled because: https://github.com/dotnet/fsharp/issues/17514
+                LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
+                LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, previewVersion
+                LanguageFeature.AllowObjectExpressionWithoutOverrides, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -228,6 +240,8 @@ type LanguageVersion(versionText) =
         | "7" -> languageVersion70
         | "8.0"
         | "8" -> languageVersion80
+        | "9.0"
+        | "9" -> languageVersion90
         | _ -> 0m
 
     let specified = getVersionFromString versionText
@@ -289,6 +303,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.FromEndSlicing -> FSComp.SR.featureFromEndSlicing ()
         | LanguageFeature.FixedIndexSlice3d4d -> FSComp.SR.featureFixedIndexSlice3d4d ()
         | LanguageFeature.AndBang -> FSComp.SR.featureAndBang ()
+        | LanguageFeature.NullnessChecking -> FSComp.SR.featureNullnessChecking ()
         | LanguageFeature.ResumableStateMachines -> FSComp.SR.featureResumableStateMachines ()
         | LanguageFeature.NullableOptionalInterop -> FSComp.SR.featureNullableOptionalInterop ()
         | LanguageFeature.DefaultInterfaceMemberConsumption -> FSComp.SR.featureDefaultInterfaceMemberConsumption ()
@@ -353,9 +368,13 @@ type LanguageVersion(versionText) =
         | LanguageFeature.EnforceAttributeTargets -> FSComp.SR.featureEnforceAttributeTargets ()
         | LanguageFeature.LowerInterpolatedStringToConcat -> FSComp.SR.featureLowerInterpolatedStringToConcat ()
         | LanguageFeature.LowerIntegralRangesToFastLoops -> FSComp.SR.featureLowerIntegralRangesToFastLoops ()
-        | LanguageFeature.LowerSimpleMappingsInComprehensionsToDirectCallsToMap ->
-            FSComp.SR.featureLowerSimpleMappingsInComprehensionsToDirectCallsToMap ()
+        | LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters ->
+            FSComp.SR.featureAllowAccessModifiersToAutoPropertiesGettersAndSetters ()
+        | LanguageFeature.LowerSimpleMappingsInComprehensionsToFastLoops ->
+            FSComp.SR.featureLowerSimpleMappingsInComprehensionsToFastLoops ()
         | LanguageFeature.ParsedHashDirectiveArgumentNonQuotes -> FSComp.SR.featureParsedHashDirectiveArgumentNonString ()
+        | LanguageFeature.EmptyBodiedComputationExpressions -> FSComp.SR.featureEmptyBodiedComputationExpressions ()
+        | LanguageFeature.AllowObjectExpressionWithoutOverrides -> FSComp.SR.featureAllowObjectExpressionWithoutOverrides ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

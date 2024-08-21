@@ -121,7 +121,7 @@ module DeclarationListHelpers =
   
         { new IPartialEqualityComparer<CompletionItem> with
             member x.InEqualityRelation item = itemComparer.InEqualityRelation item.Item
-            member x.Equals(item1, item2) = itemComparer.Equals(item1.Item, item2.Item)
+            member x.Equals(item1, item2) = nullSafeEquality item1 item2 (fun item1 item2 -> itemComparer.Equals(item1.Item, item2.Item))
             member x.GetHashCode item = itemComparer.GetHashCode(item.Item) }
 
     /// Remove all duplicate items
@@ -138,7 +138,7 @@ module DeclarationListHelpers =
         modrefs |> IPartialEqualityComparer.partialDistinctBy 
                       { new IPartialEqualityComparer<ModuleOrNamespaceRef> with
                           member x.InEqualityRelation _ = true
-                          member x.Equals(item1, item2) = (fullDisplayTextOfModRef item1 = fullDisplayTextOfModRef item2)
+                          member x.Equals(item1, item2) = nullSafeEquality item1 item2 (fun item1 item2 -> fullDisplayTextOfModRef item1 = fullDisplayTextOfModRef item2)
                           member x.GetHashCode item = hash item.Stamp  }
 
     let OutputFullName displayFullName ppF fnF r = 
@@ -157,7 +157,7 @@ module DeclarationListHelpers =
     let rec FormatItemDescriptionToToolTipElement displayFullName (infoReader: InfoReader) ad m denv (item: ItemWithInst) symbol (width: int option) = 
         let g = infoReader.g
         let amap = infoReader.amap
-        let denv = SimplerDisplayEnv denv 
+        let denv = {SimplerDisplayEnv denv with showCsharpCodeAnalysisAttributes = true } 
         let xml = GetXmlCommentForItem infoReader m item.Item
 
         match item.Item with

@@ -130,6 +130,10 @@ let ``GetMethodsAsSymbols should return all overloads of a method as FSharpSymbo
         let expected =
             [("Concat", [("values", "Collections.Generic.IEnumerable<'T>")]);
              ("Concat", [("values", "Collections.Generic.IEnumerable<string>")]);
+#if NETCOREAPP
+             ("Concat", [("args", "ReadOnlySpan<obj>")]);
+             ("Concat", [("values", "ReadOnlySpan<string>")]);
+#endif
              ("Concat", [("arg0", "obj")]);
              ("Concat", [("args", "obj array")]);
              ("Concat", [("values", "string array")]);
