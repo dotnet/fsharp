@@ -426,7 +426,7 @@ module Test4343e =
   let cA = C(1)
   let cB = C(2)
   let cAB = cA,cB,[cA;cB] (* note: these print with FSI_xxxx prefix. That is bug 4299. *)
-  // D defines it's own .ToString
+  // D defines its own .ToString
   type D(x:int) = class override this.ToString() = "D(" + string x + ")" end
   let dA = D(1)
   let dB = D(2)
@@ -438,7 +438,7 @@ module Test4343e =
     let cA = C(1)
     let cB = C(2)
     let cAB = cA,cB,[cA;cB] (* note: these print with FSI_xxxx prefix. That is bug 4299. *)
-    // D<Generic> defines it's own .ToString
+    // D<Generic> defines its own .ToString
     type D<'a>(x:'a) = class override this.ToString() = "D(" + string (box x) + ")" end
     let dA = D<int>(1)
     let dB = D<int>(2)
@@ -812,7 +812,7 @@ module Regression5265_PubInt =
 module Regression5265_PubPri =
     type public   IAPublic   = interface abstract P: int end
     type private  IBPrivate  = interface inherit IAPublic abstract Q : int end
-;; (* ;; needed, to issolate error regressions *)
+;; (* ;; needed, to isolate error regressions *)
 
 "Regression4232: Expect an error about duplicate virtual methods from parent type";;
 module Regression4232 =
@@ -824,7 +824,7 @@ module Regression4232 =
     type E() = 
         inherit D<string,string>()
         override x.M(a:string) = 1
-;; (* ;; needed, to issolate error regressions *)
+;; (* ;; needed, to isolate error regressions *)
 
 "** Expect AnAxHostSubClass to be accepted. AxHost has a newslot virtual RightToLeft property outscope RightToLeft on Control";;
 type AnAxHostSubClass(x) = class inherit System.Windows.Forms.AxHost(x) end;;
@@ -1000,7 +1000,7 @@ let functionWhichTakesMixedLengthCurriedParametersB aaaaaaaaaaaaaaaaaaaaaaaaaaaa
 let f (``parameter with spaces in name``: int) = 1
 ;;
 
-let functionWhichTakesAParameterPeeciselyPlusButNotOpAddition (``+``: int -> int -> int) = ``+`` 1 2
+let functionWhichTakesAParameterPreciselyPlusButNotOpAddition (``+``: int -> int -> int) = ``+`` 1 2
 ;;
 
 let functionWhichTakesAParameterOpAddition ((+): int -> int -> int) = 1 + 1

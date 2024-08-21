@@ -106,7 +106,7 @@ let _ = CSharpOuterClass.InnerClass.StaticMember()
 
 
 [<Fact>]
-let ``Test that symbols of csharp inner classes/enums are reported from dervied generic class`` () =
+let ``Test that symbols of csharp inner classes/enums are reported from derived generic class`` () =
     let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
     let content = """
 module NestedEnumClass

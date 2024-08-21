@@ -61,7 +61,7 @@ module internal Utils =
 
     let guard(f) = f() 
 
-    // Quick and dirty dirty method lookup for inlined IL
+    // Quick and dirty method lookup for inlined IL
     // In some situations, we can't use ldtoken to obtain a RuntimeMethodHandle, since the method
     // in question's token may contain typars from an external type environment.  Such a token would
     // cause the PE file to be flagged as invalid.

@@ -1,7 +1,7 @@
 // #Conformance #TypeRelatedExpressions #TypeAnnotations 
 // Expressions
 //
-// Rigit type annotation
+// Rigid type annotation
 // expr : ty
 //
 // rigid type annotation used as arguments to a function

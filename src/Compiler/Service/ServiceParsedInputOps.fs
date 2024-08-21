@@ -1754,7 +1754,7 @@ module ParsedInput =
                             None
 
                     // module Namespace.Top
-                    // module Neste|
+                    // module Nested
                     | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = [ ident ])) when rangeContainsPos ident.idRange pos ->
                         Some CompletionContext.Invalid
 

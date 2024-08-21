@@ -56,7 +56,7 @@ let rec ageOneYear (l:IAge list) =
 if totalAge myStuff <> 30 then exit 1
 
 ageOneYear myStuff
-// (In this test, wine doesn't age, and cars 'grow older' doesn't incement age')
+// (In this test, wine doesn't age, and cars 'grow older' doesn't increment age')
 if totalAge myStuff <> 31 then exit 2
 
 exit 0

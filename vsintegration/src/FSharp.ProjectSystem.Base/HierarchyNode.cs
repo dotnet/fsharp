@@ -490,7 +490,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Creates an object derived from NodeProperties that will be used to expose properties
-        /// spacific for this object to the property browser.
+        /// specific for this object to the property browser.
         /// </summary>
         /// <returns></returns>
         public virtual NodeProperties CreatePropertiesObject()
@@ -865,7 +865,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="propid">property id for the guid property requested</param>
         /// <param name="guid">the requested guid</param>
-        /// <returns>S_OK if succeded</returns>
+        /// <returns>S_OK if succeeded</returns>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "propid")]
         public virtual int GetGuidProperty(int propid, out Guid guid)
         {
@@ -1099,7 +1099,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Called by the drag and drop implementation to ask the node
-        /// which is being dragged/droped over which nodes should
+        /// which is being dragged/dropped over which nodes should
         /// process the operation.
         /// This allows for dragging to a node that cannot contain
         /// items to let its parent accept the drop
@@ -1234,14 +1234,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Prepares a selected node for clipboard. 
-        /// It takes the the project reference string of this item and adds it to a stringbuilder. 
+        /// It takes the project reference string of this item and adds it to a stringbuilder. 
         /// </summary>
         /// <returns>A stringbuilder.</returns>
-        /// <devremark>This method has to be public since seleceted nodes will call it.</devremark>
+        /// <devremark>This method has to be public since selected nodes will call it.</devremark>
         [SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "ClipBoard")]
         public virtual StringBuilder PrepareSelectedNodesForClipBoard()
         {
-            Debug.Assert(this.ProjectMgr != null, " No project mananager available for this node " + ToString());
+            Debug.Assert(this.ProjectMgr != null, " No project manager available for this node " + ToString());
             Debug.Assert(this.ProjectMgr.ItemsDraggedOrCutOrCopied != null, " The itemsdragged list should have been initialized prior calling this method");
             StringBuilder sb = new StringBuilder();
 
@@ -1282,9 +1282,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Returns the Cannonical Name
+        /// Returns the Canonical Name
         /// </summary>
-        /// <returns>Cannonical Name</returns>
+        /// <returns>Canonical Name</returns>
         public virtual string GetCanonicalName()
         {
             return this.GetMkDocument();
@@ -1294,7 +1294,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Factory method for the Document Manager object
         /// </summary>
         /// <returns>null object, since a hierarchy node does not know its kind of document</returns>
-        /// <remarks>Must be overriden by derived node classes if a document manager is needed</remarks>
+        /// <remarks>Must be overridden by derived node classes if a document manager is needed</remarks>
         internal virtual DocumentManager GetDocumentManager()
         {
             return null;
@@ -1551,7 +1551,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             else if (cmdGroup == VsMenus.guidStandardCommandSet2K)
             {
-                // There should only be the project node who handles these and should manifest in the same action regardles of selection.
+                // There should only be the project node who handles these and should manifest in the same action regardless of selection.
                 switch ((VsCommands2K)cmdId)
                 {
                     case VsCommands2K.SHOWALLFILES:
@@ -1570,7 +1570,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// The main entry point for command excection. Gets called from the IVsUIHierarchy and IOleCommandTarget methods.
+        /// The main entry point for command exception. Gets called from the IVsUIHierarchy and IOleCommandTarget methods.
         /// </summary>
         /// <param name="cmdGroup">Unique identifier of the command group</param>
         /// <param name="cmdId">The command to be executed.</param>
@@ -1940,7 +1940,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="cmdGroup">A unique identifier of the command group.</param>
         /// <param name="cmd">The command id to query for.</param>
         /// <param name="pCmdText">Pointer to an OLECMDTEXT structure in which to return the name and/or status information of a single command. Can be NULL to indicate that the caller does not require this information. </param>
-        /// <returns>Retuns the result of the query on the slected nodes.</returns>
+        /// <returns>Returns the result of the query on the selected nodes.</returns>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "p")]
         internal virtual QueryStatusResult QueryStatusSelectionOnNodes(IList<HierarchyNode> selectedNodes, Guid cmdGroup, uint cmd, IntPtr pCmdText)
         {
@@ -2202,7 +2202,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Handle the Copy operation to the clipboard
-        /// This method is typically overriden on the project node
+        /// This method is typically overridden on the project node
         /// </summary>
         public virtual int CopyToClipboard()
         {
@@ -2211,7 +2211,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Handle the Cut operation to the clipboard
-        /// This method is typically overriden on the project node
+        /// This method is typically overridden on the project node
         /// </summary>
         public virtual int CutToClipboard()
         {
@@ -2220,7 +2220,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Handle the paste from Clipboard command.
-        /// This method is typically overriden on the project node
+        /// This method is typically overridden on the project node
         /// </summary>
         public virtual int PasteFromClipboard(HierarchyNode targetNode)
         {
@@ -2229,7 +2229,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Determines if the paste command should be allowed.
-        /// This method is typically overriden on the project node
+        /// This method is typically overridden on the project node
         /// </summary>
         public virtual bool AllowPasteCommand()
         {
@@ -2238,7 +2238,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Register/Unregister for Clipboard events for the UiHierarchyWindow (solution explorer)
-        /// This method is typically overriden on the project node
+        /// This method is typically overridden on the project node
         /// </summary>
         /// <param name="value">true for register, false for unregister</param>
         public virtual void RegisterClipboardNotifications(bool value)
@@ -2473,7 +2473,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// The IDispose interface Dispose method for disposing the object determinastically.
+        /// The IDispose interface Dispose method for disposing the object deterministically.
         /// </summary>
         public void Dispose()
         {
@@ -2589,7 +2589,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // the root
             itemId = 0;
 
-            // The default implemenation will check for case insensitive comparision.
+            // The default implementation will check for case-insensitive comparison.
             if (String.Compare(name, this.Url, StringComparison.OrdinalIgnoreCase) == 0)
             {
                 itemId = this.hierarchyId;
@@ -2748,7 +2748,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // We can only perform save if the document is open
             if (docData == IntPtr.Zero)
             {
-                string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.GetString(SR.CanNotSaveFileNotOpeneInEditor, CultureInfo.CurrentUICulture), node.Url);
+                string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.GetString(SR.CannotSaveFileNotOpenInEditor, CultureInfo.CurrentUICulture), node.Url);
                 throw new InvalidOperationException(errorMessage);
             }
 
@@ -3004,7 +3004,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Recursively find all nodes of type T
         /// </summary>
-        /// <typeparam name="T">The type of hierachy node being serched for</typeparam>
+        /// <typeparam name="T">The type of hierarchy node being searched for</typeparam>
         /// <param name="nodes">A list of nodes of type T</param>
         public void FindNodesOfType<T>(List<T> nodes)
             where T : HierarchyNode

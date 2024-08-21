@@ -31,7 +31,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         
         public override int OnAfterOpenProject(IVsHierarchy hierarchy, int added)
         {
-            // If this is a new project and our project. We use here that it is only our project that will implemnet the "internal"  IBuildDependencyOnProjectContainer.
+            // If this is a new project and our project. We use here that it is only our project that will implement the "internal"  IBuildDependencyOnProjectContainer.
             if (added != 0 && hierarchy is IBuildDependencyUpdate)
             {
                 IVsUIHierarchy uiHierarchy = hierarchy as IVsUIHierarchy;

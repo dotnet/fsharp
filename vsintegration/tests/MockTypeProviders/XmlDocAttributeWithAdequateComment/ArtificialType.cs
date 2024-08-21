@@ -39,7 +39,7 @@ namespace TypeProviderInCSharp
             _IsPointer = IsPointer;
             _Method1 = new ArtificialMethodInfo("M", this, typeof(int[]), MethodAttributes.Public | MethodAttributes.Static);
             _Property1 = new ArtificialPropertyInfo("StaticProp", this, typeof(decimal), true, false);
-            _Event1 = new ArtificalEventInfo("Event1", this, typeof(EventHandler));
+            _Event1 = new ArtificialEventInfo("Event1", this, typeof(EventHandler));
             _Ctor1 = new ArtificialConstructorInfo(this, new ParameterInfo[] {} );  // parameter-less ctor
         }
 

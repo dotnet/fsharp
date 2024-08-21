@@ -16,9 +16,9 @@ module MemberDefinitions_MethodsAndProperties =
 
     let verifyCompileAndRun = verifyCompile >> run
 
-    // SOURCE=PartiallyOverridenProperty.fs							
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PartiallyOverridenProperty.fs"|])>]
-    let ``Partially Overriden Property`` compilation =
+    // SOURCE=PartiallyOverriddenProperty.fs							
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PartiallyOverriddenProperty.fs"|])>]
+    let ``Partially Overridden Property`` compilation =
         compilation
         |> withCheckNulls
         |> typecheck
@@ -32,9 +32,9 @@ module MemberDefinitions_MethodsAndProperties =
         |> verifyCompileAndRun
         |> shouldSucceed
    
-    // SOURCE=E_AbstractAndConcereteProp.fs SCFLAGS="--test:ErrorRanges"		# E_AbstractAndConcereteProp.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AbstractAndConcereteProp.fs"|])>]
-    let ``E_AbstractAndConcereteProp_fs`` compilation =
+    // SOURCE=E_AbstractAndConcreteProp.fs SCFLAGS="--test:ErrorRanges"		# E_AbstractAndConcreteProp.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AbstractAndConcreteProp.fs"|])>]
+    let ``E_AbstractAndConcreteProp_fs`` compilation =
         compilation
         |> verifyCompile
         |> shouldFail

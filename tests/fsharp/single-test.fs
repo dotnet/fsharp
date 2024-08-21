@@ -327,7 +327,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 
     | FSC_NETFX_TEST_ROUNDTRIP_AS_DLL ->
         // Compile as a DLL to exercise pickling of interface data, then recompile the original source file referencing this DLL
-        // THe second compilation will not utilize the information from the first in any meaningful way, but the
+        // The second compilation will not utilize the information from the first in any meaningful way, but the
         // compiler will unpickle the interface and optimization data, so we test unpickling as well.
         use _cleanup = (cleanUpFSharpCore cfg)
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")

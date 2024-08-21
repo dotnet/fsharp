@@ -214,7 +214,7 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     ///
-    /// <example id="addresset-1">
+    /// <example id="addressset-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
     ///
@@ -330,7 +330,7 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     ///
-    /// <example id="callwithwitnesses-1">In this example, we show how to use a witness to cosntruct an `op_Addition` call for a type that doesn't support addition directly:
+    /// <example id="callwithwitnesses-1">In this example, we show how to use a witness to construct an `op_Addition` call for a type that doesn't support addition directly:
     /// <code lang="fsharp">
     /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns
@@ -1255,7 +1255,7 @@ type Expr =
     /// Expr.TryGetReflectedDefinition(methInfoAtString)
     /// </code>
     /// Evaluates to a quotation with the same structure as <c>&lt;@ fun (x: string) -> (x, x) @&gt;</c>, which is the implementation of the
-    /// generic method <c>f</c> instanatiated at type <c>string</c>.
+    /// generic method <c>f</c> instantiated at type <c>string</c>.
     /// </example>
     static member TryGetReflectedDefinition: methodBase: MethodBase -> Expr option
 
@@ -1349,7 +1349,7 @@ type Expr =
     member ToString: full: bool -> string
 
 /// <summary>Type-carrying quoted expressions. Expressions are generated either
-/// by quotations in source text or programatically</summary>
+/// by quotations in source text or programmatically</summary>
 and [<CompiledName("FSharpExpr`1"); Class>] Expr<'T> =
     inherit Expr
     /// <summary>Gets the raw expression associated with this type-carrying expression</summary>
@@ -2188,8 +2188,8 @@ module DerivedPatterns =
     ///     | _ -> failwith "unexpected"
     /// </code>
     /// Evaluates <c>implExpr</c> to a quotation with the same structure as <c>&lt;@ fun (x: int) -> (x, x) @&gt;</c>, which is the implementation of the
-    /// method <c>f</c>. Note that the correct generic instantaition has been applied to the implementation to reflect
-    /// the the type at the callsite.
+    /// method <c>f</c>. Note that the correct generic instantiation has been applied to the implementation to reflect
+    /// the type at the callsite.
     /// </example>
     ///
     [<CompiledName("MethodWithReflectedDefinitionPattern")>]
@@ -2219,8 +2219,8 @@ module DerivedPatterns =
     ///     | _ -> failwith "unexpected"
     /// </code>
     /// Evaluates <c>implExpr</c> to a quotation with the same structure as <c>&lt;@ fun (x: C&lt;int&gt;) () -> x @&gt;</c>, which is the implementation of the
-    /// property <c>Identity</c>. Note that the correct generic instantaition has been applied to the implementation to reflect
-    /// the the type at the callsite.
+    /// property <c>Identity</c>. Note that the correct generic instantiation has been applied to the implementation to reflect
+    /// the type at the callsite.
     /// </example>
     ///
     [<CompiledName("PropertyGetterWithReflectedDefinitionPattern")>]
@@ -2250,8 +2250,8 @@ module DerivedPatterns =
     ///     | _ -> failwith "unexpected"
     /// </code>
     /// Evaluates <c>implExpr</c> to a quotation with the same structure as <c>&lt;@ fun (x: C&lt;int&gt;) (v: int) -> () @&gt;</c>, which is the implementation of the
-    /// setter for the property <c>Count</c>. Note that the correct generic instantaition has been applied to the implementation to reflect
-    /// the the type at the callsite.
+    /// setter for the property <c>Count</c>. Note that the correct generic instantiation has been applied to the implementation to reflect
+    /// the type at the callsite.
     /// </example>
     ///
     [<CompiledName("PropertySetterWithReflectedDefinitionPattern")>]

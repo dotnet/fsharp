@@ -1007,7 +1007,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         compileLibraryAndVerifyILWithOptions [||] (SourceCodeFileKind.Create("test.fs", source)) f
 
     static member RunScriptWithOptionsAndReturnResult options (source: string) =
-        // Intialize output and input streams
+        // Initialize output and input streams
         use inStream = new StringReader("")
         use outStream = new StringWriter()
         use errStream = new StringWriter()
