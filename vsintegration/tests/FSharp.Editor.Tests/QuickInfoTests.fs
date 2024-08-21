@@ -514,10 +514,10 @@ namespace FsTest
 
 module Test =
     type T() =
-        let fu$$nc x = ()
+        let private fu$$nc x = ()
 """
 
-        let expectedSignature = "val func: x: 'a -> unit"
+        let expectedSignature = "val private func: x: 'a -> unit"
 
         let tooltip = GetQuickInfoTextFromCode code
 
@@ -534,7 +534,7 @@ module Test =
         static let fu$$nc x = ()
 """
 
-        let expectedSignature = "val func: x: 'a -> unit"
+        let expectedSignature = "val private func: x: 'a -> unit"
 
         let tooltip = GetQuickInfoTextFromCode code
 

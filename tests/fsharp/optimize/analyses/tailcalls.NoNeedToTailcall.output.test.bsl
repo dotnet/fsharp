@@ -48,6 +48,9 @@ value simpleLibraryUse16 at line 71 does not make a critical tailcall
 value simpleLibraryUse17 at line 72 does not make a critical tailcall
 value simpleLibraryUse18 at line 73 does not make a critical tailcall
 value simpleLibraryUse19 at line 74 does not make a critical tailcall
+value IsSetEmpty at line 77 does not make a critical tailcall
+value IsSetNode at line 78 does not make a critical tailcall
+value IsSetOne at line 79 does not make a critical tailcall
 value complexDataAnalysisFunction at line 81 does not make a critical tailcall
 value complexDataConstructionFunction at line 89 does not make a critical tailcall
 value veryComplexDataConstructionFunction at line 98 does not make a critical tailcall

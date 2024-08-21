@@ -11,14 +11,15 @@ open FSharp.Compiler
 open FSharp.Compiler.BuildGraph
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
+open Internal.Utilities.Library
 open System.Runtime.CompilerServices
 
 [<AutoOpen>]
 module internal Utils =
 
     /// Return file name with one directory above it
-    let shortPath path =
-        let dirPath = Path.GetDirectoryName path
+    let shortPath (path: string) =
+        let dirPath = !! Path.GetDirectoryName(path)
 
         let dir =
             dirPath.Split Path.DirectorySeparatorChar
@@ -146,7 +147,12 @@ type internal CachingDiagnosticsLogger(originalLogger: DiagnosticsLogger option)
     member _.CapturedDiagnostics = capturedDiagnostics |> Seq.toList
 
 [<DebuggerDisplay("{DebuggerDisplay}")>]
-type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVersion: equality>
+type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVersion: equality
+#if !NO_CHECKNULLS
+    and 'TKey:not null
+    and 'TVersion:not null
+#endif
+    >
     (?keepStrongly, ?keepWeakly, ?name: string, ?cancelDuplicateRunningJobs: bool) =
 
     let name = defaultArg name "N/A"
@@ -287,7 +293,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                             key.Version,
                             key.Label,
                             (Running(
-                                TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously),
+                                TaskCompletionSource<'TValue>(TaskCreationOptions.RunContinuationsAsynchronously),
                                 cts,
                                 computation,
                                 DateTime.Now,
@@ -474,7 +480,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
             { new ICacheKey<_, _> with
                 member _.GetKey() = key
                 member _.GetVersion() = Unchecked.defaultof<_>
-                member _.GetLabel() = key.ToString()
+                member _.GetLabel() = match key.ToString() with | null -> "" | s -> s
             }
 
         this.Get(wrappedKey, computation)
