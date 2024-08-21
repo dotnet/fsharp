@@ -1923,8 +1923,7 @@ type InterfaceImpl =
     static member Create(ilType: ILType, customAttrsStored: ILAttributesStored) =
         { Idx = NoMetadataIdx; Type = ilType; CustomAttrsStored = customAttrsStored }
 
-    static member Create(ilType: ILType) =
-        { Idx = NoMetadataIdx; Type = ilType; CustomAttrsStored = emptyILCustomAttrsStored }
+    static member Create(ilType: ILType) = InterfaceImpl.Create(ilType, emptyILCustomAttrsStored)
 
 
 [<NoComparison; NoEquality; StructuredFormatDisplay("{DebugText}")>]
