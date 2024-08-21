@@ -739,3 +739,55 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
             (Error 3132, Line 22, Col 8, Line 22, Col 17, "This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.")
             (Error 3132, Line 25, Col 8, Line 25, Col 18, "This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.")
         ]
+
+    // SOURCE= E_AllowNullLiteral.fs	# E_AllowNullLiteral.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AllowNullLiteral.fs"|])>]
+    let ``E_AllowNullLiteral 8.0`` compilation =
+        compilation
+        |> withLangVersion80
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 935, Line 15, Col 10, Line 15, Col 11, "Types with the 'AllowNullLiteral' attribute may only inherit from or implement types which also allow the use of the null literal")
+            (Error 934, Line 27, Col 10, Line 27, Col 11, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute")
+            (Error 934, Line 30, Col 10, Line 30, Col 11, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute")
+            (Error 934, Line 33, Col 10, Line 33, Col 11, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute")
+            (Error 934, Line 36, Col 10, Line 36, Col 11, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute")
+            (Error 934, Line 39, Col 10, Line 39, Col 13, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute")
+            (Error 842, Line 41, Col 7, Line 41, Col 23, "This attribute is not valid for use on this language element")
+            (Error 842, Line 44, Col 7, Line 44, Col 23, "This attribute is not valid for use on this language element")
+        ]
+    
+    // SOURCE=E_AllowNullLiteral.fs	# E_AllowNullLiteral.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AllowNullLiteral.fs"|])>]
+    let ``E_AllowNullLiteral preview`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 935, Line 15, Col 10, Line 15, Col 11, "Types with the 'AllowNullLiteral' attribute may only inherit from or implement types which also allow the use of the null literal");
+            (Error 934, Line 27, Col 10, Line 27, Col 11, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute");
+            (Error 934, Line 30, Col 10, Line 30, Col 11, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute");
+            (Error 934, Line 33, Col 10, Line 33, Col 11, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute");
+            (Error 934, Line 36, Col 10, Line 36, Col 11, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute");
+            (Error 934, Line 39, Col 10, Line 39, Col 13, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute");
+            (Error 842, Line 41, Col 7, Line 41, Col 23, "This attribute is not valid for use on this language element");
+            (Error 842, Line 44, Col 7, Line 44, Col 23, "This attribute is not valid for use on this language element")
+        ]
+        
+    // SOURCE= AllowNullLiteral01.fs	# AllowNullLiteral01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AllowNullLiteral01.fs"|])>]
+    let ``AllowNullLiteral01 8.0`` compilation =
+        compilation
+        |> withLangVersion80
+        |> verifyCompile
+        |> shouldSucceed
+    
+    // SOURCE=AllowNullLiteral01.fs	# AllowNullLiteral01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AllowNullLiteral01.fs"|])>]
+    let ``AllowNullLiteral01 preview`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldSucceed
