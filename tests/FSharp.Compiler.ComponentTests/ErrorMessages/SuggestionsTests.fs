@@ -129,12 +129,12 @@ module Collections =
 
     let f () = printfn "%s" "Hello"
 
-open Collectons
+open Collections_
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 39, Line 6, Col 6, Line 6, Col 16,
-                                 ("The namespace or module 'Collectons' is not defined. Maybe you want one of the following:" + Environment.NewLine + "   Collections"))
+        |> withSingleDiagnostic (Error 39, Line 6, Col 6, Line 6, Col 18,
+                                 ("The namespace or module 'Collections_' is not defined. Maybe you want one of the following:" + Environment.NewLine + "   Collections"))
 
     [<Fact>]
     let ``Suggest Namespaces`` () =

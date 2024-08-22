@@ -2,7 +2,7 @@
 #light
 
 // Test the ability to declare anonymous signature files, that is FSI files without a
-// top-level module or namespace. (Defaults to name of the file, first letter capitolized, no extension.)
+// top-level module or namespace. (Defaults to name of the file, first letter capitalized, no extension.)
 
 
 type TypeInAnonSigFile = class

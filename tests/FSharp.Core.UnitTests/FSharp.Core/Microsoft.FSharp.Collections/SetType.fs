@@ -16,7 +16,7 @@ open Xunit
 Make sure each method works on:
 * Empty set
 * Single-element set
-* Sets with 4 more more elements
+* Sets with 4 or more elements
 *)
 
 type SetType() =

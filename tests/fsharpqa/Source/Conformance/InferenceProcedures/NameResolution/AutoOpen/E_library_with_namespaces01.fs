@@ -1,6 +1,6 @@
 // #Regression #Conformance #TypeInference #Attributes #ReqNOMT 
 // The Expects here is an artifact to make our automation happy.
-// It actuall refers to E_Module02.fs
+// It actually refers to E_Module02.fs
 //<Expects id="FS0039" span="(10,22-10,24)" status="error">The type 'C2' is not defined</Expects>
 #light
 

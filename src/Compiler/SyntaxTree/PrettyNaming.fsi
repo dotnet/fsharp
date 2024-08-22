@@ -114,7 +114,7 @@ val internal ConvertLogicalNameToDisplayName: name: string -> string
 /// In any cases it is used it probably indicates that text is being
 /// generated which:
 ///    1. does not contain double-backticks for non-identifiers
-///    2. does not put parentheses arounf operators or active pattern names
+///    2. does not put parentheses around operators or active pattern names
 ///
 /// If the text is immediately in quotes, this is generally ok, e.g.
 ///

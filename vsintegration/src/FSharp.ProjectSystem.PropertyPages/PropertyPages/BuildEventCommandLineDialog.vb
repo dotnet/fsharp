@@ -236,7 +236,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         Private m_serviceProvider As IServiceProvider
         Private m_Page As PropPageUserControlBase
 
-        Private m_szIntialFormSize As Size
+        Private m_szInitialFormSize As Size
         Private m_helpTopic As String
 
         Public Function SetFormTitleText(ByVal TitleText As String) As Boolean
@@ -424,7 +424,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
                         Dim vshelp As VsHelp.Help = CType(sp.GetService(GetType(VsHelp.Help)), VsHelp.Help)
                         vshelp.DisplayTopicFromF1Keyword(HelpTopic)
                     Else
-                        System.Diagnostics.Debug.Fail("Can not find ServiceProvider")
+                        System.Diagnostics.Debug.Fail("Cannot find ServiceProvider")
                     End If
 
                 Catch ex as System.Exception
