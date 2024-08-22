@@ -351,9 +351,10 @@ let CheckILFieldInfoAccessible g amap m ad finfo =
 /// when calling x.SomeMethod() we need to use 'adTyp' do verify that type of x is accessible from C 
 /// and 'ad' to determine accessibility of SomeMethod.
 /// I.e when calling x.Public() and x.Protected() -in both cases first check should succeed and second - should fail in the latter one. 
-let IsTypeAndMethInfoAccessible amap m accessDomainTy ad = function
+let rec IsTypeAndMethInfoAccessible amap m accessDomainTy ad = function
     | ILMeth (g, x, _) -> IsILMethInfoAccessible g amap m accessDomainTy ad x 
     | FSMeth (_, _, vref, _) -> IsValAccessible ad vref
+    | MethInfoWithModifiedReturnType(mi,_) -> IsTypeAndMethInfoAccessible amap m accessDomainTy ad mi
     | DefaultStructCtor(g, ty) -> IsTypeAccessible g amap m ad ty
 #if !NO_TYPEPROVIDERS
     | ProvidedMeth(amap, tpmb, _, m) as etmi -> 

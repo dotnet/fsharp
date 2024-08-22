@@ -81,8 +81,8 @@ let mkGetHashCodeSlotSig (g: TcGlobals) =
 let mkEqualsSlotSig (g: TcGlobals) =
     TSlotSig("Equals", g.obj_ty_noNulls, [], [], [ [ TSlotParam(Some("obj"), g.obj_ty_withNulls, false, false, false, []) ] ], Some g.bool_ty)
 
-let mkToStringSlotSig (g: TcGlobals) =
-    TSlotSig("ToString", g.obj_ty_noNulls, [], [], [ [] ], Some g.string_ty)
+//let mkToStringSlotSig (g: TcGlobals) =
+//    TSlotSig("ToString", g.obj_ty_noNulls, [], [], [ [] ], Some g.string_ty)
 
 //-------------------------------------------------------------------------
 // Helpers associated with code-generation of comparison/hash augmentations
@@ -115,8 +115,8 @@ let mkEqualsWithComparerTyExact g ty =
 let mkHashTy g ty =
     mkFunTy g (mkThisTy g ty) (mkFunTy g g.unit_ty g.int_ty)
 
-let mkToStringTy g ty =
-    mkFunTy g (mkThisTy g ty) (mkFunTy g g.unit_ty g.string_ty)
+//let mkToStringTy g ty =
+//    mkFunTy g (mkThisTy g ty) (mkFunTy g g.unit_ty g.string_ty)
 
 let mkHashWithComparerTy g ty =
     mkFunTy g (mkThisTy g ty) (mkFunTy g g.IEqualityComparer_ty g.int_ty)
@@ -1698,15 +1698,15 @@ let MakeValsForUnionAugmentation g (tcref: TyconRef) =
         g.AddValGeneratedAttributes v m
         v)
 
-let MakeValForNonNullableToStringOverride (g:TcGlobals) (tcref: TyconRef) =    
-    if g.checkNullness && not (tcref.HasOverride g "ToString" []) && (tcref.IsRecordTycon || tcref.IsUnionTycon) then
-        let _, tmty = mkMinimalTy g tcref
-        let tps = tcref.Typars tcref.Range
-        let vis = tcref.TypeReprAccessibility
-        mkValSpec g tcref tmty vis (Some(mkToStringSlotSig g)) "ToString" (tps +-> (mkToStringTy g tmty)) unitArg false
-        |> List.singleton
-    else
-        []
+//let MakeValForNonNullableToStringOverride (g:TcGlobals) (tcref: TyconRef) =    
+//    if g.checkNullness && not (tcref.HasOverride g "ToString" []) && (tcref.IsRecordTycon || tcref.IsUnionTycon) then
+//        let _, tmty = mkMinimalTy g tcref
+//        let tps = tcref.Typars tcref.Range
+//        let vis = tcref.TypeReprAccessibility
+//        mkValSpec g tcref tmty vis (Some(mkToStringSlotSig g)) "ToString" (tps +-> (mkToStringTy g tmty)) unitArg false
+//        |> List.singleton
+//    else
+//        []
 
 let MakeBindingsForUnionAugmentation g (tycon: Tycon) (vals: ValRef list) =
     let tcref = mkLocalTyconRef tycon

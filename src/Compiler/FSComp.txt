@@ -1533,6 +1533,7 @@ tcPassingWithoutNullToValueOptionOfObj,"You can create 'ValueSome value' directl
 tcPassingWithoutNullToNonNullAP,"You can remove this |Null|NonNull| pattern usage."
 tcPassingWithoutNullToNonNullQuickAP,"You can remove this |NonNullQuick| pattern usage."
 tcPassingWithoutNullTononNullFunction,"You can remove this `nonNull` assertion."
+3263,tcNullableToStringOverride,"With nullness checking enabled, overrides of .ToString() method must return a non-nullable string. You can handle potential nulls via the built-in string function."
 3268,csNullNotNullConstraintInconsistent,"The constraints 'null' and 'not null' are inconsistent"
 3271,tcNullnessCheckingNotEnabled,"The 'nullness checking' language feature is not enabled. This use of a nullness checking construct will be ignored."
 csTypeHasNullAsTrueValue,"The type '%s' uses 'null' as a representation value but a non-null type is expected"

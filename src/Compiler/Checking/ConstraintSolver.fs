@@ -2132,6 +2132,8 @@ and MemberConstraintSolutionOfMethInfo css m minfo minst staticTyOpt =
     | FSMeth(_, ty, vref, _) ->  
        FSMethSln(ty, vref, minst, staticTyOpt)
 
+    | MethInfoWithModifiedReturnType(mi,_) -> MemberConstraintSolutionOfMethInfo css m mi minst staticTyOpt
+
     | MethInfo.DefaultStructCtor _ -> 
        error(InternalError("the default struct constructor was the unexpected solution to a trait constraint", m))
 

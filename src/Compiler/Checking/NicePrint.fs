@@ -1734,7 +1734,7 @@ module InfoMemberPrinting =
     //
     // For C# extension members:
     //          ApparentContainer.Method(argName1: argType1, ..., argNameN: argTypeN) : retType
-    let prettyLayoutOfMethInfoFreeStyle (infoReader: InfoReader) m denv typarInst methInfo =
+    let rec prettyLayoutOfMethInfoFreeStyle (infoReader: InfoReader) m denv typarInst methInfo =
         let amap = infoReader.amap
 
         match methInfo with 
@@ -1745,6 +1745,12 @@ module InfoMemberPrinting =
         | FSMeth(_, _, vref, _) -> 
             let prettyTyparInst, resL = PrintTastMemberOrVals.prettyLayoutOfValOrMember { denv with showMemberContainers=true } infoReader typarInst vref
             prettyTyparInst, resL
+        | MethInfoWithModifiedReturnType(ILMeth(_, ilminfo, _) as wrappedInfo,retTy) -> 
+            let prettyTyparInst, prettyMethInfo, minst = prettifyILMethInfo amap m wrappedInfo typarInst ilminfo
+            let prettyMethInfo = MethInfoWithModifiedReturnType(prettyMethInfo,retTy)
+            let resL = layoutMethInfoCSharpStyle amap m denv prettyMethInfo minst
+            prettyTyparInst, resL
+        | MethInfoWithModifiedReturnType(mi,_) -> prettyLayoutOfMethInfoFreeStyle infoReader m denv typarInst mi
         | ILMeth(_, ilminfo, _) -> 
             let prettyTyparInst, prettyMethInfo, minst = prettifyILMethInfo amap m methInfo typarInst ilminfo
             let resL = layoutMethInfoCSharpStyle amap m denv prettyMethInfo minst

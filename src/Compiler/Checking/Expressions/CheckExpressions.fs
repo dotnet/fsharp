@@ -11676,6 +11676,8 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (_: Val option) (a
 
                      let declaredTypars = (if typarsFromAbsSlotAreRigid then typarsFromAbsSlot else declaredTypars)
 
+                     let retTyFromAbsSlot = retTyFromAbsSlot |> changeWithNullReqTyToVariable g
+
                      let absSlotTy = mkMethodTy g argTysFromAbsSlot retTyFromAbsSlot
 
                      UnifyTypes cenv envinner m argsAndRetTy absSlotTy

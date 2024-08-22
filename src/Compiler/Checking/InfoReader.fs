@@ -1191,7 +1191,7 @@ let GetXmlDocSigOfUnionCaseRef (ucref: UnionCaseRef) =
         ucref.UnionCase.XmlDocSig <- XmlDocSigOfUnionCase [tcref.CompiledRepresentationForNamedType.FullName; ucref.CaseName]
     Some (ccuFileName, ucref.UnionCase.XmlDocSig)
 
-let GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) = 
+let rec GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) = 
     let amap = infoReader.amap
     match minfo with
     | FSMeth (g, _, vref, _) ->
@@ -1219,6 +1219,7 @@ let GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) =
 
             Some (ccuFileName, "M:"+actualTypeName+"."+normalizedName+genericArity+XmlDocArgsEnc g (formalTypars, fmtps) args)
 
+    | MethInfoWithModifiedReturnType(mi,_) -> GetXmlDocSigOfMethInfo infoReader m mi
     | DefaultStructCtor(g, ty) ->
         match tryTcrefOfAppTy g ty with
         | ValueSome tcref ->

@@ -306,30 +306,17 @@ let duWithExtensionProvidedToString = """A | B
 module Functions =
     let printMyType (x:MyCustomType) : string = "xxx" 
 type MyCustomType with
-    override x.ToString() : string = "hi"
+    override x.ToString() : string = Functions.printMyType x
     """
 
 [<Literal>]
 let duWithExtensionProvidedNullableToString = """A | B 
-module Functions =
-    let printMyType (x:MyCustomType) : string = "xxx" 
+
 type MyCustomType with
     override x.ToString() = null
     """
 
-
-[<Theory>]
-[<InlineData("A | B ")>]
-[<InlineData( """A | B with override this.ToString() : string = "xx" """)>]
-[<InlineData( """A | B with override this.ToString() : (string|null) = null """)>]
-[<InlineData(duWithExtensionProvidedToString)>]
-[<InlineData(duWithExtensionProvidedNullableToString)>]
-[<InlineData("{F : int} ")>]
-[<InlineData(" {| F : string |} ")>]
-[<InlineData(" (struct{| F : string |}) ")>]
-[<InlineData(" int * string ")>]
-[<InlineData(" (struct(string * int)) ")>]
-let ``Generated ToString() methods are not nullable`` (myTypeDef) = 
+let toStringCodeSnippet myTypeDef = 
     FSharp $"""module MyLibrary
 
 type MyCustomType = {myTypeDef}
@@ -341,7 +328,29 @@ let processBool (x:MyCustomType) =
 """
     |> asLibrary
     |> typeCheckWithStrictNullness
+
+[<Theory>]
+[<InlineData("A | B ")>]
+[<InlineData( """A | B with override this.ToString() : string = "xyz" """)>]
+[<InlineData( """A | B with override this.ToString() = "xyz" """)>]
+[<InlineData( """A | B with override this.ToString() = System.Console.ReadLine() |> string """)>]
+[<InlineData(duWithExtensionProvidedToString)>]
+[<InlineData("{F : int} ")>]
+[<InlineData(" {| F : string |} ")>]
+[<InlineData(" (struct{| F : string |}) ")>]
+[<InlineData(" int * string ")>]
+[<InlineData(" (struct(string * int)) ")>]
+let ``Generated ToString() methods are not nullable`` (myTypeDef) = 
+    toStringCodeSnippet myTypeDef
     |> shouldSucceed
+
+[<Theory>]
+[<InlineData( """A | B with override this.ToString() : (string|null) = null """)>]
+[<InlineData(duWithExtensionProvidedNullableToString)>]
+let ``ToString override warns if it returns nullable`` (myTypeDef) = 
+    toStringCodeSnippet myTypeDef
+    |> shouldFail
+    |> withDiagnosticMessage "With nullness checking enabled, overrides of .ToString() method must return a non-nullable string. You can handle potential nulls via the built-in string function."
 
 [<Fact>]
 let ``Printing a nullable string should pass`` () = 

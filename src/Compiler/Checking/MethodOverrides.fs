@@ -148,6 +148,12 @@ module DispatchSlotChecking =
         let _, _, argInfos, retTy, _ = GetTypeOfMemberInMemberForm g overrideBy
         let nm = overrideBy.LogicalName
 
+        if g.checkNullness && nm = "ToString" && (argInfos |> List.sumBy _.Length) = 0 && retTy.IsSome then
+            let returnsString = typeEquiv g retTy.Value g.string_ty
+            let retTyNullness = (nullnessOfTy g retTy.Value).TryEvaluate()
+            if returnsString && retTyNullness = ValueSome(NullnessInfo.WithNull) then
+                warning(Error(FSComp.SR.tcNullableToStringOverride(), overrideBy.Range))
+
         let argTys = argInfos |> List.mapSquared fst
         
         let memberMethodTypars, memberToParentInst, argTys, retTy = 
