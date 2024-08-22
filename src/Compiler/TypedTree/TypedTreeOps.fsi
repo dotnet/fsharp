@@ -375,7 +375,7 @@ val mkCompiledTupleTy: TcGlobals -> bool -> TTypes -> TType
 /// Convert from F# tuple creation expression to .NET tuple creation expressions
 val mkCompiledTuple: TcGlobals -> bool -> TTypes * Exprs * range -> TyconRef * TTypes * Exprs * range
 
-/// Make a TAST expression representing getting an item fromm a tuple
+/// Make a TAST expression representing getting an item from a tuple
 val mkGetTupleItemN: TcGlobals -> range -> int -> ILType -> bool -> Expr -> TType -> Expr
 
 /// Evaluate the TupInfo to work out if it is a struct or a ref.  Currently this is very simple
@@ -647,6 +647,12 @@ val destStructAnonRecdTy: TcGlobals -> TType -> TTypes
 
 val tryDestForallTy: TcGlobals -> TType -> Typars * TType
 
+val nullnessOfTy: TcGlobals -> TType -> Nullness
+
+val changeWithNullReqTyToVariable: TcGlobals -> reqTy: TType -> TType
+
+val reqTyForArgumentNullnessInference: TcGlobals -> actualTy: TType -> reqTy: TType -> TType
+
 val isFunTy: TcGlobals -> TType -> bool
 
 val isForallTy: TcGlobals -> TType -> bool
@@ -685,7 +691,7 @@ val tryAnyParTyOption: TcGlobals -> TType -> Typar option
 
 val isMeasureTy: TcGlobals -> TType -> bool
 
-val mkAppTy: TyconRef -> TypeInst -> TType
+val mkWoNullAppTy: TyconRef -> TypeInst -> TType
 
 val mkProvenUnionCaseTy: UnionCaseRef -> TypeInst -> TType
 
@@ -899,6 +905,8 @@ val typarsAEquiv: TcGlobals -> TypeEquivEnv -> Typars -> Typars -> bool
 
 val typeAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TType -> TType -> bool
 
+val nullnessSensitivetypeAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TType -> TType -> bool
+
 val typeAEquiv: TcGlobals -> TypeEquivEnv -> TType -> TType -> bool
 
 val returnTypesAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TType option -> TType option -> bool
@@ -919,7 +927,7 @@ val anonInfoEquiv: AnonRecdTypeInfo -> AnonRecdTypeInfo -> bool
 val isErasedType: TcGlobals -> TType -> bool
 
 // Return all components (units-of-measure, and types) of this type that would be erased
-val getErasedTypes: TcGlobals -> TType -> TType list
+val getErasedTypes: TcGlobals -> TType -> checkForNullness: bool -> TType list
 
 //-------------------------------------------------------------------------
 // Unit operations
@@ -1071,8 +1079,10 @@ type DisplayEnv =
         shortConstraints: bool
         useColonForReturnType: bool
         showAttributes: bool
+        showCsharpCodeAnalysisAttributes: bool
         showOverrides: bool
         showStaticallyResolvedTyparAnnotations: bool
+        showNullnessAnnotations: bool option
         abbreviateAdditionalConstraints: bool
         showTyparDefaultConstraints: bool
         /// If set, signatures will be rendered with XML documentation comments for members if they exist
@@ -1645,7 +1655,7 @@ val destArrayTy: TcGlobals -> TType -> TType
 val destListTy: TcGlobals -> TType -> TType
 
 /// Build an array type of the given rank
-val mkArrayTy: TcGlobals -> int -> TType -> range -> TType
+val mkArrayTy: TcGlobals -> int -> Nullness -> TType -> range -> TType
 
 /// Check if a type definition is one of the artificial type definitions used for array types of different ranks
 val isArrayTyconRef: TcGlobals -> TyconRef -> bool
@@ -1683,7 +1693,7 @@ val isFSharpDelegateTy: TcGlobals -> TType -> bool
 /// Determine if a type is an interface type
 val isInterfaceTy: TcGlobals -> TType -> bool
 
-/// Determine if a type is a FSharpRef type
+/// Determine if a type is a reference type
 val isRefTy: TcGlobals -> TType -> bool
 
 /// Determine if a type is a function (including generic). Not the same as isFunTy.
@@ -1795,17 +1805,19 @@ val ModuleNameIsMangled: TcGlobals -> Attribs -> bool
 
 val CompileAsEvent: TcGlobals -> Attribs -> bool
 
-val TypeNullIsExtraValue: TcGlobals -> range -> TType -> bool
-
 val TypeNullIsTrueValue: TcGlobals -> TType -> bool
 
-val TypeNullNotLiked: TcGlobals -> range -> TType -> bool
+val TypeNullIsExtraValue: TcGlobals -> range -> TType -> bool
+
+val TypeHasAllowNull: TyconRef -> TcGlobals -> range -> bool
+
+val TypeNullIsExtraValueNew: TcGlobals -> range -> TType -> bool
 
 val TypeNullNever: TcGlobals -> TType -> bool
 
-val TypeSatisfiesNullConstraint: TcGlobals -> range -> TType -> bool
-
 val TypeHasDefaultValue: TcGlobals -> range -> TType -> bool
+
+val TypeHasDefaultValueNew: TcGlobals -> range -> TType -> bool
 
 val isAbstractTycon: Tycon -> bool
 
@@ -2050,8 +2062,6 @@ val mkCallArrayLength: TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkCallArrayGet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallArrayMap: g: TcGlobals -> m: range -> ty1: TType -> ty2: TType -> e1: Expr -> e2: Expr -> Expr
-
 val mkCallArray2DGet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
 
 val mkCallArray3DGet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr
@@ -2065,8 +2075,6 @@ val mkCallArray2DSet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Exp
 val mkCallArray3DSet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
 
 val mkCallArray4DSet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
-
-val mkCallListMap: g: TcGlobals -> m: range -> ty1: TType -> ty2: TType -> e1: Expr -> e2: Expr -> Expr
 
 val mkCallHash: TcGlobals -> range -> TType -> Expr -> Expr
 
@@ -2275,6 +2283,8 @@ val mkLdelem: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 val TryDecodeILAttribute: ILTypeRef -> ILAttributes -> (ILAttribElem list * ILAttributeNamedArg list) option
 
+val IsILAttrib: BuiltinAttribInfo -> ILAttribute -> bool
+
 val TryFindILAttribute: BuiltinAttribInfo -> ILAttributes -> bool
 
 val TryFindILAttributeOpt: BuiltinAttribInfo option -> ILAttributes -> bool
@@ -2296,6 +2306,8 @@ val TryFindFSharpBoolAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> boo
 val TryFindFSharpBoolAttributeAssumeFalse: TcGlobals -> BuiltinAttribInfo -> Attribs -> bool option
 
 val TryFindFSharpStringAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> string option
+
+val TryFindLocalizedFSharpStringAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> string option
 
 val TryFindFSharpInt32Attribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> int32 option
 
@@ -2683,7 +2695,7 @@ val GetTraitConstraintInfosOfTypars: TcGlobals -> Typars -> TraitConstraintInfo 
 
 val GetTraitWitnessInfosOfTypars: TcGlobals -> numParentTypars: int -> typars: Typars -> TraitWitnessInfos
 
-/// An immutable mappping from witnesses to some data.
+/// An immutable mapping from witnesses to some data.
 ///
 /// Note: this uses an immutable HashMap/Dictionary with an IEqualityComparer that captures TcGlobals, see EmptyTraitWitnessInfoHashMap
 type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>

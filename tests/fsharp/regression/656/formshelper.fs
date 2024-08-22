@@ -72,7 +72,7 @@ let CreateTrackBar label extent tickFreq value changedHandler =
 	slider.ValueChanged.AddHandler(new EventHandler(changedHandler)); 
 	slider	
 	
-/// Create a combox box with the specified names
+/// Create a combo box with the specified names
 let CreateCombo names =
 	let combo = new ComboBox() in
 	Array.iter ( fun name -> let _ = combo.Items.Add(name) in () ) names;
@@ -104,7 +104,7 @@ let CreateTableLayoutPanel columns =
 	panel.Dock <- DockStyle.Fill; 
 	panel
 
-/// Creats a PictureBox with the specified Bitmap	
+/// Creates a PictureBox with the specified Bitmap	
 let CreatePictureBox (bm:Bitmap) =
 	let pict = new PictureBox() in	
 	pict.Size <- bm.Size;	pict.Image <- bm;
@@ -152,7 +152,7 @@ type FormDockLocation =
 				| Some (form,_,_,_) -> Some(form)
 				| None -> None
 					
-		/// Set child - there can be only one with a sepcified name
+		/// Set child - there can be only one with a specified name
 		member instance.SetChild (child:Form) name x y = 		
 			child.DesktopLocation <- new Point(instance.parent.DesktopLocation.X + x, instance.parent.DesktopLocation.Y + y);		
 			// Remove any forms with same label

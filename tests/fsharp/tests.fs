@@ -36,8 +36,45 @@ let testConfig = getTestsDirectory >> testConfig
 [<NonParallelizable; SetUICulture("en-US"); SetCulture("en-US")>]
 module CoreTests =
 
+
 #if !NETCOREAPP
-// This test stays in FsharpSuite for a later migration phases, it uses hardcoded #r to a C# compiled cslib.dll inside
+    [<Test>]
+    let ``subtype-langversion-checknulls`` () =
+        let cfg = testConfig "core/subtype"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test-checknulls.exe -g --checknulls" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test-checknulls.exe") ""
+
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``subtype-langversion-no-checknulls`` () =
+        let cfg = testConfig "core/subtype"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test-no-checknulls.exe -g --checknulls-" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test-no-checknulls.exe") ""
+
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``subtype-langversion-46`` () =
+        let cfg = testConfig "core/subtype"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test-langversion-46.exe -g --langversion:4.6" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test-langversion-46.exe") ""
+
+        testOkFile.CheckExists()
+
+    // This test stays in FsharpSuite for a later migration phases, it uses hardcoded #r to a C# compiled cslib.dll inside
     [<Test>]
     let ``quotes-FSC-FSC_DEBUG`` () = singleTestBuildAndRun "core/quotes" FSC_DEBUG
 
@@ -48,21 +85,6 @@ module CoreTests =
     let ``quotes-FSI-BASIC`` () = singleTestBuildAndRun "core/quotes" FSI
 #endif
 
-
-#if !NETCOREAPP
-// This test has hardcoded expectations about current synchronization context
-// Will be moved out of FsharpSuite.Tests in a later phase for desktop framework
-    [<Test>]
-    let ``control-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/control" FSC_OPTIMIZED
-
-    [<Test>]
-    let ``control-FSI`` () = singleTestBuildAndRun "core/control" FSI
-
-    [<Test>]
-    let ``control --tailcalls`` () =
-        let cfg = testConfig "core/control"
-        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_OPTIMIZED
-#endif  
 
     [<Test>]
     let ``SDKTests`` () =
@@ -140,7 +162,7 @@ module CoreTests =
 
         use testOkFile = fileguard cfg "test.ok"
 
-        fsc cfg "%s -o:test.exe -g --tailcalls- --optimize- --langversion:preview" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -o:test.exe -g --tailcalls- --optimize-" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 
@@ -154,7 +176,7 @@ module CoreTests =
 
         use testOkFile = fileguard cfg "test.ok"
 
-        fsc cfg "%s -o:test.exe -g --tailcalls+ --optimize+ --langversion:preview" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -o:test.exe -g --tailcalls+ --optimize+" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 
@@ -768,7 +790,7 @@ module CoreTests =
     [<Test; Category("signedtest")>]
     let ``signedtest-10`` () = signedtest("test-sha1-full-attributes", "--define:SHA1", SigningType.PublicSigned)
 
-    // Test SHA1 key delayl signed  Attributes
+    // Test SHA1 key delay signed  Attributes
     [<Test; Category("signedtest")>]
     let ``signedtest-11`` () = signedtest("test-sha1-delay-attributes", "--keyfile:sha1delay.snk --define:SHA1 --define:DELAY", SigningType.DelaySigned)
 
@@ -970,6 +992,31 @@ module CoreTests =
 
     [<Test>]
     let ``libtest-FSC_NETFX_TEST_ROUNDTRIP_AS_DLL`` () = singleTestBuildAndRun "core/libtest" FSC_NETFX_TEST_ROUNDTRIP_AS_DLL
+
+    [<Test>]
+    let ``libtest-langversion-checknulls`` () =
+        let cfg = testConfig "core/libtest"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test-checknulls.exe -g --checknulls" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test-checknulls.exe") ""
+
+        testOkFile.CheckExists()
+
+ 
+    [<Test>]
+    let ``libtest-langversion-46`` () =
+        let cfg = testConfig "core/libtest"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test-langversion-46.exe -g --langversion:4.6" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test-langversion-46.exe") ""
+
+        testOkFile.CheckExists()
 
     [<Test>]
     let ``no-warn-2003-tests`` () =
@@ -1438,53 +1485,53 @@ module CoreTests =
     let topinit () =
         let cfg = testConfig "core/topinit"
 
-        fsc cfg "%s --optimize -o both69514.exe -g" cfg.fsc_flags ["lib69514.fs"; "app69514.fs"]
+        fsc cfg "%s --realsig- --optimize -o both69514.exe -g" cfg.fsc_flags ["lib69514.fs"; "app69514.fs"]
 
         peverify cfg "both69514.exe"
 
-        fsc cfg "%s --optimize- -o both69514-noopt.exe -g" cfg.fsc_flags ["lib69514.fs"; "app69514.fs"]
+        fsc cfg "%s --realsig- --optimize- -o both69514-noopt.exe -g" cfg.fsc_flags ["lib69514.fs"; "app69514.fs"]
 
         peverify cfg "both69514-noopt.exe"
 
-        fsc cfg "%s --optimize -a -g" cfg.fsc_flags ["lib69514.fs"]
+        fsc cfg "%s --realsig- --optimize -a -g" cfg.fsc_flags ["lib69514.fs"]
 
         peverify cfg "lib69514.dll"
 
-        fsc cfg "%s --optimize -r:lib69514.dll -g" cfg.fsc_flags ["app69514.fs"]
+        fsc cfg "%s --realsig- --optimize -r:lib69514.dll -g" cfg.fsc_flags ["app69514.fs"]
 
         peverify cfg "app69514.exe"
 
-        fsc cfg "%s --optimize- -o:lib69514-noopt.dll -a -g" cfg.fsc_flags ["lib69514.fs"]
+        fsc cfg "%s --realsig- --optimize- -o:lib69514-noopt.dll -a -g" cfg.fsc_flags ["lib69514.fs"]
 
         peverify cfg "lib69514-noopt.dll"
 
-        fsc cfg "%s --optimize- -r:lib69514-noopt.dll -o:app69514-noopt.exe -g" cfg.fsc_flags ["app69514.fs"]
+        fsc cfg "%s --realsig- --optimize- -r:lib69514-noopt.dll -o:app69514-noopt.exe -g" cfg.fsc_flags ["app69514.fs"]
 
         peverify cfg "app69514-noopt.exe"
 
-        fsc cfg "%s --optimize- -o:lib69514-noopt-withsig.dll -a -g" cfg.fsc_flags ["lib69514.fsi"; "lib69514.fs"]
+        fsc cfg "%s --realsig- --optimize- -o:lib69514-noopt-withsig.dll -a -g" cfg.fsc_flags ["lib69514.fsi"; "lib69514.fs"]
 
         peverify cfg "lib69514-noopt-withsig.dll"
 
-        fsc cfg "%s --optimize- -r:lib69514-noopt-withsig.dll -o:app69514-noopt-withsig.exe -g" cfg.fsc_flags ["app69514.fs"]
+        fsc cfg "%s --realsig- --optimize- -r:lib69514-noopt-withsig.dll -o:app69514-noopt-withsig.exe -g" cfg.fsc_flags ["app69514.fs"]
 
         peverify cfg "app69514-noopt-withsig.exe"
 
-        fsc cfg "%s -o:lib69514-withsig.dll -a -g" cfg.fsc_flags ["lib69514.fsi"; "lib69514.fs"]
+        fsc cfg "%s --realsig- -o:lib69514-withsig.dll -a -g" cfg.fsc_flags ["lib69514.fsi"; "lib69514.fs"]
 
         peverify cfg "lib69514-withsig.dll"
 
-        fsc cfg "%s -r:lib69514-withsig.dll -o:app69514-withsig.exe -g" cfg.fsc_flags ["app69514.fs"]
+        fsc cfg "%s -r:lib69514-withsig.dll --realsig- -o:app69514-withsig.exe -g" cfg.fsc_flags ["app69514.fs"]
 
         peverify cfg "app69514-withsig.exe"
 
-        fsc cfg "%s -o:lib.dll -a --langversion:5.0 --mlcompatibility -g" cfg.fsc_flags ["lib.ml"]
+        fsc cfg "%s -o:lib.dll --realsig- -a --langversion:5.0 --mlcompatibility -g" cfg.fsc_flags ["lib.ml"]
 
         peverify cfg "lib.dll"
 
         csc cfg """/nologo /r:"%s" /r:lib.dll /out:test.exe """ cfg.FSCOREDLLPATH ["test.cs"]
 
-        fsc cfg "%s --optimize -o:lib--optimize.dll -a  --langversion:5.0 --mlcompatibility -g" cfg.fsc_flags ["lib.ml"]
+        fsc cfg "%s --optimize -o:lib--optimize.dll --realsig- -a  --langversion:5.0 --mlcompatibility -g" cfg.fsc_flags ["lib.ml"]
 
         peverify cfg "lib--optimize.dll"
 
@@ -1492,53 +1539,53 @@ module CoreTests =
 
         let dicases = ["flag_deterministic_init1.fs"; "lib_deterministic_init1.fs"; "flag_deterministic_init2.fs"; "lib_deterministic_init2.fs"; "flag_deterministic_init3.fs"; "lib_deterministic_init3.fs"; "flag_deterministic_init4.fs"; "lib_deterministic_init4.fs"; "flag_deterministic_init5.fs"; "lib_deterministic_init5.fs"; "flag_deterministic_init6.fs"; "lib_deterministic_init6.fs"; "flag_deterministic_init7.fs"; "lib_deterministic_init7.fs"; "flag_deterministic_init8.fs"; "lib_deterministic_init8.fs"; "flag_deterministic_init9.fs"; "lib_deterministic_init9.fs"; "flag_deterministic_init10.fs"; "lib_deterministic_init10.fs"; "flag_deterministic_init11.fs"; "lib_deterministic_init11.fs"; "flag_deterministic_init12.fs"; "lib_deterministic_init12.fs"; "flag_deterministic_init13.fs"; "lib_deterministic_init13.fs"; "flag_deterministic_init14.fs"; "lib_deterministic_init14.fs"; "flag_deterministic_init15.fs"; "lib_deterministic_init15.fs"; "flag_deterministic_init16.fs"; "lib_deterministic_init16.fs"; "flag_deterministic_init17.fs"; "lib_deterministic_init17.fs"; "flag_deterministic_init18.fs"; "lib_deterministic_init18.fs"; "flag_deterministic_init19.fs"; "lib_deterministic_init19.fs"; "flag_deterministic_init20.fs"; "lib_deterministic_init20.fs"; "flag_deterministic_init21.fs"; "lib_deterministic_init21.fs"; "flag_deterministic_init22.fs"; "lib_deterministic_init22.fs"; "flag_deterministic_init23.fs"; "lib_deterministic_init23.fs"; "flag_deterministic_init24.fs"; "lib_deterministic_init24.fs"; "flag_deterministic_init25.fs"; "lib_deterministic_init25.fs"; "flag_deterministic_init26.fs"; "lib_deterministic_init26.fs"; "flag_deterministic_init27.fs"; "lib_deterministic_init27.fs"; "flag_deterministic_init28.fs"; "lib_deterministic_init28.fs"; "flag_deterministic_init29.fs"; "lib_deterministic_init29.fs"; "flag_deterministic_init30.fs"; "lib_deterministic_init30.fs"; "flag_deterministic_init31.fs"; "lib_deterministic_init31.fs"; "flag_deterministic_init32.fs"; "lib_deterministic_init32.fs"; "flag_deterministic_init33.fs"; "lib_deterministic_init33.fs"; "flag_deterministic_init34.fs"; "lib_deterministic_init34.fs"; "flag_deterministic_init35.fs"; "lib_deterministic_init35.fs"; "flag_deterministic_init36.fs"; "lib_deterministic_init36.fs"; "flag_deterministic_init37.fs"; "lib_deterministic_init37.fs"; "flag_deterministic_init38.fs"; "lib_deterministic_init38.fs"; "flag_deterministic_init39.fs"; "lib_deterministic_init39.fs"; "flag_deterministic_init40.fs"; "lib_deterministic_init40.fs"; "flag_deterministic_init41.fs"; "lib_deterministic_init41.fs"; "flag_deterministic_init42.fs"; "lib_deterministic_init42.fs"; "flag_deterministic_init43.fs"; "lib_deterministic_init43.fs"; "flag_deterministic_init44.fs"; "lib_deterministic_init44.fs"; "flag_deterministic_init45.fs"; "lib_deterministic_init45.fs"; "flag_deterministic_init46.fs"; "lib_deterministic_init46.fs"; "flag_deterministic_init47.fs"; "lib_deterministic_init47.fs"; "flag_deterministic_init48.fs"; "lib_deterministic_init48.fs"; "flag_deterministic_init49.fs"; "lib_deterministic_init49.fs"; "flag_deterministic_init50.fs"; "lib_deterministic_init50.fs"; "flag_deterministic_init51.fs"; "lib_deterministic_init51.fs"; "flag_deterministic_init52.fs"; "lib_deterministic_init52.fs"; "flag_deterministic_init53.fs"; "lib_deterministic_init53.fs"; "flag_deterministic_init54.fs"; "lib_deterministic_init54.fs"; "flag_deterministic_init55.fs"; "lib_deterministic_init55.fs"; "flag_deterministic_init56.fs"; "lib_deterministic_init56.fs"; "flag_deterministic_init57.fs"; "lib_deterministic_init57.fs"; "flag_deterministic_init58.fs"; "lib_deterministic_init58.fs"; "flag_deterministic_init59.fs"; "lib_deterministic_init59.fs"; "flag_deterministic_init60.fs"; "lib_deterministic_init60.fs"; "flag_deterministic_init61.fs"; "lib_deterministic_init61.fs"; "flag_deterministic_init62.fs"; "lib_deterministic_init62.fs"; "flag_deterministic_init63.fs"; "lib_deterministic_init63.fs"; "flag_deterministic_init64.fs"; "lib_deterministic_init64.fs"; "flag_deterministic_init65.fs"; "lib_deterministic_init65.fs"; "flag_deterministic_init66.fs"; "lib_deterministic_init66.fs"; "flag_deterministic_init67.fs"; "lib_deterministic_init67.fs"; "flag_deterministic_init68.fs"; "lib_deterministic_init68.fs"; "flag_deterministic_init69.fs"; "lib_deterministic_init69.fs"; "flag_deterministic_init70.fs"; "lib_deterministic_init70.fs"; "flag_deterministic_init71.fs"; "lib_deterministic_init71.fs"; "flag_deterministic_init72.fs"; "lib_deterministic_init72.fs"; "flag_deterministic_init73.fs"; "lib_deterministic_init73.fs"; "flag_deterministic_init74.fs"; "lib_deterministic_init74.fs"; "flag_deterministic_init75.fs"; "lib_deterministic_init75.fs"; "flag_deterministic_init76.fs"; "lib_deterministic_init76.fs"; "flag_deterministic_init77.fs"; "lib_deterministic_init77.fs"; "flag_deterministic_init78.fs"; "lib_deterministic_init78.fs"; "flag_deterministic_init79.fs"; "lib_deterministic_init79.fs"; "flag_deterministic_init80.fs"; "lib_deterministic_init80.fs"; "flag_deterministic_init81.fs"; "lib_deterministic_init81.fs"; "flag_deterministic_init82.fs"; "lib_deterministic_init82.fs"; "flag_deterministic_init83.fs"; "lib_deterministic_init83.fs"; "flag_deterministic_init84.fs"; "lib_deterministic_init84.fs"; "flag_deterministic_init85.fs"; "lib_deterministic_init85.fs"]
 
-        fsc cfg "%s --optimize- -o test_deterministic_init.exe" cfg.fsc_flags (dicases @ ["test_deterministic_init.fs"])
+        fsc cfg "%s --optimize- -o test_deterministic_init.exe --realsig- " cfg.fsc_flags (dicases @ ["test_deterministic_init.fs"])
 
         peverify cfg "test_deterministic_init.exe"
 
-        fsc cfg "%s --optimize -o test_deterministic_init--optimize.exe" cfg.fsc_flags (dicases @ ["test_deterministic_init.fs"])
+        fsc cfg "%s --optimize -o test_deterministic_init--optimize.exe --realsig- " cfg.fsc_flags (dicases @ ["test_deterministic_init.fs"])
 
         peverify cfg "test_deterministic_init--optimize.exe"
 
-        fsc cfg "%s --optimize- -a -o test_deterministic_init_lib.dll" cfg.fsc_flags dicases
+        fsc cfg "%s --optimize- -a -o test_deterministic_init_lib.dll --realsig- " cfg.fsc_flags dicases
 
         peverify cfg "test_deterministic_init_lib.dll"
 
-        fsc cfg "%s --optimize- -r test_deterministic_init_lib.dll -o test_deterministic_init_exe.exe" cfg.fsc_flags ["test_deterministic_init.fs"]
+        fsc cfg "%s --optimize- -r test_deterministic_init_lib.dll -o test_deterministic_init_exe.exe --realsig- " cfg.fsc_flags ["test_deterministic_init.fs"]
 
         peverify cfg "test_deterministic_init_exe.exe"
 
-        fsc cfg "%s --optimize -a -o test_deterministic_init_lib--optimize.dll" cfg.fsc_flags dicases
+        fsc cfg "%s --realsig- --optimize -a -o test_deterministic_init_lib--optimize.dll --realsig- " cfg.fsc_flags dicases
 
         peverify cfg "test_deterministic_init_lib--optimize.dll"
 
-        fsc cfg "%s --optimize -r test_deterministic_init_lib--optimize.dll -o test_deterministic_init_exe--optimize.exe" cfg.fsc_flags ["test_deterministic_init.fs"]
+        fsc cfg "%s --realsig- --optimize -r test_deterministic_init_lib--optimize.dll -o test_deterministic_init_exe--optimize.exe --realsig- " cfg.fsc_flags ["test_deterministic_init.fs"]
 
         peverify cfg "test_deterministic_init_exe--optimize.exe"
 
         let static_init_cases = [ "test0.fs"; "test1.fs"; "test2.fs"; "test3.fs"; "test4.fs"; "test5.fs"; "test6.fs" ]
 
-        fsc cfg "%s --optimize- -o test_static_init.exe" cfg.fsc_flags (static_init_cases @ ["static-main.fs"])
+        fsc cfg "%s --optimize- -o test_static_init.exe --realsig- " cfg.fsc_flags (static_init_cases @ ["static-main.fs"])
 
         peverify cfg "test_static_init.exe"
 
-        fsc cfg "%s --optimize -o test_static_init--optimize.exe" cfg.fsc_flags (static_init_cases @ [ "static-main.fs" ])
+        fsc cfg "%s --optimize -o test_static_init--optimize.exe --realsig- " cfg.fsc_flags (static_init_cases @ [ "static-main.fs" ])
 
         peverify cfg "test_static_init--optimize.exe"
 
-        fsc cfg "%s --optimize- -a -o test_static_init_lib.dll" cfg.fsc_flags static_init_cases
+        fsc cfg "%s --optimize- -a -o test_static_init_lib.dll --realsig- " cfg.fsc_flags static_init_cases
 
         peverify cfg "test_static_init_lib.dll"
 
-        fsc cfg "%s --optimize- -r test_static_init_lib.dll -o test_static_init_exe.exe" cfg.fsc_flags ["static-main.fs"]
+        fsc cfg "%s --optimize- -r test_static_init_lib.dll -o test_static_init_exe.exe --realsig- " cfg.fsc_flags ["static-main.fs"]
 
         peverify cfg "test_static_init_exe.exe"
 
-        fsc cfg "%s --optimize -a -o test_static_init_lib--optimize.dll" cfg.fsc_flags static_init_cases
+        fsc cfg "%s --optimize -a -o test_static_init_lib--optimize.dll --realsig- " cfg.fsc_flags static_init_cases
 
         peverify cfg "test_static_init_lib--optimize.dll"
 
-        fsc cfg "%s --optimize -r test_static_init_lib--optimize.dll -o test_static_init_exe--optimize.exe" cfg.fsc_flags ["static-main.fs"]
+        fsc cfg "%s --realsig- --optimize -r test_static_init_lib--optimize.dll --realsig- -o test_static_init_exe--optimize.exe" cfg.fsc_flags ["static-main.fs"]
 
         peverify cfg "test_static_init_exe--optimize.exe"
 
@@ -1763,7 +1810,7 @@ module RegressionTests =
 #if !NETCOREAPP
 
     [<Test>]
-    let ``SRTP doesn't handle calling member hiding hinherited members`` () =
+    let ``SRTP doesn't handle calling member hiding inherited members`` () =
         let cfg = 
             testConfig "regression/5531"
        
@@ -2114,7 +2161,7 @@ module TypecheckTests =
     [<Test>]
     let ``sigs pos41`` () =
         let cfg = testConfig "typecheck/sigs"
-        fsc cfg "%s --target:library -o:pos41.dll --warnaserror --langversion:preview" cfg.fsc_flags ["pos41.fs"]
+        fsc cfg "%s --target:library -o:pos41.dll --warnaserror" cfg.fsc_flags ["pos41.fs"]
         peverify cfg "pos41.dll"
 
     [<Test>]

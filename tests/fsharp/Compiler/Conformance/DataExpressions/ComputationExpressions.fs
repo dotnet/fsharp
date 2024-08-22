@@ -183,13 +183,13 @@ let check msg actual expected = if actual <> expected then failwithf "FAILED %s,
     let includeMinimal = { includeMergeSourcesOverloads = false; includeBindReturnExtras=false }
 
     let ApplicativeLibTest opts source =
-        CompilerAssert.CompileExeAndRunWithOptions([| "/langversion:preview" |], (Source (applicativeLib opts + source)))
+        CompilerAssert.CompileExeAndRunWithOptions([| |], (Source (applicativeLib opts + source)))
 
     let ApplicativeLibErrorTest opts source errors =
         let lib = applicativeLib opts
         // Adjust the expected errors for the number of lines in the library
         let libLineAdjust = lib |> Seq.filter (fun c -> c = '\n') |> Seq.length
-        CompilerAssert.TypeCheckWithErrorsAndOptionsAndAdjust [| "/langversion:preview" |] libLineAdjust (lib + source) errors
+        CompilerAssert.TypeCheckWithErrorsAndOptionsAndAdjust [| |] libLineAdjust (lib + source) errors
 
     let ApplicativeLibErrorTestFeatureDisabled opts source errors =
         let lib = applicativeLib opts
@@ -633,7 +633,7 @@ let _ =
               (FSharpDiagnosticSeverity.Error, 10, (8, 9, 8, 13), "Unexpected keyword 'and!' in implementation file")|]
 
     [<Test>]
-    let ``AndBang Negative TraceApplicative let betweeen let! and and!`` () =
+    let ``AndBang Negative TraceApplicative let between let! and and!`` () =
         ApplicativeLibErrorTest includeAll """
 let tracer = TraceApplicative()
 
@@ -785,7 +785,7 @@ let check msg actual expected = if actual <> expected then failwithf "FAILED %s,
         """
 
     let OverloadLibTest inclInternalExt inclExternalExt source =
-        CompilerAssert.CompileExeAndRunWithOptions([| "/langversion:preview" |], (Source (overloadLib inclInternalExt inclExternalExt + source)))
+        CompilerAssert.CompileExeAndRunWithOptions([|  |], (Source (overloadLib inclInternalExt inclExternalExt + source)))
 
     [<Test>]
     let ``OverloadLib accepts overloaded methods`` () =

@@ -214,7 +214,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
     let extraSources = ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
     let utilitySources = []
     let referenceItems =  if String.IsNullOrEmpty(copyFiles) then [] else [copyFiles]
-    let framework = "net8.0"
+    let framework = "net9.0"
 
     // Arguments:
     //    outputType = OutputType.Exe, OutputType.Library or OutputType.Script
@@ -310,8 +310,8 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 
     match p with
 #if NETCOREAPP
-    | FSC_NETCORE (optimized, buildOnly) -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net8.0" optimized buildOnly
-    | FSI_NETCORE -> executeSingleTestBuildAndRun OutputType.Script "coreclr" "net8.0" true false
+    | FSC_NETCORE (optimized, buildOnly) -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net9.0" optimized buildOnly
+    | FSI_NETCORE -> executeSingleTestBuildAndRun OutputType.Script "coreclr" "net9.0" true false
 #else
     | FSC_NETFX (optimized, buildOnly) -> executeSingleTestBuildAndRun OutputType.Exe "net40" "net472" optimized buildOnly
     | FSI_NETFX -> executeSingleTestBuildAndRun OutputType.Script "net40" "net472" true false
@@ -327,7 +327,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 
     | FSC_NETFX_TEST_ROUNDTRIP_AS_DLL ->
         // Compile as a DLL to exercise pickling of interface data, then recompile the original source file referencing this DLL
-        // THe second compilation will not utilize the information from the first in any meaningful way, but the
+        // The second compilation will not utilize the information from the first in any meaningful way, but the
         // compiler will unpickle the interface and optimization data, so we test unpickling as well.
         use _cleanup = (cleanUpFSharpCore cfg)
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")
@@ -335,7 +335,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
         let sources = extraSources |> List.filter (fileExists cfg)
 
         fsc cfg "%s --optimize -a -o:test--optimize-lib.dll -g --langversion:preview " cfg.fsc_flags sources
-        fsc cfg "%s --optimize -r:test--optimize-lib.dll -o:test--optimize-client-of-lib.exe -g --langversion:preview " cfg.fsc_flags sources
+        fsc cfg "%s --realsig- --optimize -r:test--optimize-lib.dll -o:test--optimize-client-of-lib.exe -g --langversion:preview " cfg.fsc_flags sources
 
         peverify cfg "test--optimize-lib.dll"
         peverify cfg "test--optimize-client-of-lib.exe"

@@ -172,20 +172,25 @@ type CSharpLanguageVersion =
     | CSharp8 = 0
     | CSharp9 = 1
     | CSharp11 = 11
+    | CSharp12 = 12
     | Preview = 99
+
+module CSharpLanguageVersion =
+    /// Converts the given C# language version to a Roslyn language version value.
+    let toLanguageVersion lv =
+        match lv with
+        | CSharpLanguageVersion.CSharp8 -> LanguageVersion.CSharp8
+        | CSharpLanguageVersion.CSharp9 -> LanguageVersion.CSharp9
+        | CSharpLanguageVersion.CSharp11 -> LanguageVersion.CSharp11
+        | CSharpLanguageVersion.CSharp12 -> LanguageVersion.CSharp12
+        | CSharpLanguageVersion.Preview -> LanguageVersion.Preview
+        | _ -> LanguageVersion.Default
 
 [<AbstractClass; Sealed>]
 type CompilationUtil private () =
 
     static let createCSharpCompilation (source: SourceCodeFileKind, lv, tf, additionalReferences, name) =
-        let lv =
-            match lv with
-                | CSharpLanguageVersion.CSharp8 -> LanguageVersion.CSharp8
-                | CSharpLanguageVersion.CSharp9 -> LanguageVersion.CSharp9
-                | CSharpLanguageVersion.CSharp11 -> LanguageVersion.CSharp11
-                | CSharpLanguageVersion.Preview -> LanguageVersion.Preview
-                | _ -> LanguageVersion.Default
-
+        let lv = CSharpLanguageVersion.toLanguageVersion lv
         let tf = defaultArg tf TargetFramework.NetStandard20
         let source =
             match source.GetSourceText with
@@ -646,7 +651,7 @@ module rec CompilerAssertHelpers =
         let runtimeconfig = """
 {
     "runtimeOptions": {
-        "tfm": "net8.0",
+        "tfm": "net9.0",
         "framework": {
             "name": "Microsoft.NETCore.App",
             "version": "7.0"
@@ -1002,7 +1007,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         compileLibraryAndVerifyILWithOptions [||] (SourceCodeFileKind.Create("test.fs", source)) f
 
     static member RunScriptWithOptionsAndReturnResult options (source: string) =
-        // Intialize output and input streams
+        // Initialize output and input streams
         use inStream = new StringReader("")
         use outStream = new StringWriter()
         use errStream = new StringWriter()

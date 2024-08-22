@@ -2,7 +2,7 @@
 ///
 /// Each file in the project has a string identifier. It then contains a type and a function.
 /// The function calls functions from all the files the given file depends on and returns their
-/// results + it's own type in a tuple.
+/// results + its own type in a tuple.
 ///
 /// To model changes, we change the type name in a file which results in signatures of all the
 /// dependent files also changing.
@@ -439,7 +439,7 @@ let private renderFsProj (p: SyntheticProject) =
 
         <PropertyGroup>
             <OutputType>Exe</OutputType>
-            <TargetFramework>net8.0</TargetFramework>
+            <TargetFramework>net9.0</TargetFramework>
         </PropertyGroup>
 
         <ItemGroup>

@@ -20,14 +20,14 @@ let tryCreateTemporaryDirectory () =
     let directory = Path.Combine(Path.GetTempPath(), now()).Replace('-', '_')
     Directory.CreateDirectory(directory).FullName
 
-// Create a temporaryFileName -- newGuid is random --- there is no point validating the file alread exists because: threading and Path.ChangeExtension() is commonly used after this API
+// Create a temporaryFileName -- newGuid is random --- there is no point validating the file already exists because: threading and Path.ChangeExtension() is commonly used after this API
 let tryCreateTemporaryFileName () =
     let directory = tryCreateTemporaryDirectory ()
     let fileName = ("Temp-" + Guid.NewGuid().ToString() + ".tmp").Replace('-', '_')
     let filePath = Path.Combine(directory, fileName)
     filePath
 
-// Create a temporaryFileName -- newGuid is random --- there is no point validating the file alread exists because: threading and Path.ChangeExtension() is commonly used after this API
+// Create a temporaryFileName -- newGuid is random --- there is no point validating the file already exists because: threading and Path.ChangeExtension() is commonly used after this API
 let tryCreateTemporaryFileNameInDirectory (directory: DirectoryInfo) =
     let fileName = ("Temp-" + Guid.NewGuid().ToString() + ".tmp").Replace('-', '_')
     let filePath = Path.Combine(directory.FullName, fileName)
@@ -302,7 +302,7 @@ let config configurationName envVars =
     let fsharpCoreArchitecture = "netstandard2.0"
     let fsharpBuildArchitecture = "netstandard2.0"
     let fsharpCompilerInteractiveSettingsArchitecture = "netstandard2.0"
-    let dotnetArchitecture = "net8.0"
+    let dotnetArchitecture = "net9.0"
 #if NET472
     let fscArchitecture = "net472"
     let fsiArchitecture = "net472"

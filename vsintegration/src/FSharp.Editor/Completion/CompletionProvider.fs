@@ -334,7 +334,7 @@ type internal FSharpCompletionProvider
 
             let defines, langVersion, strictIndentation = document.GetFsharpParsingOptions()
 
-            let shouldProvideCompetion =
+            let shouldProvideCompletion =
                 CompletionUtils.shouldProvideCompletion (
                     document.Id,
                     document.FilePath,
@@ -346,7 +346,7 @@ type internal FSharpCompletionProvider
                     ct
                 )
 
-            if shouldProvideCompetion then
+            if shouldProvideCompletion then
                 let inline getAllSymbols (fileCheckResults: FSharpCheckFileResults) =
                     if settings.IntelliSense.IncludeSymbolsFromUnopenedNamespacesOrModules then
                         assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies(fileCheckResults)

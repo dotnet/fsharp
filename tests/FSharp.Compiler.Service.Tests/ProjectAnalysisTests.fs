@@ -2821,7 +2821,7 @@ let ``Test Project17 all symbols`` () =
 
 
 //-----------------------------------------------------------------------------------------
-// Misc - generic type definnitions
+// Misc - generic type definitions
 
 module internal Project18 =
 
@@ -5075,31 +5075,34 @@ let ``Test Project40 all symbols`` () =
     let allSymbolUsesInfo =  [ for s in allSymbolUses -> s.Symbol.DisplayName, tups s.Range, attribsOfSymbol s.Symbol ]
     allSymbolUsesInfo |> shouldEqual
           [("option", ((4, 10), (4, 16)), ["abbrev"]); ("x", ((4, 7), (4, 8)), []);
-           ("x", ((4, 23), (4, 24)), []);
-           ("IsSome", ((4, 23), (4, 31)), ["member"; "prop"; "funky"]);
-           ("x", ((4, 33), (4, 34)), []);
-           ("IsNone", ((4, 33), (4, 41)), ["member"; "prop"; "funky"]);
-           ("f", ((4, 4), (4, 5)), ["val"]);
-           ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["class"]);
-           ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["member"]);
-           ("CompilationRepresentationFlags", ((6, 28), (6, 58)),
-            ["enum"; "valuetype"]);
-           ("UseNullAsTrueValue", ((6, 28), (6, 77)), ["field"; "static"; "8"]);
-           ("string", ((9, 11), (9, 17)), ["abbrev"]);
-           ("string", ((9, 11), (9, 17)), ["abbrev"]); ("A", ((8, 6), (8, 7)), []);
-           ("B", ((9, 6), (9, 7)), []); ("C", ((7, 5), (7, 6)), ["union"]);
-           ("IsItAnA", ((10, 13), (10, 20)), ["member"; "getter"; "funky"]);
-           ("IsItAnAMethod", ((11, 13), (11, 26)), ["member"; "funky"]);
-           ("x", ((10, 11), (10, 12)), []); ("x", ((10, 29), (10, 30)), []);
-           ("A", ((10, 36), (10, 37)), []); ("B", ((10, 48), (10, 49)), []);
-           ("x", ((11, 11), (11, 12)), []); ("x", ((11, 37), (11, 38)), []);
-           ("A", ((11, 44), (11, 45)), []); ("B", ((11, 56), (11, 57)), []);
-           ("C", ((13, 10), (13, 11)), ["union"]); ("x", ((13, 7), (13, 8)), []);
-           ("x", ((13, 15), (13, 16)), []);
-           ("IsItAnA", ((13, 15), (13, 24)), ["member"; "prop"; "funky"]);
-           ("x", ((13, 25), (13, 26)), []);
-           ("IsItAnAMethod", ((13, 25), (13, 40)), ["member"; "funky"]);
-           ("g", ((13, 4), (13, 5)), ["val"]); ("M", ((2, 7), (2, 8)), ["module"])]
+            ("x", ((4, 23), (4, 24)), []);
+            ("IsSome", ((4, 23), (4, 31)), ["member"; "prop"; "funky"]);
+            ("x", ((4, 33), (4, 34)), []);
+            ("IsNone", ((4, 33), (4, 41)), ["member"; "prop"; "funky"]);
+            ("f", ((4, 4), (4, 5)), ["val"]);
+            ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["class"]);
+            ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["member"]);
+            ("CompilationRepresentationFlags", ((6, 28), (6, 58)), ["enum"; "valuetype"]);
+            ("UseNullAsTrueValue", ((6, 28), (6, 77)), ["field"; "static"; "8"]);
+            ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["class"]);
+            ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["member"]);
+            ("CompilationRepresentationFlags", ((6, 28), (6, 58)), ["enum"; "valuetype"]);
+            ("UseNullAsTrueValue", ((6, 28), (6, 77)), ["field"; "static"; "8"]);
+            ("string", ((9, 11), (9, 17)), ["abbrev"]);
+            ("string", ((9, 11), (9, 17)), ["abbrev"]); ("A", ((8, 6), (8, 7)), []);
+            ("B", ((9, 6), (9, 7)), []); ("C", ((7, 5), (7, 6)), ["union"]);
+            ("IsItAnA", ((10, 13), (10, 20)), ["member"; "getter"; "funky"]);
+            ("IsItAnAMethod", ((11, 13), (11, 26)), ["member"; "funky"]);
+            ("x", ((10, 11), (10, 12)), []); ("x", ((10, 29), (10, 30)), []);
+            ("A", ((10, 36), (10, 37)), []); ("B", ((10, 48), (10, 49)), []);
+            ("x", ((11, 11), (11, 12)), []); ("x", ((11, 37), (11, 38)), []);
+            ("A", ((11, 44), (11, 45)), []); ("B", ((11, 56), (11, 57)), []);
+            ("C", ((13, 10), (13, 11)), ["union"]); ("x", ((13, 7), (13, 8)), []);
+            ("x", ((13, 15), (13, 16)), []);
+            ("IsItAnA", ((13, 15), (13, 24)), ["member"; "prop"; "funky"]);
+            ("x", ((13, 25), (13, 26)), []);
+            ("IsItAnAMethod", ((13, 25), (13, 40)), ["member"; "funky"]);
+            ("g", ((13, 4), (13, 5)), ["val"]); ("M", ((2, 7), (2, 8)), ["module"])]
 
 //--------------------------------------------
 

@@ -38,6 +38,19 @@ let AccFreeVarsStackGuardDepth = GetEnvInteger "FSHARP_AccFreeVars" 100
 let RemapExprStackGuardDepth = GetEnvInteger "FSHARP_RemapExpr" 50
 let FoldExprStackGuardDepth = GetEnvInteger "FSHARP_FoldExpr" 50
 
+let inline compareBy (x: 'T MaybeNull) (y: 'T MaybeNull) ([<InlineIfLambda>]func: 'T -> 'K)  = 
+#if NO_CHECKNULLS
+    compare (func x) (func y)
+#else
+    match x,y with
+    | null,null -> 0
+    | null,_ -> -1
+    | _,null -> 1
+    | x,y ->  compare (func !!x) (func !!y)
+#endif
+
+
+
 //---------------------------------------------------------------------------
 // Basic data structures
 //---------------------------------------------------------------------------
@@ -166,8 +179,9 @@ let generalizeTypars tps = List.map generalizeTypar tps
 let rec remapTypeAux (tyenv: Remap) (ty: TType) =
   let ty = stripTyparEqns ty
   match ty with
-  | TType_var (tp, _) as ty ->
-      instTyparRef tyenv.tpinst ty tp
+  | TType_var (tp, nullness) as ty -> 
+      let res = instTyparRef tyenv.tpinst ty tp
+      addNullnessToTy nullness res
 
   | TType_app (tcref, tinst, flags) as ty -> 
       match tyenv.tyconRefRemap.TryFind tcref with 
@@ -257,6 +271,7 @@ and remapTyparConstraintsAux tyenv cs =
          | TyparConstraint.SupportsComparison _ 
          | TyparConstraint.SupportsEquality _ 
          | TyparConstraint.SupportsNull _ 
+         | TyparConstraint.NotSupportsNull _ 
          | TyparConstraint.IsUnmanaged _ 
          | TyparConstraint.IsNonNullableStruct _ 
          | TyparConstraint.IsReferenceType _ 
@@ -622,12 +637,12 @@ let mkByrefTyWithInference (g: TcGlobals) ty1 ty2 =
     else 
         TType_app (g.byref_tcr, [ty1], g.knownWithoutNull) 
 
-let mkArrayTy (g: TcGlobals) rank ty m =
+let mkArrayTy (g: TcGlobals) rank nullness ty m =
     if rank < 1 || rank > 32 then
         errorR(Error(FSComp.SR.tastopsMaxArrayThirtyTwo rank, m))
-        TType_app (g.il_arr_tcr_map[3], [ty], g.knownWithoutNull)
+        TType_app (g.il_arr_tcr_map[3], [ty], nullness)
     else
-        TType_app (g.il_arr_tcr_map[rank - 1], [ty], g.knownWithoutNull)
+        TType_app (g.il_arr_tcr_map[rank - 1], [ty], nullness)
 
 //--------------------------------------------------------------------------
 // Tuple compilation (types)
@@ -718,7 +733,7 @@ let reduceTyconMeasureableOrProvided (g: TcGlobals) (tycon: Tycon) tyargs =
     | TMeasureableRepr ty -> 
         if isNil tyargs then ty else instType (mkTyconInst tycon tyargs) ty
 #if !NO_TYPEPROVIDERS
-    | TProvidedTypeRepr info when info.IsErased -> info.BaseTypeForErased (range0, g.obj_ty)
+    | TProvidedTypeRepr info when info.IsErased -> info.BaseTypeForErased (range0, g.obj_ty_withNulls)
 #endif
     | _ -> invalidArg "tc" "this type definition is not a refinement" 
 
@@ -726,13 +741,15 @@ let reduceTyconRefMeasureableOrProvided (g: TcGlobals) (tcref: TyconRef) tyargs 
     reduceTyconMeasureableOrProvided g tcref.Deref tyargs
 
 let rec stripTyEqnsA g canShortcut ty = 
-    let ty = stripTyparEqnsAux canShortcut ty 
+    let ty = stripTyparEqnsAux KnownWithoutNull canShortcut ty 
     match ty with 
-    | TType_app (tcref, tinst, _) -> 
+    | TType_app (tcref, tinst, nullness) ->
         let tycon = tcref.Deref
         match tycon.TypeAbbrev with 
         | Some abbrevTy -> 
-            stripTyEqnsA g canShortcut (applyTyconAbbrev abbrevTy tycon tinst)
+            let reducedTy = applyTyconAbbrev abbrevTy tycon tinst
+            let reducedTy2 = addNullnessToTy nullness reducedTy
+            stripTyEqnsA g canShortcut reducedTy2
         | None -> 
             // This is the point where we get to add additional conditional normalizing equations 
             // into the type system. Such power!
@@ -744,7 +761,9 @@ let rec stripTyEqnsA g canShortcut ty =
 
             // Add the equation double<1> = double for units of measure.
             elif tycon.IsMeasureableReprTycon && List.forall (isDimensionless g) tinst then
-                stripTyEqnsA g canShortcut (reduceTyconMeasureableOrProvided g tycon tinst)
+                let reducedTy = reduceTyconMeasureableOrProvided g tycon tinst
+                let reducedTy2 = addNullnessToTy nullness reducedTy
+                stripTyEqnsA g canShortcut reducedTy2
             else 
                 ty
     | ty -> ty
@@ -759,23 +778,25 @@ let evalAnonInfoIsStruct (anonInfo: AnonRecdTypeInfo) =
     evalTupInfoIsStruct anonInfo.TupInfo
 
 /// This erases outermost occurrences of inference equations, type abbreviations, non-generated provided types
-/// and measureable types (float<_>).
+/// and measurable types (float<_>).
 /// It also optionally erases all "compilation representations", i.e. function and
 /// tuple types, and also "nativeptr<'T> --> System.IntPtr"
 let rec stripTyEqnsAndErase eraseFuncAndTuple (g: TcGlobals) ty =
     let ty = stripTyEqns g ty
     match ty with
-    | TType_app (tcref, args, _) -> 
+    | TType_app (tcref, args, nullness) ->
         let tycon = tcref.Deref
-        if tycon.IsErased then
-            stripTyEqnsAndErase eraseFuncAndTuple g (reduceTyconMeasureableOrProvided g tycon args)
+        if tycon.IsErased  then
+            let reducedTy = reduceTyconMeasureableOrProvided g tycon args
+            let reducedTy2 = addNullnessToTy nullness reducedTy
+            stripTyEqnsAndErase eraseFuncAndTuple g reducedTy2
         elif tyconRefEq g tcref g.nativeptr_tcr && eraseFuncAndTuple then 
             stripTyEqnsAndErase eraseFuncAndTuple g g.nativeint_ty
         else
             ty
 
-    | TType_fun(domainTy, rangeTy, flags) when eraseFuncAndTuple ->
-        TType_app(g.fastFunc_tcr, [ domainTy; rangeTy ], flags) 
+    | TType_fun(domainTy, rangeTy, nullness) when eraseFuncAndTuple ->
+        TType_app(g.fastFunc_tcr, [ domainTy; rangeTy ], nullness) 
 
     | TType_tuple(tupInfo, l) when eraseFuncAndTuple ->
         mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) l
@@ -855,7 +876,7 @@ let isMeasureTy g ty = ty |> stripTyEqns g |> (function TType_measure _ -> true 
 
 let isProvenUnionCaseTy ty = match ty with TType_ucase _ -> true | _ -> false
 
-let mkAppTy tcref tyargs = TType_app(tcref, tyargs, 0uy)
+let mkWoNullAppTy tcref tyargs = TType_app(tcref, tyargs, KnownWithoutNull)
 
 let mkProvenUnionCaseTy ucref tyargs = TType_ucase(ucref, tyargs)
 
@@ -891,14 +912,14 @@ let (|RefTupleTy|_|) g ty = ty |> stripTyEqns g |> (function TType_tuple(tupInfo
 let (|FunTy|_|) g ty = ty |> stripTyEqns g |> (function TType_fun(domainTy, rangeTy, _) -> ValueSome (domainTy, rangeTy) | _ -> ValueNone)
 
 let tryNiceEntityRefOfTy ty = 
-    let ty = stripTyparEqnsAux false ty 
+    let ty = stripTyparEqnsAux KnownWithoutNull false ty 
     match ty with
     | TType_app (tcref, _, _) -> ValueSome tcref
     | TType_measure (Measure.Const tcref) -> ValueSome tcref
     | _ -> ValueNone
 
 let tryNiceEntityRefOfTyOption ty = 
-    let ty = stripTyparEqnsAux false ty 
+    let ty = stripTyparEqnsAux KnownWithoutNull false ty 
     match ty with
     | TType_app (tcref, _, _) -> Some tcref
     | TType_measure (Measure.Const tcref) -> Some tcref
@@ -918,7 +939,7 @@ let convertToTypeWithMetadataIfPossible g ty =
         mkOuterCompiledTupleTy g (evalTupInfoIsStruct tupInfo) tupElemTys
     elif isFunTy g ty then 
         let a,b = destFunTy g ty
-        mkAppTy g.fastFunc_tcr [a; b]
+        mkWoNullAppTy g.fastFunc_tcr [a; b]
     else ty
  
 //---------------------------------------------------------------------------
@@ -927,9 +948,9 @@ let convertToTypeWithMetadataIfPossible g ty =
 
 let stripMeasuresFromTy g ty = 
     match ty with
-    | TType_app(tcref, tinst, flags) ->
+    | TType_app(tcref, tinst, nullness) ->
         let tinstR = tinst |> List.filter (isMeasureTy g >> not)
-        TType_app(tcref, tinstR, flags)
+        TType_app(tcref, tinstR, nullness)
     | _ -> ty
 
 //---------------------------------------------------------------------------
@@ -1014,6 +1035,7 @@ and typarConstraintsAEquivAux erasureFlag g aenv tpc1 tpc2 =
     | TyparConstraint.SupportsComparison _, TyparConstraint.SupportsComparison _ 
     | TyparConstraint.SupportsEquality _, TyparConstraint.SupportsEquality _ 
     | TyparConstraint.SupportsNull _, TyparConstraint.SupportsNull _ 
+    | TyparConstraint.NotSupportsNull _, TyparConstraint.NotSupportsNull _ 
     | TyparConstraint.IsNonNullableStruct _, TyparConstraint.IsNonNullableStruct _
     | TyparConstraint.IsReferenceType _, TyparConstraint.IsReferenceType _ 
     | TyparConstraint.IsUnmanaged _, TyparConstraint.IsUnmanaged _
@@ -1040,7 +1062,7 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
     | TType_forall(tps1, rty1), TType_forall(tps2, retTy2) -> 
         typarsAEquivAux erasureFlag g aenv tps1 tps2 && typeAEquivAux erasureFlag g (aenv.BindEquivTypars tps1 tps2) rty1 retTy2
 
-    | TType_var (tp1, _), TType_var (tp2, _) when typarEq tp1 tp2 -> 
+    | TType_var (tp1, _), TType_var (tp2, _) when typarEq tp1 tp2 -> // NOTE: nullness annotations are ignored for type equivalence
         true
 
     | TType_var (tp1, _), _ ->
@@ -1048,7 +1070,8 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
         | Some tpTy1 -> typeEquivAux erasureFlag g tpTy1 ty2
         | None -> false
 
-    | TType_app (tcref1, tinst1, _), TType_app (tcref2, tinst2, _) -> 
+    // NOTE: nullness annotations are ignored for type equivalence
+    | TType_app (tcref1, tinst1, _), TType_app (tcref2, tinst2, _) ->
         tcrefAEquiv g aenv tcref1 tcref2 &&
         typesAEquivAux erasureFlag g aenv tinst1 tinst2
 
@@ -1060,12 +1083,13 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
     | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2) -> 
         structnessAEquiv tupInfo1 tupInfo2 && typesAEquivAux erasureFlag g aenv l1 l2
 
+    // NOTE: nullness annotations are ignored for type equivalence
+    | TType_fun (domainTy1, rangeTy1, _), TType_fun (domainTy2, rangeTy2, _) ->
+        typeAEquivAux erasureFlag g aenv domainTy1 domainTy2 && typeAEquivAux erasureFlag g aenv rangeTy1 rangeTy2
+
     | TType_anon (anonInfo1, l1), TType_anon (anonInfo2, l2) -> 
         anonInfoEquiv anonInfo1 anonInfo2 &&
         typesAEquivAux erasureFlag g aenv l1 l2
-
-    | TType_fun (domainTy1, rangeTy1, _), TType_fun (domainTy2, rangeTy2, _) -> 
-        typeAEquivAux erasureFlag g aenv domainTy1 domainTy2 && typeAEquivAux erasureFlag g aenv rangeTy1 rangeTy2
 
     | TType_measure m1, TType_measure m2 -> 
         match erasureFlag with 
@@ -1073,6 +1097,18 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
         | _ -> true 
 
     | _ -> false
+
+and nullnessSensitivetypeAEquivAux  erasureFlag g aenv ty1 ty2 = 
+    let ty1 = stripTyEqnsWrtErasure erasureFlag g ty1 
+    let ty2 = stripTyEqnsWrtErasure erasureFlag g ty2
+    match ty1, ty2 with
+    | TType_var (_,n1), TType_var (_,n2)
+    | TType_app (_,_,n1), TType_app (_,_,n2)     
+    | TType_fun (_,_,n1), TType_fun (_,_,n2) ->
+        n1 === n2
+    | _ -> true
+
+    && typeAEquivAux erasureFlag g aenv ty1 ty2
 
 and anonInfoEquiv (anonInfo1: AnonRecdTypeInfo) (anonInfo2: AnonRecdTypeInfo) =
     ccuEq anonInfo1.Assembly anonInfo2.Assembly && 
@@ -1133,18 +1169,30 @@ let isErasedType g ty =
   | _ -> false
 
 // Return all components of this type expression that cannot be tested at runtime
-let rec getErasedTypes g ty = 
+let rec getErasedTypes g ty checkForNullness = 
     let ty = stripTyEqns g ty
     if isErasedType g ty then [ty] else 
     match ty with
     | TType_forall(_, bodyTy) -> 
-        getErasedTypes g bodyTy
-    | TType_var (tp, _) -> 
-        if tp.IsErased then [ty] else []
-    | TType_app (_, b, _) | TType_ucase(_, b) | TType_anon (_, b) | TType_tuple (_, b) ->
-        List.foldBack (fun ty tys -> getErasedTypes g ty @ tys) b []
-    | TType_fun (domainTy, rangeTy, _) -> 
-        getErasedTypes g domainTy @ getErasedTypes g rangeTy
+        getErasedTypes g bodyTy checkForNullness
+
+    | TType_var (tp, nullness) -> 
+        match checkForNullness, nullness.Evaluate() with
+        | true, NullnessInfo.WithNull -> [ty] // with-null annotations can't be tested at runtime, Nullable<> is not part of Nullness feature as of now.
+        | _ -> if tp.IsErased then [ty] else []
+
+    | TType_app (_, b, nullness) ->
+        match checkForNullness, nullness.Evaluate() with
+        | true, NullnessInfo.WithNull -> [ty]
+        | _ -> List.foldBack (fun ty tys -> getErasedTypes g ty false @ tys) b []
+
+    | TType_ucase(_, b) | TType_anon (_, b) | TType_tuple (_, b) ->
+        List.foldBack (fun ty tys -> getErasedTypes g ty false @ tys) b []
+
+    | TType_fun (domainTy, rangeTy, nullness) -> 
+        match checkForNullness, nullness.Evaluate() with
+        | true, NullnessInfo.WithNull -> [ty]
+        | _ -> getErasedTypes g domainTy false @ getErasedTypes g rangeTy false
     | TType_measure _ -> 
         [ty]
 
@@ -1152,9 +1200,9 @@ let rec getErasedTypes g ty =
 // Standard orderings, e.g. for order set/map keys
 //---------------------------------------------------------------------------
 
-let valOrder = { new IComparer<Val> with member _.Compare(v1, v2) = compare v1.Stamp v2.Stamp }
+let valOrder = { new IComparer<Val> with member _.Compare(v1, v2) = compareBy v1 v2 _.Stamp }
 
-let tyconOrder = { new IComparer<Tycon> with member _.Compare(tycon1, tycon2) = compare tycon1.Stamp tycon2.Stamp }
+let tyconOrder = { new IComparer<Tycon> with member _.Compare(tycon1, tycon2) = compareBy tycon1 tycon2 _.Stamp }
 
 let recdFieldRefOrder = 
     { new IComparer<RecdFieldRef> with 
@@ -1236,11 +1284,14 @@ let rec stripDebugPoints expr =
     | Expr.DebugPoint (_, innerExpr) -> stripDebugPoints innerExpr
     | expr -> expr
 
-// Strip debug points and remember how to recrete them
+// Strip debug points and remember how to recreate them
 let (|DebugPoints|) expr =
-    match stripExpr expr with
-    | Expr.DebugPoint (dp, innerExpr) -> innerExpr, (fun e -> Expr.DebugPoint(dp, e))
-    | expr -> expr, id
+    let rec loop expr debug =
+        match stripExpr expr with
+        | Expr.DebugPoint (dp, innerExpr) -> loop innerExpr (debug << fun e -> Expr.DebugPoint (dp, e))
+        | expr -> expr, debug
+
+    loop expr id
 
 let mkCase (a, b) = TCase(a, b)
 
@@ -1823,6 +1874,7 @@ let isInByrefTy g ty =
         | _ -> false) 
 
 let isOutByrefTag g ty = ty |> stripTyEqns g |> (function TType_app(tcref, [], _) -> tyconRefEq g g.byrefkind_Out_tcr tcref | _ -> false) 
+
 let isOutByrefTy g ty = 
     ty |> stripTyEqns g |> (function 
         | TType_app(tcref, [_; tagTy], _) when g.byref2_tcr.CanDeref -> tyconRefEq g g.byref2_tcr tcref && isOutByrefTag g tagTy         
@@ -2129,7 +2181,7 @@ let unionFreeTycons s1 s2 =
 
 let typarOrder = 
     { new IComparer<Typar> with 
-        member x.Compare (v1: Typar, v2: Typar) = compare v1.Stamp v2.Stamp } 
+        member x.Compare (v1: Typar, v2: Typar) = compareBy v1 v2 _.Stamp } 
 
 let emptyFreeTypars = Zset.empty typarOrder
 let unionFreeTypars s1 s2 = 
@@ -2289,6 +2341,7 @@ and accFreeInTyparConstraint opts tpc acc =
     | TyparConstraint.SupportsComparison _
     | TyparConstraint.SupportsEquality _
     | TyparConstraint.SupportsNull _ 
+    | TyparConstraint.NotSupportsNull _ 
     | TyparConstraint.IsNonNullableStruct _ 
     | TyparConstraint.IsReferenceType _ 
     | TyparConstraint.IsUnmanaged _
@@ -2424,6 +2477,7 @@ and accFreeInTyparConstraintLeftToRight g cxFlag thruFlag acc tpc =
     | TyparConstraint.SupportsComparison _ 
     | TyparConstraint.SupportsEquality _ 
     | TyparConstraint.SupportsNull _ 
+    | TyparConstraint.NotSupportsNull _ 
     | TyparConstraint.IsNonNullableStruct _ 
     | TyparConstraint.IsUnmanaged _
     | TyparConstraint.IsReferenceType _ 
@@ -2472,7 +2526,7 @@ and accFreeInTypeLeftToRight g cxFlag thruFlag acc ty =
         let racc = accFreeInTypeLeftToRight g cxFlag thruFlag emptyFreeTyparsLeftToRight r
         unionFreeTyparsLeftToRight (boundTyparsLeftToRight g cxFlag thruFlag tps racc) acc
 
-    | TType_measure unt -> 
+    | TType_measure unt ->
         let mvars = ListMeasureVarOccsWithNonZeroExponents unt
         List.foldBack (fun (tp, _) acc -> accFreeTyparRefLeftToRight g cxFlag thruFlag acc tp) mvars acc
 
@@ -2810,7 +2864,10 @@ let generalizedTyconRef (g: TcGlobals) tcref =
     let tinst = generalTyconRefInst tcref
     TType_app(tcref, tinst, g.knownWithoutNull)
 
-let isTTyparCoercesToType = function TyparConstraint.CoercesTo _ -> true | _ -> false
+let isTTyparCoercesToType tpc = 
+    match tpc with 
+    | TyparConstraint.CoercesTo _  -> true
+    | _ -> false
 
 //--------------------------------------------------------------------------
 // Print Signatures/Types - prelude
@@ -2948,7 +3005,7 @@ module PrettyTypes =
     // Hence we double check here that the thing is really a type variable
     let safeDestAnyParTy orig g ty = match tryAnyParTy g ty with ValueNone -> orig | ValueSome x -> x
 
-    let foldUnurriedArgInfos f z (x: UncurriedArgInfos) = List.fold (fold1Of2 f) z x
+    let foldUncurriedArgInfos f z (x: UncurriedArgInfos) = List.fold (fold1Of2 f) z x
     let foldTypar f z (x: Typar) = foldOn mkTyparTy f z x
     let mapTypar g f (x: Typar) : Typar = (mkTyparTy >> f >> safeDestAnyParTy x g) x
 
@@ -2966,7 +3023,7 @@ module PrettyTypes =
 
     let PrettifyInstAndUncurriedSig g (x: TyparInstantiation * UncurriedArgInfos * TType) = 
         PrettifyThings g 
-            (fun f -> foldTriple (foldTyparInst f, foldUnurriedArgInfos f, f)) 
+            (fun f -> foldTriple (foldTyparInst f, foldUncurriedArgInfos f, f)) 
             (fun f -> mapTriple (mapTyparInst g f, List.map (map1Of2 f), f))
             x
 
@@ -3101,8 +3158,10 @@ type DisplayEnv =
       shortConstraints: bool
       useColonForReturnType: bool
       showAttributes: bool
+      showCsharpCodeAnalysisAttributes: bool
       showOverrides: bool
       showStaticallyResolvedTyparAnnotations: bool
+      showNullnessAnnotations: bool option
       abbreviateAdditionalConstraints: bool
       showTyparDefaultConstraints: bool
       showDocumentation: bool
@@ -3135,8 +3194,10 @@ type DisplayEnv =
         suppressMutableKeyword = false
         showMemberContainers = false
         showAttributes = false
+        showCsharpCodeAnalysisAttributes = false
         showOverrides = true
         showStaticallyResolvedTyparAnnotations = true
+        showNullnessAnnotations = None
         showDocumentation = false
         abbreviateAdditionalConstraints = false
         showTyparDefaultConstraints = false
@@ -3182,7 +3243,7 @@ type DisplayEnv =
               ControlPath
               (splitNamespace ExtraTopLevelOperatorsName) ]
 
-let (+.+) s1 s2 = if String.IsNullOrEmpty(s1) then s2 else s1+"."+s2
+let (+.+) s1 s2 = if String.IsNullOrEmpty(s1) then s2 else !!s1+"."+s2
 
 let layoutOfPath p =
     sepListL SepL.dot (List.map (tagNamespace >> wordL) p)
@@ -3387,7 +3448,7 @@ let trimPathByDisplayEnv denv path =
 
 let superOfTycon (g: TcGlobals) (tycon: Tycon) = 
     match tycon.TypeContents.tcaug_super with 
-    | None -> g.obj_ty 
+    | None -> g.obj_ty_noNulls 
     | Some ty -> ty 
 
 /// walk a TyconRef's inheritance tree, yielding any parent types as an array
@@ -3466,6 +3527,19 @@ let TryFindFSharpStringAttribute g nm attrs =
     match TryFindFSharpAttribute g nm attrs with
     | Some(Attrib(_, _, [ AttribStringArg b ], _, _, _, _)) -> Some b
     | _ -> None
+
+let TryFindLocalizedFSharpStringAttribute g nm attrs = 
+    match TryFindFSharpAttribute g nm attrs with
+    | Some(Attrib(_, _, [ AttribStringArg b ], namedArgs, _, _, _)) -> 
+        match namedArgs with 
+        | ExtractAttribNamedArg "Localize" (AttribBoolArg true) -> 
+            #if PROTO || BUILDING_WITH_LKG
+            Some b
+            #else
+            FSComp.SR.GetTextOpt(b)
+            #endif
+        | _ -> Some b
+    | _ -> None
     
 let TryFindILAttribute (AttribInfo (atref, _)) attrs = 
     HasILAttribute atref attrs
@@ -3474,6 +3548,9 @@ let TryFindILAttributeOpt attr attrs =
     match attr with
     | Some (AttribInfo (atref, _)) -> HasILAttribute atref attrs
     | _ -> false
+
+let IsILAttrib  (AttribInfo (builtInAttrRef, _)) attr = isILAttrib builtInAttrRef attr
+    
 
 /// Analyze three cases for attributes declared on type definitions: IL-declared attributes, F#-declared attributes and
 /// provided attributes.
@@ -4005,32 +4082,44 @@ module DebugPrint =
          else
              tupleL tinstL ^^ tcL
             
+    and auxAddNullness coreL (nullness: Nullness) = 
+        match nullness.Evaluate() with
+        | NullnessInfo.WithNull -> coreL ^^ wordL (tagText "?")
+        | NullnessInfo.WithoutNull -> coreL
+        | NullnessInfo.AmbivalentToNull -> coreL //^^ wordL (tagText "%")
+
     and auxTypeWrapL env isAtomic ty = 
         let wrap x = bracketIfL isAtomic x in // wrap iff require atomic expr 
         match stripTyparEqns ty with
         | TType_forall (typars, bodyTy) -> 
            (leftL (tagText "!") ^^ layoutTyparDecls typars --- auxTypeL env bodyTy) |> wrap
 
-        | TType_ucase (UnionCaseRef(tcref, _), tinst)
-
-        | TType_app (tcref, tinst, _) -> 
+        | TType_ucase (UnionCaseRef(tcref, _), tinst) ->
            let prefix = tcref.IsPrefixDisplay
            let tcL = layoutTyconRef tcref
            auxTyparsL env tcL prefix tinst
 
+        | TType_app (tcref, tinst, nullness) ->
+           let prefix = tcref.IsPrefixDisplay
+           let tcL = layoutTyconRef tcref
+           let coreL = auxTyparsL env tcL prefix tinst
+           auxAddNullness coreL nullness
+
         | TType_tuple (_tupInfo, tys) ->
             sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) tys) |> wrap
 
-        | TType_fun (domainTy, rangeTy, _) ->
-            ((auxTypeAtomL env domainTy ^^ wordL (tagText "->")) --- auxTypeL env rangeTy) |> wrap
+        | TType_fun (domainTy, rangeTy, nullness) ->
+           let coreL = ((auxTypeAtomL env domainTy ^^ wordL (tagText "->")) --- auxTypeL env rangeTy)  |> wrap
+           auxAddNullness coreL nullness
 
-        | TType_var (typar, _) ->
-            auxTyparWrapL env isAtomic typar 
+        | TType_var (typar, nullness) ->
+           let coreL = auxTyparWrapL env isAtomic typar
+           auxAddNullness coreL nullness
 
         | TType_anon (anonInfo, tys) ->
-            braceBarL (sepListL (wordL (tagText ";")) (List.map2 (fun nm ty -> wordL (tagField nm) --- auxTypeAtomL env ty) (Array.toList anonInfo.SortedNames) tys))
+           braceBarL (sepListL (wordL (tagText ";")) (List.map2 (fun nm ty -> wordL (tagField nm) --- auxTypeAtomL env ty) (Array.toList anonInfo.SortedNames) tys))
 
-        | TType_measure unt -> 
+        | TType_measure unt ->
 #if DEBUG
           leftL (tagText "{") ^^
           (match global_g with
@@ -4130,6 +4219,8 @@ module DebugPrint =
             wordL (tagText "struct") |> constraintPrefix
         | TyparConstraint.IsReferenceType _ ->
             wordL (tagText "not struct") |> constraintPrefix
+        | TyparConstraint.NotSupportsNull _ ->
+            wordL (tagText "not null") |> constraintPrefix
         | TyparConstraint.IsUnmanaged _ ->
             wordL (tagText "unmanaged") |> constraintPrefix
         | TyparConstraint.SimpleChoice(tys, _) ->
@@ -6153,12 +6244,12 @@ and remapTyconRepr ctxt tmenv repr =
     | TProvidedTypeRepr info -> 
        TProvidedTypeRepr 
             { info with 
-                 LazyBaseType = info.LazyBaseType.Force (range0, ctxt.g.obj_ty) |> remapType tmenv |> LazyWithContext.NotLazy
+                 LazyBaseType = info.LazyBaseType.Force (range0, ctxt.g.obj_ty_withNulls) |> remapType tmenv |> LazyWithContext.NotLazy
                  // The load context for the provided type contains TyconRef objects. We must remap these.
                  // This is actually done on-demand (see the implementation of ProvidedTypeContext)
                  ProvidedType = 
                      info.ProvidedType.PApplyNoFailure (fun st -> 
-                         let ctxt = st.Context.RemapTyconRefs(unbox >> remapTyconRef tmenv.tyconRefRemap >> box) 
+                         let ctxt = st.Context.RemapTyconRefs(unbox >> remapTyconRef tmenv.tyconRefRemap >> box >> (!!)) 
                          ProvidedType.ApplyContext (st, ctxt)) }
 #endif
     | TNoRepr -> repr
@@ -6440,7 +6531,7 @@ let rec remarkExpr (m: range) x =
 
         // This code allows a feature where if a 'while'/'for' etc in a computation expression is
         // implemented using code inlining and is ultimately implemented by a corresponding construct somewhere
-        // in the remark'd code then aat least one debug point is recovered, based on the noted debug point for the original construct.
+        // in the remark'd code then at least one debug point is recovered, based on the noted debug point for the original construct.
         //
         // However it is imperfect, since only one debug point is recovered
         let op = 
@@ -6630,7 +6721,7 @@ let rec tyOfExpr g expr =
         | TOp.ILCall (_, _, _, _, _, _, _, _, _, _, retTypes) | TOp.ILAsm (_, retTypes) -> (match retTypes with [h] -> h | _ -> g.unit_ty)
         | TOp.UnionCase uc -> actualResultTyOfUnionCase tinst uc 
         | TOp.UnionCaseProof uc -> mkProvenUnionCaseTy uc tinst  
-        | TOp.Recd (_, tcref) -> mkAppTy tcref tinst
+        | TOp.Recd (_, tcref) -> mkWoNullAppTy tcref tinst
         | TOp.ExnConstr _ -> g.exn_ty
         | TOp.Bytes _ -> mkByteArrayTy g
         | TOp.UInt16s _ -> mkArrayType g g.uint16_ty
@@ -7620,7 +7711,7 @@ let permuteExprList (sigma: int[]) (exprs: Expr list) (ty: TType list) (names: s
 /// We still need to sort by index. 
 let mkRecordExpr g (lnk, tcref, tinst, unsortedRecdFields: RecdFieldRef list, unsortedFieldExprs, m) =  
     // Remove any abbreviations 
-    let tcref, tinst = destAppTy g (mkAppTy tcref tinst)
+    let tcref, tinst = destAppTy g (mkWoNullAppTy tcref tinst)
     
     let sortedRecdFields = unsortedRecdFields |> List.indexed |> Array.ofList |> Array.sortBy (fun (_, r) -> r.Index)
     let sigma = Array.create sortedRecdFields.Length -1
@@ -7847,8 +7938,6 @@ let mkCallArrayLength (g: TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g
 
 let mkCallArrayGet (g: TcGlobals) m ty e1 idx1 = mkApps g (typedExprForIntrinsic g m g.array_get_info, [[ty]], [ e1 ; idx1 ], m)
 
-let mkCallArrayMap (g: TcGlobals) m ty1 ty2 e1 e2 = mkApps g (typedExprForIntrinsic g m g.array_map_info, [[ty1; ty2]], [ e1 ; e2 ], m)
-
 let mkCallArray2DGet (g: TcGlobals) m ty e1 idx1 idx2 = mkApps g (typedExprForIntrinsic g m g.array2D_get_info, [[ty]], [ e1 ; idx1; idx2 ], m)
 
 let mkCallArray3DGet (g: TcGlobals) m ty e1 idx1 idx2 idx3 = mkApps g (typedExprForIntrinsic g m g.array3D_get_info, [[ty]], [ e1 ; idx1; idx2; idx3 ], m)
@@ -7862,8 +7951,6 @@ let mkCallArray2DSet (g: TcGlobals) m ty e1 idx1 idx2 v = mkApps g (typedExprFor
 let mkCallArray3DSet (g: TcGlobals) m ty e1 idx1 idx2 idx3 v = mkApps g (typedExprForIntrinsic g m g.array3D_set_info, [[ty]], [ e1 ; idx1; idx2; idx3; v ], m)
 
 let mkCallArray4DSet (g: TcGlobals) m ty e1 idx1 idx2 idx3 idx4 v = mkApps g (typedExprForIntrinsic g m g.array4D_set_info, [[ty]], [ e1 ; idx1; idx2; idx3; idx4; v ], m)
-
-let mkCallListMap (g: TcGlobals) m ty1 ty2 e1 e2 = mkApps g (typedExprForIntrinsic g m g.list_map_info, [[ty1; ty2]], [ e1 ; e2 ], m)
 
 let mkCallHash (g: TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.hash_info, [[ty]], [ e1 ], m)
 
@@ -7909,9 +7996,9 @@ let TryEliminateDesugaredConstants g m c =
     | _ -> 
         None
 
-let mkSeqTy (g: TcGlobals) ty = mkAppTy g.seq_tcr [ty] 
+let mkSeqTy (g: TcGlobals) ty = mkWoNullAppTy g.seq_tcr [ty] 
 
-let mkIEnumeratorTy (g: TcGlobals) ty = mkAppTy g.tcref_System_Collections_Generic_IEnumerator [ty] 
+let mkIEnumeratorTy (g: TcGlobals) ty = mkWoNullAppTy g.tcref_System_Collections_Generic_IEnumerator [ty] 
 
 let mkCallSeqCollect g m alphaTy betaTy arg1 arg2 = 
     let enumty2 = try rangeOfFunTy g (tyOfExpr g arg1) with _ -> (* defensive programming *) (mkSeqTy g betaTy)
@@ -8136,12 +8223,12 @@ let mkCompilationMappingAttrForQuotationResource (g: TcGlobals) (nm, tys: ILType
 #if !NO_TYPEPROVIDERS
 
 let isTypeProviderAssemblyAttr (cattr: ILAttribute) = 
-    cattr.Method.DeclaringType.BasicQualifiedName = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName
+    cattr.Method.DeclaringType.BasicQualifiedName = !! typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName
 
 let TryDecodeTypeProviderAssemblyAttr (cattr: ILAttribute) : string MaybeNull option = 
     if isTypeProviderAssemblyAttr cattr then 
-        let parms, _args = decodeILAttribData cattr 
-        match parms with // The first parameter to the attribute is the name of the assembly with the compiler extensions.
+        let params_, _args = decodeILAttribData cattr 
+        match params_ with // The first parameter to the attribute is the name of the assembly with the compiler extensions.
         | ILAttribElem.String (Some assemblyName) :: _ -> Some assemblyName
         | ILAttribElem.String None :: _ -> Some null
         | [] -> Some null
@@ -8839,6 +8926,9 @@ let typarEnc _g (gtpsType, gtpsMethod) typar =
             warning(InternalError("Typar not found during XmlDoc generation", typar.Range))
             "``0"
 
+let nullnessEnc (g:TcGlobals) (nullness:Nullness) = 
+    if g.renderNullnessAnnotations then nullness.ToFsharpCodeString() else ""
+
 let rec typeEnc g (gtpsType, gtpsMethod) ty = 
     let stripped = stripTyEqnsAndMeasureEqns g ty
     match stripped with 
@@ -8853,26 +8943,26 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
         let ety = destNativePtrTy g ty
         typeEnc g (gtpsType, gtpsMethod) ety + "*"
 
-    | _ when isArrayTy g ty -> 
-        let tcref, tinst = destAppTy g ty
+    | TType_app (_, _, nullness) when isArrayTy g ty -> 
+        let tcref, tinst = destAppTy g ty        
         let rank = rankOfArrayTyconRef g tcref
         let arraySuffix = "[" + String.concat ", " (List.replicate (rank-1) "0:") + "]"
-        typeEnc g (gtpsType, gtpsMethod) (List.head tinst) + arraySuffix
+        typeEnc g (gtpsType, gtpsMethod) (List.head tinst) + arraySuffix + nullnessEnc g nullness
 
     | TType_ucase (_, tinst)   
     | TType_app (_, tinst, _) -> 
-        let tyName = 
+        let tyName,nullness = 
             let ty = stripTyEqnsAndMeasureEqns g ty
             match ty with
-            | TType_app (tcref, _tinst, _) -> 
+            | TType_app (tcref, _tinst, nullness) -> 
                 // Generic type names are (name + "`" + digits) where name does not contain "`".
                 // In XML doc, when used in type instances, these do not use the ticks.
                 let path = Array.toList (fullMangledPathToTyconRef tcref) @ [tcref.CompiledName]
-                textOfPath (List.map DemangleGenericTypeName path)
+                textOfPath (List.map DemangleGenericTypeName path),nullness
             | _ ->
                 assert false
                 failwith "impossible"
-        tyName + tyargsEnc g (gtpsType, gtpsMethod) tinst
+        tyName + tyargsEnc g (gtpsType, gtpsMethod) tinst + nullnessEnc g nullness
 
     | TType_anon (anonInfo, tinst) -> 
         sprintf "%s%s" anonInfo.ILTypeRef.FullName (tyargsEnc g (gtpsType, gtpsMethod) tinst)
@@ -8883,11 +8973,11 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
         else 
             sprintf "System.Tuple%s"(tyargsEnc g (gtpsType, gtpsMethod) tys)
 
-    | TType_fun (domainTy, rangeTy, _) -> 
-        "Microsoft.FSharp.Core.FSharpFunc" + tyargsEnc g (gtpsType, gtpsMethod) [domainTy; rangeTy]
+    | TType_fun (domainTy, rangeTy, nullness) -> 
+        "Microsoft.FSharp.Core.FSharpFunc" + tyargsEnc g (gtpsType, gtpsMethod) [domainTy; rangeTy] + nullnessEnc g nullness
 
-    | TType_var (typar, _) -> 
-        typarEnc g (gtpsType, gtpsMethod) typar
+    | TType_var (typar, nullness) -> 
+        typarEnc g (gtpsType, gtpsMethod) typar + nullnessEnc g nullness
 
     | TType_measure _ -> "?"
 
@@ -8899,7 +8989,7 @@ and tyargsEnc g (gtpsType, gtpsMethod) args =
 
 let XmlDocArgsEnc g (gtpsType, gtpsMethod) argTys =
     if isNil argTys then "" 
-    else "(" + String.concat "," (List.map (typeEnc g (gtpsType, gtpsMethod)) argTys) + ")"
+    else "(" + String.concat "," (List.map (typeEnc g (gtpsType, gtpsMethod)) argTys) + ")"    
 
 let buildAccessPath (cp: CompilationPath option) =
     match cp with
@@ -8908,7 +8998,7 @@ let buildAccessPath (cp: CompilationPath option) =
         System.String.Join(".", ap)      
     | None -> "Extension Type"
 
-let prependPath path name = if String.IsNullOrEmpty(path) then name else path + "." + name
+let prependPath path name = if String.IsNullOrEmpty(path) then name else !!path + "." + name
 
 let XmlDocSigOfVal g full path (v: Val) =
     let parentTypars, methTypars, cxs, argInfos, retTy, prefix, path, name = 
@@ -9023,13 +9113,22 @@ let isNonNullableStructTyparTy g ty =
     | ValueNone ->
         false
 
-// Note, isRefTy does not include type parameters with the ': not struct' constraint
+// Note, isRefTy does not include type parameters with the ': not struct' or ': null' constraints
 // This predicate is used to detect those type parameters.
 let isReferenceTyparTy g ty = 
     match tryDestTyparTy g ty with 
     | ValueSome tp -> 
-        tp.Constraints |> List.exists (function TyparConstraint.IsReferenceType _ -> true | _ -> false)
+        tp.Constraints |> List.exists (function
+            | TyparConstraint.IsReferenceType _ -> true
+            | TyparConstraint.SupportsNull _ -> true
+            | _ -> false)
     | ValueNone ->
+        false
+
+let isSupportsNullTyparTy g ty = 
+    if isReferenceTyparTy g ty then
+        (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.SupportsNull _ -> true | _ -> false)
+    else
         false
 
 let TypeNullNever g ty = 
@@ -9038,49 +9137,109 @@ let TypeNullNever g ty =
     isByrefTy g underlyingTy ||
     isNonNullableStructTyparTy g ty
 
-/// Indicates if the type admits the use of 'null' as a value
+/// The pre-nullness logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValue g m ty = 
     if isILReferenceTy g ty || isDelegateTy g ty then
-        // Putting AllowNullLiteralAttribute(false) on an IL or provided type means 'null' can't be used with that type
-        not (match tryTcrefOfAppTy g ty with ValueSome tcref -> TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some false | _ -> false)
+        match tryTcrefOfAppTy g ty with 
+        | ValueSome tcref -> 
+            // Putting AllowNullLiteralAttribute(false) on an IL or provided 
+            // type means 'null' can't be used with that type, otherwise it can
+            TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref <> Some false 
+        | _ -> 
+            // In pre-nullness, other IL reference types (e.g. arrays) always support null
+            true
     elif TypeNullNever g ty then 
         false
     else 
-        // Putting AllowNullLiteralAttribute(true) on an F# type means 'null' can be used with that type
+        // In F# 4.x, putting AllowNullLiteralAttribute(true) on an F# type means 'null' can be used with that type
         match tryTcrefOfAppTy g ty with 
         | ValueSome tcref -> TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true
         | ValueNone -> 
 
         // Consider type parameters
-        if isReferenceTyparTy g ty then
-            (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.SupportsNull _ -> true | _ -> false)
-        else
-            false
+        isSupportsNullTyparTy g ty
 
+// Any mention of a type with AllowNullLiteral(true) is considered to be with-null
+let intrinsicNullnessOfTyconRef g (tcref: TyconRef) =
+    match TryFindTyconRefBoolAttribute g tcref.Range g.attrib_AllowNullLiteralAttribute tcref with
+    | Some true -> g.knownWithNull
+    | _ -> g.knownWithoutNull
+
+let nullnessOfTy g ty =
+    ty
+    |> stripTyEqns g
+    |> function
+        | TType_app(tcref, _, nullness) ->
+            let nullness2 = intrinsicNullnessOfTyconRef g tcref
+            if nullness2 === g.knownWithoutNull then
+                nullness
+            else
+                combineNullness nullness nullness2
+        | TType_fun (_, _, nullness) | TType_var (_, nullness) ->
+            nullness
+        | _ -> g.knownWithoutNull
+
+let changeWithNullReqTyToVariable g reqTy =
+    let sty = stripTyEqns g reqTy
+    match isTyparTy g sty with
+    | false ->
+        match nullnessOfTy g sty with
+        | Nullness.Known NullnessInfo.WithNull -> 
+            reqTy |> replaceNullnessOfTy (NewNullnessVar())
+        | _ -> reqTy
+    | true -> reqTy
+
+/// When calling a null-allowing API, we prefer to infer a without null argument for idiomatic F# code.
+/// That is, unless caller explicitly marks a value (e.g. coming from a function parameter) as WithNull, it should not be inferred as such.
+let reqTyForArgumentNullnessInference g actualTy reqTy =
+    // Only change reqd nullness if actualTy is an inference variable
+    match tryDestTyparTy g actualTy with
+    | ValueSome t when t.IsCompilerGenerated && not(t.Constraints |> List.exists(function | TyparConstraint.SupportsNull _ -> true | _ -> false))->
+        changeWithNullReqTyToVariable g reqTy       
+    | _ -> reqTy
+
+let TypeHasAllowNull (tcref:TyconRef) g m =
+    not tcref.IsStructOrEnumTycon &&
+    not (isByrefLikeTyconRef g m tcref) && 
+    (TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true)
+
+/// The new logic about whether a type admits the use of 'null' as a value.
+let TypeNullIsExtraValueNew g m ty = 
+    let sty = stripTyparEqns ty
+    
+    // Check if the type has AllowNullLiteral
+    (match tryTcrefOfAppTy g sty with 
+     | ValueSome tcref -> TypeHasAllowNull tcref g m
+     | _ -> false) 
+    ||
+    // Check if the type has a nullness annotation
+    (match (nullnessOfTy g sty).Evaluate() with 
+     | NullnessInfo.AmbivalentToNull -> false
+     | NullnessInfo.WithoutNull -> false
+     | NullnessInfo.WithNull -> true)
+    ||
+    // Check if the type has a ': null' constraint
+    isSupportsNullTyparTy g ty
+
+/// The pre-nullness logic about whether a type uses 'null' as a true representation value
 let TypeNullIsTrueValue g ty =
     (match tryTcrefOfAppTy g ty with
      | ValueSome tcref -> IsUnionTypeWithNullAsTrueValue g tcref.Deref
      | _ -> false) 
     || isUnitTy g ty
 
+/// Indicates if unbox<T>(null) is actively rejected at runtime.   See nullability RFC.  This applies to types that don't have null
+/// as a valid runtime representation under old compatibility rules.
 let TypeNullNotLiked g m ty = 
        not (TypeNullIsExtraValue g m ty) 
     && not (TypeNullIsTrueValue g ty) 
     && not (TypeNullNever g ty) 
 
-// The non-inferring counter-part to SolveTypeUseSupportsNull
-let TypeSatisfiesNullConstraint g m ty = 
-    TypeNullIsExtraValue g m ty  
-
-// The non-inferring counter-part to SolveTypeRequiresDefaultValue (and SolveTypeRequiresDefaultConstructor for struct types)
-let rec TypeHasDefaultValue g m ty = 
+let rec TypeHasDefaultValueAux isNew g m ty = 
     let ty = stripTyEqnsAndMeasureEqns g ty
-    // Check reference types - precisely the ones satisfying the ': null' constraint have default values
-    TypeSatisfiesNullConstraint g m ty  
-    || 
-      // Check nominal struct types
-      (isStructTy g ty &&
-        // F# struct types have a DefaultValue if all their field types have a default value excluding those with DefaultValue(false)
+    (if isNew then TypeNullIsExtraValueNew g m ty else TypeNullIsExtraValue g m ty)
+    || (isStructTy g ty &&
+        // Is it an F# struct type?
         (if isFSharpStructTy g ty then 
             let tcref, tinst = destAppTy g ty 
             let flds = 
@@ -9089,17 +9248,17 @@ let rec TypeHasDefaultValue g m ty =
                   // We can ignore fields with the DefaultValue(false) attribute 
                   |> List.filter (fun fld -> TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute fld.FieldAttribs <> Some false)
 
-            flds |> List.forall (actualTyOfRecdField (mkTyconRefInst tcref tinst) >> TypeHasDefaultValue g m)
+            flds |> List.forall (actualTyOfRecdField (mkTyconRefInst tcref tinst) >> TypeHasDefaultValueAux isNew g m)
 
          // Struct tuple types have a DefaultValue if all their element types have a default value
          elif isStructTupleTy g ty then 
-            destStructTupleTy g ty |> List.forall (TypeHasDefaultValue g m)
+            destStructTupleTy g ty |> List.forall (TypeHasDefaultValueAux isNew g m)
          
          // Struct anonymous record types have a DefaultValue if all their element types have a default value
          elif isStructAnonRecdTy g ty then 
             match tryDestAnonRecdTy g ty with
             | ValueNone -> true
-            | ValueSome (_, ptys) -> ptys |> List.forall (TypeHasDefaultValue g m)
+            | ValueSome (_, ptys) -> ptys |> List.forall (TypeHasDefaultValueAux isNew g m)
          else
             // All nominal struct types defined in other .NET languages have a DefaultValue regardless of their instantiation
             true))
@@ -9107,6 +9266,10 @@ let rec TypeHasDefaultValue g m ty =
       // Check for type variables with the ":struct" and "(new : unit -> 'T)" constraints
       (isNonNullableStructTyparTy g ty &&
         (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.RequiresDefaultConstructor _ -> true | _ -> false))
+
+let TypeHasDefaultValue (g: TcGlobals) m ty = TypeHasDefaultValueAux false g m ty  
+
+let TypeHasDefaultValueNew g m ty = TypeHasDefaultValueAux true g m ty  
 
 /// Determines types that are potentially known to satisfy the 'comparable' constraint and returns
 /// a set of residual types that must also satisfy the constraint
@@ -9343,7 +9506,7 @@ let mkChoiceTy (g: TcGlobals) m tinst =
      match List.length tinst with 
      | 0 -> g.unit_ty
      | 1 -> List.head tinst
-     | length -> mkAppTy (mkChoiceTyconRef g m length) tinst
+     | length -> mkWoNullAppTy (mkChoiceTyconRef g m length) tinst
 
 let mkChoiceCaseRef g m n i = 
      mkUnionCaseRef (mkChoiceTyconRef g m n) ("Choice"+string (i+1)+"Of"+string n)
@@ -11145,7 +11308,7 @@ let CombineCcuContentFragments l =
 
     CombineModuleOrNamespaceTypeList [] l
 
-/// An immutable mappping from witnesses to some data.
+/// An immutable mapping from witnesses to some data.
 ///
 /// Note: this uses an immutable HashMap/Dictionary with an IEqualityComparer that captures TcGlobals, see EmptyTraitWitnessInfoHashMap
 type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>
@@ -11154,7 +11317,7 @@ type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>
 let EmptyTraitWitnessInfoHashMap g : TraitWitnessInfoHashMap<'T> =
     ImmutableDictionary.Create(
         { new IEqualityComparer<_> with 
-            member _.Equals(a, b) = traitKeysAEquiv g TypeEquivEnv.Empty a b
+            member _.Equals(a, b) = nullSafeEquality a b (fun a b -> traitKeysAEquiv g TypeEquivEnv.Empty a b)
             member _.GetHashCode(a) = hash a.MemberName
         })
 

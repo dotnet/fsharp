@@ -112,7 +112,7 @@ type UsingMSBuild() as this =
             printf "%s\n" (error.ToString()) 
         Assert.IsTrue(errorList.IsEmpty)
     
-    //Verify the error list containd the expected string
+    //Verify the error list contained the expected string
     member private this.VerifyErrorListContainedExpectedString(fileContents : string, expectedStr : string, ?addtlRefAssy : string list) =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
         
@@ -180,7 +180,7 @@ let g (t : T) = t.Count()
         checkErrors 0
 
     [<Test>]
-    [<Ignore("GetErrors function doese not work for this case")>]
+    [<Ignore("GetErrors function does not work for this case")>]
     member public this.``LineDirective``() = 
         use _guard = this.UsingNewVS()
         let fileContents = """
@@ -767,7 +767,7 @@ type staticInInterface =
     member public this.``IncompleteExpression``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """
-                // Regresson test for FSHARP1.0:1397 - Warning required on expr of function type who result is immediately thrown away
+                // Regression test for FSHARP1.0:1397 - Warning required on expr of function type who result is immediately thrown away
                 module Test
 
                 printfn "%A"
@@ -906,7 +906,7 @@ type staticInInterface =
         Assert.AreEqual(0,warnList.Length)
 
     [<Test>]
-    [<Ignore("GetErrors function doese not work for this case")>]
+    [<Ignore("GetErrors function does not work for this case")>]
     member public this.``Errorlist.WorkwithoutNowarning``() =  
         let fileContent = """
             type Fruit (shelfLife : int) as x =

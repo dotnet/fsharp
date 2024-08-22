@@ -510,7 +510,8 @@ type internal TransparentCompiler
                 tcConfig.primaryAssembly.Name,
                 tcConfig.GetTargetFrameworkDirectories(),
                 tcConfig.fsharpBinariesDir,
-                tcConfig.langVersion.SpecifiedVersion
+                tcConfig.langVersion.SpecifiedVersion,
+                tcConfig.checkNullness
             )
 
         caches.FrameworkImports.Get(
@@ -807,7 +808,7 @@ type internal TransparentCompiler
                 { new IXmlDocumentationInfoLoader with
                     /// Try to load xml documentation associated with an assembly by the same file path with the extension ".xml".
                     member _.TryLoad(assemblyFileName) =
-                        let xmlFileName = Path.ChangeExtension(assemblyFileName, ".xml")
+                        let xmlFileName = !! Path.ChangeExtension(assemblyFileName, ".xml")
 
                         // REVIEW: File IO - Will eventually need to change this to use a file system interface of some sort.
                         XmlDocumentationInfo.TryCreateFromFile(xmlFileName)
@@ -833,7 +834,7 @@ type internal TransparentCompiler
                     Activity.start
                         "ComputeBootstrapInfoStatic"
                         [|
-                            Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName
+                            Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |> (!!)
                             "references", projectSnapshot.ReferencedProjects.Length.ToString()
                         |]
 
@@ -987,7 +988,11 @@ type internal TransparentCompiler
             projectSnapshot.NoFileVersionsKey,
             async {
                 use _ =
-                    Activity.start "ComputeBootstrapInfo" [| Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |]
+                    Activity.start
+                        "ComputeBootstrapInfo"
+                        [|
+                            Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |> (!!)
+                        |]
 
                 // Trap and report diagnostics from creation.
                 let delayedLogger = CapturingDiagnosticsLogger("IncrementalBuilderCreation")
@@ -1155,8 +1160,9 @@ type internal TransparentCompiler
 
             //Trace.TraceInformation("\n" + debugGraph)
 
-            if Activity.Current <> null then
-                Activity.Current.AddTag("graph", debugGraph) |> ignore
+            match Activity.Current with
+            | Null -> ()
+            | NonNull a -> a.AddTag("graph", debugGraph) |> ignore
 
             return nodeGraph, graph
         }
@@ -1260,7 +1266,7 @@ type internal TransparentCompiler
                     Activity.start
                         "ComputeTcIntermediate"
                         [|
-                            Activity.Tags.fileName, fileName |> Path.GetFileName
+                            Activity.Tags.fileName, fileName |> Path.GetFileName |> (!!)
                             "key", key.GetLabel()
                             "version", "-" // key.GetVersion()
                         |]
@@ -1288,7 +1294,7 @@ type internal TransparentCompiler
 
                 // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
                 let tcConfig =
-                    ApplyNoWarnsToTcConfig(tcConfig, parsedMainInput, Path.GetDirectoryName mainInputFileName)
+                    ApplyNoWarnsToTcConfig(tcConfig, parsedMainInput, !! Path.GetDirectoryName(mainInputFileName))
 
                 let diagnosticsLogger = errHandler.DiagnosticsLogger
 
@@ -1299,7 +1305,7 @@ type internal TransparentCompiler
 
                 //beforeFileChecked.Trigger fileName
 
-                ApplyMetaCommandsFromInputToTcConfig(tcConfig, input, Path.GetDirectoryName fileName, tcImports.DependencyProvider)
+                ApplyMetaCommandsFromInputToTcConfig(tcConfig, input, Path.GetDirectoryName fileName |> (!!), tcImports.DependencyProvider)
                 |> ignore
 
                 let sink = TcResultsSinkImpl(tcGlobals, file.SourceText)
@@ -1319,7 +1325,7 @@ type internal TransparentCompiler
                     let! finisher =
                         CheckOneInputWithCallback
                             nodeToCheck
-                            ((fun () -> hadParseErrors || diagnosticsLogger.ErrorCount > 0),
+                            ((fun () -> hadParseErrors || diagnosticsLogger.CheckForRealErrorsIgnoringWarnings),
                              tcConfig,
                              tcImports,
                              tcGlobals,
@@ -1472,7 +1478,7 @@ type internal TransparentCompiler
                 let file = projectSnapshot.SourceFiles |> List.last
 
                 use _ =
-                    Activity.start "ComputeTcLastFile" [| Activity.Tags.fileName, file.FileName |> Path.GetFileName |]
+                    Activity.start "ComputeTcLastFile" [| Activity.Tags.fileName, file.FileName |> Path.GetFileName |> (!!) |]
 
                 let! projectSnapshot = parseSourceFiles projectSnapshot bootstrapInfo.TcConfig
 
@@ -1526,7 +1532,7 @@ type internal TransparentCompiler
             projectSnapshot.FileKeyWithExtraFileSnapshotVersion fileName,
             async {
                 use _ =
-                    Activity.start "ComputeParseAndCheckFileInProject" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
+                    Activity.start "ComputeParseAndCheckFileInProject" [| Activity.Tags.fileName, fileName |> Path.GetFileName |> (!!) |]
 
                 match! ComputeBootstrapInfo projectSnapshot with
                 | None, creationDiags -> return emptyParseResult fileName creationDiags, FSharpCheckFileAnswer.Aborted
@@ -1558,7 +1564,7 @@ type internal TransparentCompiler
 
                     // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
                     let tcConfig =
-                        ApplyNoWarnsToTcConfig(bootstrapInfo.TcConfig, parseResults.ParseTree, Path.GetDirectoryName fileName)
+                        ApplyNoWarnsToTcConfig(bootstrapInfo.TcConfig, parseResults.ParseTree, Path.GetDirectoryName fileName |> (!!))
 
                     let diagnosticsOptions = tcConfig.diagnosticsOptions
 
@@ -1640,7 +1646,9 @@ type internal TransparentCompiler
                 use _ =
                     Activity.start
                         "ComputeParseAndCheckAllFilesInProject"
-                        [| Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |]
+                        [|
+                            Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |> (!!)
+                        |]
 
                 let! projectSnapshot = parseSourceFiles projectSnapshot bootstrapInfo.TcConfig
 
@@ -1738,14 +1746,14 @@ type internal TransparentCompiler
 
                 let assemblyDataResult =
                     try
-                        // Assemblies containing type provider components can not successfully be used via cross-assembly references.
+                        // Assemblies containing type provider components cannot successfully be used via cross-assembly references.
                         // We return 'None' for the assembly portion of the cross-assembly reference
                         let hasTypeProviderAssemblyAttrib =
                             topAttrs.assemblyAttrs
                             |> List.exists (fun (Attrib(tcref, _, _, _, _, _, _)) ->
                                 let nm = tcref.CompiledRepresentationForNamedType.BasicQualifiedName
 
-                                nm = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName)
+                                nm = !!typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName)
 
                         if tcState.CreatesGeneratedProvidedTypes || hasTypeProviderAssemblyAttrib then
                             ProjectAssemblyDataResult.Unavailable true
@@ -1784,7 +1792,7 @@ type internal TransparentCompiler
                             None
 
                     // TODO: This kinda works, but the problem is that in order to switch a project to "in-memory" mode
-                    //  - some file needs to be edited (this tirggers a re-check, but LastModifiedTimeOnDisk won't change)
+                    //  - some file needs to be edited (this triggers a re-check, but LastModifiedTimeOnDisk won't change)
                     //  - saved (this will not trigger anything)
                     //  - and then another change has to be made (to any file buffer) - so that recheck is triggered and we get here again
                     // Until that sequence happens the project will be used from disk (if available).
@@ -1911,7 +1919,7 @@ type internal TransparentCompiler
             projectSnapshot.FileKey fileName,
             async {
                 use _ =
-                    Activity.start "ComputeSemanticClassification" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
+                    Activity.start "ComputeSemanticClassification" [| Activity.Tags.fileName, fileName |> Path.GetFileName |> (!!) |]
 
                 let! sinkOpt = tryGetSink fileName projectSnapshot
 
@@ -1941,7 +1949,7 @@ type internal TransparentCompiler
             projectSnapshot.FileKey fileName,
             async {
                 use _ =
-                    Activity.start "ComputeItemKeyStore" [| Activity.Tags.fileName, fileName |> Path.GetFileName |]
+                    Activity.start "ComputeItemKeyStore" [| Activity.Tags.fileName, fileName |> Path.GetFileName |> (!!) |]
 
                 let! sinkOpt = tryGetSink fileName projectSnapshot
 

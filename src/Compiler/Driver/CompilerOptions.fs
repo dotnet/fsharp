@@ -248,7 +248,7 @@ module ResponseFile =
             let data =
                 seq {
                     while not reader.EndOfStream do
-                        reader.ReadLine()
+                        !! reader.ReadLine()
                 }
                 |> Seq.choose parseLine
                 |> List.ofSeq
@@ -278,7 +278,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
             elif option <> "--" then
                 // is it an abbreviated or MSFT-style option?
                 // if so, strip the first character and move on with your life
-                // Wierdly a -- option can't have only a 1 character name
+                // Weirdly a -- option can't have only a 1 character name
                 if option.Length = 2 || isSlashOpt option then
                     option[1..]
                 elif option.Length >= 3 && option[2] = ':' then
@@ -680,8 +680,8 @@ let SetEmbedAllSourceSwitch (tcConfigB: TcConfigBuilder) switch =
     else
         tcConfigB.embedAllSource <- false
 
-let setOutFileName tcConfigB path =
-    let outputDir = Path.GetDirectoryName(path)
+let setOutFileName tcConfigB (path: string) =
+    let outputDir = !! Path.GetDirectoryName(path)
     tcConfigB.outputDir <- Some outputDir
     tcConfigB.outputFile <- Some path
 
@@ -843,6 +843,14 @@ let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) =
             OptionStringList(fun n -> tcConfigB.TurnWarningOn(rangeCmdArgs, trimFS n)),
             None,
             Some(FSComp.SR.optsWarnOn ())
+        )
+
+        CompilerOption(
+            "checknulls",
+            tagNone,
+            OptionSwitch(fun switch -> tcConfigB.checkNullness <- switch = OptionSwitch.On),
+            None,
+            Some(FSComp.SR.optsCheckNulls ())
         )
 
         CompilerOption(
@@ -1220,7 +1228,7 @@ let noFrameworkFlag isFsc tcConfigB =
         tagNone,
         OptionUnit(fun () ->
             // When the compilation is not fsi do nothing.
-            // It is just not a usefull option when running fsi on the coreclr or the desktop framework really.
+            // It is just not a useful option when running fsi on the coreclr or the desktop framework really.
             if isFsc then
                 tcConfigB.implicitlyReferenceDotNetAssemblies <- false
                 tcConfigB.implicitlyResolveAssemblies <- false),
@@ -2051,7 +2059,7 @@ let GetBannerText tcConfigB =
     else
         ""
 
-/// FSC only help. (FSI has it's own help function).
+/// FSC only help. (FSI has its own help function).
 let GetHelpFsc tcConfigB (blocks: CompilerOptionBlock list) =
 
     GetBannerText tcConfigB + GetCompilerOptionBlocks blocks tcConfigB.bufferWidth
@@ -2136,7 +2144,7 @@ let abbreviatedFlagsFsc tcConfigB =
             Some(FSComp.SR.optsShortFormOf ("--target library"))
         )
 
-        // FSC help abbreviations. FSI has it's own help options...
+        // FSC help abbreviations. FSI has its own help options...
         CompilerOption(
             "?",
             tagNone,
@@ -2389,7 +2397,7 @@ let DoWithColor newColor f =
     match enableConsoleColoring, foreBackColor () with
     | false, _
     | true, None ->
-        // could not get console colours, so no attempt to change colours, can not set them back
+        // could not get console colours, so no attempt to change colours, cannot set them back
         f ()
     | true, Some(c, _) ->
         try

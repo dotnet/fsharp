@@ -100,7 +100,7 @@ type UsingMSBuild() =
         let AssertIdentifierInToolTipExactlyOnce(ident, (tooltip:string)) =
             let count = tooltip.Split([| '='; '.'; ' '; '\t'; '('; ':'; ')'; '\n' |]) |> Array.filter ((=) ident) |> Array.length
             if (count <> 1) then
-                Assert.Fail(sprintf "Identifier '%s' doesn't occure once in the tooltip '%s'" ident tooltip)
+                Assert.Fail(sprintf "Identifier '%s' doesn't occur once in the tooltip '%s'" ident tooltip)
         
         let (_, _, file) = this.CreateSingleFileProject(code)
 
@@ -208,7 +208,7 @@ type UsingMSBuild() =
             addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
-    member public this.``QuickInfo.OverriddenMethods``() =
+    member public this.``QuickInfo.OverridenMethods``() =
         let source = """
             type A() =
                 abstract member M: unit -> unit
@@ -262,7 +262,7 @@ type UsingMSBuild() =
         """
         let expectedTooltip = """
 type Async =
-  static member AsBeginEnd: computation: ('Arg -> Async<'T>) -> ('Arg * AsyncCallback * obj -> IAsyncResult) * (IAsyncResult -> 'T) * (IAsyncResult -> unit)
+  static member AsBeginEnd: computation: ('Arg -> Async<'T>) -> ('Arg * AsyncCallback * objnull -> IAsyncResult) * (IAsyncResult -> 'T) * (IAsyncResult -> unit)
   static member AwaitEvent: event: IEvent<'Del,'T> * ?cancelAction: (unit -> unit) -> Async<'T> (requires delegate and 'Del :> Delegate)
   static member AwaitIAsyncResult: iar: IAsyncResult * ?millisecondsTimeout: int -> Async<bool>
   static member AwaitTask: task: Task<'T> -> Async<'T> + 1 overload
@@ -270,7 +270,7 @@ type Async =
   static member CancelDefaultToken: unit -> unit
   static member Catch: computation: Async<'T> -> Async<Choice<'T,exn>>
   static member Choice: computations: Async<'T option> seq -> Async<'T option>
-  static member FromBeginEnd: beginAction: (AsyncCallback * obj -> IAsyncResult) * endAction: (IAsyncResult -> 'T) * ?cancelAction: (unit -> unit) -> Async<'T> + 3 overloads
+  static member FromBeginEnd: beginAction: (AsyncCallback * objnull -> IAsyncResult) * endAction: (IAsyncResult -> 'T) * ?cancelAction: (unit -> unit) -> Async<'T> + 3 overloads
   static member FromContinuations: callback: (('T -> unit) * (exn -> unit) * (OperationCanceledException -> unit) -> unit) -> Async<'T>
   ...
 Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
@@ -779,9 +779,9 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
       
         let fileContents = """namespace NS
                            type Re(*MarkerRecord*) = { X : int } """
-        let expectedQuickinfoTypeRecored = "type Re =  { X: int }"
+        let expectedQuickinfoTypeRecord = "type Re =  { X: int }"
         
-        this.InfoInDeclarationTestQuickInfoImplWithTrim fileContents "Re(*MarkerRecord*)" expectedQuickinfoTypeRecored
+        this.InfoInDeclarationTestQuickInfoImplWithTrim fileContents "Re(*MarkerRecord*)" expectedQuickinfoTypeRecord
     
     [<Test>]
     member public this.``QuickInfo.LetBindingsInTypes``() = 
@@ -790,7 +790,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
             type A() = 
                 let fff n = n + 1                
             """
-        this.AssertQuickInfoContainsAtEndOfMarker(code, "let ff", "val fff: n: int -> int")
+        this.AssertQuickInfoContainsAtEndOfMarker(code, "let ff", "val private fff: n: int -> int")
 
     // Regression for 2494
     [<Test>]
@@ -1473,7 +1473,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
              [<System.AttributeUsage(System.AttributeTargets.All, Inherited = false)>]
              type A() = 
                do ()"""
-             "Inherite" "Inherited"  // Get the tooltip at "Inherite" & Verify that it contains the 'Inherited' fild exactly once
+             "Inherite" "Inherited"  // Get the tooltip at "Inherite" & Verify that it contains the 'Inherited' field exactly once
         
     [<Test>]
     member public this.``MethodAndPropTooltip``() = 
@@ -1694,7 +1694,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         AssertContains(tooltip,"Form")
 
     /// In this bug, the EOF token was reached before the parser could close the (, with, and let
-    /// The fix--at the point in time it was fixed--was to modify the parser to send a limitted number
+    /// The fix--at the point in time it was fixed--was to modify the parser to send a limited number
     /// of additional EOF tokens to allow the recovery code to proceed up the change of productions
     /// in the grammar.
     [<Test>]
@@ -2063,7 +2063,7 @@ query."
             ) 
               
               
-    /// BUG: intelisense on "self" parameter in implicit ctor classes is wrong
+    /// BUG: intellisense on "self" parameter in implicit ctor classes is wrong
     [<Test>]
     member public this.``Regression.CompListItemInfo.Bug5694``() =
         this.AssertMemberDataTipContainsInOrder
@@ -2263,7 +2263,7 @@ query."
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,"(*Marker3*)","Full name: Test.printer")
 
     [<Test>]
-    member public this.``Automation.Regression.ConstrutorWithSameNameAsType.Bug2739``() =
+    member public this.``Automation.Regression.ConstructorWithSameNameAsType.Bug2739``() =
         let fileContent = """namespace AA
                              module AA = 
                                  type AA = | AA(*Marker1*) = 1
@@ -2344,9 +2344,9 @@ query."
         
                                 type System.ConsoleKeyInfo with
                                     /// BCL struct extension method
-                                    member this.ExtentionMethod()  =  100
+                                    member this.ExtensionMethod()  =  100
                                     /// BCL struct extension property
-                                    member this.ExtentionProperty with get() = "Foo"        
+                                    member this.ExtensionProperty with get() = "Foo"        
 
                             module OwnCode =
                                 /// fs class
@@ -2366,10 +2366,10 @@ query."
                             module OwnCodeExtensions =
                                 type OwnCode.FSClass with
                                     /// fs class extension method
-                                    member this.ExtentionMethod()  =  100
+                                    member this.ExtensionMethod()  =  100
         
                                     /// fs class extension property
-                                    member this.ExtentionProperty with get() = "Foo"
+                                    member this.ExtensionProperty with get() = "Foo"
                                     
                                     /// fs class method extension overload
                                     member this.Method(a:int)  =  ""
@@ -2379,10 +2379,10 @@ query."
         
                                 type OwnCode.FSStruct with
                                     /// fs struct extension method
-                                    member this.ExtentionMethod()  =  100
+                                    member this.ExtensionMethod()  =  100
         
                                     /// fs struct extension property
-                                    member this.ExtentionProperty with get() = "Foo"      
+                                    member this.ExtensionProperty with get() = "Foo"      
 
                             module BCLClass = 
                                 open BCLExtensions
@@ -2396,15 +2396,15 @@ query."
                             module BCLStruct = 
                                 open BCLExtensions
                                 let cki = new System.ConsoleKeyInfo()
-                                cki.ExtentionMethod(*Marker21*) |>ignore
-                                cki.ExtentionProperty(*Marker22*) |>ignore
+                                cki.ExtensionMethod(*Marker21*) |>ignore
+                                cki.ExtensionProperty(*Marker22*) |>ignore
     
                             module OwnClass = 
                                 open OwnCode
                                 open OwnCodeExtensions
                                 let rnd = new FSClass()
-                                rnd.ExtentionMethod(*Marker31*) |>ignore
-                                rnd.ExtentionProperty(*Marker32*) |>ignore
+                                rnd.ExtensionMethod(*Marker31*) |>ignore
+                                rnd.ExtensionProperty(*Marker32*) |>ignore
                                 rnd.Method(*Marker33*)("") |>ignore
                                 rnd.Method(*Marker34*)(6) |>ignore
                                 rnd.Prop(*Marker35*)("") |>ignore
@@ -2414,8 +2414,8 @@ query."
                                 open OwnCode
                                 open OwnCodeExtensions
                                 let cki = new FSStruct(100)
-                                cki.ExtentionMethod(*Marker41*) |>ignore
-                                cki.ExtentionProperty(*Marker42*) |>ignore"""
+                                cki.ExtensionMethod(*Marker41*) |>ignore
+                                cki.ExtensionProperty(*Marker42*) |>ignore"""
                                 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker11*)", "property System.Random.DiceValue: int")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker11*)", "BCL class Extension property")
@@ -2425,13 +2425,13 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker13*)", "new BCL class Extension method with overload")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker14*)", "member System.Random.Next: a: bool -> int")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker14*)", "existing BCL class Extension method with overload")        
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker21*)", "member System.ConsoleKeyInfo.ExtentionMethod: unit -> int")
+        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker21*)", "member System.ConsoleKeyInfo.ExtensionMethod: unit -> int")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker21*)", "BCL struct extension method")
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker22*)", "System.ConsoleKeyInfo.ExtentionProperty: string")
+        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker22*)", "System.ConsoleKeyInfo.ExtensionProperty: string")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker22*)", "BCL struct extension property")
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker31*)", "member FSClass.ExtentionMethod: unit -> int")
+        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker31*)", "member FSClass.ExtensionMethod: unit -> int")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker31*)", "fs class extension method")
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker32*)", "FSClass.ExtentionProperty: string")
+        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker32*)", "FSClass.ExtensionProperty: string")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker32*)", "fs class extension property")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker33*)", "member FSClass.Method: a: string -> string")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker33*)", "fs class method original")
@@ -2441,9 +2441,9 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker35*)", "fs class property original")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker36*)", "property FSClass.Prop: int -> string")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker36*)", "fs class property extension overload")
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker41*)", "member FSStruct.ExtentionMethod: unit -> int")
+        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker41*)", "member FSStruct.ExtensionMethod: unit -> int")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker41*)", "fs struct extension method")
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker42*)", "FSStruct.ExtentionProperty: string")
+        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker42*)", "FSStruct.ExtensionProperty: string")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker42*)", "fs struct extension property")
 
     [<Test>]
@@ -2613,7 +2613,7 @@ query."
         this.VerifyQuickInfoDoesNotContainAnyAtStartOfMarker fileContent "``(*Marker2*)" "Option.Some"
 
     [<Test>]
-    [<Ignore("Can not get QuickInfo tips")>]
+    [<Ignore("Cannot get QuickInfo tips")>]
     member public this.``Automation.Setter``() =
         let fileContent ="""type T() =
                                  member this.XX
@@ -2717,7 +2717,7 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker5_2*)", "type AbAttrName = AbstractClassAttribute")
 
     [<Test>]
-    member public this.``Automation.Regression.TypeInferenceSenarios.Bug2362&3538``() =
+    member public this.``Automation.Regression.TypeInferenceScenarios.Bug2362&3538``() =
         let fileContent ="""module Test.Module1
 
                             open System
@@ -3069,8 +3069,8 @@ query."
                             let ctrlSignal = ref false
                             [<DllImport("kernel32.dll")>]
                             extern void SetConsoleCtrlHandler(ControlEventHandler callback,bool add)
-                            let ctrlEnventHandlerStatic     = new ControlEventHandler(MyCar.Run)
-                            let ctrlEnventHandlerInstance   = new ControlEventHandler( (new MyCar(10, MyColors.Blue)).Repair )
+                            let ctrlEventHandlerStatic     = new ControlEventHandler(MyCar.Run)
+                            let ctrlEventHandlerInstance   = new ControlEventHandler( (new MyCar(10, MyColors.Blue)).Repair )
 
                             let IsInstanceMethod (controlEventHandler:ControlEventHandler) =
                                 // TC 32	Identifier	Delegate	Own Code	Pattern Match
@@ -3109,8 +3109,8 @@ query."
                             let ctrlSignal = ref false
                             [<DllImport("kernel32.dll")>]
                             extern void SetConsoleCtrlHandler(ControlEventHandler callback,bool add)
-                            let ctrlEnventHandlerStatic     = new ControlEventHandler(MyCar.Run)
-                            let ctrlEnventHandlerInstance   = new ControlEventHandler( (new MyCar(10, MyColors.Blue)).Repair )
+                            let ctrlEventHandlerStatic     = new ControlEventHandler(MyCar.Run)
+                            let ctrlEventHandlerInstance   = new ControlEventHandler( (new MyCar(10, MyColors.Blue)).Repair )
 
                             let IsInstanceMethod (controlEventHandler:ControlEventHandler) =
                                 // TC 32	Identifier	Delegate	Own Code	Pattern Match
@@ -3172,8 +3172,8 @@ query."
                             let ctrlSignal = ref false
                             [<DllImport("kernel32.dll")>]
                             extern void SetConsoleCtrlHandler(ControlEventHandler callback,bool add)
-                            let ctrlEnventHandlerStatic     = new ControlEventHandler(MyCar.Run)
-                            let ctrlEnventHandlerInstance   = new ControlEventHandler( (new MyCar(10, MyColors.Blue)).Repair )
+                            let ctrlEventHandlerStatic     = new ControlEventHandler(MyCar.Run)
+                            let ctrlEventHandlerInstance   = new ControlEventHandler( (new MyCar(10, MyColors.Blue)).Repair )
     
                             let MaxTuple x y =
                                 let tuplex = (x,x.ToString() )
@@ -3307,7 +3307,7 @@ query."
     [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("Query")>]
     // Arguments to query operators have correct QuickInfo
-    // quickinfo should be corroct including when the operator is causing an error
+    // quickinfo should be correct including when the operator is causing an error
     member public this.``Query.ArgumentToQuery.OperatorError``() =
         let fileContent ="""
             let numbers = [ 1;2; 8; 9; 15; 23; 3; 42; 4;0; 55;]
@@ -3323,7 +3323,7 @@ query."
     [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     [<Category("Query")>]
     // Arguments to query operators have correct QuickInfo
-    // quickinfo should be corroct In a nested query
+    // quickinfo should be correct In a nested query
     member public this.``Query.ArgumentToQuery.InNestedQuery``() =
         let fileContent ="""
             open DataSource

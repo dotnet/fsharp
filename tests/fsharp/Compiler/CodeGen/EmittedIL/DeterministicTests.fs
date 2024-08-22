@@ -37,7 +37,7 @@ let test() =
     Console.WriteLine("Hello World!")"""
 
 
-    let getMvid codeSnippet compileOptions =
+    let getMvid (codeSnippet: string) compileOptions =
         File.WriteAllText(inputPath, codeSnippet)
 
         let mvid1 =
@@ -94,7 +94,7 @@ let test() =
         Assert.AreNotEqual(mvid1, mvid2)
 
     [<Test>]
-    let ``False-positive reference assemblies test, different aseemblies' mvid should not match`` () =
+    let ``False-positive reference assemblies test, different assemblies' mvid should not match`` () =
         let src2 = basicCodeSnippet.Replace("test()","test2()")
         let mvid1, mvid2 = calculateRefAssMvids basicCodeSnippet src2
         Assert.AreNotEqual(mvid1, mvid2)
@@ -333,4 +333,3 @@ let inline myFunc x y = x - y"""
             Assert.AreEqual(mvid1,mvid2)
         else
             Assert.AreNotEqual(mvid1,mvid2)
-

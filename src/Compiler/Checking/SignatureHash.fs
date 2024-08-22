@@ -30,7 +30,7 @@ module internal HashingPrimitives =
 
         for i in items do
             let valHash = func i
-            // We are calling hashListOrderMatters for things like list of types, list of properties, list of fields etc. The ones which are visibility-hidden will return 0, and are ommited.
+            // We are calling hashListOrderMatters for things like list of types, list of properties, list of fields etc. The ones which are visibility-hidden will return 0, and are omitted.
             if valHash <> 0 then
                 acc <- combineHash acc valHash
 
@@ -164,6 +164,7 @@ module rec HashTypes =
         | TyparConstraint.IsReferenceType _ -> tpHash @@ 11
         | TyparConstraint.SimpleChoice(tys, _) -> tpHash @@ 12 @@ (tys |> hashListOrderIndependent (hashTType g))
         | TyparConstraint.RequiresDefaultConstructor _ -> tpHash @@ 13
+        | TyparConstraint.NotSupportsNull(_) -> tpHash @@ 14
 
     /// Hash type parameter constraints
     let private hashConstraints (g: TcGlobals) cxs =

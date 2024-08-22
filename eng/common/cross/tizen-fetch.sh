@@ -7,7 +7,7 @@ fi
 
 Log()
 {
-    if [ $VERBOSE -ge $1 ]; then
+    if [ $VERBOSE -ge 1 ]; then
         echo ${@:2}
     fi
 }
@@ -66,7 +66,7 @@ Xpath_get()
     XML_FILE=$2
     RESULT=$(xmllint --xpath $XPATH $XML_FILE)
     if [[ -z ${RESULT// } ]]; then
-        Error "Can not find target from $XML_FILE"
+        Error "Cannot find target from $XML_FILE"
         Debug "Xpath = $XPATH"
         exit 1
     fi
@@ -156,17 +156,28 @@ fetch_tizen_pkgs()
     done
 }
 
+if [ "$TIZEN_ARCH" == "riscv64" ]; then
+    BASE="Tizen-Base-RISCV"
+    UNIFIED="Tizen-Unified-RISCV"
+else
+    BASE="Tizen-Base"
+    UNIFIED="Tizen-Unified"
+fi
+
 Inform "Initialize ${TIZEN_ARCH} base"
-fetch_tizen_pkgs_init standard Tizen-Base
+fetch_tizen_pkgs_init standard $BASE
 Inform "fetch common packages"
 fetch_tizen_pkgs ${TIZEN_ARCH} gcc gcc-devel-static glibc glibc-devel libicu libicu-devel libatomic linux-glibc-devel keyutils keyutils-devel libkeyutils
 Inform "fetch coreclr packages"
-fetch_tizen_pkgs ${TIZEN_ARCH} lldb lldb-devel libgcc libstdc++ libstdc++-devel libunwind libunwind-devel lttng-ust-devel lttng-ust userspace-rcu-devel userspace-rcu
+fetch_tizen_pkgs ${TIZEN_ARCH} libgcc libstdc++ libstdc++-devel libunwind libunwind-devel lttng-ust-devel lttng-ust userspace-rcu-devel userspace-rcu
+if [ "$TIZEN_ARCH" != "riscv64" ]; then
+    fetch_tizen_pkgs ${TIZEN_ARCH} lldb lldb-devel
+fi
 Inform "fetch corefx packages"
 fetch_tizen_pkgs ${TIZEN_ARCH} libcom_err libcom_err-devel zlib zlib-devel libopenssl11 libopenssl1.1-devel krb5 krb5-devel
 
 Inform "Initialize standard unified"
-fetch_tizen_pkgs_init standard Tizen-Unified
+fetch_tizen_pkgs_init standard $UNIFIED
 Inform "fetch corefx packages"
 fetch_tizen_pkgs ${TIZEN_ARCH} gssdp gssdp-devel tizen-release
 

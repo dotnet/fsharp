@@ -15,7 +15,7 @@
 [assembly: System.Runtime.CompilerServices.TypeForwardedTo(typeof(Constraint_OnlyOrigin<>))]
 [assembly: System.Runtime.CompilerServices.TypeForwardedTo(typeof(Constraint_OnlyForwarder<>))]
 [assembly: System.Runtime.CompilerServices.TypeForwardedTo(typeof(Constraint_Both<>))]
-[assembly: System.Runtime.CompilerServices.TypeForwardedTo(typeof(Constraint_BothVialated<>))]
+[assembly: System.Runtime.CompilerServices.TypeForwardedTo(typeof(Constraint_BothViolated<>))]
 
 // generic struct and generic struct test
 [assembly: System.Runtime.CompilerServices.TypeForwardedTo(typeof(Method_NotInForwarder<>))]
@@ -111,7 +111,7 @@ public struct Constraint_Both<T> where T : struct
     }
 }
 
-public struct Constraint_BothVialated<T> where T : class
+public struct Constraint_BothViolated<T> where T : class
 {
     public int getValue()
     {
