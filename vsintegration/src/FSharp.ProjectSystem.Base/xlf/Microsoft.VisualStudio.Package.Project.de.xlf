@@ -74,7 +74,7 @@
       </trans-unit>
       <trans-unit id="CannotSaveFileNotOpenInEditor">
         <source>Cannot save '{0}' as it is not open in the editor.</source>
-        <target state="translated">{0} kann nicht gespeichert werden, da sie nicht im Editor geöffnet ist.</target>
+        <target state="new">Cannot save '{0}' as it is not open in the editor.</target>
         <note />
       </trans-unit>
       <trans-unit id="Content">
