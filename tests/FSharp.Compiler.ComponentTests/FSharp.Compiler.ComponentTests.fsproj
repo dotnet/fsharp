@@ -92,6 +92,9 @@
     <Compile Include="Conformance\LexicalAnalysis\ElseIfBug14761.fs" />
     <Compile Include="Conformance\LexicalAnalysis\Comments.fs" />
     <Compile Include="Conformance\LexicalAnalysis\NumericLiterals.fs" />
+    <Compile Include="Conformance\LexicalAnalysis\CharByteLiterals.fs" />
+    <Compile Include="Conformance\LexicalAnalysis\Strings.fs" />
+    <Compile Include="Conformance\LexicalAnalysis\ByteStrings.fs" />
     <Compile Include="Conformance\LexicalAnalysis\Generics.fs" />
     <Compile Include="Conformance\LexicalAnalysis\SymbolicKeywords.fs" />
     <Compile Include="Conformance\LexicalAnalysis\SymbolicOperators.fs" />
@@ -200,7 +203,7 @@
     <Compile Include="ErrorMessages\NameResolutionTests.fs" />
     <Compile Include="ErrorMessages\SuggestionsTests.fs" />
     <Compile Include="ErrorMessages\TypeMismatchTests.fs" />
-    <Compile Include="ErrorMessages\UnitGenericAbstactType.fs" />
+    <Compile Include="ErrorMessages\UnitGenericAbstractType.fs" />
     <Compile Include="ErrorMessages\UpcastDowncastTests.fs" />
     <Compile Include="ErrorMessages\WarnExpressionTests.fs" />
     <Compile Include="ErrorMessages\WrongSyntaxInForLoop.fs" />

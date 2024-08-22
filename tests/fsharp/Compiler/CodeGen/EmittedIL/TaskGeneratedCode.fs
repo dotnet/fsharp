@@ -1407,7 +1407,7 @@ module ``Check stack traces`` =
            failwith "expected MoveNext() on stack trace"
 
         if stackTrace.Contains("End of stack trace from previous location") then
-           failwith "expected emit of CompilerGeneratedAtrtibute to suppress message in .NET Core stack walking "
+           failwith "expected emit of CompilerGeneratedAttribute to suppress message in .NET Core stack walking "
 #endif
 
 
@@ -1416,7 +1416,7 @@ module ``Check stack traces`` =
 module ``Check return attributes`` = 
     let incr (x:int) : [<Experimental("a")>] (int -> int) = (fun a -> a + x)
 
-    // Putting a return atribute of any kind on f function should be respected
+    // Putting a return attribute of any kind on f function should be respected
     // If the function is curried its inferred arity should be no more than 
     // the declared arguments (the F# rule that infers additional arguments 
     // should not kick in).

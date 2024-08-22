@@ -1695,7 +1695,7 @@ type System.Int32 with
 
 > val f: ``parameter with spaces in name`` : int -> int
 
-> val functionWhichTakesAParameterPeeciselyPlusButNotOpAddition:
+> val functionWhichTakesAParameterPreciselyPlusButNotOpAddition:
   ``+`` : (int -> int -> int) -> int
 
 > val functionWhichTakesAParameterOpAddition: (+) : (int -> int -> int) -> int

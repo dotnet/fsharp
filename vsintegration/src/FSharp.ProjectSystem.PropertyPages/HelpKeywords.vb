@@ -54,7 +54,7 @@ Namespace FSharpPropPages.Microsoft.VisualStudio.Editors.ResourceEditor
         Public Const Err_EditFormResx As String = "msvse_resedit.Err.EditFormResx"
         Public Const Err_CantAddFileToDeviceProject As String = "msvse_resedit.Err.CantAddFileToDeviceProject"
         Public Const Err_TypeIsNotSupported As String = "msvse_resedit.Err.TypeIsNotSupported"
-        Public Const Err_CantSaveBadResouceItem As String = "msvse_resedit.Err.CantSaveBadResouceItem "
+        Public Const Err_CantSaveBadResourceItem As String = "msvse_resedit.Err.CantSaveBadResourceItem "
         Public Const Err_MaxFilesLimitation As String = "msvse_resedit.Err.MaxFilesLimitation"
 
         'Task list errors

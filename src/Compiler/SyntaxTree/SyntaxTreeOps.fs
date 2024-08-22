@@ -210,7 +210,7 @@ let rec IsControlFlowExpression e =
 //
 // For example
 //    let x = 1 + 1
-// gets extended to inludde the 'let x'.
+// gets extended to include the 'let x'.
 //
 // A corner case: some things that look like simple value bindings get generalized, e.g.
 //    let empty = []

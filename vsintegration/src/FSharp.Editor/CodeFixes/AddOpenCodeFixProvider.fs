@@ -31,7 +31,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
         }
 
     // Hey, I know what you're thinking: this is a horrible hack.
-    // Indeed it is, this is a better (but still bad) version of the OpenDeclarionHelper.
+    // Indeed it is, this is a better (but still bad) version of the OpenDeclarationHelper.
     // The things should be actually fixed in the InsertionContext, it's bugged.
     // But currently CompletionProvider also depends on InsertionContext and it's not tested enough.
     // So fixing InsertionContext or OpenDeclarationHelper might break completion which would be bad.

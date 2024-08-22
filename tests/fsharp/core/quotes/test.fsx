@@ -570,7 +570,7 @@ module TypedTest = begin
 end
 
 (*
-module SubstiutionTest = begin
+module SubstitutionTest = begin
   let tm = (<@ (fun x y -> x + y + y) @>)
   // TEST INVALID - this match fails because a variable is escaping.
   let Some(x,y,y') = Template <@. (fun x y -> _ + _ + _) .@> tm
@@ -742,7 +742,7 @@ module Test72594 =
     let effect (i:int) = ()
     let foo () = ()
     let foo1 () =         
-        let i = 1 // prevent uncurring of foo1
+        let i = 1 // prevent uncurrying of foo1
         fun () -> ()    
     let foo2 () () = ()
 
@@ -1857,7 +1857,7 @@ module EqualityOnVarDoesntFail =
     
 module RelatedChange3628 =
     // Fix for 3628 translates "do x" into "do (x;())" when x is not unit typed.
-    // This regression checks the quotated form.
+    // This regression checks the quoted form.
 
     open System
     open Microsoft.FSharp.Quotations
@@ -2156,7 +2156,7 @@ module IndexedPropertySetTest =
             | PropertySet (inst, pi, l, es) ->
                 match inst with
                 | Some(e) ->
-                    Expr.PropertySet(e, pi, es, l) // swaping params 2 and 3 e.g. (e, pi, l.[0], [es]) yield to OK
+                    Expr.PropertySet(e, pi, es, l) // swapping params 2 and 3 e.g. (e, pi, l.[0], [es]) yield to OK
                 | _ -> failwith ""
             | _ -> failwith ""   
 
@@ -2561,7 +2561,7 @@ module LoopsOverArraysInQuotations =
         )
 
 module QuotationOfResizeArrayIteration = 
-    // Quotation of an iteration which implictly does a "use" on a value of struct type
+    // Quotation of an iteration which implicitly does a "use" on a value of struct type
     let q = 
       let a = ResizeArray<_>()
       <@ for i in a do ignore i @>
@@ -5591,7 +5591,7 @@ module QuotationOfConcreteTraitCalls =
 // Check we can take ReflectedDefinition of things involving multiple implicit witnesses and trait calls
 module QuotationsOfGenericCodeWithMultipleWitnesses =
 
-    // This has three type paramters and two witnesses, one for + and one for -
+    // This has three type parameters and two witnesses, one for + and one for -
     [<ReflectedDefinition>]
     let inline f1 x y z = (x + y) - z
 
@@ -5889,7 +5889,7 @@ module Interpolation =
                              NewArray (Object, Call (None, Box, [Value (1)])),
                              Value (<null>))])"""
 
-module TestQuotationWithIdetnicalStaticInstanceMethods = 
+module TestQuotationWithIdenticalStaticInstanceMethods = 
     type C() =
         static member M(c: int) = 1 + c
         member this.M(c: int) = 2 + c
