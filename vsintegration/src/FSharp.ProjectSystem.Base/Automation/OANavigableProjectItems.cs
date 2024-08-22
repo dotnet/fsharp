@@ -236,7 +236,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         }
 
         /// <summary>
-        /// Retrives a list of items associated with the current node.
+        /// Retrieves a list of items associated with the current node.
         /// </summary>
         /// <returns>A List of project items</returns>
         public IList<EnvDTE.ProjectItem> GetListOfProjectItems()
