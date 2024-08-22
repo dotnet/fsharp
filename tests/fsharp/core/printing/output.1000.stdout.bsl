@@ -1539,7 +1539,7 @@ module Test4343e =
     val dB: D<int> = D(2)
     val dAB: D<int> * D<int> * D<int> list = (D(1), D(2), [D(1); D(2)])
     val dC: D<bool> = D(True)
-    val boxed_dABC: obj list = [D(1); D(2); D(True)]
+    val boxed_dABC: objnull list = [D(1); D(2); D(True)]
 type F1 =
   inherit System.Windows.Forms.Form
   interface System.IDisposable

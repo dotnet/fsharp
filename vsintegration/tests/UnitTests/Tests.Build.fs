@@ -182,6 +182,7 @@ type Build() =
         tool.VersionFile <- "src/version"
         AssertEqual "src/version" tool.VersionFile 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--versionfile:src/version" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -256,6 +257,7 @@ type Build() =
         tool.Optimize <- false
         AssertEqual false tool.Optimize 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize-" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -270,6 +272,7 @@ type Build() =
         AssertEqual true tool.Tailcalls
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
+        // REVIEW we don't put the default, is that desired?
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -283,6 +286,7 @@ type Build() =
         tool.OtherFlags <- "--yadda yadda"
         AssertEqual "--yadda yadda" tool.OtherFlags 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -313,6 +317,7 @@ type Build() =
         tool.PdbFile <- "out.pdb"
         AssertEqual "out.pdb" tool.PdbFile 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--pdb:out.pdb" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -327,6 +332,7 @@ type Build() =
         tool.Platform <- "x64"
         AssertEqual "x64" tool.Platform 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--platform:x64" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -341,6 +347,7 @@ type Build() =
         tool.Platform <- "x86"
         AssertEqual "x86" tool.Platform 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--platform:x86" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -356,6 +363,7 @@ type Build() =
         tool.References <- [| MakeTaskItem dll |]
         AssertEqual 1 tool.References.Length 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "-r:" + dll + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -371,6 +379,7 @@ type Build() =
         tool.ReferencePath <- path
         AssertEqual path tool.ReferencePath 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--lib:c:\\sd\\staging\\tools\\nunit\\,c:\\Foo" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -386,6 +395,7 @@ type Build() =
         tool.ReferencePath <- path
         AssertEqual path tool.ReferencePath 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--lib:c:\\program files,c:\\sd\\staging\\tools\\nunit,c:\\Foo" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -400,6 +410,7 @@ type Build() =
         tool.Resources <- [| MakeTaskItem "Foo.resources" |]
         AssertEqual 1 tool.Resources.Length 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--resource:Foo.resources" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -416,6 +427,7 @@ type Build() =
         tool.Sources <- [| iti; iti |]
         AssertEqual 2 tool.Sources.Length 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -432,6 +444,7 @@ type Build() =
         tool.TargetType <- "Library"
         AssertEqual "Library" tool.TargetType 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--target:library" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -446,6 +459,7 @@ type Build() =
         tool.TargetType <- "Winexe"
         AssertEqual "Winexe" tool.TargetType 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--target:winexe" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -460,6 +474,7 @@ type Build() =
         tool.TargetType <- "Module"
         AssertEqual "Module" tool.TargetType 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--target:module" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -473,6 +488,7 @@ type Build() =
         let tool = new FSharp.Build.Fsc()
         tool.Utf8Output <- true
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--utf8output" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -486,6 +502,7 @@ type Build() =
         let tool = new FSharp.Build.Fsc()
         tool.Win32ResourceFile <- "foo.res"
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--win32res:foo.res" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -499,6 +516,7 @@ type Build() =
         let tool = new FSharp.Build.Fsc()
         tool.Win32ManifestFile <- "foo.manifest"
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--win32manifest:foo.manifest" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -512,6 +530,7 @@ type Build() =
         let tool = new FSharp.Build.Fsc()
         tool.HighEntropyVA <- true
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -524,6 +543,7 @@ type Build() =
         let tool = new FSharp.Build.Fsc()
         tool.SubsystemVersion <- "6.02"
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -619,7 +639,7 @@ type Build() =
             "--define:FOO=3"
             "--define:BAR=4"
             "--doc:foo.xml"
-            "--sig:foo.fsi" 
+            "--sig:foo.fsi"
             "--keyfile:key.txt"
             "--optimize+"
             "--pdb:out.pdb"
