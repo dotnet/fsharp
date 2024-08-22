@@ -99,7 +99,7 @@ module internal MetadataAsSource =
             ErrorHandler.ThrowOnFailure(windowFrame.SetProperty(int __VSFPROPID5.VSFPROPID_OverrideToolTip, name))
             |> ignore
 
-        windowFrame.Show() |> ignore
+        // windowFrame.Show() |> ignore
 
         let textContainer = textBuffer.AsTextContainer()
         let mutable workspace = Unchecked.defaultof<_>
