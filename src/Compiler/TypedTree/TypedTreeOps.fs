@@ -9184,7 +9184,8 @@ let changeWithNullReqTyToVariable g reqTy =
     match isTyparTy g sty with
     | false ->
         match nullnessOfTy g sty with
-        | Nullness.Known NullnessInfo.WithNull -> 
+        | Nullness.Known NullnessInfo.AmbivalentToNull 
+        | Nullness.Known NullnessInfo.WithNull when g.checkNullness -> 
             reqTy |> replaceNullnessOfTy (NewNullnessVar())
         | _ -> reqTy
     | true -> reqTy
