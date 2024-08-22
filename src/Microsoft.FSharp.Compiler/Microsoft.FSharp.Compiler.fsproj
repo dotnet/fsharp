@@ -28,7 +28,7 @@
     <NuspecProperty Include="configuration=$(Configuration)" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(DotNetBuildFromSource)' != 'true'">
+  <ItemGroup Condition="'$(IgnoreMibc)' != 'true'">
     <NuspecProperty Include="mibcRoot=$(ArtifactsDir)\mibc" />
   </ItemGroup>
 

@@ -33,7 +33,7 @@
     <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
   </PropertyGroup>
 
-  <Target Name="ValidateMibcFile" AfterTargets="CopyMIBC" BeforeTargets="Build;Pack" Condition="'$(DotNetBuildFromSource)' != 'true'">
+  <Target Name="ValidateMibcFile" AfterTargets="CopyMIBC" BeforeTargets="Build;Pack" Condition="'$(IgnoreMibc)' != 'true'">
     <Error Condition="'$(Configuration)' == 'Proto' AND !Exists('$(MibcFile)')" Text="Mibc file '$(MibcFile)' does not exist." />
   </Target>
 
