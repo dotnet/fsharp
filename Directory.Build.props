@@ -7,7 +7,7 @@
     <RepoRoot Condition="'$(RepoRoot)' == ''">$(MSBuildThisFileDirectory)</RepoRoot>
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
     <FSharpNetCoreProductDefaultTargetFramework>net9.0</FSharpNetCoreProductDefaultTargetFramework>
-    <IgnoreMibc Condition="'$(IgnoreMibc)' == ''">$(DotNetBuildFromSource)</RepoRoot>
+    <IgnoreMibc Condition="'$(IgnoreMibc)' == ''">$(DotNetBuildFromSource)</IgnoreMibc>
   </PropertyGroup>
 
   <!--
