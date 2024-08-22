@@ -4520,19 +4520,6 @@ module TcDeclarations =
             core, extra_vals_Inherits_Abstractslots @ extraMembers
             
     //-------------------------------------------------------------------------
-
-    //let ChangeFsharpTypesToNonNullToString (g:TcGlobals) (tycons:Entity list) cenv env m =
-    //    if g.checkNullness then
-    //            try
-    //                tycons |> List.iter (fun tycon ->
-    //                    if tycon.IsRecordTycon || tycon.IsUnionTycon then
-    //                        let tcref = mkLocalTyconRef tycon
-    //                        AugmentTypeDefinitions.MakeValForNonNullableToStringOverride g tcref
-    //                        |> List.iter (fun v -> PublishValueDefnMaybeInclCompilerGenerated cenv env true ModuleOrMemberBinding v))
-
-    //            with RecoverableException exn ->
-    //                errorRecovery exn m
-
     /// Bind a collection of mutually recursive definitions in an implementation file
     let TcMutRecDefinitions (cenv: cenv) envInitial parent typeNames tpenv m scopem mutRecNSInfo (mutRecDefns: MutRecDefnsInitialData) isMutRec =
 
@@ -4671,8 +4658,6 @@ module TcDeclarations =
         // Check for cyclic structs and inheritance all over again, since we may have added some fields to the struct when generating the implicit construction syntax 
         EstablishTypeDefinitionCores.TcTyconDefnCore_CheckForCyclicStructsAndInheritance cenv tycons
 
-        //ChangeFsharpTypesToNonNullToString g tycons cenv envFinal m
-
         withExtraBindings, envFinal  
 
 
@@ -4755,7 +4740,6 @@ module TcDeclarations =
                 let envForTycon = MakeInnerEnvForTyconRef envForTycon tcref (declKind = ExtrinsicExtensionBinding) 
 
                 let vals, env = TcTyconMemberSpecs cenv envForTycon (TyconContainerInfo(innerParent, tcref, declaredTyconTypars, NoSafeInitInfo)) declKind tpenv members
-                //ChangeFsharpTypesToNonNullToString g [tcref.Deref] cenv envForTycon m
                 if not(cenv.g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired)) then
                     vals, env
                 else
@@ -5794,7 +5778,7 @@ let CheckOneImplFile
         // virtual dispatch slots. 
         conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
             try
-                implFileTypePriorToSig |> IterTyconsOfModuleOrNamespaceType (fun tycon ->                    
+                implFileTypePriorToSig |> IterTyconsOfModuleOrNamespaceType (fun tycon ->
                     FinalTypeDefinitionChecksAtEndOfInferenceScope (cenv.infoReader, envAtEnd.NameEnv, cenv.tcSink, true, denvAtEnd, tycon))
 
             with RecoverableException exn ->

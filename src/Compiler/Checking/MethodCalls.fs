@@ -529,6 +529,7 @@ type CalledMeth<'T>
         | objTy :: [], ILMeth _ when             
             g.checkNullness 
             && minfo.DisplayName = "ToString"
+            && minfo.IsNullary
             && (isAnonRecdTy g objTy || isRecdTy g objTy || isUnionTy g objTy)
             && (  typeEquiv g g.obj_ty_noNulls minfo.ApparentEnclosingAppType
                || typeEquiv g g.system_Value_ty minfo.ApparentEnclosingAppType)  -> 
