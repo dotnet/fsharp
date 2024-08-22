@@ -2070,6 +2070,7 @@ type AnonTypeGenerationTable() =
                             HasReferenceTypeConstraint = false
                             HasNotNullableValueTypeConstraint = false
                             HasDefaultConstructorConstraint = false
+                            HasAllowsRefStruct = false
                             MetadataIndex = NoMetadataIdx
                         }
                 ]
@@ -5733,6 +5734,7 @@ and GenGenericParam cenv eenv (tp: Typar) =
         HasReferenceTypeConstraint = refTypeConstraint
         HasNotNullableValueTypeConstraint = notNullableValueTypeConstraint || emitUnmanagedInIlOutput
         HasDefaultConstructorConstraint = defaultConstructorConstraint
+        HasAllowsRefStruct = false
     }
 
 //--------------------------------------------------------------------------

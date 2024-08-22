@@ -54,3 +54,57 @@ module ``Byref interop verification tests`` =
         |> asExe
         |> compileAndRun
         |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``Ref structs in generics - can declare`` () =
+        FSharp """module Foo
+open System
+let x(a:Action<ReadOnlySpan<int>>) = ()
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``Ref structs in generics - can use in object expressions`` () =
+        FSharp """module Foo
+open System
+
+let main _args = 
+    let comparer = 
+        { new System.IComparable<ReadOnlySpan<int>>
+                with member x.CompareTo(o) = 42 }
+    comparer.CompareTo(ReadOnlySpan([||]))
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``Ref structs in generics - can use in foreach`` () =
+        FSharp """module Foo
+open System
+
+let processSeq (input:seq<ReadOnlySpan<int>>) = 
+    for ros in input do
+        printfn "%i" (ros.Length)
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``Ref structs in generics - GetAlternateLookup`` () =
+        FSharp """module Foo
+open System
+open System.Collections.Generic
+
+let main _args = 
+    let myDict = ["x",1;"y",2] |> dict |> Dictionary 
+    let altLookup = myDict.GetAlternateLookup<string,int,ReadOnlySpan<char>>()
+    altLookup.ContainsKey(ReadOnlySpan([|'x'|]))
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+
