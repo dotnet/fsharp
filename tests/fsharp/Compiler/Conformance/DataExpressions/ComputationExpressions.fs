@@ -633,7 +633,7 @@ let _ =
               (FSharpDiagnosticSeverity.Error, 10, (8, 9, 8, 13), "Unexpected keyword 'and!' in implementation file")|]
 
     [<Test>]
-    let ``AndBang Negative TraceApplicative let betweeen let! and and!`` () =
+    let ``AndBang Negative TraceApplicative let between let! and and!`` () =
         ApplicativeLibErrorTest includeAll """
 let tracer = TraceApplicative()
 

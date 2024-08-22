@@ -27,7 +27,7 @@ let writer = new StreamWriter (tempFile1)
 writer.WriteLine("Some Data")
 writer.Close()
 
-// Origional signature
+// Original signature
 //[<DllImport("kernel32.dll")>]
 //extern bool CopyFile(string lpExistingFileName, string lpNewFileName, bool bFailIfExists);
 

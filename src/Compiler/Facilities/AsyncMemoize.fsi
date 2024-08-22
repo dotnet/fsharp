@@ -47,7 +47,7 @@ type internal AsyncLock =
     member Do: f: (unit -> #Task<'b>) -> Task<'b>
 
 /// <summary>
-/// A cache/memoization for computations that makes sure that the same computation wil only be computed once even if it's needed
+/// A cache/memoization for computations that makes sure that the same computation will only be computed once even if it's needed
 /// at multiple places/times.
 ///
 /// Strongly holds at most one result per key.

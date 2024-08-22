@@ -41,7 +41,7 @@ type Config() =
     [<Test>]
     member this.TargetPlatform () =
         this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(["foo.fs"], [], 
-            this.MSBuildProjectMulitplatBoilerplate "Library",  
+            this.MSBuildProjectMultiPlatformBoilerplate "Library",  
             (fun project ccn projFileName ->
                 ccn((project :> IVsHierarchy), "Debug|x86")
                 project.ComputeSourcesAndFlags()

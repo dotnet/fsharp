@@ -10,7 +10,7 @@ open Internal.Utilities.Library
 /// The results of ResolveDependencies
 type IResolveDependenciesResult =
 
-    /// Succeded?
+    /// Succeeded?
     abstract Success: bool
 
     /// The resolution output log
@@ -53,7 +53,7 @@ type IDependencyManagerProvider =
     ///     paket: indicates that this DM is for paket scripts, which manage nuget packages, github source dependencies etc ...
     abstract Key: string
 
-    /// The help messages for this dependency manager inster
+    /// The help messages for this dependency manager instance
     abstract HelpMessages: string[]
 
     /// Clear the results cache

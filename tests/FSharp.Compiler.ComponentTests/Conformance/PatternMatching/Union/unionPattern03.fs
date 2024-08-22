@@ -12,7 +12,7 @@ let test1 x =
     | D | A -> 4
 
 // The union of patterns should be considered a single entity, and thus
-// their relative ordering shoudln't matter.
+// their relative ordering shouldn't matter.
 let test2 x =
     match x with
     | B | A -> 1

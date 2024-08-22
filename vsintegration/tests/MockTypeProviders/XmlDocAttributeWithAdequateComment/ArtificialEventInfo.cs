@@ -10,7 +10,7 @@ using Microsoft.FSharp.Core.CompilerServices;
 
 namespace TypeProviderInCSharp
 {
-    class ArtificalEventInfo : EventInfo
+    class ArtificialEventInfo : EventInfo
     {
         string _Name;
         Type _DeclaringType;
@@ -18,7 +18,7 @@ namespace TypeProviderInCSharp
         MethodInfo _AddMethod;
         MethodInfo _RemoveMethod;
 
-        public ArtificalEventInfo(string Name, Type DeclaringType, Type EventHandleType)
+        public ArtificialEventInfo(string Name, Type DeclaringType, Type EventHandleType)
         {
             _Name = Name;
             _DeclaringType = DeclaringType;
