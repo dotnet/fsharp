@@ -114,7 +114,7 @@ module Tuples =
         |> withRealInternalSignatureOff
         |> verifyCompilation
 
-    // SOURCE=OptionalArg01.fs      SCFLAGS="-g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd OptionalArg01.exe"		# OptionalArg01.fs - test optimizatons
+    // SOURCE=OptionalArg01.fs      SCFLAGS="-g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd OptionalArg01.exe"		# OptionalArg01.fs - test optimizations
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"OptionalArg01.fs"|])>]
     let ``OptionalArg01_fs`` compilation =
         compilation

@@ -1,5 +1,5 @@
 //This tests the basic functionality of the type forwarder on generic class
-// different type paramenter name
+// different type parameter name
 // type parameter count > 1
 
 let gc = new Basic_DiffName004<int,string>()

@@ -1174,7 +1174,7 @@ Namespace My.Resources
         End Property
         
         '''<summary>
-        '''  Looks up a localized string similar to The following events are availble for MyApplication:.
+        '''  Looks up a localized string similar to The following events are available for MyApplication:.
         '''</summary>
         Friend Shared ReadOnly Property PPG_Application_AppEventsCommentLine1() As String
             Get
@@ -3290,9 +3290,9 @@ Namespace My.Resources
         '''<summary>
         '''  Looks up a localized string similar to The external program cannot be found. Please enter a valid executable file..
         '''</summary>
-        Friend Shared ReadOnly Property PropPage_ProgramNotExist() As String
+        Friend Shared ReadOnly Property PropPage_ProgramNonexistent() As String
             Get
-                Return ResourceManager.GetString("PropPage_ProgramNotExist", resourceCulture)
+                Return ResourceManager.GetString("PropPage_ProgramNonexistent", resourceCulture)
             End Get
         End Property
         
@@ -3317,9 +3317,9 @@ Namespace My.Resources
         '''<summary>
         '''  Looks up a localized string similar to &quot;The resource file entered does not exist.&quot;.
         '''</summary>
-        Friend Shared ReadOnly Property PropPage_ResourceFileNotExist() As String
+        Friend Shared ReadOnly Property PropPage_ResourceFileNonexistent() As String
             Get
-                Return ResourceManager.GetString("PropPage_ResourceFileNotExist", resourceCulture)
+                Return ResourceManager.GetString("PropPage_ResourceFileNonexistent", resourceCulture)
             End Get
         End Property
         
@@ -3389,9 +3389,9 @@ Namespace My.Resources
         '''<summary>
         '''  Looks up a localized string similar to Embedded in .resx.
         '''</summary>
-        Friend Shared ReadOnly Property RES_PersistenceMode_Embeded() As String
+        Friend Shared ReadOnly Property RES_PersistenceMode_Embedded() As String
             Get
-                Return ResourceManager.GetString("RES_PersistenceMode_Embeded", resourceCulture)
+                Return ResourceManager.GetString("RES_PersistenceMode_Embedded", resourceCulture)
             End Get
         End Property
         
@@ -3690,9 +3690,9 @@ Namespace My.Resources
         '''<summary>
         '''  Looks up a localized string similar to &amp;Categories:.
         '''</summary>
-        Friend Shared ReadOnly Property RSE_CategiesLabel() As String
+        Friend Shared ReadOnly Property RSE_CategoriesLabel() As String
             Get
-                Return ResourceManager.GetString("RSE_CategiesLabel", resourceCulture)
+                Return ResourceManager.GetString("RSE_CategoriesLabel", resourceCulture)
             End Get
         End Property
         
@@ -3962,9 +3962,9 @@ Namespace My.Resources
         '''<summary>
         '''  Looks up a localized string similar to The resource item(s) {0} cannot be saved correctly.  The item(s) will be discarded..
         '''</summary>
-        Friend Shared ReadOnly Property RSE_Err_CantSaveResouce_1Arg() As String
+        Friend Shared ReadOnly Property RSE_Err_CantSaveResourceDiscard_1Arg() As String
             Get
-                Return ResourceManager.GetString("RSE_Err_CantSaveResouce_1Arg", resourceCulture)
+                Return ResourceManager.GetString("RSE_Err_CantSaveResourceDiscard_1Arg", resourceCulture)
             End Get
         End Property
         

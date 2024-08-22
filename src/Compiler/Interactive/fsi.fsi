@@ -406,7 +406,7 @@ module Settings =
         /// returned by System.Environment.GetCommandLineArgs.</summary>
         member CommandLineArgs: string[] with get, set
 
-        /// <summary>Gets or sets a the current event loop being used to process interactions.</summary>
+        /// <summary>Gets or sets the current event loop being used to process interactions.</summary>
         member EventLoop: IEventLoop with get, set
 
     /// A default implementation of the 'fsi' object, used by GetDefaultConfiguration().  Note this

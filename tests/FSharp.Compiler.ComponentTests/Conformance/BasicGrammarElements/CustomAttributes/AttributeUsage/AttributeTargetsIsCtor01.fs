@@ -1,5 +1,5 @@
 // #Regression #Conformance #DeclarationElements #Attributes 
-// FSharp1.0:4780 - Attributes targetting constructors are not allowed on explicit constructors 'new() = { ... }'
+// FSharp1.0:4780 - Attributes targeting constructors are not allowed on explicit constructors 'new() = { ... }'
 // Make sure custom attributes can be applied to explicit and implicit constructors
 
 #light

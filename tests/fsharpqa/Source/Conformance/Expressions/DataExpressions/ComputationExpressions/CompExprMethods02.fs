@@ -66,5 +66,5 @@ if workflow.LoopedElements <>
                 "Int 2"; 
                     "Char 'a'"; "Char 'b'" |] then printfn "failed"; exit 1
 
-printfn "Succeded"
+printfn "Succeeded"
 exit 0

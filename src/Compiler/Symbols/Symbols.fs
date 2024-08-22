@@ -2797,8 +2797,8 @@ type FSharpAttribute(cenv: SymbolEnv, attrib: AttribInfo) =
             | AttribInfo.FSAttribInfo(g, attrib) ->
                 NicePrint.stringOfFSAttrib (context.Contents g) attrib
             | AttribInfo.ILAttribInfo (g, _, _scoref, cattr, _) -> 
-                let parms, _args = decodeILAttribData cattr 
-                NicePrint.stringOfILAttrib (context.Contents g) (cattr.Method.DeclaringType, parms)
+                let params_, _args = decodeILAttribData cattr 
+                NicePrint.stringOfILAttrib (context.Contents g) (cattr.Method.DeclaringType, params_)
 
     member _.Range = attrib.Range
 

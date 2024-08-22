@@ -21,7 +21,7 @@ and isNaNFloat32 x =
     | 0.0f              -> failwith "Should never match"
     | _                 -> ()
 
-// This seems strange, but accoring to the IEEE spec
+// This seems strange, but according to the IEEE spec
 // NaN <> NaN
 TestIsNaN System.Single.NaN
 TestIsNaN System.Double.NaN

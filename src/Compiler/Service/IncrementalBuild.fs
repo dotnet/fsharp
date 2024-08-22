@@ -303,7 +303,7 @@ type BoundModel private (
             return tcInfo, sink, implFile, fileName, newErrors
         }
 
-    let skippedImplemetationTypeCheck =
+    let skippedImplementationTypeCheck =
         match syntaxTreeOpt, prevTcInfo.sigNameOpt with
         | Some syntaxTree, Some (_, qualifiedName) when syntaxTree.HasSignature ->
             let input, _, fileName, _ = syntaxTree.Skip qualifiedName
@@ -385,7 +385,7 @@ type BoundModel private (
         match tcStateOpt with
         | Some tcState -> tcState
         | _ ->
-            match skippedImplemetationTypeCheck with
+            match skippedImplementationTypeCheck with
             | Some tcInfo ->
                 // For skipped implementation sources do full type check only when requested.
                 GraphNode.FromResult tcInfo, tcInfoExtras
@@ -800,7 +800,7 @@ module IncrementalBuilderHelpers =
 
                 let tcAssemblyDataOpt =
                     try
-                        // Assemblies containing type provider components can not successfully be used via cross-assembly references.
+                        // Assemblies containing type provider components cannot successfully be used via cross-assembly references.
                         // We return 'None' for the assembly portion of the cross-assembly reference
                         let hasTypeProviderAssemblyAttrib =
                             topAttrs.assemblyAttrs |> List.exists (fun (Attrib(tcref, _, _, _, _, _, _)) ->
