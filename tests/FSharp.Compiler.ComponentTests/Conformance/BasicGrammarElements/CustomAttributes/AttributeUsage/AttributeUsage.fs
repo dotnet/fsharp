@@ -772,7 +772,7 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
             (Error 934, Line 33, Col 10, Line 33, Col 11, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute")
             (Error 934, Line 36, Col 10, Line 36, Col 11, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute")
             (Error 934, Line 39, Col 10, Line 39, Col 13, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute")
-            (Error 842, Line 41, Col 7, Line 41, Col 23, "This attribute is not valid for use on this language element")
+            (Error 842, Line 41, Col 7, Line 41, Col 23, "This attribute is not valid for use on this language element");
             (Error 842, Line 44, Col 7, Line 44, Col 23, "This attribute is not valid for use on this language element")
         ]
         
