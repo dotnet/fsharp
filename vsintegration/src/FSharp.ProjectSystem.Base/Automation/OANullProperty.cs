@@ -16,7 +16,7 @@ using Microsoft.VisualStudio.FSharp.ProjectSystem;
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
 {
     /// <summary>
-    /// This object defines a so called null object that is returned as instead of null. This is because callers in VSCore usually crash if a null propery is returned for them.
+    /// This object defines a so called null object that is returned as instead of null. This is because callers in VSCore usually crash if a null property is returned for them.
     /// </summary>
     [CLSCompliant(false), ComVisible(true)]
     public class OANullProperty : EnvDTE.Property

@@ -1,6 +1,6 @@
 // #Regression #NoMT #EntryPoint 
 // Regression test for FSHARP1.0:2209 - existence of this attribute should not confuse FSI
-// Explicit program entry point: [<ExtryPoint>]
+// Explicit program entry point: [<EntryPoint>]
 //<Expects status="success"></Expects>
 
 #light

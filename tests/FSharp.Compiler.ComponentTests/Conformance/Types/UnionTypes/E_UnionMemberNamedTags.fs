@@ -1,6 +1,6 @@
 // #Conformance #TypesAndModules #Unions 
 // RegressionTest for bug 6308 
-//<Expects status="error" id="FS0023" span="(19,14-19,18)">The member 'Tags' can not be defined because the name 'Tags' clashes with the generated type 'Tags' in this type or module</Expects>
+//<Expects status="error" id="FS0023" span="(19,14-19,18)">The member 'Tags' cannot be defined because the name 'Tags' clashes with the generated type 'Tags' in this type or module</Expects>
 
 [<DefaultAugmentation(true)>]
 type BigUnion2 = 

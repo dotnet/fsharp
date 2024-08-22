@@ -23,7 +23,7 @@ let allTestCases =
 let RootDirectory = @"/root"
 
 /// <summary>
-/// Everytime `__SOURCE_DIRECTORY__` was used in the code, the ast will contain an invalid value and range for it.
+/// Every time `__SOURCE_DIRECTORY__` was used in the code, the ast will contain an invalid value and range for it.
 /// This should be cleaned up when the test runs during CI/CD.
 /// </summary>
 /// <remarks>

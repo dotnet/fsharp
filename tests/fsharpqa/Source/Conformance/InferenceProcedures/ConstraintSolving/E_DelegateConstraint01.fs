@@ -2,7 +2,7 @@
 #light
 
 // Verify error message if delegate type doesn't have first parameter of type 'object'.
-// That is, the delegate contstraint requires the first parameter be the 'sender'
+// That is, the delegate constraint requires the first parameter be the 'sender'
 
 //<Expects id="FS0001" status="error">The type 'CallbackAlpha' has a non-standard delegate type</Expects>
 //<Expects id="FS0001" status="error">The type 'CallbackBravo' has a non-standard delegate type</Expects>

@@ -103,11 +103,11 @@ type SeqModule() =
         let integerSeq1:seq<int> = seq [0..4]
         let integerSeq2:seq<int> = seq [5..9]
          
-        let appendIntergerSeq = Seq.append integerSeq1 integerSeq2
+        let appendIntegerSeq = Seq.append integerSeq1 integerSeq2
        
         let expectResultInteger = seq { for i in 0..9 -> i}
         
-        VerifySeqsEqual expectResultInteger appendIntergerSeq
+        VerifySeqsEqual expectResultInteger appendIntegerSeq
         
         
         // String Seq
@@ -308,12 +308,12 @@ type SeqModule() =
         // int Seq
         let intSeq = seq [1..20]    
         let funcInt x = if (x%5=0) then Some x else None       
-        let intChoosed = Seq.choose funcInt intSeq
-        let expectedIntChoosed = seq { for i = 1 to 4 do yield i*5}
+        let intChosen = Seq.choose funcInt intSeq
+        let expectedIntChosen = seq { for i = 1 to 4 do yield i*5}
         
         
        
-        VerifySeqsEqual expectedIntChoosed intChoosed
+        VerifySeqsEqual expectedIntChosen intChosen
         
         // string Seq
         let stringSrc = seq ["list";"List"]
@@ -321,14 +321,14 @@ type SeqModule() =
                            | "list"-> Some x
                            | "List" -> Some x
                            | _ -> None
-        let strChoosed = Seq.choose funcString stringSrc   
+        let strChosen = Seq.choose funcString stringSrc   
         let expectedStrChoose = seq ["list";"List"]
       
-        VerifySeqsEqual expectedStrChoose strChoosed
+        VerifySeqsEqual expectedStrChoose strChosen
         
         // empty Seq
         let emptySeq = Seq.empty
-        let emptyChoosed = Seq.choose funcInt emptySeq
+        let emptyChosen = Seq.choose funcInt emptySeq
         
         let expectedEmptyChoose = Seq.empty
         
@@ -531,9 +531,9 @@ type SeqModule() =
         // string Seq
         let strDistinctSeq = seq ["elementDup"; "ele1"; "ele2"; "elementDup"]
        
-        let DistnctStrSeq = Seq.distinct strDistinctSeq
+        let DistinctStrSeq = Seq.distinct strDistinctSeq
         let expectedStrSeq = seq ["elementDup"; "ele1"; "ele2"]
-        VerifySeqsEqual expectedStrSeq DistnctStrSeq
+        VerifySeqsEqual expectedStrSeq DistinctStrSeq
         
         // Empty Seq
         let emptySeq : seq<decimal * unit>         = Seq.empty
@@ -566,9 +566,9 @@ type SeqModule() =
         let funcStrDistinct (s:string) = s.IndexOf("key")
         let strSeq = seq [ "key"; "blank key"; "key dup"; "blank key dup"]
        
-        let DistnctStrSeq = Seq.distinctBy funcStrDistinct strSeq
+        let DistinctStrSeq = Seq.distinctBy funcStrDistinct strSeq
         let expectedStrSeq = seq ["key"; "blank key"]
-        VerifySeqsEqual expectedStrSeq DistnctStrSeq
+        VerifySeqsEqual expectedStrSeq DistinctStrSeq
         
         // Empty Seq
         let emptySeq            : seq<int> = Seq.empty

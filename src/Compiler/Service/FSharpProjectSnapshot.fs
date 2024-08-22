@@ -23,7 +23,7 @@ open FSharp.Compiler.DiagnosticsLogger
 
 type internal ProjectIdentifier = string * string
 
-/// A common interface for an F# source file snapshot that can be used accross all stages (lazy, source loaded, parsed)
+/// A common interface for an F# source file snapshot that can be used across all stages (lazy, source loaded, parsed)
 type internal IFileSnapshot =
     abstract member FileName: string
     abstract member Version: byte array
