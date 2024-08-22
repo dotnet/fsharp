@@ -89,6 +89,12 @@ type FSharpCommandLineBuilder() =
         if s <> String.Empty then
             args <- s :: args
 
+    member this.AppendOptionalSwitch(switch: string, value: bool option) =
+        match value with
+        | Some true -> this.AppendSwitch($"{switch}+")
+        | Some false -> this.AppendSwitch($"{switch}-")
+        | None -> ()
+
     member _.AppendSwitchUnquotedIfNotNull(switch: string, value: string MaybeNull) =
         assert (switch = "") // we only call this method for "OtherFlags"
         // Unfortunately we still need to mimic what cmd.exe does, but only for "OtherFlags".
