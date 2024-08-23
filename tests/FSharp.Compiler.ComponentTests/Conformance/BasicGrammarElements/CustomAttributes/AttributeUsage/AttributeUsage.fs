@@ -812,7 +812,7 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
             (Error 879, Line 22, Col 5, Line 23, Col 13, "Volatile fields must be marked 'mutable' and cannot be thread-static")
         ]
     
-    // SOURCE=E_AllowNullLiteral.fs	# E_AllowNullLiteral.fs
+    // SOURCE=E_VolatileField.fs	# E_VolatileField.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_VolatileField.fs"|])>]
     let ``E_VolatileField preview`` compilation =
         compilation
@@ -840,7 +840,7 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         |> verifyCompile
         |> shouldSucceed
     
-    // SOURCE=AllowNullLiteral01.fs	# AllowNullLiteral01.fs
+    // SOURCE=VolatileField01.fs	# VolatileField01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"VolatileField01.fs"|])>]
     let ``VolatileField01 preview`` compilation =
         compilation
