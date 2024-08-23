@@ -457,7 +457,7 @@ module DiagnosticsLoggerExtensions =
         member x.ErrorR exn =
             x.EmitDiagnostic(exn, FSharpDiagnosticSeverity.Error)
             if PutStackTraceToErrors then
-                let msg = sprintf "Stack trace for %s: %s" (exn.GetType().Name) (exn.StackTrace)
+                let msg = sprintf "Stack trace for %s: %s" (exn.GetType().Name) (System.Environment.StackTrace)
                 eprintfn "eprintfn %s" msg
                 printfn "printfn %s" msg
                 x.EmitDiagnostic(InternalError(msg, range0), FSharpDiagnosticSeverity.Error)
