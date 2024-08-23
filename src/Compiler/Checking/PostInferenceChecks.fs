@@ -390,7 +390,7 @@ let rec CheckTypeDeep (cenv: cenv) (visitTy, visitTyconRefOpt, visitAppTyOpt, vi
         //if isByrefTyconRef g tcref then
         //    CheckTypesDeepNoInner cenv f g env tinst
 
-        if tcref.IsILTycon && tinst.Length = tcref.ILTyconRawMetadata.GenericParams.Length then
+        if tcref.CanDeref && tcref.IsILTycon && tinst.Length = tcref.ILTyconRawMetadata.GenericParams.Length then
             (tinst,tcref.ILTyconRawMetadata.GenericParams)
             ||> List.iter2 (fun ty ilGenericParam ->
                 let typeInstParent = IlGenericInst(tcref, ilGenericParam)

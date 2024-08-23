@@ -412,7 +412,7 @@ type internal DiagnosticsThreadStatics =
 [<AutoOpen>]
 module DiagnosticsLoggerExtensions =
 
-    let PutStackTraceToErrors = (Environment.GetEnvironmentVariable("FSC_PutStackTrace_To_Errors") = "1") || true
+    let PutStackTraceToErrors = (Environment.GetEnvironmentVariable("FSC_PutStackTrace_To_Errors") = "1") || false
 
     // Dev15.0 shipped with a bug in diasymreader in the portable pdb symbol reader which causes an AV
     // This uses a simple heuristic to detect it (the vsversion is < 16.0)
@@ -458,8 +458,6 @@ module DiagnosticsLoggerExtensions =
             x.EmitDiagnostic(exn, FSharpDiagnosticSeverity.Error)
             if PutStackTraceToErrors then
                 let msg = sprintf "Stack trace for %s: %s" (exn.GetType().Name) (System.Environment.StackTrace)
-                eprintfn "eprintfn %s" msg
-                printfn "printfn %s" msg
                 x.EmitDiagnostic(InternalError(msg, range0), FSharpDiagnosticSeverity.Error)
 
         member x.Warning exn =
