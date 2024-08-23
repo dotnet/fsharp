@@ -70,8 +70,7 @@
 
   <!-- localization -->
   <PropertyGroup>
-    <EnableXlfLocalization Condition="'$(EnableXlfLocalization)' == '' AND ('$(Configuration)' == 'Proto' OR '$(MonoPackaging)' == 'true')">false</EnableXlfLocalization>
-    <UpdateXlfOnBuild Condition="'$(OfficialBuildId)' == '' and '$(ContinuousIntegrationBuild)' != 'true' and '$(CI)' != '1'">true</UpdateXlfOnBuild>
+    <EnableXlfLocalization Condition="'$(EnableXlfLocalization)' == '' AND ('$(Configuration)' == 'Proto' OR '$(MonoPackaging)' == 'true')">false</EnableXlfLocalization>    
   </PropertyGroup>
 
   <!-- source build -->
