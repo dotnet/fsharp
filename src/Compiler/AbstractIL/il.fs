@@ -1862,10 +1862,10 @@ type ILGenericParameterDef =
         Name: string
         Constraints: ILTypes
         Variance: ILGenericVariance
-        HasReferenceTypeConstraint: bool
-        HasAllowsRefStruct: bool
+        HasReferenceTypeConstraint: bool        
         HasNotNullableValueTypeConstraint: bool
         HasDefaultConstructorConstraint: bool
+        HasAllowsRefStruct: bool
         CustomAttrsStored: ILAttributesStored
         MetadataIndex: int32
     }

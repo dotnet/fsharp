@@ -59,7 +59,20 @@ module ``Byref interop verification tests`` =
     let ``Ref structs in generics - can declare`` () =
         FSharp """module Foo
 open System
-let x(a:Action<ReadOnlySpan<int>>) = ()
+let x(a:Action<ReadOnlySpan<int>>) = a.Invoke(ReadOnlySpan([||]))
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``Ref structs in generics - can return as inner`` () =
+
+        FSharp """module Foo
+open System
+let x() =
+    let a:(Action<ReadOnlySpan<int>>) = fun _ -> ()
+    a
         """
         |> withLangVersionPreview
         |> typecheck
