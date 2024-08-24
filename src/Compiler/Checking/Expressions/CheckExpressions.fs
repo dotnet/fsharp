@@ -10860,8 +10860,10 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         // targeting the return value.
         let tgtEx = if isRet then enum 0 else AttributeTargets.ReturnValue
         let attrs, _ = TcAttributesMaybeFailEx false cenv envinner tgt tgtEx attrs
+        let attrs: Attrib list = attrs
         if attrTgt = enum 0 && not (isNil attrs) then
-            errorR(Error(FSComp.SR.tcAttributesAreNotPermittedOnLetBindings(), mBinding))
+            for attr in attrs do
+                errorR(Error(FSComp.SR.tcAttributesAreNotPermittedOnLetBindings(), attr.Range))
         attrs
 
     // Rotate [<return:...>] from binding to return value
