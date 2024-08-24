@@ -2274,7 +2274,7 @@ module GeneralizationHelpers =
     // to C<_> occurs then generate C<?ty> for a fresh type inference variable ?ty.
     //-------------------------------------------------------------------------
 
-    let CheckDeclaredTyparsPermitted (memFlagsOpt: SynMemberFlags option, declaredTypars, m) =
+    let CheckDeclaredTyparsPermitted (memFlagsOpt: SynMemberFlags option, declaredTypars: Typars, m) =
         match memFlagsOpt with
         | None -> ()
         | Some memberFlags ->
@@ -2284,7 +2284,13 @@ module GeneralizationHelpers =
             | SynMemberKind.PropertySet
             | SynMemberKind.PropertyGetSet ->
                  if not (isNil declaredTypars) then
-                     errorR(Error(FSComp.SR.tcPropertyRequiresExplicitTypeParameters(), m))
+                    let declaredTyparsRange = 
+                        declaredTypars 
+                        |> List.map(fun typar ->  typar.Range)
+                            
+                    let m = declaredTyparsRange |> List.fold (fun r a -> unionRanges r a) range.Zero
+                        
+                    errorR(Error(FSComp.SR.tcPropertyRequiresExplicitTypeParameters(), m))
             | SynMemberKind.Constructor ->
                  if not (isNil declaredTypars) then
                      errorR(Error(FSComp.SR.tcConstructorCannotHaveTypeParameters(), m))
@@ -12706,8 +12712,9 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
 
     let (SynValSig (attributes=Attributes synAttrs; explicitTypeParams=explicitTypeParams; isInline=isInline; isMutable=mutableFlag; xmlDoc=xmlDoc; accessibility=vis; synExpr=literalExprOpt; range=m)) = synValSig
     let (ValTyparDecls (synTypars, _, synCanInferTypars)) = explicitTypeParams
+    let declaredTypars = TcTyparDecls cenv env synTypars
 
-    GeneralizationHelpers.CheckDeclaredTyparsPermitted(memFlagsOpt, synTypars, m)
+    GeneralizationHelpers.CheckDeclaredTyparsPermitted(memFlagsOpt, declaredTypars, m)
 
     let canInferTypars = GeneralizationHelpers.ComputeCanInferExtraGeneralizableTypars (containerInfo.ParentRef, synCanInferTypars, memFlagsOpt)
 
