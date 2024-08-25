@@ -754,4 +754,4 @@ module internal FileContent =
             try
                 s.Substring(startCol + 1, s.LastIndexOf("\n", StringComparison.Ordinal) + 1 - startCol + endCol)
             with ex ->
-                raise(System.AggregationException($"ex: {ex}; (s: {s}, startCol: {startCol}, endCol: {endCol})", ex))
+                raise(System.AggregateException($"ex: {ex}; (s: {s}, startCol: {startCol}, endCol: {endCol})", ex))
