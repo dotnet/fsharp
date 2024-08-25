@@ -23,22 +23,62 @@ with :? System.ArgumentException as ex ->
 
     [<Fact>]
     let ``Can define in F#`` () =
-        FSharp """module Program
-# 1 "C:\\Program.fs"
-open System.Runtime.InteropServices
-type A() =
-  static member aa (
-    a,
-    [<CallerMemberName; Optional; DefaultParameterValue "no value">]b: string, 
-    [<CallerLineNumber; Optional; DefaultParameterValue 0>]c: int, 
-    [<CallerFilePath; Optional; DefaultParameterValue "no value">]d: string, 
-    [<CallerArgumentExpressionAttribute("a"); Optional; DefaultParameterValue "no value">]e: string) = 
-    a,b,c,d,e
+        FSharp """#if !NETCOREAPP3_0_OR_GREATER
+namespace System.Runtime.CompilerServices
+  open System
+  [<AttributeUsage(AttributeTargets.Parameter, AllowMultiple=false, Inherited=false)>]
+  type CallerArgumentExpressionAttribute(parameterName) = 
+    inherit Attribute()
+    member val ParameterName: string = parameterName
+#endif
 
-let stringABC = "abc"
-assert (A.aa(stringABC) = ("abc", ".ctor", 12, "C:\Program.fs", "stringABC"))
+module Program =
+  open System.Runtime.CompilerServices
+  type A() =
+    static member aa (
+      a,
+      [<CallerMemberName; Optional; DefaultParameterValue "no value">]b: string, 
+      [<CallerLineNumber; Optional; DefaultParameterValue 0>]c: int, 
+      [<CallerFilePath; Optional; DefaultParameterValue "no value">]d: string, 
+      [<CallerArgumentExpressionAttribute("a"); Optional; DefaultParameterValue "no value">]e: string) = 
+      a,b,c,d,e
+
+  let stringABC = "abc"
+  assert (A.aa(stringABC) = ("abc", ".ctor", 22, "C:\Program.fs", "stringABC"))
         """
         |> withLangVersionPreview
         |> compileAndRun
         |> shouldSucceed
         |> ignore
+
+    [<Fact>]
+    let ``Can define in F# - with #line`` () =
+        FSharp """#if !NETCOREAPP3_0_OR_GREATER
+namespace System.Runtime.CompilerServices
+  open System
+  [<AttributeUsage(AttributeTargets.Parameter, AllowMultiple=false, Inherited=false)>]
+  type CallerArgumentExpressionAttribute(parameterName) = 
+    inherit Attribute()
+    member val ParameterName: string = parameterName
+#endif
+
+module Program =
+# 1 "C:\\Program.fs"
+  open System.Runtime.CompilerServices
+  type A() =
+    static member aa (
+      a,
+      [<CallerMemberName; Optional; DefaultParameterValue "no value">]b: string, 
+      [<CallerLineNumber; Optional; DefaultParameterValue 0>]c: int, 
+      [<CallerFilePath; Optional; DefaultParameterValue "no value">]d: string, 
+      [<CallerArgumentExpressionAttribute("a"); Optional; DefaultParameterValue "no value">]e: string) = 
+      a,b,c,d,e
+
+  let stringABC = "abc"
+  assert (A.aa(stringABC) = ("abc", ".ctor", 12, "C:\Program.fs", "stringABC"))
+        """
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+

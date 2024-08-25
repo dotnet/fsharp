@@ -751,4 +751,7 @@ module internal FileContent =
         if String.IsNullOrEmpty s then
             s
         else
-            s.Substring(startCol + 1, s.LastIndexOf("\n", StringComparison.Ordinal) + 1 - startCol + endCol)
+            try
+                s.Substring(startCol + 1, s.LastIndexOf("\n", StringComparison.Ordinal) + 1 - startCol + endCol)
+            with ex ->
+                raise(System.AggregationException($"ex: {ex}; (s: {s}, startCol: {startCol}, endCol: {endCol})", ex))
