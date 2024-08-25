@@ -25,11 +25,13 @@ with :? System.ArgumentException as ex ->
     let ``Can define in F#`` () =
         FSharp """#if !NETCOREAPP3_0_OR_GREATER
 namespace System.Runtime.CompilerServices
-  open System
-  [<AttributeUsage(AttributeTargets.Parameter, AllowMultiple=false, Inherited=false)>]
-  type CallerArgumentExpressionAttribute(parameterName) = 
+open System
+[<AttributeUsage(AttributeTargets.Parameter, AllowMultiple=false, Inherited=false)>]
+type CallerArgumentExpressionAttribute(parameterName) = 
     inherit Attribute()
     member val ParameterName: string = parameterName
+
+namespace global
 #endif
 
 module Program =
@@ -55,11 +57,13 @@ module Program =
     let ``Can define in F# - with #line`` () =
         FSharp """#if !NETCOREAPP3_0_OR_GREATER
 namespace System.Runtime.CompilerServices
-  open System
-  [<AttributeUsage(AttributeTargets.Parameter, AllowMultiple=false, Inherited=false)>]
-  type CallerArgumentExpressionAttribute(parameterName) = 
+open System
+[<AttributeUsage(AttributeTargets.Parameter, AllowMultiple=false, Inherited=false)>]
+type CallerArgumentExpressionAttribute(parameterName) = 
     inherit Attribute()
     member val ParameterName: string = parameterName
+
+namespace global
 #endif
 
 module Program =
