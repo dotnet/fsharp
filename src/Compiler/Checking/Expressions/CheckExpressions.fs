@@ -10990,7 +10990,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         match apinfoOpt with
         | Some (apinfo, apOverallTy, m) ->
             if Option.isSome memberFlagsOpt || (not apinfo.IsTotal && apinfo.ActiveTags.Length > 1) then
-                error(Error(FSComp.SR.tcInvalidActivePatternName(), mBinding))
+                errorR(Error(FSComp.SR.tcInvalidActivePatternName(apinfo.LogicalName), m))
 
             apinfo.ActiveTagsWithRanges |> List.iteri (fun i (_tag, tagRange) ->
                 let item = Item.ActivePatternResult(apinfo, apOverallTy, i, tagRange)

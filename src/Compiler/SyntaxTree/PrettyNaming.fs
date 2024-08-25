@@ -963,6 +963,13 @@ type ActivePatternInfo =
 
     member x.ActiveTagsWithRanges = let (APInfo(_, tags, _)) = x in tags
 
+    member x.LogicalName =
+        let (APInfo(_, tags, _)) = x
+        tags
+        |> List.map fst
+        |> String.concat "|"
+        |> fun s -> "(|" + s + "|)"
+
     member x.Range = let (APInfo(_, _, m)) = x in m
 
 let ActivePatternInfoOfValName nm (m: range) =

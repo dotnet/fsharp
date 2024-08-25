@@ -4943,8 +4943,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidActivePatternName">
-        <source>This is not a valid name for an active pattern</source>
-        <target state="translated">To nie jest prawidłowa nazwa aktywnego wzorca</target>
+        <source>'{0}' is not a valid method name. Active patterns may only be defined as let-bound module or class functions.</source>
+        <target state="new">'{0}' is not a valid method name. Active patterns may only be defined as let-bound module or class functions.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcEntryPointAttributeRequiresFunctionInModule">
