@@ -963,9 +963,18 @@ type ActivePatternInfo =
 
     member x.ActiveTagsWithRanges = let (APInfo(_, tags, _)) = x in tags
 
+    // FIXME
     member x.LogicalName =
-        let (APInfo(_, tags, _)) = x
-        tags |> List.map fst |> String.concat "|" |> (fun s -> "(|" + s + "|)")
+        let (APInfo(isTotal, tags, _)) = x
+        tags
+        |> List.map fst 
+        |> String.concat "|" 
+        |> (fun s -> 
+            if isTotal then
+                "(|" + s + "|)"
+            else
+                 "(|" + s + "|_|)"
+        )
 
     member x.Range = let (APInfo(_, _, m)) = x in m
 

@@ -223,7 +223,7 @@ module Named =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 1, Line 5, Col 9, Line 5, Col 30, "This expression was expected to have type
+        |> withSingleDiagnostic (Error 1, Line 5, Col 10, Line 5, Col 19, "This expression was expected to have type
     'Choice<'a,'b>'    
 but here has type
     'string'    ")
@@ -236,7 +236,14 @@ but here has type
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 827, Line 4, Col 9, Line 4, Col 34, "This is not a valid name for an active pattern")
+        |> withDiagnostics [
+            (Error 827, Line 4, Col 10, Line 4, Col 23, "'(|Foo2|Bar2|_|)' is not a valid method name. Active patterns may only be defined as let-bound module or class functions.");
+            (Error 1, Line 4, Col 10, Line 4, Col 23, "This expression was expected to have type
+    'Choice<'a,'b> option'    
+but here has type
+    'string'    ")
+        ]
+               
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Error_LetRec03.fs"|])>]
@@ -246,8 +253,14 @@ but here has type
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 827, Line 4, Col 10, Line 4, Col 43, "This is not a valid name for an active pattern")
-        
+        |> withDiagnostics [
+            (Error 827, Line 4, Col 11, Line 4, Col 32, "'(|Foo2b|Bar2b|Baz2b|_|)' is not a valid method name. Active patterns may only be defined as let-bound module or class functions.");
+            (Error 1, Line 4, Col 11, Line 4, Col 32, "This expression was expected to have type
+    'Choice<'a,'b,'c> option'    
+but here has type
+    'string'    ")
+        ]
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Error_LetRec04.fs"|])>]
     let ``Named - E_Error_LetRec04_fs - --test:ErrorRanges`` compilation =
@@ -256,7 +269,7 @@ but here has type
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 1, Line 4, Col 9, Line 4, Col 29, "This expression was expected to have type
+        |> withSingleDiagnostic (Error 1, Line 4, Col 10, Line 4, Col 18, "This expression was expected to have type
     ''a option'    
 but here has type
     'string'    ")
@@ -269,7 +282,7 @@ but here has type
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 1, Line 4, Col 5, Line 4, Col 18, "This expression was expected to have type
+        |> withSingleDiagnostic (Error 1, Line 4, Col 6, Line 4, Col 15, "This expression was expected to have type
     'Choice<'a,'b>'    
 but here has type
     'string'    ")
@@ -282,7 +295,13 @@ but here has type
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 827, Line 4, Col 5, Line 4, Col 22, "This is not a valid name for an active pattern")
+        |> withDiagnostics [
+            (Error 827, Line 4, Col 6, Line 4, Col 19, "'(|Foo2|Bar2|_|)' is not a valid method name. Active patterns may only be defined as let-bound module or class functions.");
+            (Error 1, Line 4, Col 6, Line 4, Col 19, "This expression was expected to have type
+    'Choice<'a,'b> option'    
+but here has type
+    'string'    ")
+        ]
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Error_NonParam03.fs"|])>]
@@ -292,7 +311,13 @@ but here has type
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 827, Line 4, Col 5, Line 4, Col 30, "This is not a valid name for an active pattern")
+        |> withDiagnostics [
+            (Error 827, Line 4, Col 6, Line 4, Col 27, "'(|Foo2b|Bar2b|Baz2b|_|)' is not a valid method name. Active patterns may only be defined as let-bound module or class functions.");
+            (Error 1, Line 4, Col 6, Line 4, Col 27, "This expression was expected to have type
+    'Choice<'a,'b,'c> option'    
+but here has type
+    'string'    ")
+        ]
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Error_NonParam04.fs"|])>]
@@ -302,7 +327,7 @@ but here has type
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 1, Line 4, Col 5, Line 4, Col 17, "This expression was expected to have type
+        |> withSingleDiagnostic (Error 1, Line 4, Col 6, Line 4, Col 14, "This expression was expected to have type
     ''a option'    
 but here has type
     'string'    ")
@@ -315,7 +340,7 @@ but here has type
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 1, Line 4, Col 5, Line 4, Col 26, "This expression was expected to have type
+        |> withSingleDiagnostic (Error 1, Line 4, Col 6, Line 4, Col 15, "This expression was expected to have type
     'Choice<'a,'b>'    
 but here has type
     'string'    ")
@@ -328,7 +353,13 @@ but here has type
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 827, Line 4, Col 5, Line 4, Col 31, "This is not a valid name for an active pattern")
+        |> withDiagnostics [
+            (Error 827, Line 4, Col 6, Line 4, Col 19, "'(|Foo2|Bar2|_|)' is not a valid method name. Active patterns may only be defined as let-bound module or class functions.");
+            (Error 1, Line 4, Col 6, Line 4, Col 19, "This expression was expected to have type
+    'Choice<'a,'b> option'    
+but here has type
+    'string'    ")
+        ]
     
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Error_Param03.fs"|])>]
@@ -339,7 +370,11 @@ but here has type
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 827, Line 4, Col 5, Line 4, Col 38, "This is not a valid name for an active pattern")
+            (Error 827, Line 4, Col 6, Line 4, Col 27, "'(|Foo2b|Bar2b|Baz2b|_|)' is not a valid method name. Active patterns may only be defined as let-bound module or class functions.");
+            (Error 1, Line 4, Col 6, Line 4, Col 27, "This expression was expected to have type
+    'Choice<'a,'b,'c> option'    
+but here has type
+    'string'    ")
         ]
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
@@ -351,7 +386,7 @@ but here has type
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 1, Line 4, Col 5, Line 4, Col 25, "This expression was expected to have type
+            (Error 1, Line 4, Col 6, Line 4, Col 14, "This expression was expected to have type
     ''a option'    
 but here has type
     'string'    ")
@@ -377,15 +412,9 @@ but here has type
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 827, Line 8, Col 5, Line 8, Col 64, "This is not a valid name for an active pattern")
-            (Error 39, Line 20, Col 7, Line 20, Col 15, "The pattern discriminator 'Sentence' is not defined.")
-            (Error 72, Line 20, Col 25, Line 20, Col 37, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
-            (Error 39, Line 21, Col 7, Line 21, Col 11, "The pattern discriminator 'Word' is not defined.")
-            (Error 72, Line 21, Col 20, Line 21, Col 31, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
-            (Warning 49, Line 22, Col 7, Line 22, Col 17, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
-            (Error 39, Line 23, Col 7, Line 23, Col 18, "The pattern discriminator 'Punctuation' is not defined.")
-            (Warning 26, Line 23, Col 7, Line 23, Col 20, "This rule will never be matched")
-            (Warning 26, Line 24, Col 7, Line 24, Col 8, "This rule will never be matched")
+            (Error 827, Line 8, Col 6, Line 8, Col 46, "'(|Sentence|Word|Punctuation|WhiteSpace|_|)' is not a valid method name. Active patterns may only be defined as let-bound module or class functions.");
+            (Error 3868, Line 22, Col 7, Line 22, Col 17, "This active pattern expects exactly one pattern argument, e.g., 'WhiteSpace pat'.");
+            (Error 1107, Line 20, Col 7, Line 20, Col 21, "Partial active patterns may only generate one result")
         ]
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
