@@ -689,7 +689,11 @@ let CheckTypeAux permitByRefLike (cenv: cenv) env m ty onInnerByrefError =
                    cenv.potentialUnboundUsesOfVals <- cenv.potentialUnboundUsesOfVals.Add(vref.Stamp, m)
             | _ -> ()
 
-        let initialCtx = if permitByRefLike = PermitByRefType.NoInnerByRefLike then TopLevelAllowingByRef else NoInfo
+        let initialCtx = 
+            match permitByRefLike with
+            | PermitByRefType.SpanLike
+            | PermitByRefType.NoInnerByRefLike -> TopLevelAllowingByRef
+            | _ -> NoInfo        
 
         CheckTypeDeep cenv (ignore, Some visitTyconRef, Some visitAppTy, Some visitTraitSolution, Some visitTyar) cenv.g env initialCtx ty
 
