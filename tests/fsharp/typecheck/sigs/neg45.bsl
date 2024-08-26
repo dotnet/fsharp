@@ -11,9 +11,9 @@ neg45.fs(34,25,34,26): typecheck error FS0465: Type inference problem too compli
 
 neg45.fs(34,27,34,28): typecheck error FS0465: Type inference problem too complicated (maximum iteration depth reached). Consider adding further type annotations.
 
-neg45.fs(41,24,41,33): typecheck error FS0827: '(|Foo|Bir|)' is not a valid method name. Active patterns may only be defined as let-bound module or class functions.
+neg45.fs(41,24,41,33): typecheck error FS0827: '(|Foo|Bir|)' is not a valid method name. Use a 'let' binding instead.
 
-neg45.fs(56,19,56,28): typecheck error FS0827: '(|Foo|Bir|)' is not a valid method name. Active patterns may only be defined as let-bound module or class functions.
+neg45.fs(56,19,56,28): typecheck error FS0827: '(|Foo|Bir|)' is not a valid method name. Use a 'let' binding instead.
 
 neg45.fs(64,19,64,20): typecheck error FS0025: Incomplete pattern matches on this expression.
 

@@ -70,7 +70,7 @@ module MemberDefinitions_MethodsAndProperties =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 827, Line 10, Col 20, Line 10, Col 29, "'(|Foo|Bar|)' is not a valid method name. Active patterns may only be defined as let-bound module or class functions.")
+            (Error 827, Line 10, Col 20, Line 10, Col 29, "'(|Foo|Bar|)' is not a valid method name. Use a 'let' binding instead.")
             (Error 39, Line 21, Col 10, Line 21, Col 13, "The type 'FaaBor' does not define the field, constructor or member 'Foo'.")
         ]
 
@@ -81,7 +81,7 @@ module MemberDefinitions_MethodsAndProperties =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 827, Line 6, Col 15, Line 6, Col 24, "'(|Foo|Bar|)' is not a valid method name. Active patterns may only be defined as let-bound module or class functions.");
+            (Error 827, Line 6, Col 15, Line 6, Col 24, "'(|Foo|Bar|)' is not a valid method name. Use a 'let' binding instead.")
             (Error 3868, Line 16, Col 11, Line 16, Col 14, "This active pattern expects 1 expression argument(s) and a pattern argument, e.g., 'Foo e1 pat'.");
             (Error 3868, Line 17, Col 11, Line 17, Col 14, "This active pattern expects 1 expression argument(s) and a pattern argument, e.g., 'Bar e1 pat'.");
             (Warning 25, Line 15, Col 15, Line 15, Col 16, "Incomplete pattern matches on this expression.")
@@ -97,7 +97,7 @@ module MemberDefinitions_MethodsAndProperties =
         |> withDiagnostics [
             (Error 3872, Line 5, Col 6, Line 5, Col 13, "Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.")
             (Error 3872, Line 15, Col 10, Line 15, Col 17, "Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.")
-            (Error 827, Line 24, Col 20, Line 24, Col 25, "'(|A|B|)' is not a valid method name. Active patterns may only be defined as let-bound module or class functions.")
+            (Error 827, Line 24, Col 20, Line 24, Col 25, "'(|A|B|)' is not a valid method name. Use a 'let' binding instead.")
         ]
 
     // SOURCE=E_DuplicateProperty01.fs SCFLAGS="--test:ErrorRanges"	# E_DuplicateProperty01.fs
