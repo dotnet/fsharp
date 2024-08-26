@@ -217,7 +217,7 @@ type OptionalArgInfo =
                             else MissingValue
                     else
                         DefaultValue
-                                    // See above - the typpe is imported only in order to be analyzed for optional default value, nullness is irrelevant here.
+                                    // See above - the type is imported only in order to be analyzed for optional default value, nullness is irrelevant here.
                 CallerSide (analyze (ImportILTypeFromMetadataSkipNullness amap m ilScope ilTypeInst [] ilParam.Type))
             | Some v ->
                 CallerSide (Constant v)
@@ -327,7 +327,7 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
         | false, true, true -> 
             match TryFindFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs with
             | Some(Attrib(_, _, _, _, _, _, callerMemberNameAttributeRange)) ->
-                warning(Error(FSComp.SR.CallerMemberNameIsOverriden(argInfo.Name.Value.idText), callerMemberNameAttributeRange))
+                warning(Error(FSComp.SR.CallerMemberNameIsOverridden(argInfo.Name.Value.idText), callerMemberNameAttributeRange))
                 CallerFilePath
             | _ -> failwith "Impossible"
         | _, _, _ ->
@@ -593,7 +593,7 @@ type ILMethInfo =
 
     member x.GetNullness(p:ILParameter) = {DirectAttributes = AttributesFromIL(p.MetadataIndex,p.CustomAttrsStored); Fallback = x.NullableFallback}
 
-    /// Get the argument types of the the IL method. If this is an C#-style extension method
+    /// Get the argument types of the IL method. If this is an C#-style extension method
     /// then drop the object argument.
     member x.GetParamTypes(amap, m, minst) =
         x.ParamMetadata |> List.map (fun p -> ImportParameterTypeFromMetadata amap m (x.GetNullness(p)) p.Type x.MetadataScope x.DeclaringTypeInst minst)
@@ -1062,7 +1062,7 @@ type MethInfo =
         | FSMeth _ -> false // F# defined methods not supported yet. Must be a language feature.
         | _ -> false
 
-    /// Indicates, wheter this method has `IsExternalInit` modreq.
+    /// Indicates, whether this method has `IsExternalInit` modreq.
     member x.HasExternalInit =
         match x with
         | ILMeth (_, ilMethInfo, _) -> HasExternalInit ilMethInfo.ILMethodRef
@@ -1672,7 +1672,7 @@ type ILPropInfo =
     /// Indicates if the IL property has a 'set' method
     member x.HasSetter = Option.isSome x.RawMetadata.SetMethod
 
-    /// Indidcates whether IL property has an init-only setter (i.e. has the `System.Runtime.CompilerServices.IsExternalInit` modifer)
+    /// Indicates whether IL property has an init-only setter (i.e. has the `System.Runtime.CompilerServices.IsExternalInit` modifier)
     member x.IsSetterInitOnly =
         x.HasSetter && HasExternalInit x.SetterMethod.ILMethodRef
 

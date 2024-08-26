@@ -27,7 +27,7 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>] (metadataAsSo
             |> CancellableTask.startWithoutCancellation
 
         /// Invoked with Go to Definition.
-        /// Try to navigate to the definiton of the symbol at the symbolRange in the originDocument
+        /// Try to navigate to the definition of the symbol at the symbolRange in the originDocument
         member _.TryGoToDefinition(document: Document, position: int, cancellationToken: CancellationToken) =
             let navigation = FSharpNavigation(metadataAsSource, document, rangeStartup)
             navigation.TryGoToDefinition(position, cancellationToken)

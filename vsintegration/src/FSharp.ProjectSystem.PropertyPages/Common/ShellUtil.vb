@@ -273,7 +273,7 @@ Namespace Microsoft.VisualStudio.Editors.Common
         End Function
 
         ''' <summary>
-        ''' Given a hierarhy, determine if this is a devices project...
+        ''' Given a hierarchy, determine if this is a devices project...
         ''' </summary>
         ''' <param name="hierarchy"></param>
         ''' <returns></returns>
@@ -517,7 +517,7 @@ Namespace Microsoft.VisualStudio.Editors.Common
 #End Region
 
             ''' <summary>
-            ''' Forward to overridable OnBrodcastMessage handler
+            ''' Forward to overridable OnBroadcastMessage handler
             ''' </summary>
             ''' <param name="msg"></param>
             ''' <param name="wParam"></param>

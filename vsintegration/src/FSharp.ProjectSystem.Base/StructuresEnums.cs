@@ -90,7 +90,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     }
 
     /// <summary>
-    /// Defines the currect state of a property page.
+    /// Defines the current state of a property page.
     /// </summary>
     [Flags]
     internal enum PropPageStatus
@@ -258,7 +258,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     }
 
     /// <summary>
-    /// Defines the global propeties used by the msbuild project.
+    /// Defines the global properties used by the msbuild project.
     /// </summary>
     internal enum GlobalProperty
     {
@@ -294,7 +294,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         SolutionDir,
 
         /// <summary>
-        /// The extension of teh directory. This is the same as the $(SolutionExt) macro.
+        /// The extension of the directory. This is the same as the $(SolutionExt) macro.
         /// </summary>
         SolutionExt,
 
@@ -310,7 +310,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         VSIDEResolvedNonMSBuildProjectOutputs,
 
         /// <summary>
-        /// The Configuartion property.
+        /// The Configuration property.
         /// </summary>
         Configuration,
 
@@ -448,9 +448,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// The reason while the file has chnaged on disk.
+        /// The reason while the file has changed on disk.
         /// </summary>
-        /// <value>The reason while the file has chnaged on disk.</value>
+        /// <value>The reason while the file has changed on disk.</value>
         public _VSFILECHANGEFLAGS FileChangeFlag
         {
             get
@@ -461,7 +461,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     }
 
     /// <summary>
-    /// Defines the event args for the active configuration chnage event.
+    /// Defines the event args for the active configuration change event.
     /// </summary>
     internal class ActiveConfigurationChangedEventArgs : EventArgs
     {

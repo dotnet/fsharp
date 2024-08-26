@@ -315,7 +315,7 @@ Namespace Microsoft.VisualStudio.Editors.Common
         Public Shared PDLinqImports As New TraceSwitch("PDLinqImports", "Traces the adding and removing of Linq imports during target framework upgrade/downgrade")
 
         '------------- Settings Designer -------------
-        Public Shared SDSyncUserConfig As New TraceSwitch("SDSyncUserConfig", "Trace synhronization/deletion of user.config files")
+        Public Shared SDSyncUserConfig As New TraceSwitch("SDSyncUserConfig", "Trace synchronization/deletion of user.config files")
 
         ''' <summary>
         ''' Tracing whenever we read/write .settings and/or app.config files...
@@ -478,7 +478,7 @@ Namespace Microsoft.VisualStudio.Editors.Common
 
             ''' <summary>
             ''' Interprets the new (string-based) correctly, based on the string or
-            '''   integeger representation.
+            '''   integer representation.
             ''' </summary>
             ''' <remarks></remarks>
             Protected Overrides Sub OnValueChanged()

@@ -268,7 +268,7 @@ type internal VSFontsAndColorsHelper private(fontFamily, pointSize, excludedCode
 //
 type internal FSharpIntelliSenseToAppearAdornment_DEPRECATED(view: IWpfTextView, cursorPoint: SnapshotPoint, site: System.IServiceProvider) as this =
         let fontFamily, pointSize, excludedCodeForegroundColorBrush, backgroundBrush = VSFontsAndColorsHelper.GetContents(site)
-        // TODO: We should really create our own adornment layer.  It is possible (unlikely) that pre-existing layers may be re-ordered, or that
+        // TODO: We should really create our own adornment layer.  It is possible (unlikely) that preexisting layers may be re-ordered, or that
         // code 'owning' the layer will choose to clear all adornments, for example.  But creating a new adornment layer can only be done via MEF-export, and
         // as of yet, we have not done any MEF-exporting in the language service.  So for now, use the existing VisibleWhitespace layer, and incur some risk, just to 
         // unblock the feature.
@@ -488,7 +488,7 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                                   (line,idx)
                               if decls.GetCount("") > 0 && 
                                   (source.Service.Preferences.AutoListMembers || completeWord || reason = BackgroundRequestReason.DisplayMemberList) &&
-                                  line = req.Line && idx = req.Col // ensure user has not chaged cursor location (note: ideally, we would allow typing if still in 'applicative span' for completion)
+                                  line = req.Line && idx = req.Col // ensure user has not changed cursor location (note: ideally, we would allow typing if still in 'applicative span' for completion)
                                   then
                                   source.CompletionSet.Init(req.View, decls, completeWord)
                           source.ResetFSharpIntelliSenseToAppearAdornment()

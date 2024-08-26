@@ -12,7 +12,7 @@ module ObjectExpressionNegativeTests =
 
 
         let ErroneousComplete () =    
-            { new ITestSub with member x.Meth2(y) = 2 } // THis should give an error  - Meth1 is not implemented
+            { new ITestSub with member x.Meth2(y) = 2 } // This should give an error  - Meth1 is not implemented
 
 
     module Test2 = 

@@ -227,7 +227,7 @@ module internal Salsa =
         MSBuild.CreateFSharpManifestResourceName(projectFileName,configuration,platform)
 
     module Filenames = 
-        /// Compare two file names to eachother.
+        /// Compare two file names to each other.
         let AreSame f1 f2 = 
             let result = 
                    System.String.Compare(f1,f2,StringComparison.CurrentCultureIgnoreCase)=0
@@ -463,7 +463,7 @@ module internal Salsa =
     // Result of querying the completion list
     and CompletionItem = CompletionItem of name: string * displayText: string * nameInCode: string * (unit -> string) * DeclarationType
 
-    /// Representes the information that is displayed in the navigation bar
+    /// Represents the information that is displayed in the navigation bar
     and NavigationBarResult = 
       { TypesAndModules : DropDownMember[]
         Members : DropDownMember[]
@@ -1055,7 +1055,7 @@ module internal Salsa =
                         let linestarts = Array.create (lines.Length+1) 0 // One extra to save the state at the end of the file.
                         VsMocks.setFileText fileName view lines (RecolorizeLines view solution.Vs.GetColorizer lines linestarts) (fun line->linestarts.[line])
                         
-                        // The invisible project does not have a hiearchy.
+                        // The invisible project does not have a hierarchy.
                         if hier <> null then 
                             // Put the file in the hierarchy
                             behaviorHooks.AddFileToHierarchyHook(fileName, hier)
