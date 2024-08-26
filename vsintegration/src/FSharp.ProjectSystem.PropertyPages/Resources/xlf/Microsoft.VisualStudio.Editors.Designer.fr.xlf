@@ -913,14 +913,14 @@ Erreur :</target>
         <target state="translated">Propriétés de la référence</target>
         <note />
       </trans-unit>
+      <trans-unit id="PropPage_ProgramNonexistent">
+        <source>The external program cannot be found. Please enter a valid executable file.</source>
+        <target state="new">The external program cannot be found. Please enter a valid executable file.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="PropPage_RemoteMachineBlankError">
         <source>The remote machine name cannot be blank.  Please specify the name of the machine to debug remotely.</source>
         <target state="translated">Le nom de l'ordinateur distant ne peut pas être vide.  Spécifiez le nom de l'ordinateur à déboguer à distance.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PropPage_ProgramNotExist">
-        <source>The external program cannot be found. Please enter a valid executable file.</source>
-        <target state="translated">Le programme externe est introuvable. Entrez un fichier exécutable valide.</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_NeedExternalProgram">
@@ -941,6 +941,11 @@ Erreur :</target>
       <trans-unit id="PropPage_InvalidURL">
         <source>The URL is invalid. Please enter a valid URL like "http://www.microsoft.com/"</source>
         <target state="translated">L'URL n'est pas valide. Entrez une URL valide telle que "http://www.microsoft.com/"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_ResourceFileNonexistent">
+        <source>"The resource file entered does not exist."</source>
+        <target state="new">"The resource file entered does not exist."</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_WorkingDirError">
@@ -991,11 +996,6 @@ Erreur :</target>
       <trans-unit id="PropPage_NeedResFile">
         <source>"Resource files must have a .res file extension. Please enter a valid resource file name."</source>
         <target state="translated">"Les fichiers de ressources doivent avoir une extension de fichier .res. Entrez un nom de fichier de ressources valide."</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PropPage_ResourceFileNotExist">
-        <source>"The resource file entered does not exist."</source>
-        <target state="translated">"Le fichier de ressources entré n'existe pas."</target>
         <note />
       </trans-unit>
       <trans-unit id="APPDES_Title">
@@ -1610,6 +1610,21 @@ Erreur :</target>
         <target state="translated">Nécessite :</target>
         <note />
       </trans-unit>
+      <trans-unit id="RES_PersistenceMode_Embedded">
+        <source>Embedded in .resx</source>
+        <target state="new">Embedded in .resx</target>
+        <note>File Persistence Mode</note>
+      </trans-unit>
+      <trans-unit id="RSE_CategoriesLabel">
+        <source>&amp;Categories:</source>
+        <target state="new">&amp;Categories:</target>
+        <note>The label in the menu strip for the combobox that holds the categories of resources to display</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantSaveResourceDiscard_1Arg">
+        <source>The resource item(s) {0} cannot be saved correctly.  The item(s) will be discarded.</source>
+        <target state="new">The resource item(s) {0} cannot be saved correctly.  The item(s) will be discarded.</target>
+        <note>{0} - name list of the resource</note>
+      </trans-unit>
       <trans-unit id="RSE_ResourceNameColumn">
         <source>Name</source>
         <target state="translated">Nom</target>
@@ -1763,11 +1778,6 @@ Voulez-vous vraiment modifier ce fichier ?</target>
         <source>The resource item uses the type '{0}', which is not supported in this project.</source>
         <target state="translated">L'élément de la ressource utilise le type '{0}' alors que ce type n'est pas pris en charge dans ce projet.</target>
         <note>{0} - name of the type</note>
-      </trans-unit>
-      <trans-unit id="RSE_Err_CantSaveResouce_1Arg">
-        <source>The resource item(s) {0} cannot be saved correctly.  The item(s) will be discarded.</source>
-        <target state="translated">Impossible d'enregistrer correctement les éléments de la ressource {0}.  Ils vont être ignorés.</target>
-        <note>{0} - name list of the resource</note>
       </trans-unit>
       <trans-unit id="RSE_Err_Name">
         <source>'{0}'</source>
@@ -2001,11 +2011,6 @@ CONSIDER: get this from CodeDom</note>
         <target state="translated">Lié au moment de la compilation</target>
         <note>File Persistence Mode</note>
       </trans-unit>
-      <trans-unit id="RES_PersistenceMode_Embeded">
-        <source>Embedded in .resx</source>
-        <target state="translated">Incorporé dans .resx</target>
-        <note>File Persistence Mode</note>
-      </trans-unit>
       <trans-unit id="RSE_Filter_Bitmap">
         <source>Bitmaps</source>
         <target state="translated">Bitmaps</target>
@@ -2229,11 +2234,6 @@ CONSIDER: get this from CodeDom</note>
         <source>Delete values in {0} cell(s)</source>
         <target state="translated">Supprimer les valeurs dans {0} cellule(s)</target>
         <note>{0} = number of cells cleared</note>
-      </trans-unit>
-      <trans-unit id="RSE_CategiesLabel">
-        <source>&amp;Categories:</source>
-        <target state="translated">&amp;Catégories :</target>
-        <note>The label in the menu strip for the combobox that holds the categories of resources to display</note>
       </trans-unit>
       <trans-unit id="RSE_PropDesc_Name">
         <source>Name used to identify the resource in code.</source>
