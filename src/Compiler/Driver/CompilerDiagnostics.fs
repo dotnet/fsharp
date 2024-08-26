@@ -2162,12 +2162,9 @@ let CollectFormattedDiagnostics (tcConfig: TcConfig, severity: FSharpDiagnosticS
                 | DiagnosticStyle.Emacs
                 | DiagnosticStyle.Gcc
                 | DiagnosticStyle.Default
-                | DiagnosticStyle.Test ->
-                    sprintf "%s FS%04d: " message errorNumber
-                | DiagnosticStyle.VisualStudio ->
-                    sprintf "%s %s FS%04d: " subcategory message errorNumber
-                | DiagnosticStyle.Rich ->
-                    sprintf "\n◦→ %s FS%04d: " message errorNumber
+                | DiagnosticStyle.Test -> sprintf "%s FS%04d: " message errorNumber
+                | DiagnosticStyle.VisualStudio -> sprintf "%s %s FS%04d: " subcategory message errorNumber
+                | DiagnosticStyle.Rich -> sprintf "\n◦→ %s FS%04d: " message errorNumber
 
             let canonical: FormattedDiagnosticCanonicalInformation =
                 {
@@ -2210,7 +2207,9 @@ let CollectFormattedDiagnostics (tcConfig: TcConfig, severity: FSharpDiagnosticS
                         else
                             content
                             |> fun lines -> Array.sub lines (m.StartLine - 1) (m.EndLine - m.StartLine - 1)
-                            |> Array.fold (fun (context, lineNumber) line -> (context + $"\n◦ {lineNumber} |{line}", lineNumber + 1)) ("", (m.StartLine))
+                            |> Array.fold
+                                (fun (context, lineNumber) line -> (context + $"\n◦ {lineNumber} |{line}", lineNumber + 1))
+                                ("", (m.StartLine))
                             |> fst
                             |> Some
                     | None -> None
