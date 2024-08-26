@@ -539,7 +539,7 @@
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
         <source>whitespace relaxation</source>
-        <target state="translated">공백 완화</target>
+        <target state="new">whitespace relaxation</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace2">
@@ -1124,7 +1124,7 @@
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
         <source>A constrained generic construct occurred in the resumable code specification</source>
-        <target state="translated">다시 시작 가능한 코드 사양에서 제약이 있는 제네릭 구문이 발생했습니다.</target>
+        <target state="new">A constrained generic construct occurred in the resumable code specification</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsDynamicResumeAtInBody">
@@ -1139,7 +1139,7 @@
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsLetRec">
         <source>A 'let rec' occurred in the resumable code specification</source>
-        <target state="translated">다시 시작 가능한 코드 사양에서 'let rec'가 발생했습니다.</target>
+        <target state="new">A 'let rec' occurred in the resumable code specification</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsResumptionInHandlerOrFilter">
@@ -1444,7 +1444,7 @@
       </trans-unit>
       <trans-unit id="tcMissingRequiredMembers">
         <source>The following required properties have to be initialized:{0}</source>
-        <target state="translated">다음 필수 속성을 초기화해야 합니다. {0}</target>
+        <target state="new">The following required properties have to be initialized:{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMultipleFieldsInRecord">
@@ -1569,7 +1569,7 @@
       </trans-unit>
       <trans-unit id="tcResumableCodeContainsLetRec">
         <source>Invalid resumable code. A 'let rec' occurred in the resumable code specification</source>
-        <target state="translated">다시 시작 가능한 코드가 잘못되었습니다. 다시 시작 가능한 코드 사양에서 'let rec'가 발생했습니다.</target>
+        <target state="new">Invalid resumable code. A 'let rec' occurred in the resumable code specification</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeFunctionMustBeInline">
@@ -5889,7 +5889,7 @@
       </trans-unit>
       <trans-unit id="optsDebug">
         <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debugging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
-        <target state="translated">디버깅 형식(full, portable, embedded, pdbonly)을 지정합니다. '{0}'은(는) 디버깅 형식을 지정하지 않은 경우 기본값이며 디버거를 실행 중인 프로그램에 연결할 수 있습니다. 'portable'은 플랫폼 간 형식이고, 'embedded'는 출력 파일에 포함된 플랫폼 간 형식입니다.</target>
+        <target state="new">Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debugging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</target>
         <note />
       </trans-unit>
       <trans-unit id="optsOptimize">
@@ -7144,7 +7144,7 @@
       </trans-unit>
       <trans-unit id="fscRemotingError">
         <source>The resident compilation service was not used because a problem occurred in communicating with the server.</source>
-        <target state="translated">서버와 통신하는 동안 문제가 발생하여 상주 컴파일 서비스를 사용하지 않았습니다.</target>
+        <target state="new">The resident compilation service was not used because a problem occurred in communicating with the server.</target>
         <note />
       </trans-unit>
       <trans-unit id="pathIsInvalid">
@@ -7344,7 +7344,7 @@
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToType">
         <source>An error occurred applying the static arguments to a provided type</source>
-        <target state="translated">제공된 형식에 정적 인수를 적용하는 동안 오류가 발생했습니다.</target>
+        <target state="new">An error occurred applying the static arguments to a provided type</target>
         <note />
       </trans-unit>
       <trans-unit id="etUnknownStaticArgumentKind">
@@ -7409,7 +7409,7 @@
       </trans-unit>
       <trans-unit id="etInvalidTypeProviderAssemblyName">
         <source>Assembly '{0}' has TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</source>
-        <target state="translated">{0}' 어셈블리에 포함된 TypeProviderAssembly 특성의 값('{1}')이 잘못되었습니다. 값은 올바른 어셈블리 이름이어야 합니다.</target>
+        <target state="new">Assembly '{0}' has TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidMemberNameCtor">
@@ -7994,7 +7994,7 @@
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToMethod">
         <source>An error occurred applying the static arguments to a provided method</source>
-        <target state="translated">제공된 메서드에 정적 인수를 적용하는 동안 오류가 발생했습니다.</target>
+        <target state="new">An error occurred applying the static arguments to a provided method</target>
         <note />
       </trans-unit>
       <trans-unit id="pplexUnexpectedChar">
@@ -8124,7 +8124,7 @@
       </trans-unit>
       <trans-unit id="CallerMemberNameIsOverridden">
         <source>The CallerMemberNameAttribute applied to parameter '{0}' will have no effect. It is overridden by the CallerFilePathAttribute.</source>
-        <target state="translated">{0}' 매개 변수에 적용되는 CallerMemberNameAttribute는 효과가 없습니다. CallerFilePathAttribute에서 재정의합니다.</target>
+        <target state="new">The CallerMemberNameAttribute applied to parameter '{0}' will have no effect. It is overridden by the CallerFilePathAttribute.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
@@ -8439,7 +8439,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionTry">
         <source>Used to introduce a block of code that might generate an exception. Used together with 'with' or 'finally'.</source>
-        <target state="needs-review-translation">예외를 생성할 수 있는 코드 블록을 지정하는 데 사용됩니다. with 또는 finally와 함께 사용됩니다.</target>
+        <target state="new">Used to introduce a block of code that might generate an exception. Used together with 'with' or 'finally'.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionType">
