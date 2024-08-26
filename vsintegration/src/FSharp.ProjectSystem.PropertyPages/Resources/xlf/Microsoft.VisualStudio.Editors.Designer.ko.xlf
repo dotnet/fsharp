@@ -913,14 +913,14 @@ Error:</source>
         <target state="translated">참조 속성</target>
         <note />
       </trans-unit>
+      <trans-unit id="PropPage_ProgramNonexistent">
+        <source>The external program cannot be found. Please enter a valid executable file.</source>
+        <target state="new">The external program cannot be found. Please enter a valid executable file.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="PropPage_RemoteMachineBlankError">
         <source>The remote machine name cannot be blank.  Please specify the name of the machine to debug remotely.</source>
         <target state="translated">원격 컴퓨터 이름은 비워 둘 수 없습니다.  원격으로 디버그할 컴퓨터의 이름을 지정하세요.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PropPage_ProgramNotExist">
-        <source>The external program cannot be found. Please enter a valid executable file.</source>
-        <target state="translated">외부 프로그램을 찾을 수 없습니다. 올바른 실행 파일을 입력하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_NeedExternalProgram">
@@ -941,6 +941,11 @@ Error:</source>
       <trans-unit id="PropPage_InvalidURL">
         <source>The URL is invalid. Please enter a valid URL like "http://www.microsoft.com/"</source>
         <target state="translated">URL이 잘못되었습니다. "http://www.microsoft.com/"과 같은 올바른 URL을 입력하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_ResourceFileNonexistent">
+        <source>"The resource file entered does not exist."</source>
+        <target state="new">"The resource file entered does not exist."</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_WorkingDirError">
@@ -991,11 +996,6 @@ Error:</source>
       <trans-unit id="PropPage_NeedResFile">
         <source>"Resource files must have a .res file extension. Please enter a valid resource file name."</source>
         <target state="translated">"리소스 파일의 확장명은 .res여야 합니다. 올바른 리소스 파일 이름을 입력하세요."</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PropPage_ResourceFileNotExist">
-        <source>"The resource file entered does not exist."</source>
-        <target state="translated">"입력한 리소스 파일이 없습니다."</target>
         <note />
       </trans-unit>
       <trans-unit id="APPDES_Title">
@@ -1610,6 +1610,21 @@ Error:</source>
         <target state="translated">필요한 권한:</target>
         <note />
       </trans-unit>
+      <trans-unit id="RES_PersistenceMode_Embedded">
+        <source>Embedded in .resx</source>
+        <target state="new">Embedded in .resx</target>
+        <note>File Persistence Mode</note>
+      </trans-unit>
+      <trans-unit id="RSE_CategoriesLabel">
+        <source>&amp;Categories:</source>
+        <target state="new">&amp;Categories:</target>
+        <note>The label in the menu strip for the combobox that holds the categories of resources to display</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantSaveResourceDiscard_1Arg">
+        <source>The resource item(s) {0} cannot be saved correctly.  The item(s) will be discarded.</source>
+        <target state="new">The resource item(s) {0} cannot be saved correctly.  The item(s) will be discarded.</target>
+        <note>{0} - name list of the resource</note>
+      </trans-unit>
       <trans-unit id="RSE_ResourceNameColumn">
         <source>Name</source>
         <target state="translated">이름</target>
@@ -1763,11 +1778,6 @@ Do you really want to edit this file?</source>
         <source>The resource item uses the type '{0}', which is not supported in this project.</source>
         <target state="translated">리소스 항목이 이 프로젝트에서 지원하지 않는 '{0}' 형식을 사용합니다.</target>
         <note>{0} - name of the type</note>
-      </trans-unit>
-      <trans-unit id="RSE_Err_CantSaveResouce_1Arg">
-        <source>The resource item(s) {0} cannot be saved correctly.  The item(s) will be discarded.</source>
-        <target state="translated">리소스 항목 {0}을(를) 올바로 저장할 수 없습니다.  이 항목이 삭제됩니다.</target>
-        <note>{0} - name list of the resource</note>
       </trans-unit>
       <trans-unit id="RSE_Err_Name">
         <source>'{0}'</source>
@@ -2001,11 +2011,6 @@ CONSIDER: get this from CodeDom</note>
         <target state="translated">컴파일 시간에 링크됨</target>
         <note>File Persistence Mode</note>
       </trans-unit>
-      <trans-unit id="RES_PersistenceMode_Embeded">
-        <source>Embedded in .resx</source>
-        <target state="translated">.resx에 포함됨</target>
-        <note>File Persistence Mode</note>
-      </trans-unit>
       <trans-unit id="RSE_Filter_Bitmap">
         <source>Bitmaps</source>
         <target state="translated">비트맵</target>
@@ -2229,11 +2234,6 @@ CONSIDER: get this from CodeDom</note>
         <source>Delete values in {0} cell(s)</source>
         <target state="translated">{0}개 셀에서 값 삭제</target>
         <note>{0} = number of cells cleared</note>
-      </trans-unit>
-      <trans-unit id="RSE_CategiesLabel">
-        <source>&amp;Categories:</source>
-        <target state="translated">범주(&amp;C):</target>
-        <note>The label in the menu strip for the combobox that holds the categories of resources to display</note>
       </trans-unit>
       <trans-unit id="RSE_PropDesc_Name">
         <source>Name used to identify the resource in code.</source>
