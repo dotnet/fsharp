@@ -10816,284 +10816,288 @@ and TcAndBuildFixedExpr (cenv: cenv) env (overallPatTy, fixedExpr, overallExprTy
 
 /// Binding checking code, for all bindings including let bindings, let-rec bindings, member bindings and object-expression bindings and
 and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt safeInitInfo (enclosingDeclaredTypars, (ExplicitTyparInfo(_, declaredTypars, _) as explicitTyparInfo)) bind =
+
     let g = cenv.g
+
     let envinner = AddDeclaredTypars NoCheckForDuplicateTypars (enclosingDeclaredTypars@declaredTypars) env
-    let (NormalizedBinding(vis, kind, isInline, isMutable, attrs, xmlDoc, _, valSynData, pat, NormalizedBindingRhs(spatsL, rtyOpt, rhsExpr), _, debugPoint))  = bind
-    let (SynValData(memberFlags = memberFlagsOpt)) = valSynData  
-    let mBinding = pat.Range
 
-    let isClassLetBinding =
-        match declKind, kind with
-        | ClassLetBinding _, SynBindingKind.Normal -> true
-        | _ -> false
+    match bind with
+    | NormalizedBinding(vis, kind, isInline, isMutable, attrs, xmlDoc, _, valSynData, pat, NormalizedBindingRhs(spatsL, rtyOpt, rhsExpr), _, debugPoint) ->
+        let (SynValData(memberFlags = memberFlagsOpt)) = valSynData
+        let mBinding = pat.Range
 
-    let callerName =
-        match declKind, kind, pat with
-        | ExpressionBinding, _, _ -> envinner.eCallerMemberName
-        | _, _, (SynPat.Named(SynIdent(name,_), _, _, _) | SynPat.As(_, SynPat.Named(SynIdent(name,_), _, _, _), _)) ->
-            match memberFlagsOpt with
-            | Some memberFlags ->
-                match memberFlags.MemberKind with
-                | SynMemberKind.PropertyGet | SynMemberKind.PropertySet | SynMemberKind.PropertyGetSet -> Some(name.idText.Substring 4)
-                | SynMemberKind.ClassConstructor -> Some(".ctor")
-                | SynMemberKind.Constructor -> Some(".ctor")
+        let isClassLetBinding =
+            match declKind, kind with
+            | ClassLetBinding _, SynBindingKind.Normal -> true
+            | _ -> false
+
+        let callerName =
+            match declKind, kind, pat with
+            | ExpressionBinding, _, _ -> envinner.eCallerMemberName
+            | _, _, (SynPat.Named(SynIdent(name,_), _, _, _) | SynPat.As(_, SynPat.Named(SynIdent(name,_), _, _, _), _)) ->
+                match memberFlagsOpt with
+                | Some memberFlags ->
+                    match memberFlags.MemberKind with
+                    | SynMemberKind.PropertyGet | SynMemberKind.PropertySet | SynMemberKind.PropertyGetSet -> Some(name.idText.Substring 4)
+                    | SynMemberKind.ClassConstructor -> Some(".ctor")
+                    | SynMemberKind.Constructor -> Some(".ctor")
+                    | _ -> Some(name.idText)
                 | _ -> Some(name.idText)
-            | _ -> Some(name.idText)
-        | ClassLetBinding false, SynBindingKind.Do, _ -> Some(".ctor")
-        | ClassLetBinding true, SynBindingKind.Do, _ -> Some(".cctor")
-        | ModuleOrMemberBinding, SynBindingKind.StandaloneExpression, _ -> Some(".cctor")
-        | _, _, _ -> envinner.eCallerMemberName
+            | ClassLetBinding false, SynBindingKind.Do, _ -> Some(".ctor")
+            | ClassLetBinding true, SynBindingKind.Do, _ -> Some(".cctor")
+            | ModuleOrMemberBinding, SynBindingKind.StandaloneExpression, _ -> Some(".cctor")
+            | _, _, _ -> envinner.eCallerMemberName
 
-    let envinner = { envinner with eCallerMemberName = callerName }
-    let attrTgt = declKind.AllowedAttribTargets memberFlagsOpt
+        let envinner = { envinner with eCallerMemberName = callerName }
+        let attrTgt = declKind.AllowedAttribTargets memberFlagsOpt
 
-    let isFixed, rhsExpr, overallPatTy, overallExprTy =
-        match rhsExpr with
-        | SynExpr.Fixed (e, _) -> true, e, NewInferenceType g, overallTy
-        // { new Foo()  } is parsed as a SynExpr.ComputationExpr.(See pars.fsy `objExpr` rule).
-        // If a SynExpr.ComputationExpr body consists of a single SynExpr.New, and it's not the argument of a computation expression builder type.
-        // Then we should treat it as a SynExpr.ObjExpr and make it consistent with the other object expressions. e.g.
-        // { new Foo } -> SynExpr.ObjExpr
-        // { new Foo() } -> SynExpr.ObjExpr
-        // { New Foo with ... } -> SynExpr.ObjExpr
-        | SynExpr.ComputationExpr(false, SynExpr.New(_, targetType, expr, m), _) ->        
-            false, SynExpr.ObjExpr(targetType, Some(expr, None), None, [], [], [], m, rhsExpr.Range), overallTy, overallTy
-        | e -> false, e, overallTy, overallTy
+        let isFixed, rhsExpr, overallPatTy, overallExprTy =
+            match rhsExpr with
+            | SynExpr.Fixed (e, _) -> true, e, NewInferenceType g, overallTy
+            // { new Foo()  } is parsed as a SynExpr.ComputationExpr.(See pars.fsy `objExpr` rule).
+            // If a SynExpr.ComputationExpr body consists of a single SynExpr.New, and it's not the argument of a computation expression builder type.
+            // Then we should treat it as a SynExpr.ObjExpr and make it consistent with the other object expressions. e.g.
+            // { new Foo } -> SynExpr.ObjExpr
+            // { new Foo() } -> SynExpr.ObjExpr
+            // { New Foo with ... } -> SynExpr.ObjExpr
+            | SynExpr.ComputationExpr(false, SynExpr.New(_, targetType, expr, m), _) ->        
+                false, SynExpr.ObjExpr(targetType, Some(expr, None), None, [], [], [], m, rhsExpr.Range), overallTy, overallTy
+            | e -> false, e, overallTy, overallTy
 
-    // Check the attributes of the binding, parameters or return value
-    let TcAttrs tgt isRet attrs =
-        // For all but attributes positioned at the return value, disallow implicitly
-        // targeting the return value.
-        let tgtEx = if isRet then enum 0 else AttributeTargets.ReturnValue
-        let attrs, _ = TcAttributesMaybeFailEx false cenv envinner tgt tgtEx attrs
-        let attrs: Attrib list = attrs
-        if attrTgt = enum 0 && not (isNil attrs) then
-            for attr in attrs do
-                errorR(Error(FSComp.SR.tcAttributesAreNotPermittedOnLetBindings(), attr.Range))
-        attrs
+        // Check the attributes of the binding, parameters or return value
+        let TcAttrs tgt isRet attrs =
+            // For all but attributes positioned at the return value, disallow implicitly
+            // targeting the return value.
+            let tgtEx = if isRet then enum 0 else AttributeTargets.ReturnValue
+            let attrs, _ = TcAttributesMaybeFailEx false cenv envinner tgt tgtEx attrs
+            let attrs: Attrib list = attrs
+            if attrTgt = enum 0 && not (isNil attrs) then
+                for attr in attrs do
+                    errorR(Error(FSComp.SR.tcAttributesAreNotPermittedOnLetBindings(), attr.Range))
+            attrs
 
-    // Rotate [<return:...>] from binding to return value
-    // Also patch the syntactic representation
-    let retAttribs, valAttribs, valSynData =
-        let attribs = TcAttrs attrTgt false attrs
-        let rotRetSynAttrs, rotRetAttribs, valAttribs =
-            // Do not rotate if some attrs fail to typecheck...
-            if attribs.Length <> attrs.Length then [], [], attribs
-            else attribs
-                 |> List.zip attrs
-                 |> List.partition(function | _, Attrib(_, _, _, _, _, Some ts, _) -> ts &&& AttributeTargets.ReturnValue <> enum 0 | _ -> false)
-                 |> fun (r, v) -> (List.map fst r, List.map snd r, List.map snd v)
-        let retAttribs =
-            match rtyOpt with
-            | Some (SynBindingReturnInfo(attributes = Attributes retAttrs)) ->
-                rotRetAttribs @ TcAttrs AttributeTargets.ReturnValue true retAttrs
-            | None -> rotRetAttribs
-        let valSynData =
-            match rotRetSynAttrs with
-            | [] -> valSynData
-            | {Range=mHead} :: _ ->
-            let (SynValData(valMf, SynValInfo(args, SynArgInfo(attrs, opt, retId)), valId)) = valSynData
-            SynValData(valMf, SynValInfo(args, SynArgInfo({Attributes=rotRetSynAttrs; Range=mHead} :: attrs, opt, retId)), valId)
-        retAttribs, valAttribs, valSynData
+        // Rotate [<return:...>] from binding to return value
+        // Also patch the syntactic representation
+        let retAttribs, valAttribs, valSynData =
+            let attribs = TcAttrs attrTgt false attrs
+            let rotRetSynAttrs, rotRetAttribs, valAttribs =
+                // Do not rotate if some attrs fail to typecheck...
+                if attribs.Length <> attrs.Length then [], [], attribs
+                else attribs
+                     |> List.zip attrs
+                     |> List.partition(function | _, Attrib(_, _, _, _, _, Some ts, _) -> ts &&& AttributeTargets.ReturnValue <> enum 0 | _ -> false)
+                     |> fun (r, v) -> (List.map fst r, List.map snd r, List.map snd v)
+            let retAttribs =
+                match rtyOpt with
+                | Some (SynBindingReturnInfo(attributes = Attributes retAttrs)) ->
+                    rotRetAttribs @ TcAttrs AttributeTargets.ReturnValue true retAttrs
+                | None -> rotRetAttribs
+            let valSynData =
+                match rotRetSynAttrs with
+                | [] -> valSynData
+                | {Range=mHead} :: _ ->
+                let (SynValData(valMf, SynValInfo(args, SynArgInfo(attrs, opt, retId)), valId)) = valSynData
+                SynValData(valMf, SynValInfo(args, SynArgInfo({Attributes=rotRetSynAttrs; Range=mHead} :: attrs, opt, retId)), valId)
+            retAttribs, valAttribs, valSynData
 
-    let isVolatile = HasFSharpAttribute g g.attrib_VolatileFieldAttribute valAttribs
-    let inlineFlag = ComputeInlineFlag memberFlagsOpt isInline isMutable g valAttribs mBinding
+        let isVolatile = HasFSharpAttribute g g.attrib_VolatileFieldAttribute valAttribs
+        let inlineFlag = ComputeInlineFlag memberFlagsOpt isInline isMutable g valAttribs mBinding
 
-    let argAttribs =
-        spatsL |> List.map (SynInfo.InferSynArgInfoFromSimplePats >> List.map (SynInfo.AttribsOfArgData >> TcAttrs AttributeTargets.Parameter false))
+        let argAttribs =
+            spatsL |> List.map (SynInfo.InferSynArgInfoFromSimplePats >> List.map (SynInfo.AttribsOfArgData >> TcAttrs AttributeTargets.Parameter false))
 
-    // Assert the return type of an active pattern. A [<return:Struct>] attribute may be used on a partial active pattern.
-    let isStructRetTy = HasFSharpAttribute g g.attrib_StructAttribute retAttribs
+        // Assert the return type of an active pattern. A [<return:Struct>] attribute may be used on a partial active pattern.
+        let isStructRetTy = HasFSharpAttribute g g.attrib_StructAttribute retAttribs
 
-    let argAndRetAttribs = ArgAndRetAttribs(argAttribs, retAttribs)
+        let argAndRetAttribs = ArgAndRetAttribs(argAttribs, retAttribs)
 
-    // See RFC FS-1087, the 'Zero' method of a builder may have 'DefaultValueAttribute' indicating it should
-    // always be used for empty branches of if/then/else and others
-    let isZeroMethod =
-        match declKind, pat with
-        | ModuleOrMemberBinding, SynPat.Named(SynIdent(id,_), _, _, _) when id.idText = "Zero" ->
-            match memberFlagsOpt with
-            | Some memberFlags ->
-                match memberFlags.MemberKind with
-                | SynMemberKind.Member -> true
+        // See RFC FS-1087, the 'Zero' method of a builder may have 'DefaultValueAttribute' indicating it should
+        // always be used for empty branches of if/then/else and others
+        let isZeroMethod =
+            match declKind, pat with
+            | ModuleOrMemberBinding, SynPat.Named(SynIdent(id,_), _, _, _) when id.idText = "Zero" ->
+                match memberFlagsOpt with
+                | Some memberFlags ->
+                    match memberFlags.MemberKind with
+                    | SynMemberKind.Member -> true
+                    | _ -> false
                 | _ -> false
             | _ -> false
-        | _ -> false
 
-    if HasFSharpAttribute g g.attrib_DefaultValueAttribute valAttribs && not isZeroMethod then
-        errorR(Error(FSComp.SR.tcDefaultValueAttributeRequiresVal(), mBinding))
+        if HasFSharpAttribute g g.attrib_DefaultValueAttribute valAttribs && not isZeroMethod then
+            errorR(Error(FSComp.SR.tcDefaultValueAttributeRequiresVal(), mBinding))
 
-    let isThreadStatic = isThreadOrContextStatic g valAttribs
-    if isThreadStatic then errorR(DeprecatedThreadStaticBindingWarning mBinding)
+        let isThreadStatic = isThreadOrContextStatic g valAttribs
+        if isThreadStatic then errorR(DeprecatedThreadStaticBindingWarning mBinding)
 
-    if isVolatile then
-        match declKind with
-        | ClassLetBinding _ -> ()
-        | _ -> errorR(Error(FSComp.SR.tcVolatileOnlyOnClassLetBindings(), mBinding))
+        if isVolatile then
+            match declKind with
+            | ClassLetBinding _ -> ()
+            | _ -> errorR(Error(FSComp.SR.tcVolatileOnlyOnClassLetBindings(), mBinding))
 
-        if (not isMutable || isThreadStatic) then
-            errorR(Error(FSComp.SR.tcVolatileFieldsMustBeMutable(), mBinding))
+            if (not isMutable || isThreadStatic) then
+                errorR(Error(FSComp.SR.tcVolatileFieldsMustBeMutable(), mBinding))
 
-    if isFixed && (declKind <> ExpressionBinding || isInline || isMutable) then
-        errorR(Error(FSComp.SR.tcFixedNotAllowed(), mBinding))
+        if isFixed && (declKind <> ExpressionBinding || isInline || isMutable) then
+            errorR(Error(FSComp.SR.tcFixedNotAllowed(), mBinding))
 
-    if (not declKind.CanBeDllImport || (match memberFlagsOpt with Some memberFlags -> memberFlags.IsInstance | _ -> false)) &&
-        HasFSharpAttributeOpt g g.attrib_DllImportAttribute valAttribs then
-        errorR(Error(FSComp.SR.tcDllImportNotAllowed(), mBinding))
+        if (not declKind.CanBeDllImport || (match memberFlagsOpt with Some memberFlags -> memberFlags.IsInstance | _ -> false)) &&
+            HasFSharpAttributeOpt g g.attrib_DllImportAttribute valAttribs then
+            errorR(Error(FSComp.SR.tcDllImportNotAllowed(), mBinding))
 
-    if Option.isNone memberFlagsOpt && HasFSharpAttribute g g.attrib_ConditionalAttribute valAttribs then
-        errorR(Error(FSComp.SR.tcConditionalAttributeRequiresMembers(), mBinding))
+        if Option.isNone memberFlagsOpt && HasFSharpAttribute g g.attrib_ConditionalAttribute valAttribs then
+            errorR(Error(FSComp.SR.tcConditionalAttributeRequiresMembers(), mBinding))
 
-    if HasFSharpAttribute g g.attrib_EntryPointAttribute valAttribs then
-        if Option.isSome memberFlagsOpt then
-            errorR(Error(FSComp.SR.tcEntryPointAttributeRequiresFunctionInModule(), mBinding))
-        else
-            let entryPointTy = mkFunTy g (mkArrayType g g.string_ty) g.int_ty
-            UnifyTypes cenv env mBinding overallPatTy entryPointTy
-
-    if isMutable && isInline then errorR(Error(FSComp.SR.tcMutableValuesCannotBeInline(), mBinding))
-
-    if isMutable && not (isNil declaredTypars) then errorR(Error(FSComp.SR.tcMutableValuesMayNotHaveGenericParameters(), mBinding))
-
-    let explicitTyparInfo = if isMutable then dontInferTypars else explicitTyparInfo
-
-    if isMutable && not (isNil spatsL) then errorR(Error(FSComp.SR.tcMutableValuesSyntax(), mBinding))
-
-    let isInline =
-        if isInline && isNil spatsL && isNil declaredTypars then
-            errorR(Error(FSComp.SR.tcOnlyFunctionsCanBeInline(), mBinding))
-            false
-        else
-            isInline
-
-    let isCompGen = false
-
-    // Use the syntactic arity if we're defining a function
-    let (SynValData(valInfo = valSynInfo)) = valSynData
-    let prelimValReprInfo = TranslateSynValInfo cenv mBinding (TcAttributes cenv env) valSynInfo
-
-    // Check the pattern of the l.h.s. of the binding
-    let tcPatPhase2, (TcPatLinearEnv (tpenv, nameToPrelimValSchemeMap, _)) =
-        cenv.TcPat AllIdsOK cenv envinner (Some prelimValReprInfo) (TcPatValFlags (inlineFlag, explicitTyparInfo, argAndRetAttribs, isMutable, vis, isCompGen)) (TcPatLinearEnv (tpenv, NameMap.empty, Set.empty)) overallPatTy pat
-
-    // Add active pattern result names to the environment
-    let apinfoOpt =
-        match NameMap.range nameToPrelimValSchemeMap with
-        | [PrelimVal1(id, _, ty, _, _, _, _, _, _, _, _) ] ->
-            match ActivePatternInfoOfValName id.idText id.idRange with
-            | Some apinfo -> Some (apinfo, ty, id.idRange)
-            | None -> None
-        | _ -> None
-
-    // Add active pattern result names to the environment
-    let envinner =
-        match apinfoOpt with
-        | Some (apinfo, apOverallTy, m) ->
-            let isMultiCasePartialAP = memberFlagsOpt.IsNone && not apinfo.IsTotal && apinfo.ActiveTags.Length > 1
-            if isMultiCasePartialAP then
-                errorR(Error(FSComp.SR.tcPartialActivePattern(), m))
-                
-            if Option.isSome memberFlagsOpt && not spatsL.IsEmpty then
-                errorR(Error(FSComp.SR.tcInvalidActivePatternName(apinfo.LogicalName), m))
-
-            apinfo.ActiveTagsWithRanges |> List.iteri (fun i (_tag, tagRange) ->
-                let item = Item.ActivePatternResult(apinfo, apOverallTy, i, tagRange)
-                CallNameResolutionSink cenv.tcSink (tagRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Binding, env.AccessRights))
-
-            { envinner with eNameResEnv = AddActivePatternResultTagsToNameEnv apinfo envinner.eNameResEnv apOverallTy m }
-        | None ->
-            envinner
-
-    // If binding a ctor then set the ugly counter that permits us to write ctor expressions on the r.h.s.
-    let isCtor = (match memberFlagsOpt with Some memberFlags -> memberFlags.MemberKind = SynMemberKind.Constructor | _ -> false)
-
-    // Now check the right of the binding.
-    //
-    // At each module binding, dive into the expression to check for syntax errors and suppress them if they show.
-    // Don't do this for lambdas, because we always check for suppression for all lambda bodies in TcIteratedLambdas
-    let rhsExprChecked, tpenv =
-        let atTopNonLambdaDefn =
-            declKind.IsModuleOrMemberOrExtensionBinding &&
-            (match rhsExpr with SynExpr.Lambda _ -> false | _ -> true) &&
-            synExprContainsError rhsExpr
-
-        conditionallySuppressErrorReporting atTopNonLambdaDefn (fun () ->
-
-            // Save the arginfos away to match them up in the lambda
-            let (PrelimValReprInfo(argInfos, _)) = prelimValReprInfo
-
-            // The right-hand-side is control flow (has an implicit debug point) in any situation where we
-            // haven't extended the debug point to include the 'let', that is, there is a debug point noted
-            // at the binding.
-            //
-            // This includes
-            //    let _ = expr
-            //    let () = expr
-            // which are transformed to sequential expressions in TcLetBinding
-            //
-            let rhsIsControlFlow =
-                match pat with
-                | SynPat.Wild _
-                | SynPat.Const (SynConst.Unit, _)
-                | SynPat.Paren (SynPat.Const (SynConst.Unit, _), _) -> true
-                | _ ->
-                match debugPoint with
-                | DebugPointAtBinding.Yes _ -> false
-                | _ -> true
-
-            let envinner = { envinner with eLambdaArgInfos = argInfos; eIsControlFlow = rhsIsControlFlow }
-
-            if isCtor then TcExprThatIsCtorBody (safeThisValOpt, safeInitInfo) cenv (MustEqual overallExprTy) envinner tpenv rhsExpr
-            else TcExprThatCantBeCtorBody cenv (MustConvertTo (false, overallExprTy)) envinner tpenv rhsExpr)
-
-    if kind = SynBindingKind.StandaloneExpression && not cenv.isScript then
-        UnifyUnitType cenv env mBinding overallPatTy rhsExprChecked |> ignore<bool>
-
-    // Fix up the r.h.s. expression for 'fixed'
-    let rhsExprChecked =
-        if isFixed then TcAndBuildFixedExpr cenv env (overallPatTy, rhsExprChecked, overallExprTy, mBinding)
-        else rhsExprChecked
-
-    match apinfoOpt with
-    | Some (apinfo, apOverallTy, _) ->
-        let activePatResTys = NewInferenceTypes g apinfo.ActiveTags
-        let _, apReturnTy = stripFunTy g apOverallTy
-        let apRetTy =
-            if apinfo.IsTotal then
-                if isStructRetTy then errorR(Error(FSComp.SR.tcInvalidStructReturn(), mBinding))
-                ActivePatternReturnKind.RefTypeWrapper
+        if HasFSharpAttribute g g.attrib_EntryPointAttribute valAttribs then
+            if Option.isSome memberFlagsOpt then
+                errorR(Error(FSComp.SR.tcEntryPointAttributeRequiresFunctionInModule(), mBinding))
             else
-                if isStructRetTy || isValueOptionTy cenv.g apReturnTy then ActivePatternReturnKind.StructTypeWrapper
-                elif isBoolTy cenv.g apReturnTy then ActivePatternReturnKind.Boolean
-                else ActivePatternReturnKind.RefTypeWrapper
+                let entryPointTy = mkFunTy g (mkArrayType g g.string_ty) g.int_ty
+                UnifyTypes cenv env mBinding overallPatTy entryPointTy
 
-        match apRetTy with
-        | ActivePatternReturnKind.Boolean ->
-            checkLanguageFeatureError g.langVersion LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern mBinding
-        | ActivePatternReturnKind.StructTypeWrapper when not isStructRetTy ->
-            checkLanguageFeatureError g.langVersion LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern mBinding
-        | ActivePatternReturnKind.StructTypeWrapper ->
-            checkLanguageFeatureError g.langVersion LanguageFeature.StructActivePattern mBinding
-        | ActivePatternReturnKind.RefTypeWrapper -> ()
+        if isMutable && isInline then errorR(Error(FSComp.SR.tcMutableValuesCannotBeInline(), mBinding))
 
-        UnifyTypes cenv env mBinding (apinfo.ResultType g rhsExpr.Range activePatResTys apRetTy) apReturnTy
+        if isMutable && not (isNil declaredTypars) then errorR(Error(FSComp.SR.tcMutableValuesMayNotHaveGenericParameters(), mBinding))
 
-    | None ->
-        if isStructRetTy then
-            errorR(Error(FSComp.SR.tcInvalidStructReturn(), mBinding))
+        let explicitTyparInfo = if isMutable then dontInferTypars else explicitTyparInfo
 
-    // Check other attributes
-    let hasLiteralAttr, literalValue = TcLiteral cenv overallExprTy env tpenv (valAttribs, rhsExpr)
+        if isMutable && not (isNil spatsL) then errorR(Error(FSComp.SR.tcMutableValuesSyntax(), mBinding))
 
-    if hasLiteralAttr then
-        if isThreadStatic then
-            errorR(Error(FSComp.SR.tcIllegalAttributesForLiteral(), mBinding))
-        if isMutable then
-            errorR(Error(FSComp.SR.tcLiteralCannotBeMutable(), mBinding))
-        if isInline then
-            errorR(Error(FSComp.SR.tcLiteralCannotBeInline(), mBinding))
-        if not (isNil declaredTypars) then
-            errorR(Error(FSComp.SR.tcLiteralCannotHaveGenericParameters(), mBinding))
+        let isInline =
+            if isInline && isNil spatsL && isNil declaredTypars then
+                errorR(Error(FSComp.SR.tcOnlyFunctionsCanBeInline(), mBinding))
+                false
+            else
+                isInline
+
+        let isCompGen = false
+
+        // Use the syntactic arity if we're defining a function
+        let (SynValData(valInfo = valSynInfo)) = valSynData
+        let prelimValReprInfo = TranslateSynValInfo cenv mBinding (TcAttributes cenv env) valSynInfo
+
+        // Check the pattern of the l.h.s. of the binding
+        let tcPatPhase2, (TcPatLinearEnv (tpenv, nameToPrelimValSchemeMap, _)) =
+            cenv.TcPat AllIdsOK cenv envinner (Some prelimValReprInfo) (TcPatValFlags (inlineFlag, explicitTyparInfo, argAndRetAttribs, isMutable, vis, isCompGen)) (TcPatLinearEnv (tpenv, NameMap.empty, Set.empty)) overallPatTy pat
+
+        // Add active pattern result names to the environment
+        let apinfoOpt =
+            match NameMap.range nameToPrelimValSchemeMap with
+            | [PrelimVal1(id, _, ty, _, _, _, _, _, _, _, _) ] ->
+                match ActivePatternInfoOfValName id.idText id.idRange with
+                | Some apinfo -> Some (apinfo, ty, id.idRange)
+                | None -> None
+            | _ -> None
+
+        // Add active pattern result names to the environment
+        let envinner =
+            match apinfoOpt with
+            | Some (apinfo, apOverallTy, m) ->
+                let isMultiCasePartialAP = memberFlagsOpt.IsNone && not apinfo.IsTotal && apinfo.ActiveTags.Length > 1
+                if isMultiCasePartialAP then
+                    errorR(Error(FSComp.SR.tcPartialActivePattern(), m))
+                    
+                if Option.isSome memberFlagsOpt && not spatsL.IsEmpty then
+                    errorR(Error(FSComp.SR.tcInvalidActivePatternName(apinfo.LogicalName), m))
+
+                apinfo.ActiveTagsWithRanges |> List.iteri (fun i (_tag, tagRange) ->
+                    let item = Item.ActivePatternResult(apinfo, apOverallTy, i, tagRange)
+                    CallNameResolutionSink cenv.tcSink (tagRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Binding, env.AccessRights))
+
+                { envinner with eNameResEnv = AddActivePatternResultTagsToNameEnv apinfo envinner.eNameResEnv apOverallTy m }
+            | None ->
+                envinner
+
+        // If binding a ctor then set the ugly counter that permits us to write ctor expressions on the r.h.s.
+        let isCtor = (match memberFlagsOpt with Some memberFlags -> memberFlags.MemberKind = SynMemberKind.Constructor | _ -> false)
+
+        // Now check the right of the binding.
+        //
+        // At each module binding, dive into the expression to check for syntax errors and suppress them if they show.
+        // Don't do this for lambdas, because we always check for suppression for all lambda bodies in TcIteratedLambdas
+        let rhsExprChecked, tpenv =
+            let atTopNonLambdaDefn =
+                declKind.IsModuleOrMemberOrExtensionBinding &&
+                (match rhsExpr with SynExpr.Lambda _ -> false | _ -> true) &&
+                synExprContainsError rhsExpr
+
+            conditionallySuppressErrorReporting atTopNonLambdaDefn (fun () ->
+
+                // Save the arginfos away to match them up in the lambda
+                let (PrelimValReprInfo(argInfos, _)) = prelimValReprInfo
+
+                // The right-hand-side is control flow (has an implicit debug point) in any situation where we
+                // haven't extended the debug point to include the 'let', that is, there is a debug point noted
+                // at the binding.
+                //
+                // This includes
+                //    let _ = expr
+                //    let () = expr
+                // which are transformed to sequential expressions in TcLetBinding
+                //
+                let rhsIsControlFlow =
+                    match pat with
+                    | SynPat.Wild _
+                    | SynPat.Const (SynConst.Unit, _)
+                    | SynPat.Paren (SynPat.Const (SynConst.Unit, _), _) -> true
+                    | _ ->
+                    match debugPoint with
+                    | DebugPointAtBinding.Yes _ -> false
+                    | _ -> true
+
+                let envinner = { envinner with eLambdaArgInfos = argInfos; eIsControlFlow = rhsIsControlFlow }
+
+                if isCtor then TcExprThatIsCtorBody (safeThisValOpt, safeInitInfo) cenv (MustEqual overallExprTy) envinner tpenv rhsExpr
+                else TcExprThatCantBeCtorBody cenv (MustConvertTo (false, overallExprTy)) envinner tpenv rhsExpr)
+
+        if kind = SynBindingKind.StandaloneExpression && not cenv.isScript then
+            UnifyUnitType cenv env mBinding overallPatTy rhsExprChecked |> ignore<bool>
+
+        // Fix up the r.h.s. expression for 'fixed'
+        let rhsExprChecked =
+            if isFixed then TcAndBuildFixedExpr cenv env (overallPatTy, rhsExprChecked, overallExprTy, mBinding)
+            else rhsExprChecked
+
+        match apinfoOpt with
+        | Some (apinfo, apOverallTy, _) ->
+            let activePatResTys = NewInferenceTypes g apinfo.ActiveTags
+            let _, apReturnTy = stripFunTy g apOverallTy
+            let apRetTy =
+                if apinfo.IsTotal then
+                    if isStructRetTy then errorR(Error(FSComp.SR.tcInvalidStructReturn(), mBinding))
+                    ActivePatternReturnKind.RefTypeWrapper
+                else
+                    if isStructRetTy || isValueOptionTy cenv.g apReturnTy then ActivePatternReturnKind.StructTypeWrapper
+                    elif isBoolTy cenv.g apReturnTy then ActivePatternReturnKind.Boolean
+                    else ActivePatternReturnKind.RefTypeWrapper
+
+            match apRetTy with
+            | ActivePatternReturnKind.Boolean ->
+                checkLanguageFeatureError g.langVersion LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern mBinding
+            | ActivePatternReturnKind.StructTypeWrapper when not isStructRetTy ->
+                checkLanguageFeatureError g.langVersion LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern mBinding
+            | ActivePatternReturnKind.StructTypeWrapper ->
+                checkLanguageFeatureError g.langVersion LanguageFeature.StructActivePattern mBinding
+            | ActivePatternReturnKind.RefTypeWrapper -> ()
+
+            UnifyTypes cenv env mBinding (apinfo.ResultType g rhsExpr.Range activePatResTys apRetTy) apReturnTy
+
+        | None ->
+            if isStructRetTy then
+                errorR(Error(FSComp.SR.tcInvalidStructReturn(), mBinding))
+
+        // Check other attributes
+        let hasLiteralAttr, literalValue = TcLiteral cenv overallExprTy env tpenv (valAttribs, rhsExpr)
+
+        if hasLiteralAttr then
+            if isThreadStatic then
+                errorR(Error(FSComp.SR.tcIllegalAttributesForLiteral(), mBinding))
+            if isMutable then
+                errorR(Error(FSComp.SR.tcLiteralCannotBeMutable(), mBinding))
+            if isInline then
+                errorR(Error(FSComp.SR.tcLiteralCannotBeInline(), mBinding))
+            if not (isNil declaredTypars) then
+                errorR(Error(FSComp.SR.tcLiteralCannotHaveGenericParameters(), mBinding))
 
         let supportEnforceAttributeTargets =
             (g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) && memberFlagsOpt.IsNone && not attrs.IsEmpty)
@@ -11102,7 +11106,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         if supportEnforceAttributeTargets then
             TcAttributeTargetsOnLetBindings { cenv with tcSink = TcResultsSink.NoSink } env attrs overallPatTy overallExprTy (not declaredTypars.IsEmpty) isClassLetBinding
 
-    CheckedBindingInfo(inlineFlag, valAttribs, xmlDoc, tcPatPhase2, explicitTyparInfo, nameToPrelimValSchemeMap, rhsExprChecked, argAndRetAttribs, overallPatTy, mBinding, debugPoint, isCompGen, literalValue, isFixed), tpenv
+        CheckedBindingInfo(inlineFlag, valAttribs, xmlDoc, tcPatPhase2, explicitTyparInfo, nameToPrelimValSchemeMap, rhsExprChecked, argAndRetAttribs, overallPatTy, mBinding, debugPoint, isCompGen, literalValue, isFixed), tpenv
 
 // Note:
 // - Let bound values can only have attributes that uses AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
