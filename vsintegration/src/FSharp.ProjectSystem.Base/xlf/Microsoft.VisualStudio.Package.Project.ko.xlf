@@ -52,6 +52,11 @@
         <target state="translated">빌드 출력에 포함할 정보의 양을 지정합니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="WorkingDirectoryNonexistent">
+        <source>The working directory does not exist:\n'{0}'.</source>
+        <target state="new">The working directory does not exist:\n'{0}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="cli1">
         <source>ECMA-335 CLI compatible framework (location must be provided)</source>
         <target state="translated">ECMA-335 CLI 호환 프레임워크(위치를 지정해야 함)</target>
@@ -713,11 +718,6 @@
       <trans-unit id="CannotBuildWhenBuildInProgress">
         <source>Cannot start a build, because another build is already in progress.</source>
         <target state="translated">다른 빌드가 이미 진행 중이므로 빌드를 시작할 수 없습니다.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="WorkingDirectoryNotExists">
-        <source>The working directory does not exist:\n'{0}'.</source>
-        <target state="translated">작업 디렉터리가 없습니다.\n'{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="ProjectReferencesDifferentFramework">
