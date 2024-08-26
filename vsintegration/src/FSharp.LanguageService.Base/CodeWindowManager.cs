@@ -225,7 +225,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         /// <summary>The language service object that created this object and calls its SynchronizeDropdowns method</summary>
         private LanguageService_DEPRECATED languageService;
 
-        /// <summary>The correspoding VS object that represents the two drop down bars. The VS object uses call backs to pull information from
+        /// <summary>The corresponding VS object that represents the two drop down bars. The VS object uses call backs to pull information from
         /// this object and makes itself known to this object by calling SetDropdownBar</summary>
         private IVsDropdownBar dropDownBar;
 
@@ -446,7 +446,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
 
         public int CompareTo(object obj) {
             // if this overload is used then it assumes a case-sensitive current culture comparison
-            // which allows for case-senstive languages to work
+            // which allows for case-sensitive languages to work
             return CompareTo(obj, StringComparison.CurrentCulture);
         }
 

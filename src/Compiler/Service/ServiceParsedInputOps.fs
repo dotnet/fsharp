@@ -17,7 +17,7 @@ open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 
 module SourceFileImpl =
-    let IsSignatureFile file =
+    let IsSignatureFile (file: string) =
         let ext = Path.GetExtension file
         0 = String.Compare(".fsi", ext, StringComparison.OrdinalIgnoreCase)
 
@@ -1754,7 +1754,7 @@ module ParsedInput =
                             None
 
                     // module Namespace.Top
-                    // module Neste|
+                    // module Nested
                     | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = [ ident ])) when rangeContainsPos ident.idRange pos ->
                         Some CompletionContext.Invalid
 

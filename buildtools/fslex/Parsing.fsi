@@ -113,9 +113,9 @@ type Tables<'tok> =
     /// Returns an object indicating the final synthesized value for the parse.
     member Interpret :  lexer:(LexBuffer<'char> -> 'tok) * lexbuf:LexBuffer<'char> * startState:int -> obj 
 
-/// Indicates an accept action has occured
+/// Indicates an accept action has occurred
 exception Accept of obj
-/// Indicates a parse error has occured and parse recovery is in progress
+/// Indicates a parse error has occurred and parse recovery is in progress
 exception RecoverableParseError
 
 #if __DEBUG

@@ -11,16 +11,15 @@ module MemberDefinitions_MethodsAndProperties =
     let verifyCompile compilation =
         compilation
         |> asExe
-        |> withOptions ["--nowarn:988"]
+        |> withOptions ["--nowarn:988"; "--nowarn:FS3581"]
         |> compile
 
     let verifyCompileAndRun = verifyCompile >> run
 
-    // SOURCE=PartiallyOverridenProperty.fs							
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PartiallyOverridenProperty.fs"|])>]
-    let ``Partially Overriden Property`` compilation =
+    // SOURCE=PartiallyOverriddenProperty.fs							
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PartiallyOverriddenProperty.fs"|])>]
+    let ``Partially Overridden Property`` compilation =
         compilation
-        |> withLangVersionPreview
         |> withCheckNulls
         |> typecheck
         |> shouldSucceed
@@ -29,14 +28,13 @@ module MemberDefinitions_MethodsAndProperties =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AbstractProperties01.fs"|])>]
     let ``AbstractProperties01_fs`` compilation =
         compilation
-        |> withLangVersionPreview
         |> withCheckNulls
         |> verifyCompileAndRun
         |> shouldSucceed
    
-    // SOURCE=E_AbstractAndConcereteProp.fs SCFLAGS="--test:ErrorRanges"		# E_AbstractAndConcereteProp.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AbstractAndConcereteProp.fs"|])>]
-    let ``E_AbstractAndConcereteProp_fs`` compilation =
+    // SOURCE=E_AbstractAndConcreteProp.fs SCFLAGS="--test:ErrorRanges"		# E_AbstractAndConcreteProp.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AbstractAndConcreteProp.fs"|])>]
+    let ``E_AbstractAndConcreteProp_fs`` compilation =
         compilation
         |> verifyCompile
         |> shouldFail
@@ -596,7 +594,6 @@ type MyIndexerClass() =
         with get (index: int): string = ""
         and set (index: int) (value: float) = ()
 """
-        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3581, Line 3, Col 14, Line 3, Col 22, "An indexed property's getter and setter must have the same type. Property 'Indexer1' has getter of type 'string' but setter of type 'float'.")
@@ -609,7 +606,6 @@ type MyIndexerClass() =
         with get (index) = 1
         and set (index) (value: float) = ()
 """
-        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3581, Line 3, Col 14, Line 3, Col 22, "An indexed property's getter and setter must have the same type. Property 'Indexer2' has getter of type 'int' but setter of type 'float'.")
@@ -623,7 +619,6 @@ type MyIndexerClass() =
     member x.Indexer3
         with set index (value: float) = ()
 """
-        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3581, Line 3, Col 14, Line 3, Col 22, "An indexed property's getter and setter must have the same type. Property 'Indexer3' has getter of type 'int' but setter of type 'float'.")
@@ -636,7 +631,6 @@ type MyIndexerClass() =
         with get (index: int, index2: int): float = 0.0
         and set (index1: int, index2: int) (value: string) = ()
 """
-        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3581, Line 3, Col 14, Line 3, Col 22, "An indexed property's getter and setter must have the same type. Property 'Indexer4' has getter of type 'float' but setter of type 'string'.")
@@ -649,7 +643,6 @@ type MyIndexerClass() =
         with get (index, index2) = 0.0
         and set (index1, index2) value = ()
 """
-        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3581, Line 3, Col 14, Line 3, Col 22, "An indexed property's getter and setter must have the same type. Property 'Indexer5' has getter of type 'float' but setter of type 'obj'.")
@@ -671,7 +664,6 @@ type GenericIndexer<'indexerArgs,'indexerOutput,'indexerInput>() =
                                                 m_lastArgs  <- args
                                                 m_lastInput <- input
 """
-        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3581, Line 9, Col 17, Line 9, Col 21, "An indexed property's getter and setter must have the same type. Property 'Item' has getter of type ''indexerOutput' but setter of type ''indexerInput'.")

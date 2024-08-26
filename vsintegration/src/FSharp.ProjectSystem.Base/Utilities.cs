@@ -169,7 +169,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Is an extensibility object executing an automation function.
         /// </devdoc>
         /// <param name="serviceProvider">The service provider.</param>
-        /// <returns>true if the extensiblity object is executing an automation function.</returns>
+        /// <returns>true if the extensibility object is executing an automation function.</returns>
         public static bool IsInAutomationFunction(IServiceProvider serviceProvider)
         {
             if (serviceProvider == null)
@@ -189,7 +189,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Creates a semicolon delinited list of strings. This can be used to provide the properties for VSHPROPID_CfgPropertyPagesCLSIDList, VSHPROPID_PropertyPagesCLSIDList, VSHPROPID_PriorityPropertyPagesCLSIDList
+        /// Creates a semicolon delimited list of strings. This can be used to provide the properties for VSHPROPID_CfgPropertyPagesCLSIDList, VSHPROPID_PropertyPagesCLSIDList, VSHPROPID_PriorityPropertyPagesCLSIDList
         /// </summary>
         /// <param name="guids">An array of Guids.</param>
         /// <returns>A semicolon delimited string, or null</returns>
@@ -299,10 +299,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Creates a CALPOLESTR from a list of strings 
-        /// It is the responsability of the caller to release this memory.
+        /// It is the responsibility of the caller to release this memory.
         /// </summary>
         /// <param name="strings"></param>
-        /// <returns>A CALPOLESTR that was created from the the list of strings.</returns>
+        /// <returns>A CALPOLESTR that was created from the list of strings.</returns>
         [SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "CALPOLESTR")]
         public static CALPOLESTR CreateCALPOLESTR(IList<string> strings)
         {
@@ -334,7 +334,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Creates a CADWORD from a list of tagVsSccFilesFlags. Memory is allocated for the elems. 
-        /// It is the responsability of the caller to release this memory.
+        /// It is the responsibility of the caller to release this memory.
         /// </summary>
         /// <param name="flags"></param>
         /// <returns>A CADWORD created from the list of tagVsSccFilesFlags.</returns>
@@ -438,7 +438,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Gets the active configuration name.
         /// </summary>
         /// <param name="automationObject">The automation object.</param>
-        /// <returns>The name of the active configuartion.</returns>        
+        /// <returns>The name of the active configuration.</returns>        
         public static string GetActiveConfigurationName(EnvDTE.Project automationObject)
         {
             if (automationObject == null)
@@ -462,7 +462,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Verifies that two objects represent the same instance of a COM object.
-        /// This essentially compares the IUnkown pointers of the 2 objects.
+        /// This essentially compares the IUnknown pointers of the 2 objects.
         /// This is needed in scenario where aggregation is involved.
         /// </summary>
         /// <param name="obj1">Can be an object, interface or IntPtr</param>
@@ -543,7 +543,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Returns true if thename that can represent a path, absolut or relative, or a file name contains invalid filename characters.
+        /// Returns true if the name that can represent a path, absolute or relative, or a file name contains invalid filename characters.
         /// </summary>
         /// <param name="name">File name</param>
         /// <returns>true if file name is invalid</returns>
@@ -570,7 +570,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             Microsoft.VisualStudio.Shell.Url uri = new Microsoft.VisualStudio.Shell.Url(name);
 
-            // This might be confusing bur Url.IsFile means that the uri represented by the name is either absolut or relative.
+            // This might be confusing bur Url.IsFile means that the uri represented by the name is either absolute or relative.
             if (uri.IsFile)
             {
                 string[] segments = uri.Segments;
@@ -630,7 +630,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Helper method to call a converter explicitely to convert to an enum type
+        /// Helper method to call a converter explicitly to convert to an enum type
         /// </summary>
         /// <typeparam name="T">THe enum to convert to</typeparam>
         /// <param name="value">The enum value to be converted to</param>
@@ -696,7 +696,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Sets a string value from an enum
         /// </summary>
         /// <typeparam name="T">The enum type</typeparam>
-        /// <param name="enumValue">The value of teh enum.</param>
+        /// <param name="enumValue">The value of the enum.</param>
         /// <returns></returns>
         public static string SetStringValueFromConvertedEnum<T>(T enumValue, CultureInfo culture)
             where T : struct
@@ -869,7 +869,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
 
                 // We want to verify here everything but the extension.
-                // We cannot use GetFileNameWithoutExtension because it might be that for example (..\\filename.txt) is passed in asnd that should fail, since that is not a valid filename.
+                // We cannot use GetFileNameWithoutExtension because it might be that for example (..\\filename.txt) is passed in and that should fail, since that is not a valid filename.
                 fileNameToVerify = filePart.Substring(0, filePart.Length - extension.Length);
 
                 if (String.IsNullOrEmpty(fileNameToVerify))
@@ -919,7 +919,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Canonicalizes a file name, including:
         ///  - determines the full path to the file
         ///  - casts to upper case
-        /// Canonicalizing a file name makes it possible to compare file names using simple simple string comparison.
+        /// Canonicalizing a file name makes it possible to compare file names using simple string comparison.
         /// 
         /// Note: this method does not handle shared drives and UNC drives.
         /// </summary>
@@ -971,11 +971,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Retrives the configuration and the platform using the IVsSolutionBuildManager2 interface.
+        /// Retrieves the configuration and the platform using the IVsSolutionBuildManager2 interface.
         /// </summary>
         /// <param name="serviceProvider">A service provider.</param>
-        /// <param name="hierarchy">The hierrachy whose configuration is requested.</param>
-        /// <returns>true if successfull.</returns>
+        /// <param name="hierarchy">The hierarchy whose configuration is requested.</param>
+        /// <returns>true if successful.</returns>
         public static bool TryGetActiveConfigurationAndPlatform(System.IServiceProvider serviceProvider, Guid projectId, out ConfigCanonicalName configCanonicalName)
         {
             if (serviceProvider == null)
@@ -1000,11 +1000,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Retrives the configuration and the platform using the IVsSolutionBuildManager2 interface.
+        /// Retrieves the configuration and the platform using the IVsSolutionBuildManager2 interface.
         /// </summary>
         /// <param name="serviceProvider">A service provider.</param>
-        /// <param name="hierarchy">The hierrachy whose configuration is requested.</param>
-        /// <returns>true if successfull.</returns>
+        /// <param name="hierarchy">The hierarchy whose configuration is requested.</param>
+        /// <returns>true if successful.</returns>
         public static bool TryGetConfigurationAndPlatform(IVsCfg config, out ConfigCanonicalName configCanonicalName)
         {
 

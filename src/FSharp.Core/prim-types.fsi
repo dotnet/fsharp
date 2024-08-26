@@ -310,7 +310,7 @@ namespace Microsoft.FSharp.Core
     /// with a default constructor with property getters and setters.</summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct,AllowMultiple=false)>]  
     [<Sealed>]
     type CLIMutableAttribute =
         inherit Attribute
@@ -324,7 +324,7 @@ namespace Microsoft.FSharp.Core
     /// and accessor members for the generated CLI class for that type.</summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct,AllowMultiple=false)>]  
     [<Sealed>]
     type DefaultAugmentationAttribute =
         inherit Attribute
@@ -2985,7 +2985,7 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The result of the comparison.</returns>
         /// 
-        /// <example id="compare-greather-than-example">
+        /// <example id="compare-greater-than-example">
         /// <code lang="fsharp">
         ///  5 &gt; 1               // Evaluates to true
         ///  5 &gt; 5               // Evaluates to false
@@ -3208,7 +3208,6 @@ namespace Microsoft.FSharp.Core
         /// <param name="arg">A nullable value representing the argument.</param>
         /// <returns>The argument value. If it is null, the defaultValue is returned.</returns>
         [<CompiledName("DefaultIfNull")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline defaultIfNull : defaultValue:'T -> arg:'T | null -> 'T when 'T : not null and 'T : not struct 
 
         /// <summary>Used to specify a default value for an nullable value argument in the implementation of a function</summary>
@@ -3216,7 +3215,6 @@ namespace Microsoft.FSharp.Core
         /// <param name="arg">A nullable value representing the argument.</param>
         /// <returns>The argument value. If it is null, the defaultValue is returned.</returns>
         [<CompiledName("DefaultIfNullV")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline defaultIfNullV : defaultValue:'T -> arg:Nullable<'T> -> 'T 
 #endif
 
@@ -3522,7 +3520,6 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The value to check.</param>
         /// <returns>A choice indicating whether the value is null or not-null.</returns>
         [<CompiledName("NullMatchPattern")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         [<WarnOnWithoutNullArgument("tcPassingWithoutNullToNonNullAP", Localize=true)>]
         val inline (|Null|NonNull|) : value: 'T | null -> Choice<unit, 'T>  when 'T : not null and 'T : not struct
         
@@ -3531,14 +3528,12 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The value to check.</param>
         /// <returns>A choice indicating whether the value is null or not-null.</returns>
         [<CompiledName("NullValueMatchPattern")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline (|NullV|NonNullV|) : value: Nullable<'T> -> Choice<unit, 'T> 
         
         /// <summary>When used in a pattern checks the given value is not null.</summary>
         /// <param name="value">The value to check.</param>
         /// <returns>The non-null value.</returns>
         [<CompiledName("NonNullQuickPattern")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         [<WarnOnWithoutNullArgument("tcPassingWithoutNullToNonNullQuickAP", Localize=true)>]
         val inline (|NonNullQuick|) : value: 'T | null -> 'T when 'T : not null and 'T : not struct
         
@@ -3547,7 +3542,6 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The value to check.</param>
         /// <returns>The non-null value.</returns>
         [<CompiledName("NonNullQuickValuePattern")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline (|NonNullQuickV|) : value: Nullable<'T> -> 'T 
         
         /// <summary>Determines whether the given value is null.</summary>
@@ -3555,14 +3549,12 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The value to check.</param>
         /// <returns>True when value is null, false otherwise.</returns>
         [<CompiledName("IsNullV")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline isNullV : value:Nullable<'T> -> bool
 #else
         /// <summary>Determines whether the given value is null.</summary>
         /// <param name="value">The value to check.</param>
         /// <returns>A choice indicating whether the value is null or not-null.</returns>
         [<CompiledName("NullMatchPattern")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline (|Null|NonNull|) : value: 'T -> Choice<unit, 'T>  when 'T : null and 'T : not struct 
 #endif
 
@@ -3579,14 +3571,12 @@ namespace Microsoft.FSharp.Core
         /// <remarks>In a future revision of nullness support this may be unified with 'null'.</remarks>
         /// <returns>The null value for a value type.</returns>
         [<CompiledName("NullV")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline nullV<'T when 'T : struct and 'T : (new : unit -> 'T) and 'T :> ValueType> :  Nullable<'T>
 
         /// <summary>Asserts that the value is non-null.</summary>
         /// <param name="value">The value to check.</param>
         /// <returns>The value when it is not null. If the value is null an exception is raised.</returns>
         [<CompiledName("NonNull")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         [<WarnOnWithoutNullArgument("tcPassingWithoutNullTononNullFunction", Localize=true)>]
         val inline nonNull : value: 'T | null -> 'T when 'T : not null and 'T : not struct
 
@@ -3595,14 +3585,12 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The value to check.</param>
         /// <returns>True when value is null, false otherwise.</returns>
         [<CompiledName("NonNullV")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline nonNullV : value:Nullable<'T> -> 'T 
 
         /// <summary>Asserts that the value is non-null.</summary>
         /// <param name="value">The value to check.</param>
         /// <returns>True when value is null, false otherwise.</returns>
         [<CompiledName("WithNull")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline withNull : value:'T -> 'T | null when 'T : not null and 'T : not struct
 
         /// <summary>Asserts that the value is non-null.</summary>
@@ -3610,7 +3598,6 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The value to check.</param>
         /// <returns>True when value is null, false otherwise.</returns>
         [<CompiledName("WithNullV")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline withNullV : value:'T -> Nullable<'T> 
 #endif
 
@@ -3685,7 +3672,6 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <returns>The result value.</returns>
         [<CompiledName("NullArgCheck")>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline nullArgCheck : argumentName:string -> 'T | null -> 'T when 'T : not null and 'T : not struct
 #endif
 
@@ -3820,7 +3806,7 @@ namespace Microsoft.FSharp.Core
         /// <code lang="fsharp">
         /// let l1 = ['a'; 'b'; 'c']
         /// let l2 = ['d'; 'e'; 'f']
-        /// l1 @ l2   //  Evalulates to ['a'; 'b'; 'c'; 'd'; 'e'; 'f']
+        /// l1 @ l2   //  Evaluates to ['a'; 'b'; 'c'; 'd'; 'e'; 'f']
         /// </code>
         /// </example>
         /// 
@@ -5822,7 +5808,6 @@ namespace Microsoft.FSharp.Core
             /// <param name="value">The possibly nullable value.</param>
             /// <returns>The same value as in the input.</returns>
             [<CompiledName("NonNull")>]
-            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
             #if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
             val inline nonNull : value: 'T | null -> 'T when 'T : not null and 'T : not struct
             #else
@@ -5833,7 +5818,6 @@ namespace Microsoft.FSharp.Core
             /// <param name="value">The value to retype from ('T | null) to 'T .</param>
             /// <returns>The non-null value.</returns>
             [<CompiledName("NonNullQuickPattern")>]
-            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
             #if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
             val inline (|NonNullQuick|) : value: 'T | null -> 'T when 'T : not null and 'T : not struct
             #else

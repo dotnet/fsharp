@@ -458,7 +458,7 @@ let CheckEscapes cenv allowProtected m syntacticArgs body = (* m is a range suit
     if cenv.reportErrors then
         let cantBeFree (v: Val) =
            // If v is a syntactic argument, then it can be free since it was passed in.
-           // The following can not be free:
+           // The following cannot be free:
            //   a) BaseVal can never escape.
            //   b) Byref typed values can never escape.
            // Note that: Local mutables can be free, as they will be boxed later.
@@ -479,7 +479,7 @@ let CheckEscapes cenv allowProtected m syntacticArgs body = (* m is a range suit
             if (isByrefLikeTy cenv.g m v.Type) then
                 // Inner functions are not guaranteed to compile to method with a predictable arity (number of arguments).
                 // As such, partial applications involving byref arguments could lead to closures containing byrefs.
-                // For safety, such functions are assumed to have no known arity, and so can not accept byrefs.
+                // For safety, such functions are assumed to have no known arity, and so cannot accept byrefs.
                 errorR(Error(FSComp.SR.chkByrefUsedInInvalidWay(v.DisplayName), m))
 
             elif v.IsBaseVal then
@@ -2345,25 +2345,25 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                     ignore isInArg
                     match (optArgInfo, callerInfo) with
                     | _, NoCallerInfo -> ()
-                    | NotOptional, _ -> errorR(Error(FSComp.SR.tcCallerInfoNotOptional(callerInfo.ToString()), m))
+                    | NotOptional, _ -> errorR(Error(FSComp.SR.tcCallerInfoNotOptional(callerInfo |> string), m))
                     | CallerSide _, CallerLineNumber ->
                         if not (typeEquiv g g.int32_ty ty) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo.ToString(), "int", NicePrint.minimalStringOfType cenv.denv ty), m))
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "int", NicePrint.minimalStringOfType cenv.denv ty), m))
                     | CalleeSide, CallerLineNumber ->
                         if not ((isOptionTy g ty) && (typeEquiv g g.int32_ty (destOptionTy g ty))) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo.ToString(), "int", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m))
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "int", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m))
                     | CallerSide _, CallerFilePath ->
                         if not (typeEquiv g g.string_ty ty) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv ty), m))
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv ty), m))
                     | CalleeSide, CallerFilePath ->
                         if not ((isOptionTy g ty) && (typeEquiv g g.string_ty (destOptionTy g ty))) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m))
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m))
                     | CallerSide _, CallerMemberName ->
                         if not (typeEquiv g g.string_ty ty) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv ty), m))
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv ty), m))
                     | CalleeSide, CallerMemberName ->
                         if not ((isOptionTy g ty) && (typeEquiv g g.string_ty (destOptionTy g ty))) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m)))
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m)))
 
         for pinfo in immediateProps do
             let nm = pinfo.PropertyName

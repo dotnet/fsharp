@@ -36,8 +36,11 @@ let rec internal spinFor (duration: TimeSpan) =
             return! spinFor remaining
     }
 
-
+#if BUILDING_WITH_LKG
 type internal EventRecorder<'a, 'b, 'c when 'a : equality and 'b : equality>(memoize: AsyncMemoize<'a,'b,'c>) as self =
+#else
+type internal EventRecorder<'a, 'b, 'c when 'a : equality and 'b : equality and 'a:not null and 'b:not null>(memoize: AsyncMemoize<'a,'b,'c>) as self =
+#endif
 
     let events = ConcurrentQueue()
 

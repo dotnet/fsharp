@@ -207,19 +207,19 @@
         <target state="translated">透明编译器(实验性)</target>
         <note />
       </trans-unit>
-      <trans-unit id="TransparentCompiler_Discalimer1">
+      <trans-unit id="TransparentCompiler_Disclaimer1">
         <source>WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</source>
-        <target state="translated">警告!透明编译器尚不支持所有功能，可能会导致崩溃或提供错误结果。</target>
+        <target state="new">WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</target>
         <note />
       </trans-unit>
-      <trans-unit id="TransparentCompiler_Discalimer2">
+      <trans-unit id="TransparentCompiler_Disclaimer2">
         <source>Use at your own risk!</source>
-        <target state="translated">自行承担风险!</target>
+        <target state="new">Use at your own risk!</target>
         <note />
       </trans-unit>
-      <trans-unit id="TransparentCompiler_Discalimer3">
+      <trans-unit id="TransparentCompiler_Disclaimer3">
         <source>By checking this you also opt-in for additional performance telemetry</source>
-        <target state="translated">选中此项即表示你也选择加入其他性能遥测</target>
+        <target state="new">By checking this you also opt-in for additional performance telemetry</target>
         <note />
       </trans-unit>
       <trans-unit id="Transparent_Compiler_Cache_Factor">

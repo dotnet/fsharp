@@ -217,7 +217,7 @@ type OptionalArgInfo =
                             else MissingValue
                     else
                         DefaultValue
-                                    // See above - the typpe is imported only in order to be analyzed for optional default value, nullness is irrelevant here.
+                                    // See above - the type is imported only in order to be analyzed for optional default value, nullness is irrelevant here.
                 CallerSide (analyze (ImportILTypeFromMetadataSkipNullness amap m ilScope ilTypeInst [] ilParam.Type))
             | Some v ->
                 CallerSide (Constant v)
@@ -327,7 +327,7 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
         | false, true, true -> 
             match TryFindFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs with
             | Some(Attrib(_, _, _, _, _, _, callerMemberNameAttributeRange)) ->
-                warning(Error(FSComp.SR.CallerMemberNameIsOverriden(argInfo.Name.Value.idText), callerMemberNameAttributeRange))
+                warning(Error(FSComp.SR.CallerMemberNameIsOverridden(argInfo.Name.Value.idText), callerMemberNameAttributeRange))
                 CallerFilePath
             | _ -> failwith "Impossible"
         | _, _, _ ->
@@ -344,12 +344,12 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
 type ILFieldInit with
 
     /// Compute the ILFieldInit for the given provided constant value for a provided enum type.
-    static member FromProvidedObj m (v: obj) =
+    static member FromProvidedObj m (v: obj MaybeNull) =
         match v with
         | Null -> ILFieldInit.Null
         | NonNull v ->
             let objTy = v.GetType()
-            let v = if objTy.IsEnum then objTy.GetField("value__").GetValue v else v
+            let v = if objTy.IsEnum then !!(!!objTy.GetField("value__")).GetValue v else v
             match v with
             | :? single as i -> ILFieldInit.Single i
             | :? double as i -> ILFieldInit.Double i
@@ -364,7 +364,7 @@ type ILFieldInit with
             | :? uint32 as i -> ILFieldInit.UInt32 i
             | :? int64 as i -> ILFieldInit.Int64 i
             | :? uint64 as i -> ILFieldInit.UInt64 i
-            | _ -> error(Error(FSComp.SR.infosInvalidProvidedLiteralValue(try v.ToString() with _ -> "?"), m))
+            | _ -> error(Error(FSComp.SR.infosInvalidProvidedLiteralValue(try !!v.ToString() with _ -> "?"), m))
 
 
 /// Compute the OptionalArgInfo for a provided parameter.
@@ -593,7 +593,7 @@ type ILMethInfo =
 
     member x.GetNullness(p:ILParameter) = {DirectAttributes = AttributesFromIL(p.MetadataIndex,p.CustomAttrsStored); Fallback = x.NullableFallback}
 
-    /// Get the argument types of the the IL method. If this is an C#-style extension method
+    /// Get the argument types of the IL method. If this is an C#-style extension method
     /// then drop the object argument.
     member x.GetParamTypes(amap, m, minst) =
         x.ParamMetadata |> List.map (fun p -> ImportParameterTypeFromMetadata amap m (x.GetNullness(p)) p.Type x.MetadataScope x.DeclaringTypeInst minst)
@@ -1062,7 +1062,7 @@ type MethInfo =
         | FSMeth _ -> false // F# defined methods not supported yet. Must be a language feature.
         | _ -> false
 
-    /// Indicates, wheter this method has `IsExternalInit` modreq.
+    /// Indicates, whether this method has `IsExternalInit` modreq.
     member x.HasExternalInit =
         match x with
         | ILMeth (_, ilMethInfo, _) -> HasExternalInit ilMethInfo.ILMethodRef
@@ -1259,10 +1259,10 @@ type MethInfo =
         | ProvidedMeth(amap, mi, _, _) ->
             // A single group of tupled arguments
             [ [for p in mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m) do
-                let isParamArrayArg = p.PUntaint((fun px -> (px :> IProvidedCustomAttributeProvider).GetAttributeConstructorArgs(p.TypeProvider.PUntaintNoFailure id, typeof<ParamArrayAttribute>.FullName).IsSome), m)
+                let isParamArrayArg = p.PUntaint((fun px -> (px :> IProvidedCustomAttributeProvider).GetAttributeConstructorArgs(p.TypeProvider.PUntaintNoFailure id, !! typeof<ParamArrayAttribute>.FullName).IsSome), m)
                 let optArgInfo =  OptionalArgInfoOfProvidedParameter amap m p
                 let reflArgInfo =
-                    match p.PUntaint((fun px -> (px :> IProvidedCustomAttributeProvider).GetAttributeConstructorArgs(p.TypeProvider.PUntaintNoFailure id, typeof<ReflectedDefinitionAttribute>.FullName)), m) with
+                    match p.PUntaint((fun px -> (px :> IProvidedCustomAttributeProvider).GetAttributeConstructorArgs(p.TypeProvider.PUntaintNoFailure id, !! typeof<ReflectedDefinitionAttribute>.FullName)), m) with
                     | Some ([ Some (:? bool as b) ], _) -> ReflectedArgInfo.Quote b
                     | Some _ -> ReflectedArgInfo.Quote false
                     | None -> ReflectedArgInfo.None
@@ -1672,7 +1672,7 @@ type ILPropInfo =
     /// Indicates if the IL property has a 'set' method
     member x.HasSetter = Option.isSome x.RawMetadata.SetMethod
 
-    /// Indidcates whether IL property has an init-only setter (i.e. has the `System.Runtime.CompilerServices.IsExternalInit` modifer)
+    /// Indicates whether IL property has an init-only setter (i.e. has the `System.Runtime.CompilerServices.IsExternalInit` modifier)
     member x.IsSetterInitOnly =
         x.HasSetter && HasExternalInit x.SetterMethod.ILMethodRef
 
@@ -1726,7 +1726,7 @@ type ILPropInfo =
         let nullness = {DirectAttributes = AttributesFromIL(pdef.MetadataIndex,pdef.CustomAttrsStored); Fallback = tinfo.NullableClassSource}
         ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] nullness pdef.PropertyType
 
-    override x.ToString() = x.ILTypeInfo.ToString() + "::" + x.PropertyName
+    override x.ToString() = !!x.ILTypeInfo.ToString() + "::" + x.PropertyName
 
 /// Describes an F# use of a property
 [<NoComparison; NoEquality>]
@@ -1831,6 +1831,38 @@ type PropInfo =
 #if !NO_TYPEPROVIDERS
         | ProvidedProp(_, pi, m) -> pi.PUntaint((fun pi -> pi.CanWrite), m)
 #endif
+
+    member x.GetterAccessibility =
+        match x with
+        | ILProp ilpinfo when ilpinfo.HasGetter -> Some taccessPublic
+        | ILProp _ -> None
+
+        | FSProp(_, _, Some getter, _) -> Some getter.Accessibility
+        | FSProp _ -> None
+
+#if !NO_TYPEPROVIDERS
+        | ProvidedProp(_, pi, m) -> pi.PUntaint((fun pi -> if pi.CanWrite then Some taccessPublic else None), m)
+#endif
+
+    member x.SetterAccessibility =
+        match x with
+        | ILProp ilpinfo when ilpinfo.HasSetter -> Some taccessPublic
+        | ILProp _ -> None
+
+        | FSProp(_, _, _, Some setter) -> Some setter.Accessibility
+        | FSProp _ -> None
+
+#if !NO_TYPEPROVIDERS
+        | ProvidedProp(_, pi, m) -> pi.PUntaint((fun pi -> if pi.CanWrite then Some taccessPublic else None), m)
+#endif
+
+    member x.IsProtectedAccessibility =
+        match x with
+        | ILProp ilpinfo when ilpinfo.HasGetter && ilpinfo.HasSetter -> 
+            struct(ilpinfo.GetterMethod.IsProtectedAccessibility, ilpinfo.SetterMethod.IsProtectedAccessibility)
+        | ILProp ilpinfo when ilpinfo.HasGetter -> struct(ilpinfo.GetterMethod.IsProtectedAccessibility, false)
+        | ILProp ilpinfo when ilpinfo.HasSetter -> struct(false, ilpinfo.SetterMethod.IsProtectedAccessibility)
+        | _ -> struct(false, false)
 
     member x.IsSetterInitOnly =
         match x with
@@ -2152,7 +2184,7 @@ type ILEventInfo =
     /// Indicates if the property is static
     member x.IsStatic = x.AddMethod.IsStatic
 
-    override x.ToString() = x.ILTypeInfo.ToString() + "::" + x.EventName
+    override x.ToString() = !!x.ILTypeInfo.ToString() + "::" + x.EventName
 
 //-------------------------------------------------------------------------
 // Helpers for EventInfo

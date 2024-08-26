@@ -3,6 +3,7 @@
 %{
 
 #nowarn "1182"  // generated code has lots of unused "parseState"
+#nowarn "3261"  // the generated code would need to properly annotate nulls, e.g. changing System.Object to `obj|null`
 
 open System
 
@@ -21,6 +22,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
@@ -106,7 +108,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %token ODO              /* LexFilter #light converts 'DO' tokens to 'ODO' */
 %token ODO_BANG         /* LexFilter #light converts 'DO_BANG' tokens to 'ODO_BANG' */
 %token OTHEN            /* LexFilter #light converts 'THEN' tokens to 'OTHEN' */
-%token OELSE            /* LexFilter #light converts 'ELSE' tokens to 'OELSE' except if immeditely followed by 'if', when they become 'ELIF' */
+%token OELSE            /* LexFilter #light converts 'ELSE' tokens to 'OELSE' except if immediately followed by 'if', when they become 'ELIF' */
 %token OWITH            /* LexFilter #light converts SOME (but not all) 'WITH' tokens to 'OWITH' */
 %token OFUNCTION        /* LexFilter #light converts 'FUNCTION' tokens to 'OFUNCTION' */
 %token OFUN             /* LexFilter #light converts 'FUN' tokens to 'OFUN' */
@@ -142,7 +144,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %token <range> OBLOCKEND                       // CtxtSeqBlock(_, _, AddBlockEnd)
 %token OBLOCKEND_COMING_SOON OBLOCKEND_IS_HERE // CtxtSeqBlock(_, _, AddBlockEnd)
 
-%token OINTERFACE_MEMBER /* inserted for non-paranthetical use of 'INTERFACE', i.e. not INTERFACE/END */
+%token OINTERFACE_MEMBER /* inserted for non-parenthetical use of 'INTERFACE', i.e. not INTERFACE/END */
 %token FIXED
 %token <token> ODUMMY
 
@@ -230,7 +232,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
  *
  * Dummy terminals (like prec_type_prefix) can assign precedence to a rule.
  * Doc says rule and (shift) token precedence resolves shift/reduce conflict.
- * It seems like dummy terminals can not assign precedence to the shift,
+ * It seems like dummy terminals cannot assign precedence to the shift,
  * but including the tokens in the precedences below will order them.
  * e.g. prec_type_prefix lower precedence than RARROW, LBRACK, IDENT, STAR (all extend types).
  */
@@ -408,7 +410,7 @@ interactiveTerminator:
 /* It is important to make this as large as possible given the chunk of input */
 /* text. More or less identical to 'moduleDefns' but where SEMICOLON_SEMICOLON is */
 /* not part of the grammar of topSeps and HASH interactions are not part of */
-/* the swalloed blob, since things like #use must be processed separately. */
+/* the swallowed blob, since things like #use must be processed separately. */
 /* REVIEW: limiting the input chunks until the next # directive can lead to */
 /* discrepencies between whole-file type checking in FSI and FSC. */
 
@@ -741,6 +743,7 @@ valSpfn:
   | opt_attributes opt_access VAL opt_attributes opt_inline opt_mutable opt_access nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints optLiteralValueSpfn
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let attr1, attr2, isInline, isMutable, vis2, id, doc, explicitValTyparDecls, (ty, arity), (mEquals, konst: SynExpr option) = ($1), ($4), (Option.isSome $5), (Option.isSome $6), ($7), ($8), grabXmlDoc(parseState, $1, 1), ($9), ($11), ($12)
+        let vis2 = SynValSigAccess.Single(vis2)
         if not (isNil attr2) then errorR(Deprecated(FSComp.SR.parsAttributesMustComeBeforeVal(), rhs parseState 4))
         let m =
             rhs2 parseState 1 11
@@ -886,7 +889,9 @@ tyconSpfnRhs:
      { let m = lhs parseState
        let ty, arity = $3
        let flags = AbstractMemberFlags true SynMemberKind.Member
-       let valSig = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, m, SynValSigTrivia.Zero)
+       let vis2 = SynValSigAccess.Single(None)
+
+       let valSig = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, vis2, None, m, SynValSigTrivia.Zero)
        let invoke = SynMemberSig.Member(valSig, flags, m, SynMemberSigMemberTrivia.Zero)
        (fun leadingKeyword nameRange nameInfo mEquals augmentation ->
            if not (isNil augmentation) then raiseParseErrorAt m (FSComp.SR.parsAugmentationsIllegalOnDelegateType())
@@ -961,7 +966,12 @@ classMemberSpfn:
   | opt_attributes opt_access memberSpecFlags opt_inline opt_access nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet optLiteralValueSpfn
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
        let isInline, doc, vis2, id, explicitValTyparDecls, (ty, arity), (mEquals, optLiteralValue) = (Option.isSome $4), grabXmlDoc(parseState, $1, 1), $5, $6, $7, $9, $11
-       let mWith, (getSet, getSetRangeOpt) = $10
+       let mWith, (getSet, getSetRangeOpt, getterAccess, setterAccess) = $10
+       let vis2 =
+           match getterAccess, setterAccess with
+           | None, None -> SynValSigAccess.Single(vis2) 
+           | _ -> SynValSigAccess.GetSet(vis2, getterAccess, setterAccess)
+
        let getSetAdjuster arity = match arity, getSet with SynValInfo([], _), SynMemberKind.Member -> SynMemberKind.PropertyGet | _ -> getSet
        let mWhole =
            let m = rhs parseState 3
@@ -1022,18 +1032,19 @@ classMemberSpfn:
 
   | opt_attributes opt_access NEW COLON topTypeWithTypeConstraints
      { let vis, doc, (ty, valSynInfo) = $2, grabXmlDoc(parseState, $1, 1), $5
+       let vis2 = SynValSigAccess.Single(vis)
        let mNew = rhs parseState 3
        let m = unionRanges (rhs parseState 1) ty.Range |> unionRangeWithXmlDoc doc
        let isInline = false
        let trivia: SynValSigTrivia = { LeadingKeyword = SynLeadingKeyword.New mNew; InlineKeyword = None; WithKeyword = None; EqualsRange = None }
-       let valSpfn = SynValSig ($1, (SynIdent(mkSynId (rhs parseState 3) "new", None)), noInferredTypars, ty, valSynInfo, isInline, false, doc, vis, None, m, trivia)
+       let valSpfn = SynValSig ($1, (SynIdent(mkSynId (rhs parseState 3) "new", None)), noInferredTypars, ty, valSynInfo, isInline, false, doc, vis2, None, m, trivia)
        SynMemberSig.Member(valSpfn, CtorMemberFlags, m, SynMemberSigMemberTrivia.Zero) }
 
 
 /* The optional "with get, set" on a member in a signature */
 classMemberSpfnGetSet:
   | /* EMPTY */
-    { None, (SynMemberKind.Member, None) }
+    { None, (SynMemberKind.Member, None, None, None) }
 
   | WITH classMemberSpfnGetSetElements
     { let mWith = rhs parseState 1
@@ -1051,39 +1062,39 @@ classMemberSpfnGetSet:
 
 /* The "get, set" on a property member in a signature */
 classMemberSpfnGetSetElements:
-  | nameop
-    { (let (SynIdent(id:Ident, _)) = $1
+  | opt_access nameop
+    { (let (SynIdent(id:Ident, _)) = $2
        if id.idText = "get" then
-           SynMemberKind.PropertyGet, Some(GetSetKeywords.Get id.idRange)
+           SynMemberKind.PropertyGet, Some(GetSetKeywords.Get id.idRange), $1, None
        else if id.idText = "set" then
-           SynMemberKind.PropertySet, Some(GetSetKeywords.Set id.idRange)
+           SynMemberKind.PropertySet, Some(GetSetKeywords.Set id.idRange), None, $1
        else
            raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsGetOrSetRequired())) }
 
-  | nameop COMMA nameop
-    { let (SynIdent(id, _)) = $1
-      let (SynIdent(id2, _)) = $3
+  | opt_access nameop COMMA opt_access nameop
+    { let (SynIdent(id, _)) = $2
+      let (SynIdent(id2, _)) = $5
       if not ((id.idText = "get" && id2.idText = "set") ||
               (id.idText = "set" && id2.idText = "get")) then
          raiseParseErrorAt (rhs2 parseState 1 3) (FSComp.SR.parsGetOrSetRequired())
 
       if id.idText = "get" then
-          SynMemberKind.PropertyGetSet, Some(GetSetKeywords.GetSet(id.idRange, id2.idRange))
+          SynMemberKind.PropertyGetSet, Some(GetSetKeywords.GetSet(id.idRange, id2.idRange)), $1, $4
       else
-          SynMemberKind.PropertyGetSet, Some(GetSetKeywords.GetSet(id2.idRange, id.idRange)) }
+          SynMemberKind.PropertyGetSet, Some(GetSetKeywords.GetSet(id2.idRange, id.idRange)), $4, $1 }
 
-  | nameop COMMA recover
-    { (let (SynIdent(id:Ident, _)) = $1
+  | opt_access nameop COMMA recover
+    { (let (SynIdent(id:Ident, _)) = $2
        if id.idText = "get" then
-           SynMemberKind.PropertyGet, Some(GetSetKeywords.Get id.idRange)
+           SynMemberKind.PropertyGet, Some(GetSetKeywords.Get id.idRange), $1, None
        else if id.idText = "set" then
-           SynMemberKind.PropertySet, Some(GetSetKeywords.Set id.idRange)
+           SynMemberKind.PropertySet, Some(GetSetKeywords.Set id.idRange), None, $1
        else
-           raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsGetOrSetRequired())) }
+           raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsGetOrSetRequired())) }
 
   | OBLOCKBEGIN oblockend ODECLEND
     { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsIdentifierExpected())
-      SynMemberKind.Member, None }
+      SynMemberKind.Member, None, None, None }
 
 memberSpecFlags:
   | memberFlags { $1 }
@@ -1422,9 +1433,9 @@ namedModuleDefnBlock:
          // The second is a module abbreviation, the first a module containing a single expression.
          // The resolution is in favour of the module abbreviation, i.e. anything of the form
          //    module M2 = ID.ID.ID.ID
-         // will be taken as a module abbreviation, regardles of the identifiers themselves.
+         // will be taken as a module abbreviation, regardless of the identifiers themselves.
          //
-         // This is similar to the ambiguitty between
+         // This is similar to the ambiguity between
          //    type X = int
          // and
          //    type X = OneValue
@@ -1760,7 +1771,8 @@ tyconDefnRhs:
      { let m = lhs parseState
        let ty, arity = $3
        (fun nameRange augmentation ->
-           let valSig = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, m, SynValSigTrivia.Zero)
+           let vis2 = SynValSigAccess.Single(None)
+           let valSig = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, vis2, None, m, SynValSigTrivia.Zero)
            let flags = AbstractMemberFlags true SynMemberKind.Member
            let invoke = SynMemberDefn.AbstractSlot(valSig, flags, m, SynMemberDefnAbstractSlotTrivia.Zero)
            if not (isNil augmentation) then raiseParseErrorAt m (FSComp.SR.parsAugmentationsIllegalOnDelegateType())
@@ -2036,7 +2048,7 @@ classDefnMember:
   | opt_attributes opt_access abstractMemberFlags opt_inline nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet opt_ODECLEND
      { let ty, arity = $8
        let isInline, doc, id, explicitValTyparDecls = (Option.isSome $4), grabXmlDoc(parseState, $1, 1), $5, $6
-       let mWith, (getSet, getSetRangeOpt) = $9
+       let mWith, (getSet, getSetRangeOpt, getterAccess, setterAccess) = $9
        let getSetAdjuster arity = match arity, getSet with SynValInfo([], _), SynMemberKind.Member -> SynMemberKind.PropertyGet | _ -> getSet
        let mWhole =
            let m = rhs parseState 1
@@ -2044,10 +2056,12 @@ classDefnMember:
            | None -> unionRanges m ty.Range
            | Some gs -> unionRanges m gs.Range
            |> unionRangeWithXmlDoc doc
-       if Option.isSome $2 then errorR(Error(FSComp.SR.parsAccessibilityModsIllegalForAbstract(), mWhole))
+       if Option.isSome $2 || Option.isSome getterAccess || Option.isSome setterAccess
+       then errorR(Error(FSComp.SR.parsAccessibilityModsIllegalForAbstract(), mWhole))
        let mkFlags, leadingKeyword = $3
        let trivia = { LeadingKeyword = leadingKeyword; InlineKeyword = $4; WithKeyword = mWith; EqualsRange = None }
-       let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, None, None, mWhole, trivia)
+       let vis2 = SynValSigAccess.Single(None)
+       let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, vis2, None, mWhole, trivia)
        let trivia: SynMemberDefnAbstractSlotTrivia = { GetSetKeywords = getSetRangeOpt }
        [ SynMemberDefn.AbstractSlot(valSpfn, mkFlags (getSetAdjuster arity), mWhole, trivia) ] }
 
@@ -2183,7 +2197,7 @@ autoPropsDefnDecl:
            errorR (Error(FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSet (), rhs parseState 2))
        fun attribs flags rangeStart ->
            let xmlDoc = grabXmlDocAtRangeStart (parseState, attribs, rangeStart)
-           [ mkAutoPropDefn mVal $3 $4 $5 None expr (None, (SynMemberKind.Member, None)) xmlDoc attribs flags rangeStart ] }
+           [ mkAutoPropDefn mVal $3 $4 $5 None expr (None, (SynMemberKind.Member, None, None, None)) xmlDoc attribs flags rangeStart ] }
 
   | VAL opt_mutable opt_access ident opt_typ OBLOCKSEP
      { let mVal = rhs parseState 1
@@ -2196,7 +2210,7 @@ autoPropsDefnDecl:
            errorR (Error(FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSet (), rhs parseState 2))
        fun attribs flags rangeStart ->
            let xmlDoc = grabXmlDocAtRangeStart (parseState, attribs, rangeStart)
-           [ mkAutoPropDefn mVal $3 $4 $5 None expr (None, (SynMemberKind.Member, None)) xmlDoc attribs flags rangeStart ] }
+           [ mkAutoPropDefn mVal $3 $4 $5 None expr (None, (SynMemberKind.Member, None, None, None)) xmlDoc attribs flags rangeStart ] }
 
 | VAL opt_mutable opt_access recover
      { let mVal = rhs parseState 1
@@ -2206,7 +2220,7 @@ autoPropsDefnDecl:
            errorR (Error(FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSet (), rhs parseState 2))
        fun attribs flags rangeStart ->
            let xmlDoc = grabXmlDocAtRangeStart(parseState, attribs, rangeStart)
-           [ mkAutoPropDefn mVal $3 id None None expr (None, (SynMemberKind.Member, None)) xmlDoc attribs flags rangeStart ] }
+           [ mkAutoPropDefn mVal $3 id None None expr (None, (SynMemberKind.Member, None, None, None)) xmlDoc attribs flags rangeStart ] }
 
 /* An optional type on an auto-property definition */
 opt_typ:
@@ -3785,7 +3799,7 @@ parenPatternBody:
 
 /* This duplicates out 'patterns' in order to give type annotations */
 /* the desired precedence w.r.t. patterns, tuple patterns in particular. */
-/* Duplication requried to minimize the disturbance to the grammar, */
+/* Duplication required to minimize the disturbance to the grammar, */
 /* in particular the expected property that "pat" parses the same as */
 /* "(pat)"!  Here are some examples: */
 /*    a, b                  parses as (a, b) */
@@ -6807,7 +6821,7 @@ opt_topSeparators:
   | topSeparator opt_topSeparators { }
   | /* EMPTY */                    { }
 
-/* Seprators in either #light or non-#light */
+/* Separators in either #light or non-#light */
 seps:
   | OBLOCKSEP { None }
   | SEMICOLON { Some (rhs parseState 1) }

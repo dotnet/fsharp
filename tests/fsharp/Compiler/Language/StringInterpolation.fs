@@ -547,7 +547,7 @@ check "vcewweh20" $"x = %A{1}" "x = 1"
     [<Test>]
     let ``%B succeeds for langVersion preview`` () =
         CompilerAssert.CompileExeAndRunWithOptions(
-            [| "--langversion:preview" |],
+            [| |],
             """
 let check msg a b = 
     if a = b then printfn "test case '%s' succeeded" msg else failwithf "test case '%s' failed, expected %A, got %A" msg b a
@@ -643,9 +643,9 @@ let x2 = $"one %s{1}" // mismatched types
 let x3 = $"one %s" // naked percent in interpolated
 let x4 = $"one %d" // naked percent in interpolated
 let x5 = $"one %A" // naked percent in interpolated
-let x6 = $"one %P" // interpolation hole marker in interploation
-let x7 = $"one %P()" // interpolation hole marker in interploation
-let x8 = $"one %P(){1}" // interpolation hole marker in interploation
+let x6 = $"one %P" // interpolation hole marker in interpolation
+let x7 = $"one %P()" // interpolation hole marker in interpolation
+let x8 = $"one %P(){1}" // interpolation hole marker in interpolation
 let x9 = $"one %f" // naked percent in interpolated
 let xa = $"one %d{3:N}" // mix of formats
 let xc = $"5%6" // bad F# format specifier

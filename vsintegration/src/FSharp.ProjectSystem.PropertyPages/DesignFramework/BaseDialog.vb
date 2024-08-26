@@ -44,7 +44,7 @@ Namespace Microsoft.VisualStudio.Editors.DesignerFramework
         ''' </remarks>
         <EditorBrowsable(EditorBrowsableState.Never)> _
         Public Sub New()
-            Debug.Fail("You should use the constructor with a ServiceProvider paramemter")
+            Debug.Fail("You should use the constructor with a ServiceProvider parameter")
         End Sub
 
         '**************************************************************************

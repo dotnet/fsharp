@@ -38,6 +38,19 @@ let AccFreeVarsStackGuardDepth = GetEnvInteger "FSHARP_AccFreeVars" 100
 let RemapExprStackGuardDepth = GetEnvInteger "FSHARP_RemapExpr" 50
 let FoldExprStackGuardDepth = GetEnvInteger "FSHARP_FoldExpr" 50
 
+let inline compareBy (x: 'T MaybeNull) (y: 'T MaybeNull) ([<InlineIfLambda>]func: 'T -> 'K)  = 
+#if NO_CHECKNULLS
+    compare (func x) (func y)
+#else
+    match x,y with
+    | null,null -> 0
+    | null,_ -> -1
+    | _,null -> 1
+    | x,y ->  compare (func !!x) (func !!y)
+#endif
+
+
+
 //---------------------------------------------------------------------------
 // Basic data structures
 //---------------------------------------------------------------------------
@@ -765,7 +778,7 @@ let evalAnonInfoIsStruct (anonInfo: AnonRecdTypeInfo) =
     evalTupInfoIsStruct anonInfo.TupInfo
 
 /// This erases outermost occurrences of inference equations, type abbreviations, non-generated provided types
-/// and measureable types (float<_>).
+/// and measurable types (float<_>).
 /// It also optionally erases all "compilation representations", i.e. function and
 /// tuple types, and also "nativeptr<'T> --> System.IntPtr"
 let rec stripTyEqnsAndErase eraseFuncAndTuple (g: TcGlobals) ty =
@@ -1165,7 +1178,7 @@ let rec getErasedTypes g ty checkForNullness =
 
     | TType_var (tp, nullness) -> 
         match checkForNullness, nullness.Evaluate() with
-        | true, NullnessInfo.WithNull -> [ty] // with-null annotations can't be tested at runtime, Nullabe<> is not part of Nullness feature as of now.
+        | true, NullnessInfo.WithNull -> [ty] // with-null annotations can't be tested at runtime, Nullable<> is not part of Nullness feature as of now.
         | _ -> if tp.IsErased then [ty] else []
 
     | TType_app (_, b, nullness) ->
@@ -1187,9 +1200,9 @@ let rec getErasedTypes g ty checkForNullness =
 // Standard orderings, e.g. for order set/map keys
 //---------------------------------------------------------------------------
 
-let valOrder = { new IComparer<Val> with member _.Compare(v1, v2) = compare v1.Stamp v2.Stamp }
+let valOrder = { new IComparer<Val> with member _.Compare(v1, v2) = compareBy v1 v2 _.Stamp }
 
-let tyconOrder = { new IComparer<Tycon> with member _.Compare(tycon1, tycon2) = compare tycon1.Stamp tycon2.Stamp }
+let tyconOrder = { new IComparer<Tycon> with member _.Compare(tycon1, tycon2) = compareBy tycon1 tycon2 _.Stamp }
 
 let recdFieldRefOrder = 
     { new IComparer<RecdFieldRef> with 
@@ -2168,7 +2181,7 @@ let unionFreeTycons s1 s2 =
 
 let typarOrder = 
     { new IComparer<Typar> with 
-        member x.Compare (v1: Typar, v2: Typar) = compare v1.Stamp v2.Stamp } 
+        member x.Compare (v1: Typar, v2: Typar) = compareBy v1 v2 _.Stamp } 
 
 let emptyFreeTypars = Zset.empty typarOrder
 let unionFreeTypars s1 s2 = 
@@ -2992,7 +3005,7 @@ module PrettyTypes =
     // Hence we double check here that the thing is really a type variable
     let safeDestAnyParTy orig g ty = match tryAnyParTy g ty with ValueNone -> orig | ValueSome x -> x
 
-    let foldUnurriedArgInfos f z (x: UncurriedArgInfos) = List.fold (fold1Of2 f) z x
+    let foldUncurriedArgInfos f z (x: UncurriedArgInfos) = List.fold (fold1Of2 f) z x
     let foldTypar f z (x: Typar) = foldOn mkTyparTy f z x
     let mapTypar g f (x: Typar) : Typar = (mkTyparTy >> f >> safeDestAnyParTy x g) x
 
@@ -3010,7 +3023,7 @@ module PrettyTypes =
 
     let PrettifyInstAndUncurriedSig g (x: TyparInstantiation * UncurriedArgInfos * TType) = 
         PrettifyThings g 
-            (fun f -> foldTriple (foldTyparInst f, foldUnurriedArgInfos f, f)) 
+            (fun f -> foldTriple (foldTyparInst f, foldUncurriedArgInfos f, f)) 
             (fun f -> mapTriple (mapTyparInst g f, List.map (map1Of2 f), f))
             x
 
@@ -3145,6 +3158,7 @@ type DisplayEnv =
       shortConstraints: bool
       useColonForReturnType: bool
       showAttributes: bool
+      showCsharpCodeAnalysisAttributes: bool
       showOverrides: bool
       showStaticallyResolvedTyparAnnotations: bool
       showNullnessAnnotations: bool option
@@ -3180,6 +3194,7 @@ type DisplayEnv =
         suppressMutableKeyword = false
         showMemberContainers = false
         showAttributes = false
+        showCsharpCodeAnalysisAttributes = false
         showOverrides = true
         showStaticallyResolvedTyparAnnotations = true
         showNullnessAnnotations = None
@@ -3228,7 +3243,7 @@ type DisplayEnv =
               ControlPath
               (splitNamespace ExtraTopLevelOperatorsName) ]
 
-let (+.+) s1 s2 = if String.IsNullOrEmpty(s1) then s2 else s1+"."+s2
+let (+.+) s1 s2 = if String.IsNullOrEmpty(s1) then s2 else !!s1+"."+s2
 
 let layoutOfPath p =
     sepListL SepL.dot (List.map (tagNamespace >> wordL) p)
@@ -6234,7 +6249,7 @@ and remapTyconRepr ctxt tmenv repr =
                  // This is actually done on-demand (see the implementation of ProvidedTypeContext)
                  ProvidedType = 
                      info.ProvidedType.PApplyNoFailure (fun st -> 
-                         let ctxt = st.Context.RemapTyconRefs(unbox >> remapTyconRef tmenv.tyconRefRemap >> box) 
+                         let ctxt = st.Context.RemapTyconRefs(unbox >> remapTyconRef tmenv.tyconRefRemap >> box >> (!!)) 
                          ProvidedType.ApplyContext (st, ctxt)) }
 #endif
     | TNoRepr -> repr
@@ -6516,7 +6531,7 @@ let rec remarkExpr (m: range) x =
 
         // This code allows a feature where if a 'while'/'for' etc in a computation expression is
         // implemented using code inlining and is ultimately implemented by a corresponding construct somewhere
-        // in the remark'd code then aat least one debug point is recovered, based on the noted debug point for the original construct.
+        // in the remark'd code then at least one debug point is recovered, based on the noted debug point for the original construct.
         //
         // However it is imperfect, since only one debug point is recovered
         let op = 
@@ -8208,12 +8223,12 @@ let mkCompilationMappingAttrForQuotationResource (g: TcGlobals) (nm, tys: ILType
 #if !NO_TYPEPROVIDERS
 
 let isTypeProviderAssemblyAttr (cattr: ILAttribute) = 
-    cattr.Method.DeclaringType.BasicQualifiedName = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName
+    cattr.Method.DeclaringType.BasicQualifiedName = !! typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName
 
 let TryDecodeTypeProviderAssemblyAttr (cattr: ILAttribute) : string MaybeNull option = 
     if isTypeProviderAssemblyAttr cattr then 
-        let parms, _args = decodeILAttribData cattr 
-        match parms with // The first parameter to the attribute is the name of the assembly with the compiler extensions.
+        let params_, _args = decodeILAttribData cattr 
+        match params_ with // The first parameter to the attribute is the name of the assembly with the compiler extensions.
         | ILAttribElem.String (Some assemblyName) :: _ -> Some assemblyName
         | ILAttribElem.String None :: _ -> Some null
         | [] -> Some null
@@ -8983,7 +8998,7 @@ let buildAccessPath (cp: CompilationPath option) =
         System.String.Join(".", ap)      
     | None -> "Extension Type"
 
-let prependPath path name = if String.IsNullOrEmpty(path) then name else path + "." + name
+let prependPath path name = if String.IsNullOrEmpty(path) then name else !!path + "." + name
 
 let XmlDocSigOfVal g full path (v: Val) =
     let parentTypars, methTypars, cxs, argInfos, retTy, prefix, path, name = 
@@ -9175,7 +9190,7 @@ let changeWithNullReqTyToVariable g reqTy =
     | true -> reqTy
 
 /// When calling a null-allowing API, we prefer to infer a without null argument for idiomatic F# code.
-/// That is, unless caller explicitely marks a value (e.g. coming from a function parameter) as WithNull, it should not be infered as such.
+/// That is, unless caller explicitly marks a value (e.g. coming from a function parameter) as WithNull, it should not be inferred as such.
 let reqTyForArgumentNullnessInference g actualTy reqTy =
     // Only change reqd nullness if actualTy is an inference variable
     match tryDestTyparTy g actualTy with
@@ -9183,16 +9198,18 @@ let reqTyForArgumentNullnessInference g actualTy reqTy =
         changeWithNullReqTyToVariable g reqTy       
     | _ -> reqTy
 
+let TypeHasAllowNull (tcref:TyconRef) g m =
+    not tcref.IsStructOrEnumTycon &&
+    not (isByrefLikeTyconRef g m tcref) && 
+    (TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true)
+
 /// The new logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValueNew g m ty = 
     let sty = stripTyparEqns ty
     
     // Check if the type has AllowNullLiteral
     (match tryTcrefOfAppTy g sty with 
-     | ValueSome tcref -> 
-        not tcref.IsStructOrEnumTycon &&
-        not (isByrefLikeTyconRef g m tcref) && 
-        (TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true)
+     | ValueSome tcref -> TypeHasAllowNull tcref g m
      | _ -> false) 
     ||
     // Check if the type has a nullness annotation
@@ -9212,7 +9229,7 @@ let TypeNullIsTrueValue g ty =
     || isUnitTy g ty
 
 /// Indicates if unbox<T>(null) is actively rejected at runtime.   See nullability RFC.  This applies to types that don't have null
-/// as a valid runtime representation under old compatiblity rules.
+/// as a valid runtime representation under old compatibility rules.
 let TypeNullNotLiked g m ty = 
        not (TypeNullIsExtraValue g m ty) 
     && not (TypeNullIsTrueValue g ty) 
@@ -11291,7 +11308,7 @@ let CombineCcuContentFragments l =
 
     CombineModuleOrNamespaceTypeList [] l
 
-/// An immutable mappping from witnesses to some data.
+/// An immutable mapping from witnesses to some data.
 ///
 /// Note: this uses an immutable HashMap/Dictionary with an IEqualityComparer that captures TcGlobals, see EmptyTraitWitnessInfoHashMap
 type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>
@@ -11300,7 +11317,7 @@ type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>
 let EmptyTraitWitnessInfoHashMap g : TraitWitnessInfoHashMap<'T> =
     ImmutableDictionary.Create(
         { new IEqualityComparer<_> with 
-            member _.Equals(a, b) = traitKeysAEquiv g TypeEquivEnv.Empty a b
+            member _.Equals(a, b) = nullSafeEquality a b (fun a b -> traitKeysAEquiv g TypeEquivEnv.Empty a b)
             member _.GetHashCode(a) = hash a.MemberName
         })
 

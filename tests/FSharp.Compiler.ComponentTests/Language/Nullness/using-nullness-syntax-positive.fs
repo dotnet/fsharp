@@ -181,7 +181,7 @@ let f0 line =
     let add (s:String) = ()
     match line with 
     | null | "" -> ()
-    | _ -> add line // Exected to give a nullness warning
+    | _ -> add line // Expected to give a nullness warning
 
 module NullConstraintTests =
     type C<'T when 'T : null>() = class end

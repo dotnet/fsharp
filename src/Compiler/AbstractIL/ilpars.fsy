@@ -3,6 +3,7 @@
 %{
 
 #nowarn "1182"  // the generated code often has unused variable "parseState"
+#nowarn "3261"  // the generated code would need to properly annotate nulls, e.g. changing System.Object to `obj|null`
 
 open Internal.Utilities.Library
 
@@ -24,7 +25,7 @@ let resolveCurrentMethodSpecScope obj =
  *----------------------------------------------------------------------*/
 
 %token <int64> VAL_INT64     /* 342534523534534      0x34FA434644554 */
-%token <int32> VAL_INT32_ELIPSES     /* 342534523534534... */
+%token <int32> VAL_INT32_ELLIPSES     /* 342534523534534... */
 %token <double> VAL_FLOAT64        /* -334234 24E-34 */
 %token <Int32Instr> INSTR_I 
 %token <Int32Int32Instr> INSTR_I32_I32
@@ -51,7 +52,7 @@ let resolveCurrentMethodSpecScope obj =
 %token DCOLON
 %token DEFAULT  
 %token DOT  
-%token ELIPSES
+%token ELLIPSES
 %token EOF  
 %token EXPLICIT  
 %token FIELD   
@@ -285,18 +286,18 @@ bound:
        { (None, None) } 
    | int32
        { (None, Some $1) } 
-   | int32 ELIPSES int32
+   | int32 ELLIPSES int32
        { (Some $1, Some ($3 - $1 + 1)) }       
-   | int32 ELIPSES
+   | int32 ELLIPSES
        { (Some $1, None) } 
 /* We need to be able to parse all of */
 /* ldc.r8     0. */
 /* float64(-657435.)     */
 /* and int32[0...,0...] */
-/* The problem is telling an integer-followed-by-ellipses from a floating-point-nubmer-followed-by-dots */
-   | VAL_INT32_ELIPSES int32
+/* The problem is telling an integer-followed-by-ellipses from a floating-point-number-followed-by-dots */
+   | VAL_INT32_ELLIPSES int32
        { (Some $1, Some ($2 - $1 + 1)) }       
-   | VAL_INT32_ELIPSES
+   | VAL_INT32_ELLIPSES
        { (Some $1, None) } 
                                 
 id: 

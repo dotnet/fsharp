@@ -2363,7 +2363,7 @@ type Typar =
         | _, Some optData -> optData.typar_attribs <- attribs
         | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs; typar_is_contravariant = false }
 
-    /// Get the XML documetnation for the type parameter
+    /// Get the XML documentation for the type parameter
     member x.XmlDoc =
         match x.typar_opt_data with
         | Some optData -> optData.typar_xmldoc
@@ -3097,7 +3097,7 @@ type Val =
     //   - in opt.fs: when compiling fslib, we bind an entry for the value in a global table (see bind_escaping_local_vspec)
     //   - in ilxgen.fs: when compiling fslib, we bind an entry for the value in a global table (see bind_escaping_local_vspec)
     //   - in opt.fs: (fullDebugTextOfValRef) for error reporting of non-inlinable values
-    //   - in service.fs (boutput_item_description): to display the full text of a value's binding location
+    //   - in service.fs (output_item_description): to display the full text of a value's binding location
     //   - in check.fs: as a boolean to detect public values for saving quotations 
     //   - in ilxgen.fs: as a boolean to detect public values for saving quotations 
     //   - in MakeExportRemapping, to build non-local references for values
@@ -3392,7 +3392,7 @@ type NonLocalValOrMemberRef =
     member x.DebugText = x.ToString()
 
     /// For debugging
-    override x.ToString() = x.EnclosingEntity.nlr.ToString() + "::" + x.ItemKey.PartialKey.LogicalName
+    override x.ToString() = !! x.EnclosingEntity.nlr.ToString() + "::" + x.ItemKey.PartialKey.LogicalName
       
 /// Represents the path information for a reference to a value or member in another assembly, disassociated
 /// from any particular reference.
@@ -4789,7 +4789,7 @@ type DecisionTreeTest =
 ///   -- boundVals - The values bound at the target, matching the valuesin the TDSuccess
 ///   -- targetExpr - The expression to evaluate if we branch to the target
 ///   -- debugPoint - The debug point for the target
-///   -- isStateVarFlags - Indicates which, if any, of the values are repesents as state machine variables
+///   -- isStateVarFlags - Indicates which, if any, of the values are represents as state machine variables
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type DecisionTreeTarget = 
     | TTarget of 
@@ -5112,11 +5112,11 @@ type Expr =
 
     override expr.ToString() = expr.ToDebugString(3)
 
-    member expr.ToDebugString(depth: int) = 
+    member expr.ToDebugString(depth: int) : string = 
         if depth = 0 then ".." else
         let depth = depth - 1
         match expr with 
-        | Const (c, _, _) -> c.ToString()
+        | Const (c, _, _) -> string c
         | Val (v, _, _) -> v.LogicalName
         | Sequential (e1, e2, _, _) -> "Sequential(" + e1.ToDebugString(depth) + ", " + e2.ToDebugString(depth) + ")"
         | Lambda (_, _, _, vs, body, _, _) -> sprintf "Lambda(%+A, " vs + body.ToDebugString(depth) + ")" 
@@ -5695,13 +5695,13 @@ module CcuTypeForwarderTable =
             if remainingPath.Count = 0 then
                 finalKey
             else
-                remainingPath.Array.[remainingPath.Offset]
+                (!!remainingPath.Array).[remainingPath.Offset]
         match nodes.TryGetValue searchTerm with
         | true, innerTree ->
             if remainingPath.Count = 0 then
                 innerTree.Value
             else
-                 findInTree (ArraySegment<string>(remainingPath.Array, remainingPath.Offset + 1, remainingPath.Count - 1)) finalKey innerTree
+                 findInTree (ArraySegment<string>((!!remainingPath.Array), remainingPath.Offset + 1, remainingPath.Count - 1)) finalKey innerTree
         | false, _ -> None
 
 /// Represents a table of .NET CLI type forwarders for an assembly
@@ -5848,7 +5848,7 @@ type CcuThunk =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    /// Used at the end of comppiling an assembly to get a frozen, final stable CCU
+    /// Used at the end of compiling an assembly to get a frozen, final stable CCU
     /// for the compilation which we no longer mutate.
     member x.CloneWithFinalizedContents(ccuContents) =
         { x with target = { x.target with Contents = ccuContents } }
@@ -6011,7 +6011,7 @@ type Construct() =
         let lazyBaseTy = 
             LazyWithContext.Create 
                 ((fun (m, objTy) -> 
-                      let baseSystemTy = st.PApplyOption((fun st -> match st.BaseType with null -> None | ty -> Some (nonNull ty)), m)
+                      let baseSystemTy = st.PApplyOption((fun st -> match st.BaseType with null -> None | ty -> Some (ty)), m)
                       match baseSystemTy with 
                       | None -> objTy 
                       | Some t -> importProvidedType t),
@@ -6334,5 +6334,5 @@ type Construct() =
             // Coordinates from type provider are 1-based for lines and columns
             // Coordinates internally in the F# compiler are 1-based for lines and 0-based for columns
             let pos = Position.mkPos line (max 0 (column - 1)) 
-            mkRange filePath pos pos |> Some
+            mkRange !!filePath pos pos |> Some
 #endif
