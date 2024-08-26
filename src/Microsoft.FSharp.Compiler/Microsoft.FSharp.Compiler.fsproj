@@ -28,6 +28,10 @@
     <NuspecProperty Include="configuration=$(Configuration)" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(IgnoreMibc)' != 'true'">
+    <NuspecProperty Include="mibcRoot=$(ArtifactsDir)\mibc" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\fsi\fsiProject\fsi.fsproj" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\fsc\fscProject\fsc.fsproj" />
