@@ -73,8 +73,6 @@ neg16.fs(90,7,90,22): typecheck error FS0025: Incomplete pattern matches on this
 
 neg16.fs(97,15,97,16): typecheck error FS0823: The 'VolatileField' attribute may only be used on 'let' bindings in classes
 
-neg16.fs(99,5,99,18): typecheck error FS0842: This attribute is not valid for use on this language element
-
 neg16.fs(100,11,100,12): typecheck error FS0823: The 'VolatileField' attribute may only be used on 'let' bindings in classes
 
 neg16.fs(100,11,100,12): typecheck error FS0879: Volatile fields must be marked 'mutable' and cannot be thread-static
