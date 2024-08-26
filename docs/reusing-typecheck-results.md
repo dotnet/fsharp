@@ -1,13 +1,13 @@
 ---
-title: Reusing compilation results
+title: Reusing typecheck results
 category: Compiler Internals
 categoryindex: 200
 index: 42
 ---
 
-# Reusing compilation results between compiler and tooling runs
+# Reusing typecheck results between compiler runs
 
-Caching and reusing compilation results between compiler and tooling runs will be an optimization technique aimed at improving the performance and efficiency of the F# development experience.
+Caching and reusing compilation results between compiler runs will be an optimization technique aimed at improving the performance and efficiency of the F# development experience.
 
 ## Motivation
 
@@ -19,8 +19,6 @@ Caching and reusing compilation results between compiler and tooling runs will b
 
 The optimization will benefit the most in large and not very interdependent projects. For instance, a 100-files test project where a single test is changed. MSBuild will mark the project for recompilation but thanks to the improvement only one file would be recompiled in the full-blown manner.
 
-The technique should also help when MSBuild generally incorrectly marks projects for rebuild. The probably doesn't happen often though.
-
 ## Premises
 
 Here are some assumptions I am coming with after tinkering with the topic and investigating the current state of the art. 
@@ -30,17 +28,7 @@ Here are some assumptions I am coming with after tinkering with the topic and in
 The heart of the compiler, `fsc.fs`, is split into 6 phases (`main1` - `main6`). The code is designed to pass minimum information between phases, using the `Args` structure, which is essentially a data bag. The first phase takes info from the program arguments.
 
 ```fsharp
-main1 (
-    ctok,
-    argv,
-    legacyReferenceResolver,
-    bannerAlreadyPrinted,
-    reduceMemoryUsage,
-    defaultCopyFSharpCore,
-    exiter,
-    loggerProvider,
-    disposables
-)
+main1 (...args...)
 |> main2
 |> main3
 |> main4 (tcImportsCapture, dynamicAssemblyCreator)
@@ -212,54 +200,41 @@ The phases taking the longest are marked in the right. Those are assembly import
 
 ## Implementation plan
 
-The conclusion from the above is that there is a lot of potential in caching - at the same time, implementing things to the full potential right away will require serious changes in the compiler code, which will be dangerous, hard to test and harder to review. Therefore, I propose to implement the feature in stages.
+The conclusion from the above is that there is a lot of potential in caching - at the same time, implementing things to the full potential right away will require serious changes in the compiler code, which will be dangerous, hard to test and review. Therefore, I propose to implement the feature in stages.
 
-### What should be done
+**Stage 1 - force-gen and use signatures**
 
-**Stage 1 - omit retypecheck for plain rebuild**
+We can start with always generating signature files and using them for typecheck in cases when matching implementation files don't change. The affected phase will be `main2`.
 
-That is, after running "fsc test.fs", rerunning `fsc test.fs` will omit type-checking step. This should work for multiple files (project) as well. Everything will be happening in `main1` - after parsing, we check the cache and deserialize the typecheck info if available, passing it to `main2` right away. If not, we do the normal type check, caching the results at the end of it, prior to passing them to the next stage. This will speed up scenarios like tinkering with plain "fsc.exe" or project rebuild when the results are incorrectly invalidated.
+**Stage 2 - skip some typecheck when using gen'd signatures**
 
-**Stage 2 - minimize retypecheck in slightly modified projects**
+If we use generated signatures, we can probably omit doing some parts of typecheck, e.g. checking that modules match their signatures.
 
-That is, when rebuilding the project after modifying an independent file, only the modified file will be retypechecked, for others the check will be omitted. This will handle many target scenarios for the feature, like modifying one test in a test project.
+**Stage 3 - skip some signature recalculation**
 
-**Stage 3 - omit reresolving assemblies**
+Here we can get smart about signature reuse. If a project contains files F1.fs,F2.fs, ... F9.fs, F9.fsi and F5.fs is changed, we can omit forcegen'ing signatures for all the files above the changed one (F1.fs - F4.fs). 
 
-That is, for either of the scenarios above, skip the `Import mscorlib+FSharp.Core` step. This logic is also done in `main1`, prior to parsing. Same ideas apply - if cached, deserialize the information - otherwise, follow the normal process and then cache the results. The data should be stored separately from the typecheck info, so that the information be reused partially.
+**Stage 4 - side-cache and reuse sigData**
 
-## Open questions
+In `main3` part, we encode signature data in order to insert it into the executable later (`AssemblySignatureInfo` resource). We can copy this data nearby and unpickle it in `main1` if we detect no change in the source code.
 
-### How to cache data?
+**Stage 5 - side-cache and reuse optData**
 
-We can store the data in the intermediate build directory (e.g. `obj` in case of `dotnet build`). The usual way for caching would be to serialize + deserialize information.
+Similarly to the above, in `main3`, we encode optimization data (`AssemblyOptimizationInfo` resource). Again, we can copy it to a separate resource to later reuse it.
 
-However, serialization of the compiler data is non-trivial:
-- we don't have a **full** out-of-the-box solution in the repo (some parts are available, see below)
-- well-known serialization libraries (like `System.Text.Json`) won't work right away, because data is internal and libs can't handle some F# type easily (e.g. DUs)
-- we can't use F#-specific libraries (like [this](https://github.com/fsprojects/FSharp.Json) or [this](https://github.com/Tarmil/FSharp.SystemTextJson)) because we strictly minimize 3-party dependencies
+**Stage 6 - omit reresolving assemblies**
 
-It should be possible to hack things around, but the more compiler data we want to serialize, the harder it will be. Hence I see 2 ways to go:
+We can also try skipping the `Import mscorlib+FSharp.Core` step in `main1` in similar cases. This is essentially a list of libraries with paths.
 
-**1) Start with leveraging some existing elements and then see.** 
+**Stage 7 - cache imported assemblies on the x-project level**
 
-We have a mechanism for writing signature files. We could force generating signatures for fresh compilation, save them and then "feed" to the recompilation process. This will speed up typechecking, saving a lot of time on type inference. We also seem to have a mechanism for encoding optimization data. We can apply the same idea here - force saving it for the first run and then utilize for reruns. This won't help us with everything but **might be** good enough. Also, the things we'll be left with **might be** easier to hand-serialize.
+A lot of imported assemblies are actually the same for many projects (e.g. `System.*` and `Microsoft.*` assemblies). We could store and utilize them across a whole solution.
 
-**2) Create the universal serialization + deserialization mechanism right away and use it for everything**
+**Stage 8 - leverage graph-based typechecking**
 
-This can take inspiration from existing mechanisms and random libraries on the internet. Here we'll be able to unlock the full potential of data caching, yet it will also mean a bigger investment in the beginning. Also, the caching procedure would be more uniform here - we can probably store whatever we can per each file, in the same format. 
+This will further reduce the amount of signature file to regenerate. If we get here, we should discuss how risky this is and maybe have a separate flag for it.
 
-### Cache invalidation
-
-It's clear that we should be as defensive as possible here, cancelling further information reuse when suspecting that it might not match the fresh recompilation info.
-
-**Checking source files**
-
-To understand the source file is the same we can:
-1) Check the timestamp
-2) Hash the content and compare the hashes
-
-The former might lead to problems with things like time zone changes or manual file metadata modification. The latter might lead to problems in case of hash collisions. All of those scenarios are probably very unlikely, we might just look at what MSBuild does.
+## Other considerations
 
 **Checking auxiliary information**
 
@@ -268,26 +243,15 @@ Besides tracking the source files, we should track:
 - compiler flags 
 - ?
 
-**Checking dependencies**
+**Cached data granularity**
 
-This is related to the minimization of retypecheck in slightly modified projects. If only one file is changed, how do we know that nothing depends on that?
-
-Graph-based typechecking mechanism should help here, however this also means we might need to store some additional data to keep track of things.
-
-### Data propagation
-
-Since the compilation steps we want to omit happen in different phases of compilation, I see 2 approaches to data propagation:
-
-**1) Cache and restore data in each phase.**
-
-For example, independently restore typecheck data and optimization data just before doing the respective jobs. This would lead to redundant checks (we don't need to reoptimize if we don't retypecheck), hence some code clutter, but would keep the general code structure same. We'll also have to leak the data a bit (invalidate optimization cache if we invalidate typecheck cache).
-
-**2) Restore at the beginning, cache at the end.**
-
-This would mean doing all the data restoring either in `main1` or even in a new phase dedicated to just that. Then the information would be gradually collected and propagated to the `main6`. This will avoid unnecessary checks but will also mean modifying the `Args` data and hence significantly intervening into the current compiler logic. 
+Currently, the following granularity will be sufficient and also rather easy to mentally grasp:
+- cached signature files (.fsi) - per file, as with normal signature file
+- optData and sigData (OptimizationInfo and SignatureInfo) - per assembly, side-slicing them from the executable
+- imported assemblies - eventually some common storage in a solution 
 
 ## Testing and benchmarking
 
 We should have a compiler switch for this: applying it to current typechecking tests shouldn't make any difference in results. Unit tests should test that restored cached results + reusing them should be equivalent to fresh typecheck results.
 
-Benchmarks can be added to the FCSBenchmarks project. A good inspiration can be workflow-style tests for updating files done by @0101 in Transparent Compiler.
+Benchmarks should be added or run at every stage to the `FCSBenchmarks` project. A good inspiration can be workflow-style tests for updating files done by @0101 in Transparent Compiler.
