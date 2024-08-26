@@ -160,7 +160,7 @@
       <trans-unit id="AddSvcRefDlg_OPSelectContract">
         <source>Select a service contract to view its operations.</source>
         <target state="translated">Selecione um contrato de serviço para exibir as operações.</target>
-        <note>This is the message displayed when user selects non-cotract nodes.</note>
+        <note>This is the message displayed when user selects non-contract nodes.</note>
       </trans-unit>
       <trans-unit id="CSRDlg_Title">
         <source>Service Reference Settings</source>
