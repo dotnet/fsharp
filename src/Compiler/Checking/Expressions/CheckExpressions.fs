@@ -10989,7 +10989,11 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
     let envinner =
         match apinfoOpt with
         | Some (apinfo, apOverallTy, m) ->
-            if Option.isSome memberFlagsOpt || (not apinfo.IsTotal && apinfo.ActiveTags.Length > 1) then
+            let isMultiCasePartialAP = memberFlagsOpt.IsNone && not apinfo.IsTotal && apinfo.ActiveTags.Length > 1
+            if isMultiCasePartialAP then
+                errorR(Error(FSComp.SR.tcPartialActivePattern(), m))
+                
+            if Option.isSome memberFlagsOpt && not spatsL.IsEmpty then
                 errorR(Error(FSComp.SR.tcInvalidActivePatternName(apinfo.LogicalName), m))
 
             apinfo.ActiveTagsWithRanges |> List.iteri (fun i (_tag, tagRange) ->
