@@ -1495,23 +1495,23 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
         | [],[] -> ()
         | enclTypeInst,methInst ->
             let tyconRef = ImportILTypeRef cenv.amap m ilMethRef.DeclaringTypeRef
-            (enclTypeInst,tyconRef.ILTyconRawMetadata.GenericParams)
-            ||> List.iter2 (fun typeInst typeGeneric ->
-                if not typeGeneric.HasAllowsRefStruct then
-                    CheckTypeNoByrefs cenv env m typeInst)
+            match tyconRef.TypeReprInfo with
+            | TILObjectRepr(TILObjectReprData(scoref, _, tdef)) ->
+                (enclTypeInst,tdef.GenericParams)
+                ||> List.iter2 (fun typeInst typeGeneric ->
+                    if not typeGeneric.HasAllowsRefStruct then
+                        CheckTypeNoByrefs cenv env m typeInst)
 
-            match methInst with
-            | [] -> ()
-            | methInst ->
-                let methDef = 
-                    match tyconRef.ILTyconInfo with
-                    | TILObjectReprData(scoref, _, tdef) ->
-                        resolveILMethodRefWithRescope (rescopeILType scoref) tdef ilMethRef
+                match methInst with
+                | [] -> ()
+                | methInst ->
+                    let methDef = resolveILMethodRefWithRescope (rescopeILType scoref) tdef ilMethRef
+                    (methInst,methDef.GenericParams)
+                    ||> List.iter2 (fun methInst methGeneric ->
+                        if not methGeneric.HasAllowsRefStruct then
+                            CheckTypeNoByrefs cenv env m methInst)
 
-                (methInst,methDef.GenericParams)
-                ||> List.iter2 (fun methInst methGeneric ->
-                    if not methGeneric.HasAllowsRefStruct then
-                        CheckTypeNoByrefs cenv env m methInst)
+            | _ -> ()
 
         CheckTypeInstNoInnerByrefs cenv env m retTypes // permit byref returns
 
