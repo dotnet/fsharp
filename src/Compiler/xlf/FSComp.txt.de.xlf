@@ -1522,6 +1522,11 @@
         <target state="translated">Die Syntax "(expr1)[expr2]" ist jetzt für die Indizierung reserviert und mehrdeutig, wenn sie als Argument verwendet wird. Siehe https://aka.ms/fsharp-index-notation. Wenn Sie eine Funktion mit mehreren geschweiften Argumenten aufrufen, fügen Sie ein Leerzeichen dazwischen hinzu, z. B. "someFunction (expr1) [expr2]".</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcPartialActivePattern">
+        <source>Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.</source>
+        <target state="new">Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcPassingWithoutNullToANullableExpectingFunc">
         <source>Value known to be without null passed to a function meant for nullables: {0}</source>
         <target state="new">Value known to be without null passed to a function meant for nullables: {0}</target>

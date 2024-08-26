@@ -1522,6 +1522,11 @@
         <target state="translated">Синтаксис "(expr1)[expr2]" теперь зарезервирован для индексирования и неоднозначен при использовании в качестве аргумента. См. https://aka.ms/fsharp-index-notation. При вызове функции с несколькими каррированными аргументами добавьте между ними пробел, например "someFunction (expr1) [expr2]".</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcPartialActivePattern">
+        <source>Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.</source>
+        <target state="new">Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcPassingWithoutNullToANullableExpectingFunc">
         <source>Value known to be without null passed to a function meant for nullables: {0}</source>
         <target state="new">Value known to be without null passed to a function meant for nullables: {0}</target>
