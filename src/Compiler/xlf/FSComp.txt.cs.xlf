@@ -4948,8 +4948,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidActivePatternName">
-        <source>'{0}' is not a valid method name. Active patterns may only be defined as let-bound module or class functions.</source>
-        <target state="new">'{0}' is not a valid method name. Active patterns may only be defined as let-bound module or class functions.</target>
+        <source>'{0}' is not a valid method name. Use a let-binding instead.</source>
+        <target state="new">'{0}' is not a valid method name. Use a let-binding instead.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcEntryPointAttributeRequiresFunctionInModule">
