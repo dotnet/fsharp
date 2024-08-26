@@ -237,7 +237,7 @@ but here has type
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 827, Line 4, Col 10, Line 4, Col 23, "'(|Foo2|Bar2|_|)' is not a valid method name. Active patterns may only be defined as let-bound module or class functions.");
+            (Error 3872, Line 4, Col 10, Line 4, Col 23, "Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.")
             (Error 1, Line 4, Col 10, Line 4, Col 23, "This expression was expected to have type
     'Choice<'a,'b> option'    
 but here has type
@@ -254,7 +254,7 @@ but here has type
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 827, Line 4, Col 11, Line 4, Col 32, "'(|Foo2b|Bar2b|Baz2b|_|)' is not a valid method name. Active patterns may only be defined as let-bound module or class functions.");
+            (Error 3872, Line 4, Col 11, Line 4, Col 32, "Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.")
             (Error 1, Line 4, Col 11, Line 4, Col 32, "This expression was expected to have type
     'Choice<'a,'b,'c> option'    
 but here has type
@@ -296,7 +296,7 @@ but here has type
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 827, Line 4, Col 6, Line 4, Col 19, "'(|Foo2|Bar2|_|)' is not a valid method name. Active patterns may only be defined as let-bound module or class functions.");
+            (Error 3872, Line 4, Col 6, Line 4, Col 19, "Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.")
             (Error 1, Line 4, Col 6, Line 4, Col 19, "This expression was expected to have type
     'Choice<'a,'b> option'    
 but here has type
@@ -312,7 +312,7 @@ but here has type
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 827, Line 4, Col 6, Line 4, Col 27, "'(|Foo2b|Bar2b|Baz2b|_|)' is not a valid method name. Active patterns may only be defined as let-bound module or class functions.");
+            (Error 3872, Line 4, Col 6, Line 4, Col 27, "Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.")
             (Error 1, Line 4, Col 6, Line 4, Col 27, "This expression was expected to have type
     'Choice<'a,'b,'c> option'    
 but here has type
@@ -354,7 +354,7 @@ but here has type
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 827, Line 4, Col 6, Line 4, Col 19, "'(|Foo2|Bar2|_|)' is not a valid method name. Active patterns may only be defined as let-bound module or class functions.");
+            (Error 3872, Line 4, Col 6, Line 4, Col 19, "Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.")
             (Error 1, Line 4, Col 6, Line 4, Col 19, "This expression was expected to have type
     'Choice<'a,'b> option'    
 but here has type
@@ -370,7 +370,7 @@ but here has type
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 827, Line 4, Col 6, Line 4, Col 27, "'(|Foo2b|Bar2b|Baz2b|_|)' is not a valid method name. Active patterns may only be defined as let-bound module or class functions.");
+            (Error 3872, Line 4, Col 6, Line 4, Col 27, "Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.")
             (Error 1, Line 4, Col 6, Line 4, Col 27, "This expression was expected to have type
     'Choice<'a,'b,'c> option'    
 but here has type
@@ -412,7 +412,7 @@ but here has type
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 827, Line 8, Col 6, Line 8, Col 46, "'(|Sentence|Word|Punctuation|WhiteSpace|_|)' is not a valid method name. Active patterns may only be defined as let-bound module or class functions.");
+            (Error 3872, Line 8, Col 6, Line 8, Col 46, "Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.")
             (Error 3868, Line 22, Col 7, Line 22, Col 17, "This active pattern expects exactly one pattern argument, e.g., 'WhiteSpace pat'.");
             (Error 1107, Line 20, Col 7, Line 20, Col 21, "Partial active patterns may only generate one result")
         ]
