@@ -175,4 +175,22 @@ type IsByRefLikeAttribute() = inherit Attribute()
 type T(span: Span<byte>) = struct end
              """
              [| |]
+
+    [<Test>]
+    let ``A byref struct with custom attr can be passed as typar``() =
+        CompilerAssert.TypeCheckWithErrors """
+namespace System.Runtime.CompilerServices
+
+open System
+
+[<AttributeUsage(AttributeTargets.Struct)>]
+type IsByRefLikeAttribute() = inherit Attribute()
+
+[<IsByRefLike>]
+type T(span: Span<byte>) = struct end
+
+module WhatEver = 
+    let processT (a: Action<T>, ie: seq<T>, asList: list<T>) = ()
+             """
+             [| FSharpDiagnosticSeverity.Error, 3300, (13, 45, 13, 51), "The parameter 'asList' has an invalid type 'T list'. This is not permitted by the rules of Common IL." |]
 #endif
