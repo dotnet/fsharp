@@ -11086,7 +11086,11 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             if not (isNil declaredTypars) then
                 errorR(Error(FSComp.SR.tcLiteralCannotHaveGenericParameters(), mBinding))
 
-        if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) && memberFlagsOpt.IsNone && not attrs.IsEmpty then
+        let supportEnforceAttributeTargets =
+            (g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) && memberFlagsOpt.IsNone && not attrs.IsEmpty)
+            && not isVolatile // // VolatileFieldAttribute has a special treatment(specific error FS823)
+
+        if supportEnforceAttributeTargets then
             TcAttributeTargetsOnLetBindings { cenv with tcSink = TcResultsSink.NoSink } env attrs overallPatTy overallExprTy (not declaredTypars.IsEmpty) isClassLetBinding
 
         CheckedBindingInfo(inlineFlag, valAttribs, xmlDoc, tcPatPhase2, explicitTyparInfo, nameToPrelimValSchemeMap, rhsExprChecked, argAndRetAttribs, overallPatTy, mBinding, debugPoint, isCompGen, literalValue, isFixed), tpenv
@@ -11114,7 +11118,7 @@ and TcAttributeTargetsOnLetBindings (cenv: cenv) env attrs overallPatTy overallE
         else
             AttributeTargets.ReturnValue ||| AttributeTargets.Field ||| AttributeTargets.Property
 
-    TcAttributes cenv env attrTgt attrs |> ignore
+    TcAttributesWithPossibleTargets false cenv env attrTgt attrs |> ignore
 
 and TcLiteral (cenv: cenv) overallTy env tpenv (attrs, synLiteralValExpr) =
 

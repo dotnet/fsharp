@@ -2044,6 +2044,7 @@ type FormattedDiagnosticDetailedInfo =
         Location: FormattedDiagnosticLocation option
         Canonical: FormattedDiagnosticCanonicalInformation
         Message: string
+        Context: string option
     }
 
 [<RequireQualifiedAccess>]
@@ -2051,7 +2052,7 @@ type FormattedDiagnostic =
     | Short of FSharpDiagnosticSeverity * string
     | Long of FSharpDiagnosticSeverity * FormattedDiagnosticDetailedInfo
 
-let FormatDiagnosticLocation (tcConfig: TcConfig) m : FormattedDiagnosticLocation =
+let FormatDiagnosticLocation (tcConfig: TcConfig) (m: Range) : FormattedDiagnosticLocation =
     if equals m rangeStartup || equals m rangeCmdArgs then
         {
             Range = m
@@ -2114,6 +2115,10 @@ let FormatDiagnosticLocation (tcConfig: TcConfig) m : FormattedDiagnosticLocatio
                     sprintf "%s(%d,%d,%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn, m, file
                 else
                     "", m, file
+            | DiagnosticStyle.Rich ->
+                let file = file.Replace('/', Path.DirectorySeparatorChar)
+                let m = withStart (mkPos m.StartLine (m.StartColumn + 1)) m
+                (sprintf "◦→ %s (%d,%d)" file m.StartLine m.StartColumn), m, file
 
         {
             Range = m
@@ -2154,8 +2159,12 @@ let CollectFormattedDiagnostics (tcConfig: TcConfig, severity: FSharpDiagnosticS
             let text =
                 match tcConfig.diagnosticStyle with
                 // Show the subcategory for --vserrors so that we can fish it out in Visual Studio and use it to determine error stickiness.
+                | DiagnosticStyle.Emacs
+                | DiagnosticStyle.Gcc
+                | DiagnosticStyle.Default
+                | DiagnosticStyle.Test -> sprintf "%s FS%04d: " message errorNumber
                 | DiagnosticStyle.VisualStudio -> sprintf "%s %s FS%04d: " subcategory message errorNumber
-                | _ -> sprintf "%s FS%04d: " message errorNumber
+                | DiagnosticStyle.Rich -> sprintf "\n◦→ %s FS%04d: " message errorNumber
 
             let canonical: FormattedDiagnosticCanonicalInformation =
                 {
@@ -2164,11 +2173,51 @@ let CollectFormattedDiagnostics (tcConfig: TcConfig, severity: FSharpDiagnosticS
                     TextRepresentation = text
                 }
 
-            let message = diagnostic.FormatCore(tcConfig.flatErrors, suggestNames)
+            let message =
+                match tcConfig.diagnosticStyle with
+                | DiagnosticStyle.Emacs
+                | DiagnosticStyle.Gcc
+                | DiagnosticStyle.Default
+                | DiagnosticStyle.Test
+                | DiagnosticStyle.VisualStudio -> diagnostic.FormatCore(tcConfig.flatErrors, suggestNames)
+                | DiagnosticStyle.Rich ->
+                    diagnostic.FormatCore(tcConfig.flatErrors, suggestNames).Split([| '\n' |])
+                    |> Array.map (fun msg -> "\n◦   " + msg)
+                    |> String.Concat
+
+            let context =
+                match tcConfig.diagnosticStyle with
+                | DiagnosticStyle.Emacs
+                | DiagnosticStyle.Gcc
+                | DiagnosticStyle.Default
+                | DiagnosticStyle.Test
+                | DiagnosticStyle.VisualStudio -> None
+                | DiagnosticStyle.Rich ->
+                    match diagnostic.Range with
+                    | Some m ->
+                        let content =
+                            m.FileName
+                            |> FileSystem.GetFullFilePathInDirectoryShim tcConfig.implicitIncludeDir
+                            |> System.IO.File.ReadAllLines
+
+                        if m.StartLine = m.EndLine then
+                            $"\n◦ {m.StartLine} |{content[m.StartLine - 1]}\n"
+                            + $"""◦ {String.init (m.StartColumn + 3) (fun _ -> " ")}^{String.init (m.EndColumn - m.StartColumn) (fun _ -> "~")}"""
+                            |> Some
+                        else
+                            content
+                            |> fun lines -> Array.sub lines (m.StartLine - 1) (m.EndLine - m.StartLine - 1)
+                            |> Array.fold
+                                (fun (context, lineNumber) line -> (context + $"\n◦ {lineNumber} |{line}", lineNumber + 1))
+                                ("", (m.StartLine))
+                            |> fst
+                            |> Some
+                    | None -> None
 
             let entry: FormattedDiagnosticDetailedInfo =
                 {
                     Location = where
+                    Context = context
                     Canonical = canonical
                     Message = message
                 }
@@ -2199,7 +2248,11 @@ type PhasedDiagnostic with
             | FormattedDiagnostic.Short(_, txt) -> buf.AppendString txt
             | FormattedDiagnostic.Long(_, details) ->
                 match details.Location with
-                | Some l when not l.IsEmpty -> buf.AppendString l.TextRepresentation
+                | Some l when not l.IsEmpty ->
+                    buf.AppendString l.TextRepresentation
+                    // Because details.Context depends on the value of details.Location, if details.Location is not None, details.Context can be accessed directly.
+                    if details.Context.IsSome then
+                        buf.AppendString details.Context.Value
                 | _ -> ()
 
                 buf.AppendString details.Canonical.TextRepresentation
