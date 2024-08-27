@@ -847,3 +847,59 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         |> withLangVersionPreview
         |> verifyCompile
         |> shouldSucceed
+        
+    // SOURCE= E_SealedAttribute01.fs	# E_SealedAttribute01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SealedAttribute01.fs"|])>]
+    let ``E_SealedAttribute01 9.0`` compilation =
+        compilation
+        |> withLangVersion90
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 942, Line 2, Col 6, Line 2, Col 31, "Struct types are always sealed")
+            (Error 948, Line 8, Col 6, Line 8, Col 24, "Interface types cannot be sealed")
+            (Error 942, Line 14, Col 6, Line 14, Col 33, "Delegate types are always sealed")
+        ]
+    
+    // SOURCE=E_SealedAttribute01.fs	# E_SealedAttribute01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SealedAttribute01.fs"|])>]
+    let ``E_SealedAttribute01 preview`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 942, Line 2, Col 6, Line 2, Col 31, "Struct types are always sealed")
+            (Error 948, Line 8, Col 6, Line 8, Col 24, "Interface types cannot be sealed")
+            (Error 942, Line 14, Col 6, Line 14, Col 33, "Delegate types are always sealed")
+        ]
+        
+    // SOURCE= E_StructLayout01.fs	# E_StructLayout01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_StructLayout01.fs"|])>]
+    let ``E_StructLayout01 9.0`` compilation =
+        compilation
+        |> withLangVersion90
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 937, Line 2, Col 6, Line 2, Col 8, "Only structs and classes without primary constructors may be given the 'StructLayout' attribute")
+            (Error 937, Line 7, Col 6, Line 7, Col 8, "Only structs and classes without primary constructors may be given the 'StructLayout' attribute")
+            (Error 937, Line 11, Col 6, Line 11, Col 8, "Only structs and classes without primary constructors may be given the 'StructLayout' attribute")
+            (Error 937, Line 14, Col 6, Line 14, Col 8, "Only structs and classes without primary constructors may be given the 'StructLayout' attribute")
+            (Error 937, Line 17, Col 6, Line 17, Col 8, "Only structs and classes without primary constructors may be given the 'StructLayout' attribute")
+        ]
+    
+    // SOURCE=E_StructLayout01.fs	# E_StructLayout01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_StructLayout01.fs"|])>]
+    let ``E_StructLayout01 preview`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 937, Line 2, Col 6, Line 2, Col 8, "Only structs and classes without primary constructors may be given the 'StructLayout' attribute")
+            (Error 937, Line 7, Col 6, Line 7, Col 8, "Only structs and classes without primary constructors may be given the 'StructLayout' attribute")
+            (Error 937, Line 11, Col 6, Line 11, Col 8, "Only structs and classes without primary constructors may be given the 'StructLayout' attribute")
+            (Error 937, Line 14, Col 6, Line 14, Col 8, "Only structs and classes without primary constructors may be given the 'StructLayout' attribute")
+            (Error 937, Line 17, Col 6, Line 17, Col 8, "Only structs and classes without primary constructors may be given the 'StructLayout' attribute")
+        ]
