@@ -2255,6 +2255,7 @@ type PhasedDiagnostic with
                     match details.Location with
                     | Some l when not l.IsEmpty ->
                         buf.AppendString l.TextRepresentation
+
                         if details.Context.IsSome then
                             buf.AppendString details.Context.Value
                     | _ -> ()
@@ -2264,12 +2265,15 @@ type PhasedDiagnostic with
                 | DiagnosticStyle.Rich ->
                     buf.AppendString details.Canonical.TextRepresentation
                     buf.AppendString details.Message
+
                     match details.Location with
                     | Some l when not l.IsEmpty ->
                         buf.AppendString l.TextRepresentation
+
                         if details.Context.IsSome then
                             buf.AppendString details.Context.Value
                     | _ -> ()
+
     member diagnostic.OutputContext(buf, prefix, fileLineFunction) =
         match diagnostic.Range with
         | None -> ()
