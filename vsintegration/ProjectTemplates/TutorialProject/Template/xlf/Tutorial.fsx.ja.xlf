@@ -744,7 +744,7 @@
       </trans-unit>
       <trans-unit id="ArrayAssignment-Line1">
         <source>You can modify the contents of an array element by using the left arrow assignment operator.</source>
-        <target state="needs-review-translation">左矢印代入演算子を使用して、配列要素の内容を変更できます。</target>
+        <target state="new">You can modify the contents of an array element by using the left arrow assignment operator.</target>
         <note />
       </trans-unit>
       <trans-unit id="ArrayAssignment-Line2">
@@ -1009,7 +1009,7 @@
       </trans-unit>
       <trans-unit id="CardRank">
         <source>A Discriminated Union can also be used to represent the rank of a playing card.</source>
-        <target state="needs-review-translation">判別共用体はトランプのランクを表すためにも使用できます。</target>
+        <target state="new">A Discriminated Union can also be used to represent the rank of a playing card.</target>
         <note />
       </trans-unit>
       <trans-unit id="CardRankValue">
@@ -1029,7 +1029,7 @@
       </trans-unit>
       <trans-unit id="CardType-Line2">
         <source>It's common to use both Records and Discriminated Unions when representing data.</source>
-        <target state="needs-review-translation">データを表すときには、レコードと判別共用体の両方を使用するのが一般的です。</target>
+        <target state="new">It's common to use both Records and Discriminated Unions when representing data.</target>
         <note />
       </trans-unit>
       <trans-unit id="ComputeFullDeck">
@@ -1089,7 +1089,7 @@
       </trans-unit>
       <trans-unit id="DuRecursiveDef-Line1">
         <source>Discriminated Unions also support recursive definitions.</source>
-        <target state="needs-review-translation">判別共用体は再帰的な定義もサポートしています。</target>
+        <target state="new">Discriminated Unions also support recursive definitions.</target>
         <note />
       </trans-unit>
       <trans-unit id="DuRecursiveDef-Line2">
