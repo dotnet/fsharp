@@ -1395,6 +1395,7 @@ let testFlag tcConfigB =
 let editorSpecificFlags (tcConfigB: TcConfigBuilder) =
     [
         CompilerOption("vserrors", tagNone, OptionUnit(fun () -> tcConfigB.diagnosticStyle <- DiagnosticStyle.VisualStudio), None, None)
+        CompilerOption("richerrors", tagNone, OptionUnit(fun () -> tcConfigB.diagnosticStyle <- DiagnosticStyle.Rich), None, None)
         CompilerOption("validate-type-providers", tagNone, OptionUnit id, None, None) // preserved for compatibility's sake, no longer has any effect
         CompilerOption("LCID", tagInt, OptionInt ignore, None, None)
         CompilerOption("flaterrors", tagNone, OptionUnit(fun () -> tcConfigB.flatErrors <- true), None, None)
