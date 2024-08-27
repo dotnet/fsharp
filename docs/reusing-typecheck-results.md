@@ -232,7 +232,7 @@ A lot of imported assemblies are actually the same for many projects (e.g. `Syst
 
 **Stage 8 - leverage graph-based typechecking**
 
-This will further reduce the amount of signature file to regenerate. If we get here, we should discuss how risky this is and maybe have a separate flag for it.
+We can also save TC graph and analyze it in the beginning of typechecking. This will further reduce the amount of signature file to regenerate. If we get here, we should discuss how risky this is and maybe have a separate flag for it.
 
 ## Other considerations
 
