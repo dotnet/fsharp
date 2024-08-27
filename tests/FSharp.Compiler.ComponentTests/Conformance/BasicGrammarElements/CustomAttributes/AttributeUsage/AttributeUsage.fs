@@ -800,16 +800,16 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 823, Line 3, Col 3, Line 4, Col 16, "The 'VolatileField' attribute may only be used on 'let' bindings in classes")
-            (Error 823, Line 6, Col 3, Line 7, Col 14, "The 'VolatileField' attribute may only be used on 'let' bindings in classes")
-            (Error 879, Line 6, Col 3, Line 7, Col 14, "Volatile fields must be marked 'mutable' and cannot be thread-static")
-            (Error 823, Line 9, Col 3, Line 10, Col 9, "The 'VolatileField' attribute may only be used on 'let' bindings in classes")
-            (Error 879, Line 9, Col 3, Line 10, Col 9, "Volatile fields must be marked 'mutable' and cannot be thread-static")
+            (Error 823, Line 4, Col 15, Line 4, Col 16, "The 'VolatileField' attribute may only be used on 'let' bindings in classes")
+            (Error 823, Line 7, Col 11, Line 7, Col 12, "The 'VolatileField' attribute may only be used on 'let' bindings in classes")
+            (Error 879, Line 7, Col 11, Line 7, Col 12, "Volatile fields must be marked 'mutable' and cannot be thread-static")
+            (Error 823, Line 10, Col 7, Line 10, Col 9, "The 'VolatileField' attribute may only be used on 'let' bindings in classes")
+            (Error 879, Line 10, Col 7, Line 10, Col 9, "Volatile fields must be marked 'mutable' and cannot be thread-static")
             (Error 823, Line 26, Col 17, Line 26, Col 18, "The 'VolatileField' attribute may only be used on 'let' bindings in classes")
-            (Error 879, Line 13, Col 5, Line 14, Col 19, "Volatile fields must be marked 'mutable' and cannot be thread-static")
-            (Error 879, Line 16, Col 5, Line 17, Col 20, "Volatile fields must be marked 'mutable' and cannot be thread-static")
-            (Error 879, Line 19, Col 5, Line 20, Col 11, "Volatile fields must be marked 'mutable' and cannot be thread-static")
-            (Error 879, Line 22, Col 5, Line 23, Col 13, "Volatile fields must be marked 'mutable' and cannot be thread-static")
+            (Error 879, Line 14, Col 16, Line 14, Col 19, "Volatile fields must be marked 'mutable' and cannot be thread-static")
+            (Error 879, Line 17, Col 16, Line 17, Col 17, "Volatile fields must be marked 'mutable' and cannot be thread-static")
+            (Error 879, Line 20, Col 9, Line 20, Col 11, "Volatile fields must be marked 'mutable' and cannot be thread-static")
+            (Error 879, Line 23, Col 9, Line 23, Col 10, "Volatile fields must be marked 'mutable' and cannot be thread-static")
         ]
     
     // SOURCE=E_VolatileField.fs	# E_VolatileField.fs
@@ -820,16 +820,16 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 823, Line 3, Col 3, Line 4, Col 16, "The 'VolatileField' attribute may only be used on 'let' bindings in classes")
-            (Error 823, Line 6, Col 3, Line 7, Col 14, "The 'VolatileField' attribute may only be used on 'let' bindings in classes")
-            (Error 879, Line 6, Col 3, Line 7, Col 14, "Volatile fields must be marked 'mutable' and cannot be thread-static")
-            (Error 823, Line 9, Col 3, Line 10, Col 9, "The 'VolatileField' attribute may only be used on 'let' bindings in classes")
-            (Error 879, Line 9, Col 3, Line 10, Col 9, "Volatile fields must be marked 'mutable' and cannot be thread-static")
+            (Error 823, Line 4, Col 15, Line 4, Col 16, "The 'VolatileField' attribute may only be used on 'let' bindings in classes")
+            (Error 823, Line 7, Col 11, Line 7, Col 12, "The 'VolatileField' attribute may only be used on 'let' bindings in classes")
+            (Error 879, Line 7, Col 11, Line 7, Col 12, "Volatile fields must be marked 'mutable' and cannot be thread-static")
+            (Error 823, Line 10, Col 7, Line 10, Col 9, "The 'VolatileField' attribute may only be used on 'let' bindings in classes")
+            (Error 879, Line 10, Col 7, Line 10, Col 9, "Volatile fields must be marked 'mutable' and cannot be thread-static")
             (Error 823, Line 26, Col 17, Line 26, Col 18, "The 'VolatileField' attribute may only be used on 'let' bindings in classes")
-            (Error 879, Line 13, Col 5, Line 14, Col 19, "Volatile fields must be marked 'mutable' and cannot be thread-static")
-            (Error 879, Line 16, Col 5, Line 17, Col 20, "Volatile fields must be marked 'mutable' and cannot be thread-static")
-            (Error 879, Line 19, Col 5, Line 20, Col 11, "Volatile fields must be marked 'mutable' and cannot be thread-static")
-            (Error 879, Line 22, Col 5, Line 23, Col 13, "Volatile fields must be marked 'mutable' and cannot be thread-static")
+            (Error 879, Line 14, Col 16, Line 14, Col 19, "Volatile fields must be marked 'mutable' and cannot be thread-static")
+            (Error 879, Line 17, Col 16, Line 17, Col 17, "Volatile fields must be marked 'mutable' and cannot be thread-static")
+            (Error 879, Line 20, Col 9, Line 20, Col 11, "Volatile fields must be marked 'mutable' and cannot be thread-static")
+            (Error 879, Line 23, Col 9, Line 23, Col 10, "Volatile fields must be marked 'mutable' and cannot be thread-static")
         ]
         
     // SOURCE= VolatileField01.fs	# VolatileField01.fs
