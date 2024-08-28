@@ -2,41 +2,36 @@
 
 open TestUtils
 
-type Scenario =
+type FileInScenario =
     {
-        Name: string
-        Files: FileInScenario array
-    }
-
-    override x.ToString() = x.Name
-
-and FileInScenario =
-    {
-        FileWithAST: TestFileWithAST
+        Index: int
+        FileName: string
         ExpectedDependencies: Set<int>
         Content: string
     }
 
+type Scenario =
+    {
+        Name: string
+        Files: FileInScenario list
+    }
+
+    override x.ToString() = x.Name
+
 let private scenario name files =
-    let files = files |> List.toArray |> Array.mapi (fun idx f -> f idx)
+    let files = files |> List.mapi (fun idx f -> f idx)
     { Name = name; Files = files }
 
 let private sourceFile fileName content (dependencies: Set<int>) =
     fun idx ->
-        let fileWithAST =
-            {
-                Idx = idx
-                AST = parseSourceCode (fileName, content)
-                File = fileName
-            }
-
         {
-            FileWithAST = fileWithAST
+            Index = idx
+            FileName = fileName
             ExpectedDependencies = dependencies
             Content = content
         }
 
-let internal codebases =
+let internal scenarios =
     [
         scenario
             "Link via full open statement"

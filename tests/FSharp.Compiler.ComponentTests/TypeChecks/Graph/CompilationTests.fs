@@ -28,8 +28,7 @@ let compileAValidScenario (scenario: Scenario) (method: Method) =
     let cUnit =
         let files =
             scenario.Files
-            |> Array.map (fun (f: FileInScenario) -> SourceCodeFileKind.Create(f.FileWithAST.File, f.Content))
-            |> Array.toList
+            |> List.map (fun (f: FileInScenario) -> SourceCodeFileKind.Create(f.FileName, f.Content))
 
         match files with
         | [] -> failwith "empty files"
@@ -44,7 +43,7 @@ let compileAValidScenario (scenario: Scenario) (method: Method) =
     |> shouldSucceed
     |> ignore
 
-let scenarios = codebases |> List.map (fun c -> [| box c |]) |> Array.ofList
+let scenarios = scenarios |> List.map (fun c -> [| box c |])
 
 [<Theory>]
 [<MemberData(nameof scenarios)>]
