@@ -546,6 +546,7 @@ stages:
         - job: Linux
           pool:
             vmImage: $(UbuntuMachineQueueName)
+          timeoutInMinutes: 120
           variables:
           - name: _SignType
             value: Test
@@ -586,6 +587,7 @@ stages:
         - job: MacOS
           pool:
             vmImage: macos-12
+          timeoutInMinutes: 120
           variables:
           - name: _SignType
             value: Test
