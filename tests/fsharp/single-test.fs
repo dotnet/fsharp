@@ -154,6 +154,7 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
     <RestoreAdditionalProjectSources Condition = "" '$(RestoreAdditionalProjectSources)' == ''"">$(RestoreFromArtifactsPath)</RestoreAdditionalProjectSources>
     <RestoreAdditionalProjectSources Condition = "" '$(RestoreAdditionalProjectSources)' != ''"">$(RestoreAdditionalProjectSources);$(RestoreFromArtifactsPath)</RestoreAdditionalProjectSources>
     <RollForward>LatestMajor</RollForward>
+    <IgnoreMIBC>true</IgnoreMIBC>
   </PropertyGroup>
 
   <!-- FSharp.Core reference -->

@@ -2855,9 +2855,17 @@ module EstablishTypeDefinitionCores =
         let hasMeasureAttr = HasFSharpAttribute g g.attrib_MeasureAttribute attrs
         let hasStructAttr = HasFSharpAttribute g g.attrib_StructAttribute attrs
         let hasCLIMutable = HasFSharpAttribute g g.attrib_CLIMutableAttribute attrs
-        // CLIMutableAttribute has a special treatment(specific error FS3132) in the case of records(Only record types may have this attribute.)
-        // So we want to keep these special treatment for records and avoid having two errors for the same attribute.
-        let reportAttributeTargetsErrors = g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) && not hasCLIMutable
+        let hasAllowNullLiteralAttr = HasFSharpAttribute g g.attrib_AllowNullLiteralAttribute attrs
+        let hasSealedAttr = HasFSharpAttribute g g.attrib_SealedAttribute attrs
+        let structLayoutAttr = HasFSharpAttribute g g.attrib_StructLayoutAttribute attrs
+
+        // We want to keep these special attributes treatment and avoid having two errors for the same attribute.
+        let reportAttributeTargetsErrors =
+            g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets)
+            && not hasCLIMutable // CLIMutableAttribute has a special treatment(specific error FS3132)
+            && not hasAllowNullLiteralAttr // AllowNullLiteralAttribute has a special treatment(specific errors FS0934, FS093)
+            && not hasSealedAttr // SealedAttribute has a special treatment(specific error FS942)
+            && not structLayoutAttr // StructLayoutAttribute has a special treatment(specific error FS0937)
         
         let noCLIMutableAttributeCheck() =
             if hasCLIMutable then errorR (Error(FSComp.SR.tcThisTypeMayNotHaveACLIMutableAttribute(), m))
