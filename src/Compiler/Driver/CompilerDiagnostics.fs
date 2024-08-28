@@ -2045,6 +2045,7 @@ type FormattedDiagnosticDetailedInfo =
         Canonical: FormattedDiagnosticCanonicalInformation
         Message: string
         Context: string option
+        DiagnosticStyle: DiagnosticStyle
     }
 
 [<RequireQualifiedAccess>]
@@ -2118,7 +2119,7 @@ let FormatDiagnosticLocation (tcConfig: TcConfig) (m: Range) : FormattedDiagnost
             | DiagnosticStyle.Rich ->
                 let file = file.Replace('/', Path.DirectorySeparatorChar)
                 let m = withStart (mkPos m.StartLine (m.StartColumn + 1)) m
-                (sprintf "◦→ %s (%d,%d)" file m.StartLine m.StartColumn), m, file
+                (sprintf "\n  --> %s (%d,%d)" file m.StartLine m.StartColumn), m, file
 
         {
             Range = m
@@ -2164,7 +2165,7 @@ let CollectFormattedDiagnostics (tcConfig: TcConfig, severity: FSharpDiagnosticS
                 | DiagnosticStyle.Default
                 | DiagnosticStyle.Test -> sprintf "%s FS%04d: " message errorNumber
                 | DiagnosticStyle.VisualStudio -> sprintf "%s %s FS%04d: " subcategory message errorNumber
-                | DiagnosticStyle.Rich -> sprintf "\n◦→ %s FS%04d: " message errorNumber
+                | DiagnosticStyle.Rich -> sprintf "%s FS%04d: " message errorNumber
 
             let canonical: FormattedDiagnosticCanonicalInformation =
                 {
@@ -2179,11 +2180,8 @@ let CollectFormattedDiagnostics (tcConfig: TcConfig, severity: FSharpDiagnosticS
                 | DiagnosticStyle.Gcc
                 | DiagnosticStyle.Default
                 | DiagnosticStyle.Test
+                | DiagnosticStyle.Rich
                 | DiagnosticStyle.VisualStudio -> diagnostic.FormatCore(tcConfig.flatErrors, suggestNames)
-                | DiagnosticStyle.Rich ->
-                    diagnostic.FormatCore(tcConfig.flatErrors, suggestNames).Split([| '\n' |])
-                    |> Array.map (fun msg -> "\n◦   " + msg)
-                    |> String.Concat
 
             let context =
                 match tcConfig.diagnosticStyle with
@@ -2201,14 +2199,14 @@ let CollectFormattedDiagnostics (tcConfig: TcConfig, severity: FSharpDiagnosticS
                             |> System.IO.File.ReadAllLines
 
                         if m.StartLine = m.EndLine then
-                            $"\n◦ {m.StartLine} |{content[m.StartLine - 1]}\n"
-                            + $"""◦ {String.init (m.StartColumn + 3) (fun _ -> " ")}^{String.init (m.EndColumn - m.StartColumn) (fun _ -> "~")}"""
+                            $"\n  {m.StartLine} | {content[m.StartLine - 1]}\n"
+                            + $"""{String.make (m.StartColumn + 6) ' '}{String.make (m.EndColumn - m.StartColumn) '^'}"""
                             |> Some
                         else
                             content
                             |> fun lines -> Array.sub lines (m.StartLine - 1) (m.EndLine - m.StartLine - 1)
                             |> Array.fold
-                                (fun (context, lineNumber) line -> (context + $"\n◦ {lineNumber} |{line}", lineNumber + 1))
+                                (fun (context, lineNumber) line -> (context + $"\n{lineNumber} | {line}", lineNumber + 1))
                                 ("", (m.StartLine))
                             |> fst
                             |> Some
@@ -2220,6 +2218,7 @@ let CollectFormattedDiagnostics (tcConfig: TcConfig, severity: FSharpDiagnosticS
                     Context = context
                     Canonical = canonical
                     Message = message
+                    DiagnosticStyle = tcConfig.diagnosticStyle
                 }
 
             errors.Add(FormattedDiagnostic.Long(severity, entry))
@@ -2247,16 +2246,33 @@ type PhasedDiagnostic with
             match e with
             | FormattedDiagnostic.Short(_, txt) -> buf.AppendString txt
             | FormattedDiagnostic.Long(_, details) ->
-                match details.Location with
-                | Some l when not l.IsEmpty ->
-                    buf.AppendString l.TextRepresentation
-                    // Because details.Context depends on the value of details.Location, if details.Location is not None, details.Context can be accessed directly.
-                    if details.Context.IsSome then
-                        buf.AppendString details.Context.Value
-                | _ -> ()
+                match details.DiagnosticStyle with
+                | DiagnosticStyle.Emacs
+                | DiagnosticStyle.Gcc
+                | DiagnosticStyle.Test
+                | DiagnosticStyle.VisualStudio
+                | DiagnosticStyle.Default ->
+                    match details.Location with
+                    | Some l when not l.IsEmpty ->
+                        buf.AppendString l.TextRepresentation
 
-                buf.AppendString details.Canonical.TextRepresentation
-                buf.AppendString details.Message
+                        if details.Context.IsSome then
+                            buf.AppendString details.Context.Value
+                    | _ -> ()
+
+                    buf.AppendString details.Canonical.TextRepresentation
+                    buf.AppendString details.Message
+                | DiagnosticStyle.Rich ->
+                    buf.AppendString details.Canonical.TextRepresentation
+                    buf.AppendString details.Message
+
+                    match details.Location with
+                    | Some l when not l.IsEmpty ->
+                        buf.AppendString l.TextRepresentation
+
+                        if details.Context.IsSome then
+                            buf.AppendString details.Context.Value
+                    | _ -> ()
 
     member diagnostic.OutputContext(buf, prefix, fileLineFunction) =
         match diagnostic.Range with
