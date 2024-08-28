@@ -744,7 +744,7 @@
       </trans-unit>
       <trans-unit id="ArrayAssignment-Line1">
         <source>You can modify the contents of an array element by using the left arrow assignment operator.</source>
-        <target state="needs-review-translation">왼쪽 화살표 대입 연산자를 사용하여 배열 요소의 내용을 수정할 수 있습니다.</target>
+        <target state="new">You can modify the contents of an array element by using the left arrow assignment operator.</target>
         <note />
       </trans-unit>
       <trans-unit id="ArrayAssignment-Line2">
@@ -1009,7 +1009,7 @@
       </trans-unit>
       <trans-unit id="CardRank">
         <source>A Discriminated Union can also be used to represent the rank of a playing card.</source>
-        <target state="needs-review-translation">구분된 공용 구조체를 사용하여 플레잉 카드의 순위를 나타낼 수도 있습니다.</target>
+        <target state="new">A Discriminated Union can also be used to represent the rank of a playing card.</target>
         <note />
       </trans-unit>
       <trans-unit id="CardRankValue">
@@ -1029,7 +1029,7 @@
       </trans-unit>
       <trans-unit id="CardType-Line2">
         <source>It's common to use both Records and Discriminated Unions when representing data.</source>
-        <target state="needs-review-translation">일반적으로 레코드와 구분된 공용 구조체를 모두 사용하여 데이터를 나타냅니다.</target>
+        <target state="new">It's common to use both Records and Discriminated Unions when representing data.</target>
         <note />
       </trans-unit>
       <trans-unit id="ComputeFullDeck">
@@ -1089,7 +1089,7 @@
       </trans-unit>
       <trans-unit id="DuRecursiveDef-Line1">
         <source>Discriminated Unions also support recursive definitions.</source>
-        <target state="needs-review-translation">구분된 공용 구조체는 재귀 정의도 지원합니다.</target>
+        <target state="new">Discriminated Unions also support recursive definitions.</target>
         <note />
       </trans-unit>
       <trans-unit id="DuRecursiveDef-Line2">

@@ -744,7 +744,7 @@
       </trans-unit>
       <trans-unit id="ArrayAssignment-Line1">
         <source>You can modify the contents of an array element by using the left arrow assignment operator.</source>
-        <target state="needs-review-translation">Изменить содержимое элемента массива можно с помощью оператора присваивания в виде стрелки влево.</target>
+        <target state="new">You can modify the contents of an array element by using the left arrow assignment operator.</target>
         <note />
       </trans-unit>
       <trans-unit id="ArrayAssignment-Line2">
@@ -1009,7 +1009,7 @@
       </trans-unit>
       <trans-unit id="CardRank">
         <source>A Discriminated Union can also be used to represent the rank of a playing card.</source>
-        <target state="needs-review-translation">Размеченное объединение также может использоваться для представления ранга игральной карты.</target>
+        <target state="new">A Discriminated Union can also be used to represent the rank of a playing card.</target>
         <note />
       </trans-unit>
       <trans-unit id="CardRankValue">
@@ -1029,7 +1029,7 @@
       </trans-unit>
       <trans-unit id="CardType-Line2">
         <source>It's common to use both Records and Discriminated Unions when representing data.</source>
-        <target state="needs-review-translation">Как правило, при представлении данных используются как записи, так и размеченные объединения.</target>
+        <target state="new">It's common to use both Records and Discriminated Unions when representing data.</target>
         <note />
       </trans-unit>
       <trans-unit id="ComputeFullDeck">
@@ -1089,7 +1089,7 @@
       </trans-unit>
       <trans-unit id="DuRecursiveDef-Line1">
         <source>Discriminated Unions also support recursive definitions.</source>
-        <target state="needs-review-translation">Размеченные объединения также поддерживают рекурсивные определения.</target>
+        <target state="new">Discriminated Unions also support recursive definitions.</target>
         <note />
       </trans-unit>
       <trans-unit id="DuRecursiveDef-Line2">
