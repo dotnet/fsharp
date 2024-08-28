@@ -45,4 +45,13 @@ module AllowNullLiteralTest = begin
     let f x = 1
          
 end
+
+module AllowNullLiteralWithArgumentTest = begin
+
+    type A() = class end
+
+    [<AllowNullLiteral(true)>] // expect an error here
+    type B() = inherit A()
+
+end
            
