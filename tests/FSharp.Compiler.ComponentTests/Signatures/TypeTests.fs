@@ -265,7 +265,7 @@ type Foo =
   member Bar: a: int -> int with set"""
 
 [<Fact>]
-let ``IsUnionCaseTester tests`` () =
+let ``get_Is* method has IsUnionCaseTester = true`` () =
     FSharp """
 module Lib
 
@@ -285,14 +285,14 @@ let f = bar.get_IsBar
         let isBarSymbolUse = results.GetSymbolUseAtLocation(12, 21, "let f = bar.get_IsBar", [ "get_IsBar" ]).Value
         match isBarSymbolUse.Symbol with
         | :? FSharpMemberOrFunctionOrValue as mfv ->
-            Assert.False(mfv.IsUnionCaseTester, "IsUnionCaseTester returned true")
-            Assert.False(mfv.IsMethod, "IsMethod returned true")
+            Assert.True(mfv.IsUnionCaseTester, "IsUnionCaseTester returned true")
+            Assert.True(mfv.IsMethod, "IsMethod returned true")
             Assert.False(mfv.IsProperty, "IsProptery returned true")
             Assert.True(mfv.IsPropertyGetterMethod, "IsPropertyGetterMethod returned false")
         | _ -> failwith "Expected FSharpMemberOrFunctionOrValue"
 
 [<Fact>]
-let ``IsUnionCaseTester tests 2`` () =
+let ``IsUnionCaseTester does not throw for non-method non-property`` () =
     FSharp """
 module Lib
 
@@ -307,8 +307,6 @@ let foo = Foo()
         let isBarSymbolUse = results.GetSymbolUseAtLocation(7, 13, "let foo = Foo()", [ "Foo" ]).Value
         match isBarSymbolUse.Symbol with
         | :? FSharpMemberOrFunctionOrValue as mfv ->
-            Assert.False(mfv.IsUnionCaseTester)
-            //Assert.False(mfv.IsMethod)
-            //Assert.False(mfv.IsProperty)
+            Assert.False(mfv.IsUnionCaseTester, "IsUnionCaseTester returned true")
             Assert.True(mfv.IsConstructor)
         | _ -> failwith "Expected FSharpMemberOrFunctionOrValue"
