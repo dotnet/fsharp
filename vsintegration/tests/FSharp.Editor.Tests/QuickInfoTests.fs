@@ -31,7 +31,7 @@ module QuickInfo =
     let internal GetQuickInfo (code: string) caretPosition =
         asyncMaybe {
             let document =
-                RoslynTestHelpers.CreateSolution(code) |> RoslynTestHelpers.GetSingleDocument
+                RoslynTestHelpers.CreateSolution(code,extraFSharpProjectOtherOptions=[|"--realsig+"|]) |> RoslynTestHelpers.GetSingleDocument
 
             let! _, _, _, tooltip =
                 FSharpAsyncQuickInfoSource.TryGetToolTip(document, caretPosition)
