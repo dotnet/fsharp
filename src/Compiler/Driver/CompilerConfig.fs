@@ -831,7 +831,7 @@ type TcConfigBuilder =
                     DumpGraph = false
                 }
             dumpSignatureData = false
-            realsig = true
+            realsig = false
             strictIndentation = None
         }
 

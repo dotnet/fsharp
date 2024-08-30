@@ -10,7 +10,7 @@ module ``Static Member`` =
 
     [<Test>]
     let ``Action on Static Member``() =
-        CompilerAssert.CompileLibraryAndVerifyIL(
+        CompilerAssert.CompileLibraryAndVerifyILRealSig(
             """
 module StaticMember01
 
@@ -74,7 +74,7 @@ type C =
 
     [<Test>]
     let ``Action on Static Member with lambda``() =
-        CompilerAssert.CompileLibraryAndVerifyIL(
+        CompilerAssert.CompileLibraryAndVerifyILRealSig(
             """
 module StaticMember02
 
@@ -133,7 +133,7 @@ type C =
 
     [<Test>]
     let ``Action on Static Member with closure``() =
-        CompilerAssert.CompileLibraryAndVerifyIL(
+        CompilerAssert.CompileLibraryAndVerifyILRealSig(
             """
 module StaticMember03
 
@@ -247,7 +247,7 @@ let main _ =
 
     [<Test>]
     let ``Func on Static Member``() =
-        CompilerAssert.CompileLibraryAndVerifyIL(
+        CompilerAssert.CompileLibraryAndVerifyILRealSig(
             """
 module StaticMember04
 
@@ -313,7 +313,7 @@ type C =
 
     [<Test>]
     let ``Func on Static Member with lambda``() =
-        CompilerAssert.CompileLibraryAndVerifyIL(
+        CompilerAssert.CompileLibraryAndVerifyILRealSig(
             """
 module StaticMember05
 
@@ -379,7 +379,7 @@ type C =
 
     [<Test>]
     let ``Func on Static Member with closure``() =
-        CompilerAssert.CompileLibraryAndVerifyIL(
+        CompilerAssert.CompileLibraryAndVerifyILRealSig(
             """
 module StaticMember06
 
@@ -434,7 +434,7 @@ let main _ =
 #if !FX_NO_WINFORMS
     [<Test>]
     let ``EventHandler from Regression/83``() =
-        CompilerAssert.CompileLibraryAndVerifyIL(
+        CompilerAssert.CompileLibraryAndVerifyILRealSig(
             """
 module StaticMember07
 
