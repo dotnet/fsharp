@@ -12,7 +12,7 @@ module internal Graph =
 
     let map (f: 'T -> 'U) (graph: Graph<'T>) : Graph<'U> =
         graph
-        |> Seq.map (fun (KeyValue (node, deps)) -> f node, deps |> Array.map f)
+        |> Seq.map (fun (KeyValue(node, deps)) -> f node, deps |> Array.map f)
         |> make
 
     let addIfMissing<'Node when 'Node: equality> (nodes: 'Node seq) (graph: Graph<'Node>) : Graph<'Node> =
@@ -24,7 +24,7 @@ module internal Graph =
         graph
         |> Seq.toArray
         |> Array.append entriesToAdd
-        |> Array.map (fun (KeyValue (k, v)) -> k, v)
+        |> Array.map (fun (KeyValue(k, v)) -> k, v)
         |> readOnlyDict
 
     let transitive<'Node when 'Node: equality> (graph: Graph<'Node>) : Graph<'Node> =
@@ -51,7 +51,7 @@ module internal Graph =
     let reverse (originalGraph: Graph<'Node>) : Graph<'Node> =
         originalGraph
         // Collect all edges
-        |> Seq.collect (fun (KeyValue (idx, deps)) -> deps |> Array.map (fun dep -> idx, dep))
+        |> Seq.collect (fun (KeyValue(idx, deps)) -> deps |> Array.map (fun dep -> idx, dep))
         // Group dependants of the same dependencies together
         |> Seq.groupBy snd
         // Construct reversed graph
@@ -64,7 +64,7 @@ module internal Graph =
         let join (xs: string[]) = System.String.Join(", ", xs)
 
         graph
-        |> Seq.iter (fun (KeyValue (file, deps)) -> printfn $"{file} -> {deps |> Array.map nodePrinter |> join}")
+        |> Seq.iter (fun (KeyValue(file, deps)) -> printfn $"{file} -> {deps |> Array.map nodePrinter |> join}")
 
     let print (graph: Graph<'Node>) : unit =
         printCustom graph (fun node -> node.ToString())
@@ -76,10 +76,10 @@ module internal Graph =
         appendLine "```mermaid"
         appendLine "flowchart RL"
 
-        for KeyValue ((idx, fileName), _) in graph do
+        for KeyValue((idx, fileName), _) in graph do
             appendLine $"    %i{idx}[\"%s{fileName}\"]"
 
-        for KeyValue ((idx, _), deps) in graph do
+        for KeyValue((idx, _), deps) in graph do
             for depIdx, _depFileName in deps do
                 appendLine $"    %i{idx} --> %i{depIdx}"
 

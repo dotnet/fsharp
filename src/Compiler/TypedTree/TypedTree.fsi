@@ -109,6 +109,8 @@ type ValFlags =
 
     member InlineInfo: ValInline
 
+    member IsImplied: bool
+
     member IsCompiledAsStaticPropertyWithoutField: bool
 
     member IsCompilerGenerated: bool
@@ -141,6 +143,8 @@ type ValFlags =
     member WithIgnoresByrefScope: ValFlags
 
     member WithInlineIfLambda: ValFlags
+
+    member WithIsImplied: ValFlags
 
     member WithIsCompiledAsStaticPropertyWithoutField: ValFlags
 
@@ -1674,13 +1678,15 @@ type TraitWitnessInfo =
 type TraitConstraintInfo =
 
     /// Indicates the signature of a member constraint. Contains a mutable solution cell
-    /// to store the inferred solution of the constraint.
+    /// to store the inferred solution of the constraint. And a mutable source cell to store
+    /// the name of the type or member that defined the constraint.
     | TTrait of
         tys: TTypes *
         memberName: string *
         memberFlags: Syntax.SynMemberFlags *
         objAndArgTys: TTypes *
         returnTyOpt: TType option *
+        source: string option ref *
         solution: TraitConstraintSln option ref
 
     override ToString: unit -> string
@@ -1714,6 +1720,10 @@ type TraitConstraintInfo =
     /// The member kind is irrelevant to the logical properties of a trait. However it adjusts
     /// the extension property MemberDisplayNameCore
     member WithMemberKind: SynMemberKind -> TraitConstraintInfo
+
+    member WithSupportTypes: TTypes -> TraitConstraintInfo
+
+    member WithMemberName: string -> TraitConstraintInfo
 
 /// Represents the solution of a member constraint during inference.
 [<NoEquality; NoComparison>]
@@ -1921,6 +1931,8 @@ type Val =
 
     member SetInlineIfLambda: unit -> unit
 
+    member SetIsImplied: unit -> unit
+
     member SetIsCompiledAsStaticPropertyWithoutField: unit -> unit
 
     member SetIsCompilerGenerated: v: bool -> unit
@@ -2032,6 +2044,9 @@ type Val =
 
     /// Get the inline declaration on the value
     member InlineInfo: ValInline
+
+    /// Determines if the values is implied by another construct, e.g. a `IsA` property is implied by the union case for A
+    member IsImplied: bool
 
     /// Indicates if this is a 'base' value?
     member IsBaseVal: bool
@@ -2767,6 +2782,9 @@ type ValRef =
 
     /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
     member InlineIfLambda: bool
+
+    /// Determines if the values is implied by another construct, e.g. a `IsA` property is implied by the union case for A
+    member IsImplied: bool
 
     /// Get the inline declaration on the value
     member InlineInfo: ValInline
@@ -3512,7 +3530,9 @@ type Expr =
     ///
     | Quote of
         quotedExpr: Expr *
-        quotationInfo: ((ILTypeRef list * TTypes * Exprs * QuotationPickler.ExprData) * (ILTypeRef list * TTypes * Exprs * QuotationPickler.ExprData)) option ref *
+        quotationInfo:
+            ((ILTypeRef list * TTypes * Exprs * QuotationPickler.ExprData) *
+            (ILTypeRef list * TTypes * Exprs * QuotationPickler.ExprData)) option ref *
         isFromQueryExpression: bool *
         range: Text.range *
         quotedType: TType

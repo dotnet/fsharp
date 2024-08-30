@@ -162,7 +162,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                               (errorR(Error(FSComp.SR.typrelSigImplNotCompatibleConstraintsDifferRemove(sigTypar.Name, LayoutRender.showL(NicePrint.layoutTyparConstraint denv (sigTypar, sigTyparCx))), m)); false)
                           else  
                               true) &&
-                  (not checkingSig || checkAttribs aenv implTypar.Attribs sigTypar.Attribs (fun attribs -> implTypar.SetAttribs attribs)))
+                  (not checkingSig || checkAttribs aenv implTypar.Attribs sigTypar.Attribs (implTypar.SetAttribs)))
 
         and checkTypeDef (aenv: TypeEquivEnv) (infoReader: InfoReader) (implTycon: Tycon) (sigTycon: Tycon) =
             let m = implTycon.Range
@@ -349,7 +349,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 checkTypars m aenv implTypars sigTypars &&
                 if not (typeAEquiv g aenv implValTy sigValTy) then err denv FSComp.SR.ValueNotContainedMutabilityTypesDiffer
                 elif not (checkValInfo aenv (err denv) implVal sigVal) then false
-                elif not (implVal.IsExtensionMember = sigVal.IsExtensionMember) then err denv FSComp.SR.ValueNotContainedMutabilityExtensionsDiffer
+                elif implVal.IsExtensionMember <> sigVal.IsExtensionMember then err denv FSComp.SR.ValueNotContainedMutabilityExtensionsDiffer
                 elif not (checkMemberDatasConform (err denv) (implVal.Attribs, implVal, implVal.MemberInfo) (sigVal.Attribs, sigVal, sigVal.MemberInfo)) then false
                 else checkAttribs aenv implVal.Attribs sigVal.Attribs (fun attribs -> implVal.SetAttribs attribs)              
 
@@ -403,9 +403,9 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             match implMemberInfo, sigMemberInfo with 
             | None, None -> true
             | Some implMembInfo, Some sigMembInfo -> 
-                if not ((implVal.CompiledName  g.CompilerGlobalState) = (sigVal.CompiledName g.CompilerGlobalState)) then 
+                if (implVal.CompiledName  g.CompilerGlobalState) <> (sigVal.CompiledName g.CompilerGlobalState) then 
                   err(FSComp.SR.ValueNotContainedMutabilityDotNetNamesDiffer)
-                elif not (implMembInfo.MemberFlags.IsInstance = sigMembInfo.MemberFlags.IsInstance) then 
+                elif implMembInfo.MemberFlags.IsInstance <> sigMembInfo.MemberFlags.IsInstance then 
                   err(FSComp.SR.ValueNotContainedMutabilityStaticsDiffer)
                 elif false then 
                   err(FSComp.SR.ValueNotContainedMutabilityVirtualsDiffer)
@@ -419,9 +419,9 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                // This is an example where it is OK for the signature to say 'non-final' when the implementation says 'final' 
                 elif not implMembInfo.MemberFlags.IsFinal && sigMembInfo.MemberFlags.IsFinal then 
                   err(FSComp.SR.ValueNotContainedMutabilityFinalsDiffer)
-                elif not (implMembInfo.MemberFlags.IsOverrideOrExplicitImpl = sigMembInfo.MemberFlags.IsOverrideOrExplicitImpl) then 
+                elif implMembInfo.MemberFlags.IsOverrideOrExplicitImpl <> sigMembInfo.MemberFlags.IsOverrideOrExplicitImpl then 
                   err(FSComp.SR.ValueNotContainedMutabilityOverridesDiffer)
-                elif not (implMembInfo.MemberFlags.MemberKind = sigMembInfo.MemberFlags.MemberKind) then 
+                elif implMembInfo.MemberFlags.MemberKind <> sigMembInfo.MemberFlags.MemberKind then 
                   err(FSComp.SR.ValueNotContainedMutabilityOneIsConstructor)
                 else  
                    let finstance = ValSpecIsCompiledAsInstance g sigVal

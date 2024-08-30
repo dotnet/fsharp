@@ -63,6 +63,24 @@ type I<'T> =
     ]
 
 [<Fact>]
+let ``Concrete static members are allowed in interfaces as intrinsics in lang preview``() =
+    FSharp $"""
+[<Interface>]
+type I<'T> = 
+    static member Prop = Unchecked.defaultof<'T>
+type I<'T> with
+    static member Echo (x: 'T) = x
+
+if I<int>.Echo 42 <> 42 || I<int>.Prop <> 0 || not (isNull I<string>.Prop) then
+    failwith "failed"
+    """
+    |> withLangVersion80
+    |> asExe
+    |> compileAndRun
+    |> shouldSucceed
+
+
+[<Fact>]
 let ``Interface with concrete static members can be implemented in lang preview``() =
     FSharp $"""
 [<Interface>]

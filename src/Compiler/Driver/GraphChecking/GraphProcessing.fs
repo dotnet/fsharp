@@ -114,7 +114,7 @@ let processGraph<'Item, 'Result when 'Item: equality and 'Item: comparison>
                 let! res = async { processNode node } |> Async.Catch
 
                 match res with
-                | Choice1Of2 () -> ()
+                | Choice1Of2() -> ()
                 | Choice2Of2 ex -> raiseExn (Some(node.Info.Item, ex))
             },
             cts.Token
@@ -150,7 +150,7 @@ let processGraph<'Item, 'Result when 'Item: equality and 'Item: comparison>
     // If we stopped early due to an exception, reraise it.
     match getExn () with
     | None -> ()
-    | Some (item, ex) -> raise (System.Exception($"Encountered exception when processing item '{item}'", ex))
+    | Some(item, ex) -> raise (System.Exception($"Encountered exception when processing item '{item}'", ex))
 
     // All calculations succeeded - extract the results and sort in input order.
     nodes.Values

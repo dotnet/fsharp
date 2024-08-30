@@ -32,7 +32,7 @@ type BraceMatchingServiceTests() =
             |> Async.RunImmediateExceptOnUI
         with
         | None -> ()
-        | Some (left, right) -> failwith $"Found match for brace '{marker}'"
+        | Some _ -> failwith $"Found match for brace '{marker}'"
 
     member private this.VerifyBraceMatch(fileContents: string, startMarker: string, endMarker: string, ?langVersion: string) =
         let sourceText = SourceText.From(fileContents)
@@ -62,7 +62,7 @@ type BraceMatchingServiceTests() =
             |> Async.RunImmediateExceptOnUI
         with
         | None -> failwith $"Didn't find a match for start brace at position '{startMarkerPosition}"
-        | Some (left, right) ->
+        | Some(left, right) ->
             let endPositionInRange (range) =
                 let span = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range)
                 span.Start <= endMarkerPosition && endMarkerPosition <= span.End

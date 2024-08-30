@@ -287,6 +287,7 @@ namespace Microsoft.FSharp.Core
         let mutable maintainsVarSpace = false
         let mutable maintainsVarSpaceWithBind = false
         let mutable joinOnWord = ""
+        new() = CustomOperationAttribute("")
         member _.Name = name
         member _.AllowIntoPattern with get() = allowInto and set v = allowInto <- v
         member _.IsLikeZip with get() = isBinary and set v = isBinary <- v

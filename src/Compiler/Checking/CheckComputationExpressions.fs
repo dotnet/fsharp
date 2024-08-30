@@ -58,7 +58,7 @@ let (|JoinRelation|_|) cenv env (expr: SynExpr) =
 
     let isOpName opName vref s =
         (s = opName) &&
-        match ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.eNameResEnv TypeNameResolutionInfo.Default [ident(opName, m)] with
+        match ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.eNameResEnv TypeNameResolutionInfo.Default [ident(opName, m)] None with
         | Result (_, Item.Value vref2, []) -> valRefEq cenv.g vref vref2
         | _ -> false
 
@@ -229,7 +229,10 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
     // Give bespoke error messages for the FSharp.Core "query" builder
     let isQuery = 
         match stripDebugPoints interpExpr with 
-        | Expr.Val (vref, _, m) -> 
+        // An unparameterized custom builder, e.g., `query`, `async`.
+        | Expr.Val (vref, _, m)
+        // A parameterized custom builder, e.g., `builder<…>`, `builder ()`.
+        | Expr.App (funcExpr = Expr.Val (vref, _, m)) ->
             let item = Item.CustomBuilder (vref.DisplayName, vref)
             CallNameResolutionSink cenv.tcSink (m, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
             valRefEq cenv.g vref cenv.g.query_value_vref 
@@ -263,14 +266,25 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
     /// Decide if the builder is an auto-quote builder
     let isAutoQuote = hasMethInfo "Quote"
 
-    let customOperationMethods = 
+    let customOperationMethods =
         AllMethInfosOfTypeInScope ResultCollectionSettings.AllResults cenv.infoReader env.NameEnv None ad IgnoreOverrides mBuilderVal builderTy
-        |> List.choose (fun methInfo -> 
+        |> List.choose (fun methInfo ->
                 if not (IsMethInfoAccessible cenv.amap mBuilderVal ad methInfo) then None else
-                let nameSearch = 
-                    TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
+                let nameSearch =
+                    TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo
                         IgnoreAttribute // We do not respect this attribute for IL methods
-                        (function Attrib(_, _, [ AttribStringArg msg ], _, _, _, _) -> Some msg | _ -> None)
+                        (fun attr ->
+                            // NOTE: right now, we support of custom operations with spaces in them ([<CustomOperation("foo bar")>])
+                            // In the parameterless CustomOperationAttribute - we use the method name, and also allow it to be ````-quoted (member _.``foo bar`` _ = ...)
+                            match attr with
+                            // Empty string and parameterless constructor - we use the method name
+                            | Attrib(_, _, [ AttribStringArg "" ], _, _, _, _) // Empty string as parameter
+                            | Attrib(_, _, [ ], _, _, _, _) -> // No parameters, same as empty string for compat reasons.
+                                Some methInfo.LogicalName
+                            // Use the specified name
+                            | Attrib(_, _, [ AttribStringArg msg ], _, _, _, _) ->
+                                Some msg
+                            | _ -> None)
                         IgnoreAttribute // We do not respect this attribute for provided methods
 
                 match nameSearch with
@@ -2210,7 +2224,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
 
             let env = { env with eContextInfo = ContextInfo.SequenceExpression genOuterTy }
 
-            if enableImplicitYield then 
+            if enableImplicitYield then
                 let hasTypeUnit, expr, tpenv = TryTcStmt cenv env tpenv comp
                 if hasTypeUnit then 
                     Choice2Of2 expr, tpenv
@@ -2218,6 +2232,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
                     let genResultTy = NewInferenceType g
                     let mExpr = expr.Range
                     UnifyTypes cenv env mExpr genOuterTy (mkSeqTy cenv.g genResultTy)
+                    let expr, tpenv = TcExprFlex cenv flex true genResultTy env tpenv comp
                     let exprTy = tyOfExpr cenv.g expr
                     AddCxTypeMustSubsumeType env.eContextInfo env.DisplayEnv cenv.css mExpr NoTrace genResultTy exprTy
                     let resExpr = mkCallSeqSingleton cenv.g mExpr genResultTy (mkCoerceExpr(expr, genResultTy, mExpr, exprTy))
@@ -2241,7 +2256,11 @@ let TcSequenceExpressionEntry (cenv: cenv) env (overallTy: OverallTy) tpenv (has
     let validateObjectSequenceOrRecordExpression = not implicitYieldEnabled
 
     match comp with 
-    | SynExpr.New _ -> 
+    | SynExpr.New _ ->
+        try
+            TcExprUndelayed cenv overallTy env tpenv comp |> ignore
+        with RecoverableException e ->
+            errorRecovery e m
         errorR(Error(FSComp.SR.tcInvalidObjectExpressionSyntaxForm(), m))
     | SimpleSemicolonSequence cenv false _ when validateObjectSequenceOrRecordExpression ->
         errorR(Error(FSComp.SR.tcInvalidObjectSequenceOrRecordExpression(), m))

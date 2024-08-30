@@ -38,7 +38,7 @@ let def =
         )marker4
 """
 
-    let pasteTemplate =
+    let _pasteTemplate =
         """
 
 let foo =

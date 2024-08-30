@@ -445,7 +445,7 @@ type Expr =
     ///
     /// Expr.ForIntegerRangeLoop(loopVariable, startExpr, endExpr, body)
     /// </code>
-    /// Evaluates to a quotation with the same structure as <c>&lt;@ if 1 > 3 then 6 else 7 @&gt;</c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ for x in 6..7 do System.Console.WriteLine("hello") @&gt;</c>.
     /// </example>
     static member ForIntegerRangeLoop: loopVariable: Var * start: Expr * endExpr: Expr * body: Expr -> Expr
 

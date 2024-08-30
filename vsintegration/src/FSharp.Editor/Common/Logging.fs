@@ -44,7 +44,7 @@ type Logger [<ImportingConstructor>] ([<Import(typeof<SVsServiceProvider>)>] ser
 
     let getPane () =
         match outputWindow |> Option.map (fun x -> x.GetPane(ref fsharpOutputGuid)) with
-        | Some (0, pane) ->
+        | Some(0, pane) ->
             pane.Activate() |> ignore
             Some pane
         | _ -> None

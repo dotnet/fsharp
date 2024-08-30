@@ -35,7 +35,7 @@
                     </StackPanel>
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.LiveBuffers}">
-                    <CheckBox x:Name="toggleLiveBuffers" IsChecked="{Binding IsLiveBuffersEnabled}"
+                    <CheckBox x:Name="toggleLiveBuffers" IsChecked="{Binding IsUseLiveBuffersEnabled}"
                               Content="{x:Static local:Strings.Enable_Live_Buffers}"/>
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.AdditionalTelemetry}">

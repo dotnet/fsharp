@@ -37,7 +37,7 @@ type internal FSharpLanguageDebugInfoService [<ImportingConstructor>] () =
 
                 match QuickParse.GetCompleteIdentifierIsland false (textLine.ToString()) textLineColumn with
                 | None -> None
-                | Some (island, islandEnd, _) ->
+                | Some(island, islandEnd, _) ->
                     let islandDocumentStart = textLine.Start + islandEnd - island.Length
                     Some(TextSpan.FromBounds(islandDocumentStart, islandDocumentStart + island.Length))
 

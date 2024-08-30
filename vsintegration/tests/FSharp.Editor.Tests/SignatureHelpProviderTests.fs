@@ -16,8 +16,8 @@ open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 module SignatureHelpProvider =
     let private DefaultDocumentationProvider =
         { new IDocumentationBuilder with
-            override doc.AppendDocumentationFromProcessedXML(_, _, _, _, _, _) = ()
-            override doc.AppendDocumentation(_, _, _, _, _, _, _) = ()
+            override doc.AppendDocumentationFromProcessedXML(_, _, _, _, _, _, _) = ()
+            override doc.AppendDocumentation(_, _, _, _, _, _, _, _) = ()
         }
 
     let checker = FSharpChecker.Create()
@@ -44,9 +44,7 @@ module SignatureHelpProvider =
 
             let paramInfoLocations =
                 parseResults
-                    .FindParameterLocations(
-                        Position.fromZ caretLinePos.Line caretLineColumn
-                    )
+                    .FindParameterLocations(Position.fromZ caretLinePos.Line caretLineColumn)
                     .Value
 
             let triggered =
@@ -58,7 +56,8 @@ module SignatureHelpProvider =
                     DefaultDocumentationProvider,
                     sourceText,
                     caretPosition,
-                    triggerChar
+                    triggerChar,
+                    EditorOptions()
                 )
                 |> Async.RunSynchronously
 
@@ -125,7 +124,8 @@ module SignatureHelpProvider =
                         DefaultDocumentationProvider,
                         sourceText,
                         caretPosition,
-                        triggerChar
+                        triggerChar,
+                        EditorOptions()
                     )
                     |> Async.RunSynchronously
 
@@ -177,7 +177,8 @@ module SignatureHelpProvider =
                 sourceText,
                 caretPosition,
                 adjustedColumnInSource,
-                filePath
+                filePath,
+                EditorOptions()
             )
             |> Async.RunSynchronously
 
@@ -442,8 +443,8 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
 module ``Function argument applications`` =
     let private DefaultDocumentationProvider =
         { new IDocumentationBuilder with
-            override doc.AppendDocumentationFromProcessedXML(_, _, _, _, _, _) = ()
-            override doc.AppendDocumentation(_, _, _, _, _, _, _) = ()
+            override doc.AppendDocumentationFromProcessedXML(_, _, _, _, _, _, _) = ()
+            override doc.AppendDocumentation(_, _, _, _, _, _, _, _) = ()
         }
 
     [<Fact>]
@@ -520,7 +521,8 @@ M.f
                 sourceText,
                 caretPosition,
                 adjustedColumnInSource,
-                filePath
+                filePath,
+                EditorOptions()
             )
             |> Async.RunSynchronously
 

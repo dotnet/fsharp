@@ -122,6 +122,12 @@ You can find all test options as separate flags. For example `build -testAll`:
 
 Running any of the above will build the latest changes and run tests against them.
 
+## Using your custom compiler to build this repository
+
+By removing all the subfolders called `Proto` under `artifacts` and running the `build` script again, the proto compiler will include your changes.
+
+Once the "proto" compiler is built, it won't be built again, so you may want to perform those steps again to ensure your changes don't break building the compiler itself.
+
 ## Using your custom compiler to build other projects
 
 Building the compiler using `build.cmd` or `build.sh` will output artifacts in `artifacts\bin`. 
@@ -195,13 +201,13 @@ or
 Some of the code in this repository is formatted automatically by [Fantomas](https://github.com/fsprojects/fantomas). To format all files use:
 
 ```cmd
-dotnet fantomas . -r
+dotnet fantomas .
 ```
 
 The formatting is checked automatically by CI:
 
 ```cmd
-dotnet fantomas . -r --check
+dotnet fantomas . --check
 ```
 
 At the time of writing only a subset of signature files (`*.fsi`) are formatted. See the settings in `.fantomasignore` and `.editorconfig`.

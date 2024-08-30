@@ -285,7 +285,7 @@ open Printf
     static let GetString(name:string) =
         let s = resources.Value.GetString(name, System.Globalization.CultureInfo.CurrentUICulture)
     #if DEBUG
-        if null = s then
+        if isNull s then
             System.Diagnostics.Debug.Assert(false, sprintf ""**RESOURCE ERROR**: Resource token %s does not exist!"" name)
     #endif
         s

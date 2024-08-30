@@ -16,7 +16,7 @@ ImplFile
                       PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
                       SynValData
                         (None, SynValInfo ([], SynArgInfo ([], false, None)),
-                         None, None),
+                         None),
                       Named (SynIdent (a, None), false, None, (4,8--4,9)), None,
                       Const (Int32 42, (4,12--4,14)), (4,8--4,9),
                       Yes (4,4--4,14), { LeadingKeyword = Let (4,4--4,7)

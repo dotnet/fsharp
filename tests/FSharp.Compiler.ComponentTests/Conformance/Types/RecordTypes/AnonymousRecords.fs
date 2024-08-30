@@ -159,7 +159,9 @@ type ErrorResponse =
         |> withDiagnostics [
             Error 10, Line 5, Col 42, Line 5, Col 43, "Unexpected integer literal in field declaration. Expected ':' or other token."
             Error 10, Line 7, Col 12, Line 7, Col 14, "Unexpected symbol '|}' in field declaration. Expected identifier or other token."
+            Error 3244, Line 7, Col 9, Line 7, Col 14, "Invalid anonymous record type"
             Error 10, Line 10, Col 17, Line 10, Col 21, "Incomplete structured construct at or before this point in field declaration. Expected identifier or other token."
+            Error 3244, Line 10, Col 14, Line 11, Col 36, "Invalid anonymous record type"
         ]
         
     [<Fact>]

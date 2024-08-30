@@ -1,7 +1,7 @@
 
 neg28.fsx(5,10,5,11): typecheck error FS1180: The struct, record or union type 'X' has the 'StructuralEquality' attribute but the component type '(int -> int)' does not satisfy the 'equality' constraint
 
-neg28.fsx(12,13,12,20): typecheck error FS0880: Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.
+neg28.fsx(12,13,12,14): typecheck error FS0880: Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.
 
 neg28.fsx(19,13,19,14): typecheck error FS1181: Each argument of the primary constructor for a struct must be given a type, for example 'type S(x1:int, x2: int) = ...'. These arguments determine the fields of the struct.
 

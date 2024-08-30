@@ -12,7 +12,7 @@ ImplFile
                     (None, Normal, false, false, [], PreXmlDocEmpty,
                      SynValData
                        (None, SynValInfo ([], SynArgInfo ([], false, None)),
-                        None, None),
+                        None),
                      Named (SynIdent (a, None), false, None, (3,4--3,5)), None,
                      Const (Unit, (3,8--3,10)), (3,4--3,5), Yes (3,8--3,10),
                      { LeadingKeyword = Synthetic

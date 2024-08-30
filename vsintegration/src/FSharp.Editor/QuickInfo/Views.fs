@@ -52,7 +52,7 @@ module internal QuickInfoViewProvider =
 
     let (|LineBreak|_|) =
         function
-        | TaggedText (TextTag.LineBreak, _) -> Some()
+        | TaggedText(TextTag.LineBreak, _) -> Some()
         | _ -> None
 
     let wrapContent (elements: obj seq) =

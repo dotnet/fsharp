@@ -230,6 +230,7 @@ type DefaultFileSystem =
 
     abstract OpenFileForWriteShim:
         filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
+
     override OpenFileForWriteShim:
         filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
 

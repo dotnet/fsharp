@@ -41,6 +41,7 @@ type PropertyCollector =
     new:
         g: TcGlobals * amap: ImportMap * m: range * ty: TType * optFilter: string option * ad: AccessorDomain ->
             PropertyCollector
+
     member Close: unit -> PropInfo list
     member Collect: membInfo: ValMemberInfo * vref: ValRef -> unit
 
@@ -109,6 +110,7 @@ type InfoReader =
     /// Read the IL fields of a type, including inherited ones. Cache the result for monomorphic types.
     member GetILFieldInfosOfType:
         optFilter: string option * ad: AccessorDomain * m: range * ty: TType -> ILFieldInfo list
+
     member GetImmediateIntrinsicEventsOfType:
         optFilter: string option * ad: AccessorDomain * m: range * ty: TType -> EventInfo list
 

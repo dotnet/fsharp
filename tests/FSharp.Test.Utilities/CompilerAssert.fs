@@ -261,18 +261,27 @@ module rec CompilerAssertHelpers =
     let checker = FSharpChecker.Create(suggestNamesForErrors=true)
 
     // Unlike C# whose entrypoint is always string[] F# can make an entrypoint with 0 args, or with an array of string[]
-    let mkDefaultArgs (entryPoint:MethodInfo) : obj[] = [|
+    let mkDefaultArgs (entryPoint:MethodBase) : obj[] = [|
         if entryPoint.GetParameters().Length = 1 then
             yield Array.empty<string>
     |]
 
-    let executeAssemblyEntryPoint (asm: Assembly) =
-        let entryPoint = asm.EntryPoint
+    let executeAssemblyEntryPoint (asm: Assembly) isFsx =
+        let entryPoint : MethodBase = asm.EntryPoint
+        let entryPoint =
+            if isNull entryPoint && isFsx then
+                // lookup the last static constructor
+                // of the assembly types, which should match
+                // the equivalent of a .fsx entry point
+                let moduleInitType = asm.GetTypes() |> Array.last
+                moduleInitType.GetConstructors(BindingFlags.Static ||| BindingFlags.NonPublic).[0] :> MethodBase
+            else
+                entryPoint
         let args = mkDefaultArgs entryPoint
         captureConsoleOutputs (fun () -> entryPoint.Invoke(Unchecked.defaultof<obj>, args) |> ignore)
 
 #if NETCOREAPP
-    let executeBuiltApp assembly deps =
+    let executeBuiltApp assembly deps isFsx =
         let ctxt = AssemblyLoadContext("ContextName", true)
         try
             ctxt.add_Resolving(fun ctxt name ->
@@ -281,14 +290,14 @@ module rec CompilerAssertHelpers =
                 |> Option.map ctxt.LoadFromAssemblyPath
                 |> Option.defaultValue null)
 
-            ctxt.LoadFromAssemblyPath assembly |> executeAssemblyEntryPoint
+            executeAssemblyEntryPoint (ctxt.LoadFromAssemblyPath assembly) isFsx 
         finally
             ctxt.Unload()
 #else
     type Worker () =
         inherit MarshalByRefObject()
 
-        member x.ExecuteTestCase assemblyPath (deps: string[]) =
+        member x.ExecuteTestCase assemblyPath (deps: string[]) isFsx =
             AppDomain.CurrentDomain.add_AssemblyResolve(ResolveEventHandler(fun _ args ->
                 deps
                 |> Array.tryFind (fun (x: string) -> Path.GetFileNameWithoutExtension x = AssemblyName(args.Name).Name)
@@ -296,7 +305,8 @@ module rec CompilerAssertHelpers =
                 |> Option.map Assembly.LoadFile
                 |> Option.defaultValue null))
 
-            Assembly.LoadFrom assemblyPath |> executeAssemblyEntryPoint
+            let assembly = Assembly.LoadFrom assemblyPath
+            executeAssemblyEntryPoint assembly isFsx
 
     let adSetup =
         let setup = new System.AppDomainSetup ()
@@ -376,7 +386,7 @@ module rec CompilerAssertHelpers =
         let name =
             match nameOpt with
             | Some name -> name
-            | _ -> tryCreateTemporaryFileName()
+            | _ -> tryCreateTemporaryFileNameInDirectory(outputDirectory)
 
         let outputFilePath = Path.ChangeExtension (Path.Combine(outputDirectory.FullName, name), if isExe then ".exe" else ".dll")
         disposals.Add(disposeFile outputFilePath)
@@ -577,8 +587,8 @@ module rec CompilerAssertHelpers =
 
         succeeded, stdout.ToString(), stderr.ToString(), exn
 
-    let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) : (int * string * string) =
-        let succeeded, stdout, stderr, _ = executeBuiltApp outputFilePath deps
+    let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) isFsx : (int * string * string) =
+        let succeeded, stdout, stderr, _ = executeBuiltApp outputFilePath deps isFsx
         let exitCode = if succeeded then 0 else -1
         exitCode, stdout, stderr
 
@@ -620,7 +630,7 @@ type CompilerAssert private () =
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
 
-            executeBuiltApp outputExe [] |> ignore
+            executeBuiltApp outputExe [] false |> ignore<bool * string * string * exn option>
         )
 
     static let compileLibraryAndVerifyILWithOptions options (source: SourceCodeFileKind) (f: ILVerifier -> unit) =
@@ -681,10 +691,10 @@ Updated automatically, please check diffs in your pull request, changes must be 
     static member CompileRaw(cmpl: Compilation, ?ignoreWarnings) =
         returnCompilation cmpl (defaultArg ignoreWarnings false)
 
-    static member ExecuteAndReturnResult (outputFilePath: string, deps: string list, newProcess: bool) =
+    static member ExecuteAndReturnResult (outputFilePath: string, isFsx: bool, deps: string list, newProcess: bool) =
         // If we execute in-process (true by default), then the only way of getting STDOUT is to redirect it to SB, and STDERR is from catching an exception.
        if not newProcess then
-           executeBuiltAppAndReturnResult outputFilePath deps
+           executeBuiltAppAndReturnResult outputFilePath deps isFsx
        else
            executeBuiltAppNewProcessAndReturnResult outputFilePath
 
@@ -710,7 +720,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
                     Assert.Fail errors
                 onOutput output
             else
-                let _succeeded, _stdout, _stderr, exn = executeBuiltApp outputFilePath deps 
+                let _succeeded, _stdout, _stderr, exn = executeBuiltApp outputFilePath deps false 
                 exn |> Option.iter raise)
 
     static member ExecutionHasOutput(cmpl: Compilation, expectedOutput: string) =

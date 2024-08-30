@@ -172,7 +172,7 @@ type ModuleInfo =
     { ValInfos: ValInfos
       ModuleOrNamespaceInfos: NameMap<LazyModuleInfo> }
           
-and LazyModuleInfo = Lazy<ModuleInfo>
+and LazyModuleInfo = InterruptibleLazy<ModuleInfo>
 
 type ImplFileOptimizationInfo = LazyModuleInfo
 
@@ -1393,10 +1393,10 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
 let AbstractOptimizationInfoToEssentials =
 
     let rec abstractModulInfo (ss: ModuleInfo) =
-         { ModuleOrNamespaceInfos = NameMap.map (Lazy.force >> abstractModulInfo >> notlazy) ss.ModuleOrNamespaceInfos
+         { ModuleOrNamespaceInfos = NameMap.map (InterruptibleLazy.force >> abstractModulInfo >> notlazy) ss.ModuleOrNamespaceInfos
            ValInfos = ss.ValInfos.Filter (fun (v, _) -> v.MustInline) }
 
-    and abstractLazyModulInfo ss = ss |> Lazy.force |> abstractModulInfo |> notlazy
+    and abstractLazyModulInfo ss = ss |> InterruptibleLazy.force |> abstractModulInfo |> notlazy
       
     abstractLazyModulInfo
 
@@ -1459,7 +1459,7 @@ let AbstractExprInfoByVars (boundVars: Val list, boundTyVars) ivalue =
             ValMakesNoCriticalTailcalls=v.ValMakesNoCriticalTailcalls }
 
       and abstractModulInfo ss =
-         { ModuleOrNamespaceInfos = ss.ModuleOrNamespaceInfos |> NameMap.map (Lazy.force >> abstractModulInfo >> notlazy) 
+         { ModuleOrNamespaceInfos = ss.ModuleOrNamespaceInfos |> NameMap.map (InterruptibleLazy.force >> abstractModulInfo >> notlazy) 
            ValInfos = ss.ValInfos.Map (fun (vref, e) -> 
                check vref (abstractValInfo e) ) }
 
@@ -1496,7 +1496,7 @@ let RemapOptimizationInfo g tmenv =
                (vrefR, vinfo)) } 
 
     and remapLazyModulInfo ss =
-         ss |> Lazy.force |> remapModulInfo |> notlazy
+         ss |> InterruptibleLazy.force |> remapModulInfo |> notlazy
            
     remapLazyModulInfo
 
@@ -1534,11 +1534,11 @@ let ValueOfExpr expr =
 
 let IsMutableStructuralBindingForTupleElement (vref: ValRef) =
     vref.IsCompilerGenerated &&
-    vref.LogicalName.EndsWith suffixForTupleElementAssignmentTarget
+    vref.LogicalName.EndsWithOrdinal suffixForTupleElementAssignmentTarget
 
 let IsMutableForOutArg (vref: ValRef) =
     vref.IsCompilerGenerated &&
-    vref.LogicalName.StartsWith(outArgCompilerGeneratedName)
+    vref.LogicalName.StartsWithOrdinal(outArgCompilerGeneratedName)
 
 let IsKnownOnlyMutableBeforeUse (vref: ValRef) =
     IsMutableStructuralBindingForTupleElement vref || 
@@ -1672,7 +1672,7 @@ let TryEliminateBinding cenv _env bind e2 _m =
        not vspec1.IsCompilerGenerated then 
        None 
     elif vspec1.IsFixed then None 
-    elif vspec1.LogicalName.StartsWith stackVarPrefix ||
+    elif vspec1.LogicalName.StartsWithOrdinal stackVarPrefix ||
          vspec1.LogicalName.Contains suffixForVariablesThatMayNotBeEliminated then None
     else
 
@@ -2477,7 +2477,7 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
 
     and optimizeArgs args accArgs =
         (args, accArgs)
-        ||> List.foldBack (fun arg accArgs -> optimizeArg arg accArgs)
+        ||> List.foldBack (optimizeArg)
 
     let args = optimizeArgs args []
 
@@ -3353,10 +3353,10 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
         not (Zset.contains lambdaId env.dontInline) &&
         (// Check the number of argument groups is enough to saturate the lambdas of the target. 
          (if tyargs |> List.exists (fun t -> match t with TType_measure _ -> false | _ -> true) then 1 else 0) + args.Length = arities &&
-          (if size > cenv.settings.lambdaInlineThreshold + args.Length then
-             // Not inlining lambda near, size too big
-             false
-           else true))) ->
+          if size <= cenv.settings.lambdaInlineThreshold + args.Length then true
+          // Not inlining lambda near, size too big:
+          else false
+            )) ->
             
         let isBaseCall = not (List.isEmpty args) &&
                               match args[0] with
@@ -4127,7 +4127,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
         
         let env = BindInternalLocalVal cenv vref (mkValInfo einfo vref) env 
         (TBind(vref, exprOptimized, spBind), einfo), env
-    with exn -> 
+    with RecoverableException exn -> 
         errorRecovery exn vref.Range 
         raise (ReportedError (Some exn))
           
@@ -4381,14 +4381,14 @@ let rec u_ExprInfo st =
     let rec loop st =
         let tag = u_byte st
         match tag with
-        | 0 -> u_tup2 u_const u_ty st |> (fun (c, ty) -> ConstValue(c, ty))
+        | 0 -> u_tup2 u_const u_ty st |> ConstValue
         | 1 -> UnknownValue
-        | 2 -> u_tup2 u_vref loop st |> (fun (a, b) -> ValValue (a, b))
-        | 3 -> u_array loop st |> (fun a -> TupleValue a)
-        | 4 -> u_tup2 u_ucref (u_array loop) st |> (fun (a, b) -> UnionCaseValue (a, b))
+        | 2 -> u_tup2 u_vref loop st |> ValValue
+        | 3 -> u_array loop st |> TupleValue
+        | 4 -> u_tup2 u_ucref (u_array loop) st |> UnionCaseValue
         | 5 -> u_tup4 u_int u_int u_expr u_ty st |> (fun (b, c, d, e) -> CurriedLambdaValue (newUnique(), b, c, d, e))
-        | 6 -> u_tup2 u_int u_expr st |> (fun (a, b) -> ConstExprValue (a, b))
-        | 7 -> u_tup2 u_tcref (u_array loop) st |> (fun (a, b) -> RecdValue (a, b))
+        | 6 -> u_tup2 u_int u_expr st |> ConstExprValue
+        | 7 -> u_tup2 u_tcref (u_array loop) st |> RecdValue
         | _ -> failwith "loop"
     // calc size of unpicked ExprValueInfo
     MakeSizedValueInfo (loop st)

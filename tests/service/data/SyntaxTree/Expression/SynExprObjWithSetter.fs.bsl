@@ -73,7 +73,7 @@ ImplFile
                               SynValInfo
                                 ([[SynArgInfo ([], false, None)];
                                   [SynArgInfo ([], false, Some v)]],
-                                 SynArgInfo ([], false, None)), None, None),
+                                 SynArgInfo ([], false, None)), None),
                            LongIdent
                              (SynLongIdent
                                 ([this; AbstractClassPropertySet],

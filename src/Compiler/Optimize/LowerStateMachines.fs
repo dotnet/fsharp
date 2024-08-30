@@ -39,7 +39,7 @@ type StateMachineConversionFirstPhaseResult =
    }
 
 #if DEBUG
-let sm_verbose = try System.Environment.GetEnvironmentVariable("FSharp_StateMachineVerbose") <> null with _ -> false
+let sm_verbose = try not (isNull(System.Environment.GetEnvironmentVariable "FSharp_StateMachineVerbose")) with _ -> false
 #else
 let sm_verbose = false
 #endif
@@ -114,7 +114,7 @@ let isExpandVar g (v: Val) =
 let isStateMachineBindingVar g (v: Val) = 
     isExpandVar g v  ||
     (let nm = v.LogicalName
-     (nm.StartsWith "builder@" || v.IsMemberThisVal) &&
+     (nm.StartsWithOrdinal("builder@") || v.IsMemberThisVal) &&
      not v.IsCompiledAsTopLevel)
 
 type env = 
@@ -833,7 +833,7 @@ type LowerStateMachine(g: TcGlobals) =
                 |> Result.Ok
             elif bind.Var.IsCompiledAsTopLevel || 
                 not (resBody.resumableVars.FreeLocals.Contains(bind.Var)) || 
-                bind.Var.LogicalName.StartsWith stackVarPrefix then
+                bind.Var.LogicalName.StartsWithOrdinal(stackVarPrefix) then
                 if sm_verbose then printfn "LetExpr (non-control-flow, rewrite rhs, RepresentBindingAsTopLevelOrLocal)" 
                 RepresentBindingAsTopLevelOrLocal bind resBody m
                 |> Result.Ok

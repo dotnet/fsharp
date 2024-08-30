@@ -21,7 +21,7 @@ ImplFile
                              SynValData
                                (None,
                                 SynValInfo ([], SynArgInfo ([], false, None)),
-                                None, None), Wild (6,8--6,9), None,
+                                None), Wild (6,8--6,9), None,
                              Const (Unit, (6,12--6,14)), (6,8--6,9),
                              Yes (6,4--6,14),
                              { LeadingKeyword = Let (6,4--6,7)

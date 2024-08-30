@@ -4,6 +4,7 @@
 module internal FSharp.Compiler.AbstractIL.ILX.Types
 
 open FSharp.Compiler.AbstractIL.IL
+open Internal.Utilities.Library
 
 /// Union case field
 [<Sealed>]
@@ -118,7 +119,7 @@ type IlxClosureApps =
 type IlxClosureInfo =
     { cloStructure: IlxClosureLambdas
       cloFreeVars: IlxClosureFreeVar[]
-      cloCode: Lazy<ILMethodBody>
+      cloCode: InterruptibleLazy<ILMethodBody>
       cloUseStaticField: bool }
 
 /// Represents a discriminated union type prior to erasure

@@ -560,12 +560,12 @@ type UsingMSBuild()  =
     [<Test>]
     member this.``GotoDefinition.OverloadResolutionForProperties``() =
         let lines = [ "type D() ="
-                      "  member this.Foo"
-                      "    with #1##2#get(i:int) = 1"
+                      "  member this.#1##2#Foo"
+                      "    with get(i:int) = 1"
                       "    and set (i:int) v = ()"
                       ""
-                      "  member this.Foo"
-                      "    with #3##4#get (s:string) = 1"
+                      "  member this.#3##4#Foo"
+                      "    with get (s:string) = 1"
                       "    and  set (s:string) v = ()"
                       ""
                       "D().$1$Foo 1"

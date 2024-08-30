@@ -21,10 +21,10 @@ ImplFile
                                   MemberKind = Member },
                            SynValInfo
                              ([[SynArgInfo ([], false, None)]; []],
-                              SynArgInfo ([], false, None)), None, None),
+                              SynArgInfo ([], false, None)), None),
                         Named (SynIdent (this, None), false, None, (4,12--4,16)),
                         None, ArbitraryAfterError ("memberCore2", (4,16--4,16)),
-                        (4,12--4,19), NoneAtInvisible,
+                        (4,12--4,16), NoneAtInvisible,
                         { LeadingKeyword = Member (4,5--4,11)
                           InlineKeyword = None
                           EqualsRange = None }), (4,5--4,16))], [], (3,2--3,9),

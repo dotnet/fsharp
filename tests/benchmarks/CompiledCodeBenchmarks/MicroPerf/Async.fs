@@ -8,7 +8,7 @@ open BenchmarkDotNet.Attributes
 [<MarkdownExporterAttribute.GitHub>]
 type AsyncWhileMemoryBench() =
 
-  [<Params((* 0, 1, 100, *) 1000, 10000)>]
+  [<Params(1000, 10000)>]
   member val Length = 0 with get, set
 
   [<Benchmark>]

@@ -21,7 +21,7 @@ ImplFile
                                   MemberKind = Member },
                            SynValInfo
                              ([[SynArgInfo ([], false, None)]; []],
-                              SynArgInfo ([], false, None)), None, None),
+                              SynArgInfo ([], false, None)), None),
                         Named (SynIdent (this, None), false, None, (4,12--4,16)),
                         None, ArbitraryAfterError ("memberCore2", (4,16--4,16)),
                         (4,12--4,16), NoneAtInvisible,

@@ -22,11 +22,6 @@
         <target state="translated">Analiza w tle</target>
         <note />
       </trans-unit>
-      <trans-unit id="Capture_Identifiers_When_Parsing">
-        <source>Capture identifiers while parsing</source>
-        <target state="new">Capture identifiers while parsing</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Enable_Background_ItemKeyStore_And_Semantic_Classification">
         <source>Keep background symbol keys</source>
         <target state="translated">Zachowaj klawisze symboli tła</target>
@@ -38,8 +33,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Enable_Live_Buffers">
-        <source>Use live (unsaved) buffers for checking (restart required)</source>
-        <target state="new">Use live (unsaved) buffers for checking (restart required)</target>
+        <source>Use live (unsaved) buffers for analysis (restart required)</source>
+        <target state="translated">Użyj bieżących (niezapisanych) buforów do analizy (wymagane ponowne uruchomienie)</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_partial_type_checking">
@@ -113,8 +108,8 @@
         <note />
       </trans-unit>
       <trans-unit id="LiveBuffers">
-        <source>Live Buffers (experimental)</source>
-        <target state="new">Live Buffers (experimental)</target>
+        <source>Live Buffers</source>
+        <target state="translated">Bufory bieżące</target>
         <note />
       </trans-unit>
       <trans-unit id="Navigation_links">
@@ -130,6 +125,11 @@
       <trans-unit id="Preferred_description_width_in_characters">
         <source>Preferred description width in characters</source>
         <target state="translated">Preferowana szerokość opisu w znakach</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Remove_parens_code_fix">
+        <source>Remove unnecessary parentheses (experimental, might affect typing performance)</source>
+        <target state="translated">Usuń niepotrzebne nawiasy (eksperymentalne, może to wpłynąć na wydajność pisania)</target>
         <note />
       </trans-unit>
       <trans-unit id="Send_Additional_Telemetry">
@@ -175,6 +175,11 @@
       <trans-unit id="Show_navigation_links_as">
         <source>S_how navigation links as</source>
         <target state="translated">P_okaż linki nawigacyjne jako</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_remarks_in_Quick_Info">
+        <source>Show remarks in Quick Info</source>
+        <target state="translated">Pokaż uwagi w szybkich podpowiedziach</target>
         <note />
       </trans-unit>
       <trans-unit id="Simplify_name_code_fix">

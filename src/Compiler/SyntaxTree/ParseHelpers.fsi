@@ -178,7 +178,14 @@ val mkSynMemberDefnGetSet:
     parseState: IParseState ->
     opt_inline: range option ->
     mWith: range ->
-    classDefnMemberGetSetElements: (range option * SynAttributeList list * (SynPat * range) * (range option * SynReturnInfo) option * range option * SynExpr * range) list ->
+    classDefnMemberGetSetElements:
+        (range option *
+        SynAttributeList list *
+        (SynPat * range) *
+        (range option * SynReturnInfo) option *
+        range option *
+        SynExpr *
+        range) list ->
     mAnd: range option ->
     mWhole: range ->
     propertyNameBindingPat: SynPat ->
@@ -273,14 +280,13 @@ val mkAutoPropDefn:
                 SynMemberDefn
 
 val mkValField:
+    parseState: IParseState ->
     mVal: range ->
-    mRhs: range ->
-    mut: bool ->
+    isMutable: range option ->
     access: SynAccess option ->
-    ident: Ident ->
-    typ: SynType ->
-    xmlDoc: PreXmlDoc ->
-    range ->
+    idOpt: Ident option ->
+    typ: SynType option ->
+    rangeStart: range ->
     SynAttributes ->
     range option ->
         SynMemberDefn
@@ -288,11 +294,11 @@ val mkValField:
 val mkSynField:
     parseState: IParseState ->
     idOpt: Ident option ->
-    t: SynType ->
-    isMutable: bool ->
+    t: SynType option ->
+    isMutable: range option ->
     vis: SynAccess option ->
     attributes: SynAttributeList list ->
-    isStatic: bool ->
-    mWhole: range ->
+    mStatic: range option ->
+    rangeStart: range ->
     leadingKeyword: SynLeadingKeyword option ->
         SynField

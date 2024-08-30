@@ -84,6 +84,7 @@ type FSharpSymbol =
     static member internal Create:
         g: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType * tcImports: TcImports * item: Item ->
             FSharpSymbol
+
     static member internal Create: cenv: SymbolEnv * item: Item -> FSharpSymbol
 
     /// Computes if the symbol is accessible for the given accessibility rights
@@ -834,6 +835,9 @@ type FSharpMemberOrFunctionOrValue =
     /// Get an associated setter method of the property
     member SetterMethod: FSharpMemberOrFunctionOrValue
 
+    /// Indicates if the property or getter method is part of a IsABC union case tester implied by a union case definition
+    member IsUnionCaseTester: bool
+
     /// Get an associated add method of an event
     member EventAddMethod: FSharpMemberOrFunctionOrValue
 
@@ -1062,6 +1066,7 @@ type FSharpType =
     internal new:
         g: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType * tcImports: TcImports * ty: TType ->
             FSharpType
+
     internal new: SymbolEnv * ty: TType -> FSharpType
 
     /// Indicates this is a named type in an unresolved assembly

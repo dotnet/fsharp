@@ -114,60 +114,27 @@ let GetPathToDotNetFrameworkReferenceAssemblies version =
 let HighestInstalledRefAssembliesOrDotNETFramework () =
     let getHighestInstalledDotNETFramework () =
         try
-            if
-                box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version48))
-                <> null
-            then
+            if not (isNull (box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version48)))) then
                 Net48
-            elif
-                box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version472))
-                <> null
-            then
+            elif not (isNull (box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version472)))) then
                 Net472
-            elif
-                box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version471))
-                <> null
-            then
+            elif not (isNull (box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version471)))) then
                 Net471
-            elif
-                box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version47))
-                <> null
-            then
+            elif not (isNull (box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version47)))) then
                 Net47
-            elif
-                box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version462))
-                <> null
-            then
+            elif not (isNull (box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version462)))) then
                 Net462
-            elif
-                box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version461))
-                <> null
-            then
+            elif not (isNull (box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version461)))) then
                 Net461
-            elif
-                box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version461))
-                <> null
-            then
+            elif not (isNull (box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version461)))) then
                 Net461
-            elif
-                box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version46))
-                <> null
-            then
+            elif not (isNull (box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version46)))) then
                 Net46
-            elif
-                box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version452))
-                <> null
-            then
+            elif not (isNull (box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version452)))) then
                 Net452
-            elif
-                box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version451))
-                <> null
-            then
+            elif not (isNull (box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version451)))) then
                 Net451
-            elif
-                box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version45))
-                <> null
-            then
+            elif not (isNull (box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version45)))) then
                 Net45
             else
                 Net45 // version is 4.5 assumed since this code is running.
@@ -198,7 +165,7 @@ let HighestInstalledRefAssembliesOrDotNETFramework () =
 
     match
         SupportedDesktopFrameworkVersions
-        |> Seq.tryFind (fun v -> checkFrameworkForReferenceAssemblies v)
+        |> Seq.tryFind checkFrameworkForReferenceAssemblies
     with
     | Some v -> v
     | None -> getHighestInstalledDotNETFramework ()

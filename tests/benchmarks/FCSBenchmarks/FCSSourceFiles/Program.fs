@@ -270,7 +270,7 @@ module Project =
               OriginalLoadReferences = []
               Stamp = None }
 
-        FSharpReferencedProject.CreateFSharp(
+        FSharpReferencedProject.FSharpReference(
             __SOURCE_DIRECTORY__ + @"\..\..\..\..\artifacts\bin\FSharp.Core\Debug\netstandard2.1\FSharp.Core.dll",
             projectOptions
         )
@@ -459,7 +459,7 @@ module Project =
               OriginalLoadReferences = []
               Stamp = None }
 
-        FSharpReferencedProject.CreateFSharp(
+        FSharpReferencedProject.FSharpReference(
             __SOURCE_DIRECTORY__ + @"\..\..\..\..\artifacts\bin\FSharp.DependencyManager.Nuget\Debug\netstandard2.0\FSharp.DependencyManager.Nuget.dll",
             projectOptions
         )
@@ -618,8 +618,8 @@ module Project =
                __SOURCE_DIRECTORY__ + @"\..\..\..\..\src\Compiler\Checking\InfoReader.fs"
                __SOURCE_DIRECTORY__ + @"\..\..\..\..\src\Compiler\Checking\NicePrint.fsi"
                __SOURCE_DIRECTORY__ + @"\..\..\..\..\src\Compiler\Checking\NicePrint.fs"
-               __SOURCE_DIRECTORY__ + @"\..\..\..\..\src\Compiler\Checking\AugmentWithHashCompare.fsi"
-               __SOURCE_DIRECTORY__ + @"\..\..\..\..\src\Compiler\Checking\AugmentWithHashCompare.fs"
+               __SOURCE_DIRECTORY__ + @"\..\..\..\..\src\Compiler\Checking\AugmentTypeDefinitions.fsi"
+               __SOURCE_DIRECTORY__ + @"\..\..\..\..\src\Compiler\Checking\AugmentTypeDefinitions.fs"
                __SOURCE_DIRECTORY__ + @"\..\..\..\..\src\Compiler\Checking\NameResolution.fsi"
                __SOURCE_DIRECTORY__ + @"\..\..\..\..\src\Compiler\Checking\NameResolution.fs"
                __SOURCE_DIRECTORY__ + @"\..\..\..\..\src\Compiler\Checking\SignatureConformance.fsi"
@@ -890,8 +890,7 @@ type CompilerService() =
         | None -> 
             sourceOpt <- 
                 projectOptions.SourceFiles
-                |> Array.filter (fun filePath -> filePath.EndsWith("CheckDeclarations.fs")) // || filePath.EndsWith("CheckExpressions.fs"))
-                                                 // || filePath.EndsWith("lex.fs") || filePath.EndsWith("pars.fs"))
+                |> Array.filter (fun filePath -> filePath.EndsWith("CheckDeclarations.fs"))
                 |> Array.map (fun filePath -> filePath, SourceText.ofString (File.ReadAllText(filePath)))
                 |> Some
         | _ -> ()

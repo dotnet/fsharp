@@ -26,7 +26,8 @@ ImplFile
                                      (3,19--3,29), { ArrowRange = (3,23--3,25) }),
                                   false,
                                   PreXmlDoc ((3,16), FSharp.Compiler.Xml.XmlDocCollector),
-                                  None, (3,16--3,29), { LeadingKeyword = None })],
+                                  None, (3,16--3,29), { LeadingKeyword = None
+                                                        MutableKeyword = None })],
                             PreXmlDoc ((3,9), FSharp.Compiler.Xml.XmlDocCollector),
                             None, (3,11--3,29), { BarRange = Some (3,9--3,10) })],
                         (3,9--3,29)), (3,9--3,29)), [], None, (3,5--3,29),

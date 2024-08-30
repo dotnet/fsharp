@@ -121,10 +121,10 @@ let ``innerpoly-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/innerpoly" FSC_
 let ``innerpoly-FSI`` () = singleTestBuildAndRun "core/innerpoly" FSI
 
 [<Fact>]
-let ``namespaceAttributes-FSC_DEBUG`` () = singleTestBuildAndRun "core/namespaces" COMPILED_EXE_APP
+let ``namespaceAttributes-FSC_DEBUG`` () = singleTestBuildAndRunVersion "core/namespaces" COMPILED_EXE_APP LangVersion.Preview
 
 [<Fact>]
-let ``namespaceAttributes-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/namespaces" COMPILED_EXE_APP
+let ``namespaceAttributes-FSC_OPTIMIZED`` () = singleTestBuildAndRunVersion "core/namespaces" COMPILED_EXE_APP LangVersion.Preview
 
 [<Fact>]
 let ``unicode2-FSC_DEBUG`` () = singleTestBuildAndRun "core/unicode" FSC_DEBUG // TODO: fails on coreclr

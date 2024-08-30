@@ -11,8 +11,6 @@ neg62.fs(22,5,22,14): typecheck error FS0960: 'let' and 'do' bindings must come 
 
 neg62.fs(28,5,28,18): typecheck error FS0960: 'let' and 'do' bindings must come before member and interface definitions in type definitions
 
-neg62.fs(31,5,31,32): typecheck error FS3133: 'member val' definitions are only permitted in types with a primary constructor. Consider adding arguments to your type definition, e.g. 'type X(args) = ...'.
-
 neg62.fs(34,5,34,25): typecheck error FS3133: 'member val' definitions are only permitted in types with a primary constructor. Consider adding arguments to your type definition, e.g. 'type X(args) = ...'.
 
 neg62.fs(49,6,49,26): typecheck error FS0081: Implicit object constructors for structs must take at least one argument

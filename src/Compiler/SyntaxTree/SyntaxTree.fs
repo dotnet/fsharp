@@ -25,26 +25,26 @@ type SynLongIdent =
 
     member this.Range =
         match this with
-        | SynLongIdent ([], _, _) -> failwith "rangeOfLidwd"
-        | SynLongIdent ([ id ], [], _) -> id.idRange
-        | SynLongIdent ([ id ], [ m ], _) -> unionRanges id.idRange m
-        | SynLongIdent (h :: t, [], _) -> unionRanges h.idRange (List.last t).idRange
-        | SynLongIdent (h :: t, dotRanges, _) -> unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last dotRanges)
+        | SynLongIdent([], _, _) -> failwith "rangeOfLidwd"
+        | SynLongIdent([ id ], [], _) -> id.idRange
+        | SynLongIdent([ id ], [ m ], _) -> unionRanges id.idRange m
+        | SynLongIdent(h :: t, [], _) -> unionRanges h.idRange (List.last t).idRange
+        | SynLongIdent(h :: t, dotRanges, _) -> unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last dotRanges)
 
     member this.LongIdent =
         match this with
-        | SynLongIdent (lid, _, _) -> lid
+        | SynLongIdent(lid, _, _) -> lid
 
     member this.Dots =
         match this with
-        | SynLongIdent (dotRanges = dots) -> dots
+        | SynLongIdent(dotRanges = dots) -> dots
 
     member this.Trivia =
         match this with
-        | SynLongIdent (trivia = trivia) -> List.choose id trivia
+        | SynLongIdent(trivia = trivia) -> List.choose id trivia
 
     member this.IdentsWithTrivia =
-        let (SynLongIdent (lid, _, trivia)) = this
+        let (SynLongIdent(lid, _, trivia)) = this
 
         if lid.Length = trivia.Length then
             List.zip lid trivia |> List.map SynIdent
@@ -57,13 +57,13 @@ type SynLongIdent =
 
     member this.ThereIsAnExtraDotAtTheEnd =
         match this with
-        | SynLongIdent (lid, dots, _) -> lid.Length = dots.Length
+        | SynLongIdent(lid, dots, _) -> lid.Length = dots.Length
 
     member this.RangeWithoutAnyExtraDot =
         match this with
-        | SynLongIdent ([], _, _) -> failwith "rangeOfLidwd"
-        | SynLongIdent ([ id ], _, _) -> id.idRange
-        | SynLongIdent (h :: t, dotRanges, _) ->
+        | SynLongIdent([], _, _) -> failwith "rangeOfLidwd"
+        | SynLongIdent([ id ], _, _) -> id.idRange
+        | SynLongIdent(h :: t, dotRanges, _) ->
             let nonExtraDots =
                 if dotRanges.Length = t.Length then
                     dotRanges
@@ -78,7 +78,7 @@ module SynLongIdentHelpers =
     [<Obsolete("Please use SynLongIdent or define a custom active pattern")>]
     let (|LongIdentWithDots|) =
         function
-        | SynLongIdent (lid, dots, _) -> lid, dots
+        | SynLongIdent(lid, dots, _) -> lid, dots
 
     [<Obsolete("Please use SynLongIdent")>]
     let LongIdentWithDots (lid, dots) =
@@ -102,7 +102,7 @@ type SynTypar =
 
     member this.Range =
         match this with
-        | SynTypar (id, _, _) -> id.idRange
+        | SynTypar(id, _, _) -> id.idRange
 
 [<Struct; RequireQualifiedAccess>]
 type SynStringKind =
@@ -164,9 +164,9 @@ type SynConst =
 
     member c.Range dflt =
         match c with
-        | SynConst.String (_, _, m0)
-        | SynConst.Bytes (_, _, m0)
-        | SynConst.SourceIdentifier (_, _, m0) -> m0
+        | SynConst.String(_, _, m0)
+        | SynConst.Bytes(_, _, m0)
+        | SynConst.SourceIdentifier(_, _, m0) -> m0
         | _ -> dflt
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -342,18 +342,18 @@ type SynTypeConstraint =
 
     member x.Range =
         match x with
-        | WhereTyparIsValueType (range = range)
-        | WhereTyparIsReferenceType (range = range)
-        | WhereTyparIsUnmanaged (range = range)
-        | WhereTyparSupportsNull (range = range)
-        | WhereTyparIsComparable (range = range)
-        | WhereTyparIsEquatable (range = range)
-        | WhereTyparDefaultsToType (range = range)
-        | WhereTyparSubtypeOfType (range = range)
-        | WhereTyparSupportsMember (range = range)
-        | WhereTyparIsEnum (range = range)
-        | WhereTyparIsDelegate (range = range) -> range
-        | WhereSelfConstrained (range = range) -> range
+        | WhereTyparIsValueType(range = range)
+        | WhereTyparIsReferenceType(range = range)
+        | WhereTyparIsUnmanaged(range = range)
+        | WhereTyparSupportsNull(range = range)
+        | WhereTyparIsComparable(range = range)
+        | WhereTyparIsEquatable(range = range)
+        | WhereTyparDefaultsToType(range = range)
+        | WhereTyparSubtypeOfType(range = range)
+        | WhereTyparSupportsMember(range = range)
+        | WhereTyparIsEnum(range = range)
+        | WhereTyparIsDelegate(range = range) -> range
+        | WhereSelfConstrained(range = range) -> range
 
 [<RequireQualifiedAccess>]
 type SynTyparDecls =
@@ -363,23 +363,23 @@ type SynTyparDecls =
 
     member x.TyparDecls =
         match x with
-        | PostfixList (decls = decls)
-        | PrefixList (decls = decls) -> decls
-        | SinglePrefix (decl, _) -> [ decl ]
+        | PostfixList(decls = decls)
+        | PrefixList(decls = decls) -> decls
+        | SinglePrefix(decl, _) -> [ decl ]
 
     member x.Constraints =
         match x with
-        | PostfixList (decls = decls; constraints = constraints) ->
+        | PostfixList(decls = decls; constraints = constraints) ->
             // Synthesize SynTypeConstraints implied with any intersection constraints in SynTyparDecl
             // The parser makes sure we're only dealing with hash constraints here
             let intersectionConstraints =
                 decls
-                |> List.collect (fun (SynTyparDecl (typar = tp; intersectionConstraints = tys)) ->
+                |> List.collect (fun (SynTyparDecl(typar = tp; intersectionConstraints = tys)) ->
                     tys
                     |> List.map (fun ty ->
                         let ty =
                             match ty with
-                            | SynType.HashConstraint (ty, _) -> ty
+                            | SynType.HashConstraint(ty, _) -> ty
                             | _ -> ty
 
                         SynTypeConstraint.WhereTyparSubtypeOfType(tp, ty, ty.Range)))
@@ -389,9 +389,9 @@ type SynTyparDecls =
 
     member x.Range =
         match x with
-        | PostfixList (range = range)
-        | PrefixList (range = range)
-        | SinglePrefix (range = range) -> range
+        | PostfixList(range = range)
+        | PrefixList(range = range)
+        | SinglePrefix(range = range) -> range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynTupleTypeSegment =
@@ -402,8 +402,8 @@ type SynTupleTypeSegment =
     member this.Range =
         match this with
         | SynTupleTypeSegment.Type t -> t.Range
-        | SynTupleTypeSegment.Star (range = range)
-        | SynTupleTypeSegment.Slash (range = range) -> range
+        | SynTupleTypeSegment.Star(range = range)
+        | SynTupleTypeSegment.Slash(range = range) -> range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynType =
@@ -464,25 +464,25 @@ type SynType =
 
     member x.Range =
         match x with
-        | SynType.App (range = m)
-        | SynType.LongIdentApp (range = m)
-        | SynType.Tuple (range = m)
-        | SynType.Array (range = m)
-        | SynType.AnonRecd (range = m)
-        | SynType.Fun (range = m)
-        | SynType.Var (range = m)
-        | SynType.Anon (range = m)
-        | SynType.WithGlobalConstraints (range = m)
-        | SynType.StaticConstant (range = m)
-        | SynType.StaticConstantExpr (range = m)
-        | SynType.StaticConstantNamed (range = m)
-        | SynType.HashConstraint (range = m)
-        | SynType.MeasurePower (range = m)
-        | SynType.Paren (range = m)
-        | SynType.SignatureParameter (range = m)
-        | SynType.Or (range = m)
-        | SynType.Intersection (range = m)
-        | SynType.FromParseError (range = m) -> m
+        | SynType.App(range = m)
+        | SynType.LongIdentApp(range = m)
+        | SynType.Tuple(range = m)
+        | SynType.Array(range = m)
+        | SynType.AnonRecd(range = m)
+        | SynType.Fun(range = m)
+        | SynType.Var(range = m)
+        | SynType.Anon(range = m)
+        | SynType.WithGlobalConstraints(range = m)
+        | SynType.StaticConstant(range = m)
+        | SynType.StaticConstantExpr(range = m)
+        | SynType.StaticConstantNamed(range = m)
+        | SynType.HashConstraint(range = m)
+        | SynType.MeasurePower(range = m)
+        | SynType.Paren(range = m)
+        | SynType.SignatureParameter(range = m)
+        | SynType.Or(range = m)
+        | SynType.Intersection(range = m)
+        | SynType.FromParseError(range = m) -> m
         | SynType.LongIdent lidwd -> lidwd.Range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -740,93 +740,93 @@ type SynExpr =
 
     member e.Range =
         match e with
-        | SynExpr.Paren (_, leftParenRange, rightParenRange, r) ->
+        | SynExpr.Paren(_, leftParenRange, rightParenRange, r) ->
             match rightParenRange with
             | Some rightParenRange when leftParenRange.FileIndex <> rightParenRange.FileIndex -> leftParenRange
             | _ -> r
-        | SynExpr.Quote (range = m)
-        | SynExpr.Const (range = m)
-        | SynExpr.Typed (range = m)
-        | SynExpr.Tuple (range = m)
-        | SynExpr.AnonRecd (range = m)
-        | SynExpr.ArrayOrList (range = m)
-        | SynExpr.Record (range = m)
-        | SynExpr.New (range = m)
-        | SynExpr.ObjExpr (range = m)
-        | SynExpr.While (range = m)
-        | SynExpr.For (range = m)
-        | SynExpr.ForEach (range = m)
-        | SynExpr.ComputationExpr (range = m)
-        | SynExpr.ArrayOrListComputed (range = m)
-        | SynExpr.Lambda (range = m)
-        | SynExpr.Match (range = m)
-        | SynExpr.MatchLambda (range = m)
-        | SynExpr.Do (range = m)
-        | SynExpr.Assert (range = m)
-        | SynExpr.App (range = m)
-        | SynExpr.TypeApp (range = m)
-        | SynExpr.LetOrUse (range = m)
-        | SynExpr.TryWith (range = m)
-        | SynExpr.TryFinally (range = m)
-        | SynExpr.Sequential (range = m)
-        | SynExpr.SequentialOrImplicitYield (range = m)
-        | SynExpr.ArbitraryAfterError (range = m)
-        | SynExpr.FromParseError (range = m)
-        | SynExpr.DiscardAfterMissingQualificationAfterDot (range = m)
-        | SynExpr.IfThenElse (range = m)
-        | SynExpr.LongIdent (range = m)
-        | SynExpr.LongIdentSet (range = m)
-        | SynExpr.NamedIndexedPropertySet (range = m)
-        | SynExpr.DotIndexedGet (range = m)
-        | SynExpr.DotIndexedSet (range = m)
-        | SynExpr.DotGet (range = m)
-        | SynExpr.DotLambda (range = m)
-        | SynExpr.DotSet (range = m)
-        | SynExpr.Set (range = m)
-        | SynExpr.DotNamedIndexedPropertySet (range = m)
-        | SynExpr.LibraryOnlyUnionCaseFieldGet (range = m)
-        | SynExpr.LibraryOnlyUnionCaseFieldSet (range = m)
-        | SynExpr.LibraryOnlyILAssembly (range = m)
-        | SynExpr.LibraryOnlyStaticOptimization (range = m)
-        | SynExpr.IndexRange (range = m)
-        | SynExpr.IndexFromEnd (range = m)
-        | SynExpr.TypeTest (range = m)
-        | SynExpr.Upcast (range = m)
-        | SynExpr.AddressOf (range = m)
-        | SynExpr.Downcast (range = m)
-        | SynExpr.JoinIn (range = m)
-        | SynExpr.InferredUpcast (range = m)
-        | SynExpr.InferredDowncast (range = m)
-        | SynExpr.Null (range = m)
-        | SynExpr.Lazy (range = m)
-        | SynExpr.TraitCall (range = m)
-        | SynExpr.ImplicitZero (range = m)
-        | SynExpr.YieldOrReturn (range = m)
-        | SynExpr.YieldOrReturnFrom (range = m)
-        | SynExpr.LetOrUseBang (range = m)
-        | SynExpr.MatchBang (range = m)
-        | SynExpr.DoBang (range = m)
-        | SynExpr.WhileBang (range = m)
-        | SynExpr.Fixed (range = m)
-        | SynExpr.InterpolatedString (range = m)
-        | SynExpr.Dynamic (range = m) -> m
+        | SynExpr.Quote(range = m)
+        | SynExpr.Const(range = m)
+        | SynExpr.Typed(range = m)
+        | SynExpr.Tuple(range = m)
+        | SynExpr.AnonRecd(range = m)
+        | SynExpr.ArrayOrList(range = m)
+        | SynExpr.Record(range = m)
+        | SynExpr.New(range = m)
+        | SynExpr.ObjExpr(range = m)
+        | SynExpr.While(range = m)
+        | SynExpr.For(range = m)
+        | SynExpr.ForEach(range = m)
+        | SynExpr.ComputationExpr(range = m)
+        | SynExpr.ArrayOrListComputed(range = m)
+        | SynExpr.Lambda(range = m)
+        | SynExpr.Match(range = m)
+        | SynExpr.MatchLambda(range = m)
+        | SynExpr.Do(range = m)
+        | SynExpr.Assert(range = m)
+        | SynExpr.App(range = m)
+        | SynExpr.TypeApp(range = m)
+        | SynExpr.LetOrUse(range = m)
+        | SynExpr.TryWith(range = m)
+        | SynExpr.TryFinally(range = m)
+        | SynExpr.Sequential(range = m)
+        | SynExpr.SequentialOrImplicitYield(range = m)
+        | SynExpr.ArbitraryAfterError(range = m)
+        | SynExpr.FromParseError(range = m)
+        | SynExpr.DiscardAfterMissingQualificationAfterDot(range = m)
+        | SynExpr.IfThenElse(range = m)
+        | SynExpr.LongIdent(range = m)
+        | SynExpr.LongIdentSet(range = m)
+        | SynExpr.NamedIndexedPropertySet(range = m)
+        | SynExpr.DotIndexedGet(range = m)
+        | SynExpr.DotIndexedSet(range = m)
+        | SynExpr.DotGet(range = m)
+        | SynExpr.DotLambda(range = m)
+        | SynExpr.DotSet(range = m)
+        | SynExpr.Set(range = m)
+        | SynExpr.DotNamedIndexedPropertySet(range = m)
+        | SynExpr.LibraryOnlyUnionCaseFieldGet(range = m)
+        | SynExpr.LibraryOnlyUnionCaseFieldSet(range = m)
+        | SynExpr.LibraryOnlyILAssembly(range = m)
+        | SynExpr.LibraryOnlyStaticOptimization(range = m)
+        | SynExpr.IndexRange(range = m)
+        | SynExpr.IndexFromEnd(range = m)
+        | SynExpr.TypeTest(range = m)
+        | SynExpr.Upcast(range = m)
+        | SynExpr.AddressOf(range = m)
+        | SynExpr.Downcast(range = m)
+        | SynExpr.JoinIn(range = m)
+        | SynExpr.InferredUpcast(range = m)
+        | SynExpr.InferredDowncast(range = m)
+        | SynExpr.Null(range = m)
+        | SynExpr.Lazy(range = m)
+        | SynExpr.TraitCall(range = m)
+        | SynExpr.ImplicitZero(range = m)
+        | SynExpr.YieldOrReturn(range = m)
+        | SynExpr.YieldOrReturnFrom(range = m)
+        | SynExpr.LetOrUseBang(range = m)
+        | SynExpr.MatchBang(range = m)
+        | SynExpr.DoBang(range = m)
+        | SynExpr.WhileBang(range = m)
+        | SynExpr.Fixed(range = m)
+        | SynExpr.InterpolatedString(range = m)
+        | SynExpr.Dynamic(range = m) -> m
         | SynExpr.Ident id -> id.idRange
-        | SynExpr.Typar (range = m) -> m
-        | SynExpr.DebugPoint (_, _, innerExpr) -> innerExpr.Range
+        | SynExpr.Typar(range = m) -> m
+        | SynExpr.DebugPoint(_, _, innerExpr) -> innerExpr.Range
 
     member e.RangeWithoutAnyExtraDot =
         match e with
-        | SynExpr.DiscardAfterMissingQualificationAfterDot (expr, _, _) -> expr.Range
+        | SynExpr.DiscardAfterMissingQualificationAfterDot(expr, _, _) -> expr.Range
         | _ -> e.Range
 
     member e.RangeOfFirstPortion =
         match e with
         // these are better than just .Range, and also commonly applicable inside queries
-        | SynExpr.Paren (_, m, _, _) -> m
-        | SynExpr.Sequential (_, _, e1, _, _)
-        | SynExpr.SequentialOrImplicitYield (_, e1, _, _, _)
-        | SynExpr.App (_, _, e1, _, _) -> e1.RangeOfFirstPortion
-        | SynExpr.ForEach (pat = pat; range = r) ->
+        | SynExpr.Paren(_, m, _, _) -> m
+        | SynExpr.Sequential(_, _, e1, _, _)
+        | SynExpr.SequentialOrImplicitYield(_, e1, _, _, _)
+        | SynExpr.App(_, _, e1, _, _) -> e1.RangeOfFirstPortion
+        | SynExpr.ForEach(pat = pat; range = r) ->
             let e = (pat.Range: range).Start
             withEnd e r
         | _ -> e.Range
@@ -876,9 +876,9 @@ type SynSimplePat =
 
     member x.Range =
         match x with
-        | SynSimplePat.Id (range = range)
-        | SynSimplePat.Typed (range = range)
-        | SynSimplePat.Attrib (range = range) -> range
+        | SynSimplePat.Id(range = range)
+        | SynSimplePat.Typed(range = range)
+        | SynSimplePat.Attrib(range = range) -> range
 
 [<RequireQualifiedAccess>]
 type SynSimplePatAlternativeIdInfo =
@@ -900,7 +900,7 @@ type SynSimplePats =
 
     member x.Range =
         match x with
-        | SynSimplePats.SimplePats (range = range) -> range
+        | SynSimplePats.SimplePats(range = range) -> range
 
 [<RequireQualifiedAccess>]
 type SynArgPats =
@@ -911,7 +911,7 @@ type SynArgPats =
     member x.Patterns =
         match x with
         | Pats pats -> pats
-        | NamePatPairs (pats = pats) -> pats |> List.map (fun (_, _, pat) -> pat)
+        | NamePatPairs(pats = pats) -> pats |> List.map (fun (_, _, pat) -> pat)
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynPat =
@@ -969,26 +969,26 @@ type SynPat =
 
     member p.Range =
         match p with
-        | SynPat.Const (range = m)
-        | SynPat.Wild (range = m)
-        | SynPat.Named (range = m)
-        | SynPat.Or (range = m)
-        | SynPat.ListCons (range = m)
-        | SynPat.Ands (range = m)
-        | SynPat.As (range = m)
-        | SynPat.LongIdent (range = m)
-        | SynPat.ArrayOrList (range = m)
-        | SynPat.Tuple (range = m)
-        | SynPat.Typed (range = m)
-        | SynPat.Attrib (range = m)
-        | SynPat.Record (range = m)
-        | SynPat.Null (range = m)
-        | SynPat.IsInst (range = m)
-        | SynPat.QuoteExpr (range = m)
-        | SynPat.InstanceMember (range = m)
-        | SynPat.OptionalVal (range = m)
-        | SynPat.Paren (range = m)
-        | SynPat.FromParseError (range = m) -> m
+        | SynPat.Const(range = m)
+        | SynPat.Wild(range = m)
+        | SynPat.Named(range = m)
+        | SynPat.Or(range = m)
+        | SynPat.ListCons(range = m)
+        | SynPat.Ands(range = m)
+        | SynPat.As(range = m)
+        | SynPat.LongIdent(range = m)
+        | SynPat.ArrayOrList(range = m)
+        | SynPat.Tuple(range = m)
+        | SynPat.Typed(range = m)
+        | SynPat.Attrib(range = m)
+        | SynPat.Record(range = m)
+        | SynPat.Null(range = m)
+        | SynPat.IsInst(range = m)
+        | SynPat.QuoteExpr(range = m)
+        | SynPat.InstanceMember(range = m)
+        | SynPat.OptionalVal(range = m)
+        | SynPat.Paren(range = m)
+        | SynPat.FromParseError(range = m) -> m
 
 [<NoEquality; NoComparison>]
 type SynInterfaceImpl =
@@ -1011,14 +1011,14 @@ type SynMatchClause =
 
     member this.RangeOfGuardAndRhs =
         match this with
-        | SynMatchClause (whenExpr = eo; resultExpr = e) ->
+        | SynMatchClause(whenExpr = eo; resultExpr = e) ->
             match eo with
             | None -> e.Range
             | Some x -> unionRanges e.Range x.Range
 
     member this.Range =
         match this with
-        | SynMatchClause (range = m) -> m
+        | SynMatchClause(range = m) -> m
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynAttribute =
@@ -1046,13 +1046,9 @@ type SynAttributes = SynAttributeList list
 
 [<NoEquality; NoComparison>]
 type SynValData =
-    | SynValData of
-        memberFlags: SynMemberFlags option *
-        valInfo: SynValInfo *
-        thisIdOpt: Ident option *
-        transformedFromProperty: Ident option
+    | SynValData of memberFlags: SynMemberFlags option * valInfo: SynValInfo * thisIdOpt: Ident option
 
-    member x.SynValInfo = (let (SynValData (valInfo = synValInfo)) = x in synValInfo)
+    member x.SynValInfo = (let (SynValData(valInfo = synValInfo)) = x in synValInfo)
 
 [<NoEquality; NoComparison>]
 type SynBinding =
@@ -1075,12 +1071,12 @@ type SynBinding =
     //  - for everything else, the 'range' member that appears last/second-to-last is the 'full range' of the whole tree construct
     //  - but for Binding, the 'range' is only the range of the left-hand-side, the right-hand-side range is in the SynExpr
     //  - so we use explicit names to avoid confusion
-    member x.RangeOfBindingWithoutRhs = let (SynBinding (range = m)) = x in m
+    member x.RangeOfBindingWithoutRhs = let (SynBinding(range = m)) = x in m
 
     member x.RangeOfBindingWithRhs =
-        let (SynBinding (expr = e; range = m)) = x in unionRanges e.Range m
+        let (SynBinding(expr = e; range = m)) = x in unionRanges e.Range m
 
-    member x.RangeOfHeadPattern = let (SynBinding (headPat = headPat)) = x in headPat.Range
+    member x.RangeOfHeadPattern = let (SynBinding(headPat = headPat)) = x in headPat.Range
 
 [<NoEquality; NoComparison>]
 type SynBindingReturnInfo =
@@ -1152,11 +1148,11 @@ type SynMemberSig =
 
     member d.Range =
         match d with
-        | SynMemberSig.Member (range = m)
-        | SynMemberSig.Interface (range = m)
-        | SynMemberSig.Inherit (range = m)
-        | SynMemberSig.ValField (range = m)
-        | SynMemberSig.NestedType (range = m) -> m
+        | SynMemberSig.Member(range = m)
+        | SynMemberSig.Interface(range = m)
+        | SynMemberSig.Inherit(range = m)
+        | SynMemberSig.ValField(range = m)
+        | SynMemberSig.NestedType(range = m) -> m
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynTypeDefnKind =
@@ -1203,13 +1199,13 @@ type SynTypeDefnSimpleRepr =
 
     member this.Range =
         match this with
-        | Union (range = m)
-        | Enum (range = m)
-        | Record (range = m)
-        | General (range = m)
-        | LibraryOnlyILAssembly (range = m)
-        | TypeAbbrev (range = m)
-        | None (range = m) -> m
+        | Union(range = m)
+        | Enum(range = m)
+        | Record(range = m)
+        | General(range = m)
+        | LibraryOnlyILAssembly(range = m)
+        | TypeAbbrev(range = m)
+        | None(range = m) -> m
         | Exception t -> t.Range
 
 [<NoEquality; NoComparison>]
@@ -1225,7 +1221,7 @@ type SynEnumCase =
 
     member this.Range =
         match this with
-        | SynEnumCase (range = m) -> m
+        | SynEnumCase(range = m) -> m
 
 [<NoEquality; NoComparison>]
 type SynUnionCase =
@@ -1241,7 +1237,7 @@ type SynUnionCase =
 
     member this.Range =
         match this with
-        | SynUnionCase (range = m) -> m
+        | SynUnionCase(range = m) -> m
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynUnionCaseKind =
@@ -1261,8 +1257,8 @@ type SynTypeDefnSigRepr =
 
     member this.Range =
         match this with
-        | ObjectModel (range = m)
-        | Simple (range = m) -> m
+        | ObjectModel(range = m)
+        | Simple(range = m) -> m
         | Exception e -> e.Range
 
 [<NoEquality; NoComparison>]
@@ -1277,7 +1273,7 @@ type SynTypeDefnSig =
 
     member this.Range =
         match this with
-        | SynTypeDefnSig (range = m) -> m
+        | SynTypeDefnSig(range = m) -> m
 
 [<NoEquality; NoComparison>]
 type SynField =
@@ -1291,6 +1287,10 @@ type SynField =
         accessibility: SynAccess option *
         range: range *
         trivia: SynFieldTrivia
+
+    member this.Range =
+        match this with
+        | SynField(range = range) -> range
 
 [<NoEquality; NoComparison>]
 type SynComponentInfo =
@@ -1306,7 +1306,7 @@ type SynComponentInfo =
 
     member this.Range =
         match this with
-        | SynComponentInfo (range = m) -> m
+        | SynComponentInfo(range = m) -> m
 
 [<NoEquality; NoComparison>]
 type SynValSig =
@@ -1324,18 +1324,18 @@ type SynValSig =
         range: range *
         trivia: SynValSigTrivia
 
-    member x.RangeOfId = let (SynValSig(ident = SynIdent (id, _))) = x in id.idRange
+    member x.RangeOfId = let (SynValSig(ident = SynIdent(id, _))) = x in id.idRange
 
-    member x.SynInfo = let (SynValSig (arity = v)) = x in v
+    member x.SynInfo = let (SynValSig(arity = v)) = x in v
 
-    member x.SynType = let (SynValSig (synType = ty)) = x in ty
+    member x.SynType = let (SynValSig(synType = ty)) = x in ty
 
 [<NoEquality; NoComparison>]
 type SynValInfo =
 
     | SynValInfo of curriedArgInfos: SynArgInfo list list * returnInfo: SynArgInfo
 
-    member x.CurriedArgInfos = (let (SynValInfo (args, _)) = x in args)
+    member x.CurriedArgInfos = (let (SynValInfo(args, _)) = x in args)
 
     member x.ArgNames =
         x.CurriedArgInfos
@@ -1349,9 +1349,9 @@ type SynArgInfo =
 
     | SynArgInfo of attributes: SynAttributes * optional: bool * ident: Ident option
 
-    member x.Ident: Ident option = let (SynArgInfo (_, _, id)) = x in id
+    member x.Ident: Ident option = let (SynArgInfo(_, _, id)) = x in id
 
-    member x.Attributes: SynAttributes = let (SynArgInfo (attrs, _, _)) = x in attrs
+    member x.Attributes: SynAttributes = let (SynArgInfo(attrs, _, _)) = x in attrs
 
 [<NoEquality; NoComparison>]
 type SynValTyparDecls = SynValTyparDecls of typars: SynTyparDecls option * canInfer: bool
@@ -1362,7 +1362,7 @@ type SynReturnInfo =
 
     member this.Range =
         match this with
-        | SynReturnInfo (range = m) -> m
+        | SynReturnInfo(range = m) -> m
 
 [<NoEquality; NoComparison>]
 type SynExceptionDefnRepr =
@@ -1377,7 +1377,7 @@ type SynExceptionDefnRepr =
 
     member this.Range =
         match this with
-        | SynExceptionDefnRepr (range = m) -> m
+        | SynExceptionDefnRepr(range = m) -> m
 
 [<NoEquality; NoComparison>]
 type SynExceptionDefn =
@@ -1386,7 +1386,7 @@ type SynExceptionDefn =
 
     member this.Range =
         match this with
-        | SynExceptionDefn (range = m) -> m
+        | SynExceptionDefn(range = m) -> m
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynTypeDefnRepr =
@@ -1399,8 +1399,8 @@ type SynTypeDefnRepr =
 
     member this.Range =
         match this with
-        | ObjectModel (range = m)
-        | Simple (range = m) -> m
+        | ObjectModel(range = m)
+        | Simple(range = m) -> m
         | Exception t -> t.Range
 
 [<NoEquality; NoComparison>]
@@ -1415,7 +1415,7 @@ type SynTypeDefn =
 
     member this.Range =
         match this with
-        | SynTypeDefn (range = m) -> m
+        | SynTypeDefn(range = m) -> m
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynMemberDefn =
@@ -1469,18 +1469,18 @@ type SynMemberDefn =
 
     member d.Range =
         match d with
-        | SynMemberDefn.Member (range = m)
-        | SynMemberDefn.GetSetMember (range = m)
-        | SynMemberDefn.Interface (range = m)
-        | SynMemberDefn.Open (range = m)
-        | SynMemberDefn.LetBindings (range = m)
-        | SynMemberDefn.ImplicitCtor (range = m)
-        | SynMemberDefn.ImplicitInherit (range = m)
-        | SynMemberDefn.AbstractSlot (range = m)
-        | SynMemberDefn.Inherit (range = m)
-        | SynMemberDefn.ValField (range = m)
-        | SynMemberDefn.AutoProperty (range = m)
-        | SynMemberDefn.NestedType (range = m) -> m
+        | SynMemberDefn.Member(range = m)
+        | SynMemberDefn.GetSetMember(range = m)
+        | SynMemberDefn.Interface(range = m)
+        | SynMemberDefn.Open(range = m)
+        | SynMemberDefn.LetBindings(range = m)
+        | SynMemberDefn.ImplicitCtor(range = m)
+        | SynMemberDefn.ImplicitInherit(range = m)
+        | SynMemberDefn.AbstractSlot(range = m)
+        | SynMemberDefn.Inherit(range = m)
+        | SynMemberDefn.ValField(range = m)
+        | SynMemberDefn.AutoProperty(range = m)
+        | SynMemberDefn.NestedType(range = m) -> m
 
 type SynMemberDefns = SynMemberDefn list
 
@@ -1515,16 +1515,16 @@ type SynModuleDecl =
 
     member d.Range =
         match d with
-        | SynModuleDecl.ModuleAbbrev (range = m)
-        | SynModuleDecl.NestedModule (range = m)
-        | SynModuleDecl.Let (range = m)
-        | SynModuleDecl.Expr (range = m)
-        | SynModuleDecl.Types (range = m)
-        | SynModuleDecl.Exception (range = m)
-        | SynModuleDecl.Open (range = m)
-        | SynModuleDecl.HashDirective (range = m)
-        | SynModuleDecl.NamespaceFragment (SynModuleOrNamespace (range = m))
-        | SynModuleDecl.Attributes (range = m) -> m
+        | SynModuleDecl.ModuleAbbrev(range = m)
+        | SynModuleDecl.NestedModule(range = m)
+        | SynModuleDecl.Let(range = m)
+        | SynModuleDecl.Expr(range = m)
+        | SynModuleDecl.Types(range = m)
+        | SynModuleDecl.Exception(range = m)
+        | SynModuleDecl.Open(range = m)
+        | SynModuleDecl.HashDirective(range = m)
+        | SynModuleDecl.NamespaceFragment(SynModuleOrNamespace(range = m))
+        | SynModuleDecl.Attributes(range = m) -> m
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynOpenDeclTarget =
@@ -1535,8 +1535,8 @@ type SynOpenDeclTarget =
 
     member this.Range =
         match this with
-        | ModuleOrNamespace (range = m) -> m
-        | Type (range = m) -> m
+        | ModuleOrNamespace(range = m) -> m
+        | Type(range = m) -> m
 
 [<NoEquality; NoComparison>]
 type SynExceptionSig =
@@ -1568,14 +1568,14 @@ type SynModuleSigDecl =
 
     member d.Range =
         match d with
-        | SynModuleSigDecl.ModuleAbbrev (range = m)
-        | SynModuleSigDecl.NestedModule (range = m)
-        | SynModuleSigDecl.Val (range = m)
-        | SynModuleSigDecl.Types (range = m)
-        | SynModuleSigDecl.Exception (range = m)
-        | SynModuleSigDecl.Open (range = m)
-        | SynModuleSigDecl.NamespaceFragment (SynModuleOrNamespaceSig.SynModuleOrNamespaceSig (range = m))
-        | SynModuleSigDecl.HashDirective (range = m) -> m
+        | SynModuleSigDecl.ModuleAbbrev(range = m)
+        | SynModuleSigDecl.NestedModule(range = m)
+        | SynModuleSigDecl.Val(range = m)
+        | SynModuleSigDecl.Types(range = m)
+        | SynModuleSigDecl.Exception(range = m)
+        | SynModuleSigDecl.Open(range = m)
+        | SynModuleSigDecl.NamespaceFragment(SynModuleOrNamespaceSig.SynModuleOrNamespaceSig(range = m))
+        | SynModuleSigDecl.HashDirective(range = m) -> m
 
 [<Struct; RequireQualifiedAccess>]
 type SynModuleOrNamespaceKind =
@@ -1608,7 +1608,7 @@ type SynModuleOrNamespace =
 
     member this.Range =
         match this with
-        | SynModuleOrNamespace (range = m) -> m
+        | SynModuleOrNamespace(range = m) -> m
 
 [<NoEquality; NoComparison>]
 type SynModuleOrNamespaceSig =
@@ -1625,7 +1625,7 @@ type SynModuleOrNamespaceSig =
 
     member this.Range =
         match this with
-        | SynModuleOrNamespaceSig (range = m) -> m
+        | SynModuleOrNamespaceSig(range = m) -> m
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedHashDirectiveArgument =
@@ -1634,8 +1634,8 @@ type ParsedHashDirectiveArgument =
 
     member this.Range =
         match this with
-        | ParsedHashDirectiveArgument.String (range = m)
-        | ParsedHashDirectiveArgument.SourceIdentifier (range = m) -> m
+        | ParsedHashDirectiveArgument.String(range = m)
+        | ParsedHashDirectiveArgument.SourceIdentifier(range = m) -> m
 
 [<NoEquality; NoComparison>]
 type ParsedHashDirective = ParsedHashDirective of ident: string * args: ParsedHashDirectiveArgument list * range: range
@@ -1710,26 +1710,26 @@ type ParsedImplFileInput =
         identifiers: Set<string>
 
     member x.QualifiedName =
-        (let (ParsedImplFileInput (qualifiedNameOfFile = qualNameOfFile)) = x in qualNameOfFile)
+        (let (ParsedImplFileInput(qualifiedNameOfFile = qualNameOfFile)) = x in qualNameOfFile)
 
     member x.ScopedPragmas =
-        (let (ParsedImplFileInput (scopedPragmas = scopedPragmas)) = x in scopedPragmas)
+        (let (ParsedImplFileInput(scopedPragmas = scopedPragmas)) = x in scopedPragmas)
 
     member x.HashDirectives =
-        (let (ParsedImplFileInput (hashDirectives = hashDirectives)) = x in hashDirectives)
+        (let (ParsedImplFileInput(hashDirectives = hashDirectives)) = x in hashDirectives)
 
-    member x.FileName = (let (ParsedImplFileInput (fileName = fileName)) = x in fileName)
+    member x.FileName = (let (ParsedImplFileInput(fileName = fileName)) = x in fileName)
 
-    member x.Contents = (let (ParsedImplFileInput (contents = contents)) = x in contents)
+    member x.Contents = (let (ParsedImplFileInput(contents = contents)) = x in contents)
 
-    member x.IsScript = (let (ParsedImplFileInput (isScript = isScript)) = x in isScript)
+    member x.IsScript = (let (ParsedImplFileInput(isScript = isScript)) = x in isScript)
 
     member x.IsLastCompiland =
-        (let (ParsedImplFileInput (flags = (isLastCompiland, _))) = x in isLastCompiland)
+        (let (ParsedImplFileInput(flags = (isLastCompiland, _))) = x in isLastCompiland)
 
-    member x.IsExe = (let (ParsedImplFileInput (flags = (_, isExe))) = x in isExe)
+    member x.IsExe = (let (ParsedImplFileInput(flags = (_, isExe))) = x in isExe)
 
-    member x.Trivia = (let (ParsedImplFileInput (trivia = trivia)) = x in trivia)
+    member x.Trivia = (let (ParsedImplFileInput(trivia = trivia)) = x in trivia)
 
 [<NoEquality; NoComparison>]
 type ParsedSigFileInput =
@@ -1743,19 +1743,19 @@ type ParsedSigFileInput =
         identifiers: Set<string>
 
     member x.QualifiedName =
-        (let (ParsedSigFileInput (qualifiedNameOfFile = qualNameOfFile)) = x in qualNameOfFile)
+        (let (ParsedSigFileInput(qualifiedNameOfFile = qualNameOfFile)) = x in qualNameOfFile)
 
     member x.ScopedPragmas =
-        (let (ParsedSigFileInput (scopedPragmas = scopedPragmas)) = x in scopedPragmas)
+        (let (ParsedSigFileInput(scopedPragmas = scopedPragmas)) = x in scopedPragmas)
 
     member x.HashDirectives =
-        (let (ParsedSigFileInput (hashDirectives = hashDirectives)) = x in hashDirectives)
+        (let (ParsedSigFileInput(hashDirectives = hashDirectives)) = x in hashDirectives)
 
-    member x.FileName = (let (ParsedSigFileInput (fileName = fileName)) = x in fileName)
+    member x.FileName = (let (ParsedSigFileInput(fileName = fileName)) = x in fileName)
 
-    member x.Contents = (let (ParsedSigFileInput (contents = contents)) = x in contents)
+    member x.Contents = (let (ParsedSigFileInput(contents = contents)) = x in contents)
 
-    member x.Trivia = (let (ParsedSigFileInput (trivia = trivia)) = x in trivia)
+    member x.Trivia = (let (ParsedSigFileInput(trivia = trivia)) = x in trivia)
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedInput =
@@ -1780,12 +1780,12 @@ type ParsedInput =
 
     member inp.Range =
         match inp with
-        | ParsedInput.ImplFile (ParsedImplFileInput(contents = SynModuleOrNamespace (range = m) :: _))
-        | ParsedInput.SigFile (ParsedSigFileInput(contents = SynModuleOrNamespaceSig (range = m) :: _)) -> m
+        | ParsedInput.ImplFile(ParsedImplFileInput(contents = SynModuleOrNamespace(range = m) :: _))
+        | ParsedInput.SigFile(ParsedSigFileInput(contents = SynModuleOrNamespaceSig(range = m) :: _)) -> m
         | _ -> rangeN inp.FileName 0
 
     [<Experimental("This FCS API is experimental and subject to change.")>]
     member inp.Identifiers =
         match inp with
-        | ParsedInput.ImplFile (ParsedImplFileInput (identifiers = identifiers))
-        | ParsedInput.SigFile (ParsedSigFileInput (identifiers = identifiers)) -> identifiers
+        | ParsedInput.ImplFile(ParsedImplFileInput(identifiers = identifiers))
+        | ParsedInput.SigFile(ParsedSigFileInput(identifiers = identifiers)) -> identifiers

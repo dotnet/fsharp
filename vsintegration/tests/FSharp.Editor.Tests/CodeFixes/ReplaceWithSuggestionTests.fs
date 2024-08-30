@@ -156,3 +156,37 @@ let song = Song(title = "Under The Milky Way")
     let actual = codeFix |> multiFix code Auto
 
     Assert.Equal(expected, actual)
+
+[<Fact>]
+let ``Fixes FS1129`` () =
+    let code =
+        """
+type SomeType = { TheField : string }
+
+let f x =
+    match x with
+    | { TheField = "A" } -> true
+    | { TheFiedl = "B" } -> true
+    | _ -> false
+"""
+
+    let expected =
+        [
+            {
+                Message = "Replace with 'TheField'"
+                FixedCode =
+                    """
+type SomeType = { TheField : string }
+
+let f x =
+    match x with
+    | { TheField = "A" } -> true
+    | { TheField = "B" } -> true
+    | _ -> false
+"""
+            }
+        ]
+
+    let actual = codeFix |> multiFix code Auto
+
+    Assert.Equal(expected, actual)

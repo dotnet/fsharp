@@ -16,19 +16,19 @@ module XmlDocParsing =
     let (|ConstructorPats|) =
         function
         | SynArgPats.Pats ps -> ps
-        | SynArgPats.NamePatPairs (pats = xs) -> List.map (fun (_, _, pat) -> pat) xs
+        | SynArgPats.NamePatPairs(pats = xs) -> List.map (fun (_, _, pat) -> pat) xs
 
     let rec digNamesFrom pat =
         match pat with
-        | SynPat.As (_, SynPat.Named (SynIdent (id, _), _isTheThisVar, _access, _range), _)
-        | SynPat.Named (SynIdent (id, _), _isTheThisVar, _access, _range) -> [ id.idText ]
-        | SynPat.Typed (pat, _type, _range) -> digNamesFrom pat
-        | SynPat.Attrib (pat, _attrs, _range) -> digNamesFrom pat
+        | SynPat.As(_, SynPat.Named(SynIdent(id, _), _isTheThisVar, _access, _range), _)
+        | SynPat.Named(SynIdent(id, _), _isTheThisVar, _access, _range) -> [ id.idText ]
+        | SynPat.Typed(pat, _type, _range) -> digNamesFrom pat
+        | SynPat.Attrib(pat, _attrs, _range) -> digNamesFrom pat
         | SynPat.LongIdent(argPats = ConstructorPats pats) -> pats |> List.collect digNamesFrom
-        | SynPat.ListCons (p1, p2, _, _) -> List.collect digNamesFrom [ p1; p2 ]
-        | SynPat.Tuple (elementPats = pats) -> pats |> List.collect digNamesFrom
-        | SynPat.Paren (pat, _range) -> digNamesFrom pat
-        | SynPat.OptionalVal (id, _) -> [ id.idText ]
+        | SynPat.ListCons(p1, p2, _, _) -> List.collect digNamesFrom [ p1; p2 ]
+        | SynPat.Tuple(elementPats = pats) -> pats |> List.collect digNamesFrom
+        | SynPat.Paren(pat, _range) -> digNamesFrom pat
+        | SynPat.OptionalVal(id, _) -> [ id.idText ]
         | SynPat.As _ // no one uses as in fun decls
         | SynPat.Or _ // no one uses ors in fun decls
         | SynPat.Ands _ // no one uses ands in fun decls
@@ -43,14 +43,14 @@ module XmlDocParsing =
         | SynPat.FromParseError _ -> []
 
     let getParamNames binding =
-        let (SynBinding (valData = synValData; headPat = synPat)) = binding
+        let (SynBinding(valData = synValData; headPat = synPat)) = binding
 
         match synValData with
-        | SynValData(valInfo = SynValInfo (curriedArgInfos = curriedArgs)) when not curriedArgs.IsEmpty ->
+        | SynValData(valInfo = SynValInfo(curriedArgInfos = curriedArgs)) when not curriedArgs.IsEmpty ->
             let parameters =
                 [
                     for args in curriedArgs do
-                        for (SynArgInfo (ident = ident)) in args do
+                        for (SynArgInfo(ident = ident)) in args do
                             match ident with
                             | Some ident -> ident.idText
                             | None -> ()
@@ -79,17 +79,17 @@ module XmlDocParsing =
         let rec getXmlDocablesSynModuleDecl decl =
             [
                 match decl with
-                | SynModuleDecl.NestedModule (decls = decls) ->
+                | SynModuleDecl.NestedModule(decls = decls) ->
                     for decl in decls do
                         yield! getXmlDocablesSynModuleDecl decl
-                | SynModuleDecl.Let (_, synBindingList, range) ->
+                | SynModuleDecl.Let(_, synBindingList, range) ->
                     let anyXmlDoc =
                         synBindingList
-                        |> List.exists (fun (SynBinding (xmlDoc = preXmlDoc)) -> not (isEmptyXmlDoc preXmlDoc))
+                        |> List.exists (fun (SynBinding(xmlDoc = preXmlDoc)) -> not (isEmptyXmlDoc preXmlDoc))
 
                     if not anyXmlDoc then
                         let synAttributes =
-                            synBindingList |> List.collect (fun (SynBinding (attributes = a)) -> a)
+                            synBindingList |> List.collect (fun (SynBinding(attributes = a)) -> a)
 
                         let fullRange = synAttributes |> List.fold (fun r a -> unionRanges r a.Range) range
                         let line = fullRange.StartLine
@@ -102,10 +102,10 @@ module XmlDocParsing =
                             ]
 
                         yield XmlDocable(line, indent, paramNames)
-                | SynModuleDecl.Types (typeDefns, _) ->
+                | SynModuleDecl.Types(typeDefns, _) ->
                     for typeDefn in typeDefns do
                         yield! getXmlDocablesSynTypeDefn typeDefn
-                | SynModuleDecl.NamespaceFragment (synModuleOrNamespace) -> yield! getXmlDocablesSynModuleOrNamespace synModuleOrNamespace
+                | SynModuleDecl.NamespaceFragment(synModuleOrNamespace) -> yield! getXmlDocablesSynModuleOrNamespace synModuleOrNamespace
                 | SynModuleDecl.ModuleAbbrev _
                 | SynModuleDecl.Expr _
                 | SynModuleDecl.Exception _
@@ -115,19 +115,19 @@ module XmlDocParsing =
             ]
 
         and getXmlDocablesSynModuleOrNamespace inp =
-            let (SynModuleOrNamespace (decls = decls)) = inp
+            let (SynModuleOrNamespace(decls = decls)) = inp
             decls |> List.collect getXmlDocablesSynModuleDecl
 
         and getXmlDocablesSynTypeDefn typeDefn =
-            let (SynTypeDefn (typeInfo = typeInfo; typeRepr = synTypeDefnRepr; members = synMemberDefns; range = tRange)) =
+            let (SynTypeDefn(typeInfo = typeInfo; typeRepr = synTypeDefnRepr; members = synMemberDefns; range = tRange)) =
                 typeDefn
 
-            let (SynComponentInfo (attributes = synAttributes; xmlDoc = preXmlDoc; range = compRange)) =
+            let (SynComponentInfo(attributes = synAttributes; xmlDoc = preXmlDoc; range = compRange)) =
                 typeInfo
 
             [
                 match synTypeDefnRepr with
-                | SynTypeDefnRepr.ObjectModel (_, extraMemberDefns, _) ->
+                | SynTypeDefnRepr.ObjectModel(_, extraMemberDefns, _) ->
                     for extraMemberDefn in extraMemberDefns do
                         yield! getXmlDocablesSynMemberDefn extraMemberDefn
                 | SynTypeDefnRepr.Simple _ -> ()
@@ -148,8 +148,8 @@ module XmlDocParsing =
         and getXmlDocablesSynMemberDefn inp =
             [
                 match inp with
-                | SynMemberDefn.Member (memberBinding, memRange) ->
-                    let (SynBinding (attributes = synAttributes; xmlDoc = preXmlDoc; headPat = synPat)) =
+                | SynMemberDefn.Member(memberBinding, memRange) ->
+                    let (SynBinding(attributes = synAttributes; xmlDoc = preXmlDoc; headPat = synPat)) =
                         memberBinding
 
                     if isEmptyXmlDoc preXmlDoc then
@@ -161,7 +161,7 @@ module XmlDocParsing =
                         let paramNames = digNamesFrom synPat
                         XmlDocable(line, indent, paramNames)
 
-                | SynMemberDefn.GetSetMember (getBinding, setBinding, m, _) ->
+                | SynMemberDefn.GetSetMember(getBinding, setBinding, m, _) ->
                     yield!
                         getBinding
                         |> Option.map (fun b -> SynMemberDefn.Member(b, m))
@@ -174,8 +174,8 @@ module XmlDocParsing =
                         |> Option.toList
                         |> List.collect getXmlDocablesSynMemberDefn
 
-                | SynMemberDefn.AbstractSlot (slotSig = valSig; range = range) ->
-                    let (SynValSig (attributes = synAttributes; arity = synValInfo; xmlDoc = preXmlDoc)) =
+                | SynMemberDefn.AbstractSlot(slotSig = valSig; range = range) ->
+                    let (SynValSig(attributes = synAttributes; arity = synValInfo; xmlDoc = preXmlDoc)) =
                         valSig
 
                     if isEmptyXmlDoc preXmlDoc then
@@ -185,16 +185,16 @@ module XmlDocParsing =
                         let paramNames = synValInfo.ArgNames
                         XmlDocable(line, indent, paramNames)
 
-                | SynMemberDefn.Interface (members = synMemberDefnsOption) ->
+                | SynMemberDefn.Interface(members = synMemberDefnsOption) ->
                     match synMemberDefnsOption with
                     | None -> ()
-                    | Some (xs) ->
+                    | Some(xs) ->
                         for x in xs do
                             yield! getXmlDocablesSynMemberDefn x
 
-                | SynMemberDefn.NestedType (synTypeDefn, _, _) -> yield! getXmlDocablesSynTypeDefn synTypeDefn
+                | SynMemberDefn.NestedType(synTypeDefn, _, _) -> yield! getXmlDocablesSynTypeDefn synTypeDefn
 
-                | SynMemberDefn.AutoProperty (attributes = synAttributes; range = range) ->
+                | SynMemberDefn.AutoProperty(attributes = synAttributes; range = range) ->
                     let fullRange = synAttributes |> List.fold (fun r a -> unionRanges r a.Range) range
                     let line = fullRange.StartLine
                     let indent = indentOf line

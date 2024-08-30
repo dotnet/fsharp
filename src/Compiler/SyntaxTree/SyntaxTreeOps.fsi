@@ -292,8 +292,6 @@ val mkSynBinding:
         trivia: SynBindingTrivia ->
             SynBinding
 
-val updatePropertyIdentInSynBinding: propertyIdent: Ident -> SynBinding -> SynBinding
-
 val NonVirtualMemberFlags: k: SynMemberKind -> SynMemberFlags
 
 val CtorMemberFlags: SynMemberFlags
