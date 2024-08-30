@@ -343,6 +343,11 @@ type TypeInstCtx =
     | TyparInst of parent:TyconRef
     | TopLevelAllowingByRef
 
+    with member x.TyparAllowsRefStruct() =
+                        match x with
+                        | IlGenericInst(_,ilTypar) -> ilTypar.HasAllowsRefStruct
+                        | _ -> false
+
 let rec CheckTypeDeep (cenv: cenv) (visitTy, visitTyconRefOpt, visitAppTyOpt, visitTraitSolutionOpt, visitTyparOpt as f) (g: TcGlobals) env (typeInstParentOpt:TypeInstCtx) ty =
     // We iterate the _solved_ constraints as well, to pick up any record of trait constraint solutions
     // This means we walk _all_ the constraints _everywhere_ in a type, including
@@ -456,11 +461,11 @@ and CheckTraitInfoDeep cenv (_, _, _, visitTraitSolutionOpt, _ as f) g env trait
 
 /// Check for byref-like types
 let CheckForByrefLikeType cenv env m ty check =
-    CheckTypeDeep cenv (ignore, Some (fun _typeInstParent tcref -> if isByrefLikeTyconRef cenv.g m tcref then check()),  None, None, None) cenv.g env NoInfo ty
+    CheckTypeDeep cenv (ignore, Some (fun ctx tcref -> if (isByrefLikeTyconRef cenv.g m tcref && not(ctx.TyparAllowsRefStruct())) then check()),  None, None, None) cenv.g env NoInfo ty
 
 /// Check for byref types
 let CheckForByrefType cenv env ty check =
-    CheckTypeDeep cenv (ignore, Some (fun _typeInstParent tcref -> if isByrefTyconRef cenv.g tcref then check()),  None, None, None) cenv.g env NoInfo ty
+    CheckTypeDeep cenv (ignore, Some (fun _ctx tcref -> if isByrefTyconRef cenv.g tcref then check()),  None, None, None) cenv.g env NoInfo ty
 
 /// check captures under lambdas
 ///
@@ -653,9 +658,8 @@ let CheckTypeAux permitByRefLike (cenv: cenv) env m ty onInnerByrefError =
             let isInnerByRefLike() = checkInner() && isByrefLikeTyconRef cenv.g m tcref
 
             let permitByRefLike =
-                match ctx with
-                | IlGenericInst(_,ilTypar) when ilTypar.HasAllowsRefStruct -> PermitByRefType.All
-                | _ -> permitByRefLike
+                if ctx.TyparAllowsRefStruct() then PermitByRefType.All else permitByRefLike
+
 
             match permitByRefLike with
             | PermitByRefType.None when isByrefLikeTyconRef cenv.g m tcref ->

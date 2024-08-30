@@ -151,6 +151,43 @@ let main _args =
         |> typecheck
         |> shouldSucceed
 
+    [<Xunit.InlineData("task",".Result")>]
+    [<Xunit.InlineData("async"," |> Async.RunSynchronously")>]
+    [<TheoryForNETCOREAPP>]
+    let ``Ref structs in generics - builders`` (build:string) (getter:string) =
+        
+        FSharp $$$"""module Foo
+open System
+
+let getAction() =        
+    {{{build}}} {
+        let x = new Action<ReadOnlySpan<int>>(fun ros -> printfn "%i" ros.Length)
+        return x
+    }
+
+let getBuilderResult() = 
+    {{{build}}} {
+        let! myAction = getAction()
+        myAction.Invoke(ReadOnlySpan([|1|]))
+        return myAction
+    }
+
+[<EntryPoint>]
+let main _args = 
+    let myTask = getBuilderResult(){{{getter}}}
+    printfn "%O" myTask
+    0
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+        |> verifyOutputContains [|"1";"System.Action`1[System.ReadOnlySpan`1[System.Int32]]"|]
+        |> verifyIL  
+               [ if build = "task" then 
+                    "valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<class [runtime]System.Action`1<valuetype [runtime]System.ReadOnlySpan`1<int32>>>>"
+                 else "[FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [runtime]System.Action`1<valuetype [runtime]System.ReadOnlySpan`1<int32>>>>" ]
+
     [<FactForNETCOREAPP>]
     let ``Ref structs in generics - negative tests`` () =
         FSharp """module Foo
