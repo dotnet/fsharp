@@ -723,7 +723,7 @@ let ignoredChars = [| '.'; '?' |]
 // where certain operator tokens are accepted in infix forms, i.e. <expr> <op> <expr>.
 // The lexer defines the strings that lead to those tokens.
 //------
-// This function recognises these "infix operator" names.
+// This function recognizes these "infix operator" names.
 let IsLogicalInfixOpName logicalName =
     let s = ConvertValLogicalNameToDisplayNameCore logicalName
     let skipIgnoredChars = s.TrimStart(ignoredChars)

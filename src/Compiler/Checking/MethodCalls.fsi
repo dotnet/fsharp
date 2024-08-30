@@ -481,7 +481,7 @@ exception FieldNotMutable of TypedTreeOps.DisplayEnv * RecdFieldRef * range
 
 val CheckRecdFieldMutation: m: range -> denv: TypedTreeOps.DisplayEnv -> rfinfo: RecdFieldInfo -> unit
 
-/// Generate a witness for the given (solved) constraint.  Five possiblilities are taken
+/// Generate a witness for the given (solved) constraint.  Five possibilities are taken
 /// into account.
 ///   1. The constraint is solved by a .NET-declared method or an F#-declared method
 ///   2. The constraint is solved by an F# record field

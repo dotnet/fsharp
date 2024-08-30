@@ -245,7 +245,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             this.buildResult = buildResult;
             this.projectInstance = projectInstance;
-            Debug.Assert(!this.IsSuccessful || this.ProjectInstance != null, "All successfull build results should have project istances");
+            Debug.Assert(!this.IsSuccessful || this.ProjectInstance != null, "All successful build results should have project instances");
         }
         public BuildResult(BuildSubmission submission, ProjectInstance projectInstance) :
                 this(submission.BuildResult.OverallResult == BuildResultCode.Success ? MSBuildResult.Successful : MSBuildResult.Failed, projectInstance)
@@ -636,7 +636,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// This is the project instance guid that is peristed in the project file
+        /// This is the project instance guid that is persisted in the project file
         /// </summary>
         [System.ComponentModel.BrowsableAttribute(false)]
         [SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "ID")]
@@ -766,7 +766,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// The target name that will be used for evaluating the project file (i.e., pseudo-builds).
         /// This target is used to trigger a build with when the project system changes. 
-        /// Example: The language projrcts are triggering a build with the Compile target whenever 
+        /// Example: The language projects are triggering a build with the Compile target whenever 
         /// the project system changes.
         /// </summary>
         [SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "ReEvaluate")]
@@ -987,7 +987,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
 
         /// <summary>
-        /// Gets or set the relative path to the folder containing the project ouput. 
+        /// Gets or set the relative path to the folder containing the project output. 
         /// </summary>
         public virtual string OutputBaseRelativePath
         {
@@ -1778,7 +1778,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "dlg")]
         public virtual VSADDRESULT RunWizard(HierarchyNode parentNode, string itemName, string wizardToRun, IntPtr dlgOwner)
         {
-            Debug.Assert(!String.IsNullOrEmpty(itemName), "The Add item dialog was passing in a null or empty item to be added to the hierrachy.");
+            Debug.Assert(!String.IsNullOrEmpty(itemName), "The Add item dialog was passing in a null or empty item to be added to the hierarchy.");
             Debug.Assert(!String.IsNullOrEmpty(this.ProjectFolder), "The Project Folder is not specified for this project.");
 
             // We just validate for length, since we assume other validation has been performed by the dlgOwner.
@@ -1969,9 +1969,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
 
                     // Compute the file name
-                    // We try to solve two problems here. When input comes from a wizzard in case of zipped based projects 
+                    // We try to solve two problems here. When input comes from a wizard in case of zipped based projects 
                     // the parameters are different.
-                    // In that case the filename has the new filename in a temporay path.
+                    // In that case the filename has the new filename in a temporary path.
 
                     // First get the extension from the template.
                     // Then get the filename from the name.
@@ -1980,7 +1980,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
                     string tempName = String.Empty;
 
-                    // We have to be sure that we are not going to loose data here. If the project name is a.b.c then for a project that was based on a zipped template(the wizzard calls us) GetFileNameWithoutExtension will suppress "c".
+                    // We have to be sure that we are not going to loose data here. If the project name is a.b.c then for a project that was based on a zipped template(the wizard calls us) GetFileNameWithoutExtension will suppress "c".
                     // We are going to check if the parameter "name" is extension based and the extension is the same as the one from the "filename" parameter.
                     string tempExtension = Path.GetExtension(name);
                     if (!String.IsNullOrEmpty(tempExtension))
@@ -2668,7 +2668,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="path">full path to the subfolder we want to verify.</param>
         /// <param name="parent">the parent node where to add the subfolder if it does not exist.</param>
-        /// <returns>the foldernode correcsponding to the path.</returns>
+        /// <returns>the foldernode corresponding to the path.</returns>
         [SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "SubFolder")]
         public virtual FolderNode VerifySubFolderExists(string path, HierarchyNode parent)
         {
@@ -2738,19 +2738,19 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             try
             {
                 // Get the current project hierarchy, project item, and selection container for the current selection
-                // If the selection spans multiple hierachies, hierarchyPtr is Zero
+                // If the selection spans multiple hierarchies, hierarchyPtr is Zero
                 uint itemid;
                 IVsMultiItemSelect multiItemSelect = null;
                 ErrorHandler.ThrowOnFailure(monitorSelection.GetCurrentSelection(out hierarchyPtr, out itemid, out multiItemSelect, out selectionContainer));
 
-                // We only care if there are one ore more nodes selected in the tree
+                // We only care if there are one or more nodes selected in the tree
                 if (itemid != VSConstants.VSITEMID_NIL && hierarchyPtr != IntPtr.Zero)
                 {
                     IVsHierarchy hierarchy = Marshal.GetObjectForIUnknown(hierarchyPtr) as IVsHierarchy;
 
                     if (itemid != VSConstants.VSITEMID_SELECTION)
                     {
-                        // This is a single selection. Compare hirarchy with our hierarchy and get node from itemid
+                        // This is a single selection. Compare hierarchy with our hierarchy and get node from itemid
                         if (Utilities.IsSameComObject(this, hierarchy))
                         {
                             HierarchyNode node = this.NodeFromItemId(itemid);
@@ -2773,7 +2773,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         // Now loop all selected items and add to the list only those that are selected within this hierarchy
                         if (!isSingleHierarchy || (isSingleHierarchy && Utilities.IsSameComObject(this, hierarchy)))
                         {
-                            Debug.Assert(numberOfSelectedItems > 0, "Bad number of selected itemd");
+                            Debug.Assert(numberOfSelectedItems > 0, "Bad number of selected items");
                             VSITEMSELECTION[] vsItemSelections = new VSITEMSELECTION[numberOfSelectedItems];
                             uint flags = (isSingleHierarchy) ? (uint)__VSGSIFLAGS.GSI_fOmitHierPtrs : 0;
                             ErrorHandler.ThrowOnFailure(multiItemSelect.GetSelectedItems(flags, numberOfSelectedItems, vsItemSelections));
@@ -2808,7 +2808,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Recursevily walks the hierarchy nodes and redraws the state icons
+        /// Recursively walks the hierarchy nodes and redraws the state icons
         /// </summary>
         public override void UpdateSccStateIcons()
         {
@@ -3014,7 +3014,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 // Create the logger
                 buildLogger = new IDEBuildLogger(output, this.InteropSafeIVsHierarchy, errorReporter);
 
-                // To retrive the verbosity level, the build logger depends on the registry root 
+                // To retrieve the verbosity level, the build logger depends on the registry root 
                 // (otherwise it will used an hardcoded default)
                 ILocalRegistry2 registry = this.GetService(typeof(SLocalRegistry)) as ILocalRegistry2;
                 if (null != registry)
@@ -3164,7 +3164,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             else 
             {
-                // Ensure that we have traimnling backslash as this is done for the langproj macros too.
+                // Ensure that we have trailing backslash as this is done for the langproj macros too.
                 if (installDir[installDir.Length - 1] != Path.DirectorySeparatorChar)
                 {
                     installDir += Path.DirectorySeparatorChar;
@@ -3617,9 +3617,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Determines whether an item can be owerwritten in the hierarchy.
+        /// Determines whether an item can be overwritten in the hierarchy.
         /// </summary>
-        /// <param name="originalFileName">The orginal filname.</param>
+        /// <param name="originalFileName">The original filename.</param>
         /// <param name="computedNewFileName">The computed new file name, that will be copied to the project directory or into the folder .</param>
         /// <returns>S_OK for success, or an error message</returns>
         public virtual int CanOverwriteExistingItem(string originalFileName, string computedNewFileName)
@@ -3664,7 +3664,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Handle owerwriting of an existing item in the hierarchy.
+        /// Handle overwriting of an existing item in the hierarchy.
         /// </summary>
         /// <param name="existingNode">The node that exists.</param>
         public virtual void OverwriteExistingItem(HierarchyNode existingNode)
@@ -3701,7 +3701,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Defines whther the current mode of the project is in a supress command mode.
+        /// Defines whether the current mode of the project is in a suppress command mode.
         /// </summary>
         /// <returns></returns>
         public virtual bool IsCurrentStateASuppressCommandsMode()
@@ -3847,7 +3847,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 container = referencesFolder;
             }
 
-            // Load the referernces.
+            // Load the references.
             container.LoadReferencesFromBuildProject(buildProject);
         }
         /// <summary>
@@ -3916,7 +3916,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     continue;
 
                 // If the item is already contained do nothing.
-                // TODO: possibly report in the error list that the the item is already contained in the project file similar to Language projects.
+                // TODO: possibly report in the error list that the item is already contained in the project file similar to Language projects.
                 if (items.ContainsKey(MSBuildItem.GetEvaluatedInclude(item).ToUpperInvariant()))
                     continue;
 
@@ -3964,14 +3964,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="eventArgs">The event args</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2109:ReviewVisibleEventHandlers",
             Justification = "This method will give the opportunity to update global properties based on active configuration change. " +
-            "There is no security threat that could otherwise not be reached by listening to configuration chnage events.")]
+            "There is no security threat that could otherwise not be reached by listening to configuration change events.")]
         internal virtual void OnHandleConfigurationRelatedGlobalProperties(object sender, ActiveConfigurationChangedEventArgs eventArgs)
         {
             Debug.Assert(eventArgs != null, "Wrong hierarchy passed as event arg for the configuration change listener.");
 
             // If (eventArgs.Hierarchy == NULL) then we received this event because the solution configuration
             // was changed.
-            // If it is not null we got the event because a project in teh configuration manager has changed its active configuration.
+            // If it is not null we got the event because a project in the configuration manager has changed its active configuration.
             // We care only about our project in the default implementation.
             if (eventArgs.Hierarchy == null || !Utilities.IsSameComObject(eventArgs.Hierarchy, this))
             {
@@ -4271,7 +4271,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 IVsQueryEditQuerySave2 queryEditQuerySave = this.GetService(typeof(SVsQueryEditQuerySave)) as IVsQueryEditQuerySave2;
                 if (queryEditQuerySave != null)
-                {   // Project path dependends on server/client project
+                {   // Project path depends on server/client project
                     string path = this.filename;
 
                     tagVSQueryEditFlags qef = tagVSQueryEditFlags.QEF_AllowInMemoryEdits;
@@ -4294,7 +4294,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                                     1, // 1 file
                                     files, // array of files
                                     flags, // no per file flags
-                                    attributes, // no per file file attributes
+                                    attributes, // no per file attributes
                                     out verdict,
                                     out moreInfo /* ignore additional results */);
 
@@ -4319,7 +4319,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Given a node determines what is the directory that can accept files.
-        /// If the node is a FoldeNode than it is the Url of the Folder.
+        /// If the node is a FolderNode than it is the Url of the Folder.
         /// If the node is a ProjectNode it is the project folder.
         /// Otherwise (such as FileNode subitem) it delegate the resolution to the parent node.
         /// </summary>
@@ -4611,7 +4611,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public virtual int GetCfgProvider(out IVsCfgProvider p)
         {
             CCITracing.TraceCall();
-            // Be sure to call the property here since that is doing a polymorhic ProjectConfig creation.
+            // Be sure to call the property here since that is doing a polymorphic ProjectConfig creation.
             p = this.ConfigProvider;
             return (p == null ? VSConstants.E_NOTIMPL : VSConstants.S_OK);
         }
@@ -4833,7 +4833,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="logicalView"></param>
         /// <param name="result"></param>
         /// <returns>S_OK if it succeeds </returns>
-        /// <remarks>The result array is initalized to failure.</remarks>
+        /// <remarks>The result array is initialized to failure.</remarks>
         public virtual int AddItemWithSpecific(uint itemIdLoc, VSADDITEMOPERATION op, string itemName, uint filesToOpen, string[] files, IntPtr dlgOwner, uint editorFlags, ref Guid editorType, string physicalView, ref Guid logicalView, VSADDRESULT[] result)
         {
             // When Adding an item, pass true to let AddItemWithSpecific know to fire the tracker events.
@@ -4860,14 +4860,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             } 
         }
 
-        internal int AddItemWithSpecific(uint itemIdLoc, VSADDITEMOPERATION op, string itemName, uint filesToOpen, string[] files, IntPtr dlgOwner, uint editorFlags, ref Guid editorType, string physicalView, ref Guid logicalView, VSADDRESULT[] result, bool bTrackChanges, Func<uint> getIdOfExisingItem = null, AddItemContext context = AddItemContext.Unknown)
+        internal int AddItemWithSpecific(uint itemIdLoc, VSADDITEMOPERATION op, string itemName, uint filesToOpen, string[] files, IntPtr dlgOwner, uint editorFlags, ref Guid editorType, string physicalView, ref Guid logicalView, VSADDRESULT[] result, bool bTrackChanges, Func<uint> getIdOfExistingItem = null, AddItemContext context = AddItemContext.Unknown)
         {
             if (files == null || result == null || files.Length == 0 || result.Length == 0)
             {
                 return VSConstants.E_INVALIDARG;
             }
 
-            if (getIdOfExisingItem != null && files.Length != 1)
+            if (getIdOfExistingItem != null && files.Length != 1)
             {
                 // only 1 file can participate in renaming
                 return VSConstants.E_INVALIDARG;
@@ -5025,7 +5025,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
                     // Copy the file to the correct location.
                     // We will suppress the file change events to be triggered to this item, since we are going to copy over the existing file and thus we will trigger a file change event. 
-                    // We do not want the filechange event to ocur in this case, similar that we do not want a file change event to occur when saving a file.
+                    // We do not want the filechange event to occur in this case, similar that we do not want a file change event to occur when saving a file.
                     IVsFileChangeEx fileChange = this.site.GetService(typeof(SVsFileChangeEx)) as IVsFileChangeEx;
                     if (fileChange == null)
                     {
@@ -5056,12 +5056,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
                 else
                 {
-                    if (getIdOfExisingItem != null)
+                    if (getIdOfExistingItem != null)
                     {
                         // this is rename operation
                         //Add new filenode/dependentfilenode
-                        var exisingId = getIdOfExisingItem();
-                        this.AddNewFileNodeToHierarchyCore(n, newFileName, exisingId);
+                        var existingId = getIdOfExistingItem();
+                        this.AddNewFileNodeToHierarchyCore(n, newFileName, existingId);
                     }
                     else
                     {
@@ -5546,7 +5546,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="pResult">Result to be returned to the caller</param>
         public virtual int AddComponent(VSADDCOMPOPERATION dwAddCompOperation, uint cComponents, System.IntPtr[] rgpcsdComponents, System.IntPtr hwndDialog, VSADDCOMPRESULT[] pResult)
         {
-            //initalize the out parameter
+            //initialize the out parameter
             pResult[0] = VSADDCOMPRESULT.ADDCOMPRESULT_Success;
 
             IReferenceContainer references = GetReferenceContainer();
@@ -5563,7 +5563,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 selectorData = (VSCOMPONENTSELECTORDATA)Marshal.PtrToStructure(ptr, typeof(VSCOMPONENTSELECTORDATA));
                 if (null == references.AddReferenceFromSelectorData(selectorData))
                 {
-                    //Skip further proccessing since a reference has to be added
+                    //Skip further processing since a reference has to be added
                     pResult[0] = VSADDCOMPRESULT.ADDCOMPRESULT_Failure;
                     return VSConstants.S_OK;
                 }
@@ -5673,7 +5673,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <returns>If the method succeeds, it returns S_OK. If it fails, it returns an error code. </returns>
         public virtual int SccGlyphChanged(int affectedNodes, uint[] itemidAffectedNodes, VsStateIcon[] newGlyphs, uint[] newSccStatus)
         {
-            // if all the paramaters are null adn the count is 0, it means scc wants us to updated everything
+            // if all the parameters are null adn the count is 0, it means scc wants us to updated everything
             if (affectedNodes == 0 && itemidAffectedNodes == null && newGlyphs == null && newSccStatus == null)
             {
                 this.ReDraw(UIHierarchyElement.SccState);
@@ -6328,7 +6328,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Recusively parses the tree and closes all nodes, including "node".
+        /// Recursively parses the tree and closes all nodes, including "node".
         /// </summary>
         /// <param name="node">The subtree to close.</param>
         private static void CloseAllNodes(HierarchyNode node)
@@ -6341,7 +6341,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             node.Close();
         }
         /// <summary>
-        /// Recusively parses the tree and closes all nodes below "node", but don't close "node".
+        /// Recursively parses the tree and closes all nodes below "node", but don't close "node".
         /// </summary>
         /// <param name="node">The subtree to close.</param>
         private static void CloseAllSubNodes(HierarchyNode node)

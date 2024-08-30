@@ -20,7 +20,7 @@ type internal PrimaryAssembly =
     member Name: string
 
     /// Checks if an assembly resolution may represent a primary assembly that actually contains the
-    /// definition of Sytem.Object.  Note that the chosen target primary assembly may not actually be the one
+    /// definition of System.Object.  Note that the chosen target primary assembly may not actually be the one
     /// that contains the definition of System.Object - it is just the one we are choosing to emit for.
     static member IsPossiblePrimaryAssembly: fileName: string -> bool
 

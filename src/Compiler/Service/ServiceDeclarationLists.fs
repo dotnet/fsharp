@@ -841,7 +841,7 @@ module internal DescriptionListsImpl =
         | Item.DelegateCtor delTy -> 
             let (SigOfFunctionForDelegate(_, _, _, delFuncTy)) = GetSigOfFunctionForDelegate infoReader delTy m AccessibleFromSomewhere
 
-            // No need to pass more generic type information in here since the instanitations have already been applied
+            // No need to pass more generic type information in here since the instantiations have already been applied
             let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInstantiation [ParamData(false, false, false, NotOptional, NoCallerInfo, None, ReflectedArgInfo.None, delFuncTy)] delTy
 
             // FUTURE: prettyTyparInst is the pretty version of the known instantiations of type parameters in the output. It could be returned
@@ -1313,15 +1313,15 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
         unsortedMethods 
         // Methods with zero arguments show up here as taking a single argument of type 'unit'.  Patch them now to appear as having zero arguments.
         |> Array.map (fun meth -> 
-            let parms = meth.Parameters
-            if parms.Length = 1 && parms[0].CanonicalTypeTextForSorting="Microsoft.FSharp.Core.Unit" then 
+            let params_ = meth.Parameters
+            if params_.Length = 1 && params_[0].CanonicalTypeTextForSorting="Microsoft.FSharp.Core.Unit" then 
                 MethodGroupItem(meth.Description, meth.XmlDoc, meth.ReturnTypeText, [||], true, meth.HasParamArrayArg, meth.StaticParameters) 
             else 
                 meth)
         // Fix the order of methods, to be stable for unit testing.
         |> Array.sortBy (fun meth -> 
-            let parms = meth.Parameters
-            parms.Length, (parms |> Array.map (fun p -> p.CanonicalTypeTextForSorting)))
+            let params_ = meth.Parameters
+            params_.Length, (params_ |> Array.map (fun p -> p.CanonicalTypeTextForSorting)))
 
     member _.MethodName = name
 

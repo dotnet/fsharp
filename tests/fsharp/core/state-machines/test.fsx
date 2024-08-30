@@ -63,7 +63,7 @@ module ``Check resumable code can capture variables`` =
     check "vwervwkhevh" (makeStateMachine 3) 4
 
 
-module ``Check resumable code may be preceeded by value definitions`` =
+module ``Check resumable code may be preceded by value definitions`` =
     let makeStateMachine x = 
         let rnd = System.Random().Next(4)
         __stateMachine<int, int>
@@ -91,7 +91,7 @@ module ``Check resumable code may contain local function definitions`` =
             (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
     check "vewwevbrklbre" (makeStateMachine 3) 8
 
-module ``Check resumable code may be preceeded by function definitions`` =
+module ``Check resumable code may be preceded by function definitions`` =
     let makeStateMachine y = 
         let someFunction1 x = x + 1
         let someFunction2 x = someFunction1 x + 2

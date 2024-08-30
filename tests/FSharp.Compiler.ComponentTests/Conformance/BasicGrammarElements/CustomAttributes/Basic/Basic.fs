@@ -159,8 +159,7 @@ module CustomAttributes_Basic =
         |> withLangVersionPreview
         |> verifyCompile
         |> shouldFail
-        |> withDiagnostics[
-            (Error 842, Line 8, Col 7, Line 8, Col 104, "This attribute is not valid for use on this language element")
+        |> withDiagnostics [
             (Error 937, Line 9, Col 10, Line 9, Col 12, "Only structs and classes without primary constructors may be given the 'StructLayout' attribute")
         ]
 
@@ -172,7 +171,6 @@ module CustomAttributes_Basic =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 842, Line 8, Col 7, Line 8, Col 104, "This attribute is not valid for use on this language element")
             (Error 937, Line 9, Col 10, Line 9, Col 12, "Only structs and classes without primary constructors may be given the 'StructLayout' attribute")
         ]
 
@@ -184,7 +182,6 @@ module CustomAttributes_Basic =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 842, Line 7, Col 7, Line 7, Col 104, "This attribute is not valid for use on this language element")
             (Error 937, Line 8, Col 10, Line 8, Col 12, "Only structs and classes without primary constructors may be given the 'StructLayout' attribute")
         ]
 

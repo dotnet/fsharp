@@ -13,7 +13,7 @@ Fixes # (issue, if applicable)
     >
     > Release notes files:
     > - If anything under `src/Compiler` has been changed, please make sure to make an entry in `docs/release-notes/.FSharp.Compiler.Service/<version>.md`, where `<version>` is usually "highest" one, e.g. `42.8.200`
-    > - If language feature was added (i.e. `LanguageFeatures.fsi` was changed), please add it to `docs/releae-notes/.Language/preview.md`
+    > - If language feature was added (i.e. `LanguageFeatures.fsi` was changed), please add it to `docs/release-notes/.Language/preview.md`
     > - If a change to `FSharp.Core` was made, please make sure to edit `docs/release-notes/.FSharp.Core/<version>.md` where version is "highest" one, e.g. `8.0.200`.
 
     > Information about the release notes entries format can be found in the [documentation](https://fsharp.github.io/fsharp-compiler-docs/release-notes/About.html).

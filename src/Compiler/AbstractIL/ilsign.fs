@@ -144,7 +144,7 @@ type BlobReader =
         x._offset <- x._offset + length
         arr |> Array.rev
 
-let RSAParamatersFromBlob blob keyType =
+let RSAParametersFromBlob blob keyType =
     let mutable reader = BlobReader blob
 
     if reader.ReadInt32() <> 0x00000207 && keyType = KeyType.KeyPair then
@@ -263,7 +263,7 @@ let toCLRKeyBlob (rsaParameters: RSAParameters) (algId: int) : byte array =
 
 let createSignature (hash: byte array) keyBlob keyType =
     use rsa = RSA.Create()
-    rsa.ImportParameters(RSAParamatersFromBlob keyBlob keyType)
+    rsa.ImportParameters(RSAParametersFromBlob keyBlob keyType)
 
     let signature =
         rsa.SignHash(hash, HashAlgorithmName.SHA1, RSASignaturePadding.Pkcs1)
@@ -320,7 +320,7 @@ let signatureSize (pk: byte array) =
 // Returns a CLR Format Blob public key
 let getPublicKeyForKeyPair keyBlob =
     use rsa = RSA.Create()
-    rsa.ImportParameters(RSAParamatersFromBlob keyBlob KeyType.KeyPair)
+    rsa.ImportParameters(RSAParametersFromBlob keyBlob KeyType.KeyPair)
     let rsaParameters = rsa.ExportParameters false
     toCLRKeyBlob rsaParameters CALG_RSA_KEYX
 

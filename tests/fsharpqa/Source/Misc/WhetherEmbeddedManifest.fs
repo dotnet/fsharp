@@ -5,7 +5,7 @@
 
 open System.Reflection
 let thisExe = System.Reflection.Assembly.GetExecutingAssembly()
-let foo= thisExe.GetManifestResourceInfo("FSharpSignatureCompressedData.WhetherEmbededManifest")
+let foo= thisExe.GetManifestResourceInfo("FSharpSignatureCompressedData.WhetherEmbeddedManifest")
 if foo = null 
     then exit 1
     else exit 0

@@ -31,5 +31,5 @@ exception DDD of V1 : int
     with
     member this.Data0 = ""
 
-// Message field name should not conflict with base System.Exeption.Message member
+// Message field name should not conflict with base System.Exception.Message member
 exception EEE of Message : int

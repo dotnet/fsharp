@@ -15,7 +15,7 @@
     <Message Importance="High" Text="Diagnostic TestTarget FoundValueTuplePackages = '@(FoundValueTuplePackages)' " />
 
     <!-- check for invalid test settings -->
-    <Error Condition="'$(ExpectsFSharpCore)' != 'true' and '$(ExpectedFSharpCorePackageVersion)' != ''" Text="A test cannot specify both ExepctsFSharpCore=false and provide a value for ExpectedFSharpCorePackageVersion." />
+    <Error Condition="'$(ExpectsFSharpCore)' != 'true' and '$(ExpectedFSharpCorePackageVersion)' != ''" Text="A test cannot specify both ExpectsFSharpCore=false and provide a value for ExpectedFSharpCorePackageVersion." />
 
     <!-- validate there is only ever 0 or 1 FSharp.Core present -->
     <Error Condition="'$(ExpectsFSharpCore)' == 'true' and @(FoundFSharpCorePackages->Count()) == 0" Text="No FSharp.Core reference found.  Expected version $(ExpectedFSharpCorePackageVersion)." />

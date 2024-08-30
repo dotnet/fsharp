@@ -207,19 +207,19 @@
         <target state="translated">Transparentní kompilátor (experimentální)</target>
         <note />
       </trans-unit>
-      <trans-unit id="TransparentCompiler_Discalimer1">
+      <trans-unit id="TransparentCompiler_Disclaimer1">
         <source>WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</source>
-        <target state="translated">UPOZORNĚNÍ! Transparentní kompilátor zatím nepodporuje všechny funkce a může způsobit chybové ukončení nebo předat nesprávné výsledky.</target>
+        <target state="new">WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</target>
         <note />
       </trans-unit>
-      <trans-unit id="TransparentCompiler_Discalimer2">
+      <trans-unit id="TransparentCompiler_Disclaimer2">
         <source>Use at your own risk!</source>
-        <target state="translated">Používejte na vlastní nebezpečí!</target>
+        <target state="new">Use at your own risk!</target>
         <note />
       </trans-unit>
-      <trans-unit id="TransparentCompiler_Discalimer3">
+      <trans-unit id="TransparentCompiler_Disclaimer3">
         <source>By checking this you also opt-in for additional performance telemetry</source>
-        <target state="translated">Zaškrtnutím tohoto políčka také udělíte výslovný souhlas s další telemetrií výkonu</target>
+        <target state="new">By checking this you also opt-in for additional performance telemetry</target>
         <note />
       </trans-unit>
       <trans-unit id="Transparent_Compiler_Cache_Factor">
