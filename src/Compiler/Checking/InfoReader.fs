@@ -1191,6 +1191,7 @@ let GetXmlDocSigOfUnionCaseRef (ucref: UnionCaseRef) =
         ucref.UnionCase.XmlDocSig <- XmlDocSigOfUnionCase [tcref.CompiledRepresentationForNamedType.FullName; ucref.CaseName]
     Some (ccuFileName, ucref.UnionCase.XmlDocSig)
 
+[<TailCall>]
 let rec GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) = 
     let amap = infoReader.amap
     match minfo with
