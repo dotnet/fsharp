@@ -5603,6 +5603,14 @@ open SomeUsedModuleContainingFunction
 open SomeUsedModuleContainingExtensionMember
 open SomeUsedModuleContainingActivePattern
 open SomeUsedModuleContainingUnion
+open type System.DayOfWeek // Used, should not appear.
+open type System.DateTimeKind // Unused, should appear.
+
+type FSharpEnum1 = X = 1 | Y = (1 <<< 1) | Z = (1 <<< 2)
+type FSharpEnum2 = H = 1 | I = (1 <<< 1) | J = (1 <<< 2)
+
+open type FSharpEnum1 // Used, should not appear.
+open type FSharpEnum2 // Unused, should appear.
 
 type UseTheThings(i:int) =
     member x.Value = Dictionary<int,int>() // use something from System.Collections.Generic, as a constructor
@@ -5610,6 +5618,10 @@ type UseTheThings(i:int) =
     member x.UseSomeUsedModuleContainingActivePattern(ActivePattern g) = g
     member x.UseSomeUsedModuleContainingExtensionMember() = (3).Q
     member x.UseSomeUsedModuleContainingUnion() = A
+    member x.UseEnumCase = Monday // Use an enum case from System.DayOfWeek.
+    member x.UseEnumCaseQualified = System.DateTimeKind.Utc // Use a qualified enum case.
+    member x.UseFSharpEnumCase = Y // Use an enum case from FSharpEnum1.
+    member x.UseFSharpEnumCaseQualified = FSharpEnum2.J // Use a qualified enum case.
 """
     let fileSource1 = SourceText.ofString fileSource1Text
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1Text)
@@ -5637,7 +5649,9 @@ type UseTheThings(i:int) =
            (((6, 5), (6, 19)), "open FSharp.Control // unused");
            (((7, 5), (7, 16)), "open FSharp.Data // unused");
            (((8, 5), (8, 25)), "open System.Globalization // unused");
-           (((25, 5), (25, 21)), "open SomeUnusedModule")]
+           (((25, 5), (25, 21)), "open SomeUnusedModule");
+           (((31, 10), (31, 29)), "open type System.DateTimeKind // Unused, should appear.")
+           (((37, 10), (37, 21)), "open type FSharpEnum2 // Unused, should appear.")]
     unusedOpensData |> shouldEqual expected
 
 [<Theory>]
