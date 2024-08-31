@@ -3,18 +3,14 @@
 open Xunit
 open FsUnit
 open System
-open System.IO
 open System.Text
 open System.Collections.Generic
-open System.Diagnostics
-open System.Threading
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.IO
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Symbols.FSharpExprPatterns
-open TestFramework
 
 type FSharpCore =
     | FC45
@@ -29,52 +25,11 @@ type FSharpCore =
         | FC47 -> "FSharp.Core 4.7"
         | FC50 -> "FSharp.Core 5.0"
 
+[<Literal>]
+let dirName = "ExprTests"
 
 [<AutoOpen>]
 module internal Utils =
-    let getTempPath() =
-        Path.Combine(Path.GetTempPath(), "ExprTests")
-
-    /// If it doesn't exists, create a folder 'ExprTests' in local user's %TEMP% folder
-    let createTempDir() =
-        let tempPath = getTempPath()
-        do
-            if Directory.Exists tempPath then ()
-            else Directory.CreateDirectory tempPath |> ignore
-
-    /// Returns the file name part of a temp file name created with tryCreateTemporaryFileName ()
-    /// and an added process id and thread id to ensure uniqueness between threads.
-    let getTempFileName() =
-        let tempFileName = tryCreateTemporaryFileName ()
-        try
-            let tempFile, tempExt = Path.GetFileNameWithoutExtension tempFileName, Path.GetExtension tempFileName
-            let procId, threadId = Process.GetCurrentProcess().Id, Thread.CurrentThread.ManagedThreadId
-            String.concat "" [tempFile; "_"; string procId; "_"; string threadId; tempExt]  // ext includes dot
-        finally
-            try
-                FileSystem.FileDeleteShim tempFileName
-            with _ -> ()
-
-    /// Clean up after a test is run. If you need to inspect the create *.fs files, change this function to do nothing, or just break here.
-    let cleanupTempFiles files =
-        { new IDisposable with
-            member _.Dispose() =
-                for fileName in files do
-                    try
-                        // cleanup: only the source file is written to the temp dir.
-                        FileSystem.FileDeleteShim fileName
-                    with _ -> ()
-
-                try
-                    // remove the dir when empty
-                    let tempPath = getTempPath()
-                    if Directory.GetFiles tempPath |> Array.isEmpty then
-                        Directory.Delete tempPath
-                with _ -> () }
-
-    /// Given just a file name, returns it with changed extension located in %TEMP%\ExprTests
-    let getTempFilePathChangeExt tmp ext =
-        Path.Combine(getTempPath(), Path.ChangeExtension(tmp, ext))
 
     // This behaves slightly differently on Mono versions, 'null' is printed sometimes, 'None' other times
     // Presumably this is very small differences in Mono reflection causing F# printing to change behaviour
@@ -344,22 +299,6 @@ module internal Utils =
             | FSharpImplementationFileDeclaration.InitAction(e) ->
                 yield! collectMembers e |> Seq.map printMemberSignature
         }
-
-
-let createOptionsAux fileSources extraArgs =
-    let fileNames = fileSources |> List.map (fun _ -> Utils.getTempFileName())
-    let temp2 = Utils.getTempFileName()
-    let fileNames = fileNames |> List.map (fun temp1 -> Utils.getTempFilePathChangeExt temp1 ".fs")
-    let dllName = Utils.getTempFilePathChangeExt temp2 ".dll"
-    let projFileName = Utils.getTempFilePathChangeExt temp2 ".fsproj"
-
-    Utils.createTempDir()
-    for fileSource: string, fileName in List.zip fileSources fileNames do
-         FileSystem.OpenFileForWriteShim(fileName).Write(fileSource)
-    let args = [| yield! extraArgs; yield! mkProjectCommandLineArgs (dllName, []) |]
-    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames |> List.toArray }
-
-    Utils.cleanupTempFiles (fileNames @ [dllName; projFileName]), options
 
 //---------------------------------------------------------------------------------------------------------
 // This project is a smoke test for a whole range of standard and obscure expressions
@@ -653,7 +592,7 @@ let testMutableVar = mutableVar 1
 let testMutableConst = mutableConst ()
     """
 
-    let createOptionsWithArgs args = createOptionsAux [ fileSource1; fileSource2 ] args
+    let createOptionsWithArgs args = createProjectOptions dirName [ fileSource1; fileSource2 ] args
 
     let createOptions() = createOptionsWithArgs []
 
@@ -1002,15 +941,15 @@ let ``Test Optimized Declarations Project1`` useTransparentCompiler =
 
 let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimized =
 
-    let tempFileName = Utils.getTempFileName()
-    let filePath = Utils.getTempFilePathChangeExt tempFileName ".fs"
-    let dllPath =Utils.getTempFilePathChangeExt tempFileName ".dll"
-    let projFilePath = Utils.getTempFilePathChangeExt tempFileName ".fsproj"
+    let tempFileName = getTempFileName()
+    let filePath = getTempFilePathChangeExt dirName tempFileName ".fs"
+    let dllPath =getTempFilePathChangeExt dirName tempFileName ".dll"
+    let projFilePath = getTempFilePathChangeExt dirName tempFileName ".fsproj"
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=true)
 
     begin
-        use _cleanup = Utils.cleanupTempFiles [filePath; dllPath; projFilePath]
-        createTempDir()
+        use _cleanup = cleanupTempFiles dirName [filePath; dllPath; projFilePath]
+        createTempDir dirName
         let source = String.Format(Project1.operatorTests, dnName, fsName)
         let replace (s:string) r = s.Replace("let " + r, "// let " + r)
         let fileSource = excludedTests |> List.fold replace source
@@ -3192,7 +3131,7 @@ let BigSequenceExpression(outFileOpt,docFileOpt,baseAddressOpt) =
     """
 
 
-    let createOptions() = createOptionsAux [fileSource1] []
+    let createOptions() = createProjectOptions dirName [fileSource1] []
 
 #if !NETFRAMEWORK && DEBUG
 [<Fact(Skip = "Test is known to fail in DEBUG when not using NetFramework. Use RELEASE configuration or NetFramework to run it.")>]
@@ -3279,7 +3218,7 @@ let f7() = callXY (C()) (D())
 let f8() = callXY (D()) (C())
     """
 
-    let createOptions() = createOptionsAux [fileSource1] ["--langversion:7.0"]
+    let createOptions() = createProjectOptions dirName [fileSource1] ["--langversion:7.0"]
 
 [<Theory>]
 [<InlineData(false)>]
@@ -3407,7 +3346,7 @@ type MyNumberWrapper =
     { MyNumber: MyNumber }
     """
 
-    let createOptions() = createOptionsAux [fileSource1] ["--langversion:7.0"]
+    let createOptions() = createProjectOptions dirName [fileSource1] ["--langversion:7.0"]
 
 [<Theory>]
 [<InlineData(false)>]
@@ -3465,13 +3404,13 @@ let s2 = sign p1
 
     """
 
-    let createOptions() = createOptionsAux [fileSource1] ["--langversion:7.0"]
+    let createOptions() = createProjectOptions dirName [fileSource1] ["--langversion:7.0"]
 
 [<Theory>]
 [<InlineData(false)>]
 [<InlineData(true)>]
 let ``Test ProjectForWitnesses3`` useTransparentCompiler =
-    let cleanup, options = createOptionsAux [ ProjectForWitnesses3.fileSource1 ] ["--langversion:7.0"]
+    let cleanup, options = createProjectOptions dirName [ ProjectForWitnesses3.fileSource1 ] ["--langversion:7.0"]
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
@@ -3563,7 +3502,7 @@ let isNullQuoted (ts : 't[]) =
 
 """
 
-    let createOptions() = createOptionsAux [fileSource1] ["--langversion:7.0"]
+    let createOptions() = createProjectOptions dirName [fileSource1] ["--langversion:7.0"]
 
 [<Theory>]
 [<InlineData(false)>]
@@ -3603,7 +3542,7 @@ module N.M
 let rec f = new System.EventHandler(fun _ _ -> f.Invoke(null,null))
 """
     
-    let createOptions() = createOptionsAux [fileSource1] []
+    let createOptions() = createProjectOptions dirName [fileSource1] []
     
 [<Theory>]
 [<InlineData(false)>]
