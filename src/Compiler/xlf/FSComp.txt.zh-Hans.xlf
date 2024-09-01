@@ -297,6 +297,11 @@
         <target state="translated">允许对声明类型、模块使用隐式扩展属性</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureCheckFileBugFixed">
+        <source>checkFile bug fixed</source>
+        <target state="new">checkFile bug fixed</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureChkNotTailRecursive">
         <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
         <target state="translated">如果成员或函数具有 "TailCall" 属性，但未以尾递归方式使用，则引发警告。</target>

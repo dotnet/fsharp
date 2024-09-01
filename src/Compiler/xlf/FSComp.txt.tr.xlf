@@ -297,6 +297,11 @@
         <target state="translated">Türler, modüller bildirirken örtük Extension özniteliğine izin ver</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureCheckFileBugFixed">
+        <source>checkFile bug fixed</source>
+        <target state="new">checkFile bug fixed</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureChkNotTailRecursive">
         <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
         <target state="translated">Üye veya işlevi, 'TailCallAttribute' özniteliğine sahip olmasına karşın kuyruk özyinelemeli bir şekilde kullanılmıyorsa uyarı verir.</target>

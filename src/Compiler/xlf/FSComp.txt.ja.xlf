@@ -297,6 +297,11 @@
         <target state="translated">型、モジュールの宣言で暗黙的な拡張属性を許可する</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureCheckFileBugFixed">
+        <source>checkFile bug fixed</source>
+        <target state="new">checkFile bug fixed</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureChkNotTailRecursive">
         <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
         <target state="translated">メンバーまたは関数に 'TailCall' 属性があるが、末尾の再帰的な方法で使用されていない場合に警告を発生させます。</target>

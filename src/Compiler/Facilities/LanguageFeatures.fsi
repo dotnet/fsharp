@@ -85,6 +85,7 @@ type LanguageFeature =
     | ParsedHashDirectiveArgumentNonQuotes
     | EmptyBodiedComputationExpressions
     | AllowObjectExpressionWithoutOverrides
+    | CheckFileBugFixed
 
 /// LanguageVersion management
 type LanguageVersion =

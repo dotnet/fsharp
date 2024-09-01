@@ -297,6 +297,11 @@
         <target state="translated">Autoriser l’attribut implicite Extension lors de la déclaration des types, modules</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureCheckFileBugFixed">
+        <source>checkFile bug fixed</source>
+        <target state="new">checkFile bug fixed</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureChkNotTailRecursive">
         <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
         <target state="translated">Lève des avertissements si un membre ou une fonction possède l'attribut « TailCall », mais n'est pas utilisé de manière récursive.</target>
