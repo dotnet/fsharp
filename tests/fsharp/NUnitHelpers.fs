@@ -5,26 +5,6 @@ open Xunit.Sdk
 open System.Threading
 open System.Globalization
 
-type UseCulture(culture: string, uiCulture: string) =
-
-    inherit BeforeAfterTestAttribute()
-
-    let mutable restore = ignore
-
-    new(culture) = UseCulture(culture, culture)
-    override _.Before _ = 
-        let originalCulture = Thread.CurrentThread.CurrentCulture
-        let originalUiCulture = Thread.CurrentThread.CurrentUICulture
-
-        Thread.CurrentThread.CurrentCulture <- CultureInfo(culture)
-        Thread.CurrentThread.CurrentUICulture <- CultureInfo(uiCulture)
-
-        restore <- fun () ->
-            Thread.CurrentThread.CurrentCulture <- originalCulture
-            Thread.CurrentThread.CurrentUICulture <- originalUiCulture
-
-    override _.After _ = restore ()
-
 module Assert =
 
     [<assembly: CollectionBehavior(DisableTestParallelization = true)>]

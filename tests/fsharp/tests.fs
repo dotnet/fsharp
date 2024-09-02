@@ -33,7 +33,6 @@ let singleTestBuildAndRunVersion = getTestsDirectory >> singleTestBuildAndRunVer
 let testConfig = getTestsDirectory >> testConfig
 
 
-[<UseCulture("en-US")>]
 module CoreTests =
 
 
@@ -1673,7 +1672,6 @@ module VersionTests =
     let ``nameof-fsi``() = singleTestBuildAndRunVersion "core/nameof/preview" FSI "preview"
 
 #if !NETCOREAPP
-[<UseCulture("en-US")>]
 module ToolsTests =
 
     // This test is disabled in coreclr builds dependent on fixing : https://github.com/dotnet/fsharp/issues/2600

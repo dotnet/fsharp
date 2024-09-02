@@ -4,7 +4,6 @@ open Xunit
 open FSharp.Test
 open FSharp.Compiler.Diagnostics
 
-[<UseCulture("en-US")>]
 module HatDesugaringTests =
 
     [<Fact>]
