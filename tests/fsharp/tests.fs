@@ -760,62 +760,62 @@ module CoreTests =
 
         Assert.Equal(expectedSigning, actualSigning)
 
-    [<Fact; Trait("Category","signedtest")>]
+    [<Fact>]
     let ``signedtest-1`` () = signedtest("test-unsigned", "", SigningType.NotSigned)
 
-    [<Fact; Trait("Category","signedtest")>]
+    [<Fact>]
     let ``signedtest-2`` () = signedtest("test-sha1-full-cl", "--keyfile:sha1full.snk", SigningType.PublicSigned)
 
-    [<Fact; Trait("Category","signedtest")>]
+    [<Fact>]
     let ``signedtest-3`` () = signedtest("test-sha256-full-cl", "--keyfile:sha256full.snk", SigningType.PublicSigned)
 
-    [<Fact; Trait("Category","signedtest")>]
+    [<Fact>]
     let ``signedtest-4`` () = signedtest("test-sha512-full-cl", "--keyfile:sha512full.snk", SigningType.PublicSigned)
 
-    [<Fact; Trait("Category","signedtest")>]
+    [<Fact>]
     let ``signedtest-5`` () = signedtest("test-sha1024-full-cl", "--keyfile:sha1024full.snk", SigningType.PublicSigned)
 
-    [<Fact; Trait("Category","signedtest")>]
+    [<Fact>]
     let ``signedtest-6`` () = signedtest("test-sha1-delay-cl", "--keyfile:sha1delay.snk --delaysign", SigningType.DelaySigned)
 
-    [<Fact; Trait("Category","signedtest")>]
+    [<Fact>]
     let ``signedtest-7`` () = signedtest("test-sha256-delay-cl", "--keyfile:sha256delay.snk --delaysign", SigningType.DelaySigned)
 
-    [<Fact; Trait("Category","signedtest")>]
+    [<Fact>]
     let ``signedtest-8`` () = signedtest("test-sha512-delay-cl", "--keyfile:sha512delay.snk --delaysign", SigningType.DelaySigned)
 
-    [<Fact; Trait("Category","signedtest")>]
+    [<Fact>]
     let ``signedtest-9`` () = signedtest("test-sha1024-delay-cl", "--keyfile:sha1024delay.snk --delaysign", SigningType.DelaySigned)
 
     // Test SHA1 key full signed  Attributes
-    [<Fact; Trait("Category","signedtest")>]
+    [<Fact>]
     let ``signedtest-10`` () = signedtest("test-sha1-full-attributes", "--define:SHA1", SigningType.PublicSigned)
 
     // Test SHA1 key delay signed  Attributes
-    [<Fact; Trait("Category","signedtest")>]
+    [<Fact>]
     let ``signedtest-11`` () = signedtest("test-sha1-delay-attributes", "--keyfile:sha1delay.snk --define:SHA1 --define:DELAY", SigningType.DelaySigned)
 
-    [<Fact; Trait("Category","signedtest")>]
+    [<Fact>]
     let ``signedtest-12`` () = signedtest("test-sha256-full-attributes", "--define:SHA256", SigningType.PublicSigned)
 
     // Test SHA 256 bit key delay signed  Attributes
-    [<Fact; Trait("Category","signedtest")>]
+    [<Fact>]
     let ``signedtest-13`` () = signedtest("test-sha256-delay-attributes", "--define:SHA256 --define:DELAY", SigningType.DelaySigned)
 
     // Test SHA 512 bit key fully signed  Attributes
-    [<Fact; Trait("Category","signedtest")>]
+    [<Fact>]
     let ``signedtest-14`` () = signedtest("test-sha512-full-attributes", "--define:SHA512", SigningType.PublicSigned)
 
     // Test SHA 512 bit key delay signed Attributes
-    [<Fact; Trait("Category","signedtest")>]
+    [<Fact>]
     let ``signedtest-15`` () = signedtest("test-sha512-delay-attributes", "--define:SHA512 --define:DELAY", SigningType.DelaySigned)
 
     // Test SHA 1024 bit key fully signed  Attributes
-    [<Fact; Trait("Category","signedtest")>]
+    [<Fact>]
     let ``signedtest-16`` () = signedtest("test-sha1024-full-attributes", "--define:SHA1024", SigningType.PublicSigned)
 
     // Test fully signed with pdb generation
-    [<Fact; Trait("Category","signedtest")>]
+    [<Fact>]
     let ``signedtest-17`` () = signedtest("test-sha1-full-cl", "-g --keyfile:sha1full.snk", SigningType.PublicSigned)
 
 #endif
