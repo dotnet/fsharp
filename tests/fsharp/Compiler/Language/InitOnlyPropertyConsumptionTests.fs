@@ -2,17 +2,17 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 open FSharp.Test.Utilities
 
 #if NETCOREAPP
 
-[<TestFixture>]
+
 module InitOnlyPropertyConsumptionTests =
 
-    [<Test>]
+    [<Fact>]
     let ``Should be able to set an init-only property from a C# record`` () =
         let csharpSource =
             """

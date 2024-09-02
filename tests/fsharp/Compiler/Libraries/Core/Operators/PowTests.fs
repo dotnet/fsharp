@@ -2,9 +2,9 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 
-[<TestFixture>]
+
 module ``Pow Tests`` =
     
     type T() =
@@ -14,7 +14,7 @@ module ``Pow Tests`` =
             g
         static member Check() = m
 
-    [<Test>]
+    [<Fact>]
     let ``Pow of custom type``() =
         // Regression test for FSHARP1.0:4487
         // Feature request: loosen Pow operator constraints
@@ -22,4 +22,4 @@ module ``Pow Tests`` =
         let t = T()
         let _ = t ** 3.
 
-        Assert.IsTrue (T.Check())
+        Assert.True (T.Check())

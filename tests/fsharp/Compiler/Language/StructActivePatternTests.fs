@@ -2,11 +2,10 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Compiler.Diagnostics
 open FSharp.Test
 
-[<TestFixture>]
 module StructActivePatternTests =
 
     let private pass = CompilerAssert.PassWithOptions [||]
@@ -19,15 +18,15 @@ let fail msg =
     failwith msg
 """ + src))
 
-    [<Test>]
+    [<Fact>]
     let ``Partial active pattern returns Option`1`` () =
         pass "let (|Foo|_|) x = None"
 
-    [<Test>]
+    [<Fact>]
     let ``Partial struct active pattern returns ValueOption`1`` () =
         pass "[<return:Struct>] let (|P1|_|) x = ValueNone"
 
-    [<Test>]
+    [<Fact>]
     let ``StructAttribute can be placed at the active pattern return type annotation`` () =
         pass
             """
@@ -35,7 +34,7 @@ let (|P1|_|) x: [<Struct>] _ = ValueNone
 let (|P2|_|) x: [<return:Struct>] _ = ValueNone
             """
 
-    [<Test>]
+    [<Fact>]
     let ``Partial struct active pattern results can be retrieved`` () =
         run """
 [<Struct>]
@@ -88,7 +87,7 @@ match t4 with
 | _ -> fail "nested"
             """
 
-    [<Test>]
+    [<Fact>]
     let ``[<return:>] attribute is rotated to the return value``() = 
         run
             """
@@ -122,7 +121,7 @@ match ret_attrs, binding_attrs with
 | "MyAttribute", "" -> ()
 | _ -> fail $"ret_attrs = {ret_attrs}, binding_attrs = {binding_attrs} method = {method}"
             """
-    [<Test>]
+    [<Fact>]
     let ``Implicitly-targeted attribute on let binding do not target return``() = 
         run
             """
@@ -160,7 +159,7 @@ match ret_attrs, binding_attrs with
 
 // negative tests
 
-    [<Test>]
+    [<Fact>]
     let ``Struct active pattern (-langversion:5.0)`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:5.0"|]
             """
@@ -170,7 +169,7 @@ let (|Foo|_|) x = ValueNone
             [|(FSharpDiagnosticSeverity.Error, 3350, (2, 1, 3, 16),
                "Feature 'struct representation for active patterns' is not available in F# 5.0. Please use language version 6.0 or greater.")|]
 
-    [<Test>]
+    [<Fact>]
     let ``StructAttribute must explicitly target active pattern return value`` () =
         fail
             """
@@ -182,7 +181,7 @@ let (|Foo|_|) x = ValueNone
               (FSharpDiagnosticSeverity.Error, 3350, (2, 1, 3, 16),
                "Feature 'Boolean-returning and return-type-directed partial active patterns' is not available in F# 8.0. Please use language version 9.0 or greater.")|]
 
-    [<Test>]
+    [<Fact>]
     let ``StructAttribute not allowed on other bindings than partial active pattern definitions`` () =
         fail 
             """

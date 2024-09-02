@@ -1,8 +1,33 @@
-namespace NUnit.Framework
+namespace Xunit
+
+open Xunit
+open Xunit.Sdk
+open System.Threading
+open System.Globalization
+
+type UseCulture(culture: string, uiCulture: string) =
+
+    inherit BeforeAfterTestAttribute()
+
+    let mutable restore = ignore
+
+    new(culture) = UseCulture(culture, culture)
+    override _.Before _ = 
+        let originalCulture = Thread.CurrentThread.CurrentCulture
+        let originalUiCulture = Thread.CurrentThread.CurrentUICulture
+
+        Thread.CurrentThread.CurrentCulture <- CultureInfo(culture)
+        Thread.CurrentThread.CurrentUICulture <- CultureInfo(uiCulture)
+
+        restore <- fun () ->
+            Thread.CurrentThread.CurrentCulture <- originalCulture
+            Thread.CurrentThread.CurrentUICulture <- originalUiCulture
+
+    override _.After _ = restore ()
 
 module Assert =
 
-    [<assembly: NonParallelizable()>]
+    [<assembly: CollectionBehavior(DisableTestParallelization = true)>]
     do()
 
     let inline fail message = Assert.Fail message
@@ -10,8 +35,10 @@ module Assert =
     let inline failf fmt = Printf.kprintf fail fmt
 
     let inline areEqual (expected: ^T) (actual: ^T) =
-        Assert.AreEqual(expected, actual)
+        Assert.Equal<^T>(expected, actual)
 
-module StringAssert =
+    let inline contains (expected: string) (actual: string) = Assert.True(actual.Contains(expected))
 
-    let inline contains expected actual = StringAssert.Contains(expected, actual)
+    let inline doesNotThrow (action: unit -> unit) =
+        Record.Exception action
+        |> Assert.Null

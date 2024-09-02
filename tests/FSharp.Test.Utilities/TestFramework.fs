@@ -4,10 +4,9 @@ module TestFramework
 
 open System
 open System.IO
-open System.Reflection
 open System.Diagnostics
 open Scripting
-open NUnit.Framework
+open Xunit
 open FSharp.Compiler.IO
 
 let inline getTestsDirectory src dir = src ++ dir
@@ -462,21 +461,6 @@ let initializeSuite () =
 
 
 let suiteHelpers = lazy (initializeSuite ())
-
-[<AttributeUsage(AttributeTargets.Assembly)>]
-type public InitializeSuiteAttribute () =
-    inherit TestActionAttribute()
-
-    override x.BeforeTest details =
-        try
-            if details.IsSuite
-            then suiteHelpers.Force() |> ignore
-        with
-        | e -> raise (Exception("failed test suite initialization, debug code in InitializeSuiteAttribute", e))
-    override x.AfterTest _details =
-        ()
-
-    override x.Targets = ActionTargets.Test ||| ActionTargets.Suite
 
 let testConfig (testDir: string) =
     let cfg = suiteHelpers.Value
