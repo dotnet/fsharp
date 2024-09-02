@@ -11,11 +11,7 @@ module ``PreComputedTupleConstructor Tests`` =
     let ``PreComputedTupleConstructor of int and string``() =
         // Regression test for FSHARP1.0:5113
         // MT DCR: Reflection.FSharpValue.PreComputeTupleConstructor fails when executed for NetFx 2.0 by a Dev10 compiler
-
-        let testDelegate = fun () -> 
-            Reflection.FSharpValue.PreComputeTupleConstructor(typeof<int * string>) [| box 12; box "text" |] |> ignore
-
-        Assert.doesNotThrow testDelegate |> ignore
+        Reflection.FSharpValue.PreComputeTupleConstructor(typeof<int * string>) [| box 12; box "text" |] |> ignore
 
     [<Fact>]
     let ``PreComputedTupleConstructor with wrong order of arguments``() =

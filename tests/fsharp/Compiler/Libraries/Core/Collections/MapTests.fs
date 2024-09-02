@@ -12,6 +12,4 @@ module ``Map Tests`` =
         // Dev11:19569 - this used to throw an ArgumentException saying Object didn't implement IComparable
     
         let m = Map.ofArray [| 1, obj() |]
-        let testDelegate = fun _ -> (m = m) |> ignore
-    
-        Assert.doesNotThrow testDelegate
+        (m = m) |> ignore

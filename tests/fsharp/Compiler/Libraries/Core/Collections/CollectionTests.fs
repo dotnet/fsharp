@@ -13,9 +13,7 @@ module ``Array2D Tests`` =
         // bug in array2D functions would cause iter to blow up
 
         let a = Array2D.createBased 1 5 10 10 0.0
-        let testDelegate = fun _ -> a |> Array2D.iter (printf "%f")
-
-        Assert.doesNotThrow testDelegate
+        a |> Array2D.iter (printf "%f")
 
     [<Fact>]
     let ``Iteri should not throw on non-zero based 2D arrays``() =
@@ -23,6 +21,4 @@ module ``Array2D Tests`` =
         // bug in array2D functions would cause iteri to blow up
 
         let a = Array2D.createBased 1 5 10 10 0.0
-        let testDelegate = fun _ -> a |> Array2D.iteri (fun _ _ x -> printf "%f" x)
-
-        Assert.doesNotThrow testDelegate
+        a |> Array2D.iteri (fun _ _ x -> printf "%f" x)

@@ -37,8 +37,10 @@ module Assert =
     let inline areEqual (expected: ^T) (actual: ^T) =
         Assert.Equal<^T>(expected, actual)
 
-    let inline contains (expected: string) (actual: string) = Assert.True(actual.Contains(expected))
+    // let inline contains (expected: string) (actual: string) = Assert.Contains(expected, actual)
 
-    let inline doesNotThrow (action: unit -> unit) =
-        Record.Exception action
-        |> Assert.Null
+    //let inline doesNotThrow (action: unit -> unit) =
+    //    Record.Exception action
+    //    |> Assert.Null
+
+

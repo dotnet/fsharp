@@ -53,13 +53,11 @@ module ``Stackalloc Tests`` =
 
     [<Fact>]
     let ``Stackalloc of imported enum``() =
-        Assert.doesNotThrow (fun () -> 
-            NativeInterop.NativePtr.stackalloc<System.DayOfWeek> 1 |> ignore)
+        NativeInterop.NativePtr.stackalloc<System.DayOfWeek> 1 |> ignore
 
     [<Fact>]
     let ``Stackalloc of imported struct``() =
-        Assert.doesNotThrow (fun () -> 
-            NativeInterop.NativePtr.stackalloc<System.TimeSpan> 1 |> ignore)
+        NativeInterop.NativePtr.stackalloc<System.TimeSpan> 1 |> ignore
 
     [<Fact>]
     let ``Stackalloc of imported class``() =
@@ -174,14 +172,11 @@ let _ = NativeInterop.NativePtr.stackalloc<R> 1
         // Regression test for FSHARP1.0:
         // stackalloc<System.DateTime> 0
             
-        let testDelegate = fun () -> 
-            // check stackalloc 0 -- ok
-            let data = NativeInterop.NativePtr.stackalloc<System.DateTime> 0
+        // check stackalloc 0 -- ok
+        let data = NativeInterop.NativePtr.stackalloc<System.DateTime> 0
                         
-            // The returned pointer is undefined
-            // No allocation should happen
-            let _ = NativeInterop.NativePtr.toNativeInt data
+        // The returned pointer is undefined
+        // No allocation should happen
+        let _ = NativeInterop.NativePtr.toNativeInt data
                         
-            ()
-            
-        Assert.doesNotThrow testDelegate
+        ()
