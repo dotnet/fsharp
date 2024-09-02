@@ -4,7 +4,7 @@
 // It also covers the fact that they can be used both as data constructors
 // and to form patterns.
 // This is the positive case.
-//<Expects id="FS0039" span="(37,19-37,29)" status="error">The value or constructor 'CaseLabel1' is not defined</Expects>
+
 #light
 
     [<Measure>] type ı
