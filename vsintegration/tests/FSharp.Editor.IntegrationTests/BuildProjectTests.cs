@@ -29,9 +29,8 @@ let answer = 42
 
         var actualBuildSummary = await SolutionExplorer.BuildSolutionAsync(TestToken);
 
-#pragma warning disable CS8604 // Possible null reference argument.
+        Assert.NotNull(actualBuildSummary);
         Assert.Contains(expectedBuildSummary, actualBuildSummary);
-#pragma warning restore CS8604 // Possible null reference argument.
     }
 
     [IdeFact]
@@ -52,9 +51,9 @@ let answer =
         await Editor.SetTextAsync(code, TestToken);
 
         var actualBuildSummary = await SolutionExplorer.BuildSolutionAsync(TestToken);
-#pragma warning disable CS8604 // Possible null reference argument.
+
+        Assert.NotNull(actualBuildSummary);
         Assert.Contains(expectedBuildSummary, actualBuildSummary);
-#pragma warning restore CS8604 // Possible null reference argument.
 
         await ErrorList.ShowBuildErrorsAsync(TestToken);
         var errors = await ErrorList.GetBuildErrorsAsync(__VSERRORCATEGORY.EC_ERROR, TestToken);
