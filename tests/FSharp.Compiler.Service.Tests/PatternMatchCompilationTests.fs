@@ -687,22 +687,22 @@ let z as =
         "(14,8--14,10): Unexpected keyword 'as' in binding";
         "(15,8--15,10): Unexpected keyword 'as' in pattern. Expected ')' or other token.";
         "(15,6--15,7): Unmatched '('";
-        "(16,0--16,3): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (15:1). Try indenting this further.To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
+        "(16,0--16,3): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (15:1). Try indenting this further.\u001dTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
         "(16,0--16,3): Unexpected keyword 'let' or 'use' in binding. Expected incomplete structured construct at or before this point or other token.";
         "(15,0--15,3): Incomplete value or function definition. If this is in an expression, the body of the expression must be indented to the same column as the 'let' keyword.";
         "(17,0--17,3): Incomplete structured construct at or before this point in implementation file";
-        "(20,0--20,0): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this further.To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
-        "(20,0--20,0): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this further.To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
-        "(3,13--3,17): This expression was expected to have type    'int'    but here has type    'bool'";
+        "(20,0--20,0): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this further.\u001dTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
+        "(20,0--20,0): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this further.\u001dTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
+        "(3,13--3,17): This expression was expected to have type\u001d    'int'    \u001dbut here has type\u001d    'bool'";
         "(3,4--3,10): Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s).";
-        "(4,16--4,17): This expression was expected to have type    'bool'    but here has type    'int'";
+        "(4,16--4,17): This expression was expected to have type\u001d    'bool'    \u001dbut here has type\u001d    'int'";
         "(4,4--4,13): Incomplete pattern matches on this expression. For example, the value 'false' may indicate a case not covered by the pattern(s).";
-        "(5,4--5,10): This runtime coercion or type test from type    'a     to     int    involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
-        "(6,4--6,10): This runtime coercion or type test from type    'a     to     int    involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
-        "(8,29--8,30): This expression was expected to have type    'unit'    but here has type    'int'";
-        "(9,26--9,27): This expression was expected to have type    'unit'    but here has type    'int'";
-        "(10,14--10,15): This expression was expected to have type    ''a * 'b'    but here has type    'int'";
-        "(12,16--12,18): This expression was expected to have type    ''a list'    but here has type    'int'";
+        "(5,4--5,10): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    int    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(6,4--6,10): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    int    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(8,29--8,30): This expression was expected to have type\u001d    'unit'    \u001dbut here has type\u001d    'int'";
+        "(9,26--9,27): This expression was expected to have type\u001d    'unit'    \u001dbut here has type\u001d    'int'";
+        "(10,14--10,15): This expression was expected to have type\u001d    ''a * 'b'    \u001dbut here has type\u001d    'int'";
+        "(12,16--12,18): This expression was expected to have type\u001d    ''a list'    \u001dbut here has type\u001d    'int'";
         "(12,4--12,13): Incomplete pattern matches on this expression. For example, the value '[]' may indicate a case not covered by the pattern(s).";
         "(15,4--15,5): The pattern discriminator 'r' is not defined.";
         "(15,4--15,12): Incomplete pattern matches on this expression."
@@ -1092,22 +1092,22 @@ let as :? z =
         "(15,13--15,15): Unexpected keyword 'as' in pattern. Expected '(' or other token.";
         "(16,8--16,10): Unexpected keyword 'as' in pattern. Expected ')' or other token.";
         "(16,6--16,7): Unmatched '('";
-        "(17,0--17,3): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (16:1). Try indenting this further.To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
+        "(17,0--17,3): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (16:1). Try indenting this further.\u001dTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
         "(17,0--17,3): Unexpected keyword 'let' or 'use' in binding. Expected incomplete structured construct at or before this point or other token.";
         "(16,0--16,3): Incomplete value or function definition. If this is in an expression, the body of the expression must be indented to the same column as the 'let' keyword.";
         "(17,8--17,10): Unexpected keyword 'as' in pattern. Expected ']' or other token.";
-        "(18,0--18,3): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (17:1). Try indenting this further.To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
-        "(19,0--19,3): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (18:1). Try indenting this further.To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
-        "(20,0--20,0): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this further.To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
-        "(20,0--20,0): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this further.To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
+        "(18,0--18,3): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (17:1). Try indenting this further.\u001dTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
+        "(19,0--19,3): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (18:1). Try indenting this further.\u001dTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
+        "(20,0--20,0): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this further.\u001dTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
+        "(20,0--20,0): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this further.\u001dTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
         "(3,12--3,13): The type 'a' is not defined.";
         "(3,9--3,13): The type 'int' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion.";
         "(4,15--4,16): The type 'b' is not defined.";
         "(4,12--4,16): The type 'bool' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion.";
-        "(5,4--5,10): This runtime coercion or type test from type    'a     to     int    involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
-        "(6,4--6,10): This runtime coercion or type test from type    'a     to     int    involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(5,4--5,10): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    int    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(6,4--6,10): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    int    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
         "(7,27--7,28): The type 'e' is not defined.";
-        "(7,24--7,28): This runtime coercion or type test from type    'a     to     'b    involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
+        "(7,24--7,28): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
         "(8,28--8,29): The type 'f' is not defined.";
         "(8,25--8,29): The type 'unit' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion.";
         "(9,25--9,26): The type 'g' is not defined.";
@@ -1118,7 +1118,7 @@ let as :? z =
         "(12,12--12,16): The type ''a list' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion.";
         "(16,4--16,5): The pattern discriminator 't' is not defined.";
         "(16,14--16,15): The type 'u' is not defined.";
-        "(16,11--16,15): This runtime coercion or type test from type    'a     to     'b    involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
+        "(16,11--16,15): This runtime coercion or type test from type\u001d    'a    \u001d to \u001d    'b    \u001dinvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
     ]
 
 [<FactForNETCOREAPP>]
