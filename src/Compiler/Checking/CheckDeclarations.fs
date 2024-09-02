@@ -5115,7 +5115,7 @@ let CheckLetOrDoInNamespace binds m =
         error(Error(FSComp.SR.tcNamespaceCannotContainValues(), binds.Head.RangeOfHeadPattern)) 
 
 /// The non-mutually recursive case for a declaration
-let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem env synDecl = 
+let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem env synDecl =   
   cancellable {
     let g = cenv.g
     cenv.synArgNameGenerator.Reset()
@@ -5197,7 +5197,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
           if isRec then 
               assert (not isContinuingModule)
               let modDecl = SynModuleDecl.NestedModule(compInfo, false, moduleDefs, isContinuingModule, m, trivia)            
-              return! TcModuleOrNamespaceElementsMutRec cenv parent typeNames m env None [modDecl]
+              return TcModuleOrNamespaceElementsMutRec cenv parent typeNames m env None [modDecl]
           else
               let (SynComponentInfo(Attributes attribs, _, _, longPath, xml, _, vis, im)) = compInfo
               let id = ComputeModuleName longPath
@@ -5225,7 +5225,9 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               let moduleEntity = Construct.NewModuleOrNamespace (Some env.eCompPath) vis id xmlDoc modAttrs (MaybeLazy.Strict moduleTy)
 
               // Now typecheck. 
-              let! moduleContents, topAttrsNew, envAtEnd = TcModuleOrNamespaceElements cenv (Parent (mkLocalModuleRef moduleEntity)) endm envForModule xml None [] moduleDefs
+              let! moduleContents, topAttrsNew, envAtEnd = 
+                TcModuleOrNamespaceElements cenv (Parent (mkLocalModuleRef moduleEntity)) endm envForModule xml None [] moduleDefs
+                |> cenv.stackGuard.GuardCancellable
 
               // Get the inferred type of the decls and record it in the modul. 
               moduleEntity.entity_modul_type <- MaybeLazy.Strict moduleTyAcc.Value
@@ -5314,7 +5316,9 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
           let nsInfo = Some (modulNSOpt, envNS.eModuleOrNamespaceTypeAccumulator)
           let mutRecNSInfo = if isRec then nsInfo else None
 
-          let! moduleContents, topAttrs, envAtEnd = TcModuleOrNamespaceElements cenv parent endm envNS xml mutRecNSInfo [] defs
+          let! moduleContents, topAttrs, envAtEnd = 
+            TcModuleOrNamespaceElements cenv parent endm envNS xml mutRecNSInfo [] defs
+            |> cenv.stackGuard.GuardCancellable
 
           MutRecBindingChecking.TcMutRecDefns_UpdateNSContents nsInfo 
           let env, openDecls = 
@@ -5366,7 +5370,7 @@ and [<TailCall>] TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm
                 else
                     unionRanges (List.head otherDefs).Range endm
 
-            let result = Cancellable.run ct (TcModuleOrNamespaceElementNonMutRec cenv parent typeNames scopem env firstDef)
+            let result = Cancellable.run ct (TcModuleOrNamespaceElementNonMutRec cenv parent typeNames scopem env firstDef |> cenv.stackGuard.GuardCancellable)
 
             match result with
             | ValueOrCancelled.Cancelled x ->
@@ -5375,9 +5379,7 @@ and [<TailCall>] TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm
                 TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm ((firstDef :: defsSoFar), env, envAtEnd) otherDefs ct
 
 /// The mutually recursive case for a sequence of declarations (and nested modules)
-and TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial mutRecNSInfo (defs: SynModuleDecl list) =
- cancellable {
-
+and [<TailCall>] TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial mutRecNSInfo (defs: SynModuleDecl list) =
     let m = match defs with [] -> m | _ -> defs |> List.map (fun d -> d.Range) |> List.reduce unionRanges
     let scopem = (defs, m) ||> List.foldBack (fun h m -> unionRanges h.Range m) 
 
@@ -5448,9 +5450,7 @@ and TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial
     let escapeCheck () = 
         TcMutRecDefnsEscapeCheck mutRecDefnsChecked envInitial
 
-    return ([ moduleContents ], [ escapeCheck ], attrs), envAfter, envAfter
-
- }
+    ([ moduleContents ], [ escapeCheck ], attrs), envAfter, envAfter
 
 and TcMutRecDefsFinish cenv defs m =
     let opens =
@@ -5489,7 +5489,8 @@ and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo openDecls0
 
     match mutRecNSInfo with 
     | Some _ -> 
-        let! (moduleDefs, escapeChecks, topAttrsNew), _, envAtEnd = TcModuleOrNamespaceElementsMutRec cenv parent typeNames endm env mutRecNSInfo synModuleDecls
+        let (moduleDefs, escapeChecks, topAttrsNew), _, envAtEnd = 
+            TcModuleOrNamespaceElementsMutRec cenv parent typeNames endm env mutRecNSInfo synModuleDecls
         let moduleContents = TMDefs(moduleDefs) 
         // Run the escape checks (for compat run in reverse order)
         do 
@@ -5747,7 +5748,9 @@ let CheckOneImplFile
         let envinner, moduleTyAcc = MakeInitialEnv env 
 
         let defs = [ for x in implFileFrags -> SynModuleDecl.NamespaceFragment x ]
-        let! moduleContents, topAttrs, envAtEnd = TcModuleOrNamespaceElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDoc.Empty None openDecls0 defs
+        let! moduleContents, topAttrs, envAtEnd = 
+            TcModuleOrNamespaceElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDoc.Empty None openDecls0 defs
+            |> cenv.stackGuard.GuardCancellable
 
         let implFileTypePriorToSig = moduleTyAcc.Value
 

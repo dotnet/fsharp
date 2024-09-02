@@ -903,6 +903,11 @@ type StackGuard(maxDepth: int, name: string) =
         finally
             depth <- depth - 1
 
+    member x.GuardCancellable(original:Cancellable<'T>) =
+            Cancellable(fun ct ->
+                x.Guard(fun () -> Cancellable.run ct original))
+
+
     static member val DefaultDepth =
 #if DEBUG
         GetEnvInteger "FSHARP_DefaultStackGuardDepth" 50
