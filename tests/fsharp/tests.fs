@@ -6,7 +6,6 @@ open System
 open System.IO
 open System.Reflection
 open System.Reflection.PortableExecutable
-// open Xunit
 open TestFramework
 open Scripting
 open SingleTest
