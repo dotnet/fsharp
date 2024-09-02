@@ -3,6 +3,7 @@
 module TestFramework
 
 open System
+open System.Reflection
 open System.IO
 open System.Diagnostics
 open Scripting
