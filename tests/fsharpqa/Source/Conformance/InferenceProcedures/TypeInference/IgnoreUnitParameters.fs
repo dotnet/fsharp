@@ -1,7 +1,7 @@
 // #Regression #TypeInference 
 // Regression test for https://github.com/Microsoft/visualfsharp/issues/1749
 // Type Inference
-// Explicit program entry point: [<ExtryPoint>]
+// Explicit program entry point: [<EntryPoint>]
 //<Expects status="success"></Expects>
 
 

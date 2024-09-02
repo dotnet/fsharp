@@ -39,7 +39,7 @@ let p = Person.CreatePerson()
 let {Name = x; Age = y; ID = z} = p
 // The record field 'ID' is not accessible from this code location. 18	6	
 
-// If we consider allowing accessibility modifers on records, then this
+// If we consider allowing accessibility modifiers on records, then this
 // should work, but does not.
 let {Name = x2; Age = y2; ID = _} = p
 //The record field 'ID' is not accessible from this code location.	23	6	*)

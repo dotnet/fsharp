@@ -1,6 +1,6 @@
 // Regression test for DevDiv:139182
 // Title: [fsbugs] Value types don't work properly when used with "static let"
-// Static let consuming - string typr
+// Static let consuming - string type
 type T''() =
   static let str = "Test"
   static member Prop4 = str.ToLower()        // ok

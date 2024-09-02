@@ -538,7 +538,7 @@
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
-        <source>whitespace relexation</source>
+        <source>whitespace relaxation</source>
         <target state="translated">Lockerung für Leerraum</target>
         <note />
       </trans-unit>
@@ -1123,7 +1123,7 @@
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
-        <source>A constrained generic construct occured in the resumable code specification</source>
+        <source>A constrained generic construct occurred in the resumable code specification</source>
         <target state="translated">In der fortsetzbaren Codespezifikation ist ein eingeschränktes generisches Konstrukt aufgetreten.</target>
         <note />
       </trans-unit>
@@ -1138,7 +1138,7 @@
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsLetRec">
-        <source>A 'let rec' occured in the resumable code specification</source>
+        <source>A 'let rec' occurred in the resumable code specification</source>
         <target state="translated">"Let rec" ist in der fortsetzbaren Codespezifikation aufgetreten.</target>
         <note />
       </trans-unit>
@@ -1443,7 +1443,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcMissingRequiredMembers">
-        <source>The following required properties have to be initalized:{0}</source>
+        <source>The following required properties have to be initialized:{0}</source>
         <target state="translated">Die folgenden erforderlichen Eigenschaften müssen initialisiert werden:{0}</target>
         <note />
       </trans-unit>
@@ -1568,7 +1568,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeContainsLetRec">
-        <source>Invalid resumable code. A 'let rec' occured in the resumable code specification</source>
+        <source>Invalid resumable code. A 'let rec' occurred in the resumable code specification</source>
         <target state="translated">Ungültiger fortsetzbarer Code. "Let rec" ist in der fortsetzbaren Codespezifikation aufgetreten</target>
         <note />
       </trans-unit>
@@ -1638,8 +1638,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcTypeDoesNotHaveAnyNull">
-        <source>The type '{0}' does not support a nullness qualitification.</source>
-        <target state="new">The type '{0}' does not support a nullness qualitification.</target>
+        <source>The type '{0}' does not support a nullness qualification.</source>
+        <target state="new">The type '{0}' does not support a nullness qualification.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
@@ -5888,7 +5888,7 @@
         <note />
       </trans-unit>
       <trans-unit id="optsDebug">
-        <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debuggging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
+        <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debugging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
         <target state="translated">Geben Sie den Debugtyp an: full, portable, embedded, pdbonly. ("{0}" ist der Standardwert, wenn kein Debugtyp angegeben wird, und ermöglicht das Anfügen eines Debuggers an ein aktuell ausgeführtes Programm. "portable" ist ein plattformübergreifendes Format, "embedded" ein plattformübergreifendes, in die Ausgabedatei eingebettetes Format).</target>
         <note />
       </trans-unit>
@@ -7143,7 +7143,7 @@
         <note />
       </trans-unit>
       <trans-unit id="fscRemotingError">
-        <source>The resident compilation service was not used because a problem occured in communicating with the server.</source>
+        <source>The resident compilation service was not used because a problem occurred in communicating with the server.</source>
         <target state="translated">Der residente Kompilierungsdienst wurde nicht verwendet, da bei der Kommunikation mit dem Server ein Problem aufgetreten ist.</target>
         <note />
       </trans-unit>
@@ -7343,7 +7343,7 @@
         <note />
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToType">
-        <source>An error occured applying the static arguments to a provided type</source>
+        <source>An error occurred applying the static arguments to a provided type</source>
         <target state="translated">Fehler beim Anwenden des statischen Arguments auf einen angegebenen Typ.</target>
         <note />
       </trans-unit>
@@ -7408,7 +7408,7 @@
         <note />
       </trans-unit>
       <trans-unit id="etInvalidTypeProviderAssemblyName">
-        <source>Assembly '{0}' hase TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</source>
+        <source>Assembly '{0}' has TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</source>
         <target state="translated">Assembly '{0}' verfügt über ein TypeProviderAssembly-Attribut mit dem ungültigen Wert '{1}'. Beim Wert sollte es sich um einen gültigen Assemblynamen handeln.</target>
         <note />
       </trans-unit>
@@ -7993,7 +7993,7 @@
         <note />
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToMethod">
-        <source>An error occured applying the static arguments to a provided method</source>
+        <source>An error occurred applying the static arguments to a provided method</source>
         <target state="translated">Fehler beim Anwenden der statischen Argumente auf eine angegebene Methode.</target>
         <note />
       </trans-unit>
@@ -8122,7 +8122,7 @@
         <target state="translated">Wenn ein Mehrfach-Union-Typ eine Struktur ist, müssen alle Union-Fälle eindeutige Namen aufweisen. Beispiel: „type A = B von b: int | C von c: int“.</target>
         <note />
       </trans-unit>
-      <trans-unit id="CallerMemberNameIsOverriden">
+      <trans-unit id="CallerMemberNameIsOverridden">
         <source>The CallerMemberNameAttribute applied to parameter '{0}' will have no effect. It is overridden by the CallerFilePathAttribute.</source>
         <target state="translated">Das auf Parameter "{0}" angewendete CallerMemberNameAttribute hat keine Auswirkung. Es wird vom CallerFilePathAttribute überschrieben.</target>
         <note />
@@ -8438,8 +8438,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionTry">
-        <source>Used to introduce a block of code that might generate an exception. Used together with with or finally.</source>
-        <target state="translated">Wird verwendet, um einen Codeblock einzuführen, der unter Umständen eine Ausnahme generiert. Wird zusammen mit "with" oder "finally" verwendet.</target>
+        <source>Used to introduce a block of code that might generate an exception. Used together with 'with' or 'finally'.</source>
+        <target state="needs-review-translation">Wird verwendet, um einen Codeblock einzuführen, der unter Umständen eine Ausnahme generiert. Wird zusammen mit "with" oder "finally" verwendet.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionType">

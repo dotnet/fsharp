@@ -562,7 +562,7 @@
         <target state="translated">Especificador de formato incorrecto: {0}</target>
         <note />
       </trans-unit>
-      <trans-unit id="printfBadIntegerForDynamicFomatter">
+      <trans-unit id="printfBadIntegerForDynamicFormatter">
         <source>Bad integer supplied to dynamic formatter</source>
         <target state="translated">Se proporcionó un entero incorrecto a un formateador dinámico.</target>
         <note />
@@ -592,7 +592,7 @@
         <target state="translated">No es un tipo de función.</target>
         <note />
       </trans-unit>
-      <trans-unit id="printfPrecisonSpecifierIllegal">
+      <trans-unit id="printfPrecisionSpecifierIllegal">
         <source>Bad format specifier (precision)</source>
         <target state="translated">Especificador de formato incorrecto (precisión).</target>
         <note />

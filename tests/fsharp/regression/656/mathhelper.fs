@@ -126,11 +126,11 @@ let erfcinv y =
 		let u = (erfc (x) - y) / (-2.0 / sqrt (Math.PI) * exp (-x * x)) in
 		x - u / (1.0 + x * u)
 
-/// Computes the cummulative Gaussian distribution at a specified point of interest.
+/// Computes the cumulative Gaussian distribution at a specified point of interest.
 let normcdf t = 
     let sqrt2 = 1.4142135623730951 in (erfc (-t / sqrt2)) / 2.0
 			
-/// Computes the inverse of the cummulative Gaussian distribution (qunatile function) at a specified point of interest.
+/// Computes the inverse of the cumulative Gaussian distribution (quantile function) at a specified point of interest.
 let norminv p = 
 	let sqrt2 = 1.4142135623730951 in -sqrt2 * erfcinv (2.0 * p)
 	

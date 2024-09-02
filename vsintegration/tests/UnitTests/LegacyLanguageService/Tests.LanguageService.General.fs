@@ -216,7 +216,7 @@ type UsingMSBuild() =
         
         // Verify able to move cursor and get correct results
         MoveCursorToEndOfMarker(file, "comment")
-        AssertEqual(TokenType.Comment, GetTokenTypeAtCursor(file))   // Not a string, as was origionally
+        AssertEqual(TokenType.Comment, GetTokenTypeAtCursor(file))   // Not a string, as was originally
         MoveCursorToEndOfMarker(file, "let y = ")
         AssertEqual(TokenType.String, GetTokenTypeAtCursor(file))   // Able to find new marker
         MoveCursorToStartOfMarker(file, "let y = ")

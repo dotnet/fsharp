@@ -14,7 +14,7 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <CheckNulls>true</CheckNulls>
-	<!-- Nullness checking againts ns20 base class libraries is very weak, the APIs were not updated with annotations. 
+	<!-- Nullness checking against ns20 base class libraries is very weak, the APIs were not updated with annotations. 
 	     Therefore we want to use the latest BCL APIs from NetCurrent.
 		 We are still not building the actual product in NetCurrent, so for official builds we remain as ns2.0.
 		 For 'BUILDING_USING_DOTNET' builds, we still want latest BCL annotations, so that contributors can get related warnings locally.
