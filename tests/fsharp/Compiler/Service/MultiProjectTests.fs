@@ -125,7 +125,7 @@ let test() =
     let ``Using a CSharp reference project in-memory``() =
         AssertInMemoryCSharpReferenceIsValid() |> ignore
 
-    [<Fact>] //;NonParallelizable>]
+    [<Fact>]
     let ``Using a CSharp reference project in-memory and it gets GCed``() =
         let weakRef = AssertInMemoryCSharpReferenceIsValid()
         CompilerAssert.Checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
