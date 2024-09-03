@@ -1,5 +1,5 @@
 // #Regression #Conformance #PatternMatching
-//<Expects id="FS0001" status="error" span="(15,22-15,24)">This expression was expected to have type.    'int'    .but here has type.    ''a list'</Expects>
+
 // Verify that a '[]' is only valid at the end of a list in a cons pattern
 // This is OK. Type inference will pick up that this x is a generic list of lists.
 

@@ -114,7 +114,7 @@ module NumericLiterals =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/NumericLiterals)
-    //<Expects id="FS0951" span="(11,23-11,35)" status="error">Literal enumerations must have type int, uint, int16, uint16, int64, uint64, byte, sbyte or char</Expects>
+    
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/NumericLiterals", Includes=[|"E_enumNegativeLiterals009.fs"|])>]
     let ``NumericLiterals - E_enumNegativeLiterals009_fs - --test:ErrorRanges`` compilation =
         compilation
