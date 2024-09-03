@@ -742,7 +742,7 @@ module ProjectOperations =
         expectOk result ()
         Assert.NotEqual<string>(oldSignature, newSignature)
 
-    let expectSignatureContains expected result (_oldSignature, newSignature) =
+    let expectSignatureContains (expected: string) result (_oldSignature, newSignature) =
         expectOk result ()
         Assert.Contains(expected, newSignature)
 

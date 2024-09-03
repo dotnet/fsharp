@@ -3,12 +3,12 @@
 namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 
 open FSharp.Test
-open NUnit.Framework
+open Xunit
 
-[<TestFixture>]
+
 module ``ComputedListExpressions`` =
 
-    [<Test>]
+    [<Fact>]
     let ``ComputedListExpression01``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"-g"; "--optimize-"|],
             """
@@ -35,7 +35,7 @@ let ListExpressionSteppingTest1 () = [ yield 1 ]
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``ComputedListExpression02``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"-g"; "--optimize-"|],
             """
@@ -78,7 +78,7 @@ let ListExpressionSteppingTest2 () =
         """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``ComputedListExpression03``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
             [|"-g"; "--optimize-"|],
@@ -128,7 +128,7 @@ let ListExpressionSteppingTest3 () =
         """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``ComputedListExpression04``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"-g"; "--optimize-"|],
             """
@@ -212,7 +212,7 @@ let ListExpressionSteppingTest4 () =
         """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``ComputedListExpression05``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"-g"; "--optimize-"|],
             """
@@ -275,7 +275,7 @@ let ListExpressionSteppingTest5 () =
 } 
 """]))
 
-    [<Test>]
+    [<Fact>]
     let ``ComputedListExpression06``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"-g"; "--optimize-"|],
             """

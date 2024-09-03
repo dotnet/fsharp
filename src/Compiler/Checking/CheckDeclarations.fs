@@ -4526,7 +4526,6 @@ module TcDeclarations =
             core, extra_vals_Inherits_Abstractslots @ extraMembers
             
     //-------------------------------------------------------------------------
-
     /// Bind a collection of mutually recursive definitions in an implementation file
     let TcMutRecDefinitions (cenv: cenv) envInitial parent typeNames tpenv m scopem mutRecNSInfo (mutRecDefns: MutRecDefnsInitialData) isMutRec =
 
@@ -5888,12 +5887,12 @@ let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSin
             tcComputationExpression=TcComputationExpression)
 
     let envinner, moduleTyAcc = MakeInitialEnv tcEnv 
-
+    let m = sigFile.QualifiedName.Range
     let specs = [ for x in sigFile.Contents -> SynModuleSigDecl.NamespaceFragment x ]
-    let! tcEnv = TcSignatureElements cenv ParentNone sigFile.QualifiedName.Range envinner PreXmlDoc.Empty None specs
+    let! tcEnv = TcSignatureElements cenv ParentNone m envinner PreXmlDoc.Empty None specs
     
-    let sigFileType = moduleTyAcc.Value
-    
+    let sigFileType = moduleTyAcc.Value    
+
     if not (checkForErrors()) then  
         try
             sigFileType |> IterTyconsOfModuleOrNamespaceType (fun tycon ->

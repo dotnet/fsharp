@@ -4,13 +4,13 @@ namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 
 open FSharp.Compiler.UnitTests
 open FSharp.Test
-open NUnit.Framework
+open Xunit
 
-[<TestFixture>]
+
 module ``Mutation`` =
     // Regression test for FSHARP1.0:1206
 
-    [<Test>]
+    [<Fact>]
     let ``Mutation 01``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
             [|"-g"; "--optimize-";"--realsig+"|],
@@ -45,7 +45,7 @@ type Test = struct
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``Mutation 02``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
             [|"-g"; "--optimize-";"--realsig+"|],
@@ -91,7 +91,7 @@ x.ToString()
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``Mutation 03``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
             [|"-g"; "--optimize-";"--realsig+"|],
@@ -136,7 +136,7 @@ x.Day
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``Mutation 04``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
             [|"-g"; "--optimize-";"--realsig+"|],
@@ -182,7 +182,7 @@ x.ToString()
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``Mutation 05``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
             [|"-g"; "--optimize-";"--realsig+"|],
