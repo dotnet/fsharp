@@ -3,12 +3,12 @@
 namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 
 open FSharp.Test
-open NUnit.Framework
+open Xunit
 
-[<TestFixture>]
+
 module ``Static Member`` =
 
-    [<Test>]
+    [<Fact>]
     let ``Action on Static Member``() =
         CompilerAssert.CompileLibraryAndVerifyILRealSig(
             """
@@ -72,7 +72,7 @@ type C =
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``Action on Static Member with lambda``() =
         CompilerAssert.CompileLibraryAndVerifyILRealSig(
             """
@@ -131,7 +131,7 @@ type C =
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``Action on Static Member with closure``() =
         CompilerAssert.CompileLibraryAndVerifyILRealSig(
             """
@@ -245,7 +245,7 @@ let main _ =
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``Func on Static Member``() =
         CompilerAssert.CompileLibraryAndVerifyILRealSig(
             """
@@ -311,7 +311,7 @@ type C =
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``Func on Static Member with lambda``() =
         CompilerAssert.CompileLibraryAndVerifyILRealSig(
             """
@@ -377,7 +377,7 @@ type C =
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``Func on Static Member with closure``() =
         CompilerAssert.CompileLibraryAndVerifyILRealSig(
             """
@@ -432,7 +432,7 @@ let main _ =
             ]))
 
 #if !FX_NO_WINFORMS
-    [<Test>]
+    [<Fact>]
     let ``EventHandler from Regression/83``() =
         CompilerAssert.CompileLibraryAndVerifyILRealSig(
             """

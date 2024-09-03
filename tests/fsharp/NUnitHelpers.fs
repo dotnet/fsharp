@@ -1,8 +1,10 @@
-namespace NUnit.Framework
+namespace Xunit
+
+open Xunit
 
 module Assert =
 
-    [<assembly: NonParallelizable()>]
+    [<assembly: CollectionBehavior(DisableTestParallelization = true)>]
     do()
 
     let inline fail message = Assert.Fail message
@@ -10,8 +12,4 @@ module Assert =
     let inline failf fmt = Printf.kprintf fail fmt
 
     let inline areEqual (expected: ^T) (actual: ^T) =
-        Assert.AreEqual(expected, actual)
-
-module StringAssert =
-
-    let inline contains expected actual = StringAssert.Contains(expected, actual)
+        Assert.Equal<^T>(expected, actual)
