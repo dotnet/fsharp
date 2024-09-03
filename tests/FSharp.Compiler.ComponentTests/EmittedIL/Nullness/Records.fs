@@ -23,3 +23,5 @@ let createAnInstance () =
         GenericNullableField = maybeString
         GenericNotNullField = ""}
     
+
+let stringOfInst() : string = createAnInstance().ToString()

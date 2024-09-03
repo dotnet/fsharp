@@ -3,12 +3,11 @@
 namespace FSharp.Compiler.UnitTests
 
 open FSharp.Compiler.Diagnostics
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 open FSharp.Test.Utilities
 open FSharp.Test.Compiler
 
-[<TestFixture>]
 module SignatureGenerationTests =
 
     let sigText (checkResults: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults) =
@@ -37,7 +36,7 @@ module SignatureGenerationTests =
 
         Assert.shouldBeEquivalentTo expected2 actual
     
-    [<Test>]
+    [<Fact>]
     let ``can generate sigs with comments`` () = 
         """
 namespace Sample
@@ -128,7 +127,7 @@ module Inner =
       member Thing: int
   """
     
-    [<Test>]
+    [<Fact>]
     let ``can generate signatures for autoproperties`` () = 
         """
 namespace Sample
@@ -180,7 +179,7 @@ module Inner =
 
       member SomeAutoPropWithGetOnly: string"""
 
-    [<Test>]
+    [<Fact>]
     let ``can generate attributes for implicit namespace`` () = 
         """
 [<AutoOpen>]
@@ -204,7 +203,7 @@ module Say =
 
   val f: a: 'a -> 'a"""
 
-    [<Test>]
+    [<Fact>]
     let ``can generate attributes for implicit namespace with multiple modules`` () = 
         """
 [<AutoOpen>]

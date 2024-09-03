@@ -152,10 +152,11 @@ let GetAttribInfosOfEntity g amap m (tcref:TyconRef) =
         tcref.Attribs |> List.map (fun a -> FSAttribInfo (g, a))
 
 
-let GetAttribInfosOfMethod amap m minfo = 
+let rec GetAttribInfosOfMethod amap m minfo = 
     match minfo with 
     | ILMeth (g, ilminfo, _) -> ilminfo.RawMetadata.CustomAttrs  |> AttribInfosOfIL g amap ilminfo.MetadataScope m
     | FSMeth (g, _, vref, _) -> vref.Attribs |> AttribInfosOfFS g 
+    | MethInfoWithModifiedReturnType(mi,_) -> GetAttribInfosOfMethod amap m mi
     | DefaultStructCtor _ -> []
 #if !NO_TYPEPROVIDERS
     // TODO: provided attributes
@@ -186,11 +187,12 @@ let GetAttribInfosOfEvent amap m einfo =
 
 /// Analyze three cases for attributes declared on methods: IL-declared attributes, F#-declared attributes and
 /// provided attributes.
-let BindMethInfoAttributes m minfo f1 f2 f3 = 
+let rec BindMethInfoAttributes m minfo f1 f2 f3 = 
     ignore m; ignore f3
     match minfo with 
     | ILMeth (_, x, _) -> f1 x.RawMetadata.CustomAttrs 
     | FSMeth (_, _, vref, _) -> f2 vref.Attribs
+    | MethInfoWithModifiedReturnType(mi,_) -> BindMethInfoAttributes m mi f1 f2 f3
     | DefaultStructCtor _ -> f2 []
 #if !NO_TYPEPROVIDERS
     | ProvidedMeth (_, mi, _, _) -> f3 (mi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)), m))

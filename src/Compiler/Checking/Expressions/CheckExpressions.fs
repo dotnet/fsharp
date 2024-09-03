@@ -11696,6 +11696,10 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (_: Val option) (a
 
                      let declaredTypars = (if typarsFromAbsSlotAreRigid then typarsFromAbsSlot else declaredTypars)
 
+                     // Overrides can narrow the retTy from nullable to not-null.
+                     // By changing nullness to be variable we do not get in the way of eliminating nullness (=good).
+                     let retTyFromAbsSlot = retTyFromAbsSlot |> changeWithNullReqTyToVariable g
+
                      let absSlotTy = mkMethodTy g argTysFromAbsSlot retTyFromAbsSlot
 
                      UnifyTypes cenv envinner m argsAndRetTy absSlotTy

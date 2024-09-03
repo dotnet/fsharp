@@ -13,7 +13,7 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open TestFramework
-open NUnit.Framework
+open Xunit
 open System.Collections.Generic
 open FSharp.Compiler.CodeAnalysis
 open Newtonsoft.Json
@@ -21,19 +21,19 @@ open Newtonsoft.Json.Linq
 
 
 type TheoryForNETCOREAPPAttribute() =
-    inherit Xunit.TheoryAttribute()
+    inherit TheoryAttribute()
     #if !NETCOREAPP
         do base.Skip <- "Only NETCOREAPP is supported runtime for this kind of test."
     #endif
 
 type FactForNETCOREAPPAttribute() =
-    inherit Xunit.FactAttribute()
+    inherit FactAttribute()
     #if !NETCOREAPP    
         do base.Skip <- "Only NETCOREAPP is supported runtime for this kind of test."
     #endif
 
 type FactForDESKTOPAttribute() =
-    inherit Xunit.FactAttribute()
+    inherit FactAttribute()
     #if NETCOREAPP
         do base.Skip <- "NETCOREAPP is not supported runtime for this kind of test, it is intended for DESKTOP only"
     #endif
