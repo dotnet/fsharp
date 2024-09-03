@@ -1154,7 +1154,7 @@ type NativeResourceWriter() =
                             "Unknown entry %s"
                             (match e with
                              | null -> "<NULL>"
-                             | e -> e.GetType().FullName)
+                             | e -> e.GetType().FullName |> string)
 
                 if id >= 0 then
                     writer.WriteInt32 id

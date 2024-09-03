@@ -314,6 +314,9 @@ type MethInfo =
     /// Describes a use of a method backed by Abstract IL # metadata
     | ILMeth of tcGlobals: TcGlobals * ilMethInfo: ILMethInfo * extensionMethodPriority: ExtensionMethodPriority option
 
+    /// A pseudo-method used by F# typechecker to treat Object.ToString() of known types as returning regular string, not `string?` as in the BCL
+    | MethInfoWithModifiedReturnType of original: MethInfo * modifiedReturnType: TType
+
     /// Describes a use of a pseudo-method corresponding to the default constructor for a .NET struct type
     | DefaultStructCtor of tcGlobals: TcGlobals * structTy: TType
 
