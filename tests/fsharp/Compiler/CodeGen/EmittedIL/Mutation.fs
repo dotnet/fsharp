@@ -13,7 +13,7 @@ module ``Mutation`` =
     [<Test>]
     let ``Mutation 01``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [|"-g"; "--optimize-"|],
+            [|"-g"; "--optimize-";"--realsig+"|],
             """
 module Mutation01
 type Test = struct
@@ -48,7 +48,7 @@ type Test = struct
     [<Test>]
     let ``Mutation 02``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [|"-g"; "--optimize-"|],
+            [|"-g"; "--optimize-";"--realsig+"|],
             """
 module Mutation02
 let x = System.TimeSpan.MinValue
@@ -94,7 +94,7 @@ x.ToString()
     [<Test>]
     let ``Mutation 03``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [|"-g"; "--optimize-"|],
+            [|"-g"; "--optimize-";"--realsig+"|],
             """
 module Mutation03
 let x = System.DateTime.Now
@@ -139,7 +139,7 @@ x.Day
     [<Test>]
     let ``Mutation 04``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [|"-g"; "--optimize-"|],
+            [|"-g"; "--optimize-";"--realsig+"|],
             """
 module Mutation04
 let x = System.Decimal.MaxValue
@@ -185,7 +185,7 @@ x.ToString()
     [<Test>]
     let ``Mutation 05``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [|"-g"; "--optimize-"|],
+            [|"-g"; "--optimize-";"--realsig+"|],
             """
 module Mutation05
 type C() =

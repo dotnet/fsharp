@@ -52,6 +52,11 @@
         <target state="translated">Określ, ile informacji ma być uwzględnionych w danych wyjściowych kompilacji</target>
         <note />
       </trans-unit>
+      <trans-unit id="WorkingDirectoryNonexistent">
+        <source>The working directory does not exist:\n'{0}'.</source>
+        <target state="new">The working directory does not exist:\n'{0}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="cli1">
         <source>ECMA-335 CLI compatible framework (location must be provided)</source>
         <target state="translated">Platforma zgodna z ECMA-335 CLI (należy podać lokalizację)</target>
@@ -713,11 +718,6 @@
       <trans-unit id="CannotBuildWhenBuildInProgress">
         <source>Cannot start a build, because another build is already in progress.</source>
         <target state="translated">Nie można uruchomić kompilacji, ponieważ trwa już inna kompilacja.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="WorkingDirectoryNotExists">
-        <source>The working directory does not exist:\n'{0}'.</source>
-        <target state="translated">Katalog roboczy nie istnieje:\n„{0}”.</target>
         <note />
       </trans-unit>
       <trans-unit id="ProjectReferencesDifferentFramework">

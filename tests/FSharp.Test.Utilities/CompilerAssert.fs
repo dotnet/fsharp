@@ -1006,6 +1006,9 @@ Updated automatically, please check diffs in your pull request, changes must be 
     static member CompileLibraryAndVerifyIL((source: string), (f: ILVerifier -> unit)) =
         compileLibraryAndVerifyILWithOptions [||] (SourceCodeFileKind.Create("test.fs", source)) f
 
+    static member CompileLibraryAndVerifyILRealSig((source: string), (f: ILVerifier -> unit)) =
+        compileLibraryAndVerifyILWithOptions [|"--realsig+"|] (SourceCodeFileKind.Create("test.fs", source)) f
+
     static member RunScriptWithOptionsAndReturnResult options (source: string) =
         // Initialize output and input streams
         use inStream = new StringReader("")
