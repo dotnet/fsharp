@@ -18,26 +18,26 @@ neg16.fs(49,7,49,23): typecheck error FS0842: This attribute is not valid for us
 neg16.fs(52,7,52,23): typecheck error FS0842: This attribute is not valid for use on this language element
 
 neg16.fs(59,8,59,17): typecheck error FS0001: This expression was expected to have type
-    'Choice<'a,'b>' 
+    'Choice<'a,'b>'    
 but here has type
     'string'    
 
 neg16.fs(60,8,60,21): typecheck error FS3872: Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.
 
 neg16.fs(60,8,60,21): typecheck error FS0001: This expression was expected to have type
-    'Choice<'a,'b> option'
+    'Choice<'a,'b> option'    
 but here has type
-    'string'
+    'string'    
 
 neg16.fs(61,8,61,29): typecheck error FS3872: Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.
 
 neg16.fs(61,8,61,29): typecheck error FS0001: This expression was expected to have type
-    'Choice<'a,'b,'c> option'
+    'Choice<'a,'b,'c> option'    
 but here has type
-    'string'
+    'string'    
 
 neg16.fs(62,8,62,16): typecheck error FS0001: This expression was expected to have type
-    ''a option'
+    ''a option'    
 but here has type
     'string'    
 
@@ -49,16 +49,16 @@ but here has type
 neg16.fs(68,8,68,21): typecheck error FS3872: Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.
 
 neg16.fs(68,8,68,21): typecheck error FS0001: This expression was expected to have type
-    'Choice<'a,'b> option'
+    'Choice<'a,'b> option'    
 but here has type
-    'string'
+    'string'    
 
 neg16.fs(69,8,69,29): typecheck error FS3872: Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.
 
 neg16.fs(69,8,69,29): typecheck error FS0001: This expression was expected to have type
-    'Choice<'a,'b,'c> option'
+    'Choice<'a,'b,'c> option'    
 but here has type
-    'string'
+    'string'    
 
 neg16.fs(70,8,70,16): typecheck error FS0001: This expression was expected to have type
     ''a option'    
@@ -73,15 +73,16 @@ but here has type
 neg16.fs(76,12,76,25): typecheck error FS3872: Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.
 
 neg16.fs(76,12,76,25): typecheck error FS0001: This expression was expected to have type
-    'Choice<'a,'b> option'
+    'Choice<'a,'b> option'    
 but here has type
-    'string'
+    'string'    
 
 neg16.fs(77,13,77,34): typecheck error FS3872: Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.
 
 neg16.fs(77,13,77,34): typecheck error FS0001: This expression was expected to have type
-    'Choice<'a,'b,'c> option'
+    'Choice<'a,'b,'c> option'    
 but here has type
+    'string'    
 
 neg16.fs(78,12,78,20): typecheck error FS0001: This expression was expected to have type
     ''a option'    
