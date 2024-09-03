@@ -36,7 +36,7 @@ module LetBindings_TypeFunctions =
         |> verifyCompileAndRun
         |> shouldSucceed
 
-    //<Expects id="FS0704" span="(9,16-9,17)" status="error">Expected type, not unit-of-measure</Expects>
+    
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_typeof_measure_01.fs"|])>]
     let ``E_typeof_measure_01_fs`` compilation =
         compilation
@@ -59,7 +59,7 @@ module LetBindings_TypeFunctions =
             (Error 671, Line 7, Col 27, Line 7, Col 33, "A property cannot have explicit type parameters. Consider using a method instead.")
         ]
 
-    //<Expects id="FS0929" span="(7,6-7,7)" status="error">This type requires a definition</Expects>
+    
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_typeof_undefined_01.fs"|])>]
     let ``E_typeof_undefined_01_fs`` compilation =
         compilation
