@@ -176,7 +176,7 @@ type T(span: Span<byte>) = struct end
              """
              [| |]
 
-    [<Test>]
+    [<Fact>]
     let ``A byref struct with custom attr can be passed as typar``() =
         CompilerAssert.TypeCheckWithErrors """
 namespace System.Runtime.CompilerServices
