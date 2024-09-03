@@ -253,8 +253,9 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
                 var lines = args.Item2.Split(';'); // XXX Probably not robust enough
                 var path = args.Item1;
 
+                string directoryPath = Path.GetDirectoryName(path) ?? throw new Exception("Directory path should not be null");
                 var snapshot = FSharpProjectSnapshot.FromCommandLineArgs(
-                    lines, Path.GetDirectoryName(path), Path.GetFileName(path));
+                    lines, directoryPath, Path.GetFileName(path));
                 snapshots.Add(snapshot);
             }
             workspace = FSharpWorkspace.Create(snapshots);
