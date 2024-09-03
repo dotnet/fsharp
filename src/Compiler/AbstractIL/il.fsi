@@ -1021,6 +1021,9 @@ type ILGenericParameterDef =
         /// Indicates the type argument must have a public nullary constructor.
         HasDefaultConstructorConstraint: bool
 
+        /// Indicates the type parameter allows ref struct, i.e. an anti constraint.
+        HasAllowsRefStruct: bool
+
         /// Do not use this
         CustomAttrsStored: ILAttributesStored
 
