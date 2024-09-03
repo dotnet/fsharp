@@ -9,7 +9,7 @@ open FSharp.Test.Compiler
 module Simple =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
-    //<Expects id="FS0025" span="(92,13-92,14)" status="warning">Incomplete pattern matches on this expression. For example, the value 'Result \(_\)' may indicate a case not covered by the pattern\(s\)</Expects>
+    
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_Incomplete01.fs"|])>]
     let ``Simple - W_Incomplete01_fs - --test:ErrorRanges`` compilation =
         compilation
@@ -20,7 +20,7 @@ module Simple =
         |> withSingleDiagnostic (Warning 25, Line 92, Col 13, Line 92, Col 14, "Incomplete pattern matches on this expression. For example, the value 'Result (_)' may indicate a case not covered by the pattern(s).")
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
-    //<Expects id="FS0026" span="(32,11-32,13)" status="warning">This rule will never be matched</Expects>
+    
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_Incomplete02.fs"|])>]
     let ``Simple - W_Incomplete02_fs - --test:ErrorRanges`` compilation =
         compilation
@@ -36,7 +36,7 @@ module Simple =
         ]
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
-    //<Expects id="FS0049" span="(10,16-10,19)" status="warning">Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name</Expects>
+    
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_BindCapitalIdent.fs"|])>]
     let ``Simple - W_BindCapitalIdent_fs - --test:ErrorRanges`` compilation =
         compilation

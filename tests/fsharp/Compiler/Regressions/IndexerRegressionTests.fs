@@ -3,13 +3,12 @@
 namespace FSharp.Compiler.UnitTests
 
 open System
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 
-[<TestFixture()>]
 module IndexerRegressionTests =
 
-    [<Test>]
+    [<Fact>]
     let ``Indexer has qualified type value``() =
         CompilerAssert.Pass 
             """

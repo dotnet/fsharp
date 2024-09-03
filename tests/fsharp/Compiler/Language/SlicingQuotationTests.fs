@@ -1,12 +1,12 @@
 ﻿namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 open FSharp.Compiler.Diagnostics
 
-[<TestFixture>]
+
 module SlicingQuotationTests =
-    [<Test>]
+    [<Fact>]
     let ``Reverse slicing quotation on array with range return expected expression``() =
         CompilerAssert.RunScriptWithOptions [| "--langversion:preview" |]
             """
@@ -35,7 +35,7 @@ test()
             []
 
 
-    [<Test>]
+    [<Fact>]
     let ``Reverse slicing quotation on array2d with ranges return expected expression``() =
         CompilerAssert.RunScriptWithOptions [| "--langversion:preview" |]
             """
@@ -63,7 +63,7 @@ test()
             """
             []
 
-    [<Test>]
+    [<Fact>]
     let ``Reverse slicing quotation on array2d with fixed index return expected expression``() =
         CompilerAssert.RunScriptWithOptions [| "--langversion:preview" |]
             """
@@ -91,7 +91,7 @@ test()
             """
             []
 
-    [<Test>]
+    [<Fact>]
     let ``Reverse indexing quotation on array2d return expected expression``() =
         CompilerAssert.RunScriptWithOptions [| "--langversion:preview" |]
             """
@@ -119,7 +119,7 @@ test()
             """
             []
 
-    [<Test>]
+    [<Fact>]
     let ``Reverse slicing quotation on list with range return expected expression``() =
         CompilerAssert.RunScriptWithOptions [| "--langversion:preview" |]
             """
@@ -149,7 +149,7 @@ test()
 
 
 
-    [<Test>]
+    [<Fact>]
     let ``Regular slicing quotation on array with star return expected expression``() =
         CompilerAssert.RunScriptWithOptions [| "--langversion:preview" |]
             """
@@ -177,7 +177,7 @@ test()
             """
             []
 
-    [<Test>]
+    [<Fact>]
     let ``Regular slicing quotation on array with range return expected expression``() =
         CompilerAssert.RunScriptWithOptions [| "--langversion:preview" |]
             """
@@ -206,7 +206,7 @@ test()
             []
 
 
-    [<Test>]
+    [<Fact>]
     let ``Regular slicing quotation on array2d with ranges return expected expression``() =
         CompilerAssert.RunScriptWithOptions [| "--langversion:preview" |]
             """
@@ -234,7 +234,7 @@ test()
             """
             []
 
-    [<Test>]
+    [<Fact>]
     let ``Regular slicing quotation on array2d with fixed index return expected expression``() =
         CompilerAssert.RunScriptWithOptions [| "--langversion:preview" |]
             """
@@ -262,7 +262,7 @@ test()
             """
             []
 
-    [<Test>]
+    [<Fact>]
     let ``Regular indexing quotation on array2d return expected expression``() =
         CompilerAssert.RunScriptWithOptions [| "--langversion:preview" |]
             """
@@ -290,7 +290,7 @@ test()
             """
             []
 
-    [<Test>]
+    [<Fact>]
     let ``Regular slicing quotation on list with star return expected expression``() =
         CompilerAssert.RunScriptWithOptions [| "--langversion:preview" |]
             """
@@ -318,7 +318,7 @@ test()
             """
             []
 
-    [<Test>]
+    [<Fact>]
     let ``Regular slicing quotation on list with range return expected expression``() =
         CompilerAssert.RunScriptWithOptions [| "--langversion:preview" |]
             """

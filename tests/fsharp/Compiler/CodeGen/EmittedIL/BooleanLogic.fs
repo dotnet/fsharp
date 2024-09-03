@@ -3,12 +3,11 @@
 namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 
 open FSharp.Test
-open NUnit.Framework
+open Xunit
 
-[<TestFixture>]
 module BooleanLogic =
 
-    [<Test>]
+    [<Fact>]
     let BooleanOrs() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions ([|"-g"; "--optimize+"|],
             """
@@ -54,7 +53,7 @@ let compute (x: int) =
             """
             ]))
 
-[<TestFixture>]
+
 // We had a regression in debug code regression where we were falsely marking pipelines
 // as non-side-effecting, causing them to be eliminated in loops.
 //
@@ -63,7 +62,7 @@ let compute (x: int) =
 //   2. we don't eliminate loops anyway
 module DontEliminateForLoopsInDebugCode =
 
-    [<Test>]
+    [<Fact>]
     // See https://github.com/dotnet/fsharp/pull/12021
     let Regression12021() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"-g"; "--optimize-"|],

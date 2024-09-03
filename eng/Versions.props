@@ -196,8 +196,8 @@
     <RoslynToolsSignToolVersion>1.0.0-beta2-dev3</RoslynToolsSignToolVersion>
     <StreamJsonRpcVersion>2.18.48</StreamJsonRpcVersion>
     <NerdbankStreamsVersion>2.10.69</NerdbankStreamsVersion>
-    <XUnitVersion>2.4.1</XUnitVersion>
-    <XUnitRunnerVersion>2.4.2</XUnitRunnerVersion>
+    <XUnitVersion>2.9.0</XUnitVersion>
+    <XUnitRunnerVersion>2.8.2</XUnitRunnerVersion>
     <FluentAssertionsVersion>5.10.3</FluentAssertionsVersion>
     <HumanizerCoreVersion>2.2.0</HumanizerCoreVersion>
     <!-- -->
