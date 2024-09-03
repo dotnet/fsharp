@@ -683,7 +683,12 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
 
         let compilerArgs = File.ReadAllLines responseFile.FullName
 
-        FSharpProjectSnapshot.FromCommandLineArgs(compilerArgs, responseFile.DirectoryName, projectFileName)
+        let directoryName : string =
+            match responseFile.DirectoryName with
+            | null -> failwith "Directory name of the response file is null"
+            | str -> str
+
+        FSharpProjectSnapshot.FromCommandLineArgs(compilerArgs, directoryName, projectFileName)
 
     static member FromCommandLineArgs(compilerArgs: string array, directoryPath: string, projectFileName) =
         let fsharpFileExtensions = set [| ".fs"; ".fsi"; ".fsx" |]
