@@ -462,7 +462,7 @@ type StackGuard =
         [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int ->
             'T
 
-    member GuardCancellable<'T>: Internal.Utilities.Library.Cancellable<'T> -> Internal.Utilities.Library.Cancellable<'T>
+    member GuardCancellable: Internal.Utilities.Library.Cancellable<'T> -> Internal.Utilities.Library.Cancellable<'T>
 
     static member GetDepthOption: string -> int
 
