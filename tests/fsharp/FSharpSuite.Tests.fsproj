@@ -17,6 +17,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="..\scripts\scriptlib.fsx">
       <Link>scriptlib.fsx</Link>
     </Compile>
