@@ -508,19 +508,19 @@ module rec CompilerAssertHelpers =
             match source.GetSourceText with
             | Some text ->
                 // In memory source file copy it to the build directory
-                let s = source.WithFileName(tryCreateTemporaryFileName ()).ChangeExtension
-                File.WriteAllText (source.GetSourceFileName, text)
-                s
+                let sourceWithTempFileName = source.WithFileName(tryCreateTemporaryFileName ()).ChangeExtension
+                File.WriteAllText(sourceWithTempFileName.GetSourceFileName, text)
+                sourceWithTempFileName
             | None ->
                 // On Disk file
                 source
 
         let outputFilePath = Path.ChangeExtension (tryCreateTemporaryFileName (), if isExe then ".exe" else ".dll")
         try
-            f (rawCompile outputFilePath isExe options TargetFramework.Current [source])
+            f (rawCompile outputFilePath isExe options TargetFramework.Current [sourceFile])
         finally
-            try File.Delete sourceFile.GetSourceFileName with | _ -> ()
-            try File.Delete outputFilePath with | _ -> ()
+                try File.Delete sourceFile.GetSourceFileName with | _ -> ()
+                try File.Delete outputFilePath with | _ -> ()
 
     let rec evaluateReferences (outputPath:DirectoryInfo) (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : string[] * string list =
         match cmpl with
