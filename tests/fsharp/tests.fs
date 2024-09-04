@@ -808,18 +808,12 @@ module CoreTests =
 
 #endif
 
-#if !NETCOREAPP
-
-    let quotesCfg =
-        let cfg = testConfig "core/quotes"
-
-        // Ensure cslib.dll exists
-        csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
-        cfg
-    
+#if !NETCOREAPP    
     [<Fact>]
     let quotes () =
-        let cfg = quotesCfg
+        let cfg = testConfig "core/quotes"
+
+        csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
 
         fsc cfg "%s  -o:test.exe -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
 
@@ -862,18 +856,23 @@ module CoreTests =
     // This test stays in FsharpSuite for a later migration phases, it uses hardcoded #r to a C# compiled cslib.dll inside
     [<Fact>]
     let ``quotes-FSC-FSC_DEBUG`` () =
-        // 
-        quotesCfg |> ignore
+        let cfg = testConfig "core/quotes"
+        csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
+
         singleTestBuildAndRun "core/quotes" FSC_DEBUG
 
     [<Fact>]
     let ``quotes-FSC-BASIC`` () =
-        quotesCfg |> ignore
+        let cfg = testConfig "core/quotes"
+        csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
+
         singleTestBuildAndRun "core/quotes" FSC_OPTIMIZED
 
     [<Fact>]
     let ``quotes-FSI-BASIC`` () =
-        quotesCfg |> ignore
+        let cfg = testConfig "core/quotes"
+        csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
+
         singleTestBuildAndRun "core/quotes" FSI
 
     [<Fact; Trait("Category", "parsing")>]
