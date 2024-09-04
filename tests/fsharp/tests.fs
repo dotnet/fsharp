@@ -853,7 +853,9 @@ module CoreTests =
             testOkFile.CheckExists()
         end
 
-    // This test stays in FsharpSuite for a later migration phases, it uses hardcoded #r to a C# compiled cslib.dll inside
+    // Previously a comment here said:
+    // "This test stays in FsharpSuite for a later migration phases, it uses hardcoded #r to a C# compiled cslib.dll inside"
+    // This is resolved by compiling cslib.dll separately in each test. 
     [<Fact>]
     let ``quotes-FSC-FSC_DEBUG`` () =
         let cfg = testConfig "core/quotes"
