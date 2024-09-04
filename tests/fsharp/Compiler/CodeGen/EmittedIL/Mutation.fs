@@ -4,16 +4,16 @@ namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 
 open FSharp.Compiler.UnitTests
 open FSharp.Test
-open NUnit.Framework
+open Xunit
 
-[<TestFixture>]
+
 module ``Mutation`` =
     // Regression test for FSHARP1.0:1206
 
-    [<Test>]
+    [<Fact>]
     let ``Mutation 01``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [|"-g"; "--optimize-"|],
+            [|"-g"; "--optimize-";"--realsig+"|],
             """
 module Mutation01
 type Test = struct
@@ -45,10 +45,10 @@ type Test = struct
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``Mutation 02``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [|"-g"; "--optimize-"|],
+            [|"-g"; "--optimize-";"--realsig+"|],
             """
 module Mutation02
 let x = System.TimeSpan.MinValue
@@ -91,10 +91,10 @@ x.ToString()
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``Mutation 03``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [|"-g"; "--optimize-"|],
+            [|"-g"; "--optimize-";"--realsig+"|],
             """
 module Mutation03
 let x = System.DateTime.Now
@@ -136,10 +136,10 @@ x.Day
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``Mutation 04``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [|"-g"; "--optimize-"|],
+            [|"-g"; "--optimize-";"--realsig+"|],
             """
 module Mutation04
 let x = System.Decimal.MaxValue
@@ -182,10 +182,10 @@ x.ToString()
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``Mutation 05``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [|"-g"; "--optimize-"|],
+            [|"-g"; "--optimize-";"--realsig+"|],
             """
 module Mutation05
 type C() =

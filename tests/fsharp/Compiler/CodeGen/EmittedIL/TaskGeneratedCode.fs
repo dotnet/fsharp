@@ -3,7 +3,7 @@
 namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 
 open FSharp.Test
-open NUnit.Framework
+open Xunit
 
 open System
 open System.Threading.Tasks
@@ -12,7 +12,7 @@ open System.Threading.Tasks
 // The code generated changes slightly in debug mode
 #if !DEBUG 
 // Check the exact code produced for tasks
-[<TestFixture>]
+
 module TaskGeneratedCode =
 
     // This tests the exact optimized code generated for the MoveNext for a trivial task - we expect 'MoveNext' to be there
@@ -26,10 +26,10 @@ module TaskGeneratedCode =
     //   IL_000e:  ldc.i4.1
     //   IL_000f:  stfld      int32 Test/testTask@4::Result
 
-    [<Test>]
+    [<Fact>]
     let ``check MoveNext of simple task debug``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/optimize-"; "/debug:portable"; "/tailcalls-" |],
+            [| "/optimize-"; "/debug:portable";"--realsig+"; "/tailcalls-" |],
             """
 module Test
 
@@ -113,10 +113,10 @@ let testTask() = task { return 1 }
     //   IL_000e:  ldc.i4.1
     //   IL_000f:  stfld      int32 Test/testTask@4::Result
 
-    [<Test>]
+    [<Fact>]
     let ``check MoveNext of simple task optimized``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/optimize+"; "/debug:portable"; "/tailcalls+" |],
+            [| "/optimize+"; "/debug:portable";"--realsig+"; "/tailcalls+" |],
             """
 module Test
 
@@ -187,10 +187,10 @@ let testTask() = task { return 1 }
             ]))
 
 
-    [<Test>]
+    [<Fact>]
     let ``check MoveNext of simple binding task debug``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/debug:portable"; "/optimize-"; "/tailcalls-" |],
+            [| "/debug:portable";"--realsig+"; "/optimize-"; "/tailcalls-" |],
             """
 module Test
 open System.Threading.Tasks
@@ -367,10 +367,10 @@ let testTask(t: Task<int>) = task { let! res = t in return res+1 }
 
 module TaskTryFinallyGeneration =
 
-    [<Test>]
+    [<Fact>]
     let ``check MoveNext of task try/finally optimized``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/optimize+"; "/debug:portable"; "/tailcalls+" |],
+            [| "/optimize+"; "/debug:portable";"--realsig+"; "/tailcalls+" |],
             """
 module Test
 
@@ -476,10 +476,10 @@ let testTask() = task { try 1+1 finally System.Console.WriteLine("finally") }
             ]))
 
 
-    [<Test>]
+    [<Fact>]
     let ``check MoveNext of task try/finally debug``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/optimize-"; "/debug:portable"; "/tailcalls-" |],
+            [| "/optimize-"; "/debug:portable";"--realsig+"; "/tailcalls-" |],
             """
 module Test
 
@@ -593,10 +593,10 @@ let testTask() = task { try 1+1 finally System.Console.WriteLine("finally") }
 
 module TaskTryWithGeneration =
 
-    [<Test>]
+    [<Fact>]
     let ``check MoveNext of task try/with optimized``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/optimize+"; "/debug:portable"; "/tailcalls+" |],
+            [| "/optimize+"; "/debug:portable";"--realsig+"; "/tailcalls+" |],
             """
 module Test
 
@@ -706,10 +706,10 @@ let testTask() = task { try 1 with e -> System.Console.WriteLine("finally"); 2 }
             ]))
 
 
-    [<Test>]
+    [<Fact>]
     let ``check MoveNext of task try/with debug``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/optimize-"; "/debug:portable"; "/tailcalls-" |],
+            [| "/optimize-"; "/debug:portable";"--realsig+"; "/tailcalls-" |],
             """
 module Test
 
@@ -826,10 +826,10 @@ let testTask() = task { try 1 with e -> System.Console.WriteLine("with"); 2 }
 
 module TaskWhileLoopGeneration =
 
-    [<Test>]
+    [<Fact>]
     let ``check MoveNext of task while loop optimized``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/optimize+"; "/debug:portable"; "/tailcalls+" |],
+            [| "/optimize+"; "/debug:portable";"--realsig+"; "/tailcalls+" |],
             """
 module Test
 
@@ -924,10 +924,10 @@ let testTask() = task { while x > 4 do System.Console.WriteLine("loop") }
             ]))
 
 
-    [<Test>]
+    [<Fact>]
     let ``check MoveNext of task while loop debug``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/optimize-"; "/debug:portable"; "/tailcalls-" |],
+            [| "/optimize-"; "/debug:portable";"--realsig+"; "/tailcalls-" |],
             """
 module Test
 
@@ -1027,10 +1027,10 @@ let testTask() = task { while x > 4 do System.Console.WriteLine("loop") }
 module TaskTypeInference =
     // This tests the compilation of a case that hits corner cases in SRTP constraint processing.
     // See https://github.com/dotnet/fsharp/issues/12188
-    [<Test>]
+    [<Fact>]
     let ``check initially ambiguous SRTP task code ``() =
         CompilerAssert.CompileExeAndRunWithOptions(
-            [| "/optimize-"; "/debug:portable"; "/tailcalls-" |],
+            [| "/optimize-"; "/debug:portable";"--realsig+"; "/tailcalls-" |],
             """
 module Test
 
@@ -1047,10 +1047,10 @@ let myTuple : (string -> Task<unit>) * int = (fun (_s: string) -> Task.FromResul
             """)
 
     // Test task code in generic position
-    [<Test>]
+    [<Fact>]
     let ``check generic task code ``() =
         CompilerAssert.CompileExeAndRunWithOptions(
-            [| "/optimize-"; "/debug:portable"; "/tailcalls-" |],
+            [| "/optimize-"; "/debug:portable";"--realsig+"; "/tailcalls-" |],
             """
 module Test
 
@@ -1080,10 +1080,10 @@ printfn "test passed"
 
 #if !DEBUG 
 
-    [<Test>]
+    [<Fact>]
     let ``check generic task exact code``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/optimize-"; "/debug:portable"; "/tailcalls-" |],
+            [| "/optimize-"; "/debug:portable";"--realsig+"; "/tailcalls-" |],
             """
 module Test
 
@@ -1382,9 +1382,9 @@ type Generic1InGeneric1<'T>() =
 
 
 #if NETCOREAPP
-[<TestFixture>]
+
 module ``Check stack traces`` = 
-    [<Test>]
+    [<Fact>]
     let ``check stack trace of async exception from task``() =
         let t() =
             task {
@@ -1412,7 +1412,7 @@ module ``Check stack traces`` =
 
 
 // Test that the SRTP Bind on a ValueTask is still generic in the bind type
-[<TestFixture>]
+
 module ``Check return attributes`` = 
     let incr (x:int) : [<Experimental("a")>] (int -> int) = (fun a -> a + x)
 
@@ -1420,7 +1420,7 @@ module ``Check return attributes`` =
     // If the function is curried its inferred arity should be no more than 
     // the declared arguments (the F# rule that infers additional arguments 
     // should not kick in).
-    [<Test>]
+    [<Fact>]
     let ``check return attribute of curried function``() =
         match <@ incr 3 4 @> with
         | Quotations.Patterns.Application (Quotations.Patterns.Call(None, mi, [Quotations.DerivedPatterns.Int32 3]), Quotations.DerivedPatterns.Int32 4) ->

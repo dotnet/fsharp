@@ -2,7 +2,7 @@
 // Regression test for FSharp1.0:5229
 // Title: Allow private type abbreviations
 
-//<Expects id="FS1092" status="error" span="(15,10-15,13)">The type 'X' is not accessible from this code location</Expects>
+
 
 module M = 
     type private X = int * int

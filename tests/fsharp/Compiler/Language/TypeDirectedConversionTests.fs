@@ -2,13 +2,12 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 open FSharp.Compiler.Diagnostics
 
-[<TestFixture>]
 module TypeDirectedConversionTests =
-    [<Test>]
+    [<Fact>]
     let ``int32 converts to float in method call parameter``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize-"|],
             """
@@ -33,7 +32,7 @@ let test() = Thing.Do(100)
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``int32 converts to System.Nullable<float> in method call parameter``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize-"|],
             """
@@ -59,7 +58,7 @@ let test() = Thing.Do(100)
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``int32 converts to float in method call property setter``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize-"|],
             """
@@ -91,7 +90,7 @@ let test() = Thing(Do = 100)
             ]))
 
     
-    [<Test>]
+    [<Fact>]
     let ``int32 converts to System.Nullable<float> in method call property setter``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize-"|],
             """
@@ -123,7 +122,7 @@ let test() = Thing(Do = 100)
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``int converts to System.Nullable<int> in method call property setter``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize-"|],
             """
@@ -154,7 +153,7 @@ let test() = Thing(Do = 100)
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``int converts to System.Nullable<int> in method call parameter``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize-"|],
             """
@@ -179,7 +178,7 @@ let test() = Thing.Do(100)
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``Passing an incompatible argument for System.Nullable<'T> method call parameter produces accurate error``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -199,7 +198,7 @@ is not compatible with type
     'System.Nullable<float>'    
 """       
 
-    [<Test>]
+    [<Fact>]
     let ``Assigning a 'T value to a System.Nullable<'T> binding succeeds``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -212,7 +211,7 @@ let test(): System.Nullable<int> = 1
             (4, 36, 4, 37)
             """This expression uses the implicit conversion 'System.Nullable.op_Implicit(value: int) : System.Nullable<int>' to convert type 'int' to type 'System.Nullable<int>'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn "3391"."""
     
-    [<Test>]
+    [<Fact>]
     let ``Assigning an int32 to a System.Nullable<float> binding fails``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -228,7 +227,7 @@ let test(): System.Nullable<float> = 1
 but here has type
     'int'    """
 
-    [<Test>]
+    [<Fact>]
     let ``Overloading on System.Nullable and Result both work without error``() =
         CompilerAssert.Pass
             """
@@ -244,7 +243,7 @@ let test() =
 """     
     
 
-    [<Test>]
+    [<Fact>]
     let ``Overloading on System.Nullable and Result produces a builtin conversion warning when Nullable is picked``() =
         CompilerAssert.TypeCheckSingleErrorWithOptions
             [| "--warnon:3389" |]
@@ -263,7 +262,7 @@ let test() =
             (9, 9, 9, 10)
             """This expression uses a built-in implicit conversion to convert type 'int' to type 'System.Nullable<int>'. See https://aka.ms/fsharp-implicit-convs."""
     
-    [<Test>]
+    [<Fact>]
     let ``Overloading on System.Nullable<int>, System.Nullable<'T> and int all work without error``() =
         CompilerAssert.RunScript
             """
@@ -283,7 +282,7 @@ let test() =
 test()
         """ []
 
-    [<Test>]
+    [<Fact>]
     let ``Picking overload for typar does not favor any form of System.Nullable nor produce ambiguity warnings``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -303,7 +302,8 @@ let test(x: 'T) =
          (11, 5, 11, 11)
          """This construct causes code to be less generic than indicated by the type annotations. The type variable 'T has been constrained to be type 'int'."""
 
-    [<Test(Description="https://github.com/dotnet/fsharp/issues/13731")>]
+    [<Fact>]
+    // https://github.com/dotnet/fsharp/issues/13731
     let ``Picking overload for typar fails when incompatible types are part of the candidate set``() =
         CompilerAssert.TypeCheckWithErrors
             """
@@ -352,7 +352,7 @@ Candidates:
  - static member M2.A: n: int -> unit""")   
          |]
     
-    [<Test>]
+    [<Fact>]
     let ``Ambiguous overload for typar does not pick System.Nullable<'T>``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -378,7 +378,7 @@ Candidates:
  - static member M.A: n: float -> unit
  - static member M.A: n: int -> unit"""
     
-    [<Test>]
+    [<Fact>]
     let ``Passing an argument in nested method call property setter works``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize-"|],
             """
@@ -422,7 +422,7 @@ let test() =
             """
         ]))
 
-    [<Test>]
+    [<Fact>]
     let ``Test retrieving an argument provided in a nested method call property setter works``() =
         CompilerAssert.RunScript
             """
@@ -441,7 +441,7 @@ let test() =
 if not (test().OtherArgs.Value.Name = "test") then failwith "Unexpected value was returned after setting Name"
         """ []
 
-    [<Test>]
+    [<Fact>]
     let ``Prefer nullable conversion only candidate when multiple candidates require conversions``() =
         CompilerAssert.RunScript
             """
@@ -454,7 +454,7 @@ let test() = M.A(System.DateTime.UtcNow, 1)
 if test() <> 1 then failwith "Incorrect overload picked" 
         """ []
 
-    [<Test>]
+    [<Fact>]
     let ``Prefer nullable conversion over numeric conversion``() =
         CompilerAssert.RunScript
             """
@@ -467,7 +467,7 @@ let test() = M.A(0)
 if test() <> 2 then failwith "Incorrect overload picked"
         """ []
 
-    [<Test>]
+    [<Fact>]
     let ``Prefer nullable conversion over op_Implicit conversion``() =
         
         CompilerAssert.RunScript
@@ -482,7 +482,8 @@ if test() <> 2 then failwith "Incorrect overload picked"
         """ []
 
 
-    [<Test(Description="https://github.com/dotnet/fsharp/issues/14318")>]
+    [<Fact>]
+    // https://github.com/dotnet/fsharp/issues/14318
     let ``Picking overload for TDC candidate set fails as ambiguous while one candidate requires more conversions``() =
         CompilerAssert.TypeCheckSingleError
             """

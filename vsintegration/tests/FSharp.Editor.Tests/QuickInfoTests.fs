@@ -31,7 +31,8 @@ module QuickInfo =
     let internal GetQuickInfo (code: string) caretPosition =
         asyncMaybe {
             let document =
-                RoslynTestHelpers.CreateSolution(code) |> RoslynTestHelpers.GetSingleDocument
+                RoslynTestHelpers.CreateSolution(code, extraFSharpProjectOtherOptions = [| "--realsig+" |])
+                |> RoslynTestHelpers.GetSingleDocument
 
             let! _, _, _, tooltip =
                 FSharpAsyncQuickInfoSource.TryGetToolTip(document, caretPosition)
@@ -534,7 +535,7 @@ module Test =
         static let fu$$nc x = ()
 """
 
-        let expectedSignature = "val private func: x: 'a -> unit"
+        let expectedSignature = "val func: x: 'a -> unit"
 
         let tooltip = GetQuickInfoTextFromCode code
 

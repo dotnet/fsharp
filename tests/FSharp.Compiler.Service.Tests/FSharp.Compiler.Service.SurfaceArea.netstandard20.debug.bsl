@@ -7,23 +7,6 @@
 ! AssemblyReference: System.Reflection.Emit.ILGeneration
 ! AssemblyReference: System.Reflection.Metadata
 ! AssemblyReference: netstandard
-<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: <IntImplIdx>j__TPar IntImplIdx
-<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: <IntImplIdx>j__TPar get_IntImplIdx()
-<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: <IntfIdx>j__TPar IntfIdx
-<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: <IntfIdx>j__TPar get_IntfIdx()
-<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: <TypeIdx>j__TPar TypeIdx
-<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: <TypeIdx>j__TPar get_TypeIdx()
-<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: Boolean Equals(<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar])
-<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: Boolean Equals(<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar], System.Collections.IEqualityComparer)
-<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: Boolean Equals(System.Object)
-<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: Int32 CompareTo(<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar])
-<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: Int32 CompareTo(System.Object)
-<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: Int32 GetHashCode()
-<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: System.String ToString()
-<>f__AnonymousType10003411232265`3[<IntImplIdx>j__TPar,<IntfIdx>j__TPar,<TypeIdx>j__TPar]: Void .ctor(<IntImplIdx>j__TPar, <IntfIdx>j__TPar, <TypeIdx>j__TPar)
 FSharp.Compiler.AbstractIL.IL+ILArgConvention+Tags: Int32 CDecl
 FSharp.Compiler.AbstractIL.IL+ILArgConvention+Tags: Int32 Default
 FSharp.Compiler.AbstractIL.IL+ILArgConvention+Tags: Int32 FastCall
@@ -670,9 +653,11 @@ FSharp.Compiler.AbstractIL.IL+ILFieldSpec: System.String Name
 FSharp.Compiler.AbstractIL.IL+ILFieldSpec: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILFieldSpec: System.String get_Name()
 FSharp.Compiler.AbstractIL.IL+ILFieldSpec: Void .ctor(ILFieldRef, ILType)
+FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: Boolean HasAllowsRefStruct
 FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: Boolean HasDefaultConstructorConstraint
 FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: Boolean HasNotNullableValueTypeConstraint
 FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: Boolean HasReferenceTypeConstraint
+FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: Boolean get_HasAllowsRefStruct()
 FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: Boolean get_HasDefaultConstructorConstraint()
 FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: Boolean get_HasNotNullableValueTypeConstraint()
 FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: Boolean get_HasReferenceTypeConstraint()
@@ -689,7 +674,7 @@ FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: Microsoft.FSharp.Collection
 FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: System.String Name
 FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: System.String get_Name()
-FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: Void .ctor(System.String, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILType], ILGenericVariance, Boolean, Boolean, Boolean, ILAttributesStored, Int32)
+FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: Void .ctor(System.String, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILType], ILGenericVariance, Boolean, Boolean, Boolean, Boolean, ILAttributesStored, Int32)
 FSharp.Compiler.AbstractIL.IL+ILGenericVariance+Tags: Int32 CoVariant
 FSharp.Compiler.AbstractIL.IL+ILGenericVariance+Tags: Int32 ContraVariant
 FSharp.Compiler.AbstractIL.IL+ILGenericVariance+Tags: Int32 NonVariant

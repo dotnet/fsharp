@@ -2,19 +2,19 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 open FSharp.Compiler.Diagnostics
 
 #nowarn "9"
 
-[<TestFixture>]
+
 module ``Stackalloc Tests`` =
 
     type E = | A = 1
              | B = 2
 
-    [<Test>]
+    [<Fact>]
     let ``Stackalloc of DateTime``() =
         let data = NativeInterop.NativePtr.stackalloc<System.DateTime> 100
         let now = System.DateTime.Now
@@ -31,7 +31,7 @@ module ``Stackalloc Tests`` =
             let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
             Assert.areEqual datai later
 
-    [<Test>]
+    [<Fact>]
     let ``Stackalloc of enum``() =
         let data = NativeInterop.NativePtr.stackalloc<E> 10
         
@@ -51,17 +51,15 @@ module ``Stackalloc Tests`` =
             let expected = if (i % 2)=1 then E.A else E.B
             Assert.areEqual datai expected
 
-    [<Test>]
+    [<Fact>]
     let ``Stackalloc of imported enum``() =
-        Assert.DoesNotThrow (TestDelegate (fun () -> 
-            NativeInterop.NativePtr.stackalloc<System.DayOfWeek> 1 |> ignore))
+        NativeInterop.NativePtr.stackalloc<System.DayOfWeek> 1 |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Stackalloc of imported struct``() =
-        Assert.DoesNotThrow (TestDelegate (fun () -> 
-            NativeInterop.NativePtr.stackalloc<System.TimeSpan> 1 |> ignore))
+        NativeInterop.NativePtr.stackalloc<System.TimeSpan> 1 |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Stackalloc of imported class``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -74,7 +72,7 @@ let _ = NativeInterop.NativePtr.stackalloc<System.Object> 1
             (4, 9, 4, 43)
             "A generic construct requires that the type 'System.Object' is an unmanaged type"
 
-    [<Test>]
+    [<Fact>]
     let ``Stackalloc of imported interface``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -87,7 +85,7 @@ let _ = NativeInterop.NativePtr.stackalloc<System.Collections.IEnumerable> 1
             (4, 9, 4, 43)
             "A generic construct requires that the type 'System.Collections.IEnumerable' is an unmanaged type"
 
-    [<Test>]
+    [<Fact>]
     let ``Stackalloc of imported delegate``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -100,7 +98,7 @@ let _ = NativeInterop.NativePtr.stackalloc<System.EventHandler> 1
             (4, 9, 4, 43)
             "A generic construct requires that the type 'System.EventHandler' is an unmanaged type"
 
-    [<Test>]
+    [<Fact>]
     let ``Stackalloc of int``() =
         let data = NativeInterop.NativePtr.stackalloc<int> 100
            
@@ -118,7 +116,7 @@ let _ = NativeInterop.NativePtr.stackalloc<System.EventHandler> 1
             let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
             Assert.areEqual datai (1-i)
 
-    [<Test>]
+    [<Fact>]
     let ``Stackalloc of int64``() =
         let data = NativeInterop.NativePtr.stackalloc<int64> 100
 
@@ -135,7 +133,7 @@ let _ = NativeInterop.NativePtr.stackalloc<System.EventHandler> 1
             let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
             Assert.areEqual datai (int64 (1-i))
 
-    [<Test>]
+    [<Fact>]
     let ``Stackalloc of managed class``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -154,7 +152,7 @@ let _ = NativeInterop.NativePtr.stackalloc<C> 1
             (10, 9, 10, 43)
             "A generic construct requires that the type 'C' is an unmanaged type"
 
-    [<Test>]
+    [<Fact>]
     let ``Stackalloc of managed record``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -169,19 +167,16 @@ let _ = NativeInterop.NativePtr.stackalloc<R> 1
             (6, 9, 6, 43)
             "A generic construct requires that the type 'R' is an unmanaged type"
             
-    [<Test>]
+    [<Fact>]
     let ``Stackalloc zero-size``() =
         // Regression test for FSHARP1.0:
         // stackalloc<System.DateTime> 0
             
-        let testDelegate = TestDelegate (fun () -> 
-            // check stackalloc 0 -- ok
-            let data = NativeInterop.NativePtr.stackalloc<System.DateTime> 0
+        // check stackalloc 0 -- ok
+        let data = NativeInterop.NativePtr.stackalloc<System.DateTime> 0
                         
-            // The returned pointer is undefined
-            // No allocation should happen
-            let _ = NativeInterop.NativePtr.toNativeInt data
+        // The returned pointer is undefined
+        // No allocation should happen
+        let _ = NativeInterop.NativePtr.toNativeInt data
                         
-            ())
-            
-        Assert.DoesNotThrow testDelegate
+        ()

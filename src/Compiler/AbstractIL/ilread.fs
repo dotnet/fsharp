@@ -1425,16 +1425,10 @@ let seekReadParamRow (ctxt: ILMetadataReader) mdv idx =
     (flags, seq, nameIdx)
 
 /// Read Table InterfaceImpl.
-let private seekReadInterfaceImplRow (ctxt: ILMetadataReader) mdv idx =
+let private seekReadInterfaceIdx (ctxt: ILMetadataReader) mdv idx =
     let mutable addr = ctxt.rowAddr TableNames.InterfaceImpl idx
-    let tidx = seekReadUntaggedIdx TableNames.TypeDef ctxt mdv &addr
-    let intfIdx = seekReadTypeDefOrRefOrSpecIdx ctxt mdv &addr
-
-    struct {|
-        TypeIdx = tidx
-        IntfIdx = intfIdx
-        IntImplIdx = idx
-    |}
+    let _tidx = seekReadUntaggedIdx TableNames.TypeDef ctxt mdv &addr
+    seekReadTypeDefOrRefOrSpecIdx ctxt mdv &addr
 
 /// Read Table MemberRef.
 let seekReadMemberRefRow (ctxt: ILMetadataReader) mdv idx =
@@ -1653,11 +1647,11 @@ let seekReadGenericParamRow (ctxt: ILMetadataReader) mdv idx =
     (idx, seq, flags, ownerIdx, nameIdx)
 
 // Read Table GenericParamConstraint.
-let seekReadGenericParamConstraintRow (ctxt: ILMetadataReader) mdv idx =
+let seekReadGenericParamConstraintIdx (ctxt: ILMetadataReader) mdv idx =
     let mutable addr = ctxt.rowAddr TableNames.GenericParamConstraint idx
-    let pidx = seekReadUntaggedIdx TableNames.GenericParam ctxt mdv &addr
+    let _pidx = seekReadUntaggedIdx TableNames.GenericParam ctxt mdv &addr
     let constraintIdx = seekReadTypeDefOrRefOrSpecIdx ctxt mdv &addr
-    (pidx, constraintIdx)
+    constraintIdx
 
 /// Read Table ILMethodSpec.
 let seekReadMethodSpecRow (ctxt: ILMetadataReader) mdv idx =
@@ -2248,11 +2242,16 @@ and seekReadNestedTypeDefs (ctxt: ILMetadataReader) tidx =
 and seekReadInterfaceImpls (ctxt: ILMetadataReader) mdv numTypars tidx =
     seekReadIndexedRows (
         ctxt.getNumRows TableNames.InterfaceImpl,
-        seekReadInterfaceImplRow ctxt mdv,
-        (fun x -> x.TypeIdx),
-        simpleIndexCompare tidx,
+        id,
+        id,
+        (fun idx ->
+            let mutable addr = ctxt.rowAddr TableNames.InterfaceImpl idx
+            let _tidx = seekReadUntaggedIdx TableNames.TypeDef ctxt mdv &addr
+            simpleIndexCompare tidx _tidx),
         isSorted ctxt TableNames.InterfaceImpl,
-        (fun x -> (seekReadTypeDefOrRef ctxt numTypars AsObject [] x.IntfIdx), (ctxt.customAttrsReader_InterfaceImpl, x.IntImplIdx))
+        (fun idx ->
+            let intfIdx = seekReadInterfaceIdx ctxt mdv idx
+            seekReadTypeDefOrRef ctxt numTypars AsObject [] intfIdx, (ctxt.customAttrsReader_InterfaceImpl, idx))
     )
 
 and seekReadGenericParams ctxt numTypars (a, b) : ILGenericParameterDefs =
@@ -2262,12 +2261,14 @@ and seekReadGenericParamsUncached ctxtH (GenericParamsIdx(numTypars, a, b)) =
     let (ctxt: ILMetadataReader) = getHole ctxtH
     let mdv = ctxt.mdfile.GetView()
 
+    let key = TaggedIndex(a, b)
+
     let pars =
         seekReadIndexedRows (
             ctxt.getNumRows TableNames.GenericParam,
             seekReadGenericParamRow ctxt mdv,
             (fun (_, _, _, tomd, _) -> tomd),
-            tomdCompare (TaggedIndex(a, b)),
+            tomdCompare key,
             isSorted ctxt TableNames.GenericParam,
             (fun (gpidx, seq, flags, _, nameIdx) ->
                 let flags = int32 flags
@@ -2291,6 +2292,7 @@ and seekReadGenericParamsUncached ctxtH (GenericParamsIdx(numTypars, a, b)) =
                     HasReferenceTypeConstraint = (flags &&& 0x0004) <> 0
                     HasNotNullableValueTypeConstraint = (flags &&& 0x0008) <> 0
                     HasDefaultConstructorConstraint = (flags &&& 0x0010) <> 0
+                    HasAllowsRefStruct = (flags &&& 0x0020) <> 0
                 })
         )
 
@@ -2299,11 +2301,16 @@ and seekReadGenericParamsUncached ctxtH (GenericParamsIdx(numTypars, a, b)) =
 and seekReadGenericParamConstraints (ctxt: ILMetadataReader) mdv numTypars gpidx =
     seekReadIndexedRows (
         ctxt.getNumRows TableNames.GenericParamConstraint,
-        seekReadGenericParamConstraintRow ctxt mdv,
-        fst,
-        simpleIndexCompare gpidx,
+        id,
+        id,
+        (fun idx ->
+            let mutable addr = ctxt.rowAddr TableNames.GenericParamConstraint idx
+            let pidx = seekReadUntaggedIdx TableNames.GenericParam ctxt mdv &addr
+            simpleIndexCompare gpidx pidx),
         isSorted ctxt TableNames.GenericParamConstraint,
-        (snd >> seekReadTypeDefOrRef ctxt numTypars AsObject [])
+        (fun idx ->
+            let constraintIdx = seekReadGenericParamConstraintIdx ctxt mdv idx
+            seekReadTypeDefOrRef ctxt numTypars AsObject [] constraintIdx)
     )
 
 and seekReadTypeDefAsType (ctxt: ILMetadataReader) boxity (ginst: ILTypes) idx =

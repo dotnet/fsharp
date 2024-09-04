@@ -1714,31 +1714,34 @@ let buildGenParamsPass1b cenv emEnv (genArgs: Type array) (gps: ILGenericParamet
         gp.CustomAttrs
         |> emitCustomAttrs cenv emEnv (wrapCustomAttr gpB.SetCustomAttribute)
 
-        let flags = GenericParameterAttributes.None
-
         let flags =
             match gp.Variance with
-            | NonVariant -> flags
-            | CoVariant -> flags ||| GenericParameterAttributes.Covariant
-            | ContraVariant -> flags ||| GenericParameterAttributes.Contravariant
+            | NonVariant -> GenericParameterAttributes.None
+            | CoVariant -> GenericParameterAttributes.Covariant
+            | ContraVariant -> GenericParameterAttributes.Contravariant
+
+        let zero = GenericParameterAttributes.None
 
         let flags =
-            if gp.HasReferenceTypeConstraint then
-                flags ||| GenericParameterAttributes.ReferenceTypeConstraint
-            else
-                flags
-
-        let flags =
-            if gp.HasNotNullableValueTypeConstraint then
-                flags ||| GenericParameterAttributes.NotNullableValueTypeConstraint
-            else
-                flags
-
-        let flags =
-            if gp.HasDefaultConstructorConstraint then
-                flags ||| GenericParameterAttributes.DefaultConstructorConstraint
-            else
-                flags
+            flags
+            ||| (if gp.HasReferenceTypeConstraint then
+                     GenericParameterAttributes.ReferenceTypeConstraint
+                 else
+                     zero)
+            ||| (if gp.HasNotNullableValueTypeConstraint then
+                     GenericParameterAttributes.NotNullableValueTypeConstraint
+                 else
+                     zero)
+            ||| (if gp.HasDefaultConstructorConstraint then
+                     GenericParameterAttributes.DefaultConstructorConstraint
+                 else
+                     zero)
+            |||
+            // GenericParameterAttributes.AllowByRefLike from net9, not present in ns20
+            (if gp.HasAllowsRefStruct then
+                 (enum<GenericParameterAttributes> 0x0020)
+             else
+                 zero)
 
         gpB.SetGenericParameterAttributes flags)
 //----------------------------------------------------------------------------

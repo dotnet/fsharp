@@ -1,20 +1,20 @@
 ﻿namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 open FSharp.Compiler.Diagnostics
 
-[<TestFixture>]
+
 module TypeAttributeTests = 
 
-    [<Test>]
+    [<Fact>]
     let ``Attribute can be applied to type definition``() = 
         CompilerAssert.Pass
             """
 [<Struct>]
 type Point = {x:int; y:int}
             """
-    [<Test>]
+    [<Fact>]
     let ``Attribute cannot be applied to optional type extension``() = 
         CompilerAssert.TypeCheckSingleError
             """
@@ -29,7 +29,7 @@ type String with
             (4, 1, 4, 15)
             "Attributes cannot be applied to type extensions."
 
-    [<Test>]
+    [<Fact>]
     let ``Attribute cannot be applied to intrinsic type extension``() = 
         CompilerAssert.TypeCheckSingleError
             """

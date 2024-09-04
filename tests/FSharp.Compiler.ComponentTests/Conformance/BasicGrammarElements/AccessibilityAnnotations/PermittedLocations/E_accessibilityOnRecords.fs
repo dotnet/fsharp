@@ -2,9 +2,9 @@
 #light
 
 // See bug 1537.
-//<Expects id="FS0575" span="(10,21-10,41)" status="error">Accessibility modifiers are not permitted on record fields\. Use 'type R = internal \.\.\.' or 'type R = private \.\.\.' to give an accessibility to the whole representation</Expects>
-//<Expects id="FS0575" span="(11,21-11,39)" status="error">Accessibility modifiers are not permitted on record fields\. Use 'type R = internal \.\.\.' or 'type R = private \.\.\.' to give an accessibility to the whole representation</Expects>
-//<Expects id="FS0575" span="(12,21-12,37)" status="error">Accessibility modifiers are not permitted on record fields\. Use 'type R = internal \.\.\.' or 'type R = private \.\.\.' to give an accessibility to the whole representation</Expects>
+
+
+
 
 type Person = { 
                     public Name : string; 

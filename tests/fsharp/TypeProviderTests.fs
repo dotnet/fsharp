@@ -7,14 +7,13 @@
 #load "../FSharp.Test.Utilities/TestFramework.fs"
 #load "single-test.fs"
 #else
-[<NUnit.Framework.Category "Type Provider";NUnit.Framework.NonParallelizable>]
 module FSharp.Test.FSharpSuite.TypeProviderTests
 #endif
 
 open System
 open System.IO
 open System.Reflection
-open NUnit.Framework
+open Xunit
 open TestFramework
 open Scripting
 open SingleTest
@@ -36,7 +35,7 @@ let FSI = FSI_NETFX
 let inline getTestsDirectory dir = getTestsDirectory __SOURCE_DIRECTORY__ dir
 let testConfig = getTestsDirectory >> testConfig
 
-[<Test>]
+[<Fact>]
 let diamondAssembly () =
     let cfg = testConfig "typeProviders/diamondAssembly"
 
@@ -72,7 +71,7 @@ let diamondAssembly () =
 
     testOkFile.CheckExists()
 
-[<Test>]
+[<Fact>]
 let globalNamespace () =
     let cfg = testConfig "typeProviders/globalNamespace"
 
@@ -146,15 +145,15 @@ let helloWorld p =
 
     peverify cfg (bincompat2 ++ "testlib_client.exe")
 
-[<Test>]
+[<Fact>]
 let ``helloWorld fsc`` () = helloWorld FSC_OPTIMIZED
 
 #if !NETCOREAPP
-[<Test>]
+[<Fact>]
 let ``helloWorld fsi`` () = helloWorld FSI_NETFX_STDIN
 #endif
 
-[<Test>]
+[<Fact>]
 let helloWorldCSharp () =
     let cfg = testConfig "typeProviders/helloWorldCSharp"
 
@@ -176,35 +175,34 @@ let helloWorldCSharp () =
 
     exec cfg ("." ++ "test.exe") ""
 
-
-[<TestCase("neg1")>]
-[<TestCase("neg2")>]
-[<TestCase("neg2c")>]
-[<TestCase("neg2e")>]
-[<TestCase("neg2g")>]
-[<TestCase("neg2h")>]
-[<TestCase("neg4")>]
-[<TestCase("neg6")>]
-[<TestCase("InvalidInvokerExpression")>]
-[<TestCase("providerAttributeErrorConsume")>]
-[<TestCase("ProviderAttribute_EmptyConsume")>]
-[<TestCase("EVIL_PROVIDER_GetNestedNamespaces_Exception")>]
-[<TestCase("EVIL_PROVIDER_NamespaceName_Exception")>]
-[<TestCase("EVIL_PROVIDER_NamespaceName_Empty")>]
-[<TestCase("EVIL_PROVIDER_GetTypes_Exception")>]
-[<TestCase("EVIL_PROVIDER_ResolveTypeName_Exception")>]
-[<TestCase("EVIL_PROVIDER_GetNamespaces_Exception")>]
-[<TestCase("EVIL_PROVIDER_GetStaticParameters_Exception")>]
-[<TestCase("EVIL_PROVIDER_GetInvokerExpression_Exception")>]
-[<TestCase("EVIL_PROVIDER_GetTypes_Null")>]
-[<TestCase("EVIL_PROVIDER_ResolveTypeName_Null")>]
-[<TestCase("EVIL_PROVIDER_GetNamespaces_Null")>]
-[<TestCase("EVIL_PROVIDER_GetStaticParameters_Null")>]
-[<TestCase("EVIL_PROVIDER_GetInvokerExpression_Null")>]
-[<TestCase("EVIL_PROVIDER_DoesNotHaveConstructor")>]
-[<TestCase("EVIL_PROVIDER_ConstructorThrows")>]
-[<TestCase("EVIL_PROVIDER_ReturnsTypeWithIncorrectNameFromApplyStaticArguments")>]
-[<NonParallelizable>]
+[<Theory>]
+[<InlineData("neg1")>]
+[<InlineData("neg2")>]
+[<InlineData("neg2c")>]
+[<InlineData("neg2e")>]
+[<InlineData("neg2g")>]
+[<InlineData("neg2h")>]
+[<InlineData("neg4")>]
+[<InlineData("neg6")>]
+[<InlineData("InvalidInvokerExpression")>]
+[<InlineData("providerAttributeErrorConsume")>]
+[<InlineData("ProviderAttribute_EmptyConsume")>]
+[<InlineData("EVIL_PROVIDER_GetNestedNamespaces_Exception")>]
+[<InlineData("EVIL_PROVIDER_NamespaceName_Exception")>]
+[<InlineData("EVIL_PROVIDER_NamespaceName_Empty")>]
+[<InlineData("EVIL_PROVIDER_GetTypes_Exception")>]
+[<InlineData("EVIL_PROVIDER_ResolveTypeName_Exception")>]
+[<InlineData("EVIL_PROVIDER_GetNamespaces_Exception")>]
+[<InlineData("EVIL_PROVIDER_GetStaticParameters_Exception")>]
+[<InlineData("EVIL_PROVIDER_GetInvokerExpression_Exception")>]
+[<InlineData("EVIL_PROVIDER_GetTypes_Null")>]
+[<InlineData("EVIL_PROVIDER_ResolveTypeName_Null")>]
+[<InlineData("EVIL_PROVIDER_GetNamespaces_Null")>]
+[<InlineData("EVIL_PROVIDER_GetStaticParameters_Null")>]
+[<InlineData("EVIL_PROVIDER_GetInvokerExpression_Null")>]
+[<InlineData("EVIL_PROVIDER_DoesNotHaveConstructor")>]
+[<InlineData("EVIL_PROVIDER_ConstructorThrows")>]
+[<InlineData("EVIL_PROVIDER_ReturnsTypeWithIncorrectNameFromApplyStaticArguments")>]
 let ``negative type provider tests`` (name:string) =
     let cfg = testConfig "typeProviders/negTests"
     let dir = cfg.Directory
@@ -337,13 +335,13 @@ let splitAssembly subdir project =
 
     clean()
 
-[<Test>]
+[<Fact>]
 let splitAssemblyTools () = splitAssembly "tools" "typeProviders/splitAssemblyTools"
 
-[<Test>]
+[<Fact>]
 let splitAssemblyTypeProviders () = splitAssembly "typeproviders" "typeProviders/splitAssemblyTypeproviders"
 
-[<Test>]
+[<Fact>]
 let wedgeAssembly () =
     let cfg = testConfig "typeProviders/wedgeAssembly"
 
