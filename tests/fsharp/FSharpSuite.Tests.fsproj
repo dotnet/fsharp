@@ -12,7 +12,7 @@
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
     <OtherFlags>$(OtherFlags) --warnon:1182 --langversion:preview</OtherFlags>
-    <UnitTestType>nunit</UnitTestType>
+    <UnitTestType>xunit</UnitTestType>
     <NoWarn>3186</NoWarn>
   </PropertyGroup>
 
@@ -20,7 +20,7 @@
     <Compile Include="..\scripts\scriptlib.fsx">
       <Link>scriptlib.fsx</Link>
     </Compile>
-    <Compile Include="NUnitHelpers.fs" />
+    <Compile Include="XunitHelpers.fs" />
     <Compile Include="HandleExpects.fs" />
     <Compile Include="single-test.fs" />
     <Compile Include="TypeProviderTests.fs" />
@@ -98,6 +98,10 @@
     <None Include="update.base.line.with.actuals.fsx" />
     <!-- don't include test resources in subdirectories -->
     <EmbeddedResource Remove="**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

@@ -11,7 +11,7 @@ open System.IO
 module times =
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/times)
-    //<Expects id="FS0243" status="error">Unrecognized option: '--Times'</Expects>
+    
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"error_01.fs"|])>]
     let ``times - error_01_fs - --Times`` compilation =
         compilation
@@ -24,7 +24,7 @@ module times =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/times)
-    //<Expects id="FS0243" status="error">Unrecognized option: '--times-'</Expects>
+    
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"error_02.fs"|])>]
     let ``times - error_02_fs - --times-`` compilation =
         compilation
@@ -37,7 +37,7 @@ module times =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/times)
-    //<Expects id="FS0243" status="error">Unrecognized option: '--times\+'</Expects>
+    
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"error_03.fs"|])>]
     let ``times - error_03_fs - --times+`` compilation =
         compilation

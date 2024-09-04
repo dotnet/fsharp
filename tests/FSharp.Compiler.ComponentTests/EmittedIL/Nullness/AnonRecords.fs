@@ -12,3 +12,5 @@ let giveMeB () =
 
 let giveMeC () =
     {| A = maybeString; B = maybeString; C = maybeString|}
+
+let threeHappyStrings () : string array = [|giveMeA().ToString();giveMeB().ToString();giveMeC().ToString()|]
