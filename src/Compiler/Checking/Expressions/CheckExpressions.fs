@@ -8668,14 +8668,14 @@ and TcUnionCaseOrExnCaseOrActivePatternResultItemThen (cenv: cenv) overallTy env
     let ucaseAppTy = NewInferenceType g
     let mkConstrApp, argTys, argNames =
         match item with
-        | Item.ActivePatternResult(apinfo, _apOverallTy, n, _) ->
+        | Item.ActivePatternResult(apinfo, _apOverallTy, n, m) ->
             let aparity = apinfo.ActiveTags.Length
             match aparity with
             | 0 | 1 ->
                 let mkConstrApp _mArgs = function [arg] -> arg | _ -> error(InternalError("ApplyUnionCaseOrExn", mItem))
                 mkConstrApp, [ucaseAppTy], [ for s, m in apinfo.ActiveTagsWithRanges -> mkSynId m s ]
             | _ ->
-                let ucref = mkChoiceCaseRef g mItem aparity n
+                let ucref = mkChoiceCaseRef g m aparity n
                 let _, _, tinst, _ = FreshenTyconRef2 g mItem ucref.TyconRef
                 let ucinfo = UnionCaseInfo (tinst, ucref)
                 ApplyUnionCaseOrExnTypes mItem cenv env ucaseAppTy (Item.UnionCase(ucinfo, false))
@@ -11046,7 +11046,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             else rhsExprChecked
 
         match apinfoOpt with
-        | Some (apinfo, apOverallTy, _) ->
+        | Some (apinfo, apOverallTy, m) ->
             let activePatResTys = NewInferenceTypes g apinfo.ActiveTags
             let _, apReturnTy = stripFunTy g apOverallTy
             let apRetTy =
@@ -11067,7 +11067,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 checkLanguageFeatureError g.langVersion LanguageFeature.StructActivePattern mBinding
             | ActivePatternReturnKind.RefTypeWrapper -> ()
 
-            UnifyTypes cenv env mBinding (apinfo.ResultType g rhsExpr.Range activePatResTys apRetTy) apReturnTy
+            UnifyTypes cenv env mBinding (apinfo.ResultType g m activePatResTys apRetTy) apReturnTy
 
         | None ->
             if isStructRetTy then
