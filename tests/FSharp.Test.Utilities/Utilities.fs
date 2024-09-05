@@ -39,19 +39,22 @@ type FactForDESKTOPAttribute() =
     #endif
 
 module Console =
-    type ThreadLocalTextWriter() =
-        inherit TextWriter()
-        static let threadLocalWriter = new ThreadLocal<TextWriter>(fun () -> new StringWriter() :> TextWriter )
-        override _.Encoding = threadLocalWriter.Value.Encoding
-        override _.Write(value: char) = threadLocalWriter.Value.Write(value)
-        override _.Write(value: string) = threadLocalWriter.Value.Write(value)
-        override _.WriteLine(value: string) = threadLocalWriter.Value.WriteLine(value)
-        member _.Reset() = threadLocalWriter.Value <- new StringWriter()
-        member _.Set writer = threadLocalWriter.Value <- writer
-        member _.GetText() = threadLocalWriter.Value.ToString()
+    let private threadLocalOut = new ThreadLocal<TextWriter>(fun () -> new StringWriter() :> TextWriter )
+    let private threadLocalError = new ThreadLocal<TextWriter>(fun () -> new StringWriter() :> TextWriter )
 
-    let private out = new ThreadLocalTextWriter()
-    let private err = new ThreadLocalTextWriter()
+
+    type ThreadLocalTextWriter(holder: ThreadLocal<TextWriter>) =
+        inherit TextWriter()
+        override _.Encoding = holder.Value.Encoding
+        override _.Write(value: char) = holder.Value.Write(value)
+        override _.Write(value: string) = holder.Value.Write(value)
+        override _.WriteLine(value: string) = holder.Value.WriteLine(value)
+        member _.Reset() = holder.Value <- new StringWriter()
+        member _.Set (writer: TextWriter) = holder.Value <- writer
+        member _.GetText() = holder.Value.ToString()
+
+    let private out = new ThreadLocalTextWriter(threadLocalOut)
+    let private err = new ThreadLocalTextWriter(threadLocalError)
 
     let installWriters() =
         out.Reset()
@@ -110,6 +113,9 @@ module Utilities =
     type RedirectConsoleOutput() =
         let outputProduced = Event<string>()
         let errorProduced = Event<string>()
+
+        do Console.installWriters()
+
         let oldStdOut = Console.Out
         let oldStdErr = Console.Error
         let newStdOut = new EventedTextWriter()
@@ -117,6 +123,7 @@ module Utilities =
 
         do newStdOut.LineWritten.Add outputProduced.Trigger
         do newStdErr.LineWritten.Add errorProduced.Trigger
+
         do Console.setOut newStdOut
         do Console.setError newStdErr
 
