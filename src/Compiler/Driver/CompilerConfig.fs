@@ -473,7 +473,8 @@ type TcConfigBuilder =
         mutable printAllSignatureFiles: bool
         mutable xmlDocOutputFile: string option
         mutable stats: bool
-        mutable generateFilterBlocks: bool (* Previously marked with: `don't generate filter blocks due to bugs on Mono`. However, the related bug has been fixed: https://github.com/dotnet/linker/issues/2181 *)
+        mutable generateFilterBlocks:
+            bool (* Previously marked with: `don't generate filter blocks due to bugs on Mono`. However, the related bug has been fixed: https://github.com/dotnet/linker/issues/2181 *)
 
         mutable signer: string option
         mutable container: string option
