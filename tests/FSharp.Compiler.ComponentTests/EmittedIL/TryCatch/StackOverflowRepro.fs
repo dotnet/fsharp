@@ -25,7 +25,7 @@ let rec viaActivePattern (a:int) =
 
 [<EntryPoint>]
 let main (args:string[]) =
-    let iterations = 1000
+    let iterations = 4096
     try 
         viaActivePattern iterations
     with
