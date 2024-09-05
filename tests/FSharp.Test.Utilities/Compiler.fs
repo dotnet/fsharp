@@ -698,7 +698,8 @@ module rec Compiler =
 
     let private compileFSharpCompilation compilation ignoreWarnings (cUnit: CompilationUnit) : CompilationResult =
 
-        use redirect = new RedirectConsole()
+        Console.installWriters()
+
         let ((err: FSharpDiagnostic[], rc: int, outputFilePath: string), deps) =
             CompilerAssert.CompileRaw(compilation, ignoreWarnings)
 
@@ -711,7 +712,7 @@ module rec Compiler =
             Adjust        = 0
             PerFileErrors = diagnostics
             Diagnostics   = diagnostics |> List.map snd
-            Output        = Some (RunOutput.ExecutionOutput { ExitCode = rc; StdOut = redirect.Output(); StdErr = redirect.ErrorOutput() })
+            Output        = Some (RunOutput.ExecutionOutput { ExitCode = rc; StdOut = Console.getOutputText(); StdErr = Console.getErrorText() })
             Compilation   = cUnit
         }
 

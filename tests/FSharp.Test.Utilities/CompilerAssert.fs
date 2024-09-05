@@ -618,7 +618,8 @@ module rec CompilerAssertHelpers =
                 Console.Error.Write errorMessage
                 false, Some e
 
-        let out, err = Console.getOutputs()
+        let out = Console.getOutputText()
+        let err = Console.getErrorText()
 
         succeeded, out, err, exn
 

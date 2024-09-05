@@ -59,7 +59,8 @@ module Console =
         Console.SetOut out
         Console.SetError err
 
-    let getOutputs() = out.GetText(), err.GetText()
+    let getOutputText() = out.GetText()
+    let getErrorText() = err.GetText()
 
     let setOut writer = out.Set writer
 
