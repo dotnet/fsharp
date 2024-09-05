@@ -2251,12 +2251,13 @@ and seekReadInterfaceImpls (ctxt: ILMetadataReader) mdv numTypars tidx =
             (fun idx ->
                 let intfIdx = seekReadInterfaceIdx ctxt mdv idx
                 let ilType = seekReadTypeDefOrRef ctxt numTypars AsObject [] intfIdx
+
                 {
                     Idx = idx
                     Type = ilType
                     CustomAttrsStored = ctxt.customAttrsReader_InterfaceImpl
                 })
-    ))
+        ))
 
 and seekReadGenericParams ctxt numTypars (a, b) : ILGenericParameterDefs =
     ctxt.seekReadGenericParams (GenericParamsIdx(numTypars, a, b))
