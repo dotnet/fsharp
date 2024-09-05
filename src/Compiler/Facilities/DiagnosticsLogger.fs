@@ -903,6 +903,7 @@ type StackGuard(maxDepth: int, name: string) =
         finally
             depth <- depth - 1
 
+    [<DebuggerHidden; DebuggerStepThrough>]
     member x.GuardCancellable(original: Cancellable<'T>) =
         Cancellable(fun ct -> x.Guard(fun () -> Cancellable.run ct original))
 
