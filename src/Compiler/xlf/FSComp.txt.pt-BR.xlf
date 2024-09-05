@@ -1532,6 +1532,11 @@
         <target state="translated">A sintaxe 'expr1[expr2]' agora está reservada para indexação e é ambígua quando usada como um argumento. Consulte https://aka.ms/fsharp-index-notation. Se chamar uma função com vários argumentos na forma curried, adicione um espaço entre eles, por exemplo, 'someFunction expr1 [expr2]'.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcPartialActivePattern">
+        <source>Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.</source>
+        <target state="new">Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcPassingWithoutNullToANullableExpectingFunc">
         <source>Value known to be without null passed to a function meant for nullables: {0}</source>
         <target state="new">Value known to be without null passed to a function meant for nullables: {0}</target>
@@ -4953,8 +4958,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidActivePatternName">
-        <source>This is not a valid name for an active pattern</source>
-        <target state="translated">Este não é um nome válido para um padrão ativo</target>
+        <source>'{0}' is not a valid method name. Use a 'let' binding instead.</source>
+        <target state="new">'{0}' is not a valid method name. Use a 'let' binding instead.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcEntryPointAttributeRequiresFunctionInModule">
