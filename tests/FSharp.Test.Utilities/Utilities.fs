@@ -125,8 +125,8 @@ module Utilities =
 
         interface IDisposable with
             member _.Dispose() =
-                Console.SetOut(oldStdOut)
-                Console.SetError(oldStdErr)
+                Console.setOut oldStdOut
+                Console.setError oldStdErr
                 newStdOut.Dispose()
                 newStdErr.Dispose()
 
