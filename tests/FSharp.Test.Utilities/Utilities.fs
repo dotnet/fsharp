@@ -38,6 +38,32 @@ type FactForDESKTOPAttribute() =
         do base.Skip <- "NETCOREAPP is not supported runtime for this kind of test, it is intended for DESKTOP only"
     #endif
 
+module Console =
+    type ThreadLocalTextWriter() =
+        inherit TextWriter()
+        static let threadLocalWriter = new ThreadLocal<TextWriter>(fun () -> new StringWriter() :> TextWriter )
+        override _.Encoding = threadLocalWriter.Value.Encoding
+        override _.Write(value: char) = threadLocalWriter.Value.Write(value)
+        override _.Write(value: string) = threadLocalWriter.Value.Write(value)
+        override _.WriteLine(value: string) = threadLocalWriter.Value.WriteLine(value)
+        member _.Reset() = threadLocalWriter.Value <- new StringWriter()
+        member _.Set writer = threadLocalWriter.Value <- writer
+        member _.GetText() = threadLocalWriter.Value.ToString()
+
+    let private out = new ThreadLocalTextWriter()
+    let private err = new ThreadLocalTextWriter()
+
+    let installWriters() =
+        out.Reset()
+        err.Reset()
+        Console.SetOut out
+        Console.SetError err
+
+    let getOutputs() = out.GetText(), err.GetText()
+
+    let setOut writer = out.Set writer
+
+    let setError writer = err.Set writer
 
 // This file mimics how Roslyn handles their compilation references for compilation testing
 module Utilities =
@@ -52,17 +78,6 @@ module Utilities =
             if queue.Count > 0 then queue.Peek() |> int else -1
         override _.Read() =
             if queue.Count > 0 then queue.Dequeue() |> int else -1
-
-    type RedirectConsoleInput() =
-        let oldStdIn = Console.In
-        let newStdIn = new CapturedTextReader()
-        do Console.SetIn(newStdIn)
-        member _.ProvideInput(text: string) =
-            newStdIn.ProvideInput(text)
-        interface IDisposable with
-            member _.Dispose() =
-                Console.SetIn(oldStdIn)
-                newStdIn.Dispose()
 
     type EventedTextWriter() =
         inherit TextWriter()
@@ -90,8 +105,8 @@ module Utilities =
 
         do newStdOut.LineWritten.Add outputProduced.Trigger
         do newStdErr.LineWritten.Add errorProduced.Trigger
-        do Console.SetOut(newStdOut)
-        do Console.SetError(newStdErr)
+        do Console.setOut newStdOut
+        do Console.setError newStdErr
 
         member _.OutputProduced = outputProduced.Publish
 

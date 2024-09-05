@@ -607,33 +607,20 @@ module rec CompilerAssertHelpers =
         compileCompilationAux outputDirectory (ResizeArray()) ignoreWarnings cmpl
 
     let captureConsoleOutputs (func: unit -> unit) =
-        let out = Console.Out
-        let err = Console.Error
-
-        let stdout = StringBuilder ()
-        let stderr = StringBuilder ()
-
-        use outWriter = new StringWriter (stdout)
-        use errWriter = new StringWriter (stderr)
+        Console.installWriters()
 
         let succeeded, exn =
             try
-                try
-                    Console.SetOut outWriter
-                    Console.SetError errWriter
-                    func ()
-                    true, None
-                with e ->
-                    let errorMessage = if e.InnerException <> null then e.InnerException.ToString() else e.ToString()
-                    stderr.Append errorMessage |> ignore
-                    false, Some e
-            finally
-                Console.SetOut out
-                Console.SetError err
-                outWriter.Close()
-                errWriter.Close()
+                func ()
+                true, None
+            with e ->
+                let errorMessage = if e.InnerException <> null then e.InnerException.ToString() else e.ToString()
+                Console.Error.Write errorMessage
+                false, Some e
 
-        succeeded, stdout.ToString(), stderr.ToString(), exn
+        let out, err = Console.getOutputs()
+
+        succeeded, out, err, exn
 
     let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) isFsx : (int * string * string) =
         let succeeded, stdout, stderr, _ = executeBuiltApp outputFilePath deps isFsx
