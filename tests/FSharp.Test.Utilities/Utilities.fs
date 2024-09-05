@@ -79,6 +79,17 @@ module Utilities =
         override _.Read() =
             if queue.Count > 0 then queue.Dequeue() |> int else -1
 
+    type RedirectConsoleInput() =
+        let oldStdIn = Console.In
+        let newStdIn = new CapturedTextReader()
+        do Console.SetIn(newStdIn)
+        member _.ProvideInput(text: string) =
+            newStdIn.ProvideInput(text)
+        interface IDisposable with
+            member _.Dispose() =
+                Console.SetIn(oldStdIn)
+                newStdIn.Dispose()
+
     type EventedTextWriter() =
         inherit TextWriter()
         let sb = StringBuilder()
