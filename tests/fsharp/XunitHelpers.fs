@@ -4,7 +4,7 @@ open Xunit
 
 module Assert =
 
-    [<assembly: CollectionBehavior(DisableTestParallelization = true)>]
+    [<assembly: TestFramework("FSharp.Test.SplitConsoleTestFramework", "FSharp.Test.Utilities")>]
     do()
 
     let inline fail message = Assert.Fail message

@@ -40,28 +40,33 @@ type FactForDESKTOPAttribute() =
     #endif
 
 module Console =
-    let private threadLocalOut = new AsyncLocal<TextWriter>()
-    let private threadLocalError = new AsyncLocal<TextWriter>()
 
-    type ThreadLocalTextWriter(holder: AsyncLocal<TextWriter>) =
+    let private threadLocalOut = new AsyncLocal<TextWriter voption>()
+    let private threadLocalError = new AsyncLocal<TextWriter voption>()
+
+    type ThreadLocalTextWriter(holder: AsyncLocal<TextWriter voption>) =
         inherit TextWriter()
+
+        let getValue() =
+            match holder.Value with
+            | ValueSome writer -> writer
+            | ValueNone ->
+                let writer = new StringWriter()
+                holder.Value <- ValueSome writer
+                writer
+
         override _.Encoding = Encoding.UTF8
-        override _.Write(value: char) = holder.Value.Write(value)
-        override _.Write(value: string) = holder.Value.Write(value)
-        override _.WriteLine(value: string) = holder.Value.WriteLine(value)
-        override _.Flush (): unit = holder.Value.Flush()
-        member _.Set (writer: TextWriter) = holder.Value <- writer
-        member _.GetText() =
-            let text = holder.Value.ToString()
-            holder.Value <- new StringWriter()
-            text
+        override _.Write(value: char) = getValue().Write(value)
+        override _.Write(value: string) = getValue().Write(value)
+        override _.WriteLine(value: string) = getValue().WriteLine(value)
+        override _.Flush (): unit = getValue().Flush()
+        member _.Set (writer: TextWriter) = holder.Value <- ValueSome writer
+        member _.GetText() = getValue().ToString()
 
     let private out = new ThreadLocalTextWriter(threadLocalOut)
     let private err = new ThreadLocalTextWriter(threadLocalError)
 
     let installWriters() =
-        if isNull threadLocalOut.Value then threadLocalOut.Value <- new StringWriter()
-        if isNull threadLocalError.Value then threadLocalError.Value <- new StringWriter()
         Console.SetOut out
         Console.SetError err
 
@@ -76,8 +81,10 @@ module Console =
         err.Set writer
         Console.SetError err
 
-    do
-        installWriters()
+type SplitConsoleTestFramework(sink) =
+    inherit XunitTestFramework(sink)
+    do Console.installWriters()
+
 
 // This file mimics how Roslyn handles their compilation references for compilation testing
 module Utilities =

@@ -15,6 +15,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <AssemblyAttribute Include="Xunit.TestFramework">
+      <_Parameter1>FSharp.Test.SplitConsoleTestFramework</_Parameter1>
+      <_Parameter2>FSharp.Test.Utilities</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="expected-help-output.bsl">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>

@@ -12,6 +12,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <AssemblyAttribute Include="Xunit.TestFramework">
+      <_Parameter1>FSharp.Test.SplitConsoleTestFramework</_Parameter1>
+      <_Parameter2>FSharp.Test.Utilities</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="$(FSharpSourcesRoot)\Compiler\Interactive\ControlledExecution.fs" />
     <Compile Include="$(FSharpSourcesRoot)\Compiler\Utilities\RidHelpers.fs" />
     <Compile Include="DependencyManagerInteractiveTests.fs" />
