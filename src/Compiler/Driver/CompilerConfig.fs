@@ -473,7 +473,7 @@ type TcConfigBuilder =
         mutable printAllSignatureFiles: bool
         mutable xmlDocOutputFile: string option
         mutable stats: bool
-        mutable generateFilterBlocks: bool (* don't generate filter blocks due to bugs on Mono *)
+        mutable generateFilterBlocks: bool (* Previously marked with: `don't generate filter blocks due to bugs on Mono`. However, the related bug has been fixed: https://github.com/dotnet/linker/issues/2181 *)
 
         mutable signer: string option
         mutable container: string option
@@ -717,7 +717,7 @@ type TcConfigBuilder =
             printAllSignatureFiles = false
             xmlDocOutputFile = None
             stats = false
-            generateFilterBlocks = false (* don't generate filter blocks *)
+            generateFilterBlocks = false (* This was set as false due to an older bug in Mono https://github.com/dotnet/linker/issues/2181. This has been fixed in the meantime. *)
 
             signer = None
             container = None

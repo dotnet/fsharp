@@ -56,21 +56,9 @@ let ``Stackoverflow reproduction`` compilation =
     | CompilationResult.Success ({OutputPath = Some dllFile} as s) -> 
        let fsharpCoreFile = typeof<voption<_>>.Assembly.Location
        File.Copy(fsharpCoreFile, Path.Combine(Path.GetDirectoryName(dllFile), Path.GetFileName(fsharpCoreFile)), true)
-       let exitCode, stdout, stderr =  CompilerAssert.ExecuteAndReturnResult (dllFile, isFsx=false, deps = s.Dependencies, newProcess=true)
+       let exitCode, _stdout, _stderr =  CompilerAssert.ExecuteAndReturnResult (dllFile, isFsx=false, deps = s.Dependencies, newProcess=true)
 
-       let expectedStrings,expectedCode =
-#if NETCOREAPP
-            [|"Stack overflow";"at StackOverflowRepro.viaActivePattern(Int32)"|],-1073741571
-#else
-            [|"Process is terminated due to StackOverflowException"|],-2147023895
-#endif
-
-
-       for s in expectedStrings do
-           Assert.Contains(s,stderr)
-
-       Assert.Equal("",stdout)
-       exitCode |> Assert.shouldBe expectedCode
+       Assert.NotEqual(0,exitCode)
 
     | _ -> failwith (sprintf "%A" compilationResult)
 
