@@ -2274,7 +2274,7 @@ module GeneralizationHelpers =
     // to C<_> occurs then generate C<?ty> for a fresh type inference variable ?ty.
     //-------------------------------------------------------------------------
 
-    let CheckDeclaredTyparsPermitted (memFlagsOpt: SynMemberFlags option, declaredTypars, m) =
+    let CheckDeclaredTyparsPermitted (memFlagsOpt: SynMemberFlags option, declaredTypars: Typars, m) =
         match memFlagsOpt with
         | None -> ()
         | Some memberFlags ->
@@ -2284,7 +2284,13 @@ module GeneralizationHelpers =
             | SynMemberKind.PropertySet
             | SynMemberKind.PropertyGetSet ->
                  if not (isNil declaredTypars) then
-                     errorR(Error(FSComp.SR.tcPropertyRequiresExplicitTypeParameters(), m))
+                    let declaredTyparsRange = 
+                        declaredTypars 
+                        |> List.map(fun typar ->  typar.Range)
+                            
+                    let m = declaredTyparsRange |> List.fold (fun r a -> unionRanges r a) range.Zero
+                        
+                    errorR(Error(FSComp.SR.tcPropertyRequiresExplicitTypeParameters(), m))
             | SynMemberKind.Constructor ->
                  if not (isNil declaredTypars) then
                      errorR(Error(FSComp.SR.tcConstructorCannotHaveTypeParameters(), m))
@@ -10816,8 +10822,9 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
     let envinner = AddDeclaredTypars NoCheckForDuplicateTypars (enclosingDeclaredTypars@declaredTypars) env
 
     match bind with
-    | NormalizedBinding(vis, kind, isInline, isMutable, attrs, xmlDoc, _, valSynData, pat, NormalizedBindingRhs(spatsL, rtyOpt, rhsExpr), mBinding, debugPoint) ->
+    | NormalizedBinding(vis, kind, isInline, isMutable, attrs, xmlDoc, _, valSynData, pat, NormalizedBindingRhs(spatsL, rtyOpt, rhsExpr), _, debugPoint) ->
         let (SynValData(memberFlags = memberFlagsOpt)) = valSynData
+        let mBinding = pat.Range
 
         let isClassLetBinding =
             match declKind, kind with
@@ -10863,8 +10870,10 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             // targeting the return value.
             let tgtEx = if isRet then enum 0 else AttributeTargets.ReturnValue
             let attrs, _ = TcAttributesMaybeFailEx false cenv envinner tgt tgtEx attrs
+            let attrs: Attrib list = attrs
             if attrTgt = enum 0 && not (isNil attrs) then
-                errorR(Error(FSComp.SR.tcAttributesAreNotPermittedOnLetBindings(), mBinding))
+                for attr in attrs do
+                    errorR(Error(FSComp.SR.tcAttributesAreNotPermittedOnLetBindings(), attr.Range))
             attrs
 
         // Rotate [<return:...>] from binding to return value
@@ -10984,8 +10993,12 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         let envinner =
             match apinfoOpt with
             | Some (apinfo, apOverallTy, m) ->
-                if Option.isSome memberFlagsOpt || (not apinfo.IsTotal && apinfo.ActiveTags.Length > 1) then
-                    error(Error(FSComp.SR.tcInvalidActivePatternName(), mBinding))
+                let isMultiCasePartialAP = memberFlagsOpt.IsNone && not apinfo.IsTotal && apinfo.ActiveTags.Length > 1
+                if isMultiCasePartialAP then
+                    errorR(Error(FSComp.SR.tcPartialActivePattern(), m))
+                    
+                if Option.isSome memberFlagsOpt && not spatsL.IsEmpty then
+                    errorR(Error(FSComp.SR.tcInvalidActivePatternName(apinfo.LogicalName), m))
 
                 apinfo.ActiveTagsWithRanges |> List.iteri (fun i (_tag, tagRange) ->
                     let item = Item.ActivePatternResult(apinfo, apOverallTy, i, tagRange)
@@ -12715,8 +12728,9 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
 
     let (SynValSig (attributes=Attributes synAttrs; explicitTypeParams=explicitTypeParams; isInline=isInline; isMutable=mutableFlag; xmlDoc=xmlDoc; accessibility=vis; synExpr=literalExprOpt; range=m)) = synValSig
     let (ValTyparDecls (synTypars, _, synCanInferTypars)) = explicitTypeParams
+    let declaredTypars = TcTyparDecls cenv env synTypars
 
-    GeneralizationHelpers.CheckDeclaredTyparsPermitted(memFlagsOpt, synTypars, m)
+    GeneralizationHelpers.CheckDeclaredTyparsPermitted(memFlagsOpt, declaredTypars, m)
 
     let canInferTypars = GeneralizationHelpers.ComputeCanInferExtraGeneralizableTypars (containerInfo.ParentRef, synCanInferTypars, memFlagsOpt)
 

@@ -166,7 +166,7 @@ match ret_attrs, binding_attrs with
 [<return:Struct>]
 let (|Foo|_|) x = ValueNone
             """
-            [|(FSharpDiagnosticSeverity.Error, 3350, (2, 1, 3, 16),
+            [|(FSharpDiagnosticSeverity.Error, 3350, (3, 6, 3, 13),
                "Feature 'struct representation for active patterns' is not available in F# 5.0. Please use language version 6.0 or greater.")|]
 
     [<Fact>]
@@ -178,7 +178,7 @@ let (|Foo|_|) x = ValueNone
 """
             [|(FSharpDiagnosticSeverity.Error, 842, (2, 3, 2, 9),
                "This attribute is not valid for use on this language element");
-              (FSharpDiagnosticSeverity.Error, 3350, (2, 1, 3, 16),
+              (FSharpDiagnosticSeverity.Error, 3350, (3, 6, 3, 13),
                "Feature 'Boolean-returning and return-type-directed partial active patterns' is not available in F# 8.0. Please use language version 9.0 or greater.")|]
 
     [<Fact>]
@@ -194,10 +194,10 @@ let f x = x
 [<return:Struct>]
 let (|A|B|) x = A
 """
-            [|(FSharpDiagnosticSeverity.Error, 3385, (2, 1, 3, 6),
+            [|(FSharpDiagnosticSeverity.Error, 3385, (3, 5, 3, 6),
                "The use of '[<Struct>]' on values, functions and methods is only allowed on partial active pattern definitions")
-              (FSharpDiagnosticSeverity.Error, 3385, (5, 1, 6, 8),
+              (FSharpDiagnosticSeverity.Error, 3385, (6, 5, 6, 6),
                "The use of '[<Struct>]' on values, functions and methods is only allowed on partial active pattern definitions")
-              (FSharpDiagnosticSeverity.Error, 3385, (8, 1, 9, 14),
+              (FSharpDiagnosticSeverity.Error, 3385, (9, 6, 9, 11),
                "The use of '[<Struct>]' on values, functions and methods is only allowed on partial active pattern definitions")|]
 
