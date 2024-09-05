@@ -3,16 +3,16 @@
 namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 
 open FSharp.Test.Compiler
-open NUnit.Framework
+open Xunit
 open FSharp.Compiler.IO
 
-[<TestFixture>]
+
 module ReferenceAssemblyTests =
 
     let referenceAssemblyAttributeExpectedIL =
         """.custom instance void [runtime]System.Runtime.CompilerServices.ReferenceAssemblyAttribute::.ctor() = ( 01 00 00 00 )"""
 
-    [<Test>]
+    [<Fact>]
     let ``Simple reference assembly should have expected IL``() =
         let src =
             """
@@ -46,7 +46,7 @@ let test() =
         ]
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Simple reference assembly should have expected IL without a private function``() =
         let src =
             """
@@ -84,7 +84,7 @@ let test() =
         ]
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Simple reference assembly should have expected IL with anonymous record``() =
         let src =
             """
@@ -111,7 +111,7 @@ let test(_x: {| a: int32 |}) =
         ]
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Simple reference assembly with nested module should have expected IL``() =
         let src =
             """
@@ -153,7 +153,7 @@ module Nested =
         ]
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Simple reference assembly with nested module with type should have expected IL``() =
         let src =
             """
@@ -496,7 +496,7 @@ module Nested =
 #endif
         ] |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``--refout should produce both normal and reference assemblies``() =
         // TODO: We probably want a built-in test framework functionality which will be taking care of comparing/verifying refout.
         let refoutDllPath = FileSystem.GetTempPathShim() + "Test.ref.dll"
@@ -558,7 +558,7 @@ let test() =
     }"""
         ]
 
-    [<Test>]
+    [<Fact>]
     let ``Internal DU type doesn't generate any properties/methods without IVT`` () =
         FSharp """
 module ReferenceAssembly
@@ -591,7 +591,7 @@ extends [runtime]System.Object
 
   } """]
 
-    [<Test>]
+    [<Fact>]
     let ``Types with internal-only properties and methods don't generate anything without IVT`` () =
         FSharp """
 module ReferenceAssembly
@@ -628,7 +628,7 @@ extends [runtime]System.Object
 
   }"""]
 
-    [<Test>]
+    [<Fact>]
     let ``Cli events are emitted even for CliEvent members which are not last in a file`` () = 
         FSharp """
 module LibraryWithTwoClassesAndTwoEvents
@@ -726,7 +726,7 @@ type MyClass2() =
     .removeon instance void LibraryWithTwoClassesAndTwoEvents/MyClass2::remove_EventFromSecondType(class [runtime]System.EventHandler`1<class [runtime]System.EventArgs>)
 """ ]
 
-    [<Test>]
+    [<Fact>]
     let ``Properties are emitted for CliMutable records`` () = 
         FSharp """
 namespace ReferenceAssembly
@@ -738,7 +738,7 @@ type [<CLIMutable;NoComparison;NoEquality>] MyRecord = { MyId: int }"""
             referenceAssemblyAttributeExpectedIL
             "      .property instance int32 MyId()"]
 
-    [<Test>] 
+    [<Fact>] 
     let ``Properties are emitted even for CliMutable records which are not last in a file`` () = 
         FSharp """
 namespace ReferenceAssembly
@@ -753,7 +753,7 @@ type [<CLIMutable;NoComparison;NoEquality>] MySecondRecord = { MySecondId: strin
             "      .property instance int32 MyId()"
             "      .property instance string MySecondId()"]
 
-    [<Test>] // Regression https://github.com/dotnet/fsharp/issues/14088 .
+    [<Fact>] // Regression https://github.com/dotnet/fsharp/issues/14088 .
     // Generated IL was assigning properties to the last record in file instead of where they are supposed to be
     let ``Properties are emitted for equal records in the same file`` () = 
         FSharp """
@@ -904,7 +904,7 @@ type [<CLIMutable;NoComparison;NoEquality>] MySecondRecord = { Name: string }
 
         ]
 
-    [<Test>]
+    [<Fact>]
     let ``Properties, getters, setters are emitted for internal properties`` () =
         FSharp """
 module ReferenceAssembly
@@ -1013,7 +1013,7 @@ type MySecondaryAttribute() =
   } """
         ]
     
-    [<Test>]
+    [<Fact>]
     let ``Internal and private fields are emitted for structs`` () =
         FSharp """
 module ReferenceAssembly
@@ -1042,7 +1042,7 @@ type AStruct =
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.DefaultValueAttribute::.ctor() = ( 01 00 00 00 ) 
   }"""
         ]
-    [<Test>]
+    [<Fact>]
     let ``Only public properties are emitted on non-IVT assemblies`` () =
         FSharp """
 module ReferenceAssembly
@@ -1117,7 +1117,7 @@ type MType() =
     } 
   } """
         ]
-    [<Test>]
+    [<Fact>]
     let ``Only public events are emitted for non-IVT assembly`` () =
         FSharp """
 module ReferenceAssembly
@@ -1149,7 +1149,7 @@ type MType() =
   } """
         ]
 
-    [<Test>]
+    [<Fact>]
     let ``Internal constructor is emitted for attribute`` () =
         FSharp """
 module ReferenceAssembly
@@ -1278,7 +1278,7 @@ type Person(name : string, age : int) =
   }"""
         ]
 
-    [<Test>]
+    [<Fact>]
     let ``Internal constructor is emitted for attribute (with fsi)`` () =
         let fsSig =
             Fsi """
@@ -1377,7 +1377,7 @@ extends [runtime]System.Object
 
 } """ ]
 
-    [<Test>]
+    [<Fact>]
     let ``Build .exe with --refonly ensure it produces a main in the ref assembly`` () =
         FSharp """module ReferenceAssembly
 open System
@@ -1407,7 +1407,7 @@ Console.WriteLine("Hello World!")"""
         ]
         |> ignore
 #if NETCOREAPP
-    [<Test>]
+    [<Fact>]
 #endif
     let ``Refassembly_emits_static_abstracts_implementations_the_same_way_it_does_for_instance_with_empty_signature`` () =
 
@@ -1473,7 +1473,7 @@ type CompilerGoesBoom<'a>() =
 
 
 #if NETCOREAPP
-    [<Test>]
+    [<Fact>]
 #endif
     let ``Refassembly_emits_static_abstracts_implementations_the_same_way_it_does_for_instance_with_signature`` () =
         let signature = """namespace Foobar

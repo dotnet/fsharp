@@ -186,14 +186,8 @@ module Xunit =
     /// <exception cref="T:System.ArgumentNullException">
     /// Thrown if <paramref name="expected"/> or <paramref name="actual"/> are null.
     /// </exception>
-    /// <exception cref="T:System.ArgumentException">
-    /// Thrown if <paramref name="expected"/> and <paramref name="actual"/> have different line counts.
-    /// </exception>
     /// <exception cref="T:Xunit.Sdk.EqualException">
-    /// Thrown if a single line in the actual code differs from the corresponding line in the expected code.
-    /// </exception>
-    /// <exception cref="T:Xunit.Sdk.AllException">
-    /// Thrown if multiple lines in the actual code differ from the lines in the expected code.
+    /// Thrown if any line in the actual code differs from the corresponding line in the expected code.
     /// </exception>
     let shouldEqual expected actual =
         if isNull expected then
@@ -208,16 +202,7 @@ module Xunit =
         let expectedLines = split expected
         let actualLines = split actual
 
-        if expectedLines.Length <> actualLines.Length then
-            Assert.Equal(expected, actual)
-        else
-            try
-                Assert.All(
-                    (expectedLines, actualLines) ||> Array.zip |> Array.rev,
-                    (fun (expected, actual) -> Assert.Equal(expected, actual))
-                )
-            with :? Xunit.Sdk.AllException as all when all.Failures.Count = 1 ->
-                raise all.Failures[0]
+        Assert.Equal<string>(expectedLines, actualLines)
 
     /// <summary>
     /// Expects no code fix to be applied to the given code.
