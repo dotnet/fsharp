@@ -18,6 +18,7 @@ open System.Collections.Generic
 open FSharp.Compiler.CodeAnalysis
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
+open Xunit.Sdk
 
 
 type TheoryForNETCOREAPPAttribute() =
@@ -39,35 +40,44 @@ type FactForDESKTOPAttribute() =
     #endif
 
 module Console =
-    let private threadLocalOut = new ThreadLocal<TextWriter>(fun () -> new StringWriter() :> TextWriter )
-    let private threadLocalError = new ThreadLocal<TextWriter>(fun () -> new StringWriter() :> TextWriter )
+    let private threadLocalOut = new AsyncLocal<TextWriter>()
+    let private threadLocalError = new AsyncLocal<TextWriter>()
 
-
-    type ThreadLocalTextWriter(holder: ThreadLocal<TextWriter>) =
+    type ThreadLocalTextWriter(holder: AsyncLocal<TextWriter>) =
         inherit TextWriter()
-        override _.Encoding = holder.Value.Encoding
+        override _.Encoding = Encoding.UTF8
         override _.Write(value: char) = holder.Value.Write(value)
         override _.Write(value: string) = holder.Value.Write(value)
         override _.WriteLine(value: string) = holder.Value.WriteLine(value)
-        member _.Reset() = holder.Value <- new StringWriter()
+        override _.Flush (): unit = holder.Value.Flush()
         member _.Set (writer: TextWriter) = holder.Value <- writer
-        member _.GetText() = holder.Value.ToString()
+        member _.GetText() =
+            let text = holder.Value.ToString()
+            holder.Value <- new StringWriter()
+            text
 
     let private out = new ThreadLocalTextWriter(threadLocalOut)
     let private err = new ThreadLocalTextWriter(threadLocalError)
 
     let installWriters() =
-        out.Reset()
-        err.Reset()
+        if isNull threadLocalOut.Value then threadLocalOut.Value <- new StringWriter()
+        if isNull threadLocalError.Value then threadLocalError.Value <- new StringWriter()
         Console.SetOut out
         Console.SetError err
 
     let getOutputText() = out.GetText()
     let getErrorText() = err.GetText()
 
-    let setOut writer = out.Set writer
+    let setOut writer =
+        out.Set writer
+        Console.SetOut out
 
-    let setError writer = err.Set writer
+    let setError writer =
+        err.Set writer
+        Console.SetError err
+
+    do
+        installWriters()
 
 // This file mimics how Roslyn handles their compilation references for compilation testing
 module Utilities =
