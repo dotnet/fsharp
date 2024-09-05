@@ -81,14 +81,14 @@ module Utilities =
 
     type RedirectConsoleInput() =
         let oldStdIn = Console.In
-        let newStdIn = new CapturedTextReader()
-        do Console.SetIn(newStdIn)
+        static let newStdIn = new ThreadLocal<_>(fun () -> new CapturedTextReader())
+        do Console.SetIn(newStdIn.Value)
         member _.ProvideInput(text: string) =
-            newStdIn.ProvideInput(text)
+            newStdIn.Value.ProvideInput(text)
         interface IDisposable with
             member _.Dispose() =
                 Console.SetIn(oldStdIn)
-                newStdIn.Dispose()
+                newStdIn.Value.Dispose()
 
     type EventedTextWriter() =
         inherit TextWriter()
