@@ -260,6 +260,7 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
                     elif isAppTy g ty2 && (canCoerce = CanCoerce || isRefTy g ty2) && TypeFeasiblySubsumesTypeWithSupertypeCheck g amap m ndeep ty1 ty2 then
                         true
                     else
+                        // TODO(vlza): Are we missing `isInterfaceTy g ty1` here? We are checking that `ty` is within the interface hierarchy of `ty2`, so we can short-cirtuit if `ty1` is not an interface.
                         let interfaces = GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2
                         // See if any interface in type hierarchy of ty2 is a supertype of ty1
                         List.exists (TypeFeasiblySubsumesType (ndeep + 1) g amap m ty1 NoCoerce) interfaces
