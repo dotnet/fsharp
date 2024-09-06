@@ -18,11 +18,14 @@ open FSharp.Compiler.Text
 
 open System.Collections.Concurrent
 
-let typeSubsumptionCache = ConcurrentDictionary<int, bool>()
+type CanCoerce = CanCoerce | NoCoerce
+type Hash = int
+
+
+let typeSubsumptionCache = ConcurrentDictionary<(int * CanCoerce), bool>()
 
 // This is temporary code duplication from `SignatureHash.fs`, just to test some theories.
 
-type Hash = int
 
 let inline hashText (s: string) : Hash = hash s
 let inline private combineHash acc y : Hash = (acc <<< 1) + y + 631
@@ -163,8 +166,6 @@ let rec TypeDefinitelySubsumesTypeNoCoercion ndeep g amap m ty1 ty2 =
             ty2 |> GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m
                 |> List.exists (TypeDefinitelySubsumesTypeNoCoercion (ndeep+1) g amap m ty1))))
 
-type CanCoerce = CanCoerce | NoCoerce
-
 let stripAll stripMeasures g ty =
     if stripMeasures then
         ty |> stripTyEqnsWrtErasure EraseAll g |> stripMeasuresFromTy g
@@ -231,13 +232,13 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
     // For now it's more of a PoC, I think we should use a more sophisticated approach based on kind of TType.
 
     let tyPairHash = combineHash (hashTType g ty1) (hashTType g ty2)
+    let key = (tyPairHash, canCoerce)
 
-    let found, subsumes = typeSubsumptionCache.TryGetValue(tyPairHash)
-
-    if found then
+    match typeSubsumptionCache.TryGetValue(key) with
+    | true, subsumes ->
+        printfn $"Found for {DebugPrint.showType ty1} and {DebugPrint.showType ty2}, CanCoerce={canCoerce}: {subsumes}"
         subsumes
-    else
-
+    | false, _ ->
         let subsumes =
             match ty1, ty2 with
             | TType_measure _, TType_measure _
@@ -254,16 +255,18 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
 
             | _ ->
                 // F# reference types are subtypes of type 'obj'
-                if isObjTy g ty1 && (canCoerce = CanCoerce || isRefTy g ty2) then
-                    true
-                elif isAppTy g ty2 && (canCoerce = CanCoerce || isRefTy g ty2) && TypeFeasiblySubsumesTypeWithSupertypeCheck g amap m ndeep ty1 ty2 then
-                    true
-                else
-                    let interfaces = GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2
-                    // See if any interface in type hierarchy of ty2 is a supertype of ty1
-                    List.exists (TypeFeasiblySubsumesType (ndeep + 1) g amap m ty1 NoCoerce) interfaces
+                    if isObjTy g ty1 && (canCoerce = CanCoerce || isRefTy g ty2) then
+                        true
+                    elif isAppTy g ty2 && (canCoerce = CanCoerce || isRefTy g ty2) && TypeFeasiblySubsumesTypeWithSupertypeCheck g amap m ndeep ty1 ty2 then
+                        true
+                    else
+                        let interfaces = GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2
+                        // See if any interface in type hierarchy of ty2 is a supertype of ty1
+                        List.exists (TypeFeasiblySubsumesType (ndeep + 1) g amap m ty1 NoCoerce) interfaces
 
-        typeSubsumptionCache[tyPairHash] <- subsumes
+        typeSubsumptionCache[key] <- subsumes
+
+        printfn $"Cached for {DebugPrint.showType ty1} and {DebugPrint.showType ty2}, CanCoerce={canCoerce}: {subsumes}"
 
         subsumes
 
