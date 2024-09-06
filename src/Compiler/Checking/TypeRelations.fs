@@ -232,7 +232,7 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
 
     let tyPairHash = combineHash (hashTType g ty1) (hashTType g ty2)
 
-    let subsumes, found = typeSubsumptionCache.TryGetValue(tyPairHash)
+    let found, subsumes = typeSubsumptionCache.TryGetValue(tyPairHash)
 
     if found then
         subsumes
