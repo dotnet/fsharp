@@ -26,7 +26,6 @@ type LangVersion =
     | SupportsMl
 
 type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVersion) =
-    do FSharp.Test.Console.installWriters()
 
     let additionalArgs = defaultArg additionalArgs [||]
     let quiet = defaultArg quiet true

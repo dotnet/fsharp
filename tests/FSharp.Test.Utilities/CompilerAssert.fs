@@ -345,6 +345,9 @@ module rec CompilerAssertHelpers =
         inherit MarshalByRefObject()
 
         member x.ExecuteTestCase assemblyPath (deps: string[]) isFsx =
+            // AppDomain isolates console.
+            Console.installWriters()
+
             AppDomain.CurrentDomain.add_AssemblyResolve(ResolveEventHandler(fun _ args ->
                 deps
                 |> Array.tryFind (fun (x: string) -> Path.GetFileNameWithoutExtension x = AssemblyName(args.Name).Name)
@@ -607,7 +610,8 @@ module rec CompilerAssertHelpers =
         compileCompilationAux outputDirectory (ResizeArray()) ignoreWarnings cmpl
 
     let captureConsoleOutputs (func: unit -> unit) =
-        Console.installWriters()
+
+        Console.ensureNewLocalWriters()
 
         let succeeded, exn =
             try

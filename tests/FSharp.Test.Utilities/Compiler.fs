@@ -698,8 +698,6 @@ module rec Compiler =
 
     let private compileFSharpCompilation compilation ignoreWarnings (cUnit: CompilationUnit) : CompilationResult =
 
-        Console.installWriters()
-
         let ((err: FSharpDiagnostic[], rc: int, outputFilePath: string), deps) =
             CompilerAssert.CompileRaw(compilation, ignoreWarnings)
 
@@ -980,8 +978,6 @@ module rec Compiler =
                         | _ -> false
                     | _ -> false
                 let exitCode, output, errors = CompilerAssert.ExecuteAndReturnResult (p, isFsx, s.Dependencies, false)
-                printfn "---------output-------\n%s\n-------"  output
-                printfn "---------errors-------\n%s\n-------"  errors
                 let executionResult = { s with Output = Some (ExecutionOutput { ExitCode = exitCode; StdOut = output; StdErr = errors }) }
                 if exitCode = 0 then
                     CompilationResult.Success executionResult

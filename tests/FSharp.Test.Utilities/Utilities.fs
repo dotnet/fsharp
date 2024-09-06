@@ -59,8 +59,8 @@ module Console =
         override _.Write(value: char) = getValue().Write(value)
         override _.Write(value: string) = getValue().Write(value)
         override _.WriteLine(value: string) = getValue().WriteLine(value)
-        override _.Flush (): unit = getValue().Flush()
         member _.Set (writer: TextWriter) = holder.Value <- ValueSome writer
+        member _.Drop() = holder.Value <- ValueNone
         member _.GetText() = getValue().ToString()
 
     let private out = new ThreadLocalTextWriter(threadLocalOut)
@@ -73,13 +73,13 @@ module Console =
     let getOutputText() = out.GetText()
     let getErrorText() = err.GetText()
 
-    let setOut writer =
-        out.Set writer
-        Console.SetOut out
+    let setOut writer = out.Set writer
 
-    let setError writer =
-        err.Set writer
-        Console.SetError err
+    let setError writer = err.Set writer
+
+    let ensureNewLocalWriters() =
+        out.Drop()
+        err.Drop()
 
 type SplitConsoleTestFramework(sink) =
     inherit XunitTestFramework(sink)
@@ -131,8 +131,6 @@ module Utilities =
         let outputProduced = Event<string>()
         let errorProduced = Event<string>()
 
-        do Console.installWriters()
-
         let oldStdOut = Console.Out
         let oldStdErr = Console.Error
         let newStdOut = new EventedTextWriter()
@@ -172,7 +170,7 @@ module Utilities =
 
     type Async with
         static member RunImmediate (computation: Async<'T>, ?cancellationToken ) =
-            let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
+            let cancellationToken = defaultArg cancellationToken CancellationToken.None
             let ts = TaskCompletionSource<'T>()
             let task = ts.Task
             Async.StartWithContinuations(

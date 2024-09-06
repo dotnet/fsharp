@@ -46,8 +46,8 @@ module Commands =
             let commandLine = ResizeArray()
             let errorsList = ResizeArray()
             let outputList = ResizeArray()
-            let mutable errorslock = obj
-            let mutable outputlock = obj
+            let errorslock = obj()
+            let outputlock = obj()
             let outputDataReceived (message: string) =
                 if not (isNull message) then
                     lock outputlock (fun () -> outputList.Add(message))
@@ -492,7 +492,7 @@ type RedirectToType =
     | Append of FilePath
 
 type RedirectTo =
-    | Inherit
+    | Ignore
     | Output of RedirectToType
     | OutputAndError of RedirectToType * RedirectToType
     | OutputAndErrorToSameFile of RedirectToType
@@ -516,7 +516,7 @@ module Command =
         let redirectType = function Overwrite x -> sprintf ">%s" x | Append x -> sprintf ">>%s" x
         let outF =
             function
-            | Inherit -> ""
+            | Ignore -> ""
             | Output r-> sprintf " 1%s" (redirectType r)
             | OutputAndError (r1, r2) -> sprintf " 1%s 2%s" (redirectType r1)  (redirectType r2)
             | OutputAndErrorToSameFile r -> sprintf " 1%s 2>1" (redirectType r)
@@ -554,14 +554,12 @@ module Command =
 
         let outF fCont cmdArgs =
             match redirect.Output with
-            | RedirectTo.Inherit ->
-                use toLog = redirectToLog ()
-                fCont { cmdArgs with RedirectOutput = Some (toLog.Post); RedirectError = Some (toLog.Post) }
+            | RedirectTo.Ignore ->
+                fCont { cmdArgs with RedirectOutput = Some ignore; RedirectError = Some ignore }
             | Output r ->
                 use writer = openWrite r
                 use outFile = redirectTo writer
-                use toLog = redirectToLog ()
-                fCont { cmdArgs with RedirectOutput = Some (outFile.Post); RedirectError = Some (toLog.Post) }
+                fCont { cmdArgs with RedirectOutput = Some (outFile.Post); RedirectError = Some ignore }
             | OutputAndError (r1,r2) ->
                 use writer1 = openWrite r1
                 use writer2 = openWrite r2
@@ -575,8 +573,7 @@ module Command =
             | Error r ->
                 use writer = openWrite r
                 use outFile = redirectTo writer
-                use toLog = redirectToLog ()
-                fCont { cmdArgs with RedirectOutput = Some (toLog.Post); RedirectError = Some (outFile.Post) }
+                fCont { cmdArgs with RedirectOutput = Some ignore; RedirectError = Some (outFile.Post) }
 
         let exec cmdArgs =
             log "%s" (logExec dir path args redirect)
@@ -587,7 +584,7 @@ module Command =
 
 let alwaysSuccess _ = ()
 
-let execArgs = { Output = Inherit; Input = None; }
+let execArgs = { Output = Ignore; Input = None; }
 let execAppend cfg stdoutPath stderrPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { execArgs with Output = OutputAndError(Append(stdoutPath), Append(stderrPath)) } p >> checkResult
 let execAppendIgnoreExitCode cfg stdoutPath stderrPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { execArgs with Output = OutputAndError(Append(stdoutPath), Append(stderrPath)) } p >> alwaysSuccess
 let exec cfg p = Command.exec cfg.Directory cfg.EnvironmentVariables execArgs p >> checkResult
@@ -598,7 +595,7 @@ let execBothToOut cfg workDir outFile p = execBothToOutNoCheck cfg workDir outFi
 let execBothToOutExpectFail cfg workDir outFile p = execBothToOutNoCheck cfg workDir outFile p >> checkErrorLevel1
 let execAppendOutIgnoreExitCode cfg workDir outFile p = Command.exec workDir  cfg.EnvironmentVariables { execArgs with Output = Output(Append(outFile)) } p >> alwaysSuccess
 let execAppendErrExpectFail cfg errPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { execArgs with Output = Error(Overwrite(errPath)) } p >> checkErrorLevel1
-let execStdin cfg l p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = Inherit; Input = Some(RedirectInput(l)) } p >> checkResult
+let execStdin cfg l p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = Ignore; Input = Some(RedirectInput(l)) } p >> checkResult
 let execStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = OutputAndError(Append(stdoutPath), Append(stderrPath)); Input = Some(RedirectInput(stdinPath)) } p >> alwaysSuccess
 let fsc cfg arg = Printf.ksprintf (Commands.fsc cfg.Directory (exec cfg) cfg.DotNetExe cfg.FSC) arg
 let fscIn cfg workDir arg = Printf.ksprintf (Commands.fsc workDir (execIn cfg workDir) cfg.DotNetExe  cfg.FSC) arg

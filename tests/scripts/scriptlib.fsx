@@ -168,8 +168,6 @@ module Scripting =
 
     let redirectTo (writer: TextWriter) = new OutPipe (writer)
 
-    let redirectToLog () = redirectTo System.Console.Out
-
 #if !NETCOREAPP
     let defaultPlatform = 
         match Environment.OSVersion.Platform, Environment.Is64BitOperatingSystem with 
@@ -179,6 +177,8 @@ module Scripting =
         | _, false -> "win7-x86"
 #endif
 
+    // This writes to Console.Out.
+    // Do not use in parallel test execution.
     let executeProcessNoRedirect fileName arguments =
         let info = ProcessStartInfo(Arguments=arguments, UseShellExecute=false, 
                                     RedirectStandardOutput=true, RedirectStandardError=true,RedirectStandardInput=true,
