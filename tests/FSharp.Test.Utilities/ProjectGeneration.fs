@@ -1028,7 +1028,7 @@ type ProjectWorkflowBuilder
 
     member this.Execute(workflow: Async<WorkflowContext>) =
         try
-            Async.RunSynchronously(workflow, timeout = defaultArg runTimeout 600_000)
+            Async.RunSynchronously(workflow, ?timeout = runTimeout)
         finally
             if initialContext.IsNone && not isExistingProject then
                 this.DeleteProjectDir()
