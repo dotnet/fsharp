@@ -2304,7 +2304,8 @@ type DiagnosticsLoggerFilteringByScopedPragmas
     (langVersion: LanguageVersion, scopedPragmas, diagnosticOptions: FSharpDiagnosticOptions, diagnosticsLogger: DiagnosticsLogger) =
     inherit DiagnosticsLogger("DiagnosticsLoggerFilteringByScopedPragmas")
 
-    let bugFixed = langVersion.SupportsFeature LanguageFeature.CheckFileBugFixed
+    let needCompatibilityWithEarlierInconsistentInteraction =
+        not (langVersion.SupportsFeature LanguageFeature.ConsistentNowarnLineDirectiveInteraction)
 
     let mutable realErrorPresent = false
 
@@ -2321,7 +2322,7 @@ type DiagnosticsLoggerFilteringByScopedPragmas
                     scopedPragmas
                     |> List.exists (fun (ScopedPragma.WarningOff(pragmaRange, warningNumFromPragma)) ->
                         warningNum = warningNumFromPragma
-                        && (not bugFixed
+                        && (needCompatibilityWithEarlierInconsistentInteraction
                             || m.FileIndex = pragmaRange.FileIndex && posGeq m.Start pragmaRange.Start))
                     |> not
                 | None -> true
