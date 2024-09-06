@@ -297,11 +297,6 @@
         <target state="translated">允許宣告類型、模組上的隱含擴充屬性</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureCheckFileBugFixed">
-        <source>checkFile bug fixed</source>
-        <target state="new">checkFile bug fixed</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureChkNotTailRecursive">
         <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
         <target state="translated">如果成員或函式具有 'TailCall' 屬性，但未以尾遞迴方式使用，則引發警告。</target>
@@ -310,6 +305,11 @@
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
         <target state="translated">如果 'TailCall' 屬性用於非遞迴函數，則引發警告。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureConsistentNowarnLineDirectiveInteraction">
+        <source>checkFile bug fixed</source>
+        <target state="new">checkFile bug fixed</target>
         <note />
       </trans-unit>
       <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">

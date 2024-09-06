@@ -297,11 +297,6 @@
         <target state="translated">Zezwalaj na niejawny atrybut Rozszerzenie dla deklarujących typów, modułów</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureCheckFileBugFixed">
-        <source>checkFile bug fixed</source>
-        <target state="new">checkFile bug fixed</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureChkNotTailRecursive">
         <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
         <target state="translated">Zgłasza ostrzeżenia, jeśli składowa lub funkcja ma atrybut „TailCall”, ale nie jest używana w sposób cykliczny końca.</target>
@@ -310,6 +305,11 @@
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
         <target state="translated">Zgłasza ostrzeżenia, jeśli atrybut „TailCall” jest używany w funkcjach niekursywnych.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureConsistentNowarnLineDirectiveInteraction">
+        <source>checkFile bug fixed</source>
+        <target state="new">checkFile bug fixed</target>
         <note />
       </trans-unit>
       <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">

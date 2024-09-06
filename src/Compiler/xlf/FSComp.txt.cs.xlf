@@ -297,11 +297,6 @@
         <target state="translated">Povolit implicitní atribut Extension pro deklarující typy, moduly</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureCheckFileBugFixed">
-        <source>checkFile bug fixed</source>
-        <target state="new">checkFile bug fixed</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureChkNotTailRecursive">
         <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
         <target state="translated">Vyvolá upozornění, pokud člen nebo funkce má atribut „TailCall“, ale nepoužívá se koncovým (tail) rekurzivním způsobem.</target>
@@ -310,6 +305,11 @@
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
         <target state="translated">Vyvolá upozornění, pokud je atribut TailCall použit u nerekurzivních funkcí.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureConsistentNowarnLineDirectiveInteraction">
+        <source>checkFile bug fixed</source>
+        <target state="new">checkFile bug fixed</target>
         <note />
       </trans-unit>
       <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">

@@ -297,11 +297,6 @@
         <target state="translated">유형, 모듈 선언에 암시적 확장 속성 허용</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureCheckFileBugFixed">
-        <source>checkFile bug fixed</source>
-        <target state="new">checkFile bug fixed</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureChkNotTailRecursive">
         <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
         <target state="translated">멤버 또는 함수에 'TailCall' 특성이 있지만 비상 재귀적인 방식으로 사용되지 않는 경우 경고를 발생합니다.</target>
@@ -310,6 +305,11 @@
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
         <target state="translated">'TailCall' 특성이 비 재귀 함수에 사용되는 경우 경고를 발생합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureConsistentNowarnLineDirectiveInteraction">
+        <source>checkFile bug fixed</source>
+        <target state="new">checkFile bug fixed</target>
         <note />
       </trans-unit>
       <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
