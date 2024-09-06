@@ -22,10 +22,10 @@ val TypesFeasiblyEquivalent:
     stripMeasures: bool -> ndeep: int -> g: TcGlobals -> amap: 'a -> m: range -> ty1: TType -> ty2: TType -> bool
 
 /// The feasible equivalence relation. Part of the language spec.
-val TypesFeasiblyEquiv: ndeep: int -> g: TcGlobals -> amap: 'a -> m: range -> ty1: TType -> ty2: TType -> bool
+val inline TypesFeasiblyEquiv: ndeep: int -> g: TcGlobals -> amap: 'a -> m: range -> ty1: TType -> ty2: TType -> bool
 
 /// The feasible equivalence relation after stripping Measures.
-val TypesFeasiblyEquivStripMeasures: g: TcGlobals -> amap: 'a -> m: range -> ty1: TType -> ty2: TType -> bool
+val inline TypesFeasiblyEquivStripMeasures: g: TcGlobals -> amap: 'a -> m: range -> ty1: TType -> ty2: TType -> bool
 
 /// The feasible coercion relation. Part of the language spec.
 val TypeFeasiblySubsumesType:
