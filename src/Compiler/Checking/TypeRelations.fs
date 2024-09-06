@@ -236,7 +236,7 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
 
     match typeSubsumptionCache.TryGetValue(key) with
     | true, subsumes ->
-        printfn $"Found for {DebugPrint.showType ty1} and {DebugPrint.showType ty2}, CanCoerce={canCoerce}: {subsumes}"
+        printfn $"TypeFeasiblySubsumesType Found: ty1={DebugPrint.showType ty1}; ty2={DebugPrint.showType ty2}; CanCoerce={canCoerce}; Subsumes={subsumes}"
         subsumes
     | false, _ ->
         let subsumes =
@@ -266,7 +266,7 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
 
         typeSubsumptionCache[key] <- subsumes
 
-        printfn $"Cached for {DebugPrint.showType ty1} and {DebugPrint.showType ty2}, CanCoerce={canCoerce}: {subsumes}"
+        printfn $"TypeFeasiblySubsumesType Cached: ty1={DebugPrint.showType ty1}; ty2={DebugPrint.showType ty2}; CanCoerce={canCoerce}; Subsumes={subsumes}"
 
         subsumes
 
