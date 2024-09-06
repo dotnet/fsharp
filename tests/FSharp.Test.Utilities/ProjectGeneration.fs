@@ -1032,7 +1032,7 @@ type ProjectWorkflowBuilder
         finally
             if initialContext.IsNone && not isExistingProject then
                 this.DeleteProjectDir()
-            activity |> Option.iter (fun x -> x.Dispose())
+            activity |> Option.iter (fun x -> if not (isNull x) then x.Dispose())
             tracerProvider |> Option.iter (fun x ->
                 x.ForceFlush() |> ignore
                 x.Dispose())
@@ -1136,13 +1136,9 @@ type ProjectWorkflowBuilder
         async {
             let! ctx = workflow
 
-            use activity =
-                Activity.start "ProjectWorkflowBuilder.CheckFile" [ Activity.Tags.project, initialProject.Name; "fileId", fileId ]
-
             let! results =
+                use _ = Activity.start "ProjectWorkflowBuilder.CheckFile" [ Activity.Tags.project, initialProject.Name; "fileId", fileId ]
                 checkFile fileId ctx.Project checker
-
-            activity.Dispose()
 
             let oldSignature = ctx.Signatures[fileId]
             let newSignature = getSignature results
