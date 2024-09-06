@@ -55,7 +55,8 @@ module LetBindings_TypeFunctions =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 671, Line 6, Col 12, Line 6, Col 29, "A property cannot have explicit type parameters. Consider using a method instead.")
+            (Error 671, Line 6, Col 26, Line 6, Col 28, "A property cannot have explicit type parameters. Consider using a method instead.");
+            (Error 671, Line 7, Col 27, Line 7, Col 33, "A property cannot have explicit type parameters. Consider using a method instead.")
         ]
 
     
