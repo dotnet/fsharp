@@ -174,6 +174,8 @@ let stripAll stripMeasures g ty =
 /// The feasible equivalence relation. Part of the language spec.
 let rec TypesFeasiblyEquivalent stripMeasures ndeep g amap m ty1 ty2 =
 
+    // TODO(vlza): Cache?
+
     if ndeep > 100 then
         error(InternalError("recursive class hierarchy (detected in TypeFeasiblySubsumesType), ty1 = " + (DebugPrint.showType ty1), m));
 
@@ -224,6 +226,9 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
 
     let ty1 = stripTyEqns g ty1
     let ty2 = stripTyEqns g ty2
+
+    // TODO(vlza): this is probably not the best way to cache this, due to mutability of TType_var and other non-nominal generic types.
+    // For now it's more of a PoC, I think we should use a more sophisticated approach based on kind of TType.
 
     let tyPairHash = combineHash (hashTType g ty1) (hashTType g ty2)
 
