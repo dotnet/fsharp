@@ -182,6 +182,7 @@
     <Compile Include="EmittedIL\Structure\Structure.fs" />
     <Compile Include="EmittedIL\TestFunctions\TestFunctions.fs" />
     <Compile Include="EmittedIL\Tuples\Tuples.fs" />
+    <Compile Include="EmittedIL\TryCatch\TryCatch.fs" />
     <Compile Include="EmittedIL\Nullness\NullnessMetadata.fs" />
     <Compile Include="EmittedIL\FixedBindings\FixedBindings.fs" />
     <Compile Include="ErrorMessages\TypedInterpolatedStringsTests.fs" />
