@@ -698,6 +698,9 @@ module rec Compiler =
 
     let private compileFSharpCompilation compilation ignoreWarnings (cUnit: CompilationUnit) : CompilationResult =
 
+        // Some tests verify compilation stdout, for example --times option tests.
+        Console.ensureNewLocalWriters()
+
         let ((err: FSharpDiagnostic[], rc: int, outputFilePath: string), deps) =
             CompilerAssert.CompileRaw(compilation, ignoreWarnings)
 
