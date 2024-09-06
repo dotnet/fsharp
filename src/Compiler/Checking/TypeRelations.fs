@@ -228,7 +228,7 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
     let ty1 = stripTyEqns g ty1
     let ty2 = stripTyEqns g ty2
 
-    // TODO(vlza): this is probably not the best way to cache this, due to mutability of TType_var and other non-nominal generic types.
+    // TODO(vlza): this might not be the best way to cache this, due to mutability of TType_var and other non-nominal generic types.
     // For now it's more of a PoC, I think we should use a more sophisticated approach based on kind of TType.
 
     let tyPairHash = combineHash (hashTType g ty1) (hashTType g ty2)
