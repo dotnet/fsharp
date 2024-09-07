@@ -401,7 +401,7 @@ let ``controlChamenos-FSI`` () =
 [<Fact>]
 let ``controlMailbox-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/controlMailbox" FSC_OPTIMIZED
 
-[<Fact(Skip="Flaky")>]
+[<Fact>]
 let ``controlMailbox-FSI`` () = singleTestBuildAndRun "core/controlMailbox" FSI
 
 [<Fact>]

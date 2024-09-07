@@ -175,8 +175,13 @@ module rec Compiler =
           StdOut:   string
           StdErr:   string }
 
+    type EvalOutput =
+        { Result: Result<FsiValue option, exn>
+          StdOut: string
+          StdErr: string }
+
     type RunOutput =
-        | EvalOutput of Result<FsiValue option, exn>
+        | EvalOutput of EvalOutput
         | ExecutionOutput of ExecutionOutput
 
     type SourceCodeFileName = string
@@ -995,13 +1000,15 @@ module rec Compiler =
         let perFileDiagnostics = err |> fromFSharpDiagnostic
         let diagnostics = perFileDiagnostics |> List.map snd
         let (errors, warnings) = partitionErrors diagnostics
+        let stdOut = Console.getOutputText()
+        let stdErr = Console.getErrorText()
         let result =
             { OutputPath   = None
               Dependencies = []
               Adjust       = 0
               Diagnostics  = if fs.IgnoreWarnings then errors else diagnostics
               PerFileErrors = perFileDiagnostics
-              Output       = Some (EvalOutput evalResult)
+              Output       = Some (EvalOutput ({Result = evalResult; StdOut = stdOut; StdErr = stdErr}))
               Compilation  = FS fs }
 
         let evalError = match evalResult with Ok _ -> false | _ -> true
@@ -1521,10 +1528,14 @@ Actual:
                       match r.Output with
                       | Some (ExecutionOutput output) ->
                           sprintf "----output-----\n%s\n----error-------\n%s\n----------" output.StdOut output.StdErr
-                      | Some (EvalOutput (Result.Error exn) ) ->
-                          sprintf "----script error-----\n%s\n----------" (exn.ToString())
-                      | Some (EvalOutput (Result.Ok fsiVal) ) ->
-                          sprintf "----script output-----\n%A\n----------" (fsiVal)
+                      | Some (EvalOutput output) ->                                  
+                            match output.Result with
+                            | Result.Error exn ->
+                                sprintf "----script error-----\n%s\n----------" (exn.ToString())
+                                sprintf "----output-----\n%s\n----error-------\n%s\n----------" output.StdOut output.StdErr
+                            | Result.Ok fsiVal ->
+                                sprintf "----script output-----\n%A\n----------" (fsiVal)
+                                sprintf "----output-----\n%s\n----error-------\n%s\n----------" output.StdOut output.StdErr
                       | _ -> () ]
                     |> String.concat "\n"
                 failwith message
@@ -1744,9 +1755,11 @@ Actual:
         let private assertEvalOutput (selector: FsiValue -> 'T) (value: 'T) (result: CompilationResult) : CompilationResult =
             match result.RunOutput with
             | None -> failwith "Execution output is missing cannot check value."
-            | Some (EvalOutput (Ok (Some e))) -> Assert.AreEqual(value, (selector e))
-            | Some (EvalOutput (Ok None )) -> failwith "Cannot assert value of evaluation, since it is None."
-            | Some (EvalOutput (Result.Error ex)) -> raise ex
+            | Some (EvalOutput output) ->
+                match output.Result with
+                | Ok (Some e) -> Assert.AreEqual(value, (selector e))
+                | Ok None -> failwith "Cannot assert value of evaluation, since it is None."
+                | Result.Error ex -> raise ex
             | Some _ -> failwith "Only 'eval' output is supported."
             result
 
