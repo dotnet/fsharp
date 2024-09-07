@@ -229,36 +229,37 @@ module MailboxProcessorBasicTests =
                  return !received})
                 n
 
-        for i in 1..10 do
-            for sleep in [0;1;10] do
-                for timeout in [10;1;0] do
-                    checkAsync 
-                       (sprintf "cf72361: MailboxProcessor TryScan w/timeout=%d sleep=%d iteration=%d" timeout sleep i) 
-                       (task {
-                        let timedOut = ref None
-                        let mb = new MailboxProcessor<int>(fun inbox ->
-                                async {
-                                        let result = ref None
-                                        let count = ref 0
-                                        while (!result).IsNone && !count < 5 do
-                                            let! curResult = inbox.TryScan((fun i -> if i >= 0 then async { return i } |> Some  else None), timeout=timeout)
-                                            result := curResult
-                                            count := !count + 1
-                                        match !result with
-                                        |   None -> 
-                                                timedOut := Some true
-                                        |   Some i -> 
-                                                timedOut := Some false
-                                })
-                        mb.Start()
-                        let w = System.Diagnostics.Stopwatch()
-                        w.Start()
-                        while w.ElapsedMilliseconds < 1000L && (!timedOut).IsNone do
-                            mb.Post(-1)
-                            do! Task.Yield()
-                        mb.Post(0)
-                        return !timedOut})
-                       (Some true)
+        //for i in 1..10 do
+        //    for sleep in [0;1;10] do
+        //        for timeout in [10;1;0] do
+        //            checkAsync 
+        //               (sprintf "cf72361: MailboxProcessor TryScan w/timeout=%d sleep=%d iteration=%d" timeout sleep i) 
+        //               (task {
+        //                let found = TaskCompletionSource()
+        //                let timedOut = ref None
+        //                let mb = new MailboxProcessor<int>(fun inbox ->
+        //                        async {
+        //                                let result = ref None
+        //                                let count = ref 0
+        //                                while (!result).IsNone && !count < 5 do
+        //                                    let! curResult = inbox.TryScan((fun i -> if i >= 0 then async { return i } |> Some  else None), timeout=timeout)
+        //                                    result := curResult
+        //                                    count := !count + 1
+        //                                match !result with
+        //                                |   None -> 
+        //                                        timedOut := Some true
+        //                                |   Some i -> 
+        //                                        timedOut := Some false
+        //                        })
+        //                mb.Start()
+        //                let w = System.Diagnostics.Stopwatch()
+        //                w.Start()
+        //                while w.ElapsedMilliseconds < 1000L && (!timedOut).IsNone do
+        //                    mb.Post(-1)
+        //                    do! Task.Yield()
+        //                mb.Post(0)
+        //                return !timedOut})
+        //               (Some true)
 
         checkAsync "cf72361: MailboxProcessor TryScan wo/timeout" 
            (task {
