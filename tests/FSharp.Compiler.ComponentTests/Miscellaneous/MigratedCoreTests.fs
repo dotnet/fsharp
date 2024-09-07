@@ -404,10 +404,8 @@ let ``controlMailbox-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/controlMai
 [<Fact>]
 let ``controlMailbox-FSI`` () = singleTestBuildAndRun "core/controlMailbox" FSI
 
-[<Fact(Skip="Flaky")>]
-let ``controlMailbox --tailcalls`` () =
-    let cfg =  "core/controlMailbox"
-    singleTestBuildAndRunAux cfg  ["--tailcalls"] FSC_OPTIMIZED
+[<Fact>]
+let ``controlMailbox-FSC_OPTIMIZED --tailcalls-`` () = singleTestBuildAndRunAux "core/controlMailbox" ["--tailcalls-"] FSC_OPTIMIZED
 
 [<Fact>]
 let ``csext-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/csext" FSC_OPTIMIZED

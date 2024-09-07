@@ -202,7 +202,7 @@ module MailboxProcessorBasicTests =
                      mb1.Post(i)
                  while !received < n do
                      if !received % 100 = 0 then 
-                         printfn "received = %d" !received
+                         // printfn "received = %d" !received
                      do! Task.Yield()
                  return !received})
                 n
@@ -219,7 +219,7 @@ module MailboxProcessorBasicTests =
                                 match msgOpt with 
                                 | None -> 
                                     do if !received % 100 = 0 then 
-                                           printfn "timeout!, received = %d" !received
+                                           // printfn "timeout!, received = %d" !received
                                 | Some _ -> do incr received })
                  mb1.Start();
                  for i in 0 .. n-1 do
