@@ -308,8 +308,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureConsistentNowarnLineDirectiveInteraction">
-        <source>checkFile bug fixed</source>
-        <target state="new">checkFile bug fixed</target>
+        <source>The interaction between #nowarn and #line is now consistent.</source>
+        <target state="new">The interaction between #nowarn and #line is now consistent.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
