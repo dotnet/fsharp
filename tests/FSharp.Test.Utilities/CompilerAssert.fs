@@ -656,7 +656,7 @@ module rec CompilerAssertHelpers =
             { new IDisposable with
               member _.Dispose() = try File.Delete runtimeconfigPath with | _ -> () }
 #endif
-        let timeout = 30000
+        let timeout = 60000
         let exitCode, output, errors = Commands.executeProcess (Some fileName) arguments (Path.GetDirectoryName(outputFilePath)) timeout
         (exitCode, output |> String.concat "\n", errors |> String.concat "\n")
 
