@@ -11,7 +11,6 @@ open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.BuildGraph
 
-
 let timeout = TimeSpan.FromSeconds 10.
 
 let waitFor (mre: ManualResetEvent) = 
@@ -376,7 +375,6 @@ let ``Stress test`` () =
 [<InlineData(true, 1)>]
 [<InlineData(false, 2)>]
 let ``Cancel running jobs with the same key`` cancelDuplicate expectFinished =
-    task {
         let cache = AsyncMemoize(cancelDuplicateRunningJobs=cancelDuplicate)
 
         let mutable started = 0
@@ -427,7 +425,6 @@ let ``Cancel running jobs with the same key`` cancelDuplicate expectFinished =
             waitFor job1finished
 
         Assert.Equal((2, expectFinished), (started, finished))
-    }
 
 
 type DummyException(msg) =

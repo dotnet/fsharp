@@ -44,7 +44,7 @@ module Console =
     let private threadLocalOut = new AsyncLocal<TextWriter voption>()
     let private threadLocalError = new AsyncLocal<TextWriter voption>()
 
-    type ThreadLocalTextWriter(holder: AsyncLocal<TextWriter voption>) =
+    type AsyncLocalTextWriter(holder: AsyncLocal<TextWriter voption>) =
         inherit TextWriter()
 
         let getValue() =
@@ -63,8 +63,8 @@ module Console =
         member _.Drop() = holder.Value <- ValueNone
         member _.GetText() = getValue().ToString()
 
-    let private out = new ThreadLocalTextWriter(threadLocalOut)
-    let private err = new ThreadLocalTextWriter(threadLocalError)
+    let private out = new AsyncLocalTextWriter(threadLocalOut)
+    let private err = new AsyncLocalTextWriter(threadLocalError)
 
     let installWriters() =
         Console.SetOut out
