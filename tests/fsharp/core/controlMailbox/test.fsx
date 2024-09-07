@@ -201,8 +201,6 @@ module MailboxProcessorBasicTests =
                  for i in 0 .. n-1 do
                      mb1.Post(i)
                  while !received < n do
-                     if !received % 100 = 0 then 
-                         // printfn "received = %d" !received
                      do! Task.Yield()
                  return !received})
                 n
@@ -215,19 +213,19 @@ module MailboxProcessorBasicTests =
                  let received = ref 0
                  let mb1 = new MailboxProcessor<int>(fun inbox -> 
                     async { while !received < n do 
-                                let! msgOpt = inbox.TryReceive(timeout=timeout)
-                                match msgOpt with 
-                                | None -> 
-                                    do if !received % 100 = 0 then 
-                                           // printfn "timeout!, received = %d" !received
-                                | Some _ -> do incr received })
+                                match! inbox.TryReceive(timeout=timeout) with
+                                | Some _ -> incr received
+                                | _ -> ()
+                    })
+
+                 mb1.Post(0)
+
                  mb1.Start();
-                 for i in 0 .. n-1 do
+                 for i in 1 .. n-1 do
                      mb1.Post(i)
                      do! Task.Yield()
                  while !received < n do
-                     if !received % 100 = 0 then 
-                         printfn "main thread: received = %d" !received
+                    do! Task.Yield()
                  return !received})
                 n
 
