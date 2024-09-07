@@ -70,14 +70,21 @@ module Console =
         Console.SetOut out
         Console.SetError err
 
-    let getOutputText() = out.GetText()
-    let getErrorText() = err.GetText()
+    let getOutputText() =
+        Console.Out.Flush()
+        out.GetText()
+
+    let getErrorText() =
+        Console.Error.Flush()
+        err.GetText()
 
     let setOut writer = out.Set writer
 
     let setError writer = err.Set writer
 
     let ensureNewLocalWriters() =
+        Console.Out.Flush()
+        Console.Error.Flush()
         out.Drop()
         err.Drop()
 

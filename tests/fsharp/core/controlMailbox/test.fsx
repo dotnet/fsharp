@@ -223,12 +223,11 @@ module MailboxProcessorBasicTests =
                                 | Some _ -> do incr received })
                  mb1.Start();
                  for i in 0 .. n-1 do
-                     do! Task.Yield()
                      mb1.Post(i)
+                     do! Task.Yield()
                  while !received < n do
                      if !received % 100 = 0 then 
                          printfn "main thread: received = %d" !received
-                     do! Task.Yield()
                  return !received})
                 n
 
