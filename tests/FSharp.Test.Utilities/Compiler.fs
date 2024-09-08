@@ -703,9 +703,6 @@ module rec Compiler =
 
     let private compileFSharpCompilation compilation ignoreWarnings (cUnit: CompilationUnit) : CompilationResult =
 
-        // Some tests verify compilation stdout, for example --times option tests.
-        Console.ensureNewLocalWriters()
-
         let ((err: FSharpDiagnostic[], rc: int, outputFilePath: string), deps) =
             CompilerAssert.CompileRaw(compilation, ignoreWarnings)
 
@@ -1289,7 +1286,7 @@ Actual:
         | Some actual ->
             let expected = stripVersion (normalizeNewlines expected)
             if expected <> actual then
-                failwith $"""Output does not match expected: ------------{Environment.NewLine}{expected}{Environment.NewLine}Actual: ------------{Environment.NewLine}{actual}{Environment.NewLine}"""
+                failwith $"""Output does not match expected:{Environment.NewLine}{expected}{Environment.NewLine}Actual:{Environment.NewLine}{actual}{Environment.NewLine}"""
             else
                 cResult
 
@@ -1302,7 +1299,7 @@ Actual:
         | Some actual ->
             for item in expected do
                 if not(actual.Contains(item)) then
-                    failwith $"""Output does not match expected: ------------{Environment.NewLine}{item}{Environment.NewLine}Actual: ------------{Environment.NewLine}{actual}{Environment.NewLine}"""
+                    failwith $"""Output does not match expected:{Environment.NewLine}{item}{Environment.NewLine}Actual:{Environment.NewLine}{actual}{Environment.NewLine}"""
             cResult
 
     type ImportScope = { Kind: ImportDefinitionKind; Name: string }

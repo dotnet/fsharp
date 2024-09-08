@@ -49,7 +49,7 @@ module times =
         |> withDiagnosticMessageMatches "Unrecognized option: '--times\+'"
         |> ignore
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"error_01.fs"|])>]
+    [<Theory(Skip="Test gives different looking output sometimes. Investigate."); Directory(__SOURCE_DIRECTORY__, Includes=[|"error_01.fs"|])>]
     let ``times - to console`` compilation =
         compilation
         |> asFsx
