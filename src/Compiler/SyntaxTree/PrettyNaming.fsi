@@ -228,6 +228,7 @@ type internal ActivePatternInfo =
 
     member ActiveTags: string list
     member ActiveTagsWithRanges: (string * range) list
+    member LogicalName: string
     member IsTotal: bool
     member Range: range
 
