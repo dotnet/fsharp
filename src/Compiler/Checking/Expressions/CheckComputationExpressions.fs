@@ -1996,6 +1996,7 @@ let rec TryTranslateComputationExpression
                     match spBind with
                     | DebugPointAtBinding.Yes m -> m
                     | _ -> pat.Range
+
                 error (Error(FSComp.SR.tcInvalidUseBangBindingNoAndBangs (), mBind))
 
         // 'let! pat1 = expr1 and! pat2 = expr2 in ...' -->
