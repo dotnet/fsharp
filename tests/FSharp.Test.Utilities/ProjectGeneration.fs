@@ -244,7 +244,8 @@ type SyntheticProject =
       UseScriptResolutionRules: bool }
 
     static member Create(?name: string) =
-        let name = defaultArg name $"TestProject_{Guid.NewGuid().ToString()[..7]}"
+        let name = defaultArg name "TestProject"
+        let name = $"{name}_{Guid.NewGuid().ToString()[..7]}"
         let dir = Path.GetFullPath projectRoot
 
         { Name = name
