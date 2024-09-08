@@ -152,3 +152,33 @@ let x = A.Prop { return 0 }
         |> compile
         |> shouldSucceed
         |> ignore
+
+    [<Fact>]
+    let ``use! may not be combined with and!`` () =
+        Fsx """
+module Result =
+    let zip x1 x2 =
+        match x1,x2 with
+        | Ok x1res, Ok x2res -> Ok (x1res, x2res)
+        | Error e, _ -> Error e
+        | _, Error e -> Error e
+
+type ResultBuilder() =
+    member _.MergeSources(t1: Result<'T,'U>, t2: Result<'T1,'U>) = Result.zip t1 t2
+    member _.BindReturn(x: Result<'T,'U>, f) = Result.map f x
+
+let result = ResultBuilder()
+
+let run r2 r3 =
+    result {
+        use! b = r2
+        and! c = r3
+        return b - c
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3345, Line 17, Col 9, Line 17, Col 20, "use! may not be combined with and!")
+        ]
