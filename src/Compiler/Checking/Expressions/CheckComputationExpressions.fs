@@ -1988,16 +1988,16 @@ let rec TryTranslateComputationExpression
             Some(translatedCtxt bindExpr)
 
         // 'use! pat = e1 ... in e2' where 'pat' is not a simple name -> error
-        | SynExpr.LetOrUseBang(bindDebugPoint = spBind; isUse = true; pat = pat; andBangs = andBangs) ->
+        | SynExpr.LetOrUseBang(isUse = true; pat = pat; andBangs = andBangs) ->
             if isNil andBangs then
                 error (Error(FSComp.SR.tcInvalidUseBangBinding (), pat.Range))
             else
-                let mBind =
-                    match spBind with
-                    | DebugPointAtBinding.Yes m -> m
-                    | _ -> pat.Range
+                let m =
+                    match andBangs with
+                    | [] -> comp.Range
+                    | h :: _ -> h.Range
 
-                error (Error(FSComp.SR.tcInvalidUseBangBindingNoAndBangs (), mBind))
+                error (Error(FSComp.SR.tcInvalidUseBangBindingNoAndBangs (), m))
 
         // 'let! pat1 = expr1 and! pat2 = expr2 in ...' -->
         //     build.BindN(expr1, expr2, ...)

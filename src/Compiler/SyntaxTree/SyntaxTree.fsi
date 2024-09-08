@@ -982,6 +982,9 @@ type SynExprAndBang =
         range: range *
         trivia: SynExprAndBangTrivia
 
+    /// Gets the syntax range of this construct
+    member Range: range
+
 [<NoEquality; NoComparison>]
 type SynExprRecordField =
     | SynExprRecordField of

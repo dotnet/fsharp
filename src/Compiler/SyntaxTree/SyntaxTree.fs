@@ -870,6 +870,10 @@ type SynExprAndBang =
         range: range *
         trivia: SynExprAndBangTrivia
 
+    member x.Range =
+        match x with
+        | SynExprAndBang(range = range) -> range
+
 [<NoEquality; NoComparison>]
 type SynExprRecordField =
     | SynExprRecordField of
