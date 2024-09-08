@@ -1995,7 +1995,7 @@ let rec TryTranslateComputationExpression
                 let m =
                     match andBangs with
                     | [] -> comp.Range
-                    | h :: _ -> h.Range
+                    | h :: _ -> h.Trivia.AndBangKeyword
 
                 error (Error(FSComp.SR.tcInvalidUseBangBindingNoAndBangs (), m))
 
