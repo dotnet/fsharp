@@ -180,7 +180,7 @@ let run r2 r3 =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3345, Line 18, Col 9, Line 18, Col 20, "use! may not be combined with and!")
+            (Error 3345, Line 18, Col 9, Line 18, Col 13, "use! may not be combined with and!")
         ]
         
     [<Fact>]
@@ -211,7 +211,7 @@ let run r2 r3 =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3345, Line 18, Col 9, Line 18, Col 20, "use! may not be combined with and!")
+            (Error 3345, Line 18, Col 9, Line 18, Col 13, "use! may not be combined with and!")
         ]
         
     [<Fact>]
@@ -245,5 +245,5 @@ let run r2 r3 =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3345, Line 22, Col 9, Line 22, Col 20, "use! may not be combined with and!")
+            (Error 3345, Line 22, Col 9, Line 22, Col 13, "use! may not be combined with and!")
         ]
