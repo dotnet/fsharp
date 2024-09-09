@@ -3,8 +3,8 @@
 // Title: AttributeTargets from AttributeUsage are not being checked/honored
 // Descr: Verify an attribute targeting methods, can't be applied to any other language elements.
 
-//<Expects id="FS0842" span="(21,21)" status="error">This attribute is not valid for use on this language element</Expects>
-//<Expects id="FS0842" span="(24,28)" status="error">This attribute is not valid for use on this language element</Expects>
+
+
 
 open System
 

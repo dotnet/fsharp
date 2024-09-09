@@ -798,7 +798,7 @@ module internal SymbolHelpers =
     /// Get the "F1 Keyword" associated with an item, for looking up documentation help indexes on the web
     let rec GetF1Keyword (g: TcGlobals) item = 
 
-        let getKeywordForMethInfo (minfo : MethInfo) =
+        let rec getKeywordForMethInfo (minfo : MethInfo) =
             match minfo with 
             | FSMeth(_, _, vref, _) ->
                 match vref.TryDeclaringEntity with
@@ -813,6 +813,7 @@ module internal SymbolHelpers =
                     if nGenericParams > 0 then "``"+(nGenericParams.ToString()) else ""
                 sprintf "%s.%s%s" typeString minfo.RawMetadata.Name paramString |> Some
 
+            | MethInfoWithModifiedReturnType(mi,_) -> getKeywordForMethInfo mi
             | DefaultStructCtor _  -> None
 #if !NO_TYPEPROVIDERS
             | ProvidedMeth _ -> None

@@ -11,11 +11,17 @@ neg45.fs(34,25,34,26): typecheck error FS0465: Type inference problem too compli
 
 neg45.fs(34,27,34,28): typecheck error FS0465: Type inference problem too complicated (maximum iteration depth reached). Consider adding further type annotations.
 
-neg45.fs(41,23,41,41): typecheck error FS0827: This is not a valid name for an active pattern
+neg45.fs(41,24,41,33): typecheck error FS0827: '(|Foo|Bir|)' is not a valid method name. Use a 'let' binding instead.
 
 neg45.fs(52,14,52,17): typecheck error FS0039: The type 'FooBir' does not define the field, constructor or member 'Foo'.
 
-neg45.fs(56,16,56,31): typecheck error FS0827: This is not a valid name for an active pattern
+neg45.fs(56,19,56,28): typecheck error FS0827: '(|Foo|Bir|)' is not a valid method name. Use a 'let' binding instead.
+
+neg45.fs(65,15,65,18): typecheck error FS3868: This active pattern expects 1 expression argument(s) and a pattern argument, e.g., 'Foo e1 pat'.
+
+neg45.fs(66,15,66,18): typecheck error FS3868: This active pattern expects 1 expression argument(s) and a pattern argument, e.g., 'Bir e1 pat'.
+
+neg45.fs(64,19,64,20): typecheck error FS0025: Incomplete pattern matches on this expression.
 
 neg45.fs(72,26,72,31): typecheck error FS0001: A type parameter is missing a constraint 'when 'T :> System.IComparable'
 

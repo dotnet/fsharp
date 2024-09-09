@@ -1,7 +1,7 @@
 // #Regression #Conformance #PatternMatching #PatternMatchingGuards 
 #light
 
-//<Expects id="FS0038" status="error">'x' is bound twice in this pattern</Expects>
+
 
 let test input =
     match input with

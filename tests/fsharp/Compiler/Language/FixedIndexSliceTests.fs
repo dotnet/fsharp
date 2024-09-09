@@ -1,13 +1,13 @@
 ﻿namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 open FSharp.Compiler.Diagnostics
 
-[<TestFixture>]
+
 module FixedIndexSliceTests =
     
-    [<Test>]
+    [<Fact>]
     let ``Fixed index 3d slicing should not be available in 47``() =
         CompilerAssert.TypeCheckWithErrorsAndOptions [| "--langversion:4.7"|]
             """
@@ -30,7 +30,7 @@ arr3.[*, 1, 1]
                 FSharpDiagnosticSeverity.Error, 39, (10,1,10,15), "The type '[,,]<_>' does not define the field, constructor or member 'GetSlice'."
             |]
 
-    [<Test>]
+    [<Fact>]
     let ``Fixed index 4d slicing should not be available in 47``() =
         CompilerAssert.TypeCheckWithErrorsAndOptions [| "--langversion:4.7"|]
             """
@@ -67,7 +67,7 @@ arr4.[*, 1, 1, 1]
                 FSharpDiagnosticSeverity.Error, 39, (17,1,17,18), "The type '[,,,]<_>' does not define the field, constructor or member 'GetSlice'."
             |]
             
-    [<Test>]
+    [<Fact>]
     let ``Fixed index 3d set slicing should not be available in 47``() =
         CompilerAssert.TypeCheckWithErrorsAndOptions [| "--langversion:4.7"|]
             """
@@ -92,7 +92,7 @@ arr3.[*, 1, 1] <- arr1
                 FSharpDiagnosticSeverity.Error, 39, (12,1,12,15), "The type '[,,]<_>' does not define the field, constructor or member 'SetSlice'."
             |]
 
-    [<Test>]
+    [<Fact>]
     let ``Fixed index 4d set slicing should not be available in 47``() =
         CompilerAssert.TypeCheckWithErrorsAndOptions [| "--langversion:4.7"|]
             """

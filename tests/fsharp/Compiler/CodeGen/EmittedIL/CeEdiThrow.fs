@@ -2,13 +2,12 @@
 namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 
 open FSharp.Compiler.UnitTests
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 
-[<TestFixture>]
 module CeEdiThrow =
 
-    [<Test>]
+    [<Fact>]
     let ``Emits EDI.Throw``() =
         CompilerAssert.CompileLibraryAndVerifyIL(
             """

@@ -2,14 +2,14 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 
 #if !DEBUG // requires release version of compiler to avoid very deep stacks
-[<TestFixture>]
+
 module LargeExprTests =
 
-    [<Test>]
+    [<Fact>]
     let LargeRecordDoesNotStackOverflow() =
         CompilerAssert.CompileExe
             """
@@ -991,7 +991,7 @@ type TestRecord =
 let main _ = 0
             """
 
-    [<Test>]
+    [<Fact>]
     let LargeRecordWithStringFieldsDoesNotStackOverflow() =
         CompilerAssert.CompileExe
             """
@@ -1974,7 +1974,7 @@ type TestRecord =
 let main _ = 0
             """
 
-    [<Test>]
+    [<Fact>]
     let LargeStructRecordDoesNotStackOverflow() =
         CompilerAssert.CompileExe
             """
@@ -2987,7 +2987,7 @@ type TestRecord =
 let main _ = 0
             """
 
-    [<Test>]
+    [<Fact>]
     let LargeExprDoesNotStackOverflow() =
         CompilerAssert.CompileExe
             """
@@ -4999,7 +4999,7 @@ module Test =
 let main _ = 0
             """
 
-    [<Test>]
+    [<Fact>]
     let LargeListExprDoesNotStackOverflow() =
         let source = """
 let test () : unit =

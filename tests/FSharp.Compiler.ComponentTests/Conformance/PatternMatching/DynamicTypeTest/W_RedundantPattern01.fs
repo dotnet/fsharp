@@ -3,8 +3,8 @@
 
 // FSB 1488, Implement redundancy checking for dynamic type test patterns
 
-//<Expects id="FS0026" status="warning">This rule will never be matched</Expects>
-//<Expects id="FS0026" status="warning">This rule will never be matched</Expects>
+
+
 
 let _ = 
     match box "3" with 

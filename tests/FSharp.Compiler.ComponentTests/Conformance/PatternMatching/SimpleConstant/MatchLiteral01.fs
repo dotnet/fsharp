@@ -2,9 +2,9 @@
 #light
 
 // Test ability to match a const literal value
-//<Expects id="FS0026" status="warning">This rule will never be matched</Expects>
-//<Expects id="FS0026" status="warning">This rule will never be matched</Expects>
-//<Expects id="FS0026" status="warning">This rule will never be matched</Expects>
+
+
+
 
 [<Literal>]
 let intLiteral  = 42

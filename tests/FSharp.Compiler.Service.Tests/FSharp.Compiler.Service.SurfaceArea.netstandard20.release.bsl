@@ -653,9 +653,11 @@ FSharp.Compiler.AbstractIL.IL+ILFieldSpec: System.String Name
 FSharp.Compiler.AbstractIL.IL+ILFieldSpec: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILFieldSpec: System.String get_Name()
 FSharp.Compiler.AbstractIL.IL+ILFieldSpec: Void .ctor(ILFieldRef, ILType)
+FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: Boolean HasAllowsRefStruct
 FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: Boolean HasDefaultConstructorConstraint
 FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: Boolean HasNotNullableValueTypeConstraint
 FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: Boolean HasReferenceTypeConstraint
+FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: Boolean get_HasAllowsRefStruct()
 FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: Boolean get_HasDefaultConstructorConstraint()
 FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: Boolean get_HasNotNullableValueTypeConstraint()
 FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: Boolean get_HasReferenceTypeConstraint()
@@ -672,7 +674,7 @@ FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: Microsoft.FSharp.Collection
 FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: System.String Name
 FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: System.String get_Name()
-FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: Void .ctor(System.String, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILType], ILGenericVariance, Boolean, Boolean, Boolean, ILAttributesStored, Int32)
+FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef: Void .ctor(System.String, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILType], ILGenericVariance, Boolean, Boolean, Boolean, Boolean, ILAttributesStored, Int32)
 FSharp.Compiler.AbstractIL.IL+ILGenericVariance+Tags: Int32 CoVariant
 FSharp.Compiler.AbstractIL.IL+ILGenericVariance+Tags: Int32 ContraVariant
 FSharp.Compiler.AbstractIL.IL+ILGenericVariance+Tags: Int32 NonVariant
