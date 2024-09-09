@@ -310,19 +310,34 @@ module MailboxProcessorErrorEventTests =
             100
 
         // Make sure the event does get raised after message receive 
-        checkAsync 
+        checkAsync
             "c32398u9332: MailboxProcessor Error (2)"
-            (task {
-             let mb1 = new MailboxProcessor<int>( fun inbox -> async {
-                    let! msg = inbox.Receive() 
-                    raise (Err msg)
-                })
-             let res = ref 0
-             mb1.Error.Add(function Err n -> res := n | _ -> check "rwe90r - unexpected error" 0 1)
-             mb1.Start();
-             mb1.Post 100
-             do! Task.Delay(200)
-             return !res})
+            (
+                let tcs = TaskCompletionSource<_>()
+
+                let mb1 = new MailboxProcessor<int>( fun inbox -> async {
+                       let! msg = inbox.Receive() 
+                       raise (Err msg)
+                   })
+
+                mb1.Error.Add(function
+                   | Err n -> tcs.SetResult n
+                   | _ -> 
+                       check "rwe90r - unexpected error" 0 1 )
+
+                mb1.Start();
+                mb1.Post 100
+
+                let timeOut = task {
+                    do! Task.Delay 10_000
+                    return 0
+                }
+
+                task {
+                    let! result = Task.WhenAny(tcs.Task, timeOut)
+                    return! result
+                }
+            )
             100
         
 type msg = Increment of int | Fetch of AsyncReplyChannel<int> | Reset
