@@ -66,16 +66,6 @@ module CoreTests =
         exec cfg ("." ++ "test-langversion-46.exe") ""
 
         testOkFile.CheckExists()
-
-    // This test stays in FsharpSuite for a later migration phases, it uses hardcoded #r to a C# compiled cslib.dll inside
-    [<Fact>]
-    let ``quotes-FSC-FSC_DEBUG`` () = singleTestBuildAndRun "core/quotes" FSC_DEBUG
-
-    [<Fact>]
-    let ``quotes-FSC-BASIC`` () = singleTestBuildAndRun "core/quotes" FSC_OPTIMIZED
-
-    [<Fact>]
-    let ``quotes-FSI-BASIC`` () = singleTestBuildAndRun "core/quotes" FSI
 #endif
 
 
@@ -820,7 +810,6 @@ module CoreTests3 =
     let quotes () =
         let cfg = testConfig "core/quotes"
 
-
         csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
 
         fsc cfg "%s  -o:test.exe -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
@@ -860,6 +849,30 @@ module CoreTests3 =
             exec cfg ("." ++ "test--optimize.exe") ""
             testOkFile.CheckExists()
         end
+
+    // Previously a comment here said:
+    // "This test stays in FsharpSuite for a later migration phases, it uses hardcoded #r to a C# compiled cslib.dll inside"
+    // This is resolved by compiling cslib.dll separately in each test. 
+    [<Fact>]
+    let ``quotes-FSC-FSC_DEBUG`` () =
+        let cfg = testConfig "core/quotes"
+        csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
+
+        singleTestBuildAndRun "core/quotes" FSC_DEBUG
+
+    [<Fact>]
+    let ``quotes-FSC-BASIC`` () =
+        let cfg = testConfig "core/quotes"
+        csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
+
+        singleTestBuildAndRun "core/quotes" FSC_OPTIMIZED
+
+    [<Fact>]
+    let ``quotes-FSI-BASIC`` () =
+        let cfg = testConfig "core/quotes"
+        csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
+
+        singleTestBuildAndRun "core/quotes" FSI
 
     [<Fact; Trait("Category", "parsing")>]
     let parsing () =
