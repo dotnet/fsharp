@@ -462,6 +462,8 @@ type StackGuard =
         [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int ->
             'T
 
+    member GuardCancellable: Internal.Utilities.Library.Cancellable<'T> -> Internal.Utilities.Library.Cancellable<'T>
+
     static member GetDepthOption: string -> int
 
 /// This represents the global state established as each task function runs as part of the build.
