@@ -32,12 +32,16 @@ let FSC_OPTIMIZED = FSC_NETFX (true, false)
 let FSI = FSI_NETFX
 #endif
 
-let inline getTestsDirectory dir = getTestsDirectory __SOURCE_DIRECTORY__ dir
-let testConfig = getTestsDirectory >> testConfig
+let copyHelloWorld cfgDirectory =
+    for helloDir in DirectoryInfo(__SOURCE_DIRECTORY__ + "/typeProviders").GetDirectories("hello*") do
+        DirectoryInfo(cfgDirectory + "\\..").CreateSubdirectory(helloDir.Name).FullName
+        |> copyFilesToDest helloDir.FullName
 
 [<Fact>]
 let diamondAssembly () =
     let cfg = testConfig "typeProviders/diamondAssembly"
+
+    copyHelloWorld cfg.Directory
 
     rm cfg "provider.dll"
 
@@ -175,41 +179,14 @@ let helloWorldCSharp () =
 
     exec cfg ("." ++ "test.exe") ""
 
-[<Theory>]
-[<InlineData("neg1")>]
-[<InlineData("neg2")>]
-[<InlineData("neg2c")>]
-[<InlineData("neg2e")>]
-[<InlineData("neg2g")>]
-[<InlineData("neg2h")>]
-[<InlineData("neg4")>]
-[<InlineData("neg6")>]
-[<InlineData("InvalidInvokerExpression")>]
-[<InlineData("providerAttributeErrorConsume")>]
-[<InlineData("ProviderAttribute_EmptyConsume")>]
-[<InlineData("EVIL_PROVIDER_GetNestedNamespaces_Exception")>]
-[<InlineData("EVIL_PROVIDER_NamespaceName_Exception")>]
-[<InlineData("EVIL_PROVIDER_NamespaceName_Empty")>]
-[<InlineData("EVIL_PROVIDER_GetTypes_Exception")>]
-[<InlineData("EVIL_PROVIDER_ResolveTypeName_Exception")>]
-[<InlineData("EVIL_PROVIDER_GetNamespaces_Exception")>]
-[<InlineData("EVIL_PROVIDER_GetStaticParameters_Exception")>]
-[<InlineData("EVIL_PROVIDER_GetInvokerExpression_Exception")>]
-[<InlineData("EVIL_PROVIDER_GetTypes_Null")>]
-[<InlineData("EVIL_PROVIDER_ResolveTypeName_Null")>]
-[<InlineData("EVIL_PROVIDER_GetNamespaces_Null")>]
-[<InlineData("EVIL_PROVIDER_GetStaticParameters_Null")>]
-[<InlineData("EVIL_PROVIDER_GetInvokerExpression_Null")>]
-[<InlineData("EVIL_PROVIDER_DoesNotHaveConstructor")>]
-[<InlineData("EVIL_PROVIDER_ConstructorThrows")>]
-[<InlineData("EVIL_PROVIDER_ReturnsTypeWithIncorrectNameFromApplyStaticArguments")>]
-let ``negative type provider tests`` (name:string) =
+let singleNegTest name =
     let cfg = testConfig "typeProviders/negTests"
-    let dir = cfg.Directory
+
+    copyHelloWorld cfg.Directory
 
     if requireENCulture () then
 
-        let fileExists = Commands.fileExists dir >> Option.isSome
+        let fileExists = Commands.fileExists cfg.Directory >> Option.isSome
 
         rm cfg "provided.dll"
 
@@ -240,7 +217,7 @@ let ``negative type provider tests`` (name:string) =
         fsc cfg "--out:MostBasicProvider.dll -g --optimize- -a" ["MostBasicProvider.fsx"]
 
         let preprocess name pref =
-            let dirp = (dir |> Commands.pathAddBackslash)
+            let dirp = (cfg.Directory |> Commands.pathAddBackslash)
             do
             FileSystem.OpenFileForReadShim(sprintf "%s%s.%sbslpp" dirp name pref)
                       .ReadAllText()
@@ -258,9 +235,53 @@ let ``negative type provider tests`` (name:string) =
 
         SingleTest.singleNegTest cfg name
 
+module Neg1 = 
+    [<Theory>]
+    [<InlineData("neg1")>]
+    [<InlineData("neg2")>]
+    [<InlineData("neg2c")>]
+    [<InlineData("neg2e")>]
+    [<InlineData("neg2g")>]
+    [<InlineData("neg2h")>]
+    [<InlineData("neg4")>]
+    [<InlineData("neg6")>]
+    let ``negative type provider tests 1`` (name:string) = singleNegTest name
+
+module Neg2 =
+    [<Theory>]
+    [<InlineData("InvalidInvokerExpression")>]
+    [<InlineData("providerAttributeErrorConsume")>]
+    [<InlineData("ProviderAttribute_EmptyConsume")>]
+    [<InlineData("EVIL_PROVIDER_GetNestedNamespaces_Exception")>]
+    [<InlineData("EVIL_PROVIDER_NamespaceName_Exception")>]
+    [<InlineData("EVIL_PROVIDER_NamespaceName_Empty")>]
+    let ``negative type provider tests 2`` (name:string) = singleNegTest name
+
+module Neg3 =
+    [<Theory>]
+    [<InlineData("EVIL_PROVIDER_GetTypes_Exception")>]
+    [<InlineData("EVIL_PROVIDER_ResolveTypeName_Exception")>]
+    [<InlineData("EVIL_PROVIDER_GetNamespaces_Exception")>]
+    [<InlineData("EVIL_PROVIDER_GetStaticParameters_Exception")>]
+    [<InlineData("EVIL_PROVIDER_GetInvokerExpression_Exception")>]
+    [<InlineData("EVIL_PROVIDER_GetTypes_Null")>]
+    [<InlineData("EVIL_PROVIDER_ResolveTypeName_Null")>]
+    let ``negative type provider tests 3`` (name:string) = singleNegTest name
+
+module Neg4 =
+    [<Theory>]
+    [<InlineData("EVIL_PROVIDER_GetNamespaces_Null")>]
+    [<InlineData("EVIL_PROVIDER_GetStaticParameters_Null")>]
+    [<InlineData("EVIL_PROVIDER_GetInvokerExpression_Null")>]
+    [<InlineData("EVIL_PROVIDER_DoesNotHaveConstructor")>]
+    [<InlineData("EVIL_PROVIDER_ConstructorThrows")>]
+    [<InlineData("EVIL_PROVIDER_ReturnsTypeWithIncorrectNameFromApplyStaticArguments")>]
+    let ``negative type provider tests 4`` (name:string) = singleNegTest name
+
 let splitAssembly subdir project =
-    let subdir = getTestsDirectory subdir
     let cfg = testConfig project
+
+    copyHelloWorld cfg.Directory
 
     let clean() =
         rm cfg "providerDesigner.dll"
@@ -344,6 +365,8 @@ let splitAssemblyTypeProviders () = splitAssembly "typeproviders" "typeProviders
 [<Fact>]
 let wedgeAssembly () =
     let cfg = testConfig "typeProviders/wedgeAssembly"
+
+    copyHelloWorld cfg.Directory
 
     rm cfg "provider.dll"
 

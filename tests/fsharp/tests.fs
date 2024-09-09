@@ -27,11 +27,6 @@ let FSI = FSI_NETFX
 #endif
 // ^^^^^^^^^^^^ To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test ^^^^^^^^^^^^
 
-let inline getTestsDirectory dir = getTestsDirectory __SOURCE_DIRECTORY__ dir
-let singleTestBuildAndRun = getTestsDirectory >> singleTestBuildAndRun
-let singleTestBuildAndRunVersion = getTestsDirectory >> singleTestBuildAndRunVersion
-let testConfig = getTestsDirectory >> testConfig
-
 module CoreTests =
 
 
@@ -89,7 +84,9 @@ module CoreTests =
         let cfg = testConfig "SDKTests"
         exec cfg cfg.DotNetExe ("msbuild " + Path.Combine(cfg.Directory, "AllSdkTargetsTests.proj") + " /p:Configuration=" + cfg.BUILD_CONFIG)
 
+
 #if !NETCOREAPP
+module CoreTests1 =
     [<Fact>]
     let ``attributes-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/attributes" FSC_OPTIMIZED
 
@@ -284,8 +281,8 @@ module CoreTests =
 #endif
 
 
-
 #if !NETCOREAPP
+module CoreTests2 =
 
     // Requires winforms will not run on coreclr
     [<Fact>]
@@ -818,6 +815,7 @@ module CoreTests =
 #endif
 
 #if !NETCOREAPP
+module CoreTests3 =
     [<Fact>]
     let quotes () =
         let cfg = testConfig "core/quotes"
@@ -1209,6 +1207,7 @@ module CoreTests =
 
 
 #if !NETCOREAPP
+module CoreTests4 =
     [<Fact>]
     let ``measures-FSC_NETFX_TEST_ROUNDTRIP_AS_DLL`` () = singleTestBuildAndRun "core/measures" FSC_NETFX_TEST_ROUNDTRIP_AS_DLL
 
@@ -1415,6 +1414,7 @@ module CoreTests =
 
 
 #if !NETCOREAPP
+module CoreTests5 =
     [<Fact>]
     let refnormalization () =
         let cfg = testConfig "core/refnormalization"
@@ -2392,7 +2392,7 @@ module TypecheckTests =
 module FscTests =
     [<Fact>]
     let ``should be raised if AssemblyInformationalVersion has invalid version`` () =
-        let cfg = testConfig (Commands.createTempDir())
+        let cfg = testConfigWithoutSourceDirectory()
 
         let code  =
             """
@@ -2417,7 +2417,7 @@ open System.Reflection
 
     [<Fact>]
     let ``should set file version info on generated file`` () =
-        let cfg = testConfig (Commands.createTempDir())
+        let cfg = testConfigWithoutSourceDirectory()
 
         let code =
             """
@@ -2476,7 +2476,7 @@ module ProductVersionTest =
     let ``should use correct fallback``() =
 
        for (assemblyVersion, fileVersion, infoVersion, expected) in fallbackTestData () do
-        let cfg = testConfig (Commands.createTempDir())
+        let cfg = testConfigWithoutSourceDirectory()
         let dir = cfg.Directory
 
         printfn "Directory: %s" dir

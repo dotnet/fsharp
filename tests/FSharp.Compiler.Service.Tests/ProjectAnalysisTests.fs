@@ -4399,7 +4399,7 @@ let ``Test Project33 extension methods`` () =
              ("GetValue", ["member"; "extmem"])]
 
 module internal Project34 =
-    let directoryPath = tryCreateTemporaryDirectory ()
+    let directoryPath = tryCreateTemporaryDirectory "Project34"
     let sourceFileName = Path.Combine(directoryPath, "Program.fs")
     let dllName = Path.ChangeExtension(sourceFileName, ".dll")
     let projFileName = Path.ChangeExtension(sourceFileName, ".fsproj")

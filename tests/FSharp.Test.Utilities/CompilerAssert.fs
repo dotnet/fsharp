@@ -590,7 +590,7 @@ module rec CompilerAssertHelpers =
     let compileCompilation ignoreWarnings (cmpl: Compilation) f =
         let disposals = ResizeArray()
         try
-            let outputDirectory = DirectoryInfo(tryCreateTemporaryDirectory())
+            let outputDirectory = DirectoryInfo(tryCreateTemporaryDirectory "compileCompilation")
             disposals.Add({ new IDisposable with member _.Dispose() = try File.Delete (outputDirectory.FullName) with | _ -> () })
             f (compileCompilationAux outputDirectory disposals ignoreWarnings cmpl)
         finally
@@ -604,7 +604,7 @@ module rec CompilerAssertHelpers =
         let outputDirectory =
             match cmpl with
             | Compilation(outputDirectory = Some outputDirectory) -> DirectoryInfo(outputDirectory.FullName)
-            | Compilation _ -> DirectoryInfo(tryCreateTemporaryDirectory())
+            | Compilation _ -> DirectoryInfo(tryCreateTemporaryDirectory "returnCompilation")
 
         outputDirectory.Create()
         compileCompilationAux outputDirectory (ResizeArray()) ignoreWarnings cmpl
@@ -945,7 +945,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
                         }
                     ))
 
-            let snapshot = FSharpProjectSnapshot.FromOptions(projectOptions, getFileSnapshot) |> Async.RunSynchronously
+            let snapshot = FSharpProjectSnapshot.FromOptions(projectOptions, getFileSnapshot) |> Async.RunImmediate
 
             checker.ParseAndCheckProject(snapshot)
         else
