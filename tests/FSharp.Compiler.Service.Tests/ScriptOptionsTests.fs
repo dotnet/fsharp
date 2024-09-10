@@ -26,7 +26,7 @@ let pi = Math.PI
 [<InlineData(true, true, "--targetprofile:netcore")>]
 let ``can generate options for different frameworks regardless of execution environment - useSdkRefs = false``(assumeDotNetFramework, useSdkRefs, flag) =
     let path = Path.GetTempPath()
-    let file = tryCreateTemporaryFileName () + ".fsx"
+    let file = getTemporaryFileName () + ".fsx"
     let tempFile = Path.Combine(path, file)
     let _, errors =
         checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, assumeDotNetFramework = assumeDotNetFramework, useSdkRefs = useSdkRefs, otherFlags = [| flag |])

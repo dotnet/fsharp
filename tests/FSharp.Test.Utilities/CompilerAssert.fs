@@ -220,7 +220,7 @@ type CompilationUtil private () =
     static member CreateILCompilation (source: string) =
         let compute =
             lazy
-                let ilFilePath = tryCreateTemporaryFileName() + ".il"
+                let ilFilePath = getTemporaryFileName() + ".il"
                 let dllFilePath = Path.ChangeExtension (ilFilePath, ".dll")
                 try
                     File.WriteAllText (ilFilePath, source)
@@ -505,14 +505,14 @@ module rec CompilerAssertHelpers =
             match source.GetSourceText with
             | Some text ->
                 // In memory source file copy it to the build directory
-                let sourceWithTempFileName = source.WithFileName(tryCreateTemporaryFileName ()).ChangeExtension
+                let sourceWithTempFileName = source.WithFileName(getTemporaryFileName ()).ChangeExtension
                 File.WriteAllText(sourceWithTempFileName.GetSourceFileName, text)
                 sourceWithTempFileName
             | None ->
                 // On Disk file
                 source
 
-        let outputFilePath = Path.ChangeExtension (tryCreateTemporaryFileName (), if isExe then ".exe" else ".dll")
+        let outputFilePath = Path.ChangeExtension (getTemporaryFileName (), if isExe then ".exe" else ".dll")
         try
             f (rawCompile outputFilePath isExe options TargetFramework.Current [sourceFile])
         finally
@@ -584,7 +584,7 @@ module rec CompilerAssertHelpers =
     let compileCompilation ignoreWarnings (cmpl: Compilation) f =
         let disposals = ResizeArray()
         try
-            let outputDirectory = DirectoryInfo(tryCreateTemporaryDirectory "compileCompilation")
+            let outputDirectory = DirectoryInfo(createTemporaryDirectory "compileCompilation")
             disposals.Add({ new IDisposable with member _.Dispose() = try File.Delete (outputDirectory.FullName) with | _ -> () })
             f (compileCompilationAux outputDirectory disposals ignoreWarnings cmpl)
         finally
@@ -598,7 +598,7 @@ module rec CompilerAssertHelpers =
         let outputDirectory =
             match cmpl with
             | Compilation(outputDirectory = Some outputDirectory) -> DirectoryInfo(outputDirectory.FullName)
-            | Compilation _ -> DirectoryInfo(tryCreateTemporaryDirectory "returnCompilation")
+            | Compilation _ -> DirectoryInfo(createTemporaryDirectory "returnCompilation")
 
         outputDirectory.Create()
         compileCompilationAux outputDirectory (ResizeArray()) ignoreWarnings cmpl

@@ -635,8 +635,8 @@ module CoreTests =
 
         let fsc_flags_errors_ok = ""
 
-        let rawFileOut = tryCreateTemporaryFileName ()
-        let rawFileErr = tryCreateTemporaryFileName ()
+        let rawFileOut = getTemporaryFileName ()
+        let rawFileErr = getTemporaryFileName ()
         ``fsi <a >b 2>c`` "%s --nologo --preferreduilang:en-US %s" fsc_flags_errors_ok flag ("test.fsx", rawFileOut, rawFileErr)
 
         let removeCDandHelp fromFile toFile =

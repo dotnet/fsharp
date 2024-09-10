@@ -21,13 +21,13 @@ let tempDirectoryOfThisTestRun =
 
 // Temporary directory is TempPath + "/FSharp.Test.Utilities/yyy-MM-dd/{part}-xxxxxxx"
 // Throws exception if it Fails
-let tryCreateTemporaryDirectory (part: string) =
+let createTemporaryDirectory (part: string) =
     DirectoryInfo(tempDirectoryOfThisTestRun)
         .CreateSubdirectory($"{part}-{getShortId()}")
         .FullName
 
-let tryCreateTemporaryFileName () =
-    (tryCreateTemporaryDirectory "temp") ++ $"tmp_{getShortId()}"
+let getTemporaryFileName () =
+    (createTemporaryDirectory "temp") ++ $"tmp_{getShortId()}"
 
 let tryCreateTemporaryFileNameInDirectory (directory: DirectoryInfo) =
     directory.FullName ++ $"tmp_{getShortId()}"
@@ -57,7 +57,7 @@ let rec copyDirectory (sourceDir: string) (destinationDir: string) (recursive: b
 
 let copyTestDirectoryToTempLocation source (destinationSubDir: string) =
     let description = destinationSubDir.Split('\\', '/') |> String.concat "-"
-    let tempTestRoot = tryCreateTemporaryDirectory description
+    let tempTestRoot = createTemporaryDirectory description
     let tempTestDir =
         DirectoryInfo(tempTestRoot)
             .CreateSubdirectory(destinationSubDir)
@@ -498,7 +498,7 @@ let testConfig sourceDir (testSubDir: string) =
 
 let testConfigWithoutSourceDirectory() =
     let cfg = suiteHelpers.Value
-    { cfg with Directory = tryCreateTemporaryDirectory "temp" }
+    { cfg with Directory = createTemporaryDirectory "temp" }
 
 [<AllowNullLiteral>]
 type FileGuard(path: string) =
