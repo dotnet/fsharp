@@ -10,29 +10,26 @@ open Scripting
 open Xunit
 open FSharp.Compiler.IO
 
-let inline getTestsDirectory src dir = src ++ dir
+let getShortId() = Guid.NewGuid().ToString().[..7]
 
-// Temporary directory is TempPath + "/FSharp.Test.Utilities/yyy-MM-dd/{part}-xxxxxxx"
-// Throws exception if it Fails
-let tryCreateTemporaryDirectory (part: string) =
+// Temporary directory is TempPath + "/FSharp.Test.Utilities/yyy-MM-dd-xxxxxxx/"
+let tempDirectoryOfThisTestRun =
     let tempDir = Path.GetTempPath()
     let today = DateTime.Now.ToString("yyyy-MM-dd")
     DirectoryInfo(tempDir)
-        .CreateSubdirectory($"FSharp.Test.Utilities/{today}/{part}-{Guid.NewGuid().ToString().[..7]}")
+        .CreateSubdirectory($"FSharp.Test.Utilities/{today}-{getShortId()}")
         .FullName
 
-// Create a temporaryFileName -- newGuid is random --- there is no point validating the file already exists because: threading and Path.ChangeExtension() is commonly used after this API
-let tryCreateTemporaryFileName () =
-    let directory = tryCreateTemporaryDirectory "tmp"
-    let fileName = ("Temp-" + Guid.NewGuid().ToString() + ".tmp").Replace('-', '_')
-    let filePath = Path.Combine(directory, fileName)
-    filePath
+let createTemporaryDirectory (part: string) =
+    DirectoryInfo(tempDirectoryOfThisTestRun)
+        .CreateSubdirectory($"{part}-{getShortId()}")
+        .FullName
 
-// Create a temporaryFileName -- newGuid is random --- there is no point validating the file already exists because: threading and Path.ChangeExtension() is commonly used after this API
-let tryCreateTemporaryFileNameInDirectory (directory: DirectoryInfo) =
-    let fileName = ("Temp-" + Guid.NewGuid().ToString() + ".tmp").Replace('-', '_')
-    let filePath = Path.Combine(directory.FullName, fileName)
-    filePath
+let getTemporaryFileName () =
+    (createTemporaryDirectory "temp") ++ $"tmp_{getShortId()}"
+
+let getTemporaryFileNameInDirectory (directory: string) =
+    directory ++ $"tmp_{getShortId()}"
 
 // Well, this function is AI generated.
 let rec copyDirectory (sourceDir: string) (destinationDir: string) (recursive: bool) =
@@ -56,16 +53,6 @@ let rec copyDirectory (sourceDir: string) (destinationDir: string) (recursive: b
         for subDir in dir.EnumerateDirectories() do
             let newDestinationDir = Path.Combine(destinationDir, subDir.Name)
             copyDirectory subDir.FullName newDestinationDir true
-
-let copyTestDirectoryToTempLocation source (destinationSubDir: string) =
-    let description = destinationSubDir.Split('\\', '/') |> String.concat "-"
-    let tempTestRoot = tryCreateTemporaryDirectory description
-    let tempTestDir =
-        DirectoryInfo(tempTestRoot)
-            .CreateSubdirectory(destinationSubDir)
-            .FullName
-    copyDirectory source tempTestDir true
-    tempTestDir
 
 [<RequireQualifiedAccess>]
 module Commands =
@@ -491,16 +478,24 @@ let initializeSuite () =
 
 let suiteHelpers = lazy (initializeSuite ())
 
-let testConfig sourceDir (testSubDir: string) =
+let testConfig sourceDir (relativePathToTestFixture: string) =
     let cfg = suiteHelpers.Value
-    let testDir = Path.GetFullPath( sourceDir + "\\" + testSubDir )
+    let testFixtureFullPath = Path.GetFullPath(sourceDir ++ relativePathToTestFixture)
 
-    let testDir = copyTestDirectoryToTempLocation testDir testSubDir
-    { cfg with Directory = testDir }
+    let description = relativePathToTestFixture.Split('\\', '/') |> String.concat "-"
 
-let testConfigWithoutSourceDirectory() =
+    let tempTestRoot = createTemporaryDirectory description
+    let tempTestDir =
+        DirectoryInfo(tempTestRoot)
+            .CreateSubdirectory(relativePathToTestFixture)
+            .FullName
+    copyDirectory testFixtureFullPath tempTestDir true
+
+    { cfg with Directory = tempTestDir }
+
+let createConfigWithEmptyDirectory() =
     let cfg = suiteHelpers.Value
-    { cfg with Directory = tryCreateTemporaryDirectory "temp" }
+    { cfg with Directory = createTemporaryDirectory "temp" }
 
 [<AllowNullLiteral>]
 type FileGuard(path: string) =

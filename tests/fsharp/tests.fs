@@ -69,11 +69,15 @@ module CoreTests =
 #endif
 
 
-    [<Fact(Skip="Need to deal with hardcoded paths?")>]
+    [<Fact>]
     let ``SDKTests`` () =
         let cfg = testConfig "SDKTests"
-        exec cfg cfg.DotNetExe ("msbuild " + Path.Combine(cfg.Directory, "AllSdkTargetsTests.proj") + " /p:Configuration=" + cfg.BUILD_CONFIG)
 
+        let FSharpRepositoryPath = Path.GetFullPath(__SOURCE_DIRECTORY__ ++ ".." ++ "..")
+
+        let projectFile = cfg.Directory ++ "AllSdkTargetsTests.proj"
+
+        exec cfg cfg.DotNetExe ($"msbuild {projectFile} /p:Configuration={cfg.BUILD_CONFIG} -property:FSharpRepositoryPath={FSharpRepositoryPath}")
 
 #if !NETCOREAPP
 module CoreTests1 =
@@ -637,8 +641,8 @@ module CoreTests2 =
 
         let fsc_flags_errors_ok = ""
 
-        let rawFileOut = tryCreateTemporaryFileName ()
-        let rawFileErr = tryCreateTemporaryFileName ()
+        let rawFileOut = getTemporaryFileName ()
+        let rawFileErr = getTemporaryFileName ()
         ``fsi <a >b 2>c`` "%s --nologo --preferreduilang:en-US %s" fsc_flags_errors_ok flag ("test.fsx", rawFileOut, rawFileErr)
 
         let removeCDandHelp fromFile toFile =
@@ -2405,7 +2409,7 @@ module TypecheckTests =
 module FscTests =
     [<Fact>]
     let ``should be raised if AssemblyInformationalVersion has invalid version`` () =
-        let cfg = testConfigWithoutSourceDirectory()
+        let cfg = createConfigWithEmptyDirectory()
 
         let code  =
             """
@@ -2430,7 +2434,7 @@ open System.Reflection
 
     [<Fact>]
     let ``should set file version info on generated file`` () =
-        let cfg = testConfigWithoutSourceDirectory()
+        let cfg = createConfigWithEmptyDirectory()
 
         let code =
             """
@@ -2489,7 +2493,7 @@ module ProductVersionTest =
     let ``should use correct fallback``() =
 
        for (assemblyVersion, fileVersion, infoVersion, expected) in fallbackTestData () do
-        let cfg = testConfigWithoutSourceDirectory()
+        let cfg = createConfigWithEmptyDirectory()
         let dir = cfg.Directory
 
         printfn "Directory: %s" dir

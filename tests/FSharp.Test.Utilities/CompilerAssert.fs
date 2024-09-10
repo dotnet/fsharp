@@ -220,9 +220,8 @@ type CompilationUtil private () =
     static member CreateILCompilation (source: string) =
         let compute =
             lazy
-                let ilFilePath = tryCreateTemporaryFileName ()
-                let tmp = tryCreateTemporaryFileName ()
-                let dllFilePath = Path.ChangeExtension (tmp, ".dll")
+                let ilFilePath = getTemporaryFileName() + ".il"
+                let dllFilePath = Path.ChangeExtension (ilFilePath, ".dll")
                 try
                     File.WriteAllText (ilFilePath, source)
                     let errors = ILChecker.reassembleIL ilFilePath dllFilePath
@@ -231,9 +230,7 @@ type CompilationUtil private () =
                     with
                         | _ -> (errors, [||])
                 finally
-                    try File.Delete ilFilePath with | _ -> ()
-                    try File.Delete tmp with | _ -> ()
-                    try File.Delete dllFilePath with | _ -> ()
+                    try Directory.Delete(Path.GetDirectoryName ilFilePath, true) with _ -> ()
         TestCompilation.IL (source, compute)
 
 and CompilationReference =
@@ -436,7 +433,7 @@ module rec CompilerAssertHelpers =
         let name =
             match nameOpt with
             | Some name -> name
-            | _ -> tryCreateTemporaryFileNameInDirectory(outputDirectory)
+            | _ -> getTemporaryFileNameInDirectory outputDirectory.FullName
 
         let outputFilePath = Path.ChangeExtension (Path.Combine(outputDirectory.FullName, name), if isExe then ".exe" else ".dll")
         disposals.Add(disposeFile outputFilePath)
@@ -507,23 +504,24 @@ module rec CompilerAssertHelpers =
 
 
     let compile isExe options (source:SourceCodeFileKind) f =
+        let outputFilePath = Path.ChangeExtension (getTemporaryFileName (), if isExe then ".exe" else ".dll")
+        let tempDir = Path.GetDirectoryName outputFilePath
+
         let sourceFile =
             match source.GetSourceText with
             | Some text ->
                 // In memory source file copy it to the build directory
-                let sourceWithTempFileName = source.WithFileName(tryCreateTemporaryFileName ()).ChangeExtension
+                let sourceWithTempFileName = source.WithFileName(getTemporaryFileNameInDirectory tempDir).ChangeExtension
                 File.WriteAllText(sourceWithTempFileName.GetSourceFileName, text)
                 sourceWithTempFileName
             | None ->
                 // On Disk file
                 source
 
-        let outputFilePath = Path.ChangeExtension (tryCreateTemporaryFileName (), if isExe then ".exe" else ".dll")
         try
             f (rawCompile outputFilePath isExe options TargetFramework.Current [sourceFile])
         finally
-                try File.Delete sourceFile.GetSourceFileName with | _ -> ()
-                try File.Delete outputFilePath with | _ -> ()
+            try Directory.Delete(tempDir, true) with | _ -> ()
 
     let rec evaluateReferences (outputPath:DirectoryInfo) (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : string[] * string list =
         match cmpl with
@@ -538,7 +536,7 @@ module rec CompilerAssertHelpers =
                             let fileName =
                                 match cmpl with
                                 | TestCompilation.CSharp c when not (String.IsNullOrWhiteSpace c.AssemblyName) -> c.AssemblyName
-                                | _ -> tryCreateTemporaryFileName()
+                                | _ -> getTemporaryFileNameInDirectory outputPath.FullName
                             let tmp = Path.Combine(outputPath.FullName, Path.ChangeExtension(fileName, ".dll"))
                             disposals.Add({ new IDisposable with member _.Dispose() = File.Delete tmp })
                             cmpl.EmitAsFile tmp
@@ -590,7 +588,7 @@ module rec CompilerAssertHelpers =
     let compileCompilation ignoreWarnings (cmpl: Compilation) f =
         let disposals = ResizeArray()
         try
-            let outputDirectory = DirectoryInfo(tryCreateTemporaryDirectory "compileCompilation")
+            let outputDirectory = DirectoryInfo(createTemporaryDirectory "compileCompilation")
             disposals.Add({ new IDisposable with member _.Dispose() = try File.Delete (outputDirectory.FullName) with | _ -> () })
             f (compileCompilationAux outputDirectory disposals ignoreWarnings cmpl)
         finally
@@ -604,7 +602,7 @@ module rec CompilerAssertHelpers =
         let outputDirectory =
             match cmpl with
             | Compilation(outputDirectory = Some outputDirectory) -> DirectoryInfo(outputDirectory.FullName)
-            | Compilation _ -> DirectoryInfo(tryCreateTemporaryDirectory "returnCompilation")
+            | Compilation _ -> DirectoryInfo(createTemporaryDirectory "returnCompilation")
 
         outputDirectory.Create()
         compileCompilationAux outputDirectory (ResizeArray()) ignoreWarnings cmpl
