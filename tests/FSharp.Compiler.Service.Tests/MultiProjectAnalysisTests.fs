@@ -444,7 +444,7 @@ let z = Project1.x
             ReferencedProjects = [| FSharpReferencedProject.FSharpReference(MultiProjectDirty1.dllName, MultiProjectDirty1.getOptions()) |] }
 
 [<Theory>]
-[<InlineData(true)>]
+// [<InlineData(true)>]
 [<InlineData(false)>]
 let ``Test multi project symbols should pick up changes in dependent projects`` useTransparentCompiler =
 

@@ -2292,6 +2292,7 @@ and seekReadGenericParamsUncached ctxtH (GenericParamsIdx(numTypars, a, b)) =
                     HasReferenceTypeConstraint = (flags &&& 0x0004) <> 0
                     HasNotNullableValueTypeConstraint = (flags &&& 0x0008) <> 0
                     HasDefaultConstructorConstraint = (flags &&& 0x0010) <> 0
+                    HasAllowsRefStruct = (flags &&& 0x0020) <> 0
                 })
         )
 

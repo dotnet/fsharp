@@ -39,7 +39,7 @@ module MethodImplAttribute =
         compilation
         |> withLangVersion80
         |> typecheck
-        |> withSingleDiagnostic (Warning 3151, Line 2, Col 1, Line 3, Col 38, "This member, function or value declaration may not be declared 'inline'")
+        |> withSingleDiagnostic (Warning 3151, Line 3, Col 12, Line 3, Col 19, "This member, function or value declaration may not be declared 'inline'")
     
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MethodImplAttribute.NoInlining_InlineKeyword.fs"|])>]
     let ``NoInlining_fs with inline keyword => should not warn in F# 7 or older`` compilation =
