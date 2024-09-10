@@ -430,7 +430,7 @@ module rec CompilerAssertHelpers =
         let name =
             match nameOpt with
             | Some name -> name
-            | _ -> tryCreateTemporaryFileNameInDirectory outputDirectory
+            | _ -> getTemporaryFileNameInDirectory outputDirectory.FullName
 
         let outputFilePath = Path.ChangeExtension (Path.Combine(outputDirectory.FullName, name), if isExe then ".exe" else ".dll")
         disposals.Add(disposeFile outputFilePath)
@@ -501,23 +501,24 @@ module rec CompilerAssertHelpers =
 
 
     let compile isExe options (source:SourceCodeFileKind) f =
+        let outputFilePath = Path.ChangeExtension (getTemporaryFileName (), if isExe then ".exe" else ".dll")
+        let tempDir = Path.GetDirectoryName outputFilePath
+
         let sourceFile =
             match source.GetSourceText with
             | Some text ->
                 // In memory source file copy it to the build directory
-                let sourceWithTempFileName = source.WithFileName(getTemporaryFileName ()).ChangeExtension
+                let sourceWithTempFileName = source.WithFileName(getTemporaryFileNameInDirectory tempDir).ChangeExtension
                 File.WriteAllText(sourceWithTempFileName.GetSourceFileName, text)
                 sourceWithTempFileName
             | None ->
                 // On Disk file
                 source
 
-        let outputFilePath = Path.ChangeExtension (getTemporaryFileName (), if isExe then ".exe" else ".dll")
         try
             f (rawCompile outputFilePath isExe options TargetFramework.Current [sourceFile])
         finally
-                try File.Delete sourceFile.GetSourceFileName with | _ -> ()
-                try File.Delete outputFilePath with | _ -> ()
+            try Directory.Delete(tempDir, true) with | _ -> ()
 
     let rec evaluateReferences (outputPath:DirectoryInfo) (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : string[] * string list =
         match cmpl with
@@ -532,7 +533,7 @@ module rec CompilerAssertHelpers =
                             let fileName =
                                 match cmpl with
                                 | TestCompilation.CSharp c when not (String.IsNullOrWhiteSpace c.AssemblyName) -> c.AssemblyName
-                                | _ -> tryCreateTemporaryFileNameInDirectory outputPath
+                                | _ -> getTemporaryFileNameInDirectory outputPath.FullName
                             let tmp = Path.Combine(outputPath.FullName, Path.ChangeExtension(fileName, ".dll"))
                             disposals.Add({ new IDisposable with member _.Dispose() = File.Delete tmp })
                             cmpl.EmitAsFile tmp
