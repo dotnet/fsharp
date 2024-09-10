@@ -54,16 +54,6 @@ let rec copyDirectory (sourceDir: string) (destinationDir: string) (recursive: b
             let newDestinationDir = Path.Combine(destinationDir, subDir.Name)
             copyDirectory subDir.FullName newDestinationDir true
 
-let copyTestDirectoryToTempLocation source (destinationSubDir: string) =
-    let description = destinationSubDir.Split('\\', '/') |> String.concat "-"
-    let tempTestRoot = createTemporaryDirectory description
-    let tempTestDir =
-        DirectoryInfo(tempTestRoot)
-            .CreateSubdirectory(destinationSubDir)
-            .FullName
-    copyDirectory source tempTestDir true
-    tempTestDir
-
 [<RequireQualifiedAccess>]
 module Commands =
 
@@ -488,12 +478,20 @@ let initializeSuite () =
 
 let suiteHelpers = lazy (initializeSuite ())
 
-let testConfig sourceDir (testSubDir: string) =
+let testConfig sourceDir (relativePathToTestFixture: string) =
     let cfg = suiteHelpers.Value
-    let testDir = Path.GetFullPath(sourceDir ++ testSubDir)
+    let testFixtureFullPath = Path.GetFullPath(sourceDir ++ relativePathToTestFixture)
 
-    let testDir = copyTestDirectoryToTempLocation testDir testSubDir
-    { cfg with Directory = testDir }
+    let description = relativePathToTestFixture.Split('\\', '/') |> String.concat "-"
+
+    let tempTestRoot = createTemporaryDirectory description
+    let tempTestDir =
+        DirectoryInfo(tempTestRoot)
+            .CreateSubdirectory(relativePathToTestFixture)
+            .FullName
+    copyDirectory testFixtureFullPath tempTestDir true
+
+    { cfg with Directory = tempTestDir }
 
 /// Returns config with original test directory. Does not copy the test fixture to temp directory.
 let testConfigOldBehavior sourceDir (testSubDir: string) =
