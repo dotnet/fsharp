@@ -75,7 +75,9 @@ module CoreTests =
 
         let FSharpRepositoryPath = Path.GetFullPath(__SOURCE_DIRECTORY__ ++ ".." ++ "..")
 
-        exec cfg cfg.DotNetExe ($"msbuild {cfg.Directory}\AllSdkTargetsTests.proj /p:Configuration={cfg.BUILD_CONFIG} -property:FSharpRepositoryPath={FSharpRepositoryPath}")
+        let projectFile = cfg.Directory ++ "AllSdkTargetsTests.proj"
+
+        exec cfg cfg.DotNetExe ($"msbuild {projectFile} /p:Configuration={cfg.BUILD_CONFIG} -property:FSharpRepositoryPath={FSharpRepositoryPath}")
 
 #if !NETCOREAPP
     [<Fact>]
