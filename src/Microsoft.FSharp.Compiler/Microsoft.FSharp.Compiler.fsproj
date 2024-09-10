@@ -7,7 +7,7 @@
     <NuspecFile>Microsoft.FSharp.Compiler.nuspec</NuspecFile>
     <IsPackable>true</IsPackable>
     <PackageDescription>.NET Core compatible version of the F# compiler fsc.exe.</PackageDescription>
-    <PackageReleaseNotes>/blob/main/docs/release-notes/.FSharp.Compiler.Service/$(FSProductVersionReleaseNotesVersion).md</PackageReleaseNotes>
+    <PackageReleaseNotes>/blob/main/docs/release-notes/.Language/$(FSLanguageVersion).md</PackageReleaseNotes>
     <NoDefaultExcludes>true</NoDefaultExcludes>
   </PropertyGroup>
 
