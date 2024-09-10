@@ -7,6 +7,7 @@ open System.Text
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
@@ -84,7 +85,7 @@ type PhasedDiagnostic with
 
 /// Get a diagnostics logger that filters the reporting of warnings based on scoped pragma information
 val GetDiagnosticsLoggerFilteringByScopedPragmas:
-    checkFile: bool *
+    langVersion: LanguageVersion *
     scopedPragmas: ScopedPragma list *
     diagnosticOptions: FSharpDiagnosticOptions *
     diagnosticsLogger: DiagnosticsLogger ->
