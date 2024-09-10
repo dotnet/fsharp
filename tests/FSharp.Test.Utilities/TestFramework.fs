@@ -10,28 +10,60 @@ open Scripting
 open Xunit
 open FSharp.Compiler.IO
 
-let inline getTestsDirectory src dir = src ++ dir
+let getShortId() = Guid.NewGuid().ToString().[..7]
 
-// Temporary directory is TempPath + "/FSharp.Test.Utilities/" date ("yyy-MM-dd")
+let tempDirectoryOfThisTestRun =
+    let tempDir = Path.GetTempPath()
+    let today = DateTime.Now.ToString("yyyy-MM-dd")
+    DirectoryInfo(tempDir)
+        .CreateSubdirectory($"FSharp.Test.Utilities/{today}-{getShortId()}")
+        .FullName
+
+// Temporary directory is TempPath + "/FSharp.Test.Utilities/yyy-MM-dd/{part}-xxxxxxx"
 // Throws exception if it Fails
-let tryCreateTemporaryDirectory () =
-    let date() = DateTime.Now.ToString("yyyy-MM-dd")
-    let now() = $"{date()}-{Guid.NewGuid().ToString()}"
-    let directory = Path.Combine(Path.GetTempPath(), now()).Replace('-', '_')
-    Directory.CreateDirectory(directory).FullName
+let tryCreateTemporaryDirectory (part: string) =
+    DirectoryInfo(tempDirectoryOfThisTestRun)
+        .CreateSubdirectory($"{part}-{getShortId()}")
+        .FullName
 
-// Create a temporaryFileName -- newGuid is random --- there is no point validating the file already exists because: threading and Path.ChangeExtension() is commonly used after this API
 let tryCreateTemporaryFileName () =
-    let directory = tryCreateTemporaryDirectory ()
-    let fileName = ("Temp-" + Guid.NewGuid().ToString() + ".tmp").Replace('-', '_')
-    let filePath = Path.Combine(directory, fileName)
-    filePath
+    (tryCreateTemporaryDirectory "temp") ++ $"tmp_{getShortId()}"
 
-// Create a temporaryFileName -- newGuid is random --- there is no point validating the file already exists because: threading and Path.ChangeExtension() is commonly used after this API
 let tryCreateTemporaryFileNameInDirectory (directory: DirectoryInfo) =
-    let fileName = ("Temp-" + Guid.NewGuid().ToString() + ".tmp").Replace('-', '_')
-    let filePath = Path.Combine(directory.FullName, fileName)
-    filePath
+    directory.FullName ++ $"tmp_{getShortId()}"
+
+// Well, this function is AI generated.
+let rec copyDirectory (sourceDir: string) (destinationDir: string) (recursive: bool) =
+    // Get information about the source directory
+    let dir = DirectoryInfo(sourceDir)
+
+    // Check if the source directory exists
+    if not dir.Exists then
+        raise (DirectoryNotFoundException($"Source directory not found: {dir.FullName}"))
+
+    // Create the destination directory
+    Directory.CreateDirectory(destinationDir) |> ignore
+
+    // Get the files in the source directory and copy to the destination directory
+    for file in dir.EnumerateFiles() do
+        let targetFilePath = Path.Combine(destinationDir, file.Name)
+        file.CopyTo(targetFilePath) |> ignore
+
+    // If recursive and copying subdirectories, recursively call this method
+    if recursive then
+        for subDir in dir.EnumerateDirectories() do
+            let newDestinationDir = Path.Combine(destinationDir, subDir.Name)
+            copyDirectory subDir.FullName newDestinationDir true
+
+let copyTestDirectoryToTempLocation source (destinationSubDir: string) =
+    let description = destinationSubDir.Split('\\', '/') |> String.concat "-"
+    let tempTestRoot = tryCreateTemporaryDirectory description
+    let tempTestDir =
+        DirectoryInfo(tempTestRoot)
+            .CreateSubdirectory(destinationSubDir)
+            .FullName
+    copyDirectory source tempTestDir true
+    tempTestDir
 
 [<RequireQualifiedAccess>]
 module Commands =
@@ -46,8 +78,8 @@ module Commands =
             let commandLine = ResizeArray()
             let errorsList = ResizeArray()
             let outputList = ResizeArray()
-            let mutable errorslock = obj
-            let mutable outputlock = obj
+            let errorslock = obj()
+            let outputlock = obj()
             let outputDataReceived (message: string) =
                 if not (isNull message) then
                     lock outputlock (fun () -> outputList.Add(message))
@@ -210,12 +242,6 @@ module Commands =
 
     let peverify exec peverifyExe flags path =
         exec peverifyExe (sprintf "%s %s" (quotepath path) flags)
-
-    let createTempDir () =
-        let path = tryCreateTemporaryFileName  ()
-        File.Delete path
-        Directory.CreateDirectory path |> ignore
-        path
 
 type TestConfig =
     { EnvironmentVariables : Map<string, string>
@@ -463,14 +489,16 @@ let initializeSuite () =
 
 let suiteHelpers = lazy (initializeSuite ())
 
-let testConfig (testDir: string) =
+let testConfig sourceDir (testSubDir: string) =
     let cfg = suiteHelpers.Value
-    if not (Path.IsPathRooted testDir) then
-      failwith $"path is not rooted: {testDir}"
-    let testDir = Path.GetFullPath testDir // mostly used to normalize / and \
-    log "------------------ %s ---------------" testDir
-    log "cd %s" testDir
+    let testDir = Path.GetFullPath( sourceDir + "\\" + testSubDir )
+
+    let testDir = copyTestDirectoryToTempLocation testDir testSubDir
     { cfg with Directory = testDir }
+
+let testConfigWithoutSourceDirectory() =
+    let cfg = suiteHelpers.Value
+    { cfg with Directory = tryCreateTemporaryDirectory "temp" }
 
 [<AllowNullLiteral>]
 type FileGuard(path: string) =

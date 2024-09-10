@@ -730,7 +730,7 @@ module rec Compiler =
         let outputDirectory =
             match fs.OutputDirectory with
             | Some di -> di
-            | None -> DirectoryInfo(tryCreateTemporaryDirectory())
+            | None -> DirectoryInfo(tryCreateTemporaryDirectory "compileFSharp")
         let references = processReferences fs.References outputDirectory
         let compilation = Compilation.CreateFromSources([fs.Source] @ fs.AdditionalSources, output, options, fs.TargetFramework, references, name, outputDirectory)
         compileFSharpCompilation compilation fs.IgnoreWarnings (FS fs)
@@ -780,7 +780,7 @@ module rec Compiler =
         let outputDirectory =
             match csSource.OutputDirectory with
             | Some di -> di
-            | None -> DirectoryInfo(tryCreateTemporaryDirectory())
+            | None -> DirectoryInfo(tryCreateTemporaryDirectory "compileCSharp")
 
         let additionalReferences =
             processReferences csSource.References outputDirectory
@@ -922,7 +922,7 @@ module rec Compiler =
                 let outputDirectory =
                     match fsSource.OutputDirectory with
                     | Some di -> di
-                    | None -> DirectoryInfo(tryCreateTemporaryDirectory())
+                    | None -> DirectoryInfo(tryCreateTemporaryDirectory "typecheckResults")
                 let references = processReferences fsSource.References outputDirectory
                 if references.IsEmpty then
                     Array.empty
@@ -1058,7 +1058,7 @@ module rec Compiler =
                 let outputDirectory =
                     match fs.OutputDirectory with
                     | Some di -> di
-                    | None -> DirectoryInfo(tryCreateTemporaryDirectory())
+                    | None -> DirectoryInfo(tryCreateTemporaryDirectory "runFsi")
                 outputDirectory.Create()
                 disposals.Add({ new IDisposable with member _.Dispose() = outputDirectory.Delete(true) })
 
@@ -1522,9 +1522,9 @@ Actual:
                       | Some (ExecutionOutput output) ->
                           sprintf "----output-----\n%s\n----error-------\n%s\n----------" output.StdOut output.StdErr
                       | Some (EvalOutput (Result.Error exn) ) ->
-                          sprintf "----script error-----\n%s\n----------" (exn.ToString())
+                                sprintf "----script error-----\n%s\n----------" (exn.ToString())
                       | Some (EvalOutput (Result.Ok fsiVal) ) ->
-                          sprintf "----script output-----\n%A\n----------" (fsiVal)
+                                sprintf "----script output-----\n%A\n----------" (fsiVal)
                       | _ -> () ]
                     |> String.concat "\n"
                 failwith message
