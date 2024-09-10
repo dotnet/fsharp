@@ -69,9 +69,9 @@ module CoreTests =
 #endif
 
 
-    [<Fact(Skip="Need to deal with hardcoded paths?")>]
+    [<Fact>]
     let ``SDKTests`` () =
-        let cfg = testConfig "SDKTests"
+        let cfg = testConfigOldBehavior __SOURCE_DIRECTORY__ "SDKTests"
         exec cfg cfg.DotNetExe ("msbuild " + Path.Combine(cfg.Directory, "AllSdkTargetsTests.proj") + " /p:Configuration=" + cfg.BUILD_CONFIG)
 
 #if !NETCOREAPP
@@ -2400,7 +2400,7 @@ module TypecheckTests =
 module FscTests =
     [<Fact>]
     let ``should be raised if AssemblyInformationalVersion has invalid version`` () =
-        let cfg = testConfigWithoutSourceDirectory()
+        let cfg = createConfigWithEmptyDirectory()
 
         let code  =
             """
@@ -2425,7 +2425,7 @@ open System.Reflection
 
     [<Fact>]
     let ``should set file version info on generated file`` () =
-        let cfg = testConfigWithoutSourceDirectory()
+        let cfg = createConfigWithEmptyDirectory()
 
         let code =
             """
@@ -2484,7 +2484,7 @@ module ProductVersionTest =
     let ``should use correct fallback``() =
 
        for (assemblyVersion, fileVersion, infoVersion, expected) in fallbackTestData () do
-        let cfg = testConfigWithoutSourceDirectory()
+        let cfg = createConfigWithEmptyDirectory()
         let dir = cfg.Directory
 
         printfn "Directory: %s" dir

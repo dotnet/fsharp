@@ -490,12 +490,18 @@ let suiteHelpers = lazy (initializeSuite ())
 
 let testConfig sourceDir (testSubDir: string) =
     let cfg = suiteHelpers.Value
-    let testDir = Path.GetFullPath( sourceDir + "\\" + testSubDir )
+    let testDir = Path.GetFullPath(sourceDir ++ testSubDir)
 
     let testDir = copyTestDirectoryToTempLocation testDir testSubDir
     { cfg with Directory = testDir }
 
-let testConfigWithoutSourceDirectory() =
+/// Returns config with original test directory. Does not copy the test fixture to temp directory.
+let testConfigOldBehavior sourceDir (testSubDir: string) =
+    let cfg = suiteHelpers.Value
+    let testDir = Path.GetFullPath(sourceDir ++ testSubDir)
+    { cfg with Directory = testDir }
+
+let createConfigWithEmptyDirectory() =
     let cfg = suiteHelpers.Value
     { cfg with Directory = createTemporaryDirectory "temp" }
 
