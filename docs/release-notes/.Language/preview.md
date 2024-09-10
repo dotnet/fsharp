@@ -21,6 +21,7 @@
 * Enforce AttributeTargets on union case declarations. ([PR #16764](https://github.com/dotnet/fsharp/pull/16764))
 * Enforce AttributeTargets on implicit constructors. ([PR #16845](https://github.com/dotnet/fsharp/pull/16845/))
 * Enforce AttributeTargets on structs and classes ([PR #16790](https://github.com/dotnet/fsharp/pull/16790))
+* Ensure consistent interaction between ``#line` and `#nowarn` directives ([PR #17649](https://github.com/dotnet/fsharp/pull/17649))
 
 ### Changed
 
