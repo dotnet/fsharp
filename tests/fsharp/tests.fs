@@ -71,8 +71,11 @@ module CoreTests =
 
     [<Fact>]
     let ``SDKTests`` () =
-        let cfg = testConfigOldBehavior __SOURCE_DIRECTORY__ "SDKTests"
-        exec cfg cfg.DotNetExe ("msbuild " + Path.Combine(cfg.Directory, "AllSdkTargetsTests.proj") + " /p:Configuration=" + cfg.BUILD_CONFIG)
+        let cfg = testConfig "SDKTests"
+
+        let FSharpRepositoryPath = Path.GetFullPath(__SOURCE_DIRECTORY__ ++ ".." ++ "..")
+
+        exec cfg cfg.DotNetExe ($"msbuild {cfg.Directory}\AllSdkTargetsTests.proj /p:Configuration={cfg.BUILD_CONFIG} -property:FSharpRepositoryPath={FSharpRepositoryPath}")
 
 #if !NETCOREAPP
     [<Fact>]
