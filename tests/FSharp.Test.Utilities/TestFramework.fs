@@ -12,6 +12,7 @@ open FSharp.Compiler.IO
 
 let getShortId() = Guid.NewGuid().ToString().[..7]
 
+// Temporary directory is TempPath + "/FSharp.Test.Utilities/yyy-MM-dd-xxxxxxx/"
 let tempDirectoryOfThisTestRun =
     let tempDir = Path.GetTempPath()
     let today = DateTime.Now.ToString("yyyy-MM-dd")
@@ -19,8 +20,6 @@ let tempDirectoryOfThisTestRun =
         .CreateSubdirectory($"FSharp.Test.Utilities/{today}-{getShortId()}")
         .FullName
 
-// Temporary directory is TempPath + "/FSharp.Test.Utilities/yyy-MM-dd/{part}-xxxxxxx"
-// Throws exception if it Fails
 let createTemporaryDirectory (part: string) =
     DirectoryInfo(tempDirectoryOfThisTestRun)
         .CreateSubdirectory($"{part}-{getShortId()}")
