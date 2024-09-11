@@ -560,7 +560,7 @@ type FrameworkImportsCache(size) =
         // and updated realsig and langversion
         let tcGlobals =
             if tcGlobals.langVersion.SpecifiedVersion <> tcConfig.langVersion.SpecifiedVersion
-                && tcGlobals.realsig <> tcConfig.realsig then
+                || tcGlobals.realsig <> tcConfig.realsig then
                     TcGlobals(
                         tcGlobals.compilingFSharpCore,
                         tcGlobals.ilg,
@@ -570,7 +570,6 @@ type FrameworkImportsCache(size) =
                         tcGlobals.isInteractive,
                         tcGlobals.checkNullness,
                         tcGlobals.useReflectionFreeCodeGen,
-                        // The helper to find system types amongst referenced DLLs
                         tcGlobals.tryFindSysTypeCcuHelper,
                         tcGlobals.emitDebugInfoInQuotations,
                         tcGlobals.noDebugAttributes,

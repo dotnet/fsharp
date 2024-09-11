@@ -12,7 +12,7 @@ open FSharp.Editor.Tests.Helpers
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
-type HelpContextServiceTests() =
+type HelpContextServiceTests () =
     let getMarkers (source: string) =
         let mutable cnt = 0
 
