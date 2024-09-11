@@ -817,6 +817,11 @@
         <target state="translated">差補字串包含不成對的右大括弧。</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexWarnDirectiveMustBeFirst">
+        <source>#nowarn / #warnon directives must appear as the first non-whitespace character on a line</source>
+        <target state="new">#nowarn / #warnon directives must appear as the first non-whitespace character on a line</target>
+        <note />
+      </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">
         <source>All elements of a list must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">清單的所有元素必須以隱含方式轉換成第一個元素的類型，這是類型為\n    {1}    \n的元組長度 {0}此元素是類型為\n    {3}    \n的元組長度 {2}</target>

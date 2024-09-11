@@ -817,6 +817,11 @@
         <target state="translated">内插字符串包含不匹配的右大括号。</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexWarnDirectiveMustBeFirst">
+        <source>#nowarn / #warnon directives must appear as the first non-whitespace character on a line</source>
+        <target state="new">#nowarn / #warnon directives must appear as the first non-whitespace character on a line</target>
+        <note />
+      </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">
         <source>All elements of a list must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">列表的所有元素必须可隐式转换为第一个元素的类型，这是一个长度为 {0} 的类型的元组\n    {1}    \n此元素是长度为 {2} 类型的元组\n    {3}    \n</target>

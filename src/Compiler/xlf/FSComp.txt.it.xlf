@@ -817,6 +817,11 @@
         <target state="translated">La stringa interpolata contiene parentesi graffe di chiusura non corrispondenti.</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexWarnDirectiveMustBeFirst">
+        <source>#nowarn / #warnon directives must appear as the first non-whitespace character on a line</source>
+        <target state="new">#nowarn / #warnon directives must appear as the first non-whitespace character on a line</target>
+        <note />
+      </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">
         <source>All elements of a list must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">Tutti gli elementi di un elenco devono essere convertibili in modo implicito nel tipo del primo elemento, che qui è una tupla di lunghezza {0} di tipo\n {1}    \nQuesto elemento è una tupla di lunghezza {2} di tipo\n    {3} \n</target>

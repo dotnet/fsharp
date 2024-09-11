@@ -817,6 +817,11 @@
         <target state="translated">補間された文字列には、一致しない閉じかっこが含まれています。</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexWarnDirectiveMustBeFirst">
+        <source>#nowarn / #warnon directives must appear as the first non-whitespace character on a line</source>
+        <target state="new">#nowarn / #warnon directives must appear as the first non-whitespace character on a line</target>
+        <note />
+      </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">
         <source>All elements of a list must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">リストのすべての要素は、最初の要素の型に暗黙的に変換できる必要があります。これは、型の長さ {0} のタプルです\n    {1}    \nこの要素は、型の長さ {2} のタプルです\n    {3}    \n</target>

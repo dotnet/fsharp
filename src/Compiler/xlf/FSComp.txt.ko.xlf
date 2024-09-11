@@ -817,6 +817,11 @@
         <target state="translated">보간된 문자열에 일치하지 않는 닫는 중괄호가 포함되어 있습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexWarnDirectiveMustBeFirst">
+        <source>#nowarn / #warnon directives must appear as the first non-whitespace character on a line</source>
+        <target state="new">#nowarn / #warnon directives must appear as the first non-whitespace character on a line</target>
+        <note />
+      </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">
         <source>All elements of a list must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">목록의 모든 요소는 첫 번째 요소의 형식으로 암시적으로 변환할 수 있어야 합니다. 여기서는 형식이 \n    {1}이고 길이가 {0}인 튜플입니다.    \n이 요소는 형식이 \n    {3}이고 길이가 {2}인 튜플입니다.    \n</target>
