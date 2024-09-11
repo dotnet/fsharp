@@ -200,58 +200,52 @@ The phases taking the longest are marked in the right. Those are assembly import
 
 ## Implementation plan
 
-The conclusion from the above is that there is a lot of potential in caching - at the same time, implementing things to the full potential right away will require serious changes in the compiler code, which will be dangerous, hard to test and review. Therefore, I propose to implement the feature in stages.
+The conclusion from the above is that there is a lot of potential in caching - at the same time, implementing things to the full potential right away will require serious changes in the compiler code, which will be dangerous, hard to test and review. Therefore, I propose to implement the feature in stages where each stage brings gains in some scenarios.
 
-**Stage 1 - force-gen and use signatures**
+**Stage 1 - force-gen and compare typechecking graphs**
 
-We can start with always generating signature files and using them for typecheck in cases when matching implementation files don't change. The affected phase will be `main2`.
+We already create the TC graph in `main1` and we are able to dump it (in Mermaid) via the compiler flags.
 
-**Stage 2 - skip some typecheck when using gen'd signatures**
+So we can do the following:
+- force-gen and save the graph
+- append all the extra compilation info (basically, the compilation arguments string)
+- before doing the retypecheck, detect if there is any change to above:
+  - if so, skip the retypecheck
+  - otherwise, apply some algorithm to get the graph diff. The result should be the list of files for retypecheck (just ignore it for now)
 
-If we use generated signatures, we can probably omit doing some parts of typecheck, e.g. checking that modules match their signatures.
+This will allow to skip a huge part of the compilation in the scenarios like reopening Visual Studio for a project when nothing has changed.
 
-**Stage 3 - skip some signature recalculation**
+**Stage 2 - skip retypecheck for some files**
 
-Here we can get smart about signature reuse. If a project contains files F1.fs,F2.fs, ... F9.fs, F9.fsi and F5.fs is changed, we can omit forcegen'ing signatures for all the files above the changed one (F1.fs - F4.fs). 
+In `main1`, we do unpickling (= deserializing) and pickling (= serializing) of the code. This currently happens on the module/namespace basis. 
 
-**Stage 4 - side-cache and reuse sigData**
+So here we can do the following:
+- extend the pickler logic so that it can work on the file basis
+- save acquired typecheck information to the intermediate folder after the typecheck
+- for the files not needing retypecheck as per graph diff, skip the phase, instead restore the typecheck info
 
-In `main3` part, we encode signature data in order to insert it into the executable later (`AssemblySignatureInfo` resource). We can copy this data nearby and unpickle it in `main1` if we detect no change in the source code.
+This will hugely benefit the scenarios when only the edge of the graph is affected (think one test in a test project).
 
-**Stage 5 - side-cache and reuse optData**
+**Stage 3 - reduce signature data generation**
 
-Similarly to the above, in `main3`, we encode optimization data (`AssemblyOptimizationInfo` resource). Again, we can copy it to a separate resource to later reuse it.
+In `main3`, we encode signature data in the assemblies.
 
-**Stage 6 - omit reresolving assemblies**
+Since we'll have typecheck graph at this point, we can detect its "edges" - files which nothing depends on. Those don't need to include signature data, hence we can skip the encoding step for them.
 
-We can also try skipping the `Import mscorlib+FSharp.Core` step in `main1` in similar cases. This is essentially a list of libraries with paths.
+Here, the gain largely depends on the type of the project, but this would be anyway a good move in the direction of the compiler less relying on signatures for its operations.
 
-**Stage 7 - cache imported assemblies on the x-project level**
+**Stage 4 - reuse import data**
 
-A lot of imported assemblies are actually the same for many projects (e.g. `System.*` and `Microsoft.*` assemblies). We could store and utilize them across a whole solution.
+In `main1`, we restore imported assemblies to get their IL (e.g. system assemblies).
 
-**Stage 8 - leverage graph-based typechecking**
+So here we can:
+- serialize and cache imported IL on the per-assembly basis
+- apply this for the cross-project case, to not reimport IL for repeating assemblies but instead restore it from the cache
 
-We can also save TC graph and analyze it in the beginning of typechecking. This will further reduce the amount of signature file to regenerate. If we get here, we should discuss how risky this is and maybe have a separate flag for it.
-
-## Other considerations
-
-**Checking auxiliary information**
-
-Besides tracking the source files, we should track:
-- compiler version
-- compiler flags 
-- ?
-
-**Cached data granularity**
-
-Currently, the following granularity will be sufficient and also rather easy to mentally grasp:
-- cached signature files (.fsi) - per file, as with normal signature file
-- optData and sigData (OptimizationInfo and SignatureInfo) - per assembly, side-slicing them from the executable
-- imported assemblies - eventually some common storage in a solution 
+This will be a smaller gain for any particular project but a big accummulated one for large multi-project solutions.
 
 ## Testing and benchmarking
 
-We should have a compiler switch for this: applying it to current typechecking tests shouldn't make any difference in results. Unit tests should test that restored cached results + reusing them should be equivalent to fresh typecheck results.
+We should have a compiler switch for this: applying it to current typechecking tests shouldn't make any difference in results. Tests should test that restored cached results + reusing them should be equivalent to fresh typecheck results.
 
 Benchmarks should be added or run at every stage to the `FCSBenchmarks` project. A good inspiration can be workflow-style tests for updating files done by @0101 in Transparent Compiler.
