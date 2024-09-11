@@ -26,17 +26,6 @@ type LangVersion =
     | SupportsMl
 
 module InputOutput =
-    type CapturedTextReader() =
-        inherit TextReader()
-        let queue = Queue<char>()
-        member _.ProvideInput(text: string) =
-            for c in text.ToCharArray() do
-                queue.Enqueue(c)
-        override _.Peek() =
-            if queue.Count > 0 then queue.Peek() |> int else -1
-        override _.Read() =
-            if queue.Count > 0 then queue.Dequeue() |> int else -1
-
     type EventedTextWriter() =
         inherit TextWriter()
         let sb = StringBuilder()
@@ -85,17 +74,15 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
 
     let argv = Array.append baseArgs additionalArgs
 
-    let inWriter = new InputOutput.CapturedTextReader()
+    let inReader = new StreamReader(new CompilerInputStream())
     let outWriter = new InputOutput.EventedTextWriter()
     let errorWriter = new InputOutput.EventedTextWriter()
 
-    let fsi = FsiEvaluationSession.Create (config, argv, inWriter, outWriter, errorWriter)
+    let fsi = FsiEvaluationSession.Create (config, argv, inReader, outWriter, errorWriter)
 
     member _.ValueBound = fsi.ValueBound
 
     member _.Fsi = fsi
-
-    member _.ProvideInput text = inWriter.ProvideInput text
 
     member _.OutputProduced = outWriter.LineWritten
 

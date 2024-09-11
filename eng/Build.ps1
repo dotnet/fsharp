@@ -64,6 +64,7 @@ param (
     [switch]$testAllButIntegrationAndAot,
     [switch]$testpack,
     [switch]$testAOT,
+    [switch]$testEditor,
     [switch]$testBenchmarks,
     [string]$officialSkipTests = "false",
     [switch]$noVisualStudio,
@@ -119,6 +120,7 @@ function Print-Usage() {
     Write-Host "  -testVs                       Run F# editor unit tests"
     Write-Host "  -testpack                     Verify built packages"
     Write-Host "  -testAOT                      Run AOT/Trimming tests"
+    Write-Host "  -testEditor                   Run VS Editor tests"
     Write-Host "  -testBenchmarks               Build and Run Benchmark suite"
     Write-Host "  -officialSkipTests <bool>     Set to 'true' to skip running tests"
     Write-Host ""
@@ -178,7 +180,11 @@ function Process-Arguments() {
         $script:testFSharpQA = $True
         $script:testIntegration = $False
         $script:testVs = $True
-        $script:testAOT = $False
+        $script:testEditor = $True
+    }
+
+    if($script:testVs) {
+        $script:testEditor = $True
     }
 
     if ([System.Boolean]::Parse($script:officialSkipTests)) {
@@ -669,10 +675,14 @@ try {
         TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $script:desktopTargetFramework  -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Private.Scripting.UnitTests\"
     }
 
-    if ($testVs -and -not $noVisualStudio) {
+    if ($testEditor -and -not $noVisualStudio) {
         TestUsingMSBuild -testProject "$RepoRoot\vsintegration\tests\FSharp.Editor.Tests\FSharp.Editor.Tests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Editor.Tests\FSharp.Editor.Tests.fsproj"
+    }
+
+    if ($testVs -and -not $noVisualStudio) {
         TestUsingMSBuild -testProject "$RepoRoot\vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\VisualFSharp.UnitTests\"
     }
+
 
     if ($testIntegration) {
         TestUsingMSBuild -testProject "$RepoRoot\vsintegration\tests\FSharp.Editor.IntegrationTests\FSharp.Editor.IntegrationTests.csproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Editor.IntegrationTests\"

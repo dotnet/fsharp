@@ -633,6 +633,8 @@ type FSharpChecker
         if isEditing then
             tcConfigB.conditionalDefines <- "EDITING" :: tcConfigB.conditionalDefines
 
+        tcConfigB.realsig <- List.contains "--realsig" argv || List.contains "--realsig+" argv
+
         // Apply command-line arguments and collect more source files if they are in the arguments
         let sourceFilesNew = ApplyCommandLineArgs(tcConfigB, sourceFiles, argv)
         FSharpParsingOptions.FromTcConfigBuilder(tcConfigB, Array.ofList sourceFilesNew, isInteractive), errorScope.Diagnostics
