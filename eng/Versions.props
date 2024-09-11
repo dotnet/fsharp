@@ -87,7 +87,6 @@
     <SystemRuntimeCompilerServicesUnsafeVersion>6.0.0</SystemRuntimeCompilerServicesUnsafeVersion>
     <SystemThreadingTasksDataflow>$(SystemPackageVersionVersion)</SystemThreadingTasksDataflow>
     <SystemValueTupleVersion>4.5.0</SystemValueTupleVersion>
-    <SystemTextJsonVersion>6.0.0</SystemTextJsonVersion>
     <MicrosoftDiaSymReaderPortablePdbVersion>1.6.0</MicrosoftDiaSymReaderPortablePdbVersion>
     <!-- Versions for package groups -->
     <RoslynVersion>4.11.0-2.24264.2</RoslynVersion>
