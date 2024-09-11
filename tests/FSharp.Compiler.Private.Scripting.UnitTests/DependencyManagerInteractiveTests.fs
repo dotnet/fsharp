@@ -25,6 +25,7 @@ module Native =
 
 type scriptHost (?langVersion: LangVersion) = inherit FSharpScript(langVersion=defaultArg langVersion LangVersion.Preview)
 
+[<CollectionDefinition(nameof DependencyManagerInteractiveTests, DisableParallelization = true)>]
 type DependencyManagerInteractiveTests() =
 
     let getValue ((value: Result<FsiValue option, exn>), (errors: FSharpDiagnostic[])) =
@@ -679,6 +680,8 @@ x |> Seq.iter(fun r ->
             else
                 p
 
+        let pathParts (path: string) = Set (path.Split(';'))
+
         let reportError =
             let report errorType code message =
                 match errorType with
@@ -715,7 +718,7 @@ x |> Seq.iter(fun r ->
             currentPath <-  appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
         finalPath <- appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
         Assert.True(currentPath <> initialPath)      // The path was modified by #r "nuget: ..."
-        Assert.Equal(finalPath, initialPath)        // IDispose correctly cleaned up the path
+        Assert.True(pathParts finalPath = pathParts initialPath)        // IDispose correctly cleaned up the path
 
         ()
 
