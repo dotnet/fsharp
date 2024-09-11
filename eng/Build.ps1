@@ -314,7 +314,8 @@ function BuildSolution([string] $solutionName, $nopack) {
         /p:QuietRestore=$quietRestore `
         /p:QuietRestoreBinaryLog=$binaryLog `
         /p:TestTargetFrameworks=$testTargetFrameworks `
-        /p:DotNetBuildFromSource=$sourceBuild `
+        /p:DotNetBuildSourceOnly=$sourceBuild `
+        /p:DotNetBuildRepo=$sourceBuild `
         /p:CompressAllMetadata=$CompressAllMetadata `
         /p:BuildNoRealsig=$buildnorealsig `
         /v:$verbosity `

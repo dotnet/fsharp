@@ -4,8 +4,8 @@
     <RootDir Condition="'$(RootDir)'==''">Bootstrap</RootDir>
   </PropertyGroup>
 
-  <!-- Skip on sourcebuild -->
-  <ItemGroup Condition="'$(ArcadeBuildFromSource)'!='true'">
+  <!-- Skip on source only builds. -->
+  <ItemGroup Condition="'$(DotNetBuildSourceOnly)'!='true'">
     <Projects Include="buildtools\fslex\fslex.fsproj" />
     <Projects Include="buildtools\fsyacc\fsyacc.fsproj" />
     <Projects Include="buildtools\AssemblyCheck\AssemblyCheck.fsproj" />

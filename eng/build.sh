@@ -274,7 +274,7 @@ function BuildSolution {
     fi
 
     BuildMessage="Error building tools"
-    local args=" publish $repo_root/proto.proj $blrestore $bltools /p:Configuration=Proto /p:ArcadeBuildFromSource=$source_build $properties"
+    local args=" publish $repo_root/proto.proj $blrestore $bltools /p:Configuration=Proto /p:DotNetBuildRepo=$source_build /p:DotNetBuildSourceOnly=$source_build $properties"
     echo $args
     "$DOTNET_INSTALL_DIR/dotnet" $args  #$args || exit $?
   fi
@@ -296,7 +296,8 @@ function BuildSolution {
       /p:ContinuousIntegrationBuild=$ci \
       /p:QuietRestore=$quiet_restore \
       /p:QuietRestoreBinaryLog="$binary_log" \
-      /p:ArcadeBuildFromSource=$source_build \
+      /p:DotNetBuildSourceOnly=$source_build \
+      /p:DotNetBuildRepo=$source_build \
       /p:BuildNoRealsig=$buildnorealsig \
       $properties
   fi
