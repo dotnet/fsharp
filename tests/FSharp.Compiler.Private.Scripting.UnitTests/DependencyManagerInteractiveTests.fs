@@ -718,7 +718,7 @@ x |> Seq.iter(fun r ->
             currentPath <-  appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
         finalPath <- appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
         Assert.True(currentPath <> initialPath)      // The path was modified by #r "nuget: ..."
-        Assert.True(pathParts finalPath = pathParts initialPath)        // IDispose correctly cleaned up the path
+        Assert.Equal<Set<_>>(pathParts finalPath, pathParts initialPath)        // IDispose correctly cleaned up the path
 
         ()
 
