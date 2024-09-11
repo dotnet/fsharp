@@ -85,9 +85,6 @@ val ProcessMetaCommandsFromInput:
 /// Process all the #r, #I etc. in an input.  For non-scripts report warnings about ignored directives.
 val ApplyMetaCommandsFromInputToTcConfig: TcConfig * ParsedInput * string * DependencyProvider -> TcConfig
 
-/// Process the #nowarn in an input and integrate them into the TcConfig
-val ApplyNoWarnsToTcConfig: TcConfig * ParsedInput * string -> TcConfig
-
 /// Parse one input stream
 val ParseOneInputStream:
     tcConfig: TcConfig *

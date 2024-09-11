@@ -380,7 +380,7 @@ type PhasedDiagnostic with
         // Level 2
         | _ -> 2
 
-    member x.IsEnabled(severity, options) =
+    member private x.IsEnabled(severity, options) =
         let level = options.WarnLevel
         let specificWarnOn = options.WarnOn
         let n = x.Number
@@ -410,47 +410,34 @@ type PhasedDiagnostic with
                 (severity = FSharpDiagnosticSeverity.Info && level > 0)
                 || (severity = FSharpDiagnosticSeverity.Warning && level >= x.WarningLevel)
 
-    /// Indicates if a diagnostic should be reported as an informational
-    member x.ReportAsInfo(options, severity) =
-        match severity with
-        | FSharpDiagnosticSeverity.Error -> false
-        | FSharpDiagnosticSeverity.Warning -> false
-        | FSharpDiagnosticSeverity.Info -> x.IsEnabled(severity, options) && not (List.contains x.Number options.WarnOff)
-        | FSharpDiagnosticSeverity.Hidden -> false
+    member x.AdaptedSeverity(options, severity) =
+        let n = x.Number
 
-    /// Indicates if a diagnostic should be reported as a warning
-    member x.ReportAsWarning(options, severity) =
-        match severity with
-        | FSharpDiagnosticSeverity.Error -> false
+        let localWarnon () = WarnScopes.IsWarnon options.WarnScopes n x.Range
 
-        | FSharpDiagnosticSeverity.Warning -> x.IsEnabled(severity, options) && not (List.contains x.Number options.WarnOff)
+        let localNowarn () =
+            WarnScopes.IsNowarn options.WarnScopes n x.Range options.Fsharp8CompatibleNowarn
 
-        // Informational become warning if explicitly on and not explicitly off
-        | FSharpDiagnosticSeverity.Info ->
-            let n = x.Number
-            List.contains n options.WarnOn && not (List.contains n options.WarnOff)
-
-        | FSharpDiagnosticSeverity.Hidden -> false
-
-    /// Indicates if a diagnostic should be reported as an error
-    member x.ReportAsError(options, severity) =
+        let warnOff () =
+            List.contains n options.WarnOff && not (localWarnon ()) || localNowarn ()
 
         match severity with
-        | FSharpDiagnosticSeverity.Error -> true
-
-        // Warnings become errors in some situations
-        | FSharpDiagnosticSeverity.Warning ->
-            let n = x.Number
-
+        | FSharpDiagnosticSeverity.Error -> FSharpDiagnosticSeverity.Error
+        | FSharpDiagnosticSeverity.Warning when
             x.IsEnabled(severity, options)
             && not (List.contains n options.WarnAsWarn)
-            && ((options.GlobalWarnAsError && not (List.contains n options.WarnOff))
-                || List.contains n options.WarnAsError)
+            && ((options.GlobalWarnAsError && not (warnOff ()))
+                || List.contains n options.WarnAsError && not (localNowarn ()))
+            ->
+            FSharpDiagnosticSeverity.Error
+        | FSharpDiagnosticSeverity.Info when List.contains n options.WarnAsError && not (localNowarn ()) -> FSharpDiagnosticSeverity.Error
 
-        // Informational become errors if explicitly WarnAsError
-        | FSharpDiagnosticSeverity.Info -> List.contains x.Number options.WarnAsError
+        | FSharpDiagnosticSeverity.Warning when x.IsEnabled(severity, options) && not (warnOff ()) -> FSharpDiagnosticSeverity.Warning
+        | FSharpDiagnosticSeverity.Info when List.contains n options.WarnOn && not (warnOff ()) -> FSharpDiagnosticSeverity.Warning
 
-        | FSharpDiagnosticSeverity.Hidden -> false
+        | FSharpDiagnosticSeverity.Info when x.IsEnabled(severity, options) && not (warnOff ()) -> FSharpDiagnosticSeverity.Info
+
+        | _ -> FSharpDiagnosticSeverity.Hidden
 
 [<AutoOpen>]
 module OldStyleMessages =
@@ -2299,45 +2286,25 @@ type PhasedDiagnostic with
 //----------------------------------------------------------------------------
 // Scoped #nowarn pragmas
 
-/// Build an DiagnosticsLogger that delegates to another DiagnosticsLogger but filters warnings turned off by the given pragma declarations
-type DiagnosticsLoggerFilteringByScopedPragmas
-    (langVersion: LanguageVersion, scopedPragmas, diagnosticOptions: FSharpDiagnosticOptions, diagnosticsLogger: DiagnosticsLogger) =
+/// Build an DiagnosticsLogger that delegates to another DiagnosticsLogger but filters warnings (still needed??)
+type DiagnosticsLoggerFilteringByScopedPragmas(diagnosticOptions: FSharpDiagnosticOptions, diagnosticsLogger: DiagnosticsLogger) =
     inherit DiagnosticsLogger("DiagnosticsLoggerFilteringByScopedPragmas")
-
-    let needCompatibilityWithEarlierInconsistentInteraction =
-        not (langVersion.SupportsFeature LanguageFeature.ConsistentNowarnLineDirectiveInteraction)
 
     let mutable realErrorPresent = false
 
     override _.DiagnosticSink(diagnostic: PhasedDiagnostic, severity) =
+
         if severity = FSharpDiagnosticSeverity.Error then
             realErrorPresent <- true
             diagnosticsLogger.DiagnosticSink(diagnostic, severity)
         else
-            let report =
-                let warningNum = diagnostic.Number
-
-                match diagnostic.Range with
-                | Some m ->
-                    scopedPragmas
-                    |> List.exists (fun (ScopedPragma.WarningOff(pragmaRange, warningNumFromPragma)) ->
-                        warningNum = warningNumFromPragma
-                        && (needCompatibilityWithEarlierInconsistentInteraction
-                            || m.FileIndex = pragmaRange.FileIndex && posGeq m.Start pragmaRange.Start))
-                    |> not
-                | None -> true
-
-            if report then
-                if diagnostic.ReportAsError(diagnosticOptions, severity) then
-                    diagnosticsLogger.DiagnosticSink(diagnostic, FSharpDiagnosticSeverity.Error)
-                elif diagnostic.ReportAsWarning(diagnosticOptions, severity) then
-                    diagnosticsLogger.DiagnosticSink(diagnostic, FSharpDiagnosticSeverity.Warning)
-                elif diagnostic.ReportAsInfo(diagnosticOptions, severity) then
-                    diagnosticsLogger.DiagnosticSink(diagnostic, severity)
+            match diagnostic.AdaptedSeverity(diagnosticOptions, severity) with
+            | FSharpDiagnosticSeverity.Hidden -> ()
+            | s -> diagnosticsLogger.DiagnosticSink(diagnostic, s)
 
     override _.ErrorCount = diagnosticsLogger.ErrorCount
 
     override _.CheckForRealErrorsIgnoringWarnings = realErrorPresent
 
-let GetDiagnosticsLoggerFilteringByScopedPragmas (langVersion, scopedPragmas, diagnosticOptions, diagnosticsLogger) =
-    DiagnosticsLoggerFilteringByScopedPragmas(langVersion, scopedPragmas, diagnosticOptions, diagnosticsLogger) :> DiagnosticsLogger
+let GetDiagnosticsLoggerFilteringByScopedPragmas (diagnosticOptions, diagnosticsLogger) =
+    DiagnosticsLoggerFilteringByScopedPragmas(diagnosticOptions, diagnosticsLogger) :> DiagnosticsLogger

@@ -18,6 +18,7 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.ILX.Types
 open FSharp.Compiler.CompilerGlobalState
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
@@ -5576,7 +5577,6 @@ type NamedDebugPointKey =
 type CheckedImplFile = 
     | CheckedImplFile of 
         qualifiedNameOfFile: QualifiedNameOfFile *
-        pragmas: ScopedPragma list *
         signature: ModuleOrNamespaceType *
         contents: ModuleOrNamespaceContents *
         hasExplicitEntryPoint: bool *
@@ -5589,8 +5589,6 @@ type CheckedImplFile =
     member x.Contents = let (CheckedImplFile (contents=res)) = x in res
 
     member x.QualifiedNameOfFile = let (CheckedImplFile (qualifiedNameOfFile=res)) = x in res
-
-    member x.Pragmas = let (CheckedImplFile (pragmas=res)) = x in res
 
     member x.HasExplicitEntryPoint = let (CheckedImplFile (hasExplicitEntryPoint=res)) = x in res
 

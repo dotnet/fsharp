@@ -898,7 +898,8 @@ type internal DiagnosticsLoggerThatStopsOnFirstError
     override _.DiagnosticSink(diagnostic, severity) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
 
-        if diagnostic.ReportAsError(tcConfig.diagnosticsOptions, severity) then
+        match diagnostic.AdaptedSeverity(tcConfig.diagnosticsOptions, severity) with
+        | FSharpDiagnosticSeverity.Error ->
             fsiStdinSyphon.PrintDiagnostic(tcConfig, diagnostic)
             errorCount <- errorCount + 1
 
@@ -906,20 +907,21 @@ type internal DiagnosticsLoggerThatStopsOnFirstError
                 exit 1 (* non-zero exit code *)
             // STOP ON FIRST ERROR (AVOIDS PARSER ERROR RECOVERY)
             raise StopProcessing
-        elif diagnostic.ReportAsWarning(tcConfig.diagnosticsOptions, severity) then
+        | FSharpDiagnosticSeverity.Warning ->
             DoWithDiagnosticColor FSharpDiagnosticSeverity.Warning (fun () ->
                 fsiConsoleOutput.Error.WriteLine()
                 diagnostic.WriteWithContext(fsiConsoleOutput.Error, "  ", fsiStdinSyphon.GetLine, tcConfig, severity)
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.Flush())
-        elif diagnostic.ReportAsInfo(tcConfig.diagnosticsOptions, severity) then
+        | FSharpDiagnosticSeverity.Info ->
             DoWithDiagnosticColor FSharpDiagnosticSeverity.Info (fun () ->
                 fsiConsoleOutput.Error.WriteLine()
                 diagnostic.WriteWithContext(fsiConsoleOutput.Error, "  ", fsiStdinSyphon.GetLine, tcConfig, severity)
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.Flush())
+        | FSharpDiagnosticSeverity.Hidden -> ()
 
     override _.ErrorCount = errorCount
 
@@ -1673,7 +1675,7 @@ let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
 
     let contents = TMDefs([ TMDefs[TMDefRec(false, [], [], [ mbinding ], m)] ])
     let qname = QualifiedNameOfFile.QualifiedNameOfFile(Ident(moduleName, m))
-    entity, v, CheckedImplFile.CheckedImplFile(qname, [], mty, contents, false, false, StampMap.Empty, Map.empty)
+    entity, v, CheckedImplFile.CheckedImplFile(qname, mty, contents, false, false, StampMap.Empty, Map.empty)
 
 let scriptingSymbolsPath =
     let createDirectory (path: string) =
@@ -2484,7 +2486,6 @@ type internal FsiDynamicCompiler
                     true,
                     ComputeQualifiedNameOfFileFromUniquePath(m, prefixPath),
                     [],
-                    [],
                     [ impl ],
                     (isLastCompiland, isExe),
                     {
@@ -2839,9 +2840,7 @@ type internal FsiDynamicCompiler
         ) =
         WithImplicitHome (tcConfigB, directoryName sourceFile) (fun () ->
             ProcessMetaCommandsFromInput
-                ((fun st (m, nm) ->
-                    tcConfigB.TurnWarningOff(m, nm)
-                    st),
+                ((fun st _ -> st),
                  (fun st (m, path, directive) ->
                      let st, _ =
                          fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncludePathDirective(ctok, st, directive, path, false, m)
@@ -2884,10 +2883,6 @@ type internal FsiDynamicCompiler
                     fsiConsoleOutput.uprintnf " %s %s" (FSIstrings.SR.fsiLoadingFilesPrefixText ()) input.FileName)
 
             fsiConsoleOutput.uprintfn "]"
-
-            for (warnNum, ranges) in closure.NoWarns do
-                for m in ranges do
-                    tcConfigB.TurnWarningOff(m, warnNum)
 
             // Play errors and warnings from resolution
             closure.ResolutionDiagnostics |> List.iter diagnosticSink
@@ -3849,9 +3844,9 @@ type FsiInteractionProcessor
 
             istate, Completed None
 
-        | ParsedHashDirective("nowarn", nowarnArguments, m) ->
-            let numbers = (parsedHashDirectiveArguments nowarnArguments tcConfigB.langVersion)
-            List.iter (fun (d: string) -> tcConfigB.TurnWarningOff(m, d)) numbers
+        | ParsedHashDirective("nowarn", _, _) ->
+            // let numbers = (parsedHashDirectiveArguments nowarnArguments tcConfigB.langVersion)
+            // List.iter (fun (d: string) -> tcConfigB.TurnWarningOff(m, d)) numbers
             istate, Completed None
 
         | ParsedHashDirective("terms", [], _) ->

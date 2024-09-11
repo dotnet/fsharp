@@ -474,7 +474,7 @@ interactiveSeparator:
   | OBLOCKSEP { }
 
 /*--------------------------------------------------------------------------*/
-/* #directives - used by both F# Interactive directives and #nowarn etc.    */
+/* #directives - used by F# Interactive directives                                    */
 
 
 /* A #directive in a module, namespace or an interaction */

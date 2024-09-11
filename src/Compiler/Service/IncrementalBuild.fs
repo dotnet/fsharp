@@ -128,7 +128,6 @@ module IncrementalBuildSyntaxTree =
                     sigName,
                     [],
                     [],
-                    [],
                     isLastCompiland,
                     { ConditionalDirectives = []; CodeComments = [] },
                     Set.empty
@@ -259,7 +258,7 @@ type BoundModel private (
 
             IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked fileName)
             let capturingDiagnosticsLogger = CapturingDiagnosticsLogger("TypeCheck")
-            let diagnosticsLogger = GetDiagnosticsLoggerFilteringByScopedPragmas(tcConfig.langVersion, input.ScopedPragmas, tcConfig.diagnosticsOptions, capturingDiagnosticsLogger)
+            let diagnosticsLogger = GetDiagnosticsLoggerFilteringByScopedPragmas(tcConfig.diagnosticsOptions, capturingDiagnosticsLogger)
             use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
 
             beforeFileChecked.Trigger fileName

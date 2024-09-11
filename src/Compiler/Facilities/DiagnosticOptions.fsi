@@ -6,6 +6,20 @@
 
 namespace FSharp.Compiler.Diagnostics
 
+open FSharp.Compiler.Text
+
+/// The range between #nowarn and #warnon, or #warnon and #nowarn, for a warning number.
+/// Or between the directive and eof, for the "Open" cases.
+[<RequireQualifiedAccess>]
+type WarnScope =
+    | Off of range
+    | On of range
+    | OpenOff of range
+    | OpenOn of range
+
+/// The collected WarnScope objects (collected during lexing)
+type WarnScopeMap = WarnScopeMap of Map<int64, WarnScope list>
+
 [<RequireQualifiedAccess>]
 type FSharpDiagnosticSeverity =
     | Hidden
@@ -19,7 +33,9 @@ type FSharpDiagnosticOptions =
       WarnOff: int list
       WarnOn: int list
       WarnAsError: int list
-      WarnAsWarn: int list }
+      WarnAsWarn: int list
+      mutable Fsharp8CompatibleNowarn: bool
+      mutable WarnScopes: WarnScopeMap }
 
     static member Default: FSharpDiagnosticOptions
 
