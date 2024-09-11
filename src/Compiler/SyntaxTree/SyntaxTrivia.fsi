@@ -334,9 +334,10 @@ type SynBindingTrivia =
 [<NoEquality; NoComparison>]
 type SynExprAndBangTrivia =
     {
+        /// The syntax range of the `and!` keyword
+        AndBangKeyword: range
         /// The syntax range of the `=` token.
         EqualsRange: range
-
         /// The syntax range of the `in` keyword.
         InKeyword: range option
     }

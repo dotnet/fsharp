@@ -25,7 +25,8 @@ ImplFile
                            App
                              (NonAtomic, false, Ident getFoo,
                               Const (Unit, (5,22--5,24)), (5,15--5,24)),
-                           (5,4--5,24), { EqualsRange = (5,13--5,14)
+                           (5,4--5,24), { AndBangKeyword = (5,4--5,8)
+                                          EqualsRange = (5,13--5,14)
                                           InKeyword = None })],
                        YieldOrReturn ((false, true), Ident bar, (7,4--7,14)),
                        (3,4--7,14), { EqualsRange = Some (3,13--3,14) }),
