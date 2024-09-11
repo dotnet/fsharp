@@ -3,7 +3,6 @@
 namespace FSharp.Test.ScriptHelpers
 
 open System
-open System.Collections.Generic
 open System.IO
 open System.Text
 open System.Threading
@@ -11,7 +10,7 @@ open FSharp.Compiler
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
-open FSharp.Test.Utilities
+open FSharp.Test
 
 [<RequireQualifiedAccess>]
 type LangVersion =
@@ -74,13 +73,21 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
 
     let argv = Array.append baseArgs additionalArgs
 
-    let inReader = new StreamReader(new CompilerInputStream())
+    let inputStream = new CompilerInputStream()
+    let inReader = new StreamReader(inputStream)
     let outWriter = new InputOutput.EventedTextWriter()
     let errorWriter = new InputOutput.EventedTextWriter()
+
+    do 
+        Console.setLocalIn inReader
+        Console.setLocalOut outWriter
+        Console.setLocalError errorWriter
 
     let fsi = FsiEvaluationSession.Create (config, argv, inReader, outWriter, errorWriter)
 
     member _.ValueBound = fsi.ValueBound
+
+    member _.ProvideInput text = inputStream.Add text
 
     member _.Fsi = fsi
 

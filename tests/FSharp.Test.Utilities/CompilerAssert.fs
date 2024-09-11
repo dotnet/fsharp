@@ -343,7 +343,7 @@ module rec CompilerAssertHelpers =
 
         member x.ExecuteTestCase assemblyPath (deps: string[]) isFsx =
             // AppDomain isolates console.
-            Console.installWriters()
+            Console.installWrappers()
 
             AppDomain.CurrentDomain.add_AssemblyResolve(ResolveEventHandler(fun _ args ->
                 deps
@@ -609,7 +609,7 @@ module rec CompilerAssertHelpers =
 
     let captureConsoleOutputs (func: unit -> unit) =
 
-        Console.ensureNewLocalWriters()
+        Console.ensureNewLocals()
 
         let succeeded, exn =
             try

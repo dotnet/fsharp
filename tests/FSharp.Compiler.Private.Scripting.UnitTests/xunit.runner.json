@@ -2,5 +2,5 @@
     "$schema": "https://xunit.net/schema/current/xunit.runner.schema.json",
     "appDomain": "ifAvailable",
     "shadowCopy": false,
-    "maxParallelThreads": 1
+    "maxParallelThreads": 0
 }

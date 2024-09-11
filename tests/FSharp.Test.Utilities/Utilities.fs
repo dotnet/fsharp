@@ -41,19 +41,32 @@ type FactForDESKTOPAttribute() =
 
 module Console =
 
-    let private threadLocalOut = new AsyncLocal<TextWriter voption>()
-    let private threadLocalError = new AsyncLocal<TextWriter voption>()
+    let private localIn = new AsyncLocal<TextReader voption>()
+    let private localOut = new AsyncLocal<TextWriter voption>()
+    let private localError = new AsyncLocal<TextWriter voption>()
+
+    let originalConsoleIn = Console.In
+
+    let getValue (holder: AsyncLocal<_>) f =
+        match holder.Value with
+        | ValueSome v -> v
+        | ValueNone ->
+            let v = f()
+            holder.Value <- ValueSome v
+            v
+
+    type AsyncLocalTextReader(holder: AsyncLocal<TextReader voption>) =
+        inherit TextReader()
+        let getValue() = getValue holder <| fun () -> originalConsoleIn
+
+        override _.Peek() = getValue().Peek()
+        override _.Read() = getValue().Read()
+        member _.Set (reader: TextReader) = holder.Value <- ValueSome reader
+        member _.Drop() = holder.Value <- ValueNone
 
     type AsyncLocalTextWriter(holder: AsyncLocal<TextWriter voption>) =
         inherit TextWriter()
-
-        let getValue() =
-            match holder.Value with
-            | ValueSome writer -> writer
-            | ValueNone ->
-                let writer = new StringWriter()
-                holder.Value <- ValueSome writer
-                writer
+        let getValue() = getValue holder <| fun () -> new StringWriter()
 
         override _.Encoding = Encoding.UTF8
         override _.Write(value: char) = getValue().Write(value)
@@ -63,35 +76,30 @@ module Console =
         member _.Drop() = holder.Value <- ValueNone
         member _.GetText() = getValue().ToString()
 
-    let private out = new AsyncLocalTextWriter(threadLocalOut)
-    let private err = new AsyncLocalTextWriter(threadLocalError)
+    let private inReader = new AsyncLocalTextReader(localIn)
+    let private outWriter = new AsyncLocalTextWriter(localOut)
+    let private errorWriter = new AsyncLocalTextWriter(localError)
 
-    let installWriters() =
-        Console.SetOut out
-        Console.SetError err
+    let installWrappers() =
+        Console.SetIn inReader
+        Console.SetOut outWriter
+        Console.SetError errorWriter
 
-    let getOutputText() =
-        Console.Out.Flush()
-        out.GetText()
+    let getOutputText() = outWriter.GetText()
+    let getErrorText() = errorWriter.GetText()
 
-    let getErrorText() =
-        Console.Error.Flush()
-        err.GetText()
+    let setLocalIn reader = inReader.Set reader
+    let setLocalOut writer = outWriter.Set writer
+    let setLocalError writer = errorWriter.Set writer
 
-    let setOut writer = out.Set writer
-
-    let setError writer = err.Set writer
-
-    let ensureNewLocalWriters() =
-        Console.Out.Flush()
-        Console.Error.Flush()
-        out.Drop()
-        err.Drop()
+    let ensureNewLocals() =
+        inReader.Drop()
+        outWriter.Drop()
+        errorWriter.Drop()
 
 type SplitConsoleTestFramework(sink) =
     inherit XunitTestFramework(sink)
-    do Console.installWriters()
-
+    do Console.installWrappers()
 
 // This file mimics how Roslyn handles their compilation references for compilation testing
 module Utilities =
