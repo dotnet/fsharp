@@ -793,7 +793,9 @@ type internal TransparentCompiler
 
                 define :: tcConfigB.conditionalDefines
 
-            tcConfigB.realsig <- List.contains "--realsig" commandLineArgs || List.contains "--realsig+" commandLineArgs
+            tcConfigB.realsig <-
+                List.contains "--realsig" commandLineArgs
+                || List.contains "--realsig+" commandLineArgs
 
             tcConfigB.projectReferences <- projectReferences
 

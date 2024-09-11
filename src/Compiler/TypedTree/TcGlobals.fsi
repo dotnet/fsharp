@@ -1287,8 +1287,6 @@ type internal TcGlobals =
 
     member typeof_info: IntrinsicValRef
 
-
-
     member typeof_vref: FSharp.Compiler.TypedTree.ValRef
 
     member uint16_checked_info: IntrinsicValRef
