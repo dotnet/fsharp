@@ -288,7 +288,11 @@ open Printf
         if isNull s then
             System.Diagnostics.Debug.Assert(false, sprintf ""**RESOURCE ERROR**: Resource token %s does not exist!"" name)
     #endif
+    #if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
+        s
+    #else
         Unchecked.nonNull s
+    #endif
 
 
     static let mkFunctionValue (tys: System.Type[]) (impl:obj->obj) =
@@ -314,7 +318,11 @@ open Printf
         // PERF: this technique is a bit slow (e.g. in simple cases, like 'sprintf ""%x""')
         mkFunctionValue tys (fun inp -> impl rty inp)
 
+    #if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
+    static let capture1 (fmt:string) i args ty (go: obj list -> System.Type -> int -> obj) : obj =
+    #else
     static let capture1 (fmt:string) i args ty (go: objnull list -> System.Type -> int -> obj) : obj =
+    #endif
         match fmt.[i] with
         | '%' -> go args ty (i+1)
         | 'd'
@@ -336,7 +344,11 @@ open Printf
             if i >= len ||  (fmt.[i] = '%' && i+1 >= len) then
                 let b = new System.Text.StringBuilder()
                 b.AppendFormat(messageString, [| for x in List.rev args -> x |]) |> ignore
+    #if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
+                box(b.ToString())
+    #else
                 box(b.ToString()) |> Unchecked.nonNull
+    #endif
             // REVIEW: For these purposes, this should be a nop, but I'm leaving it
             // in incase we ever decide to support labels for the error format string
             // E.g., ""<name>%s<foo>%d""
