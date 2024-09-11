@@ -793,6 +793,8 @@ type internal TransparentCompiler
 
                 define :: tcConfigB.conditionalDefines
 
+            tcConfigB.realsig <- List.contains "--realsig" commandLineArgs || List.contains "--realsig+" commandLineArgs
+
             tcConfigB.projectReferences <- projectReferences
 
             tcConfigB.useSimpleResolution <- useSimpleResolution

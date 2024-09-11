@@ -554,6 +554,34 @@ type FrameworkImportsCache(size) =
         let frameworkDLLs, nonFrameworkResolutions, unresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
         let node = this.GetNode(tcConfig, frameworkDLLs, nonFrameworkResolutions)
         let! tcGlobals, frameworkTcImports = node.GetOrComputeValue()
+
+        // If the tcGlobals was loaded from a different project, langVersion and realsig may be different 
+        // for each cached project.  So here we create a new tcGlobals, with the existing framework values
+        // and updated realsig and langversion
+        let tcGlobals =
+            if tcGlobals.langVersion.SpecifiedVersion <> tcConfig.langVersion.SpecifiedVersion
+                && tcGlobals.realsig <> tcConfig.realsig then
+                    TcGlobals(
+                        tcGlobals.compilingFSharpCore,
+                        tcGlobals.ilg,
+                        tcGlobals.fslibCcu,
+                        tcGlobals.directoryToResolveRelativePaths,
+                        tcGlobals.mlCompatibility,
+                        tcGlobals.isInteractive,
+                        tcGlobals.checkNullness,
+                        tcGlobals.useReflectionFreeCodeGen,
+                        // The helper to find system types amongst referenced DLLs
+                        tcGlobals.tryFindSysTypeCcuHelper,
+                        tcGlobals.emitDebugInfoInQuotations,
+                        tcGlobals.noDebugAttributes,
+                        tcGlobals.pathMap,
+                        tcConfig.langVersion,
+                        tcConfig.realsig
+                    )
+
+            else
+                tcGlobals
+
         return tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolved
       }
 
@@ -1444,6 +1472,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                 tcConfigB.projectReferences <- projectReferences
 
                 tcConfigB.useSimpleResolution <- (getSwitchValue useSimpleResolutionSwitch) |> Option.isSome
+
+                tcConfigB.realsig <- List.contains "--realsig" commandLineArgs || List.contains "--realsig+" commandLineArgs
 
                 // Apply command-line arguments and collect more source files if they are in the arguments
                 let sourceFilesNew = ApplyCommandLineArgs(tcConfigB, sourceFiles, commandLineArgs)
