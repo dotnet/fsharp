@@ -25,6 +25,37 @@ type LangVersion =
     | Latest
     | SupportsMl
 
+module InputOutput =
+    type CapturedTextReader() =
+        inherit TextReader()
+        let queue = Queue<char>()
+        member _.ProvideInput(text: string) =
+            for c in text.ToCharArray() do
+                queue.Enqueue(c)
+        override _.Peek() =
+            if queue.Count > 0 then queue.Peek() |> int else -1
+        override _.Read() =
+            if queue.Count > 0 then queue.Dequeue() |> int else -1
+
+    type EventedTextWriter() =
+        inherit TextWriter()
+        let sb = StringBuilder()
+        let sw = new StringWriter()
+        let lineWritten = Event<string>()
+        member _.LineWritten = lineWritten.Publish
+        override _.Encoding = Encoding.UTF8
+        override _.Write(c: char) =
+            if c = '\n' then
+                let line =
+                    let v = sb.ToString()
+                    if v.EndsWith("\r") then v.Substring(0, v.Length - 1)
+                    else v
+                sb.Clear() |> ignore
+                sw.WriteLine line
+                lineWritten.Trigger(line)
+            else sb.Append(c) |> ignore
+        member _.GetText() = sw.ToString()
+
 type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVersion) =
 
     let additionalArgs = defaultArg additionalArgs [||]
@@ -54,13 +85,27 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
 
     let argv = Array.append baseArgs additionalArgs
 
-    let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr)
+    let inWriter = new InputOutput.CapturedTextReader()
+    let outWriter = new InputOutput.EventedTextWriter()
+    let errorWriter = new InputOutput.EventedTextWriter()
+
+    let fsi = FsiEvaluationSession.Create (config, argv, inWriter, outWriter, errorWriter)
 
     member _.ValueBound = fsi.ValueBound
 
     member _.Fsi = fsi
 
-    member _.Eval(code: string, ?cancellationToken: CancellationToken, ?desiredCulture: Globalization.CultureInfo) =
+    member _.ProvideInput text = inWriter.ProvideInput text
+
+    member _.OutputProduced = outWriter.LineWritten
+
+    member _.ErrorProduced = errorWriter.LineWritten
+
+    member _.GetOutput() = lock outWriter outWriter.GetText
+
+    member _.GetErrorOutput() = lock errorWriter errorWriter.GetText
+
+    member this.Eval(code: string, ?cancellationToken: CancellationToken, ?desiredCulture: Globalization.CultureInfo) =
         let originalCulture = Thread.CurrentThread.CurrentCulture
         Thread.CurrentThread.CurrentCulture <- Option.defaultValue Globalization.CultureInfo.InvariantCulture desiredCulture
 

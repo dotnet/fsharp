@@ -993,19 +993,17 @@ module rec Compiler =
 
     let compileExeAndRun = asExe >> compileAndRun
 
-    let private processScriptResults fs (evalResult: Result<FsiValue option, exn>, err: FSharpDiagnostic[])  =
+    let private processScriptResults fs (evalResult: Result<FsiValue option, exn>, err: FSharpDiagnostic[]) outputWritten errorsWritten =
         let perFileDiagnostics = err |> fromFSharpDiagnostic
         let diagnostics = perFileDiagnostics |> List.map snd
         let (errors, warnings) = partitionErrors diagnostics
-        let stdOut = Console.getOutputText()
-        let stdErr = Console.getErrorText()
         let result =
             { OutputPath   = None
               Dependencies = []
               Adjust       = 0
               Diagnostics  = if fs.IgnoreWarnings then errors else diagnostics
               PerFileErrors = perFileDiagnostics
-              Output       = Some (EvalOutput ({Result = evalResult; StdOut = stdOut; StdErr = stdErr}))
+              Output       = Some (EvalOutput ({Result = evalResult; StdOut = outputWritten; StdErr = errorsWritten}))
               Compilation  = FS fs }
 
         let evalError = match evalResult with Ok _ -> false | _ -> true
@@ -1017,7 +1015,9 @@ module rec Compiler =
 
     let private evalFSharp (fs: FSharpCompilationSource) (script:FSharpScript) : CompilationResult =
         let source = fs.Source.GetSourceText |> Option.defaultValue ""
-        script.Eval(source) |> (processScriptResults fs)
+        let result = script.Eval(source)
+        let outputWritten, errorsWritten = script.GetOutput(), script.GetErrorOutput()
+        processScriptResults fs result outputWritten errorsWritten
 
     let scriptingShim = Path.Combine(__SOURCE_DIRECTORY__,"ScriptingShims.fsx")
     let private evalScriptFromDisk (fs: FSharpCompilationSource) (script:FSharpScript) : CompilationResult =
@@ -1029,7 +1029,9 @@ module rec Compiler =
             |> List.map (sprintf " @\"%s\"")
             |> String.Concat
 
-        script.Eval("#load " + fileNames ) |> (processScriptResults fs)
+        let result = script.Eval("#load " + fileNames)
+        let outputWritten, errorsWritten = script.GetOutput(), script.GetErrorOutput()
+        processScriptResults fs result outputWritten errorsWritten
 
     let eval (cUnit: CompilationUnit) : CompilationResult =
         match cUnit with
