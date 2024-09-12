@@ -97,7 +97,11 @@ type SynExprLetOrUseBangTrivia =
         EqualsRange: range option
     }
 
-    static member Zero: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = Range.Zero; EqualsRange = None }
+    static member Zero: SynExprLetOrUseBangTrivia =
+        {
+            LetOrUseBangKeyword = Range.Zero
+            EqualsRange = None
+        }
 
 [<NoEquality; NoComparison>]
 type SynExprMatchTrivia =

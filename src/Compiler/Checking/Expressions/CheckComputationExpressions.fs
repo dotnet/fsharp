@@ -1854,7 +1854,14 @@ let rec TryTranslateComputationExpression
         //  or
         //    --> build.BindReturn(e1, (fun _argN -> match _argN with pat -> expr-without-return))
         | SynExpr.LetOrUseBang(
-            bindDebugPoint = spBind; isUse = false; isFromSource = isFromSource; pat = pat; rhs = rhsExpr; andBangs = []; body = innerComp; trivia = { LetOrUseBangKeyword = mBind }) ->
+            bindDebugPoint = spBind
+            isUse = false
+            isFromSource = isFromSource
+            pat = pat
+            rhs = rhsExpr
+            andBangs = []
+            body = innerComp
+            trivia = { LetOrUseBangKeyword = mBind }) ->
 
             if ceenv.isQuery then
                 error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), mBind))
