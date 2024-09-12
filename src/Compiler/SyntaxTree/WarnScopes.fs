@@ -44,7 +44,7 @@ module internal WarnScopes =
         | false, _ -> None
 
     let private regex =
-        Regex(" *#(nowarn|warnon)(?: +([^ ]+))*(?:\n|\r\n)", RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
+        Regex(" *#(nowarn|warnon)(?: +([^ \r\n]+))*\r?\n", RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
 
     let private getDirectives text m =
         let mkDirective (directiveId: string) (m: range) (c: Capture) =
@@ -62,6 +62,8 @@ module internal WarnScopes =
 
     let private index (fileIndex, warningNumber) =
         (int64 fileIndex <<< 32) + int64 warningNumber
+    
+    let private warnNumFromIndex (idx: int64) = idx &&& 0xFFFFFFFFL
 
     let private getScopes idx warnScopes =
         Map.tryFind idx warnScopes |> Option.defaultValue []
@@ -125,15 +127,16 @@ module internal WarnScopes =
 
     /// compatible = compatible with earlier (< F#9.0) inconsistent interaction between #line and #nowarn
     let IsNowarn (WarnScopeMap warnScopes) warningNumber (mo: range option) compatible =
-        match mo with
-        | None -> compatible
-        | Some m ->
+        match mo, compatible with
+        | Some m, false ->
             let scopes = getScopes (index (m.FileIndex, warningNumber)) warnScopes
 
             let isEnclosingNowarnScope scope =
                 match scope with
                 | WarnScope.Off wm when contains m wm -> true
-                | WarnScope.OpenOff wm when compatible || m.StartLine > wm.StartLine -> true
+                | WarnScope.OpenOff wm when m.StartLine > wm.StartLine -> true
                 | _ -> false
 
             List.exists isEnclosingNowarnScope scopes
+        | _ ->
+            warnScopes |> Map.exists (fun idx _ -> warnNumFromIndex idx = warningNumber)
