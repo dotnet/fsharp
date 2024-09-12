@@ -243,6 +243,8 @@ So here we can:
 
 This will be a smaller gain for any particular project but a big accummulated one for large multi-project solutions.
 
+This step includes adding a cross-project intermmediate file location to be coordinated with msbuild properties.
+
 ## Testing and benchmarking
 
 We should have a compiler switch for this: applying it to current typechecking tests shouldn't make any difference in results. Tests should test that restored cached results + reusing them should be equivalent to fresh typecheck results.
