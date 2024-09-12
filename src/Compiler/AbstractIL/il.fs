@@ -1862,9 +1862,10 @@ type ILGenericParameterDef =
         Name: string
         Constraints: ILTypes
         Variance: ILGenericVariance
-        HasReferenceTypeConstraint: bool
+        HasReferenceTypeConstraint: bool        
         HasNotNullableValueTypeConstraint: bool
         HasDefaultConstructorConstraint: bool
+        HasAllowsRefStruct: bool
         CustomAttrsStored: ILAttributesStored
         MetadataIndex: int32
     }
@@ -3283,6 +3284,7 @@ let mkILSimpleTypar nm =
         HasReferenceTypeConstraint = false
         HasNotNullableValueTypeConstraint = false
         HasDefaultConstructorConstraint = false
+        HasAllowsRefStruct = false
         CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
         MetadataIndex = NoMetadataIdx
     }

@@ -1,9 +1,9 @@
 ﻿namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 
-[<TestFixture>]
+
 module UIntTests =
     let ``uint type abbreviation works`` () =
         let src = "let x = uint 12"

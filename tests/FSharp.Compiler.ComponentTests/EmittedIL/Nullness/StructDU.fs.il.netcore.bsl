@@ -218,18 +218,28 @@
       IL_001a:  ret
     } 
 
-    .method public strict virtual instance string ToString() cil managed
+    .method public hidebysig virtual instance string ToString() cil managed
     {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
-      .maxstack  8
-      IL_0000:  ldstr      "%+A"
-      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype MyTestModule/Myassembly,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,valuetype MyTestModule/Myassembly>::.ctor(string)
-      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype MyTestModule/Myassembly,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
-      IL_000f:  ldarg.0
-      IL_0010:  ldobj      MyTestModule/Myassembly
-      IL_0015:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype MyTestModule/Myassembly,string>::Invoke(!0)
-      IL_001a:  ret
+      .maxstack  3
+      .locals init (valuetype MyTestModule/Myassembly V_0)
+      IL_0000:  ldarg.0
+      IL_0001:  ldobj      MyTestModule/Myassembly
+      IL_0006:  stloc.0
+      IL_0007:  ldarg.0
+      IL_0008:  call       instance int32 MyTestModule/Myassembly::get_Tag()
+      IL_000d:  switch     ( 
+                            IL_001e,
+                            IL_0024,
+                            IL_002a)
+      IL_001e:  ldstr      "A"
+      IL_0023:  ret
+
+      IL_0024:  ldstr      "B"
+      IL_0029:  ret
+
+      IL_002a:  ldstr      "C"
+      IL_002f:  ret
     } 
 
     .property instance int32 Tag()
@@ -294,6 +304,15 @@
     } 
   } 
 
+  .method public static string  printMyDu(valuetype MyTestModule/Myassembly x) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldarga.s   x
+    IL_0002:  callvirt   instance string MyTestModule/Myassembly::ToString()
+    IL_0007:  ret
+  } 
+
   .method public static string  getVal(valuetype MyTestModule/Myassembly x) cil managed
   {
     .param [0]
@@ -329,6 +348,7 @@
        extends [runtime]System.Object
 {
 } 
+
 
 
 
