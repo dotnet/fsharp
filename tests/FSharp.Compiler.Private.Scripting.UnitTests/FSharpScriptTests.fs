@@ -19,6 +19,11 @@ open Xunit
 [<CollectionDefinition(nameof InteractiveTests, DisableParallelization = true)>]
 type InteractiveTests() =
 
+    let copyHousingToTemp() =
+        let tempName = TestFramework.getTemporaryFileName()
+        File.Copy(__SOURCE_DIRECTORY__ ++ "housing.csv", tempName + ".csv")
+        tempName
+
     [<Fact>]
     member _.``ValueRestriction error message should not have type variables fully solved``() =
         use script = new FSharpScript()
@@ -250,10 +255,10 @@ System.Configuration.ConfigurationManager.AppSettings.Item "Environment" <- "LOC
         if RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then
             ()
         else
-        let code = @"
-#r ""nuget:Microsoft.ML,version=1.4.0-preview""
-#r ""nuget:Microsoft.ML.AutoML,version=0.16.0-preview""
-#r ""nuget:Microsoft.Data.Analysis,version=0.4.0""
+        let code = $"""
+#r "nuget:Microsoft.ML,version=1.4.0-preview"
+#r "nuget:Microsoft.ML.AutoML,version=0.16.0-preview"
+#r "nuget:Microsoft.Data.Analysis,version=0.4.0"
 
 open System
 open System.IO
@@ -269,7 +274,7 @@ let Shuffle (arr:int[]) =
         arr.[i] <- temp
     arr
 
-let housingPath = ""housing.csv""
+let housingPath = @"{copyHousingToTemp()}.csv"
 let housingData = DataFrame.LoadCsv(housingPath)
 let randomIndices = (Shuffle(Enumerable.Range(0, (int (housingData.Rows.Count) - 1)).ToArray()))
 let testSize = int (float (housingData.Rows.Count) * 0.1)
@@ -283,11 +288,11 @@ open Microsoft.ML.AutoML
 
 let mlContext = MLContext()
 let experiment = mlContext.Auto().CreateRegressionExperiment(maxExperimentTimeInSeconds = 15u)
-let result = experiment.Execute(housing_train, labelColumnName = ""median_house_value"")
+let result = experiment.Execute(housing_train, labelColumnName = "median_house_value")
 let details = result.RunDetails
-printfn ""%A"" result
+printfn "{@"%A"}" result
 123
-"
+"""
         use script = new FSharpScript(additionalArgs=[| |])
         let opt = script.Eval(code)  |> getValue
         let value = opt.Value

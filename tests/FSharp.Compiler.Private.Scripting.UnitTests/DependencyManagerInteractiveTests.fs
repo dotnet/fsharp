@@ -27,6 +27,11 @@ type scriptHost (?langVersion: LangVersion) = inherit FSharpScript(langVersion=d
 
 type DependencyManagerInteractiveTests() =
 
+    let copyHousingToTemp() =
+        let tempName = TestFramework.getTemporaryFileName() + ".csv"
+        File.Copy(__SOURCE_DIRECTORY__ ++ "housing.csv", tempName)
+        tempName
+
     let getValue ((value: Result<FsiValue option, exn>), (errors: FSharpDiagnostic[])) =
         if errors.Length > 0 then
             failwith <| sprintf "Evaluation returned %d errors:\r\n\t%s" errors.Length (String.Join("\r\n\t", errors))
@@ -316,8 +321,8 @@ TorchSharp.Tensor.LongTensor.From([| 0L .. 100L |]).Device
                 acc + "#r @\"" + r + "\"" + Environment.NewLine)
 #endif
 
-        let code = @"
-$(REFERENCES)
+        let scriptText = $"""
+{referenceText}
 
 open System
 open System.IO
@@ -333,7 +338,7 @@ let Shuffle (arr:int[]) =
         arr.[i] <- temp
     arr
 
-let housingPath = ""housing.csv""
+let housingPath = @"{copyHousingToTemp()}"
 let housingData = DataFrame.LoadCsv(housingPath)
 let randomIndices = (Shuffle(Enumerable.Range(0, (int (housingData.Rows.Count) - 1)).ToArray()))
 let testSize = int (float (housingData.Rows.Count) * 0.1)
@@ -347,12 +352,11 @@ open Microsoft.ML.AutoML
 
 let mlContext = MLContext()
 let experiment = mlContext.Auto().CreateRegressionExperiment(maxExperimentTimeInSeconds = 15u)
-let result = experiment.Execute(housing_train, labelColumnName = ""median_house_value"")
+let result = experiment.Execute(housing_train, labelColumnName = "median_house_value")
 let details = result.RunDetails
-printfn ""%A"" result
+printfn "{@"%A"}" result
 123
-"
-        let scriptText = code.Replace("$(REFERENCES)", referenceText)
+"""
 
         // Use the dependency manager to resolve assemblies and native paths
         use dp = new DependencyProvider(AssemblyResolutionProbe(assemblyProbingPaths), NativeResolutionProbe(nativeProbingRoots), false)
@@ -405,8 +409,8 @@ printfn ""%A"" result
         let referenceText =
             ("", result.Resolutions) ||> Seq.fold(fun acc r -> acc + @"#r @""" + r + "\"" + Environment.NewLine)
 
-        let code = @"
-$(REFERENCES)
+        let scriptText = $"""
+{referenceText}
 
 open System
 open System.IO
@@ -422,7 +426,7 @@ let Shuffle (arr:int[]) =
         arr.[i] <- temp
     arr
 
-let housingPath = ""housing.csv""
+let housingPath = @"{copyHousingToTemp()}"
 let housingData = DataFrame.LoadCsv(housingPath)
 let randomIndices = (Shuffle(Enumerable.Range(0, (int (housingData.Rows.Count) - 1)).ToArray()))
 let testSize = int (float (housingData.Rows.Count) * 0.1)
@@ -436,12 +440,11 @@ open Microsoft.ML.AutoML
 
 let mlContext = MLContext()
 let experiment = mlContext.Auto().CreateRegressionExperiment(maxExperimentTimeInSeconds = 15u)
-let result = experiment.Execute(housing_train, labelColumnName = ""median_house_value"")
+let result = experiment.Execute(housing_train, labelColumnName = "median_house_value")
 let details = result.RunDetails
-printfn ""%A"" result
+printfn "{@"%A"}" result
 123
-"
-        let scriptText = code.Replace("$(REFERENCES)", referenceText)
+"""
 
         use script = new FSharpScript()
         let opt = script.Eval(scriptText)  |> getValue
