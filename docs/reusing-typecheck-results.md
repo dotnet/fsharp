@@ -63,30 +63,6 @@ Let's measure (`fsc --times`) the fresh compilation of large F# files. We'll use
 |TailCall Checks                     |  1,2687|  0,0054|    178|      0|      0|      0|    456|     46|
 // main4, main5
 |TAST -> IL                          |  1,3657|  0,0883|    180|      0|      0|      0|    456|     46|
-|>Write Started                      |  1,3817|  0,0016|    180|      0|      0|      0|    455|     46|
-|>Module Generation Preparation      |  1,3909|  0,0002|    180|      0|      0|      0|    455|     46|
-|>Module Generation Pass 1           |  1,3987|  0,0015|    181|      0|      0|      0|    455|     46|
-|>Module Generation Pass 2           |  1,4266|  0,0216|    182|      0|      0|      0|    455|     46|
-|>Module Generation Pass 3           |  1,4353|  0,0024|    182|      0|      0|      0|    455|     46|
-|>Module Generation Pass 4           |  1,4423|  0,0004|    182|      0|      0|      0|    455|     46|
-|>Finalize Module Generation Results |  1,4515|  0,0003|    182|      0|      0|      0|    455|     46|
-|>Generated Tables and Code          |  1,4607|  0,0004|    182|      0|      0|      0|    455|     46|
-|>Layout Header of Tables            |  1,4663|  0,0001|    182|      0|      0|      0|    455|     46|
-|>Build String/Blob Address Tables   |  1,4750|  0,0013|    182|      0|      0|      0|    455|     46|
-|>Sort Tables                        |  1,4838|  0,0000|    182|      0|      0|      0|    455|     46|
-|>Write Header of tablebuf           |  1,4931|  0,0015|    182|      0|      0|      0|    455|     46|
-|>Write Tables to tablebuf           |  1,4999|  0,0000|    182|      0|      0|      0|    455|     46|
-|>Layout Metadata                    |  1,5070|  0,0000|    182|      0|      0|      0|    455|     46|
-|>Write Metadata Header              |  1,5149|  0,0000|    182|      0|      0|      0|    455|     46|
-|>Write Metadata Tables              |  1,5218|  0,0001|    182|      0|      0|      0|    455|     46|
-|>Write Metadata Strings             |  1,5297|  0,0000|    182|      0|      0|      0|    455|     46|
-|>Write Metadata User Strings        |  1,5369|  0,0002|    182|      0|      0|      0|    455|     46|
-|>Write Blob Stream                  |  1,5433|  0,0002|    182|      0|      0|      0|    455|     46|
-|>Fixup Metadata                     |  1,5516|  0,0003|    182|      0|      0|      0|    455|     46|
-|>Generated IL and metadata          |  1,5606|  0,0015|    182|      0|      0|      0|    455|     46|
-|>Layout image                       |  1,5713|  0,0018|    183|      0|      0|      0|    455|     46|
-|>Writing Image                      |  1,5799|  0,0009|    183|      0|      0|      0|    454|     46|
-|>Signing Image                      |  1,5871|  0,0000|    183|      0|      0|      0|    454|     46|
 // main6
 |Write .NET Binary                   |  1,6016|  0,2284|    183|      0|      0|      0|    462|     46|     <-- long
 --------------------------------------------------------------------------------------------------------
@@ -115,30 +91,6 @@ Let's measure (`fsc --times`) the fresh compilation of large F# files. We'll use
 |TailCall Checks                     |  0,8990|  0,0025|    173|      0|      0|      0|    378|     30|
 // main4, main5
 |TAST -> IL                          |  0,9487|  0,0447|    176|      0|      0|      0|    378|     30|
-|>Write Started                      |  0,9664|  0,0023|    177|      0|      0|      0|    377|     30|
-|>Module Generation Preparation      |  0,9728|  0,0001|    177|      0|      0|      0|    377|     30|
-|>Module Generation Pass 1           |  0,9821|  0,0022|    177|      0|      0|      0|    377|     30|
-|>Module Generation Pass 2           |  1,0012|  0,0138|    178|      0|      0|      0|    377|     30|
-|>Module Generation Pass 3           |  1,0098|  0,0012|    179|      0|      0|      0|    377|     30|
-|>Module Generation Pass 4           |  1,0180|  0,0002|    179|      0|      0|      0|    377|     30|
-|>Finalize Module Generation Results |  1,0264|  0,0007|    179|      0|      0|      0|    377|     30|
-|>Generated Tables and Code          |  1,0344|  0,0003|    179|      0|      0|      0|    377|     30|
-|>Layout Header of Tables            |  1,0403|  0,0000|    179|      0|      0|      0|    377|     30|
-|>Build String/Blob Address Tables   |  1,0481|  0,0010|    179|      0|      0|      0|    377|     30|
-|>Sort Tables                        |  1,0543|  0,0000|    179|      0|      0|      0|    377|     30|
-|>Write Header of tablebuf           |  1,0608|  0,0003|    179|      0|      0|      0|    377|     30|
-|>Write Tables to tablebuf           |  1,0681|  0,0000|    179|      0|      0|      0|    377|     30|
-|>Layout Metadata                    |  1,0738|  0,0000|    179|      0|      0|      0|    377|     30|
-|>Write Metadata Header              |  1,0796|  0,0000|    179|      0|      0|      0|    377|     30|
-|>Write Metadata Tables              |  1,0875|  0,0000|    179|      0|      0|      0|    377|     30|
-|>Write Metadata Strings             |  1,0933|  0,0000|    179|      0|      0|      0|    377|     30|
-|>Write Metadata User Strings        |  1,1016|  0,0001|    179|      0|      0|      0|    377|     30|
-|>Write Blob Stream                  |  1,1076|  0,0001|    179|      0|      0|      0|    377|     30|
-|>Fixup Metadata                     |  1,1135|  0,0004|    179|      0|      0|      0|    377|     30|
-|>Generated IL and metadata          |  1,1208|  0,0009|    179|      0|      0|      0|    377|     30|
-|>Layout image                       |  1,1269|  0,0010|    179|      0|      0|      0|    377|     30|
-|>Writing Image                      |  1,1347|  0,0003|    179|      0|      0|      0|    376|     30|
-|>Signing Image                      |  1,1402|  0,0000|    179|      0|      0|      0|    376|     30|
 // main6
 |Write .NET Binary                   |  1,1530|  0,1972|    180|      0|      0|      0|    384|     30|     <-- long
 --------------------------------------------------------------------------------------------------------
@@ -167,30 +119,6 @@ Let's measure (`fsc --times`) the fresh compilation of large F# files. We'll use
 |TailCall Checks                     |  9,0190|  0,0013|    216|      0|      0|      0|    457|     45|
 // main4, main5
 |TAST -> IL                          |  9,0463|  0,0210|    217|      0|      0|      0|    458|     46|
-|>Write Started                      |  9,0586|  0,0018|    217|      0|      0|      0|    457|     46|
-|>Module Generation Preparation      |  9,0655|  0,0001|    217|      0|      0|      0|    457|     46|
-|>Module Generation Pass 1           |  9,0719|  0,0005|    217|      0|      0|      0|    457|     46|
-|>Module Generation Pass 2           |  9,0820|  0,0031|    218|      0|      0|      0|    457|     46|
-|>Module Generation Pass 3           |  9,0894|  0,0005|    218|      0|      0|      0|    457|     46|
-|>Module Generation Pass 4           |  9,0968|  0,0002|    218|      0|      0|      0|    457|     46|
-|>Finalize Module Generation Results |  9,1032|  0,0003|    218|      0|      0|      0|    457|     46|
-|>Generated Tables and Code          |  9,1120|  0,0005|    218|      0|      0|      0|    457|     46|
-|>Layout Header of Tables            |  9,1189|  0,0000|    218|      0|      0|      0|    457|     46|
-|>Build String/Blob Address Tables   |  9,1276|  0,0006|    218|      0|      0|      0|    457|     46|
-|>Sort Tables                        |  9,1339|  0,0000|    218|      0|      0|      0|    457|     46|
-|>Write Header of tablebuf           |  9,1430|  0,0001|    218|      0|      0|      0|    457|     46|
-|>Write Tables to tablebuf           |  9,1503|  0,0000|    218|      0|      0|      0|    457|     46|
-|>Layout Metadata                    |  9,1588|  0,0000|    218|      0|      0|      0|    457|     46|
-|>Write Metadata Header              |  9,1656|  0,0000|    218|      0|      0|      0|    457|     46|
-|>Write Metadata Tables              |  9,1731|  0,0000|    218|      0|      0|      0|    457|     46|
-|>Write Metadata Strings             |  9,1819|  0,0000|    218|      0|      0|      0|    457|     46|
-|>Write Metadata User Strings        |  9,1897|  0,0000|    218|      0|      0|      0|    457|     46|
-|>Write Blob Stream                  |  9,1976|  0,0000|    218|      0|      0|      0|    457|     46|
-|>Fixup Metadata                     |  9,2033|  0,0002|    218|      0|      0|      0|    457|     46|
-|>Generated IL and metadata          |  9,2102|  0,0015|    218|      0|      0|      0|    457|     46|
-|>Layout image                       |  9,2195|  0,0025|    218|      0|      0|      0|    457|     46|
-|>Writing Image                      |  9,2272|  0,0006|    218|      0|      0|      0|    456|     46|
-|>Signing Image                      |  9,2338|  0,0000|    218|      0|      0|      0|    456|     46|
 // main6
 |Write .NET Binary                   |  9,2463|  0,1930|    218|      0|      0|      0|    464|     46|     <-- long
 --------------------------------------------------------------------------------------------------------
