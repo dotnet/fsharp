@@ -292,6 +292,8 @@ function BuildSolution([string] $solutionName, $nopack) {
     # Do not set the property to true explicitly, since that would override value projects might set.
     $suppressExtensionDeployment = if (!$deployExtensions) { "/p:DeployExtension=false" } else { "" }
 
+    $sourceBuildArgs = if ($sourceBuild) { "/p:DotNetBuildSourceOnly=true /p:DotNetBuildRepo=true" } else { "" }
+
     $BUILDING_USING_DOTNET_ORIG = $env:BUILDING_USING_DOTNET
 
     $env:BUILDING_USING_DOTNET="false"
@@ -314,11 +316,10 @@ function BuildSolution([string] $solutionName, $nopack) {
         /p:QuietRestore=$quietRestore `
         /p:QuietRestoreBinaryLog=$binaryLog `
         /p:TestTargetFrameworks=$testTargetFrameworks `
-        /p:DotNetBuildSourceOnly=$sourceBuild `
-        /p:DotNetBuildRepo=$sourceBuild `
         /p:CompressAllMetadata=$CompressAllMetadata `
         /p:BuildNoRealsig=$buildnorealsig `
         /v:$verbosity `
+        $sourceBuildArgs `
         $suppressExtensionDeployment `
         @properties
 
