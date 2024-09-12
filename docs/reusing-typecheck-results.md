@@ -215,6 +215,9 @@ So we can do the following:
 
 This will allow to skip a huge part of the compilation in the scenarios like reopening Visual Studio for a project when nothing has changed.
 
+
+This step is largely technical without big observable benefits, but will require the necessary msbuild hooks to communicate the intermmediatefiles folder towards fcs.exe, add time-based and hash-based cache invalidation logic, and involve necessary tests which will include the `clean` and `rebuild` tests to make sure the cache be easily invalidated on demand.
+
 **Stage 2 - skip retypecheck for some files**
 
 In `main1`, we do unpickling (= deserializing) and pickling (= serializing) of the code. This currently happens on the module/namespace basis. 
