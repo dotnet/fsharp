@@ -71,7 +71,7 @@ param (
     [switch]$sourceBuild,
     [switch]$skipBuild,
     [switch]$compressAllMetadata,
-    [switch]$buildnorealsig = $true,
+    [switch]$buildnorealsig,
     [switch]$verifypackageshipstatus = $false,
     [parameter(ValueFromRemainingArguments = $true)][string[]]$properties)
 
