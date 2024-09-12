@@ -165,6 +165,7 @@ module rec HashTypes =
         | TyparConstraint.SimpleChoice(tys, _) -> tpHash @@ 12 @@ (tys |> hashListOrderIndependent (hashTType g))
         | TyparConstraint.RequiresDefaultConstructor _ -> tpHash @@ 13
         | TyparConstraint.NotSupportsNull(_) -> tpHash @@ 14
+        | TyparConstraint.AllowsRefStruct _ -> tpHash @@ 15
 
     /// Hash type parameter constraints
     let private hashConstraints (g: TcGlobals) cxs =

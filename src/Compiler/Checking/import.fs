@@ -647,6 +647,8 @@ let ImportILGenericParameters amap m scoref tinst (nullableFallback:Nullness.Nul
                     TyparConstraint.IsNonNullableStruct(m)
                   if gp.HasReferenceTypeConstraint then
                     TyparConstraint.IsReferenceType(m)
+                  if gp.HasAllowsRefStruct then
+                    TyparConstraint.AllowsRefStruct(m)
                   for ilTy in gp.Constraints do
                     TyparConstraint.CoercesTo(ImportILType amap m importInst (rescopeILType scoref ilTy), m) ]            
 

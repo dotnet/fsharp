@@ -11,6 +11,9 @@ module Assert =
 
     let inline shouldBeEquivalentTo (expected : ^T) (actual : ^U) =
         actual.Should().BeEquivalentTo(expected, "") |> ignore
+        
+    let inline shouldStartWith (expected : string) (actual : string) =
+        actual.Should().StartWith(expected) |> ignore
 
     let inline shouldBe (expected : ^T) (actual : ^U) =
         actual.Should().Be(expected, "") |> ignore
