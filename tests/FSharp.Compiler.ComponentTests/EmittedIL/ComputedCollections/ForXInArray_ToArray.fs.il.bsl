@@ -19,13 +19,13 @@
 }
 .mresource public FSharpSignatureCompressedData.assembly
 {
-
-
+  
+  
 }
 .mresource public FSharpOptimizationCompressedData.assembly
 {
-
-
+  
+  
 }
 .module assembly.exe
 
