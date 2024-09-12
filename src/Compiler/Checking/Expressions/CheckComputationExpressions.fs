@@ -1854,12 +1854,7 @@ let rec TryTranslateComputationExpression
         //  or
         //    --> build.BindReturn(e1, (fun _argN -> match _argN with pat -> expr-without-return))
         | SynExpr.LetOrUseBang(
-            bindDebugPoint = spBind; isUse = false; isFromSource = isFromSource; pat = pat; rhs = rhsExpr; andBangs = []; body = innerComp) ->
-
-            let mBind =
-                match spBind with
-                | DebugPointAtBinding.Yes m -> m
-                | _ -> rhsExpr.Range
+            bindDebugPoint = spBind; isUse = false; isFromSource = isFromSource; pat = pat; rhs = rhsExpr; andBangs = []; body = innerComp; trivia = { LetOrUseBangKeyword = mBind }) ->
 
             if ceenv.isQuery then
                 error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), mBind))
@@ -1900,7 +1895,8 @@ let rec TryTranslateComputationExpression
             pat = SynPat.Named(ident = SynIdent(id, _); isThisVal = false) as pat
             rhs = rhsExpr
             andBangs = []
-            body = innerComp)
+            body = innerComp
+            trivia = { LetOrUseBangKeyword = mBind })
         | SynExpr.LetOrUseBang(
             bindDebugPoint = spBind
             isUse = true
@@ -1908,12 +1904,8 @@ let rec TryTranslateComputationExpression
             pat = SynPat.LongIdent(longDotId = SynLongIdent(id = [ id ])) as pat
             rhs = rhsExpr
             andBangs = []
-            body = innerComp) ->
-
-            let mBind =
-                match spBind with
-                | DebugPointAtBinding.Yes m -> m
-                | _ -> rhsExpr.Range
+            body = innerComp
+            trivia = { LetOrUseBangKeyword = mBind }) ->
 
             if ceenv.isQuery then
                 error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), mBind))
@@ -1988,9 +1980,9 @@ let rec TryTranslateComputationExpression
             Some(translatedCtxt bindExpr)
 
         // 'use! pat = e1 ... in e2' where 'pat' is not a simple name -> error
-        | SynExpr.LetOrUseBang(isUse = true; pat = pat; andBangs = andBangs) ->
+        | SynExpr.LetOrUseBang(isUse = true; andBangs = andBangs; trivia = { LetOrUseBangKeyword = mBind }) ->
             if isNil andBangs then
-                error (Error(FSComp.SR.tcInvalidUseBangBinding (), pat.Range))
+                error (Error(FSComp.SR.tcInvalidUseBangBinding (), mBind))
             else
                 let m =
                     match andBangs with
@@ -2013,17 +2005,12 @@ let rec TryTranslateComputationExpression
             rhs = letRhsExpr
             andBangs = andBangBindings
             body = innerComp
-            range = letBindRange) ->
+            trivia = { LetOrUseBangKeyword = mBind }) ->
             if not (cenv.g.langVersion.SupportsFeature LanguageFeature.AndBang) then
-                error (Error(FSComp.SR.tcAndBangNotSupported (), comp.Range))
+                error (Error(FSComp.SR.tcAndBangNotSupported (), mBind))
 
             if ceenv.isQuery then
-                error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), letBindRange))
-
-            let mBind =
-                match spBind with
-                | DebugPointAtBinding.Yes m -> m
-                | _ -> letRhsExpr.Range
+                error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), mBind))
 
             let sources =
                 (letRhsExpr
