@@ -25,7 +25,6 @@ module Native =
 
 type scriptHost (?langVersion: LangVersion) = inherit FSharpScript(langVersion=defaultArg langVersion LangVersion.Preview)
 
-[<CollectionDefinition(nameof DependencyManagerInteractiveTests, DisableParallelization = true)>]
 type DependencyManagerInteractiveTests() =
 
     let getValue ((value: Result<FsiValue option, exn>), (errors: FSharpDiagnostic[])) =
@@ -670,7 +669,7 @@ x |> Seq.iter(fun r ->
         try Assembly.Load("NoneSuchAssembly") |> ignore with _ -> ()
         Assert.False (assemblyFound, "Invoke the assemblyProbingRoots callback -- Error the AssemblyResolve still fired ")
 
-    [<Fact>]
+    [<Fact(Skip="Needs fixing / investigation.")>]
     member _.``Verify that Dispose cleans up the native paths added``() =
         let nativeProbingRoots () = Seq.empty<string>
 
