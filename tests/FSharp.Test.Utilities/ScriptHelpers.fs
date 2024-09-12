@@ -3,11 +3,8 @@
 namespace FSharp.Test.ScriptHelpers
 
 open System
-open System.Collections.Generic
 open System.IO
-open System.Text
 open System.Threading
-open FSharp.Compiler
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
@@ -54,11 +51,17 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
 
     let argv = Array.append baseArgs additionalArgs
 
+    let redirectedConsole = new RedirectConsole()
+
     let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr)
 
     member _.ValueBound = fsi.ValueBound
 
+    member _.ProvideInput text = redirectedConsole.ProvideInput text
+
     member _.Fsi = fsi
+
+    member _.Console = redirectedConsole
 
     member _.Eval(code: string, ?cancellationToken: CancellationToken, ?desiredCulture: Globalization.CultureInfo) =
         let originalCulture = Thread.CurrentThread.CurrentCulture
@@ -88,7 +91,9 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
         }
 
     interface IDisposable with
-        member this.Dispose() = ((this.Fsi) :> IDisposable).Dispose()
+        member _.Dispose() =
+            (fsi :> IDisposable).Dispose()
+            (redirectedConsole :> IDisposable).Dispose()
 
 [<AutoOpen>]
 module TestHelpers =

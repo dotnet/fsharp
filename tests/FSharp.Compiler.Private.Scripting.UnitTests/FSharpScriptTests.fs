@@ -5,14 +5,14 @@ namespace FSharp.Compiler.Scripting.UnitTests
 open System
 open System.Diagnostics
 open System.IO
-open System.Reflection
+//open System.Reflection
 open System.Runtime.InteropServices
 open System.Threading
 open System.Threading.Tasks
 open FSharp.Compiler.Interactive
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Test.ScriptHelpers
-open FSharp.Test.Utilities
+//open FSharp.Test.Utilities
 
 open Xunit
 
@@ -83,9 +83,8 @@ x
 
     [<Fact>]
     member _.``Capture console input``() =
-        use input = new RedirectConsoleInput()
         use script = new FSharpScript()
-        input.ProvideInput "stdin:1234\r\n"
+        script.ProvideInput "stdin:1234\r\n"
         let opt = script.Eval("System.Console.ReadLine()") |> getValue
         let value = opt.Value
         Assert.Equal(typeof<string>, value.ReflectionType)
@@ -93,12 +92,11 @@ x
 
     [<Fact>]
     member _.``Capture console output/error``() =
-        use output = new RedirectConsoleOutput()
         use script = new FSharpScript()
         use sawOutputSentinel = new ManualResetEvent(false)
         use sawErrorSentinel = new ManualResetEvent(false)
-        output.OutputProduced.Add (fun line -> if line = "stdout:1234" then sawOutputSentinel.Set() |> ignore)
-        output.ErrorProduced.Add (fun line -> if line = "stderr:5678" then sawErrorSentinel.Set() |> ignore)
+        script.Console.OutputProduced.Add (fun line -> if line = "stdout:1234" then sawOutputSentinel.Set() |> ignore)
+        script.Console.ErrorProduced.Add (fun line -> if line = "stderr:5678" then sawErrorSentinel.Set() |> ignore)
         script.Eval("printfn \"stdout:1234\"; eprintfn \"stderr:5678\"") |> ignoreValue
         Assert.True(sawOutputSentinel.WaitOne(TimeSpan.FromSeconds(5.0)), "Expected to see output sentinel value written")
         Assert.True(sawErrorSentinel.WaitOne(TimeSpan.FromSeconds(5.0)), "Expected to see error sentinel value written")
@@ -305,11 +303,10 @@ printfn ""%A"" result
 
     [<Fact>]
     member _.``Eval script with invalid PackageName should fail immediately``() =
-        use output = new RedirectConsoleOutput()
         use script = new FSharpScript(additionalArgs=[| |])
         let mutable found = 0
         let outp = System.Collections.Generic.List<string>()
-        output.OutputProduced.Add(
+        script.Console.OutputProduced.Add(
             fun line ->
                 if line.Contains("error NU1101:") && line.Contains("FSharp.Really.Not.A.Package") then
                     found <- found + 1
@@ -321,10 +318,9 @@ printfn ""%A"" result
 
     [<Fact>]
     member _.``Eval script with invalid PackageName should fail immediately and resolve one time only``() =
-        use output = new RedirectConsoleOutput()
         use script = new FSharpScript(additionalArgs=[| |])
         let mutable foundResolve = 0
-        output.OutputProduced.Add (fun line -> if line.Contains("error NU1101:") then foundResolve <- foundResolve + 1)
+        script.Console.OutputProduced.Add (fun line -> if line.Contains("error NU1101:") then foundResolve <- foundResolve + 1)
         let result, errors =
             script.Eval("""
 #r "nuget:FSharp.Really.Not.A.Package"

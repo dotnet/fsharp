@@ -760,10 +760,9 @@ x |> Seq.iter(fun r ->
                 if found = expected.Length then sawExpectedOutput.Set() |> ignore
 
         let text = "#help"
-        use output = new RedirectConsoleOutput()
         use script = new FSharpScript(quiet = false, langVersion = LangVersion.V47)
         let mutable found = 0
-        output.OutputProduced.Add (fun line -> verifyOutput line)
+        script.Console.OutputProduced.Add (fun line -> verifyOutput line)
         let opt = script.Eval(text) |> getValue
         Assert.True(sawExpectedOutput.WaitOne(TimeSpan.FromSeconds(5.0)), sprintf "Expected to see error sentinel value written\nexpected:%A\nactual:%A" expected lines)
 
@@ -811,10 +810,9 @@ x |> Seq.iter(fun r ->
                 if found = expected.Length then sawExpectedOutput.Set() |> ignore
 
         let text = "#help"
-        use output = new RedirectConsoleOutput()
         use script = new FSharpScript(quiet = false, langVersion = LangVersion.Preview)
         let mutable found = 0
-        output.OutputProduced.Add (fun line -> verifyOutput line)
+        script.Console.OutputProduced.Add (fun line -> verifyOutput line)
         let opt = script.Eval(text) |> getValue
         Assert.True(sawExpectedOutput.WaitOne(TimeSpan.FromSeconds(5.0)), sprintf "Expected to see error sentinel value written\nexpected:%A\nactual:%A" expected lines)
 
