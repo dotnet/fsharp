@@ -217,7 +217,10 @@ This will allow to skip a huge part of the compilation in the scenarios like reo
 
 **Stage 2 - skip retypecheck for some files**
 
-In `main1`, we do unpickling (= deserializing) and pickling (= serializing) of the code. This currently happens on the module/namespace basis. 
+We will fully implement pickling and unpickling of all typechecked files (`CheckedImplFile` per file as well as all other outputs of `main1` which cannot be cheaply re-created like topAttrs and CcuThunk). 
+
+Parts of the pickling/unpickling can reuse the primitives already existing in TypedTreePickle and built upon them.
+This is likely the biggest amount of work expected.
 
 So here we can do the following:
 - extend the pickler logic so that it can work on the file basis
