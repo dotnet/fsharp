@@ -143,6 +143,5 @@ let _ = test "dce98nj" (main 500000 = "-0.169096567")
 
 
 do   (System.Console.WriteLine "Test Passed"; 
-       System.IO.File.WriteAllText ("test.ok", "ok"); 
        exit 0)
 

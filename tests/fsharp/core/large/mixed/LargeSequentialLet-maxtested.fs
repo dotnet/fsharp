@@ -1008,4 +1008,4 @@ let expectedValues() =
     let mutable x = x + 1
     x
 printfn "expectedValues() = %A" (expectedValues())
-System.IO.File.WriteAllLines("test.ok", ["ok"])
+exit 0

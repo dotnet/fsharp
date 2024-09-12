@@ -33,5 +33,4 @@ let _ =
    * So avoid using ;;
    *)
   System.Console.WriteLine "Test Passed"; 
-  System.IO.File.WriteAllText ("test.ok", "ok"); 
   exit 0

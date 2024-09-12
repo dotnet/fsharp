@@ -2100,7 +2100,6 @@ let aa =
       exit 1
   else   
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
       exit 0
 #endif
 

@@ -283,12 +283,10 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
                     emitFile propsFileName propsBody
                     let projectBody = generateProjectArtifacts pc outputType targetFramework cfg.BUILD_CONFIG languageVersion
                     emitFile projectFileName projectBody
-                    use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
                     let cfg = { cfg with Directory = directory }
                     let result = execBothToOutNoCheck cfg directory buildOutputFile cfg.DotNetExe  (sprintf "run -f %s" targetFramework)
                     if not (buildOnly) then
                         result |> checkResult
-                        testOkFile.CheckExists()
                 executeFsc compilerType targetFramework
                 if buildOnly then verifyResults (findFirstSourceFile pc) buildOutputFile
             else
@@ -297,10 +295,8 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
                     emitFile propsFileName propsBody
                     let projectBody = generateProjectArtifacts pc outputType  targetFramework cfg.BUILD_CONFIG languageVersion
                     emitFile projectFileName projectBody
-                    use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
                     let cfg = { cfg with Directory = directory }
                     execBothToOut cfg directory buildOutputFile cfg.DotNetExe "build /t:RunFSharpScript"
-                    testOkFile.CheckExists()
                 executeFsi compilerType targetFramework
             result <- true
         finally
@@ -321,19 +317,15 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 
     | FSI_NETFX_STDIN ->
         use _cleanup = (cleanUpFSharpCore cfg)
-        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
         let sources = extraSources |> List.filter (fileExists cfg)
 
         fsiStdin cfg (sources |> List.rev |> List.head) "" [] //use last file, because `cmd < a.txt b.txt` redirect b.txt only
-
-        testOkFile.CheckExists()
 
     | FSC_NETFX_TEST_ROUNDTRIP_AS_DLL ->
         // Compile as a DLL to exercise pickling of interface data, then recompile the original source file referencing this DLL
         // The second compilation will not utilize the information from the first in any meaningful way, but the
         // compiler will unpickle the interface and optimization data, so we test unpickling as well.
         use _cleanup = (cleanUpFSharpCore cfg)
-        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 
         let sources = extraSources |> List.filter (fileExists cfg)
 
@@ -344,8 +336,6 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
         peverify cfg "test--optimize-client-of-lib.exe"
 
         exec cfg ("." ++ "test--optimize-client-of-lib.exe") ""
-
-        testOkFile.CheckExists()
 #endif
 
 let singleTestBuildAndRunAux cfg p =

@@ -18,7 +18,7 @@ This test case builds and runs the test case in the folder core/array
 this #define is used to exclude from the build tests that run will not run correctly on the coreclr
 __#if !NETCOREAPP__
 
-There are some older tests in this section that looks similar to:
+There are some older tests in this section that look similar to:
 ````
     [<Fact>]
     let events () = 
@@ -27,9 +27,7 @@ There are some older tests in this section that looks similar to:
         peverify cfg "test.dll"
         csc cfg """/r:"%s" /reference:test.dll /debug+""" cfg.FSCOREDLLPATH ["testcs.cs"]
         peverify cfg "testcs.exe"
-        use testOkFile = fileguard cfg "test.ok"
         fsi cfg "" ["test.fs"]
-        testOkFile.CheckExists()
         exec cfg ("." ++ "testcs.exe") ""
 ````
 These tests build, compile, peverify and run fsi.

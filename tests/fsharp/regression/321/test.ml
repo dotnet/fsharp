@@ -25,5 +25,4 @@ exception Bad_xml_structure of string
  
 let _ = 
       (System.Console.Out.WriteLine "Test Passed"; 
-       System.IO.File.WriteAllText("test.ok", "ok"); 
        exit 0)

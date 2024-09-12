@@ -536,6 +536,5 @@ module EventWithNonPublicDelegateTypes_DevDiv271288 =
 
 let _ = 
   if failures.Length > 0 then (printfn "Tests Failed: %A" failures; exit 1) 
-  else (stdout.WriteLine "Test Passed"; 
-        System.IO.File.WriteAllText("test.ok","ok"); 
+  else (stdout.WriteLine "Test Passed";
         exit 0)

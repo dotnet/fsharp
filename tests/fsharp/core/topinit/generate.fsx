@@ -132,7 +132,6 @@ let generateTests() =
                       // Touching the 'init' value should trigger initialization
                       yield sprintf "printfn \"Lib%d.forceInit = %%A\" Lib%d.forceInit" n.Value n.Value
                       yield sprintf "checkInitialized \"Lib%d\" InitFlag%d.init" n.Value n.Value
-           yield "System.IO.File.WriteAllText(\"test.ok\",\"ok\")"
            yield "exit 0" |]
     System.IO.File.WriteAllLines("test_deterministic_init.fs", lines)
     commandLine :=  commandLine.Value + " test_deterministic_init.fs"

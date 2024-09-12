@@ -538,5 +538,4 @@ end
   let _ = test()
 
 do   (System.Console.WriteLine "Test Passed"; 
-       System.IO.File.WriteAllText ("test.ok", "ok");
        exit 0)
