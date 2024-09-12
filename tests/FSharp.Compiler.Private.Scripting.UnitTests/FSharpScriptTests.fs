@@ -16,7 +16,6 @@ open FSharp.Test.Utilities
 
 open Xunit
 
-[<CollectionDefinition(nameof InteractiveTests, DisableParallelization = true)>]
 type InteractiveTests() =
 
     let copyHousingToTemp() =
