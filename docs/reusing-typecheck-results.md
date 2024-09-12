@@ -239,7 +239,7 @@ Here, the gain largely depends on the type of the project, but this would be any
 In `main1`, we restore imported assemblies to get their IL (e.g. system assemblies).
 
 So here we can:
-- serialize and cache imported IL on the per-assembly basis
+- serialize and cache imported IL (to be evaluated and benchmarked if per-assembly or per assembly-block, such as all System.*.dll into a single persisted file)
 - apply this for the cross-project case, to not reimport IL for repeating assemblies but instead restore it from the cache
 
 This will be a smaller gain for any particular project but a big accummulated one for large multi-project solutions.
