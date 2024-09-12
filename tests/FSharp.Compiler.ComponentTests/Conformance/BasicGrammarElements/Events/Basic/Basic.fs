@@ -6,6 +6,7 @@ open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 
+[<CollectionDefinition("Events", DisableParallelization = true)>]
 module Events =
 
     let verifyCompile compilation =

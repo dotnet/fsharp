@@ -31,6 +31,8 @@ open FSharp.Compiler.Text
 
 open Xunit
 
+open FSharp.Test.Utilities
+
 open OpenTelemetry
 open OpenTelemetry.Resources
 open OpenTelemetry.Trace
@@ -322,7 +324,7 @@ type SyntheticProject =
                         SourceText.ofString referenceScript,
                         assumeDotNetFramework = false
                     )
-                    |> Async.RunSynchronously
+                    |> Async.RunImmediate
 
                 {
                     ProjectFileName = this.ProjectFileName
