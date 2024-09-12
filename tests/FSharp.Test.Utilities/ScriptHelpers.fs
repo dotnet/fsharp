@@ -24,25 +24,24 @@ type LangVersion =
     | Latest
     | SupportsMl
 
-module InputOutput =
-    type EventedTextWriter() =
-        inherit TextWriter()
-        let sb = StringBuilder()
-        let sw = new StringWriter()
-        let lineWritten = Event<string>()
-        member _.LineWritten = lineWritten.Publish
-        override _.Encoding = Encoding.UTF8
-        override _.Write(c: char) =
-            if c = '\n' then
-                let line =
-                    let v = sb.ToString()
-                    if v.EndsWith("\r") then v.Substring(0, v.Length - 1)
-                    else v
-                sb.Clear() |> ignore
-                sw.WriteLine line
-                lineWritten.Trigger(line)
-            else sb.Append(c) |> ignore
-        member _.GetText() = sw.ToString()
+type private EventedTextWriter() =
+    inherit TextWriter()
+    let sb = StringBuilder()
+    let sw = new StringWriter()
+    let lineWritten = Event<string>()
+    member _.LineWritten = lineWritten.Publish
+    override _.Encoding = Encoding.UTF8
+    override _.Write(c: char) =
+        if c = '\n' then
+            let line =
+                let v = sb.ToString()
+                if v.EndsWith("\r") then v.Substring(0, v.Length - 1)
+                else v
+            sb.Clear() |> ignore
+            sw.WriteLine line
+            lineWritten.Trigger(line)
+        else sb.Append(c) |> ignore
+    member _.GetText() = sw.ToString()
 
 type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVersion) =
 
@@ -75,8 +74,8 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
 
     let inputStream = new CompilerInputStream()
     let inReader = new StreamReader(inputStream)
-    let outWriter = new InputOutput.EventedTextWriter()
-    let errorWriter = new InputOutput.EventedTextWriter()
+    let outWriter = new EventedTextWriter()
+    let errorWriter = new EventedTextWriter()
 
     do 
         Console.setLocalIn inReader
