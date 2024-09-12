@@ -124,7 +124,7 @@ Let's measure (`fsc --times`) the fresh compilation of large F# files. We'll use
 --------------------------------------------------------------------------------------------------------
 ```
 
-The phases taking the longest are marked in the right. Those are assembly import, type check, optimization and IL writing.
+The phases taking the longest are marked in the right. Those are assembly import, type check, optimizations and IL writing. Optimizations are not relevant in the dev loop with run/debug/test cycles so we won't take those into account.
 
 ## Implementation plan
 
