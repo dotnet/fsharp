@@ -210,13 +210,13 @@ type LanguageVersion(versionText) =
                 LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern, languageVersion90
                 LanguageFeature.LowerInterpolatedStringToConcat, languageVersion90
                 LanguageFeature.LowerIntegralRangesToFastLoops, languageVersion90
-                LanguageFeature.LowerSimpleMappingsInComprehensionsToFastLoops, languageVersion90
                 LanguageFeature.ParsedHashDirectiveArgumentNonQuotes, languageVersion90
                 LanguageFeature.EmptyBodiedComputationExpressions, languageVersion90
                 LanguageFeature.EnforceAttributeTargets, languageVersion90
                 LanguageFeature.ConsistentNowarnLineDirectiveInteraction, languageVersion90
 
                 // F# preview
+                LanguageFeature.LowerSimpleMappingsInComprehensionsToFastLoops, previewVersion // not enabled due https://github.com/dotnet/fsharp/issues/17708
                 LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion // not enabled because: https://github.com/dotnet/fsharp/issues/17509
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
                 LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, previewVersion
