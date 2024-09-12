@@ -373,7 +373,7 @@ module Array =
         else any ilTy
 
     /// Makes the equivalent of an inlined call to Array.map.
-    let mkMap g m (mBody, _spFor, _spIn, mFor, mIn, spInWhile) srcArray srcIlTy destIlTy overallElemTy loopVal body =
+    let mkMap g m (mBody, _spFor, _spIn, mFor, mIn, spInWhile) srcArray srcIlTy destIlTy overallElemTy (loopVal: Val) body =
         let len = mkLdlen g mIn srcArray
         let arrayTy = mkArrayType g overallElemTy
 
@@ -396,7 +396,11 @@ module Array =
                 mkCompGenLetMutableIn mFor "i" g.int32_ty (mkTypedZero g mIn g.int32_ty) (fun (iVal, i) ->
                     let body =
                         // Rebind the loop val to pull directly from the source array.
-                        let body = mkInvisibleLet mBody loopVal (mkAsmExpr ([ldelem], [], [srcArray; i], [loopVal.val_type], mBody)) body
+                        let body =
+                            // If the loop val is marked as compiler-generated here,
+                            // it is the wildcard _ and is unused in the loop body.
+                            if loopVal.IsCompilerGenerated then body
+                            else mkInvisibleLet mBody loopVal (mkAsmExpr ([ldelem], [], [srcArray; i], [loopVal.val_type], mBody)) body
 
                         // destArray[i] <- body srcArray[i]
                         let setArrSubI = mkAsmExpr ([stelem], [], [array; i; body], [], mIn)

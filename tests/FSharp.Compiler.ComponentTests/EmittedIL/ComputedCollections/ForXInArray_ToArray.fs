@@ -21,3 +21,9 @@ let f8 f g (array: int array) = [|let y = f () in let z = g () in for x in array
 let f9 f g (array: int array) = [|let y = f () in g (); for x in array -> x + y|]
 let f10 f g (array: int array) = [|f (); g (); for x in array -> x|]
 let f11 f g (array: int array) = [|f (); let y = g () in for x in array -> x + y|]
+
+// https://github.com/dotnet/fsharp/issues/17708
+// Don't read or rebind the loop variable when it is not in scope in the body.
+let ``for _ in Array.groupBy id [||] do …`` () = [| for _ in Array.groupBy id [||] do 0 |]
+let ``for _ | _ in Array.groupBy id [||] do …`` () = [| for _ | _ in Array.groupBy id [||] do 0 |]
+let ``for _ & _ in Array.groupBy id [||] do …`` () = [| for _ & _ in Array.groupBy id [||] do 0 |]

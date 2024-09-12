@@ -17,16 +17,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -43,6 +33,108 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'for _ in Array-groupBy id -||- do …@27'
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<object,object>
+  {
+    .field static assembly initonly class assembly/'for _ in Array-groupBy id -||- do …@27' @_instance
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<object,object>::.ctor()
+      IL_0006:  ret
+    } 
+
+    .method public strict virtual instance object Invoke(object x) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  ret
+    } 
+
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void assembly/'for _ in Array-groupBy id -||- do …@27'::.ctor()
+      IL_0005:  stsfld     class assembly/'for _ in Array-groupBy id -||- do …@27' assembly/'for _ in Array-groupBy id -||- do …@27'::@_instance
+      IL_000a:  ret
+    } 
+
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'for _ | _ in Array-groupBy id -||- do …@28'
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<object,object>
+  {
+    .field static assembly initonly class assembly/'for _ | _ in Array-groupBy id -||- do …@28' @_instance
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<object,object>::.ctor()
+      IL_0006:  ret
+    } 
+
+    .method public strict virtual instance object Invoke(object x) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  ret
+    } 
+
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void assembly/'for _ | _ in Array-groupBy id -||- do …@28'::.ctor()
+      IL_0005:  stsfld     class assembly/'for _ | _ in Array-groupBy id -||- do …@28' assembly/'for _ | _ in Array-groupBy id -||- do …@28'::@_instance
+      IL_000a:  ret
+    } 
+
+  } 
+
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'for _ - _ in Array-groupBy id -||- do …@29'
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<object,object>
+  {
+    .field static assembly initonly class assembly/'for _ - _ in Array-groupBy id -||- do …@29' @_instance
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<object,object>::.ctor()
+      IL_0006:  ret
+    } 
+
+    .method public strict virtual instance object Invoke(object x) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.1
+      IL_0001:  ret
+    } 
+
+    .method private specialname rtspecialname static void  .cctor() cil managed
+    {
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void assembly/'for _ - _ in Array-groupBy id -||- do …@29'::.ctor()
+      IL_0005:  stsfld     class assembly/'for _ - _ in Array-groupBy id -||- do …@29' assembly/'for _ - _ in Array-groupBy id -||- do …@29'::@_instance
+      IL_000a:  ret
+    } 
+
+  } 
+
   .method public static int32[]  f0(int32[] 'array') cil managed
   {
     
@@ -1110,6 +1202,117 @@
 
     IL_0033:  ldloc.1
     IL_0034:  ret
+  } 
+
+  .method public static int32[]  'for _ in Array.groupBy id [||] do …'() cil managed
+  {
+    
+    .maxstack  5
+    .locals init (int32[] V_0,
+             int32 V_1)
+    IL_0000:  nop
+    IL_0001:  ldsfld     class assembly/'for _ in Array-groupBy id -||- do …@27' assembly/'for _ in Array-groupBy id -||- do …@27'::@_instance
+    IL_0006:  call       !!0[] [runtime]System.Array::Empty<object>()
+    IL_000b:  call       class [runtime]System.Tuple`2<!!1,!!0[]>[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::GroupBy<object,object>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
+                                                                                                                                                         !!0[])
+    IL_0010:  ldlen
+    IL_0011:  conv.i4
+    IL_0012:  newarr     [runtime]System.Int32
+    IL_0017:  stloc.0
+    IL_0018:  ldc.i4.0
+    IL_0019:  stloc.1
+    IL_001a:  br.s       IL_0024
+
+    IL_001c:  ldloc.0
+    IL_001d:  ldloc.1
+    IL_001e:  ldc.i4.0
+    IL_001f:  stelem.i4
+    IL_0020:  ldloc.1
+    IL_0021:  ldc.i4.1
+    IL_0022:  add
+    IL_0023:  stloc.1
+    IL_0024:  ldloc.1
+    IL_0025:  ldloc.0
+    IL_0026:  ldlen
+    IL_0027:  conv.i4
+    IL_0028:  blt.s      IL_001c
+
+    IL_002a:  ldloc.0
+    IL_002b:  ret
+  } 
+
+  .method public static int32[]  'for _ | _ in Array.groupBy id [||] do …'() cil managed
+  {
+    
+    .maxstack  5
+    .locals init (int32[] V_0,
+             int32 V_1)
+    IL_0000:  nop
+    IL_0001:  ldsfld     class assembly/'for _ | _ in Array-groupBy id -||- do …@28' assembly/'for _ | _ in Array-groupBy id -||- do …@28'::@_instance
+    IL_0006:  call       !!0[] [runtime]System.Array::Empty<object>()
+    IL_000b:  call       class [runtime]System.Tuple`2<!!1,!!0[]>[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::GroupBy<object,object>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
+                                                                                                                                                         !!0[])
+    IL_0010:  ldlen
+    IL_0011:  conv.i4
+    IL_0012:  newarr     [runtime]System.Int32
+    IL_0017:  stloc.0
+    IL_0018:  ldc.i4.0
+    IL_0019:  stloc.1
+    IL_001a:  br.s       IL_0024
+
+    IL_001c:  ldloc.0
+    IL_001d:  ldloc.1
+    IL_001e:  ldc.i4.0
+    IL_001f:  stelem.i4
+    IL_0020:  ldloc.1
+    IL_0021:  ldc.i4.1
+    IL_0022:  add
+    IL_0023:  stloc.1
+    IL_0024:  ldloc.1
+    IL_0025:  ldloc.0
+    IL_0026:  ldlen
+    IL_0027:  conv.i4
+    IL_0028:  blt.s      IL_001c
+
+    IL_002a:  ldloc.0
+    IL_002b:  ret
+  } 
+
+  .method public static int32[]  'for _ & _ in Array.groupBy id [||] do …'() cil managed
+  {
+    
+    .maxstack  5
+    .locals init (int32[] V_0,
+             int32 V_1)
+    IL_0000:  nop
+    IL_0001:  ldsfld     class assembly/'for _ - _ in Array-groupBy id -||- do …@29' assembly/'for _ - _ in Array-groupBy id -||- do …@29'::@_instance
+    IL_0006:  call       !!0[] [runtime]System.Array::Empty<object>()
+    IL_000b:  call       class [runtime]System.Tuple`2<!!1,!!0[]>[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::GroupBy<object,object>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
+                                                                                                                                                         !!0[])
+    IL_0010:  ldlen
+    IL_0011:  conv.i4
+    IL_0012:  newarr     [runtime]System.Int32
+    IL_0017:  stloc.0
+    IL_0018:  ldc.i4.0
+    IL_0019:  stloc.1
+    IL_001a:  br.s       IL_0024
+
+    IL_001c:  ldloc.0
+    IL_001d:  ldloc.1
+    IL_001e:  ldc.i4.0
+    IL_001f:  stelem.i4
+    IL_0020:  ldloc.1
+    IL_0021:  ldc.i4.1
+    IL_0022:  add
+    IL_0023:  stloc.1
+    IL_0024:  ldloc.1
+    IL_0025:  ldloc.0
+    IL_0026:  ldlen
+    IL_0027:  conv.i4
+    IL_0028:  blt.s      IL_001c
+
+    IL_002a:  ldloc.0
+    IL_002b:  ret
   } 
 
 } 
