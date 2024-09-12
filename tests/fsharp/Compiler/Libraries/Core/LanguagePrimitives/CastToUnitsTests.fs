@@ -2,15 +2,15 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 
-[<TestFixture>]
+
 module ``Cast to Units Tests`` =
     
-    [<Test>]
+    [<Fact>]
     let ``Casting to Measures should compile``() =
-        CompilerAssert.PassWithOptions [| "--langversion:preview" |]
+        CompilerAssert.PassWithOptions [| |]
             """
 module M
 

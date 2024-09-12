@@ -110,7 +110,7 @@ open System
     member Shape: ArrayShape
     member ElementType: Type
     member TypeSpec: TypeSpec
-    member ParamaterIndex: UInt16
+    member ParameterIndex: UInt16
     member IsRequired: bool
     member CustomModifier: Type
     member ModifiedType: Type
@@ -146,7 +146,7 @@ open System
     member ElementType: Type when k = Array or K = Ptr or k = Byref
     member TypeSpec: TypeSpec when k = Value or k = Boxed
     member Callsig: Callsig when k = Fptr
-    member ParamaterIndex: UInt16 when k = Tyvar
+    member ParameterIndex: UInt16 when k = Tyvar
     member IsRequired: bool when k = Modified
     member CustomModifier: Type when k = Modified
     member ModifiedType: Type when k = Modified
@@ -196,7 +196,7 @@ open System
   // any delegate type.
   //
   // Note 'a and 'args must correspond - if they do not runtime exceptions will arise.
-  // We could add a constrinat of the form 
+  // We could add a constraint of the form 
   //    when 'a :> delegate(object * 'arg -> void)
   type EventForDelegateType<'a> =
     { Add: 'a -> unit;
@@ -596,7 +596,7 @@ type native_type =
   | NativeType_as_any
   | (* COM interop *) NativeType_bstr
   | (* COM interop *) NativeType_iunknown
-  | (* COM interop *) NativeType_idsipatch
+  | (* COM interop *) NativeType_idispatch
   | (* COM interop *) NativeType_interface
   | (* COM interop *) NativeType_error               
   | (* COM interop *) NativeType_safe_array of variant_type * string option 
@@ -669,7 +669,7 @@ val typ_of_local: local -> Type
 
 type CILMethodBody = 
     { ilZeroInit: bool;
-      ilMaxStack: Int32; (* strictly speakin should be a UInt16 *)
+      ilMaxStack: Int32; (* strictly speaking should be a UInt16 *)
       ilNoInlining: bool;
       ilLocals: local list;
       ilCode: Code;
@@ -947,7 +947,7 @@ val name_of_fdef: FieldDef -> string
  * name.
  * -------------------------------------------------------------------- *)
 
-type FieldDefs (* Abstract type qquivalent to a list of FieldDefs *)
+type FieldDefs (* Abstract type equivalent to a list of FieldDefs *)
 
 val dest_fdefs: FieldDefs -> FieldDef list
 val filter_fdefs: (FieldDef -> bool) -> FieldDefs -> FieldDefs
@@ -1250,8 +1250,8 @@ type manifest =
  * One module in the "current" assembly, either a main-module or
  * an auxiliary module.  The main module will have a manifest.
  *
- * The abbreviation "modul" is used frequently throught the OCaml source
- * code because "module" is a resesrved word in OCaml.
+ * The abbreviation "modul" is used frequently throughout the OCaml source
+ * code because "module" is a reserved word in OCaml.
  * -------------------------------------------------------------------- *)
 
 type modul = 
@@ -1400,7 +1400,7 @@ val mk_mspec_to_mdef: Type * MethodDef * Instantiation -> MethodSpec
 val mk_CallSig: Callconv * List<Type> * Type -> CallSig
 
 (* -------------------------------------------------------------------- 
- * Make generalized verions of possibly-generic Types,
+ * Make generalized versions of possibly-generic Types,
  * e.g. Given the TypeDef for List, return the type "List<T>".
  * -------------------------------------------------------------------- *)
 

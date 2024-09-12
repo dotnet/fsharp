@@ -30,6 +30,7 @@
           
     <PropertyGroup>
       <SourceBuildBootstrapTfmArg Condition="$(SourceBuildBootstrapTfm) != ''">--tfm $(SourceBuildBootstrapTfm)</SourceBuildBootstrapTfmArg>
+      <SourceBuildUseMonoRuntime Condition="'$(SourceBuildUseMonoRuntime)' == ''">false</SourceBuildUseMonoRuntime>
     </PropertyGroup>
 
     <!-- this runs the source-build bootstrap path as described in https://github.com/dotnet/fsharp/blob/95df49e380ea8dbf33653fa4209f89dba29413f5/eng/build.sh#L247

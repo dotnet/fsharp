@@ -4,11 +4,12 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework Condition="'$(Configuration)' != 'Proto'">netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <TargetFrameworks Condition="'$(Configuration)' == 'Proto'">netstandard2.0</TargetFrameworks>
     <AssemblyName>FSharp.Build</AssemblyName>
     <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
     <AllowCrossTargeting>true</AllowCrossTargeting>
+    <CheckNulls>true</CheckNulls>
     <DefineConstants>$(DefineConstants);LOCALIZATION_FSBUILD</DefineConstants>
     <NoWarn>$(NoWarn);NU1701;FS0075</NoWarn>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -30,6 +31,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
+    <Compile Include="..\Compiler\Utilities\NullnessShims.fs" />
     <EmbeddedText Include="FSBuild.txt" />
     <EmbeddedText Include="..\Compiler\Facilities\UtilsStrings.txt" />
     <Compile Include="..\Compiler\Facilities\CompilerLocation.fs" />

@@ -273,7 +273,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return false;
         }
 
-        // Overriden in source.fs, it calls this base implementation
+        // Overridden in source.fs, it calls this base implementation
         public virtual void Dispose()
         {
 #if LANGTRACE
@@ -570,7 +570,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         /// <summary>Implement this method to provide different comment delimiters.</summary>
         public abstract CommentInfo GetCommentFormat();
 
-        // Overriden in Source.fs, but it calls this base implementation
+        // Overridden in Source.fs, but it calls this base implementation
         public virtual TextSpan CommentSpan(TextSpan span)
         {
             TextSpan result = span;
@@ -593,7 +593,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
         /// <summary>
         /// Called from Comment Selection. Default behavior is to insert line style comments
-        /// at beginning and end of selection. Override to add custome behavior.
+        /// at beginning and end of selection. Override to add custom behavior.
         /// </summary>
         /// <param name="span"></param>
         /// <param name="lineComment"></param>
@@ -603,7 +603,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
         /// <summary>
         /// Called from Comment Selection. Default behavior is to insert block style comments
-        /// at beginning and end of selection. Override to add custome behavior.
+        /// at beginning and end of selection. Override to add custom behavior.
         /// </summary>
         /// <returns>The final span of the commented block including the comment delimiters</returns>
         private TextSpan CommentBlock(TextSpan span, string blockStart, string blockEnd)
@@ -1127,7 +1127,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         /// Trim whitespace from the beginning and ending of the given span.
         public void TrimSpan(ref TextSpan span)
         {
-            // Scan forwards past whitepsace.
+            // Scan forwards past whitespace.
             int length;
             NativeMethods.ThrowOnFailure(this.textLines.GetLengthOfLine(span.iStartLine, out length));
 
@@ -1152,7 +1152,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                     break;
                 }
             }
-            // Scan backwards past whitepsace.
+            // Scan backwards past whitespace.
             NativeMethods.ThrowOnFailure(this.textLines.GetLengthOfLine(span.iEndLine, out length));
 
             while (span.iStartLine < span.iEndLine || (span.iStartLine == span.iEndLine && span.iStartIndex < span.iEndIndex))
@@ -2011,7 +2011,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             if (this.displayed && this.textView != null)
             {
                 // Here we can't throw or exit because we need to call Dispose on
-                // the disposable membres.
+                // the disposable members.
                 try
                 {
                     textView.UpdateCompletionStatus(null, 0);

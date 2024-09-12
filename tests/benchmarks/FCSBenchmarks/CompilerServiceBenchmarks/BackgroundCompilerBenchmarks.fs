@@ -106,7 +106,7 @@ type ParsingBenchmark() =
     let mutable checker: FSharpChecker = Unchecked.defaultof<_>
     let mutable parsingOptions: FSharpParsingOptions = Unchecked.defaultof<_>
 
-    let filePath = __SOURCE_DIRECTORY__ ++ ".." ++ ".." ++ ".." ++ ".." ++ "src" ++ "Compiler" ++ "Checking" ++ "CheckExpressions.fs"
+    let filePath = __SOURCE_DIRECTORY__ ++ ".." ++ ".." ++ ".." ++ ".." ++ "src" ++ "Compiler" ++ "Checking" ++ "Expressions" ++ "CheckExpressions.fs"
     let source = File.ReadAllText filePath |> SourceText.ofString
 
     [<ParamsAllValues>]

@@ -13,7 +13,7 @@ open FSharp.Core.UnitTests.LibraryTestFx
 (*
 [Test Strategy]
 Make sure each method works on:
-* Few charachter string ("foo")
+* Few character string ("foo")
 * Empty string   ("")
 * Null string (null)
 *)

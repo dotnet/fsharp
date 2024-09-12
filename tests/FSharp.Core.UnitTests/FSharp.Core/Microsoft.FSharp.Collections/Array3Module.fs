@@ -132,7 +132,7 @@ type Array3Module() =
         
         // null array
         let nullArr : string[,,] = null
-        CheckThrowsArgumentNullException(fun () -> Array3D.iter (fun x -> Assert.Fail("Souldn't be called")) nullArr)
+        CheckThrowsArgumentNullException(fun () -> Array3D.iter (fun x -> Assert.Fail("Shouldn't be called")) nullArr)
         ()   
 
     [<Fact>]

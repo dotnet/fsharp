@@ -49,7 +49,6 @@ type SemanticClassificationType =
     | TypeDef = 35
     | Plaintext = 36
 
-[<RequireQualifiedAccess>]
 [<Struct>]
 type SemanticClassificationItem =
     val Range: range
@@ -60,7 +59,7 @@ type SemanticClassificationItem =
 [<AutoOpen>]
 module internal TcResolutionsExtensions =
     val (|CNR|):
-        cnr: CapturedNameResolution -> Item * ItemOccurence * DisplayEnv * NameResolutionEnv * AccessorDomain * range
+        cnr: CapturedNameResolution -> Item * ItemOccurrence * DisplayEnv * NameResolutionEnv * AccessorDomain * range
 
     type TcResolutions with
 

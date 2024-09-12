@@ -195,7 +195,7 @@ type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: 
 
     override decl.GetGlyph(filterText, index) =
         let decls = trimmedDeclarations filterText
-        //The following constants are the index of the various glyphs in the ressources of Microsoft.VisualStudio.Package.LanguageService.dll
+        //The following constants are the index of the various glyphs in the resources of Microsoft.VisualStudio.Package.LanguageService.dll
         if index >= 0 && index < decls.Length then
             // Get old VS glyph indexes, just for tests.
             match decls.[index].Glyph with

@@ -130,6 +130,10 @@ let ``GetMethodsAsSymbols should return all overloads of a method as FSharpSymbo
         let expected =
             [("Concat", [("values", "Collections.Generic.IEnumerable<'T>")]);
              ("Concat", [("values", "Collections.Generic.IEnumerable<string>")]);
+#if NETCOREAPP
+             ("Concat", [("args", "ReadOnlySpan<obj>")]);
+             ("Concat", [("values", "ReadOnlySpan<string>")]);
+#endif
              ("Concat", [("arg0", "obj")]);
              ("Concat", [("args", "obj array")]);
              ("Concat", [("values", "string array")]);
@@ -611,7 +615,7 @@ let _ = sprintf "ABCDE"
     |> shouldEqual [||]
 
 [<Fact>]
-let ``Single case discreminated union type definition`` () =
+let ``Single case discriminated union type definition`` () =
     let input =
       """
 type DU = Case1
@@ -726,7 +730,7 @@ let _ =
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
     |> Array.distinct
     |> shouldEqual
-        // note: these "System" sysbol uses are not duplications because each of them corresponts to different namespaces
+        // note: these "System" symbol uses are not duplications because each of them corresponds to different namespaces
         [|("System", (2, 5, 2, 11))
           ("ConsoleKey", (5, 10, 5, 20));
           ("field Tab", (5, 10, 5, 24));

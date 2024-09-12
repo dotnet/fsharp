@@ -202,6 +202,7 @@ module Test =
             "1 2 3.Test.M1.A.B", "open ``1 2 3`` - Test.M1.A.B";
             "1 2 3.Test.M1.A.C", "open ``1 2 3`` - Test.M1.A.C";
             "1 2 3.Test.M1.A.op_PlusPlus", "open ``1 2 3`` - Test.M1.A.op_PlusPlus";
+            "1 2 3.Test.M1.(|Is1|_|)", "open ``1 2 3`` - Test.M1.``(|Is1|_|)``"
             "1 2 3.Test.M1.B", "open ``1 2 3`` - Test.M1.B";
             "1 2 3.Test.M1.E", "open ``1 2 3`` - Test.M1.E";
             "1 2 3.Test.M1.F", "open ``1 2 3`` - Test.M1.F";

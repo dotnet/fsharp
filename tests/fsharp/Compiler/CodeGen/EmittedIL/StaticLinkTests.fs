@@ -6,12 +6,12 @@ open System.IO
 open System.Reflection
 open FSharp.Test
 open FSharp.Test.Utilities
-open NUnit.Framework
+open Xunit
 
-[<TestFixture>]
+
 module StaticLinkTests =
 
-    [<Test>]
+    [<Fact>]
     let ``Static link simple library``() =
         let module1 =
             let source =
@@ -35,7 +35,7 @@ printfn "%A" y
                 deps
                 |> List.iter (fun dep -> try File.Delete dep with | _ -> ())))
 
-    [<Test>]
+    [<Fact>]
     let ``Simple exe should fail to execute if dependency was not found and is not statically linked``() =
         let module1 =
             let source =
@@ -60,7 +60,7 @@ printfn "%A" y
                     deps
                     |> List.iter (fun dep -> try File.Delete dep with | _ -> ())))) |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Simple exe should execute if dependency was found and is not statically linked``() =
         let module1 =
             let source =
@@ -81,7 +81,7 @@ printfn "%A" y
 
         CompilerAssert.Execute module2
 
-    [<Test>]
+    [<Fact>]
     let ``Static link quotes in multiple modules``() =
         let module1 =
             let source =
@@ -105,7 +105,7 @@ type C() =
   [<ReflectedDefinition>]
   static member F x = (C(), System.DateTime.Now)
                 """
-            Compilation.Create(source, Library, options = [|"--langversion:preview"|])
+            Compilation.Create(source, Library, options = [| |])
 
         let module2 =
             let source =
@@ -154,7 +154,7 @@ else failwith "Test Failed"
 
         CompilerAssert.Execute(module2, ignoreWarnings=true)
 
-    [<Test>]
+    [<Fact>]
     let ``Static link quotes in multiple modules - optimized``() =
         let module1 =
             let source =
@@ -227,7 +227,7 @@ else failwith "Test Failed"
 
         CompilerAssert.Execute(module2, ignoreWarnings=true)
 
-    [<Test>]
+    [<Fact>]
     let ``Standalone linking``() =
         let source =
             """
@@ -240,7 +240,7 @@ let _ = exit 0
         let module1 = Compilation.Create(source, Exe, [|"--standalone"|])
         CompilerAssert.Execute(module1, newProcess=true)
 
-    [<Test>]
+    [<Fact>]
     let ``Standalone linking - optimized``() =
         let source =
             """

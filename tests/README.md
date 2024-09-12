@@ -100,7 +100,7 @@ Existing FSharpQA and Cambridge need to be migrated to corresponding test projec
 
 ## Open questions:
 
-* As far as I know, [FSharp.Compiler.Service](https://github.com/fsharp/FSharp.Compiler.Service) is dependant on some of the F# compiler tests. Does it have to be changed as well?
+* As far as I know, [FSharp.Compiler.Service](https://github.com/fsharp/FSharp.Compiler.Service) is dependent on some of the F# compiler tests. Does it have to be changed as well?
 
 ## Other
 

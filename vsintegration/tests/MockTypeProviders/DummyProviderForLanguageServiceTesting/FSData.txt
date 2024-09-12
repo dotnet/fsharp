@@ -86,7 +86,7 @@ noConnectionStringOrConnectionStringName,"When using this provider you must spec
 notBothConnectionStringOrConnectionStringName,"When using this provider you must specify either a connection string or a connection string name, but not both. To specify a connection string, use SqlDataConnection<\"...connection string...\">."
 invalidProviderInConfigFile,"Invalid provider '%s' in connection string entry '%s' in config file '%s'. SqlDataConnection can only be used with provider 'System.Data.SqlClient'."
 invalidConnectionStringInConfigFile,"Invalid empty connection string '%s' for the connection string name '%s' in config file '%s'"
-errorWhileReadingConnectionStringInConfigFile,"An error occured while reading connection string '%s' from the config file '%s': '%s'"
+errorWhileReadingConnectionStringInConfigFile,"An error occurred while reading connection string '%s' from the config file '%s': '%s'"
 serviceMetadataFileElementIsEmpty,"ServiceMetadataFile element cannot be empty"
 invalidWsdlUri,"The parameter 'ServiceUri' cannot be an empty string."
 requiredToolNotFound,"The required tool '%s' could not be found."

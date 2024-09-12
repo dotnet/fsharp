@@ -470,12 +470,11 @@ let ``Multi-project`` signatureFiles =
 
 
 type ProjectAction = Get | Modify of (SyntheticProject -> SyntheticProject)
-type ProjectModificaiton = Update of int | Add | Remove
+type ProjectModification = Update of int | Add | Remove
 type ProjectRequest = ProjectAction * AsyncReplyChannel<SyntheticProject>
 
 type FuzzingEvent = StartedChecking | FinishedChecking of bool | AbortedChecking of string | ModifiedImplFile | ModifiedSigFile
 
-[<RequireQualifiedAccess>]
 type SignatureFiles = Yes = 1 | No = 2 | Some = 3
 
 let fuzzingTest seed (project: SyntheticProject) = task {
@@ -753,7 +752,7 @@ let ``File moving test`` signatureFiles =
 
 [<GiraffeTheory>]
 [<InlineData true>]
-let ``What happens if bootrstapInfoStatic needs to be recomputed`` _ =
+let ``What happens if bootstrapInfoStatic needs to be recomputed`` _ =
 
     let giraffeProject = SyntheticProject.CreateFromRealProject giraffeSignaturesDir
     let giraffeProject = { giraffeProject with OtherOptions = "--nowarn:FS3520"::giraffeProject.OtherOptions }

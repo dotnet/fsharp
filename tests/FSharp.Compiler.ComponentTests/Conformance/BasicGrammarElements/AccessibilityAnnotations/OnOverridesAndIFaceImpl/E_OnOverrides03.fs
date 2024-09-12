@@ -1,9 +1,9 @@
 // #Regression #Conformance #DeclarationElements #Accessibility #Overloading 
 // Regression test for FSHARP1.0:4485
 // Visibility decl on overrides (class inheritance)
-//<Expects id="FS0941" span="(15,28-15,29)" status="error">Accessibility modifiers are not permitted on overrides or interface implementations</Expects>
-//<Expects id="FS0941" span="(21,28-21,29)" status="error">Accessibility modifiers are not permitted on overrides or interface implementations</Expects>
-//<Expects id="FS0941" span="(27,28-27,29)" status="error">Accessibility modifiers are not permitted on overrides or interface implementations</Expects>
+
+
+
 
 [<AbstractClass>]
 type D() = class

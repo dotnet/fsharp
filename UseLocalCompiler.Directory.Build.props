@@ -1,0 +1,36 @@
+<Project>
+  <PropertyGroup>
+    <LoadLocalFSharpBuild Condition="'$(LoadLocalFSharpBuild)' == ''">False</LoadLocalFSharpBuild>
+    
+    <LocalFSharpCompilerConfiguration Condition="'$(LocalFSharpCompilerConfiguration)' == ''">Release</LocalFSharpCompilerConfiguration>
+
+    <LocalFSharpCompilerPath Condition=" '$(LocalFSharpCompilerPath)' == '' ">$(MSBuildThisFileDirectory)</LocalFSharpCompilerPath>
+
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
+    <FscToolPath Condition="'$(FscToolPath)' == ''">$([System.IO.Path]::GetDirectoryName($(DOTNET_HOST_PATH)))</FscToolPath>
+    <FscToolExe Condition="'$(FscToolExe)' == ''">$([System.IO.Path]::GetFileName($(DOTNET_HOST_PATH)))</FscToolExe>
+
+    <DotnetFscCompilerPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/net9.0/fsc.dll</DotnetFscCompilerPath>
+    <Fsc_DotNET_DotnetFscCompilerPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/net9.0/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
+
+    <FSharpPreferNetFrameworkTools>False</FSharpPreferNetFrameworkTools>
+    <FSharpPrefer64BitTools>True</FSharpPrefer64BitTools>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(LoadLocalFSharpBuild)' == 'True'">
+    <LocalFSharpBuildBinPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/net9.0</LocalFSharpBuildBinPath>
+    <FSharpBuildAssemblyFile>$(LocalFSharpBuildBinPath)/FSharp.Build.dll</FSharpBuildAssemblyFile>
+    <FSharpTargetsPath>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.Targets</FSharpTargetsPath>
+    <FSharpPropsShim>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.NetSdk.props</FSharpPropsShim>
+    <FSharpTargetsShim>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
+    <FSharpOverridesTargetsShim>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>
+  </PropertyGroup>
+
+  <UsingTask Condition="'$(LoadLocalFSharpBuild)' == 'True'" TaskName="FSharpEmbedResourceText" AssemblyFile="$(FSharpBuildAssemblyFile)" Override="true" />
+  <UsingTask Condition="'$(LoadLocalFSharpBuild)' == 'True'" TaskName="FSharpEmbedResXSource" AssemblyFile="$(FSharpBuildAssemblyFile)" Override="true" />
+
+  <ItemGroup>
+    <Reference Include="$(LocalFSharpCompilerPath)/artifacts/bin/FSharp.Core/$(LocalFSharpCompilerConfiguration)/netstandard2.0/FSharp.Core.dll" />
+  </ItemGroup>
+</Project>

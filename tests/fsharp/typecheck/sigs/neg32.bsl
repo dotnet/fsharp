@@ -5,7 +5,7 @@ neg32.fs(24,15,24,16): typecheck error FS0043: The member or object constructor 
 
 neg32.fs(43,17,43,19): typecheck error FS0039: The type parameter 'T is not defined.
 
-neg32.fs(44,4,44,23): typecheck error FS0671: A property cannot have explicit type parameters. Consider using a method instead.
+neg32.fs(44,15,44,17): typecheck error FS0671: A property cannot have explicit type parameters. Consider using a method instead.
 
 neg32.fs(44,21,44,23): typecheck error FS0039: The type parameter 'U is not defined.
 
@@ -19,7 +19,7 @@ neg32.fs(46,24,46,26): typecheck error FS0039: The type parameter 'U is not defi
 
 neg32.fs(50,17,50,19): typecheck error FS0039: The type parameter 'T is not defined.
 
-neg32.fs(51,4,51,23): typecheck error FS0671: A property cannot have explicit type parameters. Consider using a method instead.
+neg32.fs(51,15,51,17): typecheck error FS0671: A property cannot have explicit type parameters. Consider using a method instead.
 
 neg32.fs(51,21,51,23): typecheck error FS0039: The type parameter 'U is not defined.
 
@@ -37,17 +37,13 @@ neg32.fs(55,18,55,20): typecheck error FS0039: The type parameter 'T is not defi
 
 neg32.fs(56,18,56,20): typecheck error FS0039: The type parameter 'T is not defined.
 
-neg32.fs(57,4,57,38): typecheck error FS0671: A property cannot have explicit type parameters. Consider using a method instead.
+neg32.fs(57,16,57,18): typecheck error FS0671: A property cannot have explicit type parameters. Consider using a method instead.
 
-neg32.fs(58,4,58,33): typecheck error FS0671: A property cannot have explicit type parameters. Consider using a method instead.
+neg32.fs(58,16,58,18): typecheck error FS0671: A property cannot have explicit type parameters. Consider using a method instead.
 
-neg32.fs(59,4,59,33): typecheck error FS0671: A property cannot have explicit type parameters. Consider using a method instead.
-
-neg32.fs(62,10,62,12): typecheck error FS0039: The type parameter 'T is not defined.
+neg32.fs(59,16,59,18): typecheck error FS0671: A property cannot have explicit type parameters. Consider using a method instead.
 
 neg32.fs(62,10,62,12): typecheck error FS0039: The type parameter 'T is not defined.
-
-neg32.fs(65,11,65,13): typecheck error FS0039: The type parameter 'T is not defined.
 
 neg32.fs(65,11,65,13): typecheck error FS0039: The type parameter 'T is not defined.
 

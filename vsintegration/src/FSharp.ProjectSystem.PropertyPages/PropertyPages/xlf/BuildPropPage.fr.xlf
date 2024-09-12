@@ -12,6 +12,11 @@
         <target state="translated">&amp;Préférer 32 bits</target>
         <note />
       </trans-unit>
+      <trans-unit id="lblSuppressWarnings.Text">
+        <source>&amp;Suppress warnings:</source>
+        <target state="new">&amp;Suppress warnings:</target>
+        <note />
+      </trans-unit>
       <trans-unit id="outputLabel.Text">
         <source>Output</source>
         <target state="translated">Sortie</target>
@@ -60,11 +65,6 @@
       <trans-unit id="rbWarningNone.Text">
         <source>&amp;None</source>
         <target state="translated">&amp;Aucune</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="lblSupressWarnings.Text">
-        <source>&amp;Suppress warnings:</source>
-        <target state="translated">&amp;Supprimer les avertissements :</target>
         <note />
       </trans-unit>
       <trans-unit id="cboWarningLevel.Items">

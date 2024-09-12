@@ -9,6 +9,7 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Import
+open FSharp.Compiler.Import.Nullness
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
@@ -216,7 +217,8 @@ type OptionalArgInfo =
                             else MissingValue
                     else
                         DefaultValue
-                CallerSide (analyze (ImportILTypeFromMetadata amap m ilScope ilTypeInst [] ilParam.Type))
+                                    // See above - the type is imported only in order to be analyzed for optional default value, nullness is irrelevant here.
+                CallerSide (analyze (ImportILTypeFromMetadataSkipNullness amap m ilScope ilTypeInst [] ilParam.Type))
             | Some v ->
                 CallerSide (Constant v)
         else
@@ -325,7 +327,7 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
         | false, true, true -> 
             match TryFindFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs with
             | Some(Attrib(_, _, _, _, _, _, callerMemberNameAttributeRange)) ->
-                warning(Error(FSComp.SR.CallerMemberNameIsOverriden(argInfo.Name.Value.idText), callerMemberNameAttributeRange))
+                warning(Error(FSComp.SR.CallerMemberNameIsOverridden(argInfo.Name.Value.idText), callerMemberNameAttributeRange))
                 CallerFilePath
             | _ -> failwith "Impossible"
         | _, _, _ ->
@@ -342,12 +344,12 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
 type ILFieldInit with
 
     /// Compute the ILFieldInit for the given provided constant value for a provided enum type.
-    static member FromProvidedObj m (v: obj) =
+    static member FromProvidedObj m (v: obj MaybeNull) =
         match v with
         | Null -> ILFieldInit.Null
         | NonNull v ->
             let objTy = v.GetType()
-            let v = if objTy.IsEnum then objTy.GetField("value__").GetValue v else v
+            let v = if objTy.IsEnum then !!(!!objTy.GetField("value__")).GetValue v else v
             match v with
             | :? single as i -> ILFieldInit.Single i
             | :? double as i -> ILFieldInit.Double i
@@ -362,7 +364,7 @@ type ILFieldInit with
             | :? uint32 as i -> ILFieldInit.UInt32 i
             | :? int64 as i -> ILFieldInit.Int64 i
             | :? uint64 as i -> ILFieldInit.UInt64 i
-            | _ -> error(Error(FSComp.SR.infosInvalidProvidedLiteralValue(try v.ToString() with _ -> "?"), m))
+            | _ -> error(Error(FSComp.SR.infosInvalidProvidedLiteralValue(try !!v.ToString() with _ -> "?"), m))
 
 
 /// Compute the OptionalArgInfo for a provided parameter.
@@ -394,8 +396,8 @@ let OptionalArgInfoOfProvidedParameter (amap: ImportMap) m (provParam : Tainted<
 /// Compute the ILFieldInit for the given provided constant value for a provided enum type.
 let GetAndSanityCheckProviderMethod m (mi: Tainted<'T :> ProvidedMemberInfo>) (get : 'T -> ProvidedMethodInfo MaybeNull) err = 
     match mi.PApply((fun mi -> (get mi :> ProvidedMethodBase MaybeNull)),m) with 
-    | Tainted.Null -> error(Error(err(mi.PUntaint((fun mi -> mi.Name),m),mi.PUntaint((fun mi -> (nonNull<ProvidedType> mi.DeclaringType).Name), m)), m))   // TODO NULLNESS: type isntantiation should not be needed
-    | meth -> meth
+    | Tainted.Null -> error(Error(err(mi.PUntaint((fun mi -> mi.Name),m),mi.PUntaint((fun mi -> (nonNull mi.DeclaringType).Name), m)), m))
+    | Tainted.NonNull meth -> meth
 
 /// Try to get an arbitrary ProvidedMethodInfo associated with a property.
 let ArbitraryMethodInfoOfPropertyInfo (pi: Tainted<ProvidedPropertyInfo>) m =
@@ -447,6 +449,10 @@ type ILTypeInfo =
         let (ILTypeInfo(g, ty, tref, tdef)) = x
         ILTypeInfo(g, instType inst ty, tref, tdef)
 
+    member x.NullableAttributes = AttributesFromIL(x.RawMetadata.MetadataIndex,x.RawMetadata.CustomAttrsStored)
+
+    member x.NullableClassSource = FromClass(x.NullableAttributes)
+
     static member FromType g ty =
         if isAnyTupleTy g ty then
             // When getting .NET metadata for the properties and methods
@@ -463,7 +469,17 @@ type ILTypeInfo =
             let tref = mkRefForNestedILTypeDef scoref (enc, tdef)
             ILTypeInfo(g, ty, tref, tdef)
         else
-            failwith "ILTypeInfo.FromType - no IL metadata for type"
+            failwith ("ILTypeInfo.FromType - no IL metadata for type" + System.Environment.StackTrace)
+
+[<NoComparison; NoEquality>]
+type ILMethParentTypeInfo =
+    | IlType of ILTypeInfo
+    | CSharpStyleExtension of declaring:TyconRef * apparent:TType
+    
+    member x.ToType =
+        match x with
+        | IlType x -> x.ToType
+        | CSharpStyleExtension(apparent=x) -> x
 
 /// Describes an F# use of an IL method.
 [<NoComparison; NoEquality>]
@@ -472,32 +488,38 @@ type ILMethInfo =
     ///
     /// If ilDeclaringTyconRefOpt is 'Some' then this is an F# use of an C#-style extension method.
     /// If ilDeclaringTyconRefOpt is 'None' then ilApparentType is an IL type definition.
-    | ILMethInfo of g: TcGlobals * ilApparentType: TType * ilDeclaringTyconRefOpt: TyconRef option  * ilMethodDef: ILMethodDef * ilGenericMethodTyArgs: Typars
+    | ILMethInfo of g: TcGlobals * ilType:ILMethParentTypeInfo * ilMethodDef: ILMethodDef * ilGenericMethodTyArgs: Typars
 
-    member x.TcGlobals = match x with ILMethInfo(g, _, _, _, _) -> g
+    member x.TcGlobals = match x with ILMethInfo(g, _, _, _) -> g
 
     /// Get the apparent declaring type of the method as an F# type.
     /// If this is a C#-style extension method then this is the type which the method
     /// appears to extend. This may be a variable type.
-    member x.ApparentEnclosingType = match x with ILMethInfo(_, ty, _, _, _) -> ty
+    member x.ApparentEnclosingType = match x with ILMethInfo(_, ty, _, _) -> ty.ToType
 
     /// Like ApparentEnclosingType but use the compiled nominal type if this is a method on a tuple type
     member x.ApparentEnclosingAppType = convertToTypeWithMetadataIfPossible x.TcGlobals x.ApparentEnclosingType
 
     /// Get the declaring type associated with an extension member, if any.
-    member x.ILExtensionMethodDeclaringTyconRef = match x with ILMethInfo(_, _, tcrefOpt, _, _) -> tcrefOpt
+    member x.ILExtensionMethodDeclaringTyconRef = 
+        match x with
+        | ILMethInfo(ilType=CSharpStyleExtension(declaring= x)) -> Some x
+        | _ -> None
 
     /// Get the Abstract IL metadata associated with the method.
-    member x.RawMetadata = match x with ILMethInfo(_, _, _, md, _) -> md
+    member x.RawMetadata = match x with ILMethInfo(_, _, md, _) -> md
 
     /// Get the formal method type parameters associated with a method.
-    member x.FormalMethodTypars = match x with ILMethInfo(_, _, _, _, fmtps) -> fmtps
+    member x.FormalMethodTypars = match x with ILMethInfo(_, _, _, fmtps) -> fmtps
 
     /// Get the IL name of the method
     member x.ILName       = x.RawMetadata.Name
 
     /// Indicates if the method is an extension method
-    member x.IsILExtensionMethod = x.ILExtensionMethodDeclaringTyconRef.IsSome
+    member x.IsILExtensionMethod = 
+        match x with
+        | ILMethInfo(ilType=CSharpStyleExtension _) -> true
+        | _ -> false
 
     /// Get the declaring type of the method. If this is an C#-style extension method then this is the IL type
     /// holding the static member that is the extension method.
@@ -558,15 +580,28 @@ type ILMethInfo =
     /// Does it appear to the user as an instance method?
     member x.IsInstance = not x.IsConstructor &&  not x.IsStatic
 
-    /// Get the argument types of the the IL method. If this is an C#-style extension method
+    member x.NullableFallback = 
+        let raw = x.RawMetadata
+        let classAttrs = 
+            match x with
+            | ILMethInfo(ilType=CSharpStyleExtension(declaring= t)) when t.IsILTycon -> AttributesFromIL(t.ILTyconRawMetadata.MetadataIndex,t.ILTyconRawMetadata.CustomAttrsStored)
+            // C#-style extension defined in F# -> we do not support manually adding NullableContextAttribute by F# users.
+            | ILMethInfo(ilType=CSharpStyleExtension _)  -> AttributesFromIL(0,Given(ILAttributes.Empty))
+            | ILMethInfo(ilType=IlType(t)) -> t.NullableAttributes
+
+        FromMethodAndClass(AttributesFromIL(raw.MetadataIndex,raw.CustomAttrsStored),classAttrs)
+
+    member x.GetNullness(p:ILParameter) = {DirectAttributes = AttributesFromIL(p.MetadataIndex,p.CustomAttrsStored); Fallback = x.NullableFallback}
+
+    /// Get the argument types of the IL method. If this is an C#-style extension method
     /// then drop the object argument.
     member x.GetParamTypes(amap, m, minst) =
-        x.ParamMetadata |> List.map (fun p -> ImportParameterTypeFromMetadata amap m p.Type (fun _ -> p.CustomAttrs) x.MetadataScope x.DeclaringTypeInst minst)
+        x.ParamMetadata |> List.map (fun p -> ImportParameterTypeFromMetadata amap m (x.GetNullness(p)) p.Type x.MetadataScope x.DeclaringTypeInst minst)
 
     /// Get all the argument types of the IL method. Include the object argument even if this is
     /// an C#-style extension method.
     member x.GetRawArgTypes(amap, m, minst) =
-        x.RawMetadata.Parameters |> List.map (fun p -> ImportParameterTypeFromMetadata amap m p.Type (fun _ -> p.CustomAttrs) x.MetadataScope x.DeclaringTypeInst minst)
+        x.RawMetadata.Parameters |> List.map (fun p -> ImportParameterTypeFromMetadata amap m (x.GetNullness(p)) p.Type x.MetadataScope x.DeclaringTypeInst minst)
 
     /// Get info about the arguments of the IL method. If this is an C#-style extension method then
     /// drop the object argument.
@@ -575,7 +610,7 @@ type ILMethInfo =
     member x.GetParamNamesAndTypes(amap, m, minst) =
         let scope = x.MetadataScope
         let tinst = x.DeclaringTypeInst
-        x.ParamMetadata |> List.map (fun p -> ParamNameAndType(Option.map (mkSynId m) p.Name, ImportParameterTypeFromMetadata amap m p.Type (fun _ -> p.CustomAttrs) scope tinst minst) )
+        x.ParamMetadata |> List.map (fun p -> ParamNameAndType(Option.map (mkSynId m) p.Name, ImportParameterTypeFromMetadata amap m (x.GetNullness(p))  p.Type scope tinst minst) )
 
     /// Get a reference to the method (dropping all generic instantiations), as an Abstract IL ILMethodRef.
     member x.ILMethodRef =
@@ -599,12 +634,13 @@ type ILMethInfo =
 
     /// Get the (zero or one) 'self'/'this'/'object' arguments associated with an IL method.
     /// An instance extension method returns one object argument.
-    member x.GetObjArgTypes(amap, m, minst) =
+    member x.GetObjArgTypes(amap, m, minst) =    
         // All C#-style extension methods are instance. We have to re-read the 'obj' type w.r.t. the
         // method instantiation.
         if x.IsILExtensionMethod then
             let p = x.RawMetadata.Parameters.Head
-            [ ImportParameterTypeFromMetadata amap m p.Type (fun _ -> p.CustomAttrs) x.MetadataScope x.DeclaringTypeInst minst ]
+            let nullableSource = {DirectAttributes = AttributesFromIL(p.MetadataIndex,p.CustomAttrsStored); Fallback = x.NullableFallback}
+            [ ImportParameterTypeFromMetadata amap m nullableSource p.Type x.MetadataScope x.DeclaringTypeInst minst ]
         else if x.IsInstance then
             [ x.ApparentEnclosingType ]
         else
@@ -612,10 +648,12 @@ type ILMethInfo =
 
     /// Get the compiled return type of the method, where 'void' is None.
     member x.GetCompiledReturnType (amap, m, minst) =
-        ImportReturnTypeFromMetadata amap m x.RawMetadata.Return.Type (fun _ -> x.RawMetadata.Return.CustomAttrs) x.MetadataScope x.DeclaringTypeInst minst
+        let ilReturn = x.RawMetadata.Return
+        let nullableSource = {DirectAttributes = AttributesFromIL(ilReturn.MetadataIndex,ilReturn.CustomAttrsStored); Fallback = x.NullableFallback}
+        ImportReturnTypeFromMetadata amap m nullableSource ilReturn.Type x.MetadataScope x.DeclaringTypeInst minst
 
     /// Get the F# view of the return type of the method, where 'void' is 'unit'.
-    member x.GetFSharpReturnType (amap, m, minst) =
+    member x.GetFSharpReturnType (amap, m, minst) =      
         x.GetCompiledReturnType(amap, m, minst)
         |> GetFSharpViewOfReturnType amap.g
 
@@ -629,6 +667,9 @@ type MethInfo =
 
     /// Describes a use of a method backed by Abstract IL # metadata
     | ILMeth of tcGlobals: TcGlobals * ilMethInfo: ILMethInfo * extensionMethodPriority: ExtensionMethodPriority option
+
+    /// A pseudo-method used by F# typechecker to treat Object.ToString() of known types as returning regular string, not `string?` as in the BCL
+    | MethInfoWithModifiedReturnType of original:MethInfo * modifiedReturnType: TType
 
     /// Describes a use of a pseudo-method corresponding to the default constructor for a .NET struct type
     | DefaultStructCtor of tcGlobals: TcGlobals * structTy: TType
@@ -646,6 +687,7 @@ type MethInfo =
         match x with
         | ILMeth(_, ilminfo, _) -> ilminfo.ApparentEnclosingType
         | FSMeth(_, ty, _, _) -> ty
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.ApparentEnclosingType
         | DefaultStructCtor(_, ty) -> ty
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(amap, mi, _, m) ->
@@ -666,6 +708,7 @@ type MethInfo =
         match x with
         | ILMeth(_, ilminfo, _) when x.IsExtensionMember  -> ilminfo.DeclaringTyconRef
         | FSMeth(_, _, vref, _) when x.IsExtensionMember && vref.HasDeclaringEntity -> vref.DeclaringEntity
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.DeclaringTyconRef
         | _ -> x.ApparentEnclosingTyconRef
 
     /// Get the information about provided static parameters, if any
@@ -673,6 +716,7 @@ type MethInfo =
         match x with
         | ILMeth _ -> None
         | FSMeth _  -> None
+        | MethInfoWithModifiedReturnType _ -> None
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth (_, mb, _, m) ->
             let staticParams = mb.PApplyWithProvider((fun (mb, provider) -> mb.GetStaticParametersForMethod provider), range=m)
@@ -691,6 +735,7 @@ type MethInfo =
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, _, pri, _) -> pri
 #endif
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.ExtensionMemberPriorityOption
         | DefaultStructCtor _ -> None
 
     /// Get the extension method priority of the method. If it is not an extension method
@@ -704,6 +749,7 @@ type MethInfo =
         | ILMeth(_, y, _) -> y.DeclaringTyconRef.DisplayNameWithStaticParametersAndUnderscoreTypars + "::" + y.ILName
         | FSMeth(_, AbbrevOrAppTy(tcref, _), vref, _) -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars + "::" + vref.LogicalName
         | FSMeth(_, _, vref, _) -> "??::" + vref.LogicalName
+        | MethInfoWithModifiedReturnType(mi, returnTy) ->  mi.DebuggerDisplayName + $"({returnTy.DebugText})"
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi, _, m) -> "ProvidedMeth: " + mi.PUntaint((fun mi -> mi.Name), m)
 #endif
@@ -714,6 +760,7 @@ type MethInfo =
         match x with
         | ILMeth(_, y, _) -> y.ILName
         | FSMeth(_, _, vref, _) -> vref.LogicalName
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.LogicalName
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi, _, m) -> mi.PUntaint((fun mi -> mi.Name), m)
 #endif
@@ -753,6 +800,7 @@ type MethInfo =
         match x with
         | ILMeth(g, _, _) -> g
         | FSMeth(g, _, _, _) -> g
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.TcGlobals
         | DefaultStructCtor (g, _) -> g
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(amap, _, _, _) -> amap.g
@@ -768,6 +816,7 @@ type MethInfo =
             let ty = x.ApparentEnclosingAppType
             let _, memberMethodTypars, _, _ = AnalyzeTypeOfMemberVal x.IsCSharpStyleExtensionMember g (ty, vref)
             memberMethodTypars
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.FormalMethodTypars
         | DefaultStructCtor _ -> []
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth _ -> [] // There will already have been an error if there are generic parameters here.
@@ -783,6 +832,7 @@ type MethInfo =
         match x with
         | ILMeth _ -> XmlDoc.Empty
         | FSMeth(_, _, vref, _) -> vref.XmlDoc
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.XmlDoc
         | DefaultStructCtor _ -> XmlDoc.Empty
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi, _, m)->
@@ -794,6 +844,7 @@ type MethInfo =
     member x.ArbitraryValRef =
         match x with
         | FSMeth(_g, _, vref, _) -> Some vref
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.ArbitraryValRef
         | _ -> None
 
     /// Get a list of argument-number counts, one count for each set of curried arguments.
@@ -803,6 +854,7 @@ type MethInfo =
         match x with
         | ILMeth(_, ilminfo, _) -> [ilminfo.NumParams]
         | FSMeth(g, _, vref, _) -> GetArgInfosOfMember x.IsCSharpStyleExtensionMember g vref |> List.map List.length
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.NumArgs
         | DefaultStructCtor _ -> [0]
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi, _, m) -> [mi.PUntaint((fun mi -> mi.GetParameters().Length), m)] // Why is this a list? Answer: because the method might be curried
@@ -824,6 +876,7 @@ type MethInfo =
         match x with
         | ILMeth(_, ilmeth, _) -> ilmeth.IsInstance
         | FSMeth(_, _, vref, _) -> vref.IsInstanceMember || x.IsCSharpStyleExtensionMember
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.IsInstance
         | DefaultStructCtor _ -> false
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi, _, m) -> mi.PUntaint((fun mi -> not mi.IsConstructor && not mi.IsStatic), m)
@@ -837,6 +890,7 @@ type MethInfo =
         match x with
         | ILMeth(_, ilmeth, _) -> ilmeth.IsProtectedAccessibility
         | FSMeth _ -> false
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.IsProtectedAccessibility
         | DefaultStructCtor _ -> false
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi, _, m) -> mi.PUntaint((fun mi -> mi.IsFamily), m)
@@ -846,6 +900,7 @@ type MethInfo =
         match x with
         | ILMeth(_, ilmeth, _) -> ilmeth.IsVirtual
         | FSMeth(_, _, vref, _) -> vref.IsVirtualMember
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.IsVirtual
         | DefaultStructCtor _ -> false
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi, _, m) -> mi.PUntaint((fun mi -> mi.IsVirtual), m)
@@ -855,6 +910,7 @@ type MethInfo =
         match x with
         | ILMeth(_, ilmeth, _) -> ilmeth.IsConstructor
         | FSMeth(_g, _, vref, _) -> (vref.MemberInfo.Value.MemberFlags.MemberKind = SynMemberKind.Constructor)
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.IsConstructor
         | DefaultStructCtor _ -> true
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi, _, m) -> mi.PUntaint((fun mi -> mi.IsConstructor), m)
@@ -867,6 +923,7 @@ type MethInfo =
              match vref.TryDeref with
              | ValueSome x -> x.IsClassConstructor
              | _ -> false
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.IsClassConstructor
         | DefaultStructCtor _ -> false
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi, _, m) -> mi.PUntaint((fun mi -> mi.IsConstructor && mi.IsStatic), m) // Note: these are never public anyway
@@ -876,6 +933,7 @@ type MethInfo =
         match x with
         | ILMeth(_g, ilmeth, _) -> ilmeth.IsVirtual
         | FSMeth(_, _, vref, _) -> vref.MemberInfo.Value.MemberFlags.IsDispatchSlot
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.IsDispatchSlot
         | DefaultStructCtor _ -> false
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth _ -> x.IsVirtual // Note: follow same implementation as ILMeth
@@ -887,6 +945,7 @@ type MethInfo =
         match x with
         | ILMeth(_, ilmeth, _) -> ilmeth.IsFinal
         | FSMeth(_g, _, _vref, _) -> false
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.IsFinal
         | DefaultStructCtor _ -> true
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi, _, m) -> mi.PUntaint((fun mi -> mi.IsFinal), m)
@@ -902,6 +961,7 @@ type MethInfo =
         match minfo with
         | ILMeth(_, ilmeth, _) -> ilmeth.IsAbstract
         | FSMeth(g, _, vref, _)  -> isInterfaceTy g minfo.ApparentEnclosingType  || vref.IsDispatchSlotMember
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.IsAbstract
         | DefaultStructCtor _ -> false
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi, _, m) -> mi.PUntaint((fun mi -> mi.IsAbstract), m)
@@ -912,6 +972,7 @@ type MethInfo =
           (match x with
            | ILMeth(_, x, _) -> x.IsNewSlot || (isInterfaceTy x.TcGlobals x.ApparentEnclosingType && not x.IsFinal)
            | FSMeth(_, _, vref, _) -> vref.IsDispatchSlotMember
+           | MethInfoWithModifiedReturnType(mi, _) -> mi.IsNewSlot
 #if !NO_TYPEPROVIDERS
            | ProvidedMeth(_, mi, _, m) -> mi.PUntaint((fun mi -> mi.IsHideBySig), m) // REVIEW: Check this is correct
 #endif
@@ -921,6 +982,7 @@ type MethInfo =
     member x.IsILMethod =
         match x with
         | ILMeth _ -> true
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.IsILMethod
         | _ -> false
 
     /// Check if this method is an explicit implementation of an interface member
@@ -928,6 +990,7 @@ type MethInfo =
         match x with
         | ILMeth _ -> false
         | FSMeth(g, _, vref, _) -> vref.IsFSharpExplicitInterfaceImplementation g
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.IsFSharpExplicitInterfaceImplementation
         | DefaultStructCtor _ -> false
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth _ -> false
@@ -938,6 +1001,7 @@ type MethInfo =
         match x with
         | ILMeth _ -> false
         | FSMeth(_, _, vref, _) -> vref.IsDefiniteFSharpOverrideMember
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.IsDefiniteFSharpOverride
         | DefaultStructCtor _ -> false
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth _ -> false
@@ -946,6 +1010,7 @@ type MethInfo =
     member x.ImplementedSlotSignatures =
         match x with
         | FSMeth(_, _, vref, _) -> vref.ImplementedSlotSignatures
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.ImplementedSlotSignatures
         | _ -> failwith "not supported"
 
     /// Indicates if this is an extension member.
@@ -953,6 +1018,7 @@ type MethInfo =
         match x with
         | FSMeth (_, _, vref, pri) -> pri.IsSome || vref.IsExtensionMember
         | ILMeth (_, _, Some _) -> true
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.IsExtensionMember
         | _ -> false
 
     /// Indicates if this is an extension member (e.g. on a struct) that takes a byref arg
@@ -964,12 +1030,16 @@ type MethInfo =
 
     /// Indicates if this is an F# extension member.
     member x.IsFSharpStyleExtensionMember =
-        match x with FSMeth (_, _, vref, _) -> vref.IsExtensionMember | _ -> false
+        match x with 
+        | FSMeth (_, _, vref, _) -> vref.IsExtensionMember 
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.IsFSharpStyleExtensionMember
+        | _ -> false
 
     /// Indicates if this is an C#-style extension member.
     member x.IsCSharpStyleExtensionMember =
         match x with
         | FSMeth (_, _, vref, Some _) -> not vref.IsExtensionMember
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.IsCSharpStyleExtensionMember
         | ILMeth (_, _, Some _) -> true
         | _ -> false
 
@@ -991,6 +1061,7 @@ type MethInfo =
     member x.IsFSharpEventPropertyMethod =
         match x with
         | FSMeth(g, _, vref, _)  -> vref.IsFSharpEventProperty g
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.IsFSharpEventPropertyMethod
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth _ -> false
 #endif
@@ -1022,12 +1093,14 @@ type MethInfo =
         | ILMeth (g, ilMethInfo, _) -> 
              ilMethInfo.IsReadOnly g || x.IsOnReadOnlyType
         | FSMeth _ -> false // F# defined methods not supported yet. Must be a language feature.
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.IsReadOnly
         | _ -> false
 
-    /// Indicates, wheter this method has `IsExternalInit` modreq.
+    /// Indicates, whether this method has `IsExternalInit` modreq.
     member x.HasExternalInit =
         match x with
         | ILMeth (_, ilMethInfo, _) -> HasExternalInit ilMethInfo.ILMethodRef
+        | MethInfoWithModifiedReturnType(mi, _) -> mi.HasExternalInit
         | _ -> false
 
     /// Indicates if this method is an extension member that is read-only.
@@ -1040,14 +1113,19 @@ type MethInfo =
     /// Build IL method infos.
     static member CreateILMeth (amap: ImportMap, m, ty: TType, md: ILMethodDef) =
         let tinfo = ILTypeInfo.FromType amap.g ty
-        let mtps = ImportILGenericParameters (fun () -> amap) m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata md.GenericParams
-        ILMeth (amap.g, ILMethInfo(amap.g, ty, None, md, mtps), None)
+        let nullableFallback = FromMethodAndClass(AttributesFromIL(md.MetadataIndex,md.CustomAttrsStored),tinfo.NullableAttributes)
+        let mtps = ImportILGenericParameters (fun () -> amap) m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata nullableFallback md.GenericParams
+        ILMeth (amap.g, ILMethInfo(amap.g, IlType tinfo, md, mtps), None)
 
     /// Build IL method infos for a C#-style extension method
-    static member CreateILExtensionMeth (amap, m, apparentTy: TType, declaringTyconRef: TyconRef, extMethPri, md: ILMethodDef) =
+    static member CreateILExtensionMeth (amap:ImportMap, m, apparentTy: TType, declaringTyconRef: TyconRef, extMethPri, md: ILMethodDef) =
         let scoref =  declaringTyconRef.CompiledRepresentationForNamedType.Scope
-        let mtps = ImportILGenericParameters (fun () -> amap) m scoref [] md.GenericParams
-        ILMeth (amap.g, ILMethInfo(amap.g, apparentTy, Some declaringTyconRef, md, mtps), extMethPri)
+        let typeInfo = CSharpStyleExtension(declaringTyconRef,apparentTy)
+        let declaringMetadata = declaringTyconRef.ILTyconRawMetadata
+        let declaringAttributes = AttributesFromIL(declaringMetadata.MetadataIndex,declaringMetadata.CustomAttrsStored)
+        let nullableFallback = FromMethodAndClass(AttributesFromIL(md.MetadataIndex,md.CustomAttrsStored),declaringAttributes)
+        let mtps = ImportILGenericParameters (fun () -> amap) m scoref [] nullableFallback md.GenericParams
+        ILMeth (amap.g, ILMethInfo(amap.g, typeInfo, md, mtps), extMethPri)
 
     /// Tests whether two method infos have the same underlying definition.
     /// Used to merge operator overloads collected from left and right of an operator constraint.
@@ -1056,6 +1134,8 @@ type MethInfo =
         match x1, x2 with
         | ILMeth(_, x1, _), ILMeth(_, x2, _) -> (x1.RawMetadata ===  x2.RawMetadata)
         | FSMeth(g, _, vref1, _), FSMeth(_, _, vref2, _)  -> valRefEq g vref1 vref2
+        | mi1, MethInfoWithModifiedReturnType(mi2, _)
+        | MethInfoWithModifiedReturnType(mi1, _), mi2 -> MethInfo.MethInfosUseIdenticalDefinitions mi1 mi2
         | DefaultStructCtor _, DefaultStructCtor _ -> tyconRefEq x1.TcGlobals x1.DeclaringTyconRef x2.DeclaringTyconRef
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi1, _, _), ProvidedMeth(_, mi2, _, _)  -> ProvidedMethodBase.TaintedEquals (mi1, mi2)
@@ -1067,6 +1147,7 @@ type MethInfo =
         match x with
         | ILMeth(_, x1, _) -> hash x1.RawMetadata.Name
         | FSMeth(_, _, vref, _) -> hash vref.LogicalName
+        | MethInfoWithModifiedReturnType(mi,_) -> mi.ComputeHashCode()
         | DefaultStructCtor(_, _ty) -> 34892 // "ty" doesn't support hashing. We could use "hash (tcrefOfAppTy g ty).CompiledName" or
                                            // something but we don't have a "g" parameter here yet. But this hash need only be very approximate anyway
 #if !NO_TYPEPROVIDERS
@@ -1078,9 +1159,10 @@ type MethInfo =
         match x with
         | ILMeth(_g, ilminfo, pri) ->
             match ilminfo with
-            | ILMethInfo(_, ty, None, md, _) -> MethInfo.CreateILMeth(amap, m, instType inst ty, md)
-            | ILMethInfo(_, ty, Some declaringTyconRef, md, _) -> MethInfo.CreateILExtensionMeth(amap, m, instType inst ty, declaringTyconRef, pri, md)
+            | ILMethInfo(_, IlType ty, md, _) -> MethInfo.CreateILMeth(amap, m, instType inst ty.ToType, md)
+            | ILMethInfo(_, CSharpStyleExtension(declaringTyconRef,ty), md, _) -> MethInfo.CreateILExtensionMeth(amap, m, instType inst ty, declaringTyconRef, pri, md)
         | FSMeth(g, ty, vref, pri) -> FSMeth(g, instType inst ty, vref, pri)
+        | MethInfoWithModifiedReturnType(mi, retTy) -> MethInfoWithModifiedReturnType(mi.Instantiate(amap, m, inst), retTy)
         | DefaultStructCtor(g, ty) -> DefaultStructCtor(g, instType inst ty)
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth _ ->
@@ -1099,6 +1181,7 @@ type MethInfo =
             let inst = GetInstantiationForMemberVal g x.IsCSharpStyleExtensionMember (ty, vref, minst)
             let _, _, retTy, _ = AnalyzeTypeOfMemberVal x.IsCSharpStyleExtensionMember g (ty, vref)
             retTy |> Option.map (instType inst)
+        | MethInfoWithModifiedReturnType(_,retTy) -> Some retTy
         | DefaultStructCtor _ -> None
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(amap, mi, _, m) ->
@@ -1116,6 +1199,7 @@ type MethInfo =
         | ILMeth (ilMethInfo = ilminfo) ->
             // A single group of tupled arguments
             [ ilminfo.ParamMetadata |> List.map (fun x -> x.Name) ]
+        | MethInfoWithModifiedReturnType(mi,_) -> mi.GetParamNames()
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth (_, mi, _, m) ->
             // A single group of tupled arguments
@@ -1134,6 +1218,7 @@ type MethInfo =
             let paramTypes = ParamNameAndType.FromMember x.IsCSharpStyleExtensionMember g vref
             let inst = GetInstantiationForMemberVal g x.IsCSharpStyleExtensionMember (ty, vref, minst)
             paramTypes |> List.mapSquared (fun (ParamNameAndType(_, ty)) -> instType inst ty)
+        | MethInfoWithModifiedReturnType(mi,_) -> mi.GetParamTypes(amap,m,minst)
         | DefaultStructCtor _ -> []
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(amap, mi, _, m) ->
@@ -1158,6 +1243,7 @@ type MethInfo =
                 else
                     [ ty ]
             else []
+        | MethInfoWithModifiedReturnType(mi,_) -> mi.GetObjArgTypes(amap, m, minst)
         | DefaultStructCtor _ -> []
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(amap, mi, _, m) ->
@@ -1169,6 +1255,7 @@ type MethInfo =
     member x.GetCustomAttrs() =
         match x with
         | ILMeth(_, ilMethInfo, _) -> ilMethInfo.RawMetadata.CustomAttrs
+        | MethInfoWithModifiedReturnType(mi,_) -> mi.GetCustomAttrs()
         | _ -> ILAttributes.Empty
 
     /// Get the parameter attributes of a method info, which get combined with the parameter names and types
@@ -1209,6 +1296,7 @@ type MethInfo =
         | FSMeth(g, _, vref, _) ->
             GetArgInfosOfMember x.IsCSharpStyleExtensionMember g vref
             |> List.mapSquared (CrackParamAttribsInfo g)
+        | MethInfoWithModifiedReturnType(mi,_) -> mi.GetParamAttribs(amap, m)
         | DefaultStructCtor _ ->
             [[]]
 
@@ -1216,10 +1304,10 @@ type MethInfo =
         | ProvidedMeth(amap, mi, _, _) ->
             // A single group of tupled arguments
             [ [for p in mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m) do
-                let isParamArrayArg = p.PUntaint((fun px -> (px :> IProvidedCustomAttributeProvider).GetAttributeConstructorArgs(p.TypeProvider.PUntaintNoFailure id, typeof<ParamArrayAttribute>.FullName).IsSome), m)
+                let isParamArrayArg = p.PUntaint((fun px -> (px :> IProvidedCustomAttributeProvider).GetAttributeConstructorArgs(p.TypeProvider.PUntaintNoFailure id, !! typeof<ParamArrayAttribute>.FullName).IsSome), m)
                 let optArgInfo =  OptionalArgInfoOfProvidedParameter amap m p
                 let reflArgInfo =
-                    match p.PUntaint((fun px -> (px :> IProvidedCustomAttributeProvider).GetAttributeConstructorArgs(p.TypeProvider.PUntaintNoFailure id, typeof<ReflectedDefinitionAttribute>.FullName)), m) with
+                    match p.PUntaint((fun px -> (px :> IProvidedCustomAttributeProvider).GetAttributeConstructorArgs(p.TypeProvider.PUntaintNoFailure id, !! typeof<ReflectedDefinitionAttribute>.FullName)), m) with
                     | Some ([ Some (:? bool as b) ], _) -> ReflectedArgInfo.Quote b
                     | Some _ -> ReflectedArgInfo.Quote false
                     | None -> ReflectedArgInfo.None
@@ -1251,6 +1339,7 @@ type MethInfo =
                 |> List.mapSquared (map1Of2 (instType methodToParentRenaming) >> MakeSlotParam )
             let formalRetTy = Option.map (instType methodToParentRenaming) retTy
             MakeSlotSig(x.LogicalName, x.ApparentEnclosingType, formalEnclosingTypars, formalMethTypars, formalParams, formalRetTy)
+        | MethInfoWithModifiedReturnType(mi,_) -> mi.GetSlotSig(amap, m)
         | DefaultStructCtor _ -> error(InternalError("no slotsig for DefaultStructCtor", m))
         | _ ->
             let g = x.TcGlobals
@@ -1269,12 +1358,17 @@ type MethInfo =
 
             let formalRetTy, formalParams =
                 match x with
-                | ILMeth(_, ilminfo, _) ->
+                | ILMeth(_, ilminfo, _) ->                
                     let ftinfo = ILTypeInfo.FromType g (TType_app(tcref, formalEnclosingTyparTys, g.knownWithoutNull))
-                    let formalRetTy = ImportReturnTypeFromMetadata amap m ilminfo.RawMetadata.Return.Type (fun _ -> ilminfo.RawMetadata.Return.CustomAttrs) ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys
+
+                    let ilReturn = ilminfo.RawMetadata.Return
+                    let nullableSource = {DirectAttributes = AttributesFromIL(ilReturn.MetadataIndex,ilReturn.CustomAttrsStored); Fallback = ilminfo.NullableFallback}
+
+                    let formalRetTy = ImportReturnTypeFromMetadata amap m nullableSource ilReturn.Type ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys
                     let formalParams =
                         [ [ for p in ilminfo.RawMetadata.Parameters do
-                                let paramTy = ImportILTypeFromMetadataWithAttributes amap m ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys p.Type (fun _ -> p.CustomAttrs)
+                                let nullableSource = {nullableSource with DirectAttributes = AttributesFromIL(p.MetadataIndex,p.CustomAttrsStored)}
+                                let paramTy = ImportILTypeFromMetadataWithAttributes amap m ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys nullableSource p.Type
                                 yield TSlotParam(p.Name, paramTy, p.IsIn, p.IsOut, p.IsOptional, []) ] ]
                     formalRetTy, formalParams
 #if !NO_TYPEPROVIDERS
@@ -1286,7 +1380,7 @@ type MethInfo =
                     // For non-generic type providers there is no difference
                     let formalParams =
                         [ [ for p in mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m) do
-                                let paramName = p.PUntaint((fun p -> match p.Name with null -> None | s -> Some s), m)
+                                let paramName = p.PUntaint((fun p -> match p.Name with "" -> None | s -> Some s), m)
                                 let paramTy = ImportProvidedType amap m (p.PApply((fun p -> p.ParameterType), m))
                                 let isIn, isOut, isOptional = p.PUntaint((fun p -> p.IsIn, p.IsOut, p.IsOptional), m)
                                 yield TSlotParam(paramName, paramTy, isIn, isOut, isOptional, []) ] ]
@@ -1298,37 +1392,41 @@ type MethInfo =
 
     /// Get the ParamData objects for the parameters of a MethInfo
     member x.GetParamDatas(amap, m, minst) =
-        let paramNamesAndTypes =
-            match x with
-            | ILMeth(_g, ilminfo, _) ->
-                [ ilminfo.GetParamNamesAndTypes(amap, m, minst)  ]
-            | FSMeth(g, _, vref, _) ->
-                let ty = x.ApparentEnclosingAppType
-                let items = ParamNameAndType.FromMember x.IsCSharpStyleExtensionMember g vref
-                let inst = GetInstantiationForMemberVal g x.IsCSharpStyleExtensionMember (ty, vref, minst)
-                items |> ParamNameAndType.InstantiateCurried inst
-            | DefaultStructCtor _ ->
-                [[]]
+        match x with
+        | MethInfoWithModifiedReturnType(mi,_) -> mi.GetParamDatas(amap, m, minst)
+        | _ ->
+            let paramNamesAndTypes =
+                match x with
+                | ILMeth(_g, ilminfo, _) ->
+                    [ ilminfo.GetParamNamesAndTypes(amap, m, minst)  ]
+                | FSMeth(g, _, vref, _) ->
+                    let ty = x.ApparentEnclosingAppType
+                    let items = ParamNameAndType.FromMember x.IsCSharpStyleExtensionMember g vref
+                    let inst = GetInstantiationForMemberVal g x.IsCSharpStyleExtensionMember (ty, vref, minst)
+                    items |> ParamNameAndType.InstantiateCurried inst
+                | MethInfoWithModifiedReturnType(_mi,_) -> failwith "unreachable"
+                | DefaultStructCtor _ ->
+                    [[]]
 #if !NO_TYPEPROVIDERS
-            | ProvidedMeth(amap, mi, _, _) ->
-                // A single set of tupled parameters
-                [ [for p in mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m) do
-                        let paramName =
-                            match p.PUntaint((fun p -> p.Name), m) with
-                            | null -> None
-                            | name -> Some (mkSynId m name)
-                        let paramTy =
-                            match p.PApply((fun p -> p.ParameterType), m) with
-                            | Tainted.Null ->  amap.g.unit_ty
-                            | Tainted.NonNull parameterType -> ImportProvidedType amap m parameterType
-                        yield ParamNameAndType(paramName, paramTy) ] ]
+                | ProvidedMeth(amap, mi, _, _) ->
+                    // A single set of tupled parameters
+                    [ [for p in mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m) do
+                            let paramName =
+                                match p.PUntaint((fun p -> p.Name), m) with
+                                | "" -> None
+                                | name -> Some (mkSynId m name)
+                            let paramTy =
+                                match p.PApply((fun p -> p.ParameterType), m) with
+                                | Tainted.Null ->  amap.g.unit_ty
+                                | Tainted.NonNull parameterType -> ImportProvidedType amap m parameterType
+                            yield ParamNameAndType(paramName, paramTy) ] ]
 
 #endif
 
-        let paramAttribs = x.GetParamAttribs(amap, m)
-        (paramAttribs, paramNamesAndTypes) ||> List.map2 (List.map2 (fun info (ParamNameAndType(nmOpt, pty)) ->
-             let (ParamAttribs(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, reflArgInfo)) = info
-             ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, nmOpt, reflArgInfo, pty)))
+            let paramAttribs = x.GetParamAttribs(amap, m)
+            (paramAttribs, paramNamesAndTypes) ||> List.map2 (List.map2 (fun info (ParamNameAndType(nmOpt, pty)) ->
+                 let (ParamAttribs(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, reflArgInfo)) = info
+                 ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, nmOpt, reflArgInfo, pty)))
 
     /// Get the ParamData objects for the parameters of a MethInfo
     member x.HasParamArrayArg(amap, m, minst) =
@@ -1472,8 +1570,10 @@ type ILFieldInfo =
 
      /// Get the type of the field as an F# type
     member x.FieldType(amap, m) =
-        match x with
-        | ILFieldInfo (tinfo, fdef) -> ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] fdef.FieldType
+        match x with     
+        | ILFieldInfo (tinfo, fdef) -> 
+            let nullness = {DirectAttributes = AttributesFromIL(fdef.MetadataIndex,fdef.CustomAttrsStored); Fallback = tinfo.NullableClassSource}
+            ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] nullness fdef.FieldType
 #if !NO_TYPEPROVIDERS
         | ProvidedField(amap, fi, m) -> ImportProvidedType amap m (fi.PApply((fun fi -> fi.FieldType), m))
 #endif
@@ -1533,7 +1633,7 @@ type RecdFieldInfo =
     member x.FieldType = actualTyOfRecdFieldRef x.RecdFieldRef x.TypeInst
 
     /// Get the enclosing (declaring) type of the field in an F#-declared record, class or struct type
-    member x.DeclaringType = TType_app (x.RecdFieldRef.TyconRef, x.TypeInst, 0uy)
+    member x.DeclaringType = TType_app (x.RecdFieldRef.TyconRef, x.TypeInst, KnownWithoutNull) // TODO NULLNESS - qualify this 
 
     override x.ToString() = x.TyconRef.ToString() + "::" + x.LogicalName
 
@@ -1608,13 +1708,13 @@ type ILPropInfo =
     member x.GetterMethod =
         assert x.HasGetter
         let mdef = resolveILMethodRef x.ILTypeInfo.RawMetadata x.RawMetadata.GetMethod.Value
-        ILMethInfo(x.TcGlobals, x.ILTypeInfo.ToType, None, mdef, [])
+        ILMethInfo(x.TcGlobals, IlType x.ILTypeInfo, mdef, [])
 
     /// Gets the ILMethInfo of the 'set' method for the IL property
     member x.SetterMethod =
         assert x.HasSetter
         let mdef = resolveILMethodRef x.ILTypeInfo.RawMetadata x.RawMetadata.SetMethod.Value
-        ILMethInfo(x.TcGlobals, x.ILTypeInfo.ToType, None, mdef, [])
+        ILMethInfo(x.TcGlobals, IlType x.ILTypeInfo, mdef, [])
 
     /// Indicates if the IL property has a 'get' method
     member x.HasGetter = Option.isSome x.RawMetadata.GetMethod
@@ -1622,7 +1722,7 @@ type ILPropInfo =
     /// Indicates if the IL property has a 'set' method
     member x.HasSetter = Option.isSome x.RawMetadata.SetMethod
 
-    /// Indidcates whether IL property has an init-only setter (i.e. has the `System.Runtime.CompilerServices.IsExternalInit` modifer)
+    /// Indicates whether IL property has an init-only setter (i.e. has the `System.Runtime.CompilerServices.IsExternalInit` modifier)
     member x.IsSetterInitOnly =
         x.HasSetter && HasExternalInit x.SetterMethod.ILMethodRef
 
@@ -1647,23 +1747,36 @@ type ILPropInfo =
     /// Any type parameters of the enclosing type are instantiated in the type returned.
     member x.GetParamNamesAndTypes(amap, m) =
         let (ILPropInfo (tinfo, pdef)) = x
-        pdef.Args |> List.map (fun ty -> ParamNameAndType(None, ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] ty) )
+        if x.HasGetter then
+            x.GetterMethod.GetParamNamesAndTypes(amap,m,tinfo.TypeInstOfRawMetadata)
+        else if x.HasSetter then
+            x.SetterMethod.GetParamNamesAndTypes(amap,m,tinfo.TypeInstOfRawMetadata)
+        else
+            // Fallback-only for invalid properties
+            pdef.Args |> List.map (fun ty -> ParamNameAndType(None, ImportILTypeFromMetadataSkipNullness amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] ty) )
 
     /// Get the types of the indexer arguments associated with the IL property.
     ///
     /// Any type parameters of the enclosing type are instantiated in the type returned.
     member x.GetParamTypes(amap, m) =
         let (ILPropInfo (tinfo, pdef)) = x
-        pdef.Args |> List.map (fun ty -> ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] ty)
+        if x.HasGetter then
+            x.GetterMethod.GetParamTypes(amap,m,tinfo.TypeInstOfRawMetadata)
+        else if x.HasSetter then
+            x.SetterMethod.GetParamTypes(amap,m,tinfo.TypeInstOfRawMetadata)
+        else
+            // Fallback-only for invalid properties
+            pdef.Args |> List.map (fun ty -> ImportILTypeFromMetadataSkipNullness amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] ty)
 
     /// Get the return type of the IL property.
     ///
     /// Any type parameters of the enclosing type are instantiated in the type returned.
     member x.GetPropertyType (amap, m) =
         let (ILPropInfo (tinfo, pdef)) = x
-        ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] pdef.PropertyType
+        let nullness = {DirectAttributes = AttributesFromIL(pdef.MetadataIndex,pdef.CustomAttrsStored); Fallback = tinfo.NullableClassSource}
+        ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] nullness pdef.PropertyType
 
-    override x.ToString() = x.ILTypeInfo.ToString() + "::" + x.PropertyName
+    override x.ToString() = !!x.ILTypeInfo.ToString() + "::" + x.PropertyName
 
 /// Describes an F# use of a property
 [<NoComparison; NoEquality>]
@@ -1768,6 +1881,38 @@ type PropInfo =
 #if !NO_TYPEPROVIDERS
         | ProvidedProp(_, pi, m) -> pi.PUntaint((fun pi -> pi.CanWrite), m)
 #endif
+
+    member x.GetterAccessibility =
+        match x with
+        | ILProp ilpinfo when ilpinfo.HasGetter -> Some taccessPublic
+        | ILProp _ -> None
+
+        | FSProp(_, _, Some getter, _) -> Some getter.Accessibility
+        | FSProp _ -> None
+
+#if !NO_TYPEPROVIDERS
+        | ProvidedProp(_, pi, m) -> pi.PUntaint((fun pi -> if pi.CanWrite then Some taccessPublic else None), m)
+#endif
+
+    member x.SetterAccessibility =
+        match x with
+        | ILProp ilpinfo when ilpinfo.HasSetter -> Some taccessPublic
+        | ILProp _ -> None
+
+        | FSProp(_, _, _, Some setter) -> Some setter.Accessibility
+        | FSProp _ -> None
+
+#if !NO_TYPEPROVIDERS
+        | ProvidedProp(_, pi, m) -> pi.PUntaint((fun pi -> if pi.CanWrite then Some taccessPublic else None), m)
+#endif
+
+    member x.IsProtectedAccessibility =
+        match x with
+        | ILProp ilpinfo when ilpinfo.HasGetter && ilpinfo.HasSetter -> 
+            struct(ilpinfo.GetterMethod.IsProtectedAccessibility, ilpinfo.SetterMethod.IsProtectedAccessibility)
+        | ILProp ilpinfo when ilpinfo.HasGetter -> struct(ilpinfo.GetterMethod.IsProtectedAccessibility, false)
+        | ILProp ilpinfo when ilpinfo.HasSetter -> struct(false, ilpinfo.SetterMethod.IsProtectedAccessibility)
+        | _ -> struct(false, false)
 
     member x.IsSetterInitOnly =
         match x with
@@ -1939,7 +2084,7 @@ type PropInfo =
 
     /// Get the result type of the property
     member x.GetPropertyType (amap, m) =
-        match x with
+        match x with      
         | ILProp ilpinfo -> ilpinfo.GetPropertyType (amap, m)
         | FSProp (g, _, Some vref, _)
         | FSProp (g, _, _, Some vref) ->
@@ -1957,7 +2102,7 @@ type PropInfo =
     ///
     /// If the property is in a generic type, then the type parameters are instantiated in the types returned.
     member x.GetParamNamesAndTypes(amap, m) =
-        match x with
+        match x with     
         | ILProp ilpinfo -> ilpinfo.GetParamNamesAndTypes(amap, m)
         | FSProp (g, ty, Some vref, _)
         | FSProp (g, ty, _, Some vref) ->
@@ -1967,7 +2112,7 @@ type PropInfo =
 #if !NO_TYPEPROVIDERS
         | ProvidedProp (_, pi, m) ->
             [ for p in pi.PApplyArray((fun pi -> pi.GetIndexParameters()), "GetIndexParameters", m) do
-                let paramName = p.PUntaint((fun p -> match p.Name with null -> None | s -> Some (mkSynId m s)), m)
+                let paramName = p.PUntaint((fun p -> match p.Name with "" -> None | s -> Some (mkSynId m s)), m)
                 let paramTy = ImportProvidedType amap m (p.PApply((fun p -> p.ParameterType), m))
                 yield ParamNameAndType(paramName, paramTy) ]
 #endif
@@ -1978,7 +2123,7 @@ type PropInfo =
         |> List.map (fun (ParamNameAndType(nmOpt, paramTy)) -> ParamData(false, false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, paramTy))
 
     /// Get the types of the indexer parameters associated with the property
-    member x.GetParamTypes(amap, m) =
+    member x.GetParamTypes(amap, m) =  
       x.GetParamNamesAndTypes(amap, m) |> List.map (fun (ParamNameAndType(_, ty)) -> ty)
 
     /// Get a MethInfo for the 'getter' method associated with the property
@@ -2073,12 +2218,12 @@ type ILEventInfo =
     /// Get the ILMethInfo describing the 'add' method associated with the event
     member x.AddMethod =
         let mdef = resolveILMethodRef x.ILTypeInfo.RawMetadata x.RawMetadata.AddMethod
-        ILMethInfo(x.TcGlobals, x.ILTypeInfo.ToType, None, mdef, [])
+        ILMethInfo(x.TcGlobals, IlType x.ILTypeInfo, mdef, [])
 
     /// Get the ILMethInfo describing the 'remove' method associated with the event
     member x.RemoveMethod =
         let mdef = resolveILMethodRef x.ILTypeInfo.RawMetadata x.RawMetadata.RemoveMethod
-        ILMethInfo(x.TcGlobals, x.ILTypeInfo.ToType, None, mdef, [])
+        ILMethInfo(x.TcGlobals, IlType x.ILTypeInfo, mdef, [])
 
     /// Get the declaring type of the event as an ILTypeRef
     member x.TypeRef = x.ILTypeInfo.ILTypeRef
@@ -2089,7 +2234,7 @@ type ILEventInfo =
     /// Indicates if the property is static
     member x.IsStatic = x.AddMethod.IsStatic
 
-    override x.ToString() = x.ILTypeInfo.ToString() + "::" + x.EventName
+    override x.ToString() = !!x.ILTypeInfo.ToString() + "::" + x.EventName
 
 //-------------------------------------------------------------------------
 // Helpers for EventInfo
@@ -2274,9 +2419,10 @@ type EventInfo =
         match x with
         | ILEvent(ILEventInfo(tinfo, edef)) ->
             // Get the delegate type associated with an IL event, taking into account the instantiation of the
-            // declaring type.
+            // declaring type
             if Option.isNone edef.EventType then error (nonStandardEventError x.EventName m)
-            ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] edef.EventType.Value
+            let nullness = {DirectAttributes = AttributesFromIL(edef.MetadataIndex,edef.CustomAttrsStored); Fallback = tinfo.NullableClassSource}
+            ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] nullness edef.EventType.Value
 
         | FSEvent(g, p, _, _) ->
             FindDelegateTypeOfPropertyEvent g amap x.EventName m (p.GetPropertyType(amap, m))

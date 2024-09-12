@@ -12,6 +12,26 @@
         <target state="translated">약어가 다르기 때문에 시그니처 및 구현의 '{1}' 형식에 대한 {0} 정의가 호환되지 않습니다.\n    {2}\n 대 \n    {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarning">
+        <source>Nullness warning: {0}.</source>
+        <target state="new">Nullness warning: {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningEquivWithTypes">
+        <source>Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</source>
+        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningWithType">
+        <source>Nullness warning: The type '{0}' does not support 'null'.</source>
+        <target state="new">Nullness warning: The type '{0}' does not support 'null'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningWithTypes">
+        <source>Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</source>
+        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
         <source>Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</source>
         <target state="translated">유형 불일치. 형식이 \n    {1}이고 길이가 {0}인 튜플이 필요합니다.    \n그러나 형식이 \n    {3}이고 길이가 {2}인 튜플이 제공되었습니다.{4}\n</target>
@@ -35,6 +55,11 @@
       <trans-unit id="OverrideShouldBeStatic">
         <source> Static member is expected.</source>
         <target state="translated"> 정적 멤버가 필요합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR_JUST_BEFORE_NULL">
+        <source>symbol '|' (directly before 'null')</source>
+        <target state="new">symbol '|' (directly before 'null')</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
@@ -178,7 +203,7 @@
         <note />
       </trans-unit>
       <trans-unit id="NameClash2">
-        <source>The {0} '{1}' can not be defined because the name '{2}' clashes with the {3} '{4}' in this type or module</source>
+        <source>The {0} '{1}' cannot be defined because the name '{2}' clashes with the {3} '{4}' in this type or module</source>
         <target state="translated">이름 '{2}'이(가) 이 형식 또는 모듈의 {3} '{4}'과(와) 충돌하므로 {0} '{1}'을(를) 정의할 수 없습니다.</target>
         <note />
       </trans-unit>
@@ -249,7 +274,7 @@
       </trans-unit>
       <trans-unit id="TypeIsImplicitlyAbstract">
         <source>Non-abstract classes cannot contain abstract members. Either provide a default member implementation or add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
-        <target state="needs-review-translation">일부 추상 멤버에 구현이 지정되지 않았으므로 이 형식은 'abstract'입니다. 의도적으로 구현을 지정하지 않은 경우에는 형식에 '[&lt;AbstractClass&gt;]' 특성을 추가하세요.</target>
+        <target state="translated">비 추상 클래스는 추상 구성원을 포함할 수 없습니다. 기본 구성원 구현을 제공하거나 형식에 '[&lt;AbstractClass&gt;]' 특성을 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar1">
@@ -1379,7 +1404,7 @@
       </trans-unit>
       <trans-unit id="RecursiveUseCheckedAtRuntime">
         <source>This recursive use will be checked for initialization-soundness at runtime. This warning is usually harmless, and may be suppressed by using '#nowarn "21"' or '--nowarn:21'.</source>
-        <target state="needs-review-translation">이러한 재귀적 사용은 런타임에 초기화 적합성이 확인됩니다. 이 경고는 일반적으로 무해하며 '#nowarn "21"' 또는 '--nowarn:21'을 사용하여 표시하지 않을 수 있습니다.</target>
+        <target state="translated">이러한 재귀적 사용은 런타임에 초기화 적합성이 확인됩니다. 이 경고는 일반적으로 무해하며 '#nowarn "21"' 또는 '--nowarn:21'을 사용하여 표시하지 않을 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="LetRecUnsound1">
@@ -1404,7 +1429,7 @@
       </trans-unit>
       <trans-unit id="LetRecCheckedAtRuntime">
         <source>This and other recursive references to the object(s) being defined will be checked for initialization-soundness at runtime through the use of a delayed reference. This is because you are defining one or more recursive objects, rather than recursive functions. This warning may be suppressed by using '#nowarn "40"' or '--nowarn:40'.</source>
-        <target state="needs-review-translation">이 재귀 참조와 정의 대상 개체에 대한 기타 재귀 참조는 런타임에 지연된 참조를 사용하여 초기화 적합성이 확인됩니다. 이는 사용자가 재귀 함수 대신 하나 이상의 재귀적 개체를 정의하기 때문입니다. 이 경고는 '#nowarn "40"' 또는 '--nowarn:40'을 사용하여 표시하지 않을 수 있습니다.</target>
+        <target state="translated">이 재귀 참조와 정의 대상 개체에 대한 기타 재귀 참조는 런타임에 지연된 참조를 사용하여 초기화 적합성이 확인됩니다. 이는 사용자가 재귀 함수 대신 하나 이상의 재귀적 개체를 정의하기 때문입니다. 이 경고는 '#nowarn "40"' 또는 '--nowarn:40'을 사용하여 표시하지 않을 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="SelfRefObjCtor1">
@@ -1524,12 +1549,12 @@
       </trans-unit>
       <trans-unit id="Experimental">
         <source>{0}. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.</source>
-        <target state="needs-review-translation">{0}. 이 경고는 '--nowarn:57' 또는 '#nowarn "57"'을 통해 사용할 수 없도록 설정할 수 있습니다.</target>
+        <target state="translated">{0}. 이 경고는 '--nowarn:57' 또는 '#nowarn "57"'을 통해 사용할 수 없도록 설정할 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="PossibleUnverifiableCode">
         <source>Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.</source>
-        <target state="needs-review-translation">이 구문을 사용하면 확인할 수 없는 .NET IL 코드가 생성될 수 있습니다. 이 경고는 '--nowarn:9' 또는 '#nowarn "9"'를 통해 사용할 수 없도록 설정할 수 있습니다.</target>
+        <target state="translated">이 구문을 사용하면 확인할 수 없는 .NET IL 코드가 생성될 수 있습니다. 이 경고는 '--nowarn:9' 또는 '#nowarn "9"'를 통해 사용할 수 없도록 설정할 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="Deprecated">
@@ -1574,7 +1599,7 @@
       </trans-unit>
       <trans-unit id="IntfImplInIntrinsicAugmentation">
         <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using '#nowarn "69"' if you have checked this is not the case.</source>
-        <target state="needs-review-translation">인터페이스 구현은 일반적으로 유형의 초기 선언에 제공되어야 합니다. 확대의 인터페이스 구현은 초기화되기 전에 정적 바인딩에 액세스할 수 있지만 정적 데이터의 초기화 중에 인터페이스 구현이 호출되어 정적 데이터에 액세스하는 경우에만 가능합니다. 사실이 아님을 확인한 경우 #nowarn "69"를 사용하여 이 경고를 제거할 수 있습니다.</target>
+        <target state="translated">인터페이스 구현은 일반적으로 유형의 초기 선언에 제공되어야 합니다. 확대의 인터페이스 구현은 초기화되기 전에 정적 바인딩에 액세스할 수 있지만 정적 데이터의 초기화 중에 인터페이스 구현이 호출되어 정적 데이터에 액세스하는 경우에만 가능합니다. 사실이 아님을 확인한 경우 #nowarn "69"를 사용하여 이 경고를 제거할 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInExtrinsicAugmentation">
@@ -1594,12 +1619,12 @@
       </trans-unit>
       <trans-unit id="HashIncludeNotAllowedInNonScript">
         <source>#I directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="needs-review-translation">#I 지시문은 F# 스크립트 파일(확장명 .fsx 또는 .fsscript)에서만 발생할 수 있습니다. 이 코드를 스크립트 파일로 이동하거나, 이 참조에 대한 '-I' 컴파일러 옵션을 추가하거나, 지시문을 '#if INTERACTIVE'/'#endif'로 구분하세요.</target>
+        <target state="translated">#I 지시문은 F# 스크립트 파일(확장명 .fsx 또는 .fsscript)에서만 사용할 수 있습니다. 이 코드를 스크립트 파일로 이동하거나, 이 참조에 대한 '-I' 컴파일러 옵션을 추가하거나, 지시문을 '#if INTERACTIVE'/'#endif'로 구분하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="HashReferenceNotAllowedInNonScript">
         <source>#r directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="needs-review-translation">#r 지시문은 F# 스크립트 파일(확장명 .fsx 또는 .fsscript)에서만 발생할 수 있습니다. 이 코드를 스크립트 파일로 이동하거나 이 참조를 '-r' 컴파일러 옵션으로 바꾸세요. 이 지시문이 사용자 입력으로 실행되는 경우 지시문을 '#if INTERACTIVE'/'#endif'로 구분할 수 있습니다.</target>
+        <target state="translated">#r 지시문은 F# 스크립트 파일(확장명 .fsx 또는 .fsscript)에서만 사용할 수 있습니다. 이 코드를 스크립트 파일로 이동하거나 이 참조를 '-r' 컴파일러 옵션으로 바꾸세요. 이 지시문이 사용자 입력으로 실행되는 경우 지시문을 '#if INTERACTIVE'/'#endif'로 구분할 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="HashDirectiveNotAllowedInNonScript">
