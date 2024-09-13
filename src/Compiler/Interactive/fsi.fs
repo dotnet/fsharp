@@ -1741,24 +1741,24 @@ type internal FsiDynamicCompiler
             try
                 if not (Directory.Exists(path)) then
                     Directory.CreateDirectory(path) |> ignore
-    
+
                 path
             with _ ->
                 path
-    
+
         createDirectory (Path.Combine(Path.GetTempPath(), $"{DateTime.Now:s}-{Guid.NewGuid():n}".Replace(':', '-')))
-    
+
     let deleteScriptingSymbols () =
         try
-    #if !DEBUG
+#if !DEBUG
             if Directory.Exists(scriptingSymbolsPath) then
                 Directory.Delete(scriptingSymbolsPath, true)
-    #else
+#else
             ()
-    #endif
+#endif
         with _ ->
             ()
-    
+
     do
         AppDomain.CurrentDomain.ProcessExit
         |> Event.add (fun _ -> deleteScriptingSymbols ())
