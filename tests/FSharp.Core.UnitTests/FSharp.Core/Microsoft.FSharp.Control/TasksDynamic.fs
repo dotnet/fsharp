@@ -998,6 +998,7 @@ type Basics() =
                     try
                         ranInitial.Set()
                         do! stepOutside.WaitAsync()
+                        Thread.Sleep(200)
                         ranNext.Set()
                     finally
                         ranFinally <- ranFinally + 1
