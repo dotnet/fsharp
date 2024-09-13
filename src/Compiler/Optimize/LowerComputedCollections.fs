@@ -373,60 +373,70 @@ module Array =
         else any ilTy
 
     /// Makes the equivalent of an inlined call to Array.map.
-    let mkMap g m (mBody, _spFor, _spIn, mFor, mIn, spInWhile) srcArray srcIlTy destIlTy overallElemTy loopVal body =
-        let len = mkLdlen g mIn srcArray
-        let arrayTy = mkArrayType g overallElemTy
+    let mkMap g m (mBody, _spFor, _spIn, mFor, mIn, spInWhile) srcArray srcIlTy destIlTy overallElemTy (loopVal: Val) body =
+        mkCompGenLetIn m (nameof srcArray) (tyOfExpr g srcArray) srcArray (fun (_, srcArray) ->
+            let len = mkLdlen g mIn srcArray
+            let arrayTy = mkArrayType g overallElemTy
 
-        /// (# "newarr !0" type ('T) count : 'T array #)
-        let array =
-            mkAsmExpr
-                (
-                    [I_newarr (ILArrayShape.SingleDimensional, destIlTy)],
-                    [],
-                    [len],
-                    [arrayTy],
-                    m
+            /// (# "newarr !0" type ('T) count : 'T array #)
+            let array =
+                mkAsmExpr
+                    (
+                        [I_newarr (ILArrayShape.SingleDimensional, destIlTy)],
+                        [],
+                        [len],
+                        [arrayTy],
+                        m
+                    )
+
+            let ldelem = mkIlInstr g I_ldelem (fun ilTy -> I_ldelem_any (ILArrayShape.SingleDimensional, ilTy)) srcIlTy
+            let stelem = mkIlInstr g I_stelem (fun ilTy -> I_stelem_any (ILArrayShape.SingleDimensional, ilTy)) destIlTy
+
+            let mapping =
+                mkCompGenLetIn m (nameof array) arrayTy array (fun (_, array) ->
+                    mkCompGenLetMutableIn mFor "i" g.int32_ty (mkTypedZero g mIn g.int32_ty) (fun (iVal, i) ->
+                        let body =
+                            // If the loop val is used in the loop body,
+                            // rebind it to pull directly from the source array.
+                            // Otherwise, don't bother reading from the source array at all.
+                            let body =
+                                let freeLocals = (freeInExpr CollectLocals body).FreeLocals
+
+                                if freeLocals.Contains loopVal then
+                                    mkInvisibleLet mBody loopVal (mkAsmExpr ([ldelem], [], [srcArray; i], [loopVal.val_type], mBody)) body
+                                else
+                                    body
+
+                            // destArray[i] <- body srcArray[i]
+                            let setArrSubI = mkAsmExpr ([stelem], [], [array; i; body], [], mIn)
+
+                            // i <- i + 1
+                            let incrI = mkValSet mIn (mkLocalValRef iVal) (mkAsmExpr ([AI_add], [], [i; mkTypedOne g mIn g.int32_ty], [g.int32_ty], mIn))
+
+                            mkSequential mIn setArrSubI incrI
+
+                        let guard = mkILAsmClt g mFor i (mkLdlen g mFor array)
+
+                        let loop =
+                            mkWhile
+                                g
+                                (
+                                    spInWhile,
+                                    NoSpecialWhileLoopMarker,
+                                    guard,
+                                    body,
+                                    mIn
+                                )
+
+                        // while i < array.Length do <body> done
+                        // array
+                        mkSequential m loop array
+                    )
                 )
 
-        let ldelem = mkIlInstr g I_ldelem (fun ilTy -> I_ldelem_any (ILArrayShape.SingleDimensional, ilTy)) srcIlTy
-        let stelem = mkIlInstr g I_stelem (fun ilTy -> I_stelem_any (ILArrayShape.SingleDimensional, ilTy)) destIlTy
-
-        let mapping =
-            mkCompGenLetIn m (nameof array) arrayTy array (fun (_, array) ->
-                mkCompGenLetMutableIn mFor "i" g.int32_ty (mkTypedZero g mIn g.int32_ty) (fun (iVal, i) ->
-                    let body =
-                        // Rebind the loop val to pull directly from the source array.
-                        let body = mkInvisibleLet mBody loopVal (mkAsmExpr ([ldelem], [], [srcArray; i], [loopVal.val_type], mBody)) body
-
-                        // destArray[i] <- body srcArray[i]
-                        let setArrSubI = mkAsmExpr ([stelem], [], [array; i; body], [], mIn)
-
-                        // i <- i + 1
-                        let incrI = mkValSet mIn (mkLocalValRef iVal) (mkAsmExpr ([AI_add], [], [i; mkTypedOne g mIn g.int32_ty], [g.int32_ty], mIn))
-
-                        mkSequential mIn setArrSubI incrI
-
-                    let guard = mkILAsmClt g mFor i (mkLdlen g mFor array)
-
-                    let loop =
-                        mkWhile
-                            g
-                            (
-                                spInWhile,
-                                NoSpecialWhileLoopMarker,
-                                guard,
-                                body,
-                                mIn
-                            )
-
-                    // while i < array.Length do <body> done
-                    // array
-                    mkSequential m loop array
-                )
-            )
-
-        // Add a debug point at the `for`, before anything gets evaluated.
-        Expr.DebugPoint (DebugPointAtLeafExpr.Yes mFor, mapping)
+            // Add a debug point at the `for`, before anything gets evaluated.
+            Expr.DebugPoint (DebugPointAtLeafExpr.Yes mFor, mapping)
+        )
 
     /// Whether to check for overflow when converting a value to a native int.
     [<NoEquality; NoComparison>]
@@ -557,6 +567,9 @@ let (|SingleYield|_|) g expr : Expr voption =
 
         | Expr.Sequential (expr1, DebugPoints (body, debug), kind, m) ->
             loop body (cont << fun body -> Expr.Sequential (expr1, debug body, kind, m))
+
+        | Expr.Match (debugPoint, mInput, decision, [|TTarget (boundVals, DebugPoints (SeqSingleton g body, debug), isStateVarFlags)|], mFull, exprType) ->
+            ValueSome (cont (Expr.Match (debugPoint, mInput, decision, [|TTarget (boundVals, debug body, isStateVarFlags)|], mFull, exprType)))
 
         | SeqSingleton g body ->
             ValueSome (cont body)
