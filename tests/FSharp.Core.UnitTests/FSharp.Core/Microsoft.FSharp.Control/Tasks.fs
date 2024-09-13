@@ -190,6 +190,14 @@ module Helpers =
     let BIG = 10
     // let BIG = 10000
     let require x msg = if not x then failwith msg
+
+    let waitFor (e: ManualResetEventSlim) msg =
+        if not (e.Wait(TimeSpan.FromSeconds 5.)) then failwith msg
+
+    let requireNotSet (e: ManualResetEventSlim) msg = if e.IsSet then failwith msg
+
+    let requireSet (e: ManualResetEventSlim) msg = if not e.IsSet then failwith msg
+
     let failtest str = raise (TestException str)
 
 type Basics() = 
@@ -236,16 +244,17 @@ type Basics() =
     [<Fact>]
     member _.testNonBlocking() =
         printfn "Running testNonBlocking..."
-        let sw = Stopwatch()
-        sw.Start()
+        let allowContinue = new SemaphoreSlim(0)
+        let finished = new ManualResetEventSlim()
         let t =
             task {
-                do! Task.Yield()
-                Thread.Sleep(100)
+                do! allowContinue.WaitAsync()
+                Thread.Sleep(200)
+                finished.Set()
             }
-        sw.Stop()
-        require (sw.ElapsedMilliseconds < 50L) "sleep blocked caller"
-        t.Wait()
+        allowContinue.Release() |> ignore
+        requireNotSet finished "sleep blocked caller"
+        waitFor finished "did not finish in time"
 
     [<Fact>]
     member _.testCatching1() =
@@ -937,29 +946,31 @@ type Basics() =
     member _.test2ndExceptionThrownInFinally() =
         printfn "running test2ndExceptionThrownInFinally"
         for i in 1 .. 5 do 
-            let mutable ranInitial = false
-            let mutable ranNext = false
+            use ranInitial = new ManualResetEventSlim()
+            use continueTask = new SemaphoreSlim(0)
+            use ranNext = new ManualResetEventSlim()
             let mutable ranFinally = 0
             let t =
                 task {
                     try
-                        ranInitial <- true
-                        do! Task.Yield()
+                        ranInitial.Set()
+                        do! continueTask.WaitAsync()
                         Thread.Sleep(100) // shouldn't be blocking so we should get through to requires before this finishes
-                        ranNext <- true
+                        ranNext.Set()
                         failtest "uhoh"
                     finally
                         ranFinally <- ranFinally + 1
                         failtest "2nd exn!"
                 }
-            require ranInitial "didn't run initial"
-            require (not ranNext) "ran next too early"
+            waitFor ranInitial "didn't run initial"
+            continueTask.Release() |> ignore
+            requireNotSet ranNext "ran next too early"
             try
                 t.Wait()
                 require false "shouldn't get here"
             with
             | _ -> ()
-            require ranNext "didn't run next"
+            requireSet ranNext "didn't run next"
             require (ranFinally = 1) "didn't run finally exactly once"
     
     [<Fact>]

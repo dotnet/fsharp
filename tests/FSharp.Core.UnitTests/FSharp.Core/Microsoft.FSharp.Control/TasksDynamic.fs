@@ -311,6 +311,12 @@ module Helpers =
     let BIG = 10
     // let BIG = 10000
     let require x msg = if not x then failwith msg
+
+    let requireSet (e: ManualResetEventSlim) msg =
+        if not (e.Wait(TimeSpan.FromSeconds 5.)) then failwith msg
+
+    let requireNotSet (e: ManualResetEventSlim) msg = if e.IsSet then failwith msg
+
     let failtest str = raise (TestException str)
 
 type Basics() = 
@@ -982,29 +988,30 @@ type Basics() =
     [<Fact>]
     member _.testExceptionThrownInFinally() =
         printfn "running testExceptionThrownInFinally"
-        for i in 1 .. 5 do 
-            let mutable ranInitial = false
-            let mutable ranNext = false
+        for i in 1 .. 5 do
+            use stepOutside = new SemaphoreSlim(0)
+            use ranInitial = new ManualResetEventSlim()
+            use ranNext = new ManualResetEventSlim()
             let mutable ranFinally = 0
             let t =
                 taskDynamic {
                     try
-                        ranInitial <- true
-                        do! Task.Yield()
-                        Thread.Sleep(100) // shouldn't be blocking so we should get through to requires before this finishes
-                        ranNext <- true
+                        ranInitial.Set()
+                        do! stepOutside.WaitAsync()
+                        ranNext.Set()
                     finally
                         ranFinally <- ranFinally + 1
                         failtest "finally exn!"
                 }
-            require ranInitial "didn't run initial"
-            require (not ranNext) "ran next too early"
+            requireSet ranInitial "didn't run initial"
+            stepOutside.Release() |> ignore
+            requireNotSet ranNext "ran next too early"
             try
                 t.Wait()
                 require false "shouldn't get here"
             with
             | _ -> ()
-            require ranNext "didn't run next"
+            requireSet ranNext "didn't run next"
             require (ranFinally = 1) "didn't run finally exactly once"
 
     [<Fact>]
