@@ -7530,9 +7530,9 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
             let concatenableExprs = if canLower then concatenable [] fillExprs parts else []
 
             match concatenableExprs with
-            | [p1; p2; p3; p4] -> mkStaticCall_String_Concat4 g m p1 p2 p3 p4, tpenv
-            | [p1; p2; p3] -> mkStaticCall_String_Concat3 g m p1 p2 p3, tpenv
-            | [p1; p2] -> mkStaticCall_String_Concat2 g m p1 p2, tpenv
+            | [p1; p2; p3; p4] -> TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env m (fun () -> mkStaticCall_String_Concat4 g m p1 p2 p3 p4, tpenv)
+            | [p1; p2; p3] -> TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env m (fun () -> mkStaticCall_String_Concat3 g m p1 p2 p3, tpenv)
+            | [p1; p2] -> TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env m (fun () -> mkStaticCall_String_Concat2 g m p1 p2, tpenv)
             | [p1] -> p1, tpenv
             | _ ->
 
