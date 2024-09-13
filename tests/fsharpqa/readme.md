@@ -22,7 +22,7 @@ About the format:
 
 You can use [run.fsharpqa.test.fsx](run.fsharpqa.test.fsx) script, and edit the end of it to specify which classifying tag you are working with. Evaluating the script should run the relevant tests.
 
-A convenience "fsharpqafiles.csproj" project is located in the fsharp.sln solution, the only purpose is to facillitate navigation to test files that frequently need to be edited from within the IDE/text editor environment.
+A convenience "fsharpqafiles.csproj" project is located in the fsharp.sln solution, the only purpose is to facilitate navigation to test files that frequently need to be edited from within the IDE/text editor environment.
 
 * edit Source/test.lst, find the entry you like to work with and give it a unique tag (e.g. "RERUN")
 * within the suite, if you are only interested about a specific test, you can comment lines in `env.lst` files by prepending those with `#`
@@ -44,5 +44,5 @@ set TEST_UPDATE_BSL=1
 
 Updating baselines en-masse should be done very carefully and subject to careful code review.   Where possible the
 compiler change causing the en-masse update should be isolated and minimized so it is obvious at review time that no other
-code generation chagnes will be caused.
+code generation changes will be caused.
 

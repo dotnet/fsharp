@@ -1,4 +1,4 @@
-// Verify consumtion from F#
+// Verify consumption from F#
 
 //Interface - empty
 public interface I_000<T> { }

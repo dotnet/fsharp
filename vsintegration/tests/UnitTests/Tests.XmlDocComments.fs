@@ -43,15 +43,15 @@ type XmlDocComments() =
             let Subtract x y = x - y
 
             /// <summary>
-            /// Multipy two <see cref="T:System.Int32" /> values.
+            /// Multiply two <see cref="T:System.Int32" /> values.
             /// </summary>
             /// <param name="x">The first value to sum</param>
             /// <param name="x">The second value to sum</param>
-            let Multipy x y = x * y
+            let Multiply x y = x * y
 
             let foo = XML.Doc.Add(*Marker1*)
             let bar = Subtract(*Marker2*) 3 2
-            let baz = Multipy(*Marker3*) 2 3"""
+            let baz = Multiply(*Marker3*) 2 3"""
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
         let project1 = CreateProject(solution, "FSLibrary")
@@ -66,7 +66,7 @@ type XmlDocComments() =
         GetQuickInfoAtCursor file
 
     [<Test>]
-    [<Ignore("GetQcuickInfoAtCursor miss XMLDoc analyzing")>]
+    [<Ignore("GetQuickInfoAtCursor miss XMLDoc analyzing")>]
     member this.``MalFormedXML.FromXMLDoc``() = 
         let expected = "XML comment"
         let tooltip = this.TestMalFormedXML("(*Marker1*)")
@@ -74,7 +74,7 @@ type XmlDocComments() =
         AssertContains(trimnewlines tooltip, trimnewlines expected) 
 
     [<Test>]
-    [<Ignore("GetQcuickInfoAtCursor miss XMLDoc analyzing")>]
+    [<Ignore("GetQuickInfoAtCursor miss XMLDoc analyzing")>]
     member this.``MalFormedXML.FromCurrentProject``() = 
         let expected = "'summary'"
         let tooltip = this.TestMalFormedXML("(*Marker2*)")
@@ -82,7 +82,7 @@ type XmlDocComments() =
         AssertContains(trimnewlines tooltip, trimnewlines expected) 
 
     [<Test>]
-    [<Ignore("GetQcuickInfoAtCursor miss XMLDoc analyzing")>]
+    [<Ignore("GetQuickInfoAtCursor miss XMLDoc analyzing")>]
     member this.``MalFormedXML.NoXMLComment.Bug5858``() = 
         let notexpected = "summary"
         let notexpected2 = "param name="
@@ -92,7 +92,7 @@ type XmlDocComments() =
         AssertNotContains(tooltip, notexpected2)   
 
     [<Test>]
-    [<Ignore("GetQcuickInfoAtCursor miss XMLDoc analyzing")>]
+    [<Ignore("GetQuickInfoAtCursor miss XMLDoc analyzing")>]
     member this.Test() = 
         let fileContent = """
             //local custom type value

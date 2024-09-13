@@ -203,8 +203,8 @@ type TypeBuilder with
 
         typB.DefineGenericParameters gps
 
-    member typB.DefineConstructorAndLog(attrs, cconv, parms) =
-        let consB = typB.DefineConstructor(attrs, cconv, parms)
+    member typB.DefineConstructorAndLog(attrs, cconv, params_) =
+        let consB = typB.DefineConstructor(attrs, cconv, params_)
 
         if logRefEmitCalls then
             printfn
@@ -213,7 +213,7 @@ type TypeBuilder with
                 (abs <| hash typB)
                 (LanguagePrimitives.EnumToValue attrs)
                 cconv
-                parms
+                params_
 
         consB
 
@@ -1714,31 +1714,34 @@ let buildGenParamsPass1b cenv emEnv (genArgs: Type array) (gps: ILGenericParamet
         gp.CustomAttrs
         |> emitCustomAttrs cenv emEnv (wrapCustomAttr gpB.SetCustomAttribute)
 
-        let flags = GenericParameterAttributes.None
-
         let flags =
             match gp.Variance with
-            | NonVariant -> flags
-            | CoVariant -> flags ||| GenericParameterAttributes.Covariant
-            | ContraVariant -> flags ||| GenericParameterAttributes.Contravariant
+            | NonVariant -> GenericParameterAttributes.None
+            | CoVariant -> GenericParameterAttributes.Covariant
+            | ContraVariant -> GenericParameterAttributes.Contravariant
+
+        let zero = GenericParameterAttributes.None
 
         let flags =
-            if gp.HasReferenceTypeConstraint then
-                flags ||| GenericParameterAttributes.ReferenceTypeConstraint
-            else
-                flags
-
-        let flags =
-            if gp.HasNotNullableValueTypeConstraint then
-                flags ||| GenericParameterAttributes.NotNullableValueTypeConstraint
-            else
-                flags
-
-        let flags =
-            if gp.HasDefaultConstructorConstraint then
-                flags ||| GenericParameterAttributes.DefaultConstructorConstraint
-            else
-                flags
+            flags
+            ||| (if gp.HasReferenceTypeConstraint then
+                     GenericParameterAttributes.ReferenceTypeConstraint
+                 else
+                     zero)
+            ||| (if gp.HasNotNullableValueTypeConstraint then
+                     GenericParameterAttributes.NotNullableValueTypeConstraint
+                 else
+                     zero)
+            ||| (if gp.HasDefaultConstructorConstraint then
+                     GenericParameterAttributes.DefaultConstructorConstraint
+                 else
+                     zero)
+            |||
+            // GenericParameterAttributes.AllowByRefLike from net9, not present in ns20
+            (if gp.HasAllowsRefStruct then
+                 (enum<GenericParameterAttributes> 0x0020)
+             else
+                 zero)
 
         gpB.SetGenericParameterAttributes flags)
 //----------------------------------------------------------------------------
@@ -1920,7 +1923,7 @@ let rec buildMethodPass3 cenv tref modB (typB: TypeBuilder) emEnv (mdef: ILMetho
     | ".cctor"
     | ".ctor" ->
         let consB = envGetConsB emEnv mref
-        // Constructors can not have generic parameters
+        // Constructors cannot have generic parameters
         assert isNil mdef.GenericParams
         // Value parameters
         let defineParameter (i, attr, name) =
@@ -2229,7 +2232,7 @@ let rec buildTypeDefPass3 cenv nesting modB emEnv (tdef: ILTypeDef) =
 //
 // The code in this phase is fragile.
 //
-// THe background is that System.Reflection.Emit implementations can be finnickity about the
+// The background is that System.Reflection.Emit implementations can be finickity about the
 // order that CreateType calls are made when types refer to each other. Some of these restrictions
 // are not well documented, or are related to historical bugs where the F# emit code worked around the
 // underlying problems. Ideally the SRE implementation would just "work this out as it goes along" but

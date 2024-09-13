@@ -2,9 +2,9 @@
 #light
 
 // See bug 1537.
-//<Expects id="FS0575" span="(10,21-10,41)" status="error">Accessibility modifiers are not permitted on record fields\. Use 'type R = internal \.\.\.' or 'type R = private \.\.\.' to give an accessibility to the whole representation</Expects>
-//<Expects id="FS0575" span="(11,21-11,39)" status="error">Accessibility modifiers are not permitted on record fields\. Use 'type R = internal \.\.\.' or 'type R = private \.\.\.' to give an accessibility to the whole representation</Expects>
-//<Expects id="FS0575" span="(12,21-12,37)" status="error">Accessibility modifiers are not permitted on record fields\. Use 'type R = internal \.\.\.' or 'type R = private \.\.\.' to give an accessibility to the whole representation</Expects>
+
+
+
 
 type Person = { 
                     public Name : string; 
@@ -39,7 +39,7 @@ let p = Person.CreatePerson()
 let {Name = x; Age = y; ID = z} = p
 // The record field 'ID' is not accessible from this code location. 18	6	
 
-// If we consider allowing accessibility modifers on records, then this
+// If we consider allowing accessibility modifiers on records, then this
 // should work, but does not.
 let {Name = x2; Age = y2; ID = _} = p
 //The record field 'ID' is not accessible from this code location.	23	6	*)

@@ -72,7 +72,7 @@
                                          -g)
 --debug:{full|pdbonly|portable|embedded} Specify debugging type: full,
                                          portable, embedded, pdbonly. ('full'
-                                         is the default if no debuggging type
+                                         is the default if no debugging type
                                          specified and enables attaching a
                                          debugger to a running program,
                                          'portable' is a cross-platform

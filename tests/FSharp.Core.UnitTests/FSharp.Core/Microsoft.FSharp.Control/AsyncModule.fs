@@ -651,7 +651,7 @@ type AsyncModule() =
         Async.RunSynchronously(computation) |> ignore
 
     [<Fact>]
-    member _.``maxDegreeOfParallelism can not be 0`` () =
+    member _.``maxDegreeOfParallelism cannot be 0`` () =
         try
             [| for i in 1 .. 10 -> async { return i } |]
             |> fun cs -> Async.Parallel(cs, 0)
@@ -663,7 +663,7 @@ type AsyncModule() =
             Assert.True(exc.Message.Contains("maxDegreeOfParallelism must be positive, was 0"))
 
     [<Fact>]
-    member _.``maxDegreeOfParallelism can not be negative`` () =
+    member _.``maxDegreeOfParallelism cannot be negative`` () =
         try
             [| for i in 1 .. 10 -> async { return i } |]
             |> fun cs -> Async.Parallel(cs, -1)

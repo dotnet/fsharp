@@ -203,7 +203,7 @@
         <note />
       </trans-unit>
       <trans-unit id="NameClash2">
-        <source>The {0} '{1}' can not be defined because the name '{2}' clashes with the {3} '{4}' in this type or module</source>
+        <source>The {0} '{1}' cannot be defined because the name '{2}' clashes with the {3} '{4}' in this type or module</source>
         <target state="translated">이름 '{2}'이(가) 이 형식 또는 모듈의 {3} '{4}'과(와) 충돌하므로 {0} '{1}'을(를) 정의할 수 없습니다.</target>
         <note />
       </trans-unit>

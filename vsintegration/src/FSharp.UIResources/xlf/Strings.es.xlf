@@ -207,19 +207,19 @@
         <target state="translated">Compilador transparente (experimental)</target>
         <note />
       </trans-unit>
-      <trans-unit id="TransparentCompiler_Discalimer1">
+      <trans-unit id="TransparentCompiler_Disclaimer1">
         <source>WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</source>
-        <target state="translated">ADVERTENCIA El compilador transparente aún no admite todas las características y puede provocar bloqueos o proporcionar resultados incorrectos.</target>
+        <target state="new">WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</target>
         <note />
       </trans-unit>
-      <trans-unit id="TransparentCompiler_Discalimer2">
+      <trans-unit id="TransparentCompiler_Disclaimer2">
         <source>Use at your own risk!</source>
-        <target state="translated">Úselo bajo su propio riesgo.</target>
+        <target state="new">Use at your own risk!</target>
         <note />
       </trans-unit>
-      <trans-unit id="TransparentCompiler_Discalimer3">
+      <trans-unit id="TransparentCompiler_Disclaimer3">
         <source>By checking this you also opt-in for additional performance telemetry</source>
-        <target state="translated">Al marcar esto, también puede optar por obtener telemetría de rendimiento adicional.</target>
+        <target state="new">By checking this you also opt-in for additional performance telemetry</target>
         <note />
       </trans-unit>
       <trans-unit id="Transparent_Compiler_Cache_Factor">

@@ -169,7 +169,6 @@ stages:
         #       because we want to catch cases when version is desynched and we didn't update it.
         #       It is also helping the release notes automation to be up to date with packages versions.
         - job: Check_Published_Package_Versions
-          condition: or(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), or(startsWith(variables['System.PullRequest.SourceBranch'], 'release/dev'), startsWith(variables['System.PullRequest.TargetBranch'], 'release/dev')))
           pool:
             vmImage: $(UbuntuMachineQueueName)
           strategy:
@@ -546,6 +545,7 @@ stages:
         - job: Linux
           pool:
             vmImage: $(UbuntuMachineQueueName)
+          timeoutInMinutes: 120
           variables:
           - name: _SignType
             value: Test
@@ -553,8 +553,6 @@ stages:
           - checkout: self
             clean: true
           - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
-            env:
-              SKIP_NETCURRENT_FSC_BUILD: true
             displayName: Build / Test
           - task: PublishTestResults@2
             displayName: Publish Test Results
@@ -588,6 +586,7 @@ stages:
         - job: MacOS
           pool:
             vmImage: macos-12
+          timeoutInMinutes: 120
           variables:
           - name: _SignType
             value: Test
@@ -597,7 +596,6 @@ stages:
           - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
             env:
               COMPlus_DefaultStackSize: 1000000
-              SKIP_NETCURRENT_FSC_BUILD: true
             displayName: Build / Test
           - task: PublishTestResults@2
             displayName: Publish Test Results

@@ -18,13 +18,14 @@ open Internal.Utilities.Library.Extras
 open System.Threading.Tasks
 
 /// Represents the style being used to format errors
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type DiagnosticStyle =
     | Default
     | Emacs
     | Test
     | VisualStudio
     | Gcc
+    | Rich
 
 /// Thrown when we want to add some range information to a .NET exception
 exception WrappedError of exn * range with
@@ -901,6 +902,10 @@ type StackGuard(maxDepth: int, name: string) =
                 f ()
         finally
             depth <- depth - 1
+
+    [<DebuggerHidden; DebuggerStepThrough>]
+    member x.GuardCancellable(original: Cancellable<'T>) =
+        Cancellable(fun ct -> x.Guard(fun () -> Cancellable.run ct original))
 
     static member val DefaultDepth =
 #if DEBUG

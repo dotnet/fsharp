@@ -264,7 +264,7 @@ TorchSharp.Tensor.LongTensor.From([| 0L .. 100L |]).Device
 
     [<Fact>]
     member _.``Use Dependency Manager to restore packages with native dependencies, build and run script that depends on the results``() =
-        // Skip test on arm64, because there is not an arm64 netive library
+        // Skip test on arm64, because there is not an arm64 native library
         if RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then
             ()
         else
@@ -364,7 +364,7 @@ printfn ""%A"" result
 
     [<Fact>]
     member _.``Use NativeResolver to resolve native dlls.``() =
-        // Skip test on arm64, because there is not an arm64 netive library
+        // Skip test on arm64, because there is not an arm64 native library
         if RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then
             ()
         else
@@ -399,7 +399,7 @@ printfn ""%A"" result
         resolverPackageRoots <- result.Roots
         resolverReferences <- result.Resolutions
 
-        use _nativeDepencyResolver = new NativeDllResolveHandler(NativeResolutionProbe(nativeProbingRoots))
+        use _nativeDependencyResolver = new NativeDllResolveHandler(NativeResolutionProbe(nativeProbingRoots))
 
         // Build and execute script
         let referenceText =
@@ -450,7 +450,7 @@ printfn ""%A"" result
 
     [<Fact>]
     member _.``Use AssemblyResolver to resolve assemblies``() =
-        // Skip test on arm64, because there is not an arm64 netive library
+        // Skip test on arm64, because there is not an arm64 native library
         if RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then
             ()
         else
@@ -536,7 +536,7 @@ x |> Seq.iter(fun r ->
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
             dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "net9.0")
 
-        // Expected: error FS3217: PackageManager can not reference the System Package 'FSharp.Core'
+        // Expected: error FS3217: PackageManager cannot reference the System Package 'FSharp.Core'
         Assert.False(result.Success, "resolve succeeded but should have failed")
 
     [<Fact>]
@@ -584,7 +584,7 @@ x |> Seq.iter(fun r ->
         do
             use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
 
-            // Invoking a non-existent dll via pinvoke cause a probe. which should invoke the call back
+            // Invoking a nonexistent dll via pinvoke cause a probe. which should invoke the call back
             try Native.NoneSuch() |> ignore with _ -> ()
             Assert.True (found, "Failed to invoke the nativeProbingRoots callback")
 
@@ -628,11 +628,11 @@ x |> Seq.iter(fun r ->
         do
             use dp = new DependencyProvider(AssemblyResolutionProbe(assemblyProbingPaths), NativeResolutionProbe(nativeProbingRoots), false)
 
-            // Invoking a non-existent dll via pinvoke cause a probe. which should invoke the call back
+            // Invoking a nonexistent dll via pinvoke cause a probe. which should invoke the call back
             try Native.NoneSuch() |> ignore with _ -> ()
             Assert.True (nativeFound, "Failed to invoke the nativeProbingRoots callback")
 
-            // Invoking a non-existent assembly causes a probe. which should invoke the call back
+            // Invoking a nonexistent assembly causes a probe. which should invoke the call back
             try Assembly.Load("NoneSuchAssembly") |> ignore with _ -> ()
             Assert.True (assemblyFound, "Failed to invoke the AssemblyResolve handler")
 
@@ -659,7 +659,7 @@ x |> Seq.iter(fun r ->
         do
             use dp = new AssemblyResolveHandler(AssemblyResolutionProbe(assemblyProbingPaths))
 
-            // Invoking a non-existent assembly causes a probe. which should invoke the call back
+            // Invoking a nonexistent assembly causes a probe. which should invoke the call back
             try Assembly.Load("NoneSuchAssembly") |> ignore with _ -> ()
             Assert.True (assemblyFound, "Failed to invoke the AssemblyResolve handler")
 

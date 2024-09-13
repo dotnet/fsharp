@@ -72,7 +72,7 @@ and [<Sealed>]
     let extendBufferAsync = (fun () -> match filler.fillAsync with Some refill -> refill this | None -> invalidOp "attempt to read asynchronously from a synchronous lex buffer")
     let mutable buffer=[||]
 
-    /// number of valid charactes beyond bufferScanStart 
+    /// number of valid characters beyond bufferScanStart 
     let mutable bufferMaxScanLength=0
 
     /// count into the buffer when scanning 

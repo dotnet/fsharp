@@ -195,7 +195,7 @@ type ByteFile(fileName: string, bytes: byte[]) =
 type PEFile(fileName: string, peReader: PEReader) as this =
 
     // We store a weak byte memory reference so we do not constantly create a lot of byte memory objects.
-    // We could just have a single ByteMemory stored in the PEFile, but we need to dispose of the stream via the finalizer; we cannot have a cicular reference.
+    // We could just have a single ByteMemory stored in the PEFile, but we need to dispose of the stream via the finalizer; we cannot have a circular reference.
     let mutable weakMemory = WeakReference<ByteMemory>(Unchecked.defaultof<_>)
 
     member _.FileName = fileName
@@ -207,7 +207,7 @@ type PEFile(fileName: string, peReader: PEReader) as this =
             match weakMemory.TryGetTarget() with
             | true, m -> m.AsReadOnly()
             | _ ->
-                let block = peReader.GetEntireImage() // it's ok to call this everytime we do GetView as it is cached in the PEReader.
+                let block = peReader.GetEntireImage() // it's ok to call this every time we do GetView as it is cached in the PEReader.
 
                 let m =
                     ByteMemory.FromUnsafePointer(block.Pointer |> NativePtr.toNativeInt, block.Length, this)
@@ -1425,16 +1425,10 @@ let seekReadParamRow (ctxt: ILMetadataReader) mdv idx =
     (flags, seq, nameIdx)
 
 /// Read Table InterfaceImpl.
-let private seekReadInterfaceImplRow (ctxt: ILMetadataReader) mdv idx =
+let private seekReadInterfaceIdx (ctxt: ILMetadataReader) mdv idx =
     let mutable addr = ctxt.rowAddr TableNames.InterfaceImpl idx
-    let tidx = seekReadUntaggedIdx TableNames.TypeDef ctxt mdv &addr
-    let intfIdx = seekReadTypeDefOrRefOrSpecIdx ctxt mdv &addr
-
-    struct {|
-        TypeIdx = tidx
-        IntfIdx = intfIdx
-        IntImplIdx = idx
-    |}
+    let _tidx = seekReadUntaggedIdx TableNames.TypeDef ctxt mdv &addr
+    seekReadTypeDefOrRefOrSpecIdx ctxt mdv &addr
 
 /// Read Table MemberRef.
 let seekReadMemberRefRow (ctxt: ILMetadataReader) mdv idx =
@@ -1565,10 +1559,10 @@ let seekReadTypeSpecRow (ctxt: ILMetadataReader) mdv idx =
 let seekReadImplMapRow (ctxt: ILMetadataReader) mdv idx =
     let mutable addr = ctxt.rowAddr TableNames.ImplMap idx
     let flags = seekReadUInt16AsInt32Adv mdv &addr
-    let forwrdedIdx = seekReadMemberForwardedIdx ctxt mdv &addr
+    let forwardedIdx = seekReadMemberForwardedIdx ctxt mdv &addr
     let nameIdx = seekReadStringIdx ctxt mdv &addr
     let scopeIdx = seekReadUntaggedIdx TableNames.ModuleRef ctxt mdv &addr
-    (flags, forwrdedIdx, nameIdx, scopeIdx)
+    (flags, forwardedIdx, nameIdx, scopeIdx)
 
 /// Read Table FieldRVA.
 let seekReadFieldRVARow (ctxt: ILMetadataReader) mdv idx =
@@ -1653,11 +1647,11 @@ let seekReadGenericParamRow (ctxt: ILMetadataReader) mdv idx =
     (idx, seq, flags, ownerIdx, nameIdx)
 
 // Read Table GenericParamConstraint.
-let seekReadGenericParamConstraintRow (ctxt: ILMetadataReader) mdv idx =
+let seekReadGenericParamConstraintIdx (ctxt: ILMetadataReader) mdv idx =
     let mutable addr = ctxt.rowAddr TableNames.GenericParamConstraint idx
-    let pidx = seekReadUntaggedIdx TableNames.GenericParam ctxt mdv &addr
+    let _pidx = seekReadUntaggedIdx TableNames.GenericParam ctxt mdv &addr
     let constraintIdx = seekReadTypeDefOrRefOrSpecIdx ctxt mdv &addr
-    (pidx, constraintIdx)
+    constraintIdx
 
 /// Read Table ILMethodSpec.
 let seekReadMethodSpecRow (ctxt: ILMetadataReader) mdv idx =
@@ -2248,11 +2242,16 @@ and seekReadNestedTypeDefs (ctxt: ILMetadataReader) tidx =
 and seekReadInterfaceImpls (ctxt: ILMetadataReader) mdv numTypars tidx =
     seekReadIndexedRows (
         ctxt.getNumRows TableNames.InterfaceImpl,
-        seekReadInterfaceImplRow ctxt mdv,
-        (fun x -> x.TypeIdx),
-        simpleIndexCompare tidx,
+        id,
+        id,
+        (fun idx ->
+            let mutable addr = ctxt.rowAddr TableNames.InterfaceImpl idx
+            let _tidx = seekReadUntaggedIdx TableNames.TypeDef ctxt mdv &addr
+            simpleIndexCompare tidx _tidx),
         isSorted ctxt TableNames.InterfaceImpl,
-        (fun x -> (seekReadTypeDefOrRef ctxt numTypars AsObject [] x.IntfIdx), (ctxt.customAttrsReader_InterfaceImpl, x.IntImplIdx))
+        (fun idx ->
+            let intfIdx = seekReadInterfaceIdx ctxt mdv idx
+            seekReadTypeDefOrRef ctxt numTypars AsObject [] intfIdx, (ctxt.customAttrsReader_InterfaceImpl, idx))
     )
 
 and seekReadGenericParams ctxt numTypars (a, b) : ILGenericParameterDefs =
@@ -2262,12 +2261,14 @@ and seekReadGenericParamsUncached ctxtH (GenericParamsIdx(numTypars, a, b)) =
     let (ctxt: ILMetadataReader) = getHole ctxtH
     let mdv = ctxt.mdfile.GetView()
 
+    let key = TaggedIndex(a, b)
+
     let pars =
         seekReadIndexedRows (
             ctxt.getNumRows TableNames.GenericParam,
             seekReadGenericParamRow ctxt mdv,
             (fun (_, _, _, tomd, _) -> tomd),
-            tomdCompare (TaggedIndex(a, b)),
+            tomdCompare key,
             isSorted ctxt TableNames.GenericParam,
             (fun (gpidx, seq, flags, _, nameIdx) ->
                 let flags = int32 flags
@@ -2291,6 +2292,7 @@ and seekReadGenericParamsUncached ctxtH (GenericParamsIdx(numTypars, a, b)) =
                     HasReferenceTypeConstraint = (flags &&& 0x0004) <> 0
                     HasNotNullableValueTypeConstraint = (flags &&& 0x0008) <> 0
                     HasDefaultConstructorConstraint = (flags &&& 0x0010) <> 0
+                    HasAllowsRefStruct = (flags &&& 0x0020) <> 0
                 })
         )
 
@@ -2299,11 +2301,16 @@ and seekReadGenericParamsUncached ctxtH (GenericParamsIdx(numTypars, a, b)) =
 and seekReadGenericParamConstraints (ctxt: ILMetadataReader) mdv numTypars gpidx =
     seekReadIndexedRows (
         ctxt.getNumRows TableNames.GenericParamConstraint,
-        seekReadGenericParamConstraintRow ctxt mdv,
-        fst,
-        simpleIndexCompare gpidx,
+        id,
+        id,
+        (fun idx ->
+            let mutable addr = ctxt.rowAddr TableNames.GenericParamConstraint idx
+            let pidx = seekReadUntaggedIdx TableNames.GenericParam ctxt mdv &addr
+            simpleIndexCompare gpidx pidx),
         isSorted ctxt TableNames.GenericParamConstraint,
-        (snd >> seekReadTypeDefOrRef ctxt numTypars AsObject [])
+        (fun idx ->
+            let constraintIdx = seekReadGenericParamConstraintIdx ctxt mdv idx
+            seekReadTypeDefOrRef ctxt numTypars AsObject [] constraintIdx)
     )
 
 and seekReadTypeDefAsType (ctxt: ILMetadataReader) boxity (ginst: ILTypes) idx =
@@ -2751,10 +2758,10 @@ and readBlobHeapAsPropertySigUncached ctxtH (BlobAsPropSigIdx(numTypars, blobIdx
     let sigptr = 0
     let ccByte, sigptr = sigptrGetByte bytes sigptr
     let hasthis = byteAsHasThis ccByte
-    let ccMaxked = (ccByte &&& 0x0Fuy)
+    let ccMasked = (ccByte &&& 0x0Fuy)
 
-    if ccMaxked <> e_IMAGE_CEE_CS_CALLCONV_PROPERTY then
-        dprintn ("warning: property sig was " + string ccMaxked + " instead of CC_PROPERTY")
+    if ccMasked <> e_IMAGE_CEE_CS_CALLCONV_PROPERTY then
+        dprintn ("warning: property sig was " + string ccMasked + " instead of CC_PROPERTY")
 
     let struct (numparams, sigptr) = sigptrGetZInt32 bytes sigptr
     let retTy, sigptr = sigptrGetTy ctxt numTypars bytes sigptr
@@ -2792,17 +2799,17 @@ and byteAsHasThis b =
 
 and byteAsCallConv b =
     let cc =
-        let ccMaxked = b &&& 0x0Fuy
+        let ccMasked = b &&& 0x0Fuy
 
-        if ccMaxked = e_IMAGE_CEE_CS_CALLCONV_FASTCALL then
+        if ccMasked = e_IMAGE_CEE_CS_CALLCONV_FASTCALL then
             ILArgConvention.FastCall
-        elif ccMaxked = e_IMAGE_CEE_CS_CALLCONV_STDCALL then
+        elif ccMasked = e_IMAGE_CEE_CS_CALLCONV_STDCALL then
             ILArgConvention.StdCall
-        elif ccMaxked = e_IMAGE_CEE_CS_CALLCONV_THISCALL then
+        elif ccMasked = e_IMAGE_CEE_CS_CALLCONV_THISCALL then
             ILArgConvention.ThisCall
-        elif ccMaxked = e_IMAGE_CEE_CS_CALLCONV_CDECL then
+        elif ccMasked = e_IMAGE_CEE_CS_CALLCONV_CDECL then
             ILArgConvention.CDecl
-        elif ccMaxked = e_IMAGE_CEE_CS_CALLCONV_VARARG then
+        elif ccMasked = e_IMAGE_CEE_CS_CALLCONV_VARARG then
             ILArgConvention.VarArg
         else
             ILArgConvention.Default
@@ -4715,10 +4722,10 @@ let openPEFileReader (fileName, pefile: BinaryFile, noFileOnDisk) =
     let _headerPhysSize = seekReadInt32 pev (peOptionalHeaderPhysLoc + 60) // Header Size Combined size of MS-DOS Header, PE Header, PE Optional Header and padding
     let subsys = seekReadUInt16 pev (peOptionalHeaderPhysLoc + 68) // SubSystem Subsystem required to run this image.
 
-    let useHighEnthropyVA =
+    let useHighEntropyVA =
         let n = seekReadUInt16 pev (peOptionalHeaderPhysLoc + 70)
-        let highEnthropyVA = 0x20us
-        (n &&& highEnthropyVA) = highEnthropyVA
+        let highEntropyVA = 0x20us
+        (n &&& highEntropyVA) = highEntropyVA
 
     (* x86: 000000e0 *)
 
@@ -4918,7 +4925,7 @@ let openPEFileReader (fileName, pefile: BinaryFile, noFileOnDisk) =
     let peinfo =
         (subsys,
          (subsysMajor, subsysMinor),
-         useHighEnthropyVA,
+         useHighEntropyVA,
          ilOnly,
          only32,
          is32bitpreferred,

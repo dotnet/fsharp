@@ -5,10 +5,10 @@
 // Title: Incomplete pattern in quotation causes error.
 // Descr: Make sure quotations compile (even with warning) when having incomplete pattern match inside
 
-//<Expects id="FS0025" span="(14,15-14,16)" status="warning">Incomplete pattern matches on this expression\.</Expects>
-//<Expects id="FS0025" span="(21,31-21,39)" status="warning">Incomplete pattern matches on this expression\.</Expects>
-//<Expects id="FS0026" span="(31,11-31,12)" status="warning">This rule will never be matched</Expects>
-//<Expects id="FS0026" span="(32,11-32,13)" status="warning">This rule will never be matched</Expects>
+
+
+
+
 let foo x =
     <@@
         match x with 

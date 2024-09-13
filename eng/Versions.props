@@ -19,12 +19,10 @@
     <!-- -->
     <!-- F# Language version -->
     <FSLanguageVersion>$(FSMajorVersion).$(FSMinorVersion)</FSLanguageVersion>
-    <FSLanguageReleaseNotesVersion>$(FSMajorVersion)-$(FSMinorVersion)</FSLanguageReleaseNotesVersion>
     <!-- -->
     <!-- FSharp.Core version -->
     <FSCoreProductVersion>$(FSMajorVersion).$(FSMinorVersion)</FSCoreProductVersion>
     <FSCorePackageVersionValue>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSCorePackageVersionValue>
-    <FSCoreReleaseNotesVersion>$(FSMajorVersion)-$(FSMinorVersion)-$(FSBuildVersion)</FSCoreReleaseNotesVersion>
     <FSCoreVersionPrefix>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSCoreVersionPrefix>
     <FSCoreVersion>$(FSMajorVersion).$(FSMinorVersion).0.0</FSCoreVersion>
     <FSCoreShippedVersion>8.0.0.0</FSCoreShippedVersion>
@@ -36,10 +34,10 @@
     <FCSRevisionVersion>$(FSRevisionVersion)</FCSRevisionVersion>
     <FSharpCompilerServicePackageVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion)</FSharpCompilerServicePackageVersion>
     <FSharpCompilerServiceVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion).$(FCSRevisionVersion)</FSharpCompilerServiceVersion>
-    <FSharpCompilerServiceReleaseNotesVersion>$(FCSMajorVersion)$(FCSMinorVersion)$(FCSBuildVersion)</FSharpCompilerServiceReleaseNotesVersion>
+    <FSharpLibrariesChangelogVersion>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSharpLibrariesChangelogVersion>
     <!-- -->
     <!-- The current published nuget package -->
-    <FSharpCoreShippedPackageVersionValue>8.0.301</FSharpCoreShippedPackageVersionValue>
+    <FSharpCoreShippedPackageVersionValue>8.0.400</FSharpCoreShippedPackageVersionValue>
     <!-- -->
     <!-- The pattern for specifying the preview package -->
     <FSharpCorePreviewPackageVersionValue>$(FSCorePackageVersionValue)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersionValue>
@@ -50,7 +48,6 @@
     <FSToolsBuildVersion>$(FSBuildVersion)</FSToolsBuildVersion>
     <FSToolsRevisionVersion>$(FSRevisionVersion)</FSToolsRevisionVersion>
     <FSProductVersionPrefix>$(FSToolsMajorVersion).$(FSToolsMinorVersion).$(FSToolsBuildVersion)</FSProductVersionPrefix>
-    <FSProductVersionReleaseNotesVersion>$(FSToolsMajorVersion)-$(FSToolsMinorVersion)-$(FSToolsBuildVersion)</FSProductVersionReleaseNotesVersion>
     <FSProductVersion>$(FSToolsMajorVersion).$(FSToolsMinorVersion).$(FSToolsBuildVersion).$(FSToolsRevisionVersion)</FSProductVersion>
   </PropertyGroup>
   <PropertyGroup>
@@ -196,8 +193,8 @@
     <RoslynToolsSignToolVersion>1.0.0-beta2-dev3</RoslynToolsSignToolVersion>
     <StreamJsonRpcVersion>2.18.48</StreamJsonRpcVersion>
     <NerdbankStreamsVersion>2.10.69</NerdbankStreamsVersion>
-    <XUnitVersion>2.4.1</XUnitVersion>
-    <XUnitRunnerVersion>2.4.2</XUnitRunnerVersion>
+    <XUnitVersion>2.9.0</XUnitVersion>
+    <XUnitRunnerVersion>2.8.2</XUnitRunnerVersion>
     <FluentAssertionsVersion>5.10.3</FluentAssertionsVersion>
     <HumanizerCoreVersion>2.2.0</HumanizerCoreVersion>
     <!-- -->

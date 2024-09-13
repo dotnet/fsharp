@@ -7,6 +7,8 @@ open TestFramework
 open HandleExpects
 open FSharp.Compiler.IO
 
+let testConfig = testConfig __SOURCE_DIRECTORY__
+
 type Permutation =
 #if NETCOREAPP
     | FSC_NETCORE of optimized: bool * buildOnly: bool
@@ -154,6 +156,7 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
     <RestoreAdditionalProjectSources Condition = "" '$(RestoreAdditionalProjectSources)' == ''"">$(RestoreFromArtifactsPath)</RestoreAdditionalProjectSources>
     <RestoreAdditionalProjectSources Condition = "" '$(RestoreAdditionalProjectSources)' != ''"">$(RestoreAdditionalProjectSources);$(RestoreFromArtifactsPath)</RestoreAdditionalProjectSources>
     <RollForward>LatestMajor</RollForward>
+    <IgnoreMIBC>true</IgnoreMIBC>
   </PropertyGroup>
 
   <!-- FSharp.Core reference -->
@@ -327,7 +330,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 
     | FSC_NETFX_TEST_ROUNDTRIP_AS_DLL ->
         // Compile as a DLL to exercise pickling of interface data, then recompile the original source file referencing this DLL
-        // THe second compilation will not utilize the information from the first in any meaningful way, but the
+        // The second compilation will not utilize the information from the first in any meaningful way, but the
         // compiler will unpickle the interface and optimization data, so we test unpickling as well.
         use _cleanup = (cleanUpFSharpCore cfg)
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")

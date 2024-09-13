@@ -78,7 +78,6 @@ type Build() =
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--codepage:65001" + Environment.NewLine +
-                     "--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
                      "--graphtypechecking+" + Environment.NewLine +
                      "--paralleloptimization+" + Environment.NewLine +
@@ -99,7 +98,6 @@ type Build() =
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("-g" + Environment.NewLine +
-                     "--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
                      "--graphtypechecking+" + Environment.NewLine +
                      "--paralleloptimization+" + Environment.NewLine +
@@ -120,7 +118,6 @@ type Build() =
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--debug:pdbonly" + Environment.NewLine +
-                     "--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
                      "--graphtypechecking+" + Environment.NewLine +
                      "--paralleloptimization+" + Environment.NewLine +
@@ -141,8 +138,7 @@ type Build() =
         AssertEqual 2 tool.DefineConstants.Length 
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual ("--compressmetadata" + Environment.NewLine +
-                     "--define:FOO=3" + Environment.NewLine +
+        AssertEqual ("--define:FOO=3" + Environment.NewLine +
                      "--define:BAR=4" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
                      "--graphtypechecking+" + Environment.NewLine +
@@ -246,8 +242,7 @@ type Build() =
         AssertEqual "foo.xml" tool.DocumentationFile 
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual ("--compressmetadata" + Environment.NewLine +
-                     "--doc:foo.xml" + Environment.NewLine +
+        AssertEqual ("--doc:foo.xml" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
                      "--graphtypechecking+" + Environment.NewLine +
                      "--paralleloptimization+" + Environment.NewLine +
@@ -267,8 +262,7 @@ type Build() =
         AssertEqual "foo.fsi" tool.GenerateInterfaceFile 
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual ("--compressmetadata" + Environment.NewLine +
-                     "--sig:foo.fsi" + Environment.NewLine +
+        AssertEqual ("--sig:foo.fsi" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
                      "--graphtypechecking+" + Environment.NewLine +
                      "--paralleloptimization+" + Environment.NewLine +
@@ -288,8 +282,7 @@ type Build() =
         AssertEqual "key.txt" tool.KeyFile 
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
-        AssertEqual ("--compressmetadata" + Environment.NewLine +
-                     "--keyfile:key.txt" + Environment.NewLine +
+        AssertEqual ("--keyfile:key.txt" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
                      "--graphtypechecking+" + Environment.NewLine +
                      "--paralleloptimization+" + Environment.NewLine +
@@ -310,7 +303,6 @@ type Build() =
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--noframework" + Environment.NewLine +
-                     "--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
                      "--graphtypechecking+" + Environment.NewLine +
                      "--paralleloptimization+" + Environment.NewLine +
@@ -394,7 +386,6 @@ type Build() =
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("-o:oUt.dll" + Environment.NewLine +
-                     "--compressmetadata" + Environment.NewLine +
                      "--optimize+" + Environment.NewLine +
                      "--graphtypechecking+" + Environment.NewLine +
                      "--paralleloptimization+" + Environment.NewLine +
@@ -785,7 +776,6 @@ type Build() =
             "--debug:full" + Environment.NewLine +
             "--noframework" + Environment.NewLine  +
             "--baseaddress:0xBADF00D" + Environment.NewLine +
-            "--compressmetadata" + Environment.NewLine +
             "--define:FOO=3" + Environment.NewLine +
             "--define:BAR=4" + Environment.NewLine +
             "--doc:foo.xml" + Environment.NewLine +
@@ -834,7 +824,6 @@ type Build() =
             "--debug:full"
             "--noframework"
             "--baseaddress:0xBADF00D"
-            "--compressmetadata"
             "--define:FOO=3"
             "--define:BAR=4"
             "--doc:foo.xml"
@@ -888,7 +877,6 @@ type Build() =
         printfn "cmd=\"%s\"" cmd
 
         let expected =
-            "--compressmetadata" + Environment.NewLine +
             "--optimize+" + Environment.NewLine +
             "--graphtypechecking+" + Environment.NewLine +
             "--paralleloptimization+" + Environment.NewLine +

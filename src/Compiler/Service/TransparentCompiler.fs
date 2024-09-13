@@ -793,6 +793,10 @@ type internal TransparentCompiler
 
                 define :: tcConfigB.conditionalDefines
 
+            tcConfigB.realsig <-
+                List.contains "--realsig" commandLineArgs
+                || List.contains "--realsig+" commandLineArgs
+
             tcConfigB.projectReferences <- projectReferences
 
             tcConfigB.useSimpleResolution <- useSimpleResolution
@@ -1299,7 +1303,12 @@ type internal TransparentCompiler
                 let diagnosticsLogger = errHandler.DiagnosticsLogger
 
                 let diagnosticsLogger =
-                    GetDiagnosticsLoggerFilteringByScopedPragmas(false, input.ScopedPragmas, tcConfig.diagnosticsOptions, diagnosticsLogger)
+                    GetDiagnosticsLoggerFilteringByScopedPragmas(
+                        tcConfig.langVersion,
+                        input.ScopedPragmas,
+                        tcConfig.diagnosticsOptions,
+                        diagnosticsLogger
+                    )
 
                 use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
 
@@ -1746,7 +1755,7 @@ type internal TransparentCompiler
 
                 let assemblyDataResult =
                     try
-                        // Assemblies containing type provider components can not successfully be used via cross-assembly references.
+                        // Assemblies containing type provider components cannot successfully be used via cross-assembly references.
                         // We return 'None' for the assembly portion of the cross-assembly reference
                         let hasTypeProviderAssemblyAttrib =
                             topAttrs.assemblyAttrs
@@ -1792,7 +1801,7 @@ type internal TransparentCompiler
                             None
 
                     // TODO: This kinda works, but the problem is that in order to switch a project to "in-memory" mode
-                    //  - some file needs to be edited (this tirggers a re-check, but LastModifiedTimeOnDisk won't change)
+                    //  - some file needs to be edited (this triggers a re-check, but LastModifiedTimeOnDisk won't change)
                     //  - saved (this will not trigger anything)
                     //  - and then another change has to be made (to any file buffer) - so that recheck is triggered and we get here again
                     // Until that sequence happens the project will be used from disk (if available).

@@ -319,7 +319,7 @@ type FindMemberFlag =
     /// Get overrides instead of abstract slots when measuring whether a class/interface implements all its required slots. 
     | PreferOverrides
     /// Similar to "IgnoreOverrides", but filters the items bottom-to-top,
-    /// and discards all when finds first non-virtual member which hides one above it in hirearchy.
+    /// and discards all when finds first non-virtual member which hides one above it in hierarchy.
     | DiscardOnFirstNonOverride
 
 /// The input list is sorted from most-derived to least-derived type, so any System.Object methods 
@@ -486,7 +486,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
 
             // MethodImpls contains a list of methods that override.
             // OverrideBy is the method that does the overriding.
-            // Overrides is the method being overriden.
+            // Overrides is the method being overridden.
             (acc, mimpls)
             ||> List.fold (fun acc ilMethImpl ->
                 let overridesName = ilMethImpl.Overrides.MethodRef.Name
@@ -677,7 +677,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     //    inherit A()
     //    static member val A = 0
     // Will get (static B::A, None)
-    static let FilterOverridesOfPropInfosWithOverridenProp findFlag g amap m props = 
+    static let FilterOverridesOfPropInfosWithOverriddenProp findFlag g amap m props = 
         let checkProp prop prop2 =
             not(obj.ReferenceEquals(prop, prop2)) && 
             PropInfosEquivByNameAndSig EraseNone g amap m prop prop2 &&
@@ -960,7 +960,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     /// Get the flattened list of intrinsic properties in the hierarchy
     member infoReader.GetIntrinsicPropInfoWithOverriddenPropOfType optFilter ad allowMultiIntfInst findFlag m ty = 
         infoReader.GetRawIntrinsicPropertySetsOfType(optFilter, ad, allowMultiIntfInst, m, ty) 
-        |> FilterOverridesOfPropInfosWithOverridenProp findFlag infoReader.g infoReader.amap m
+        |> FilterOverridesOfPropInfosWithOverriddenProp findFlag infoReader.g infoReader.amap m
         |> List.concat
 
     member _.GetTraitInfosInType optFilter ty = 
@@ -1029,7 +1029,7 @@ let TryFindIntrinsicPropInfo (infoReader: InfoReader) m ad nm ty =
     infoReader.TryFindIntrinsicPropInfo m ad nm ty
 
 /// Get a set of most specific override methods.
-let GetIntrinisicMostSpecificOverrideMethInfoSetsOfType (infoReader: InfoReader) m ty =
+let GetIntrinsicMostSpecificOverrideMethInfoSetsOfType (infoReader: InfoReader) m ty =
     infoReader.GetIntrinsicMostSpecificOverrideMethodSetsOfType (None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes, m, ty)
 
 //-------------------------------------------------------------------------
@@ -1191,7 +1191,8 @@ let GetXmlDocSigOfUnionCaseRef (ucref: UnionCaseRef) =
         ucref.UnionCase.XmlDocSig <- XmlDocSigOfUnionCase [tcref.CompiledRepresentationForNamedType.FullName; ucref.CaseName]
     Some (ccuFileName, ucref.UnionCase.XmlDocSig)
 
-let GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) = 
+[<TailCall>]
+let rec GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) = 
     let amap = infoReader.amap
     match minfo with
     | FSMeth (g, _, vref, _) ->
@@ -1219,6 +1220,7 @@ let GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) =
 
             Some (ccuFileName, "M:"+actualTypeName+"."+normalizedName+genericArity+XmlDocArgsEnc g (formalTypars, fmtps) args)
 
+    | MethInfoWithModifiedReturnType(mi,_) -> GetXmlDocSigOfMethInfo infoReader m mi
     | DefaultStructCtor(g, ty) ->
         match tryTcrefOfAppTy g ty with
         | ValueSome tcref ->

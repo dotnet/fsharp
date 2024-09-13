@@ -3,13 +3,13 @@
 namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 
 open FSharp.Test
-open NUnit.Framework
+open Xunit
 
 #if !DEBUG // sensitive to debug-level code coming across from debug FSharp.Core
-[<TestFixture>]
+
 module DelegateAndFuncOptimizations =
 
-    [<Test>]
+    [<Fact>]
     // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
     let ``Reduce function via InlineIfLambda``() =
         CompilerAssert.CompileLibraryAndVerifyIL(
@@ -153,7 +153,7 @@ type C =
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
     let ``Reduce delegate invoke via InlineIfLambda``() =
         CompilerAssert.CompileLibraryAndVerifyIL(
@@ -301,7 +301,7 @@ type C =
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
     let ``Reduce computed function invoke``() =
         CompilerAssert.CompileLibraryAndVerifyIL(
@@ -341,7 +341,7 @@ let ApplyComputedFunction(c: int) =
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
     let ``Reduce Computed Delegate``() =
         CompilerAssert.CompileLibraryAndVerifyIL(
@@ -381,7 +381,7 @@ let ApplyComputedDelegate(c: int) =
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
     let ``Reduce Computed Function with irreducible match``() =
         CompilerAssert.CompileLibraryAndVerifyIL(
@@ -433,7 +433,7 @@ let ApplyComputedFunction(c: int) =
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
     let ``Immediately apply computed function in sequential``() =
         CompilerAssert.CompileLibraryAndVerifyIL(
@@ -492,8 +492,10 @@ let ApplyComputedFunction(c: int) =
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
+    // See also https://github.com/dotnet/fsharp/issues/17607 for a regression caused by realsig+ becoming default
+    // This test case must keep using direct call to ReduceComputedDelegate, and not a FSharpFunc invocation.
     let ``Reduce Computed Delegate with let rec``() =
         CompilerAssert.CompileLibraryAndVerifyIL(
             """
@@ -506,31 +508,25 @@ let ApplyComputedDelegate(c: int) =
             """,
             (fun verifier -> verifier.VerifyIL [
             """
-  .method public static int32  ApplyComputedDelegate(int32 c) cil managed
-  {
-    
-    .maxstack  4
-    .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32> V_0,
-             class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_1)
-    IL_0000:  ldsfld     class ReduceComputedDelegate/f@7 ReduceComputedDelegate/f@7::@_instance
-    IL_0005:  stloc.0
-    IL_0006:  ldstr      "hello"
-    IL_000b:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-    IL_0010:  stloc.1
-    IL_0011:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
-    IL_0016:  ldloc.1
-    IL_0017:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
-                                                                                                                                                         class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_001c:  pop
-    IL_001d:  ldloc.0
-    IL_001e:  ldarg.0
-    IL_001f:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::Invoke(!0)
-    IL_0024:  ldc.i4.3
-    IL_0025:  add
-    IL_0026:  ret
+.method public static int32  ApplyComputedDelegate(int32 c) cil managed
+{
+  
+  .maxstack  4
+  .locals init (class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0)
+  IL_0000:  ldstr      "hello"
+  IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+  IL_000a:  stloc.0
+  IL_000b:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
+  IL_0010:  ldloc.0
+  IL_0011:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
+                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+  IL_0016:  pop
+  IL_0017:  ldarg.0
+  IL_0018:  call       int32 ReduceComputedDelegate::f@7(int32)
+  IL_001d:  ldc.i4.3
+  IL_001e:  add
+  IL_001f:  ret
   } 
-
-} 
             """
             ]))
 

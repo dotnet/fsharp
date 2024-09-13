@@ -273,6 +273,16 @@
     IL_0020:  ret
   } 
 
+  .method public static string  stringOfInst() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  call       class MyTestModule/MyRecord`3<int32,string,string> MyTestModule::createAnInstance()
+    IL_0005:  tail.
+    IL_0007:  callvirt   instance string [runtime]System.Object::ToString()
+    IL_000c:  ret
+  } 
+
   .property string maybeString()
   {
     .custom instance void System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8) = ( 01 00 02 00 00 ) 

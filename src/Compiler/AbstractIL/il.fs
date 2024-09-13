@@ -1862,9 +1862,10 @@ type ILGenericParameterDef =
         Name: string
         Constraints: ILTypes
         Variance: ILGenericVariance
-        HasReferenceTypeConstraint: bool
+        HasReferenceTypeConstraint: bool        
         HasNotNullableValueTypeConstraint: bool
         HasDefaultConstructorConstraint: bool
+        HasAllowsRefStruct: bool
         CustomAttrsStored: ILAttributesStored
         MetadataIndex: int32
     }
@@ -3283,6 +3284,7 @@ let mkILSimpleTypar nm =
         HasReferenceTypeConstraint = false
         HasNotNullableValueTypeConstraint = false
         HasDefaultConstructorConstraint = false
+        HasAllowsRefStruct = false
         CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
         MetadataIndex = NoMetadataIdx
     }
@@ -4404,7 +4406,7 @@ let buildILCode (_methName: string) lab2pc instrs tryspecs localspecs : ILCode =
 // Detecting Delegates
 // --------------------------------------------------------------------
 
-let mkILDelegateMethods access (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IAsyncResult) (parms, rtv: ILReturn) =
+let mkILDelegateMethods access (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IAsyncResult) (params_, rtv: ILReturn) =
     let retTy = rtv.Type
 
     let one nm args ret =
@@ -4427,10 +4429,10 @@ let mkILDelegateMethods access (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IAsy
 
     [
         ctor
-        one "Invoke" parms retTy
+        one "Invoke" params_ retTy
         one
             "BeginInvoke"
-            (parms
+            (params_
              @ [
                  mkILParamNamed ("callback", iltyp_AsyncCallback)
                  mkILParamNamed ("objects", ilg.typ_Object)

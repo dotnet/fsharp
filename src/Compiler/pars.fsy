@@ -2,6 +2,7 @@
 
 %{
 
+#nowarn "64" // turn off warnings that type variables used in production annotations are instantiated to concrete type
 #nowarn "1182"  // generated code has lots of unused "parseState"
 #nowarn "3261"  // the generated code would need to properly annotate nulls, e.g. changing System.Object to `obj|null`
 
@@ -108,7 +109,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %token ODO              /* LexFilter #light converts 'DO' tokens to 'ODO' */
 %token ODO_BANG         /* LexFilter #light converts 'DO_BANG' tokens to 'ODO_BANG' */
 %token OTHEN            /* LexFilter #light converts 'THEN' tokens to 'OTHEN' */
-%token OELSE            /* LexFilter #light converts 'ELSE' tokens to 'OELSE' except if immeditely followed by 'if', when they become 'ELIF' */
+%token OELSE            /* LexFilter #light converts 'ELSE' tokens to 'OELSE' except if immediately followed by 'if', when they become 'ELIF' */
 %token OWITH            /* LexFilter #light converts SOME (but not all) 'WITH' tokens to 'OWITH' */
 %token OFUNCTION        /* LexFilter #light converts 'FUNCTION' tokens to 'OFUNCTION' */
 %token OFUN             /* LexFilter #light converts 'FUN' tokens to 'OFUN' */
@@ -144,7 +145,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %token <range> OBLOCKEND                       // CtxtSeqBlock(_, _, AddBlockEnd)
 %token OBLOCKEND_COMING_SOON OBLOCKEND_IS_HERE // CtxtSeqBlock(_, _, AddBlockEnd)
 
-%token OINTERFACE_MEMBER /* inserted for non-paranthetical use of 'INTERFACE', i.e. not INTERFACE/END */
+%token OINTERFACE_MEMBER /* inserted for non-parenthetical use of 'INTERFACE', i.e. not INTERFACE/END */
 %token FIXED
 %token <token> ODUMMY
 
@@ -172,6 +173,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %type <SynPat> headBindingPattern
 %type <SynType> appTypeNullableInParens
 %type <SynType> atomTypeNonAtomicDeprecated
+%type <SynType> atomTypeOrAnonRecdType
 %type <SynExpr> atomicExprAfterType
 %type <SynExpr> typedSequentialExprBlock
 %type <SynExpr * bool> atomicExpr
@@ -232,7 +234,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
  *
  * Dummy terminals (like prec_type_prefix) can assign precedence to a rule.
  * Doc says rule and (shift) token precedence resolves shift/reduce conflict.
- * It seems like dummy terminals can not assign precedence to the shift,
+ * It seems like dummy terminals cannot assign precedence to the shift,
  * but including the tokens in the precedences below will order them.
  * e.g. prec_type_prefix lower precedence than RARROW, LBRACK, IDENT, STAR (all extend types).
  */
@@ -410,7 +412,7 @@ interactiveTerminator:
 /* It is important to make this as large as possible given the chunk of input */
 /* text. More or less identical to 'moduleDefns' but where SEMICOLON_SEMICOLON is */
 /* not part of the grammar of topSeps and HASH interactions are not part of */
-/* the swalloed blob, since things like #use must be processed separately. */
+/* the swallowed blob, since things like #use must be processed separately. */
 /* REVIEW: limiting the input chunks until the next # directive can lead to */
 /* discrepencies between whole-file type checking in FSI and FSC. */
 
@@ -1433,9 +1435,9 @@ namedModuleDefnBlock:
          // The second is a module abbreviation, the first a module containing a single expression.
          // The resolution is in favour of the module abbreviation, i.e. anything of the form
          //    module M2 = ID.ID.ID.ID
-         // will be taken as a module abbreviation, regardles of the identifiers themselves.
+         // will be taken as a module abbreviation, regardless of the identifiers themselves.
          //
-         // This is similar to the ambiguitty between
+         // This is similar to the ambiguity between
          //    type X = int
          // and
          //    type X = OneValue
@@ -3550,7 +3552,7 @@ headBindingPattern:
       { let mColonColon = rhs parseState 2
         SynPat.ListCons($1, $3, rhs2 parseState 1 3, { ColonColonRange = mColonColon }) }
 
-  | headBindingPattern COLON_COLON recover
+  | headBindingPattern COLON_COLON ends_coming_soon_or_recover 
       { let mColonColon = rhs parseState 2
         let pat2 = SynPat.Wild(mColonColon.EndRange)
         SynPat.ListCons($1, pat2, rhs2 parseState 1 2, { ColonColonRange = mColonColon }) }
@@ -3679,7 +3681,21 @@ constrPattern:
         SynPat.LongIdent(lid, None, None, args, vis, m) }
 
   | COLON_QMARK atomTypeOrAnonRecdType %prec pat_isinst
-      { SynPat.IsInst($2, lhs parseState) }
+      { let m = unionRanges (rhs parseState 1) $2.Range
+        SynPat.IsInst($2, m) }
+
+  | COLON_QMARK recover %prec pat_isinst
+      { let mColon = rhs parseState 1
+        if not $2 then
+            reportParseErrorAt mColon (FSComp.SR.parsExpectingPattern ())
+        let ty = SynType.FromParseError(mColon.EndRange)
+        SynPat.IsInst(ty, mColon) }
+
+  | COLON_QMARK %prec pat_isinst
+      { let mColon = rhs parseState 1
+        let ty = SynType.FromParseError(mColon.EndRange)
+        reportParseErrorAt mColon (FSComp.SR.parsExpectingType ())
+        SynPat.IsInst(ty, mColon) }
 
   | atomicPattern
       { $1 }
@@ -3799,7 +3815,7 @@ parenPatternBody:
 
 /* This duplicates out 'patterns' in order to give type annotations */
 /* the desired precedence w.r.t. patterns, tuple patterns in particular. */
-/* Duplication requried to minimize the disturbance to the grammar, */
+/* Duplication required to minimize the disturbance to the grammar, */
 /* in particular the expected property that "pat" parses the same as */
 /* "(pat)"!  Here are some examples: */
 /*    a, b                  parses as (a, b) */
@@ -3856,6 +3872,8 @@ parenPattern:
 
   | parenPattern COLON recover
       { let mColon = rhs parseState 2
+        if not $3 then
+            reportParseErrorAt mColon (FSComp.SR.parsExpectingPattern ())
         let ty = SynType.FromParseError(mColon.EndRange)
         SynPat.Typed($1, ty, unionRanges $1.Range mColon) }
 
@@ -3869,6 +3887,8 @@ parenPattern:
 
   | parenPattern COLON_COLON recover
       { let mColonColon = rhs parseState 2
+        if not $3 then
+            reportParseErrorAt mColonColon (FSComp.SR.parsExpectingPattern ())
         let pat2 = SynPat.Wild(mColonColon.EndRange)
         SynPat.ListCons($1, pat2, rhs2 parseState 1 2, { ColonColonRange = mColonColon }) }
 
@@ -4059,7 +4079,8 @@ moreBinders:
        let mEquals = rhs parseState 3
        let m = unionRanges (rhs parseState 1) $4.Range
        let mIn = rhs parseState 5
-       SynExprAndBang(spBind, $1, true, $2, $4, m, { EqualsRange = mEquals; InKeyword = Some mIn }) :: $6 }
+       let trivia = { AndBangKeyword = rhs parseState 1; EqualsRange = mEquals; InKeyword = Some mIn }
+       SynExprAndBang(spBind, $1, true, $2, $4, m, trivia) :: $6 }
 
   | OAND_BANG headBindingPattern EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders %prec expr_let
      { let report, mIn, _ = $5
@@ -4067,7 +4088,8 @@ moreBinders:
        let spBind = DebugPointAtBinding.Yes(rhs2 parseState 1 5) (* TODO Pretty sure this is wrong *)
        let mEquals = rhs parseState 3
        let m = unionRanges (rhs parseState 1) $4.Range
-       SynExprAndBang(spBind, $1, true, $2, $4, m, { EqualsRange = mEquals; InKeyword = mIn }) :: $7 }
+       let trivia = { AndBangKeyword = rhs parseState 1; EqualsRange = mEquals; InKeyword = mIn }
+       SynExprAndBang(spBind, $1, true, $2, $4, m, trivia) :: $7 }
 
   | %prec prec_no_more_attr_bindings
       { [] }
@@ -6821,7 +6843,7 @@ opt_topSeparators:
   | topSeparator opt_topSeparators { }
   | /* EMPTY */                    { }
 
-/* Seprators in either #light or non-#light */
+/* Separators in either #light or non-#light */
 seps:
   | OBLOCKSEP { None }
   | SEMICOLON { Some (rhs parseState 1) }

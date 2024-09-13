@@ -154,7 +154,7 @@
           Condition="'$(IsPackable)'=='true'">
 
     <PropertyGroup>
-      <_GitUrl>$([System.Text.RegularExpressions.Regex]::Replace($(ScmRepositoryUrl), ".git$", ""))</_GitUrl>
+      <_GitUrl>https://github.com/dotnet/fsharp</_GitUrl>
       <PackageReleaseNotes>$(_GitUrl)$(PackageReleaseNotes)</PackageReleaseNotes>
     </PropertyGroup>
   </Target>

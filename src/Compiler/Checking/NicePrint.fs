@@ -652,8 +652,8 @@ module PrintTypes =
             [ for a in attrs.AsArray() do
                 let name =  a.Method.DeclaringType.BasicQualifiedName
                 if name.StartsWith("System.Diagnostics.CodeAnalysis") then
-                    let parms, _args = decodeILAttribData a 
-                    layoutILAttrib (denvShortNames()) (a.Method.DeclaringType, parms)
+                    let params_, _args = decodeILAttribData a 
+                    layoutILAttrib (denvShortNames()) (a.Method.DeclaringType, params_)
             ]
         match attrsL with
         | [] -> restL
@@ -1221,7 +1221,7 @@ module PrintTypes =
         (nameL |> addColonL) ^^ tauL
 
     /// layouts the elements of an unresolved overloaded method call:
-    /// argInfos: unammed and named arguments
+    /// argInfos: unnamed and named arguments
     /// retTy: return type
     /// genParamTy: generic parameter types
     let prettyLayoutsOfUnresolvedOverloading denv argInfos retTy genParamTys =
@@ -1238,7 +1238,7 @@ module PrintTypes =
             // using 0, 1, 2 as discriminant for return, arguments and generic parameters
             // respectively, in order to easily retrieve each of the types with their
             // expected quality below.
-            let typesWithDiscrimants =
+            let typesWithDiscriminants =
                 [
                     yield 0, retTy 
                     for ty,_ in argInfos do
@@ -1246,14 +1246,14 @@ module PrintTypes =
                     for ty in genParamTys do
                         yield 2, ty
                 ]
-            let typesWithDiscrimants,typarsAndCxs = PrettyTypes.PrettifyDiscriminantAndTypePairs denv.g typesWithDiscrimants
-            let retTy = typesWithDiscrimants |> List.find (function 0, _ -> true | _ -> false) |> snd
+            let typesWithDiscriminants,typarsAndCxs = PrettyTypes.PrettifyDiscriminantAndTypePairs denv.g typesWithDiscriminants
+            let retTy = typesWithDiscriminants |> List.find (function 0, _ -> true | _ -> false) |> snd
             let argInfos = 
-                typesWithDiscrimants
+                typesWithDiscriminants
                 |> List.choose (function 1,ty -> Some ty | _ -> None)
                 |> List.map2 (fun (_, argInfo) tTy -> tTy, argInfo) argInfos
             let genParamTys = 
-                typesWithDiscrimants
+                typesWithDiscriminants
                 |> List.choose (function 2,ty -> Some ty | _ -> None)
               
             argInfos, retTy, genParamTys, typarsAndCxs
@@ -1734,7 +1734,7 @@ module InfoMemberPrinting =
     //
     // For C# extension members:
     //          ApparentContainer.Method(argName1: argType1, ..., argNameN: argTypeN) : retType
-    let prettyLayoutOfMethInfoFreeStyle (infoReader: InfoReader) m denv typarInst methInfo =
+    let rec prettyLayoutOfMethInfoFreeStyle (infoReader: InfoReader) m denv typarInst methInfo =
         let amap = infoReader.amap
 
         match methInfo with 
@@ -1745,6 +1745,12 @@ module InfoMemberPrinting =
         | FSMeth(_, _, vref, _) -> 
             let prettyTyparInst, resL = PrintTastMemberOrVals.prettyLayoutOfValOrMember { denv with showMemberContainers=true } infoReader typarInst vref
             prettyTyparInst, resL
+        | MethInfoWithModifiedReturnType(ILMeth(_, ilminfo, _) as wrappedInfo,retTy) -> 
+            let prettyTyparInst, prettyMethInfo, minst = prettifyILMethInfo amap m wrappedInfo typarInst ilminfo
+            let prettyMethInfo = MethInfoWithModifiedReturnType(prettyMethInfo,retTy)
+            let resL = layoutMethInfoCSharpStyle amap m denv prettyMethInfo minst
+            prettyTyparInst, resL
+        | MethInfoWithModifiedReturnType(mi,_) -> prettyLayoutOfMethInfoFreeStyle infoReader m denv typarInst mi
         | ILMeth(_, ilminfo, _) -> 
             let prettyTyparInst, prettyMethInfo, minst = prettifyILMethInfo amap m methInfo typarInst ilminfo
             let resL = layoutMethInfoCSharpStyle amap m denv prettyMethInfo minst

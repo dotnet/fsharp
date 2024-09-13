@@ -511,7 +511,7 @@ let ParseInput
     finally
         // OK, now commit the errors, since the ScopedPragmas will (hopefully) have been scraped
         let filteringDiagnosticsLogger =
-            GetDiagnosticsLoggerFilteringByScopedPragmas(false, scopedPragmas, diagnosticOptions, diagnosticsLogger)
+            GetDiagnosticsLoggerFilteringByScopedPragmas(lexbuf.LanguageVersion, scopedPragmas, diagnosticOptions, diagnosticsLogger)
 
         delayLogger.CommitDelayedDiagnostics filteringDiagnosticsLogger
 
@@ -803,7 +803,7 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, fileName, isLastC
 /// NOTE: Max errors is currently counted separately for each logger. When max errors is reached on one compilation
 /// the given Exiter will be called.
 ///
-/// NOTE: this needs to be improved to commit diagnotics as soon as possible
+/// NOTE: this needs to be improved to commit diagnostics as soon as possible
 ///
 /// NOTE: If StopProcessing is raised by any piece of work then the overall function raises StopProcessing.
 let UseMultipleDiagnosticLoggers (inputs, diagnosticsLogger, eagerFormat) f =
@@ -1429,7 +1429,7 @@ let CheckOneInput
 
 // Within a file, equip loggers to locally filter w.r.t. scope pragmas in each input
 let DiagnosticsLoggerForInput (tcConfig: TcConfig, input: ParsedInput, oldLogger) =
-    GetDiagnosticsLoggerFilteringByScopedPragmas(false, input.ScopedPragmas, tcConfig.diagnosticsOptions, oldLogger)
+    GetDiagnosticsLoggerFilteringByScopedPragmas(tcConfig.langVersion, input.ScopedPragmas, tcConfig.diagnosticsOptions, oldLogger)
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
 let CheckOneInputEntry (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt) tcState input =
@@ -1514,7 +1514,7 @@ type NodeToTypeCheck =
     /// This can be either an implementation or a signature file.
     | PhysicalFile of fileIndex: FileIndex
     /// An artificial node that will add the earlier processed signature information to the TcEnvFromImpls.
-    /// Dependants on this type of node will perceive that a file is known in both TcEnvFromSignatures and TcEnvFromImpls.
+    /// Dependents on this type of node will perceive that a file is known in both TcEnvFromSignatures and TcEnvFromImpls.
     /// Even though the actual implementation file was not type-checked.
     | ArtificialImplFile of signatureFileIndex: FileIndex
 

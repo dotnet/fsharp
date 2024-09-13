@@ -2,14 +2,12 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test
-open FSharp.Compiler.Diagnostics
 
-[<TestFixture>]
 module ``Basic Grammar Element Constants`` =
 
-    [<Test>]
+    [<Fact>]
     let ``Basic constants compile `` () =
         CompilerAssert.Pass 
             """
@@ -53,7 +51,7 @@ let boolConst2 = false
 let unitConst = ()
             """
 
-    [<Test>]
+    [<Fact>]
     let ``Long with underscores``() = 
         CompilerAssert.CompileExeAndRun
             """
@@ -66,7 +64,7 @@ printfn "%A" socialSecurityNumber
 printfn "%A" creditCardNumber
             """
 
-    [<Test>]
+    [<Fact>]
     let ``float 32 with underscores``() = 
         CompilerAssert.CompileExeAndRun
             """
@@ -75,7 +73,7 @@ if pi <> 3.1415F  then failwith "Wrong parsing"
 printfn "%A" pi
             """
 
-    [<Test>]
+    [<Fact>]
     let ``int with underscores hexBytes``() = 
         CompilerAssert.CompileExeAndRun
             """
@@ -85,7 +83,7 @@ printfn "%A" hexBytes
             """
 
 
-    [<Test>]
+    [<Fact>]
     let ``int with underscore hexWords``() = 
         CompilerAssert.CompileExeAndRun
             """
@@ -94,7 +92,7 @@ if hexWords <> 0xCAFEBABE then failwith "Wrong parsing"
 printfn "%A" hexWords
             """
 
-    [<Test>]
+    [<Fact>]
     let ``Long with underscores maxLong``() = 
         CompilerAssert.CompileExeAndRun
             """
@@ -103,7 +101,7 @@ if maxLong <> 0x7fffffffffffffffL then failwith "Wrong parsing"
 printfn "%A" maxLong
             """
 
-    [<Test>]
+    [<Fact>]
     let ``int with underscore nybbles``() = 
         CompilerAssert.CompileExeAndRun
             """
@@ -112,7 +110,7 @@ if nybbles <> 0b00100101 then failwith "Wrong parsing"
 printfn "%A" nybbles
             """
 
-    [<Test>]
+    [<Fact>]
     let ``int with underscores bytes``() = 
         CompilerAssert.CompileExeAndRun
             """
@@ -121,7 +119,7 @@ if bytes <> 0b11010010011010011001010010010010 then failwith "Wrong parsing"
 printfn "%A" bytes
             """
 
-    [<Test>]
+    [<Fact>]
     let ``int with single underscore literal``() = 
         CompilerAssert.CompileExeAndRun
             """
@@ -130,7 +128,7 @@ if x2 <> 52 then failwith "Wrong parsing"
 printfn "%A" x2
             """
 
-    [<Test>]
+    [<Fact>]
     let ``int with multiple underscores literal``() = 
         CompilerAssert.CompileExeAndRun
             """
@@ -139,7 +137,7 @@ if x4 <> 52 then failwith "Wrong parsing"
 printfn "%A" x4
             """
 
-    [<Test>]
+    [<Fact>]
     let ``int with single underscore Hex literal``() = 
         CompilerAssert.CompileExeAndRun
             """
@@ -149,7 +147,7 @@ if x7 <> 0x52 then
 printfn "%A" x7
             """
 
-    [<Test>]
+    [<Fact>]
     let ``int with single underscore after leading zero literal``() = 
         CompilerAssert.CompileExeAndRun
             """
@@ -158,8 +156,8 @@ if x9 <> 052 then failwith "Wrong parsing"
 printfn "%A" x9
             """
 
-    [<Test>]
-    let ``int with single underscore after leteral with leading zero ``() = 
+    [<Fact>]
+    let ``int with single underscore after literal with leading zero ``() = 
         CompilerAssert.CompileExeAndRun
             """
 let x10 = 05_2
@@ -167,15 +165,15 @@ if x10 <> 052 then failwith "Wrong parsing"
 printfn "%A" x10
             """
 
-    [<Test>]
-    let ``int with single underscore after octo leteral ``() = 
+    [<Fact>]
+    let ``int with single underscore after octo literal ``() = 
         CompilerAssert.CompileExeAndRun
             """
 let x14 = 0o5_2
 if x14 <> 0o52 then failwith "Wrong parsing"
 printfn "%A" x14
             """
-    [<Test>]
+    [<Fact>]
     let ``dotless float``() = 
         CompilerAssert.CompileExeWithOptions([|"--langversion:5.0"|],
             """
@@ -183,35 +181,35 @@ let x = 42f
 printfn "%A" x
             """)
 
-    [<Test>]
+    [<Fact>]
     let ``dotted float``() = 
         CompilerAssert.CompileExe("""
 let x = 42.f
 printfn "%A" x
             """)
 
-    [<Test>]
+    [<Fact>]
     let ``dotted floats should be equal to dotless floats``() = 
         CompilerAssert.CompileExeAndRunWithOptions([|"--langversion:5.0"|],
             """
 if 1.0f <> 1f then failwith "1.0f <> 1f"
             """)
 
-    [<Test>]
+    [<Fact>]
     let ``exponent dotted floats should be equal to dotted floats``() =
         CompilerAssert.CompileExeAndRun
             """
 if 1.0e1f <> 10.f then failwith "1.0e1f <> 10.f"
             """
 
-    [<Test>]
+    [<Fact>]
     let ``exponent dotless floats should be equal to dotted floats``() = 
         CompilerAssert.CompileExeAndRun
             """
 if 1e1f <> 10.f then failwith "1e1f <> 10.f" 
             """
 
-    [<Test>]
+    [<Fact>]
     let ``exponent dotted floats should be equal to dotless floats``() = 
         CompilerAssert.CompileExeAndRunWithOptions(
             [|"--langversion:5.0"|],
@@ -219,7 +217,7 @@ if 1e1f <> 10.f then failwith "1e1f <> 10.f"
 if 1.0e1f <> 10f then failwith "1.0e1f <> 10f" 
             """)
 
-    [<Test>]
+    [<Fact>]
     let ``exponent dotless floats should be equal to dotless floats``() = 
         CompilerAssert.CompileExeAndRunWithOptions(
             [|"--langversion:5.0"|],

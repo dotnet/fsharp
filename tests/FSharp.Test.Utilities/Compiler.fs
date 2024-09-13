@@ -730,7 +730,7 @@ module rec Compiler =
         let outputDirectory =
             match fs.OutputDirectory with
             | Some di -> di
-            | None -> DirectoryInfo(tryCreateTemporaryDirectory())
+            | None -> DirectoryInfo(createTemporaryDirectory "compileFSharp")
         let references = processReferences fs.References outputDirectory
         let compilation = Compilation.CreateFromSources([fs.Source] @ fs.AdditionalSources, output, options, fs.TargetFramework, references, name, outputDirectory)
         compileFSharpCompilation compilation fs.IgnoreWarnings (FS fs)
@@ -775,12 +775,12 @@ module rec Compiler =
     let private compileCSharp (csSource: CSharpCompilationSource) : CompilationResult =
 
         let source = csSource.Source.GetSourceText |> Option.defaultValue ""
-        let name = defaultArg csSource.Name (tryCreateTemporaryFileName())
+        let name = defaultArg csSource.Name (getTemporaryFileName())
 
         let outputDirectory =
             match csSource.OutputDirectory with
             | Some di -> di
-            | None -> DirectoryInfo(tryCreateTemporaryDirectory())
+            | None -> DirectoryInfo(createTemporaryDirectory "compileCSharp")
 
         let additionalReferences =
             processReferences csSource.References outputDirectory
@@ -922,7 +922,7 @@ module rec Compiler =
                 let outputDirectory =
                     match fsSource.OutputDirectory with
                     | Some di -> di
-                    | None -> DirectoryInfo(tryCreateTemporaryDirectory())
+                    | None -> DirectoryInfo(createTemporaryDirectory "typecheckResults")
                 let references = processReferences fsSource.References outputDirectory
                 if references.IsEmpty then
                     Array.empty
@@ -1058,7 +1058,7 @@ module rec Compiler =
                 let outputDirectory =
                     match fs.OutputDirectory with
                     | Some di -> di
-                    | None -> DirectoryInfo(tryCreateTemporaryDirectory())
+                    | None -> DirectoryInfo(createTemporaryDirectory "runFsi")
                 outputDirectory.Create()
                 disposals.Add({ new IDisposable with member _.Dispose() = outputDirectory.Delete(true) })
 
@@ -1328,7 +1328,7 @@ Actual:
         if reader.ImportScopes.Count < 2 then
             failwith $"Expected to have at least 2 import scopes, but found {reader.ImportScopes.Count}."
 
-        // Sanity check: explicitly test that first import scope is indeed an apty one (i.e. there are no imports).
+        // Sanity check: explicitly test that first import scope is indeed an empty one (i.e. there are no imports).
         let rootScope = reader.ImportScopes.ToImmutableArray().Item(0) |> reader.GetImportScope
 
         let rootScopeImportsLength = rootScope.GetImports().ToImmutableArray().Length
@@ -1412,7 +1412,7 @@ Actual:
 
             verifyPdbFormat reader compilationType
             verifyPdbOptions result.OutputPath reader options
-        | _ -> failwith "Output path is not set, please make sure compilation was successfull."
+        | _ -> failwith "Output path is not set, please make sure compilation was successful."
 
         ()
 
@@ -1430,7 +1430,7 @@ Actual:
                 let pdbPath = Path.ChangeExtension(assemblyPath, ".pdb")
                 if not (FileSystem.FileExistsShim pdbPath) then
                     failwith $"PDB file does not exists: {pdbPath}"
-            | _ -> failwith "Output path is not set, please make sure compilation was successfull."
+            | _ -> failwith "Output path is not set, please make sure compilation was successful."
         match result with
         | CompilationResult.Success r -> verifyPdbExists r
         | _ -> failwith "Result should be \"Success\" in order to verify PDB."
@@ -1442,7 +1442,7 @@ Actual:
                 let pdbPath = Path.ChangeExtension(assemblyPath, ".pdb")
                 if FileSystem.FileExistsShim pdbPath then
                     failwith $"PDB file exists: {pdbPath}"
-            | _ -> failwith "Output path is not set, please make sure compilation was successfull."
+            | _ -> failwith "Output path is not set, please make sure compilation was successful."
         match result with
         | CompilationResult.Success r -> verifyPdbNotExists r
         | _ -> failwith "Result should be \"Success\" in order to verify PDB."

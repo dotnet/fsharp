@@ -2,10 +2,9 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test.Compiler
 
-[<TestFixture()>]
 module NullableOptionalRegressionTests =
 
     //Disabled, see RFC for nullable
@@ -35,7 +34,7 @@ let test () =
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Method should infer 'z' correctly``() =
         let fsSrc =
             """
@@ -56,7 +55,7 @@ type Test with
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Method should infer correctly``() =
         let fsSrc =
             """
@@ -77,7 +76,7 @@ type Test with
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Method should infer correctly 2``() =
         let fsSrc =
             """
