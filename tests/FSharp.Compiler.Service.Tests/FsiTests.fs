@@ -14,7 +14,6 @@ type Sentinel () =
 module MyModule =
     let test(x: int) = ()
 
-[<CollectionDefinition("FsiTests", DisableParallelization = true)>]
 module FsiTests =
 
     let createFsiSession (useOneDynamicAssembly: bool) =

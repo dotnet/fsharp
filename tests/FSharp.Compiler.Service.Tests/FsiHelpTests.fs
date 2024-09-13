@@ -3,7 +3,6 @@
 open FSharp.Test.Assert
 open Xunit
 
-[<CollectionDefinition("FsiHelpTests", DisableParallelization = false)>]
 module FsiHelpTests =
 
     [<Fact>]
