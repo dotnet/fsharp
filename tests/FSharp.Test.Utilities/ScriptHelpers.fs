@@ -43,7 +43,7 @@ type private EventedTextWriter() =
         else sb.Append(c) |> ignore
     member _.GetText() = sw.ToString()
 
-type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVersion) =
+type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVersion, ?input: string) =
 
     let additionalArgs = defaultArg additionalArgs [||]
     let quiet = defaultArg quiet true
@@ -72,8 +72,7 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
 
     let argv = Array.append baseArgs additionalArgs
 
-    let inputStream = new CompilerInputStream()
-    let inReader = new StreamReader(inputStream)
+    let inReader = new StringReader(defaultArg input "")
     let outWriter = new EventedTextWriter()
     let errorWriter = new EventedTextWriter()
 
@@ -85,8 +84,6 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
     let fsi = FsiEvaluationSession.Create (config, argv, inReader, outWriter, errorWriter)
 
     member _.ValueBound = fsi.ValueBound
-
-    member _.ProvideInput text = inputStream.Add text
 
     member _.Fsi = fsi
 

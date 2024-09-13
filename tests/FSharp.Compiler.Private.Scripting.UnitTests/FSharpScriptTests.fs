@@ -88,8 +88,7 @@ x
 
     [<Fact>]
     member _.``Capture console input``() =
-        use script = new FSharpScript()
-        script.ProvideInput "stdin:1234\r\n"
+        use script = new FSharpScript(input = "stdin:1234\r\n")
         let opt = script.Eval("System.Console.ReadLine()") |> getValue
         let value = opt.Value
         Assert.Equal(typeof<string>, value.ReflectionType)
