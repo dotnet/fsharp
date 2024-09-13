@@ -273,8 +273,7 @@ type AsyncModule() =
             }
         Async.RunSynchronously test
 
-    // test is flaky: https://github.com/dotnet/fsharp/issues/11586
-    //[<Fact>]
+    [<Fact(Skip="test is flaky: https://github.com/dotnet/fsharp/issues/11586")>]
     member _.``OnCancel.RaceBetweenCancellationHandlerAndDisposingHandlerRegistration``() = 
         let test() = 
             use flag = new ManualResetEvent(false)
@@ -297,8 +296,7 @@ type AsyncModule() =
 
         for _i = 1 to 300 do test()
 
-    // test is flaky: https://github.com/dotnet/fsharp/issues/11586
-    //[<Fact>]
+    [<Fact(Skip="test is flaky: https://github.com/dotnet/fsharp/issues/11586")>]
     member _.``OnCancel.RaceBetweenCancellationAndDispose``() = 
         let mutable flag = 0
         let cts = new System.Threading.CancellationTokenSource()
@@ -316,8 +314,7 @@ type AsyncModule() =
             :? System.OperationCanceledException -> ()
         Assert.AreEqual(1, flag)
 
-    // test is flaky: https://github.com/dotnet/fsharp/issues/11586
-    //[<Fact>]
+    [<Fact(Skip="test is flaky: https://github.com/dotnet/fsharp/issues/11586")>]
     member _.``OnCancel.CancelThatWasSignalledBeforeRunningTheComputation``() = 
         let test() = 
             let cts = new System.Threading.CancellationTokenSource()

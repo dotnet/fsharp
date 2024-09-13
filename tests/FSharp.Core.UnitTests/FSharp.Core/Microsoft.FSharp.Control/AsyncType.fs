@@ -16,8 +16,10 @@ type RunWithContinuationsTest_WhatToDo =
     | Cancel
     | Throw
 
-// Run tests sequentially because of CancelDefaultToken.
-[<CollectionDefinition(nameof AsyncType, DisableParallelization = true)>]
+[<CollectionDefinition(nameof NotThreadSafeCollection, DisableParallelization = true)>]
+type NotThreadSafeCollection = class end
+
+[<Collection(nameof NotThreadSafeCollection)>]
 type AsyncType() =
 
     let ignoreSynchCtx f =
