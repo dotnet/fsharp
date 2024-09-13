@@ -90,7 +90,7 @@ IL_0014:  call       string [runtime]System.String::Concat(string,
                                                                   string)
 IL_0019:  ret"""]
 
-    [<Fact>]
+    [<FSharp.Test.FactForNETCOREAPP>]
     let ``Interpolated string with concat converts to span implicitly`` () =
         let compilation = 
                 FSharp $"""
