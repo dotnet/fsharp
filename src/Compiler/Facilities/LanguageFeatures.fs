@@ -94,7 +94,6 @@ type LanguageFeature =
     | ParsedHashDirectiveArgumentNonQuotes
     | EmptyBodiedComputationExpressions
     | AllowObjectExpressionWithoutOverrides
-    | ConsistentNowarnLineDirectiveInteraction
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -214,7 +213,6 @@ type LanguageVersion(versionText) =
                 LanguageFeature.ParsedHashDirectiveArgumentNonQuotes, languageVersion90
                 LanguageFeature.EmptyBodiedComputationExpressions, languageVersion90
                 LanguageFeature.EnforceAttributeTargets, languageVersion90
-                LanguageFeature.ConsistentNowarnLineDirectiveInteraction, languageVersion90
 
                 // F# preview
                 LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion // not enabled because: https://github.com/dotnet/fsharp/issues/17509
@@ -377,7 +375,6 @@ type LanguageVersion(versionText) =
         | LanguageFeature.ParsedHashDirectiveArgumentNonQuotes -> FSComp.SR.featureParsedHashDirectiveArgumentNonString ()
         | LanguageFeature.EmptyBodiedComputationExpressions -> FSComp.SR.featureEmptyBodiedComputationExpressions ()
         | LanguageFeature.AllowObjectExpressionWithoutOverrides -> FSComp.SR.featureAllowObjectExpressionWithoutOverrides ()
-        | LanguageFeature.ConsistentNowarnLineDirectiveInteraction -> FSComp.SR.featureConsistentNowarnLineDirectiveInteraction ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
