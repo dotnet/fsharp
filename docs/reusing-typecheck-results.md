@@ -25,7 +25,7 @@ Here are some assumptions I am coming with after tinkering with the topic and in
 
 ### Premise 1: current compiler design
 
-The heart of the compiler, `fsc.fs`, is split into 6 phases (`main1` - `main6`). The code is designed to pass minimum information between phases, using the `Args` structure, which is essentially a data bag. The first phase takes info from the program arguments.
+The heart of the compiler, [fsc.fs](src\Compiler\Driver\fsc.fs), is split into 6 phases (`main1` - `main6`). The code is designed to pass minimum information between phases, using the `Args` structure, which is essentially a data bag. The first phase takes info from the program arguments.
 
 ```fsharp
 main1 (...args...)
@@ -124,7 +124,9 @@ Let's measure (`fsc --times`) the fresh compilation of large F# files. We'll use
 --------------------------------------------------------------------------------------------------------
 ```
 
-The phases taking the longest are marked in the right. Those are assembly import, type check, optimizations and IL writing. Optimizations are not relevant in the dev loop with run/debug/test cycles so we won't take those into account.
+The phases taking the longest are marked in the right. Those are assembly import, type check, optimizations and IL writing.
+
+Optimizations are not relevant in the dev loop with run/debug/test cycles so we won't take those into account.
 
 ## Implementation plan
 
@@ -134,42 +136,31 @@ The conclusion from the above is that there is a lot of potential in caching - a
 
 We already create the TC graph in `main1` and we are able to dump it (in Mermaid) via the compiler flags.
 
-So we can do the following:
-- force-gen and save the graph
-- append all the extra compilation info (basically, the compilation arguments string)
-- before doing the retypecheck, detect if there is any change to above:
-  - if so, skip the retypecheck
-  - otherwise, apply some algorithm to get the graph diff. The result should be the list of files for retypecheck (just ignore it for now)
+That means we can force-gen and save the graph which will allow us to skip retypecheck if we detect that the graph is not changed. We should also track all the compilation information (the argument string).
 
-This will allow to skip a huge part of the compilation in the scenarios like reopening Visual Studio for a project when nothing has changed.
-
-This step is largely technical without big observable benefits, but will require the necessary msbuild hooks to communicate the intermediate files folder towards fcs.exe, add time-based and hash-based cache invalidation logic, and involve necessary tests which will include the `clean` and `rebuild` tests to make sure the cache be easily invalidated on demand.
+This step won't bring big observable benefits, yet it will create necessary MSBuild hooks to communicate the intermediate files folder towards the compiler, add time-based and hash-based cache invalidation logic, and create testing rails which will include the `clean` and `rebuild` tests to make sure the cache is easily invalidated on demand.
 
 **Stage 2 - skip retypecheck for some files**
 
 In `main1`, we do unpickling (= deserializing) and pickling (= serializing) of the code. This currently happens on the module/namespace basis. 
 
-So in the stage, we will fully implement pickling and unpickling of all typechecked files (`CheckedImplFile` per file as well as all other outputs of `main1` which cannot be cheaply re-created like `topAttrs` and `CcuThunk`). Parts of the pickling/unpickling can reuse the primitives already existing in TypedTreePickle and built upon them. This is likely the biggest amount of work expected.
+In this stage, we will fully implement pickling and unpickling of all typechecked files (`CheckedImplFile` per file as well as all other outputs of `main1` which cannot be cheaply recreated like `topAttrs` and `CcuThunk`). Parts of the pickling/unpickling can reuse the primitives already existing in `TypedTreePickle` and built upon them. So we can save acquired typecheck information to the intermediate folder after the typecheck - and for the files not needing retypecheck as per graph diff, skip the phase, instead restoring the typecheck info.
 
-Then we can save acquired typecheck information to the intermediate folder after the typecheck - and for the files not needing retypecheck as per graph diff, skip the phase, instead restore the typecheck info.
-
-This will hugely benefit the scenarios when only the edge of the graph is affected (think one test in a test project).
+This is likely the biggest amount of work expected but it will hugely benefit the scenarios when only the edge of the graph is affected (think one test in a test project).
 
 **Stage 3 - reduce signature data generation**
 
 In `main3`, we encode signature data in the assemblies.
 
-Since we'll have typecheck graph at this point, we can detect its "edges" - files which nothing depends on. Those don't need to include signature data, hence we can skip the encoding step for them.
+Since we are addressing run/debug/test scenarios, a lot of projects can avoid signature data at all, because signature data is only needed for cross-project compilation. This could be detected automatically for certain types of projects (think web apps, console apps, test projects).
 
-Here, the gain largely depends on the type of the project, but this would be anyway a good move in the direction of the compiler less relying on signatures for its operations.
+For libraries, the signature information resource blob (a byte array) would have to be split into per-file data and we'll and logic to recombine the splits with freshly typechecked information into a single binary resource back.
 
 **Stage 4 - reuse import data**
 
 In `main1`, we restore imported assemblies to get their IL (e.g. system assemblies).
 
-So here we can:
-- serialize and cache imported IL (to be evaluated and benchmarked if per-assembly or per assembly-block, such as all System.*.dll into a single persisted file)
-- apply this for the cross-project case, to not reimport IL for repeating assemblies but instead restore it from the cache - by adding a cross-project intermediate file location to be coordinated with msbuild properties
+So here, we can serialize and cache imported IL - we'll need to evaluate and benchmark if per assembly or per assembly block (cases like  System.*.dll). We'll apply this for the cross-project case, to not reimport IL for repeating assemblies but instead restore it from the cache - by adding a cross-project intermediate file location to be coordinated with MSBuild properties.
 
 This will be a smaller gain for any particular project but a big accummulated one for large multi-project solutions.
 
