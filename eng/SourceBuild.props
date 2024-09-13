@@ -43,7 +43,7 @@
     <Exec
       Command="./build.sh --bootstrap --skipBuild -bl $(SourceBuildBootstrapTfmArg) /p:SourceBuildUseMonoRuntime=$(SourceBuildUseMonoRuntime)"
       WorkingDirectory="$(InnerSourceBuildRepoRoot)"
-      EnvironmentVariables="@(InnerBuildEnv);DotNetBuildSourceOnly=true" />
+      EnvironmentVariables="@(InnerBuildEnv)" />
   </Target>
 
 </Project>
