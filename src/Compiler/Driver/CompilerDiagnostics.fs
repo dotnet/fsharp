@@ -2305,7 +2305,7 @@ type DiagnosticsLoggerFilteringByScopedPragmas
     inherit DiagnosticsLogger("DiagnosticsLoggerFilteringByScopedPragmas")
 
     let skipFilenameChecks =
-        not(langVersion.SupportsFeature LanguageFeature.ConsistentNowarnLineDirectiveInteraction)
+        not(true || langVersion.SupportsFeature LanguageFeature.ConsistentNowarnLineDirectiveInteraction)
 
     let mutable realErrorPresent = false
 
