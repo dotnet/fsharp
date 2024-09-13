@@ -51,5 +51,4 @@
       RemoveProperties="TargetFramework"
       StopOnFirstFailure="True" />
   </Target>
-
 </Project>
