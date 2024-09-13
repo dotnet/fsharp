@@ -162,7 +162,7 @@ In `main1`, we restore imported assemblies to get their IL (e.g. system assembli
 
 So here, we can serialize and cache imported IL - we'll need to evaluate and benchmark if per assembly or per assembly block (cases like  System.*.dll). We'll apply this for the cross-project case, to not reimport IL for repeating assemblies but instead restore it from the cache - by adding a cross-project intermediate file location to be coordinated with MSBuild properties.
 
-This will be a smaller gain for any particular project but a big accummulated one for large multi-project solutions.
+This will be a smaller gain for any particular project but a big accumulated one for large multi-project solutions.
 
 ## Testing and benchmarking
 
