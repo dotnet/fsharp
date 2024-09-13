@@ -29,45 +29,32 @@ let FSI = FSI_NETFX
 
 module CoreTests =
 
-
 #if !NETCOREAPP
     [<Fact>]
     let ``subtype-langversion-checknulls`` () =
         let cfg = testConfig "core/subtype"
 
-        use testOkFile = fileguard cfg "test.ok"
-
         fsc cfg "%s -o:test-checknulls.exe -g --checknulls" cfg.fsc_flags ["test.fsx"]
 
         exec cfg ("." ++ "test-checknulls.exe") ""
-
-        testOkFile.CheckExists()
 
     [<Fact>]
     let ``subtype-langversion-no-checknulls`` () =
         let cfg = testConfig "core/subtype"
 
-        use testOkFile = fileguard cfg "test.ok"
-
         fsc cfg "%s -o:test-no-checknulls.exe -g --checknulls-" cfg.fsc_flags ["test.fsx"]
 
         exec cfg ("." ++ "test-no-checknulls.exe") ""
-
-        testOkFile.CheckExists()
 
     [<Fact>]
     let ``subtype-langversion-46`` () =
         let cfg = testConfig "core/subtype"
 
-        use testOkFile = fileguard cfg "test.ok"
-
         fsc cfg "%s -o:test-langversion-46.exe -g --langversion:4.6" cfg.fsc_flags ["test.fsx"]
 
         exec cfg ("." ++ "test-langversion-46.exe") ""
 
-        testOkFile.CheckExists()
 #endif
-
 
     [<Fact>]
     let ``SDKTests`` () =
@@ -95,7 +82,6 @@ module CoreTests1 =
         let cfg = { cfg with fsc_flags = sprintf "%s --preferreduilang:en-US --test:StackSpan" cfg.fsc_flags}
 
         begin
-            use testOkFile = fileguard cfg "test.ok"
 
             singleNegTest cfg "test"
 
@@ -104,11 +90,9 @@ module CoreTests1 =
             // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
             //exec cfg ("." ++ "test.exe") ""
 
-            //testOkFile.CheckExists()
         end
 
         begin
-            use testOkFile = fileguard cfg "test2.ok"
 
             singleNegTest cfg "test2"
 
@@ -117,11 +101,9 @@ module CoreTests1 =
             // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
             //exec cfg ("." ++ "test.exe") ""
 
-            //testOkFile.CheckExists()
         end
 
         begin
-            use testOkFile = fileguard cfg "test3.ok"
 
             singleNegTest cfg "test3"
 
@@ -130,26 +112,19 @@ module CoreTests1 =
             // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
             //exec cfg ("." ++ "test.exe") ""
 
-            //testOkFile.CheckExists()
         end
 
     [<Fact>]
     let asyncStackTraces () =
         let cfg = testConfig "core/asyncStackTraces"
 
-        use testOkFile = fileguard cfg "test.ok"
-
         fsc cfg "%s -o:test.exe -g --tailcalls- --optimize-" cfg.fsc_flags ["test.fsx"]
 
         exec cfg ("." ++ "test.exe") ""
 
-        testOkFile.CheckExists()
-
     [<Fact>]
     let ``state-machines-non-optimized`` () = 
         let cfg = testConfig "core/state-machines"
-
-        use testOkFile = fileguard cfg "test.ok"
 
         fsc cfg "%s -o:test.exe -g --tailcalls- --optimize-" cfg.fsc_flags ["test.fsx"]
 
@@ -157,13 +132,9 @@ module CoreTests1 =
 
         exec cfg ("." ++ "test.exe") ""
 
-        testOkFile.CheckExists()
-
     [<Fact>]
     let ``state-machines-optimized`` () = 
         let cfg = testConfig "core/state-machines"
-
-        use testOkFile = fileguard cfg "test.ok"
 
         fsc cfg "%s -o:test.exe -g --tailcalls+ --optimize+" cfg.fsc_flags ["test.fsx"]
 
@@ -171,13 +142,10 @@ module CoreTests1 =
 
         exec cfg ("." ++ "test.exe") ""
 
-        testOkFile.CheckExists()
-
     [<Fact>]
     let ``state-machines neg-resumable-01`` () =
         let cfg = testConfig "core/state-machines"
         singleVersionedNegTest cfg "preview" "neg-resumable-01"
-
 
     [<Fact>]
     let ``state-machines neg-resumable-02`` () =
@@ -187,93 +155,70 @@ module CoreTests1 =
     [<Fact>]
     let ``lots-of-conditionals``() =
         let cfg = testConfig "core/large/conditionals"
-        use testOkFile = fileguard cfg "test.ok"
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeConditionals-200.fs"]
         exec cfg ("." ++ "test.exe") ""
-        testOkFile.CheckExists()
 
     [<Fact>]
     let ``lots-of-conditionals-maxtested``() =
         let cfg = testConfig "core/large/conditionals"
-        use testOkFile = fileguard cfg "test.ok"
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeConditionals-maxtested.fs"]
         exec cfg ("." ++ "test.exe") ""
-        testOkFile.CheckExists()
 
     [<Fact>]
     let ``lots-of-lets``() =
         let cfg = testConfig "core/large/lets"
-        use testOkFile = fileguard cfg "test.ok"
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeLets-500.fs"]
         exec cfg ("." ++ "test.exe") ""
-        testOkFile.CheckExists()
 
     [<Fact>]
     let ``lots-of-lets-maxtested``() =
         let cfg = testConfig "core/large/lets"
-        use testOkFile = fileguard cfg "test.ok"
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeLets-maxtested.fs"]
         exec cfg ("." ++ "test.exe") ""
-        testOkFile.CheckExists()
 
     [<Fact>]
     let ``lots-of-lists``() =
         let cfg = testConfig "core/large/lists"
-        use testOkFile = fileguard cfg "test.ok"
         fsc cfg "%s -o:test-500.exe " cfg.fsc_flags ["LargeList-500.fs"]
         exec cfg ("." ++ "test-500.exe") ""
-        testOkFile.CheckExists()
 
     [<Fact>]
     let ``lots-of-matches``() =
         let cfg = testConfig "core/large/matches"
-        use testOkFile = fileguard cfg "test.ok"
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeMatches-200.fs"]
         exec cfg ("." ++ "test.exe") ""
-        testOkFile.CheckExists()
 
     [<Fact>]
     let ``lots-of-matches-maxtested``() =
         let cfg = testConfig "core/large/matches"
-        use testOkFile = fileguard cfg "test.ok"
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeMatches-maxtested.fs"]
         exec cfg ("." ++ "test.exe") ""
-        testOkFile.CheckExists()
 
     [<Fact>]
     let ``lots-of-sequential-and-let``() =
         let cfg = testConfig "core/large/mixed"
-        use testOkFile = fileguard cfg "test.ok"
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeSequentialLet-500.fs"]
         exec cfg ("." ++ "test.exe") ""
-        testOkFile.CheckExists()
 
     [<Fact>]
     let ``lots-of-sequential-and-let-maxtested``() =
         let cfg = testConfig "core/large/mixed"
-        use testOkFile = fileguard cfg "test.ok"
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeSequentialLet-maxtested.fs"]
         exec cfg ("." ++ "test.exe") ""
-        testOkFile.CheckExists()
 
     [<Fact>]
     let ``lots-of-sequential``() =
         let cfg = testConfig "core/large/sequential"
-        use testOkFile = fileguard cfg "test.ok"
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeSequential-500.fs"]
         exec cfg ("." ++ "test.exe") ""
-        testOkFile.CheckExists()
 
     [<Fact>]
     let ``lots-of-sequential-maxtested``() =
         let cfg = testConfig "core/large/sequential"
-        use testOkFile = fileguard cfg "test.ok"
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeSequential-maxtested.fs"]
         exec cfg ("." ++ "test.exe") ""
-        testOkFile.CheckExists()
 
 #endif
-
 
 #if !NETCOREAPP
 module CoreTests2 =
@@ -296,19 +241,15 @@ module CoreTests2 =
         peverify cfg "test.exe"
 
         begin
-            use testOkFile = fileguard cfg "test.ok"
 
             exec cfg ("." ++ "test.exe") ""
 
-            testOkFile.CheckExists()
         end
 
         begin
-            use testOkFile = fileguard cfg "test.ok"
 
             fsi cfg "-r:lib.dll" ["test.fsx"]
 
-            testOkFile.CheckExists()
         end
 
     [<Fact>]
@@ -323,64 +264,9 @@ module CoreTests2 =
 
         peverify cfg "testcs.exe"
 
-        use testOkFile = fileguard cfg "test.ok"
-
         fsi cfg "" ["test.fs"]
 
-        testOkFile.CheckExists()
-
         exec cfg ("." ++ "testcs.exe") ""
-
-
-    //
-    // Shadowcopy does not work for public signed assemblies
-    // =====================================================
-    //
-    //module ``FSI-Shadowcopy`` =
-    //
-    //    [<Fact>]
-    //    // "%FSI%" %fsi_flags%                          < test1.fsx
-    //    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "")
-    //    // "%FSI%" %fsi_flags%  --shadowcopyreferences- < test1.fsx
-    //    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "--shadowcopyreferences-")
-    //    let ``shadowcopy disabled`` (flags: string) =
-    //        let cfg = testConfig' ()
-    //
-    //
-    //
-    //
-    //
-    //        // if exist test1.ok (del /f /q test1.ok)
-    //        use testOkFile = fileguard cfg "test1.ok"
-    //
-    //        fsiStdin cfg "%s %s" cfg.fsi_flags flags "test1.fsx"
-    //
-    //        // if NOT EXIST test1.ok goto SetError
-    //        testOkFile.CheckExists()
-    //
-    //
-    //    [<Fact>]
-    //    // "%FSI%" %fsi_flags%  /shadowcopyreferences+  < test2.fsx
-    //    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "/shadowcopyreferences+")
-    //    // "%FSI%" %fsi_flags%  --shadowcopyreferences  < test2.fsx
-    //    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "--shadowcopyreferences")
-    //    let ``shadowcopy enabled`` (flags: string) =
-    //        let cfg = testConfig' ()
-    //
-    //
-    //
-    //
-    //
-    //        // if exist test2.ok (del /f /q test2.ok)
-    //        use testOkFile = fileguard cfg "test2.ok"
-    //
-    //        // "%FSI%" %fsi_flags%  /shadowcopyreferences+  < test2.fsx
-    //        fsiStdin cfg "%s %s" cfg.fsi_flags flags "test2.fsx"
-    //
-    //        // if NOT EXIST test2.ok goto SetError
-    //        testOkFile.CheckExists()
-    //
-
 
     [<Fact>]
     let forwarders () =
@@ -511,11 +397,9 @@ module CoreTests2 =
         let cfg = testConfig "core/fsi-reference"
 
         begin
-            use testOkFile = fileguard cfg "test.ok"
             fsc cfg @"--target:library -o:ImplementationAssembly\ReferenceAssemblyExample.dll" ["ImplementationAssembly.fs"]
             fsc cfg @"--target:library -o:ReferenceAssembly\ReferenceAssemblyExample.dll" ["ReferenceAssembly.fs"]
             fsiStdin cfg "test.fsx" "" []
-            testOkFile.CheckExists()
         end
 
     [<Fact>]
@@ -523,26 +407,19 @@ module CoreTests2 =
         let cfg = testConfig "core/fsi-reload"
 
         begin
-            use testOkFile = fileguard cfg "test.ok"
             fsiStdin cfg "test1.ml"  " --langversion:5.0 --mlcompatibility --maxerrors:1" []
-            testOkFile.CheckExists()
         end
 
         begin
-            use testOkFile = fileguard cfg "test.ok"
             fsi cfg "%s  --maxerrors:1" cfg.fsi_flags ["load1.fsx"]
-            testOkFile.CheckExists()
         end
 
         begin
-            use testOkFile = fileguard cfg "test.ok"
             fsi cfg "%s  --maxerrors:1" cfg.fsi_flags ["load2.fsx"]
-            testOkFile.CheckExists()
         end
 
         fsc cfg "" ["load1.fsx"]
         fsc cfg "" ["load2.fsx"]
-
 
     [<Fact>]
     let fsiAndModifiers () =
@@ -552,15 +429,10 @@ module CoreTests2 =
 
         fsiStdin cfg "prepare.fsx" "--maxerrors:1" []
 
-        use testOkFile = fileguard cfg "test.ok"
-
         fsiStdin cfg "test.fsx" "--maxerrors:1"  []
-
-        testOkFile.CheckExists()
 
     [<Fact>]
     let ``genericmeasures-FSC_NETFX_TEST_ROUNDTRIP_AS_DLL`` () = singleTestBuildAndRun "core/genericmeasures" FSC_NETFX_TEST_ROUNDTRIP_AS_DLL
-
 
     [<Fact>]
     let hiding () =
@@ -596,27 +468,21 @@ module CoreTests2 =
         singleNegTest cfg "negativetest"
 
         begin
-            use testOkFile = fileguard cfg "test.ok"
 
             fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
 
-            testOkFile.CheckExists()
         end
 
         begin
-            use testOkFile = fileguard cfg "test.ok"
 
             exec cfg ("." ++ "test.exe") ""
 
-            testOkFile.CheckExists()
         end
 
         begin
-            use testOkFile = fileguard cfg "test.ok"
 
             exec cfg ("." ++ "test--optimize.exe") ""
 
-            testOkFile.CheckExists()
         end
 
     // Debug with
@@ -821,9 +687,7 @@ module CoreTests3 =
         peverify cfg "test.exe"
 
         begin
-            use testOkFile = fileguard cfg "test.ok"
             exec cfg ("." ++ "test.exe") ""
-            testOkFile.CheckExists()
         end
 
         fsc cfg "%s -o:test-with-debug-data.exe --quotations-debug+ -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
@@ -835,23 +699,17 @@ module CoreTests3 =
         peverify cfg "test--optimize.exe"
 
         begin
-            use testOkFile = fileguard cfg "test.ok"
 
             fsi cfg "%s -r cslib.dll" cfg.fsi_flags ["test.fsx"]
 
-            testOkFile.CheckExists()
         end
 
         begin
-            use testOkFile = fileguard cfg "test.ok"
             exec cfg ("." ++ "test-with-debug-data.exe") ""
-            testOkFile.CheckExists()
         end
 
         begin
-            use testOkFile = fileguard cfg "test.ok"
             exec cfg ("." ++ "test--optimize.exe") ""
-            testOkFile.CheckExists()
         end
 
     // Previously a comment here said:
@@ -912,7 +770,6 @@ module CoreTests3 =
 
         fsi cfg "%s --utf8output" cfg.fsi_flags ["kanji-unicode-utf16.fs"]
 
-
     [<Fact>]
     let internalsvisible () =
         let cfg = testConfig "core/internalsvisible"
@@ -934,7 +791,6 @@ module CoreTests3 =
 
         // Run F# main. Quick test!
         exec cfg ("." ++ "main.exe") ""
-
 
     // Repro for https://github.com/dotnet/fsharp/issues/1298
     [<Fact>]
@@ -1010,26 +866,17 @@ module CoreTests3 =
     let ``libtest-langversion-checknulls`` () =
         let cfg = testConfig "core/libtest"
 
-        use testOkFile = fileguard cfg "test.ok"
-
         fsc cfg "%s -o:test-checknulls.exe -g --checknulls" cfg.fsc_flags ["test.fsx"]
 
         exec cfg ("." ++ "test-checknulls.exe") ""
 
-        testOkFile.CheckExists()
-
- 
     [<Fact>]
     let ``libtest-langversion-46`` () =
         let cfg = testConfig "core/libtest"
 
-        use testOkFile = fileguard cfg "test.ok"
-
         fsc cfg "%s -o:test-langversion-46.exe -g --langversion:4.6" cfg.fsc_flags ["test.fsx"]
 
         exec cfg ("." ++ "test-langversion-46.exe") ""
-
-        testOkFile.CheckExists()
 
     [<Fact>]
     let ``no-warn-2003-tests`` () =
@@ -1221,8 +1068,6 @@ module CoreTests3 =
         | _ -> Assert.failf "'%s' and '%s' differ; %A" stderrPath stderrBaseline diffs2
 #endif
 
-
-
 #if !NETCOREAPP
 module CoreTests4 =
     [<Fact>]
@@ -1243,24 +1088,11 @@ module CoreTests4 =
 
         peverify cfg "test--optimize.exe"
 
-        use testOkFile = fileguard cfg "test.ok"
-
         fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
-
-        testOkFile.CheckExists()
-
-        use testOkFile2 = fileguard cfg "test.ok"
 
         exec cfg ("." ++ "test.exe") ""
 
-        testOkFile2.CheckExists()
-
-        use testOkFile3 = fileguard cfg "test.ok"
-
         exec cfg ("." ++ "test--optimize.exe") ""
-
-        testOkFile3.CheckExists()
-
 
     [<Fact>]
     let queriesNullableOperators () =
@@ -1274,17 +1106,11 @@ module CoreTests4 =
 
         peverify cfg "test--optimize.exe"
 
-        use testOkFile = fileguard cfg "test.ok"
         fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
-        testOkFile.CheckExists()
 
-        use testOkFile2 = fileguard cfg "test.ok"
         exec cfg ("." ++ "test.exe") ""
-        testOkFile2.CheckExists()
 
-        use testOkFile3 = fileguard cfg "test.ok"
         exec cfg ("." ++ "test--optimize.exe") ""
-        testOkFile3.CheckExists()
 
     [<Fact>]
     let queriesOverIEnumerable () =
@@ -1298,23 +1124,11 @@ module CoreTests4 =
 
         peverify cfg "test--optimize.exe"
 
-        use testOkFile = fileguard cfg "test.ok"
-
         fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
-
-        testOkFile.CheckExists()
-
-        use testOkFile2 = fileguard cfg "test.ok"
 
         exec cfg ("." ++ "test.exe") ""
 
-        testOkFile2.CheckExists()
-
-        use testOkFile3 = fileguard cfg "test.ok"
-
         exec cfg ("." ++ "test--optimize.exe") ""
-
-        testOkFile3.CheckExists()
 
     [<Fact>]
     let queriesOverIQueryable () =
@@ -1328,24 +1142,11 @@ module CoreTests4 =
 
         peverify cfg "test--optimize.exe"
 
-        use testOkFile = fileguard cfg "test.ok"
         fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
-
-        testOkFile.CheckExists()
-
-
-        use testOkFile2 = fileguard cfg "test.ok"
 
         exec cfg ("." ++ "test.exe") ""
 
-        testOkFile2.CheckExists()
-
-
-        use testOkFile3 = fileguard cfg "test.ok"
         exec cfg ("." ++ "test--optimize.exe") ""
-
-        testOkFile3.CheckExists()
-
 
     [<Fact>]
     let quotesDebugInfo () =
@@ -1359,24 +1160,11 @@ module CoreTests4 =
 
         peverify cfg "test--optimize.exe"
 
-        use testOkFile = fileguard cfg "test.ok"
         fsi cfg "%s --quotations-debug+" cfg.fsi_flags ["test.fsx"]
-
-        testOkFile.CheckExists()
-
-
-        use testOkFile2 = fileguard cfg "test.ok"
 
         exec cfg ("." ++ "test.exe") ""
 
-        testOkFile2.CheckExists()
-
-        use testOkFile3 = fileguard cfg "test.ok"
-
         exec cfg ("." ++ "test--optimize.exe") ""
-
-        testOkFile3.CheckExists()
-
 
     [<Fact>]
     let quotesInMultipleModules () =
@@ -1402,33 +1190,15 @@ module CoreTests4 =
 
         peverify cfg "module2-opt.exe"
 
-        use testOkFile = fileguard cfg "test.ok"
-
         fsi cfg "%s -r module1.dll" cfg.fsi_flags ["module2.fsx"]
-
-        testOkFile.CheckExists()
-
-
-        use testOkFile = fileguard cfg "test.ok"
 
         exec cfg ("." ++ "module2.exe") ""
 
-        testOkFile.CheckExists()
-
-        use testOkFile = fileguard cfg "test.ok"
-
         exec cfg ("." ++ "module2-opt.exe") ""
-
-        testOkFile.CheckExists()
-
-        use testOkFile = fileguard cfg "test.ok"
 
         exec cfg ("." ++ "module2-staticlink.exe") ""
 
-        testOkFile.CheckExists()
 #endif
-
-
 
 #if !NETCOREAPP
 module CoreTests5 =
@@ -1446,27 +1216,20 @@ module CoreTests5 =
         //TestCase1
         // Build a program that references v2 of ascendent and v1 of dependent.
         // Note that, even though ascendent v2 references dependent v2, the reference is marked as v1.
-        use TestOk = fileguard cfg "test.ok"
         fsc cfg @"%s -o:test1.exe -r:version1\DependentAssembly.dll -r:version2\AscendentAssembly.dll --optimize- -g" cfg.fsc_flags ["test.fs"]
         exec cfg ("." ++ "test1.exe") "DependentAssembly-1.0.0.0 AscendentAssembly-2.0.0.0"
-        TestOk.CheckExists()
 
         //TestCase2
         // Build a program that references v1 of ascendent and v2 of dependent.
         // Note that, even though ascendent v1 references dependent v1, the reference is marked as v2 which was passed in.
-        use TestOk = fileguard cfg "test.ok"
         fsc cfg @"%s -o:test2.exe -r:version2\DependentAssembly.dll -r:version1\AscendentAssembly.dll --optimize- -g" cfg.fsc_flags ["test.fs"]
         exec cfg ("." ++ "test2.exe") "DependentAssembly-2.0.0.0 AscendentAssembly-1.0.0.0"
-        TestOk.CheckExists()
 
         //TestCase3
         // Build a program that references v1 of ascendent and v1 and v2 of dependent.
         // Verifies that compiler uses first version of a duplicate assembly passed on command line.
-        use TestOk = fileguard cfg "test.ok"
         fsc cfg @"%s -o:test3.exe -r:version1\DependentAssembly.dll -r:version2\DependentAssembly.dll -r:version1\AscendentAssembly.dll --optimize- -g" cfg.fsc_flags ["test.fs"]
         exec cfg ("." ++ "test3.exe") "DependentAssembly-1.0.0.0 AscendentAssembly-1.0.0.0"
-        TestOk.CheckExists()
-
 
     [<Fact>]
     let testResources () =
@@ -1632,11 +1395,7 @@ module CoreTests5 =
 
         peverify cfg "test.exe"
 
-        use testOkFile = fileguard cfg "test.ok"
-
         exec cfg ("." ++ "test.exe") ""
-
-        testOkFile.CheckExists()
 
     [<Fact>]
     let verify () =
@@ -1653,8 +1412,7 @@ module CoreTests5 =
         fsc cfg "%s -o:xmlverify.exe -g" cfg.fsc_flags ["xmlverify.fs"]
 
         peverifyWithArgs cfg "/nologo" "xmlverify.exe"
-        
-        
+
     [<Fact>]
     let ``property setter in method or constructor`` () =
         let cfg = testConfig "core/members/set-only-property"
@@ -1825,7 +1583,6 @@ module RegressionTests =
     let ``SRTP doesn't handle calling member hiding inherited members`` () =
         let cfg = 
             testConfig "regression/5531"
-       
 
         let outFile = "compilation.output.test.txt"
         let expectedFile = "compilation.output.test.bsl"
@@ -1871,11 +1628,7 @@ module RegressionTests =
 
         peverify cfg "test.exe"
 
-        use testOkFile = fileguard cfg "test.ok"
-
         exec cfg ("." ++ "test.exe") ""
-
-        testOkFile.CheckExists()
 
     // This test is disabled in coreclr builds dependent on fixing : https://github.com/dotnet/fsharp/issues/2600
     [<Fact>]
@@ -1939,7 +1692,6 @@ module OptimizationTests =
         | _ ->
             Assert.failf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff
 
-
     [<Fact>]
     let totalSizes () =
         let cfg = testConfig "optimize/analyses"
@@ -1955,7 +1707,6 @@ module OptimizationTests =
         match diff with
         | "" -> ()
         | _ -> Assert.failf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff
-
 
     [<Fact>]
     let hasEffect () =
@@ -1973,7 +1724,6 @@ module OptimizationTests =
         | "" -> ()
         | _ -> Assert.failf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff
 
-
     [<Fact>]
     let noNeedToTailcall () =
         let cfg = testConfig "optimize/analyses"
@@ -1989,7 +1739,6 @@ module OptimizationTests =
         match diff with
         | "" -> ()
         | _ -> Assert.failf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff
-
 
     [<Fact>]
     let ``inline`` () =
@@ -2167,7 +1916,7 @@ module TypecheckTests =
         fsc cfg "%s --langversion:6.0 --target:exe -o:pos40.exe" cfg.fsc_flags ["pos40.fs"]
         peverify cfg "pos40.exe"
         exec cfg ("." ++ "pos40.exe") ""
-        
+
     [<Fact>]
     let ``sigs pos41`` () =
         let cfg = testConfig "typecheck/sigs"
@@ -2398,8 +2147,8 @@ module TypecheckTests =
     let ``type check neg116`` () = singleNegTest (testConfig "typecheck/sigs") "neg116"
 
     [<Fact>]
-    let ``type check neg117`` () = singleNegTest (testConfig "typecheck/sigs") "neg117"        
-    
+    let ``type check neg117`` () = singleNegTest (testConfig "typecheck/sigs") "neg117"
+
     [<Fact>]
     let ``type check neg134`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg134"
 
@@ -2430,7 +2179,6 @@ open System.Reflection
 
         (fv.ProductMajorPart, fv.ProductMinorPart, fv.ProductBuildPart, fv.ProductPrivatePart)
         |> Assert.areEqual (45, 2048, 0, 2)
-
 
     [<Fact>]
     let ``should set file version info on generated file`` () =

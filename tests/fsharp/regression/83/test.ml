@@ -41,6 +41,5 @@ let _ =
   if !failures then (System.Console.Out.WriteLine "Test Failed"; exit 1) 
 
 do (System.Console.Out.WriteLine "Test Passed"; 
-    System.IO.File.WriteAllText("test.ok", "ok"); 
     exit 0)
 
