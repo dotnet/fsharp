@@ -343,7 +343,7 @@ module rec CompilerAssertHelpers =
 
         member x.ExecuteTestCase assemblyPath (deps: string[]) isFsx =
             // AppDomain isolates console.
-            Console.installWrappers()
+            ParallelConsole.installParallelRedirections()
 
             AppDomain.CurrentDomain.add_AssemblyResolve(ResolveEventHandler(fun _ args ->
                 deps
@@ -605,7 +605,7 @@ module rec CompilerAssertHelpers =
 
     let captureConsoleOutputs (func: unit -> unit) =
 
-        Console.ensureNewLocals()
+        use captured = new ParallelConsole.Caputure()
 
         let succeeded, exn =
             try
@@ -616,10 +616,7 @@ module rec CompilerAssertHelpers =
                 Console.Error.Write errorMessage
                 false, Some e
 
-        let out = Console.getOutputText()
-        let err = Console.getErrorText()
-
-        succeeded, out, err, exn
+        succeeded, captured.OutText, captured.ErrorText, exn
 
     let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) isFsx : (int * string * string) =
         let succeeded, stdout, stderr, _ = executeBuiltApp outputFilePath deps isFsx

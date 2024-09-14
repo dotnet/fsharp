@@ -4,11 +4,14 @@ module TestFramework
 
 open System
 open System.IO
+open System.Threading
+open System.Text
 open System.Reflection
 open System.Diagnostics
 open Scripting
 open Xunit
 open FSharp.Compiler.IO
+open Xunit.Sdk
 
 let getShortId() = Guid.NewGuid().ToString().[..7]
 

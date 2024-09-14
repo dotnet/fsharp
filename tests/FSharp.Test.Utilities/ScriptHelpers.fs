@@ -75,13 +75,10 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
     let inReader = new StringReader(defaultArg input "")
     let outWriter = new EventedTextWriter()
     let errorWriter = new EventedTextWriter()
+    
+    let redirectedConsole = new ParallelConsole.Caputure(input = inReader, output = outWriter, error = errorWriter)
 
-    do 
-        Console.setLocalIn inReader
-        Console.setLocalOut outWriter
-        Console.setLocalError errorWriter
-
-    let fsi = FsiEvaluationSession.Create (config, argv, inReader, outWriter, errorWriter)
+    let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr)
 
     member _.ValueBound = fsi.ValueBound
 
@@ -123,7 +120,9 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
         }
 
     interface IDisposable with
-        member this.Dispose() = ((this.Fsi) :> IDisposable).Dispose()
+        member this.Dispose() =
+            ((this.Fsi) :> IDisposable).Dispose()
+            (redirectedConsole :> IDisposable).Dispose()
 
 [<AutoOpen>]
 module TestHelpers =
@@ -136,15 +135,3 @@ module TestHelpers =
         | Error ex -> raise ex
 
     let ignoreValue = getValue >> ignore
-
-    let getTempDir () =
-        let sysTempDir = Path.GetTempPath()
-        let customTempDirName = Guid.NewGuid().ToString("D")
-        let fullDirName = Path.Combine(sysTempDir, customTempDirName)
-        let dirInfo = Directory.CreateDirectory(fullDirName)
-        { new Object() with
-            member _.ToString() = dirInfo.FullName
-          interface IDisposable with
-            member _.Dispose() =
-                dirInfo.Delete(true)
-        }

@@ -39,68 +39,6 @@ type FactForDESKTOPAttribute() =
         do base.Skip <- "NETCOREAPP is not supported runtime for this kind of test, it is intended for DESKTOP only"
     #endif
 
-module Console =
-
-    let private localIn = new AsyncLocal<TextReader voption>()
-    let private localOut = new AsyncLocal<TextWriter voption>()
-    let private localError = new AsyncLocal<TextWriter voption>()
-
-    let originalConsoleIn = Console.In
-
-    let getValue (holder: AsyncLocal<_>) f =
-        match holder.Value with
-        | ValueSome v -> v
-        | ValueNone ->
-            let v = f()
-            holder.Value <- ValueSome v
-            v
-
-    type AsyncLocalTextReader(holder: AsyncLocal<TextReader voption>) =
-        inherit TextReader()
-        let getValue() = getValue holder <| fun () -> originalConsoleIn
-
-        override _.Peek() = getValue().Peek()
-        override _.Read() = getValue().Read()
-        member _.Set (reader: TextReader) = holder.Value <- ValueSome reader
-        member _.Drop() = holder.Value <- ValueNone
-
-    type AsyncLocalTextWriter(holder: AsyncLocal<TextWriter voption>) =
-        inherit TextWriter()
-        let getValue() = getValue holder <| fun () -> new StringWriter()
-
-        override _.Encoding = Encoding.UTF8
-        override _.Write(value: char) = getValue().Write(value)
-        override _.Write(value: string) = getValue().Write(value)
-        override _.WriteLine(value: string) = getValue().WriteLine(value)
-        member _.Set (writer: TextWriter) = holder.Value <- ValueSome writer
-        member _.Drop() = holder.Value <- ValueNone
-        member _.GetText() = getValue().ToString()
-
-    let private inReader = new AsyncLocalTextReader(localIn)
-    let private outWriter = new AsyncLocalTextWriter(localOut)
-    let private errorWriter = new AsyncLocalTextWriter(localError)
-
-    let installWrappers() =
-        Console.SetIn inReader
-        Console.SetOut outWriter
-        Console.SetError errorWriter
-
-    let getOutputText() = outWriter.GetText()
-    let getErrorText() = errorWriter.GetText()
-
-    let setLocalIn reader = inReader.Set reader
-    let setLocalOut writer = outWriter.Set writer
-    let setLocalError writer = errorWriter.Set writer
-
-    let ensureNewLocals() =
-        inReader.Drop()
-        outWriter.Drop()
-        errorWriter.Drop()
-
-type SplitConsoleTestFramework(sink) =
-    inherit XunitTestFramework(sink)
-    do Console.installWrappers()
-
 // This file mimics how Roslyn handles their compilation references for compilation testing
 module Utilities =
 
