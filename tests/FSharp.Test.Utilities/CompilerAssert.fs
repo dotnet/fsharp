@@ -355,17 +355,13 @@ module rec CompilerAssertHelpers =
             let assembly = Assembly.LoadFrom assemblyPath
             executeAssemblyEntryPoint assembly isFsx
 
-    let adSetup =
-        let setup = new System.AppDomainSetup ()
-        let directory = Path.GetDirectoryName(typeof<Worker>.Assembly.Location)
-        setup.ApplicationBase <- directory
-        setup
-
     let executeBuiltApp assembly deps =
-        let ad = AppDomain.CreateDomain((Guid()).ToString(), null, adSetup)
+        let thisAssemblyDirectory = Path.GetDirectoryName(typeof<Worker>.Assembly.Location)
+        let setup = AppDomainSetup(ApplicationBase = thisAssemblyDirectory)
+        let testCaseDomain = AppDomain.CreateDomain($"built app {assembly}", null, setup)
+        
         let worker =
-            use _ = new AlreadyLoadedAppDomainResolver()
-            (ad.CreateInstanceFromAndUnwrap(typeof<Worker>.Assembly.CodeBase, typeof<Worker>.FullName)) :?> Worker
+            (testCaseDomain.CreateInstanceFromAndUnwrap(typeof<Worker>.Assembly.CodeBase, typeof<Worker>.FullName)) :?> Worker
         worker.ExecuteTestCase assembly (deps |> Array.ofList)
 #endif
 
