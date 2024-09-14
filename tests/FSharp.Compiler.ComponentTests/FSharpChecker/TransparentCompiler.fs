@@ -1064,67 +1064,73 @@ type private LoadClosureTestShim(currentFileSystem: IFileSystem) =
                 ?shouldShadowCopy = shouldShadowCopy
             )
 
-[<Theory>]
-[<InlineData(false)>]
-[<InlineData(true)>]
-let ``The script load closure should always be evaluated`` useTransparentCompiler =
-    async {
-        // The LoadScriptClosure uses the file system shim so we need to reset that.
-        let currentFileSystem = FileSystemAutoOpens.FileSystem
-        let assumeDotNetFramework =
-            // The old BackgroundCompiler uses assumeDotNetFramework = true
-            // This is not always correctly loading when this test runs on non-Windows.
-            if System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription.StartsWith(".NET Framework") then
-                None
-            else
-                Some false 
+[<CollectionDefinition(nameof FileSystemMutatingCollection, DisableParallelization = true)>]
+type FileSystemMutatingCollection = class end
 
-        try
-            let checker = FSharpChecker.Create(useTransparentCompiler = useTransparentCompiler)
-            let fileSystemShim = LoadClosureTestShim(currentFileSystem)
-            // Override the file system shim for loading b.fsx
-            FileSystem <- fileSystemShim
+[<Collection(nameof FileSystemMutatingCollection)>]
+module TestsMutatingFileSystem =
+    
+    [<Theory>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    let ``The script load closure should always be evaluated`` useTransparentCompiler =
+        async {
+            // The LoadScriptClosure uses the file system shim so we need to reset that.
+            let currentFileSystem = FileSystemAutoOpens.FileSystem
+            let assumeDotNetFramework =
+                // The old BackgroundCompiler uses assumeDotNetFramework = true
+                // This is not always correctly loading when this test runs on non-Windows.
+                if System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription.StartsWith(".NET Framework") then
+                    None
+                else
+                    Some false 
 
-            let! initialSnapshot, _ =
-                checker.GetProjectSnapshotFromScript(
-                    "a.fsx",
-                    SourceTextNew.ofString fileSystemShim.aFsx,
-                    documentSource = DocumentSource.Custom fileSystemShim.DocumentSource,
-                    ?assumeDotNetFramework = assumeDotNetFramework
-                )
+            try
+                let checker = FSharpChecker.Create(useTransparentCompiler = useTransparentCompiler)
+                let fileSystemShim = LoadClosureTestShim(currentFileSystem)
+                // Override the file system shim for loading b.fsx
+                FileSystem <- fileSystemShim
 
-            // File b.fsx should also be included in the snapshot.
-            Assert.Equal(2, initialSnapshot.SourceFiles.Length)
+                let! initialSnapshot, _ =
+                    checker.GetProjectSnapshotFromScript(
+                        "a.fsx",
+                        SourceTextNew.ofString fileSystemShim.aFsx,
+                        documentSource = DocumentSource.Custom fileSystemShim.DocumentSource,
+                        ?assumeDotNetFramework = assumeDotNetFramework
+                    )
 
-            let! checkResults = checker.ParseAndCheckFileInProject("a.fsx", initialSnapshot)
+                // File b.fsx should also be included in the snapshot.
+                Assert.Equal(2, initialSnapshot.SourceFiles.Length)
 
-            match snd checkResults with
-            | FSharpCheckFileAnswer.Aborted -> failwith "Did not expected FSharpCheckFileAnswer.Aborted"
-            | FSharpCheckFileAnswer.Succeeded checkFileResults -> Assert.Equal(0, checkFileResults.Diagnostics.Length)
+                let! checkResults = checker.ParseAndCheckFileInProject("a.fsx", initialSnapshot)
+
+                match snd checkResults with
+                | FSharpCheckFileAnswer.Aborted -> failwith "Did not expected FSharpCheckFileAnswer.Aborted"
+                | FSharpCheckFileAnswer.Succeeded checkFileResults -> Assert.Equal(0, checkFileResults.Diagnostics.Length)
             
-            // Update b.fsx, it should now load c.fsx
-            fileSystemShim.UpdateB()
+                // Update b.fsx, it should now load c.fsx
+                fileSystemShim.UpdateB()
 
-            // The constructed key for the load closure will the exactly the same as the first GetProjectSnapshotFromScript call.
-            // However, a none cached version will be computed first in GetProjectSnapshotFromScript and update the cache afterwards.
-            let! secondSnapshot, _ =
-                checker.GetProjectSnapshotFromScript(
-                    "a.fsx",
-                    SourceTextNew.ofString fileSystemShim.aFsx,
-                    documentSource = DocumentSource.Custom fileSystemShim.DocumentSource,
-                    ?assumeDotNetFramework = assumeDotNetFramework
-                )
+                // The constructed key for the load closure will the exactly the same as the first GetProjectSnapshotFromScript call.
+                // However, a none cached version will be computed first in GetProjectSnapshotFromScript and update the cache afterwards.
+                let! secondSnapshot, _ =
+                    checker.GetProjectSnapshotFromScript(
+                        "a.fsx",
+                        SourceTextNew.ofString fileSystemShim.aFsx,
+                        documentSource = DocumentSource.Custom fileSystemShim.DocumentSource,
+                        ?assumeDotNetFramework = assumeDotNetFramework
+                    )
 
-            Assert.Equal(3, secondSnapshot.SourceFiles.Length)
+                Assert.Equal(3, secondSnapshot.SourceFiles.Length)
 
-            let! checkResults = checker.ParseAndCheckFileInProject("a.fsx", secondSnapshot)
+                let! checkResults = checker.ParseAndCheckFileInProject("a.fsx", secondSnapshot)
 
-            match snd checkResults with
-            | FSharpCheckFileAnswer.Aborted -> failwith "Did not expected FSharpCheckFileAnswer.Aborted"
-            | FSharpCheckFileAnswer.Succeeded checkFileResults -> Assert.Equal(0, checkFileResults.Diagnostics.Length)
-        finally
-            FileSystemAutoOpens.FileSystem <- currentFileSystem
-    }
+                match snd checkResults with
+                | FSharpCheckFileAnswer.Aborted -> failwith "Did not expected FSharpCheckFileAnswer.Aborted"
+                | FSharpCheckFileAnswer.Succeeded checkFileResults -> Assert.Equal(0, checkFileResults.Diagnostics.Length)
+            finally
+                FileSystemAutoOpens.FileSystem <- currentFileSystem
+        }
 
 [<Fact>]
 let ``Parsing without cache and without project snapshot`` () =
@@ -1166,3 +1172,4 @@ let b : int = ExtraIdentUserNeverWroteRulezzz
         Assert.Equal(0, checker.Caches.ParseFile.Count)
         Assert.Equal(1, checker.Caches.ParseFileWithoutProject.Count)
     }
+
