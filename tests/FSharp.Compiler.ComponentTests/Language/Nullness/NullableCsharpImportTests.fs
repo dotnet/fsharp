@@ -225,4 +225,39 @@ let ``Consumption of nullable C# - no generics, just strings in methods and fiel
             Error 3261, Line 25, Col 85, Line 25, Col 97, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."
             Error 3261, Line 28, Col 99, Line 28, Col 111, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."
             Error 3261, Line 30, Col 97, Line 30, Col 109, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."]
+    
+    
+[<FactForNETCOREAPP>]
+let ``Regression 17701 - Nullable value type with nested generics`` () =
+    let csharpLib =
+        CSharp """
+using System;
+using System.Collections.Immutable;
+#nullable enable
+namespace Nullables;
+public class NullableClass {
+    public static ImmutableArray<string?>? nullableImmArrayOfStrings;
+    public static ImmutableArray<string>? nullableImmArrayOfNotNullStrings;
+}""" |> withName "csNullableLib"
+     |> withCSharpLanguageVersionPreview
+
+    FSharp """module FSNullable
+open Nullables
+
+let nullablestrNoParams = NullableClass.nullableImmArrayOfStrings
+let toOption = NullableClass.nullableImmArrayOfStrings |> Option.ofNullable
+let firstString = (toOption.Value |> Seq.head)
+let lengthOfIt = firstString.Length
+
+let theOtherOne = NullableClass.nullableImmArrayOfNotNullStrings
+    """        
+    |> asLibrary
+    |> withReferences [csharpLib]
+    |> withStrictNullness
+    |> withLangVersionPreview
+    |> compile
+    |> shouldFail
+    |> withDiagnostics 
+                [Error 3261, Line 7, Col 18, Line 7, Col 36, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."]
+            
             
