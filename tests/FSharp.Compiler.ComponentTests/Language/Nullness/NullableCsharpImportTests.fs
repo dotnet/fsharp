@@ -233,10 +233,11 @@ let ``Regression 17701 - Nullable value type with nested generics`` () =
         CSharp """
 using System;
 using System.Collections.Immutable;
-
+#nullable enable
 namespace Nullables;
 public class NullableClass {
-    public static ImmutableArray<string>? nullableImmArrayOfStrings;
+    public static ImmutableArray<string?>? nullableImmArrayOfStrings;
+    public static ImmutableArray<string>? nullableImmArrayOfNotNullStrings;
 }""" |> withName "csNullableLib"
      |> withCSharpLanguageVersionPreview
 
@@ -245,19 +246,18 @@ open Nullables
 
 let nullablestrNoParams = NullableClass.nullableImmArrayOfStrings
 let toOption = NullableClass.nullableImmArrayOfStrings |> Option.ofNullable
-let lengthOfFirstString = (NullableClass.nullableImmArrayOfStrings.Value |> Seq.head).Length
+let firstString = (toOption.Value |> Seq.head)
+let lengthOfIt = firstString.Length
+
+let theOtherOne = NullableClass.nullableImmArrayOfNotNullStrings
     """        
     |> asLibrary
     |> withReferences [csharpLib]
     |> withStrictNullness
+    |> withLangVersionPreview
     |> compile
     |> shouldFail
-    |> withDiagnostics [
-            Error 3261, Line 5, Col 40, Line 5, Col 85, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
-            Error 3261, Line 5, Col 40, Line 5, Col 85, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."
-            Error 3261, Line 14, Col 34, Line 14, Col 62, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."
-            Error 3261, Line 16, Col 35, Line 16, Col 39, "Nullness warning: The type 'string' does not support 'null'."
-            Error 3261, Line 25, Col 85, Line 25, Col 97, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."
-            Error 3261, Line 28, Col 99, Line 28, Col 111, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."
-            Error 3261, Line 30, Col 97, Line 30, Col 109, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."]
+    |> withDiagnostics 
+                [Error 3261, Line 7, Col 18, Line 7, Col 36, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."]
+            
             
