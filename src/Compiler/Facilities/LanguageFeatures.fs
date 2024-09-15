@@ -212,11 +212,11 @@ type LanguageVersion(versionText) =
                 LanguageFeature.LowerIntegralRangesToFastLoops, languageVersion90
                 LanguageFeature.LowerSimpleMappingsInComprehensionsToFastLoops, languageVersion90
                 LanguageFeature.ParsedHashDirectiveArgumentNonQuotes, languageVersion90
-                LanguageFeature.EmptyBodiedComputationExpressions, languageVersion90
-                LanguageFeature.EnforceAttributeTargets, languageVersion90
+                LanguageFeature.EmptyBodiedComputationExpressions, languageVersion90                
                 LanguageFeature.ConsistentNowarnLineDirectiveInteraction, languageVersion90
 
                 // F# preview
+                LanguageFeature.EnforceAttributeTargets, previewVersion // waiting for fix of https://github.com/dotnet/fsharp/issues/17731
                 LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion // not enabled because: https://github.com/dotnet/fsharp/issues/17509
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
                 LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, previewVersion
