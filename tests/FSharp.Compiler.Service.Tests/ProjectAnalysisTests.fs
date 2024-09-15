@@ -2353,13 +2353,13 @@ let ``Test Project14 all symbols`` () =
         |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project14.cleanFileName su.FileName, tups su.Range, attribsOfSymbolUse su)
 
     allUsesOfAllSymbols |> shouldEqual
-          [|
-            ("StructAttribute", "StructAttribute", "file1", ((4, 2), (4, 8)), ["attribute"]);
-            ("member .ctor", "StructAttribute", "file1", ((4, 2), (4, 8)), [])
+        [|
             ("StructAttribute", "StructAttribute", "file1", ((4, 2), (4, 8)), ["attribute"]);
             ("member .ctor", "StructAttribute", "file1", ((4, 2), (4, 8)), []);
             ("int", "int", "file1", ((5, 9), (5, 12)), ["type"]);
             ("int", "int", "file1", ((5, 9), (5, 12)), ["type"]);
+            ("StructAttribute", "StructAttribute", "file1", ((4, 2), (4, 8)), ["attribute"]);
+            ("member .ctor", "StructAttribute", "file1", ((4, 2), (4, 8)), []);
             ("S", "S", "file1", ((5, 5), (5, 6)), ["defn"]);
             ("int", "int", "file1", ((5, 9), (5, 12)), ["type"]);
             ("val p", "p", "file1", ((5, 7), (5, 8)), ["defn"]);
@@ -2509,86 +2509,70 @@ let ``Test Project16 all symbols`` () =
         |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.DisplayName, Project16.cleanFileName su.FileName, tups su.Range, attribsOfSymbolUse su, attribsOfSymbol su.Symbol)
 
     allUsesOfAllSymbols |> shouldEqual
-          [|("ClassAttribute", "ClassAttribute", "sig1", ((8, 6), (8, 11)), ["attribute"], ["class"]);
-            ("member .ctor", "ClassAttribute", "sig1", ((8, 6), (8, 11)), [], ["member"]);
-            ("ClassAttribute", "ClassAttribute", "sig1", ((8, 6), (8, 11)), ["attribute"], ["class"]);
-            ("member .ctor", "ClassAttribute", "sig1", ((8, 6), (8, 11)), [], ["member"]);
-            ("ClassAttribute", "ClassAttribute", "sig1", ((12, 6), (12, 11)), ["attribute"], ["class"]);
-            ("member .ctor", "ClassAttribute", "sig1", ((12, 6), (12, 11)), [], ["member"]);
-            ("ClassAttribute", "ClassAttribute", "sig1", ((12, 6), (12, 11)), ["attribute"], ["class"]);
-            ("member .ctor", "ClassAttribute", "sig1", ((12, 6), (12, 11)), [], ["member"]);
-            ("int", "int", "sig1", ((16, 19), (16, 22)), ["type"], ["abbrev"]);
-            ("int", "int", "sig1", ((16, 33), (16, 36)), ["type"], ["abbrev"]);
-            ("int", "int", "sig1", ((17, 25), (17, 28)), ["type"], ["abbrev"]);
-            ("int", "int", "sig1", ((16, 19), (16, 22)), ["type"], ["abbrev"]);
-            ("int", "int", "sig1", ((16, 33), (16, 36)), ["type"], ["abbrev"]);
-            ("field Field1", "Field1", "sig1", ((16, 10), (16, 16)), ["defn"],
-             ["field"]);
-            ("field Field2", "Field2", "sig1", ((16, 24), (16, 30)), ["defn"],
-             ["field"]);
-            ("int", "int", "sig1", ((17, 25), (17, 28)), ["type"], ["abbrev"]);
-            ("Case1", "Case1", "sig1", ((17, 8), (17, 13)), ["defn"], []);
-            ("Case2", "Case2", "sig1", ((17, 16), (17, 21)), ["defn"], []);
-            ("C", "C", "sig1", ((4, 5), (4, 6)), ["defn"], ["class"]);
-            ("unit", "unit", "sig1", ((5, 10), (5, 14)), ["type"], ["abbrev"]);
-            ("C", "C", "sig1", ((5, 18), (5, 19)), ["type"], ["class"]);
-            ("member .ctor", "``.ctor``", "sig1", ((5, 4), (5, 7)), ["defn"],
-             ["member"]);
-            ("int", "int", "sig1", ((6, 16), (6, 19)), ["type"], ["abbrev"]);
-            ("member get_PC", "PC", "sig1", ((6, 11), (6, 13)), ["defn"],
-             ["member"; "getter"]);
-            ("D", "D", "sig1", ((8, 14), (8, 15)), ["defn"], ["class"]);
-            ("unit", "unit", "sig1", ((9, 10), (9, 14)), ["type"], ["abbrev"]);
-            ("D", "D", "sig1", ((9, 18), (9, 19)), ["type"], ["class"]);
-            ("member .ctor", "``.ctor``", "sig1", ((9, 4), (9, 7)), ["defn"],
-             ["member"]);
-            ("int", "int", "sig1", ((10, 16), (10, 19)), ["type"], ["abbrev"]);
-            ("member get_PD", "PD", "sig1", ((10, 11), (10, 13)), ["defn"],
-             ["member"; "getter"]);
-            ("E", "E", "sig1", ((12, 14), (12, 15)), ["defn"], ["class"]);
-            ("unit", "unit", "sig1", ((13, 10), (13, 14)), ["type"], ["abbrev"]);
-            ("E", "E", "sig1", ((13, 18), (13, 19)), ["type"], ["class"]);
-            ("member .ctor", "``.ctor``", "sig1", ((13, 4), (13, 7)), ["defn"],
-             ["member"]);
-            ("int", "int", "sig1", ((14, 16), (14, 19)), ["type"], ["abbrev"]);
-            ("member get_PE", "PE", "sig1", ((14, 11), (14, 13)), ["defn"],
-             ["member"; "getter"]);
-            ("F", "F", "sig1", ((16, 4), (16, 5)), ["defn"], ["record"]);
-            ("G", "G", "sig1", ((17, 4), (17, 5)), ["defn"], ["union"]);
-            ("Impl", "Impl", "sig1", ((2, 7), (2, 11)), ["defn"], ["module"]);
-            ("int", "int", "file1", ((13, 19), (13, 22)), ["type"], ["abbrev"]);
-            ("int", "int", "file1", ((13, 33), (13, 36)), ["type"], ["abbrev"]);
-            ("int", "int", "file1", ((14, 25), (14, 28)), ["type"], ["abbrev"]);
-            ("int", "int", "file1", ((13, 19), (13, 22)), ["type"], ["abbrev"]);
-            ("int", "int", "file1", ((13, 33), (13, 36)), ["type"], ["abbrev"]);
-            ("field Field1", "Field1", "file1", ((13, 10), (13, 16)), ["defn"],
-             ["field"]);
-            ("field Field2", "Field2", "file1", ((13, 24), (13, 30)), ["defn"],
-             ["field"]);
-            ("int", "int", "file1", ((14, 25), (14, 28)), ["type"], ["abbrev"]);
-            ("Case1", "Case1", "file1", ((14, 8), (14, 13)), ["defn"], []);
-            ("Case2", "Case2", "file1", ((14, 16), (14, 21)), ["defn"], []);
-            ("C", "C", "file1", ((4, 5), (4, 6)), ["defn"], ["class"]);
-            ("D", "D", "file1", ((7, 4), (7, 5)), ["defn"], ["class"]);
-            ("E", "E", "file1", ((10, 4), (10, 5)), ["defn"], ["class"]);
-            ("F", "F", "file1", ((13, 4), (13, 5)), ["defn"], ["record"]);
-            ("G", "G", "file1", ((14, 4), (14, 5)), ["defn"], ["union"]);
-            ("member .ctor", "``.ctor``", "file1", ((4, 5), (4, 6)), ["defn"],
-             ["member"; "ctor"]);
-            ("member get_PC", "PC", "file1", ((5, 13), (5, 15)), ["defn"],
-             ["member"; "getter"]);
-            ("member .ctor", "``.ctor``", "file1", ((7, 4), (7, 5)), ["defn"],
-             ["member"; "ctor"]);
-            ("member get_PD", "PD", "file1", ((8, 13), (8, 15)), ["defn"],
-             ["member"; "getter"]);
-            ("member .ctor", "``.ctor``", "file1", ((10, 4), (10, 5)), ["defn"],
-             ["member"; "ctor"]);
-            ("member get_PE", "PE", "file1", ((11, 13), (11, 15)), ["defn"],
-             ["member"; "getter"]);
-            ("val x", "x", "file1", ((5, 11), (5, 12)), ["defn"], []);
-            ("val x", "x", "file1", ((8, 11), (8, 12)), ["defn"], []);
-            ("val x", "x", "file1", ((11, 11), (11, 12)), ["defn"], []);
-            ("Impl", "Impl", "file1", ((2, 7), (2, 11)), ["defn"], ["module"])|]
+        [|("ClassAttribute", "ClassAttribute", "sig1", ((8, 6), (8, 11)), ["attribute"], ["class"]);
+        ("member .ctor", "ClassAttribute", "sig1", ((8, 6), (8, 11)), [], ["member"]);
+        ("ClassAttribute", "ClassAttribute", "sig1", ((12, 6), (12, 11)), ["attribute"], ["class"]);
+        ("member .ctor", "ClassAttribute", "sig1", ((12, 6), (12, 11)), [], ["member"]);
+        ("int", "int", "sig1", ((16, 19), (16, 22)), ["type"], ["abbrev"]);
+        ("int", "int", "sig1", ((16, 33), (16, 36)), ["type"], ["abbrev"]);
+        ("int", "int", "sig1", ((17, 25), (17, 28)), ["type"], ["abbrev"]);
+        ("ClassAttribute", "ClassAttribute", "sig1", ((8, 6), (8, 11)), ["attribute"], ["class"]);
+        ("member .ctor", "ClassAttribute", "sig1", ((8, 6), (8, 11)), [], ["member"]);
+        ("ClassAttribute", "ClassAttribute", "sig1", ((12, 6), (12, 11)), ["attribute"], ["class"]);
+        ("member .ctor", "ClassAttribute", "sig1", ((12, 6), (12, 11)), [], ["member"]);
+        ("int", "int", "sig1", ((16, 19), (16, 22)), ["type"], ["abbrev"]);
+        ("int", "int", "sig1", ((16, 33), (16, 36)), ["type"], ["abbrev"]);
+        ("field Field1", "Field1", "sig1", ((16, 10), (16, 16)), ["defn"], ["field"]);
+        ("field Field2", "Field2", "sig1", ((16, 24), (16, 30)), ["defn"], ["field"]);
+        ("int", "int", "sig1", ((17, 25), (17, 28)), ["type"], ["abbrev"]);
+        ("Case1", "Case1", "sig1", ((17, 8), (17, 13)), ["defn"], []);
+        ("Case2", "Case2", "sig1", ((17, 16), (17, 21)), ["defn"], []);
+        ("C", "C", "sig1", ((4, 5), (4, 6)), ["defn"], ["class"]);
+        ("unit", "unit", "sig1", ((5, 10), (5, 14)), ["type"], ["abbrev"]);
+        ("C", "C", "sig1", ((5, 18), (5, 19)), ["type"], ["class"]);
+        ("member .ctor", "``.ctor``", "sig1", ((5, 4), (5, 7)), ["defn"], ["member"]);
+        ("int", "int", "sig1", ((6, 16), (6, 19)), ["type"], ["abbrev"]);
+        ("member get_PC", "PC", "sig1", ((6, 11), (6, 13)), ["defn"], ["member"; "getter"]);
+        ("D", "D", "sig1", ((8, 14), (8, 15)), ["defn"], ["class"]);
+        ("unit", "unit", "sig1", ((9, 10), (9, 14)), ["type"], ["abbrev"]);
+        ("D", "D", "sig1", ((9, 18), (9, 19)), ["type"], ["class"]);
+        ("member .ctor", "``.ctor``", "sig1", ((9, 4), (9, 7)), ["defn"], ["member"]);
+        ("int", "int", "sig1", ((10, 16), (10, 19)), ["type"], ["abbrev"]);
+        ("member get_PD", "PD", "sig1", ((10, 11), (10, 13)), ["defn"], ["member"; "getter"]);
+        ("E", "E", "sig1", ((12, 14), (12, 15)), ["defn"], ["class"]);
+        ("unit", "unit", "sig1", ((13, 10), (13, 14)), ["type"], ["abbrev"]);
+        ("E", "E", "sig1", ((13, 18), (13, 19)), ["type"], ["class"]);
+        ("member .ctor", "``.ctor``", "sig1", ((13, 4), (13, 7)), ["defn"], ["member"]);
+        ("int", "int", "sig1", ((14, 16), (14, 19)), ["type"], ["abbrev"]);
+        ("member get_PE", "PE", "sig1", ((14, 11), (14, 13)), ["defn"], ["member"; "getter"]);
+        ("F", "F", "sig1", ((16, 4), (16, 5)), ["defn"], ["record"]);
+        ("G", "G", "sig1", ((17, 4), (17, 5)), ["defn"], ["union"]);
+        ("Impl", "Impl", "sig1", ((2, 7), (2, 11)), ["defn"], ["module"]);
+        ("int", "int", "file1", ((13, 19), (13, 22)), ["type"], ["abbrev"]);
+        ("int", "int", "file1", ((13, 33), (13, 36)), ["type"], ["abbrev"]);
+        ("int", "int", "file1", ((14, 25), (14, 28)), ["type"], ["abbrev"]);
+        ("int", "int", "file1", ((13, 19), (13, 22)), ["type"], ["abbrev"]);
+        ("int", "int", "file1", ((13, 33), (13, 36)), ["type"], ["abbrev"]);
+        ("field Field1", "Field1", "file1", ((13, 10), (13, 16)), ["defn"], ["field"]);
+        ("field Field2", "Field2", "file1", ((13, 24), (13, 30)), ["defn"], ["field"]);
+        ("int", "int", "file1", ((14, 25), (14, 28)), ["type"], ["abbrev"]);
+        ("Case1", "Case1", "file1", ((14, 8), (14, 13)), ["defn"], []);
+        ("Case2", "Case2", "file1", ((14, 16), (14, 21)), ["defn"], []);
+        ("C", "C", "file1", ((4, 5), (4, 6)), ["defn"], ["class"]);
+        ("D", "D", "file1", ((7, 4), (7, 5)), ["defn"], ["class"]);
+        ("E", "E", "file1", ((10, 4), (10, 5)), ["defn"], ["class"]);
+        ("F", "F", "file1", ((13, 4), (13, 5)), ["defn"], ["record"]);
+        ("G", "G", "file1", ((14, 4), (14, 5)), ["defn"], ["union"]);
+        ("member .ctor", "``.ctor``", "file1", ((4, 5), (4, 6)), ["defn"], ["member"; "ctor"]);
+        ("member get_PC", "PC", "file1", ((5, 13), (5, 15)), ["defn"], ["member"; "getter"]);
+        ("member .ctor", "``.ctor``", "file1", ((7, 4), (7, 5)), ["defn"], ["member"; "ctor"]);
+        ("member get_PD", "PD", "file1", ((8, 13), (8, 15)), ["defn"], ["member"; "getter"]);
+        ("member .ctor", "``.ctor``", "file1", ((10, 4), (10, 5)), ["defn"], ["member"; "ctor"]);
+        ("member get_PE", "PE", "file1", ((11, 13), (11, 15)), ["defn"], ["member"; "getter"]);
+        ("val x", "x", "file1", ((5, 11), (5, 12)), ["defn"], []);
+        ("val x", "x", "file1", ((8, 11), (8, 12)), ["defn"], []);
+        ("val x", "x", "file1", ((11, 11), (11, 12)), ["defn"], []);
+        ("Impl", "Impl", "file1", ((2, 7), (2, 11)), ["defn"], ["module"])|]
 
 [<Fact>]
 let ``Test Project16 sig symbols are equal to impl symbols`` () =
@@ -5074,35 +5058,35 @@ let ``Test Project40 all symbols`` () =
     let allSymbolUses = wholeProjectResults.GetAllUsesOfAllSymbols()
     let allSymbolUsesInfo =  [ for s in allSymbolUses -> s.Symbol.DisplayName, tups s.Range, attribsOfSymbol s.Symbol ]
     allSymbolUsesInfo |> shouldEqual
-          [("option", ((4, 10), (4, 16)), ["abbrev"]); ("x", ((4, 7), (4, 8)), []);
-            ("x", ((4, 23), (4, 24)), []);
-            ("IsSome", ((4, 23), (4, 31)), ["member"; "prop"; "funky"]);
-            ("x", ((4, 33), (4, 34)), []);
-            ("IsNone", ((4, 33), (4, 41)), ["member"; "prop"; "funky"]);
-            ("f", ((4, 4), (4, 5)), ["val"]);
-            ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["class"]);
-            ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["member"]);
-            ("CompilationRepresentationFlags", ((6, 28), (6, 58)), ["enum"; "valuetype"]);
-            ("UseNullAsTrueValue", ((6, 28), (6, 77)), ["field"; "static"; "8"]);
-            ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["class"]);
-            ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["member"]);
-            ("CompilationRepresentationFlags", ((6, 28), (6, 58)), ["enum"; "valuetype"]);
-            ("UseNullAsTrueValue", ((6, 28), (6, 77)), ["field"; "static"; "8"]);
-            ("string", ((9, 11), (9, 17)), ["abbrev"]);
-            ("string", ((9, 11), (9, 17)), ["abbrev"]); ("A", ((8, 6), (8, 7)), []);
-            ("B", ((9, 6), (9, 7)), []); ("C", ((7, 5), (7, 6)), ["union"]);
-            ("IsItAnA", ((10, 13), (10, 20)), ["member"; "getter"; "funky"]);
-            ("IsItAnAMethod", ((11, 13), (11, 26)), ["member"; "funky"]);
-            ("x", ((10, 11), (10, 12)), []); ("x", ((10, 29), (10, 30)), []);
-            ("A", ((10, 36), (10, 37)), []); ("B", ((10, 48), (10, 49)), []);
-            ("x", ((11, 11), (11, 12)), []); ("x", ((11, 37), (11, 38)), []);
-            ("A", ((11, 44), (11, 45)), []); ("B", ((11, 56), (11, 57)), []);
-            ("C", ((13, 10), (13, 11)), ["union"]); ("x", ((13, 7), (13, 8)), []);
-            ("x", ((13, 15), (13, 16)), []);
-            ("IsItAnA", ((13, 15), (13, 24)), ["member"; "prop"; "funky"]);
-            ("x", ((13, 25), (13, 26)), []);
-            ("IsItAnAMethod", ((13, 25), (13, 40)), ["member"; "funky"]);
-            ("g", ((13, 4), (13, 5)), ["val"]); ("M", ((2, 7), (2, 8)), ["module"])]
+        [("option", ((4, 10), (4, 16)), ["abbrev"]); ("x", ((4, 7), (4, 8)), []);
+           ("x", ((4, 23), (4, 24)), []);
+           ("IsSome", ((4, 23), (4, 31)), ["member"; "prop"; "funky"]);
+           ("x", ((4, 33), (4, 34)), []);
+           ("IsNone", ((4, 33), (4, 41)), ["member"; "prop"; "funky"]);
+           ("f", ((4, 4), (4, 5)), ["val"]);
+           ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["class"]);
+           ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["member"]);
+           ("CompilationRepresentationFlags", ((6, 28), (6, 58)), ["enum"; "valuetype"]);
+           ("UseNullAsTrueValue", ((6, 28), (6, 77)), ["field"; "static"; "8"]);
+           ("string", ((9, 11), (9, 17)), ["abbrev"]);
+           ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["class"]);
+           ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["member"]);
+           ("CompilationRepresentationFlags", ((6, 28), (6, 58)), ["enum"; "valuetype"]);
+           ("UseNullAsTrueValue", ((6, 28), (6, 77)), ["field"; "static"; "8"]);
+           ("string", ((9, 11), (9, 17)), ["abbrev"]); ("A", ((8, 6), (8, 7)), []);
+           ("B", ((9, 6), (9, 7)), []); ("C", ((7, 5), (7, 6)), ["union"]);
+           ("IsItAnA", ((10, 13), (10, 20)), ["member"; "getter"; "funky"]);
+           ("IsItAnAMethod", ((11, 13), (11, 26)), ["member"; "funky"]);
+           ("x", ((10, 11), (10, 12)), []); ("x", ((10, 29), (10, 30)), []);
+           ("A", ((10, 36), (10, 37)), []); ("B", ((10, 48), (10, 49)), []);
+           ("x", ((11, 11), (11, 12)), []); ("x", ((11, 37), (11, 38)), []);
+           ("A", ((11, 44), (11, 45)), []); ("B", ((11, 56), (11, 57)), []);
+           ("C", ((13, 10), (13, 11)), ["union"]); ("x", ((13, 7), (13, 8)), []);
+           ("x", ((13, 15), (13, 16)), []);
+           ("IsItAnA", ((13, 15), (13, 24)), ["member"; "prop"; "funky"]);
+           ("x", ((13, 25), (13, 26)), []);
+           ("IsItAnAMethod", ((13, 25), (13, 40)), ["member"; "funky"]);
+           ("g", ((13, 4), (13, 5)), ["val"]); ("M", ((2, 7), (2, 8)), ["module"])]
 
 //--------------------------------------------
 

@@ -3333,11 +3333,11 @@ module EstablishTypeDefinitionCores =
 
             let hasAbstractAttr = HasFSharpAttribute g g.attrib_AbstractClassAttribute attrs
             let hasSealedAttr = 
-                // The special case is necessary for 'unit' because the 'Sealed' attribute is not yet available when this type is defined.
+                // The special case is needed for 'unit' because the 'Sealed' attribute is not yet available when this type is defined.
                 if g.compilingFSharpCore && id.idText = "Unit" then 
-                    true
+                    Some true
                 else
-                    HasFSharpAttribute g g.attrib_SealedAttribute attrs
+                    TryFindFSharpBoolAttribute g g.attrib_SealedAttribute attrs
 
             let hasMeasureAttr = HasFSharpAttribute g g.attrib_MeasureAttribute attrs
             
@@ -3356,7 +3356,7 @@ module EstablishTypeDefinitionCores =
                 g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets)
                 && not hasCLIMutable // CLIMutableAttribute has a special treatment (specific error FS3132)
                 && not hasAllowNullLiteralAttr // AllowNullLiteralAttribute has a special treatment(specific errors FS0934, FS093)
-                && not hasSealedAttr // SealedAttribute has a special treatment (specific error FS942)
+                && not (hasSealedAttr = Some true)// SealedAttribute has a special treatment (specific error FS942)
                 && not hasStructLayoutAttr // StructLayoutAttribute has a special treatment (specific error FS0937)
 
             if hasAbstractAttr then 
@@ -3392,7 +3392,7 @@ module EstablishTypeDefinitionCores =
                 
             let hiddenReprChecks hasRepr =
                  structLayoutAttributeCheck false
-                 if not hasSealedAttr || (hasRepr && hasSealedAttr && not (id.idText = "Unit" && g.compilingFSharpCore) ) then 
+                 if hasSealedAttr = Some false || (hasRepr && hasSealedAttr <> Some true && not (id.idText = "Unit" && g.compilingFSharpCore) ) then 
                     errorR(Error(FSComp.SR.tcRepresentationOfTypeHiddenBySignature(), m))
                  if hasAbstractAttr then 
                      errorR (Error(FSComp.SR.tcOnlyClassesCanHaveAbstract(), m))
@@ -3401,7 +3401,7 @@ module EstablishTypeDefinitionCores =
                 if hasMeasureAttr then errorR (Error(FSComp.SR.tcOnlyTypesRepresentingUnitsOfMeasureCanHaveMeasure(), m))
 
             let noSealedAttributeCheck k = 
-                if hasSealedAttr then errorR (Error(k(), m))
+                if hasSealedAttr = Some true then errorR (Error(k(), m))
 
             let noFieldsCheck(fields': RecdField list) = 
                 match fields' with 
@@ -3504,7 +3504,7 @@ module EstablishTypeDefinitionCores =
                     TNoRepr, None, NoSafeInitInfo
 
                 | SynTypeDefnSimpleRepr.TypeAbbrev(ParserDetail.Ok, rhsType, _) ->
-                    if hasSealedAttr then 
+                    if hasSealedAttr = Some true then 
                         errorR (Error(FSComp.SR.tcAbbreviatedTypesCannotBeSealed(), m))
                     noAbstractClassAttributeCheck()
                     noAllowNullLiteralAttributeCheck()
@@ -3650,7 +3650,7 @@ module EstablishTypeDefinitionCores =
 
                                   TFSharpStruct
                               | SynTypeDefnKind.Interface -> 
-                                  if hasSealedAttr then errorR (Error(FSComp.SR.tcInterfaceTypesCannotBeSealed(), m))
+                                  if hasSealedAttr = Some true then errorR (Error(FSComp.SR.tcInterfaceTypesCannotBeSealed(), m))
                                   if reportAttributeTargetsErrors then
                                     TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Interface synAttrs |> ignore
                                   structLayoutAttributeCheck false
@@ -3660,7 +3660,10 @@ module EstablishTypeDefinitionCores =
                                   TFSharpInterface
                               | SynTypeDefnKind.Class ->
                                   if reportAttributeTargetsErrors then
-                                      TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Class synAttrs |> ignore
+                                    if hasStructAttr then
+                                        TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Struct synAttrs |> ignore
+                                    else
+                                        TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Class synAttrs |> ignore
                                   structLayoutAttributeCheck(not isIncrClass)
                                   allowNullLiteralAttributeCheck()
 

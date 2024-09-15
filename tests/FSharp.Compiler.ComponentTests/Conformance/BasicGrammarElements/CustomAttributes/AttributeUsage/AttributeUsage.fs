@@ -876,17 +876,17 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
             (Error 942, Line 14, Col 6, Line 14, Col 33, "Delegate types are always sealed")
         ]        
     
-    // SOURCE= E_AttributeTargetIsClass03.fs	# E_AttributeTargetIsClass03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass03.fs"|])>]
-    let ``E_AttributeTargetIsClass03 9.0`` compilation =
+    // SOURCE= AttributeTargetIsClass01.fs	# E_AttributeTargetIsClass03.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetIsClass01.fs"|])>]
+    let ``AttributeTargetIsClass01 9.0`` compilation =
         compilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
 
-    // SOURCE=E_AttributeTargetIsClass03.fs	# E_AttributeTargetIsClass03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass03.fs"|])>]
-    let ``E_AttributeTargetIsClass03 preview`` compilation =
+    // SOURCE=AttributeTargetIsClass01.fs	# AttributeTargetIsClass01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetIsClass01.fs"|])>]
+    let ``AttributeTargetIsClass01 preview`` compilation =
         compilation
         |> withLangVersionPreview
         |> verifyCompile
