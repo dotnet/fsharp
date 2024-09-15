@@ -8940,7 +8940,7 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
         let ety = destNativePtrTy g ty
         typeEnc g (gtpsType, gtpsMethod) ety + "*"
 
-    | TType_app (_, _, nullness) when isArrayTy g ty -> 
+    | TType_app (_, _, _nullness) when isArrayTy g ty -> 
         let tcref, tinst = destAppTy g ty        
         let rank = rankOfArrayTyconRef g tcref
         let arraySuffix = "[" + String.concat ", " (List.replicate (rank-1) "0:") + "]"
@@ -8948,14 +8948,14 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
 
     | TType_ucase (_, tinst)   
     | TType_app (_, tinst, _) -> 
-        let tyName,nullness = 
+        let tyName = 
             let ty = stripTyEqnsAndMeasureEqns g ty
             match ty with
-            | TType_app (tcref, _tinst, nullness) -> 
+            | TType_app (tcref, _tinst, _nullness) -> 
                 // Generic type names are (name + "`" + digits) where name does not contain "`".
                 // In XML doc, when used in type instances, these do not use the ticks.
                 let path = Array.toList (fullMangledPathToTyconRef tcref) @ [tcref.CompiledName]
-                textOfPath (List.map DemangleGenericTypeName path),nullness
+                textOfPath (List.map DemangleGenericTypeName path)
             | _ ->
                 assert false
                 failwith "impossible"
@@ -8970,10 +8970,10 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
         else 
             sprintf "System.Tuple%s"(tyargsEnc g (gtpsType, gtpsMethod) tys)
 
-    | TType_fun (domainTy, rangeTy, nullness) -> 
+    | TType_fun (domainTy, rangeTy, _nullness) -> 
         "Microsoft.FSharp.Core.FSharpFunc" + tyargsEnc g (gtpsType, gtpsMethod) [domainTy; rangeTy]
 
-    | TType_var (typar, nullness) -> 
+    | TType_var (typar, _nullness) -> 
         typarEnc g (gtpsType, gtpsMethod) typar
 
     | TType_measure _ -> "?"
