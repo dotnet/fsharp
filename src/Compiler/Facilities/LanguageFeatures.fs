@@ -212,7 +212,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.LowerIntegralRangesToFastLoops, languageVersion90
                 LanguageFeature.LowerSimpleMappingsInComprehensionsToFastLoops, languageVersion90
                 LanguageFeature.ParsedHashDirectiveArgumentNonQuotes, languageVersion90
-                LanguageFeature.EmptyBodiedComputationExpressions, languageVersion90                
+                LanguageFeature.EmptyBodiedComputationExpressions, languageVersion90
                 LanguageFeature.ConsistentNowarnLineDirectiveInteraction, languageVersion90
 
                 // F# preview
