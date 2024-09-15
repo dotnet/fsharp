@@ -544,7 +544,7 @@
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
         <source>whitespace relaxation</source>
-        <target state="translated">空白字元放寬</target>
+        <target state="new">whitespace relaxation</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace2">
@@ -1129,7 +1129,7 @@
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
         <source>A constrained generic construct occurred in the resumable code specification</source>
-        <target state="translated">可繼續的程式碼規格中出現了限制式泛型建構</target>
+        <target state="new">A constrained generic construct occurred in the resumable code specification</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsDynamicResumeAtInBody">
@@ -1144,7 +1144,7 @@
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsLetRec">
         <source>A 'let rec' occurred in the resumable code specification</source>
-        <target state="translated">可繼續的程式碼規格中發生 'let rec'</target>
+        <target state="new">A 'let rec' occurred in the resumable code specification</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsResumptionInHandlerOrFilter">
@@ -1449,7 +1449,7 @@
       </trans-unit>
       <trans-unit id="tcMissingRequiredMembers">
         <source>The following required properties have to be initialized:{0}</source>
-        <target state="translated">下列必要的屬性必須初始化:{0}</target>
+        <target state="new">The following required properties have to be initialized:{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMultipleFieldsInRecord">
@@ -1584,7 +1584,7 @@
       </trans-unit>
       <trans-unit id="tcResumableCodeContainsLetRec">
         <source>Invalid resumable code. A 'let rec' occurred in the resumable code specification</source>
-        <target state="translated">可繼續的程式碼無效。可繼續的程式碼規格中發生 'let rec'</target>
+        <target state="new">Invalid resumable code. A 'let rec' occurred in the resumable code specification</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeFunctionMustBeInline">
@@ -5904,7 +5904,7 @@
       </trans-unit>
       <trans-unit id="optsDebug">
         <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debugging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
-        <target state="translated">指定偵錯類型: full、portable、embedded、pdbonly。(如果未指定偵錯類型，即預設為 '{0}'，並允許將偵錯工具附加到正在執行的程式，'portable' 為跨平台格式，'embedded' 為輸出檔案內嵌的跨平台格式)。</target>
+        <target state="new">Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debugging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</target>
         <note />
       </trans-unit>
       <trans-unit id="optsOptimize">
@@ -7159,7 +7159,7 @@
       </trans-unit>
       <trans-unit id="fscRemotingError">
         <source>The resident compilation service was not used because a problem occurred in communicating with the server.</source>
-        <target state="translated">未使用常駐編譯服務，因為伺服器發生通訊問題。</target>
+        <target state="new">The resident compilation service was not used because a problem occurred in communicating with the server.</target>
         <note />
       </trans-unit>
       <trans-unit id="pathIsInvalid">
@@ -7359,7 +7359,7 @@
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToType">
         <source>An error occurred applying the static arguments to a provided type</source>
-        <target state="translated">將靜態引數套用至提供的類型時發生錯誤</target>
+        <target state="new">An error occurred applying the static arguments to a provided type</target>
         <note />
       </trans-unit>
       <trans-unit id="etUnknownStaticArgumentKind">
@@ -7424,7 +7424,7 @@
       </trans-unit>
       <trans-unit id="etInvalidTypeProviderAssemblyName">
         <source>Assembly '{0}' has TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</source>
-        <target state="translated">組件 '{0}' 的 TypeProviderAssembly 屬性值 '{1}' 無效。此值必須是有效的屬性名稱</target>
+        <target state="new">Assembly '{0}' has TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidMemberNameCtor">
@@ -8009,7 +8009,7 @@
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToMethod">
         <source>An error occurred applying the static arguments to a provided method</source>
-        <target state="translated">將靜態引數套用至所提供的方法時，發生錯誤</target>
+        <target state="new">An error occurred applying the static arguments to a provided method</target>
         <note />
       </trans-unit>
       <trans-unit id="pplexUnexpectedChar">
@@ -8139,7 +8139,7 @@
       </trans-unit>
       <trans-unit id="CallerMemberNameIsOverridden">
         <source>The CallerMemberNameAttribute applied to parameter '{0}' will have no effect. It is overridden by the CallerFilePathAttribute.</source>
-        <target state="translated">套用至參數 '{0}' 的 CallerMemberNameAttribute 將不會有作用。CallerFilePathAttribute 會加以覆寫。</target>
+        <target state="new">The CallerMemberNameAttribute applied to parameter '{0}' will have no effect. It is overridden by the CallerFilePathAttribute.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
@@ -8454,7 +8454,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionTry">
         <source>Used to introduce a block of code that might generate an exception. Used together with 'with' or 'finally'.</source>
-        <target state="needs-review-translation">用於引入可能會產生例外狀況的程式碼區塊。這會與 with 或 finally 並用。</target>
+        <target state="new">Used to introduce a block of code that might generate an exception. Used together with 'with' or 'finally'.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionType">
