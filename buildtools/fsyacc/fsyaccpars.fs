@@ -13,9 +13,10 @@ open FsLexYacc.FsYacc
 open FsLexYacc.FsYacc.AST
 
 #nowarn "62" // This construct is for ML compatibility
+#nowarn "64" // Turn off warnings that type variables used in production annotations are instantiated to concrete type"
 
 
-# 18 "fsyaccpars.fs"
+# 19 "fsyaccpars.fs"
 // This type is the type of tokens accepted by the parser
 type token = 
   | TOKEN of (string option)
@@ -213,7 +214,7 @@ let _fsyacc_reductionSymbolCounts = [|1us; 4us; 1us; 0us; 0us; 2us; 2us; 2us; 2u
 let _fsyacc_productionToNonTerminalTable = [|0us; 1us; 2us; 2us; 3us; 3us; 4us; 4us; 4us; 4us; 4us; 4us; 5us; 5us; 6us; 6us; 7us; 8us; 8us; 9us; 9us; 10us; 10us; 11us; 12us; 12us; 12us; 13us; 13us; |]
 let _fsyacc_immediateActions = [|65535us; 49152us; 65535us; 65535us; 65535us; 16385us; 16386us; 65535us; 16389us; 65535us; 16390us; 65535us; 16391us; 65535us; 16392us; 65535us; 16393us; 65535us; 16394us; 65535us; 16395us; 65535us; 16396us; 65535us; 16398us; 65535us; 65535us; 65535us; 65535us; 16400us; 16402us; 16404us; 65535us; 65535us; 16405us; 65535us; 65535us; 16407us; 65535us; 16408us; 65535us; 16409us; 65535us; 16412us; |]
 let _fsyacc_reductions ()  =    [| 
-# 216 "fsyaccpars.fs"
+# 217 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> AST.ParserSpec in
             Microsoft.FSharp.Core.Operators.box
@@ -222,7 +223,7 @@ let _fsyacc_reductions ()  =    [|
                       raise (FSharp.Text.Parsing.Accept(Microsoft.FSharp.Core.Operators.box _1))
                    )
                  : 'gentype__startspec));
-# 225 "fsyaccpars.fs"
+# 226 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_headeropt in
             let _2 = parseState.GetInput(2) :?> 'gentype_decls in
@@ -230,168 +231,168 @@ let _fsyacc_reductions ()  =    [|
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 25 "fsyaccpars.fsy"
+# 26 "fsyaccpars.fsy"
                            List.foldBack (fun f x -> f x) _2 { Header=_1;Tokens=[];Types=[];Associativities=[];StartSymbols=[];Rules=_4 } 
                    )
-# 25 "fsyaccpars.fsy"
+# 26 "fsyaccpars.fsy"
                  : AST.ParserSpec));
-# 238 "fsyaccpars.fs"
+# 239 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> AST.Code in
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 29 "fsyaccpars.fsy"
+# 30 "fsyaccpars.fsy"
                               _1 
                    )
-# 29 "fsyaccpars.fsy"
+# 30 "fsyaccpars.fsy"
                  : 'gentype_headeropt));
-# 249 "fsyaccpars.fs"
+# 250 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 31 "fsyaccpars.fsy"
+# 32 "fsyaccpars.fsy"
                              "", (parseState.ResultRange |> fst)
                    )
-# 31 "fsyaccpars.fsy"
+# 32 "fsyaccpars.fsy"
                  : 'gentype_headeropt));
-# 259 "fsyaccpars.fs"
+# 260 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 34 "fsyaccpars.fsy"
+# 35 "fsyaccpars.fsy"
                            [] 
                    )
-# 34 "fsyaccpars.fsy"
+# 35 "fsyaccpars.fsy"
                  : 'gentype_decls));
-# 269 "fsyaccpars.fs"
+# 270 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_decl in
             let _2 = parseState.GetInput(2) :?> 'gentype_decls in
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 35 "fsyaccpars.fsy"
+# 36 "fsyaccpars.fsy"
                                       _1 :: _2 
                    )
-# 35 "fsyaccpars.fsy"
+# 36 "fsyaccpars.fsy"
                  : 'gentype_decls));
-# 281 "fsyaccpars.fs"
+# 282 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string option in
             let _2 = parseState.GetInput(2) :?> 'gentype_idents in
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 38 "fsyaccpars.fsy"
+# 39 "fsyaccpars.fsy"
                                         (fun x -> {x with Tokens = x.Tokens @ (List.map (fun x -> (x,_1)) _2)}) 
                    )
-# 38 "fsyaccpars.fsy"
+# 39 "fsyaccpars.fsy"
                  : 'gentype_decl));
-# 293 "fsyaccpars.fs"
+# 294 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             let _2 = parseState.GetInput(2) :?> 'gentype_idents in
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 39 "fsyaccpars.fsy"
+# 40 "fsyaccpars.fsy"
                                          (fun x -> {x with Types = x.Types @ (List.map (fun x -> (x,_1)) _2)} ) 
                    )
-# 39 "fsyaccpars.fsy"
+# 40 "fsyaccpars.fsy"
                  : 'gentype_decl));
-# 305 "fsyaccpars.fs"
+# 306 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_idents in
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 40 "fsyaccpars.fsy"
+# 41 "fsyaccpars.fsy"
                                           (fun x -> {x with StartSymbols = x.StartSymbols @ _2} ) 
                    )
-# 40 "fsyaccpars.fsy"
+# 41 "fsyaccpars.fsy"
                  : 'gentype_decl));
-# 316 "fsyaccpars.fs"
+# 317 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_idents in
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 41 "fsyaccpars.fsy"
+# 42 "fsyaccpars.fsy"
                                          (fun x -> {x with Associativities = x.Associativities @ [(List.map (fun x -> (x,LeftAssoc)) _2)]} ) 
                    )
-# 41 "fsyaccpars.fsy"
+# 42 "fsyaccpars.fsy"
                  : 'gentype_decl));
-# 327 "fsyaccpars.fs"
+# 328 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_idents in
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 42 "fsyaccpars.fsy"
+# 43 "fsyaccpars.fsy"
                                           (fun x -> {x with Associativities = x.Associativities @ [(List.map (fun x -> (x,RightAssoc)) _2)]} ) 
                    )
-# 42 "fsyaccpars.fsy"
+# 43 "fsyaccpars.fsy"
                  : 'gentype_decl));
-# 338 "fsyaccpars.fs"
+# 339 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_idents in
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 43 "fsyaccpars.fsy"
+# 44 "fsyaccpars.fsy"
                                              (fun x -> {x with Associativities = x.Associativities @ [(List.map (fun x -> (x,NonAssoc)) _2)]} ) 
                    )
-# 43 "fsyaccpars.fsy"
+# 44 "fsyaccpars.fsy"
                  : 'gentype_decl));
-# 349 "fsyaccpars.fs"
+# 350 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             let _2 = parseState.GetInput(2) :?> 'gentype_idents in
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 45 "fsyaccpars.fsy"
+# 46 "fsyaccpars.fsy"
                                             _1 :: _2 
                    )
-# 45 "fsyaccpars.fsy"
+# 46 "fsyaccpars.fsy"
                  : 'gentype_idents));
-# 361 "fsyaccpars.fs"
+# 362 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 45 "fsyaccpars.fsy"
+# 46 "fsyaccpars.fsy"
                                                            [] 
                    )
-# 45 "fsyaccpars.fsy"
+# 46 "fsyaccpars.fsy"
                  : 'gentype_idents));
-# 371 "fsyaccpars.fs"
+# 372 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_rule in
             let _2 = parseState.GetInput(2) :?> 'gentype_rules in
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 46 "fsyaccpars.fsy"
+# 47 "fsyaccpars.fsy"
                                          _1 :: _2 
                    )
-# 46 "fsyaccpars.fsy"
+# 47 "fsyaccpars.fsy"
                  : 'gentype_rules));
-# 383 "fsyaccpars.fs"
+# 384 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_rule in
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 46 "fsyaccpars.fsy"
+# 47 "fsyaccpars.fsy"
                                                              [_1] 
                    )
-# 46 "fsyaccpars.fsy"
+# 47 "fsyaccpars.fsy"
                  : 'gentype_rules));
-# 394 "fsyaccpars.fs"
+# 395 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             let _3 = parseState.GetInput(3) :?> 'gentype_optbar in
@@ -400,75 +401,75 @@ let _fsyacc_reductions ()  =    [|
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 47 "fsyaccpars.fsy"
+# 48 "fsyaccpars.fsy"
                                                                 (_1,_4) 
                    )
-# 47 "fsyaccpars.fsy"
+# 48 "fsyaccpars.fsy"
                  : 'gentype_rule));
-# 408 "fsyaccpars.fs"
+# 409 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 48 "fsyaccpars.fsy"
+# 49 "fsyaccpars.fsy"
                                
                    )
-# 48 "fsyaccpars.fsy"
+# 49 "fsyaccpars.fsy"
                  : 'gentype_optbar));
-# 418 "fsyaccpars.fs"
+# 419 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 48 "fsyaccpars.fsy"
+# 49 "fsyaccpars.fsy"
                                          
                    )
-# 48 "fsyaccpars.fsy"
+# 49 "fsyaccpars.fsy"
                  : 'gentype_optbar));
-# 428 "fsyaccpars.fs"
+# 429 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 49 "fsyaccpars.fsy"
+# 50 "fsyaccpars.fsy"
                                 
                    )
-# 49 "fsyaccpars.fsy"
+# 50 "fsyaccpars.fsy"
                  : 'gentype_optsemi));
-# 438 "fsyaccpars.fs"
+# 439 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 49 "fsyaccpars.fsy"
+# 50 "fsyaccpars.fsy"
                                            
                    )
-# 49 "fsyaccpars.fsy"
+# 50 "fsyaccpars.fsy"
                  : 'gentype_optsemi));
-# 448 "fsyaccpars.fs"
+# 449 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_clause in
             let _3 = parseState.GetInput(3) :?> 'gentype_clauses in
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 50 "fsyaccpars.fsy"
+# 51 "fsyaccpars.fsy"
                                                   _1 :: _3 
                    )
-# 50 "fsyaccpars.fsy"
+# 51 "fsyaccpars.fsy"
                  : 'gentype_clauses));
-# 460 "fsyaccpars.fs"
+# 461 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_clause in
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 50 "fsyaccpars.fsy"
+# 51 "fsyaccpars.fsy"
                                                                         [_1] 
                    )
-# 50 "fsyaccpars.fsy"
+# 51 "fsyaccpars.fsy"
                  : 'gentype_clauses));
-# 471 "fsyaccpars.fs"
+# 472 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> 'gentype_syms in
             let _2 = parseState.GetInput(2) :?> 'gentype_optprec in
@@ -476,67 +477,67 @@ let _fsyacc_reductions ()  =    [|
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 51 "fsyaccpars.fsy"
+# 52 "fsyaccpars.fsy"
                                                  Rule(_1,_2,Some _3) 
                    )
-# 51 "fsyaccpars.fsy"
+# 52 "fsyaccpars.fsy"
                  : 'gentype_clause));
-# 484 "fsyaccpars.fs"
+# 485 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             let _1 = parseState.GetInput(1) :?> string in
             let _2 = parseState.GetInput(2) :?> 'gentype_syms in
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 52 "fsyaccpars.fsy"
+# 53 "fsyaccpars.fsy"
                                         _1 :: _2 
                    )
-# 52 "fsyaccpars.fsy"
+# 53 "fsyaccpars.fsy"
                  : 'gentype_syms));
-# 496 "fsyaccpars.fs"
+# 497 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> 'gentype_syms in
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 52 "fsyaccpars.fsy"
+# 53 "fsyaccpars.fsy"
                                                                   "error" :: _2 
                    )
-# 52 "fsyaccpars.fsy"
+# 53 "fsyaccpars.fsy"
                  : 'gentype_syms));
-# 507 "fsyaccpars.fs"
+# 508 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 52 "fsyaccpars.fsy"
+# 53 "fsyaccpars.fsy"
                                                                                       [] 
                    )
-# 52 "fsyaccpars.fsy"
+# 53 "fsyaccpars.fsy"
                  : 'gentype_syms));
-# 517 "fsyaccpars.fs"
+# 518 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 53 "fsyaccpars.fsy"
+# 54 "fsyaccpars.fsy"
                                 None 
                    )
-# 53 "fsyaccpars.fsy"
+# 54 "fsyaccpars.fsy"
                  : 'gentype_optprec));
-# 527 "fsyaccpars.fs"
+# 528 "fsyaccpars.fs"
         (fun (parseState : FSharp.Text.Parsing.IParseState) ->
             let _2 = parseState.GetInput(2) :?> string in
             Microsoft.FSharp.Core.Operators.box
                 (
                    (
-# 53 "fsyaccpars.fsy"
+# 54 "fsyaccpars.fsy"
                                                       Some _2 
                    )
-# 53 "fsyaccpars.fsy"
+# 54 "fsyaccpars.fsy"
                  : 'gentype_optprec));
 |]
-# 539 "fsyaccpars.fs"
+# 540 "fsyaccpars.fs"
 let tables : FSharp.Text.Parsing.Tables<_> = 
   { reductions= _fsyacc_reductions ();
     endOfInputTag = _fsyacc_endOfInputTag;
