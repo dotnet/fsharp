@@ -307,11 +307,6 @@
         <target state="translated">Gera avisos se o atributo "TailCall" for usado em funções não recursivas.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureConsistentNowarnLineDirectiveInteraction">
-        <source>The interaction between #nowarn and #line is now consistent.</source>
-        <target state="new">The interaction between #nowarn and #line is now consistent.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
         <source>Constraint intersection on flexible types</source>
         <target state="translated">Interseção de restrição em tipos flexíveis</target>
