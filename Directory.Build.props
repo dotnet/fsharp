@@ -7,7 +7,7 @@
     <RepoRoot Condition="'$(RepoRoot)' == ''">$(MSBuildThisFileDirectory)</RepoRoot>
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
     <FSharpNetCoreProductDefaultTargetFramework>net9.0</FSharpNetCoreProductDefaultTargetFramework>
-    <IgnoreMibc Condition="'$(IgnoreMibc)' == ''">$(DotNetBuildFromSource)</IgnoreMibc>
+    <IgnoreMibc Condition="'$(IgnoreMibc)' == ''">$(DotNetBuildSourceOnly)</IgnoreMibc>
   </PropertyGroup>
 
   <!--
@@ -73,7 +73,7 @@
          we should also support $(NetPrevious) for all releases.
          This will likely include FCS and FSharp.Core as well as shipped products.
          Right now, it only covers products we ship (FSC and FSI), not NuGet packages. -->
-    <When Condition="'$(DotNetBuildFromSource)' == 'true' AND '$(DotNetBuildFromSourceFlavor)' == 'Product'">
+    <When Condition="'$(DotNetBuildSourceOnly)' == 'true' AND '$(DotNetBuildOrchestrator)' == 'true'">
       <PropertyGroup>
         <FSharpNetCoreProductTargetFramework>$(NetCurrent)</FSharpNetCoreProductTargetFramework>
       </PropertyGroup>
