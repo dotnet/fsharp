@@ -14,6 +14,9 @@ module Assert =
         
     let inline shouldStartWith (expected : string) (actual : string) =
         actual.Should().StartWith(expected) |> ignore
+        
+    let inline shouldContain (needle : string) (haystack : string) =
+        haystack.Should().Contain(needle) |> ignore    
 
     let inline shouldBe (expected : ^T) (actual : ^U) =
         actual.Should().Be(expected, "") |> ignore

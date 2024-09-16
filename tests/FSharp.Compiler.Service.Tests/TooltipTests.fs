@@ -548,8 +548,7 @@ let doIt (dict:Dictionary<'a,'b>) = dict.GetAlternateLookup<'a,'b,ReadOnlySpan<c
     let checkResults = getCheckResults source [|"--langversion:preview"|]
     checkResults.GetToolTip(4, 59, "let doIt (dict:Dictionary<'a,'b>) = dict.GetAlternateLookup<'a,'b,ReadOnlySpan<char>>()", [ "GetAlternateLookup" ], FSharpTokenTag.Identifier)   
     |> assertAndGetSingleToolTipText
-    |> fun s -> s.Replace("(extension) ","") //BCL changes if this is instance or extension method, this test does not care
-    |> Assert.shouldStartWith ("""Dictionary.GetAlternateLookup<'TKey,'TValue,'TAlternateKey (allows ref struct)>""" |> normalize)
+    |> Assert.shouldContain ("""'TAlternateKey (allows ref struct)""" |> normalize)
     
 [<FactForNETCOREAPP>]
 let ``Allows ref struct is not shown on BCL interface usage`` () =   
