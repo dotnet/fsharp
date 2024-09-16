@@ -8,7 +8,7 @@ open System.Collections.Generic
 open System.IO
 open System.Text.RegularExpressions
 open System.Xml.Linq
-open NUnit.Framework
+open Xunit
 
 // VS namespaces 
 open Microsoft.VisualStudio
@@ -23,13 +23,10 @@ open UnitTests.TestLib.Utils.FilesystemHelpers
 open UnitTests.TestLib.ProjectSystem
 
 
-[<SetUpFixture>]
 type public AssemblyResolverTestFixture () =
 
-    [<OneTimeSetUp>]
     member public _.Init () = AssemblyResolver.addResolver ()
 
-[<TestFixture>][<Category "ProjectSystem">]
 type Config() = 
     inherit TheTests()
 
@@ -38,7 +35,7 @@ type Config() =
     static let SaveProject(project : UnitTestingFSharpProjectNode) =
         project.Save(null, 1, 0u) |> ignore
 
-    [<Test>]
+    [<Fact>]
     member this.TargetPlatform () =
         this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(["foo.fs"], [], 
             this.MSBuildProjectMultiPlatformBoilerplate "Library",  
@@ -46,32 +43,32 @@ type Config() =
                 ccn((project :> IVsHierarchy), "Debug|x86")
                 project.ComputeSourcesAndFlags()
                 let flags = project.CompilationOptions |> List.ofArray
-                Assert.IsTrue(List.exists (fun s -> s = "--platform:x86") flags)
+                Assert.True(List.exists (fun s -> s = "--platform:x86") flags)
                 ()
         ))
 
-    [<Test>]
+    [<Fact>]
     member this.``Configs.EnsureAtLeastOneConfiguration`` () =
         this.HelperEnsureAtLeastOne 
             @"<PropertyGroup Condition="" '$(Platform)' == 'x86' "" />" 
             [|"Debug"|]  // the goal of the test - when no configs, "Debug" should magically appear
             [|"x86"|]
 
-    [<Test>]
+    [<Fact>]
     member this.``Configs.EnsureAtLeastOnePlatform`` () =
         this.HelperEnsureAtLeastOne 
             @"<PropertyGroup Condition="" '$(Configuration)' == 'Release' "" />"
             [|"Release"|]
             [|"Any CPU"|] // the goal of the test - when no platforms, "AnyCPU" should magically appear
 
-    [<Test>]
+    [<Fact>]
     member this.``Configs.EnsureAtLeastOneConfigurationAndPlatform`` () =
         this.HelperEnsureAtLeastOne 
             ""
             [|"Debug"|] // first goal of the test - when no configs, "Debug" should magically appear
             [|"Any CPU"|] // second goal of the test - when no platforms, "AnyCPU" should magically appear
 
-    [<Test>]
+    [<Fact>]
     member this.``Configs.EnsureAtLeastOneConfiguration.Imported`` () =
         // Take advantage of the fact that we always create projects one directory below TempPath
         let tmpTargets = Path.Combine(Path.GetTempPath(), "foo.targets")
@@ -88,7 +85,7 @@ type Config() =
         finally
             File.Delete tmpTargets
 
-    [<Test>]
+    [<Fact>]
     member this.``Configs.EnsureAtLeastOnePlatform.Imported`` () =
         // Take advantage of the fact that we always create projects one directory below TempPath
         // The unit test failed due to the previous test use the same target name "foo.targets". 
@@ -106,7 +103,7 @@ type Config() =
         finally
             File.Delete tmpTargets
     
-    [<Test>]
+    [<Fact>]
     member this.``Configs.Renaming`` () =
         this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
             this.MSBuildProjectMultiConfigBoilerplate ["Debug",""; "Release",""],
@@ -122,7 +119,7 @@ type Config() =
                 TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
             ))
             
-    [<Test>]
+    [<Fact>]
     member this.``Configs.Deleting`` () =
         this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
             this.MSBuildProjectMultiConfigBoilerplate ["Debug",""; "Release",""],
@@ -137,7 +134,7 @@ type Config() =
                 let expectedXDoc = XDocument.Load(new StringReader(TheTests.SimpleFsprojText(["foo.fs"],[],expected)))
                 TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
             ))
-    [<Test>]
+    [<Fact>]
     member this.``Configs.Adding`` () =
         this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
             this.MSBuildProjectMultiConfigBoilerplate ["Debug","<Foo/>"; "Release",""],
@@ -152,7 +149,7 @@ type Config() =
                 let expectedXDoc = XDocument.Load(new StringReader(TheTests.SimpleFsprojText(["foo.fs"],[],expected)))
                 TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
             ))
-    [<Test>]
+    [<Fact>]
     member this.``Configs.AddingBaseless`` () =
         this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
             this.MSBuildProjectMultiConfigBoilerplate ["Debug","<Foo/>"; "Release",""],
@@ -168,7 +165,7 @@ type Config() =
                 TheTests.AssertSimilarXml(expectedXDoc.Root, xDoc.Root)                
             ))
 
-    [<Test>]
+    [<Fact>]
     member this.``Configs.Platforms.Deleting`` () =
         this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
             this.MSBuildProjectMultiPlatform ["Any CPU",""; "x86",""],
@@ -185,7 +182,7 @@ type Config() =
 
         ))
         
-    [<Test>]
+    [<Fact>]
     member this.``Configs.Platforms.Adding`` () =
         this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
             this.MSBuildProjectMultiPlatform ["Any CPU",""; "x86","<Custom/>"],
@@ -202,7 +199,7 @@ type Config() =
 
         ))
 
-    [<Test>]
+    [<Fact>]
     member this.``Configs.Platforms.AddingBaseless`` () =
         this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
             this.MSBuildProjectMultiPlatform ["Any CPU",""; "x86",""],
