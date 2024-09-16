@@ -4028,7 +4028,7 @@ let rec TcTyparConstraint ridx (cenv: cenv) newOk checkConstraints occ (env: TcE
     | SynTypeConstraint.WhereTyparSupportsNull(tp, m) ->
         TcSimpleTyparConstraint cenv env newOk tpenv tp m AddCxTypeUseSupportsNull
 
-    | SynTypeConstraint.WhereTyparNotSupportsNull(tp, m) ->
+    | SynTypeConstraint.WhereTyparNotSupportsNull(tp, m, _) ->
         if g.langFeatureNullness then
             TcSimpleTyparConstraint cenv env newOk tpenv tp m AddCxTypeDefnNotSupportsNull
         else
@@ -4472,7 +4472,7 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
         errorR(Error(FSComp.SR.parsInvalidLiteralInType(), m))
         NewErrorType (), tpenv
 
-    | SynType.WithNull(innerTy, ambivalent, m) ->
+    | SynType.WithNull(innerTy, ambivalent, m, _) ->
         let innerTyC, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.Yes env tpenv innerTy
         let nullness = if ambivalent then KnownAmbivalentToNull else KnownWithNull
         let tyWithNull = TcAddNullnessToType false cenv env nullness innerTyC m
