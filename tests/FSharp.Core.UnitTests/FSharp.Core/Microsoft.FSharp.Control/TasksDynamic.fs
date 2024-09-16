@@ -363,15 +363,16 @@ type Basics() =
     [<Fact>]
     member _.testNonBlocking() =
         printfn "Running testNonBlocking..."
-        let sw = Stopwatch()
-        sw.Start()
+        let allowContinue = new SemaphoreSlim(0)
+        let finished = new ManualResetEventSlim()
         let t =
             taskDynamic {
                 do! Task.Yield()
-                Thread.Sleep(100)
+                allowContinue.Wait()
+                finished.Set()
             }
-        sw.Stop()
-        require (sw.ElapsedMilliseconds < 50L) "sleep blocked caller"
+        allowContinue.Release() |> ignore
+        requireNotSet finished "sleep blocked caller"
         t.Wait()
 
     [<Fact>]
@@ -1022,12 +1023,13 @@ type Basics() =
             let mutable ranInitial = false
             let mutable ranNext = false
             let mutable ranFinally = 0
+            let goBackToRequires = new SemaphoreSlim(0)
+
             let t =
                 taskDynamic {
                     try
                         ranInitial <- true
-                        do! Task.Yield()
-                        Thread.Sleep(100) // shouldn't be blocking so we should get through to requires before this finishes
+                        do! goBackToRequires.WaitAsync()
                         ranNext <- true
                         failtest "uhoh"
                     finally
@@ -1035,6 +1037,7 @@ type Basics() =
                         failtest "2nd exn!"
                 }
             require ranInitial "didn't run initial"
+            goBackToRequires.Release() |> ignore
             require (not ranNext) "ran next too early"
             try
                 t.Wait()
