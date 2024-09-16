@@ -405,6 +405,9 @@ type SynFieldTrivia =
 type SynTypeOrTrivia = { OrKeyword: range }
 
 [<NoEquality; NoComparison>]
+type SynTypeWithNullTrivia = { BarRange: range }
+
+[<NoEquality; NoComparison>]
 type SynBindingReturnInfoTrivia = { ColonRange: range option }
 
 [<NoEquality; NoComparison>]
@@ -429,3 +432,6 @@ type SynMeasureConstantTrivia =
         LessRange: range
         GreaterRange: range
     }
+
+[<NoEquality; NoComparison>]
+type SynTypeConstraintWhereTyparNotSupportsNullTrivia = { ColonRange: range; NotRange: range }
