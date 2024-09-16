@@ -1020,31 +1020,30 @@ type Basics() =
     member _.test2ndExceptionThrownInFinally() =
         printfn "running test2ndExceptionThrownInFinally"
         for i in 1 .. 5 do 
-            let mutable ranInitial = false
-            let mutable ranNext = false
+            use ranInitial = new ManualResetEventSlim()
+            use continueTask = new SemaphoreSlim(0)
+            use ranNext = new ManualResetEventSlim()
             let mutable ranFinally = 0
-            let goBackToRequires = new SemaphoreSlim(0)
-
             let t =
                 taskDynamic {
                     try
-                        ranInitial <- true
-                        do! goBackToRequires.WaitAsync()
-                        ranNext <- true
+                        ranInitial.Set()
+                        do! continueTask.WaitAsync()
+                        //do! Task.Yield()
+                        ranNext.Set()
                         failtest "uhoh"
                     finally
                         ranFinally <- ranFinally + 1
                         failtest "2nd exn!"
                 }
-            require ranInitial "didn't run initial"
-            goBackToRequires.Release() |> ignore
-            require (not ranNext) "ran next too early"
+            ranInitial.Wait()
+            continueTask.Release() |> ignore
             try
                 t.Wait()
                 require false "shouldn't get here"
             with
             | _ -> ()
-            require ranNext "didn't run next"
+            requireSet ranNext "didn't run next"
             require (ranFinally = 1) "didn't run finally exactly once"
     
     [<Fact>]

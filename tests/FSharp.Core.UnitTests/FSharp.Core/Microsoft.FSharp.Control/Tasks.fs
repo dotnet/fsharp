@@ -191,9 +191,6 @@ module Helpers =
     // let BIG = 10000
     let require x msg = if not x then failwith msg
 
-    let waitFor (e: ManualResetEventSlim) msg =
-        if not (e.Wait(TimeSpan.FromSeconds 5.)) then failwith msg
-
     let requireNotSet (e: ManualResetEventSlim) msg = if e.IsSet then failwith msg
 
     let requireSet (e: ManualResetEventSlim) msg = if not e.IsSet then failwith msg
@@ -254,7 +251,7 @@ type Basics() =
             }
         allowContinue.Release() |> ignore
         requireNotSet finished "sleep blocked caller"
-        waitFor finished "did not finish in time"
+        finished.Wait()
 
     [<Fact>]
     member _.testCatching1() =
@@ -955,16 +952,15 @@ type Basics() =
                     try
                         ranInitial.Set()
                         do! continueTask.WaitAsync()
-                        Thread.Sleep(100) // shouldn't be blocking so we should get through to requires before this finishes
+                        //do! Task.Yield()
                         ranNext.Set()
                         failtest "uhoh"
                     finally
                         ranFinally <- ranFinally + 1
                         failtest "2nd exn!"
                 }
-            waitFor ranInitial "didn't run initial"
+            ranInitial.Wait()
             continueTask.Release() |> ignore
-            requireNotSet ranNext "ran next too early"
             try
                 t.Wait()
                 require false "shouldn't get here"

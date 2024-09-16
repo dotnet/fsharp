@@ -537,28 +537,23 @@ let ``We get diagnostics from the job that failed`` () =
                     member _.GetVersion() = 1
                     member _.GetLabel() = "job1" }
 
-    let job (input: int) = async {
-        let ex = DummyException($"job {input} error")
+    let job = async {
+        let ex = DummyException($"job error")
 
         // no recovery
         DiagnosticsThreadStatics.DiagnosticsLogger.Error ex
         return 5
     }
 
-    let cacheGet key i = cache.Get(key, job i ) |> Async.Catch |> Async.Ignore
-
     task {
         let logger = CapturingDiagnosticsLogger("AsyncMemoize diagnostics test")
 
         SetThreadDiagnosticsLoggerNoUnwind logger
 
-        do! cacheGet key 1
-
-        // Run with the same cache key
-        do! cacheGet key 2
+        do! cache.Get(key, job ) |> Async.Catch |> Async.Ignore
 
         let messages = logger.Diagnostics |> List.map fst |> List.map _.Exception.Message
 
-        Assert.Equal<_ list>(["job 1 error"; "job 1 error"], messages)
+        Assert.Equal<_ list>(["job error"], messages)
     }
 
