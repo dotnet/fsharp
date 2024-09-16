@@ -2651,8 +2651,9 @@ typeConstraint:
      { SynTypeConstraint.WhereTyparSupportsNull($1, lhs parseState) }
 
   | typar COLON IDENT NULL
-      { if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3 + " (2)"))  
-        SynTypeConstraint.WhereTyparNotSupportsNull($1, lhs parseState) }
+      { if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3 + " (2)"))
+        let trivia : SynTypeConstraintWhereTyparNotSupportsNullTrivia = { ColonRange = rhs parseState 2; NotRange = rhs parseState 3 }
+        SynTypeConstraint.WhereTyparNotSupportsNull($1, lhs parseState, trivia) }
 
   | typar COLON LPAREN classMemberSpfn rparen
      { let tp = $1
@@ -3240,7 +3241,7 @@ cType:
        SynType.App(SynType.LongIdent(SynLongIdent([ident("nativeptr", m)], [], [ Some(IdentTrivia.OriginalNotation "*") ])), None, [$1], [], None, true, m) }
 
   | cType BAR_JUST_BEFORE_NULL NULL
-    { SynType.WithNull($1, false, lhs parseState) }
+    { SynType.WithNull($1, false, lhs parseState, { BarRange = rhs parseState 2 }) }
 
   | cType AMP
      { let m = lhs parseState
@@ -6192,7 +6193,7 @@ appTypeConPower:
 
 appTypeCanBeNullable:
   | appTypeWithoutNull BAR_JUST_BEFORE_NULL NULL
-    { SynType.WithNull($1, false, lhs parseState) }
+    { SynType.WithNull($1, false, lhs parseState, { BarRange = rhs parseState 2 }) }
 
   | appTypeWithoutNull
     { $1 }

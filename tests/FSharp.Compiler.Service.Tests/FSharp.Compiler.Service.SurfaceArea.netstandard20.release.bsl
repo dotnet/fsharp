@@ -9197,6 +9197,8 @@ FSharp.Compiler.Syntax.SynType+WithNull: Boolean ambivalent
 FSharp.Compiler.Syntax.SynType+WithNull: Boolean get_ambivalent()
 FSharp.Compiler.Syntax.SynType+WithNull: FSharp.Compiler.Syntax.SynType get_innerType()
 FSharp.Compiler.Syntax.SynType+WithNull: FSharp.Compiler.Syntax.SynType innerType
+FSharp.Compiler.Syntax.SynType+WithNull: FSharp.Compiler.SyntaxTrivia.SynTypeWithNullTrivia get_trivia()
+FSharp.Compiler.Syntax.SynType+WithNull: FSharp.Compiler.SyntaxTrivia.SynTypeWithNullTrivia trivia
 FSharp.Compiler.Syntax.SynType+WithNull: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynType+WithNull: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynType: Boolean IsAnon
@@ -9264,7 +9266,7 @@ FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewStaticConstant
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewTuple(Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTupleTypeSegment], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewVar(FSharp.Compiler.Syntax.SynTypar, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewWithGlobalConstraints(FSharp.Compiler.Syntax.SynType, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeConstraint], FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewWithNull(FSharp.Compiler.Syntax.SynType, Boolean, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewWithNull(FSharp.Compiler.Syntax.SynType, Boolean, FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynTypeWithNullTrivia)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+Anon
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+AnonRecd
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+App
@@ -9350,6 +9352,8 @@ FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparIsValueType: FSharp.Compiler.
 FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparIsValueType: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparNotSupportsNull: FSharp.Compiler.Syntax.SynTypar genericName
 FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparNotSupportsNull: FSharp.Compiler.Syntax.SynTypar get_genericName()
+FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparNotSupportsNull: FSharp.Compiler.SyntaxTrivia.SynTypeConstraintWhereTyparNotSupportsNullTrivia get_trivia()
+FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparNotSupportsNull: FSharp.Compiler.SyntaxTrivia.SynTypeConstraintWhereTyparNotSupportsNullTrivia trivia
 FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparNotSupportsNull: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparNotSupportsNull: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparSubtypeOfType: FSharp.Compiler.Syntax.SynTypar get_typar()
@@ -9403,7 +9407,7 @@ FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstrai
 FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint NewWhereTyparIsReferenceType(FSharp.Compiler.Syntax.SynTypar, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint NewWhereTyparIsUnmanaged(FSharp.Compiler.Syntax.SynTypar, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint NewWhereTyparIsValueType(FSharp.Compiler.Syntax.SynTypar, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint NewWhereTyparNotSupportsNull(FSharp.Compiler.Syntax.SynTypar, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint NewWhereTyparNotSupportsNull(FSharp.Compiler.Syntax.SynTypar, FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynTypeConstraintWhereTyparNotSupportsNullTrivia)
 FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint NewWhereTyparSubtypeOfType(FSharp.Compiler.Syntax.SynTypar, FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint NewWhereTyparSupportsMember(FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Syntax.SynMemberSig, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint NewWhereTyparSupportsNull(FSharp.Compiler.Syntax.SynTypar, FSharp.Compiler.Text.Range)
@@ -10573,6 +10577,12 @@ FSharp.Compiler.SyntaxTrivia.SynTyparDeclTrivia: Microsoft.FSharp.Collections.FS
 FSharp.Compiler.SyntaxTrivia.SynTyparDeclTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range] get_AmpersandRanges()
 FSharp.Compiler.SyntaxTrivia.SynTyparDeclTrivia: System.String ToString()
 FSharp.Compiler.SyntaxTrivia.SynTyparDeclTrivia: Void .ctor(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range])
+FSharp.Compiler.SyntaxTrivia.SynTypeConstraintWhereTyparNotSupportsNullTrivia: FSharp.Compiler.Text.Range ColonRange
+FSharp.Compiler.SyntaxTrivia.SynTypeConstraintWhereTyparNotSupportsNullTrivia: FSharp.Compiler.Text.Range NotRange
+FSharp.Compiler.SyntaxTrivia.SynTypeConstraintWhereTyparNotSupportsNullTrivia: FSharp.Compiler.Text.Range get_ColonRange()
+FSharp.Compiler.SyntaxTrivia.SynTypeConstraintWhereTyparNotSupportsNullTrivia: FSharp.Compiler.Text.Range get_NotRange()
+FSharp.Compiler.SyntaxTrivia.SynTypeConstraintWhereTyparNotSupportsNullTrivia: System.String ToString()
+FSharp.Compiler.SyntaxTrivia.SynTypeConstraintWhereTyparNotSupportsNullTrivia: Void .ctor(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTrivia.SynTypeDefnLeadingKeyword+And: FSharp.Compiler.Text.Range Item
 FSharp.Compiler.SyntaxTrivia.SynTypeDefnLeadingKeyword+And: FSharp.Compiler.Text.Range get_Item()
 FSharp.Compiler.SyntaxTrivia.SynTypeDefnLeadingKeyword+StaticType: FSharp.Compiler.Text.Range get_staticRange()
@@ -10635,6 +10645,10 @@ FSharp.Compiler.SyntaxTrivia.SynTypeOrTrivia: FSharp.Compiler.Text.Range OrKeywo
 FSharp.Compiler.SyntaxTrivia.SynTypeOrTrivia: FSharp.Compiler.Text.Range get_OrKeyword()
 FSharp.Compiler.SyntaxTrivia.SynTypeOrTrivia: System.String ToString()
 FSharp.Compiler.SyntaxTrivia.SynTypeOrTrivia: Void .ctor(FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTrivia.SynTypeWithNullTrivia: FSharp.Compiler.Text.Range BarRange
+FSharp.Compiler.SyntaxTrivia.SynTypeWithNullTrivia: FSharp.Compiler.Text.Range get_BarRange()
+FSharp.Compiler.SyntaxTrivia.SynTypeWithNullTrivia: System.String ToString()
+FSharp.Compiler.SyntaxTrivia.SynTypeWithNullTrivia: Void .ctor(FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTrivia.SynUnionCaseTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] BarRange
 FSharp.Compiler.SyntaxTrivia.SynUnionCaseTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_BarRange()
 FSharp.Compiler.SyntaxTrivia.SynUnionCaseTrivia: System.String ToString()

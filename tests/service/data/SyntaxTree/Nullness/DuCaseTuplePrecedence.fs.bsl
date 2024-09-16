@@ -22,8 +22,9 @@ ImplFile
                                     (WithNull
                                        (LongIdent
                                           (SynLongIdent ([string], [], [None])),
-                                        false, (1,21--1,34)), (1,20--1,35)),
-                                  false,
+                                        false, (1,21--1,34),
+                                        { BarRange = (1,28--1,29) }),
+                                     (1,20--1,35)), false,
                                   PreXmlDoc ((1,20), FSharp.Compiler.Xml.XmlDocCollector),
                                   None, (1,20--1,35), { LeadingKeyword = None
                                                         MutableKeyword = None });
