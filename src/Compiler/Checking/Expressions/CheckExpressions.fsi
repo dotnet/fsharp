@@ -347,9 +347,9 @@ type PostSpecialValsRecursiveBinding =
 
 [<RequireQualifiedAccess>]
 type TcCanFail =
-     | IgnoreMemberResoutionError
-     | IgnoreAllErrors
-     | ReportAllErrors
+    | IgnoreMemberResoutionError
+    | IgnoreAllErrors
+    | ReportAllErrors
 
 /// Represents a recursive binding after it has been both checked and generalized, but
 /// before initialization recursion has been rewritten
