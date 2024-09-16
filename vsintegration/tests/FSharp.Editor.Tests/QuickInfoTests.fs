@@ -508,7 +508,7 @@ module Test =
         ()
 
     [<Fact>]
-    let ``Automation.LetBindings.InsideType.Instance`` () =
+    let ``Automation.LetBindings.Instance`` () =
         let code =
             """
 namespace FsTest
@@ -518,14 +518,14 @@ module Test =
         let private fu$$nc x = ()
 """
 
-        let expectedSignature = "val func: x: 'a -> unit"
+        let expectedSignature = "val private func: x: 'a -> unit"
 
         let tooltip = GetQuickInfoTextFromCode code
 
         Assert.StartsWith(expectedSignature, tooltip)
 
     [<Fact>]
-    let ``Automation.LetBindings.InsideType.Static`` () =
+    let ``Automation.LetBindings.Static`` () =
         let code =
             """
 namespace FsTest
@@ -543,7 +543,7 @@ module Test =
         ()
 
     [<Fact>]
-    let ``Automation.LetBindings`` () =
+    let ``Automation.LetBindings.Do`` () =
         let code =
             """
 namespace FsTest

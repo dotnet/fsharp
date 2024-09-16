@@ -152,6 +152,12 @@ type internal TcGlobals =
 
     static member IsInEmbeddableKnownSet: name: string -> bool
 
+    member directoryToResolveRelativePaths: string
+
+    member noDebugAttributes: bool
+
+    member tryFindSysTypeCcuHelper: (string list -> string -> bool -> FSharp.Compiler.TypedTree.CcuThunk option) with get
+
     member AddFieldGeneratedAttributes:
         mdef: FSharp.Compiler.AbstractIL.IL.ILFieldDef -> FSharp.Compiler.AbstractIL.IL.ILFieldDef
 
@@ -1048,8 +1054,6 @@ type internal TcGlobals =
     member refcell_tcr_nice: FSharp.Compiler.TypedTree.EntityRef
 
     member reference_equality_inner_vref: FSharp.Compiler.TypedTree.ValRef
-
-    member renderNullnessAnnotations: bool
 
     member reraise_info: IntrinsicValRef
 
