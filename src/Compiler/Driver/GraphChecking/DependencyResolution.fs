@@ -117,7 +117,7 @@ let rec processStateEntry (trie: TrieNode) (state: FileContentQueryState) (entry
             FoundDependencies = foundDependencies
         }
 
-    | ModuleName name ->
+    | FileContentEntry.ModuleName name ->
         // We need to check if the module name is a hit in the Trie.
         let state' =
             let queryResult = queryTrie trie [ name ]

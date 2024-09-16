@@ -5,10 +5,10 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Collections.Generic
+open System.Threading
 open System.Threading.Tasks
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.IO
-open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
@@ -34,7 +34,7 @@ type Async with
 let checker = FSharpChecker.Create(useTransparentCompiler=FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically)
 
 type TempFile(ext, contents: string) =
-    let tmpFile =  Path.ChangeExtension(tryCreateTemporaryFileName (), ext)
+    let tmpFile =  Path.ChangeExtension(getTemporaryFileName (), ext)
     do FileSystem.OpenFileForWriteShim(tmpFile).Write(contents)
 
     interface IDisposable with
@@ -130,8 +130,8 @@ let mkProjectCommandLineArgsForScript (dllName, fileNames) =
 #endif
 
 let mkTestFileAndOptions source additionalArgs =
-    let fileName = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let project = tryCreateTemporaryFileName ()
+    let fileName = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let project = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(project, ".dll")
     let projFileName = Path.ChangeExtension(project, ".fsproj")
     let fileSource1 = "module M"
@@ -473,3 +473,63 @@ let assertRange
     Assert.Equal(Position.mkPos expectedStartLine expectedStartColumn, actualRange.Start)
     Assert.Equal(Position.mkPos expectedEndLine expectedEndColumn, actualRange.End)
 
+[<AutoOpen>]
+module TempDirUtils =
+    let getTempPath dir =
+        Path.Combine(Path.GetTempPath(), dir)
+
+    /// Returns the file name part of a temp file name created with tryCreateTemporaryFileName ()
+    /// and an added process id and thread id to ensure uniqueness between threads.
+    let getTempFileName() =
+        let tempFileName = getTemporaryFileName ()
+        try
+            let tempFile, tempExt = Path.GetFileNameWithoutExtension tempFileName, Path.GetExtension tempFileName
+            let procId, threadId = Process.GetCurrentProcess().Id, Thread.CurrentThread.ManagedThreadId
+            String.concat "" [tempFile; "_"; string procId; "_"; string threadId; tempExt]  // ext includes dot
+        finally
+            try
+                FileSystem.FileDeleteShim tempFileName
+            with _ -> ()
+
+    /// Given just a file name, returns it with changed extension located in %TEMP%\ExprTests
+    let getTempFilePathChangeExt dir tmp ext =
+        Path.Combine(getTempPath dir, Path.ChangeExtension(tmp, ext))
+
+    /// If it doesn't exists, create a folder 'ExprTests' in local user's %TEMP% folder
+    let createTempDir dirName =
+        let tempPath = getTempPath dirName
+        do
+            if Directory.Exists tempPath then ()
+            else Directory.CreateDirectory tempPath |> ignore
+
+    /// Clean up after a test is run. If you need to inspect the create *.fs files, change this function to do nothing, or just break here.
+    let cleanupTempFiles dirName files =
+        { new IDisposable with
+            member _.Dispose() =
+                for fileName in files do
+                    try
+                        // cleanup: only the source file is written to the temp dir.
+                        FileSystem.FileDeleteShim fileName
+                    with _ -> ()
+
+                try
+                    // remove the dir when empty
+                    let tempPath = getTempPath dirName
+                    if Directory.GetFiles tempPath |> Array.isEmpty then
+                        Directory.Delete tempPath
+                with _ -> () }
+
+    let createProjectOptions dirName fileSources extraArgs =
+        let fileNames = fileSources |> List.map (fun _ -> getTempFileName())
+        let temp2 = getTempFileName()
+        let fileNames = fileNames |> List.map (fun temp1 -> getTempFilePathChangeExt dirName temp1 ".fs")
+        let dllName = getTempFilePathChangeExt dirName temp2 ".dll"
+        let projFileName = getTempFilePathChangeExt dirName temp2 ".fsproj"
+
+        createTempDir dirName
+        for fileSource: string, fileName in List.zip fileSources fileNames do
+             FileSystem.OpenFileForWriteShim(fileName).Write(fileSource)
+        let args = [| yield! extraArgs; yield! mkProjectCommandLineArgs (dllName, []) |]
+        let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames |> List.toArray }
+
+        cleanupTempFiles dirName (fileNames @ [dllName; projFileName]), options

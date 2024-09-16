@@ -65,7 +65,7 @@ module public Structure =
         | Comment
         | XmlDocComment
 
-    /// Stores the range for a construct, the sub-range that should be collapsed for outlinging,
+    /// Stores the range for a construct, the sub-range that should be collapsed for outlining,
     /// a tag for the construct type, and a tag for the collapse style
     [<NoComparison>]
     type ScopeRange =

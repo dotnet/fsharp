@@ -3,7 +3,7 @@
 
 let (|MulN|_|) (n:int) (inp:int) = if inp % 3 = 0 then Some(inp/n) else None
 
-// Verify it works as exected.
+// Verify it works as excepted.
 let posCase =
     match 30 with
     | MulN 10 result -> if result <> 3 then failwith "Failed: 1"

@@ -2,16 +2,14 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 
-[<TestFixture>]
+
 module ``Map Tests`` =
 
-    [<Test>]
+    [<Fact>]
     let ``Equality should be implemented on map``() =
         // Dev11:19569 - this used to throw an ArgumentException saying Object didn't implement IComparable
     
         let m = Map.ofArray [| 1, obj() |]
-        let testDelegate = TestDelegate (fun _ -> (m = m) |> ignore)
-    
-        Assert.DoesNotThrow testDelegate
+        (m = m) |> ignore

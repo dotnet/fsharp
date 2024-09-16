@@ -1,7 +1,7 @@
 // #Regression #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties 
 // Setter declared using curried syntax
 // Expected: invalid declaration syntax
-//<Expects id="FS0554" span="(9,27-9,35)" status="error">Invalid declaration syntax</Expects>
+
 let mutable globalPt : obj = null
 
 type Pt =

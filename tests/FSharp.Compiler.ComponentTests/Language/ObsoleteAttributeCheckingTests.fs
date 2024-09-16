@@ -7,7 +7,7 @@ open FSharp.Test.Compiler
 module ObsoleteAttributeCheckingTests =
     
     [<Fact>]
-    let ``Obsolete attribute is not taken into account when used on on a member and and instantiate the type`` () =
+    let ``Obsolete attribute is not taken into account when used on on a member and instantiate the type`` () =
         Fsx """
 open System
 
@@ -468,7 +468,7 @@ type ButtonExtensions =
         ]
 
     [<Fact>]
-    let ``Obsolete attribute is taken into account when used on an module and set property via module using an extension method`` () =
+    let ``Obsolete attribute is taken into account when used on a module and set property via module using an extension method`` () =
         Fsx """
 open System
 open System.Runtime.CompilerServices
@@ -495,7 +495,7 @@ type ButtonExtensions =
         ]
 
     [<Fact>]
-    let ``Obsolete attribute is taken into account when used on an module and function and set property via module using an extesnion method`` () =
+    let ``Obsolete attribute is taken into account when used on a module and function and set property via module using an extension method`` () =
         Fsx """
 open System
 open System.Runtime.CompilerServices
@@ -523,7 +523,7 @@ type ButtonExtensions =
         ]
 
     [<Fact>]
-    let ``Obsolete attribute is taken into account when used on an moudle function and set property via module using an extesnion method`` () =
+    let ``Obsolete attribute is taken into account when used on a module function and set property via module using an extension method`` () =
         Fsx """
 open System
 open System.Runtime.CompilerServices

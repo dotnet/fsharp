@@ -53,7 +53,7 @@ let GetMuTrajectory (table:PlayerRecord array) =
 let GetTrueSkillTrajectory 	(table:PlayerRecord array) =
 	table |> Array.map ( fun player -> player.TrueSkill )
 	
-/// Get (Bungie) Level tranjectory from specified table
+/// Get (Bungie) Level trajectory from specified table
 let GetLevelTrajectory (table:PlayerRecord array) = 
 	table |> Array.map ( fun player -> player.Level !k1 !k2 k3  )
 
@@ -73,7 +73,7 @@ let CreatePlayerCheckBox (toolTip:ToolTip) (player:PlayerRecord) eventHandler =
 	toolTip.SetToolTip(box, tipText); 
 	box
 
-// Create eventHanlder here
+// Create eventHandler here
 let CheckBoxEventHandler (selected:List<string>) f =
 		let eventHandler (sender:obj) (e:EventArgs) = 
 		let checkBox = sender :?> CheckBox in 

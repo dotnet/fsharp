@@ -99,7 +99,10 @@ module internal MetadataAsSource =
             ErrorHandler.ThrowOnFailure(windowFrame.SetProperty(int __VSFPROPID5.VSFPROPID_OverrideToolTip, name))
             |> ignore
 
-        windowFrame.Show() |> ignore
+        // This is commented out as a temporary fix for https://github.com/dotnet/fsharp/issues/17230
+        // With the new IFindDefinitionService interface we don't need to manipulate VS text windows directly.
+
+        // windowFrame.Show() |> ignore
 
         let textContainer = textBuffer.AsTextContainer()
         let mutable workspace = Unchecked.defaultof<_>

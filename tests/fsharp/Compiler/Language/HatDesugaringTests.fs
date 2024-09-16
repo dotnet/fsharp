@@ -1,13 +1,12 @@
 ﻿namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 open FSharp.Compiler.Diagnostics
 
-[<TestFixture; SetUICulture("en-US"); SetCulture("en-US")>]
 module HatDesugaringTests =
 
-    [<Test>]
+    [<Fact>]
     let ``Hat operator should be overloadable in infix context``() =
         CompilerAssert.CompileExeAndRunWithOptions(
             [| "--langversion:preview" |],
@@ -21,7 +20,7 @@ if 1 ^ 2 <> 3 then failwithf "expected result to be 3 but got %i" (1 ^ 2)
 Console.WriteLine()
             """)
     
-    [<Test>]
+    [<Fact>]
     let ``Reverse slicing should work with overloaded infix hat``() =
         CompilerAssert.CompileExeAndRunWithOptions(
             [| "--langversion:preview" |],
@@ -35,7 +34,7 @@ if result <> [1;2] then failwithf "expected result to be [1;2] but got %A" resul
 Console.WriteLine()
             """)
 
-    [<Test>]
+    [<Fact>]
     let ``At operator should not be usable in prefix context``() =
         CompilerAssert.ParseWithErrors
            ("""
@@ -47,7 +46,7 @@ let x = @1
                 FSharpDiagnosticSeverity.Error, 1208, (4,9,4,10), "Invalid prefix operator"
             |]
 
-    [<Test>]
+    [<Fact>]
     let ``Hat operator should not be overloadable as prefix operator``() = 
         CompilerAssert.ParseWithErrors
             """
@@ -60,7 +59,7 @@ let (~^) (x: int) (y:int) = x + y
                 FSharpDiagnosticSeverity.Error, 1208, (5,6,5,8), "Invalid operator definition. Prefix operator definitions must use a valid prefix operator name.";
             |]
 
-    [<Test>]
+    [<Fact>]
     let ``Reverse slicing should not work with at symbol in 1st slice index``() =
         CompilerAssert.ParseWithErrors
            ("""
@@ -74,7 +73,7 @@ Console.WriteLine(list[@1..])
                 FSharpDiagnosticSeverity.Error, 1208, (6,24,6,25), "Invalid prefix operator"
             |]
 
-    [<Test>]
+    [<Fact>]
     let ``Reverse slicing should not work with at symbol in 2nd slice index``() =
         CompilerAssert.ParseWithErrors
            ("""
@@ -88,7 +87,7 @@ Console.WriteLine(list[..@1])
                 FSharpDiagnosticSeverity.Error, 1208, (6,24,6,27), "Invalid prefix operator"
             |]
 
-    [<Test>]
+    [<Fact>]
     let ``Reverse slicing should not work with at symbol in both slice index``() =
         CompilerAssert.ParseWithErrors
            ("""
@@ -103,7 +102,7 @@ Console.WriteLine(list[@1..@1])
                 FSharpDiagnosticSeverity.Error, 1208, (6,28,6,29), "Invalid prefix operator"
             |]
 
-    [<Test>]
+    [<Fact>]
     let ``Reverse indexing should not work with at symbol``() =
         CompilerAssert.ParseWithErrors
            ("""

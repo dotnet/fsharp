@@ -2,11 +2,10 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Compiler.Diagnostics
 open FSharp.Test
 
-[<TestFixture>]
 module StringInterpolationTests =
 
     let SimpleCheckTest text =
@@ -18,7 +17,7 @@ let check msg a b =
 
 """ + text))
 
-    [<Test>]
+    [<Fact>]
     let ``Basic string interpolation`` () =
         SimpleCheckTest
             """
@@ -43,7 +42,7 @@ check "basic-string-interp9" $"{1}
 2"
             """
 
-    [<Test>]
+    [<Fact>]
     let ``Neighbouring specifiers for string interpolation`` () =
         SimpleCheckTest
             """
@@ -100,7 +99,7 @@ check "nbr-interp7c" $"this is %d{1}%d{2} %d{3}"  "this is 12 3"
 check "nbr-interp7c" $"this is %d{1}%d{2}"  "this is 12"
             """
 
-    [<Test>]
+    [<Fact>]
     let ``Basic string interpolation verbatim strings`` () =
         SimpleCheckTest
             """
@@ -130,7 +129,7 @@ check "basic-string-interp-verbatim6b" $@"this i\s {1}"  "this i\s 1"
 
             """
 
-    [<Test>]
+    [<Fact>]
     let ``Basic string interpolation triple quote strings`` () =
         SimpleCheckTest
             "
@@ -157,7 +156,7 @@ is {1+1}\"\"\"
 is 2\"\"\"
             "
 
-    [<Test>]
+    [<Fact>]
     let ``String interpolation using atomic expression forms`` () =
         SimpleCheckTest
             """
@@ -180,7 +179,7 @@ check "vcewwei8" $"abc{4%3}def" "abc1def"
             """
 
 
-    [<Test>]
+    [<Fact>]
     let ``String interpolation using nested control flow expressions`` () =
         SimpleCheckTest
             """
@@ -247,7 +246,7 @@ check "vcewweh17" $"abc{while false do ()}def" "abcdef"
 
 
 
-    [<Test>]
+    [<Fact>]
     let ``String interpolation using nested string`` () =
         SimpleCheckTest
             "
@@ -263,7 +262,7 @@ do
 
 "
 
-    [<Test>]
+    [<Fact>]
     let ``Triple quote string interpolation using nested string`` () =
         SimpleCheckTest
             "
@@ -283,7 +282,7 @@ for(i=0;i<100;++i) {
 }\"\"\"
 "
 
-    [<Test>]
+    [<Fact>]
     let ``Mixed quote string interpolation using nested string`` () =
         SimpleCheckTest
             "
@@ -311,7 +310,7 @@ check \"vcewweh22n2\"
     END;\"\"\"
 "
 
-    [<Test>]
+    [<Fact>]
     let ``String interpolation to FormattableString`` () =
         SimpleCheckTest
             """
@@ -340,7 +339,7 @@ check "fwejwflpej17" (fmt_de $"abc {30000,-10:N2} def {40000:N2} hij") "abc 30.0
 
             """
 
-    [<Test>]
+    [<Fact>]
     let ``String interpolation to IFormattable`` () =
         SimpleCheckTest
             """
@@ -369,7 +368,7 @@ check "fwejwflpej17" (fmt_de $"abc {30000,-10:N2} def {40000:N2} hij") "abc 30.0
 
             """
 
-    [<Test>]
+    [<Fact>]
     let ``String interpolation to PrintFormat`` () =
         SimpleCheckTest
             """
@@ -389,7 +388,7 @@ check "fwejwflpej4" (sb.ToString()) "0abcabc1"
             """
 
 
-    [<Test>]
+    [<Fact>]
     let ``String interpolation using .NET Formats`` () =
         SimpleCheckTest
             """
@@ -404,7 +403,7 @@ check "vcewweh225u" $"abc %5d{1}" "abc     1"
 check "vcewweh225u" $"abc %-5d{1}" "abc 1    "
             """
 
-    [<Test>]
+    [<Fact>]
     let ``String interpolation of null`` () =
         SimpleCheckTest
             """
@@ -415,7 +414,7 @@ check "vcewweh221q3" $"abc %s{null}" "abc "
 check "vcewweh221q4" $"abc %s{null} def" "abc  def"
             """
 
-    [<Test>]
+    [<Fact>]
     let ``String interpolation of basic types`` () =
         SimpleCheckTest
             """
@@ -450,7 +449,7 @@ check "vcewweh221q1l" $"%d{1un}" "1"
 
 check "vcewweh221q1" $"%f{1.0}" "1.000000"
             """
-    [<Test>]
+    [<Fact>]
     let ``String interpolation using escaped braces`` () =
         SimpleCheckTest
             """
@@ -463,7 +462,7 @@ check "vcewweh228d" "{{" "{{"
 check "vcewweh229f" "}}" "}}"
             """
 
-    [<Test>]
+    [<Fact>]
     let ``String interpolation using verbatim strings`` () =
         SimpleCheckTest
             """
@@ -477,7 +476,7 @@ check "vcewweh229f" "}}" "}}"
             """
 
 
-    [<Test>]
+    [<Fact>]
     let ``String interpolation using record data`` () =
         SimpleCheckTest
             """
@@ -507,7 +506,7 @@ check "vcewweh21" $"abc{{X=1; Y=2}}def" "abc{X=1; Y=2}def"
             """
 
 
-    [<Test>]
+    [<Fact>]
     let ``String interpolation using printf formats`` () =
         SimpleCheckTest
             """
@@ -538,23 +537,23 @@ check "vcewweh22g" $"x = %A{s}" "x = \"sixsix\""
 check "vcewweh20" $"x = %A{1}" "x = 1"
 
             """
-    [<Test>]
+    [<Fact>]
     let ``%B fails for langVersion 5.0`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:5.0" |]
             """printf "%B" 10"""
             [|(FSharpDiagnosticSeverity.Error, 3350, (1, 8, 1, 12),
                    "Feature 'binary formatting for integers' is not available in F# 5.0. Please use language version 6.0 or greater.")|]
-    [<Test>]
+    [<Fact>]
     let ``%B succeeds for langVersion preview`` () =
         CompilerAssert.CompileExeAndRunWithOptions(
-            [| "--langversion:preview" |],
+            [| |],
             """
 let check msg a b = 
     if a = b then printfn "test case '%s' succeeded" msg else failwithf "test case '%s' failed, expected %A, got %A" msg b a
 check "vcewweh22a" $"x = %B{19}" "x = 10011"
         """)
 
-    [<Test>]
+    [<Fact>]
     let ``String interpolation using list and array data`` () =
         SimpleCheckTest
             """
@@ -581,7 +580,7 @@ check "vcewweh22k" $"x = %0A{[|0..100|]} " "x = [|0; 1; 2; 3; 4; 5; 6; 7; 8; 9; 
             """
 
 
-    [<Test>]
+    [<Fact>]
     let ``Quotations of interpolation`` () =
         SimpleCheckTest
             """
@@ -590,14 +589,14 @@ check "vcewweh1"
     "Call (None, PrintFormatToString,      [NewObject (PrintfFormat`5, Value (this %P() is 2),                  NewArray (Object, Call (None, Box, [Value (1)])),                  Value (<null>))])"
             """
 
-    [<Test>]
+    [<Fact>]
     let ``Quotations in interpolation`` () =
         SimpleCheckTest
             """
 check "check-quotation1" $"this {<@ 1 @>} is 2" "this Value (1) is 2"
             """
 
-    [<Test>]
+    [<Fact>]
     let ``Object expression in interpolation`` () =
         SimpleCheckTest
             """
@@ -606,7 +605,7 @@ check "check-object-expression-in-interpolation1"
     "this AA is 2"
             """
 
-    [<Test>]
+    [<Fact>]
     let ``Exception handling in interpolation`` () =
         SimpleCheckTest
             """
@@ -615,7 +614,7 @@ check "check-object-expression-in-interpolation1"
     "this AA is 2"
             """
 
-    [<Test>]
+    [<Fact>]
     let ``String interpolation using anonymous records`` () =
         SimpleCheckTest
             """
@@ -625,7 +624,7 @@ check "vcewweh23" $"abc{({| A=1 |})}def" "abc{ A = 1 }def"
             """
 
 
-    [<Test>]
+    [<Fact>]
     let ``Basic string interpolation (4.7)`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:4.7" |]
             """
@@ -635,7 +634,7 @@ let x = $"one"
                    "Feature 'string interpolation' is not available in F# 4.7. Please use language version 5.0 or greater.")|]
 
 
-    [<Test>]
+    [<Fact>]
     let ``Basic string interpolation negative`` () =
         let code =    """
 let x1 = $"one %d{System.String.Empty}" // mismatched types
@@ -643,9 +642,9 @@ let x2 = $"one %s{1}" // mismatched types
 let x3 = $"one %s" // naked percent in interpolated
 let x4 = $"one %d" // naked percent in interpolated
 let x5 = $"one %A" // naked percent in interpolated
-let x6 = $"one %P" // interpolation hole marker in interploation
-let x7 = $"one %P()" // interpolation hole marker in interploation
-let x8 = $"one %P(){1}" // interpolation hole marker in interploation
+let x6 = $"one %P" // interpolation hole marker in interpolation
+let x7 = $"one %P()" // interpolation hole marker in interpolation
+let x8 = $"one %P(){1}" // interpolation hole marker in interpolation
 let x9 = $"one %f" // naked percent in interpolated
 let xa = $"one %d{3:N}" // mix of formats
 let xc = $"5%6" // bad F# format specifier
@@ -712,7 +711,7 @@ let xd = $"%A{  }" // empty expression
                "Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.")
             |]
 
-    [<Test>]
+    [<Fact>]
     let ``String interpolation FormattableString negative`` () =
         let code =    """
 
@@ -731,7 +730,7 @@ let x3 : FormattableString = $"one %10s{String.Empty}" // no %10s in Formattable
                "Invalid interpolated string. Interpolated strings used as type IFormattable or type FormattableString may not use '%' specifiers, only .NET-style interpolands such as '{expr}', '{expr,3}' or '{expr:N5}' may be used.")|]
 
 
-    [<Test>]
+    [<Fact>]
     let ``String interpolation negative nested in single`` () =
         let code =    """
 
@@ -767,7 +766,7 @@ let s9 = @$"123{456}789{$@"012"}345"
               (FSharpDiagnosticSeverity.Error, 3373, (12, 25, 12, 28),
                "Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal.")|]
 
-    [<Test>]
+    [<Fact>]
     let ``String interpolation negative nested in triple`` () =
         let code =    "
 
@@ -794,7 +793,7 @@ let TripleInterpolatedInVerbatimInterpolated = $\"123{456}789{$\"\"\"012\"\"\"}3
               (FSharpDiagnosticSeverity.Error, 3374, (9, 62, 9, 66),
                "Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.")|]
   
-    [<Test>]
+    [<Fact>]
     let ``String interpolation negative incomplete string`` () =
         let code =    """let x1 = $"one %d{System.String.Empty}"""
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:5.0" |]
@@ -804,7 +803,7 @@ let TripleInterpolatedInVerbatimInterpolated = $\"123{456}789{$\"\"\"012\"\"\"}3
               (FSharpDiagnosticSeverity.Error, 3379, (1, 38, 1, 39),
                "Incomplete interpolated string begun at or before here")|]
   
-    [<Test>]
+    [<Fact>]
     let ``String interpolation negative incomplete string fill`` () =
         let code =    """let x1 = $"one %d{System.String.Empty"""
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:5.0" |]
@@ -814,7 +813,7 @@ let TripleInterpolatedInVerbatimInterpolated = $\"123{456}789{$\"\"\"012\"\"\"}3
               (FSharpDiagnosticSeverity.Error, 3378, (1, 18, 1, 19),
                "Incomplete interpolated string expression fill begun at or before here")|]
   
-    [<Test>]
+    [<Fact>]
     let ``String interpolation negative incomplete verbatim string`` () =
         let code =    """let x1 = @$"one %d{System.String.Empty} """
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:5.0" |]
@@ -824,7 +823,7 @@ let TripleInterpolatedInVerbatimInterpolated = $\"123{456}789{$\"\"\"012\"\"\"}3
               (FSharpDiagnosticSeverity.Error, 3380, (1, 39, 1, 40),
                "Incomplete interpolated verbatim string begun at or before here")|]
   
-    [<Test>]
+    [<Fact>]
     let ``String interpolation negative incomplete triple quote string`` () =
         let code = "let x1 = $\"\"\"one"
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:5.0" |]
@@ -838,7 +837,7 @@ let TripleInterpolatedInVerbatimInterpolated = $\"123{456}789{$\"\"\"012\"\"\"}3
               (FSharpDiagnosticSeverity.Error, 3381, (1, 10, 1, 14),
                "Incomplete interpolated triple-quote string begun at or before here")|]
 
-    [<Test>]
+    [<Fact>]
     let ``String interpolation extra right brace single quote`` () =
         let code = "let x1 = $\"}\""
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:5.0" |]
@@ -846,7 +845,7 @@ let TripleInterpolatedInVerbatimInterpolated = $\"123{456}789{$\"\"\"012\"\"\"}3
             [|(FSharpDiagnosticSeverity.Error, 3383, (1, 10, 1, 14),
                "A '}' character must be escaped (by doubling) in an interpolated string.")|]
 
-    [<Test>]
+    [<Fact>]
     let ``String interpolation extra right brace verbatim`` () =
         let code = "let x1 = @$\"}\""
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:5.0" |]
@@ -854,7 +853,7 @@ let TripleInterpolatedInVerbatimInterpolated = $\"123{456}789{$\"\"\"012\"\"\"}3
             [|(FSharpDiagnosticSeverity.Error, 3383, (1, 10, 1, 15),
                "A '}' character must be escaped (by doubling) in an interpolated string.")|]
 
-    [<Test>]
+    [<Fact>]
     let ``String interpolation extra right brace triple`` () =
         let code = "let x1 = $\"\"\"}\"\"\""
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:5.0" |]
@@ -862,7 +861,7 @@ let TripleInterpolatedInVerbatimInterpolated = $\"123{456}789{$\"\"\"012\"\"\"}3
             [|(FSharpDiagnosticSeverity.Error, 3383, (1, 10, 1, 18),
                "A '}' character must be escaped (by doubling) in an interpolated string.")|]
 
-    [<Test>]
+    [<Fact>]
     let ``String interpolation extra right brace single quote with hole`` () =
         let code = "let x1 = $\"{0}}\""
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:5.0" |]
@@ -870,7 +869,7 @@ let TripleInterpolatedInVerbatimInterpolated = $\"123{456}789{$\"\"\"012\"\"\"}3
             [|(FSharpDiagnosticSeverity.Error, 3383, (1, 14, 1, 17),
                "A '}' character must be escaped (by doubling) in an interpolated string.")|]
 
-    [<Test>]
+    [<Fact>]
     let ``String continuation character gives right ranges`` () =
         let code = "let x1 = \"hello \\\n     world\", foo"
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| |]

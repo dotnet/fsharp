@@ -784,7 +784,7 @@ module Test4343e =
     val dB: D<int> = D(2)
     val dAB: D<int> * D<int> * D<int> list = (D(1), D(2), [D(1); D(2)])
     val dC: D<bool> = D(True)
-    val boxed_dABC: obj list = [D(1); D(2); D(True)]
+    val boxed_dABC: objnull list = [D(1); D(2); D(True)]
 type F1 =
   inherit System.Windows.Forms.Form
   interface System.IDisposable
@@ -1925,7 +1925,7 @@ type System.Int32 with
 
 > val f: ``parameter with spaces in name`` : int -> int
 
-> val functionWhichTakesAParameterPeeciselyPlusButNotOpAddition:
+> val functionWhichTakesAParameterPreciselyPlusButNotOpAddition:
   ``+`` : (int -> int -> int) -> int
 
 > val functionWhichTakesAParameterOpAddition: (+) : (int -> int -> int) -> int

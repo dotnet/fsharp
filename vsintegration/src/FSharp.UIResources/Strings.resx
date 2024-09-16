@@ -306,13 +306,13 @@
   <data name="Transparent_Compiler_Snapshot_Reuse" xml:space="preserve">
     <value>Create new project snapshots from existing ones</value>
   </data>
-  <data name="TransparentCompiler_Discalimer1" xml:space="preserve">
+  <data name="TransparentCompiler_Disclaimer1" xml:space="preserve">
     <value>WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</value>
   </data>
-  <data name="TransparentCompiler_Discalimer2" xml:space="preserve">
+  <data name="TransparentCompiler_Disclaimer2" xml:space="preserve">
     <value>Use at your own risk!</value>
   </data>
-  <data name="TransparentCompiler_Discalimer3" xml:space="preserve">
+  <data name="TransparentCompiler_Disclaimer3" xml:space="preserve">
     <value>By checking this you also opt-in for additional performance telemetry</value>
   </data>
 </root>

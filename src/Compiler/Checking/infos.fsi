@@ -178,13 +178,19 @@ type ILTypeInfo =
 
     member TypeInstOfRawMetadata: TypeInst
 
+[<NoComparison; NoEquality>]
+type ILMethParentTypeInfo =
+    | IlType of ILTypeInfo
+    | CSharpStyleExtension of declaring: TyconRef * apparent: TType
+
+    member ToType: TType
+
 /// Describes an F# use of an IL method.
 [<NoComparison; NoEquality>]
 type ILMethInfo =
     | ILMethInfo of
         g: TcGlobals *
-        ilApparentType: TType *
-        ilDeclaringTyconRefOpt: TyconRef option *
+        ilType: ILMethParentTypeInfo *
         ilMethodDef: ILMethodDef *
         ilGenericMethodTyArgs: Typars
 
@@ -278,7 +284,7 @@ type ILMethInfo =
     /// Any type parameters of the enclosing type are instantiated in the type returned.
     member GetParamNamesAndTypes: amap: ImportMap * m: range * minst: TType list -> ParamNameAndType list
 
-    /// Get the argument types of the the IL method. If this is an C#-style extension method
+    /// Get the argument types of the IL method. If this is an C#-style extension method
     /// then drop the object argument.
     member GetParamTypes: amap: ImportMap * m: range * minst: TType list -> TType list
 
@@ -307,6 +313,9 @@ type MethInfo =
 
     /// Describes a use of a method backed by Abstract IL # metadata
     | ILMeth of tcGlobals: TcGlobals * ilMethInfo: ILMethInfo * extensionMethodPriority: ExtensionMethodPriority option
+
+    /// A pseudo-method used by F# typechecker to treat Object.ToString() of known types as returning regular string, not `string?` as in the BCL
+    | MethInfoWithModifiedReturnType of original: MethInfo * modifiedReturnType: TType
 
     /// Describes a use of a pseudo-method corresponding to the default constructor for a .NET struct type
     | DefaultStructCtor of tcGlobals: TcGlobals * structTy: TType
@@ -438,7 +447,7 @@ type MethInfo =
     /// Receiver must be a struct type.
     member IsReadOnly: bool
 
-    /// Indicates, wheter this method has `IsExternalInit` modreq.
+    /// Indicates, whether this method has `IsExternalInit` modreq.
     member HasExternalInit: bool
 
     /// Indicates if the enclosing type for the method is a value type.
@@ -721,7 +730,7 @@ type ILPropInfo =
     /// Get the declaring IL type of the IL property, including any generic instantiation
     member ILTypeInfo: ILTypeInfo
 
-    /// Is the property requied (has the RequiredMemberAttribute).
+    /// Is the property required (has the RequiredMemberAttribute).
     member IsRequired: bool
 
     /// Indicates if the IL property is logically a 'newslot', i.e. hides any previous slots of the same name.
@@ -816,10 +825,16 @@ type PropInfo =
     /// Indicates if this property has an associated setter method.
     member HasSetter: bool
 
-    /// Indidcates whether IL property has an init-only setter (i.e. has the `System.Runtime.CompilerServices.IsExternalInit` modifer)
+    member GetterAccessibility: Accessibility option
+
+    member SetterAccessibility: Accessibility option
+
+    member IsProtectedAccessibility: struct (bool * bool)
+
+    /// Indicates whether IL property has an init-only setter (i.e. has the `System.Runtime.CompilerServices.IsExternalInit` modifier)
     member IsSetterInitOnly: bool
 
-    /// Is the property requied (has the RequiredMemberAttribute).
+    /// Is the property required (has the RequiredMemberAttribute).
     member IsRequired: bool
 
     member ImplementedSlotSignatures: SlotSig list

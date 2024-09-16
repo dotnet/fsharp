@@ -88,7 +88,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
 
                 /// <summary>
-                /// The IDispose interface Dispose method for disposing the object determinastically.
+                /// The IDispose interface Dispose method for disposing the object deterministically.
                 /// </summary>
                 public void Dispose()
                 {
@@ -105,7 +105,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         // Everybody can go here.
                         if (!this.isDisposed)
                         {
-                                // Synchronize calls to the Dispose simulteniously.
+                                // Synchronize calls to the Dispose simultaneously.
                                 lock (Mutex)
                                 {
                                     if (!this.isDisposed)
@@ -311,7 +311,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
 
                 /// <summary>
-                /// Retrives data from a VS format.
+                /// Retrieves data from a VS format.
                 /// </summary>
                 public static List<string> GetDroppedFiles(ushort format, Microsoft.VisualStudio.OLE.Interop.IDataObject dataObject, out DropDataType ddt)
                 {
@@ -338,11 +338,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                                                         // We are a directory based project thus a projref string is placed on the clipboard.
                                                         // We assign the maximum length of a projref string.
                                                         // The format of a projref is : <Proj Guid>|<project rel path>|<file path>
-                                                        uint lenght = (uint)Guid.Empty.ToString().Length + 2 * NativeMethods.MAX_PATH + 2;
-                                                        char[] moniker = new char[lenght + 1];
+                                                        uint length = (uint)Guid.Empty.ToString().Length + 2 * NativeMethods.MAX_PATH + 2;
+                                                        char[] moniker = new char[length + 1];
                                                         for (uint fileIndex = 0; fileIndex < numFiles; fileIndex++)
                                                         {
-                                                                uint queryFileLength = UnsafeNativeMethods.DragQueryFile(dropInfoHandle, fileIndex, moniker, lenght);
+                                                                uint queryFileLength = UnsafeNativeMethods.DragQueryFile(dropInfoHandle, fileIndex, moniker, length);
                                                                 string filename = new String(moniker, 0, (int)queryFileLength);
                                                                 droppedFiles.Add(filename);
                                                         }
@@ -552,7 +552,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         internal class EnumFORMATETC : IEnumFORMATETC
         {
-                IEnumerable cache; // of DataCacheEntrys.
+                IEnumerable cache; // of DataCacheEntries.
 
                 DATADIR dir;
 

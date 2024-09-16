@@ -118,7 +118,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 return null;
             }
             return UIThread.DoOnUIThread(delegate(){
-                // Get the soulution.
+                // Get the solution.
                 IVsSolution solution = container.ProjectMgr.Site.GetService(typeof(SVsSolution)) as IVsSolution;
                 if (null == solution)
                 {

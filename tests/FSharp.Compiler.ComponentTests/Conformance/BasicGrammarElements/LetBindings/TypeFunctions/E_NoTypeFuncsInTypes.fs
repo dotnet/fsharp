@@ -1,6 +1,7 @@
 // #Regression #Conformance #DeclarationElements #LetBindings #TypeTests 
-// Verify error asssociated with putting type functions inside types
-//<Expects id="FS0671" status="error" span="(6,12)">A property cannot have explicit type parameters\. Consider using a method instead\.$</Expects>
+// Verify error associated with putting type functions inside types
+
 
 type Foo() =
     member this.TypeFunc<'a> = typeof<'a>.Name
+    member this.TypeFunc2<'a, 'b> = typeof<'a>.Name

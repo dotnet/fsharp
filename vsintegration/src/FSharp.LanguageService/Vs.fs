@@ -81,7 +81,7 @@ module internal VsHierarchy =
         let hr, typename = hier.GetProperty(itemid, int32 __VSHPROPID.VSHPROPID_OwnerKey)
         if Com.Succeeded hr then (typename :?> System.String) else System.String.Empty            
         
-    /// All the children itemids ov the given item
+    /// All the children itemids of the given item
     let children (hier:IVsHierarchy) (itemid:uint32) = 
         seq {
             let hr, child = hier.GetProperty(itemid, int32 __VSHPROPID.VSHPROPID_FirstChild)
@@ -151,7 +151,7 @@ module internal VsUserData =
     let vsBufferMoniker = Guid("978A8E17-4DF8-432A-9623-D530A26452BC")
 
     // This is the file name of the buffer.
-    let GetBufferMonker(ud:IVsUserData) : string = 
+    let GetBufferMoniker(ud:IVsUserData) : string = 
         downcast Com.ThrowOnFailure1(ud.GetData(ref vsBufferMoniker))
        
 /// Isolate IVsTextLines as much as possible to ease transition into new editor architecture
@@ -171,7 +171,7 @@ module internal VsTextLines =
     /// Get the filename of the given buffer (via IVsUserData). Not all buffers have a file. This will be an exception.
     let GetFilename(buffer : IVsTextLines) =
         let ud = (box buffer) :?> IVsUserData
-        VsUserData.GetBufferMonker(ud)
+        VsUserData.GetBufferMoniker(ud)
 
     /// Get the string contents of a given buffer (the current snapshot).
     let GetFileContents(buffer: IVsTextBuffer, editorAdaptersFactoryService: IVsEditorAdaptersFactoryService) =

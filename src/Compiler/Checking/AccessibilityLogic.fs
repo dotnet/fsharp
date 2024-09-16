@@ -243,8 +243,8 @@ let IsILEventInfoAccessible g amap m ad einfo =
 
 let private IsILMethInfoAccessible g amap m adType ad ilminfo = 
     match ilminfo with 
-    | ILMethInfo (_, ty, None, mdef, _) -> IsILTypeAndMemberAccessible g amap m adType ad (ILTypeInfo.FromType g ty) mdef.Access 
-    | ILMethInfo (_, _, Some declaringTyconRef, mdef, _) -> IsILMemberAccessible g amap m declaringTyconRef ad mdef.Access
+    | ILMethInfo (_, IlType ty, mdef, _) -> IsILTypeAndMemberAccessible g amap m adType ad ty mdef.Access 
+    | ILMethInfo (_, CSharpStyleExtension(declaring=declaringTyconRef), mdef, _) -> IsILMemberAccessible g amap m declaringTyconRef ad mdef.Access
 
 let GetILAccessOfILPropInfo (ILPropInfo(tinfo, pdef)) =
     let tdef = tinfo.RawMetadata
@@ -256,7 +256,7 @@ let GetILAccessOfILPropInfo (ILPropInfo(tinfo, pdef)) =
         | Some mrefGet, Some mrefSet ->
             //
             // Dotnet properties have a getter and a setter method, each of which can have a separate visibility public, protected, private etc ...
-            // This code computes the visibility for the property by choosing the most visible method. This approximation is usefull for cases
+            // This code computes the visibility for the property by choosing the most visible method. This approximation is useful for cases
             // where the compiler needs to know the visibility of the property.
             // The specific ordering for choosing the most visible is:
             //  ILMemberAccess.Public,
@@ -351,9 +351,10 @@ let CheckILFieldInfoAccessible g amap m ad finfo =
 /// when calling x.SomeMethod() we need to use 'adTyp' do verify that type of x is accessible from C 
 /// and 'ad' to determine accessibility of SomeMethod.
 /// I.e when calling x.Public() and x.Protected() -in both cases first check should succeed and second - should fail in the latter one. 
-let IsTypeAndMethInfoAccessible amap m accessDomainTy ad = function
+let rec IsTypeAndMethInfoAccessible amap m accessDomainTy ad = function
     | ILMeth (g, x, _) -> IsILMethInfoAccessible g amap m accessDomainTy ad x 
     | FSMeth (_, _, vref, _) -> IsValAccessible ad vref
+    | MethInfoWithModifiedReturnType(mi,_) -> IsTypeAndMethInfoAccessible amap m accessDomainTy ad mi
     | DefaultStructCtor(g, ty) -> IsTypeAccessible g amap m ad ty
 #if !NO_TYPEPROVIDERS
     | ProvidedMeth(amap, tpmb, _, m) as etmi -> 

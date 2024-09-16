@@ -16,7 +16,8 @@ let should (f : 'a -> #Constraint) x (y : obj) =
 let equal x = EqualConstraint(x)
 
 /// like "should equal", but validates same-type
-let shouldEqual (x: 'a) (y: 'a) = Assert.AreEqual(x, y, sprintf "Expected: %A\nActual: %A" x y)
+let shouldEqual (x: 'a) (y: 'a) =
+    Assert.AreEqual(x, y, sprintf "Expected: %A\nActual: %A" x y)
 
 /// Same as 'shouldEqual' but goes pairwise over the collections. Lengths must be equal.
 let shouldPairwiseEqual (x: seq<_>) (y: seq<_>) =

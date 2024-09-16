@@ -33,7 +33,7 @@ namespace MyNamespace
 
         let fsharpSource =
             """
-let loss2 = MyNamespace.OoterClass.InnerClass.MoreInnerClass.somefunction()   //Note the miss-typed functionname we expect a good error message
+let loss2 = MyNamespace.OoterClass.InnerClass.MoreInnerClass.somefunction()   //Note the mistyped functionname we expect a good error message
 """
         FSharp fsharpSource
         |> asExe
@@ -47,21 +47,21 @@ let loss2 = MyNamespace.OoterClass.InnerClass.MoreInnerClass.somefunction()   //
 
         let fsharpSource =
             """
-let loss2 = MyNamespace.OuterClass.InerClass.MoreInnerClass.somefunction()   //Note the miss-typed InnerClass name we expect a good error message
+let loss2 = MyNamespace.OuterClass.InnerClass_.MoreInnerClass.somefunction()   //Note the mistyped InnerClass name we expect a good error message
 """
         FSharp fsharpSource
         |> asExe
         |> withReferences [cslib]
         |> compile
         |> shouldFail
-        |> withSingleDiagnostic (Error 39, Line 2, Col 36, Line 2, Col 45, "The type 'OuterClass' does not define the field, constructor or member 'InerClass'.")
+        |> withSingleDiagnostic (Error 39, Line 2, Col 36, Line 2, Col 47, "The type 'OuterClass' does not define the field, constructor or member 'InnerClass_'.")
 
     [<Fact>]
     let ``Missing type nested type moreinnerclass generates good message and range`` () =
 
         let fsharpSource =
             """
-let loss2 = MyNamespace.OuterClass.InnerClass.MoareInnerClass.somefunction()   //Note the miss-typed MoreInnerClass we expect a good error message
+let loss2 = MyNamespace.OuterClass.InnerClass.MoareInnerClass.somefunction()   //Note the mistyped MoreInnerClass we expect a good error message
 """
         FSharp fsharpSource
         |> asExe
@@ -75,12 +75,12 @@ let loss2 = MyNamespace.OuterClass.InnerClass.MoareInnerClass.somefunction()   /
 
         let fsharpSource =
             """
-let loss2 = MyNamespace.OuterClass.InnerClass.MoreInnerClass.somefunctoion()   //Note the miss-typed somefunction we expect a good error message
+let loss2 = MyNamespace.OuterClass.InnerClass.MoreInnerClass.somefunction_()   //Note the mistyped somefunction we expect a good error message
 """
         FSharp fsharpSource
         |> asExe
         |> withReferences [cslib]
         |> compile
         |> shouldFail
-        |> withSingleDiagnostic ((Error 39, Line 2, Col 62, Line 2, Col 75, """The type 'MoreInnerClass' does not define the field, constructor or member 'somefunctoion'. Maybe you want one of the following:
+        |> withSingleDiagnostic ((Error 39, Line 2, Col 62, Line 2, Col 75, """The type 'MoreInnerClass' does not define the field, constructor or member 'somefunction_'. Maybe you want one of the following:
    somefunction"""))

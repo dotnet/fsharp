@@ -199,6 +199,76 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                 return None
         }
 
+    member _.TryGetExternalDeclarationAsync(targetSymbolUse: FSharpSymbolUse, metadataReferences: seq<MetadataReference>) =
+        let textOpt =
+            match targetSymbolUse.Symbol with
+            | :? FSharpEntity as symbol -> symbol.TryGetMetadataText() |> Option.map (fun text -> text, symbol.DisplayName)
+            | :? FSharpMemberOrFunctionOrValue as symbol ->
+                symbol.ApparentEnclosingEntity.TryGetMetadataText()
+                |> Option.map (fun text -> text, symbol.ApparentEnclosingEntity.DisplayName)
+            | :? FSharpField as symbol ->
+                match symbol.DeclaringEntity with
+                | Some entity ->
+                    let text = entity.TryGetMetadataText()
+
+                    match text with
+                    | Some text -> Some(text, entity.DisplayName)
+                    | None -> None
+                | None -> None
+            | :? FSharpUnionCase as symbol ->
+                symbol.DeclaringEntity.TryGetMetadataText()
+                |> Option.map (fun text -> text, symbol.DisplayName)
+            | _ -> None
+
+        match textOpt with
+        | None -> CancellableTask.singleton None
+        | Some(text, fileName) ->
+            foregroundCancellableTask {
+                let! cancellationToken = CancellableTask.getCancellationToken ()
+                do! ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken)
+
+                let tmpProjInfo, tmpDocInfo =
+                    MetadataAsSource.generateTemporaryDocument (
+                        AssemblyIdentity(targetSymbolUse.Symbol.Assembly.QualifiedName),
+                        fileName,
+                        metadataReferences
+                    )
+
+                let tmpShownDocOpt =
+                    metadataAsSource.ShowDocument(tmpProjInfo, tmpDocInfo.FilePath, SourceText.From(text.ToString()))
+
+                match tmpShownDocOpt with
+                | ValueNone -> return None
+                | ValueSome tmpShownDoc ->
+                    let! _, checkResults = tmpShownDoc.GetFSharpParseAndCheckResultsAsync("NavigateToExternalDeclaration")
+
+                    let r =
+                        // This tries to find the best possible location of the target symbol's location in the metadata source.
+                        // We really should rely on symbol equality within FCS instead of doing it here,
+                        //     but the generated metadata as source isn't perfect for symbol equality.
+                        let symbols = checkResults.GetAllUsesOfAllSymbolsInFile(cancellationToken)
+
+                        symbols
+                        |> Seq.tryFindV (tryFindExternalSymbolUse targetSymbolUse)
+                        |> ValueOption.map (fun x -> x.Range)
+
+                    let! span =
+                        cancellableTask {
+                            let! cancellationToken = CancellableTask.getCancellationToken ()
+
+                            match r with
+                            | ValueNone -> return TextSpan.empty
+                            | ValueSome r ->
+                                let! text = tmpShownDoc.GetTextAsync(cancellationToken)
+
+                                match RoslynHelpers.TryFSharpRangeToTextSpan(text, r) with
+                                | ValueSome span -> return span
+                                | _ -> return TextSpan.empty
+                        }
+
+                    return Some(FSharpGoToDefinitionNavigableItem(tmpShownDoc, span) :> FSharpNavigableItem)
+            }
+
     /// Helper function that is used to determine the navigation strategy to apply, can be tuned towards signatures or implementation files.
     member private _.FindSymbolHelper(originDocument: Document, originRange: range, sourceText: SourceText, preferSignature: bool) =
         let originTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, originRange)
@@ -389,8 +459,8 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                             let metadataReferences = originDocument.Project.MetadataReferences
                             return ValueSome(FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences), idRange)
                         else if
-                            // if goto definition is called at we are alread at the declaration location of a symbol in
-                            // either a signature or an implementation file then we jump to it's respective postion in thethe
+                            // if goto definition is called as we are already at the declaration location of a symbol in
+                            // either a signature or an implementation file then we jump to its respective position in the document
                             lexerSymbol.Range = targetRange
                         then
                             // jump from signature to the corresponding implementation
@@ -516,7 +586,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
     member this.FindDefinitionAsync(originDocument: Document, position: int) =
         this.FindDefinitionAtPosition(originDocument, position)
 
-    /// Navigate to the positon of the textSpan in the provided document
+    /// Navigate to the position of the textSpan in the provided document
     /// used by quickinfo link navigation when the tooltip contains the correct destination range.
     member _.TryNavigateToTextSpan(document: Document, textSpan: TextSpan, cancellationToken: CancellationToken) =
         let navigableItem = FSharpGoToDefinitionNavigableItem(document, textSpan)
@@ -566,75 +636,13 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
         }
 
     member this.NavigateToExternalDeclarationAsync(targetSymbolUse: FSharpSymbolUse, metadataReferences: seq<MetadataReference>) =
-        let textOpt =
-            match targetSymbolUse.Symbol with
-            | :? FSharpEntity as symbol -> symbol.TryGetMetadataText() |> Option.map (fun text -> text, symbol.DisplayName)
-            | :? FSharpMemberOrFunctionOrValue as symbol ->
-                symbol.ApparentEnclosingEntity.TryGetMetadataText()
-                |> Option.map (fun text -> text, symbol.ApparentEnclosingEntity.DisplayName)
-            | :? FSharpField as symbol ->
-                match symbol.DeclaringEntity with
-                | Some entity ->
-                    let text = entity.TryGetMetadataText()
+        foregroundCancellableTask {
+            let! cancellationToken = CancellableTask.getCancellationToken ()
 
-                    match text with
-                    | Some text -> Some(text, entity.DisplayName)
-                    | None -> None
-                | None -> None
-            | :? FSharpUnionCase as symbol ->
-                symbol.DeclaringEntity.TryGetMetadataText()
-                |> Option.map (fun text -> text, symbol.DisplayName)
-            | _ -> None
-
-        match textOpt with
-        | None -> CancellableTask.singleton false
-        | Some(text, fileName) ->
-            foregroundCancellableTask {
-                let! cancellationToken = CancellableTask.getCancellationToken ()
-                do! ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken)
-
-                let tmpProjInfo, tmpDocInfo =
-                    MetadataAsSource.generateTemporaryDocument (
-                        AssemblyIdentity(targetSymbolUse.Symbol.Assembly.QualifiedName),
-                        fileName,
-                        metadataReferences
-                    )
-
-                let tmpShownDocOpt =
-                    metadataAsSource.ShowDocument(tmpProjInfo, tmpDocInfo.FilePath, SourceText.From(text.ToString()))
-
-                match tmpShownDocOpt with
-                | ValueNone -> return false
-                | ValueSome tmpShownDoc ->
-                    let! _, checkResults = tmpShownDoc.GetFSharpParseAndCheckResultsAsync("NavigateToExternalDeclaration")
-
-                    let r =
-                        // This tries to find the best possible location of the target symbol's location in the metadata source.
-                        // We really should rely on symbol equality within FCS instead of doing it here,
-                        //     but the generated metadata as source isn't perfect for symbol equality.
-                        let symbols = checkResults.GetAllUsesOfAllSymbolsInFile(cancellationToken)
-
-                        symbols
-                        |> Seq.tryFindV (tryFindExternalSymbolUse targetSymbolUse)
-                        |> ValueOption.map (fun x -> x.Range)
-
-                    let! span =
-                        cancellableTask {
-                            let! cancellationToken = CancellableTask.getCancellationToken ()
-
-                            match r with
-                            | ValueNone -> return TextSpan.empty
-                            | ValueSome r ->
-                                let! text = tmpShownDoc.GetTextAsync(cancellationToken)
-
-                                match RoslynHelpers.TryFSharpRangeToTextSpan(text, r) with
-                                | ValueSome span -> return span
-                                | _ -> return TextSpan.empty
-                        }
-
-                    let navItem = FSharpGoToDefinitionNavigableItem(tmpShownDoc, span)
-                    return this.NavigateToItem(navItem, cancellationToken)
-            }
+            match! this.TryGetExternalDeclarationAsync(targetSymbolUse, metadataReferences) with
+            | Some navItem -> return this.NavigateToItem(navItem, cancellationToken)
+            | None -> return false
+        }
 
     member this.NavigateToExternalDeclaration
         (
@@ -754,7 +762,7 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
                                     // Target range will point to .fsi file if only there is one so we can just use Roslyn navigation service.
                                     do gtd.TryNavigateToTextSpan(targetDoc, targetTextSpan, cancellationToken)
                                 else
-                                    // Navigation request was made in a .fs file, so we try to find the implmentation of the symbol at target range.
+                                    // Navigation request was made in a .fs file, so we try to find the implementation of the symbol at target range.
                                     // This is the part that may take some time, because of type checks involved.
                                     let! result = gtd.NavigateToSymbolDefinitionAsync(targetDoc, targetSource, range)
 
@@ -780,11 +788,9 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
             match result with
             | ValueSome(FSharpGoToDefinitionResult.NavigableItem(navItem), _) -> return ImmutableArray.create navItem
             | ValueSome(FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences), _) ->
-                do!
-                    gtd.NavigateToExternalDeclarationAsync(targetSymbolUse, metadataReferences)
-                    |> CancellableTask.ignore
-
-                return ImmutableArray.empty
+                match! gtd.TryGetExternalDeclarationAsync(targetSymbolUse, metadataReferences) with
+                | Some navItem -> return ImmutableArray.Create navItem
+                | _ -> return ImmutableArray.empty
             | _ -> return ImmutableArray.empty
         }
 
@@ -962,7 +968,7 @@ type FSharpCrossLanguageSymbolNavigationService() =
         // The groups are following:
         //   1 - type (see below).
         //   2 - Path - a dotted path to a symbol.
-        //   3 - parameters, opetional, only for methods and properties.
+        //   3 - parameters, optional, only for methods and properties.
         //   4 - return type, optional, only for methods.
         let docCommentIdRx =
             Regex(@"^(?<kind>\w):(?<entity>[\w\d#`.]+)(?<args>\(.+\))?(?:~([\w\d.]+))?$", RegexOptions.Compiled)

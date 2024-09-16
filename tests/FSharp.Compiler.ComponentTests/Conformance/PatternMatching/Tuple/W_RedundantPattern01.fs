@@ -2,7 +2,7 @@
 #light
 
 // Verify warning with redundant pattern
-//<Expects id="FS0026" status="warning">This rule will never be matched</Expects>
+
 
 let redPat () =
     function

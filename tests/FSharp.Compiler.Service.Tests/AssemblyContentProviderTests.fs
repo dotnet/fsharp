@@ -63,7 +63,7 @@ let private getSymbolMap (getSymbolProperty: AssemblySymbol -> 'a) (source: stri
     |> List.map (fun s -> getCleanedFullName s, getSymbolProperty s)
     |> Map.ofList
 
-[<Fact>]
+[<FactForDESKTOP>]
 let ``implicitly added Module suffix is removed``() =
     """
 type MyType = { F: int }
@@ -76,7 +76,7 @@ module MyType =
         "Test.MyType"
         "Test.MyType.func123"]
         
-[<Fact>]
+[<FactForDESKTOP>]
 let ``Module suffix added by an explicitly applied ModuleSuffix attribute is removed``() =
     """
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -87,7 +87,7 @@ module MyType =
          "Test.MyType"
          "Test.MyType.func123" ]
 
-[<Fact>]
+[<FactForDESKTOP>]
 let ``Property getters and setters are removed``() =
     """
     type MyType() =
@@ -97,7 +97,7 @@ let ``Property getters and setters are removed``() =
          "Test.MyType"
          "Test.MyType.MyProperty" ]
 
-[<Fact>]
+[<FactForDESKTOP>]
 let ``TopRequireQualifiedAccessParent property should be valid``() =
     let source = """
         module M1 = 
@@ -144,7 +144,7 @@ let ``TopRequireQualifiedAccessParent property should be valid``() =
     assertAreEqual (expectedResult, actual)
 
 
-[<Fact>]
+[<FactForDESKTOP>]
 let ``Check Unresolved Symbols``() =
     let source = """
 namespace ``1 2 3``
@@ -202,6 +202,7 @@ module Test =
             "1 2 3.Test.M1.A.B", "open ``1 2 3`` - Test.M1.A.B";
             "1 2 3.Test.M1.A.C", "open ``1 2 3`` - Test.M1.A.C";
             "1 2 3.Test.M1.A.op_PlusPlus", "open ``1 2 3`` - Test.M1.A.op_PlusPlus";
+            "1 2 3.Test.M1.(|Is1|_|)", "open ``1 2 3`` - Test.M1.``(|Is1|_|)``"
             "1 2 3.Test.M1.B", "open ``1 2 3`` - Test.M1.B";
             "1 2 3.Test.M1.E", "open ``1 2 3`` - Test.M1.E";
             "1 2 3.Test.M1.F", "open ``1 2 3`` - Test.M1.F";

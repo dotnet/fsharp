@@ -28,23 +28,6 @@ module SynPat =
         else
             ValueNone
 
-    /// Matches if any member in the given list is an inherit
-    /// or implementation of an interface with generic type args.
-    [<return: Struct>]
-    let (|AnyGenericInheritOrInterfaceImpl|_|) members =
-        if
-            members
-            |> List.exists (function
-                | SynMemberDefn.ImplicitInherit(inheritType = SynType.App(typeArgs = _ :: _))
-                | SynMemberDefn.ImplicitInherit(inheritType = SynType.LongIdentApp(typeArgs = _ :: _))
-                | SynMemberDefn.Interface(interfaceType = SynType.App(typeArgs = _ :: _))
-                | SynMemberDefn.Interface(interfaceType = SynType.LongIdentApp(typeArgs = _ :: _)) -> true
-                | _ -> false)
-        then
-            ValueSome AnyGenericInheritOrInterfaceImpl
-        else
-            ValueNone
-
     /// Matches the rightmost potentially dangling nested pattern.
     let rec (|Rightmost|) pat =
         match pat with
@@ -182,15 +165,20 @@ module SynPat =
         //     type C<'T> = abstract M : 'T -> unit
         //     let _ = { new C<unit> with override _.M (()) = () }
         //     let _ = { new C<int * int> with override _.M ((x, y)) = () }
+        //
+        // Single versus double parens are also compiled differently in cases like these:
+        //
+        //     type T =
+        //         static member M ()                   = () // .method public static void M()
+        //         static member M (())                 = () // .method public static void M(class [FSharp.Core]Microsoft.FSharp.Core.Unit _arg1)
+        //         static member M (_ : int, _ : int)   = () // .method public static void M(int32 _arg1, int32 _arg2)
+        //         static member M ((_ : int, _ : int)) = () // .method public static void M(class [System.Runtime]System.Tuple`2<int32, int32> _arg1)
         | SynPat.Paren((SynPat.Const(SynConst.Unit, _) | SynPat.Tuple(isStruct = false)), _),
-          SyntaxNode.SynPat(SynPat.LongIdent _) :: SyntaxNode.SynBinding _ :: SyntaxNode.SynExpr(SynExpr.ObjExpr(
-              objType = SynType.App(typeArgs = _ :: _) | SynType.LongIdentApp(typeArgs = _ :: _))) :: _
+          SyntaxNode.SynPat(SynPat.LongIdent _) :: SyntaxNode.SynBinding _ :: _
         | SynPat.Tuple(isStruct = false),
-          SyntaxNode.SynPat(SynPat.Paren _) :: SyntaxNode.SynPat(SynPat.LongIdent _) :: SyntaxNode.SynBinding _ :: SyntaxNode.SynExpr(SynExpr.ObjExpr(
-              objType = SynType.App(typeArgs = _ :: _) | SynType.LongIdentApp(typeArgs = _ :: _))) :: _
+          SyntaxNode.SynPat(SynPat.Paren _) :: SyntaxNode.SynPat(SynPat.LongIdent _) :: SyntaxNode.SynBinding _ :: _
         | SynPat.Paren((SynPat.Const(SynConst.Unit, _) | SynPat.Tuple(isStruct = false)), _),
-          SyntaxNode.SynPat(SynPat.LongIdent _) :: SyntaxNode.SynBinding _ :: SyntaxNode.SynMemberDefn _ :: SyntaxNode.SynTypeDefn(SynTypeDefn(
-              typeRepr = SynTypeDefnRepr.ObjectModel(members = AnyGenericInheritOrInterfaceImpl))) :: _ -> true
+          SyntaxNode.SynPat(SynPat.LongIdent _) :: SyntaxNode.SynBinding _ :: SyntaxNode.SynMemberDefn _ :: _ -> true
 
         // Not required:
         //

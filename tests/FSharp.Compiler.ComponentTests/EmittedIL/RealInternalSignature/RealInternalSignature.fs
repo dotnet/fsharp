@@ -334,7 +334,6 @@ type MyType =
     static let x1 = 1100 + System.Random().Next(0)
     static let _ = printfn "Hello, World from MyLibrary.MyType"
         """
-        |> withLangVersionPreview
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
@@ -365,7 +364,6 @@ module MyModule =
         printfn "Hello from main method"
         0
         """
-        |> withLangVersionPreview
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
@@ -396,7 +394,6 @@ module MyModule =
         printfn "Hello from main method"
         0
         """
-        |> withLangVersionPreview
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
@@ -428,7 +425,6 @@ module MyModule =
 
     printfn "Hello from main method"
         """
-        |> withLangVersionPreview
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
@@ -463,7 +459,6 @@ module MyModule =
         printfn "Hello from main method"
         0
         """
-        |> withLangVersionPreview
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
@@ -495,7 +490,6 @@ module internal PrintfImpl
     printfn $"FormatParser.prefix: {FormatParser().GetStepsForCapturedFormat()}"
     printfn "Main program"
         """
-        |> withLangVersionPreview
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
@@ -535,7 +529,6 @@ module doit =
     FSharpSource.CreateFromFile("Hello") |> ignore
     printfn "Main program"
         """
-        |> withLangVersionPreview
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
@@ -574,7 +567,6 @@ module doit =
     FSharpSource.CreateFromFile("Hello") |> ignore
     printfn "Main program"
         """
-        |> withLangVersionPreview
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
@@ -613,7 +605,6 @@ module doit =
     FSharpSource.CreateFromFile("Hello") |> ignore
     printfn "Main program"
         """
-        |> withLangVersionPreview
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
@@ -651,7 +642,6 @@ module doit =
     FSharpSource.CreateFromFile("Hello") |> ignore
     printfn "Main program"
         """
-        |> withLangVersionPreview
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
@@ -689,7 +679,6 @@ module doit =
     FSharpSource.CreateFromFile("Hello") |> ignore
     printfn "Main program"
         """
-        |> withLangVersionPreview
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
@@ -728,7 +717,6 @@ module doit =
     FSharpSource.CreateFromFile("Hello") |> ignore
     printfn "Main program"
         """
-        |> withLangVersionPreview
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
@@ -1042,7 +1030,6 @@ type FSharpSource with
 module doit =
     printfn "Main program"
         """
-        |> withLangVersionPreview
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
@@ -1080,7 +1067,6 @@ module doit =
     FSharpSource.CreateFromFile("Hello") |> ignore
     printfn "Main program"
         """
-        |> withLangVersionPreview
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
@@ -1115,7 +1101,6 @@ module doit =
     createFromFile("Hello") |> ignore
     printfn "Main program"
         """
-        |> withLangVersionPreview
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
@@ -1159,7 +1144,6 @@ let makeOne() = FSharpSourceFromFile.MakeOne()
 
 printfn $"{makeOne().FilePath}"
         """
-        |> withLangVersionPreview
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
@@ -1183,7 +1167,6 @@ module private TestReferences =
 module doSomething =
     printfn $"{TestReferences.NetStandard20.Files.netStandard.Value}"
         """
-        |> withLangVersionPreview
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
@@ -1212,7 +1195,6 @@ module private outer_private =
 module doSomething =
     printfn "Hello, World!"
         """
-        |> withLangVersionPreview
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
@@ -1248,8 +1230,60 @@ module Test6
 
         let public getInt (data:Data): int = HelperModule.handle data.Thing               
         """
-        |> withLangVersionPreview
         |> withRealInternalSignature realSig
         |> asLibrary
         |> compile
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Calling protected static base member from `static do` does not raise MethodAccessException when --realsig+`` () =
+        FSharp """
+#nowarn "44" // using Uri.EscapeString just because it's protected static
+
+type C(str : string) =
+    inherit System.Uri(str)
+    
+    static do 
+        System.Uri.EscapeString("http://www.myserver.com") |> ignore
+        printfn "Hello, World"
+
+module M =
+    [<EntryPoint>]
+    let main args =
+       let res = C("http://www.myserver.com")
+       0
+        """
+        |> withLangVersionPreview
+        |> withRealInternalSignature true
+        |> asLibrary
+        |> compile
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContainsAllInOrder [
+            "Hello, World"
+        ]
+
+    [<Fact>]
+    let ``Calling protected static base member from `static do` raises MethodAccessException with --realsig-`` () =
+        FSharp """
+#nowarn "44" // using Uri.EscapeString just because it's protected static
+
+type C(str : string) =
+    inherit System.Uri(str)
+    
+    static do 
+        System.Uri.EscapeString("http://www.myserver.com") |> ignore
+        printfn "Hello, World"
+
+module M =
+    [<EntryPoint>]
+    let main args =
+       let res = C("http://www.myserver.com")
+       0
+        """
+        |> withLangVersionPreview
+        |> withRealInternalSignature false
+        |> asLibrary
+        |> compile
+        |> compileExeAndRun
+        |> shouldFail

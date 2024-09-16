@@ -18,7 +18,6 @@ module TooFew =
 let (|P|) (expr2 : int) (expr1 : int) = P
 match 1 with P -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -31,7 +30,6 @@ match 1 with P -> ()
 let (|P|_|) (expr2 : int) (expr1 : int) = if expr1 = expr2 then Some P else None
 match 1 with P -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -44,7 +42,6 @@ match 1 with P -> ()
 let (|P|_|) (expr2 : int) (expr1 : int) = if expr1 = expr2 then ValueSome P else ValueNone
 match 1 with P -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -57,7 +54,6 @@ match 1 with P -> ()
 let (|P|Q|) (expr2 : int) (expr1 : int) = if expr1 = expr2 then P else Q
 match 1 with P -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -70,7 +66,6 @@ match 1 with P -> ()
 let (|P|_|) (expr2 : int) (expr1 : int) = expr1 = expr2
 match 1 with P -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -83,7 +78,6 @@ match 1 with P -> ()
 let (|P|) expr2 expr1 = P (expr1 + expr2)
 match 1 with P -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -96,7 +90,6 @@ match 1 with P -> ()
 let (|P|_|) expr2 expr1 = if expr1 = expr2 then Some (P (expr1 + expr2)) else None
 match 1 with P -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -108,7 +101,6 @@ match 1 with P -> ()
 let (|P|_|) expr2 expr1 = if expr1 = expr2 then Some (P (expr1 + expr2)) else None
 match 1 with P pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -121,7 +113,6 @@ let (|P|_|) expr2 expr1 = if expr1 = expr2 then Some (P (expr1 + expr2)) else No
 let expr2 = 2
 match 1 with P expr2 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -134,7 +125,6 @@ match 1 with P expr2 -> ()
 let (|P|_|) expr2 expr1 = if expr1 = expr2 then ValueSome (P (expr1 + expr2)) else ValueNone
 match 1 with P -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -146,7 +136,6 @@ match 1 with P -> ()
 let (|P|_|) expr2 expr1 = if expr1 = expr2 then ValueSome (P (expr1 + expr2)) else ValueNone
 match 1 with P pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -159,7 +148,6 @@ let (|P|_|) expr2 expr1 = if expr1 = expr2 then ValueSome (P (expr1 + expr2)) el
 let expr2 = 2
 match 1 with P expr2 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -172,7 +160,6 @@ match 1 with P expr2 -> ()
 let (|P|Q|) expr2 expr1 = if expr1 = expr2 then P (expr1 + expr2) else Q
 match 1 with P -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -184,7 +171,6 @@ match 1 with P -> ()
 let (|P|Q|) expr2 expr1 = if expr1 = expr2 then P (expr1 + expr2) else Q
 match 1 with P pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -197,7 +183,6 @@ let (|P|Q|) expr2 expr1 = if expr1 = expr2 then P (expr1 + expr2) else Q
 let expr2 = 2
 match 1 with P expr2 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -211,7 +196,6 @@ module Enough =
 let (|P|) expr1 = P
 match 1 with P -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -223,7 +207,6 @@ match 1 with P -> ()
 let (|P|) expr1 = P
 match 1 with P pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -234,7 +217,6 @@ match 1 with P pat -> ()
 let (|P|) expr1 = P
 match 1 with P () -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -246,7 +228,6 @@ match 1 with P () -> ()
 let (|P|_|) expr1 = if expr1 = 1 then Some P else None
 match 1 with P -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -258,7 +239,6 @@ match 1 with P -> ()
 let (|P|_|) expr1 = if expr1 = 1 then Some P else None
 match 1 with P pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -269,7 +249,6 @@ match 1 with P pat -> ()
 let (|P|_|) expr1 = if expr1 = 1 then Some P else None
 match 1 with P () -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -281,7 +260,6 @@ match 1 with P () -> ()
 let (|P|_|) expr1 = if expr1 = 1 then ValueSome P else ValueNone
 match 1 with P -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -293,7 +271,6 @@ match 1 with P -> ()
 let (|P|_|) expr1 = if expr1 = 1 then ValueSome P else ValueNone
 match 1 with P pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -304,7 +281,6 @@ match 1 with P pat -> ()
 let (|P|_|) expr1 = if expr1 = 1 then ValueSome P else ValueNone
 match 1 with P () -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -316,7 +292,6 @@ match 1 with P () -> ()
 let (|P|Q|) expr1 = if expr1 = 1 then P else Q
 match 1 with P -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -328,7 +303,6 @@ match 1 with P -> ()
 let (|P|Q|) expr1 = if expr1 = 1 then P else Q
 match 1 with P pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -339,7 +313,6 @@ match 1 with P pat -> ()
 let (|P|Q|) expr1 = if expr1 = 1 then P else Q
 match 1 with P () -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -351,7 +324,6 @@ match 1 with P () -> ()
 let (|P|_|) expr1 = expr1 = 1
 match 1 with P -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -363,7 +335,6 @@ match 1 with P -> ()
 let (|P|) (expr1 : int) = P expr1
 match 1 with P pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -375,7 +346,6 @@ match 1 with P pat -> ()
 let (|P|_|) (expr1 : int) = if expr1 = 1 then Some (P expr1) else None
 match 1 with P pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -387,7 +357,6 @@ match 1 with P pat -> ()
 let (|P|_|) (expr1 : int) = if expr1 = 1 then ValueSome (P expr1) else ValueNone
 match 1 with P pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -399,7 +368,6 @@ match 1 with P pat -> ()
 let (|P|Q|) (expr1 : int) = if expr1 = 1 then P expr1 else Q
 match 1 with P pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -412,7 +380,6 @@ let (|P|) (expr2 : int) (expr1 : int) = P
 let expr2 = 2
 match 1 with P expr2 () -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -425,7 +392,6 @@ let (|P|) (expr2 : int) (expr1 : int) = P
 let expr2 = 2
 match 1 with P expr2 pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -439,7 +405,6 @@ let expr2 = 2
 let expr3 = 3
 match 1 with P expr2 expr3 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -451,7 +416,6 @@ match 1 with P expr2 expr3 -> ()
 let (|P|) (expr2 : int) (expr1 : int) = P
 match 1 with P pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -464,7 +428,6 @@ let (|P|) (expr2 : int) (expr1 : int) = P
 let expr2 = 2
 match 1 with P expr2 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -477,7 +440,6 @@ let (|P|_|) (expr2 : int) (expr1 : int) = if expr1 = expr2 then Some P else None
 let expr2 = 2
 match 1 with P expr2 () -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -490,7 +452,6 @@ let (|P|_|) (expr2 : int) (expr1 : int) = if expr1 = expr2 then Some P else None
 let expr2 = 2
 match 1 with P expr2 pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -504,7 +465,6 @@ let expr2 = 2
 let expr3 = 3
 match 1 with P expr2 expr3 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -515,7 +475,6 @@ match 1 with P expr2 expr3 -> ()
 let (|P|_|) (expr2 : int) (expr1 : int) = if expr1 = expr2 then Some P else None
 match 1 with P pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -528,7 +487,6 @@ let (|P|_|) (expr2 : int) (expr1 : int) = if expr1 = expr2 then Some P else None
 let expr2 = 2
 match 1 with P expr2 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -541,7 +499,6 @@ let (|P|_|) (expr2 : int) (expr1 : int) = if expr1 = expr2 then ValueSome P else
 let expr2 = 2
 match 1 with P expr2 () -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -554,7 +511,6 @@ let (|P|_|) (expr2 : int) (expr1 : int) = if expr1 = expr2 then ValueSome P else
 let expr2 = 2
 match 1 with P expr2 pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -568,7 +524,6 @@ let expr2 = 2
 let expr3 = 3
 match 1 with P expr2 expr3 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -579,7 +534,6 @@ match 1 with P expr2 expr3 -> ()
 let (|P|_|) (expr2 : int) (expr1 : int) = if expr1 = expr2 then ValueSome P else ValueNone
 match 1 with P pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -605,7 +559,6 @@ let (|P|Q|) (expr2 : int) (expr1 : int) = if expr1 = expr2 then P else Q
 let expr2 = 2
 match 1 with P expr2 () -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -618,7 +571,6 @@ let (|P|Q|) (expr2 : int) (expr1 : int) = if expr1 = expr2 then P else Q
 let expr2 = 2
 match 1 with P expr2 pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -632,7 +584,6 @@ let expr2 = 2
 let expr3 = 3
 match 1 with P expr2 expr3 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -644,7 +595,6 @@ match 1 with P expr2 expr3 -> ()
 let (|P|Q|) (expr2 : int) (expr1 : int) = if expr1 = expr2 then P else Q
 match 1 with P pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -660,7 +610,6 @@ let (|P|Q|) (expr2 : int) (expr1 : int) = if expr1 = expr2 then P else Q
 let expr2 = 2
 match 1 with P expr2 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -674,7 +623,6 @@ let (|P|_|) (expr2 : int) (expr1 : int) = expr1 = expr2
 let expr2 = 2
 match 1 with P expr2 () -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -687,7 +635,6 @@ let (|P|_|) (expr2 : int) (expr1 : int) = expr1 = expr2
 let expr2 = 2
 match 1 with P expr2 pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -701,7 +648,6 @@ let expr2 = 2
 let expr3 = 3
 match 1 with P expr2 expr3 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -713,7 +659,6 @@ match 1 with P expr2 expr3 -> ()
 let (|P|_|) (expr2 : int) (expr1 : int) = expr1 = expr2
 match 1 with P pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -726,7 +671,6 @@ let (|P|_|) (expr2 : int) (expr1 : int) = expr1 = expr2
 let expr2 = 2
 match 1 with P expr2 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -740,7 +684,6 @@ let (|P|) expr2 expr1 = P (expr1 + expr2)
 let expr2 = 2
 match 1 with P expr2 pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -754,7 +697,6 @@ let expr2 = 2
 let expr3 = 2
 match 1 with P expr2 expr3 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -766,7 +708,6 @@ match 1 with P expr2 expr3 -> ()
 let (|P|) expr2 expr1 = P (expr1 + expr2)
 match 1 with P pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -779,7 +720,6 @@ let (|P|) expr2 expr1 = P (expr1 + expr2)
 let expr2 = 2
 match 1 with P expr2 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -793,7 +733,6 @@ let (|P|_|) expr2 expr1 = if expr1 = expr2 then Some (P (expr1 + expr2)) else No
 let expr2 = 2
 match 1 with P expr2 pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -807,7 +746,6 @@ let expr2 = 2
 let expr3 = 2
 match 1 with P expr2 expr3 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -819,7 +757,6 @@ let (|P|_|) expr2 expr1 = if expr1 = expr2 then Some (P (expr1 + expr2)) else No
 let expr2 = 2
 match 1 with P expr2 pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -833,7 +770,6 @@ let (|P|_|) expr2 expr1 = if expr1 = expr2 then ValueSome (P (expr1 + expr2)) el
 let expr2 = 2
 match 1 with P expr2 pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -847,7 +783,6 @@ let expr2 = 2
 let expr3 = 2
 match 1 with P expr2 expr3 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -859,7 +794,6 @@ let (|P|_|) expr2 expr1 = if expr1 = expr2 then ValueSome (P (expr1 + expr2)) el
 let expr2 = 2
 match 1 with P expr2 pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
@@ -872,7 +806,6 @@ let (|P|Q|) expr2 expr1 = if expr1 = expr2 then P (expr1 + expr2) else Q
 let expr2 = 2
 match 1 with P expr2 pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -886,7 +819,6 @@ let expr2 = 2
 let expr3 = 2
 match 1 with P expr2 expr3 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -899,7 +831,6 @@ let (|P|Q|) expr2 expr1 = if expr1 = expr2 then P (expr1 + expr2) else Q
 let expr2 = 2
 match 1 with P expr2 pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -914,7 +845,6 @@ let (|P|) (expr1 : int) = P
 let expr2 = 2
 match 1 with P expr2 pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -927,7 +857,6 @@ let (|P|) (expr1 : int) = P
 let expr2 = 2
 match 1 with P expr2 () -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -940,7 +869,6 @@ let (|P|) (expr1 : int) = P
 let expr2 = 2
 match 1 with P () expr2 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -954,7 +882,6 @@ let (|P|_|) (expr1 : int) = if expr1 = 1 then Some P else None
 let expr2 = 2
 match 1 with P expr2 pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -967,7 +894,6 @@ let (|P|_|) (expr1 : int) = if expr1 = 1 then Some P else None
 let expr2 = 2
 match 1 with P expr2 () -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -980,7 +906,6 @@ let (|P|_|) (expr1 : int) = if expr1 = 1 then Some P else None
 let expr2 = 2
 match 1 with P () expr2 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -994,7 +919,6 @@ let (|P|_|) (expr1 : int) = if expr1 = 1 then ValueSome P else ValueNone
 let expr2 = 2
 match 1 with P expr2 pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -1007,7 +931,6 @@ let (|P|_|) (expr1 : int) = if expr1 = 1 then ValueSome P else ValueNone
 let expr2 = 2
 match 1 with P expr2 () -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -1020,7 +943,6 @@ let (|P|_|) (expr1 : int) = if expr1 = 1 then ValueSome P else ValueNone
 let expr2 = 2
 match 1 with P () expr2 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -1034,7 +956,6 @@ let (|P|Q|) (expr1 : int) = if expr1 = 1 then P else Q
 let expr2 = 2
 match 1 with P expr2 pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -1047,7 +968,6 @@ let (|P|Q|) (expr1 : int) = if expr1 = 1 then P else Q
 let expr2 = 2
 match 1 with P expr2 () -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -1060,7 +980,6 @@ let (|P|Q|) (expr1 : int) = if expr1 = 1 then P else Q
 let expr2 = 2
 match 1 with P () expr2 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -1073,7 +992,6 @@ match 1 with P () expr2 -> ()
 let (|P|_|) expr1 = expr1 = 1
 match 1 with P pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -1087,7 +1005,6 @@ let (|P|) (expr1 : int) = P expr1
 let expr2 = 2
 match 1 with P expr2 pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -1100,7 +1017,6 @@ let (|P|) (expr1 : int) = P expr1
 let expr2 = 2
 match 1 with P expr2 () -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -1114,7 +1030,6 @@ let (|P|_|) (expr1 : int) = if expr1 = 1 then Some (P expr1) else None
 let expr2 = 2
 match 1 with P expr2 pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -1127,7 +1042,6 @@ let (|P|_|) (expr1 : int) = if expr1 = 1 then Some (P expr1) else None
 let expr2 = 2
 match 1 with P expr2 () -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -1141,7 +1055,6 @@ let (|P|_|) (expr1 : int) = if expr1 = 1 then ValueSome (P expr1) else ValueNone
 let expr2 = 2
 match 1 with P expr2 pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -1154,7 +1067,6 @@ let (|P|_|) (expr1 : int) = if expr1 = 1 then ValueSome (P expr1) else ValueNone
 let expr2 = 2
 match 1 with P expr2 () -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -1168,7 +1080,6 @@ let (|P|Q|) (expr1 : int) = if expr1 = 1 then P expr1 else Q
 let expr2 = 2
 match 1 with P expr2 pat -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -1181,7 +1092,6 @@ let (|P|Q|) (expr1 : int) = if expr1 = 1 then P expr1 else Q
 let expr2 = 2
 match 1 with P expr2 () -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -1195,7 +1105,6 @@ let (|P|) (expr2 : int) (expr1 : int) = P
 let expr2 = 2
 match 1 with P expr2 pat1 pat2 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -1209,7 +1118,6 @@ let (|P|_|) (expr2 : int) (expr1 : int) = if expr1 = expr2 then Some P else None
 let expr2 = 2
 match 1 with P expr2 pat1 pat2 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -1223,7 +1131,6 @@ let (|P|_|) (expr2 : int) (expr1 : int) = if expr1 = expr2 then ValueSome P else
 let expr2 = 2
 match 1 with P expr2 pat1 pat2 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -1237,7 +1144,6 @@ let (|P|Q|) (expr2 : int) (expr1 : int) = if expr1 = expr2 then P else Q
 let expr2 = 2
 match 1 with P expr2 pat1 pat2 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -1251,7 +1157,6 @@ let (|P|) expr2 expr1 = P (expr1 + expr2)
 let expr2 = 2
 match 1 with P expr2 pat1 pat2 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -1265,7 +1170,6 @@ let (|P|_|) expr2 expr1 = if expr1 = expr2 then Some (P (expr1 + expr2)) else No
 let expr2 = 2
 match 1 with P expr2 pat1 pat2 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -1279,7 +1183,6 @@ let (|P|_|) expr2 expr1 = if expr1 = expr2 then ValueSome (P (expr1 + expr2)) el
 let expr2 = 2
 match 1 with P expr2 pat1 pat2 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail
@@ -1293,7 +1196,6 @@ let (|P|Q|) expr2 expr1 = if expr1 = expr2 then P (expr1 + expr2) else Q
 let expr2 = 2
 match 1 with P expr2 pat1 pat2 -> ()
             """
-            |> withLangVersionPreview
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldFail

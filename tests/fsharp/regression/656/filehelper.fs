@@ -23,13 +23,13 @@ let GetLatestFile path searchPattern	=
 	else
 		None
 		
-/// Create an enumarable stream from specified file
+/// Create an enumerable stream from specified file
 let CreateEnumerableStream (fileName:string) =
     let reader = new StreamReader (fileName) in
     reader |> Seq.unfold (fun (reader:StreamReader) -> if (reader.EndOfStream) then (reader.Close(); None) else Some(reader.ReadLine(),reader))
 
 /// Create an enumerable csv stream from specified file 
-let CreateEnumrableCSVStream fileName = 
+let CreateEnumerableCSVStream fileName = 
 	CreateEnumerableStream fileName |> Seq.map (fun (s:string) -> s.Split([|','|]))
 			
 			

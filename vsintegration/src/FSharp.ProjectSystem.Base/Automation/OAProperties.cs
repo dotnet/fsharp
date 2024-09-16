@@ -130,7 +130,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// <summary>
         /// Returns an indexed member of a Properties collection. 
         /// </summary>
-        /// <param name="index">The index at which to return a mamber.</param>
+        /// <param name="index">The index at which to return a member.</param>
         /// <returns>A Property object.</returns>
         public virtual EnvDTE.Property Item(object index)
         {

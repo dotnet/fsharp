@@ -431,7 +431,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
                     '    Return ValidationResult.Warning
                     'Else
                     If ((Not (IsNothing(Win32ResourceFile.Text)) AndAlso Win32ResourceFile.Text <> "") AndAlso Not File.Exists(Win32ResourceFile.Text)) Then
-                        message = SR.GetString(SR.PropPage_ResourceFileNotExist)
+                        message = SR.GetString(SR.PropPage_ResourceFileNonexistent)
                         Return ValidationResult.Warning
                     End If
             End Select
@@ -604,12 +604,12 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             Return New FrameworkName(currentTargetFrameworkMoniker)
         End Function
 
-        Private Shared Function IsDotNetPortable(ByVal frameworName As FrameworkName) As Boolean
-            Return frameworName.Identifier = ".NETPortable"
+        Private Shared Function IsDotNetPortable(ByVal frameworkName As FrameworkName) As Boolean
+            Return frameworkName.Identifier = ".NETPortable"
         End Function
 
-        Private Shared Function IsDotNetCore(ByVal frameworName As FrameworkName) As Boolean
-            Return frameworName.Identifier = ".NETCore"
+        Private Shared Function IsDotNetCore(ByVal frameworkName As FrameworkName) As Boolean
+            Return frameworkName.Identifier = ".NETCore"
         End Function
 
         Private Function GetServiceProvider() As IServiceProvider

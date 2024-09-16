@@ -187,32 +187,34 @@ type internal FscCompiler(legacyReferenceResolver) =
         let regex =
             Regex(@"^(/|--)test:ErrorRanges$", RegexOptions.Compiled ||| RegexOptions.IgnoreCase)
 
-        fun arg -> regex.IsMatch(arg)
+        fun (arg: string) -> regex.IsMatch(arg)
 
     /// test if --vserrors flag is set
     let vsErrorsArg =
         let regex =
             Regex(@"^(/|--)vserrors$", RegexOptions.Compiled ||| RegexOptions.IgnoreCase)
 
-        fun arg -> regex.IsMatch(arg)
+        fun (arg: string) -> regex.IsMatch(arg)
 
     /// test if an arg is a path to fsc.exe
     let fscExeArg =
         let regex =
             Regex(@"fsc(\.exe)?$", RegexOptions.Compiled ||| RegexOptions.IgnoreCase)
 
-        fun arg -> regex.IsMatch(arg)
+        fun (arg: string) -> regex.IsMatch(arg)
 
     /// do compilation as if args was argv to fsc.exe
     member _.Compile(args: string[]) =
         // args.[0] is later discarded, assuming it is just the path to fsc.
         // compensate for this in case caller didn't know
         let args =
-            match args with
-            | [||]
+            match box args with
             | null -> [| "fsc" |]
-            | a when not <| fscExeArg a[0] -> Array.append [| "fsc" |] a
-            | _ -> args
+            | _ ->
+                match args with
+                | [||] -> [| "fsc" |]
+                | a when not <| fscExeArg a[0] -> Array.append [| "fsc" |] a
+                | _ -> args
 
         let errorRanges = args |> Seq.exists errorRangesArg
         let vsErrors = args |> Seq.exists vsErrorsArg

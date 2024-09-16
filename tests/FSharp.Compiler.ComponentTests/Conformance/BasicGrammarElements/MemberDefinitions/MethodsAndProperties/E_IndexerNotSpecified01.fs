@@ -2,7 +2,7 @@
 #light
 
 // Verify error if the type doesn't support an indexer
-//<Expects id="FS0039" status="error">The type 'Foo' does not define the field, constructor or member 'Item'</Expects>
+
 
 type Foo(x : int) =
     member this.Value = x

@@ -19,7 +19,7 @@
       </trans-unit>
       <trans-unit id="fsiIntroTextHashhelpdocInfo">
         <source>Display documentation for an identifier, e.g. #help \"List.map\";;</source>
-        <target state="new">Display documentation for an identifier, e.g. #help \"List.map\";;</target>
+        <target state="translated">識別子のドキュメントを表示する (例:#help \"List.map\";;</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">

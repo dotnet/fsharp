@@ -18,7 +18,7 @@ module ExplicitObjectConstructors =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/ClassTypes/ExplicitObjectConstructors)
-    //<Expects id="FS0044" span="(14,9-14,15)" status="warning">Message2</Expects>
+    
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"WithAttribute01.fs"|])>]
     let ``WithAttribute01_fs`` compilation =
         compilation
@@ -31,7 +31,7 @@ module ExplicitObjectConstructors =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/ClassTypes/ExplicitObjectConstructors)
-    //<Expects id="FS0044" span="(11,9-11,14)" status="warning">Message1</Expects>
+    
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"WithAttribute02.fs"|])>]
     let ``WithAttribute02_fs`` compilation =
         compilation

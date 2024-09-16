@@ -2,7 +2,7 @@
 #light
 
 // Verify error cases for restrictions on active pattern parameters.
-//<Expects id="FS0722" status="error">Only active patterns returning exactly one result may accept arguments</Expects>
+
 
 
 // Multi-Case

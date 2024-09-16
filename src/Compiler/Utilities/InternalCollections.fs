@@ -24,7 +24,7 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value: not struct>(keepStron
     let mutable keepMax = max keepStrongly keepMax
     let requiredToKeep = defaultArg requiredToKeep (fun _ -> false)
 
-    /// Look up a the given key, return <c>None</c> if not found.
+    /// Look up the given key, return <c>None</c> if not found.
     let TryPeekKeyValueImpl (data, key) =
         let rec Lookup key =
             function

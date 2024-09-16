@@ -23,7 +23,7 @@ using OleConstants = Microsoft.VisualStudio.OLE.Interop.Constants;
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
     /// <summary>
-    /// This class triggers the project events for "our" hierrachies.
+    /// This class triggers the project events for "our" hierarchies.
     /// </summary>
     internal class SolutionListenerForProjectEvents : SolutionListener, IProjectEvents
     {

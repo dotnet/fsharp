@@ -7,9 +7,9 @@ open StructuredResultsAsserts
 [<Fact>]
 let ``Cannot update the same field twice in nested copy-and-update``() =
     FSharp """
-type NestdRecTy = { B: string }
+type NestedRecTy = { B: string }
 
-type RecTy = { D: NestdRecTy; E: string option }
+type RecTy = { D: NestedRecTy; E: string option }
 
 let t2 x = { x with D.B = "a"; D.B = "b" }
     """
@@ -23,13 +23,12 @@ let t2 x = { x with D.B = "a"; D.B = "b" }
 [<Fact>]
 let ``Cannot update the same field appears multiple times in nested copy-and-update``() =
     FSharp """
-type NestdRecTy = { B: string }
+type NestedRecTy = { B: string }
 
-type RecTy = { D: NestdRecTy; E: string option }
+type RecTy = { D: NestedRecTy; E: string option }
 
 let t2 x = { x with D.B = "a"; D.B = "b"; D.B = "c" }
     """
-    |> withLangVersionPreview
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
@@ -40,13 +39,12 @@ let t2 x = { x with D.B = "a"; D.B = "b"; D.B = "c" }
 [<Fact>]
 let ``Cannot update the same field appears multiple times in nested copy-and-update 2``() =
     FSharp """
-type NestdRecTy = { B: string; C: string }
+type NestedRecTy = { B: string; C: string }
 
-type RecTy = { D: NestdRecTy; E: string option }
+type RecTy = { D: NestedRecTy; E: string option }
 
 let t2 x = { x with D.B = "a"; D.C = ""; D.B = "c" ; D.C = "d" }
     """
-    |> withLangVersionPreview
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
@@ -57,9 +55,9 @@ let t2 x = { x with D.B = "a"; D.C = ""; D.B = "c" ; D.C = "d" }
 [<Fact>]
 let ``Cannot use nested copy-and-update in lang version70``() =
     FSharp """
-type NestdRecTy = { B: string }
+type NestedRecTy = { B: string }
 
-type RecTy = { D: NestdRecTy; E: string option }
+type RecTy = { D: NestedRecTy; E: string option }
 
 let t2 x = { x with D.B = "a" }
     """
@@ -77,9 +75,9 @@ module CopyAndUpdateTests
 
 type AnotherNestedRecTy = { A: int }
 
-type NestdRecTy = { B: AnotherNestedRecTy; C: string }
+type NestedRecTy = { B: AnotherNestedRecTy; C: string }
 
-type RecTy = { D: NestdRecTy; E: string option }
+type RecTy = { D: NestedRecTy; E: string option }
 
 let t2 x = { x with D.B.A = 1; D.C = "ads" }
     """
@@ -92,7 +90,7 @@ let t2 x = { x with D.B.A = 1; D.C = "ads" }
 (*
         public static CopyAndUpdateTests.RecTy t2(CopyAndUpdateTests.RecTy x)
         {
-            return new CopyAndUpdateTests.RecTy(new CopyAndUpdateTests.NestdRecTy(new CopyAndUpdateTests.AnotherNestedRecTy(1), "ads"), x.E@);
+            return new CopyAndUpdateTests.RecTy(new CopyAndUpdateTests.NestedRecTy(new CopyAndUpdateTests.AnotherNestedRecTy(1), "ads"), x.E@);
         }
 *)
         """
@@ -104,11 +102,11 @@ let t2 x = { x with D.B.A = 1; D.C = "ads" }
   IL_0000:  ldc.i4.1
   IL_0001:  newobj     instance void CopyAndUpdateTests/AnotherNestedRecTy::.ctor(int32)
   IL_0006:  ldstr      "ads"
-  IL_000b:  newobj     instance void CopyAndUpdateTests/NestdRecTy::.ctor(class CopyAndUpdateTests/AnotherNestedRecTy,
+  IL_000b:  newobj     instance void CopyAndUpdateTests/NestedRecTy::.ctor(class CopyAndUpdateTests/AnotherNestedRecTy,
                                                                           string)
   IL_0010:  ldarg.0
   IL_0011:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string> CopyAndUpdateTests/RecTy::E@
-  IL_0016:  newobj     instance void CopyAndUpdateTests/RecTy::.ctor(class CopyAndUpdateTests/NestdRecTy,
+  IL_0016:  newobj     instance void CopyAndUpdateTests/RecTy::.ctor(class CopyAndUpdateTests/NestedRecTy,
                                                                      class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string>)
   IL_001b:  ret
 } 
@@ -122,9 +120,9 @@ module CopyAndUpdateTests
 
 type AnotherNestedRecTy = { A: int }
 
-type NestdRecTy = { B: string; C: AnotherNestedRecTy }
+type NestedRecTy = { B: string; C: AnotherNestedRecTy }
 
-type RecTy = { D: NestdRecTy; E: string option; F: int }
+type RecTy = { D: NestedRecTy; E: string option; F: int }
 
 let t1 = { D = { B = "t1"; C = { A = 1 } }; E = None; F = 42 }
 
@@ -172,9 +170,9 @@ module CopyAndUpdateTests
 
 type AnotherNestedRecTy = { A: int }
 
-type NestdRecTy<'b> = { B: 'b; C: AnotherNestedRecTy }
+type NestedRecTy<'b> = { B: 'b; C: AnotherNestedRecTy }
 
-type RecTy<'b, 'e> = { D: NestdRecTy<'b>; E: 'e option; F: int }
+type RecTy<'b, 'e> = { D: NestedRecTy<'b>; E: 'e option; F: int }
 
 let t1 = { D = { B = "t1"; C = { A = 1 } }; E = Option<string>.None; F = 42 }
 
@@ -202,10 +200,10 @@ module CopyAndUpdateTests
 [<Struct>]
 type AnotherNestedRecTy = { A: int }
 
-type NestdRecTy = { B: string; C: AnotherNestedRecTy; G: int; H: int }
+type NestedRecTy = { B: string; C: AnotherNestedRecTy; G: int; H: int }
 
 [<Struct>]
-type RecTy = { D: NestdRecTy; E: string option; F: int }
+type RecTy = { D: NestedRecTy; E: string option; F: int }
 
 let t1 = { D = { B = "t1"; C = { A = 1 }; G = 0; H = 0 }; E = None; F = 42 }
 
@@ -313,9 +311,9 @@ module CopyAndUpdateTests
 
 type AnotherNestedRecTy = { A: int }
 
-type NestdRecTy<'b> = { B: 'b; C: AnotherNestedRecTy }
+type NestedRecTy<'b> = { B: 'b; C: AnotherNestedRecTy }
 
-type RecTy<'b, 'e> = { D: NestdRecTy<'b>; E: 'e option; F: int }
+type RecTy<'b, 'e> = { D: NestedRecTy<'b>; E: 'e option; F: int }
 
 let t1 = { D = { B = "t1"; C = { A = 1 } }; E = Option<string>.None; F = 42 }
 
@@ -400,29 +398,29 @@ let ``Nested copy-and-update does not compile when referencing invalid fields``(
     FSharp """
 module CopyAndUpdateTests
 
-type NestdRecTy = { B: string; G: {| a: int |} }
+type NestedRecTy = { B: string; G: {| a: int |} }
 
-type RecTy = { D: NestdRecTy; E: string option }
+type RecTy = { D: NestedRecTy; E: string option }
 
 let t1 x = { x with D.B.A = "a" }
 let t2 x = { x with D.C = "a" }
 let t3 x = { x with D.G.b = "a" }
 let t4 x = { x with C.D = "a" }
-let t5 (x: {| a: int; b: NestdRecTy |}) = {| x with b.C = "a" |}
-let t6 (x: {| a: int; b: NestdRecTy |}) = {| x with b.G.b = "a" |}
-let t7 (x: {| a: int; b: NestdRecTy |}) = {| x with c.D = "a" |}
+let t5 (x: {| a: int; b: NestedRecTy |}) = {| x with b.C = "a" |}
+let t6 (x: {| a: int; b: NestedRecTy |}) = {| x with b.G.b = "a" |}
+let t7 (x: {| a: int; b: NestedRecTy |}) = {| x with c.D = "a" |}
     """
     |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
         (Error 39, Line 8, Col 25, Line 8, Col 26, "The record label 'A' is not defined.")
-        (Error 1129, Line 9, Col 23, Line 9, Col 24, "The record type 'NestdRecTy' does not contain a label 'C'.")
+        (Error 1129, Line 9, Col 23, Line 9, Col 24, "The record type 'NestedRecTy' does not contain a label 'C'.")
         (Error 1129, Line 10, Col 25, Line 10, Col 26, "The record type '{| a: int |}' does not contain a label 'b'.")
         (Error 39, Line 11, Col 21, Line 11, Col 22, "The namespace or module 'C' is not defined.")
-        (Error 1129, Line 12, Col 55, Line 12, Col 56, "The record type 'NestdRecTy' does not contain a label 'C'.")
-        (Error 1129, Line 13, Col 57, Line 13, Col 58, "The record type '{| a: int |}' does not contain a label 'b'.")
-        (Error 1129, Line 14, Col 53, Line 14, Col 54, "The record type '{| a: int; b: NestdRecTy |}' does not contain a label 'c'.")
+        (Error 1129, Line 12, Col 56, Line 12, Col 57, "The record type 'NestedRecTy' does not contain a label 'C'.")
+        (Error 1129, Line 13, Col 58, Line 13, Col 59, "The record type '{| a: int |}' does not contain a label 'b'.")
+        (Error 1129, Line 14, Col 54, Line 14, Col 55, "The record type '{| a: int; b: NestedRecTy |}' does not contain a label 'c'.")
     ]
 
 [<Fact>]

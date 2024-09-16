@@ -3,15 +3,14 @@
 namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 
 open FSharp.Test
-open NUnit.Framework
+open Xunit
 
 open System
 open System.Threading.Tasks
 
-[<TestFixture>]
 module ByrefTailcalls =
 
-    [<Test>]
+    [<Fact>]
     let ``check no tailcall to inref``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([| "/optimize";"/tailcalls" |],
             """

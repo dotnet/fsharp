@@ -19,7 +19,7 @@ open LanguagePrimitives.IntrinsicOperators
 
 type PrintfFormat<'Printer, 'State, 'Residue, 'Result>
         [<DebuggerStepThrough>]
-        (value:string, captures: obj array, captureTys: Type array) =
+        (value:string, captures: objnull array, captureTys: Type array) =
         
     [<DebuggerStepThrough>]
     new (value) = new PrintfFormat<'Printer, 'State, 'Residue, 'Result>(value, null, null) 
@@ -246,7 +246,7 @@ module internal PrintfImpl =
                             let p = parsePrecision s &i2
                             let typeChar = parseTypeChar s &i2
 
-                            // shortcut for the simpliest case
+                            // shortcut for the simplest case
                             // if typeChar is not % or it has star as width\precision - resort to long path
                             if typeChar = '%' && not (w = StarValue || p = StarValue) then 
                                 buf.Append('%') |> ignore
@@ -263,14 +263,14 @@ module internal PrintfImpl =
     /// Represents one step in the execution of a format string
     [<NoComparison; NoEquality>]
     type Step =
-        | StepWithArg of prefix: string * conv: (obj -> string) 
-        | StepWithTypedArg of prefix: string * conv: (obj -> Type -> string) 
+        | StepWithArg of prefix: string * conv: (objnull -> string) 
+        | StepWithTypedArg of prefix: string * conv: (objnull -> Type -> string) 
         | StepString of prefix: string 
         | StepLittleT of prefix: string 
         | StepLittleA of prefix: string
-        | StepStar1 of prefix: string * conv: (obj -> int -> string) 
+        | StepStar1 of prefix: string * conv: (objnull -> int -> string) 
         | StepPercentStar1 of prefix: string
-        | StepStar2 of prefix: string * conv: (obj -> int -> int -> string)
+        | StepStar2 of prefix: string * conv: (objnull -> int -> int -> string)
         | StepPercentStar2 of prefix: string
 
         // Count the number of string fragments in a sequence of steps
@@ -323,7 +323,7 @@ module internal PrintfImpl =
             if not (String.IsNullOrEmpty s) then 
                 env.Write s
     
-        member env.RunSteps (args: obj array, argTys: Type array, steps: Step array) =
+        member env.RunSteps (args: objnull array, argTys: Type array, steps: Step array) =
             let mutable argIndex = 0
             let mutable tyIndex = 0
 
@@ -359,7 +359,7 @@ module internal PrintfImpl =
                     argIndex <- argIndex + 1
                     let arg = args.[argIndex]
                     argIndex <- argIndex + 1
-                    let f = farg :?> ('State -> obj -> 'Residue)
+                    let f = farg :?> ('State -> objnull -> 'Residue)
                     env.WriteT(f env.State arg)
 
                 | StepStar1(prefix, conv) -> 
@@ -395,7 +395,7 @@ module internal PrintfImpl =
     /// Type of results produced by specialization.
     ///
     /// This is a function that accepts a thunk to create PrintfEnv on demand (at the very last
-    /// appliction of an argument) and returns a concrete instance of an appriate curried printer.
+    /// application of an argument) and returns a concrete instance of an appropriate curried printer.
     ///
     /// After all arguments are collected, specialization obtains concrete PrintfEnv from the thunk
     /// and uses it to output collected data.
@@ -410,7 +410,7 @@ module internal PrintfImpl =
     /// If we captured into an mutable array then these would interfere 
     type PrintfInitial<'State, 'Residue, 'Result> = (unit -> PrintfEnv<'State, 'Residue, 'Result>)
     type PrintfFuncFactory<'Printer, 'State, 'Residue, 'Result> = 
-        delegate of obj list * PrintfInitial<'State, 'Residue, 'Result> -> 'Printer
+        delegate of objnull list * PrintfInitial<'State, 'Residue, 'Result> -> 'Printer
 
     [<Literal>]
     let MaxArgumentsInSpecialization = 3
@@ -477,7 +477,7 @@ module internal PrintfImpl =
         static member CaptureLittleA<'A, 'Tail>(next: PrintfFuncFactory<_, 'State, 'Residue, 'Result>) =
             PrintfFuncFactory<_, 'State, 'Residue, 'Result>(fun args initial -> 
                 (fun (f: 'State -> 'A -> 'Residue) (arg1: 'A) ->
-                    let args = box arg1 :: box (fun s (arg:obj) -> f s (unbox arg)) :: args
+                    let args = box arg1 :: box (fun s (arg:objnull) -> f s (unbox arg)) :: args
                     next.Invoke(args, initial) : 'Tail
                 )
             )
@@ -546,12 +546,12 @@ module internal PrintfImpl =
     /// A wrapper struct used to slightly strengthen the types of "ValueConverter" objects produced during composition of
     /// the dynamic implementation.  These are always functions but sometimes they take one argument, sometimes two.
     [<Struct; NoEquality; NoComparison>]
-    type ValueConverter internal (f: obj) =
+    type ValueConverter internal (f: objnull) =
         member x.FuncObj = f
 
-        static member inline Make (f: obj -> string) = ValueConverter(box f)
-        static member inline Make (f: obj -> int -> string) = ValueConverter(box f)
-        static member inline Make (f: obj -> int-> int -> string) = ValueConverter(box f)
+        static member inline Make (f: objnull -> string) = ValueConverter(box f)
+        static member inline Make (f: objnull -> int -> string) = ValueConverter(box f)
+        static member inline Make (f: objnull -> int-> int -> string) = ValueConverter(box f)
 
     let getFormatForFloat (ch: char) (prec: int) = ch.ToString() +  prec.ToString()
 
@@ -569,7 +569,7 @@ module internal PrintfImpl =
         /// pad here is function that converts T to string with respect of justification
         /// basic - function that converts T to string without applying justification rules
         /// adaptPaddedFormatted returns boxed function that has various number of arguments depending on if width\precision flags has '*' value 
-        let adaptPaddedFormatted (spec: FormatSpecifier) getFormat (basic: string -> obj -> string) (pad: string -> int -> obj -> string) : ValueConverter =
+        let adaptPaddedFormatted (spec: FormatSpecifier) getFormat (basic: string -> objnull -> string) (pad: string -> int -> objnull -> string) : ValueConverter =
             if spec.IsStarWidth then
                 if spec.IsStarPrecision then
                     // width=*, prec=*
@@ -609,7 +609,7 @@ module internal PrintfImpl =
         /// pad here is function that converts T to string with respect of justification
         /// basic - function that converts T to string without applying justification rules
         /// adaptPadded returns boxed function that has various number of arguments depending on if width flags has '*' value 
-        let adaptPadded (spec: FormatSpecifier) (basic: obj -> string) (pad: int -> obj -> string) : ValueConverter = 
+        let adaptPadded (spec: FormatSpecifier) (basic: objnull -> string) (pad: int -> objnull -> string) : ValueConverter = 
             if spec.IsStarWidth then
                 // width=*, prec=?
                 ValueConverter.Make (fun v width -> 
@@ -624,7 +624,7 @@ module internal PrintfImpl =
                     ValueConverter.Make ( 
                         basic)
 
-        let withPaddingFormatted (spec: FormatSpecifier) getFormat  (defaultFormat: string) (f: string ->  obj -> string) left right : ValueConverter =
+        let withPaddingFormatted (spec: FormatSpecifier) getFormat  (defaultFormat: string) (f: string ->  objnull -> string) left right : ValueConverter =
             if not (spec.IsWidthSpecified || spec.IsPrecisionSpecified) then
                 ValueConverter.Make (f defaultFormat)
             else
@@ -633,7 +633,7 @@ module internal PrintfImpl =
                 else
                     adaptPaddedFormatted spec getFormat f right
 
-        let withPadding (spec: FormatSpecifier) (f: obj -> string) left right : ValueConverter =
+        let withPadding (spec: FormatSpecifier) (f: objnull -> string) left right : ValueConverter =
             if not spec.IsWidthSpecified then
                 ValueConverter.Make f
             else
@@ -644,11 +644,11 @@ module internal PrintfImpl =
 
     /// Contains functions to handle left/right justifications for non-numeric types (strings/bools)
     module Basic =
-        let leftJustify (f: obj -> string) padChar = 
+        let leftJustify (f: objnull -> string) padChar = 
             fun (w: int) v -> 
                 (f v).PadRight(w, padChar)
     
-        let rightJustify (f: obj -> string) padChar = 
+        let rightJustify (f: objnull -> string) padChar = 
             fun (w: int) v -> 
                 (f v).PadLeft(w, padChar)
     
@@ -725,16 +725,16 @@ module internal PrintfImpl =
             else str
         
         /// noJustification handler for f: 'T -> string - basic integer types
-        let noJustification (f: obj -> string) (prefix: string) isUnsigned =
+        let noJustification (f: objnull -> string) (prefix: string) isUnsigned =
             if isUnsigned then
-                fun (v: obj) -> noJustificationCore (f v) true true prefix
+                fun (v: objnull) -> noJustificationCore (f v) true true prefix
             else 
-                fun (v: obj) -> noJustificationCore (f v) true (isPositive v) prefix
+                fun (v: objnull) -> noJustificationCore (f v) true (isPositive v) prefix
 
     /// contains functions to handle left/right and no justification case for numbers
     module Integer =
     
-        let eliminateNative (v: obj) = 
+        let eliminateNative (v: objnull) = 
             match v with
             | :? nativeint as n ->
                 if IntPtr.Size = 4 then box (n.ToInt32())
@@ -744,7 +744,7 @@ module internal PrintfImpl =
                 else box (uint64 (n.ToUInt64()))
             | _ -> v
 
-        let rec toString (v: obj) =
+        let rec toString (v: objnull) =
             match v with
             | :? int32 as n -> n.ToString(CultureInfo.InvariantCulture)
             | :? int64 as n -> n.ToString(CultureInfo.InvariantCulture)
@@ -770,7 +770,7 @@ module internal PrintfImpl =
             | :? nativeint | :? unativeint -> toFormattedString fmt (eliminateNative v)
             | _ -> failwith "toFormattedString: unreachable"
 
-        let rec toUnsigned (v: obj) = 
+        let rec toUnsigned (v: objnull) = 
             match v with
             | :? int32 as n -> box (uint32 n)
             | :? int64 as n -> box (uint64 n)
@@ -780,35 +780,35 @@ module internal PrintfImpl =
             | _ -> v
 
         /// Left justification handler for f: 'T -> string - basic integer types
-        let leftJustify isGFormat (f: obj -> string) (prefix: string) padChar isUnsigned = 
+        let leftJustify isGFormat (f: objnull -> string) (prefix: string) padChar isUnsigned = 
             if isUnsigned then
                 if isGFormat then
-                    fun (w: int) (v: obj) ->
+                    fun (w: int) (v: objnull) ->
                         GenericNumber.leftJustifyWithGFormat (f v) true true true w prefix padChar
                 else
-                    fun (w: int) (v: obj) ->
+                    fun (w: int) (v: objnull) ->
                         GenericNumber.leftJustifyWithNonGFormat (f v) true true w prefix padChar
             else
                 if isGFormat then
-                    fun (w: int) (v: obj) ->
+                    fun (w: int) (v: objnull) ->
                         GenericNumber.leftJustifyWithGFormat (f v) true true (GenericNumber.isPositive v) w prefix padChar
                 else
-                    fun (w: int) (v: obj) ->
+                    fun (w: int) (v: objnull) ->
                         GenericNumber.leftJustifyWithNonGFormat (f v) true (GenericNumber.isPositive v) w prefix padChar
         
         /// Right justification handler for f: 'T -> string - basic integer types
         let rightJustify f (prefixForPositives: string) padChar isUnsigned =
             if isUnsigned then
                 if padChar = '0' then
-                    fun (w: int) (v: obj) ->
+                    fun (w: int) (v: objnull) ->
                         GenericNumber.rightJustifyWithZeroAsPadChar (f v) true true w prefixForPositives
                 else
                     System.Diagnostics.Debug.Assert((padChar = ' '))
-                    fun (w: int) (v: obj) ->
+                    fun (w: int) (v: objnull) ->
                         GenericNumber.rightJustifyWithSpaceAsPadChar (f v) true true w prefixForPositives
             else
                 if padChar = '0' then
-                    fun (w: int) (v: obj) ->
+                    fun (w: int) (v: objnull) ->
                         GenericNumber.rightJustifyWithZeroAsPadChar (f v) true (GenericNumber.isPositive v) w prefixForPositives
 
                 else
@@ -819,7 +819,7 @@ module internal PrintfImpl =
         /// Computes a new function from 'f' that wraps the basic conversion given
         /// by 'f' with padding for 0, spacing and justification, if the flags specify
         /// it.  If they don't, f is made into a value converter
-        let withPadding (spec: FormatSpecifier) isUnsigned (f: obj -> string)  =
+        let withPadding (spec: FormatSpecifier) isUnsigned (f: objnull -> string)  =
             let allowZeroPadding = not (isLeftJustify spec.Flags) || spec.IsDecimalFormat
             let padChar, prefix = spec.GetPadAndPrefix allowZeroPadding
             Padding.withPadding spec
@@ -838,13 +838,13 @@ module internal PrintfImpl =
             | 'X' ->
                 withPadding spec true (toFormattedString "X")
             | 'o' ->
-                withPadding spec true (fun (v: obj) ->
+                withPadding spec true (fun (v: objnull) ->
                     // Convert.ToInt64 throws for uint64 with values above int64 range so cast directly
                     match toUnsigned v with 
                     | :? uint64 as u -> Convert.ToString(int64 u, 8)
                     | u -> Convert.ToString(Convert.ToInt64 u, 8))
             | 'B' ->
-                withPadding spec true (fun (v: obj) ->
+                withPadding spec true (fun (v: objnull) ->
                     match toUnsigned v with 
                     | :? uint64 as u -> Convert.ToString(int64 u, 2)
                     | u -> Convert.ToString(Convert.ToInt64 u, 2))
@@ -910,7 +910,7 @@ module internal PrintfImpl =
     type ObjectPrinter = 
 
         static member ObjectToString(spec: FormatSpecifier) : ValueConverter = 
-            Basic.withPadding spec (fun (v: obj) ->
+            Basic.withPadding spec (fun (v: objnull) ->
                 match v with
                 | null -> "<null>"
                 | x -> x.ToString())
@@ -921,7 +921,7 @@ module internal PrintfImpl =
                 match spec.InteropHoleDotNetFormat with 
                 | ValueNone -> null
                 | ValueSome fmt -> "{0:" + fmt + "}"
-            Basic.withPadding spec (fun (vobj: obj) ->
+            Basic.withPadding spec (fun (vobj: objnull) ->
                 match vobj with
                 | null -> ""
                 | x -> 
@@ -953,7 +953,7 @@ module internal PrintfImpl =
 
             match spec.IsStarWidth, spec.IsStarPrecision with
             | true, true ->
-                ValueConverter.Make (fun (vobj: obj) (width: int) (prec: int) ->
+                ValueConverter.Make (fun (vobj: objnull) (width: int) (prec: int) ->
                     let v = unbox<'T> vobj
                     let opts = { opts with PrintSize = prec }
                     let opts  = if not useZeroWidth then { opts with PrintWidth = width} else opts
@@ -961,19 +961,19 @@ module internal PrintfImpl =
                     )
 
             | true, false ->
-                ValueConverter.Make (fun (vobj: obj) (width: int) ->
+                ValueConverter.Make (fun (vobj: objnull) (width: int) ->
                     let v = unbox<'T> vobj
                     let opts  = if not useZeroWidth then { opts with PrintWidth = width} else opts
                     ObjectPrinter.GenericToStringCore(v, opts, bindingFlags))
 
             | false, true ->
-                ValueConverter.Make (fun (vobj: obj) (prec: int) ->
+                ValueConverter.Make (fun (vobj: objnull) (prec: int) ->
                     let v = unbox<'T> vobj
                     let opts = { opts with PrintSize = prec }
                     ObjectPrinter.GenericToStringCore(v, opts, bindingFlags) )
 
             | false, false ->
-                ValueConverter.Make (fun (vobj: obj) ->
+                ValueConverter.Make (fun (vobj: objnull) ->
                     let v = unbox<'T> vobj
                     ObjectPrinter.GenericToStringCore(v, opts, bindingFlags))
         
@@ -992,7 +992,7 @@ module internal PrintfImpl =
         | 's' ->
             Basic.withPadding spec (unbox >> stringToSafeString)
         | 'c' ->
-            Basic.withPadding spec (fun (c: obj) -> (unbox<char> c).ToString())
+            Basic.withPadding spec (fun (c: objnull) -> (unbox<char> c).ToString())
         | 'M'  ->
             FloatAndDecimal.withPadding spec (fun _ -> "G") "G" // %M ignores precision
         | 'd' | 'i' | 'u' | 'B' | 'o' | 'x' | 'X' -> 
@@ -1149,10 +1149,10 @@ module internal PrintfImpl =
                     let argTy = match argTys with null -> typeof<obj> | _ -> argTys.[argTys.Length - 1]
                     let conv = getValueConverter argTy spec 
                     if isTwoStar then 
-                        let convFunc = conv.FuncObj :?> (obj -> int -> int -> string)
+                        let convFunc = conv.FuncObj :?> (objnull -> int -> int -> string)
                         StepStar2 (prefix, convFunc)
                     else
-                        let convFunc = conv.FuncObj :?> (obj -> int -> string)
+                        let convFunc = conv.FuncObj :?> (objnull -> int -> string)
                         StepStar1 (prefix, convFunc)
             else
                 // For interpolated string format processing, the static types of the '%A' arguments 
@@ -1162,7 +1162,7 @@ module internal PrintfImpl =
                     let convFunc arg argTy = 
                         let mi = mi_GenericToString.MakeGenericMethod [| argTy |]
                         let f = mi.Invoke(null, [| box spec |]) :?> ValueConverter
-                        let f2 = f.FuncObj :?> (obj -> string)
+                        let f2 = f.FuncObj :?> (objnull -> string)
                         f2 arg
 
                     StepWithTypedArg (prefix, convFunc)
@@ -1172,7 +1172,7 @@ module internal PrintfImpl =
                     // are provided via the argument typed extracted from the curried function. They are known on first phase.
                     let argTy = match argTys with null -> typeof<obj> | _ -> argTys.[0]
                     let conv = getValueConverter argTy spec
-                    let convFunc = conv.FuncObj :?> (obj -> string)
+                    let convFunc = conv.FuncObj :?> (objnull -> string)
                     StepWithArg (prefix, convFunc)
             
         let parseSpec (i: byref<int>) = 

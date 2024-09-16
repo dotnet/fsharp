@@ -13,7 +13,7 @@ let test s b = stderr.Write(s:string);  if b then stderr.WriteLine " OK" else re
 
 (*--------------------*)
 
-// Test cases for Github Issue # 10  module cannot contain ,
+// Test cases for GitHub Issue # 10  module cannot contain ,
 
 // Comma in module name
 module ``,`` =

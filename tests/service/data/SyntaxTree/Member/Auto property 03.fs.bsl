@@ -27,7 +27,7 @@ ImplFile
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertySet },
                          PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         None,
+                         GetSet (None, None, None),
                          ArbitraryAfterError
                            ("typedSequentialExprBlock1", (4,19--4,19)),
                          (4,4--4,19),
@@ -51,7 +51,8 @@ ImplFile
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertySet },
                          PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         None, Const (Int32 2, (5,20--5,21)), (5,4--5,21),
+                         GetSet (None, None, None),
+                         Const (Int32 2, (5,20--5,21)), (5,4--5,21),
                          { LeadingKeyword =
                             MemberVal ((5,4--5,10), (5,11--5,14))
                            WithKeyword = None

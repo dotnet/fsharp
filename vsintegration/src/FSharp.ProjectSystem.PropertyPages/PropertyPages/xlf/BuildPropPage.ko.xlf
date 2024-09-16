@@ -12,6 +12,11 @@
         <target state="translated">32비트 기본 사용(&amp;P)</target>
         <note />
       </trans-unit>
+      <trans-unit id="lblSuppressWarnings.Text">
+        <source>&amp;Suppress warnings:</source>
+        <target state="new">&amp;Suppress warnings:</target>
+        <note />
+      </trans-unit>
       <trans-unit id="outputLabel.Text">
         <source>Output</source>
         <target state="translated">출력</target>
@@ -60,11 +65,6 @@
       <trans-unit id="rbWarningNone.Text">
         <source>&amp;None</source>
         <target state="translated">없음(&amp;N)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="lblSupressWarnings.Text">
-        <source>&amp;Suppress warnings:</source>
-        <target state="translated">경고 표시 안 함(&amp;S):</target>
         <note />
       </trans-unit>
       <trans-unit id="cboWarningLevel.Items">

@@ -11,25 +11,30 @@ module MemberDefinitions_MethodsAndProperties =
     let verifyCompile compilation =
         compilation
         |> asExe
-        |> withOptions ["--nowarn:988"]
+        |> withOptions ["--nowarn:988"; "--nowarn:FS3581"]
         |> compile
 
-    let verifyCompileAndRun compilation =
+    let verifyCompileAndRun = verifyCompile >> run
+
+    // SOURCE=PartiallyOverriddenProperty.fs							
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PartiallyOverriddenProperty.fs"|])>]
+    let ``Partially Overridden Property`` compilation =
         compilation
-        |> asExe
-        |> withOptions ["--nowarn:988"]
-        |> compileAndRun
+        |> withCheckNulls
+        |> typecheck
+        |> shouldSucceed
 
     // SOURCE=AbstractProperties01.fs								# AbstractProperties01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AbstractProperties01.fs"|])>]
     let ``AbstractProperties01_fs`` compilation =
         compilation
+        |> withCheckNulls
         |> verifyCompileAndRun
         |> shouldSucceed
    
-    // SOURCE=E_AbstractAndConcereteProp.fs SCFLAGS="--test:ErrorRanges"		# E_AbstractAndConcereteProp.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AbstractAndConcereteProp.fs"|])>]
-    let ``E_AbstractAndConcereteProp_fs`` compilation =
+    // SOURCE=E_AbstractAndConcreteProp.fs SCFLAGS="--test:ErrorRanges"		# E_AbstractAndConcreteProp.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AbstractAndConcreteProp.fs"|])>]
+    let ``E_AbstractAndConcreteProp_fs`` compilation =
         compilation
         |> verifyCompile
         |> shouldFail
@@ -65,7 +70,7 @@ module MemberDefinitions_MethodsAndProperties =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 827, Line 10, Col 19, Line 10, Col 37, "This is not a valid name for an active pattern")
+            (Error 827, Line 10, Col 20, Line 10, Col 29, "'(|Foo|Bar|)' is not a valid method name. Use a 'let' binding instead.")
             (Error 39, Line 21, Col 10, Line 21, Col 13, "The type 'FaaBor' does not define the field, constructor or member 'Foo'.")
         ]
 
@@ -76,7 +81,23 @@ module MemberDefinitions_MethodsAndProperties =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 827, Line 6, Col 12, Line 6, Col 27, "This is not a valid name for an active pattern")
+            (Error 827, Line 6, Col 15, Line 6, Col 24, "'(|Foo|Bar|)' is not a valid method name. Use a 'let' binding instead.")
+            (Error 3868, Line 16, Col 11, Line 16, Col 14, "This active pattern expects 1 expression argument(s) and a pattern argument, e.g., 'Foo e1 pat'.");
+            (Error 3868, Line 17, Col 11, Line 17, Col 14, "This active pattern expects 1 expression argument(s) and a pattern argument, e.g., 'Bar e1 pat'.");
+            (Warning 25, Line 15, Col 15, Line 15, Col 16, "Incomplete pattern matches on this expression.")
+        ]
+        
+
+    // SOURCE=E_ActivePatternMember03.fs  SCFLAGS="--test:ErrorRanges"	# E_ActivePatternMember03.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ActivePatternMember03.fs"|])>]
+    let ``E_ActivePatternMember03_fs`` compilation =
+        compilation
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3872, Line 5, Col 6, Line 5, Col 13, "Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.")
+            (Error 3872, Line 15, Col 10, Line 15, Col 17, "Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.")
+            (Error 827, Line 24, Col 20, Line 24, Col 25, "'(|A|B|)' is not a valid method name. Use a 'let' binding instead.")
         ]
 
     // SOURCE=E_DuplicateProperty01.fs SCFLAGS="--test:ErrorRanges"	# E_DuplicateProperty01.fs
@@ -589,7 +610,6 @@ type MyIndexerClass() =
         with get (index: int): string = ""
         and set (index: int) (value: float) = ()
 """
-        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3581, Line 3, Col 14, Line 3, Col 22, "An indexed property's getter and setter must have the same type. Property 'Indexer1' has getter of type 'string' but setter of type 'float'.")
@@ -602,7 +622,6 @@ type MyIndexerClass() =
         with get (index) = 1
         and set (index) (value: float) = ()
 """
-        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3581, Line 3, Col 14, Line 3, Col 22, "An indexed property's getter and setter must have the same type. Property 'Indexer2' has getter of type 'int' but setter of type 'float'.")
@@ -616,7 +635,6 @@ type MyIndexerClass() =
     member x.Indexer3
         with set index (value: float) = ()
 """
-        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3581, Line 3, Col 14, Line 3, Col 22, "An indexed property's getter and setter must have the same type. Property 'Indexer3' has getter of type 'int' but setter of type 'float'.")
@@ -629,7 +647,6 @@ type MyIndexerClass() =
         with get (index: int, index2: int): float = 0.0
         and set (index1: int, index2: int) (value: string) = ()
 """
-        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3581, Line 3, Col 14, Line 3, Col 22, "An indexed property's getter and setter must have the same type. Property 'Indexer4' has getter of type 'float' but setter of type 'string'.")
@@ -642,7 +659,6 @@ type MyIndexerClass() =
         with get (index, index2) = 0.0
         and set (index1, index2) value = ()
 """
-        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3581, Line 3, Col 14, Line 3, Col 22, "An indexed property's getter and setter must have the same type. Property 'Indexer5' has getter of type 'float' but setter of type 'obj'.")
@@ -664,7 +680,6 @@ type GenericIndexer<'indexerArgs,'indexerOutput,'indexerInput>() =
                                                 m_lastArgs  <- args
                                                 m_lastInput <- input
 """
-        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3581, Line 9, Col 17, Line 9, Col 21, "An indexed property's getter and setter must have the same type. Property 'Item' has getter of type ''indexerOutput' but setter of type ''indexerInput'.")

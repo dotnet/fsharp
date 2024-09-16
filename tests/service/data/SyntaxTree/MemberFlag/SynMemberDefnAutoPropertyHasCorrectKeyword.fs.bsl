@@ -28,7 +28,8 @@ ImplFile
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertySet },
                          PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         None, Const (Int32 1, (3,32--3,33)), (3,4--3,33),
+                         GetSet (None, None, None),
+                         Const (Int32 1, (3,32--3,33)), (3,4--3,33),
                          { LeadingKeyword =
                             StaticMemberVal
                               ((3,4--3,10), (3,11--3,17), (3,18--3,21))
@@ -51,7 +52,8 @@ ImplFile
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertySet },
                          PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         None, Const (Int32 1, (4,25--4,26)), (4,4--4,26),
+                         GetSet (None, None, None),
+                         Const (Int32 1, (4,25--4,26)), (4,4--4,26),
                          { LeadingKeyword =
                             MemberVal ((4,4--4,10), (4,11--4,14))
                            WithKeyword = None
@@ -73,7 +75,8 @@ ImplFile
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertySet },
                          PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         None, Const (Int32 2, (5,27--5,28)), (5,4--5,28),
+                         GetSet (None, None, None),
+                         Const (Int32 2, (5,27--5,28)), (5,4--5,28),
                          { LeadingKeyword =
                             OverrideVal ((5,4--5,12), (5,13--5,16))
                            WithKeyword = None
@@ -95,7 +98,8 @@ ImplFile
                            GetterOrSetterIsCompilerGenerated = false
                            MemberKind = PropertySet },
                          PreXmlDoc ((6,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         None, Const (Int32 1, (6,26--6,27)), (6,4--6,27),
+                         GetSet (None, None, None),
+                         Const (Int32 1, (6,26--6,27)), (6,4--6,27),
                          { LeadingKeyword =
                             DefaultVal ((6,4--6,11), (6,12--6,15))
                            WithKeyword = None

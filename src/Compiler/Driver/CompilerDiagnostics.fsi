@@ -1,12 +1,13 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// Contains logic to prepare, post-process, filter and emit compiler diagnsotics
+/// Contains logic to prepare, post-process, filter and emit compiler diagnostics
 module internal FSharp.Compiler.CompilerDiagnostics
 
 open System.Text
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
@@ -84,7 +85,7 @@ type PhasedDiagnostic with
 
 /// Get a diagnostics logger that filters the reporting of warnings based on scoped pragma information
 val GetDiagnosticsLoggerFilteringByScopedPragmas:
-    checkFile: bool *
+    langVersion: LanguageVersion *
     scopedPragmas: ScopedPragma list *
     diagnosticOptions: FSharpDiagnosticOptions *
     diagnosticsLogger: DiagnosticsLogger ->
@@ -113,7 +114,9 @@ type FormattedDiagnosticCanonicalInformation =
 type FormattedDiagnosticDetailedInfo =
     { Location: FormattedDiagnosticLocation option
       Canonical: FormattedDiagnosticCanonicalInformation
-      Message: string }
+      Message: string
+      Context: string option
+      DiagnosticStyle: DiagnosticStyle }
 
 /// Used internally and in LegacyHostedCompilerForTesting
 [<RequireQualifiedAccess>]

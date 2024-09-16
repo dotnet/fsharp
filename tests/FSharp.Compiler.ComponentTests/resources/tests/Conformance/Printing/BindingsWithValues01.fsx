@@ -34,7 +34,7 @@ let B = "Hello"                                 // reference type   - val B: str
 
 let c' = { Name = "F#" }                        // record           - val c': RecT = { Name = "F#" }
 
-let _d = Office                                 // disc unioin      - val _d: Bldg = Office
+let _d = Office                                 // disc union       - val _d: Bldg = Office
 
 let e = {1..2..100}                             // sequence         - val e: seq<int> = <seq>
 let F'F = [3..-1..1]                            // list             - val F'F: int list = [3; 2; 1]

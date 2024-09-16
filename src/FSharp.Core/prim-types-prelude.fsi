@@ -18,6 +18,16 @@ namespace Microsoft.FSharp.Core
     /// <category>Basic Types</category>
     type obj = System.Object
 
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.Object"/> or null.
+    /// With the 'nullable reference types' feature, this is an alias to 'obj | null'.</summary>
+    ///
+    /// <category>Basic Types</category>
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
+    type objnull = obj
+#else
+    type objnull = obj | null
+#endif
+
     /// <summary>An abbreviation for the CLI type <see cref="T:System.Exception"/>.</summary>
     ///
     /// <category>Basic Types</category>

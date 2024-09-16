@@ -116,7 +116,7 @@ is not compatible with type
 
 neg10.fs(245,50,245,51): typecheck error FS0193: A type parameter is missing a constraint 'when 'b :> C'
 
-neg10.fs(245,17,245,40): typecheck error FS0043: A type parameter is missing a constraint 'when 'b :> C'
+neg10.fs(245,17,245,20): typecheck error FS0043: A type parameter is missing a constraint 'when 'b :> C'
 
 neg10.fs(251,49,251,61): typecheck error FS0001: The type '('a -> 'a)' does not support the 'equality' constraint because it is a function type
 

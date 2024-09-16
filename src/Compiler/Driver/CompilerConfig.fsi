@@ -41,16 +41,18 @@ type IRawFSharpAssemblyData =
     /// Indicates if the assembly has any F# signature data attribute
     abstract HasAnyFSharpSignatureDataAttribute: bool
 
-    /// Indicates if the assembly has an F# signature data attribute auitable for use with this version of F# tooling
+    /// Indicates if the assembly has an F# signature data attribute suitable for use with this version of F# tooling
     abstract HasMatchingFSharpSignatureDataAttribute: bool
 
     /// Get the raw F# signature data in the assembly, if any
     abstract GetRawFSharpSignatureData:
-        m: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
+        m: range * ilShortAssemName: string * fileName: string ->
+            (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
 
     /// Get the raw F# optimization data in the assembly, if any
     abstract GetRawFSharpOptimizationData:
-        m: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
+        m: range * ilShortAssemName: string * fileName: string ->
+            (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
 
     /// Get the table of type forwarders in the assembly
     abstract GetRawTypeForwarders: unit -> ILExportedTypesAndForwarders
@@ -287,6 +289,8 @@ type TcConfigBuilder =
         mutable diagnosticsOptions: FSharpDiagnosticOptions
 
         mutable mlCompatibility: bool
+
+        mutable checkNullness: bool
 
         mutable checkOverflow: bool
 
@@ -626,6 +630,8 @@ type TcConfig =
 
     member mlCompatibility: bool
 
+    member checkNullness: bool
+
     member checkOverflow: bool
 
     member showReferenceResolutions: bool
@@ -874,7 +880,7 @@ type TcConfig =
 
     member CoreLibraryDllReference: unit -> AssemblyReference
 
-    /// Allow forking and subsuequent modification of the TcConfig via a new TcConfigBuilder
+    /// Allow forking and subsequent modification of the TcConfig via a new TcConfigBuilder
     member CloneToBuilder: unit -> TcConfigBuilder
 
     /// Indicates if the compilation will result in F# signature data resource in the generated binary

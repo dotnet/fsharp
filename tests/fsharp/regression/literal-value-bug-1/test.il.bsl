@@ -26,15 +26,15 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.test
+.mresource public FSharpSignatureCompressedData.test
 {
   // Offset: 0x00000000 Length: 0x00000274
-  // WARNING: managed resource file FSharpSignatureData.test created
+  // WARNING: managed resource file FSharpSignatureCompressedData.test created
 }
-.mresource public FSharpOptimizationData.test
+.mresource public FSharpOptimizationCompressedData.test
 {
   // Offset: 0x00000278 Length: 0x0000006F
-  // WARNING: managed resource file FSharpOptimizationData.test created
+  // WARNING: managed resource file FSharpOptimizationCompressedData.test created
 }
 .module test.exe
  // MVID: {5AA663EB-D9C1-2E4E-A745-0383EB63A65A}

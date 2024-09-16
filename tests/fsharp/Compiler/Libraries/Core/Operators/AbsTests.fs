@@ -2,14 +2,14 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Compiler.Diagnostics
 open FSharp.Test
 
-[<TestFixture>]
+
 module ``Abs Tests`` =
 
-    [<Test>]
+    [<Fact>]
     let  ``Abs of signed integral types``() =
         // Regression test for FSHARP1.0:3470 - exception on abs of native integer
 
@@ -20,7 +20,7 @@ module ``Abs Tests`` =
         Assert.areEqual (abs -1L) 1L   // int64
         Assert.areEqual (abs -1I) 1I   // bigint
 
-    [<Test>]
+    [<Fact>]
     let ``Abs of byte``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -31,7 +31,7 @@ abs -1uy |> ignore
             (2, 6, 2, 9)
             "The type 'byte' does not support the operator 'abs'"
     
-    [<Test>]
+    [<Fact>]
     let ``Abs of uint16``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -42,7 +42,7 @@ abs -1us |> ignore
             (2, 6, 2, 9)
             "The type 'uint16' does not support the operator 'abs'"
 
-    [<Test>]
+    [<Fact>]
     let ``Abs of uint32``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -62,7 +62,7 @@ abs -1u |> ignore
             (2, 6, 2, 8)
             "The type 'uint32' does not support the operator 'abs'"
             
-    [<Test>]
+    [<Fact>]
     let ``Abs of unativeint``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -73,7 +73,7 @@ abs -1un |> ignore
             (2, 6, 2, 9)
             "The type 'unativeint' does not support the operator 'abs'"
             
-    [<Test>]
+    [<Fact>]
     let ``Abs of uint64``() =
         CompilerAssert.TypeCheckSingleError
             """

@@ -2,7 +2,7 @@
 // Verify appropriate error with ambiguous record inference
 // Same as 01, but with generic types
 // Regression test for FSHARP1.0:2780
-//<Expects id="FS0764" span="(13,20-13,30)" status="error">No assignment given for field 'Y' of type 'N\.M\.Blue+</Expects>
+
 namespace N
 module M =
 

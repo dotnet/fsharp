@@ -2,7 +2,7 @@
 #light
 
 // Verify error when trying to use range constants
-//<Expects id="FS0010" status="error">Unexpected symbol '..' in pattern matching. Expected '->' or other token</Expects>
+
 
 let areKnownLists l =
     match l with

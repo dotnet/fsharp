@@ -6,7 +6,7 @@ let b = true
 // This is a value we will access from the outside.
 // We expect accessing the value 'x' to trigger initialization of this file
 let x = 1.0M - 2.0M
-// This is a value we can access from the outside to definitely force initialziation of the module
+// This is a value we can access from the outside to definitely force initialization of the module
 let mutable forceInit = 1
 // This sets a value in another module to indicate that initialization has happened
 InitFlag66.init <- true

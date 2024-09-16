@@ -1,13 +1,12 @@
 ﻿namespace FSharp.Compiler.UnitTests
 
 open System
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 
-[<TestFixture>]
 module ComparisonOptimizationTests =
 
-    [<Test>]
+    [<Fact>]
     let Script_Compare_int() =
         let script = 
             """
@@ -36,7 +35,7 @@ let f (x: int) (y: int) = compare x y
             )
         )
 
-    [<Test>]
+    [<Fact>]
     let Script_Compare_uint() =
         let script = 
             """
@@ -65,7 +64,7 @@ let f (x: uint) (y: uint) = compare x y
             )
         )
 
-    [<Test>]
+    [<Fact>]
     let Script_Compare_int64() =
         let script = 
             """
@@ -94,7 +93,7 @@ let f (x: int64) (y: int64) = compare x y
             )
         )
 
-    [<Test>]
+    [<Fact>]
     let Script_Compare_uint64() =
         let script = 
             """
@@ -124,7 +123,7 @@ let f (x: uint64) (y: uint64) = compare x y
         )
 
 
-    [<Test>]
+    [<Fact>]
     let Script_Compare_int16() =
         let script = 
             """
@@ -153,7 +152,7 @@ let f (x: int16) (y: int16) = compare x y
             )
         )
 
-    [<Test>]
+    [<Fact>]
     let Script_Compare_uint16() =
         let script = 
             """
@@ -182,7 +181,7 @@ let f (x: uint16) (y: uint16) = compare x y
             )
         )
 
-    [<Test>]
+    [<Fact>]
     let Script_Compare_byte() =
         let script = 
             """
@@ -212,7 +211,7 @@ let f (x: byte) (y: byte) = compare x y
         )
 
 
-    [<Test>]
+    [<Fact>]
     let Script_Compare_sbyte() =
         let script = 
             """
@@ -242,7 +241,7 @@ let f (x: sbyte) (y: sbyte) = compare x y
         )
 
 
-    [<Test>]
+    [<Fact>]
     let Script_Compare_char() =
         let script = 
             """
@@ -271,7 +270,7 @@ let f (x: char) (y: char) = compare x y
             )
         )
 
-    [<Test>]
+    [<Fact>]
     let Script_Compare_bool() =
         let script = 
             """
@@ -307,7 +306,7 @@ let f (x: bool) (y: bool) = compare x y
         let areSameSign (x: int) (y: int) =
             Math.Sign(x) |> Assert.areEqual (Math.Sign(y))
 
-    [<Test>]
+    [<Fact>]
     let Check_equivalence_with_CompareTo() =
         let rnd = Random()
         for i in 0 .. 1000 do
@@ -318,7 +317,7 @@ let f (x: bool) (y: bool) = compare x y
 
 
 
-    [<Test>]
+    [<Fact>]
     let Check_limit_case_equivalence_with_CompareTo_int32() =
         let values = [0; 1; -1; Int32.MinValue; Int32.MaxValue; Int32.MinValue+1; Int32.MaxValue-1]
 
@@ -326,7 +325,7 @@ let f (x: bool) (y: bool) = compare x y
         for y in values do
             compare x y |> Assert.areSameSign (x.CompareTo(y))
 
-    [<Test>]
+    [<Fact>]
     let Check_limit_case_equivalence_with_CompareTo_uint32() =
         let values = [0u; 1u; UInt32.MaxValue; UInt32.MaxValue-1u]
 
@@ -334,7 +333,7 @@ let f (x: bool) (y: bool) = compare x y
         for y in values do
             compare x y |> Assert.areSameSign (x.CompareTo(y))
 
-    [<Test>]
+    [<Fact>]
     let Check_limit_case_equivalence_with_CompareTo_int64() =
         let values = [0L; 1L; -1L; Int64.MinValue; Int64.MaxValue; Int64.MinValue+1L; Int64.MaxValue-1L]
 
@@ -342,7 +341,7 @@ let f (x: bool) (y: bool) = compare x y
         for y in values do
             compare x y |> Assert.areSameSign (x.CompareTo(y))
 
-    [<Test>]
+    [<Fact>]
     let Check_limit_case_equivalence_with_CompareTo_uint64() =
         let values = [0UL; 1UL; UInt64.MaxValue; UInt64.MaxValue-1UL]
 
@@ -350,7 +349,7 @@ let f (x: bool) (y: bool) = compare x y
         for y in values do
             compare x y |> Assert.areSameSign (x.CompareTo(y))
 
-    [<Test>]
+    [<Fact>]
     let Check_limit_case_equivalence_with_CompareTo_int16() =
         let values = [0s; 1s; -1s; Int16.MinValue; Int16.MaxValue; Int16.MinValue+1s; Int16.MaxValue-1s]
 
@@ -358,7 +357,7 @@ let f (x: bool) (y: bool) = compare x y
         for y in values do
             compare x y |> Assert.areSameSign (x.CompareTo(y))
 
-    [<Test>]
+    [<Fact>]
     let Check_limit_case_equivalence_with_CompareTo_uint16() =
         let values = [0us; 1us; UInt16.MaxValue; UInt16.MaxValue-1us]
 
@@ -367,7 +366,7 @@ let f (x: bool) (y: bool) = compare x y
             compare x y |> Assert.areSameSign (x.CompareTo(y))
 
 
-    [<Test>]
+    [<Fact>]
     let Check_limit_case_equivalence_with_CompareTo_sbyte() =
         let values = [0y; 1y; -1y; SByte.MinValue; SByte.MaxValue; SByte.MinValue+1y; SByte.MaxValue-1y]
 
@@ -375,7 +374,7 @@ let f (x: bool) (y: bool) = compare x y
         for y in values do
             compare x y |> Assert.areSameSign (x.CompareTo(y))
 
-    [<Test>]
+    [<Fact>]
     let Check_limit_case_equivalence_with_CompareTo_byte() =
         let values = [0uy; 1uy; Byte.MaxValue; Byte.MaxValue-1uy]
 
@@ -383,7 +382,7 @@ let f (x: bool) (y: bool) = compare x y
         for y in values do
             compare x y |> Assert.areSameSign (x.CompareTo(y))
 
-    [<Test>]
+    [<Fact>]
     let Check_limit_case_equivalence_with_CompareTo_char() =
         let values = [Char.MinValue; Char.MinValue+char 1 ; Char.MaxValue; Char.MaxValue+char -1]
 
@@ -391,7 +390,7 @@ let f (x: bool) (y: bool) = compare x y
         for y in values do
             compare x y |> Assert.areSameSign (x.CompareTo(y))
 
-    [<Test>]
+    [<Fact>]
     let Check_limit_case_equivalence_with_CompareTo_bool() =
         let values = [false; true]
 

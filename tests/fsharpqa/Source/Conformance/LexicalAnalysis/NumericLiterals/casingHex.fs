@@ -1,5 +1,5 @@
 // #Conformance #LexicalAnalysis #Constants 
-// Number type specifier are not case sensitive
+// Number type specifier are not case-sensitive
 // Float
 //<Expects status="success"></Expects>
 #light

@@ -23,7 +23,7 @@ module BuildGraphTests =
         }), WeakReference(o)
 
     [<Fact>]
-    let ``Intialization of graph node should not have a computed value``() =
+    let ``Initialization of graph node should not have a computed value``() =
         let node = GraphNode(async { return 1 })
         Assert.shouldBeTrue(node.TryPeekValue().IsNone)
         Assert.shouldBeFalse(node.HasValue)
@@ -524,9 +524,9 @@ module BuildGraphTests =
         }
         |> Async.RunImmediate
 
-        // Synchronus code will affect current context:
+        // Synchronous code will affect current context:
 
-        // This is synchrouous, caller's context is affected
+        // This is synchronous, caller's context is affected
         async {
             SetThreadDiagnosticsLoggerNoUnwind DiscardErrorsLogger
             do! Async.SwitchToNewThread()

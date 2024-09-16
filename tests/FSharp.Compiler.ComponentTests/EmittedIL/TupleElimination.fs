@@ -7,6 +7,12 @@ open FSharp.Test.Compiler
 
 module ``TupleElimination`` =
 
+
+    let compile cu =
+        cu 
+        |> withCheckNulls
+        |> compile
+
     [<Fact>]
     let ``Sequence expressions with potential side effects do not prevent tuple elimination``() =
         FSharp """
@@ -90,12 +96,12 @@ public static Tuple<long, int> v()
            valuetype [runtime]System.DateTime V_1,
            int32 V_2)
   IL_0000:  ldstr      ""
-  IL_0005:  callvirt   instance string [runtime]System.Object::ToString()
+  IL_0005:  callvirt   instance string [runtime]System.String::ToString()
   IL_000a:  stloc.0
   IL_000b:  call       valuetype [runtime]System.DateTime [runtime]System.DateTime::get_Now()
   IL_0010:  stloc.1
   IL_0011:  ldstr      "3"
-  IL_0016:  callvirt   instance string [runtime]System.Object::ToString()
+  IL_0016:  callvirt   instance string [runtime]System.String::ToString()
   IL_001b:  stloc.0
   IL_001c:  call       int32 TupleElimination::f()
   IL_0021:  stloc.2
@@ -133,12 +139,12 @@ public static int w()
            int32 V_2,
            class [runtime]System.Tuple`2<int32,int32> V_3)
   IL_0000:  ldstr      ""
-  IL_0005:  callvirt   instance string [runtime]System.Object::ToString()
+  IL_0005:  callvirt   instance string [runtime]System.String::ToString()
   IL_000a:  stloc.0
   IL_000b:  call       valuetype [runtime]System.DateTime [runtime]System.DateTime::get_Now()
   IL_0010:  stloc.1
   IL_0011:  ldstr      "3"
-  IL_0016:  callvirt   instance string [runtime]System.Object::ToString()
+  IL_0016:  callvirt   instance string [runtime]System.String::ToString()
   IL_001b:  stloc.0
   IL_001c:  call       int32 TupleElimination::f()
   IL_0021:  stloc.2
@@ -179,12 +185,12 @@ public static int x()
            valuetype [runtime]System.DateTime V_1,
            int32 V_2)
   IL_0000:  ldstr      ""
-  IL_0005:  callvirt   instance string [runtime]System.Object::ToString()
+  IL_0005:  callvirt   instance string [runtime]System.String::ToString()
   IL_000a:  stloc.0
   IL_000b:  call       valuetype [runtime]System.DateTime [runtime]System.DateTime::get_Now()
   IL_0010:  stloc.1
   IL_0011:  ldstr      "3"
-  IL_0016:  callvirt   instance string [runtime]System.Object::ToString()
+  IL_0016:  callvirt   instance string [runtime]System.String::ToString()
   IL_001b:  stloc.0
   IL_001c:  call       int32 TupleElimination::f()
   IL_0021:  stloc.2
@@ -347,12 +353,12 @@ public static int z()
            int32 V_3,
            int32 V_4)
   IL_0000:  ldstr      ""
-  IL_0005:  callvirt   instance string [runtime]System.Object::ToString()
+  IL_0005:  callvirt   instance string [runtime]System.String::ToString()
   IL_000a:  stloc.1
   IL_000b:  call       valuetype [runtime]System.DateTime [runtime]System.DateTime::get_Now()
   IL_0010:  stloc.2
   IL_0011:  ldstr      "3"
-  IL_0016:  callvirt   instance string [runtime]System.Object::ToString()
+  IL_0016:  callvirt   instance string [runtime]System.String::ToString()
   IL_001b:  stloc.1
   IL_001c:  ldc.i4.2
   IL_001d:  call       int32 TupleElimination::f()
@@ -574,7 +580,7 @@ public static int y()
   IL_000b:  brfalse.s  IL_0027
 
   IL_000d:  ldstr      ""
-  IL_0012:  callvirt   instance string [runtime]System.Object::ToString()
+  IL_0012:  callvirt   instance string [runtime]System.String::ToString()
   IL_0017:  stloc.3
   IL_0018:  ldc.i4.1
   IL_0019:  stloc.0
@@ -621,7 +627,7 @@ public static int y()
   IL_005a:  br.s       IL_0095
   
   IL_005c:  ldstr      ""
-  IL_0061:  callvirt   instance string [runtime]System.Object::ToString()
+  IL_0061:  callvirt   instance string [runtime]System.String::ToString()
   IL_0066:  stloc.3
   IL_0067:  ldc.i4.6
   IL_0068:  stloc.0

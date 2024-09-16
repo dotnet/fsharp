@@ -392,6 +392,7 @@ module internal TokenClassifications =
         | HIGH_PRECEDENCE_PAREN_APP
         | FIXED
         | HIGH_PRECEDENCE_BRACK_APP
+        | BAR_JUST_BEFORE_NULL
         | TYPE_COMING_SOON
         | TYPE_IS_HERE
         | MODULE_COMING_SOON
@@ -438,7 +439,7 @@ module internal TestExpose =
 /// many allocated objects.
 ///
 /// The encoding is lossy so some incremental lexing scenarios such as deeply nested #if
-/// or accurate error messages from lexing for mismtached #if are not supported.
+/// or accurate error messages from lexing for mismatched #if are not supported.
 [<Struct; CustomEquality; NoComparison>]
 type FSharpTokenizerLexState =
     {

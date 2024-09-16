@@ -55,15 +55,15 @@ module LeafExpressionConverter =
         tyargs.[0], tyargs.[1]
 
     let StringConcat =
-       methodhandleof (fun (x:obj, y:obj) -> String.Concat (x, y))
+       methodhandleof (fun (x:objnull, y:objnull) -> String.Concat (x, y))
        |> System.Reflection.MethodInfo.GetMethodFromHandle
        :?> MethodInfo
 
-    let SubstHelperRaw (q:Expr, x:Var array, y:obj array) : Expr =
+    let SubstHelperRaw (q:Expr, x:Var array, y:objnull array) : Expr =
         let d = Map.ofArray (Array.zip x y)
         q.Substitute(fun v -> v |> d.TryFind |> Option.map (fun x -> Expr.Value (x, v.Type)))
 
-    let SubstHelper<'T> (q:Expr, x:Var array, y:obj array) : Expr<'T> =
+    let SubstHelper<'T> (q:Expr, x:Var array, y:objnull array) : Expr<'T> =
         SubstHelperRaw(q, x, y) |> Expr.Cast
 
     let showAll =
@@ -393,12 +393,12 @@ module LeafExpressionConverter =
     //let (|ArrayAssignQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun -> LanguagePrimitives.IntrinsicFunctions.SetArray : int array -> int -> int -> unit))
     //let (|ArrayTypeQ|_|) (ty:System.Type) = if ty.IsArray && ty.GetArrayRank() = 1 then Some (ty.GetElementType()) else None
     let substHelperMeth =
-        methodhandleof (fun (x:Expr, y:Var array, z:obj array) -> SubstHelper<obj> (x, y, z))
+        methodhandleof (fun (x:Expr, y:Var array, z:objnull array) -> SubstHelper<obj> (x, y, z))
         |> System.Reflection.MethodInfo.GetMethodFromHandle
         :?> MethodInfo
 
     let substHelperRawMeth =
-        methodhandleof (fun (x:Expr, y:Var array, z:obj array) -> SubstHelperRaw (x, y, z))
+        methodhandleof (fun (x:Expr, y:Var array, z:objnull array) -> SubstHelperRaw (x, y, z))
         |> System.Reflection.MethodInfo.GetMethodFromHandle
         :?> MethodInfo
 
@@ -895,7 +895,7 @@ module LeafExpressionConverter =
     // provides no other way to evaluate the expression.
     //
     // REVIEW: It is possible it is just better to interpret the expression in many common cases, e.g. property-gets, values etc.
-    let EvaluateQuotation (e: Microsoft.FSharp.Quotations.Expr) : obj =
+    let EvaluateQuotation (e: Microsoft.FSharp.Quotations.Expr) : objnull =
 #if FX_NO_QUOTATIONS_COMPILE
        raise (new NotSupportedException())
 #else

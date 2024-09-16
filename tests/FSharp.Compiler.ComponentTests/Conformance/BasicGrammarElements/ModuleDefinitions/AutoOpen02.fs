@@ -1,7 +1,7 @@
 // #Regression #Conformance #TypesAndModules #Modules 
 #light
 
-//<Expects id="FS0039" status="error">The value or constructor 'x' is not defined</Expects>
+
 
 module A =
     [<AutoOpen>]

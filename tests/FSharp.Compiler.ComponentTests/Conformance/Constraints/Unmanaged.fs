@@ -495,7 +495,6 @@ type FsharpStructWrapper<'TInner when 'TInner: unmanaged> =
     val Item : 'TInner   
     with static member Hi() = typeof<'TInner>.Name"""
             |> asLibrary
-            |> withLangVersionPreview
             |> withName "fsLib"
 
         let app = 

@@ -81,7 +81,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         }
 
         /// <summary>
-        /// For use by F# tooling only. Specfies if the project is dirty.
+        /// For use by F# tooling only. Specifies if the project is dirty.
         /// </summary>
         public virtual bool IsDirty
         {
@@ -251,7 +251,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         }
 
         /// <summary>
-        /// Gets or sets a value indicatingwhether the object has not been modified since last being saved or opened.
+        /// Gets or sets a value indicating whether the object has not been modified since last being saved or opened.
         /// </summary>
         public virtual bool Saved
         {
@@ -381,7 +381,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// Saves the project. 
         /// </summary>
         /// <param name="fileName">The file name with which to save the solution, project, or project item. If the file exists, it is overwritten</param>
-        /// <exception cref="InvalidOperationException">Is thrown if the save operation failes.</exception>
+        /// <exception cref="InvalidOperationException">Is thrown if the save operation fails.</exception>
         /// <exception cref="ArgumentNullException">Is thrown if fileName is null.</exception>        
         public virtual void SaveAs(string fileName)
         {
@@ -392,7 +392,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// Saves the project
         /// </summary>
         /// <param name="fileName">The file name of the project</param>
-        /// <exception cref="InvalidOperationException">Is thrown if the save operation failes.</exception>
+        /// <exception cref="InvalidOperationException">Is thrown if the save operation fails.</exception>
         public virtual void Save(string fileName)
         {
             this.DoSave(false, fileName ?? string.Empty);
@@ -436,7 +436,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         }
 
         /// <summary>
-        /// Saves or Save Asthe project.
+        /// Saves or Save As the project.
         /// </summary>
         /// <param name="isCalledFromSaveAs">Flag determining which Save method called , the SaveAs or the Save.</param>
         /// <param name="fileName">The name of the project file.</param>        
@@ -469,7 +469,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                     {
                         // Use the solution service to save the project file. Note that we have to use the service
                         // so that all the shell's elements are aware that we are inside a save operation and
-                        // all the file change listenters registered by the shell are suspended.
+                        // all the file change listeners registered by the shell are suspended.
 
                         // Get the cookie of the project file from the RTD.
                         IVsRunningDocumentTable rdt = this.project.Site.GetService(typeof(SVsRunningDocumentTable)) as IVsRunningDocumentTable;
@@ -503,7 +503,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                         // Get the IVsHierarchy for the project.
                         IVsHierarchy prjHierarchy = project.InteropSafeIVsHierarchy;
 
-                        // Now get the soulution.
+                        // Now get the solution.
                         IVsSolution solution = this.project.Site.GetService(typeof(SVsSolution)) as IVsSolution;
                         // Verify that we have both solution and hierarchy.
                         if ((null == prjHierarchy) || (null == solution))
@@ -518,7 +518,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
 
                         // We need to make some checks before we can call the save method on the project node.
                         // This is mainly because it is now us and not the caller like in  case of SaveAs or Save that should validate the file name.
-                        // The IPersistFileFormat.Save method only does a validation that is necesseray to be performed. Example: in case of Save As the  
+                        // The IPersistFileFormat.Save method only does a validation that is necessary to be performed. Example: in case of Save As the  
                         // file name itself is not validated only the whole path. (thus a file name like file\file is accepted, since as a path is valid)
 
                         // 1. The file name has to be valid. 
@@ -530,7 +530,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                                 fullPath = Path.Combine(this.project.ProjectFolder, fileName);
                             }
                         }
-                        // We want to be consistent in the error message and exception we throw. ArgumentException on Path.IsRooted shoud become InvalidOperationException.
+                        // We want to be consistent in the error message and exception we throw. ArgumentException on Path.IsRooted should become InvalidOperationException.
                         catch (ArgumentException)
                         {
                             throw new InvalidOperationException(SR.GetString(SR.ErrorInvalidFileName, CultureInfo.CurrentUICulture));

@@ -22,7 +22,8 @@ ImplFile
                            App
                              (NonAtomic, false, Ident someFunction,
                               Const (Unit, (4,26--4,28)), (4,13--4,28)),
-                           (4,4--4,28), { EqualsRange = (4,11--4,12)
+                           (4,4--4,28), { AndBangKeyword = (4,4--4,8)
+                                          EqualsRange = (4,11--4,12)
                                           InKeyword = None })],
                        YieldOrReturn
                          ((false, true), Const (Unit, (5,11--5,13)), (5,4--5,13)),

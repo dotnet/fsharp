@@ -15,8 +15,11 @@ open System.Collections.Concurrent
 module Option =
 
     /// Convert string into Option string where null and String.Empty result in None
-    let ofString s =
-        if String.IsNullOrEmpty(s) then None else Some(s)
+    let ofString (s: string MaybeNull) =
+        match s with
+        | null -> None
+        | "" -> None
+        | s -> Some s
 
 [<AutoOpen>]
 module ReflectionHelper =
@@ -57,31 +60,27 @@ module ReflectionHelper =
             let instanceFlags =
                 BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance
 
-            let property =
-                theType.GetProperty(propertyName, instanceFlags, null, typeof<'T>, [||], [||])
-
-            if isNull property then
-                None
-            else
-                let getMethod = property.GetGetMethod()
-
-                if not (isNull getMethod) && not getMethod.IsStatic then
-                    Some property
-                else
-                    None
+            match theType.GetProperty(propertyName, instanceFlags, null, typeof<'T>, [||], [||]) with
+            | null -> None
+            | property ->
+                match property.GetGetMethod() with
+                | null -> None
+                | getMethod when getMethod.IsStatic -> None
+                | _ -> Some property
         with _ ->
             None
 
     let getInstanceMethod<'T> (theType: Type) (parameterTypes: Type[]) methodName =
         try
-            let theMethod = theType.GetMethod(methodName, parameterTypes)
-            if isNull theMethod then None else Some theMethod
+            match theType.GetMethod(methodName, parameterTypes) with
+            | null -> None
+            | theMethod -> Some theMethod
         with _ ->
             None
 
     let stripTieWrapper (e: Exception) =
         match e with
-        | :? TargetInvocationException as e -> e.InnerException
+        | :? TargetInvocationException as e when isNotNull e.InnerException -> !!e.InnerException
         | _ -> e
 
 /// Indicate the type of error to report
@@ -96,7 +95,7 @@ type ResolvingErrorReport = delegate of ErrorReportType * int * string -> unit
 /// The results of ResolveDependencies
 type IResolveDependenciesResult =
 
-    /// Succeded?
+    /// Succeeded?
     abstract Success: bool
 
     /// The resolution output log
@@ -105,7 +104,7 @@ type IResolveDependenciesResult =
     /// The resolution error log (* process stderror *)
     abstract StdError: string[]
 
-    /// The resolution paths - the full paths to selcted resolved dll's.
+    /// The resolution paths - the full paths to selected resolved dll's.
     /// In scripts this is equivalent to #r @"c:\somepath\to\packages\ResolvedPackage\1.1.1\lib\netstandard2.0\ResolvedAssembly.dll"
     abstract Resolutions: seq<string>
 
@@ -124,7 +123,9 @@ type IResolveDependenciesResult =
     ///     #I @"c:\somepath\to\packages\1.1.1\ResolvedPackage"
     abstract Roots: seq<string>
 
+#if NO_CHECKNULLS
 [<AllowNullLiteral>]
+#endif
 type IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string
@@ -323,7 +324,7 @@ type ReflectionDependencyManagerProvider
 
     static member MakeResultFromObject(result: obj) =
         { new IResolveDependenciesResult with
-            /// Succeded?
+            /// Succeeded?
             member _.Success =
                 match getInstanceProperty<bool> (result.GetType()) "Success" with
                 | None -> false
@@ -370,7 +371,7 @@ type ReflectionDependencyManagerProvider
             roots: seq<string>
         ) =
         { new IResolveDependenciesResult with
-            /// Succeded?
+            /// Succeeded?
             member _.Success = success
 
             /// The resolution output log
@@ -418,7 +419,7 @@ type ReflectionDependencyManagerProvider
                 rid,
                 timeout
             ) : IResolveDependenciesResult =
-            // The ResolveDependencies method, has two signatures, the original signaature in the variable resolveDeps and the updated signature resolveDepsEx
+            // The ResolveDependencies method, has two signatures, the original signature in the variable resolveDeps and the updated signature resolveDepsEx
             // the resolve method can return values in two different tuples:
             //     (bool * string list * string list * string list)
             //     (bool * string list * string list)
@@ -498,7 +499,7 @@ type DependencyProvider
                 let assemblyLocation =
                     typeof<IDependencyManagerProvider>.GetTypeInfo().Assembly.Location
 
-                yield Path.GetDirectoryName assemblyLocation
+                yield !!(Path.GetDirectoryName assemblyLocation)
                 yield AppDomain.CurrentDomain.BaseDirectory
             ])
 

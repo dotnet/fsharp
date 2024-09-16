@@ -19,7 +19,7 @@ neg62.fs(50,5,50,34): typecheck error FS0901: Structs cannot contain value defin
 
 neg62.fs(54,31,54,34): typecheck error FS3135: To indicate that this property can be set, use 'member val PropertyName = expr with get,set'.
 
-neg62.fs(69,22,69,40): typecheck error FS0670: This code is not sufficiently generic. The type variable 'S could not be generalized because it would escape its scope.
+neg62.fs(69,24,69,30): typecheck error FS0670: This code is not sufficiently generic. The type variable 'S could not be generalized because it would escape its scope.
 
 neg62.fs(75,5,75,28): typecheck error FS3151: This member, function or value declaration may not be declared 'inline'
 

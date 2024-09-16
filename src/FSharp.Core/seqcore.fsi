@@ -125,7 +125,7 @@ module RuntimeHelpers =
     val CreateEvent:
         addHandler: ('Delegate -> unit) ->
         removeHandler: ('Delegate -> unit) ->
-        createHandler: ((obj -> 'Args -> unit) -> 'Delegate) ->
+        createHandler: ((objnull -> 'Args -> unit) -> 'Delegate) ->
             Microsoft.FSharp.Control.IEvent<'Delegate, 'Args>
 
 /// <summary>The F# compiler emits implementations of this type for compiled sequence expressions.</summary>

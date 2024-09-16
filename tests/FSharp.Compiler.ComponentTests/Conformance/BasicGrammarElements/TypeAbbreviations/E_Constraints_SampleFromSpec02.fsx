@@ -1,6 +1,6 @@
 // #Regression #Conformance #TypesAndModules 
 // Abbreviation: the constraints on the right-hand-side are not sufficient
-//<Expects id="FS0001" span="(16,14-16,19)" status="error">A type parameter is missing a constraint 'when 'b :> IB'</Expects>
+
 #light
 
 type IA = 

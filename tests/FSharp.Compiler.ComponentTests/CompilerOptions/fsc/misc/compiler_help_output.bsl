@@ -49,8 +49,8 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
                 - CODE GENERATION -
 --debug[+|-]                             Emit debug information (Short form: -g)
 --debug:{full|pdbonly|portable|embedded} Specify debugging type: full, portable, embedded, pdbonly. ('full' is the
-                                         default if no debuggging type specified and enables attaching a debugger to
-                                         a running program, 'portable' is a cross-platform format, 'embedded' is a
+                                         default if no debugging type specified and enables attaching a debugger to a
+                                         running program, 'portable' is a cross-platform format, 'embedded' is a
                                          cross-platform format embedded into the output file).
 --embed[+|-]                             Embed all source files in the portable PDB file
 --embed:<file;...>                       Embed specific source files in the portable PDB file
@@ -71,6 +71,7 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 --warn:<n>                               Set a warning level (0-5)
 --nowarn:<warn;...>                      Disable specific warning messages
 --warnon:<warn;...>                      Enable specific warnings that may be off by default
+--checknulls[+|-]                        Enable nullness declarations and checks
 --consolecolors[+|-]                     Output warning and error messages in color
 
 

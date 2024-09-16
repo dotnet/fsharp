@@ -34,7 +34,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// Returns the dirty state of the document.
         /// </summary>
         /// <exception cref="InvalidOperationException">Is thrown if the project is closed or it the service provider attached to the project is invalid.</exception>
-        /// <exception cref="COMException">Is thrown if the dirty state cannot be retrived.</exception>
+        /// <exception cref="COMException">Is thrown if the dirty state cannot be retrieved.</exception>
         public override bool IsDirty
         {
             get
@@ -216,7 +216,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// Saves the project item.
         /// </summary>
         /// <param name="fileName">The name with which to save the project or project item.</param>
-        /// <exception cref="InvalidOperationException">Is thrown if the save operation failes.</exception>
+        /// <exception cref="InvalidOperationException">Is thrown if the save operation fails.</exception>
         public override void Save(string fileName)
         {
             this.DoSave(false, fileName ?? string.Empty);
@@ -226,7 +226,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// Saves the project item.
         /// </summary>
         /// <param name="fileName">The file name with which to save the solution, project, or project item. If the file exists, it is overwritten</param>
-        /// <returns>true if the rename was successful. False if Save as failes</returns>
+        /// <returns>true if the rename was successful. False if Save as fails</returns>
         /// <exception cref="ArgumentNullException">Is thrown if fileName is null.</exception>
         public override bool SaveAs(string fileName)
         {

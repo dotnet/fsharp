@@ -1,7 +1,7 @@
 // #Regression #Conformance #PatternMatching #Constants  
 // Pattern Matching - Simple Constants
 // Type: BigInt
-//<Expects id="FS0720" span="(9,7-9,9)" status="error">Non-primitive numeric literal constants.+</Expects>
+
 #light
 
 let isZero x =

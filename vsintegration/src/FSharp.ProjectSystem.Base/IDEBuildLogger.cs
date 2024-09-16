@@ -32,7 +32,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     {
         // TODO: Remove these constants when we have a version that supports getting the verbosity using automation.
         private string buildVerbosityRegistryRoot = LoggingConstants.DefaultVSRegistryRoot;
-        // TODO: Re-enable this constants when we have a version that suppoerts getting the verbosity using automation.
+        // TODO: Re-enable this constants when we have a version that supports getting the verbosity using automation.
 
 		private int currentIndent;
 		private IVsOutputWindowPane outputWindowPane;
@@ -61,7 +61,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 		}
 		/// <summary>
 		/// When building from within VS, setting this will
-		/// enable the logger to retrive the verbosity from
+		/// enable the logger to retrieve the verbosity from
 		/// the correct registry hive.
 		/// </summary>
 		public string BuildVerbosityRegistryRoot
@@ -206,9 +206,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // the pane reference we have will no longer accept input from us.
             // But here there is no race, because
             //  - we only log user-invoked builds to the Output window
-            //  - user-invoked buils always run MSBuild ASYNC
+            //  - user-invoked builds always run MSBuild ASYNC
             //  - in an ASYNC build, the BuildCoda uses UIThread.Run() to schedule itself to be run on the UI thread
-            //  - UIThread.Run() protects against re-entrancy and thus always preserves the queuing order of its actions
+            //  - UIThread.Run() protects against reentrancy and thus always preserves the queuing order of its actions
             //  - the pane is good until at least the point when BuildCoda runs and we declare to MSBuild that we are finished with this build
             var pane = this.OutputWindowPane;  // copy to capture in delegate
             UIThread.Run(delegate()
@@ -409,7 +409,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             catch (Exception e)
             {
-                Debug.Assert(false, "Problem logging projectstarted event: " + e.Message + " at " + e.TargetSite);
+                Debug.Assert(false, "Problem logging project started event: " + e.Message + " at " + e.TargetSite);
                 // swallow the exception
             }
 		}
@@ -548,7 +548,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
 		/// <summary>
 		/// This method takes a MessageImportance and returns true if messages
-		/// at importance i should be loggeed.  Otherwise return false.
+		/// at importance i should be logged.  Otherwise return false.
 		/// </summary>
         private bool LogAtImportance(MessageImportance importance)
         {
@@ -762,7 +762,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Logs a message to the output window, if the original predicate returns true
         /// </summary>
         /// <param name="message">Log message, can be a String.Format-style format string</param>
-        /// <param name="args">Optional aruments for format string</param>
+        /// <param name="args">Optional arguments for format string</param>
         public void WriteLine(string message, params object[] args)
         {
             if (this.predicate())

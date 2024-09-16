@@ -47,7 +47,7 @@ let lambdaWhichAlwaysReturnsThree = _.3"""
     |> withErrorCodes [3584]
 
 [<Fact>]
-let ``Bug - bigger paranthesized expressions are not part of this feature`` () =
+let ``Bug - bigger parenthesized expressions are not part of this feature`` () =
     Fsx """
 let neverEndingLambda = _.(while true do ())"""
     |> withLangVersion80
@@ -77,7 +77,7 @@ let ``Bug - all of these should be an error`` (code:string) =
     |> withErrorCodes [3584]
 
 [<Fact>]
-let ``Underscore Dot ToString With Space Before Paranthesis - NonAtomic`` () =    
+let ``Underscore Dot ToString With Space Before Parenthesis - NonAtomic`` () =    
     Fsx """
 let x = "a" |> _.ToString () """
     |> withLangVersion80
@@ -89,7 +89,7 @@ let x = "a" |> _.ToString () """
     'string -> 'a'    
 but given a
     'unit -> string'    
-The type 'string' does not match the type 'unit'""" ]
+The type 'unit' does not match the type 'string'""" ]
 
 [<Fact>]
 let ``Underscore Dot Curried Function With Arguments - NonAtomic`` () =
@@ -147,7 +147,7 @@ let ``DotLambda does NOT generalize automatically to a member based SRTP`` () =
     |> withDiagnostics [(Error 72, Line 1, Col 28, Line 1, Col 47, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")] 
 
 [<Fact>]
-let ``DotLambda does allow member based SRTP if labelled explicitely`` () =
+let ``DotLambda does allow member based SRTP if labelled explicitly`` () =
     Fsx "let inline myFunc<'a when 'a:(member WhatANiceProperty: int)> (x: 'a) = x |> _.WhatANiceProperty "
     |> withLangVersion80
     |> typecheck
@@ -249,7 +249,7 @@ let ``Regression 16318 typeof dotlambda should fail`` () =
     |> withDiagnostics [Error 72, Line 1, Col 10, Line 1, Col 18, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved."]
 
 [<Fact>]
-let ``Nested anonymous unary function shorthands fails because of ambigous discard`` () =
+let ``Nested anonymous unary function shorthands fails because of ambiguous discard`` () =
     FSharp """
 module One
 let a : string = {| Inner =  (fun x -> x.ToString()) |} |> _.Inner([5] |> _.[0])
@@ -322,8 +322,8 @@ let onlyIdC (ids: MyId list) = ids |> List.choose _.IdC
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 23, Line 7, Col 17, Line 7, Col 20, "The member 'IdA' can not be defined because the name 'IdA' clashes with the union case 'IdA' in this type or module");
+            (Error 23, Line 7, Col 17, Line 7, Col 20, "The member 'IdA' cannot be defined because the name 'IdA' clashes with the union case 'IdA' in this type or module");
             (Error 812, Line 22, Col 51, Line 22, Col 56, "The syntax 'expr.id' may only be used with record labels, properties and fields");
-            (Error 23, Line 17, Col 17, Line 17, Col 20, "The member 'IdC' can not be defined because the name 'IdC' clashes with the union case 'IdC' in this type or module");
+            (Error 23, Line 17, Col 17, Line 17, Col 20, "The member 'IdC' cannot be defined because the name 'IdC' clashes with the union case 'IdC' in this type or module");
             (Error 812, Line 24, Col 51, Line 24, Col 56, "The syntax 'expr.id' may only be used with record labels, properties and fields")
         ]

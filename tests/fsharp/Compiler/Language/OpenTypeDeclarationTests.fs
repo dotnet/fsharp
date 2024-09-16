@@ -3,12 +3,12 @@
 namespace FSharp.Compiler.UnitTests
 
 open FSharp.Compiler.Diagnostics
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 open FSharp.Test.Utilities
 open FSharp.Test.Compiler
 
-[<TestFixture>]
+
 module OpenTypeDeclarationTests =
 
     [<Literal>]
@@ -34,7 +34,7 @@ type NotAllowedToOpen() =
 
 """
 
-    [<Test>]
+    [<Fact>]
     let ``OpenSystemMathOnce - langversion:4.6`` () =
         Fsx (baseModule + """
 module OpenSystemMathOnce =
@@ -50,7 +50,7 @@ module OpenSystemMathOnce =
             ]
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``OpenSystemMathOnce - langversion:5.0`` () =
         Fsx (baseModule + """
 module OpenSystemMathOnce =
@@ -62,7 +62,7 @@ module OpenSystemMathOnce =
          |> shouldSucceed
          |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``OpenSystemMathTwice - langversion:4.6`` () =
         Fsx (baseModule + """
 module OpenSystemMathTwice = 
@@ -83,7 +83,7 @@ module OpenSystemMathTwice =
             ]
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``OpenSystemMathTwice - langversion:50`` () =
         Fsx (baseModule + """
 module OpenSystemMathOnce =
@@ -95,7 +95,7 @@ module OpenSystemMathOnce =
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``OpenMyMathOnce - langversion:4.6`` () =
         Fsx (baseModule + """
 module OpenMyMathOnce = 
@@ -113,7 +113,7 @@ module OpenMyMathOnce =
             ]
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``OpenMyMathOnce - langversion:5.0`` () =
         Fsx (baseModule + """
 module OpenMyMathOnce = 
@@ -126,7 +126,7 @@ module OpenMyMathOnce =
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``DontOpenAutoMath - langversion:4.6`` () =
         Fsx (baseModule + """
 module DontOpenAutoMath = 
@@ -142,7 +142,7 @@ module DontOpenAutoMath =
             ]
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``DontOpenAutoMath - langversion:5.0`` () =
         Fsx (baseModule + """
 module DontOpenAutoMath = 
@@ -154,7 +154,7 @@ module DontOpenAutoMath =
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``OpenAutoMath - langversion:4.6`` () =
         Fsx (baseModule + """
 module OpenAutoMath = 
@@ -173,7 +173,7 @@ module OpenAutoMath =
             ]
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``OpenAutoMath - langversion:5.0`` () =
         Fsx (baseModule + """
 module OpenAutoMath = 
@@ -187,7 +187,7 @@ module OpenAutoMath =
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``OpenAccessibleFields - langversion:5.0`` () =
         Fsx (baseModule + """
 module OpenAFieldFromMath =
@@ -199,7 +199,7 @@ module OpenAFieldFromMath =
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open type and use nested types as unqualified`` () =
         let csharp =
             CSharp """
@@ -241,7 +241,7 @@ module Test =
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open a type where the type declaration uses a type abbreviation as a qualifier to a real nested type`` () =
         let csharp =
             CSharp """
@@ -279,7 +279,7 @@ open type Abbrev.NestedTest"""
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open a type where the type declaration uses a type abbreviation`` () =
         let csharp =
             CSharp """
@@ -317,7 +317,7 @@ open type Abbrev"""
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open a nested type as qualified`` () =
         let csharp =
             CSharp """
@@ -350,7 +350,7 @@ module Test =
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open generic type and use nested types as unqualified`` () =
         let csharp =
             CSharp """
@@ -421,7 +421,7 @@ module Test2 =
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open generic type and use nested types as unqualified 2`` () =
          FSharp """
 namespace FSharpTest
@@ -435,7 +435,7 @@ module Test =
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open generic type and use nested types as unqualified 3`` () =
         let csharp =
             CSharp """
@@ -540,7 +540,7 @@ module Test4 =
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open generic type and use nested types as unqualified 4`` () =
         let csharp =
             CSharp """
@@ -639,7 +639,7 @@ module Test3 =
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open unit of measure - Errors`` () =
         FSharp """
 namespace FSharpTest
@@ -659,7 +659,7 @@ open type kg
             ]
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open type with unit of measure`` () =
         FSharp """
 namespace FSharpTest
@@ -682,7 +682,7 @@ open type vec3<kg>
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open custom type with unit of measure`` () =
         FSharp """
 namespace FSharpTest
@@ -714,7 +714,7 @@ module Test =
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open custom type with unit of measure and more type params`` () =
         FSharp """
 namespace FSharpTest
@@ -755,7 +755,7 @@ module Test =
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open custom type with unit of measure should error with measure mismatch`` () =
         FSharp """
 namespace FSharpTest
@@ -787,7 +787,7 @@ module Test =
         |> withErrorCode 1
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open tuple - Errors`` () =
         FSharp """
 namespace FSharpTest
@@ -802,7 +802,7 @@ open type (int * int)
             ]
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open struct tuple - Errors`` () =
         FSharp """
 namespace FSharpTest
@@ -817,7 +817,7 @@ open type struct (int * int)
             ]
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open function - Errors`` () =
         FSharp """
 namespace FSharpTest
@@ -832,7 +832,7 @@ open type (int -> int)
             ]
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open anon type - Errors`` () =
         FSharp """
 namespace FSharpTest
@@ -847,7 +847,7 @@ open type {| x: int |}
             ]
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open struct anon type - Errors`` () =
         FSharp """
 namespace FSharpTest
@@ -862,7 +862,7 @@ open type struct {| x: int |}
             ]
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open direct tuple - Errors`` () =
         // Note: `Tuple` is technically a named type but it gets decompiled into F#'s representation of a tuple in its type system.
         //       This test is to verify that behavior.
@@ -881,7 +881,7 @@ open type Tuple<int, int>
             ]
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open direct value tuple - Errors`` () =
         // Note: `ValueTuple` is technically a named type but it gets decompiled into F#'s representation of a struct tuple in its type system.
         //       This test is to verify that behavior.
@@ -900,7 +900,7 @@ open type ValueTuple<int, int>
             ]
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open direct function - Errors`` () =
         // Note: `FSharpFunc` is technically a named type but it gets decompiled into F#'s representation of a function in its type system.
         //       This test is to verify that behavior.
@@ -917,7 +917,7 @@ open type FSharpFunc<int, int>
             ]
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open enum should have access to its cases`` () =
         FSharp """
 namespace FSharpTest
@@ -938,7 +938,7 @@ module Test =
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open C# enum should have access to its cases`` () =
         let csharp = 
             CSharp """
@@ -967,7 +967,7 @@ module Test =
         |> compile
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open union should have access to union cases`` () =
         FSharp """
 namespace FSharpTest
@@ -993,7 +993,7 @@ module Test2 =
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open generic union should have access to union cases with the enclosing type instantiations`` () =
         FSharp """
 namespace FSharpTest
@@ -1019,7 +1019,7 @@ module Test2 =
         |> withErrorCode 1
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open generic union should have access to pattern union cases with the enclosing type instantiations - Errors`` () =
         FSharp """
 namespace FSharpTest
@@ -1041,7 +1041,7 @@ module Test2 =
         |> withErrorCode 1
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open record should have access to construct record via labels`` () =
         FSharp """
 namespace FSharpTest
@@ -1065,7 +1065,7 @@ module Test2 =
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open generic record should have access to construct record via labels with enclosing type instantiations`` () =
         FSharp """
 namespace FSharpTest
@@ -1095,7 +1095,7 @@ module Test3 =
         |> withErrorCode 1
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open generic record should have access to pattern record via labels with enclosing type instantiations - Errors`` () =
         FSharp """
 namespace FSharpTest
@@ -1124,7 +1124,7 @@ module Test3 =
         |> withErrorCode 1
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open type should have no access to constructor - Errors`` () =
         FSharp """
 namespace FSharpTest
@@ -1148,7 +1148,7 @@ module Test2 =
         |> withErrorCode 39
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open type should combine both extension and intrinsic method groups`` () =
         FSharp """
 namespace FSharpTest
@@ -1177,7 +1177,7 @@ module Test2 =
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open type should combine both extension and intrinsic method groups but error if extensions are added after opening the type`` () =
         FSharp """
 namespace FSharpTest
@@ -1206,7 +1206,7 @@ module Test2 =
         |> withErrorCodes [1;1]
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Using the 'open' declaration on a possible type identifier - Error`` () =
         let csharp =
             CSharp """
@@ -1241,7 +1241,7 @@ module Test =
             ]
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open type declaration on a namespace - Error`` () =
         FSharp """
 namespace FSharpTest
@@ -1255,7 +1255,7 @@ open type System"""
             ]
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open type declaration on a module - Error`` () =
         FSharp """
 namespace FSharpTest
@@ -1269,7 +1269,7 @@ open type FSharp.Core.Option"""
             ]
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Open type declaration on a byref - Error`` () =
         FSharp """
 namespace FSharpTest
@@ -1287,7 +1287,7 @@ open type outref<int>"""
             ]
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Type extensions with static members are able to be accessed in an unqualified manner`` () =
         let fsharpSource =
             """
@@ -1324,7 +1324,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "MPM2ExtP2Ext")
 
-    [<Test>]
+    [<Fact>]
     let ``Type extensions with static members are able to be accessed in an unqualified manner with no shadowing on identical names`` () =
         let fsharpSource =
             """
@@ -1359,7 +1359,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "MP")
 
-    [<Test>]
+    [<Fact>]
     let ``Type extensions with static members are able to be accessed in an unqualified manner with the nuance of favoring extension properties over extension methods of identical names`` () =
         let fsharpSource =
             """
@@ -1397,7 +1397,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "MExtP")
 
-    [<Test>]
+    [<Fact>]
     let ``Type extensions with static members are able to be accessed in an unqualified manner with no shadowing on identical method/property names`` () =
         let fsharpSource =
             """
@@ -1427,7 +1427,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "M")
 
-    [<Test>]
+    [<Fact>]
     let ``Opened types do no allow unqualified access to their inherited type's members - Error`` () =
         Fsx """
 open type System.Math
@@ -1442,7 +1442,7 @@ let x = Equals(2.0, 3.0)
             ]
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Opened types do no allow unqualified access to C#-style extension methods - Error`` () =
         FSharp """
 open System.Runtime.CompilerServices
@@ -1472,7 +1472,7 @@ let main _ =
             ]
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Opened types do allow unqualified access to C#-style extension methods if type has no [<Extension>] attribute`` () =
         FSharp """
 open System.Runtime.CompilerServices
@@ -1495,7 +1495,7 @@ let main _ =
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Opened types do allow unqualified access to members with no [<Extension>] attribute`` () =
         FSharp """
 open System.Runtime.CompilerServices
@@ -1518,7 +1518,7 @@ let main _ =
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Opened types with C# style extension members are available for normal extension method lookup`` () =
         FSharp """
 open System.Runtime.CompilerServices
@@ -1543,7 +1543,7 @@ let main _ =
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Opened types with operators`` () =
         FSharp """
 type A() =
@@ -1562,7 +1562,7 @@ let main _ =
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``An assembly with an event and field with the same name, favor the field`` () =
         let ilSource =
             """
@@ -1689,7 +1689,7 @@ let x2: int = X
 
         CompilerAssert.Compile(fsCmpl)
 
-    [<Test>]
+    [<Fact>]
     let ``An assembly with an event and field with the same name, favor the field - reversed`` () =
         let ilSource =
             """
@@ -1815,7 +1815,7 @@ let x2: int = X
 
         CompilerAssert.Compile(fsCmpl)
 
-    [<Test>]
+    [<Fact>]
     let ``An assembly with a property, event, and field with the same name`` () =
         let ilSource =
             """
@@ -1965,7 +1965,7 @@ let x2: string = X
 
         CompilerAssert.Compile(fsCmpl)
 
-    [<Test>]
+    [<Fact>]
     let ``An assembly with a method, property, event, and field with the same name`` () =
         let ilSource =
             """
@@ -2126,7 +2126,7 @@ let x2: float32 = X()
 
 #if NETCOREAPP
 
-    [<Test>]
+    [<Fact>]
     let ``Opening an interface with a static method`` () =
         let csharpSource =
             """
@@ -2165,7 +2165,7 @@ let main _ =
 
         CompilerAssert.Compile(fsCmpl)
 
-    [<Test>]
+    [<Fact>]
     let ``Opening an interface with an internal static method`` () =
         let csharpSource =
             """
@@ -2207,7 +2207,7 @@ let main _ =
 
         CompilerAssert.Compile(fsCmpl)
 
-    [<Test>]
+    [<Fact>]
     let ``Opening an interface with an internal static method - Error`` () =
         let csharpSource =
             """
@@ -2252,7 +2252,7 @@ let main _ =
 
 #if !NETCOREAPP
 
-    [<Test>]
+    [<Fact>]
     let ``Opening type providers with abbreviation result in unqualified access to types and members`` () =
         let dir = getTestsDirectory __SOURCE_DIRECTORY__ "../../typeProviders/helloWorld"
 
@@ -2294,7 +2294,7 @@ if StaticProperty1 <> "You got a static property" then
         compileAndRun test
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Opening type providers result in unqualified access to types and members`` () =
         let dir = getTestsDirectory __SOURCE_DIRECTORY__ "../../typeProviders/helloWorld"
 
@@ -2334,7 +2334,7 @@ if StaticProperty1 <> "You got a static property" then
         compileAndRun test
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Opening type providers with nested result in unqualified access to types and members`` () =
         let dir = getTestsDirectory __SOURCE_DIRECTORY__ "../../typeProviders/helloWorld"
 
@@ -2367,7 +2367,7 @@ if StaticProperty1 <> "You got a static property" then
         compileAndRun test
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Opening generative type providers in unqualified access to types and members`` () =
         let dir = getTestsDirectory __SOURCE_DIRECTORY__ "../../typeProviders/helloWorld"
 
@@ -2401,7 +2401,7 @@ let _ : TheNestedGeneratedType = Unchecked.defaultof<_>
         compileAndRun test
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Opening generative type providers directly in unqualified access to types and members - Errors`` () =
         let dir = getTestsDirectory __SOURCE_DIRECTORY__ "../../typeProviders/helloWorld"
 

@@ -27,7 +27,7 @@ SigFile
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
                             PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, None, (5,4--6,20),
+                            Single None, None, (5,4--6,20),
                             { LeadingKeyword = Abstract (6,4--6,12)
                               InlineKeyword = None
                               WithKeyword = None

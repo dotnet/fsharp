@@ -199,7 +199,7 @@ let x =
             """
     
 type C() = 
-    member x.FSharpGenericMethodExplitTypeParams<'T>(a:'T, y:'T) = (a,y)
+    member x.FSharpGenericMethodExplicitTypeParams<'T>(a:'T, y:'T) = (a,y)
 
     member x.FSharpGenericMethodInferredTypeParams(a, y) = (a,y)
 
@@ -207,14 +207,14 @@ open System.Linq
 let coll = [ for i in 1 .. 100 -> (i, string i) ]
 let res1 = coll.GroupBy (fun (a, b) -> a)
 let res2 = System.Array.Sort [| 1 |]
-let test4 x = C().FSharpGenericMethodExplitTypeParams([x], [x])
-let test5<'U> (x: 'U) = C().FSharpGenericMethodExplitTypeParams([x], [x])
-let test6 = C().FSharpGenericMethodExplitTypeParams(1, 1)
+let test4 x = C().FSharpGenericMethodExplicitTypeParams([x], [x])
+let test5<'U> (x: 'U) = C().FSharpGenericMethodExplicitTypeParams([x], [x])
+let test6 = C().FSharpGenericMethodExplicitTypeParams(1, 1)
 let test7 x = C().FSharpGenericMethodInferredTypeParams([x], [x])
 let test8 = C().FSharpGenericMethodInferredTypeParams(1, 1)
 let test9<'U> (x: 'U) = C().FSharpGenericMethodInferredTypeParams([x], [x])
 let res3 = [1] |> List.map id
-let res4 = (1.0,[1]) ||> List.fold (fun s x -> string s + string x) // note there is a type error here, still cehck quickinfo any way
+let res4 = (1.0,[1]) ||> List.fold (fun s x -> string s + string x) // note there is a type error here, still check quickinfo any way
 let res5 = 1 + 2
 let res6 = System.DateTime.Now + System.TimeSpan.Zero
 let res7 = sin 5.0
@@ -234,16 +234,16 @@ let res8 = abs 5.0<kg>
                     "System.Array.Sort<'T>(array: 'T array) : unit
 'T is int"
                 mkDesc
-                    "let test4 x = C().FSharpGenericMethodExplitTypeParams"
-                    "member C.FSharpGenericMethodExplitTypeParams: a: 'T0 * y: 'T0 -> 'T0 * 'T0
+                    "let test4 x = C().FSharpGenericMethodExplicitTypeParams"
+                    "member C.FSharpGenericMethodExplicitTypeParams: a: 'T0 * y: 'T0 -> 'T0 * 'T0
 'T is 'a list"
                 mkDesc
-                    "let test5<'U> (x: 'U) = C().FSharpGenericMethodExplitTypeParams"
-                    "member C.FSharpGenericMethodExplitTypeParams: a: 'T0 * y: 'T0 -> 'T0 * 'T0
+                    "let test5<'U> (x: 'U) = C().FSharpGenericMethodExplicitTypeParams"
+                    "member C.FSharpGenericMethodExplicitTypeParams: a: 'T0 * y: 'T0 -> 'T0 * 'T0
 'T is 'U list"
                 mkDesc
-                    "let test6 = C().FSharpGenericMethodExplitTypeParams"
-                    "member C.FSharpGenericMethodExplitTypeParams: a: 'T0 * y: 'T0 -> 'T0 * 'T0
+                    "let test6 = C().FSharpGenericMethodExplicitTypeParams"
+                    "member C.FSharpGenericMethodExplicitTypeParams: a: 'T0 * y: 'T0 -> 'T0 * 'T0
 'T is int"
                 mkDesc
                     "let test7 x = C().FSharpGenericMethodInferredTypeParams"

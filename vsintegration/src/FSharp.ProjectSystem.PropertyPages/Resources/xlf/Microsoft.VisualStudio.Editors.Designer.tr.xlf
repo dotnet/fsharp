@@ -913,14 +913,14 @@ Hata:</target>
         <target state="translated">Başvuru Özellikleri</target>
         <note />
       </trans-unit>
+      <trans-unit id="PropPage_ProgramNonexistent">
+        <source>The external program cannot be found. Please enter a valid executable file.</source>
+        <target state="new">The external program cannot be found. Please enter a valid executable file.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="PropPage_RemoteMachineBlankError">
         <source>The remote machine name cannot be blank.  Please specify the name of the machine to debug remotely.</source>
         <target state="translated">Uzak makine adı boş olamaz.  Lütfen uzaktan hata ayıklama işleminin yapılacağı makinenin adını belirtin.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PropPage_ProgramNotExist">
-        <source>The external program cannot be found. Please enter a valid executable file.</source>
-        <target state="translated">Dış program bulunamıyor. Lütfen geçerli bir yürütülebilir dosya girin.</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_NeedExternalProgram">
@@ -941,6 +941,11 @@ Hata:</target>
       <trans-unit id="PropPage_InvalidURL">
         <source>The URL is invalid. Please enter a valid URL like "http://www.microsoft.com/"</source>
         <target state="translated">URL geçersiz. Lütfen "http://www.microsoft.com/" gibi geçerli bir URL girin</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_ResourceFileNonexistent">
+        <source>"The resource file entered does not exist."</source>
+        <target state="new">"The resource file entered does not exist."</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_WorkingDirError">
@@ -991,11 +996,6 @@ Hata:</target>
       <trans-unit id="PropPage_NeedResFile">
         <source>"Resource files must have a .res file extension. Please enter a valid resource file name."</source>
         <target state="translated">"Kaynak dosyalarının uzantısı .res olmalıdır. Lütfen geçerli bir kaynak dosyası adı girin."</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PropPage_ResourceFileNotExist">
-        <source>"The resource file entered does not exist."</source>
-        <target state="translated">"Girilen kaynak dosyası yok."</target>
         <note />
       </trans-unit>
       <trans-unit id="APPDES_Title">
@@ -1610,6 +1610,21 @@ Hata:</target>
         <target state="translated">Gereksinimler:</target>
         <note />
       </trans-unit>
+      <trans-unit id="RES_PersistenceMode_Embedded">
+        <source>Embedded in .resx</source>
+        <target state="new">Embedded in .resx</target>
+        <note>File Persistence Mode</note>
+      </trans-unit>
+      <trans-unit id="RSE_CategoriesLabel">
+        <source>&amp;Categories:</source>
+        <target state="new">&amp;Categories:</target>
+        <note>The label in the menu strip for the combobox that holds the categories of resources to display</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantSaveResourceDiscard_1Arg">
+        <source>The resource item(s) {0} cannot be saved correctly.  The item(s) will be discarded.</source>
+        <target state="new">The resource item(s) {0} cannot be saved correctly.  The item(s) will be discarded.</target>
+        <note>{0} - name list of the resource</note>
+      </trans-unit>
       <trans-unit id="RSE_ResourceNameColumn">
         <source>Name</source>
         <target state="translated">Ad</target>
@@ -1763,11 +1778,6 @@ Bu dosyayı düzenlemek istediğinizden emin misiniz?</target>
         <source>The resource item uses the type '{0}', which is not supported in this project.</source>
         <target state="translated">Kaynak öğesi bu projede desteklenmeyen '{0}' türünü kullanıyor.</target>
         <note>{0} - name of the type</note>
-      </trans-unit>
-      <trans-unit id="RSE_Err_CantSaveResouce_1Arg">
-        <source>The resource item(s) {0} cannot be saved correctly.  The item(s) will be discarded.</source>
-        <target state="translated">Şu kaynak öğeleri doğru şekilde kaydedilemiyor: {0}.  Öğeler atılacak.</target>
-        <note>{0} - name list of the resource</note>
       </trans-unit>
       <trans-unit id="RSE_Err_Name">
         <source>'{0}'</source>
@@ -2001,11 +2011,6 @@ CONSIDER: get this from CodeDom</note>
         <target state="translated">Derleme zamanında bağlandı</target>
         <note>File Persistence Mode</note>
       </trans-unit>
-      <trans-unit id="RES_PersistenceMode_Embeded">
-        <source>Embedded in .resx</source>
-        <target state="translated">.resx biçiminde eklendi</target>
-        <note>File Persistence Mode</note>
-      </trans-unit>
       <trans-unit id="RSE_Filter_Bitmap">
         <source>Bitmaps</source>
         <target state="translated">Bit eşlemler</target>
@@ -2229,11 +2234,6 @@ CONSIDER: get this from CodeDom</note>
         <source>Delete values in {0} cell(s)</source>
         <target state="translated">{0} hücredeki değerleri sil</target>
         <note>{0} = number of cells cleared</note>
-      </trans-unit>
-      <trans-unit id="RSE_CategiesLabel">
-        <source>&amp;Categories:</source>
-        <target state="translated">&amp;Kategoriler:</target>
-        <note>The label in the menu strip for the combobox that holds the categories of resources to display</note>
       </trans-unit>
       <trans-unit id="RSE_PropDesc_Name">
         <source>Name used to identify the resource in code.</source>

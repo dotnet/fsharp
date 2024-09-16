@@ -3,7 +3,7 @@
 
 // Verify error if two pattern match clauses match
 // different values
-//<Expects id="FS0018" status="error">The two sides of this 'or' pattern bind different sets of variables</Expects>
+
 
 let testMatch x =
     match x with

@@ -2,7 +2,7 @@
 
 open FSharp.Test
 open FSharp.Test.Compiler
-open NUnit.Framework
+open Xunit;
 open Scenarios
 
 [<Struct>]
@@ -28,8 +28,7 @@ let compileAValidScenario (scenario: Scenario) (method: Method) =
     let cUnit =
         let files =
             scenario.Files
-            |> Array.map (fun (f: FileInScenario) -> SourceCodeFileKind.Create(f.FileWithAST.File, f.Content))
-            |> Array.toList
+            |> List.map (fun (f: FileInScenario) -> SourceCodeFileKind.Create(f.FileName, f.Content))
 
         match files with
         | [] -> failwith "empty files"
@@ -44,12 +43,14 @@ let compileAValidScenario (scenario: Scenario) (method: Method) =
     |> shouldSucceed
     |> ignore
 
-let scenarios = codebases
+let scenarios = scenarios |> List.map (fun c -> [| box c |])
 
-[<TestCaseSource(nameof scenarios)>]
-let ``Compile a valid scenario using graph-based type-checking`` (scenario: Scenario) =
+[<Theory>]
+[<MemberData(nameof scenarios)>]
+let ``Compile a valid scenario using graph-based type-checking`` (scenario) =
     compileAValidScenario scenario Method.Graph
 
-[<TestCaseSource(nameof scenarios)>]
-let ``Compile a valid scenario using sequential type-checking`` (scenario: Scenario) =
+[<Theory>]
+[<MemberData(nameof scenarios)>]
+let ``Compile a valid scenario using sequential type-checking`` (scenario) =
     compileAValidScenario scenario Method.Sequential

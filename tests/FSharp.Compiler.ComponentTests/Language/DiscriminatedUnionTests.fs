@@ -15,7 +15,6 @@ let foo = Foo.Foo "hi"
 if not foo.IsFoo then failwith "Should be Foo"
 if foo.IsBar then failwith "Should not be Bar"
         """
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
 
@@ -27,7 +26,6 @@ let foo = Foo.Bar "hi"
 if not foo.IsBar then failwith "Should be Bar"
 
         """
-        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withDiagnostics  [Error 39, Line 4, Col 12, Line 4, Col 17, "The type 'Foo' does not define the field, constructor or member 'IsBar'. Maybe you want one of the following:
@@ -45,7 +43,6 @@ let inline test<'a when 'a: (member IsA: bool)> (v: 'a) =
 
 X.A "a" |> test
         """
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
 
@@ -61,9 +58,9 @@ let foo = X.a 1
 if not foo.Isa then failwith "Should be a"
 if foo.IsA then failwith "Should not be A"
         """
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
+
 
     [<Fact>]
     let ``Is* discriminated union properties with backticks are visible, proper values are returned`` () =
@@ -77,7 +74,6 @@ let marsbar = ``Mars Bar``
 if marsbar.IsFoo then failwith "Should not be Foo"
 if not marsbar.``IsMars Bar`` then failwith "Should be ``Mars Bar``"
         """
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
 
@@ -99,7 +95,6 @@ type Foo =
     | Foo of string
     | Bar
         """
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
 
@@ -128,7 +123,6 @@ module Main =
         if isBar then failwith "Should not be Bar"
         0
         """
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
 
@@ -140,11 +134,11 @@ type Foo = | Foo of string | Bar
 let foo = Foo.Foo "hi"
 let isFoo = foo.IsFoo
         """
-        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withErrorMessage "The type 'Foo' does not define the field, constructor or member 'IsFoo'. Maybe you want one of the following:
    Foo"
+
 
     [<Fact>]
     let ``Is* discriminated union properties are unavailable on union case with lang version 8`` () =
@@ -175,7 +169,6 @@ type PrimaryAssembly =
 
 let x = (PrimaryAssembly.Mscorlib).IsMscorlib
         """
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
 
@@ -192,6 +185,5 @@ let giveMeZ () = Z
 
 if giveMeZ().IsX then failwith "Should not be X"
         """
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed

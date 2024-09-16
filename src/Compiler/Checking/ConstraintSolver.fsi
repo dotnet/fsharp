@@ -119,6 +119,28 @@ exception ConstraintSolverTypesNotInSubsumptionRelation of
 
 exception ConstraintSolverMissingConstraint of displayEnv: DisplayEnv * Typar * TyparConstraint * range * range
 
+exception ConstraintSolverNullnessWarningEquivWithTypes of
+    DisplayEnv *
+    TType *
+    TType *
+    NullnessInfo *
+    NullnessInfo *
+    range *
+    range
+
+exception ConstraintSolverNullnessWarningWithTypes of
+    DisplayEnv *
+    TType *
+    TType *
+    NullnessInfo *
+    NullnessInfo *
+    range *
+    range
+
+exception ConstraintSolverNullnessWarningWithType of DisplayEnv * TType * NullnessInfo * range * range
+
+exception ConstraintSolverNullnessWarning of string * range * range
+
 exception ConstraintSolverError of string * range * range
 
 exception ErrorFromApplyingDefault of
@@ -166,8 +188,32 @@ exception ArgDoesNotMatchError of
 /// A function that denotes captured tcVal, Used in constraint solver and elsewhere to get appropriate expressions for a ValRef.
 type TcValF = ValRef -> ValUseFlag -> TType list -> range -> Expr * TType
 
-[<Sealed>]
 type ConstraintSolverState =
+    {
+        g: TcGlobals
+
+        amap: ImportMap
+
+        InfoReader: InfoReader
+
+        /// The function used to freshen values we encounter during trait constraint solving
+        TcVal: TcValF
+
+        /// This table stores all unsolved, ungeneralized trait constraints, indexed by free type variable.
+        /// That is, there will be one entry in this table for each free type variable in
+        /// each outstanding, unsolved, ungeneralized trait constraint. Constraints are removed from the table and resolved
+        /// each time a solution to an index variable is found.
+        mutable ExtraCxs: Internal.Utilities.Collections.HashMultiMap<Stamp, TraitConstraintInfo * range>
+
+        /// Checks to run after all inference is complete, but before defaults are applied and internal unknowns solved
+        PostInferenceChecksPreDefaults: ResizeArray<unit -> unit>
+
+        /// Checks to run after all inference is complete.
+        PostInferenceChecksFinal: ResizeArray<unit -> unit>
+
+        WarnWhenUsingWithoutNullOnAWithNullTarget: string option
+    }
+
     static member New: TcGlobals * ImportMap * InfoReader * TcValF -> ConstraintSolverState
 
     /// Add a post-inference check to run at the end of inference
@@ -241,7 +287,11 @@ val AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed:
 
 val AddCxMethodConstraint: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TraitConstraintInfo -> unit
 
+val AddCxTypeDefnNotSupportsNull: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
+
 val AddCxTypeUseSupportsNull: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
+
+val AddCxTypeCanCarryNullnessInfo: DisplayEnv -> ConstraintSolverState -> range -> TType -> Nullness -> unit
 
 val AddCxTypeMustSupportComparison: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
 

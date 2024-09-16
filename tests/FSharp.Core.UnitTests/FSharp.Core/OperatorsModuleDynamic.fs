@@ -7,6 +7,10 @@ namespace FSharp.Core.UnitTests.Operators
 open System
 open Xunit
 
+// For information on the runtime-dependent behavior differences in this file, see:
+// - https://github.com/dotnet/runtime/issues/61885
+// - https://github.com/dotnet/runtime/pull/97529
+
 #nowarn "1204" // CompilerMessage: This function is for use by dynamic invocations of F# code and should not be used directly
 module OperatorsModuleDynamic =
     
@@ -94,7 +98,10 @@ module OperatorsModuleDynamic =
         
         // Overflow
         let result = Operators.byte Single.MaxValue
-        Assert.AreEqual(0uy, result)
+        if Info.isNetFramework then
+            Assert.AreEqual(0uy, result)
+        else
+            Assert.AreEqual(255uy, result)
         
         // Overflow
         let result = Operators.byte Double.MinValue
@@ -102,7 +109,10 @@ module OperatorsModuleDynamic =
         
         // Overflow
         let result = Operators.byte Double.MaxValue
-        Assert.AreEqual(0uy, result)
+        if Info.isNetFramework then
+            Assert.AreEqual(0uy, result)
+        else
+            Assert.AreEqual(255uy, result)
         
         // Overflow
         let result = Operators.byte (Int64.MaxValue * 8L)
@@ -135,8 +145,16 @@ module OperatorsModuleDynamic =
         // Overflow
         Assert.AreEqual('\000', Operators.char Single.MinValue)
         Assert.AreEqual('\000', Operators.char Double.MinValue)
-        Assert.AreEqual('\000', Operators.char Single.MaxValue)
-        Assert.AreEqual('\000', Operators.char Double.MaxValue)
+
+        if Info.isNetFramework then
+            Assert.AreEqual('\000', Operators.char Single.MaxValue)
+        else
+            Assert.AreEqual('\uffff', Operators.char Single.MaxValue)
+
+        if Info.isNetFramework then
+            Assert.AreEqual('\000', Operators.char Double.MaxValue)
+        else
+            Assert.AreEqual('\uffff', Operators.char Double.MaxValue)
         CheckThrowsOverflowException(fun () -> Operators.char Decimal.MinValue |> ignore)
         
         // string type
@@ -233,7 +251,10 @@ module OperatorsModuleDynamic =
         
         // Overflow
         let result = Operators.int Single.MaxValue
-        Assert.AreEqual(Int32.MinValue, result)
+        if Info.isNetFramework then
+            Assert.AreEqual(Int32.MinValue, result)
+        else
+            Assert.AreEqual(Int32.MaxValue, result)
         
         // Overflow
         let result = Operators.int Single.MinValue
@@ -241,7 +262,10 @@ module OperatorsModuleDynamic =
         
         // Overflow
         let result = Operators.int Double.MaxValue
-        Assert.AreEqual(Int32.MinValue, result)
+        if Info.isNetFramework then
+            Assert.AreEqual(Int32.MinValue, result)
+        else
+            Assert.AreEqual(Int32.MaxValue, result)
         
         // Overflow
         let result = Operators.int Double.MinValue
@@ -286,7 +310,10 @@ module OperatorsModuleDynamic =
         
         // Overflow
         let result = Operators.int16 Single.MaxValue
-        Assert.AreEqual(0s, result)
+        if Info.isNetFramework then
+            Assert.AreEqual(0s, result)
+        else
+            Assert.AreEqual(-1s, result)
 
         // Overflow
         let result = Operators.int16 Single.MinValue
@@ -294,7 +321,10 @@ module OperatorsModuleDynamic =
         
         // Overflow
         let result = Operators.int16 Double.MaxValue
-        Assert.AreEqual(0s, result)
+        if Info.isNetFramework then
+            Assert.AreEqual(0s, result)
+        else
+            Assert.AreEqual(-1s, result)
 
         // Overflow
         let result = Operators.int16 Double.MinValue
@@ -338,7 +368,10 @@ module OperatorsModuleDynamic =
         
         // Overflow
         let result = Operators.int32 Single.MaxValue
-        Assert.AreEqual(Int32.MinValue, result)
+        if Info.isNetFramework then
+            Assert.AreEqual(Int32.MinValue, result)
+        else
+            Assert.AreEqual(Int32.MaxValue, result)
         
         // Overflow
         let result = Operators.int32 Single.MinValue
@@ -346,7 +379,10 @@ module OperatorsModuleDynamic =
         
         // Overflow
         let result = Operators.int32 Double.MaxValue
-        Assert.AreEqual(Int32.MinValue, result)
+        if Info.isNetFramework then
+            Assert.AreEqual(Int32.MinValue, result)
+        else
+            Assert.AreEqual(Int32.MaxValue, result)
         
         // Overflow
         let result = Operators.int32 Double.MinValue
@@ -391,7 +427,10 @@ module OperatorsModuleDynamic =
         
         // Overflow.
         let result = Operators.int64 Single.MaxValue
-        Assert.AreEqual(Int64.MinValue, result)
+        if Info.isNetFramework then
+            Assert.AreEqual(Int64.MinValue, result)
+        else
+            Assert.AreEqual(Int64.MaxValue, result)
 
         // Overflow
         let result = Operators.int64 Single.MinValue
@@ -399,7 +438,10 @@ module OperatorsModuleDynamic =
         
         // Overflow.
         let result = Operators.int64 Double.MaxValue
-        Assert.AreEqual(Int64.MinValue, result)
+        if Info.isNetFramework then
+            Assert.AreEqual(Int64.MinValue, result)
+        else
+            Assert.AreEqual(Int64.MaxValue, result)
 
         // Overflow
         let result = Operators.int64 Double.MinValue
@@ -444,9 +486,12 @@ module OperatorsModuleDynamic =
         if Info.isX86Runtime then
             Assert.AreEqual(-2147483648n, result)
         else
-            // Cannot use -9223372036854775808, compiler doesn't allow it, see https://github.com/dotnet/fsharp/issues/9524
-            Assert.AreEqual(-9223372036854775807n - 1n, result)
-        
+            if Info.isNetFramework then
+                // Cannot use -9223372036854775808, compiler doesn't allow it, see https://github.com/dotnet/fsharp/issues/9524
+                Assert.AreEqual(-9223372036854775807n - 1n, result)
+            else
+                Assert.AreEqual(9223372036854775807n, result)
+
         // Overflow (depends on pointer size)
         let result = Operators.nativeint Single.MinValue
         if Info.isX86Runtime then
@@ -454,15 +499,18 @@ module OperatorsModuleDynamic =
         else
             // Cannot use -9223372036854775808, compiler doesn't allow it, see https://github.com/dotnet/fsharp/issues/9524
             Assert.AreEqual(-9223372036854775807n - 1n, result)
-        
+
         // Overflow Double.MaxValue is equal on 32 bits and 64 bits runtimes
         let result = Operators.nativeint Double.MaxValue
         if Info.isX86Runtime then
             Assert.AreEqual(-2147483648n, result)
         else
-            // Cannot use -9223372036854775808, compiler doesn't allow it, see https://github.com/dotnet/fsharp/issues/9524
-            Assert.AreEqual(-9223372036854775807n - 1n, result)
-        
+            if Info.isNetFramework then
+                // Cannot use -9223372036854775808, compiler doesn't allow it, see https://github.com/dotnet/fsharp/issues/9524
+                Assert.AreEqual(-9223372036854775807n - 1n, result)
+            else
+                Assert.AreEqual(9223372036854775807n, result)
+
         // Overflow (depends on pointer size)
         let result = Operators.nativeint Double.MinValue
         if Info.isX86Runtime then
@@ -470,7 +518,7 @@ module OperatorsModuleDynamic =
         else
             // Cannot use -9223372036854775808, compiler doesn't allow it, see https://github.com/dotnet/fsharp/issues/9524
             Assert.AreEqual(-9223372036854775807n - 1n, result)
-        
+
         // Overflow (depends on pointer size)
         let result = Operators.nativeint Int64.MinValue
         if Info.isX86Runtime then
@@ -492,8 +540,11 @@ module OperatorsModuleDynamic =
         if Info.isX86Runtime then
             Assert.AreEqual(-2147483648n, result)
         else
-            // Cannot express this as a literal, see https://github.com/dotnet/fsharp/issues/9524
-            Assert.AreEqual("-9223372036854775808", string result)
+            if Info.isNetFramework then
+                // Cannot express this as a literal, see https://github.com/dotnet/fsharp/issues/9524
+                Assert.AreEqual("-9223372036854775808", string result)
+            else
+                Assert.AreEqual(9223372036854775807n, result)
 
         let result = Operators.nativeint System.Double.MinValue
         if Info.isX86Runtime then
@@ -501,7 +552,6 @@ module OperatorsModuleDynamic =
         else
             // Cannot express this as a literal, see https://github.com/dotnet/fsharp/issues/9524
             Assert.AreEqual("-9223372036854775808", string result)
-
         // Max and min value as literals (this breaks compilation if the lexer fails).
         // The following tests ensure that the proper value is parsed, which is similar to `nativeint Int64.MaxValue` etc.
         if Info.isX86Runtime then
@@ -544,7 +594,10 @@ module OperatorsModuleDynamic =
         
         // Overflow
         let result = Operators.sbyte Single.MaxValue
-        Assert.AreEqual(0y, result)
+        if Info.isNetFramework then
+            Assert.AreEqual(0y, result)
+        else
+            Assert.AreEqual(-1y, result)
         
         // Overflow
         let result = Operators.sbyte Double.MinValue
@@ -552,7 +605,10 @@ module OperatorsModuleDynamic =
         
         // Overflow
         let result = Operators.sbyte Double.MaxValue
-        Assert.AreEqual(0y, result)
+        if Info.isNetFramework then
+            Assert.AreEqual(0y, result)
+        else
+            Assert.AreEqual(-1y, result)
         
         // Overflow
         let result = Operators.sbyte (Int64.MaxValue * 8L)
@@ -596,7 +652,10 @@ module OperatorsModuleDynamic =
         
         // Overflow
         let result = Operators.uint16 Single.MaxValue
-        Assert.AreEqual(0us, result)
+        if Info.isNetFramework then
+            Assert.AreEqual(0us, result)
+        else
+            Assert.AreEqual(65535us, result)
         
         // Overflow
         let result = Operators.uint16 Single.MinValue
@@ -604,7 +663,10 @@ module OperatorsModuleDynamic =
         
         // Overflow
         let result = Operators.uint16 Double.MaxValue
-        Assert.AreEqual(0us, result)
+        if Info.isNetFramework then
+            Assert.AreEqual(0us, result)
+        else
+            Assert.AreEqual(65535us, result)
         
         // Overflow
         let result = Operators.uint16 Double.MinValue
@@ -629,7 +691,10 @@ module OperatorsModuleDynamic =
         
         // Overflow
         let result = Operators.uint32 Single.MaxValue
-        Assert.AreEqual(0u, result)
+        if Info.isNetFramework then
+            Assert.AreEqual(0u, result)
+        else
+            Assert.AreEqual(4294967295u, result)
         
         // Overflow
         let result = Operators.uint32 Single.MinValue
@@ -637,8 +702,10 @@ module OperatorsModuleDynamic =
         
         // Overflow
         let result = Operators.uint32 Double.MaxValue
-        Assert.AreEqual(0u, result)
-        
+        if Info.isNetFramework then
+            Assert.AreEqual(0u, result)
+        else
+            Assert.AreEqual(4294967295u, result)
         // Overflow
         let result = Operators.uint32 Double.MinValue
         Assert.AreEqual(0u, result)
@@ -679,20 +746,31 @@ module OperatorsModuleDynamic =
 
         // Overflow
         let result = Operators.uint64 Single.MaxValue
-        Assert.AreEqual(0UL, result)
-        
+        if Info.isNetFramework then
+            Assert.AreEqual(0UL, result)
+        else
+            Assert.AreEqual(18446744073709551615UL, result)
+
         // Overflow
         let result = Operators.uint64 Single.MinValue
-        Assert.AreEqual(9223372036854775808UL, result)      // surprising, but true, 2^63 + 1
-        
+        if Info.isNetFramework then
+            Assert.AreEqual(9223372036854775808UL, result)      // surprising, but true, 2^63 + 1
+        else
+            Assert.AreEqual(0UL, result)
+
         // Overflow
         let result = Operators.uint64 Double.MaxValue
-        Assert.AreEqual(0UL, result)
-        
+        if Info.isNetFramework then
+            Assert.AreEqual(0UL, result)
+        else
+            Assert.AreEqual(18446744073709551615UL, result)
+
         // Overflow
         let result = Operators.uint64 Double.MinValue
-        Assert.AreEqual(9223372036854775808UL, result)      // surprising, but true, 2^63 + 1
-        
+        if Info.isNetFramework then
+            Assert.AreEqual(9223372036854775808UL, result)      // surprising, but true, 2^63 + 1
+        else
+            Assert.AreEqual(0UL, result)
         // Overflow
         let result = Operators.uint64 Int64.MinValue
         Assert.AreEqual(9223372036854775808UL, result)
@@ -721,26 +799,37 @@ module OperatorsModuleDynamic =
         
         // Overflow Single.MaxValue is equal on 32 bits and 64 bits runtimes
         let result = Operators.unativeint Single.MaxValue
-        Assert.AreEqual(0un, result)
+        if Info.isNetFramework then
+            Assert.AreEqual(0un, result)
+        else
+            Assert.AreEqual(18446744073709551615un, result)
         
         // Overflow (depends on pointer size)
         let result = Operators.unativeint Single.MinValue
         if Info.isX86Runtime then
             Assert.AreEqual(0un, result)
         else
-            Assert.AreEqual(9223372036854775808un, result)      // surprising, but true, 2^63 + 1
+            if Info.isNetFramework then
+                Assert.AreEqual(9223372036854775808un, result)      // surprising, but true, 2^63 + 1
+            else
+                Assert.AreEqual(0un, result)
         
         // Overflow Double.MaxValue is equal on 32 bits and 64 bits runtimes
         let result = Operators.unativeint Double.MaxValue
-        Assert.AreEqual(0un, result)
+        if Info.isNetFramework then
+            Assert.AreEqual(0un, result)
+        else
+            Assert.AreEqual(18446744073709551615un, result)
         
         // Overflow (depends on pointer size)
         let result = Operators.unativeint Double.MinValue
         if Info.isX86Runtime then
             Assert.AreEqual(0un, result)
         else
-            Assert.AreEqual(9223372036854775808un, result)      // surprising, but true, 2^63 + 1
-        
+            if Info.isNetFramework then
+                Assert.AreEqual(9223372036854775808un, result)      // surprising, but true, 2^63 + 1
+            else
+                Assert.AreEqual(0un, result)
         // Overflow (depends on pointer size)
         let result = Operators.unativeint Int64.MinValue
         if Info.isX86Runtime then

@@ -32,6 +32,7 @@
   </Target>
 
   <ItemGroup>
+    <Compile Include="$(FSharpSourcesRoot)\Compiler\Utilities\NullnessShims.fs" />
     <EmbeddedText Include="FSDependencyManager.txt" />
     <EmbeddedText Include="$(FSharpSourcesRoot)\Compiler\Facilities\UtilsStrings.txt" />
     <Compile Include="$(FSharpSourcesRoot)\Compiler\Facilities\CompilerLocation.fsi" />

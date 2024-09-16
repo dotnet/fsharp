@@ -49,7 +49,7 @@ and
     member ResumptionFunc: ResumptionFunc<'Data> with get, set 
     
     /// Additional data associated with the state machine
-    member ResumptionData: obj with get, set 
+    member ResumptionData: objnull with get, set 
 
     /// Executes the MoveNext implementation of the state machine
     abstract MoveNext: machine: byref<ResumableStateMachine<'Data>> -> unit

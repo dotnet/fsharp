@@ -4,7 +4,7 @@
 // Regression testcase for FSharp 1.0:2070
 // Warning on incomplete match
 
-//<Expects id="FS0025" span="(92,13-92,14)" status="warning">Incomplete pattern matches on this expression. For example, the value 'Result \(_\)' may indicate a case not covered by the pattern\(s\)</Expects>
+
 
 module M =
   

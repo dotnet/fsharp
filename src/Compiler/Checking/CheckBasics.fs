@@ -137,7 +137,7 @@ type CtorInfo =
       /// A handle to the boolean ref cell to hold success of initialized 'this' for 'type X() as x = ...' constructs
       safeInitInfo: SafeInitData
 
-      /// Is the an implicit constructor or an explicit one?
+      /// Is there an implicit constructor or an explicit one?
       ctorIsImplicit: bool
     }
 

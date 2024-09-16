@@ -86,7 +86,9 @@ type CompletionItem =
       IsOwnMember: bool
       MinorPriority: int
       Type: TyconRef option
-      Unresolved: UnresolvedSymbol option }
+      Unresolved: UnresolvedSymbol option
+      CustomInsertText: string voption
+      CustomDisplayText: string voption }
     member x.Item = x.ItemWithInst.Item
 
 [<AutoOpen>]
@@ -119,7 +121,7 @@ module DeclarationListHelpers =
   
         { new IPartialEqualityComparer<CompletionItem> with
             member x.InEqualityRelation item = itemComparer.InEqualityRelation item.Item
-            member x.Equals(item1, item2) = itemComparer.Equals(item1.Item, item2.Item)
+            member x.Equals(item1, item2) = nullSafeEquality item1 item2 (fun item1 item2 -> itemComparer.Equals(item1.Item, item2.Item))
             member x.GetHashCode item = itemComparer.GetHashCode(item.Item) }
 
     /// Remove all duplicate items
@@ -136,7 +138,7 @@ module DeclarationListHelpers =
         modrefs |> IPartialEqualityComparer.partialDistinctBy 
                       { new IPartialEqualityComparer<ModuleOrNamespaceRef> with
                           member x.InEqualityRelation _ = true
-                          member x.Equals(item1, item2) = (fullDisplayTextOfModRef item1 = fullDisplayTextOfModRef item2)
+                          member x.Equals(item1, item2) = nullSafeEquality item1 item2 (fun item1 item2 -> fullDisplayTextOfModRef item1 = fullDisplayTextOfModRef item2)
                           member x.GetHashCode item = hash item.Stamp  }
 
     let OutputFullName displayFullName ppF fnF r = 
@@ -155,7 +157,7 @@ module DeclarationListHelpers =
     let rec FormatItemDescriptionToToolTipElement displayFullName (infoReader: InfoReader) ad m denv (item: ItemWithInst) symbol (width: int option) = 
         let g = infoReader.g
         let amap = infoReader.amap
-        let denv = SimplerDisplayEnv denv 
+        let denv = {SimplerDisplayEnv denv with showCsharpCodeAnalysisAttributes = true } 
         let xml = GetXmlCommentForItem infoReader m item.Item
 
         match item.Item with
@@ -839,7 +841,7 @@ module internal DescriptionListsImpl =
         | Item.DelegateCtor delTy -> 
             let (SigOfFunctionForDelegate(_, _, _, delFuncTy)) = GetSigOfFunctionForDelegate infoReader delTy m AccessibleFromSomewhere
 
-            // No need to pass more generic type information in here since the instanitations have already been applied
+            // No need to pass more generic type information in here since the instantiations have already been applied
             let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInstantiation [ParamData(false, false, false, NotOptional, NoCallerInfo, None, ReflectedArgInfo.None, delFuncTy)] delTy
 
             // FUTURE: prettyTyparInst is the pretty version of the known instantiations of type parameters in the output. It could be returned
@@ -1125,19 +1127,23 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                     match u.Namespace with
                     | [||] -> u.DisplayName
                     | ns -> (ns |> String.concat ".") + "." + u.DisplayName
-                | None -> x.Item.DisplayName)
+                | None when x.CustomDisplayText.IsSome -> x.CustomDisplayText.Value
+                | None -> x.Item.DisplayName
+            )
             |> List.map (
                 let textInDeclList item =
                     match item.Unresolved with
                     | Some u -> u.DisplayName
+                    | None when item.CustomDisplayText.IsSome -> item.CustomDisplayText.Value
                     | None -> item.Item.DisplayNameCore
                 let textInCode (item: CompletionItem) =
                     match item.Item with
                     | Item.TypeVar (name, typar) -> (if typar.StaticReq = Syntax.TyparStaticReq.None then "'" else " ^") + name
                     | _ ->
-                        match item.Unresolved with
-                        | Some u -> u.DisplayName
-                        | None -> item.Item.DisplayName
+                        match item.Unresolved, item.CustomInsertText with
+                        | Some u, _ -> u.DisplayName
+                        | None, ValueSome textInCode -> textInCode
+                        | None, _ -> item.Item.DisplayName
                 if not supportsPreferExtsMethodsOverProperty then
                     // we don't pay the cost of filtering specific to RFC-1137
                     // nor risk a change in behaviour for the intellisense item list
@@ -1307,15 +1313,15 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
         unsortedMethods 
         // Methods with zero arguments show up here as taking a single argument of type 'unit'.  Patch them now to appear as having zero arguments.
         |> Array.map (fun meth -> 
-            let parms = meth.Parameters
-            if parms.Length = 1 && parms[0].CanonicalTypeTextForSorting="Microsoft.FSharp.Core.Unit" then 
+            let params_ = meth.Parameters
+            if params_.Length = 1 && params_[0].CanonicalTypeTextForSorting="Microsoft.FSharp.Core.Unit" then 
                 MethodGroupItem(meth.Description, meth.XmlDoc, meth.ReturnTypeText, [||], true, meth.HasParamArrayArg, meth.StaticParameters) 
             else 
                 meth)
         // Fix the order of methods, to be stable for unit testing.
         |> Array.sortBy (fun meth -> 
-            let parms = meth.Parameters
-            parms.Length, (parms |> Array.map (fun p -> p.CanonicalTypeTextForSorting)))
+            let params_ = meth.Parameters
+            params_.Length, (params_ |> Array.map (fun p -> p.CanonicalTypeTextForSorting)))
 
     member _.MethodName = name
 

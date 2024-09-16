@@ -2,41 +2,36 @@
 
 open TestUtils
 
-type Scenario =
+type FileInScenario =
     {
-        Name: string
-        Files: FileInScenario array
-    }
-
-    override x.ToString() = x.Name
-
-and FileInScenario =
-    {
-        FileWithAST: TestFileWithAST
+        Index: int
+        FileName: string
         ExpectedDependencies: Set<int>
         Content: string
     }
 
+type Scenario =
+    {
+        Name: string
+        Files: FileInScenario list
+    }
+
+    override x.ToString() = x.Name
+
 let private scenario name files =
-    let files = files |> List.toArray |> Array.mapi (fun idx f -> f idx)
+    let files = files |> List.mapi (fun idx f -> f idx)
     { Name = name; Files = files }
 
 let private sourceFile fileName content (dependencies: Set<int>) =
     fun idx ->
-        let fileWithAST =
-            {
-                Idx = idx
-                AST = parseSourceCode (fileName, content)
-                File = fileName
-            }
-
         {
-            FileWithAST = fileWithAST
+            Index = idx
+            FileName = fileName
             ExpectedDependencies = dependencies
             Content = content
         }
 
-let internal codebases =
+let internal scenarios =
     [
         scenario
             "Link via full open statement"
@@ -256,7 +251,7 @@ module Y.C
 
 // This open statement does not do anything.
 // It can safely be removed, but because of its presence we need to link it to something that exposes the namespace X.
-// We try and pick the file with the lowest index 
+// We try and pick the file with the lowest index
 open X
 
 let c = 0
@@ -572,7 +567,7 @@ type Bar() =
     static member Foo () : unit =
         failwith ""
 
-let Foo () : unit = 
+let Foo () : unit =
     Bar.Foo ()
 """
                     (set [| 0 |])
@@ -792,7 +787,7 @@ open My.Great.Namespace
 type Foo = class end
 """
                     (set [| 0 |])
-                    
+
                 sourceFile
                     "Program"
                     """
@@ -897,7 +892,7 @@ do
 """
                     (set [| 0 |])
             ]
-            
+
         scenario
             "parentheses around module name in nameof expression"
             [
@@ -1022,4 +1017,72 @@ module Program =
 """
                     (set [| 0 |])
         ]
+        scenario
+            "fully qualified type in tuple constructor pattern"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace MyRootNamespace.A
+
+type Foo() = class end
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+namespace MyRootNamespace.A.B
+
+type Bar(foo: MyRootNamespace.A.Foo, s: string) = class end
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Library with using global namespace"
+            [
+                sourceFile
+                    "Library.fs"
+                    """
+namespace Lib
+module File1 =
+    let mutable discState = System.DateTime.Now
+
+module File2 =
+    [<Struct>]
+    type DiscState(rep : int) =
+        member this.Rep = rep
+
+    let mutable discState = DiscState(0)
+                    """
+                    Set.empty
+                sourceFile
+                    "App.fs"
+                    """
+module X
+let v = global.Lib.File1.discState.Second
+let v2 = global.Lib.File2.discState.Rep
+                    """
+                    (set [| 0 |])
+            ]
+        scenario
+            "Library with using global namespace as module alias"
+            [
+                sourceFile
+                    "Library.fs"
+                    """
+namespace Z
+
+module N =
+    let mutable discState = System.DateTime.Now
+                    """
+                    Set.empty
+                sourceFile
+                    "App.fs"
+                    """
+module X
+
+module Y = global.Z.N
+                    """
+                    (set [| 0 |])
+            ]
     ]

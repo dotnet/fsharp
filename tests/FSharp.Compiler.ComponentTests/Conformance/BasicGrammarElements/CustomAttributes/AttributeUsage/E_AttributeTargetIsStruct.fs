@@ -25,3 +25,33 @@ type Struct4 = struct end
 [<CustomClass>]
 [<Struct>]
 type Struct5 = struct end
+
+[<AttributeUsage(AttributeTargets.Interface)>]
+type InterfaceTargetAttribute() =
+    inherit Attribute()
+
+[<CustomClass>]
+[<InterfaceTarget>]
+[<CustomStruct>]
+type UnionCase = 
+    | UnionCase of int
+    | UnionCase2 of string
+
+[<CustomClass>]
+[<InterfaceTarget>]
+[<CustomStruct>]
+[<Struct>]
+type UnionCase2 = 
+    | UnionCase of a: int * b: int
+    | UnionCase2 of c: string * d: string
+
+[<CustomClass>]
+[<InterfaceTarget>]
+[<CustomStruct>]
+type StructUnionId = Id
+
+[<CustomClass>]
+[<InterfaceTarget>]
+[<CustomStruct>]
+[<Struct>]
+type StructUnionId2 = Id

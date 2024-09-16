@@ -48,7 +48,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Sets this file to linked or nonlinked.
+        /// Sets this file to linked or unlinked.
         /// </summary>
         /// <param name="isLinked"></param>
         public void SetIsLinkedFile(bool isLinked)

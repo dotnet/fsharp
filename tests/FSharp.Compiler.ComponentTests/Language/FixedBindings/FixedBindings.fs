@@ -229,7 +229,7 @@ The type 'char' does not match the type 'byte'""")
     
     [<Theory>]
     [<InlineData("7.0")>]
-    let ``Pin int inref parmeter`` langVersion =
+    let ``Pin int inref parameter`` langVersion =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinIntInrefParameter.fs")
         |> withLangVersion langVersion
         |> ignoreWarnings
@@ -243,7 +243,7 @@ The type 'char' does not match the type 'byte'""")
         
     [<Theory>]
     [<InlineData("7.0")>]
-    let ``Pin int outref parmeter`` langVersion =
+    let ``Pin int outref parameter`` langVersion =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinIntOutrefParameter.fs")
         |> withLangVersion langVersion
         |> ignoreWarnings
@@ -469,7 +469,7 @@ module ExtendedFixedBindings =
         
     [<Theory>]
     [<InlineData("preview")>]
-    let ``Pin int inref parmeter`` langVersion =
+    let ``Pin int inref parameter`` langVersion =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinIntInrefParameter.fs")
         |> withLangVersion langVersion
         |> ignoreWarnings
@@ -482,7 +482,7 @@ module ExtendedFixedBindings =
         
     [<Theory>]
     [<InlineData("preview")>]
-    let ``Pin int outref parmeter`` langVersion =
+    let ``Pin int outref parameter`` langVersion =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinIntOutrefParameter.fs")
         |> withLangVersion langVersion
         |> ignoreWarnings

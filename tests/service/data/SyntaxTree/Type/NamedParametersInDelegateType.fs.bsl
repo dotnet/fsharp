@@ -70,7 +70,7 @@ ImplFile
                                  SynArgInfo ([], false, Some b)];
                                 [SynArgInfo ([], false, Some c)]],
                                SynArgInfo ([], false, None)), false, false,
-                            PreXmlDocEmpty, None, None, (2,11--2,46),
+                            PreXmlDocEmpty, Single None, None, (2,11--2,46),
                             { LeadingKeyword = Synthetic
                               InlineKeyword = None
                               WithKeyword = None

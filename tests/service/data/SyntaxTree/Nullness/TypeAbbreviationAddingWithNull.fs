@@ -1,0 +1,1 @@
+type MyFlatOption = string | null

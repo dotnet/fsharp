@@ -483,7 +483,7 @@ type ITypeProvider =
     abstract GetStaticParameters: typeWithoutArguments: Type -> ParameterInfo array
 
     abstract ApplyStaticArguments:
-        typeWithoutArguments: Type * typePathWithArguments: string array * staticArguments: obj array -> Type
+        typeWithoutArguments: Type * typePathWithArguments: string array * staticArguments: objnull array -> Type
 
     abstract GetInvokerExpression: syntheticMethodBase: MethodBase * parameters: Expr array -> Expr
 
@@ -496,4 +496,5 @@ type ITypeProvider2 =
     abstract GetStaticParametersForMethod: methodWithoutArguments: MethodBase -> ParameterInfo array
 
     abstract ApplyStaticArgumentsForMethod:
-        methodWithoutArguments: MethodBase * methodNameWithArguments: string * staticArguments: obj array -> MethodBase
+        methodWithoutArguments: MethodBase * methodNameWithArguments: string * staticArguments: objnull array ->
+            MethodBase

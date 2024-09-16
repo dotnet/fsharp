@@ -4,7 +4,7 @@
 # https://blogs.msdn.microsoft.com/dotnet/2017/03/14/announcing-nightly-releases-for-the-visual-f-tools/
 # https://dotnet.myget.org/feed/fsharp/package/vsix/VisualFSharp
 
-# requies Visual Studio Setup PowerShell Module
+# requires Visual Studio Setup PowerShell Module
 # https://github.com/Microsoft/vssetup.powershell
 # Install-Module VSSetup -Scope CurrentUser
 

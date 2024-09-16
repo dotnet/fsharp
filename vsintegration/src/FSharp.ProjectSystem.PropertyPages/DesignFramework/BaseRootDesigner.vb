@@ -22,7 +22,7 @@ Namespace Microsoft.VisualStudio.Editors.DesignerFramework
     '''       (see VSIP documents | Advanced VSPackage Support | Implementing Menu and Toolbar Commands).
     '''       -   Add some unique ID for your menu, group and command into VisualStudioEditorsID.h.
     '''       -   Add those groups, menus and commands into Menus.ctc file (see Command Table Format).
-    ''' 2.    Define those constants in vbpackage\Contants.vb - MenuConstants.
+    ''' 2.    Define those constants in vbpackage\Constants.vb - MenuConstants.
     '''       Only expose the final CommandID (combination of the GUID and the command ID).
     ''' 3.    BaseRootDesigner exposes utilities methods to allow you registering menus with the shells, 
     '''       and showing context menus. 

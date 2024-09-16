@@ -31,14 +31,14 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
     '
     'The only interface necessary for third parties to implement for property pages that the project designer can host is
     '   IPropertyPage.  The interfaces in Microsoft.VisualStudio.ManagedInterfaces.dll are optional for third parties to implement
-    '   in order to hook in to our undo functionality and control group validation.
+    '   in order to hook into our undo functionality and control group validation.
     '
     ' *******************
 
 
 
     ''' <summary>
-    ''' This is an interface interface used to communicate between the PropPageBase class and any property pages (those that inherit
+    ''' This is an interface used to communicate between the PropPageBase class and any property pages (those that inherit
     '''   from PropPageUserControlBase).
     ''' It is our internal equivalent of IPropertyPage2.
     ''' </summary>
@@ -57,7 +57,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
 
 
     ''' <summary>
-    ''' This is an interface interface that subclasses of PropPageUserControlBase use to communicate with their site (PropPageBaseClass)
+    ''' This is an interface that subclasses of PropPageUserControlBase use to communicate with their site (PropPageBaseClass)
     '''   (i.e., it is internal to our property page implementation - public for those assemblies that have classes that inherit from
     '''   PropPageUserControlBase, but not useful for those implementing pages without using PropPageUserControlBase).
     ''' It is our internal equivalent of IPropertyPageSite.

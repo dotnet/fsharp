@@ -13,3 +13,4 @@ type PropertyOrFieldLevelAttribute() =
 type SomeUnion =
 | [<PropertyLevel>] Case1 of int // Should fail
 | [<PropertyOrFieldLevel>] Case2 of int // Should fail
+

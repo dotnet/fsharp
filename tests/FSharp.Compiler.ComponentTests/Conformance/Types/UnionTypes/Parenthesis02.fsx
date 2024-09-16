@@ -1,5 +1,5 @@
 // #Regression #Conformance #TypesAndModules #Unions 
-// Parethesis are no longer ignificant in DU definitions
+// Parentheses are no longer significant in DU definitions
 // See FSHARP1.0:4787 (Discriminated union constructors as first class values)
 //<Expects status="success"></Expects>
 

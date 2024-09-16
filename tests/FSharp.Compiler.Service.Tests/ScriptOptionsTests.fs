@@ -26,7 +26,7 @@ let pi = Math.PI
 [<InlineData(true, true, "--targetprofile:netcore")>]
 let ``can generate options for different frameworks regardless of execution environment - useSdkRefs = false``(assumeDotNetFramework, useSdkRefs, flag) =
     let path = Path.GetTempPath()
-    let file = tryCreateTemporaryFileName () + ".fsx"
+    let file = getTemporaryFileName () + ".fsx"
     let tempFile = Path.Combine(path, file)
     let _, errors =
         checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, assumeDotNetFramework = assumeDotNetFramework, useSdkRefs = useSdkRefs, otherFlags = [| flag |])
@@ -41,9 +41,9 @@ let ``can generate options for different frameworks regardless of execution envi
 [<InlineData("--targetprofile:netcore")>]
 [<InlineData("--targetprofile:netstandard")>]
 let ``can resolve nuget packages to right target framework for different frameworks regardless of execution environment``(flag) =
-    let path = DirectoryInfo(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location))
-    let file = tryCreateTemporaryFileNameInDirectory(path) + ".fsx"
-    let scriptFullPath = Path.Combine(path.FullName, file)
+    let path = DirectoryInfo(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)).FullName
+    let file = (getTemporaryFileNameInDirectory path) + ".fsx"
+    let scriptFullPath = Path.Combine(path, file)
     let scriptSource = """
 #r "nuget: FSharp.Data, 3.3.3"
 open System

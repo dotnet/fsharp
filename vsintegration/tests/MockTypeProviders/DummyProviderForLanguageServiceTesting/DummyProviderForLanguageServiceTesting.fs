@@ -47,7 +47,7 @@ module internal TPModule =
     let typeT = ProvidedTypeDefinition(thisAssembly,namespaceName,"T",Some typeof<System.Object>)
 
     // Make an instantiation of the parametric type
-    // THe instantiated type has a static property that evaluates to the param passed
+    // The instantiated type has a static property that evaluates to the param passed
     let instantiateParametricType (typeName:string) (args:System.Object[]) =
         match args with
         [| :? string as value; :? int as ignoredvalue; |] -> 
@@ -221,7 +221,7 @@ module TypeProviderThatThrowsErrorsModule =
                 | [|:? int as n|] when n > 0 ->
                     let errors = Seq.init n (sprintf "Error %d" >> Failure)
                     raise (System.AggregateException(errors))
-                | _ -> failwith "nonexpected"
+                | _ -> failwith "unexpected"
             )
         [t]
 
@@ -388,7 +388,7 @@ module RegexTypeProvider =
                 // Create an instance of the regular expression. 
                 //
                 // This will fail with System.ArgumentException if the regular expression is invalid. 
-                // The exception will excape the type provider and be reported in client code.
+                // The exception will escape the type provider and be reported in client code.
                 let r = System.Text.RegularExpressions.Regex(pattern)            
 
                 // Declare the typed regex provided type.
@@ -441,7 +441,7 @@ module RegexTypeProvider =
                                     parameters = [ProvidedParameter("input", typeof<string>)], 
                                     returnType = matchTy, 
                                     invokeCode = fun args -> <@@ ((%%args.[0]:obj) :?> Regex).Match(%%args.[1]) :> obj @@>)
-                matchMeth.AddXmlDoc "Searches the specified input string for the first occurence of this regular expression"
+                matchMeth.AddXmlDoc "Searches the specified input string for the first occurrence of this regular expression"
             
                 ty.AddMember matchMeth
             

@@ -2,13 +2,13 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 
-[<TestFixture>]
+
 module ``String Format Tests`` =
 
-    [<Test>]
+    [<Fact>]
     let ``sprintf with %d format specifier``() =
         // Regression test for FSHARP1.0:4120
         // format specifier %d does not work correctly with UInt64 values
@@ -32,7 +32,7 @@ module ``String Format Tests`` =
         Assert.areEqual (sprintf "%d" 1un) "1"
         Assert.areEqual (sprintf "%d" -1n) "-1"
 
-    [<Test>]
+    [<Fact>]
     let ``sprintf with %i format specifier``() =
         // Regression test for FSHARP1.0:4120
         // format specifier %i does not work correctly with UInt64 values
@@ -56,7 +56,7 @@ module ``String Format Tests`` =
         Assert.areEqual (sprintf "%i" 1un) "1"
         Assert.areEqual (sprintf "%i" -1n) "-1"
 
-    [<Test>]
+    [<Fact>]
     let ``sprintf with %u format specifier``() =
         // Regression test for FSHARP1.0:4120
         // format specifier %u does not work correctly with UInt64 values
@@ -80,7 +80,7 @@ module ``String Format Tests`` =
         Assert.areEqual (sprintf "%u" 1un) "1"
         Assert.areEqual (sprintf "%u" -1n) (if System.IntPtr.Size = 4 then "4294967295" else "18446744073709551615")
 
-    [<Test>]
+    [<Fact>]
     let ``string constructor``() =
         // Regression test for FSHARP1.0:5894
 
@@ -139,7 +139,7 @@ module ``String Format Tests`` =
         Assert.areEqual (string  nanf) "NaN"
         Assert.areEqual (string (new System.Guid("210f4d6b-cb42-4b09-baa1-f1aa8e59d4b0"))) "210f4d6b-cb42-4b09-baa1-f1aa8e59d4b0"
 
-    [<Test>]
+    [<Fact>]
     let ``string constructor in FSI``() =
         // Regression test for FSHARP1.0:5894
 

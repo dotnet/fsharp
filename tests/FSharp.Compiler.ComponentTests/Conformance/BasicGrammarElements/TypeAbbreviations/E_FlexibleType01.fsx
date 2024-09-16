@@ -1,7 +1,7 @@
 // #Regression #Conformance #TypesAndModules 
-// Incorrect right hand side: flexibe type.
+// Incorrect right hand side: flexible type.
 // See also FSHARP1.0:4957
-//<Expects id="FS0010" status="error">Unexpected infix operator in implementation file</Expects>
+
 /
 
 exception E of int

@@ -3,7 +3,7 @@
 
 // Verify warning if all DU tags are matched with and
 // a wildcard is included.
-//<Expects id="FS0026" status="warning">This rule will never be matched</Expects>
+
 
 type DU = A | B | C of int
 

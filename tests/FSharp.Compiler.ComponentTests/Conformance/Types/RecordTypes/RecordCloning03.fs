@@ -17,7 +17,7 @@ if t.A <> 2 || t.B <> "2" then failwith "Failed"
 let copy = { t with A = -1 }
 if copy.A <> -1 || copy.B <> "2" then failwith "Failed"
 
-// Mutate the copy, verify it does NOT affect origional
+// Mutate the copy, verify it does NOT affect original
 copy.A <- -3
 copy.B <- "-3"
 

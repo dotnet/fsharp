@@ -7,6 +7,7 @@ open System.IO
 open System.IO.MemoryMappedFiles
 open System.Reflection.Metadata
 open System.Runtime.InteropServices
+open Internal.Utilities.Library
 open FSharp.NativeInterop
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Infos
@@ -436,7 +437,7 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
         writeString ItemKeyTags.itemActivePattern
 
         match apInfo.ActiveTagsWithRanges with
-        | (_, m) :: _ -> m.FileName |> Path.GetFileNameWithoutExtension |> writeString
+        | (_, m) :: _ -> m.FileName |> Path.GetFileNameWithoutExtension |> (!!) |> writeString
         | _ -> ()
 
         for tag in apInfo.ActiveTags do

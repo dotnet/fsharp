@@ -58,7 +58,6 @@ type SemanticClassificationType =
     | TypeDef = 35
     | Plaintext = 36
 
-[<RequireQualifiedAccess>]
 [<Struct>]
 type SemanticClassificationItem =
     val Range: range
@@ -68,7 +67,7 @@ type SemanticClassificationItem =
 [<AutoOpen>]
 module TcResolutionsExtensions =
     let (|CNR|) (cnr: CapturedNameResolution) =
-        (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.NameResolutionEnv, cnr.AccessorDomain, cnr.Range)
+        (cnr.Item, cnr.ItemOccurrence, cnr.DisplayEnv, cnr.NameResolutionEnv, cnr.AccessorDomain, cnr.Range)
 
     let isDisposableTy g amap (ty: TType) =
         not (typeEquiv g ty g.system_IDisposable_ty)
@@ -145,14 +144,14 @@ module TcResolutionsExtensions =
             DiagnosticsScope.Protect
                 range0
                 (fun () ->
-                    let (|LegitTypeOccurence|_|) occ =
+                    let (|LegitTypeOccurrence|_|) occ =
                         match occ with
-                        | ItemOccurence.UseInType
-                        | ItemOccurence.UseInAttribute
-                        | ItemOccurence.Use
-                        | ItemOccurence.Binding
-                        | ItemOccurence.Pattern
-                        | ItemOccurence.Open -> Some()
+                        | ItemOccurrence.UseInType
+                        | ItemOccurrence.UseInAttribute
+                        | ItemOccurrence.Use
+                        | ItemOccurrence.Binding
+                        | ItemOccurrence.Pattern
+                        | ItemOccurrence.Open -> Some()
                         | _ -> None
 
                     let (|KeywordIntrinsicValue|_|) (vref: ValRef) =
@@ -176,7 +175,7 @@ module TcResolutionsExtensions =
                             | _ -> None
                         | _ -> None
 
-                    // Custome builders like 'async { }' are both Item.Value and Item.CustomBuilder.
+                    // Custom builders like 'async { }' are both Item.Value and Item.CustomBuilder.
                     // We should prefer the latter, otherwise they would not get classified as CEs.
                     let takeCustomBuilder (cnrs: CapturedNameResolution[]) =
                         assert (cnrs.Length > 0)
@@ -210,13 +209,13 @@ module TcResolutionsExtensions =
 
                     resolutions
                     |> Array.iter (fun cnr ->
-                        match cnr.Item, cnr.ItemOccurence, cnr.Range with
-                        | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, m ->
+                        match cnr.Item, cnr.ItemOccurrence, cnr.Range with
+                        | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurrence.Use, m ->
                             add m SemanticClassificationType.ComputationExpression
 
                         | Item.Value vref, _, m when isValRefMutable g vref -> add m SemanticClassificationType.MutableVar
 
-                        | Item.Value KeywordIntrinsicValue, ItemOccurence.Use, m -> add m SemanticClassificationType.IntrinsicFunction
+                        | Item.Value KeywordIntrinsicValue, ItemOccurrence.Use, m -> add m SemanticClassificationType.IntrinsicFunction
 
                         | Item.Value vref, _, m when isForallFunctionTy g vref.Type ->
                             if isDiscard vref.DisplayName then
@@ -300,12 +299,12 @@ module TcResolutionsExtensions =
                                     add m SemanticClassificationType.Method
 
                         // Special case measures for struct types
-                        | Item.Types(_, AppTy g (tyconRef, TType_measure _ :: _) :: _), LegitTypeOccurence, m when
+                        | Item.Types(_, AppTy g (tyconRef, TType_measure _ :: _) :: _), LegitTypeOccurrence, m when
                             isStructTyconRef g tyconRef
                             ->
                             add m SemanticClassificationType.ValueType
 
-                        | Item.Types(_, ty :: _), LegitTypeOccurence, m ->
+                        | Item.Types(_, ty :: _), LegitTypeOccurrence, m ->
                             let ty = stripTyEqns g ty
 
                             if isDisposableTy g amap ty then
@@ -325,11 +324,11 @@ module TcResolutionsExtensions =
                                     else
                                         add m SemanticClassificationType.TypeDef
 
-                        | Item.TypeVar _, LegitTypeOccurence, m -> add m SemanticClassificationType.TypeArgument
+                        | Item.TypeVar _, LegitTypeOccurrence, m -> add m SemanticClassificationType.TypeArgument
 
-                        | Item.ExnCase _, LegitTypeOccurence, m -> add m SemanticClassificationType.Exception
+                        | Item.ExnCase _, LegitTypeOccurrence, m -> add m SemanticClassificationType.Exception
 
-                        | Item.ModuleOrNamespaces(modref :: _), LegitTypeOccurence, m ->
+                        | Item.ModuleOrNamespaces(modref :: _), LegitTypeOccurrence, m ->
                             if modref.IsNamespace then
                                 add m SemanticClassificationType.Namespace
                             else
@@ -353,7 +352,7 @@ module TcResolutionsExtensions =
 
                         | Item.SetterArg _, _, m -> add m SemanticClassificationType.NamedArgument
 
-                        | Item.UnqualifiedType(tcref :: _), LegitTypeOccurence, m ->
+                        | Item.UnqualifiedType(tcref :: _), LegitTypeOccurrence, m ->
                             if tcref.IsEnumTycon || tcref.IsILEnumTycon then
                                 add m SemanticClassificationType.Enumeration
                             elif tcref.IsFSharpException then

@@ -26,7 +26,7 @@ let tokenizeLines (lines:string[]) =
 let ``Tokenizer test - simple let with string``() =
     let tokenizedLines = 
       tokenizeLines
-        [| "// Sets the hello wrold variable"
+        [| "// Sets the hello world variable"
            "let hello = \"Hello world\" " |]
 
     let actual = 
@@ -37,7 +37,7 @@ let ``Tokenizer test - simple let with string``() =
         [("LINE_COMMENT", "//"); ("LINE_COMMENT", " "); ("LINE_COMMENT", "Sets");
          ("LINE_COMMENT", " "); ("LINE_COMMENT", "the"); ("LINE_COMMENT", " ");
          ("LINE_COMMENT", "hello"); ("LINE_COMMENT", " ");
-         ("LINE_COMMENT", "wrold"); ("LINE_COMMENT", " ");
+         ("LINE_COMMENT", "world"); ("LINE_COMMENT", " ");
          ("LINE_COMMENT", "variable")]);
        (1,
         [("LET", "let"); ("WHITESPACE", " "); ("IDENT", "hello");

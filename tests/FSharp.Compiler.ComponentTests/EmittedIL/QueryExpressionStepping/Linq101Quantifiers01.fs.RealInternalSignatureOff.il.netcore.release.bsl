@@ -12,7 +12,7 @@
 .assembly extern System.Linq
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         
-  .ver 8:0:0:0
+  .ver 9:0:0:0
 }
 .assembly assembly
 {
@@ -25,16 +25,6 @@
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
-}
-.mresource public FSharpSignatureData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationData.assembly
-{
-  
-  
 }
 .module assembly.exe
 
@@ -89,8 +79,7 @@
       IL_001b:  ret
     } 
 
-    .method public strict virtual instance int32 
-            GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<string>& next) cil managed
+    .method public strict virtual instance int32 GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<string>& next) cil managed
     {
       
       .maxstack  6
@@ -166,8 +155,7 @@
       IL_0093:  ret
     } 
 
-    .method public strict virtual instance void 
-            Close() cil managed
+    .method public strict virtual instance void Close() cil managed
     {
       
       .maxstack  6
@@ -248,8 +236,7 @@
       IL_007b:  ret
     } 
 
-    .method public strict virtual instance bool 
-            get_CheckClose() cil managed
+    .method public strict virtual instance bool get_CheckClose() cil managed
     {
       
       .maxstack  8
@@ -285,8 +272,7 @@
       IL_002f:  ret
     } 
 
-    .method public strict virtual instance string 
-            get_LastGenerated() cil managed
+    .method public strict virtual instance string get_LastGenerated() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -297,8 +283,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<string> 
-            GetFreshEnumerator() cil managed
+    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<string> GetFreshEnumerator() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -319,8 +304,7 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,bool>
   {
     .field static assembly initonly class assembly/'iAfterE@13-1' @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -331,8 +315,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance bool 
-            Invoke(string w) cil managed
+    .method public strict virtual instance bool Invoke(string w) cil managed
     {
       
       .maxstack  8
@@ -342,8 +325,7 @@
       IL_000b:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10
@@ -361,8 +343,7 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
+    .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -376,8 +357,7 @@
       IL_000d:  ret
     } 
 
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,object> 
-            Invoke(class [Utils]Utils/Product _arg1) cil managed
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,object> Invoke(class [Utils]Utils/Product _arg1) cil managed
     {
       
       .maxstack  6
@@ -398,8 +378,7 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [Utils]Utils/Product>
   {
     .field static assembly initonly class assembly/'Pipe #1 input at line 20@22-1' @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -410,8 +389,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [Utils]Utils/Product 
-            Invoke(class [Utils]Utils/Product p) cil managed
+    .method public strict virtual instance class [Utils]Utils/Product Invoke(class [Utils]Utils/Product p) cil managed
     {
       
       .maxstack  8
@@ -419,8 +397,7 @@
       IL_0001:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10
@@ -435,8 +412,7 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,string>
   {
     .field static assembly initonly class assembly/'Pipe #1 input at line 20@22-2' @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -447,8 +423,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance string 
-            Invoke(class [Utils]Utils/Product p) cil managed
+    .method public strict virtual instance string Invoke(class [Utils]Utils/Product p) cil managed
     {
       
       .maxstack  8
@@ -458,8 +433,7 @@
       IL_0008:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10
@@ -477,8 +451,7 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
+    .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -492,8 +465,7 @@
       IL_000d:  ret
     } 
 
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,object> 
-            Invoke(class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> _arg2) cil managed
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,object> Invoke(class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> _arg2) cil managed
     {
       
       .maxstack  6
@@ -531,8 +503,7 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,bool>
   {
     .field static assembly initonly class assembly/'Pipe #1 input at line 20@23-4' @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -543,8 +514,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance bool 
-            Invoke(class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> g) cil managed
+    .method public strict virtual instance bool Invoke(class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> g) cil managed
     {
       
       .maxstack  8
@@ -558,8 +528,7 @@
       IL_0012:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10
@@ -574,8 +543,7 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [runtime]System.Tuple`2<string,class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>>
   {
     .field static assembly initonly class assembly/'Pipe #1 input at line 20@24-6' @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -586,8 +554,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Tuple`2<string,class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>> 
-            Invoke(class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> g) cil managed
+    .method public strict virtual instance class [runtime]System.Tuple`2<string,class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>> Invoke(class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> g) cil managed
     {
       
       .maxstack  8
@@ -599,8 +566,7 @@
       IL_000c:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10
@@ -648,8 +614,7 @@
       IL_001b:  ret
     } 
 
-    .method public strict virtual instance int32 
-            GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
+    .method public strict virtual instance int32 GenerateNext(class [runtime]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
     {
       
       .maxstack  6
@@ -725,8 +690,7 @@
       IL_0093:  ret
     } 
 
-    .method public strict virtual instance void 
-            Close() cil managed
+    .method public strict virtual instance void Close() cil managed
     {
       
       .maxstack  6
@@ -807,8 +771,7 @@
       IL_007b:  ret
     } 
 
-    .method public strict virtual instance bool 
-            get_CheckClose() cil managed
+    .method public strict virtual instance bool get_CheckClose() cil managed
     {
       
       .maxstack  8
@@ -844,8 +807,7 @@
       IL_002f:  ret
     } 
 
-    .method public strict virtual instance int32 
-            get_LastGenerated() cil managed
+    .method public strict virtual instance int32 get_LastGenerated() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -856,8 +818,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<int32> 
-            GetFreshEnumerator() cil managed
+    .method public strict virtual instance class [runtime]System.Collections.Generic.IEnumerator`1<int32> GetFreshEnumerator() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -878,8 +839,7 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>
   {
     .field static assembly initonly class assembly/'onlyOdd@33-1' @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -890,8 +850,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance bool 
-            Invoke(int32 n) cil managed
+    .method public strict virtual instance bool Invoke(int32 n) cil managed
     {
       
       .maxstack  8
@@ -903,8 +862,7 @@
       IL_0006:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10
@@ -922,8 +880,7 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
+    .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -937,8 +894,7 @@
       IL_000d:  ret
     } 
 
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,object> 
-            Invoke(class [Utils]Utils/Product _arg1) cil managed
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,object> Invoke(class [Utils]Utils/Product _arg1) cil managed
     {
       
       .maxstack  6
@@ -959,8 +915,7 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [Utils]Utils/Product>
   {
     .field static assembly initonly class assembly/'Pipe #2 input at line 38@40-1' @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -971,8 +926,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [Utils]Utils/Product 
-            Invoke(class [Utils]Utils/Product p) cil managed
+    .method public strict virtual instance class [Utils]Utils/Product Invoke(class [Utils]Utils/Product p) cil managed
     {
       
       .maxstack  8
@@ -980,8 +934,7 @@
       IL_0001:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10
@@ -996,8 +949,7 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,string>
   {
     .field static assembly initonly class assembly/'Pipe #2 input at line 38@40-2' @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -1008,8 +960,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance string 
-            Invoke(class [Utils]Utils/Product p) cil managed
+    .method public strict virtual instance string Invoke(class [Utils]Utils/Product p) cil managed
     {
       
       .maxstack  8
@@ -1019,8 +970,7 @@
       IL_0008:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10
@@ -1038,8 +988,7 @@
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method assembly specialname rtspecialname 
-            instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
+    .method assembly specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -1053,8 +1002,7 @@
       IL_000d:  ret
     } 
 
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,object> 
-            Invoke(class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> _arg2) cil managed
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,object> Invoke(class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> _arg2) cil managed
     {
       
       .maxstack  6
@@ -1092,8 +1040,7 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,bool>
   {
     .field static assembly initonly class assembly/'Pipe #2 input at line 38@41-4' @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -1104,8 +1051,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance bool 
-            Invoke(class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> g) cil managed
+    .method public strict virtual instance bool Invoke(class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> g) cil managed
     {
       
       .maxstack  8
@@ -1119,8 +1065,7 @@
       IL_0012:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10
@@ -1135,8 +1080,7 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [runtime]System.Tuple`2<string,class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>>
   {
     .field static assembly initonly class assembly/'Pipe #2 input at line 38@42-6' @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method assembly specialname rtspecialname instance void  .ctor() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -1147,8 +1091,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Tuple`2<string,class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>> 
-            Invoke(class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> g) cil managed
+    .method public strict virtual instance class [runtime]System.Tuple`2<string,class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>> Invoke(class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> g) cil managed
     {
       
       .maxstack  8
@@ -1160,8 +1103,7 @@
       IL_000c:  ret
     } 
 
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
+    .method private specialname rtspecialname static void  .cctor() cil managed
     {
       
       .maxstack  10
@@ -1172,8 +1114,7 @@
 
   } 
 
-  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> 
-          get_words() cil managed
+  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> get_words() cil managed
   {
     
     .maxstack  8
@@ -1181,8 +1122,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static bool 
-          get_iAfterE() cil managed
+  .method public specialname static bool get_iAfterE() cil managed
   {
     
     .maxstack  8
@@ -1190,8 +1130,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> 
-          get_products() cil managed
+  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> get_products() cil managed
   {
     
     .maxstack  8
@@ -1199,8 +1138,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static class [runtime]System.Tuple`2<string,class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>[] 
-          get_productGroups() cil managed
+  .method public specialname static class [runtime]System.Tuple`2<string,class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>[] get_productGroups() cil managed
   {
     
     .maxstack  8
@@ -1208,8 +1146,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
-          get_numbers() cil managed
+  .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> get_numbers() cil managed
   {
     
     .maxstack  8
@@ -1217,8 +1154,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static bool 
-          get_onlyOdd() cil managed
+  .method public specialname static bool get_onlyOdd() cil managed
   {
     
     .maxstack  8
@@ -1226,8 +1162,7 @@
     IL_0005:  ret
   } 
 
-  .method public specialname static class [runtime]System.Tuple`2<string,class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>[] 
-          get_productGroups2() cil managed
+  .method public specialname static class [runtime]System.Tuple`2<string,class [System.Linq]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>>[] get_productGroups2() cil managed
   {
     
     .maxstack  8
@@ -1463,3 +1398,8 @@
   } 
 
 } 
+
+
+
+
+

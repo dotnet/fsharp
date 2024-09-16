@@ -101,7 +101,7 @@
                 "Speedscope",
                 "--",
                 "dotnet",
-                "${workspaceFolder}/artifacts/bin/fsi/Debug/net8.0/fsi.dll",
+                "${workspaceFolder}/artifacts/bin/fsi/Debug/net9.0/fsi.dll",
                 "${input:fsiArgsPrompt}"
             ],
             "problemMatcher": "$msCompile",
@@ -118,7 +118,7 @@
                 "Speedscope",
                 "--",
                 "dotnet",
-                "${workspaceFolder}/artifacts/bin/fsc/Debug/net8.0/fsc.dll",
+                "${workspaceFolder}/artifacts/bin/fsc/Debug/net9.0/fsc.dll",
                 "--targetprofile:netstandard",
                 "--simpleresolution",
                 "${input:fscArgsPrompt}"

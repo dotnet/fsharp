@@ -1,6 +1,6 @@
 // #Regression #Conformance #DeclarationElements #Accessibility 
 // Verify error when using a private implicit constructor
-//<Expects id="FS0509" span="(24,10-24,18)" status="error">Method or object constructor 'C' not found</Expects>
+
 
 type A public (x : int) =
     member this.Value = x

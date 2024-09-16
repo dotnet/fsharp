@@ -221,7 +221,7 @@ Namespace Microsoft.VisualStudio.Editors.DesignerFramework
                         OLEButtons, OLEDefaultButton, MessageBoxIconToOleIcon(Icon), CInt(False), Result))
                 Return CType(Result, DialogResult)
             Else
-                Debug.Fail("Could not retreive IVsUIShell, message box will not be parented")
+                Debug.Fail("Could not retrieve IVsUIShell, message box will not be parented")
             End If
 
             ' Either UIService or VsUIShell does not exist, show message box without parent.

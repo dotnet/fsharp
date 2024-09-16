@@ -9,6 +9,7 @@ namespace Internal.Utilities.Collections.Tagged
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open System.Collections.Generic
+open Internal.Utilities.Library
 
 [<NoEquality; NoComparison>]
 [<AllowNullLiteral>]
@@ -141,7 +142,7 @@ module SetTree =
                 | _ -> add comparer k (add comparer t2.Key t1)
             | _ -> add comparer k (add comparer t1.Key t2)
 
-    let rec split (comparer: IComparer<'T>) pivot (t: SetTree<'T>) =
+    let rec split (comparer: IComparer<'T>) (pivot: 'T) (t: SetTree<'T>) =
         // Given a pivot and a set t
         // Return { x in t s.t. x < pivot }, pivot in t?, { x in t s.t. x > pivot }
         if isEmpty t then
@@ -178,7 +179,7 @@ module SetTree =
                     let k3, l' = spliceOutSuccessor tn.Left in k3, mk l' tn.Key tn.Right
             | _ -> t.Key, empty
 
-    let rec remove (comparer: IComparer<'T>) k (t: SetTree<'T>) =
+    let rec remove (comparer: IComparer<'T>) (k: 'T) (t: SetTree<'T>) =
         if isEmpty t then
             t
         else
@@ -200,7 +201,7 @@ module SetTree =
                     rebalance tn.Left tn.Key (remove comparer k tn.Right)
             | _ -> if c = 0 then empty else t
 
-    let rec contains (comparer: IComparer<'T>) k (t: SetTree<'T>) =
+    let rec contains (comparer: IComparer<'T>) (k: 'T) (t: SetTree<'T>) =
         if isEmpty t then
             false
         else
@@ -809,7 +810,7 @@ module MapTree =
     let indexNotFound () =
         raise (KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
 
-    let rec tryGetValue (comparer: IComparer<'Key>) k (v: byref<'Value>) (m: MapTree<'Key, 'Value>) =
+    let rec tryGetValue (comparer: IComparer<'Key>) (k: 'Key) (v: byref<'Value>) (m: MapTree<'Key, 'Value>) =
         if isEmpty m then
             false
         else
@@ -823,7 +824,7 @@ module MapTree =
                 | :? MapTreeNode<'Key, 'Value> as mn -> tryGetValue comparer k &v (if c < 0 then mn.Left else mn.Right)
                 | _ -> false
 
-    let find (comparer: IComparer<'Key>) k (m: MapTree<'Key, 'Value>) =
+    let find (comparer: IComparer<'Key>) (k: 'Key) (m: MapTree<'Key, 'Value>) =
         let mutable v = Unchecked.defaultof<'Value>
 
         if tryGetValue comparer k &v m then v else indexNotFound ()

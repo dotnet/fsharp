@@ -12,7 +12,7 @@ module private ImmutableHashSet =
     let singleton (value: 'T) =
         ImmutableHashSet.Create<'T>(Array.singleton value)
 
-    /// Create new new HashSet<'T> with zero elements.
+    /// Create a new HashSet<'T> with zero elements.
     let empty () = ImmutableHashSet.Empty
 
 let autoOpenShapes =

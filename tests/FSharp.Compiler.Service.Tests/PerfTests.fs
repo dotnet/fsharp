@@ -14,8 +14,8 @@ let internal checker = FSharpChecker.Create()
 
 module internal Project1 =
 
-    let fileNamesI = [ for i in 1 .. 10 -> (i, Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")) ]
-    let base2 = tryCreateTemporaryFileName ()
+    let fileNamesI = [ for i in 1 .. 10 -> (i, Path.ChangeExtension(getTemporaryFileName (), ".fs")) ]
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSources = [ for i,f in fileNamesI -> (f, "module M" + string i) ]

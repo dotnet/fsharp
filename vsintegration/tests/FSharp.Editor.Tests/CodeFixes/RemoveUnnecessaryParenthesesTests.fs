@@ -2801,7 +2801,15 @@ module Patterns =
 
                 expectFix code expected
 
-            let bareAtomics = fmtAllAsMemberData bareAtomics
+            let bareAtomics =
+                bareAtomics
+                |> List.map (function
+                    // We can't actually reliably remove the extra parens in argument patterns,
+                    // since they affect compilation.
+                    // See https://github.com/dotnet/fsharp/issues/17611, https://github.com/dotnet/fsharp/issues/16254, etc.
+                    | SynPat.Paren(SynPat.Const "()") as doubleParen, _ -> doubleParen, doubleParen
+                    | pats -> pats)
+                |> fmtAllAsMemberData
 
             let bareNonAtomics =
                 patterns
@@ -2825,7 +2833,15 @@ module Patterns =
                 let expected = $"type T () = member _.M %s{expected} = Unchecked.defaultof<_>"
                 expectFix code expected
 
-            let bareAtomics = fmtAllAsMemberData bareAtomics
+            let bareAtomics =
+                bareAtomics
+                |> List.map (function
+                    // We can't actually reliably remove the extra parens in argument patterns,
+                    // since they affect compilation.
+                    // See https://github.com/dotnet/fsharp/issues/17611, https://github.com/dotnet/fsharp/issues/16254, etc.
+                    | SynPat.Paren(SynPat.Const "()") as doubleParen, _ -> doubleParen, doubleParen
+                    | pats -> pats)
+                |> fmtAllAsMemberData
 
             let bareNonAtomics =
                 patterns
@@ -2959,7 +2975,7 @@ module Patterns =
             ",
             "
             type C = abstract M : unit -> unit
-            let _ = { new C with override _.M () = () }
+            let _ = { new C with override _.M (()) = () }
             "
 
             // See https://github.com/dotnet/fsharp/issues/16254.

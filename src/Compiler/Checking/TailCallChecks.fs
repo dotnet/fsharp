@@ -47,8 +47,16 @@ type TailCall =
     static member YesFromVal (g: TcGlobals) (v: Val) = TailCall.Yes(TailCall.IsVoidRet g v)
 
     static member YesFromExpr (g: TcGlobals) (expr: Expr) =
+        let yesFromTType (t: TType) =
+            if isUnitTy g t then
+                TailCall.Yes TailCallReturnType.MustReturnVoid
+            else
+                TailCall.Yes TailCallReturnType.NonVoid
+
         match expr with
         | ValUseAtApp(valRef, _) -> TailCall.Yes(TailCall.IsVoidRet g valRef.Deref)
+        | Expr.Const(constType = constType) -> yesFromTType constType
+        | Expr.Match(exprType = exprType) -> yesFromTType exprType
         | _ -> TailCall.Yes TailCallReturnType.NonVoid
 
     member x.AtExprLambda =
@@ -195,7 +203,7 @@ let CheckForNonTailRecCall (cenv: cenv) expr (tailCall: TailCall) =
                             && not isCCall
                             && not hasByrefArg
 
-                        noTailCallBlockers // blockers that will prevent the IL level from emmiting a tail instruction
+                        noTailCallBlockers // blockers that will prevent the IL level from emitting a tail instruction
                     else
                         true
 

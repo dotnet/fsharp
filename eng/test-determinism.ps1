@@ -404,7 +404,7 @@ try {
 
   $script:bootstrap = $true
   $script:bootstrapConfiguration = "Proto"
-  $script:fsharpNetCoreProductTfm = "net8.0"
+  $script:fsharpNetCoreProductTfm = "net9.0"
   $script:bootstrapTfm = $script:fsharpNetCoreProductTfm
 
   $bootstrapDir = Make-BootstrapBuild

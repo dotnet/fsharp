@@ -6,8 +6,8 @@ open Microsoft.FSharp.Core
 
 [<AutoOpen>]
 module internal DetailedExceptions =
-    val inline invalidArgFmt: arg: string -> format: string -> paramArray: obj array -> 'T
-    val inline invalidOpFmt: format: string -> paramArray: obj array -> 'T
+    val inline invalidArgFmt: arg: string -> format: string -> paramArray: objnull array -> 'T
+    val inline invalidOpFmt: format: string -> paramArray: objnull array -> 'T
     val invalidArgDifferentListLength: arg1: string -> arg2: string -> diff: int -> 'T
 
     val invalidArg3ListsDifferent:

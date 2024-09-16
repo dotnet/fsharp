@@ -2,7 +2,7 @@
 // Regression test for FSHARP1.0:4727
 // Title: once we start compiling them as real mutable fields, you should not be able to target both "property" for "val mutable" fields in classes
 
-//<Expects id="FS0842" span="(24,14)" status="error">This attribute is not valid for use on this language element</Expects>
+
 
 open System
 

@@ -57,7 +57,7 @@ type public FSharpProjectOptions =
         // Note that this may not reduce to just the project directory, because there may be two projects in the same directory.
         ProjectFileName: string
 
-        /// This is the unique identifier for the project, it is case sensitive. If it's None, will key off of ProjectFileName in our caching.
+        /// This is the unique identifier for the project, it is case-sensitive. If it's None, will key off of ProjectFileName in our caching.
         ProjectId: string option
 
         /// The files in the project
@@ -192,7 +192,7 @@ type public FSharpSymbolUse =
 
     // For internal use only
     internal new:
-        denv: DisplayEnv * symbol: FSharpSymbol * inst: TyparInstantiation * itemOcc: ItemOccurence * range: range ->
+        denv: DisplayEnv * symbol: FSharpSymbol * inst: TyparInstantiation * itemOcc: ItemOccurrence * range: range ->
             FSharpSymbolUse
 
 /// Represents the checking context implied by the ProjectOptions

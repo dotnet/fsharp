@@ -12,7 +12,7 @@ open System.Threading
 
 #nowarn "52" //  The value has been copied to ensure the original is not mutated by this operation
 
-// Can not be DEBUG only since it is used by tests  
+// Cannot be DEBUG only since it is used by tests  
 let mutable timeoutAppShowMessageOnTimeOut = true
 
 open Microsoft.FSharp.Control
@@ -56,7 +56,7 @@ let timeoutApp descr timeoutMS (f : 'a -> 'b) (arg:'a) =
                                                          "timeoutApp: an exception was thrown.\n" +
                                                          "fsi.exe starts the remoting server at the end of it's initialisation sequence.\n" +
                                                          "The initialisation sequence takes an observable time (e.g. 2 seconds).\n" + 
-                                                         "Remoting exceptions are to be expected on interupt/intelisense calls made before that point.\n" +
+                                                         "Remoting exceptions are to be expected on interrupt/intellisense calls made before that point.\n" +
                                                          "Context: " + descr + "\n" +
                                                          "Exception: " + e.ToString()) |> ignore
 #endif             
@@ -260,7 +260,7 @@ let fsiStartInfo channelName sourceFile =
         |> (fun s -> s +  sprintf " %s" SessionsProperties.fsiArgs)
         |> addBoolOption fsiSupportsShadowcopy "shadowcopyreferences" SessionsProperties.fsiShadowCopy
         // For best debug experience, need optimizations OFF and debug info ON
-        // tack these on the the end, they will override whatever comes earlier
+        // tack these on the end, they will override whatever comes earlier
         |> addBoolOption SessionsProperties.fsiDebugMode "optimize" false
         |> addBoolOption SessionsProperties.fsiDebugMode "debug" true
         |> addStringOption SessionsProperties.fsiPreview "langversion" "preview"
@@ -334,7 +334,7 @@ type FsiSession(sourceFile) =
     do readOutputAsync cmdProcess.StandardError  (catchAll fsiError.Trigger)
 
     let inputQueue = 
-        // Write the input asynchronously, freeing up the IDE thread to contrinue doing work
+        // Write the input asynchronously, freeing up the IDE thread to continue doing work
         // Force input to be written in UTF8 regardless of the apparent encoding.
         let inputWriter = new StreamWriter(cmdProcess.StandardInput.BaseStream, new UTF8Encoding(encoderShouldEmitUTF8Identifier=false), AutoFlush = false)
         MailboxProcessor<string>.Start(fun inbox -> 
@@ -357,7 +357,7 @@ type FsiSession(sourceFile) =
             new CtrlBreakClient(channelName)
         with e -> raise (SessionError (VFSIstrings.SR.exceptionRaisedWhenCreatingRemotingClient(e.ToString())))
 
-    /// interrupt timeout in miliseconds
+    /// interrupt timeout in milliseconds
     let interruptTimeoutMS = 1000
 
     // system.runtime.interopservices.runtimeinformation.frameworkdescription

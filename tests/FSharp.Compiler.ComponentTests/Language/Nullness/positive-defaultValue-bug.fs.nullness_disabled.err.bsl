@@ -1,0 +1,2 @@
+positive-defaultValue-bug.fs (6,18)-(6,24) typecheck error Nullness warning: The type ''a option' uses 'null' as a representation value but a non-null type is expected.
+positive-defaultValue-bug.fs (13,17)-(13,23) typecheck error The type of a field using the 'DefaultValue' attribute must admit default initialization, i.e. have 'null' as a proper value or be a struct type whose fields all admit default initialization. You can use 'DefaultValue(false)' to disable this check

@@ -372,7 +372,7 @@ module Query =
 
     let CallGenericStaticMethod (methHandle:System.RuntimeMethodHandle) =
         let methInfo = methHandle |> System.Reflection.MethodInfo.GetMethodFromHandle :?> MethodInfo
-        fun (tyargs: Type list, args: obj list) ->
+        fun (tyargs: Type list, args: objnull list) ->
             let methInfo = if methInfo.IsGenericMethod then methInfo.MakeGenericMethod(Array.ofList tyargs) else methInfo
             try
                methInfo.Invoke(null, Array.ofList args)
@@ -381,7 +381,7 @@ module Query =
 
     let CallGenericInstanceMethod (methHandle:System.RuntimeMethodHandle) =
         let methInfo = methHandle |> System.Reflection.MethodInfo.GetMethodFromHandle :?> MethodInfo
-        fun (objExpr:obj, tyargs: Type list, args: obj list) ->
+        fun (objExpr:obj, tyargs: Type list, args: objnull list) ->
             let methInfo = if methInfo.IsGenericMethod then methInfo.MakeGenericMethod(Array.ofList tyargs) else methInfo
             try
                methInfo.Invoke(objExpr, Array.ofList args)
@@ -467,7 +467,7 @@ module Query =
             else
                 ME ([srcItemTy], [src; key])
 
-        let Call (isIQ, srcItemTy, src:obj, key: Expr) =
+        let Call (isIQ, srcItemTy, src:objnull, key: Expr) =
             let key = key |> LeafExpressionConverter.EvaluateQuotation
             let C = if isIQ then CQ else CE
             C ([srcItemTy], [src; box key])
@@ -496,7 +496,7 @@ module Query =
             else
                 ME ([srcItemTy; keyElemTy], [src; valSelector])
 
-        let Call (isIQ, srcItemTy: Type, _keyItemTy: Type, src:obj, keyElemTy: Type, v: Var, res: Expr) =
+        let Call (isIQ, srcItemTy: Type, _keyItemTy: Type, src:objnull, keyElemTy: Type, v: Var, res: Expr) =
             if isIQ then
                 let selector = FuncExprToLinqFunc2Expression (srcItemTy, keyElemTy, v, res)
                 CQ ([srcItemTy; keyElemTy], [src; box selector])
@@ -505,7 +505,7 @@ module Query =
                 CE ([srcItemTy; keyElemTy], [src; selector])
         Make, Call
 
-    let (MakeMinBy: bool * Expr * Var * Expr -> Expr), (CallMinBy : bool * Type * Type * obj * Type * Var * Expr -> obj) =
+    let (MakeMinBy: bool * Expr * Var * Expr -> Expr), (CallMinBy : bool * Type * Type * objnull * Type * Var * Expr -> obj) =
         let FQ = methodhandleof (fun (x, y: Expression<Func<_, _>>) -> System.Linq.Queryable.Min(x, y))
         let FE = methodhandleof (fun (x, y: Func<_, 'Result>) -> Enumerable.Min(x, y))
         MakeOrCallMinByOrMaxBy FQ FE
@@ -539,7 +539,7 @@ module Query =
             else
                 ME ([srcItemTy], [src; predicate])
 
-        let Call (isIQ, srcItemTy: Type, src:obj, v: Var, res: Expr) =
+        let Call (isIQ, srcItemTy: Type, src:objnull, v: Var, res: Expr) =
             if isIQ then
                 let selector = FuncExprToLinqFunc2Expression (srcItemTy, boolTy, v, res)
                 CQ ([srcItemTy], [src; box selector])
@@ -612,7 +612,7 @@ module Query =
                     let selector = Expr.Lambda (v, res)
                     ME (qb, [srcItemTy; qTy; resTyNoNullable], [src; selector])
 
-        let Call (qb:obj, isIQ, srcItemTy: Type, resTyNoNullable: Type, src:obj, resTy: Type, v: Var, res: Expr) =
+        let Call (qb:obj, isIQ, srcItemTy: Type, resTyNoNullable: Type, src:objnull, resTy: Type, v: Var, res: Expr) =
             if isIQ then
                 let selector = FuncExprToLinqFunc2Expression (srcItemTy, resTy, v, res)
                 let caller =
@@ -1260,12 +1260,12 @@ module Query =
         | TransInnerResult.Select(canElim, isQTy, mutSource, mutSelectorVar, mutSelectorBody) ->
             MakeSelect(canElim, isQTy, CommitTransInnerResult mutSource, mutSelectorVar, mutSelectorBody)
 
-    /// Given a the inner of query expression in terms of query.For, query.Select, query.Yield, query.Where etc.,
+    /// Given the inner of query expression in terms of query.For, query.Select, query.Yield, query.Where etc.,
     /// and including immutable tuples and immutable records, build an equivalent query expression
     /// in terms of LINQ operators, operating over mutable tuples. Return the conversion
     /// information for the immutable-to-mutable conversion performed so we can undo it where needed.
     ///
-    /// Here 'inner' refers the the part of the query that produces a sequence of results.
+    /// Here 'inner' refers the part of the query that produces a sequence of results.
     ///
     /// The output query will use either Queryable.* or Enumerable.* operators depending on whether
     /// the inputs to the queries have type IQueryable or IEnumerable.
@@ -1605,7 +1605,7 @@ module Query =
     // propagate a immutable-->mutable-->immutable translation if any.
     //
     /// This is used on recursive translations of yielded elements to translate nested queries
-    /// in 'yield' position and still propagate information about a possible imutable->mutable->mutable
+    /// in 'yield' position and still propagate information about a possible immutable->mutable->mutable
     //  translation.
     //      e.g. yield (1, query { ... })
     and TransInnerNoCheck e =
@@ -1657,7 +1657,7 @@ module Query =
 
     /// Given a query expression in terms of query.For, query.Select, query.Yield, query.Where etc.,
     /// and including immutable tuples and immutable records, build an equivalent query expression
-    /// in terms of LINQ operators, operating over mutable tuples. If necessary, also add a "postifx" in-memory transformation
+    /// in terms of LINQ operators, operating over mutable tuples. If necessary, also add a "postfix" in-memory transformation
     /// converting the data back to immutable tuples and records.
     let TransInnerWithFinalConsume canElim immutSource =
         let mutSource, sourceConv = TransInnerAndCommit canElim true immutSource

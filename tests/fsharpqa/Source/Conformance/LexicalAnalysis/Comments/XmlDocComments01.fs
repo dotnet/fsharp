@@ -1,7 +1,7 @@
 // #Conformance #LexicalAnalysis 
 #light
 
-// Verify no stynax errors or problems when using XML doc comments
+// Verify no syntax errors or problems when using XML doc comments
 
 /// Not associated with anything
 

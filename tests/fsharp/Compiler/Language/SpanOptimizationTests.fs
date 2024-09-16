@@ -2,14 +2,14 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 
 #if NETCOREAPP
-[<TestFixture>]
+
 module SpanOptimizationTests =
 
-    [<Test>]
+    [<Fact>]
     let SpanForInDo() =
         let source =
             """
@@ -62,7 +62,7 @@ let test () =
   }"""
                                 ]))
 
-    [<Test>]
+    [<Fact>]
     let ReadOnlySpanForInDo() =
         let source =
             """
@@ -114,7 +114,7 @@ let test () =
   }"""
                             ]))
 
-    [<Test>]
+    [<Fact>]
     let ExplicitSpanTypeForInDo() =
 
         let source =
@@ -203,7 +203,7 @@ module Test =
 """
                         ]))
 
-    [<Test>]
+    [<Fact>]
     let SpanForInBoundsDo() =
         let source =
             """
@@ -254,7 +254,7 @@ let test () =
   }"""
                             ]))
 
-    [<Test>]
+    [<Fact>]
     let ReadOnlySpanForInBoundsDo() =
         let source =
             """

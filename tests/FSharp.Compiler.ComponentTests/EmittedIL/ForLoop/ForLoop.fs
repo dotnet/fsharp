@@ -202,7 +202,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff.opt", Includes=[|"NonTrivialBranchingBindingInEnd03.fs"|])>]
     let ``NonTrivialBranchingBindingInEnd03_fs_RealInternalSignatureOff_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOff
         |> verifyCompilation
 
@@ -210,7 +209,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn.opt", Includes=[|"NonTrivialBranchingBindingInEnd03.fs"|])>]
     let ``NonTrivialBranchingBindingInEnd03_fs_RealInternalSignatureOn_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOn
         |> verifyCompilation
 
@@ -218,7 +216,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"NonTrivialBranchingBindingInEnd03.fs"|])>]
     let ``NonTrivialBranchingBindingInEnd03_fs_RealInternalSignatureOff_nonopt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOff
         |> verifyCompilation
 
@@ -226,7 +223,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"NonTrivialBranchingBindingInEnd03.fs"|])>]
     let ``NonTrivialBranchingBindingInEnd03_fs_RealInternalSignatureOn_nonopt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOn
         |> verifyCompilation
 
@@ -234,7 +230,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff.opt", Includes=[|"NonTrivialBranchingBindingInEnd04.fs"|])>]
     let ``NonTrivialBranchingBindingInEnd04_fs_RealInternalSignatureOff_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOff
         |> verifyCompilation
 
@@ -242,7 +237,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn.opt", Includes=[|"NonTrivialBranchingBindingInEnd04.fs"|])>]
     let ``NonTrivialBranchingBindingInEnd04_fs_RealInternalSignatureOn_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOn
         |> verifyCompilation
 
@@ -250,7 +244,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"NonTrivialBranchingBindingInEnd04.fs"|])>]
     let ``NonTrivialBranchingBindingInEnd04_fs_RealInternalSignatureOff_nonopt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOff
         |> verifyCompilation
 
@@ -258,7 +251,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"NonTrivialBranchingBindingInEnd04.fs"|])>]
     let ``NonTrivialBranchingBindingInEnd04_fs_RealInternalSignatureOn_nonopt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOn
         |> verifyCompilation
 
@@ -294,7 +286,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff.opt", Includes=[|"ForEachRangeStepSByte.fs"|])>]
     let ``ForEachRangeStepSByte_fs_RealInternalSignatureOff_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOff
         |> verifyCompilation
 
@@ -302,7 +293,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn.opt", Includes=[|"ForEachRangeStepSByte.fs"|])>]
     let ``ForEachRangeStepSByte_fs_RealInternalSignatureOn_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOn
         |> verifyCompilation
 
@@ -310,7 +300,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff.opt", Includes=[|"ForEachRangeStepByte.fs"|])>]
     let ``ForEachRangeStepByte_fs_RealInternalSignatureOff_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOff
         |> verifyCompilation
 
@@ -318,7 +307,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn.opt", Includes=[|"ForEachRangeStepByte.fs"|])>]
     let ``ForEachRangeStepByte_fs_RealInternalSignatureOn_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOn
         |> verifyCompilation
 
@@ -326,7 +314,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff.opt", Includes=[|"ForEachRangeStepChar.fs"|])>]
     let ``ForEachRangeStepChar_fs_RealInternalSignatureOff_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOff
         |> verifyCompilation
 
@@ -334,7 +321,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn.opt", Includes=[|"ForEachRangeStepChar.fs"|])>]
     let ``ForEachRangeStepChar_fs_RealInternalSignatureOn_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOn
         |> verifyCompilation
 
@@ -342,7 +328,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff.opt", Includes=[|"ForEachRangeStepInt16.fs"|])>]
     let ``ForEachRangeStepInt16_fs_RealInternalSignatureOff_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOff
         |> verifyCompilation
 
@@ -350,7 +335,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn.opt", Includes=[|"ForEachRangeStepInt16.fs"|])>]
     let ``ForEachRangeStepInt16_fs_RealInternalSignatureOn_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOn
         |> verifyCompilation
 
@@ -358,7 +342,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff.opt", Includes=[|"ForEachRangeStepUInt16.fs"|])>]
     let ``ForEachRangeStepUInt16_fs_RealInternalSignatureOff_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOff
         |> verifyCompilation
 
@@ -366,7 +349,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn.opt", Includes=[|"ForEachRangeStepUInt16.fs"|])>]
     let ``ForEachRangeStepUInt16_fs_RealInternalSignatureOn_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOn
         |> verifyCompilation
 
@@ -374,7 +356,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff.opt", Includes=[|"ForEachRangeStepInt32.fs"|])>]
     let ``ForEachRangeStepInt32_fs_RealInternalSignatureOff_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOff
         |> verifyCompilation
 
@@ -382,7 +363,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn.opt", Includes=[|"ForEachRangeStepInt32.fs"|])>]
     let ``ForEachRangeStepInt32_fs_RealInternalSignatureOn_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOn
         |> verifyCompilation
 
@@ -390,7 +370,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff.opt", Includes=[|"ForEachRangeStepUInt32.fs"|])>]
     let ``ForEachRangeStepUInt32_fs_RealInternalSignatureOff_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOff
         |> verifyCompilation
 
@@ -398,7 +377,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn.opt", Includes=[|"ForEachRangeStepUInt32.fs"|])>]
     let ``ForEachRangeStepUInt32_fs_RealInternalSignatureOn_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOn
         |> verifyCompilation
 
@@ -406,7 +384,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff.opt", Includes=[|"ForEachRangeStepInt64.fs"|])>]
     let ``ForEachRangeStepInt64_fs_RealInternalSignatureOff_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOff
         |> verifyCompilation
 
@@ -414,7 +391,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn.opt", Includes=[|"ForEachRangeStepInt64.fs"|])>]
     let ``ForEachRangeStepInt64_fs_RealInternalSignatureOn_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOn
         |> verifyCompilation
 
@@ -422,7 +398,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff.opt", Includes=[|"ForEachRangeStepUInt64.fs"|])>]
     let ``ForEachRangeStepUInt64_fs_RealInternalSignatureOff_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOff
         |> verifyCompilation
 
@@ -430,7 +405,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn.opt", Includes=[|"ForEachRangeStepUInt64.fs"|])>]
     let ``ForEachRangeStepUInt64_fs_RealInternalSignatureOn_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOn
         |> verifyCompilation
 
@@ -438,7 +412,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff.opt", Includes=[|"ForEachRangeStepIntPtr.fs"|])>]
     let ``ForEachRangeStepIntPtr_fs_RealInternalSignatureOff_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOff
         |> verifyCompilation
 
@@ -446,7 +419,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn.opt", Includes=[|"ForEachRangeStepIntPtr.fs"|])>]
     let ``ForEachRangeStepIntPtr_fs_RealInternalSignatureOn_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOn
         |> verifyCompilation
 
@@ -454,7 +426,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff.opt", Includes=[|"ForEachRangeStepUIntPtr.fs"|])>]
     let ``ForEachRangeStepUIntPtr_fs_RealInternalSignatureOff_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOff
         |> verifyCompilation
 
@@ -462,7 +433,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn.opt", Includes=[|"ForEachRangeStepUIntPtr.fs"|])>]
     let ``ForEachRangeStepUIntPtr_fs_RealInternalSignatureOn_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOn
         |> verifyCompilation
 
@@ -470,7 +440,6 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff.opt", Includes=[|"ForEachRangeStep_UnitsOfMeasure.fs"|])>]
     let ``ForEachRangeStep_UnitsOfMeasure_fs_RealInternalSignatureOff_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOff
         |> verifyCompilation
 
@@ -478,6 +447,5 @@ module ForLoop =
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn.opt", Includes=[|"ForEachRangeStep_UnitsOfMeasure.fs"|])>]
     let ``ForEachRangeStep_UnitsOfMeasure_fs_RealInternalSignatureOn_opt`` compilation =
         compilation
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
         |> withRealInternalSignatureOn
         |> verifyCompilation

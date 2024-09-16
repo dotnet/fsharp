@@ -128,7 +128,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             if (IntPtr.Zero == iconHandles[iconIndex])
             {
                 Bitmap bitmap = imageList.Images[iconIndex] as Bitmap;
-                // If the image is not a bitmap, then we can not build the icon,
+                // If the image is not a bitmap, then we cannot build the icon,
                 // so we have to return a null handle.
                 if (null == bitmap)
                 {

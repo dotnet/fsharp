@@ -123,7 +123,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             else
             {
-                // There is no target node. The drop can not be completed.
+                // There is no target node. The drop cannot be completed.
                 return VSConstants.S_FALSE;
             }
 
@@ -337,10 +337,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Determines if a node can accept drop opertaion.
+        /// Determines if a node can accept drop operation.
         /// </summary>
         /// <param name="itemId">The id of the node.</param>
-        /// <returns>true if the node acceots drag operation.</returns>
+        /// <returns>true if the node accepts drag operation.</returns>
         public virtual bool CanTargetNodeAcceptDrop(uint itemId)
         {
             HierarchyNode targetNode = NodeFromItemId(itemId);
@@ -441,7 +441,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
 
         /// <summary>
-        /// This is used to recursively add a folder from an other project.
+        /// This is used to recursively add a folder from another project.
         /// Note that while we copy the folder content completely, we only
         /// add to the project items which are part of the source project.
         /// </summary>
@@ -1035,7 +1035,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return true;
         }
         /// <summary>
-        /// Adds an item from a project refererence to target node.
+        /// Adds an item from a project reference to target node.
         /// </summary>
         /// <param name="projectRef"></param>
         /// <param name="targetNode"></param>
@@ -1067,7 +1067,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 throw new InvalidOperationException();
             }
 
-            // This will throw invalid cast exception if the hierrachy is not a project.
+            // This will throw invalid cast exception if the hierarchy is not a project.
             IVsProject project = (IVsProject)hierarchy;
 
             string moniker;

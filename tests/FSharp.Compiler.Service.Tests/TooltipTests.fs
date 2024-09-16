@@ -9,6 +9,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
+open FSharp.Compiler.Xml
 open FSharp.Test
 open Xunit
 
@@ -390,6 +391,35 @@ c.Abc
 
     testToolTipSquashing source 7 5 "c.Abc" [ "c"; "Abc" ] FSharpTokenTag.Identifier
 
+let getCheckResults source options =
+    let fileName, options =
+        mkTestFileAndOptions
+            source
+            options
+    let _, checkResults = parseAndCheckFile fileName source options
+    checkResults
+
+
+let taggedTextsToString (t: TaggedText array) =
+    t
+    |> Array.map (fun taggedText -> taggedText.Text)
+    |> String.concat ""
+let assertAndExtractTooltip (ToolTipText(items)) =
+    Assert.Equal(1,items.Length)
+    match items.[0] with
+    | ToolTipElement.Group [ singleElement ] ->
+        let toolTipText =
+            singleElement.MainDescription
+            |> taggedTextsToString
+        toolTipText, singleElement.XmlDoc, singleElement.Remarks |> Option.map taggedTextsToString
+    | _ -> failwith $"Expected group, got {items.[0]}"
+    
+let assertAndGetSingleToolTipText items =
+    let text,_xml,_remarks = assertAndExtractTooltip items
+    text
+
+let normalize (s:string) = s.Replace("\r\n", "\n").Replace("\n\n", "\n")
+
 [<Fact>]
 let ``Auto property should display a single tool tip`` () =
     let source = """
@@ -400,19 +430,88 @@ type Bar() =
     /// Some comment on class member
     member val Foo = "bla" with get, set
 """
-    let fileName, options =
-        mkTestFileAndOptions
-            source
-            Array.empty
-    let _, checkResults = parseAndCheckFile fileName source options
-    let (ToolTipText(items)) = checkResults.GetToolTip(7, 18, "    member val Foo = \"bla\" with get, set", [ "Foo" ], FSharpTokenTag.Identifier)
-    Assert.True (items.Length = 1)
-    match items.[0] with
-    | ToolTipElement.Group [ { MainDescription = description } ] ->
-        let toolTipText =
-            description
-            |> Array.map (fun taggedText -> taggedText.Text)
-            |> String.concat ""
+    let checkResults = getCheckResults source Array.empty
+    checkResults.GetToolTip(7, 18, "    member val Foo = \"bla\" with get, set", [ "Foo" ], FSharpTokenTag.Identifier)
+    |> assertAndGetSingleToolTipText
+    |> Assert.shouldBeEquivalentTo "property Bar.Foo: string with get, set"
 
-        Assert.Equal("property Bar.Foo: string with get, set", toolTipText)
-    | _ -> failwith $"Expected group, got {items.[0]}"
+[<FactForNETCOREAPP>]
+let ``Should display nullable Csharp code analysis annotations on method argument`` () =
+    
+    let source = """module Foo
+let exists() = System.IO.Path.Exists(null:string)
+"""
+    let checkResults = getCheckResults source [|"--checknulls+";"--langversion:preview"|]
+    checkResults.GetToolTip(2, 36, "let exists() = System.IO.Path.Exists(null:string)", [ "Exists" ], FSharpTokenTag.Identifier)
+    |> assertAndGetSingleToolTipText
+    |> Assert.shouldBeEquivalentTo "System.IO.Path.Exists([<NotNullWhenAttribute (true)>] path: string | null) : bool"
+    
+[<FactForNETCOREAPP>]
+let ``Should display xml doc on a nullable BLC method`` () =
+    
+    let source = """module Foo
+let exists() = System.IO.Path.Exists(null:string)
+"""
+    let checkResults = getCheckResults source [|"--checknulls+";"--langversion:preview"|]
+    checkResults.GetToolTip(2, 36, "let exists() = System.IO.Path.Exists(null:string)", [ "Exists" ], FSharpTokenTag.Identifier)
+    |> assertAndExtractTooltip
+    |> fun (text,xml,remarks) ->
+            text |> Assert.shouldBeEquivalentTo "System.IO.Path.Exists([<NotNullWhenAttribute (true)>] path: string | null) : bool"
+            match xml with
+            | FSharpXmlDoc.FromXmlFile (_dll,sigPath) -> sigPath |> Assert.shouldBeEquivalentTo "M:System.IO.Path.Exists(System.String)"
+            | _ -> failwith $"Xml wrong type %A{xml}"
+
+            
+[<FactForNETCOREAPP>]
+let ``Should display xml doc on fsharp hosted nullable function`` () =
+    
+    let source = """module Foo
+/// This is a xml doc above myFunc
+let myFunc(x:string|null) : string | null = x
+
+let exists() = myFunc(null)
+"""
+    let checkResults = getCheckResults source [|"--checknulls+";"--langversion:preview"|]
+    checkResults.GetToolTip(5, 21, "let exists() = myFunc(null)", [ "myFunc" ], FSharpTokenTag.Identifier)
+    |> assertAndExtractTooltip
+    |> fun (text,xml,remarks) ->
+            match xml with
+            | FSharpXmlDoc.FromXmlText t ->
+                 t.UnprocessedLines |> Assert.shouldBeEquivalentTo [|" This is a xml doc above myFunc"|]
+            | _ -> failwith $"xml was %A{xml}"
+            text |> Assert.shouldBeEquivalentTo "val myFunc: x: string | null -> string | null"            
+            remarks |> Assert.shouldBeEquivalentTo (Some "Full name: Foo.myFunc")
+
+
+[<FactForNETCOREAPP>]
+let ``Should display nullable Csharp code analysis annotations on method return type`` () =
+    
+    let source = """module Foo
+let getPath() = System.IO.Path.GetFileName(null:string)
+"""
+    let checkResults = getCheckResults source [|"--checknulls+";"--langversion:preview"|]
+    checkResults.GetToolTip(2, 42, "let getPath() = System.IO.Path.GetFileName(null:string)", [ "GetFileName" ], FSharpTokenTag.Identifier)   
+    |> assertAndGetSingleToolTipText
+    |> Assert.shouldBeEquivalentTo ("""[<return:NotNullIfNotNullAttribute ("path")>]
+System.IO.Path.GetFileName(path: string | null) : string | null""" |> normalize)
+
+[<FactForNETCOREAPP>]
+let ``Should display nullable Csharp code analysis annotations on TryParse pattern`` () =   
+    let source = """module Foo
+let success,version = System.Version.TryParse(null)
+"""
+    let checkResults = getCheckResults source [|"--checknulls+";"--langversion:preview"|]
+    checkResults.GetToolTip(2, 45, "let success,version = System.Version.TryParse(null)", [ "TryParse" ], FSharpTokenTag.Identifier)   
+    |> assertAndGetSingleToolTipText
+    |> Assert.shouldBeEquivalentTo ("""System.Version.TryParse([<NotNullWhenAttribute (true)>] input: string | null, [<NotNullWhenAttribute (true)>] result: byref<System.Version | null>) : bool""")
+
+[<FactForNETCOREAPP>]
+let ``Display with nullable annotations can be squashed`` () =   
+    let source = """module Foo
+let success,version = System.Version.TryParse(null)
+"""
+    let checkResults = getCheckResults source [|"--checknulls+";"--langversion:preview"|]
+    checkResults.GetToolTip(2, 45, "let success,version = System.Version.TryParse(null)", [ "TryParse" ], FSharpTokenTag.Identifier,width=100)   
+    |> assertAndGetSingleToolTipText
+    |> Assert.shouldBeEquivalentTo ("""System.Version.TryParse([<NotNullWhenAttribute (true)>] input: string | null,
+                        [<NotNullWhenAttribute (true)>] result: byref<System.Version | null>) : bool""" |> normalize)

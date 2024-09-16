@@ -29,6 +29,7 @@ let answer = 42
 
         var actualBuildSummary = await SolutionExplorer.BuildSolutionAsync(TestToken);
 
+        Assert.NotNull(actualBuildSummary);
         Assert.Contains(expectedBuildSummary, actualBuildSummary);
     }
 
@@ -50,6 +51,8 @@ let answer =
         await Editor.SetTextAsync(code, TestToken);
 
         var actualBuildSummary = await SolutionExplorer.BuildSolutionAsync(TestToken);
+
+        Assert.NotNull(actualBuildSummary);
         Assert.Contains(expectedBuildSummary, actualBuildSummary);
 
         await ErrorList.ShowBuildErrorsAsync(TestToken);

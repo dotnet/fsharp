@@ -12,6 +12,26 @@
         <target state="translated">Las definiciones de {0} para el tipo "{1}" de la firma y la implementación no son compatibles porque las abreviaciones difieren:\n    {2}\nversus\n    {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarning">
+        <source>Nullness warning: {0}.</source>
+        <target state="new">Nullness warning: {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningEquivWithTypes">
+        <source>Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</source>
+        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningWithType">
+        <source>Nullness warning: The type '{0}' does not support 'null'.</source>
+        <target state="new">Nullness warning: The type '{0}' does not support 'null'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningWithTypes">
+        <source>Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</source>
+        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
         <source>Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</source>
         <target state="translated">Error de coincidencia de tipos. Se espera una tupla de longitud {0} de tipo\n    {1}    \nperero se ha proporcionado una tupla de longitud {2} de tipo\n    {3}{4}\n</target>
@@ -35,6 +55,11 @@
       <trans-unit id="OverrideShouldBeStatic">
         <source> Static member is expected.</source>
         <target state="translated"> Se espera un miembro estático.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR_JUST_BEFORE_NULL">
+        <source>symbol '|' (directly before 'null')</source>
+        <target state="new">symbol '|' (directly before 'null')</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
@@ -178,7 +203,7 @@
         <note />
       </trans-unit>
       <trans-unit id="NameClash2">
-        <source>The {0} '{1}' can not be defined because the name '{2}' clashes with the {3} '{4}' in this type or module</source>
+        <source>The {0} '{1}' cannot be defined because the name '{2}' clashes with the {3} '{4}' in this type or module</source>
         <target state="translated">No se puede definir el {0} '{1}' porque el nombre '{2}' está en conflicto con el {3} '{4}' de este tipo o módulo.</target>
         <note />
       </trans-unit>
@@ -249,7 +274,7 @@
       </trans-unit>
       <trans-unit id="TypeIsImplicitlyAbstract">
         <source>Non-abstract classes cannot contain abstract members. Either provide a default member implementation or add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
-        <target state="needs-review-translation">Este tipo es "abstract" ya que a algunos miembros abstractos no se les ha dado una implementación. Si esto es intencional, agregue el atributo "[&lt;AbstractClass&gt;]"</target>
+        <target state="translated">Las clases no abstractas no pueden contener miembros abstractos. Proporcione una implementación de miembros predeterminados o agregue el atributo "[&lt;AbstractClass&gt;]" al tipo.</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar1">
@@ -1379,7 +1404,7 @@
       </trans-unit>
       <trans-unit id="RecursiveUseCheckedAtRuntime">
         <source>This recursive use will be checked for initialization-soundness at runtime. This warning is usually harmless, and may be suppressed by using '#nowarn "21"' or '--nowarn:21'.</source>
-        <target state="needs-review-translation">Este uso recursivo se comprobará para ver si tiene inicialización silenciosa en tiempo de ejecución. Esta advertencia suele ser inocua y se puede suprimir con '#nowarn "21"' o '--nowarn:21'.</target>
+        <target state="translated">Este uso recursivo se comprobará para ver si tiene inicialización silenciosa en tiempo de ejecución. Esta advertencia suele ser inocua y se puede suprimir con '#nowarn "21"' o '--nowarn:21'.</target>
         <note />
       </trans-unit>
       <trans-unit id="LetRecUnsound1">
@@ -1404,7 +1429,7 @@
       </trans-unit>
       <trans-unit id="LetRecCheckedAtRuntime">
         <source>This and other recursive references to the object(s) being defined will be checked for initialization-soundness at runtime through the use of a delayed reference. This is because you are defining one or more recursive objects, rather than recursive functions. This warning may be suppressed by using '#nowarn "40"' or '--nowarn:40'.</source>
-        <target state="needs-review-translation">Esta y otras referencias recursivas al objeto que se va a definir se comprobarán para ver si tienen inicialización silenciosa en tiempo de ejecución mediante el uso de una referencia retardada. Esto se debe a que está definiendo uno o varios objetos recursivos en lugar de funciones recursivas. Esta advertencia se puede suprimir con '#nowarn "40" o --nowarn:40'.</target>
+        <target state="translated">Esta y otras referencias recursivas al objeto que se va a definir se comprobarán para ver si tienen inicialización silenciosa en tiempo de ejecución mediante el uso de una referencia retardada. Esto se debe a que está definiendo uno o varios objetos recursivos en lugar de funciones recursivas. Esta advertencia se puede suprimir con '#nowarn "40" o --nowarn:40'.</target>
         <note />
       </trans-unit>
       <trans-unit id="SelfRefObjCtor1">
@@ -1524,12 +1549,12 @@
       </trans-unit>
       <trans-unit id="Experimental">
         <source>{0}. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.</source>
-        <target state="needs-review-translation">{0}. Esta advertencia se puede deshabilitar con '--nowarn:57' o '#nowarn "57"'.</target>
+        <target state="translated">{0}. Esta advertencia se puede deshabilitar con '--nowarn:57' o '#nowarn "57"'.</target>
         <note />
       </trans-unit>
       <trans-unit id="PossibleUnverifiableCode">
         <source>Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.</source>
-        <target state="needs-review-translation">El uso de esta construcción puede dar lugar a que se genere código .NET de IL que no se puede comprobar. Esta advertencia se puede deshabilitar con '--nowarn:9' o '#nowarn "9"'.</target>
+        <target state="translated">El uso de esta construcción puede dar lugar a que se genere código .NET de IL que no se puede comprobar. Esta advertencia se puede deshabilitar con '--nowarn:9' o '#nowarn "9"'.</target>
         <note />
       </trans-unit>
       <trans-unit id="Deprecated">
@@ -1574,7 +1599,7 @@
       </trans-unit>
       <trans-unit id="IntfImplInIntrinsicAugmentation">
         <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using '#nowarn "69"' if you have checked this is not the case.</source>
-        <target state="needs-review-translation">Normalmente, las implementaciones de interfaz deben proporcionarse en la declaración inicial de un tipo. Las implementaciones de interfaz en aumentos pueden dar lugar al acceso a enlaces estáticos antes de inicializarse, aunque solo si la implementación de interfaz se invoca durante la inicialización de los datos estáticos y, a su vez, obtiene acceso a los datos estáticos. Puede quitar esta advertencia con #nowarn "69" si ha comprobado que este no es el caso.</target>
+        <target state="translated">Normalmente, las implementaciones de interfaz deben proporcionarse en la declaración inicial de un tipo. Las implementaciones de interfaz en aumentos pueden dar lugar al acceso a enlaces estáticos antes de inicializarse, aunque solo si la implementación de interfaz se invoca durante la inicialización de los datos estáticos y, a su vez, obtiene acceso a los datos estáticos. Puede quitar esta advertencia con 'nowarn "69"' si ha comprobado que este no es el caso.</target>
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInExtrinsicAugmentation">
@@ -1594,12 +1619,12 @@
       </trans-unit>
       <trans-unit id="HashIncludeNotAllowedInNonScript">
         <source>#I directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="needs-review-translation">Las directivas #I pueden existir solo en archivos de script de F# (extensiones .fsx o .fsscript). Mueva este código a un archivo de script, agregue una opción de compilador '-I' para esta referencia o delimite la directiva con '#if INTERACTIVE'/'#endif'.</target>
+        <target state="translated">Las directivas #I solo pueden utilizarse en archivos de script de F# (extensiones .fsx o .fsscript). Mueva este código a un archivo de script, agregue una opción de compilador '-I' para esta referencia o delimite la directiva con '#if INTERACTIVE'/'#endif'.</target>
         <note />
       </trans-unit>
       <trans-unit id="HashReferenceNotAllowedInNonScript">
         <source>#r directives may only be used in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="needs-review-translation">Las directivas #r pueden existir solo en archivos de script de F# (extensiones .fsx o .fsscript). Mueva este código a un archivo de script o sustituta esta referencia por la opción de compilador '-r'. Si esta directiva se ejecuta como entrada de usuario, puede delimitarla con '#if INTERACTIVE'/'#endif'.</target>
+        <target state="translated">Las directivas #r solo pueden utilizarse en archivos de script de F# (extensiones .fsx o .fsscript). Mueva este código a un archivo de script o sustituta esta referencia por la opción de compilador '-r'. Si esta directiva se ejecuta como entrada de usuario, puede delimitarla con '#if INTERACTIVE'/'#endif'.</target>
         <note />
       </trans-unit>
       <trans-unit id="HashDirectiveNotAllowedInNonScript">

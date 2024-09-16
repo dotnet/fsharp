@@ -1,7 +1,7 @@
 // #Regression #Conformance #DeclarationElements #Modules 
 #light
 
-//<Expects id="FS0039" status="error">The field, constructor or member 'sum' is not defined</Expects>
+
 
 
 // Define a function

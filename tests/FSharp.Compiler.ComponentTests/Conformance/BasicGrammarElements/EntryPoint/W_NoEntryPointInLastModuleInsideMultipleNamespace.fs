@@ -2,7 +2,7 @@
 // Empty program entry point warning
 // Lack of entry point produces warning with correct source location when compiled to *.exe
 // when multiple namespaces with multiple modules declared in source file 
-//<Expects id="FS0988" span="(1,1-1,1)" status="warning">Main module of program is empty: nothing will happen when it is run</Expects>
+
 
 #light
 namespace MyNamespace1

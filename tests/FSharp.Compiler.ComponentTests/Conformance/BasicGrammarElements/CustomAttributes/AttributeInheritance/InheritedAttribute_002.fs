@@ -1,8 +1,8 @@
 // Ensures that we get an error when warnings as error specified
 
-//<Expects id="FS3242" span="(12,3)" status="warning">This type does not inherit Attribute, it will not work correctly with other .NET languages.</Expects>
 
-namespace FSharp.Conformance.DeclaratioElements.CustomAttributes.InheritedAttribute
+
+namespace FSharp.Conformance.DeclarationElements.CustomAttributes.InheritedAttribute
 
 open System
 

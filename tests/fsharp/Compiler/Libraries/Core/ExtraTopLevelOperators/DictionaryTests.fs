@@ -2,12 +2,12 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 
 module ``Dictionary Tests`` =
 
-    [<Test>]
+    [<Fact>]
     let ``Assigning to dictionary should compile``() =
         // Regression test for FSHARP1.0:5365
 
@@ -26,7 +26,7 @@ module N.M
             dict.[key] <- value
             """
 
-    [<Test>]
+    [<Fact>]
     let ``Assigning to dictionary with type constraint should compile``() =
         // Regression test for FSHARP1.0:5365
         // Used to give error: value must be local and mutable in order to mutate the contents of a value type, e.g. 'let mutable x = ...'

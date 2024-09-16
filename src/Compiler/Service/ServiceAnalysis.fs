@@ -51,6 +51,11 @@ module UnusedOpens =
                         if not entity.IsNamespace && not entity.IsFSharpModule then
                             for fv in entity.MembersFunctionsAndValues do
                                 fv
+
+                            if entity.IsEnum then
+                                for field in entity.FSharpFields do
+                                    if field.IsStatic && field.IsLiteral then
+                                        field
                     |]
 
                 HashSet<_>(symbols, symbolHash)

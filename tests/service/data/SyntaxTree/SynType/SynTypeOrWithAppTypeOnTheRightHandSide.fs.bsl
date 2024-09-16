@@ -40,7 +40,7 @@ ImplFile
                               SynValInfo ([], SynArgInfo ([], false, None)),
                               false, false,
                               PreXmlDoc ((2,39), FSharp.Compiler.Xml.XmlDocCollector),
-                              None, None, (2,39--2,59),
+                              Single None, None, (2,39--2,59),
                               { LeadingKeyword =
                                  StaticMember ((2,39--2,45), (2,46--2,52))
                                 InlineKeyword = None

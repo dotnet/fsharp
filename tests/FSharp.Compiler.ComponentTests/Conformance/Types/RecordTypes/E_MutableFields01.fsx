@@ -1,8 +1,8 @@
 // #Regression #Conformance #TypesAndModules #Records 
 // Verify that record fields may be marked mutable
 // Making one field mutable does not make _all_ the fields mutable
-//<Expects id="FS0005" span="(16,1-16,5)" status="error">This field is not mutable</Expects>
-//<Expects id="FS0005" span="(17,1-17,5)" status="error">This field is not mutable</Expects>
+
+
 // This is also regression test for FSHARP1.0:3733
 #light
 

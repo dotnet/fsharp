@@ -1,10 +1,10 @@
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 open FSharp.Compiler.Diagnostics
 
-[<TestFixture>]
+
 module ComputationExpressionTests =
 
     let ``complex CE with source member and applicatives`` ceUsage =
@@ -159,7 +159,7 @@ let asyncResult = AsyncResultBuilder()
 
 %s"""     ceUsage
 
-    [<Test>]
+    [<Fact>]
     let ``do-bang can be used with nested CE expressions``() =
         let code = ``complex CE with source member and applicatives`` """
 asyncResult {
@@ -175,7 +175,7 @@ asyncResult {
 """
         CompilerAssert.Pass code
 
-    [<Test>]
+    [<Fact>]
     let ``match-bang should apply source transformations to its inputs`` () =
         let code = ``complex CE with source member and applicatives`` """
 asyncResult {

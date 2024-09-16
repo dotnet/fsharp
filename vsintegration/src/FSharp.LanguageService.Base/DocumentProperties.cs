@@ -72,7 +72,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         public void Dispose() {
             Dispose(true);
             // This object will be cleaned up by the Dispose method.
-            // Therefore, you should call GC.SupressFinalize
+            // Therefore, you should call GC.SuppressFinalize
             GC.SuppressFinalize(this);
         }
 

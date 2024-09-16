@@ -1,9 +1,9 @@
 ﻿namespace FSharp.Core.UnitTests.Control.Tasks
 
-// The tasks below fail state machine comilation.  This failure was causing subsequent problems in code generation.
+// The tasks below fail state machine compilation.  This failure was causing subsequent problems in code generation.
 // See https://github.com/dotnet/fsharp/issues/13404
 
-#nowarn "3511"  // state machine not staticlly compilable - this is a separate issue, see  https://github.com/dotnet/fsharp/issues/13404
+#nowarn "3511"  // state machine not statically compilable - this is a separate issue, see  https://github.com/dotnet/fsharp/issues/13404
 
 open System
 open Microsoft.FSharp.Control

@@ -1090,7 +1090,11 @@ module internal Array =
         if array.Length > 1 then 
             Array.Sort<_>(array, fastComparerForArraySort())
 
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
     let stableSortWithKeysAndComparer (cFast:IComparer<'Key>) (c:IComparer<'Key>) (array:'T array) (keys: 'Key array)  =
+#else
+    let stableSortWithKeysAndComparer (cFast:IComparer<'Key> | null) (c:IComparer<'Key>) (array:array<'T>) (keys:array<'Key>)  =
+#endif
         // 'places' is an array or integers storing the permutation performed by the sort        
         let len = array.Length
         let places = zeroCreateUnchecked len

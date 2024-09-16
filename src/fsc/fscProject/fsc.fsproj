@@ -9,9 +9,18 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
+    <MibcTargetOS>linux</MibcTargetOS>
+    <!-- We deliberately want to use linux mibc pgo data on macOS -->
+    <MibcTargetOS Condition="$([MSBuild]::IsOSPlatform('OSX'))">linux</MibcTargetOS>
+    <MibcTargetOS Condition="$([MSBuild]::IsOSPlatform('WINDOWS'))">windows_nt</MibcTargetOS>
+    <MibcTargetArchitecture>$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant)</MibcTargetArchitecture>
+    <MibcCurrentMachineArcitecture>$(MibcTargetOS)-$(MibcTargetArchitecture)</MibcCurrentMachineArcitecture>
+    <MibcFile>$(ArtifactsDir)mibc-proto\optimization.$(MibcCurrentMachineArcitecture).mibc.runtime\DotNet_FSharp.mibc</MibcFile>
+
     <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
     <PublishReadyToRun>$(EnablePublishReadyToRun)</PublishReadyToRun>
     <RuntimeIdentifier>$(NETCoreSdkRuntimeIdentifier)</RuntimeIdentifier>
+    <ReadyToRunOptimizationData>$(MibcFile)</ReadyToRunOptimizationData>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(Configuration)' == 'Proto'">
@@ -23,6 +32,10 @@
     <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
     <IntermediateOutputPath>$(ArtifactsDir)obj/$(MSBuildProjectName)/$(Configuration)/</IntermediateOutputPath>
   </PropertyGroup>
+
+  <Target Name="ValidateMibcFile" AfterTargets="CopyMIBC" BeforeTargets="Build;Pack" Condition="'$(IgnoreMibc)' != 'true'">
+    <Error Condition="'$(Configuration)' == 'Proto' AND !Exists('$(MibcFile)')" Text="Mibc file '$(MibcFile)' does not exist." />
+  </Target>
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove('fsc.targets', '$(MSBuildThisFileDirectory)../'))" />
 

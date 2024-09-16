@@ -17,7 +17,7 @@ open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 // This causes re-analysis to happen when a F# document is saved.
 // We do this because FCS relies on the file system and existing open documents
-// need to be re-analyzed so the changes are propogated.
+// need to be re-analyzed so the changes are propagated.
 // We only re-analyze F# documents that are dependent on the document that was just saved.
 // We ignore F# script documents here.
 // REVIEW: This could be removed when Roslyn workspaces becomes the source of truth for FCS instead of the file system.

@@ -1,13 +1,13 @@
 ﻿namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 open FSharp.Compiler.Diagnostics
 
-[<TestFixture>]
+
 module PatternMatchingWarningTests =
 
-    [<Test>]
+    [<Fact>]
     let ``Complete pattern match on byte should not trigger FS0025 warning`` () =
         CompilerAssert.Pass
             """
@@ -271,7 +271,7 @@ module PatternMatchingWarningTests =
            | 255uy -> 255
     printfn ""
             """
-    [<Test>]
+    [<Fact>]
     let ``Complete pattern match on sbyte should not trigger FS0025 warning`` () =
         CompilerAssert.Pass
             """

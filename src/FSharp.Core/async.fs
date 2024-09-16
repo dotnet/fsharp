@@ -822,7 +822,7 @@ module AsyncPrimitives =
             WhileLoop())
 #endif
 
-    /// Implement the for loop construct of async commputation expressions
+    /// Implement the for loop construct of async computation expressions
     ///   - No initial cancellation check before GetEnumerator call.
     ///   - No initial cancellation check before entering protection of implied try/finally
     ///   - Cancellation check after 'entering' the implied try/finally and before loop
@@ -867,8 +867,12 @@ module AsyncPrimitives =
 #endif
 
     ///   - Initial cancellation check
-    ///   - Call syncCtxt.Post with exception protection. THis may fail as it is arbitrary user code
+    ///   - Call syncCtxt.Post with exception protection. This may fail as it is arbitrary user code
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
     let CreateSwitchToAsync (syncCtxt: SynchronizationContext) =
+#else
+    let CreateSwitchToAsync (syncCtxt: SynchronizationContext | null) =
+#endif
         MakeAsyncWithCancelCheck(fun ctxt -> ctxt.PostWithTrampoline syncCtxt ctxt.cont)
 
     ///   - Initial cancellation check
@@ -1072,7 +1076,7 @@ module AsyncPrimitives =
 
     /// Create an instance of an arbitrary delegate type delegating to the given F# function
     type FuncDelegate<'T>(f) =
-        member _.Invoke(sender: obj, a: 'T) : unit =
+        member _.Invoke(sender: objnull, a: 'T) : unit =
             ignore sender
             f a
 
@@ -1305,7 +1309,7 @@ module AsyncPrimitives =
         | None -> ()
 
     [<Sealed; AutoSerializable(false)>]
-    type AsyncIAsyncResult<'T>(callback: System.AsyncCallback, state: obj) =
+    type AsyncIAsyncResult<'T>(callback: System.AsyncCallback, state: objnull) =
         // This gets set to false if the result is not available by the
         // time the IAsyncResult is returned to the caller of Begin
         let mutable completedSynchronously = true
@@ -2031,7 +2035,7 @@ type Async =
                             // Register the result.
                             resultCell.RegisterResult(res, reuseThread = true) |> unfake)
 
-            let (iar: IAsyncResult) = beginAction (callback, (null: obj))
+            let (iar: IAsyncResult) = beginAction (callback, (null: objnull))
 
             if iar.CompletedSynchronously then
                 // Ensure cancellation is not possible beyond this point
@@ -2063,7 +2067,7 @@ type Async =
     static member AsBeginEnd<'Arg, 'T>
         (computation: ('Arg -> Async<'T>))
         // The 'Begin' member
-        : ('Arg * System.AsyncCallback * obj -> System.IAsyncResult) *
+        : ('Arg * System.AsyncCallback * objnull -> System.IAsyncResult) *
           (System.IAsyncResult -> 'T) *
           (System.IAsyncResult -> unit)
         =
@@ -2330,7 +2334,7 @@ module WebExtensions =
                 Async.FromContinuations(fun (cont, econt, ccont) ->
                     let userToken = obj ()
 
-                    let rec delegate' (_: obj) (args: #ComponentModel.AsyncCompletedEventArgs) =
+                    let rec delegate' (_: objnull) (args: #ComponentModel.AsyncCompletedEventArgs) =
                         // ensure we handle the completed event from correct download call
                         if userToken = args.UserState then
                             event.RemoveHandler handle

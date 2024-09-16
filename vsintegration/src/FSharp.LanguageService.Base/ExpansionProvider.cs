@@ -102,7 +102,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         }
 
         internal virtual bool HandleQueryStatus(ref Guid guidCmdGroup, uint nCmdId, out int hr) {
-            // in case there's something to conditinally support later on...
+            // in case there's something to conditionally support later on...
             hr = 0;
             return false;
         }

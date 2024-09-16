@@ -282,7 +282,7 @@ module internal VsOpsUtils =
 
         let compList = AutoCompleteAtCursor(file)
        
-        // Now restore the origional file contents
+        // Now restore the original file contents
         ReplaceFileInMemory file orgFileContents
         
         compList
@@ -295,7 +295,7 @@ module internal VsOpsUtils =
 
     // ------------------------------------------------------------------------
  
-    /// Abbreviation for 'None', to indiciate a GotoDefn failure
+    /// Abbreviation for 'None', to indicate a GotoDefn failure
     let GotoDefnFailure       = None : (string * string) option
     /// Abbreviation for 'Some(ident, lineOfCode)'
     let GotoDefnSuccess x y = Some (x, y) : (string * string) option

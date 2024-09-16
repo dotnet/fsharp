@@ -43,7 +43,7 @@ type SynRationalConst =
     // ...
 ```	
 
-After modifying `SyntaxTree.fsi` and `SyntaxTree.fs`, the compiler will report erros in `pars.fsy`. If not, the `fsy` file wasn't processed by the compilation. In this case, a rebuild of `FSharp.Compiler.Service.fsproj` should help.  
+After modifying `SyntaxTree.fsi` and `SyntaxTree.fs`, the compiler will report errors in `pars.fsy`. If not, the `fsy` file wasn't processed by the compilation. In this case, a rebuild of `FSharp.Compiler.Service.fsproj` should help.  
 `pars.fsy` is the parser specification of F#, a list of rules that describe how to parse F# code. Don't be scared by the size of the file or the unfamiliar content.
 It's easier than it looks.
 The F# compiler uses a parser generator called [fsyacc](https://github.com/fsprojects/FsLexYacc) to generate the parser from the specification in `pars.fsy`.
@@ -82,6 +82,6 @@ SynRationalConst.Rational(fst $1, rhs parseState 1, rhs parseState 2, fst $3, rh
 ```	
 
 That's it. Adjusting the other constructor calls of `Rational` in `pars.fsy` should be enough to have a working parser again which returns the modified AST.  
-While fixing the remaining compiler errors outside of `pars.fsy`, it's a good idea to use named access to the fields of the `SynRationalConst.Rational` union case instead of positional access. This way, the compilation won't fail if aditional fields are added to the union case in the future.  
+While fixing the remaining compiler errors outside of `pars.fsy`, it's a good idea to use named access to the fields of the `SynRationalConst.Rational` union case instead of positional access. This way, the compilation won't fail if additional fields are added to the union case in the future.  
 After a successful compilation, you can run the parser tests in `SyntaxTreeTests.fs` to verify that everything works as expected.  
-It's likely that you'll need to update the baseline files as decribed in `SyntaxTreeTests.fs`.
+It's likely that you'll need to update the baseline files as described in `SyntaxTreeTests.fs`.

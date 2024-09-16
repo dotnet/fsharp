@@ -64,7 +64,9 @@ let hashAssembly (peReader: PEReader) (hashAlgorithm: IncrementalHash) =
     let checkSumOffset = peHeaderOffset + 0x40 // offsetof(IMAGE_OPTIONAL_HEADER, CheckSum)
 
     let securityDirectoryEntryOffset, peHeaderSize =
-        match peHeaders.PEHeader.Magic with
+        let header = peHeaders.PEHeader |> nullArgCheck (nameof peHeaders.PEHeader)
+
+        match header.Magic with
         | PEMagic.PE32 -> peHeaderOffset + 0x80, 0xE0 // offsetof(IMAGE_OPTIONAL_HEADER32, DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY]), sizeof(IMAGE_OPTIONAL_HEADER32)
         | PEMagic.PE32Plus -> peHeaderOffset + 0x90, 0xF0 // offsetof(IMAGE_OPTIONAL_HEADER64, DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY]), sizeof(IMAGE_OPTIONAL_HEADER64)
         | _ -> raise (BadImageFormatException(getResourceString (FSComp.SR.ilSignInvalidMagicValue ())))
@@ -87,7 +89,9 @@ let hashAssembly (peReader: PEReader) (hashAlgorithm: IncrementalHash) =
     hashAlgorithm.AppendData(allHeaders, 0, allHeadersSize)
 
     // Hash content of all sections
-    let signatureDirectory = peHeaders.CorHeader.StrongNameSignatureDirectory
+    let signatureDirectory =
+        let corHeader = peHeaders.CorHeader |> nullArgCheck (nameof peHeaders.CorHeader)
+        corHeader.StrongNameSignatureDirectory
 
     let signatureStart =
         match peHeaders.TryGetDirectoryOffset signatureDirectory with
@@ -140,7 +144,7 @@ type BlobReader =
         x._offset <- x._offset + length
         arr |> Array.rev
 
-let RSAParamatersFromBlob blob keyType =
+let RSAParametersFromBlob blob keyType =
     let mutable reader = BlobReader blob
 
     if reader.ReadInt32() <> 0x00000207 && keyType = KeyType.KeyPair then
@@ -186,10 +190,10 @@ let toCLRKeyBlob (rsaParameters: RSAParameters) (algId: int) : byte array =
     if isNull rsaParameters.Modulus then
         raise (CryptographicException(String.Format(getResourceString (FSComp.SR.ilSignInvalidRSAParams ()), "Modulus")))
 
-    if isNull rsaParameters.Exponent || rsaParameters.Exponent.Length > 4 then
+    if isNull rsaParameters.Exponent || (!!rsaParameters.Exponent).Length > 4 then
         raise (CryptographicException(String.Format(getResourceString (FSComp.SR.ilSignInvalidRSAParams ()), "Exponent")))
 
-    let modulusLength = rsaParameters.Modulus.Length
+    let modulusLength = (!!rsaParameters.Modulus).Length
     let halfModulusLength = (modulusLength + 1) / 2
 
     // We assume that if P != null, then so are Q, DP, DQ, InverseQ and D and indicate KeyPair RSA Parameters
@@ -227,31 +231,39 @@ let toCLRKeyBlob (rsaParameters: RSAParameters) (algId: int) : byte array =
         let expAsDword =
             let mutable buffer = int 0
 
-            for i in 0 .. rsaParameters.Exponent.Length - 1 do
-                buffer <- (buffer <<< 8) ||| int rsaParameters.Exponent[i]
+            match rsaParameters.Exponent with
+            | null -> ()
+            | exp ->
+                for i in 0 .. exp.Length - 1 do
+                    buffer <- (buffer <<< 8) ||| int exp[i]
 
             buffer
 
+        let safeArrayRev (buffer: _ MaybeNull) =
+            match buffer with
+            | Null -> Array.empty<byte>
+            | NonNull buffer -> buffer |> Array.rev
+
         bw.Write expAsDword // RSAPubKey.pubExp
-        bw.Write(rsaParameters.Modulus |> Array.rev) // Copy over the modulus for both public and private
+        bw.Write(rsaParameters.Modulus |> safeArrayRev) // Copy over the modulus for both public and private
 
         if isPrivate then
             do
-                bw.Write(rsaParameters.P |> Array.rev)
-                bw.Write(rsaParameters.Q |> Array.rev)
-                bw.Write(rsaParameters.DP |> Array.rev)
-                bw.Write(rsaParameters.DQ |> Array.rev)
-                bw.Write(rsaParameters.InverseQ |> Array.rev)
-                bw.Write(rsaParameters.D |> Array.rev)
+                bw.Write(rsaParameters.P |> safeArrayRev)
+                bw.Write(rsaParameters.Q |> safeArrayRev)
+                bw.Write(rsaParameters.DP |> safeArrayRev)
+                bw.Write(rsaParameters.DQ |> safeArrayRev)
+                bw.Write(rsaParameters.InverseQ |> safeArrayRev)
+                bw.Write(rsaParameters.D |> safeArrayRev)
 
         bw.Flush()
         ms.ToArray()
 
     key
 
-let createSignature hash keyBlob keyType =
+let createSignature (hash: byte array) keyBlob keyType =
     use rsa = RSA.Create()
-    rsa.ImportParameters(RSAParamatersFromBlob keyBlob keyType)
+    rsa.ImportParameters(RSAParametersFromBlob keyBlob keyType)
 
     let signature =
         rsa.SignHash(hash, HashAlgorithmName.SHA1, RSASignaturePadding.Pkcs1)
@@ -260,7 +272,8 @@ let createSignature hash keyBlob keyType =
 
 let patchSignature (stream: Stream) (peReader: PEReader) (signature: byte array) =
     let peHeaders = peReader.PEHeaders
-    let signatureDirectory = peHeaders.CorHeader.StrongNameSignatureDirectory
+    let corHeader = peHeaders.CorHeader |> nullArgCheck (nameof peHeaders.CorHeader)
+    let signatureDirectory = corHeader.StrongNameSignatureDirectory
 
     let signatureOffset =
         if signatureDirectory.Size > signature.Length then
@@ -275,7 +288,7 @@ let patchSignature (stream: Stream) (peReader: PEReader) (signature: byte array)
 
     let corHeaderFlagsOffset = int64 (peHeaders.CorHeaderStartOffset + 16) // offsetof(IMAGE_COR20_HEADER, Flags)
     stream.Seek(corHeaderFlagsOffset, SeekOrigin.Begin) |> ignore
-    stream.WriteByte(byte (peHeaders.CorHeader.Flags ||| CorFlags.StrongNameSigned))
+    stream.WriteByte(byte (corHeader.Flags ||| CorFlags.StrongNameSigned))
     ()
 
 let signStream stream keyBlob =
@@ -307,7 +320,7 @@ let signatureSize (pk: byte array) =
 // Returns a CLR Format Blob public key
 let getPublicKeyForKeyPair keyBlob =
     use rsa = RSA.Create()
-    rsa.ImportParameters(RSAParamatersFromBlob keyBlob KeyType.KeyPair)
+    rsa.ImportParameters(RSAParametersFromBlob keyBlob KeyType.KeyPair)
     let rsaParameters = rsa.ExportParameters false
     toCLRKeyBlob rsaParameters CALG_RSA_KEYX
 

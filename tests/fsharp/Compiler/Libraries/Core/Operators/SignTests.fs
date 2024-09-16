@@ -2,14 +2,14 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Compiler.Diagnostics
 open FSharp.Test
 
-[<TestFixture>]
+
 module ``Sign Tests`` =
 
-    [<Test>]
+    [<Fact>]
     let ``Sign of signed types``() =
         Assert.areEqual (sign 1y) 1       // byte
         Assert.areEqual (sign 1s) 1       // int16
@@ -36,7 +36,7 @@ module ``Sign Tests`` =
     // #Regression #Libraries #Operators 
     // Test sign function on unsigned primitives, should get error.
 
-    [<Test>]
+    [<Fact>]
     let ``Sign of byte``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -47,7 +47,7 @@ sign 0uy |> ignore
             (2, 6, 2, 9)
             "The type 'byte' does not support the operator 'sign'"
 
-    [<Test>]
+    [<Fact>]
     let ``Sign of uint16``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -58,7 +58,7 @@ sign 0us |> ignore
             (2, 6, 2, 9)
             "The type 'uint16' does not support the operator 'sign'"
 
-    [<Test>]
+    [<Fact>]
     let ``Sign of uint32``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -69,7 +69,7 @@ sign 0u |> ignore
             (2, 6, 2, 8)
             "The type 'uint32' does not support the operator 'sign'"
 
-    [<Test>]
+    [<Fact>]
     let ``Sign of uint64``() =
         CompilerAssert.TypeCheckSingleError
             """

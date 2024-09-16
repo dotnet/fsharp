@@ -65,7 +65,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public const string CancelQueryEdit = "CancelQueryEdit";
         public const string CannotAddFileThatIsOpenInEditor = "CannotAddFileThatIsOpenInEditor";
         public const string CannotAddItemToProjectWithWildcards = "CannotAddItemToProjectWithWildcards";
-        public const string CanNotSaveFileNotOpeneInEditor = "CanNotSaveFileNotOpeneInEditor";
+        public const string CannotSaveFileNotOpenInEditor = "CannotSaveFileNotOpenInEditor";
         public const string CannotStartLibraries = "CannotStartLibraries";
         public const string cli1 = "cli1";
         public const string Compile = "Compile";
@@ -181,7 +181,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public const string InvalidOutputPath = "InvalidOutputPath";
         public const string ProjectRefOnlyExeOrDll = "ProjectRefOnlyExeOrDll";
         public const string CannotBuildWhenBuildInProgress = "CannotBuildWhenBuildInProgress";
-        public const string WorkingDirectoryNotExists = "WorkingDirectoryNotExists";
+        public const string WorkingDirectoryNonexistent = "WorkingDirectoryNonexistent";
         public const string CannotLoadUnknownTargetFrameworkProject = "CannotLoadUnknownTargetFrameworkProject";
         public const string ProductName = "ProductName";
         public const string ProjectReferencesHigherVersionWarning = "ProjectReferencesHigherVersionWarning";

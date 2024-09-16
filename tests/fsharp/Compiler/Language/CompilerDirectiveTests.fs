@@ -2,14 +2,14 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 open FSharp.Compiler.Diagnostics
 
-[<TestFixture>]
+
 module ``Test Compiler Directives`` =
 
-    [<Test>]
+    [<Fact>]
     let ``compiler #r "" is invalid``() =
         let source = """
 #r ""
@@ -20,7 +20,7 @@ module ``Test Compiler Directives`` =
                 FSharpDiagnosticSeverity.Warning, 213, (2,1,2,6), "'' is not a valid assembly name"
             |])
 
-    [<Test>]
+    [<Fact>]
     let ``compiler #r "   " is invalid``() =
         let source = """
 #r "    "

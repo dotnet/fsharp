@@ -1,6 +1,6 @@
 ﻿// #Conformance #DeclarationElements #MemberDefinitions #OptionalDefaultParameterValueArguments
 
-//<Expects id="FS3211" status="warning">The default value does not have the same type as the argument. </Expects>
+
 //<Expects>The DefaultParameterValue attribute and any Optional attribute will be ignored.</Expects>
 //<Expects>Note: 'null' needs to be annotated with the correct type, e.g. 'DefaultParameterValue(null:obj)'.</Expects>
 

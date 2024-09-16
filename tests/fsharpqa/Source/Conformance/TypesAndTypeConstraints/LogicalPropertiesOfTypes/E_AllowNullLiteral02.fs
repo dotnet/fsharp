@@ -1,5 +1,5 @@
 // #Regression #Conformance #TypeConstraints 
-// Verify the [<AllowNullLiteral>] attribute is only valud on class and interface types
+// Verify the [<AllowNullLiteral>] attribute is only value on class and interface types
 
 //<Expects id="FS0934" span="(10,6-10,15)" status="error">Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute</Expects>
 //<Expects id="FS0934" span="(22,6-22,12)" status="error">Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute</Expects>

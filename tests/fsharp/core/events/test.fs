@@ -43,7 +43,7 @@ module EventTest2 =
     check "fewnew0" (typeof<SomeComponent>.GetEvent("Paint").GetRaiseMethod()) null
     check "fewnew0" (typeof<SomeComponent>.GetEvent("Paint").GetRemoveMethod().Name) "remove_Paint"
 
-module AbtsractEventTests =
+module AbstractEventTests =
 
 
     type ChannelChangedHandler = delegate of obj * int -> unit
@@ -202,7 +202,7 @@ module EventCombinators =
                               { new System.IDisposable with 
                                       member __.Dispose() = () }  }
 
-        // Obervers should ignore subsequent failures
+        // Observers should ignore subsequent failures
         let failTwice () = 
             { new IObservable<_> with  
                 member __.Subscribe(o:IObserver<_>) = 

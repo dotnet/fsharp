@@ -93,7 +93,7 @@ type TaskReporterTests() =
 
 // One File Tests
     // For the next two, add tasks to the task list more than once to ensure that
-    // hashing is occuring correctly   
+    // hashing is occurring correctly   
     [<Test>]
     member public this.``ErrorList.LanguageServiceErrorsProperlyCoalesced``() =  
         use errorReporter = CreateErrorReporter()
@@ -174,7 +174,7 @@ type TaskReporterTests() =
         AssertEqual (errorReporter.TaskListProvider.Count()) 2
         ()
         
-    /// Ensure that text line markers are only created when a task is output to the the task list
+    /// Ensure that text line markers are only created when a task is output to the task list
     [<Test>]
     member public this.``ErrorList.TextLineMarkersCreatedOnce``() =  
         use errorReporter = CreateErrorReporter()

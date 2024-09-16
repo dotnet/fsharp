@@ -19,7 +19,7 @@ SigFile
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
                             PreXmlDoc ((6,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, None, (6,4--8,35),
+                            Single None, None, (6,4--8,35),
                             { LeadingKeyword = Member (6,4--6,10)
                               InlineKeyword = None
                               WithKeyword = Some (7,20--7,24)

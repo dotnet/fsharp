@@ -23,7 +23,7 @@
             // TODO: Shall we assume that it's already been built, or build it every time we debug?
             "preLaunchTask": "${defaultBuildTask}",
             // If you have changed target frameworks, make sure to update the program p
-            "program": "${workspaceFolder}/artifacts/bin/fsi/Debug/net8.0/fsi.dll",
+            "program": "${workspaceFolder}/artifacts/bin/fsi/Debug/net9.0/fsi.dll",
             "args": [
                 "${input:fsiArgsPrompt}"
             ],
@@ -53,7 +53,7 @@
             // TODO: Shall we assume that it's already been built, or build it every time we debug?
             "preLaunchTask": "${defaultBuildTask}",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/artifacts/bin/fsc/Debug/net8.0/fsc.dll",
+            "program": "${workspaceFolder}/artifacts/bin/fsc/Debug/net9.0/fsc.dll",
             "args": [
                 "--targetprofile:netstandard",
                 "--simpleresolution",

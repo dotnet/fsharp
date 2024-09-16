@@ -36,7 +36,7 @@ let BuildDisposableCleanup tcVal (g: TcGlobals) infoReader m (v: Val) =
     else
         let disposeObjVar, disposeObjExpr = mkCompGenLocal m "objectToDispose" g.system_IDisposable_ty
         let disposeExpr, _ = BuildMethodCall tcVal g infoReader.amap PossiblyMutates m false disposeMethod NormalValUse [] [disposeObjExpr] [] None
-        let inputExpr = mkCoerceExpr(exprForVal v.Range v, g.obj_ty, m, v.Type)
+        let inputExpr = mkCoerceExpr(exprForVal v.Range v, g.obj_ty_ambivalent, m, v.Type)
         mkIsInstConditional g m g.system_IDisposable_ty inputExpr disposeObjVar disposeExpr (mkUnit g m)
 
 let mkCallCollectorMethod tcVal (g: TcGlobals) infoReader m name collExpr args =
@@ -373,60 +373,70 @@ module Array =
         else any ilTy
 
     /// Makes the equivalent of an inlined call to Array.map.
-    let mkMap g m (mBody, _spFor, _spIn, mFor, mIn, spInWhile) srcArray srcIlTy destIlTy overallElemTy loopVal body =
-        let len = mkLdlen g mIn srcArray
-        let arrayTy = mkArrayType g overallElemTy
+    let mkMap g m (mBody, _spFor, _spIn, mFor, mIn, spInWhile) srcArray srcIlTy destIlTy overallElemTy (loopVal: Val) body =
+        mkCompGenLetIn m (nameof srcArray) (tyOfExpr g srcArray) srcArray (fun (_, srcArray) ->
+            let len = mkLdlen g mIn srcArray
+            let arrayTy = mkArrayType g overallElemTy
 
-        /// (# "newarr !0" type ('T) count : 'T array #)
-        let array =
-            mkAsmExpr
-                (
-                    [I_newarr (ILArrayShape.SingleDimensional, destIlTy)],
-                    [],
-                    [len],
-                    [arrayTy],
-                    m
+            /// (# "newarr !0" type ('T) count : 'T array #)
+            let array =
+                mkAsmExpr
+                    (
+                        [I_newarr (ILArrayShape.SingleDimensional, destIlTy)],
+                        [],
+                        [len],
+                        [arrayTy],
+                        m
+                    )
+
+            let ldelem = mkIlInstr g I_ldelem (fun ilTy -> I_ldelem_any (ILArrayShape.SingleDimensional, ilTy)) srcIlTy
+            let stelem = mkIlInstr g I_stelem (fun ilTy -> I_stelem_any (ILArrayShape.SingleDimensional, ilTy)) destIlTy
+
+            let mapping =
+                mkCompGenLetIn m (nameof array) arrayTy array (fun (_, array) ->
+                    mkCompGenLetMutableIn mFor "i" g.int32_ty (mkTypedZero g mIn g.int32_ty) (fun (iVal, i) ->
+                        let body =
+                            // If the loop val is used in the loop body,
+                            // rebind it to pull directly from the source array.
+                            // Otherwise, don't bother reading from the source array at all.
+                            let body =
+                                let freeLocals = (freeInExpr CollectLocals body).FreeLocals
+
+                                if freeLocals.Contains loopVal then
+                                    mkInvisibleLet mBody loopVal (mkAsmExpr ([ldelem], [], [srcArray; i], [loopVal.val_type], mBody)) body
+                                else
+                                    body
+
+                            // destArray[i] <- body srcArray[i]
+                            let setArrSubI = mkAsmExpr ([stelem], [], [array; i; body], [], mIn)
+
+                            // i <- i + 1
+                            let incrI = mkValSet mIn (mkLocalValRef iVal) (mkAsmExpr ([AI_add], [], [i; mkTypedOne g mIn g.int32_ty], [g.int32_ty], mIn))
+
+                            mkSequential mIn setArrSubI incrI
+
+                        let guard = mkILAsmClt g mFor i (mkLdlen g mFor array)
+
+                        let loop =
+                            mkWhile
+                                g
+                                (
+                                    spInWhile,
+                                    NoSpecialWhileLoopMarker,
+                                    guard,
+                                    body,
+                                    mIn
+                                )
+
+                        // while i < array.Length do <body> done
+                        // array
+                        mkSequential m loop array
+                    )
                 )
 
-        let ldelem = mkIlInstr g I_ldelem (fun ilTy -> I_ldelem_any (ILArrayShape.SingleDimensional, ilTy)) srcIlTy
-        let stelem = mkIlInstr g I_stelem (fun ilTy -> I_stelem_any (ILArrayShape.SingleDimensional, ilTy)) destIlTy
-
-        let mapping =
-            mkCompGenLetIn m (nameof array) arrayTy array (fun (_, array) ->
-                mkCompGenLetMutableIn mFor "i" g.int32_ty (mkTypedZero g mIn g.int32_ty) (fun (iVal, i) ->
-                    let body =
-                        // Rebind the loop val to pull directly from the source array.
-                        let body = mkInvisibleLet mBody loopVal (mkAsmExpr ([ldelem], [], [srcArray; i], [loopVal.val_type], mBody)) body
-
-                        // destArray[i] <- body srcArray[i]
-                        let setArrSubI = mkAsmExpr ([stelem], [], [array; i; body], [], mIn)
-
-                        // i <- i + 1
-                        let incrI = mkValSet mIn (mkLocalValRef iVal) (mkAsmExpr ([AI_add], [], [i; mkTypedOne g mIn g.int32_ty], [g.int32_ty], mIn))
-
-                        mkSequential mIn setArrSubI incrI
-
-                    let guard = mkILAsmClt g mFor i (mkLdlen g mFor array)
-
-                    let loop =
-                        mkWhile
-                            g
-                            (
-                                spInWhile,
-                                NoSpecialWhileLoopMarker,
-                                guard,
-                                body,
-                                mIn
-                            )
-
-                    // while i < array.Length do <body> done
-                    // array
-                    mkSequential m loop array
-                )
-            )
-
-        // Add a debug point at the `for`, before anything gets evaluated.
-        Expr.DebugPoint (DebugPointAtLeafExpr.Yes mFor, mapping)
+            // Add a debug point at the `for`, before anything gets evaluated.
+            Expr.DebugPoint (DebugPointAtLeafExpr.Yes mFor, mapping)
+        )
 
     /// Whether to check for overflow when converting a value to a native int.
     [<NoEquality; NoComparison>]
@@ -524,22 +534,49 @@ module Array =
                     )
             )
 
-/// f (); …; Seq.singleton x
-///
-/// E.g., in [for x in … do f (); …; yield x]
+/// Matches Seq.singleton and returns the body expression.
 [<return: Struct>]
-let (|SimpleSequential|_|) g expr : Expr voption =
+let (|SeqSingleton|_|) g expr : Expr voption =
+    match expr with
+    | ValApp g g.seq_singleton_vref (_, [body], _) -> ValueSome body
+    | _ -> ValueNone
+
+/// Matches the compiled representation of the mapping in
+///
+///     for … in … do f (); …; yield …
+///     for … in … do let … = … in yield …
+///     for … in … do f (); …; …
+///     for … in … do let … = … in …
+///
+/// i.e.,
+///
+///     f (); …; Seq.singleton …
+///     let … = … in Seq.singleton …
+[<return: Struct>]
+let (|SingleYield|_|) g expr : Expr voption =
     let rec loop expr cont =
         match expr with
-        | Expr.Sequential (expr1, DebugPoints (ValApp g g.seq_singleton_vref (_, [body], _), debug), kind, m) ->
-            ValueSome (cont (expr1, debug body, kind, m))
+        | Expr.Let (binding, DebugPoints (SeqSingleton g body, debug), m, frees) ->
+            ValueSome (cont (Expr.Let (binding, debug body, m, frees)))
+
+        | Expr.Let (binding, DebugPoints (body, debug), m, frees) ->
+            loop body (cont << fun body -> Expr.Let (binding, debug body, m, frees))
+
+        | Expr.Sequential (expr1, DebugPoints (SeqSingleton g body, debug), kind, m) ->
+            ValueSome (cont (Expr.Sequential (expr1, debug body, kind, m)))
 
         | Expr.Sequential (expr1, DebugPoints (body, debug), kind, m) ->
-            loop body (cont >> fun body -> Expr.Sequential (expr1, debug body, kind, m))
+            loop body (cont << fun body -> Expr.Sequential (expr1, debug body, kind, m))
+
+        | Expr.Match (debugPoint, mInput, decision, [|TTarget (boundVals, DebugPoints (SeqSingleton g body, debug), isStateVarFlags)|], mFull, exprType) ->
+            ValueSome (cont (Expr.Match (debugPoint, mInput, decision, [|TTarget (boundVals, debug body, isStateVarFlags)|], mFull, exprType)))
+
+        | SeqSingleton g body ->
+            ValueSome (cont body)
 
         | _ -> ValueNone
 
-    loop expr Expr.Sequential
+    loop expr id
 
 /// Extracts any let-bindings or sequential
 /// expressions that directly precede the specified mapping application, e.g.,
@@ -573,11 +610,9 @@ let gatherPrelude ((|App|_|) : _ -> _ voption) expr =
 
 /// The representation used for
 ///
-/// for … in … -> …
-///
-/// and
-///
-/// for … in … do yield …
+///     for … in … -> …
+///     for … in … do yield …
+///     for … in … do …
 [<return: Struct>]
 let (|SeqMap|_|) g =
     gatherPrelude (function
@@ -592,30 +627,41 @@ let (|SeqMap|_|) g =
 
 /// The representation used for
 ///
-/// for … in … do f (); …; yield …
+///     for … in … do f (); …; yield …
+///     for … in … do let … = … in yield …
+///     for … in … do f (); …; …
+///     for … in … do let … = … in …
 [<return: Struct>]
 let (|SeqCollectSingle|_|) g =
     gatherPrelude (function
-        | ValApp g g.seq_collect_vref ([ty1; _; ty2], [Expr.Lambda (valParams = [loopVal]; bodyExpr = SimpleSequential g body; range = mIn) as mapping; input], mFor) ->
+        | ValApp g g.seq_collect_vref ([ty1; _; ty2], [Expr.Lambda (valParams = [loopVal]; bodyExpr = DebugPoints (SingleYield g body, debug); range = mIn) as mapping; input], mFor) ->
             let spIn = match mIn.NotedSourceConstruct with NotedSourceConstruct.InOrTo -> DebugPointAtInOrTo.Yes mIn | _ -> DebugPointAtInOrTo.No
             let spFor = DebugPointAtBinding.Yes mFor
             let spInWhile = match spIn with DebugPointAtInOrTo.Yes m -> DebugPointAtWhile.Yes m | DebugPointAtInOrTo.No -> DebugPointAtWhile.No
             let ranges = body.Range, spFor, spIn, mFor, mIn, spInWhile
-            ValueSome (ty1, ty2, input, mapping, loopVal, body, ranges)
+            ValueSome (ty1, ty2, input, mapping, loopVal, debug body, ranges)
 
         | _ -> ValueNone)
 
 /// for … in … -> …
 /// for … in … do yield …
+/// for … in … do …
 /// for … in … do f (); …; yield …
+/// for … in … do let … = … in yield …
+/// for … in … do f (); …; …
+/// for … in … do let … = … in …
 [<return: Struct>]
 let (|SimpleMapping|_|) g expr =
     match expr with
     // for … in … -> …
     // for … in … do yield …
+    // for … in … do …
     | ValApp g g.seq_delay_vref (_, [Expr.Lambda (bodyExpr = DebugPoints (SeqMap g (cont, (ty1, ty2, input, mapping, loopVal, body, ranges)), debug))], _)
 
     // for … in … do f (); …; yield …
+    // for … in … do let … = … in yield …
+    // for … in … do f (); …; …
+    // for … in … do let … = … in …
     | ValApp g g.seq_delay_vref (_, [Expr.Lambda (bodyExpr = DebugPoints (SeqCollectSingle g (cont, (ty1, ty2, input, mapping, loopVal, body, ranges)), debug))], _) ->
         ValueSome (debug >> cont, (ty1, ty2, input, mapping, loopVal, body, ranges))
 
@@ -640,7 +686,7 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap ilTyForTy overallExpr
             match overallSeqExpr with
             // [for … in xs -> …] (* When xs is a list. *)
             | SimpleMapping g (cont, (_, _, List g list, _, loopVal, body, ranges)) when
-                g.langVersion.SupportsFeature LanguageFeature.LowerSimpleMappingsInComprehensionsToDirectCallsToMap
+                g.langVersion.SupportsFeature LanguageFeature.LowerSimpleMappingsInComprehensionsToFastLoops
                 ->
                 Some (cont (List.mkMap tcVal g amap m ranges list overallElemTy loopVal body))
 
@@ -669,7 +715,7 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap ilTyForTy overallExpr
             match overallSeqExpr with
             // [|for … in xs -> …|] (* When xs is an array. *)
             | SimpleMapping g (cont, (ty1, ty2, Array g array, _, loopVal, body, ranges)) when
-                g.langVersion.SupportsFeature LanguageFeature.LowerSimpleMappingsInComprehensionsToDirectCallsToMap
+                g.langVersion.SupportsFeature LanguageFeature.LowerSimpleMappingsInComprehensionsToFastLoops
                 ->
                 Some (cont (Array.mkMap g m ranges array (ilTyForTy ty1) (ilTyForTy ty2) overallElemTy loopVal body))
 

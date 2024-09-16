@@ -2,7 +2,7 @@
 // Union Types
 // Sample from spec - using #light (but with incorrect indentation)
 // Q: Why this warning is emitted twice?
-//<Expects id="FS0058" span="(9,1-9,2)" status="warning">Possible incorrect indentation: this token is offside of context started at position \(8:19\)\. Try indenting this token further or using standard formatting conventions</Expects>
+
 #light
 
 (* extra space *) type Message = 

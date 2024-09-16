@@ -22,8 +22,8 @@ open System
 open System.IO
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
-
 #if COMPILER
+open Internal.Utilities.Library
 
 /// Data representing joints in structured layouts of terms.  The representation
 /// of this data type is only for the consumption of formatting engines.
@@ -213,6 +213,7 @@ module internal TaggedText =
     val internal keywordInline: TaggedText
     val internal keywordModule: TaggedText
     val internal keywordNamespace: TaggedText
+    val internal keywordReturn: TaggedText
     val internal punctuationUnit: TaggedText
 
 type internal IEnvironment =
@@ -365,7 +366,7 @@ type internal FormatOptions =
     { FloatingPointFormat: string
       AttributeProcessor: string -> (string * string) list -> bool -> unit
 #if COMPILER  // FSharp.Core.dll: PrintIntercepts aren't used there
-      PrintIntercepts: (IEnvironment -> obj -> Layout option) list
+      PrintIntercepts: (IEnvironment -> objnull -> Layout option) list
       StringLimit: int
 #endif
       FormatProvider: IFormatProvider
@@ -394,7 +395,7 @@ module internal Display =
     val output_layout_tagged: options: FormatOptions -> writer: TaggedTextWriter -> layout: Layout -> unit
 #else
 
-    // Most functions aren't needed in FSharp.Core.dll, but we add one inernal entry for printf
+    // Most functions aren't needed in FSharp.Core.dll, but we add one internal entry for printf
     val anyToStringForPrintf:
         options: FormatOptions -> bindingFlags: System.Reflection.BindingFlags -> value: 'T * Type -> string
 #endif

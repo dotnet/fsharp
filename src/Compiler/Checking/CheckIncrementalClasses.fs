@@ -448,7 +448,7 @@ type IncrClassReprInfo =
         | InMethod(isStatic, methodVal, valReprInfo), _ -> 
             //dprintfn "Rewriting application of %s to be call to method %s" v.LogicalName methodVal.LogicalName
             let expr, exprTy = AdjustValForExpectedValReprInfo g m (mkLocalValRef methodVal) NormalValUse valReprInfo 
-            // Prepend the the type arguments for the class
+            // Prepend the type arguments for the class
             let tyargs = tinst @ tyargs 
             let thisArgs =
                 if isStatic then []

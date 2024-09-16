@@ -9,7 +9,7 @@ open FSharp.Test.Compiler
 module SequenceIteration =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/Expressions/ControlFlowExpressions/SequenceIteration)
-    //<Expects id="FS0025" span="(27,20-27,28)" status="warning">Incomplete pattern matches on this expression\. For example, the value 'None' may indicate a case not covered by the pattern\(s\)\.$</Expects>
+    
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_IncompleteMatchFor01.fs"|])>]
     let ``W_IncompleteMatchFor01_fs`` compilation =
         compilation

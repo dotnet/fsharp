@@ -252,7 +252,7 @@ let test () =
             """
 
     [<Fact>]
-    let ``Cannot take native address to get a nativeptr of an immmutable value`` () =
+    let ``Cannot take native address to get a nativeptr of an immutable value`` () =
         CompilerAssert.TypeCheckWithErrors
             """
 #nowarn "51"
@@ -283,9 +283,7 @@ type C() =
           .get instance int32& modreq([runtime]System.Runtime.InteropServices.InAttribute) Test/C::get_X()
         }"""
 
-        let verifyMethod = """.method public hidebysig specialname
-                instance int32& modreq([runtime]System.Runtime.InteropServices.InAttribute)
-                get_X() cil managed
+        let verifyMethod = """.method public hidebysig specialname instance int32& modreq([runtime]System.Runtime.InteropServices.InAttribute)  get_X() cil managed
         {
           .param [0]
           .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )"""
@@ -313,9 +311,7 @@ type C() =
           .get instance int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute) Test/C::get_X()
         }"""
 
-        let verifyMethod = """.method public hidebysig specialname
-                instance int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute)
-                get_X() cil managed
+        let verifyMethod = """.method public hidebysig specialname instance int32& modreq([netstandard]System.Runtime.InteropServices.InAttribute)  get_X() cil managed
         {
           .param [0]
           .custom instance void System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )"""
@@ -452,9 +448,7 @@ type C<'T>() =
     abstract X<'U> : unit -> inref<'U>
             """
 
-        let verifyMethod = """.method public hidebysig abstract virtual
-                instance !!U& modreq([runtime]System.Runtime.InteropServices.InAttribute)
-                X<U>() cil managed
+        let verifyMethod = """.method public hidebysig abstract virtual instance !!U& modreq([runtime]System.Runtime.InteropServices.InAttribute)  X<U>() cil managed
         {
           .param [0]
           .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )"""
@@ -481,9 +475,7 @@ type C =
           .get instance int32& modreq([runtime]System.Runtime.InteropServices.InAttribute) Test/C::get_X()
         }"""
 
-        let verifyMethod = """.method public hidebysig specialname abstract virtual
-                instance int32& modreq([runtime]System.Runtime.InteropServices.InAttribute)
-                get_X() cil managed
+        let verifyMethod = """.method public hidebysig specialname abstract virtual instance int32& modreq([runtime]System.Runtime.InteropServices.InAttribute)  get_X() cil managed
         {
           .param [0]
           .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )"""

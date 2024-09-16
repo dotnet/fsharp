@@ -9,7 +9,7 @@
 //     https://fsharp.org
 //     https://learn.microsoft.com/dotnet/articles/fsharp/
 //
-// @@@SeeDocumentaton|To see this tutorial in documentation form, see:@@@
+// @@@SeeDocumentation|To see this tutorial in documentation form, see:@@@
 //     https://learn.microsoft.com/dotnet/articles/fsharp/tour
 //
 // @@@LearnMoreAbout|To learn more about applied F# programming, use@@@
@@ -401,7 +401,7 @@ module Arrays =
     for word in array4 do
         printfn "word: %s" word
 
-    // @@@ArrayAssignment-Line1|You can modify the contents of an an array element by using the left arrow assignment operator.@@@
+    // @@@ArrayAssignment-Line1|You can modify the contents of an array element by using the left arrow assignment operator.@@@
     //
     // @@@ArrayAssignment-Line2|To learn more about this operator, see: https://learn.microsoft.com/dotnet/articles/fsharp/language-reference/values/index#mutable-variables@@@
     array2.[1] <- "WORLD!"
@@ -590,7 +590,7 @@ module DiscriminatedUnions =
         | Diamonds
         | Spades
 
-    /// @@@CardRank|A Disciminated Union can also be used to represent the rank of a playing card.@@@
+    /// @@@CardRank|A Discriminated Union can also be used to represent the rank of a playing card.@@@
     type Rank =
         /// @@@CardRankValue|Represents the rank of cards 2 .. 10@@@
         | Value of int
@@ -608,7 +608,7 @@ module DiscriminatedUnions =
               yield King ]
 
     /// @@@CardType-Line1|This is a record type that combines a Suit and a Rank.@@@
-    /// @@@CardType-Line2|It's common to use both Records and Disciminated Unions when representing data.@@@
+    /// @@@CardType-Line2|It's common to use both Records and Discriminated Unions when representing data.@@@
     type Card = { Suit: Suit; Rank: Rank }
 
     /// @@@ComputeFullDeck|This computes a list representing all the cards in the deck.@@@
@@ -662,7 +662,7 @@ module DiscriminatedUnions =
     // @@@PrintSingleCaseDu|Printing single-case DUs is simple with unwrapping functions.@@@
     printfn "Address: %s, Name: %s, and SSN: %d" (address |> unwrapAddress) (name |> unwrapName) (ssn |> unwrapSSN)
 
-    /// @@@DuRecursiveDef-Line1|Disciminated Unions also support recursive definitions.@@@
+    /// @@@DuRecursiveDef-Line1|Discriminated Unions also support recursive definitions.@@@
     ///
     /// @@@DuRecursiveDef-Line2|This represents a Binary Search Tree, with one case being the Empty tree,@@@
     /// @@@DuRecursiveDef-Line3|and the other being a Node with a value and two subtrees.@@@

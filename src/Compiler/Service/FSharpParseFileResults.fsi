@@ -47,7 +47,7 @@ type public FSharpParseFileResults =
 
     /// <summary>
     /// Given the position of an expression, attempts to find the range of the
-    /// '!' in a derefence operation of that expression, like:
+    /// '!' in a dereference operation of that expression, like:
     /// '!expr', '!(expr)', etc.
     /// </summary>
     member TryRangeOfRefCellDereferenceContainingPos: expressionPos: pos -> range option

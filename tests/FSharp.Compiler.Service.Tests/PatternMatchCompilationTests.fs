@@ -314,12 +314,12 @@ match box 1 with
 """
     assertHasSymbolUsages (List.map string ['a'..'j']) checkResults
     dumpDiagnostics checkResults |> shouldEqual [
-        "(5,34--5,35): The type 'obj' does not support the operator '+'"
-        "(5,32--5,33): The type 'obj' does not support the operator '+'"
-        "(7,45--7,46): The type 'obj' does not match the type 'uint64'"
-        "(7,43--7,44): The type 'obj' does not match the type 'uint64'"
-        "(8,43--8,44): The type 'obj' does not match the type 'int8'"
-        "(8,41--8,42): The type 'obj' does not match the type 'int8'"
+        "(5,34--5,35): The type 'objnull' does not support the operator '+'"
+        "(5,32--5,33): The type 'objnull' does not support the operator '+'"
+        "(7,45--7,46): The type 'objnull' does not match the type 'uint64'"
+        "(7,43--7,44): The type 'objnull' does not match the type 'uint64'"
+        "(8,43--8,44): The type 'objnull' does not match the type 'int8'"
+        "(8,41--8,42): The type 'objnull' does not match the type 'int8'"
         "(3,6--3,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
     ]
 
@@ -755,7 +755,7 @@ Some x |> eq<obj>
 """
     assertHasSymbolUsages (List.map string ['a'..'z']) checkResults
     dumpDiagnostics checkResults |> shouldEqual [
-        "(11,25--11,26): This expression was expected to have type\u001d    'int'    \u001dbut here has type\u001d    'obj'";
+        "(11,25--11,26): This expression was expected to have type\u001d    'int'    \u001dbut here has type\u001d    'objnull'";
         "(28,6--28,24): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
         "(26,6--26,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
         "(24,6--24,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
@@ -955,8 +955,8 @@ Some "" |> eq<int> // No more type checks after the above line?
 """
     assertHasSymbolUsages (Set.toList validSet) checkResults
     dumpDiagnostics checkResults |> shouldEqual [
-        "(27,2--27,14): This expression was expected to have type\u001d    'obj'    \u001dbut here has type\u001d    'struct ('a * 'b)'";
-        "(52,2--52,13): This expression was expected to have type\u001d    'obj'    \u001dbut here has type\u001d    'AAA'";
+        "(27,2--27,14): This expression was expected to have type\u001d    'objnull'    \u001dbut here has type\u001d    'struct ('a * 'b)'";
+        "(52,2--52,13): This expression was expected to have type\u001d    'objnull'    \u001dbut here has type\u001d    'AAA'";
         "(26,6--26,24): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
         "(24,6--24,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
         "(22,6--22,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
@@ -1037,10 +1037,10 @@ Some "" |> eq<int>
 """
     assertHasSymbolUsages (set ['a'..'y'] - set [ 'm'..'r' ] |> Set.map string |> Set.toList) checkResults
     dumpDiagnostics checkResults |> shouldEqual [
-        "(19,2--19,4): This expression was expected to have type\u001d    'obj'    \u001dbut here has type\u001d    'int'";
-        "(21,2--21,7): This expression was expected to have type\u001d    'obj'    \u001dbut here has type\u001d    'bool'";
-        "(23,2--23,6): This expression was expected to have type\u001d    'obj'    \u001dbut here has type\u001d    'bool'";
-        "(28,28--28,29): The type 'obj' does not match the type 'int'";
+        "(19,2--19,4): This expression was expected to have type\u001d    'objnull'    \u001dbut here has type\u001d    'int'";
+        "(21,2--21,7): This expression was expected to have type\u001d    'objnull'    \u001dbut here has type\u001d    'bool'";
+        "(23,2--23,6): This expression was expected to have type\u001d    'objnull'    \u001dbut here has type\u001d    'bool'";
+        "(28,28--28,29): The type 'objnull' does not match the type 'int'";
         "(41,5--41,6): The value or constructor 'm' is not defined.";
         "(42,5--42,6): The value or constructor 'n' is not defined.";
         "(43,5--43,6): The value or constructor 'o' is not defined.";

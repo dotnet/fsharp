@@ -21,11 +21,11 @@ SigFile
                      LongIdent (SynLongIdent ([int], [], [None])),
                      SynValInfo ([], SynArgInfo ([], false, None)), false, false,
                      PreXmlDoc ((6,4), FSharp.Compiler.Xml.XmlDocCollector),
-                     None, None, (6,4--6,15), { LeadingKeyword = Val (6,4--6,7)
-                                                InlineKeyword = None
-                                                WithKeyword = None
-                                                EqualsRange = None }),
-                  (6,4--6,15))], (4,0--6,15),
+                     Single None, None, (6,4--6,15),
+                     { LeadingKeyword = Val (6,4--6,7)
+                       InlineKeyword = None
+                       WithKeyword = None
+                       EqualsRange = None }), (6,4--6,15))], (4,0--6,15),
               { ModuleKeyword = Some (5,0--5,6)
                 EqualsRange = Some (5,14--5,15) })], PreXmlDocEmpty, [], None,
           (2,0--6,15), { LeadingKeyword = Namespace (2,0--2,9) })],

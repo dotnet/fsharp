@@ -3,9 +3,9 @@
 
 // Verify that 'null' is not a valid value for F# types
 
-//<Expects id="FS0043" status="error">The type 'int list' does not have 'null' as a proper value</Expects>
-//<Expects id="FS0043" status="error">The type 'DU' does not have 'null' as a proper value</Expects>
-//<Expects id="FS0043" status="error">The type 'RecType' does not have 'null' as a proper value</Expects>
+
+
+
 
 type RecType = {RTag1 : int * string; RTag2 : int list option}
 

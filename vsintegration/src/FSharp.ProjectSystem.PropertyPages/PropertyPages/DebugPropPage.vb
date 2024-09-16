@@ -375,7 +375,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
                 If action = VSLangProj.prjStartAction.prjStartActionProject Then
                     EnableControl(UseVSHostingProcess, True)
                 Else
-                    ' We don't want to enable this unless the the startup action is to start the project
+                    ' We don't want to enable this unless the startup action is to start the project
                     UseVSHostingProcess.Enabled = False
                 End If
             Finally
@@ -412,7 +412,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             If _enabled AndAlso StartActionGetValue() = VSLangProj.prjStartAction.prjStartActionProject Then
                 EnableControl(Me.UseVSHostingProcess, True)
             Else
-                ' We don't want to enable this unless the the startup action is to start the project
+                ' We don't want to enable this unless the startup action is to start the project
                 Me.UseVSHostingProcess.Enabled = False
             End If
         End Sub
@@ -476,7 +476,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
                 If StartActionGetValue() = VSLangProj.prjStartAction.prjStartActionProject Then
                     EnableControl(Me.UseVSHostingProcess, True)
                 Else
-                    ' We don't want to enable this unless the the startup action is to start the project
+                    ' We don't want to enable this unless the startup action is to start the project
                     Me.UseVSHostingProcess.Enabled = False
                 End If
 
@@ -572,10 +572,10 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             Select Case controlData.DispId
                 Case VsProjPropId.VBPROJPROPID_StartProgram
                     If rbStartProgram.Checked Then
-                        'DO NOT Validate file existance if we are remote debugging, as they are local to the remote machine
+                        'DO NOT Validate file existence if we are remote debugging, as they are local to the remote machine
                         If Not RemoteDebugEnabled.Checked Then
                             If Not File.Exists(StartProgram.Text) Then
-                                message = SR.GetString(SR.PropPage_ProgramNotExist)
+                                message = SR.GetString(SR.PropPage_ProgramNonexistent)
                                 Return ValidationResult.Warning
                             End If
                         End If

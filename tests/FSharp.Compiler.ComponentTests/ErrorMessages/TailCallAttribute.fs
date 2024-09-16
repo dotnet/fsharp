@@ -1722,3 +1722,22 @@ module M =
         |> withLangVersion80
         |> compile
         |> shouldSucceed
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Don't warn for tail rec call returning unit`` () =
+        """
+namespace N
+
+module M =
+
+    [<TailCall>]
+    let rec go (args: string list) =
+        match args with
+        | [] -> ()
+        | "--" :: _ -> ()
+        | arg :: args -> go args
+        """
+        |> FSharp
+        |> withLangVersion80
+        |> compile
+        |> shouldSucceed

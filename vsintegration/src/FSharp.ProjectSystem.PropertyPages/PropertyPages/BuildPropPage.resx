@@ -918,67 +918,67 @@
   <data name="&gt;&gt;rbWarningNone.ZOrder" xml:space="preserve">
     <value>13</value>
   </data>
-  <data name="txtSupressWarnings.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+  <data name="txtSuppressWarnings.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Left, Right</value>
   </data>
-  <data name="txtSupressWarnings.Location" type="System.Drawing.Point, System.Drawing">
+  <data name="txtSuppressWarnings.Location" type="System.Drawing.Point, System.Drawing">
     <value>355, 393</value>
   </data>
-  <data name="txtSupressWarnings.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+  <data name="txtSuppressWarnings.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>3, 3, 3, 11</value>
   </data>
-  <data name="txtSupressWarnings.Size" type="System.Drawing.Size, System.Drawing">
+  <data name="txtSuppressWarnings.Size" type="System.Drawing.Size, System.Drawing">
     <value>271, 31</value>
   </data>
-  <data name="txtSupressWarnings.TabIndex" type="System.Int32, mscorlib">
+  <data name="txtSuppressWarnings.TabIndex" type="System.Int32, mscorlib">
     <value>13</value>
   </data>
-  <data name="&gt;&gt;txtSupressWarnings.Name" xml:space="preserve">
-    <value>txtSupressWarnings</value>
+  <data name="&gt;&gt;txtSuppressWarnings.Name" xml:space="preserve">
+    <value>txtSuppressWarnings</value>
   </data>
-  <data name="&gt;&gt;txtSupressWarnings.Type" xml:space="preserve">
+  <data name="&gt;&gt;txtSuppressWarnings.Type" xml:space="preserve">
     <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;txtSupressWarnings.Parent" xml:space="preserve">
+  <data name="&gt;&gt;txtSuppressWarnings.Parent" xml:space="preserve">
     <value>overarchingTableLayoutPanel</value>
   </data>
-  <data name="&gt;&gt;txtSupressWarnings.ZOrder" xml:space="preserve">
+  <data name="&gt;&gt;txtSuppressWarnings.ZOrder" xml:space="preserve">
     <value>14</value>
   </data>
-  <data name="lblSupressWarnings.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+  <data name="lblSuppressWarnings.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Left</value>
   </data>
-  <data name="lblSupressWarnings.AutoSize" type="System.Boolean, mscorlib">
+  <data name="lblSuppressWarnings.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
-  <data name="lblSupressWarnings.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+  <data name="lblSuppressWarnings.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
     <value>NoControl</value>
   </data>
-  <data name="lblSupressWarnings.Location" type="System.Drawing.Point, System.Drawing">
+  <data name="lblSuppressWarnings.Location" type="System.Drawing.Point, System.Drawing">
     <value>23, 396</value>
   </data>
-  <data name="lblSupressWarnings.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+  <data name="lblSuppressWarnings.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>23, 3, 3, 11</value>
   </data>
-  <data name="lblSupressWarnings.Size" type="System.Drawing.Size, System.Drawing">
+  <data name="lblSuppressWarnings.Size" type="System.Drawing.Size, System.Drawing">
     <value>201, 25</value>
   </data>
-  <data name="lblSupressWarnings.TabIndex" type="System.Int32, mscorlib">
+  <data name="lblSuppressWarnings.TabIndex" type="System.Int32, mscorlib">
     <value>12</value>
   </data>
-  <data name="lblSupressWarnings.Text" xml:space="preserve">
+  <data name="lblSuppressWarnings.Text" xml:space="preserve">
     <value>&amp;Suppress warnings:</value>
   </data>
-  <data name="&gt;&gt;lblSupressWarnings.Name" xml:space="preserve">
-    <value>lblSupressWarnings</value>
+  <data name="&gt;&gt;lblSuppressWarnings.Name" xml:space="preserve">
+    <value>lblSuppressWarnings</value>
   </data>
-  <data name="&gt;&gt;lblSupressWarnings.Type" xml:space="preserve">
+  <data name="&gt;&gt;lblSuppressWarnings.Type" xml:space="preserve">
     <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="&gt;&gt;lblSupressWarnings.Parent" xml:space="preserve">
+  <data name="&gt;&gt;lblSuppressWarnings.Parent" xml:space="preserve">
     <value>overarchingTableLayoutPanel</value>
   </data>
-  <data name="&gt;&gt;lblSupressWarnings.ZOrder" xml:space="preserve">
+  <data name="&gt;&gt;lblSuppressWarnings.ZOrder" xml:space="preserve">
     <value>15</value>
   </data>
   <data name="cboWarningLevel.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
@@ -1309,7 +1309,7 @@
     <value>0</value>
   </data>
   <data name="overarchingTableLayoutPanel.LayoutSettings" type="System.Windows.Forms.TableLayoutSettings, System.Windows.Forms">
-    <value>&lt;?xml version="1.0" encoding="utf-16"?&gt;&lt;TableLayoutSettings&gt;&lt;Controls&gt;&lt;Control Name="chkPrefer32Bit" Row="7" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="outputTableLayoutPanel" Row="17" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="generalHeaderTableLayoutPanel" Row="0" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="treatWarningsAsErrorsTableLayoutPanel" Row="13" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="errorsAndWarningsTableLayoutPanel" Row="10" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="chkXMLDocumentationFile" Row="19" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="txtXMLDocumentationFile" Row="19" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="btnOutputPathBrowse" Row="18" RowSpan="1" Column="2" ColumnSpan="1" /&gt;&lt;Control Name="txtOutputPath" Row="18" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="lblOutputPath" Row="18" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="rbWarningAll" Row="16" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="rbWarningSpecific" Row="15" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="txtSpecificWarnings" Row="15" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="rbWarningNone" Row="14" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="txtSupressWarnings" Row="12" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="lblSupressWarnings" Row="12" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="cboWarningLevel" Row="11" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="lblWarningLevel" Row="11" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="cboPlatformTarget" Row="4" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="chkOptimizeCode" Row="8" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="chkTailcalls" Row="9" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="chkDefineTrace" Row="3" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="chkDefineDebug" Row="2" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="txtConditionalCompilationSymbols" Row="1" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="lblConditionalCompilationSymbols" Row="1" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="lblPlatformTarget" Row="4" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="txtOtherFlags" Row="6" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="lblOtherFlags" Row="6" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;/Controls&gt;&lt;Columns Styles="AutoSize,0,Percent,100,AutoSize,0" /&gt;&lt;Rows Styles="AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,Absolute,24,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,Absolute,16,Absolute,20" /&gt;&lt;/TableLayoutSettings&gt;</value>
+    <value>&lt;?xml version="1.0" encoding="utf-16"?&gt;&lt;TableLayoutSettings&gt;&lt;Controls&gt;&lt;Control Name="chkPrefer32Bit" Row="7" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="outputTableLayoutPanel" Row="17" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="generalHeaderTableLayoutPanel" Row="0" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="treatWarningsAsErrorsTableLayoutPanel" Row="13" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="errorsAndWarningsTableLayoutPanel" Row="10" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="chkXMLDocumentationFile" Row="19" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="txtXMLDocumentationFile" Row="19" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="btnOutputPathBrowse" Row="18" RowSpan="1" Column="2" ColumnSpan="1" /&gt;&lt;Control Name="txtOutputPath" Row="18" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="lblOutputPath" Row="18" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="rbWarningAll" Row="16" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="rbWarningSpecific" Row="15" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="txtSpecificWarnings" Row="15" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="rbWarningNone" Row="14" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="txtSuppressWarnings" Row="12" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="lblSuppressWarnings" Row="12" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="cboWarningLevel" Row="11" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="lblWarningLevel" Row="11" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="cboPlatformTarget" Row="4" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="chkOptimizeCode" Row="8" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="chkTailcalls" Row="9" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="chkDefineTrace" Row="3" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="chkDefineDebug" Row="2" RowSpan="1" Column="0" ColumnSpan="3" /&gt;&lt;Control Name="txtConditionalCompilationSymbols" Row="1" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="lblConditionalCompilationSymbols" Row="1" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="lblPlatformTarget" Row="4" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="txtOtherFlags" Row="6" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="lblOtherFlags" Row="6" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;/Controls&gt;&lt;Columns Styles="AutoSize,0,Percent,100,AutoSize,0" /&gt;&lt;Rows Styles="AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,Absolute,24,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,Absolute,16,Absolute,20" /&gt;&lt;/TableLayoutSettings&gt;</value>
   </data>
   <data name="chkDefineDebug.Location" type="System.Drawing.Point, System.Drawing">
     <value>23, 73</value>
