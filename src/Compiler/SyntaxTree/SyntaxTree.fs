@@ -332,7 +332,7 @@ type SynTypeConstraint =
 
     | WhereTyparSupportsNull of typar: SynTypar * range: range
 
-    | WhereTyparNotSupportsNull of genericName: SynTypar * range: range
+    | WhereTyparNotSupportsNull of genericName: SynTypar * range: range * trivia: SynTypeConstraintWhereTyparNotSupportsNullTrivia
 
     | WhereTyparIsComparable of typar: SynTypar * range: range
 
@@ -465,7 +465,7 @@ type SynType =
 
     | StaticConstantNamed of ident: SynType * value: SynType * range: range
 
-    | WithNull of innerType: SynType * ambivalent: bool * range: range
+    | WithNull of innerType: SynType * ambivalent: bool * range: range * trivia: SynTypeWithNullTrivia
 
     | Paren of innerType: SynType * range: range
 

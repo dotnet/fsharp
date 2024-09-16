@@ -838,7 +838,7 @@ module SyntaxTraversal =
                 | SynType.Fun(argType = ty1; returnType = ty2) -> [ ty1; ty2 ] |> List.tryPick (traverseSynType path)
                 | SynType.MeasurePower(ty, _, _)
                 | SynType.HashConstraint(ty, _)
-                | SynType.WithNull(ty, _, _)
+                | SynType.WithNull(innerType = ty)
                 | SynType.WithGlobalConstraints(ty, _, _)
                 | SynType.Array(_, ty, _) -> traverseSynType path ty
                 | SynType.StaticConstantNamed(ty1, ty2, _)
