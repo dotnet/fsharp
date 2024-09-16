@@ -13,9 +13,9 @@ ImplFile
                           (Paren
                              (WithNull
                                 (LongIdent (SynLongIdent ([string], [], [None])),
-                                 false, (2,6--2,19)), (2,5--2,20)), (2,2--2,20)),
-                        Null (2,23--2,27), (2,2--2,27),
-                        { BarRange = (2,21--2,22) }), None,
+                                 false, (2,6--2,19), { BarRange = (2,13--2,14) }),
+                              (2,5--2,20)), (2,2--2,20)), Null (2,23--2,27),
+                        (2,2--2,27), { BarRange = (2,21--2,22) }), None,
                      Const (Unit, (2,31--2,33)), (2,2--2,33), Yes,
                      { ArrowRange = Some (2,28--2,30)
                        BarRange = Some (2,0--2,1) })], (1,0--2,33),
