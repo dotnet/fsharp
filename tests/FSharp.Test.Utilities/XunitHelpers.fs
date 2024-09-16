@@ -31,10 +31,10 @@ module ParallelConsole =
     let private errorHolder = new AsyncLocal<TextWriter voption>()
 
     /// Redirects reads performed on different threads or async execution contexts to the relevant TextReader held by AsyncLocal.
-    type RedirectingTextReader(holder: AsyncLocal<TextReader voption>) =
+    type RedirectingTextReader(holder: AsyncLocal<TextReader voption>, defaultReader) =
         inherit TextReader()
 
-        let getValue() = holder.Value |> ValueOption.defaultValue TextReader.Null
+        let getValue() = holder.Value |> ValueOption.defaultValue defaultReader
 
         override _.Peek() = getValue().Peek()
         override _.Read() = getValue().Read()
@@ -42,10 +42,10 @@ module ParallelConsole =
         member _.Drop() = holder.Value <- ValueNone
 
     /// Redirects writes performed on different threads or async execution contexts to the relevant TextWriter held by AsyncLocal.
-    type RedirectingTextWriter(holder: AsyncLocal<TextWriter voption>) =
+    type RedirectingTextWriter(holder: AsyncLocal<TextWriter voption>, defaultWriter) =
         inherit TextWriter()
 
-        let getValue() = holder.Value |> ValueOption.defaultValue TextWriter.Null
+        let getValue() = holder.Value |> ValueOption.defaultValue defaultWriter
 
         override _.Encoding = Encoding.UTF8
         override _.Write(value: char) = getValue().Write(value)
@@ -55,9 +55,9 @@ module ParallelConsole =
         member _.Set (writer: TextWriter) = holder.Value <- ValueSome writer
         member _.Drop() = holder.Value <- ValueNone
 
-    let private localIn = new RedirectingTextReader(inHolder)
-    let private localOut = new RedirectingTextWriter(outHolder)
-    let private localError = new RedirectingTextWriter(errorHolder)
+    let private localIn = new RedirectingTextReader(inHolder, TextReader.Null)
+    let private localOut = new RedirectingTextWriter(outHolder, TextWriter.Null)
+    let private localError = new RedirectingTextWriter(errorHolder, TextWriter.Null)
 
     let installParallelRedirections() =
         Console.SetIn localIn
@@ -82,5 +82,5 @@ module ParallelConsole =
 type ParallelConsoleTestFramework(sink) =
     inherit XunitTestFramework(sink)
     do
-        MessageSink.installSink sink
+        // MessageSink.installSink sink
         ParallelConsole.installParallelRedirections()
