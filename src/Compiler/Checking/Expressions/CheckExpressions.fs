@@ -1010,6 +1010,13 @@ let TranslatePartialValReprInfo tps (PrelimValReprInfo (argsData, retData)) =
 // Members
 //-------------------------------------------------------------------------
 
+
+[<RequireQualifiedAccess>]
+type TcCanFail =
+    | IgnoreMemberResoutionError
+    | IgnoreAllErrors
+    | ReportAllErrors
+
 let TcAddNullnessToType (warn: bool) (cenv: cenv) (env: TcEnv) nullness innerTyC m =
     let g = cenv.g
     if g.langFeatureNullness then
@@ -4028,7 +4035,7 @@ let rec TcTyparConstraint ridx (cenv: cenv) newOk checkConstraints occ (env: TcE
     | SynTypeConstraint.WhereTyparSupportsNull(tp, m) ->
         TcSimpleTyparConstraint cenv env newOk tpenv tp m AddCxTypeUseSupportsNull
 
-    | SynTypeConstraint.WhereTyparNotSupportsNull(tp, m) ->
+    | SynTypeConstraint.WhereTyparNotSupportsNull(tp, m, _) ->
         if g.langFeatureNullness then
             TcSimpleTyparConstraint cenv env newOk tpenv tp m AddCxTypeDefnNotSupportsNull
         else
@@ -4472,7 +4479,7 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
         errorR(Error(FSComp.SR.parsInvalidLiteralInType(), m))
         NewErrorType (), tpenv
 
-    | SynType.WithNull(innerTy, ambivalent, m) ->
+    | SynType.WithNull(innerTy, ambivalent, m, _) ->
         let innerTyC, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.Yes env tpenv innerTy
         let nullness = if ambivalent then KnownAmbivalentToNull else KnownWithNull
         let tyWithNull = TcAddNullnessToType false cenv env nullness innerTyC m
@@ -7530,9 +7537,9 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
             let concatenableExprs = if canLower then concatenable [] fillExprs parts else []
 
             match concatenableExprs with
-            | [p1; p2; p3; p4] -> mkStaticCall_String_Concat4 g m p1 p2 p3 p4, tpenv
-            | [p1; p2; p3] -> mkStaticCall_String_Concat3 g m p1 p2 p3, tpenv
-            | [p1; p2] -> mkStaticCall_String_Concat2 g m p1 p2, tpenv
+            | [p1; p2; p3; p4] -> TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env m (fun () -> mkStaticCall_String_Concat4 g m p1 p2 p3 p4, tpenv)
+            | [p1; p2; p3] -> TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env m (fun () -> mkStaticCall_String_Concat3 g m p1 p2 p3, tpenv)
+            | [p1; p2] -> TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env m (fun () -> mkStaticCall_String_Concat2 g m p1 p2, tpenv)
             | [p1] -> p1, tpenv
             | _ ->
 
@@ -10869,7 +10876,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             // For all but attributes positioned at the return value, disallow implicitly
             // targeting the return value.
             let tgtEx = if isRet then enum 0 else AttributeTargets.ReturnValue
-            let attrs, _ = TcAttributesMaybeFailEx false cenv envinner tgt tgtEx attrs
+            let attrs, _ = TcAttributesMaybeFailEx TcCanFail.ReportAllErrors cenv envinner tgt tgtEx attrs
             let attrs: Attrib list = attrs
             if attrTgt = enum 0 && not (isNil attrs) then
                 for attr in attrs do
@@ -11131,7 +11138,7 @@ and TcAttributeTargetsOnLetBindings (cenv: cenv) env attrs overallPatTy overallE
         else
             AttributeTargets.ReturnValue ||| AttributeTargets.Field ||| AttributeTargets.Property
 
-    TcAttributesWithPossibleTargets false cenv env attrTgt attrs |> ignore
+    TcAttributesWithPossibleTargets TcCanFail.ReportAllErrors cenv env attrTgt attrs |> ignore
 
 and TcLiteral (cenv: cenv) overallTy env tpenv (attrs, synLiteralValExpr) =
 
@@ -11291,7 +11298,7 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
                 error(Error(FSComp.SR.tcAttributeIsNotValidForLanguageElement(), mAttr))
 
         match ResolveObjectConstructor cenv.nameResolver env.DisplayEnv mAttr ad ty with
-        | Exception _ when canFail -> [ ], true
+        | Exception _ when canFail = TcCanFail.IgnoreAllErrors || canFail = TcCanFail.IgnoreMemberResoutionError -> [ ], true
         | res ->
 
         let item = ForceRaise res
@@ -11396,11 +11403,11 @@ and TcAttributesMaybeFail canFail cenv env attrTgt synAttribs =
     TcAttributesMaybeFailEx canFail cenv env attrTgt (enum 0) synAttribs
 
 and TcAttributesCanFail cenv env attrTgt synAttribs =
-    let attrs, didFail = TcAttributesMaybeFail true cenv env attrTgt synAttribs
+    let attrs, didFail = TcAttributesMaybeFail TcCanFail.IgnoreAllErrors cenv env attrTgt synAttribs
     attrs, (fun () -> if didFail then TcAttributes cenv env attrTgt synAttribs else attrs)
 
 and TcAttributes cenv env attrTgt synAttribs =
-    TcAttributesMaybeFail false cenv env attrTgt synAttribs |> fst
+    TcAttributesMaybeFail TcCanFail.ReportAllErrors cenv env attrTgt synAttribs |> fst
 
 //-------------------------------------------------------------------------
 // TcLetBinding

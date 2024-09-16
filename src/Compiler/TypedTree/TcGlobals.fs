@@ -193,9 +193,7 @@ type TcGlobals(
     realsig: bool) =
 
   let v_langFeatureNullness = langVersion.SupportsFeature LanguageFeature.NullnessChecking
-
-  let v_renderNullness = checkNullness && v_langFeatureNullness
-
+  
   let v_knownWithNull =
       if v_langFeatureNullness then KnownWithNull else KnownAmbivalentToNull
 
@@ -1112,8 +1110,6 @@ type TcGlobals(
   member _.checkNullness = checkNullness
 
   member _.langFeatureNullness = v_langFeatureNullness
-
-  member _.renderNullnessAnnotations = v_renderNullness
 
   member _.knownWithNull = v_knownWithNull
 
