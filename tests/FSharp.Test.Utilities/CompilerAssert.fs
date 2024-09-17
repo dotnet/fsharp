@@ -343,7 +343,7 @@ module rec CompilerAssertHelpers =
 
         member x.ExecuteTestCase assemblyPath (deps: string[]) isFsx =
             // AppDomain isolates console.
-            ParallelConsole.installParallelRedirections()
+            ParallelConsole.installRedirections()
 
             AppDomain.CurrentDomain.add_AssemblyResolve(ResolveEventHandler(fun _ args ->
                 deps
@@ -650,6 +650,8 @@ module rec CompilerAssertHelpers =
         let timeout = 60000
         let exitCode, output, errors = Commands.executeProcess (Some fileName) arguments (Path.GetDirectoryName(outputFilePath)) timeout
         (exitCode, output |> String.concat "\n", errors |> String.concat "\n")
+
+    let Initialized = true
 
 open CompilerAssertHelpers
 

@@ -39,6 +39,66 @@ type FactForDESKTOPAttribute() =
         do base.Skip <- "NETCOREAPP is not supported runtime for this kind of test, it is intended for DESKTOP only"
     #endif
 
+module ParallelConsole =
+
+    let private inHolder = new AsyncLocal<TextReader voption>()
+    let private outHolder = new AsyncLocal<TextWriter voption>()
+    let private errorHolder = new AsyncLocal<TextWriter voption>()
+
+    /// Redirects reads performed on different threads or async execution contexts to the relevant TextReader held by AsyncLocal.
+    type RedirectingTextReader(holder: AsyncLocal<TextReader voption>, defaultReader) =
+        inherit TextReader()
+
+        let getValue() = holder.Value |> ValueOption.defaultValue defaultReader
+
+        override _.Peek() = getValue().Peek()
+        override _.Read() = getValue().Read()
+        member _.Set (reader: TextReader) = holder.Value <- ValueSome reader
+        member _.Drop() = holder.Value <- ValueNone
+
+    /// Redirects writes performed on different threads or async execution contexts to the relevant TextWriter held by AsyncLocal.
+    type RedirectingTextWriter(holder: AsyncLocal<TextWriter voption>, defaultWriter) =
+        inherit TextWriter()
+
+        let getValue() = holder.Value |> ValueOption.defaultValue defaultWriter
+
+        override _.Encoding = Encoding.UTF8
+        override _.Write(value: char) = getValue().Write(value)
+        override _.Write(value: string) = getValue().Write(value)
+        override _.WriteLine(value: string) = getValue().WriteLine(value)
+        member _.Value = getValue()
+        member _.Set (writer: TextWriter) = holder.Value <- ValueSome writer
+        member _.Drop() = holder.Value <- ValueNone
+
+    let private localIn = new RedirectingTextReader(inHolder, TextReader.Null)
+    let private localOut = new RedirectingTextWriter(outHolder, TextWriter.Null)
+    let private localError = new RedirectingTextWriter(errorHolder, TextWriter.Null)
+
+    let installRedirections() =
+        Console.SetIn localIn
+        Console.SetOut localOut
+        Console.SetError localError
+
+    do
+        installRedirections()
+
+    let Initialized = true
+
+    type Caputure(?input, ?error: TextWriter, ?output: TextWriter) =
+        do
+            input |> Option.iter localIn.Set
+            defaultArg output (new StringWriter()) |> localOut.Set
+            defaultArg error (new StringWriter()) |> localError.Set
+
+        member _.OutText = string localOut.Value
+        member _.ErrorText = string localError.Value
+
+        interface IDisposable with
+            member _.Dispose () =
+                localIn.Drop()
+                localOut.Drop()
+                localError.Drop()
+
 // This file mimics how Roslyn handles their compilation references for compilation testing
 module Utilities =
 

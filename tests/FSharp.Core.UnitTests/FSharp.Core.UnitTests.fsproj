@@ -26,10 +26,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <AssemblyAttribute Include="Xunit.TestFramework">
-      <_Parameter1>FSharp.Test.ParallelConsoleTestFramework</_Parameter1>
-      <_Parameter2>FSharp.Test.Utilities</_Parameter2>
-    </AssemblyAttribute>
+    <AssemblyAttribute Include="FSharp.Test.InitTestGlobals" />
   </ItemGroup>
 
   <PropertyGroup>
