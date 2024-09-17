@@ -24,6 +24,7 @@ type StartImmediateThreadInfo =
 type StartImmediateMessage =
     | GetThreadInfo of AsyncReplyChannel<StartImmediateThreadInfo>
 
+[<Collection(nameof FSharp.Test.DoNotRunInParallel)>]
 type MailboxProcessorType() =
 
     let getSimpleMailbox() =

@@ -74,13 +74,10 @@ module ParallelConsole =
     let private localOut = new RedirectingTextWriter(outHolder, TextWriter.Null)
     let private localError = new RedirectingTextWriter(errorHolder, TextWriter.Null)
 
-    let installRedirections() =
+    do
         Console.SetIn localIn
         Console.SetOut localOut
         Console.SetError localError
-
-    do
-        installRedirections()
 
     let Initialized = true
 

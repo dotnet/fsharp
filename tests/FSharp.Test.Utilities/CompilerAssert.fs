@@ -298,6 +298,8 @@ and Compilation =
 
 module rec CompilerAssertHelpers =
 
+    let Initialized = true
+
     let UseTransparentCompiler =
         FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically ||
         not (String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TEST_TRANSPARENT_COMPILER")))
@@ -342,8 +344,8 @@ module rec CompilerAssertHelpers =
         inherit MarshalByRefObject()
 
         member x.ExecuteTestCase assemblyPath (deps: string[]) isFsx =
-            // AppDomain isolates console.
-            ParallelConsole.installRedirections()
+            // AppDomain isolates static classes.
+            ParallelConsole.Initialized |> ignore
 
             AppDomain.CurrentDomain.add_AssemblyResolve(ResolveEventHandler(fun _ args ->
                 deps
@@ -650,8 +652,6 @@ module rec CompilerAssertHelpers =
         let timeout = 60000
         let exitCode, output, errors = Commands.executeProcess (Some fileName) arguments (Path.GetDirectoryName(outputFilePath)) timeout
         (exitCode, output |> String.concat "\n", errors |> String.concat "\n")
-
-    let Initialized = true
 
 open CompilerAssertHelpers
 

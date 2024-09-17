@@ -952,8 +952,8 @@ type Basics() =
                     try
                         ranInitial.Set()
                         do! continueTask.WaitAsync()
-                        //do! Task.Yield()
                         ranNext.Set()
+                        do! Task.Yield()
                         failtest "uhoh"
                     finally
                         ranFinally <- ranFinally + 1
