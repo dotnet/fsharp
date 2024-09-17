@@ -1458,7 +1458,7 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
     // 'a :> obj ---> <solved> 
     let ndeep = ndeep + 1
     let g = csenv.g
-    if isObjTy g ty1 then CompleteD else 
+    if isObjNullTy g ty1 then CompleteD else 
     let canShortcut = not trace.HasTrace
     let sty1 = stripTyEqnsA csenv.g canShortcut ty1
     let sty2 = stripTyEqnsA csenv.g canShortcut ty2
@@ -1548,7 +1548,7 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
         // By now we know the type is not a variable type 
 
         // C :> obj ---> <solved> 
-        if isObjTy g ty1 then CompleteD else
+        if isObjNullTy g ty1 then CompleteD else
         
         let m = csenv.m
 
@@ -1594,7 +1594,7 @@ and SolveTypeSubsumesTypeKeepAbbrevs csenv ndeep m2 trace cxsln ty1 ty2 =
 
 and SolveTyparSubtypeOfType (csenv: ConstraintSolverEnv) ndeep m2 trace tp ty1 = 
     let g = csenv.g
-    if isObjTy g ty1 then CompleteD
+    if isObjNullTy g ty1 then CompleteD
     elif typeEquiv g ty1 (mkTyparTy tp) then CompleteD
     elif isSealedTy g ty1 then 
         SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace (mkTyparTy tp) ty1

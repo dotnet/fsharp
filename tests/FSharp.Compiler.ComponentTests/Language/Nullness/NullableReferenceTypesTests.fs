@@ -28,6 +28,33 @@ let getLength (x: string | null) = x.Length
     |> shouldFail
     |> withDiagnostics [Error 3261, Line 3, Col 36, Line 3, Col 44, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."]
 
+[<Fact>]
+let ``Does report warning on obj to static member`` () =
+    FSharp """
+type Test() =
+    member _.XX(o:obj) = ()
+    static member X(o: obj) = ()
+
+let x: obj | null = null
+Test.X x // warning expected
+let y2 = Test.X(x) // warning also expected
+Test.X(null:(obj|null)) // warning also expected
+let t = Test()
+t.XX(x)
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics 
+        [ Error 3261, Line 7, Col 8, Line 7, Col 9, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
+          Error 3261, Line 7, Col 1, Line 7, Col 9, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
+          Error 3261, Line 8, Col 17, Line 8, Col 18, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
+          Error 3261, Line 8, Col 10, Line 8, Col 19, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
+          Error 3261, Line 9, Col 8, Line 9, Col 23, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
+          Error 3261, Line 9, Col 1, Line 9, Col 24, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
+          Error 3261, Line 11, Col 6, Line 11, Col 7, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
+          Error 3261, Line 11, Col 1, Line 11, Col 8, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."]
+
     
 [<Fact>]
 let ``Cannot pass possibly null value to a strict function``() =

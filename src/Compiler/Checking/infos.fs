@@ -207,7 +207,7 @@ type OptionalArgInfo =
                     if isByrefTy g ty then
                         let ty = destByrefTy g ty
                         PassByRef (ty, analyze ty)
-                    elif isObjTy g ty then
+                    elif isObjTyAnyNullness g ty then
                         match ilParam.Marshal with
                         | Some(ILNativeType.IUnknown | ILNativeType.IDispatch | ILNativeType.Interface) -> Constant ILFieldInit.Null
                         | _ ->
@@ -296,7 +296,7 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
             | None ->
                 // Do a type-directed analysis of the type to determine the default value to pass.
                 // Similar rules as OptionalArgInfo.FromILParameter are applied here, except for the COM and byref-related stuff.
-                CallerSide (if isObjTy g ty then MissingValue else DefaultValue)
+                CallerSide (if isObjTyAnyNullness g ty then MissingValue else DefaultValue)
             | Some attr ->
                 let defaultValue = OptionalArgInfo.ValueOfDefaultParameterValueAttrib attr
                 match defaultValue with
@@ -382,7 +382,7 @@ let OptionalArgInfoOfProvidedParameter (amap: ImportMap) m (provParam : Tainted<
                 if isByrefTy g ty then
                     let ty = destByrefTy g ty
                     PassByRef (ty, analyze ty)
-                elif isObjTy g ty then MissingValue
+                elif isObjTyAnyNullness g ty then MissingValue
                 else  DefaultValue
 
             let paramTy = ImportProvidedType amap m (provParam.PApply((fun p -> p.ParameterType), m))

@@ -117,7 +117,7 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
 
     | _ -> 
         // F# reference types are subtypes of type 'obj' 
-        (isObjTy g ty1 && (canCoerce = CanCoerce || isRefTy g ty2)) 
+        (isObjTyAnyNullness g ty1 && (canCoerce = CanCoerce || isRefTy g ty2)) 
         ||
         (isAppTy g ty2 &&
          (canCoerce = CanCoerce || isRefTy g ty2) && 
