@@ -21,8 +21,7 @@ module SignatureHelpProvider =
             override doc.AppendDocumentation(_, _, _, _, _, _, _, _) = ()
         }
 
-    let checker =
-        FSharpChecker.Create(useTransparentCompiler = CompilerAssertHelpers.UseTransparentCompiler)
+    let checker = TestContext.checker
 
     let filePath = "C:\\test.fs"
 

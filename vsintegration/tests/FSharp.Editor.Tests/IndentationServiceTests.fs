@@ -12,8 +12,7 @@ open FSharp.Editor.Tests.Helpers
 open FSharp.Test
 
 type IndentationServiceTests() =
-    let checker =
-        FSharpChecker.Create(useTransparentCompiler = CompilerAssertHelpers.UseTransparentCompiler)
+    let checker = TestContext.checker
 
     let filePath = "C:\\test.fs"
 
