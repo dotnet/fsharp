@@ -90,7 +90,7 @@ type References() =
                 // add reference to Test.exe
                 let selectorData = new VSCOMPONENTSELECTORDATA(``type`` = VSCOMPONENTTYPE.VSCOMPONENTTYPE_File, bstrFile = exe)
                 let refContainer = GetReferenceContainerNode(project)
-                refContainer.AddReferenceFromSelectorData(selectorData) |> (fun x -> Assert.NotNull(x, "expected AddReference to succeed"))
+                refContainer.AddReferenceFromSelectorData(selectorData) |> (fun x -> Assert.NotNull(x))
                 // it should have succeeded (no throw)
                 ))
             )

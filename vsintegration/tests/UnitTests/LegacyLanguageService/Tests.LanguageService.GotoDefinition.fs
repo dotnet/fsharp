@@ -204,7 +204,7 @@ type UsingMSBuild()  =
 
             match result.ToOption() with 
             | Some(span,_) -> Assert.Equal(column',span.iStartIndex) 
-            | None ->  Assert.Fail <| sprintf "Expected to find the definition at column '%d' but GotoDefn failed." column'
+            | None -> failwithf "Expected to find the definition at column '%d' but GotoDefn failed." column'
 
         // Basic scenario on a provided Type
         let ``Type.BasicScenario``() = 

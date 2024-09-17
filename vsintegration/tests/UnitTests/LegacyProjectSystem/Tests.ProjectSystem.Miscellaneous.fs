@@ -450,19 +450,19 @@ type Miscellaneous() =
 
             // Verify Solution values
             let solutionDir = project.GetBuildMacroValue("SolutionDir")
-            Assert.NotNull (solutionDir, "SolutionDir is NULL")
+            Assert.NotNull(solutionDir)
             Assert.False ( (solutionDir = "*Undefined*"), "SolutionDir not defined")
 
             let solutionFileName = project.GetBuildMacroValue("SolutionFileName")
-            Assert.NotNull (solutionFileName, "SolutionFileName is null")
+            Assert.NotNull(solutionFileName)
             Assert.False ( (solutionFileName = "*Undefined*"), "SolutionFileName not defined")
 
             let solutionName = project.GetBuildMacroValue("SolutionName")
-            Assert.NotNull (solutionName, "SolutionName is null")
+            Assert.NotNull(solutionName)
             Assert.False ( (solutionName = "*Undefined*"), "SolutionName not defined")
 
             let solutionExt = project.GetBuildMacroValue("SolutionExt")
-            Assert.NotNull (solutionExt, "SolutionExt is null")
+            Assert.NotNull(solutionExt)
             Assert.False ( (solutionExt = "*Undefined*"), "SolutionExt not defined")
         )
      
@@ -654,7 +654,7 @@ type Miscellaneous() =
                 | [ _; fn ] -> // first file is AssemblyAttributes.fs
                     AssertEqual fileName fn
                 | _ ->
-                    sprintf "wring set of compile items %A" items |> Assert.Fail
+                    failwithf "wring set of compile items %A" items
                 ()
             finally
                 project.Close() |> ignore

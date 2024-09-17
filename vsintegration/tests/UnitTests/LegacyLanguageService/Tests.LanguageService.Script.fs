@@ -1505,22 +1505,22 @@ type UsingMSBuild() as this =
         use _guard = this.UsingNewVS()
         let providerAssemblyName = PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")
         let providerAssembly = System.Reflection.Assembly.LoadFrom providerAssemblyName
-        Assert.NotNull(providerAssembly, "provider assembly should not be null")
+        Assert.NotNull(providerAssembly)
         let providerCounters = providerAssembly.GetType("DummyProviderForLanguageServiceTesting.GlobalCounters")
-        Assert.NotNull(providerCounters, "provider counters module should not be null")
+        Assert.NotNull(providerCounters)
         let totalCreationsMeth = providerCounters.GetMethod("GetTotalCreations")
-        Assert.NotNull(totalCreationsMeth, "totalCreationsMeth should not be null")
+        Assert.NotNull(totalCreationsMeth)
         let totalDisposalsMeth = providerCounters.GetMethod("GetTotalDisposals")
-        Assert.NotNull(totalDisposalsMeth, "totalDisposalsMeth should not be null")
+        Assert.NotNull(totalDisposalsMeth)
         let checkConfigsMeth = providerCounters.GetMethod("CheckAllConfigsDisposed")
-        Assert.NotNull(checkConfigsMeth, "checkConfigsMeth should not be null")
+        Assert.NotNull(checkConfigsMeth)
 
         let providerCounters2 = providerAssembly.GetType("ProviderImplementation.ProvidedTypes.GlobalCountersForInvalidation")
-        Assert.NotNull(providerCounters2, "provider counters #2 module should not be null")
+        Assert.NotNull(providerCounters2)
         let totalInvalidationHandlersAddedMeth = providerCounters2.GetMethod("GetInvalidationHandlersAdded")
-        Assert.NotNull(totalInvalidationHandlersAddedMeth, "totalInvalidationHandlersAddedMeth should not be null")
+        Assert.NotNull(totalInvalidationHandlersAddedMeth)
         let totalInvalidationHandlersRemovedMeth = providerCounters2.GetMethod("GetInvalidationHandlersRemoved")
-        Assert.NotNull(totalInvalidationHandlersRemovedMeth, "totalInvalidationHandlersRemovedMeth should not be null")
+        Assert.NotNull(totalInvalidationHandlersRemovedMeth)
 
         let totalCreations() = totalCreationsMeth.Invoke(null, [| |]) :?> int
         let totalDisposals() = totalDisposalsMeth.Invoke(null, [| |]) :?> int
