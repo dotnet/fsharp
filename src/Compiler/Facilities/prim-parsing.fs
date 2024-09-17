@@ -14,7 +14,7 @@ exception Accept of obj
 
 [<Sealed>]
 type internal IParseState
-    (ruleStartPoss: Position[], ruleEndPoss: Position[], lhsPos: Position[], ruleValues: obj[], lexbuf: LexBuffer<char>) =
+    (ruleStartPoss: Position[], ruleEndPoss: Position[], lhsPos: Position[], ruleValues: objnull[], lexbuf: LexBuffer<char>) =
     member _.LexBuffer = lexbuf
 
     member _.InputRange index =
@@ -231,7 +231,7 @@ module internal Implementation =
     [<NoEquality; NoComparison>]
     [<Struct>]
     type ValueInfo =
-        val value: obj
+        val value: objnull
         val startPos: Position
         val endPos: Position
 
@@ -269,7 +269,7 @@ module internal Implementation =
         // The 100 here means a maximum of 100 elements for each rule
         let ruleStartPoss = (Array.zeroCreate 100: Position[])
         let ruleEndPoss = (Array.zeroCreate 100: Position[])
-        let ruleValues = (Array.zeroCreate 100: obj[])
+        let ruleValues = (Array.zeroCreate 100: objnull[])
         let lhsPos = (Array.zeroCreate 2: Position[])
         let reductions = tables.reductions
         let cacheSize = 7919 // the 1000'th prime

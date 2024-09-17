@@ -364,7 +364,9 @@ type ILFieldInit with
             | :? uint32 as i -> ILFieldInit.UInt32 i
             | :? int64 as i -> ILFieldInit.Int64 i
             | :? uint64 as i -> ILFieldInit.UInt64 i
-            | _ -> error(Error(FSComp.SR.infosInvalidProvidedLiteralValue(try !!v.ToString() with _ -> "?"), m))
+            | _ -> 
+                let txt = match v with | null -> "?" | v -> try !!v.ToString() with _ -> "?"
+                error(Error(FSComp.SR.infosInvalidProvidedLiteralValue(txt), m))
 
 
 /// Compute the OptionalArgInfo for a provided parameter.
