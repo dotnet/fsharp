@@ -213,7 +213,6 @@ type LanguageVersion(versionText) =
                 LanguageFeature.ParsedHashDirectiveArgumentNonQuotes, languageVersion90
                 LanguageFeature.EmptyBodiedComputationExpressions, languageVersion90
                 LanguageFeature.EnforceAttributeTargets, languageVersion90
-                LanguageFeature.ConsistentNowarnLineDirectiveInteraction, languageVersion90
 
                 // F# preview
                 LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion // not enabled because: https://github.com/dotnet/fsharp/issues/17509
