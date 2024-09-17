@@ -3,7 +3,6 @@
 %{
 open FSharp.Compiler.DiagnosticsLogger
 
-#nowarn "64" // turn off warnings that type variables used in production annotations are instantiated to concrete type
 #nowarn "3261"  // the generated code would need to properly annotate nulls, e.g. changing System.Object to `obj|null`
 
 let dummy       = IfdefId("DUMMY")
