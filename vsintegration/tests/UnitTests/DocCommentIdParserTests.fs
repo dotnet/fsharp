@@ -1,12 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-[<NUnit.Framework.TestFixture>]
+
 module Tests.ServiceAnalysis.DocCommentIdParser
 
 open Xunit
 open Microsoft.VisualStudio.FSharp.Editor
-
-
-
 
 [<Fact>]
 let ``Test DocCommentId parser``() =

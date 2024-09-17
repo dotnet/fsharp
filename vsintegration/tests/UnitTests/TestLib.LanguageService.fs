@@ -4,7 +4,7 @@ namespace UnitTests.TestLib.LanguageService
 
 open System
 open System.Reflection
-open NUnit.Framework
+open Xunit
 open System.Diagnostics
 open System.IO
 open Salsa.Salsa
@@ -367,14 +367,7 @@ type LanguageServiceBaseTests() =
 
         GlobalFunctions.AddAssemblyReference(proj, ref)
 
-    /// Called per test run
-#if NUNIT_V2
-    [<TestFixtureSetUp>]
-    member this.TestFixtureSetUp() =
-#else
-    [<OneTimeSetUp>]
     member this.Init() =
-#endif
         let AssertNotAssemblyNameContains(a:System.Reflection.Assembly, text1:string, text2:string) = 
             let fullname = sprintf "%A" a
             if fullname.Contains(text1) && fullname.Contains(text2) then
@@ -399,13 +392,7 @@ type LanguageServiceBaseTests() =
         defaultSolution <- GlobalFunctions.CreateSolution(defaultVS)
         cache.Clear()
 
-#if NUNIT_V2
-    [<TestFixtureTearDown>]
-    member this.Shutdown() =
-#else
-    [<OneTimeTearDown>]
     member this.Cleanup() =
-#endif
         if box currentVS <> box defaultVS then
             failwith "LanguageServiceBaseTests.Shutdown was called when 'active' instance of VS is not 'default' one - this may denote that tests contains errors"
         
@@ -424,8 +411,6 @@ type LanguageServiceBaseTests() =
                 currentVS <- defaultVS }
 
 
-    /// Called per test
-    [<SetUp>]
     member this.Setup() =
         if box currentVS <> box defaultVS then
             failwith "LanguageServiceBaseTests.Setup was called when 'active' instance of VS is not 'default' one - this may denote that tests contains errors"
@@ -439,8 +424,6 @@ type LanguageServiceBaseTests() =
         testStopwatch.Start()
         ()
         
-    /// Called per test
-    [<TearDown>]
     member this.TearDown() =
 
 

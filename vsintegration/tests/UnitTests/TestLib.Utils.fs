@@ -4,7 +4,7 @@ namespace UnitTests.TestLib.Utils
 
 open System
 open System.IO
-open NUnit.Framework
+open NUnit
 open Microsoft.VisualStudio
 
 module Asserts =

@@ -353,14 +353,9 @@ type Miscellaneous() =
                    ()
                ))
 
-#if NUNIT_V2
-    [<Fact>][<ExpectedException (typeof<ClassLibraryCannotBeStartedDirectlyException>)>]
-    member public this.``DebuggingDLLFails``() = this.``DebuggingDLLFailsFunc``()
-#else
     [<Fact>]
     member public this.``DebuggingDLLFails``() =
         Assert.Throws<ClassLibraryCannotBeStartedDirectlyException>((fun () -> this.``DebuggingDLLFailsFunc``()))
-#endif
 
     [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``DebuggingEXESucceeds``() =
