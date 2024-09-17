@@ -395,29 +395,6 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     }
 }
 
-function TestSolutionUsingMSBuild([string] $testSolution, [string] $targetFramework) {
-    $dotnetPath = InitializeDotNetCli
-    $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
-    $solutionName = [System.IO.Path]::GetFileNameWithoutExtension($testSolution)
-    # $testLogPath = "$ArtifactsDir\TestResults\$configuration\${solutionName}_$targetFramework.xml"
-    $testBinLogPath = "$LogDir\${solutionName}_$targetFramework.binlog"
-    $args = "test $testSolution -c $configuration -f $targetFramework /bl:$testBinLogPath"
-    $args += " --blame --results-directory $ArtifactsDir\TestResults\$configuration -p:vstestusemsbuildoutput=false"
-    $args += " --blame-hang-timeout 60sec"
-    # $args += " --logger ""nunit;LogFilePath=$testLogPath"""
-
-    if (-not $noVisualStudio -or $norestore) {
-        $args += " --no-restore"
-    }
-
-    if (-not $noVisualStudio) {
-        $args += " --no-build"
-    }
-
-    Write-Host("$args")
-    Exec-Console $dotnetExe $args
-}
-
 function Prepare-TempDir() {
     Copy-Item (Join-Path $RepoRoot "tests\Resources\Directory.Build.props") $TempDir
     Copy-Item (Join-Path $RepoRoot "tests\Resources\Directory.Build.targets") $TempDir
@@ -612,11 +589,31 @@ try {
     $script:BuildMessage = "Failure running tests"
 
     if ($testCoreClr) {
-        TestSolutionUsingMSBuild -testSolution "$RepoRoot\FSharp.sln" -targetFramework $script:coreclrTargetFramework
+        $bgJob = TestUsingMSBuild -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $script:coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\" -asBackgroundJob $true
+
+        TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $script:coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\"
+        TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $script:coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Service.Tests\"
+        TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $script:coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Private.Scripting.UnitTests\"
+        TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $script:coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Build.UnitTests\"
+        TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $script:coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Core.UnitTests\"
+
+        # Collect output from  background jobs
+        Wait-job $bgJob | out-null
+        Receive-Job $bgJob -ErrorAction Stop
     }
 
     if ($testDesktop) {
-        TestSolutionUsingMSBuild -testSolution "$RepoRoot\FSharp.sln" -targetFramework $script:desktopTargetFramework
+        $bgJob = TestUsingMSBuild -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\" -asBackgroundJob $true
+
+        TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\"
+        TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Service.Tests\"
+        TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $script:desktopTargetFramework  -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Private.Scripting.UnitTests\"
+        TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Build.UnitTests\"
+        TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Core.UnitTests\"
+
+        # Collect output from  background jobs
+        Wait-job $bgJob | out-null
+        Receive-Job $bgJob -ErrorAction Stop
     }
 
     if ($testFSharpQA) {
