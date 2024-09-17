@@ -13,6 +13,7 @@ open FSharp.Compiler.Diagnostics
 
 open Xunit
 
+open FSharp.Test
 open FSharp.Test.ProjectGeneration
 open FSharp.Test.ProjectGeneration.Helpers
 open System.IO
@@ -1064,10 +1065,8 @@ type private LoadClosureTestShim(currentFileSystem: IFileSystem) =
                 ?shouldShadowCopy = shouldShadowCopy
             )
 
-[<CollectionDefinition(nameof FileSystemMutatingCollection, DisableParallelization = true)>]
-type FileSystemMutatingCollection = class end
-
-[<Collection(nameof FileSystemMutatingCollection)>]
+// Because it is mutating FileSystem!
+[<Collection(nameof DoNotRunInParallel)>]
 module TestsMutatingFileSystem =
     
     [<Theory>]

@@ -16,10 +16,8 @@ type RunWithContinuationsTest_WhatToDo =
     | Cancel
     | Throw
 
-[<CollectionDefinition(nameof NotThreadSafeCollection, DisableParallelization = true)>]
-type NotThreadSafeCollection = class end
 
-[<Collection(nameof NotThreadSafeCollection)>]
+[<Collection(nameof FSharp.Test.DoNotRunInParallel)>]
 type AsyncType() =
 
     let ignoreSynchCtx f =

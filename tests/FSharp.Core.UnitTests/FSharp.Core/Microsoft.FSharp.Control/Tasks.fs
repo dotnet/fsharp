@@ -1205,7 +1205,7 @@ type Basics() =
         }
         |> ignore
 
-[<CollectionDefinition("BasicsNotInParallel", DisableParallelization = true)>]
+[<Collection(nameof FSharp.Test.DoNotRunInParallel)>]
 type BasicsNotInParallel() = 
 
     [<Fact; >]

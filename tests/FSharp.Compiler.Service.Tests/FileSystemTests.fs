@@ -26,10 +26,7 @@ module File2
 let B = File1.A + File1.A"""
 
 
-[<CollectionDefinition(nameof SequentialBecauseOfFileSystem, DisableParallelization = true)>]
-type SequentialBecauseOfFileSystem = class end
-
-[<Collection(nameof SequentialBecauseOfFileSystem)>]
+[<Collection(nameof DoNotRunInParallel)>]
 type internal MyFileSystem() =
     inherit DefaultFileSystem()
         static member FilesCache = dict [(fileName1, file1); (fileName2, file2)]
