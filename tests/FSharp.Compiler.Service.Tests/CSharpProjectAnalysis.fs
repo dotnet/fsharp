@@ -12,7 +12,7 @@ open TestFramework
 let internal getProjectReferences (content: string, dllFiles, libDirs, otherFlags) =
     let otherFlags = defaultArg otherFlags []
     let libDirs = defaultArg libDirs []
-    let base1 = tryCreateTemporaryFileName ()
+    let base1 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base1, ".dll")
     let fileName1 = Path.ChangeExtension(base1, ".fs")
     let projFileName = Path.ChangeExtension(base1, ".fsproj")

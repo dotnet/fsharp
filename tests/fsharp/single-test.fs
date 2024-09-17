@@ -7,6 +7,8 @@ open TestFramework
 open HandleExpects
 open FSharp.Compiler.IO
 
+let testConfig = testConfig __SOURCE_DIRECTORY__
+
 type Permutation =
 #if NETCOREAPP
     | FSC_NETCORE of optimized: bool * buildOnly: bool

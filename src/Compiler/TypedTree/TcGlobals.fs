@@ -185,7 +185,7 @@ type TcGlobals(
     checkNullness: bool,
     useReflectionFreeCodeGen: bool,
     // The helper to find system types amongst referenced DLLs
-    tryFindSysTypeCcuHelper,
+    tryFindSysTypeCcuHelper: string list -> string -> bool -> FSharp.Compiler.TypedTree.CcuThunk option,
     emitDebugInfoInQuotations: bool,
     noDebugAttributes: bool,
     pathMap: PathMap,
@@ -193,9 +193,7 @@ type TcGlobals(
     realsig: bool) =
 
   let v_langFeatureNullness = langVersion.SupportsFeature LanguageFeature.NullnessChecking
-
-  let v_renderNullness = checkNullness && v_langFeatureNullness
-
+  
   let v_knownWithNull =
       if v_langFeatureNullness then KnownWithNull else KnownAmbivalentToNull
 
@@ -215,11 +213,9 @@ type TcGlobals(
   let mk_MFCompilerServices_tcref ccu n = mkNonLocalTyconRef2 ccu CompilerServicesPath n
   let mk_MFControl_tcref          ccu n = mkNonLocalTyconRef2 ccu ControlPathArray n
 
-  let tryFindSysTypeCcu path nm =
-    tryFindSysTypeCcuHelper path nm false
+  let tryFindSysTypeCcu path nm = tryFindSysTypeCcuHelper path nm false
 
-  let tryFindPublicSysTypeCcu path nm =
-    tryFindSysTypeCcuHelper path nm true
+  let tryFindPublicSysTypeCcu path nm = tryFindSysTypeCcuHelper path nm true
 
   let vara = Construct.NewRigidTypar "a" envRange
   let varb = Construct.NewRigidTypar "b" envRange
@@ -1089,11 +1085,17 @@ type TcGlobals(
         tryFindSysAttrib "System.Runtime.CompilerServices.RequiredMemberAttribute"
                               ] |> List.choose (Option.map (fun x -> x.TyconRef))
 
+  static member IsInEmbeddableKnownSet name = isInEmbeddableKnownSet name
+
   override _.ToString() = "<TcGlobals>"
+
+  member _.directoryToResolveRelativePaths = directoryToResolveRelativePaths
 
   member _.ilg = ilg
 
-  static member IsInEmbeddableKnownSet name = isInEmbeddableKnownSet name
+  member _.noDebugAttributes = noDebugAttributes
+
+  member _.tryFindSysTypeCcuHelper: string list -> string -> bool -> FSharp.Compiler.TypedTree.CcuThunk option = tryFindSysTypeCcuHelper
 
   member _.tryRemoveEmbeddedILTypeDefs () = [
       for key in embeddedILTypeDefs.Keys.OrderBy id do
@@ -1108,8 +1110,6 @@ type TcGlobals(
   member _.checkNullness = checkNullness
 
   member _.langFeatureNullness = v_langFeatureNullness
-
-  member _.renderNullnessAnnotations = v_renderNullness
 
   member _.knownWithNull = v_knownWithNull
 

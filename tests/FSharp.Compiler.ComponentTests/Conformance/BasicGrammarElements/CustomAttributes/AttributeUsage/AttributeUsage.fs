@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Conformance.BasicGrammarElements
 
@@ -875,7 +875,7 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
             (Error 948, Line 8, Col 6, Line 8, Col 24, "Interface types cannot be sealed")
             (Error 942, Line 14, Col 6, Line 14, Col 33, "Delegate types are always sealed")
         ]
-        
+
     // SOURCE= E_StructLayout01.fs	# E_StructLayout01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_StructLayout01.fs"|])>]
     let ``E_StructLayout01 9.0`` compilation =
@@ -890,7 +890,7 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
             (Error 937, Line 14, Col 6, Line 14, Col 8, "Only structs and classes without primary constructors may be given the 'StructLayout' attribute")
             (Error 937, Line 17, Col 6, Line 17, Col 8, "Only structs and classes without primary constructors may be given the 'StructLayout' attribute")
         ]
-    
+
     // SOURCE=E_StructLayout01.fs	# E_StructLayout01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_StructLayout01.fs"|])>]
     let ``E_StructLayout01 preview`` compilation =
@@ -905,3 +905,31 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
             (Error 937, Line 14, Col 6, Line 14, Col 8, "Only structs and classes without primary constructors may be given the 'StructLayout' attribute")
             (Error 937, Line 17, Col 6, Line 17, Col 8, "Only structs and classes without primary constructors may be given the 'StructLayout' attribute")
         ]
+
+#if NETCOREAPP
+    let missingConstructorRepro =
+        """
+open System.Text.Json.Serialization
+
+type internal ApplicationTenantJsonDerivedTypeAttribute () =
+    inherit JsonDerivedTypeAttribute (typeof<ApplicationTenant>, "a")
+
+// --------------------------------------------------------------------------
+// IMPORTANT: Read ReadMe before modifying this сlass and any referenced types
+// --------------------------------------------------------------------------
+and [<ApplicationTenantJsonDerivedType>]
+    ApplicationTenant
+    [<JsonConstructor>] (id, name, loginProvider, allowedDomains, authorizedTenants, properties) =
+
+    member _.Id = ""
+        """
+
+    [<InlineData("8.0")>]
+    [<InlineData("preview")>]
+    [<Theory>]
+    let ``Regression for - F# 9 compiler cannot find constructor for attribute`` langVersion =
+        FSharp missingConstructorRepro
+        |> withLangVersion langVersion
+        |> verifyCompile
+        |> shouldSucceed
+#endif

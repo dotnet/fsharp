@@ -12,7 +12,7 @@
     <IntermediateOutputPath>$(ArtifactsDir)\VSSetup.obj\$(Configuration)\$(MSBuildProjectName)</IntermediateOutputPath>
     <VsixBuildLocation>$(SetupRootFolder)..\artifacts\VSSetup\$(Configuration)</VsixBuildLocation>
     <InsertionDir>$(SetupRootFolder)..\artifacts\VSSetup\$(Configuration)\Insertion</InsertionDir>
-    <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
+    <ExcludeFromSourceOnlyBuild>true</ExcludeFromSourceOnlyBuild>
     <SetupProductArch>Neutral</SetupProductArch>
   </PropertyGroup>
 
