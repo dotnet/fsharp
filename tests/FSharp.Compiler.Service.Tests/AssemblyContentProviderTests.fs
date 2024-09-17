@@ -22,7 +22,8 @@ let private projectOptions : FSharpProjectOptions =
       UnresolvedReferences = None
       Stamp = None }
 
-let private checker = FSharpChecker.Create(useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
+// let private checker = FSharpChecker.Create(useTransparentCompiler = TestContext.UseTransparentCompiler)
+let private checker = TestContext.checker
 
 let private assertAreEqual (expected, actual) =
     if actual <> expected then

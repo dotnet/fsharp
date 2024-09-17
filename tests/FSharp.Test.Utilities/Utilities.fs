@@ -96,6 +96,21 @@ module ParallelConsole =
                 localOut.Drop()
                 localError.Drop()
 
+    let captureConsoleOutputs (func: unit -> unit) =
+
+        use captured = new Caputure()
+
+        let succeeded, exn =
+            try
+                func ()
+                true, None
+            with e ->
+                let errorMessage = if e.InnerException <> null then e.InnerException.ToString() else e.ToString()
+                Console.Error.Write errorMessage
+                false, Some e
+
+        succeeded, captured.OutText, captured.ErrorText, exn
+
 // This file mimics how Roslyn handles their compilation references for compilation testing
 module Utilities =
 

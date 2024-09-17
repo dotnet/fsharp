@@ -34,4 +34,4 @@ type InitTestGlobals() =
     override _.Before (_methodUnderTest: Reflection.MethodInfo): unit =
         // ensure static context is initialized
         ParallelConsole.Initialized |> ignore
-        CompilerAssertHelpers.Initialized |> ignore
+        TestContext.checker |> ignore

@@ -295,16 +295,16 @@ and Compilation =
                 | n -> Some n
             Compilation(sources, output, options, targetFramework, cmplRefs, name, outputDirectory)
 
+module TestContext =
 
-module rec CompilerAssertHelpers =
+    // useTransparentCompiler = true often gives "value cannot be null" in a couple of tests when starting a test run.
+    let UseTransparentCompiler = false
+        //FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically ||
+        //not (String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TEST_TRANSPARENT_COMPILER")))
 
-    let Initialized = true
+    let checker = FSharpChecker.Create(suggestNamesForErrors=true, useTransparentCompiler = UseTransparentCompiler)
 
-    let UseTransparentCompiler =
-        FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically ||
-        not (String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TEST_TRANSPARENT_COMPILER")))
-
-    let checker = FSharpChecker.Create(suggestNamesForErrors=true, useTransparentCompiler=UseTransparentCompiler)
+module CompilerAssertHelpers =
 
     // Unlike C# whose entrypoint is always string[] F# can make an entrypoint with 0 args, or with an array of string[]
     let mkDefaultArgs (entryPoint:MethodBase) : obj[] = [|
@@ -324,7 +324,7 @@ module rec CompilerAssertHelpers =
             else
                 entryPoint
         let args = mkDefaultArgs entryPoint
-        captureConsoleOutputs (fun () -> entryPoint.Invoke(Unchecked.defaultof<obj>, args) |> ignore)
+        ParallelConsole.captureConsoleOutputs (fun () -> entryPoint.Invoke(Unchecked.defaultof<obj>, args) |> ignore)
 
 #if NETCOREAPP
     let executeBuiltApp assembly deps isFsx =
@@ -410,7 +410,7 @@ module rec CompilerAssertHelpers =
 
         // Generate a response file, purely for diagnostic reasons.
         File.WriteAllLines(Path.ChangeExtension(outputFilePath, ".rsp"), args)
-        let errors, rc = checker.Compile args |> Async.RunImmediate
+        let errors, rc = TestContext.checker.Compile args |> Async.RunImmediate
         errors, rc, outputFilePath
 
     let compileDisposable (outputDirectory:DirectoryInfo) isExe options targetFramework nameOpt (sources:SourceCodeFileKind list) =
@@ -521,7 +521,30 @@ module rec CompilerAssertHelpers =
         finally
             try Directory.Delete(tempDir, true) with | _ -> ()
 
-    let rec evaluateReferences (outputPath:DirectoryInfo) (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : string[] * string list =
+    let rec compileCompilationAux outputDirectory (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * int * string) * string list =
+
+        let compilationRefs, deps = evaluateReferences outputDirectory disposals ignoreWarnings cmpl
+        let isExe, sources, options, targetFramework, name =
+            match cmpl with
+            | Compilation(sources, output, options, targetFramework, _, name, _) ->
+                (match output with | Module -> false | Library -> false | Exe -> true),           // isExe
+                sources,
+                options,
+                targetFramework,
+                name
+
+        let disposal, res = compileDisposable outputDirectory isExe (Array.append options compilationRefs) targetFramework name sources
+        disposals.Add(disposal)
+
+        let deps2 =
+            compilationRefs
+            |> Array.filter (fun x -> not (x.Contains("--staticlink")))
+            |> Array.map (fun x -> x.Replace("-r:", String.Empty))
+            |> List.ofArray
+
+        res, (deps @ deps2)
+
+    and evaluateReferences (outputPath:DirectoryInfo) (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : string[] * string list =
         match cmpl with
         | Compilation(_, _, _, _, cmpls, _, _) ->
             let compiledRefs =
@@ -560,29 +583,6 @@ module rec CompilerAssertHelpers =
 
             compilationRefs, deps
 
-    let compileCompilationAux outputDirectory (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * int * string) * string list =
-
-        let compilationRefs, deps = evaluateReferences outputDirectory disposals ignoreWarnings cmpl
-        let isExe, sources, options, targetFramework, name =
-            match cmpl with
-            | Compilation(sources, output, options, targetFramework, _, name, _) ->
-                (match output with | Module -> false | Library -> false | Exe -> true),           // isExe
-                sources,
-                options,
-                targetFramework,
-                name
-
-        let disposal, res = compileDisposable outputDirectory isExe (Array.append options compilationRefs) targetFramework name sources
-        disposals.Add(disposal)
-
-        let deps2 =
-            compilationRefs
-            |> Array.filter (fun x -> not (x.Contains("--staticlink")))
-            |> Array.map (fun x -> x.Replace("-r:", String.Empty))
-            |> List.ofArray
-
-        res, (deps @ deps2)
-
     let compileCompilation ignoreWarnings (cmpl: Compilation) f =
         let disposals = ResizeArray()
         try
@@ -604,21 +604,6 @@ module rec CompilerAssertHelpers =
 
         outputDirectory.Create()
         compileCompilationAux outputDirectory (ResizeArray()) ignoreWarnings cmpl
-
-    let captureConsoleOutputs (func: unit -> unit) =
-
-        use captured = new ParallelConsole.Caputure()
-
-        let succeeded, exn =
-            try
-                func ()
-                true, None
-            with e ->
-                let errorMessage = if e.InnerException <> null then e.InnerException.ToString() else e.ToString()
-                Console.Error.Write errorMessage
-                false, Some e
-
-        succeeded, captured.OutText, captured.ErrorText, exn
 
     let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) isFsx : (int * string * string) =
         let succeeded, stdout, stderr, _ = executeBuiltApp outputFilePath deps isFsx
@@ -677,7 +662,6 @@ type CompilerAssert private () =
             f (ILVerifier outputFilePath)
         )
 
-
     static let compileLibraryAndVerifyDebugInfoWithOptions options (expectedFile: string) (source: SourceCodeFileKind) =
         let options = [| yield! options; yield"--test:DumpDebugInfo" |]
         compile false options source (fun (errors, _, outputFilePath) ->
@@ -699,8 +683,8 @@ Actual is in {debugInfoFile}
 Updated automatically, please check diffs in your pull request, changes must be scrutinized
 """
         )
-
-    static member Checker = checker
+    
+    static member Checker = TestContext.checker
 
     static member DefaultProjectOptions = defaultProjectOptions
 
@@ -761,7 +745,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         CompilerAssert.Execute(cmpl, newProcess = true, onOutput = (fun output -> Assert.AreEqual(expectedOutput, output, sprintf "'%s' = '%s'" expectedOutput output)))  
 
     static member Pass (source: string) =
-        let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions TargetFramework.Current) |> Async.RunImmediate
+        let parseResults, fileAnswer = TestContext.checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions TargetFramework.Current) |> Async.RunImmediate
 
         Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
 
@@ -775,7 +759,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         let defaultOptions = defaultProjectOptions TargetFramework.Current
         let options = { defaultOptions with OtherOptions = Array.append options defaultOptions.OtherOptions}
 
-        let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, options) |> Async.RunImmediate
+        let parseResults, fileAnswer = TestContext.checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, options) |> Async.RunImmediate
 
         Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
 
@@ -789,7 +773,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         let absoluteSourceFile = System.IO.Path.Combine(sourceDirectory, sourceFile)
         let parseResults, fileAnswer =
             let defaultOptions = defaultProjectOptions TargetFramework.Current
-            checker.ParseAndCheckFileInProject(
+            TestContext.checker.ParseAndCheckFileInProject(
                 sourceFile,
                 0,
                 SourceText.ofString (File.ReadAllText absoluteSourceFile),
@@ -820,7 +804,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         let errors =
             let parseResults, fileAnswer =
                 let defaultOptions = defaultProjectOptions TargetFramework.Current
-                checker.ParseAndCheckFileInProject(
+                TestContext.checker.ParseAndCheckFileInProject(
                     name,
                     0,
                     SourceText.ofString source,
@@ -846,7 +830,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         let errors =
             let parseResults, fileAnswer =
                 let defaultOptions = defaultProjectOptions TargetFramework.Current
-                checker.ParseAndCheckFileInProject(
+                TestContext.checker.ParseAndCheckFileInProject(
                     "test.fs",
                     0,
                     SourceText.ofString source,
@@ -867,7 +851,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
     static member ParseAndTypeCheck(options, name, source: string) =
         let parseResults, fileAnswer =
             let defaultOptions = defaultProjectOptionsForFilePath name TargetFramework.Current
-            checker.ParseAndCheckFileInProject(
+            TestContext.checker.ParseAndCheckFileInProject(
                 name,
                 0,
                 SourceText.ofString source,
@@ -890,7 +874,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         let errors =
             let parseResults, fileAnswer =
                 let defaultOptions = defaultProjectOptions TargetFramework.Current
-                checker.ParseAndCheckFileInProject(
+                TestContext.checker.ParseAndCheckFileInProject(
                     "test.fs",
                     0,
                     SourceText.ofString source,
@@ -1044,7 +1028,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
             { FSharpParsingOptions.Default with
                 SourceFiles = [| sourceFileName |]
                 LangVersionText = langVersion }
-        checker.ParseFile(sourceFileName, SourceText.ofString source, parsingOptions) |> Async.RunImmediate
+        TestContext.checker.ParseFile(sourceFileName, SourceText.ofString source, parsingOptions) |> Async.RunImmediate
 
     static member ParseWithErrors (source: string, ?langVersion: string) = fun expectedParseErrors ->
         let parseResults = CompilerAssert.Parse (source, ?langVersion=langVersion)
