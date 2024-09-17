@@ -261,7 +261,48 @@ type LanguageServiceBaseTests() =
     // Timings ----------------------------------------------------------------------------- 
     let stopWatch = new Stopwatch()
     let ResetStopWatch() = stopWatch.Reset(); stopWatch.Start()
-               
+      
+
+    let Init() =
+        let AssertNotAssemblyNameContains(a:System.Reflection.Assembly, text1:string, text2:string) = 
+            let fullname = sprintf "%A" a
+            if fullname.Contains(text1) && fullname.Contains(text2) then
+                // Can't throw an exception here because its in an event handler.
+                System.Diagnostics.Debug.Assert(false, sprintf "Unexpected: loaded assembly '%s' to not contain '%s' and '%s'" fullname text1 text2)
+
+        // Under .NET 4.0 we don't allow 3.5.0.0 assemblies
+        let AssertNotBackVersionAssembly(args:AssemblyLoadEventArgs) =
+
+            // We're worried about loading these when running against .NET 4.0:
+            // Microsoft.Build.Tasks.v3.5, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+            // Microsoft.Build.Utilities.v3.5, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+            AssertNotAssemblyNameContains(args.LoadedAssembly,"Microsoft.Build", "Version=3.5.0.0") 
+            ()
+        AppDomain.CurrentDomain.AssemblyLoad.Add AssertNotBackVersionAssembly
+
+        UIStuff.SetupSynchronizationContext()
+
+        defaultVS <- ops.CreateVisualStudio()
+        currentVS <- defaultVS
+        
+        defaultSolution <- GlobalFunctions.CreateSolution(defaultVS)
+        cache.Clear()
+
+    do
+        Init()
+
+        if box currentVS <> box defaultVS then
+            failwith "LanguageServiceBaseTests.Setup was called when 'active' instance of VS is not 'default' one - this may denote that tests contains errors"
+        
+        // reset state of default VS instance that can be shared among the tests
+        ShiftKeyUp(currentVS)
+        ops.CleanInvisibleProject(currentVS)
+
+        ResetStopWatch()
+        testStopwatch.Reset()
+        testStopwatch.Start()
+        ()
+
     member internal _.VsOpts
         with set op = ops <- op
     
@@ -367,37 +408,13 @@ type LanguageServiceBaseTests() =
 
         GlobalFunctions.AddAssemblyReference(proj, ref)
 
-    member this.Init() =
-        let AssertNotAssemblyNameContains(a:System.Reflection.Assembly, text1:string, text2:string) = 
-            let fullname = sprintf "%A" a
-            if fullname.Contains(text1) && fullname.Contains(text2) then
-                // Can't throw an exception here because its in an event handler.
-                System.Diagnostics.Debug.Assert(false, sprintf "Unexpected: loaded assembly '%s' to not contain '%s' and '%s'" fullname text1 text2)
-
-        // Under .NET 4.0 we don't allow 3.5.0.0 assemblies
-        let AssertNotBackVersionAssembly(args:AssemblyLoadEventArgs) =
-
-            // We're worried about loading these when running against .NET 4.0:
-            // Microsoft.Build.Tasks.v3.5, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
-            // Microsoft.Build.Utilities.v3.5, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
-            AssertNotAssemblyNameContains(args.LoadedAssembly,"Microsoft.Build", "Version=3.5.0.0") 
-            ()
-        AppDomain.CurrentDomain.AssemblyLoad.Add AssertNotBackVersionAssembly
-
-        UIStuff.SetupSynchronizationContext()
-
-        defaultVS <- ops.CreateVisualStudio()
-        currentVS <- defaultVS
+    interface IDisposable with
+        member _.Dispose() =
+            if box currentVS <> box defaultVS then
+                failwith "LanguageServiceBaseTests.Shutdown was called when 'active' instance of VS is not 'default' one - this may denote that tests contains errors"
         
-        defaultSolution <- GlobalFunctions.CreateSolution(defaultVS)
-        cache.Clear()
-
-    member this.Cleanup() =
-        if box currentVS <> box defaultVS then
-            failwith "LanguageServiceBaseTests.Shutdown was called when 'active' instance of VS is not 'default' one - this may denote that tests contains errors"
-        
-        GlobalFunctions.Cleanup(defaultVS)
-        cache.Clear()
+            GlobalFunctions.Cleanup(defaultVS)
+            cache.Clear()
 
     member this.UsingNewVS() = 
         if box currentVS <> box defaultVS then
@@ -410,19 +427,6 @@ type LanguageServiceBaseTests() =
                 GlobalFunctions.Cleanup(currentVS)
                 currentVS <- defaultVS }
 
-
-    member this.Setup() =
-        if box currentVS <> box defaultVS then
-            failwith "LanguageServiceBaseTests.Setup was called when 'active' instance of VS is not 'default' one - this may denote that tests contains errors"
-        
-        // reset state of default VS instance that can be shared among the tests
-        ShiftKeyUp(currentVS)
-        ops.CleanInvisibleProject(currentVS)
-
-        ResetStopWatch()
-        testStopwatch.Reset()
-        testStopwatch.Start()
-        ()
         
     member this.TearDown() =
 
