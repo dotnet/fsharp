@@ -5,9 +5,10 @@ namespace FSharp.Core.UnitTests.Control
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
 open Xunit
+open FSharp.Test
 open System.Threading
 
-
+[<Collection(nameof DoNotRunInParallel)>]
 type CancellationType() =
 
     [<Fact>]
