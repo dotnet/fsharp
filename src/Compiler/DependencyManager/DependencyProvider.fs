@@ -453,14 +453,18 @@ type ReflectionDependencyManagerProvider
                     None, [||]
 
             match method with
+            | None -> ReflectionDependencyManagerProvider.MakeResultFromFields(false, [||], [||], Seq.empty, Seq.empty, Seq.empty)
             | Some m ->
-                let result = m.Invoke(instance, arguments)
+                match m.Invoke(instance, arguments) with
+                | null -> ReflectionDependencyManagerProvider.MakeResultFromFields(false, [||], [||], Seq.empty, Seq.empty, Seq.empty)
 
                 // Verify the number of arguments returned in the tuple returned by resolvedependencies, it can be:
                 //     1 - object with properties
                 //     3 - (bool * string list * string list)
                 // Support legacy api return shape (bool, seq<string>, seq<string>) --- original paket packagemanager
-                if FSharpType.IsTuple(result.GetType()) then
+                | result when FSharpType.IsTuple(result.GetType()) |> not ->
+                    ReflectionDependencyManagerProvider.MakeResultFromObject(result)
+                | result ->
                     // Verify the number of arguments returned in the tuple returned by resolvedependencies, it can be:
                     //     3 - (bool * string list * string list)
                     let success, sourceFiles, packageRoots =
@@ -474,10 +478,6 @@ type ReflectionDependencyManagerProvider
                         | _ -> false, seqEmpty, seqEmpty
 
                     ReflectionDependencyManagerProvider.MakeResultFromFields(success, [||], [||], Seq.empty, sourceFiles, packageRoots)
-                else
-                    ReflectionDependencyManagerProvider.MakeResultFromObject(result)
-
-            | None -> ReflectionDependencyManagerProvider.MakeResultFromFields(false, [||], [||], Seq.empty, Seq.empty, Seq.empty)
 
 /// Provides DependencyManagement functions.
 /// Class is IDisposable
