@@ -24,7 +24,6 @@ open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticMessage
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
-open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.IO
 open FSharp.Compiler.Lexhelp
@@ -2300,12 +2299,16 @@ type PhasedDiagnostic with
 // Scoped #nowarn pragmas
 
 /// Build an DiagnosticsLogger that delegates to another DiagnosticsLogger but filters warnings turned off by the given pragma declarations
+//
+// NOTE: we allow a flag to turn of strict file checking. This is because file names sometimes don't match due to use of
+// #line directives, e.g. for pars.fs/pars.fsy. In this case we just test by line number - in most cases this is sufficient
+// because we install a filtering error handler on a file-by-file basis for parsing and type-checking.
+// However this is indicative of a more systematic problem where source-line
+// sensitive operations (lexfilter and warning filtering) do not always
+// interact well with #line directives.
 type DiagnosticsLoggerFilteringByScopedPragmas
-    (langVersion: LanguageVersion, scopedPragmas, diagnosticOptions: FSharpDiagnosticOptions, diagnosticsLogger: DiagnosticsLogger) =
+    (checkFile, scopedPragmas, diagnosticOptions: FSharpDiagnosticOptions, diagnosticsLogger: DiagnosticsLogger) =
     inherit DiagnosticsLogger("DiagnosticsLoggerFilteringByScopedPragmas")
-
-    let needCompatibilityWithEarlierInconsistentInteraction =
-        not (langVersion.SupportsFeature LanguageFeature.ConsistentNowarnLineDirectiveInteraction)
 
     let mutable realErrorPresent = false
 
@@ -2320,10 +2323,12 @@ type DiagnosticsLoggerFilteringByScopedPragmas
                 match diagnostic.Range with
                 | Some m ->
                     scopedPragmas
-                    |> List.exists (fun (ScopedPragma.WarningOff(pragmaRange, warningNumFromPragma)) ->
+                    |> List.exists (fun pragma ->
+                        let (ScopedPragma.WarningOff(pragmaRange, warningNumFromPragma)) = pragma
+
                         warningNum = warningNumFromPragma
-                        && (needCompatibilityWithEarlierInconsistentInteraction
-                            || m.FileIndex = pragmaRange.FileIndex && posGeq m.Start pragmaRange.Start))
+                        && (not checkFile || m.FileIndex = pragmaRange.FileIndex)
+                        && posGeq m.Start pragmaRange.Start)
                     |> not
                 | None -> true
 
@@ -2339,5 +2344,5 @@ type DiagnosticsLoggerFilteringByScopedPragmas
 
     override _.CheckForRealErrorsIgnoringWarnings = realErrorPresent
 
-let GetDiagnosticsLoggerFilteringByScopedPragmas (langVersion, scopedPragmas, diagnosticOptions, diagnosticsLogger) =
-    DiagnosticsLoggerFilteringByScopedPragmas(langVersion, scopedPragmas, diagnosticOptions, diagnosticsLogger) :> DiagnosticsLogger
+let GetDiagnosticsLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, diagnosticOptions, diagnosticsLogger) =
+    DiagnosticsLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, diagnosticOptions, diagnosticsLogger) :> DiagnosticsLogger
