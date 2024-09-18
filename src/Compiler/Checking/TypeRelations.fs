@@ -7,122 +7,19 @@ module internal FSharp.Compiler.TypeRelations
 open FSharp.Compiler.Features
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
-open Internal.Utilities.Rational
+
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeHierarchy
-open FSharp.Compiler.Text
 
+open Internal.Utilities.TypeHashing
+open Internal.Utilities.TypeHashing.HashTypes
+
+[<Struct; NoComparison;>]
 type CanCoerce = CanCoerce | NoCoerce
-type Hash = int
-
-// This is temporary code duplication from `SignatureHash.fs`, just to test some theories.
-
-
-let inline hashText (s: string) : Hash = hash s
-let inline private combineHash acc y : Hash = (acc <<< 1) + y + 631
-let inline pipeToHash (value: Hash) (acc: Hash) = combineHash acc value
-let inline addFullStructuralHash (value) (acc: Hash) = combineHash (acc) (hash value)
-let (@@) (h1: Hash) (h2: Hash) = combineHash h1 h2
-
-let inline hashListOrderMatters ([<InlineIfLambda>] func) (items: #seq<'T>) : Hash =
-    let mutable acc = 0
-
-    for i in items do
-        let valHash = func i
-        // We are calling hashListOrderMatters for things like list of types, list of properties, list of fields etc. The ones which are visibility-hidden will return 0, and are omitted.
-        if valHash <> 0 then
-            acc <- combineHash acc valHash
-
-    acc
-
-let hashEntityRefName (xref: EntityRef) name =
-    let tag =
-        if xref.IsNamespace then
-            TextTag.Namespace
-        elif xref.IsModule then
-            TextTag.Module
-        elif xref.IsTypeAbbrev then
-            TextTag.Alias
-        elif xref.IsFSharpDelegateTycon then
-            TextTag.Delegate
-        elif xref.IsILEnumTycon || xref.IsFSharpEnumTycon then
-            TextTag.Enum
-        elif xref.IsStructOrEnumTycon then
-            TextTag.Struct
-        elif isInterfaceTyconRef xref then
-            TextTag.Interface
-        elif xref.IsUnionTycon then
-            TextTag.Union
-        elif xref.IsRecordTycon then
-            TextTag.Record
-        else
-            TextTag.Class
-
-    (hash tag) @@ (hashText name)
-
-let hashTyconRef (tcref: TyconRef) =
-    let demangled = tcref.DisplayNameWithStaticParameters
-    let tyconHash = hashEntityRefName tcref demangled
-
-    tcref.CompilationPath.AccessPath
-    |> hashListOrderMatters (fst >> hashText)
-    |> pipeToHash tyconHash
-
-let hashTyparRef (typar: Typar) =
-    hashText typar.DisplayName
-    |> addFullStructuralHash (typar.Rigidity)
-    |> addFullStructuralHash (typar.StaticReq)
-
-let inline hashListOrderIndependent ([<InlineIfLambda>] func) (items: #seq<'T>) : Hash =
-    let mutable acc = 0
-
-    for i in items do
-        let valHash = func i
-        acc <- acc ^^^ valHash
-
-    acc
-
-let inline hashAttrib (Attrib(tyconRef = tcref)) = hashTyconRef tcref
-
-let inline hashAttributeList attrs =
-     hashListOrderIndependent hashAttrib attrs
-
-let inline hashTyparRefWithInfo (typar: Typar) =
-    hashTyparRef typar @@ hashAttributeList typar.Attribs
-
-let private hashMeasure unt =
-    let measuresWithExponents =
-        ListMeasureVarOccsWithNonZeroExponents unt
-        |> List.sortBy (fun (tp: Typar, _) -> tp.DisplayName)
-
-    measuresWithExponents
-    |> hashListOrderIndependent (fun (typar, exp: Rational) -> hashTyparRef typar @@ hash exp)
-
-let rec hashTType (g: TcGlobals) ty =
-
-    match stripTyparEqns ty |> (stripTyEqns g) with
-    | TType_ucase(UnionCaseRef(tc, _), args)
-    | TType_app(tc, args, _) -> args |> hashListOrderMatters (hashTType g) |> pipeToHash (hashTyconRef tc)
-    | TType_anon(anonInfo, tys) ->
-        tys
-        |> hashListOrderMatters (hashTType g)
-        |> pipeToHash (anonInfo.SortedNames |> hashListOrderMatters hashText)
-        |> addFullStructuralHash (evalAnonInfoIsStruct anonInfo)
-    | TType_tuple(tupInfo, t) ->
-        t
-        |> hashListOrderMatters (hashTType g)
-        |> addFullStructuralHash (evalTupInfoIsStruct tupInfo)
-    // Hash a first-class generic type.
-    | TType_forall(tps, tau) -> tps |> hashListOrderMatters (hashTyparRef) |> pipeToHash (hashTType g tau)
-    | TType_fun _ ->
-        let argTys, retTy = stripFunTy g ty
-        argTys |> hashListOrderMatters (hashTType g) |> pipeToHash (hashTType g retTy)
-    | TType_var(r, _) -> hashTyparRefWithInfo r
-    | TType_measure unt -> hashMeasure unt
 
 /// Implements a :> b without coercion based on finalized (no type variable) types
 // Note: This relation is approximate and not part of the language specification.
@@ -223,9 +120,6 @@ let rec TypeFeasiblySubsumesType ndeep g (amap: Import.ImportMap) m ty1 canCoerc
     let ty1 = stripTyEqns g ty1
     let ty2 = stripTyEqns g ty2
 
-    // TODO(vlza): this might not be the best way to cache this, due to mutability of TType_var and other non-nominal generic types.
-    // For now it's more of a PoC, I think we should use a more sophisticated approach based on kind of TType.
-
     let ty1Hash = hashTType g ty1
     let ty2Hash = hashTType g ty2
 
@@ -257,10 +151,12 @@ let rec TypeFeasiblySubsumesType ndeep g (amap: Import.ImportMap) m ty1 canCoerc
                     elif isAppTy g ty2 && (canCoerce = CanCoerce || isRefTy g ty2) && TypeFeasiblySubsumesTypeWithSupertypeCheck g amap m ndeep ty1 ty2 then
                         true
                     else
-                        // TODO(vlza): Are we missing `isInterfaceTy g ty1` here? We are checking that `ty1` is within the interface hierarchy of `ty2`, so we can short-cirtuit if `ty1` is not an interface.
-                        let interfaces = GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2
-                        // See if any interface in type hierarchy of ty2 is a supertype of ty1
-                        List.exists (TypeFeasiblySubsumesType (ndeep + 1) g amap m ty1 NoCoerce) interfaces
+                        if isInterfaceTy g ty1 then
+                            let interfaces = GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2
+                            // See if any interface in type hierarchy of ty2 is a supertype of ty1
+                            List.exists (TypeFeasiblySubsumesType (ndeep + 1) g amap m ty1 NoCoerce) interfaces
+                        else
+                            false
 
         amap.TypeSubsumptionCache[key] <- subsumes
 

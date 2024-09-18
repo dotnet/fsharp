@@ -21,6 +21,7 @@ open System.Text
 open System.Threading
 
 open Internal.Utilities
+open Internal.Utilities.TypeHashing
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 
@@ -897,9 +898,9 @@ let main3
 
             let observer =
                 if hasIvt then
-                    Fsharp.Compiler.SignatureHash.PublicAndInternal
+                    PublicAndInternal
                 else
-                    Fsharp.Compiler.SignatureHash.PublicOnly
+                    PublicOnly
 
             let optDataHash =
                 optDataResources

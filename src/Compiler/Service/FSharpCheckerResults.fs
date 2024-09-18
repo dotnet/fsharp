@@ -15,6 +15,7 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.NicePrint
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
+open Internal.Utilities.TypeHashing
 open FSharp.Core.Printf
 open FSharp.Compiler
 open FSharp.Compiler.Syntax
@@ -3536,7 +3537,7 @@ type FSharpCheckFileResults
                 |> SourceText.ofString)
 
     member internal _.CalculateSignatureHash() =
-        let visibility = Fsharp.Compiler.SignatureHash.PublicAndInternal
+        let visibility = PublicAndInternal
 
         match details with
         | None -> failwith "Typechecked details not available for CalculateSignatureHash() operation."

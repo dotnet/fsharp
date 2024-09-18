@@ -139,8 +139,6 @@ let GetImmediateInterfacesOfMetadataType g amap m skipUnref ty (tcref: TyconRef)
 // IComparable<T> or IEquatable<T>. This is because whether they support these interfaces depend on their
 // constituent types, which may not yet be known in type inference.
 let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
-    // TODO(vlza): Cache? Do we already do that via the importmap?
-
     [
         match tryAppTy g ty with
         | ValueSome(tcref, tinst) ->

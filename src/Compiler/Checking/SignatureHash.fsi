@@ -5,9 +5,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.CheckDeclarations
 
-type ObserverVisibility =
-    | PublicOnly
-    | PublicAndInternal
+open Internal.Utilities.TypeHashing
 
 val calculateHashOfImpliedSignature:
     g: TcGlobals -> observer: ObserverVisibility -> expr: ModuleOrNamespaceContents -> int

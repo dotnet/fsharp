@@ -9,6 +9,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
+[<Struct; NoComparison>]
 type CanCoerce =
     | CanCoerce
     | NoCoerce
