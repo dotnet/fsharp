@@ -12,6 +12,9 @@ module internal WarnScopes =
 
     /// Get the collected warn scopes out of the lexbuf.BufferLocalStore
     val FromLexbuf: lexbuf: UnicodeLexing.Lexbuf -> WarnScopeMap
+    
+    /// Clear the warn scopes in lexbuf.BufferLocalStore for reuse of the lexbuf
+    val ClearLexbufStore: UnicodeLexing.Lexbuf -> unit
 
     /// Add the warn scopes of a lexed file into the diagnostics options
     val MergeInto: FSharpDiagnosticOptions -> WarnScopeMap -> unit
