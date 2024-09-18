@@ -152,6 +152,7 @@ let aa =
   match !failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
+      System.IO.File.WriteAllText("test.ok","ok")
       exit 0
   | messages ->
       printfn "%A" messages

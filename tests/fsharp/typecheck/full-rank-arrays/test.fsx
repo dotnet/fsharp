@@ -107,4 +107,5 @@ let _ =
   let x = Class1()
   x.RunTests()
   System.Console.WriteLine "Test Passed"; 
+  System.IO.File.WriteAllText ("test.ok", "ok"); 
   exit 0

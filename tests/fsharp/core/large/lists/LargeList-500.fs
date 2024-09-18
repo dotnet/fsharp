@@ -504,4 +504,4 @@ let expectedValues =
         1 
     ]
 printfn "length = %d" expectedValues.Length
-exit 0
+System.IO.File.WriteAllLines("test.ok", ["ok"])

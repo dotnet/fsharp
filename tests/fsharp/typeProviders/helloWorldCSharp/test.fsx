@@ -26,6 +26,7 @@ let _ =
   if not failures.IsEmpty then (printfn "Test Failed, failures = %A" failures; exit 1) 
 
 do (stdout.WriteLine "Test Passed"; 
+    System.IO.File.WriteAllText("test.ok","ok"); 
     exit 0)
 
 

@@ -5938,6 +5938,7 @@ let aa =
   match !failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
+      System.IO.File.WriteAllText("test.ok","ok")
       exit 0
   | errs -> 
       printfn "Test Failed, errors = %A" errs

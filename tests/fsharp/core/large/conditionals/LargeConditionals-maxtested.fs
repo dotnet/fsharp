@@ -421,4 +421,4 @@ let expectedValues() =
     if rnd.Next(3) = 1 then 1 else 
     4
 printfn "expectedValues() = %A" (expectedValues())
-exit 0
+System.IO.File.WriteAllLines("test.ok", ["ok"])

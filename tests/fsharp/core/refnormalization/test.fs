@@ -25,4 +25,5 @@ let main args =
         printfn "Actual: %A "   versions
         1
     else 
+        File.WriteAllText("test.ok", "ok")
         0

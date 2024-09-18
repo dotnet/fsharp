@@ -19,4 +19,5 @@ let aa =
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
 
 do (stdout.WriteLine "Test Passed"; 
+    System.IO.File.WriteAllText("test.ok","ok"); 
     exit 0)

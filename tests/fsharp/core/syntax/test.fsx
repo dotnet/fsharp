@@ -1841,6 +1841,7 @@ let aa =
   match !failures with 
   | false -> 
       stdout.WriteLine "Test Passed"
+      System.IO.File.WriteAllText("test.ok","ok")
       exit 0
   | _ -> 
       stdout.WriteLine "Test Failed"

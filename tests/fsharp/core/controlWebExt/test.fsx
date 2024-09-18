@@ -233,6 +233,12 @@ let aa =
   if not failures.IsEmpty then (stdout.WriteLine("Test Failed, failures = {0}", failures); exit 1) 
   else (stdout.WriteLine "Test Passed"; 
         log "ALL OK, HAPPY HOLIDAYS, MERRY CHRISTMAS!"
+        System.IO.File.WriteAllText("test.ok","ok"); 
+// debug: why is the fsi test failing?  is it because test.ok does not exist?
+        if System.IO.File.Exists("test.ok") then
+            stdout.WriteLine ("test.ok found at {0}", System.IO.FileInfo("test.ok").FullName)
+        else
+            stdout.WriteLine ("test.ok not found")
         exit 0)
 
 #endif

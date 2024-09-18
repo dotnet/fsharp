@@ -644,6 +644,7 @@ let aa =
   match failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
+      System.IO.File.WriteAllText("test.ok","ok")
       exit 0
   | _ -> 
       printfn "Test Failed, failures = %A" failures

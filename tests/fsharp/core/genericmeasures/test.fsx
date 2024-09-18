@@ -80,6 +80,7 @@ module Core_genericMeasures =
 #else
     RunAll();
     stdout.WriteLine "Test Passed"
+    System.IO.File.WriteAllText("test.ok","ok")
     exit 0
 #endif
 

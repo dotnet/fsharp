@@ -27,5 +27,6 @@ let _ = if (compare [| |] [| |] <> 0) then fail "Test Failed (abcwlvero02)"
 let _ = System.Console.Error.WriteLine "Test Passed"
 
 do (System.Console.Out.WriteLine "Test Passed"; 
+    System.IO.File.WriteAllText("test.ok", "ok"); 
     exit 0)
 

@@ -1,4 +1,5 @@
 build.ok
+test.ok
 test*.exe
 test*.pdb
 test*.dll
