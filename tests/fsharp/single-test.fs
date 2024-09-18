@@ -286,9 +286,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
                 executeFsi compilerType targetFramework
             result <- true
         finally
-            if result <> false then
-                try Directory.Delete(directory, true) with _ -> ()
-            else
+            if result = true then
                 printfn "Configuration: %s" cfg.Directory
                 printfn "Directory: %s" directory
                 printfn "Filename: %s" projectFileName
