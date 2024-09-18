@@ -127,7 +127,7 @@ let rec TypeFeasiblySubsumesType ndeep g (amap: Import.ImportMap) m ty1 canCoerc
 
     match amap.TypeSubsumptionCache.TryGetValue(key) with
     | true, subsumes ->
-        printfn $"TypeFeasiblySubsumesType Hit: ty1={DebugPrint.showType ty1}; ty2={DebugPrint.showType ty2}; CanCoerce={canCoerce}; Subsumes={subsumes}; ty1Hash={ty1Hash}; ty2Hash={ty2Hash}; combinedHash={key}"
+        // printfn $"TypeFeasiblySubsumesType Hit: ty1={DebugPrint.showType ty1}; ty2={DebugPrint.showType ty2}; CanCoerce={canCoerce}; Subsumes={subsumes}; ty1Hash={ty1Hash}; ty2Hash={ty2Hash}; combinedHash={key}"
         subsumes
     | false, _ ->
         let subsumes =
@@ -160,7 +160,7 @@ let rec TypeFeasiblySubsumesType ndeep g (amap: Import.ImportMap) m ty1 canCoerc
 
         amap.TypeSubsumptionCache[key] <- subsumes
 
-        printfn $"TypeFeasiblySubsumesType Store: ty1={DebugPrint.showType ty1}; ty2={DebugPrint.showType ty2}; CanCoerce={canCoerce}; Subsumes={subsumes}; ty1Hash={ty1Hash}; ty2Hash={ty2Hash}; combinedHash={key}"
+        // printfn $"TypeFeasiblySubsumesType Store: ty1={DebugPrint.showType ty1}; ty2={DebugPrint.showType ty2}; CanCoerce={canCoerce}; Subsumes={subsumes}; ty1Hash={ty1Hash}; ty2Hash={ty2Hash}; combinedHash={key}"
 
         subsumes
 
