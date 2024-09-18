@@ -1463,6 +1463,10 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
     let sty1 = stripTyEqnsA csenv.g canShortcut ty1
     let sty2 = stripTyEqnsA csenv.g canShortcut ty2
 
+    if isObjTyAnyNullness g ty1 then
+        SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 (nullnessOfTy g sty1) (nullnessOfTy g sty2)
+    else
+
     let amap = csenv.amap
     let aenv = csenv.EquivEnv
     let denv = csenv.DisplayEnv
