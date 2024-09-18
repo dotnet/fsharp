@@ -31,5 +31,5 @@ module TestOfObj =
             | _ -> None
 
 
-    System.IO.File.WriteAllText("test.ok","ok")
+    printf "TEST PASSED OK" ;
     printfn "Succeeded"

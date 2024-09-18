@@ -28,6 +28,7 @@
       <Link>scriptlib.fsx</Link>
     </Compile>
     <None Include="ScriptingShims.fsx" />
+    <Compile Include="XunitHelpers.fs" />
     <Compile Include="TestFramework.fs" />
     <Compile Include="ILChecker.fs" />
     <Compile Include="Utilities.fs" />
@@ -40,7 +41,6 @@
     <Compile Include="DirectoryAttribute.fs" />
     <Compile Include="ReflectionHelper.fs" />
     <Compile Include="SurfaceArea.fs" />
-    <Compile Include="XunitHelpers.fs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -87,6 +87,9 @@ let generateOverrides =
     let template = @"<Project>
   <Target Name=""Build"" DependsOnTargets=""RunFSharpScript"" />
   <Target Name=""Rebuild"" DependsOnTargets=""RunFSharpScript"" />
+  <Target Name='RunFSharpScriptAndPrintOutput' DependsOnTargets='RunFSharpScript'>
+      <Message Text='@(FsiTextOutput)' Importance='high' /> 
+  </Target>
 </Project>"
     template
 
@@ -189,7 +192,6 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
     </ItemGroup>
     <Copy SourceFiles='@(Libraries)' DestinationFolder='$(OutputPath)' SkipUnchangedFiles='false' />
   </Target>
-
 </Project>"
         template
         |> replace "$(UTILITYSOURCEITEMS)" pc.UtilitySourceItems false false CompileItem.Compile
@@ -209,7 +211,6 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
         |> replaceTokens "$(RestoreFromArtifactsPath)" (Path.GetFullPath(__SOURCE_DIRECTORY__) + "/../../artifacts/packages/" + configuration)
     generateProjBody
 
-let lockObj = obj()
 let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
     let sources = []
     let loadSources = []
@@ -265,12 +266,10 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
                     emitFile propsFileName propsBody
                     let projectBody = generateProjectArtifacts pc outputType targetFramework cfg.BUILD_CONFIG languageVersion
                     emitFile projectFileName projectBody
-                    use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
                     let cfg = { cfg with Directory = directory }
                     let result = execBothToOutNoCheck cfg directory buildOutputFile cfg.DotNetExe  (sprintf "run -f %s" targetFramework)
                     if not (buildOnly) then
-                        result |> checkResult
-                        testOkFile.CheckExists()
+                        result |> checkResultPassed
                 executeFsc compilerType targetFramework
                 if buildOnly then verifyResults (findFirstSourceFile pc) buildOutputFile
             else
@@ -279,10 +278,8 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
                     emitFile propsFileName propsBody
                     let projectBody = generateProjectArtifacts pc outputType  targetFramework cfg.BUILD_CONFIG languageVersion
                     emitFile projectFileName projectBody
-                    use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
                     let cfg = { cfg with Directory = directory }
-                    execBothToOut cfg directory buildOutputFile cfg.DotNetExe "build /t:RunFSharpScript"
-                    testOkFile.CheckExists()
+                    execBothToOutCheckPassed cfg directory buildOutputFile cfg.DotNetExe $"build /t:RunFSharpScriptAndPrintOutput"
                 executeFsi compilerType targetFramework
             result <- true
         finally
@@ -301,19 +298,17 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 
     | FSI_NETFX_STDIN ->
         use _cleanup = (cleanUpFSharpCore cfg)
-        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
         let sources = extraSources |> List.filter (fileExists cfg)
 
         fsiStdin cfg (sources |> List.rev |> List.head) "" [] //use last file, because `cmd < a.txt b.txt` redirect b.txt only
 
-        testOkFile.CheckExists()
+        checkPassed()
 
     | FSC_NETFX_TEST_ROUNDTRIP_AS_DLL ->
         // Compile as a DLL to exercise pickling of interface data, then recompile the original source file referencing this DLL
         // The second compilation will not utilize the information from the first in any meaningful way, but the
         // compiler will unpickle the interface and optimization data, so we test unpickling as well.
         use _cleanup = (cleanUpFSharpCore cfg)
-        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 
         let sources = extraSources |> List.filter (fileExists cfg)
 
@@ -323,9 +318,8 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
         peverify cfg "test--optimize-lib.dll"
         peverify cfg "test--optimize-client-of-lib.exe"
 
-        exec cfg ("." ++ "test--optimize-client-of-lib.exe") ""
+        execAndCheckPassed cfg ("." ++ "test--optimize-client-of-lib.exe") ""
 
-        testOkFile.CheckExists()
 #endif
 
 let singleTestBuildAndRunAux cfg p =

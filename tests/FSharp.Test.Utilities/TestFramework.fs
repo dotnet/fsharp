@@ -12,6 +12,7 @@ open Scripting
 open Xunit
 open FSharp.Compiler.IO
 open Xunit.Sdk
+open FSharp.Test
 
 let getShortId() = Guid.NewGuid().ToString().[..7]
 
@@ -144,7 +145,7 @@ module Commands =
     let copy workDir source dest =
         log "copy /y %s %s" source dest
         File.Copy( source |> getfullpath workDir, dest |> getfullpath workDir, true)
-        CmdResult.Success
+        CmdResult.Success ""
 
     let mkdir_p workDir dir =
         log "mkdir %s" dir
@@ -444,15 +445,29 @@ let logConfig (cfg: TestConfig) =
     log "PEVERIFY                 = %s" cfg.PEVERIFY
     log "---------------------------------------------------------------"
 
+let checkPassedOutput (output: string) =
+    Assert.True(output.EndsWith "TEST PASSED OK\n", $"Output does not end with TEST PASSED OK:\n{output}")
+    printfn "...Checked OK"
+
+let checkPassed () = checkPassedOutput ParallelConsole.OutText
+
+let checkPassedOutputContains (output: string) =
+    Assert.True(output.Contains "TEST PASSED OK", $"Output does not end with TEST PASSED OK:\n{output}")
+
+let checkResultPassed result =
+    match result with
+    | CmdResult.ErrorLevel (msg1, err) -> Assert.Fail (sprintf "%s. ERRORLEVEL %d" msg1 err)
+    | CmdResult.Success output -> checkPassedOutputContains output
+
 let checkResult result =
     match result with
     | CmdResult.ErrorLevel (msg1, err) -> Assert.Fail (sprintf "%s. ERRORLEVEL %d" msg1 err)
-    | CmdResult.Success -> ()
+    | CmdResult.Success _ -> ()
 
 let checkErrorLevel1 result =
     match result with
     | CmdResult.ErrorLevel (_,1) -> ()
-    | CmdResult.Success | CmdResult.ErrorLevel _ -> Assert.Fail (sprintf "Command passed unexpectedly")
+    | CmdResult.Success _ | CmdResult.ErrorLevel _ -> Assert.Fail (sprintf "Command passed unexpectedly")
 
 let envVars () =
     System.Environment.GetEnvironmentVariables ()
@@ -500,27 +515,13 @@ let createConfigWithEmptyDirectory() =
     let cfg = suiteHelpers.Value
     { cfg with Directory = createTemporaryDirectory "temp" }
 
-[<AllowNullLiteral>]
-type FileGuard(path: string) =
-    let remove path = if FileSystem.FileExistsShim(path) then Commands.rm (Path.GetTempPath()) path
-    do if not (Path.IsPathRooted(path)) then failwithf "path '%s' must be absolute" path
-    do remove path
-    member x.Path = path
-    member x.Exists = x.Path |> FileSystem.FileExistsShim
-    member x.CheckExists() =
-        if not x.Exists then
-             failwith (sprintf "exit code 0 but %s file doesn't exists" (x.Path |> Path.GetFileName))
-
-    interface IDisposable with
-        member x.Dispose () = remove path
-
-
 type RedirectToType =
     | Overwrite of FilePath
     | Append of FilePath
 
 type RedirectTo =
     | Ignore
+    | Collect
     | Output of RedirectToType
     | OutputAndError of RedirectToType * RedirectToType
     | OutputAndErrorToSameFile of RedirectToType
@@ -544,8 +545,8 @@ module Command =
         let redirectType = function Overwrite x -> sprintf ">%s" x | Append x -> sprintf ">>%s" x
         let outF =
             function
-            | Ignore -> ""
-            | Output r-> sprintf " 1%s" (redirectType r)
+            | Ignore | Collect -> ""
+            | Output r -> sprintf " 1%s" (redirectType r)
             | OutputAndError (r1, r2) -> sprintf " 1%s 2%s" (redirectType r1)  (redirectType r2)
             | OutputAndErrorToSameFile r -> sprintf " 1%s 2>1" (redirectType r)
             | Error r -> sprintf " 2%s" (redirectType r)
@@ -582,8 +583,12 @@ module Command =
 
         let outF fCont cmdArgs =
             match redirect.Output with
-            | RedirectTo.Ignore ->
+            | Ignore ->
                 fCont { cmdArgs with RedirectOutput = Some ignore; RedirectError = Some ignore }
+            | Collect ->
+                use out = redirectTo (new StringWriter())
+                use error = redirectTo (new StringWriter())
+                fCont { cmdArgs with RedirectOutput = Some out.Post; RedirectError = Some error.Post }
             | Output r ->
                 use writer = openWrite r
                 use outFile = redirectTo writer
@@ -616,10 +621,12 @@ let execArgs = { Output = Ignore; Input = None; }
 let execAppend cfg stdoutPath stderrPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { execArgs with Output = OutputAndError(Append(stdoutPath), Append(stderrPath)) } p >> checkResult
 let execAppendIgnoreExitCode cfg stdoutPath stderrPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { execArgs with Output = OutputAndError(Append(stdoutPath), Append(stderrPath)) } p >> alwaysSuccess
 let exec cfg p = Command.exec cfg.Directory cfg.EnvironmentVariables execArgs p >> checkResult
+let execAndCheckPassed cfg p = Command.exec cfg.Directory cfg.EnvironmentVariables { execArgs with Output = Collect } p >> checkResultPassed
 let execExpectFail cfg p = Command.exec cfg.Directory cfg.EnvironmentVariables execArgs p >> checkErrorLevel1
 let execIn cfg workDir p = Command.exec workDir cfg.EnvironmentVariables execArgs p >> checkResult
 let execBothToOutNoCheck cfg workDir outFile p = Command.exec workDir  cfg.EnvironmentVariables { execArgs with Output = OutputAndErrorToSameFile(Overwrite(outFile)) } p
 let execBothToOut cfg workDir outFile p = execBothToOutNoCheck cfg workDir outFile p >> checkResult
+let execBothToOutCheckPassed cfg workDir outFile p = execBothToOutNoCheck cfg workDir outFile p >> checkResultPassed
 let execBothToOutExpectFail cfg workDir outFile p = execBothToOutNoCheck cfg workDir outFile p >> checkErrorLevel1
 let execAppendOutIgnoreExitCode cfg workDir outFile p = Command.exec workDir  cfg.EnvironmentVariables { execArgs with Output = Output(Append(outFile)) } p >> alwaysSuccess
 let execAppendErrExpectFail cfg errPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { execArgs with Output = Error(Overwrite(errPath)) } p >> checkErrorLevel1
@@ -638,7 +645,7 @@ let ildasm cfg arg = Printf.ksprintf (Commands.ildasm (exec cfg) cfg.ILDASM) arg
 let ilasm cfg arg = Printf.ksprintf (Commands.ilasm (exec cfg) cfg.ILASM) arg
 let peverify _cfg _test = printfn "PEVerify is disabled, need to migrate to ILVerify instead, see https://github.com/dotnet/fsharp/issues/13854" //Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"
 let peverifyWithArgs _cfg _args _test = printfn "PEVerify is disabled, need to migrate to ILVerify instead, see https://github.com/dotnet/fsharp/issues/13854" //Commands.peverify (exec cfg) cfg.PEVERIFY args
-let fsi cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI)
+let fsiCheckPassed cfg = Printf.ksprintf (Commands.fsi (execAndCheckPassed cfg) cfg.FSI)
 #if !NETCOREAPP
 let fsiAnyCpu cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSIANYCPU)
 let sn cfg = Printf.ksprintf (Commands.sn (exec cfg) cfg.SN)
@@ -646,7 +653,6 @@ let sn cfg = Printf.ksprintf (Commands.sn (exec cfg) cfg.SN)
 let fsi_script cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI_FOR_SCRIPTS)
 let fsiExpectFail cfg = Printf.ksprintf (Commands.fsi (execExpectFail cfg) cfg.FSI)
 let fsiAppendIgnoreExitCode cfg stdoutPath stderrPath = Printf.ksprintf (Commands.fsi (execAppendIgnoreExitCode cfg stdoutPath stderrPath) cfg.FSI)
-let fileguard cfg fileName = Commands.getfullpath cfg.Directory fileName |> (fun x -> new FileGuard(x))
 let getfullpath cfg = Commands.getfullpath cfg.Directory
 let fileExists cfg fileName = Commands.fileExists cfg.Directory fileName |> Option.isSome
 let fsiStdin cfg stdinPath = Printf.ksprintf (Commands.fsi (execStdin cfg stdinPath) cfg.FSI)

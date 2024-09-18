@@ -41,7 +41,7 @@ type private EventedTextWriter() =
             sw.WriteLine line
             lineWritten.Trigger(line)
         else sb.Append(c) |> ignore
-    member _.GetText() = sw.ToString()
+    override _.ToString() = sw.ToString()
 
 type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVersion, ?input: string) =
 

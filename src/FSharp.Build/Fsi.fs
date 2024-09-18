@@ -161,6 +161,12 @@ type public Fsi() as this =
 
         builder
 
+    let outputWriter = new StringWriter()
+
+    override _.LogEventsFromTextOutput(line, msgImportance) =
+        outputWriter.WriteLine(line)
+        base.LogEventsFromTextOutput(line, msgImportance)
+
     // --codepage <int>: Specify the codepage to use when opening source files
     member _.CodePage
         with get () = codePage
@@ -282,6 +288,9 @@ type public Fsi() as this =
     member _.CommandLineArgs
         with get () = List.toArray commandLineArgs
         and set value = commandLineArgs <- List.ofArray value
+
+    [<Output>]
+    member _.TextOutput = outputWriter.ToString()
 
     // ToolTask methods
     override _.ToolName = "fsi.exe"
