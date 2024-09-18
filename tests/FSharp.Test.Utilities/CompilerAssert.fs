@@ -306,6 +306,8 @@ module TestContext =
 
 module CompilerAssertHelpers =
 
+
+
     // Unlike C# whose entrypoint is always string[] F# can make an entrypoint with 0 args, or with an array of string[]
     let mkDefaultArgs (entryPoint:MethodBase) : obj[] = [|
         if entryPoint.GetParameters().Length = 1 then
@@ -324,7 +326,7 @@ module CompilerAssertHelpers =
             else
                 entryPoint
         let args = mkDefaultArgs entryPoint
-        ParallelConsole.captureConsoleOutputs (fun () -> entryPoint.Invoke(Unchecked.defaultof<obj>, args) |> ignore)
+        entryPoint.Invoke(Unchecked.defaultof<obj>, args) |> ignore
 
 #if NETCOREAPP
     let executeBuiltApp assembly deps isFsx =
@@ -344,8 +346,8 @@ module CompilerAssertHelpers =
         inherit MarshalByRefObject()
 
         member x.ExecuteTestCase assemblyPath (deps: string[]) isFsx =
-            // AppDomain isolates static classes.
-            ParallelConsole.Initialized |> ignore
+            // AppDomain isolates console.
+            ParallelConsole.reset()
 
             AppDomain.CurrentDomain.add_AssemblyResolve(ResolveEventHandler(fun _ args ->
                 deps
@@ -355,16 +357,23 @@ module CompilerAssertHelpers =
                 |> Option.defaultValue null))
 
             let assembly = Assembly.LoadFrom assemblyPath
-            executeAssemblyEntryPoint assembly isFsx
+            let ex = try executeAssemblyEntryPoint assembly isFsx; None with ex -> Some ex
+            ParallelConsole.OutText, ParallelConsole.ErrorText, ex
+                
 
-    let executeBuiltApp assembly deps =
+    let executeBuiltApp assembly deps isFsx =
         let thisAssemblyDirectory = Path.GetDirectoryName(typeof<Worker>.Assembly.Location)
         let setup = AppDomainSetup(ApplicationBase = thisAssemblyDirectory)
         let testCaseDomain = AppDomain.CreateDomain($"built app {assembly}", null, setup)
         
         let worker =
             (testCaseDomain.CreateInstanceFromAndUnwrap(typeof<Worker>.Assembly.CodeBase, typeof<Worker>.FullName)) :?> Worker
-        worker.ExecuteTestCase assembly (deps |> Array.ofList)
+
+        let out, error, ex = worker.ExecuteTestCase assembly (deps |> Array.ofList) isFsx
+
+        printf $"{out}"
+        eprintf $"{error}"
+        ex |> Option.iter raise
 #endif
 
     let defaultProjectOptions (targetFramework: TargetFramework) =
@@ -605,10 +614,11 @@ module CompilerAssertHelpers =
         outputDirectory.Create()
         compileCompilationAux outputDirectory (ResizeArray()) ignoreWarnings cmpl
 
-    let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) isFsx : (int * string * string) =
-        let succeeded, stdout, stderr, _ = executeBuiltApp outputFilePath deps isFsx
-        let exitCode = if succeeded then 0 else -1
-        exitCode, stdout, stderr
+    let unwrapException (ex: exn) = ex.InnerException |> Option.ofObj |> Option.map _.Message |> Option.defaultValue ex.Message
+
+    let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) isFsx =
+        executeBuiltApp outputFilePath deps isFsx
+
 
     let executeBuiltAppNewProcessAndReturnResult (outputFilePath: string) : (int * string * string) =
 #if !NETCOREAPP
@@ -649,7 +659,7 @@ type CompilerAssert private () =
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
 
-            executeBuiltApp outputExe [] false |> ignore<bool * string * string * exn option>
+            executeBuiltApp outputExe [] false
         )
 
     static let compileLibraryAndVerifyILWithOptions options (source: SourceCodeFileKind) (f: ILVerifier -> unit) =
@@ -711,10 +721,11 @@ Updated automatically, please check diffs in your pull request, changes must be 
 
     static member ExecuteAndReturnResult (outputFilePath: string, isFsx: bool, deps: string list, newProcess: bool) =
         // If we execute in-process (true by default), then the only way of getting STDOUT is to redirect it to SB, and STDERR is from catching an exception.
-       if not newProcess then
-           executeBuiltAppAndReturnResult outputFilePath deps isFsx
-       else
-           executeBuiltAppNewProcessAndReturnResult outputFilePath
+        if not newProcess then
+            let exitCode = try executeBuiltAppAndReturnResult outputFilePath deps isFsx; 0 with _ -> -1
+            exitCode, ParallelConsole.OutText, ParallelConsole.ErrorText      
+        else
+            executeBuiltAppNewProcessAndReturnResult outputFilePath
 
     static member Execute(cmpl: Compilation, ?ignoreWarnings, ?beforeExecute, ?newProcess, ?onOutput) =
 
@@ -738,8 +749,8 @@ Updated automatically, please check diffs in your pull request, changes must be 
                     Assert.Fail errors
                 onOutput output
             else
-                let _succeeded, _stdout, _stderr, exn = executeBuiltApp outputFilePath deps false 
-                exn |> Option.iter raise)
+                executeBuiltApp outputFilePath deps false
+        )
 
     static member ExecutionHasOutput(cmpl: Compilation, expectedOutput: string) =
         CompilerAssert.Execute(cmpl, newProcess = true, onOutput = (fun output -> Assert.AreEqual(expectedOutput, output, sprintf "'%s' = '%s'" expectedOutput output)))  

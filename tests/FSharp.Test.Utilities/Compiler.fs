@@ -703,8 +703,6 @@ module rec Compiler =
 
     let private compileFSharpCompilation compilation ignoreWarnings (cUnit: CompilationUnit) : CompilationResult =
 
-        use captured = new ParallelConsole.Caputure()
-
         let ((err: FSharpDiagnostic[], rc: int, outputFilePath: string), deps) =
             CompilerAssert.CompileRaw(compilation, ignoreWarnings)
 
@@ -717,7 +715,7 @@ module rec Compiler =
             Adjust        = 0
             PerFileErrors = diagnostics
             Diagnostics   = diagnostics |> List.map snd
-            Output        = Some (RunOutput.ExecutionOutput { ExitCode = rc; StdOut = captured.OutText; StdErr = captured.ErrorText })
+            Output        = Some (RunOutput.ExecutionOutput { ExitCode = rc; StdOut = ParallelConsole.OutText; StdErr = ParallelConsole.ErrorText })
             Compilation   = cUnit
         }
 

@@ -75,8 +75,11 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
     let inReader = new StringReader(defaultArg input "")
     let outWriter = new EventedTextWriter()
     let errorWriter = new EventedTextWriter()
-    
-    let redirectedConsole = new ParallelConsole.Caputure(input = inReader, output = outWriter, error = errorWriter)
+
+    do
+        ParallelConsole.localIn.Set inReader
+        ParallelConsole.localOut.Set outWriter
+        ParallelConsole.localError.Set errorWriter
 
     let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr)
 
@@ -88,9 +91,9 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
 
     member _.ErrorProduced = errorWriter.LineWritten
 
-    member _.GetOutput() = lock outWriter outWriter.GetText
+    member _.GetOutput() = ParallelConsole.OutText
 
-    member _.GetErrorOutput() = lock errorWriter errorWriter.GetText
+    member _.GetErrorOutput() = ParallelConsole.ErrorText
 
     member this.Eval(code: string, ?cancellationToken: CancellationToken, ?desiredCulture: Globalization.CultureInfo) =
         let originalCulture = Thread.CurrentThread.CurrentCulture
@@ -122,7 +125,6 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
     interface IDisposable with
         member this.Dispose() =
             ((this.Fsi) :> IDisposable).Dispose()
-            (redirectedConsole :> IDisposable).Dispose()
 
 [<AutoOpen>]
 module TestHelpers =

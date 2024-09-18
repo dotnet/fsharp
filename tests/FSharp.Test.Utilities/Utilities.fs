@@ -39,28 +39,27 @@ type FactForDESKTOPAttribute() =
         do base.Skip <- "NETCOREAPP is not supported runtime for this kind of test, it is intended for DESKTOP only"
     #endif
 
-module ParallelConsole =
+module internal ParallelConsole =
 
-    let private inHolder = new AsyncLocal<TextReader voption>()
-    let private outHolder = new AsyncLocal<TextWriter voption>()
-    let private errorHolder = new AsyncLocal<TextWriter voption>()
+    let inHolder = new AsyncLocal<TextReader voption>()
+    let outHolder = new AsyncLocal<TextWriter voption>()
+    let errorHolder = new AsyncLocal<TextWriter voption>()
 
     /// Redirects reads performed on different threads or async execution contexts to the relevant TextReader held by AsyncLocal.
-    type RedirectingTextReader(holder: AsyncLocal<TextReader voption>, defaultReader) =
+    type RedirectingTextReader(holder: AsyncLocal<TextReader voption>) =
         inherit TextReader()
 
-        let getValue() = holder.Value |> ValueOption.defaultValue defaultReader
+        let getValue() = holder.Value |> ValueOption.defaultValue TextReader.Null
 
         override _.Peek() = getValue().Peek()
         override _.Read() = getValue().Read()
         member _.Set (reader: TextReader) = holder.Value <- ValueSome reader
-        member _.Drop() = holder.Value <- ValueNone
 
     /// Redirects writes performed on different threads or async execution contexts to the relevant TextWriter held by AsyncLocal.
-    type RedirectingTextWriter(holder: AsyncLocal<TextWriter voption>, defaultWriter) =
+    type RedirectingTextWriter(holder: AsyncLocal<TextWriter voption>) =
         inherit TextWriter()
 
-        let getValue() = holder.Value |> ValueOption.defaultValue defaultWriter
+        let getValue() = holder.Value |> ValueOption.defaultValue TextWriter.Null
 
         override _.Encoding = Encoding.UTF8
         override _.Write(value: char) = getValue().Write(value)
@@ -68,48 +67,24 @@ module ParallelConsole =
         override _.WriteLine(value: string) = getValue().WriteLine(value)
         member _.Value = getValue()
         member _.Set (writer: TextWriter) = holder.Value <- ValueSome writer
-        member _.Drop() = holder.Value <- ValueNone
 
-    let private localIn = new RedirectingTextReader(inHolder, TextReader.Null)
-    let private localOut = new RedirectingTextWriter(outHolder, TextWriter.Null)
-    let private localError = new RedirectingTextWriter(errorHolder, TextWriter.Null)
+    let localIn = new RedirectingTextReader(inHolder)
+    let localOut = new RedirectingTextWriter(outHolder)
+    let localError = new RedirectingTextWriter(errorHolder)
 
     do
         Console.SetIn localIn
         Console.SetOut localOut
         Console.SetError localError
 
-    let Initialized = true
+    let reset() =
+        new StringWriter() |> localOut.Set
+        new StringWriter() |> localError.Set
 
-    type Caputure(?input, ?error: TextWriter, ?output: TextWriter) =
-        do
-            input |> Option.iter localIn.Set
-            defaultArg output (new StringWriter()) |> localOut.Set
-            defaultArg error (new StringWriter()) |> localError.Set
+type ParallelConsole =
+    static member OutText = string ParallelConsole.localOut.Value
 
-        member _.OutText = string localOut.Value
-        member _.ErrorText = string localError.Value
-
-        interface IDisposable with
-            member _.Dispose () =
-                localIn.Drop()
-                localOut.Drop()
-                localError.Drop()
-
-    let captureConsoleOutputs (func: unit -> unit) =
-
-        use captured = new Caputure()
-
-        let succeeded, exn =
-            try
-                func ()
-                true, None
-            with e ->
-                let errorMessage = if e.InnerException <> null then e.InnerException.ToString() else e.ToString()
-                Console.Error.Write errorMessage
-                false, Some e
-
-        succeeded, captured.OutText, captured.ErrorText, exn
+    static member ErrorText = string ParallelConsole.localError.Value
 
 // This file mimics how Roslyn handles their compilation references for compilation testing
 module Utilities =

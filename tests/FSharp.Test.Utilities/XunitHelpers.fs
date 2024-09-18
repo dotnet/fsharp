@@ -32,6 +32,5 @@ type DoNotRunInParallel = class end
 type InitTestGlobals() =
     inherit Xunit.Sdk.BeforeAfterTestAttribute()
     override _.Before (_methodUnderTest: Reflection.MethodInfo): unit =
-        // ensure static context is initialized
-        ParallelConsole.Initialized |> ignore
-        TestContext.checker |> ignore
+        // Ensure console capture is installed.
+        ParallelConsole.reset()
