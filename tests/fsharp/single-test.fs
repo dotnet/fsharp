@@ -226,21 +226,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
     //    optimize = true or false
     let executeSingleTestBuildAndRun outputType compilerType targetFramework optimize buildOnly =
         let mutable result = false
-        let directory =
-            let mutable result = ""
-            lock lockObj <| (fun () ->
-                let rec loop () =
-                    let pathToArtifacts = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "../../../.."))
-                    if Path.GetFileName(pathToArtifacts) <> "artifacts" then failwith "FSharp.Cambridge did not find artifacts directory --- has the location changed????"
-                    let pathToTemp = Path.Combine(pathToArtifacts, "Temp")
-                    let projectDirectory = Path.Combine(pathToTemp, "FSharp.Cambridge", Guid.NewGuid().ToString() + ".tmp")
-                    if Directory.Exists(projectDirectory) then
-                        loop ()
-                    else
-                        Directory.CreateDirectory(projectDirectory) |>ignore
-                        projectDirectory
-                result <- loop())
-            result
+        let directory = cfg.Directory
 
         let pc = {
             OutputType = outputType
@@ -270,10 +256,6 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
         let overridesFileName = Path.Combine(directory, "Directory.Overrides.targets")
         let projectFileName = Path.Combine(directory, Guid.NewGuid().ToString() + ".tmp" + ".fsproj")
         try
-            // Clean up directory
-            Directory.CreateDirectory(directory) |> ignore
-            copyFilesToDest cfg.Directory directory
-            try File.Delete(Path.Combine(directory, "FSharp.Core.dll")) with _ -> ()
             emitFile targetsFileName targetsBody
             emitFile overridesFileName overridesBody
             let buildOutputFile = Path.Combine(directory, "buildoutput.txt")
