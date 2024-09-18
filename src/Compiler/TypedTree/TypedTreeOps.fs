@@ -1857,6 +1857,13 @@ let isObjNullTy g ty =
     ty 
     |> stripTyEqns g 
     |> (function TType_app(tcref, _, n) when (not g.checkNullness || n.TryEvaluate() = ValueSome(NullnessInfo.WithNull)) 
+                -> tyconRefEq g g.system_Object_tcref tcref | _ -> false)
+
+let isObjTyWithoutNull (g:TcGlobals) ty = 
+    g.checkNullness &&
+    ty 
+    |> stripTyEqns g 
+    |> (function TType_app(tcref, _, n) when (n.TryEvaluate() = ValueSome(NullnessInfo.WithoutNull)) 
                 -> tyconRefEq g g.system_Object_tcref tcref | _ -> false) 
 
 let isValueTypeTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tyconRefEq g g.system_Value_tcref tcref | _ -> false) 

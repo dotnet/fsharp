@@ -34,26 +34,55 @@ let ``Does report warning on obj to static member`` () =
 type Test() =
     member _.XX(o:obj) = ()
     static member X(o: obj) = ()
-
+    static member XString(x:string) = ()
 let x: obj | null = null
 Test.X x // warning expected
 let y2 = Test.X(x) // warning also expected
 Test.X(null:(obj|null)) // warning also expected
 let t = Test()
 t.XX(x)
+Test.XString(null)
+Test.XString("x":(string|null))
     """
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics 
-        [ Error 3261, Line 7, Col 8, Line 7, Col 9, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
-          Error 3261, Line 7, Col 1, Line 7, Col 9, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
-          Error 3261, Line 8, Col 17, Line 8, Col 18, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
+         [Error 3261, Line 7, Col 1, Line 7, Col 9, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
           Error 3261, Line 8, Col 10, Line 8, Col 19, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
-          Error 3261, Line 9, Col 8, Line 9, Col 23, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
           Error 3261, Line 9, Col 1, Line 9, Col 24, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
-          Error 3261, Line 11, Col 6, Line 11, Col 7, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
-          Error 3261, Line 11, Col 1, Line 11, Col 8, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."]
+          Error 3261, Line 11, Col 1, Line 11, Col 8, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
+          Error 3261, Line 12, Col 14, Line 12, Col 18, "Nullness warning: The type 'string' does not support 'null'."
+          Error 3261, Line 13, Col 14, Line 13, Col 31, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."]
+
+[<Fact>]
+let ``Typar infered to nonnull obj`` () =
+
+    FSharp """module Tests
+let asObj(x:obj) = x
+let asObjNull(x:objnull) = x
+
+let genericWithoutNull x = asObj x
+let genericWithNull x = asObjNull x
+
+let result0 = genericWithoutNull null
+let result1 = genericWithoutNull ("":(obj|null))
+let result2 = genericWithoutNull 15
+let result3 = genericWithoutNull "xxx"
+let result4 = genericWithoutNull ("xxx":(string|null))
+let result5 = genericWithNull null
+let result6 = genericWithNull 15
+let result7 = genericWithNull "xxx"
+let result8 = genericWithNull ("":(obj|null))
+
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics 
+            [ Error 43, Line 8, Col 34, Line 8, Col 38, "The constraints 'null' and 'not null' are inconsistent"
+              Error 3261, Line 9, Col 35, Line 9, Col 48, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
+              Error 3261, Line 12, Col 35, Line 12, Col 54, "Nullness warning: The type 'string | null' supports 'null' but a non-null type is expected."]
 
     
 [<Fact>]
@@ -638,7 +667,7 @@ let ``Supports null in generic code`` () =
 let myGenericFunction p = 
     match p with
     | null -> ()
-    | p -> printfn "%s" (p.ToString()) 
+    | nnp -> printfn "%s" (nnp.ToString()) 
 
 [<AllowNullLiteral>]
 type X(p:int) =
