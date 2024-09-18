@@ -60,11 +60,16 @@ type AssemblyLoader =
 type ImportMap(g: TcGlobals, assemblyLoader: AssemblyLoader) =
     let typeRefToTyconRefCache = ConcurrentDictionary<ILTypeRef, TyconRef>()
 
+    // TODO(vlza): should that be an MRU cache, so we can evict the entries we are not (or checked just once or twice)?
+    let typeSubsumptionCache = ConcurrentDictionary<int, bool>()
+
     member _.g = g
 
     member _.assemblyLoader = assemblyLoader
 
     member _.ILTypeRefToTyconRefCache = typeRefToTyconRefCache
+
+    member _.TypeSubsumptionCache = typeSubsumptionCache
 
 let CanImportILScopeRef (env: ImportMap) m scoref = 
 
@@ -897,4 +902,3 @@ let RescopeAndImportILType scoref (amap:ImportMap) m importInst (nullnessSource:
 
 let CanRescopeAndImportILType scoref amap m ilTy =
     ilTy |> rescopeILType scoref |>  CanImportILType amap m
-

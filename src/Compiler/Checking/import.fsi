@@ -10,6 +10,8 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 
+open System.Collections.Concurrent
+
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
 #endif
@@ -50,6 +52,9 @@ type ImportMap =
 
     /// The TcGlobals for the import context
     member g: TcGlobals
+    
+    /// Type subsumption cache
+    member TypeSubsumptionCache: ConcurrentDictionary<int, bool>
 
 module Nullness =
 

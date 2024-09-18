@@ -16,13 +16,8 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.Text
 
-open System.Collections.Concurrent
-
 type CanCoerce = CanCoerce | NoCoerce
 type Hash = int
-
-// TODO(vlza): should that be an MRU cache, so we can evict the entries we are not (or checked just once or twice)?
-let typeSubsumptionCache = ConcurrentDictionary<(int * CanCoerce), bool>()
 
 // This is temporary code duplication from `SignatureHash.fs`, just to test some theories.
 
@@ -220,7 +215,7 @@ let inline TypesFeasiblyEquivStripMeasures g amap m ty1 ty2 =
     TypesFeasiblyEquivalent true 0 g amap m ty1 ty2
 
 /// The feasible coercion relation. Part of the language spec.
-let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
+let rec TypeFeasiblySubsumesType ndeep g (amap: Import.ImportMap) m ty1 canCoerce ty2 =
 
     if ndeep > 100 then
         error(InternalError("recursive class hierarchy (detected in TypeFeasiblySubsumesType), ty1 = " + (DebugPrint.showType ty1), m))
@@ -231,12 +226,14 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
     // TODO(vlza): this might not be the best way to cache this, due to mutability of TType_var and other non-nominal generic types.
     // For now it's more of a PoC, I think we should use a more sophisticated approach based on kind of TType.
 
-    let tyPairHash = combineHash (hashTType g ty1) (hashTType g ty2)
-    let key = (tyPairHash, canCoerce)
+    let ty1Hash = hashTType g ty1
+    let ty2Hash = hashTType g ty2
 
-    match typeSubsumptionCache.TryGetValue(key) with
+    let key = combineHash (hash canCoerce) <| combineHash ty1Hash ty2Hash
+
+    match amap.TypeSubsumptionCache.TryGetValue(key) with
     | true, subsumes ->
-        printfn $"TypeFeasiblySubsumesType Found: ty1={DebugPrint.showType ty1}; ty2={DebugPrint.showType ty2}; CanCoerce={canCoerce}; Subsumes={subsumes}"
+        printfn $"TypeFeasiblySubsumesType Hit: ty1={DebugPrint.showType ty1}; ty2={DebugPrint.showType ty2}; CanCoerce={canCoerce}; Subsumes={subsumes}; ty1Hash={ty1Hash}; ty2Hash={ty2Hash}; combinedHash={key}"
         subsumes
     | false, _ ->
         let subsumes =
@@ -265,9 +262,9 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
                         // See if any interface in type hierarchy of ty2 is a supertype of ty1
                         List.exists (TypeFeasiblySubsumesType (ndeep + 1) g amap m ty1 NoCoerce) interfaces
 
-        typeSubsumptionCache[key] <- subsumes
+        amap.TypeSubsumptionCache[key] <- subsumes
 
-        printfn $"TypeFeasiblySubsumesType Cached: ty1={DebugPrint.showType ty1}; ty2={DebugPrint.showType ty2}; CanCoerce={canCoerce}; Subsumes={subsumes}"
+        printfn $"TypeFeasiblySubsumesType Store: ty1={DebugPrint.showType ty1}; ty2={DebugPrint.showType ty2}; CanCoerce={canCoerce}; Subsumes={subsumes}; ty1Hash={ty1Hash}; ty2Hash={ty2Hash}; combinedHash={key}"
 
         subsumes
 
