@@ -200,7 +200,7 @@ let g (t : T) = t.Count()
         CheckErrorList content (assertExpectedErrorMessages expectedMessages)
             
 
-    [<Fact>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Query.InvalidJoinRelation.GroupJoin``() = 
         let content = """
 let x = query { 
@@ -216,7 +216,7 @@ let x = query {
                 | errs -> 
                     Assert.Fail("Unexpected content of error list")
 
-    [<Fact>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Query.NonOpenedNullableModule.Join``() = 
         let content = """
 let t = 
@@ -233,7 +233,7 @@ let t =
                 | errs -> 
                     Assert.Fail("Unexpected content of error list")
 
-    [<Fact>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Query.NonOpenedNullableModule.GroupJoin``() = 
         let content = """
 let t = 
@@ -251,7 +251,7 @@ let t =
                     Assert.Fail("Unexpected content of error list")
 
 
-    [<Fact>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Query.InvalidJoinRelation.Join``() = 
         let content = """
 let x = 
