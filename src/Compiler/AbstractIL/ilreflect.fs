@@ -2178,7 +2178,8 @@ let rec buildTypeDefPass2 cenv nesting emEnv (tdef: ILTypeDef) =
     let typB = envGetTypB emEnv tref
     let emEnv = envPushTyvars emEnv (getGenericArgumentsOfType typB)
     // add interface impls
-    tdef.Implements
+    tdef.Implements.Value
+    |> List.map _.Type
     |> convTypes cenv emEnv
     |> List.iter (fun implT -> typB.AddInterfaceImplementationAndLog implT)
     // add methods, properties
@@ -2339,7 +2340,8 @@ let createTypeRef (visited: Dictionary<_, _>, created: Dictionary<_, _>) emEnv t
         if verbose2 then
             dprintf "buildTypeDefPass4: Creating Interface Chain of %s\n" tdef.Name
 
-        tdef.Implements |> List.iter (traverseType CollectTypes.All)
+        tdef.Implements.Value
+        |> List.iter (fun x -> traverseType CollectTypes.All x.Type)
 
         if verbose2 then
             dprintf "buildTypeDefPass4: Do value types in fields of %s\n" tdef.Name
