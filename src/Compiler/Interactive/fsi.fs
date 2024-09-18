@@ -1677,34 +1677,6 @@ let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
     let qname = QualifiedNameOfFile.QualifiedNameOfFile(Ident(moduleName, m))
     entity, v, CheckedImplFile.CheckedImplFile(qname, mty, contents, false, false, StampMap.Empty, Map.empty)
 
-let scriptingSymbolsPath =
-    let createDirectory (path: string) =
-        lazy
-            try
-                if not (Directory.Exists(path)) then
-                    Directory.CreateDirectory(path) |> ignore
-
-                path
-            with _ ->
-                path
-
-    createDirectory (Path.Combine(Path.GetTempPath(), $"{DateTime.Now:s}-{Guid.NewGuid():n}".Replace(':', '-')))
-
-let deleteScriptingSymbols () =
-    try
-#if !DEBUG
-        if scriptingSymbolsPath.IsValueCreated then
-            if Directory.Exists(scriptingSymbolsPath.Value) then
-                Directory.Delete(scriptingSymbolsPath.Value, true)
-#else
-        ()
-#endif
-    with _ ->
-        ()
-
-AppDomain.CurrentDomain.ProcessExit
-|> Event.add (fun _ -> deleteScriptingSymbols ())
-
 let dynamicCcuName = "FSI-ASSEMBLY"
 
 /// Encapsulates the coordination of the typechecking, optimization and code generation
@@ -1765,6 +1737,33 @@ type internal FsiDynamicCompiler
     let infoReader = InfoReader(tcGlobals, tcImports.GetImportMap())
 
     let reportedAssemblies = Dictionary<string, DateTime>()
+
+    let scriptingSymbolsPath =
+        let createDirectory (path: string) =
+            try
+                if not (Directory.Exists(path)) then
+                    Directory.CreateDirectory(path) |> ignore
+
+                path
+            with _ ->
+                path
+
+        createDirectory (Path.Combine(Path.GetTempPath(), $"{DateTime.Now:s}-{Guid.NewGuid():n}".Replace(':', '-')))
+
+    let deleteScriptingSymbols () =
+        try
+#if !DEBUG
+            if Directory.Exists(scriptingSymbolsPath) then
+                Directory.Delete(scriptingSymbolsPath, true)
+#else
+            ()
+#endif
+        with _ ->
+            ()
+
+    do
+        AppDomain.CurrentDomain.ProcessExit
+        |> Event.add (fun _ -> deleteScriptingSymbols ())
 
     /// Add attributes
     let CreateModuleFragment (tcConfigB: TcConfigBuilder, dynamicCcuName, codegenResults) =
@@ -1843,7 +1842,7 @@ type internal FsiDynamicCompiler
             {
                 ilg = tcGlobals.ilg
                 outfile = $"{multiAssemblyName}-{dynamicAssemblyId}.dll"
-                pdbfile = Some(Path.Combine(scriptingSymbolsPath.Value, $"{multiAssemblyName}-{dynamicAssemblyId}.pdb"))
+                pdbfile = Some(Path.Combine(scriptingSymbolsPath, $"{multiAssemblyName}-{dynamicAssemblyId}.pdb"))
                 emitTailcalls = tcConfig.emitTailcalls
                 deterministic = tcConfig.deterministic
                 portablePDB = true

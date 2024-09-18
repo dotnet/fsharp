@@ -431,7 +431,7 @@ module TcRecdUnionAndEnumDeclarations =
     let TcFieldDecl (cenv: cenv) env parent isIncrClass tpenv (isStatic, synAttrs, id: Ident, nameGenerated, ty, isMutable, xmldoc, vis) =
         let g = cenv.g
         let m = id.idRange
-        let attrs, _ = TcAttributesWithPossibleTargets false cenv env AttributeTargets.FieldDecl synAttrs
+        let attrs, _ = TcAttributesWithPossibleTargets TcCanFail.ReportAllErrors cenv env AttributeTargets.FieldDecl synAttrs
 
         let attrsForProperty, attrsForField = attrs |> List.partition (fun (attrTargets, _) -> (attrTargets &&& AttributeTargets.Property) <> enum 0) 
         let attrsForProperty = (List.map snd attrsForProperty) 
@@ -455,7 +455,7 @@ module TcRecdUnionAndEnumDeclarations =
         match parent with
         | Parent tcref when useGenuineField tcref.Deref rfspec ->
             // Recheck the attributes for errors if the definition only generates a field
-            TcAttributesWithPossibleTargets false cenv env AttributeTargets.FieldDeclRestricted synAttrs |> ignore
+            TcAttributesWithPossibleTargets TcCanFail.ReportAllErrors cenv env AttributeTargets.FieldDeclRestricted synAttrs |> ignore
         | _ -> ()
         rfspec
 
@@ -2909,9 +2909,9 @@ module EstablishTypeDefinitionCores =
                 
                 if reportAttributeTargetsErrors then
                     if hasStructAttr then
-                        TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Struct synAttrs |> ignore
+                        TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Struct synAttrs |> ignore
                     else
-                        TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Class synAttrs |> ignore
+                        TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Class synAttrs |> ignore
 
                 // Note: the table of union cases is initially empty
                 Construct.MakeUnionRepr []
@@ -2934,9 +2934,9 @@ module EstablishTypeDefinitionCores =
                 
                 if reportAttributeTargetsErrors then
                     if hasStructAttr then
-                        TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Struct synAttrs |> ignore
+                        TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Struct synAttrs |> ignore
                     else
-                        TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Class synAttrs |> ignore
+                        TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Class synAttrs |> ignore
 
                 // Note: the table of record fields is initially empty
                 TFSharpTyconRepr (Construct.NewEmptyFSharpTyconData TFSharpRecord)
@@ -2952,19 +2952,19 @@ module EstablishTypeDefinitionCores =
                         match kind with
                         | SynTypeDefnKind.Class ->
                             if reportAttributeTargetsErrors then
-                                TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Class synAttrs |> ignore
+                                TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Class synAttrs |> ignore
                             TFSharpClass
                         | SynTypeDefnKind.Interface ->
                             if reportAttributeTargetsErrors then
-                                TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Interface synAttrs |> ignore
+                                TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Interface synAttrs |> ignore
                             TFSharpInterface
                         | SynTypeDefnKind.Delegate _ ->
                             if reportAttributeTargetsErrors then
-                                TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Delegate synAttrs |> ignore
+                                TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Delegate synAttrs |> ignore
                             TFSharpDelegate (MakeSlotSig("Invoke", g.unit_ty, [], [], [], None))
                         | SynTypeDefnKind.Struct ->
                             if reportAttributeTargetsErrors then
-                                TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Struct synAttrs |> ignore
+                                TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Struct synAttrs |> ignore
                             TFSharpStruct 
                         | _ -> error(InternalError("should have inferred tycon kind", m))
 
@@ -2973,7 +2973,7 @@ module EstablishTypeDefinitionCores =
             | SynTypeDefnSimpleRepr.Enum _ ->
                 noCLIMutableAttributeCheck()
                 if reportAttributeTargetsErrors then
-                    TcAttributesWithPossibleTargets false cenv envinner AttributeTargets.Enum synAttrs |> ignore
+                    TcAttributesWithPossibleTargets TcCanFail.IgnoreMemberResoutionError cenv envinner AttributeTargets.Enum synAttrs |> ignore
                 TFSharpTyconRepr (Construct.NewEmptyFSharpTyconData TFSharpEnum)
 
         // OK, now fill in the (partially computed) type representation
@@ -4035,7 +4035,7 @@ module EstablishTypeDefinitionCores =
         // Phase 1B. Establish the kind of each type constructor 
         // Here we run InferTyconKind and record partial information about the kind of the type constructor. 
         // This means FSharpTyconKind is set, which means isSealedTy, isInterfaceTy etc. give accurate results. 
-        let withAttrs = 
+        let withAttrs =
             (envMutRecPrelim, withEnvs) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo, tyconOpt) -> 
                 let res = 
                     match origInfo, tyconOpt with 
@@ -5202,7 +5202,7 @@ let TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial
     let mutRecDefnsChecked, envAfter = TcDeclarations.TcMutRecDefinitions cenv envInitial parent typeNames tpenv m scopem mutRecNSInfo mutRecDefns true
 
     // Check the assembly attributes
-    let attrs, _ = TcAttributesWithPossibleTargets false cenv envAfter AttributeTargets.Top synAttrs
+    let attrs, _ = TcAttributesWithPossibleTargets TcCanFail.ReportAllErrors cenv envAfter AttributeTargets.Top synAttrs
 
     // Check the non-escaping condition as we build the list of module expressions on the way back up 
     let moduleContents = TcMutRecDefsFinish cenv mutRecDefnsChecked m 
@@ -5279,7 +5279,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
           return! failwith "unreachable"
 
       | SynModuleDecl.Attributes (Attributes synAttrs, _) -> 
-          let attrs, _ = TcAttributesWithPossibleTargets false cenv env AttributeTargets.Top synAttrs
+          let attrs, _ = TcAttributesWithPossibleTargets TcCanFail.ReportAllErrors cenv env AttributeTargets.Top synAttrs
           return ([], [], attrs), env, env
 
       | SynModuleDecl.HashDirective _ -> 

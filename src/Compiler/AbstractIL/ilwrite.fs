@@ -1323,7 +1323,7 @@ and GenTypeDefPass2 pidx enc cenv (tdef: ILTypeDef) =
         // Now generate or assign index numbers for tables referenced by the maps.
         // Don't yet generate contents of these tables - leave that to pass3, as
         // code may need to embed these entries.
-        cenv.implementsIdxs[tidx] <- tdef.Implements |> List.map (GenImplementsPass2 cenv env tidx)            
+        cenv.implementsIdxs[tidx] <- tdef.Implements.Value |> List.map (fun x -> GenImplementsPass2 cenv env tidx x.Type)            
 
         tdef.Fields.AsList() |> List.iter (GenFieldDefPass2 tdef cenv tidx)
         tdef.Methods |> Seq.iter (GenMethodDefPass2 tdef cenv tidx)
@@ -2875,12 +2875,9 @@ let rec GenTypeDefPass3 enc cenv (tdef: ILTypeDef) =
         let env = envForTypeDef tdef
         let tidx = GetIdxForTypeDef cenv (TdKey(enc, tdef.Name))
 
-        match tdef.ImplementsCustomAttrs with
-        | None -> ()
-        | Some attrList ->
-            attrList
-            |> List.zip cenv.implementsIdxs[tidx]
-            |> List.iter (fun (impIdx,(attrs,metadataIdx)) -> GenCustomAttrsPass3Or4 cenv (hca_InterfaceImpl,impIdx) (attrs.GetCustomAttrs metadataIdx))
+        tdef.Implements.Value
+        |> List.zip cenv.implementsIdxs[tidx]
+        |> List.iter (fun (impIdx, impl) -> GenCustomAttrsPass3Or4 cenv (hca_InterfaceImpl,impIdx) impl.CustomAttrs)
 
         tdef.Properties.AsList() |> List.iter (GenPropertyPass3 cenv env)
         tdef.Events.AsList() |> List.iter (GenEventPass3 cenv env)

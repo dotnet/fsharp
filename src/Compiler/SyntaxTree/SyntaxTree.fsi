@@ -410,7 +410,10 @@ type SynTypeConstraint =
     | WhereTyparSupportsNull of typar: SynTypar * range: range
 
     /// F# syntax is 'typar : null
-    | WhereTyparNotSupportsNull of genericName: SynTypar * range: range
+    | WhereTyparNotSupportsNull of
+        genericName: SynTypar *
+        range: range *
+        trivia: SynTypeConstraintWhereTyparNotSupportsNullTrivia
 
     /// F# syntax is 'typar: comparison
     | WhereTyparIsComparable of typar: SynTypar * range: range
@@ -528,7 +531,7 @@ type SynType =
     /// F# syntax: ident=1 etc., used in static parameters to type providers
     | StaticConstantNamed of ident: SynType * value: SynType * range: range
 
-    | WithNull of innerType: SynType * ambivalent: bool * range: range
+    | WithNull of innerType: SynType * ambivalent: bool * range: range * trivia: SynTypeWithNullTrivia
 
     | Paren of innerType: SynType * range: range
 
