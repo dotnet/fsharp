@@ -278,12 +278,18 @@ For value types, a value is passed even though it is always 0
 
             member this.Advance() = {Data = this.Data; Idx = this.Idx + 1}
 
+    let inline isSystemNullable (tspec:ILTypeSpec) = 
+        match tspec.Name,tspec.Enclosing with
+        | "Nullable`1",["System"] -> true
+        | "System.Nullable`1",[] -> true
+        | _ -> false
+
     let inline evaluateFirstOrderNullnessAndAdvance (ilt:ILType) (flags:NullableFlags) = 
         match ilt with
         | ILType.Value tspec when tspec.GenericArgs.IsEmpty -> KnownWithoutNull, flags
         // System.Nullable is special-cased in C# spec for nullness metadata.
         // You CAN assign 'null' to it, and when boxed, it CAN be boxed to 'null'.
-        | ILType.Value tspec when tspec.Name = "Nullable`1" && tspec.Enclosing = ["System"] -> KnownWithoutNull, flags
+        | ILType.Value tspec when isSystemNullable tspec -> KnownWithoutNull, flags
         | ILType.Value _  -> KnownWithoutNull, flags.Advance()
         | _ -> flags.GetNullness(), flags.Advance()
 

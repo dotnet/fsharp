@@ -169,7 +169,6 @@ stages:
         #       because we want to catch cases when version is desynched and we didn't update it.
         #       It is also helping the release notes automation to be up to date with packages versions.
         - job: Check_Published_Package_Versions
-          condition: or(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), or(startsWith(variables['System.PullRequest.SourceBranch'], 'release/dev'), startsWith(variables['System.PullRequest.TargetBranch'], 'release/dev')))
           pool:
             vmImage: $(UbuntuMachineQueueName)
           strategy:

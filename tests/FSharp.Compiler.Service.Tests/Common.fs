@@ -34,7 +34,7 @@ type Async with
 let checker = FSharpChecker.Create(useTransparentCompiler=FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically)
 
 type TempFile(ext, contents: string) =
-    let tmpFile =  Path.ChangeExtension(tryCreateTemporaryFileName (), ext)
+    let tmpFile =  Path.ChangeExtension(getTemporaryFileName (), ext)
     do FileSystem.OpenFileForWriteShim(tmpFile).Write(contents)
 
     interface IDisposable with
@@ -130,8 +130,8 @@ let mkProjectCommandLineArgsForScript (dllName, fileNames) =
 #endif
 
 let mkTestFileAndOptions source additionalArgs =
-    let fileName = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let project = tryCreateTemporaryFileName ()
+    let fileName = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let project = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(project, ".dll")
     let projFileName = Path.ChangeExtension(project, ".fsproj")
     let fileSource1 = "module M"
@@ -481,7 +481,7 @@ module TempDirUtils =
     /// Returns the file name part of a temp file name created with tryCreateTemporaryFileName ()
     /// and an added process id and thread id to ensure uniqueness between threads.
     let getTempFileName() =
-        let tempFileName = tryCreateTemporaryFileName ()
+        let tempFileName = getTemporaryFileName ()
         try
             let tempFile, tempExt = Path.GetFileNameWithoutExtension tempFileName, Path.GetExtension tempFileName
             let procId, threadId = Process.GetCurrentProcess().Id, Thread.CurrentThread.ManagedThreadId
