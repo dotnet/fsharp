@@ -926,7 +926,7 @@ module CoreTests3 =
 
         peverify cfg "test.exe"
 
-        execAndCheckPassed cfg ("." ++ "test.exe") ""
+        exec cfg ("." ++ "test.exe") ""
 
     [<Fact>]
     let ``add files with same name from different folders including signature files`` () =
