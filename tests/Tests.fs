@@ -191,3 +191,17 @@ let ``My test with arg`` (arg:int) =
 [<Theory>]
 let ``My super fasttest with arg`` (arg:int) =
     Assert.True(true)
+
+
+
+
+// Ok we have 5 of these suckers. All the other tests could go to 2 remaining agents
+[<InlineData(1)>]
+[<InlineData(2)>]
+[<InlineData(3)>]
+[<InlineData(4)>]
+[<InlineData(5)>]
+[<Theory>]
+let ``Bloody hell 5 fucking minutes`` (arg:int) =
+    System.Threading.Thread.Sleep((1000*60*5)+arg))
+    Assert.True(true)
