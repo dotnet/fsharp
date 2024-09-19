@@ -363,6 +363,7 @@ function VerifyAssemblyVersionsAndSymbols() {
 }
 
 function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [string]$testadapterpath, [boolean] $asBackgroundJob = $false) {
+
     $dotnetPath = InitializeDotNetCli
     $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
     $projectName = [System.IO.Path]::GetFileNameWithoutExtension($testProject)
@@ -370,6 +371,11 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     $testBinLogPath = "$LogDir\${projectName}_$targetFramework.binlog"
     $args = "test $testProject -c $configuration -f $targetFramework -v n --test-adapter-path $testadapterpath --logger ""nunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
     $args += " --blame --results-directory $ArtifactsDir\TestResults\$configuration -p:vstestusemsbuildoutput=false"
+
+    #sanity check
+    if ($ci) { 
+        $args += " -p:ParallelizeTestCollections=false"
+    }
 
     if (-not $noVisualStudio -or $norestore) {
         $args += " --no-restore"
