@@ -197,6 +197,7 @@ module Helpers =
 
     let failtest str = raise (TestException str)
 
+[<Collection(nameof FSharp.Test.DoNotRunInParallel)>]
 type Basics() = 
     [<Fact>]
     member _.testShortCircuitResult() =
@@ -1205,8 +1206,6 @@ type Basics() =
         }
         |> ignore
 
-[<Collection(nameof FSharp.Test.DoNotRunInParallel)>]
-type BasicsNotInParallel() = 
 
     [<Fact; >]
     member _.testTaskUsesSyncContext() =
