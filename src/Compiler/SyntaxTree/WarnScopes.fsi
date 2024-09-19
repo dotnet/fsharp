@@ -21,4 +21,5 @@ module internal WarnScopes =
     val IsWarnon: WarnScopeMap -> warningNumber: int -> mo: range option -> bool
 
     /// Check if the range is inside a WarnScope.Off scope
-    val IsNowarn: WarnScopeMap -> warningNumber: int -> mo: range option -> bool -> bool
+    /// compatible = compatible with earlier (< F# 10.0) inconsistent interaction between #line and #nowarn
+    val IsNowarn: WarnScopeMap -> warningNumber: int -> mo: range option -> compatible: bool -> bool
