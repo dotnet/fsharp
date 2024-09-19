@@ -372,17 +372,17 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     $args = "test $testProject -c $configuration -f $targetFramework -v n --test-adapter-path $testadapterpath --logger ""nunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
     $args += " --blame --results-directory $ArtifactsDir\TestResults\$configuration -p:vstestusemsbuildoutput=false"
 
-    #sanity check
-    if ($ci) { 
-        $args += " -p:ParallelizeTestCollections=false"
-    }
-
     if (-not $noVisualStudio -or $norestore) {
         $args += " --no-restore"
     }
 
     if (-not $noVisualStudio) {
         $args += " --no-build"
+    }
+
+    #sanity check
+    if ($ci) { 
+        $args += " -- xUnit.ParallelizeTestCollections=false"
     }
 
     if ($asBackgroundJob) {
