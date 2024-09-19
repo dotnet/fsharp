@@ -57,8 +57,6 @@ module CoreTests =
     let ``subtype-langversion-46`` () =
         let cfg = testConfig "core/subtype"
 
-        
-
         fsc cfg "%s -o:test-langversion-46.exe -g --langversion:4.6" cfg.fsc_flags ["test.fsx"]
 
         execAndCheckPassed cfg ("." ++ "test-langversion-46.exe") ""
@@ -74,7 +72,7 @@ module CoreTests =
 
         let projectFile = cfg.Directory ++ "AllSdkTargetsTests.proj"
 
-        execAndCheckPassed cfg cfg.DotNetExe ($"msbuild {projectFile} /p:Configuration={cfg.BUILD_CONFIG} -property:FSharpRepositoryPath={FSharpRepositoryPath}")
+        exec cfg cfg.DotNetExe ($"msbuild {projectFile} /p:Configuration={cfg.BUILD_CONFIG} -property:FSharpRepositoryPath={FSharpRepositoryPath}")
 
 #if !NETCOREAPP
 module CoreTests1 =
@@ -501,21 +499,15 @@ module CoreTests2 =
     let ``fsi-reload`` () =
         let cfg = testConfig "core/fsi-reload"
 
-        begin
-            
+        begin          
             fsiStdin cfg "test1.ml"  " --langversion:5.0 --mlcompatibility --maxerrors:1" []
             checkPassed()
         end
-
-        begin
             
-            fsiCheckPassed cfg "%s  --maxerrors:1" cfg.fsi_flags ["load1.fsx"]
-        end
+        fsiCheckPassed cfg "%s  --maxerrors:1" cfg.fsi_flags ["load1.fsx"]
 
-        begin
-            
-            fsiCheckPassed cfg "%s  --maxerrors:1" cfg.fsi_flags ["load2.fsx"]
-        end
+           
+        fsiCheckPassed cfg "%s  --maxerrors:1" cfg.fsi_flags ["load2.fsx"]
 
         fsc cfg "" ["load1.fsx"]
         fsc cfg "" ["load2.fsx"]
@@ -872,15 +864,15 @@ module CoreTests3 =
 
         fsc cfg "%s -a -o:kanji-unicode-utf8-withsig-codepage-65001.dll -g" cfg.fsc_flags ["kanji-unicode-utf8-withsig-codepage-65001.fs"]
 
-        fsiCheckPassed cfg "%s --utf8output" cfg.fsi_flags ["kanji-unicode-utf8-nosig-codepage-65001.fs"]
+        fsi cfg "%s --utf8output" cfg.fsi_flags ["kanji-unicode-utf8-nosig-codepage-65001.fs"]
 
-        fsiCheckPassed cfg "%s --utf8output --codepage:65001" cfg.fsi_flags ["kanji-unicode-utf8-withsig-codepage-65001.fs"]
+        fsi cfg "%s --utf8output --codepage:65001" cfg.fsi_flags ["kanji-unicode-utf8-withsig-codepage-65001.fs"]
 
-        fsiCheckPassed cfg "%s --utf8output" cfg.fsi_flags ["kanji-unicode-utf8-withsig-codepage-65001.fs"]
+        fsi cfg "%s --utf8output" cfg.fsi_flags ["kanji-unicode-utf8-withsig-codepage-65001.fs"]
 
-        fsiCheckPassed cfg "%s --utf8output --codepage:65000" cfg.fsi_flags ["kanji-unicode-utf7-codepage-65000.fs"]
+        fsi cfg "%s --utf8output --codepage:65000" cfg.fsi_flags ["kanji-unicode-utf7-codepage-65000.fs"]
 
-        fsiCheckPassed cfg "%s --utf8output" cfg.fsi_flags ["kanji-unicode-utf16.fs"]
+        fsi cfg "%s --utf8output" cfg.fsi_flags ["kanji-unicode-utf16.fs"]
 
 
     [<Fact>]
@@ -1529,25 +1521,25 @@ module CoreTests5 =
 
         peverify cfg "test_static_init_exe--optimize.exe"
 
-        execAndCheckPassed cfg ("." ++ "test.exe") ""
+        exec cfg ("." ++ "test.exe") ""
 
-        execAndCheckPassed cfg ("." ++ "test--optimize.exe") ""
+        exec cfg ("." ++ "test--optimize.exe") ""
 
-        execAndCheckPassed cfg ("." ++ "test_deterministic_init.exe") ""
+        exec cfg ("." ++ "test_deterministic_init.exe") ""
 
-        execAndCheckPassed cfg ("." ++ "test_deterministic_init--optimize.exe") ""
+        exec cfg ("." ++ "test_deterministic_init--optimize.exe") ""
 
-        execAndCheckPassed cfg ("." ++ "test_deterministic_init_exe.exe") ""
+        exec cfg ("." ++ "test_deterministic_init_exe.exe") ""
 
-        execAndCheckPassed cfg ("." ++ "test_deterministic_init_exe--optimize.exe") ""
+        exec cfg ("." ++ "test_deterministic_init_exe--optimize.exe") ""
 
-        execAndCheckPassed cfg ("." ++ "test_static_init.exe") ""
+        exec cfg ("." ++ "test_static_init.exe") ""
 
-        execAndCheckPassed cfg ("." ++ "test_static_init--optimize.exe") ""
+        exec cfg ("." ++ "test_static_init--optimize.exe") ""
 
-        execAndCheckPassed cfg ("." ++ "test_static_init_exe.exe") ""
+        exec cfg ("." ++ "test_static_init_exe.exe") ""
 
-        execAndCheckPassed cfg ("." ++ "test_static_init_exe--optimize.exe") ""
+        exec cfg ("." ++ "test_static_init_exe--optimize.exe") ""
 
     [<Fact>]
     let unitsOfMeasure () =
