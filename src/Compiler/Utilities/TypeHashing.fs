@@ -19,7 +19,12 @@ module internal HashingPrimitives =
     type Hash = int
 
     let inline hashText (s: string) : Hash = hash s
-    let inline combineHash acc y : Hash = (acc <<< 1) + y + 631
+    let inline combineHash acc y : Hash =
+    #if NETSTANDARD_2_1
+        System.HashCode.Combine(acc, y)
+    #else
+        (acc <<< 1) + y + 631
+    #endif
     let inline pipeToHash (value: Hash) (acc: Hash) = combineHash acc value
     let inline addFullStructuralHash (value) (acc: Hash) = combineHash (acc) (hash value)
 
