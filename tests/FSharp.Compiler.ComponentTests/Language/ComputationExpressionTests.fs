@@ -282,3 +282,129 @@ let run r2 r3 =
         |> withDiagnostics [
             (Error 708, Line 23, Col 9, Line 23, Col 13, "This control construct may only be used if the computation expression builder defines a 'Bind' method")
         ]
+    
+    [<Fact>]
+    let ``do! expressions may not be used in queries`` () =
+        Fsx """
+query {
+    do! failwith ""
+    yield 1
+}
+    """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3143, Line 3, Col 5, Line 3, Col 20, "'let!', 'use!' and 'do!' expressions may not be used in queries")
+        ]
+        
+    [<Fact>]
+    let ``let! expressions may not be used in queries`` () =
+        Fsx """
+query {
+    let! x = failwith ""
+    yield 1
+}
+    """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3143, Line 3, Col 5, Line 3, Col 9, "'let!', 'use!' and 'do!' expressions may not be used in queries")
+        ]
+            
+    [<Fact>]
+    let ``let!, and! expressions may not be used in queries`` () =
+        Fsx """
+query {
+    let! x = failwith ""
+    and! y = failwith ""
+    yield 1
+}
+    """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3143, Line 3, Col 5, Line 3, Col 9, "'let!', 'use!' and 'do!' expressions may not be used in queries")
+        ]
+        
+    [<Fact>]
+    let ``use! expressions may not be used in queries`` () =
+        Fsx """
+query {
+    use! x = failwith ""
+    yield 1
+}
+    """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3143, Line 3, Col 5, Line 3, Col 9, "'let!', 'use!' and 'do!' expressions may not be used in queries")
+        ]
+
+    [<Fact>]
+    let ``do! expressions may not be used in queries(SynExpr.Sequential)`` () =
+        Fsx """
+query {
+    for c in [1..10] do
+    do! failwith ""
+    yield 1
+}
+    """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3143, Line 4, Col 5, Line 4, Col 20, "'let!', 'use!' and 'do!' expressions may not be used in queries")  
+        ]
+        
+    [<Fact>]
+    let ``let! expressions may not be used in queries(SynExpr.Sequential)`` () =
+        Fsx """
+query {
+    for c in [1..10] do
+    let! x = failwith ""
+    yield 1
+}
+    """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3143, Line 4, Col 5, Line 4, Col 9, "'let!', 'use!' and 'do!' expressions may not be used in queries")
+        ]
+        
+    [<Fact>]
+    let ``let!, and! expressions may not be used in queries(SynExpr.Sequential)`` () =
+        Fsx """
+query {
+    for c in [1..10] do
+    let! x = failwith ""
+    and! y = failwith ""
+    yield 1
+}
+    """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3143, Line 4, Col 5, Line 4, Col 9, "'let!', 'use!' and 'do!' expressions may not be used in queries")
+        ]
+        
+    [<Fact>]
+    let ``use! expressions may not be used in queries(SynExpr.Sequential)`` () =
+        Fsx """
+query {
+    for c in [1..10] do
+    use! x = failwith ""
+    yield 1
+}
+    """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3143, Line 4, Col 5, Line 4, Col 9, "'let!', 'use!' and 'do!' expressions may not be used in queries")
+        ]

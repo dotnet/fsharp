@@ -1589,10 +1589,10 @@ let rec TryTranslateComputationExpression
                 Some(TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace innerComp2 translatedCtxt)
 
             else
-
                 if ceenv.isQuery && not (innerComp1.IsArbExprAndThusAlreadyReportedError) then
                     match innerComp1 with
-                    | SynExpr.JoinIn _ -> () // an error will be reported later when we process innerComp1 as a sequential
+                    | SynExpr.JoinIn _ -> ()
+                    | SynExpr.DoBang(range = m) -> errorR (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), m))
                     | _ -> errorR (Error(FSComp.SR.tcUnrecognizedQueryOperator (), innerComp1.RangeOfFirstPortion))
 
                 match
