@@ -103,7 +103,7 @@ stages:
         # Plain FCS build Windows
         - job: TomasTestingWithTests
           strategy:
-            parallel: 7
+            parallel: 8
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(WindowsMachineQueueName)
@@ -127,17 +127,13 @@ stages:
             env:
               NativeToolsOnMachine: true
             displayName: Bootstrapped compiler build
-          - script: dotnet build .\tests\tests.fsproj /bl:\"artifacts/log/$(_BuildConfig)/TestPlaygroundRebuild.binlog\"
-            workingDirectory: $(Build.SourcesDirectory)
-            displayName: Build tests with freshly built compiler
-            continueOnError: false
-            condition: always()
           - task: VSTest@2
             displayName: Run tests
             inputs:
               testSelector: testAssemblies
+              searchFolder: $(Build.SourcesDirectory)
               testAssemblyVer2: |
-                .\artifacts\bin\tests\**\*Tests.dll
+                artifacts\bin\FSharpSuite.Tests\Release\net472\FSharpSuite.Tests.dll
                 !**\obj\**
               runInParallel: False # This disables multi-threaded test runs
               distributionBatchType: basedOnExecutionTime
