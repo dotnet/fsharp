@@ -14,20 +14,20 @@ module Nowarn =
     let consistencySource1 = """
 module A
 #nowarn "20"
-#line 1 "xyz.fs"
+#line 5 "xyz.fs"
 ""
         """
 
     let consistencySource2 = """
 module A
-#line 1 "xyz.fs"
 #nowarn "20"
+#line 1 "xyz.fs"
 ""
         """
 
 
     [<Fact>]
-    let consistentInteractionBetweenLineAndNowarnCompatibility () =
+    let inconsistentInteractionBetweenLineAndNowarn1 () =
 
         FSharp consistencySource1
         |> withLangVersion80
@@ -35,21 +35,26 @@ module A
         |> shouldSucceed
 
     [<Fact>]
-    let consistentInteractionBetweenLineAndNowarnFail () =
+    let inconsistentInteractionBetweenLineAndNowarn2 () =
+
+        FSharp consistencySource2
+        |> withLangVersion80
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let  consistentInteractionBetweenLineAndNowarn1 () =
 
         FSharp consistencySource1
         |> withLangVersionPreview
         |> compile
-        |> shouldFail
-        |> withDiagnostics [
-                (Warning 20, Line 1, Col 1, Line 1, Col 3, warning20Text)
-            ]
+        |> shouldSucceed
 
     [<Fact>]
-    let  consistentInteractionBetweenLineAndNowarnSucceed () =
+    let  consistentInteractionBetweenLineAndNowarn2 () =
 
         FSharp consistencySource2
-        |> withLangVersion90
+        |> withLangVersionPreview
         |> compile
         |> shouldSucceed
 

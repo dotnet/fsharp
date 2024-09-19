@@ -19,7 +19,7 @@ module internal WarnScopes =
     // The key into the BufferLocalStore used to hold the warn scopes
     let private warnScopeKey = "WarnScopes"
 
-    let FromLexbuf (lexbuf: Lexbuf) : WarnScopeMap =
+    let private fromLexbuf (lexbuf: Lexbuf) : WarnScopeMap =
         if not <| lexbuf.BufferLocalStore.ContainsKey warnScopeKey then
             lexbuf.BufferLocalStore.Add(warnScopeKey, WarnScopeMap Map.empty)
 
@@ -97,13 +97,14 @@ module internal WarnScopes =
 
         let text = Lexbuf.LexemeString lexbuf
         let directives = getDirectives text m
-        let warnScopes = (FromLexbuf lexbuf, directives) ||> List.fold processWarnDirective
+        let warnScopes = (fromLexbuf lexbuf, directives) ||> List.fold processWarnDirective
         lexbuf.BufferLocalStore[warnScopeKey] <- warnScopes
-    
+
     let ClearLexbufStore (lexbuf: Lexbuf) =
         lexbuf.BufferLocalStore.Remove warnScopeKey |> ignore
     
-    let MergeInto (diagnosticOptions: FSharpDiagnosticOptions) (WarnScopeMap warnScopes) =
+    let MergeInto (diagnosticOptions: FSharpDiagnosticOptions) (lexbuf: Lexbuf) =
+        let (WarnScopeMap warnScopes) = fromLexbuf lexbuf
         lock diagnosticOptions (fun () ->
             let (WarnScopeMap current) = diagnosticOptions.WarnScopes
             let warnScopes' = Map.fold (fun wss idx ws -> Map.add idx ws wss) current warnScopes
@@ -113,6 +114,11 @@ module internal WarnScopes =
     /// true if m1 contains the start of m2 (#line directives can appear in the middle of an error range)
     let private contains (m2: range) (m1: range) =
         m2.StartLine > m1.StartLine && m2.StartLine < m1.EndLine
+
+
+    // *************************************
+    // Use the warn scopes after lexing
+    // *************************************
 
     let IsWarnon (WarnScopeMap warnScopes) warningNumber (mo: range option) =
         match mo with

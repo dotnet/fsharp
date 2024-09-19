@@ -4,20 +4,18 @@ namespace FSharp.Compiler
 
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Text
+open FSharp.Compiler.UnicodeLexing
 
 module internal WarnScopes =
 
     /// For use in lex.fsl: #nowarn / #warnon directives are turned into warn scopes and saved in lexbuf.BufferLocalStore
-    val ParseAndSaveWarnDirectiveLine: lexbuf: UnicodeLexing.Lexbuf -> unit
-
-    /// Get the collected warn scopes out of the lexbuf.BufferLocalStore
-    val FromLexbuf: lexbuf: UnicodeLexing.Lexbuf -> WarnScopeMap
+    val ParseAndSaveWarnDirectiveLine: lexbuf: Lexbuf -> unit
     
     /// Clear the warn scopes in lexbuf.BufferLocalStore for reuse of the lexbuf
-    val ClearLexbufStore: UnicodeLexing.Lexbuf -> unit
+    val ClearLexbufStore: Lexbuf -> unit
 
     /// Add the warn scopes of a lexed file into the diagnostics options
-    val MergeInto: FSharpDiagnosticOptions -> WarnScopeMap -> unit
+    val MergeInto: FSharpDiagnosticOptions -> Lexbuf -> unit
 
     /// Check if the range is inside a WarnScope.On scope
     val IsWarnon: WarnScopeMap -> warningNumber: int -> mo: range option -> bool

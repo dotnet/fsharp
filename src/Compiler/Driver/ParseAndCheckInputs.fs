@@ -440,7 +440,7 @@ let ParseInput
         if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
             let impl = Parser.implementationFile lexer lexbuf
 
-            lexbuf |> WarnScopes.FromLexbuf |> WarnScopes.MergeInto diagnosticOptions
+            lexbuf |> WarnScopes.MergeInto diagnosticOptions
 
             let tripleSlashComments =
                 LexbufLocalXmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
@@ -449,7 +449,7 @@ let ParseInput
         elif FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
             let intfs = Parser.signatureFile lexer lexbuf
 
-            lexbuf |> WarnScopes.FromLexbuf |> WarnScopes.MergeInto diagnosticOptions
+            lexbuf |> WarnScopes.MergeInto diagnosticOptions
 
             let tripleSlashComments =
                 LexbufLocalXmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
