@@ -487,22 +487,17 @@ module CoreTests2 =
 
         let cfg = testConfig "core/fsi-reference"
 
-        begin
-            
+        begin           
             fsc cfg @"--target:library -o:ImplementationAssembly\ReferenceAssemblyExample.dll" ["ImplementationAssembly.fs"]
             fsc cfg @"--target:library -o:ReferenceAssembly\ReferenceAssemblyExample.dll" ["ReferenceAssembly.fs"]
-            fsiStdin cfg "test.fsx" "" []
-            checkPassed()
+            fsiStdinCheckPassed cfg "test.fsx" "" []
         end
 
     [<Fact>]
     let ``fsi-reload`` () =
         let cfg = testConfig "core/fsi-reload"
-
-        begin          
-            fsiStdin cfg "test1.ml"  " --langversion:5.0 --mlcompatibility --maxerrors:1" []
-            checkPassed()
-        end
+        
+        fsiStdinCheckPassed cfg "test1.ml"  " --langversion:5.0 --mlcompatibility --maxerrors:1" []
             
         fsiCheckPassed cfg "%s  --maxerrors:1" cfg.fsi_flags ["load1.fsx"]
 
@@ -521,11 +516,7 @@ module CoreTests2 =
 
         fsiStdin cfg "prepare.fsx" "--maxerrors:1" []
 
-        
-
-        fsiStdin cfg "test.fsx" "--maxerrors:1"  []
-
-        checkPassed()
+        fsiStdinCheckPassed cfg "test.fsx" "--maxerrors:1"  []
 
     [<Fact>]
     let ``genericmeasures-FSC_NETFX_TEST_ROUNDTRIP_AS_DLL`` () = singleTestBuildAndRun "core/genericmeasures" FSC_NETFX_TEST_ROUNDTRIP_AS_DLL
@@ -895,7 +886,7 @@ module CoreTests3 =
         peverify cfg "main.exe"
 
         // Run F# main. Quick test!
-        execAndCheckPassed cfg ("." ++ "main.exe") ""
+        exec cfg ("." ++ "main.exe") ""
 
 
     // Repro for https://github.com/dotnet/fsharp/issues/1298
@@ -946,7 +937,7 @@ module CoreTests3 =
 
         peverify cfg "test.exe"
 
-        execAndCheckPassed cfg ("." ++ "test.exe") ""
+        exec cfg ("." ++ "test.exe") ""
 
     [<Fact>]
     let ``add files with same name from different folders including signature files that are not synced`` () =
@@ -957,7 +948,7 @@ module CoreTests3 =
 
         peverify cfg "test.exe"
 
-        execAndCheckPassed cfg ("." ++ "test.exe") ""
+        exec cfg ("." ++ "test.exe") ""
 
     [<Fact>]
     let ``libtest-FSI_NETFX_STDIN`` () = singleTestBuildAndRun "core/libtest" FSI_NETFX_STDIN
@@ -1405,13 +1396,13 @@ module CoreTests5 =
 
         peverify cfg "test-link-named.exe"
 
-        execAndCheckPassed cfg ("." ++ "test-embed.exe") ""
+        exec cfg ("." ++ "test-embed.exe") ""
 
-        execAndCheckPassed cfg ("." ++ "test-link.exe") ""
+        exec cfg ("." ++ "test-link.exe") ""
 
-        execAndCheckPassed cfg ("." ++ "test-link-named.exe") "ResourceName"
+        exec cfg ("." ++ "test-link-named.exe") "ResourceName"
 
-        execAndCheckPassed cfg ("." ++ "test-embed-named.exe") "ResourceName"
+        exec cfg ("." ++ "test-embed-named.exe") "ResourceName"
 
     [<Fact>]
     let topinit () =
