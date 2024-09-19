@@ -445,19 +445,13 @@ let logConfig (cfg: TestConfig) =
     log "PEVERIFY                 = %s" cfg.PEVERIFY
     log "---------------------------------------------------------------"
 
-let checkPassedOutput (output: string) =
-    Assert.True(output.EndsWith "TEST PASSED OK\n", $"Output does not end with TEST PASSED OK:\n{output}")
-    printfn "...Checked OK"
-
-let checkPassed () = checkPassedOutput ParallelConsole.OutText
-
-let checkPassedOutputContains (output: string) =
-    Assert.True(output.Contains "TEST PASSED OK", $"Output does not end with TEST PASSED OK:\n{output}")
+let checkOutputPassed (output: string) =
+    Assert.True(output.Contains "TEST PASSED OK", $"Output does not contain 'TEST PASSED OK':\n{output}")
 
 let checkResultPassed result =
     match result with
     | CmdResult.ErrorLevel (msg1, err) -> Assert.Fail (sprintf "%s. ERRORLEVEL %d" msg1 err)
-    | CmdResult.Success output -> checkPassedOutputContains output
+    | CmdResult.Success output -> checkOutputPassed output
 
 let checkResult result =
     match result with
