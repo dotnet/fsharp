@@ -23,10 +23,6 @@ open UnitTests.TestLib.Utils.FilesystemHelpers
 open UnitTests.TestLib.ProjectSystem
 
 
-type public AssemblyResolverTestFixture () =
-
-    member public _.Init () = AssemblyResolver.addResolver ()
-
 type Config() = 
     inherit TheTests()
 

@@ -27,8 +27,6 @@ open UnitTests.TestLib.ProjectSystem
 type UpToDate() = 
     inherit TheTests()
 
-    member public _.Init () = AssemblyResolver.addResolver ()
-
     [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.ItemInputs () =
         this.MakeProjectAndDo(["file1.fs"], [], @"

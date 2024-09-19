@@ -45,7 +45,3 @@ module AssemblyResolver =
             match found() with
             | None -> Unchecked.defaultof<Assembly>
             | Some name -> Assembly.Load(name) )
-
-type public AssemblyResolverTestFixture () =
-
-    member public _.Init () = AssemblyResolver.addResolver ()

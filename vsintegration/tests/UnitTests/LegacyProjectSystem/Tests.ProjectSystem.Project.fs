@@ -13,6 +13,7 @@ open Xunit
 // VS namespaces 
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Shell.Interop
+open Microsoft.VisualStudio.FSharp
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 
 // Internal unittest namespaces
@@ -25,6 +26,8 @@ open UnitTests.TestLib.ProjectSystem
 type Project() = 
     inherit TheTests()
 
+    do
+        AssemblyResolver.addResolver ()
 
     //TODO: look for a way to remove the helper functions
     static let ANYTREE = Tree("",Nil,Nil)

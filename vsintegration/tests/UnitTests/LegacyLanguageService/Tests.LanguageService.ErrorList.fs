@@ -13,10 +13,6 @@ open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 
-type public AssemblyResolverTestFixture () =
-
-    member public _.Init () = AssemblyResolver.addResolver ()
-
 type UsingMSBuild() as this = 
     inherit LanguageServiceBaseTests()
 

@@ -246,8 +246,6 @@ type internal GlobalParseAndTypeCheckCounter private(initialParseCount:int, init
 /// various functions that abstract actions over vs.
 type LanguageServiceBaseTests() =  
 
-    let _resolver = AssemblyResolver.addResolver ()
-
     let mutable defaultSolution : OpenSolution = Unchecked.defaultof<_>
     let cache = System.Collections.Generic.Dictionary()
 
