@@ -136,6 +136,8 @@ stages:
                 artifacts\bin\FSharpSuite.Tests\Release\net472\FSharpSuite.Tests.dll
                 !**\obj\**
               runInParallel: False # This disables multi-threaded test runs
+              failOnMinTestsNotRun: True
+              minimumExpectedTests: 50
               distributionBatchType: basedOnExecutionTime
               configuration: '$(_BuildConfig)'
               continueOnError: true
