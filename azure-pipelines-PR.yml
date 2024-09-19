@@ -109,7 +109,7 @@ stages:
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           variables:
           - name: _BuildConfig
-            value: Debug
+            value: Releaseß
           steps:
           - checkout: self
             clean: true
