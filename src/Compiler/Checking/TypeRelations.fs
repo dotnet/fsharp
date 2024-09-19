@@ -120,8 +120,8 @@ let rec TypeFeasiblySubsumesType ndeep g (amap: Import.ImportMap) m ty1 canCoerc
     let ty1 = stripTyEqns g ty1
     let ty2 = stripTyEqns g ty2
 
-    let ty1Hash = hashTType g ty1
-    let ty2Hash = hashTType g ty2
+    let ty1Hash = combineHash (hashStamp ty1) (hashTType g ty1)
+    let ty2Hash = combineHash (hashStamp ty2) (hashTType g ty2)
 
     let key = combineHash (combineHash ty1Hash ty2Hash) (hash canCoerce)
 

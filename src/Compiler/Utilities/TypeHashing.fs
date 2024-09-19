@@ -127,6 +127,16 @@ module HashAccessibility =
         | _ -> true
 
 module rec HashTypes =
+    open Microsoft.FSharp.Core.LanguagePrimitives
+
+    /// Get has for Stamp for TType_app tyconref and TType_var typar
+    let hashStamp ty =
+        let v: Stamp =
+            match ty with
+            | TType_app(tcref, _, _) -> tcref.Stamp
+            | TType_var(r, _) -> r.Stamp
+            | _ -> GenericZero
+        hash v
 
     /// Hash a reference to a type
     let hashTyconRef tcref = hashTyconRefImpl tcref
