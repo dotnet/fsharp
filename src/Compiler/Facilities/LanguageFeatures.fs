@@ -220,6 +220,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
                 LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, previewVersion
                 LanguageFeature.AllowObjectExpressionWithoutOverrides, previewVersion
+                LanguageFeature.ScopedNowarn, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")

@@ -38,7 +38,7 @@ module A
     let consistentInteractionBetweenLineAndNowarnFail () =
 
         FSharp consistencySource1
-        |> withLangVersion90
+        |> withLangVersionPreview
         |> compile
         |> shouldFail
         |> withDiagnostics [

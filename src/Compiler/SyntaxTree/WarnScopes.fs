@@ -128,7 +128,7 @@ module internal WarnScopes =
 
             List.exists isEnclosingWarnonScope scopes
 
-    /// compatible = compatible with earlier (< F#9.0) inconsistent interaction between #line and #nowarn
+    /// compatible = compatible with earlier (< F# 10.0) inconsistent interaction between #line and #nowarn
     let IsNowarn (WarnScopeMap warnScopes) warningNumber (mo: range option) compatible =
         match mo, compatible with
         | Some m, false ->
