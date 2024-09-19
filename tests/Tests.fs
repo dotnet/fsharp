@@ -203,5 +203,5 @@ let ``My super fasttest with arg`` (arg:int) =
 [<InlineData(5)>]
 [<Theory>]
 let ``Bloody hell 5 fucking minutes`` (arg:int) =
-    System.Threading.Thread.Sleep((1000*60*5)+arg))
+    System.Threading.Thread.Sleep((1000*60*5)+arg)
     Assert.True(true)
