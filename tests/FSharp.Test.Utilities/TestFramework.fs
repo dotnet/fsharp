@@ -624,13 +624,14 @@ let exec cfg p = Command.exec cfg.Directory cfg.EnvironmentVariables execArgs p 
 let execAndCheckPassed cfg p = Command.exec cfg.Directory cfg.EnvironmentVariables { execArgs with Output = Collect } p >> checkResultPassed
 let execExpectFail cfg p = Command.exec cfg.Directory cfg.EnvironmentVariables execArgs p >> checkErrorLevel1
 let execIn cfg workDir p = Command.exec workDir cfg.EnvironmentVariables execArgs p >> checkResult
-let execBothToOutNoCheck cfg workDir outFile p = Command.exec workDir  cfg.EnvironmentVariables { execArgs with Output = OutputAndErrorToSameFile(Overwrite(outFile)) } p
+let execBothToOutNoCheck cfg workDir outFile p = Command.exec workDir cfg.EnvironmentVariables { execArgs with Output = OutputAndErrorToSameFile(Overwrite(outFile)) } p
 let execBothToOut cfg workDir outFile p = execBothToOutNoCheck cfg workDir outFile p >> checkResult
 let execBothToOutCheckPassed cfg workDir outFile p = execBothToOutNoCheck cfg workDir outFile p >> checkResultPassed
 let execBothToOutExpectFail cfg workDir outFile p = execBothToOutNoCheck cfg workDir outFile p >> checkErrorLevel1
 let execAppendOutIgnoreExitCode cfg workDir outFile p = Command.exec workDir  cfg.EnvironmentVariables { execArgs with Output = Output(Append(outFile)) } p >> alwaysSuccess
 let execAppendErrExpectFail cfg errPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { execArgs with Output = Error(Overwrite(errPath)) } p >> checkErrorLevel1
 let execStdin cfg l p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = Ignore; Input = Some(RedirectInput(l)) } p >> checkResult
+let execStdinCheckPassed cfg l p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = Collect; Input = Some(RedirectInput(l)) } p >> checkResultPassed
 let execStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = OutputAndError(Append(stdoutPath), Append(stderrPath)); Input = Some(RedirectInput(stdinPath)) } p >> alwaysSuccess
 let fsc cfg arg = Printf.ksprintf (Commands.fsc cfg.Directory (exec cfg) cfg.DotNetExe cfg.FSC) arg
 let fscIn cfg workDir arg = Printf.ksprintf (Commands.fsc workDir (execIn cfg workDir) cfg.DotNetExe  cfg.FSC) arg
@@ -657,6 +658,7 @@ let fsiAppendIgnoreExitCode cfg stdoutPath stderrPath = Printf.ksprintf (Command
 let getfullpath cfg = Commands.getfullpath cfg.Directory
 let fileExists cfg fileName = Commands.fileExists cfg.Directory fileName |> Option.isSome
 let fsiStdin cfg stdinPath = Printf.ksprintf (Commands.fsi (execStdin cfg stdinPath) cfg.FSI)
+let fsiStdinCheckPassed cfg stdinPath = Printf.ksprintf (Commands.fsi (execStdinCheckPassed cfg stdinPath) cfg.FSI)
 let fsiStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath = Printf.ksprintf (Commands.fsi (execStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath) cfg.FSI)
 let rm cfg x = Commands.rm cfg.Directory x
 let rmdir cfg x = Commands.rmdir cfg.Directory x

@@ -300,9 +300,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
         use _cleanup = (cleanUpFSharpCore cfg)
         let sources = extraSources |> List.filter (fileExists cfg)
 
-        fsiStdin cfg (sources |> List.rev |> List.head) "" [] //use last file, because `cmd < a.txt b.txt` redirect b.txt only
-
-        checkPassed()
+        fsiStdinCheckPassed cfg (sources |> List.rev |> List.head) "" [] //use last file, because `cmd < a.txt b.txt` redirect b.txt only
 
     | FSC_NETFX_TEST_ROUNDTRIP_AS_DLL ->
         // Compile as a DLL to exercise pickling of interface data, then recompile the original source file referencing this DLL
