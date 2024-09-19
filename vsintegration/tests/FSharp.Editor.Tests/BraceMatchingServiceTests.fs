@@ -11,7 +11,7 @@ open FSharp.Editor.Tests.Helpers
 open FSharp.Test
 
 type BraceMatchingServiceTests() =
-    let checker = TestContext.checker
+    let checker = TestContext.Checker
 
     let fileName = "C:\\test.fs"
 

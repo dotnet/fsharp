@@ -21,7 +21,7 @@ module SignatureHelpProvider =
             override doc.AppendDocumentation(_, _, _, _, _, _, _, _) = ()
         }
 
-    let checker = TestContext.checker
+    let checker = TestContext.Checker
 
     let filePath = "C:\\test.fs"
 

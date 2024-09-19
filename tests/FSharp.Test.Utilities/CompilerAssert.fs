@@ -2,6 +2,8 @@
 
 namespace FSharp.Test
 
+open System.Threading
+
 #nowarn "57"
 
 open System
@@ -295,13 +297,23 @@ and Compilation =
                 | n -> Some n
             Compilation(sources, output, options, targetFramework, cmplRefs, name, outputDirectory)
 
-module TestContext =
+module private TestContext =
 
-    let UseTransparentCompiler = 
+    let useTransparentCompiler = 
         FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically ||
         not (String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TEST_TRANSPARENT_COMPILER")))
 
-    let checker = FSharpChecker.Create(suggestNamesForErrors=true, useTransparentCompiler = UseTransparentCompiler)
+    let localChecker = AsyncLocal<FSharpChecker voption>()
+
+    let createChecker() =
+        let checker = 
+            FSharpChecker.Create(suggestNamesForErrors=true, useTransparentCompiler = useTransparentCompiler)
+        localChecker.Value <- ValueSome checker
+        checker
+
+type TestContext =
+    static member UseTransparentCompiler = TestContext.useTransparentCompiler
+    static member Checker = TestContext.localChecker.Value |> ValueOption.defaultWith TestContext.createChecker
 
 module CompilerAssertHelpers =
 
@@ -416,7 +428,7 @@ module CompilerAssertHelpers =
 
         // Generate a response file, purely for diagnostic reasons.
         File.WriteAllLines(Path.ChangeExtension(outputFilePath, ".rsp"), args)
-        let errors, rc = TestContext.checker.Compile args |> Async.RunImmediate
+        let errors, rc = TestContext.Checker.Compile args |> Async.RunImmediate
         errors, rc, outputFilePath
 
     let compileDisposable (outputDirectory:DirectoryInfo) isExe options targetFramework nameOpt (sources:SourceCodeFileKind list) =
@@ -690,8 +702,6 @@ Actual is in {debugInfoFile}
 Updated automatically, please check diffs in your pull request, changes must be scrutinized
 """
         )
-    
-    static member Checker = TestContext.checker
 
     static member DefaultProjectOptions = defaultProjectOptions
 
@@ -753,7 +763,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         CompilerAssert.Execute(cmpl, newProcess = true, onOutput = (fun output -> Assert.AreEqual(expectedOutput, output, sprintf "'%s' = '%s'" expectedOutput output)))  
 
     static member Pass (source: string) =
-        let parseResults, fileAnswer = TestContext.checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions TargetFramework.Current) |> Async.RunImmediate
+        let parseResults, fileAnswer = TestContext.Checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions TargetFramework.Current) |> Async.RunImmediate
 
         Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
 
@@ -767,7 +777,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         let defaultOptions = defaultProjectOptions TargetFramework.Current
         let options = { defaultOptions with OtherOptions = Array.append options defaultOptions.OtherOptions}
 
-        let parseResults, fileAnswer = TestContext.checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, options) |> Async.RunImmediate
+        let parseResults, fileAnswer = TestContext.Checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, options) |> Async.RunImmediate
 
         Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
 
@@ -781,7 +791,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         let absoluteSourceFile = System.IO.Path.Combine(sourceDirectory, sourceFile)
         let parseResults, fileAnswer =
             let defaultOptions = defaultProjectOptions TargetFramework.Current
-            TestContext.checker.ParseAndCheckFileInProject(
+            TestContext.Checker.ParseAndCheckFileInProject(
                 sourceFile,
                 0,
                 SourceText.ofString (File.ReadAllText absoluteSourceFile),
@@ -812,7 +822,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         let errors =
             let parseResults, fileAnswer =
                 let defaultOptions = defaultProjectOptions TargetFramework.Current
-                TestContext.checker.ParseAndCheckFileInProject(
+                TestContext.Checker.ParseAndCheckFileInProject(
                     name,
                     0,
                     SourceText.ofString source,
@@ -838,7 +848,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         let errors =
             let parseResults, fileAnswer =
                 let defaultOptions = defaultProjectOptions TargetFramework.Current
-                TestContext.checker.ParseAndCheckFileInProject(
+                TestContext.Checker.ParseAndCheckFileInProject(
                     "test.fs",
                     0,
                     SourceText.ofString source,
@@ -859,7 +869,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
     static member ParseAndTypeCheck(options, name, source: string) =
         let parseResults, fileAnswer =
             let defaultOptions = defaultProjectOptionsForFilePath name TargetFramework.Current
-            TestContext.checker.ParseAndCheckFileInProject(
+            TestContext.Checker.ParseAndCheckFileInProject(
                 name,
                 0,
                 SourceText.ofString source,
@@ -882,7 +892,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         let errors =
             let parseResults, fileAnswer =
                 let defaultOptions = defaultProjectOptions TargetFramework.Current
-                TestContext.checker.ParseAndCheckFileInProject(
+                TestContext.Checker.ParseAndCheckFileInProject(
                     "test.fs",
                     0,
                     SourceText.ofString source,
@@ -1036,7 +1046,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
             { FSharpParsingOptions.Default with
                 SourceFiles = [| sourceFileName |]
                 LangVersionText = langVersion }
-        TestContext.checker.ParseFile(sourceFileName, SourceText.ofString source, parsingOptions) |> Async.RunImmediate
+        TestContext.Checker.ParseFile(sourceFileName, SourceText.ofString source, parsingOptions) |> Async.RunImmediate
 
     static member ParseWithErrors (source: string, ?langVersion: string) = fun expectedParseErrors ->
         let parseResults = CompilerAssert.Parse (source, ?langVersion=langVersion)
