@@ -12,7 +12,7 @@ module MoreTests2 =
     [<Fact>]
     let ``My test 2`` () =
         System.Threading.Thread.Sleep(5000)
-        Assert.True(true)
+        Assert.True(false)
 
     [<Fact>]
     let ``My test 3`` () =
@@ -38,12 +38,12 @@ module MoreTests3 =
     [<Fact>]
     let ``My test 3`` () =
         System.Threading.Thread.Sleep(7000)
-        Assert.True(true)
+        Assert.True(false)
 
     [<Fact>]
     let ``My test 4`` () =
         System.Threading.Thread.Sleep(8000)
-        Assert.True(true)
+        Assert.True(false)
 
 [<Fact>]
 let ``Slowepoke1`` () =
