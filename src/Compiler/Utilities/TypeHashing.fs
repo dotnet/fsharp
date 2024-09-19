@@ -130,9 +130,9 @@ module rec HashTypes =
     open Microsoft.FSharp.Core.LanguagePrimitives
 
     /// Get has for Stamp for TType_app tyconref and TType_var typar
-    let hashStamp ty =
+    let hashStamp g ty =
         let v: Stamp =
-            match ty with
+            match (stripTyEqns g ty) with
             | TType_app(tcref, _, _) -> tcref.Stamp
             | TType_var(r, _) -> r.Stamp
             | _ -> GenericZero
