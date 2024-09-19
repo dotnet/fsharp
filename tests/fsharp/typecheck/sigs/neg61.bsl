@@ -59,7 +59,7 @@ neg61.fs(86,13,86,16): typecheck error FS3141: 'try/finally' expressions may not
 
 neg61.fs(92,13,92,70): typecheck error FS3142: 'use' expressions may not be used in queries
 
-neg61.fs(97,13,97,33): typecheck error FS3143: 'let!', 'use!' and 'do!' expressions may not be used in queries
+neg61.fs(97,13,97,17): typecheck error FS3143: 'let!', 'use!' and 'do!' expressions may not be used in queries
 
 neg61.fs(102,13,102,28): typecheck error FS3145: This is not a known query operator. Query operators are identifiers such as 'select', 'where', 'sortBy', 'thenBy', 'groupBy', 'groupValBy', 'join', 'groupJoin', 'sumBy' and 'averageBy', defined using corresponding methods on the 'QueryBuilder' type.
 

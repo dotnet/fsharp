@@ -2014,7 +2014,12 @@ let rec TryTranslateComputationExpression
             body = innerComp
             trivia = { LetOrUseBangKeyword = mBind }) ->
             if not (cenv.g.langVersion.SupportsFeature LanguageFeature.AndBang) then
-                error (Error(FSComp.SR.tcAndBangNotSupported (), mBind))
+                let andBangRange =
+                    match andBangBindings with
+                    | [] -> comp.Range
+                    | h :: _ -> h.Trivia.AndBangKeyword
+
+                error (Error(FSComp.SR.tcAndBangNotSupported (), andBangRange))
 
             if ceenv.isQuery then
                 error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), mBind))
