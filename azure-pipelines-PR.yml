@@ -123,9 +123,13 @@ stages:
               includePreviewVersions: true
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: .\Build.cmd $(_kind) -pack -c $(_BuildConfig)
+            env:
+              NativeToolsOnMachine: true
+            displayName: Bootstrapped compiler build
           - script: dotnet build .\tests\tests.fsproj /bl:\"artifacts/log/$(_BuildConfig)/TestPlaygroundRebuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
-            displayName: Build dummy test project
+            displayName: Build tests with freshly built compiler
             continueOnError: false
             condition: always()
           - task: VSTest@2
@@ -133,10 +137,9 @@ stages:
             inputs:
               testSelector: testAssemblies
               testAssemblyVer2: |
-                **\*Tests.dll
+                .\artifacts\bin\tests\**\*Tests.dll
                 !**\obj\**
               runInParallel: False # This disables multi-threaded test runs
               distributionBatchType: basedOnExecutionTime
               configuration: '$(BuildConfiguration)'
-              diagnosticsEnabled: true
               continueOnError: true
