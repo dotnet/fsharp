@@ -236,7 +236,7 @@ stages:
               includePreviewVersions: true
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Agent.ToolsDirectory)/dotnet
-          - script: dotnet build .\tests\tests.fsproj /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+          - script: dotnet build .\tests\tests.fsproj /bl:\"artifacts/log/$(_BuildConfig)/TestPlaygroundRebuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Build dummy test project
             continueOnError: false
