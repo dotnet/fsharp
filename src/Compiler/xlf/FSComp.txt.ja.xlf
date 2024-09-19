@@ -562,6 +562,11 @@
         <target state="translated">名前と型が同じである限り、[&lt;Struct&gt;] 判別可能な共用体で基になるフィールドを共有する</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureScopedNowarn">
+        <source>Support for scoped enabling / disabling of warnings by #warn and #nowarn directives</source>
+        <target state="new">Support for scoped enabling / disabling of warnings by #warn and #nowarn directives</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureSelfTypeConstraints">
         <source>self type constraints</source>
         <target state="translated">自己型制約</target>
@@ -810,11 +815,6 @@
       <trans-unit id="lexUnmatchedRBracesInTripleQuote">
         <source>The interpolated string contains unmatched closing braces.</source>
         <target state="translated">補間された文字列には、一致しない閉じかっこが含まれています。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="lexWarnDirectiveMustBeFirst">
-        <source>#nowarn / #warnon directives must appear as the first non-whitespace character on a line</source>
-        <target state="new">#nowarn / #warnon directives must appear as the first non-whitespace character on a line</target>
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">

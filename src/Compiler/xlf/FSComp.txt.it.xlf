@@ -562,6 +562,11 @@
         <target state="translated">Condividi i campi sottostanti in un'unione discriminata di [&lt;Struct&gt;] purché abbiano lo stesso nome e tipo</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureScopedNowarn">
+        <source>Support for scoped enabling / disabling of warnings by #warn and #nowarn directives</source>
+        <target state="new">Support for scoped enabling / disabling of warnings by #warn and #nowarn directives</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureSelfTypeConstraints">
         <source>self type constraints</source>
         <target state="translated">vincoli di tipo automatico</target>
@@ -810,11 +815,6 @@
       <trans-unit id="lexUnmatchedRBracesInTripleQuote">
         <source>The interpolated string contains unmatched closing braces.</source>
         <target state="translated">La stringa interpolata contiene parentesi graffe di chiusura non corrispondenti.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="lexWarnDirectiveMustBeFirst">
-        <source>#nowarn / #warnon directives must appear as the first non-whitespace character on a line</source>
-        <target state="new">#nowarn / #warnon directives must appear as the first non-whitespace character on a line</target>
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">
