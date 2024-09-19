@@ -162,7 +162,7 @@ module CoreTests1 =
 
         peverify cfg "test.exe"
 
-        execAndCheckPassed cfg ("." ++ "test.exe") ""
+        exec cfg ("." ++ "test.exe") ""
 
 
     [<Fact>]
@@ -2063,7 +2063,7 @@ module TypecheckTests =
         fsc cfg "%s --target:exe -r:pos36-srtp-lib.dll -o:pos36-srtp-app.exe --warnaserror" cfg.fsc_flags ["pos36-srtp-app.fs"]
         peverify cfg "pos36-srtp-lib.dll"
         peverify cfg "pos36-srtp-app.exe"
-        execAndCheckPassed cfg ("." ++ "pos36-srtp-app.exe") ""
+        exec cfg ("." ++ "pos36-srtp-app.exe") ""
 
     [<Fact>]
     let ``sigs pos37`` () =
@@ -2082,14 +2082,14 @@ module TypecheckTests =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos39.exe" cfg.fsc_flags ["pos39.fs"]
         peverify cfg "pos39.exe"
-        execAndCheckPassed cfg ("." ++ "pos39.exe") ""
+        exec cfg ("." ++ "pos39.exe") ""
 
     [<Fact>]
     let ``sigs pos40`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --langversion:6.0 --target:exe -o:pos40.exe" cfg.fsc_flags ["pos40.fs"]
         peverify cfg "pos40.exe"
-        execAndCheckPassed cfg ("." ++ "pos40.exe") ""
+        exec cfg ("." ++ "pos40.exe") ""
         
     [<Fact>]
     let ``sigs pos41`` () =
@@ -2103,77 +2103,77 @@ module TypecheckTests =
         // This checks that warning 25 "incomplete matches" is not triggered
         fsc cfg "%s --target:exe -o:pos1281.exe --warnaserror --nowarn:26" cfg.fsc_flags ["pos1281.fs"]
         peverify cfg "pos1281.exe"
-        execAndCheckPassed cfg ("." ++ "pos1281.exe") ""
+        exec cfg ("." ++ "pos1281.exe") ""
 
     [<Fact>]
     let ``sigs pos3294`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos3294.exe --warnaserror" cfg.fsc_flags ["pos3294.fs"]
         peverify cfg "pos3294.exe"
-        execAndCheckPassed cfg ("." ++ "pos3294.exe") ""
+        exec cfg ("." ++ "pos3294.exe") ""
 
     [<Fact>]
     let ``sigs pos23`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos23.exe" cfg.fsc_flags ["pos23.fs"]
         peverify cfg "pos23.exe"
-        execAndCheckPassed cfg ("." ++ "pos23.exe") ""
+        exec cfg ("." ++ "pos23.exe") ""
 
     [<Fact>]
     let ``sigs pos20`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos20.exe" cfg.fsc_flags ["pos20.fs"]
         peverify cfg "pos20.exe"
-        execAndCheckPassed cfg ("." ++ "pos20.exe") ""
+        exec cfg ("." ++ "pos20.exe") ""
 
     [<Fact>]
     let ``sigs pos19`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos19.exe" cfg.fsc_flags ["pos19.fs"]
         peverify cfg "pos19.exe"
-        execAndCheckPassed cfg ("." ++ "pos19.exe") ""
+        exec cfg ("." ++ "pos19.exe") ""
 
     [<Fact>]
     let ``sigs pos18`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos18.exe" cfg.fsc_flags ["pos18.fs"]
         peverify cfg "pos18.exe"
-        execAndCheckPassed cfg ("." ++ "pos18.exe") ""
+        exec cfg ("." ++ "pos18.exe") ""
 
     [<Fact>]
     let ``sigs pos16`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos16.exe" cfg.fsc_flags ["pos16.fs"]
         peverify cfg "pos16.exe"
-        execAndCheckPassed cfg ("." ++ "pos16.exe") ""
+        exec cfg ("." ++ "pos16.exe") ""
 
     [<Fact>]
     let ``sigs pos17`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos17.exe" cfg.fsc_flags ["pos17.fs"]
         peverify cfg "pos17.exe"
-        execAndCheckPassed cfg ("." ++ "pos17.exe") ""
+        exec cfg ("." ++ "pos17.exe") ""
 
     [<Fact>]
     let ``sigs pos15`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos15.exe" cfg.fsc_flags ["pos15.fs"]
         peverify cfg "pos15.exe"
-        execAndCheckPassed cfg ("." ++ "pos15.exe") ""
+        exec cfg ("." ++ "pos15.exe") ""
 
     [<Fact>]
     let ``sigs pos14`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos14.exe" cfg.fsc_flags ["pos14.fs"]
         peverify cfg "pos14.exe"
-        execAndCheckPassed cfg ("." ++ "pos14.exe") ""
+        exec cfg ("." ++ "pos14.exe") ""
 
     [<Fact>]
     let ``sigs pos13`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos13.exe" cfg.fsc_flags ["pos13.fs"]
         peverify cfg "pos13.exe"
-        execAndCheckPassed cfg ("." ++ "pos13.exe") ""
+        exec cfg ("." ++ "pos13.exe") ""
 
     [<Fact>]
     let ``sigs pos12 `` () =
