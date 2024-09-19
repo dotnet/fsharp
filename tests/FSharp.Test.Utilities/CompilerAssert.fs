@@ -297,16 +297,13 @@ and Compilation =
 
 module TestContext =
 
-    // useTransparentCompiler = true often gives "value cannot be null" in a couple of tests when starting a test run.
-    let UseTransparentCompiler = false
-        //FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically ||
-        //not (String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TEST_TRANSPARENT_COMPILER")))
+    let UseTransparentCompiler = 
+        FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically ||
+        not (String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TEST_TRANSPARENT_COMPILER")))
 
     let checker = FSharpChecker.Create(suggestNamesForErrors=true, useTransparentCompiler = UseTransparentCompiler)
 
 module CompilerAssertHelpers =
-
-
 
     // Unlike C# whose entrypoint is always string[] F# can make an entrypoint with 0 args, or with an array of string[]
     let mkDefaultArgs (entryPoint:MethodBase) : obj[] = [|
