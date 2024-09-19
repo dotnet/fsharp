@@ -123,7 +123,7 @@ stages:
               includePreviewVersions: true
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Agent.ToolsDirectory)/dotnet
-          - script: .\Build.cmd $(_kind) -pack -c $(_BuildConfig)
+          - script: .\Build.cmd -pack -c $(_BuildConfig)
             env:
               NativeToolsOnMachine: true
             displayName: Bootstrapped compiler build
@@ -141,5 +141,5 @@ stages:
                 !**\obj\**
               runInParallel: False # This disables multi-threaded test runs
               distributionBatchType: basedOnExecutionTime
-              configuration: '$(BuildConfiguration)'
+              configuration: '$(_BuildConfig)'
               continueOnError: true
