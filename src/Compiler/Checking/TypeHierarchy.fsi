@@ -38,7 +38,7 @@ type AllowMultiIntfInstantiations =
     | No
 
 /// Fold, do not follow interfaces (unless the type is itself an interface)
-val FoldPrimaryHierarchyOfType:
+val inline FoldPrimaryHierarchyOfType:
     f: (TType -> 'a -> 'a) ->
     g: TcGlobals ->
     amap: ImportMap ->
@@ -49,7 +49,7 @@ val FoldPrimaryHierarchyOfType:
         'a
 
 /// Fold, following interfaces. Skipping interfaces that lie outside the referenced assembly set is allowed.
-val FoldEntireHierarchyOfType:
+val inline FoldEntireHierarchyOfType:
     f: (TType -> 'a -> 'a) ->
     g: TcGlobals ->
     amap: ImportMap ->
@@ -60,7 +60,7 @@ val FoldEntireHierarchyOfType:
         'a
 
 /// Iterate, following interfaces. Skipping interfaces that lie outside the referenced assembly set is allowed.
-val IterateEntireHierarchyOfType:
+val inline IterateEntireHierarchyOfType:
     f: (TType -> unit) ->
     g: TcGlobals ->
     amap: ImportMap ->
@@ -70,7 +70,7 @@ val IterateEntireHierarchyOfType:
         unit
 
 /// Search for one element satisfying a predicate, following interfaces
-val ExistsInEntireHierarchyOfType:
+val inline ExistsInEntireHierarchyOfType:
     f: (TType -> bool) ->
     g: TcGlobals ->
     amap: ImportMap ->
@@ -80,11 +80,11 @@ val ExistsInEntireHierarchyOfType:
         bool
 
 /// Search for one element where a function returns a 'Some' result, following interfaces
-val SearchEntireHierarchyOfType:
+val inline SearchEntireHierarchyOfType:
     f: (TType -> bool) -> g: TcGlobals -> amap: ImportMap -> m: range -> ty: TType -> TType option
 
 /// Get all super types of the type, including the type itself
-val AllSuperTypesOfType:
+val inline AllSuperTypesOfType:
     g: TcGlobals ->
     amap: ImportMap ->
     m: range ->
@@ -93,7 +93,7 @@ val AllSuperTypesOfType:
         TType list
 
 /// Get all interfaces of a type, including the type itself if it is an interface
-val AllInterfacesOfType:
+val inline AllInterfacesOfType:
     g: TcGlobals ->
     amap: ImportMap ->
     m: range ->
@@ -102,21 +102,21 @@ val AllInterfacesOfType:
         TType list
 
 /// Check if two types have the same nominal head type
-val HaveSameHeadType: g: TcGlobals -> ty1: TType -> ty2: TType -> bool
+val inline HaveSameHeadType: g: TcGlobals -> ty1: TType -> ty2: TType -> bool
 
 /// Check if a type has a particular head type
-val HasHeadType: g: TcGlobals -> tcref: TyconRef -> ty2: TType -> bool
+val inline HasHeadType: g: TcGlobals -> tcref: TyconRef -> ty2: TType -> bool
 
 /// Check if a type exists somewhere in the hierarchy which has the same head type as the given type (note, the given type need not have a head type at all)
-val ExistsSameHeadTypeInHierarchy:
+val inline ExistsSameHeadTypeInHierarchy:
     g: TcGlobals -> amap: ImportMap -> m: range -> typeToSearchFrom: TType -> typeToLookFor: TType -> bool
 
 /// Check if a type exists somewhere in the hierarchy which has the given head type.
-val ExistsHeadTypeInEntireHierarchy:
+val inline ExistsHeadTypeInEntireHierarchy:
     g: TcGlobals -> amap: ImportMap -> m: range -> typeToSearchFrom: TType -> tcrefToLookFor: TyconRef -> bool
 
 /// Read an Abstract IL type from metadata and convert to an F# type.
-val ImportILTypeFromMetadata:
+val inline ImportILTypeFromMetadata:
     amap: ImportMap ->
     m: range ->
     scoref: ILScopeRef ->
@@ -127,7 +127,7 @@ val ImportILTypeFromMetadata:
         TType
 
 /// Read an Abstract IL type from metadata and convert to an F# type, ignoring nullness checking.
-val ImportILTypeFromMetadataSkipNullness:
+val inline ImportILTypeFromMetadataSkipNullness:
     amap: ImportMap -> m: range -> scoref: ILScopeRef -> tinst: TType list -> minst: TType list -> ilTy: ILType -> TType
 
 /// Read an Abstract IL type from metadata, including any attributes that may affect the type itself, and convert to an F# type.
@@ -142,7 +142,7 @@ val ImportILTypeFromMetadataWithAttributes:
         TType
 
 /// Get the parameter type of an IL method.
-val ImportParameterTypeFromMetadata:
+val inline ImportParameterTypeFromMetadata:
     amap: ImportMap ->
     m: range ->
     nullnessSource: Nullness.NullableAttributesSource ->
@@ -154,7 +154,7 @@ val ImportParameterTypeFromMetadata:
 
 /// Get the return type of an IL method, taking into account instantiations for type, return attributes and method generic parameters, and
 /// translating 'void' to 'None'.
-val ImportReturnTypeFromMetadata:
+val inline ImportReturnTypeFromMetadata:
     amap: ImportMap ->
     m: range ->
     nullnessSource: Nullness.NullableAttributesSource ->

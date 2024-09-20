@@ -85,7 +85,6 @@
     <SystemReflectionEmitVersion>4.7.0</SystemReflectionEmitVersion>
     <SystemReflectionMetadataVersion>$(SystemPackageVersionVersion)</SystemReflectionMetadataVersion>
     <SystemRuntimeCompilerServicesUnsafeVersion>6.0.0</SystemRuntimeCompilerServicesUnsafeVersion>
-    <SystemRuntimeCachingVersion>9.0.0-rc.1.24431.7</SystemRuntimeCachingVersion>
     <SystemThreadingTasksDataflow>$(SystemPackageVersionVersion)</SystemThreadingTasksDataflow>
     <SystemValueTupleVersion>4.5.0</SystemValueTupleVersion>
     <MicrosoftDiaSymReaderPortablePdbVersion>1.6.0</MicrosoftDiaSymReaderPortablePdbVersion>

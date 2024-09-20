@@ -538,7 +538,7 @@ type internal TypeCheckInfo
                         // check that type of value is the same or subtype of tcref
                         // yes - allow access to protected members
                         // no - strip ability to access protected members
-                        if TypeRelations.TypeFeasiblySubsumesType 0 g amap m thisTy TypeRelations.CanCoerce ty then
+                        if TypeRelations.TypeFeasiblySubsumesType 0 g amap m thisTy Import.CanCoerce ty then
                             ad
                         else
                             AccessibleFrom(paths, None)

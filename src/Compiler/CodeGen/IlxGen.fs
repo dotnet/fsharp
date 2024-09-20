@@ -6025,7 +6025,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
         GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g cenv.amap m templateStructTy
 
     let ilInterfaceTys =
-        List.map (GenType cenv m eenvinner.tyenv >> InterfaceImpl.Create) interfaceTys
+        Seq.map (GenType cenv m eenvinner.tyenv >> InterfaceImpl.Create) interfaceTys
 
     let super = g.iltyp_ValueType
 
@@ -6256,7 +6256,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
             methods = mkILMethods mdefs,
             methodImpls = mkILMethodImpls mimpls,
             nestedTypes = emptyILTypeDefs,
-            implements = InterruptibleLazy.FromValue(ilInterfaceTys),
+            implements = InterruptibleLazy.FromValue(ilInterfaceTys |> Seq.toList),
             extends = Some super,
             additionalFlags = ILTypeDefAdditionalFlags.None,
             securityDecls = emptyILSecurityDecls

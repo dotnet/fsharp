@@ -24,6 +24,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypeRelations
 open type System.MemoryExtensions
+open Import
 
 exception MatchIncomplete of bool * (string * bool) option * range
 exception RuleNeverMatched of range

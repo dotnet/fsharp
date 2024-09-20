@@ -17,6 +17,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeHierarchy
+open Import
 
 /// Build the 'test and dispose' part of a 'use' statement
 let BuildDisposableCleanup tcVal (g: TcGlobals) infoReader m (v: Val) =
