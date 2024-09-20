@@ -193,9 +193,9 @@ stages:
           steps:
           - download: current
             artifact: fsharp_compiler_artifacts
-          - script: tree '$(Pipeline.Workspace)'
+          - script: tree $(Pipeline.Workspace)
             displayName: Show me what you got Workspace
-          - script: tree '$(System.DefaultWorkingDirectory)'
+          - script: tree $(System.DefaultWorkingDirectory)
             displayName: Show me what you got DefaultWorkingDirectory
           - task: UseDotNet@2
             displayName: install SDK
@@ -205,10 +205,16 @@ stages:
               includePreviewVersions: true
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Agent.ToolsDirectory)/dotnet
+          - task: CopyFiles@2
+            displayName: 'Why do i need this?'
+            inputs:
+              contents: 'artifacts/**'
+              targetFolder: $(Build.SourcesDirectory)
           - task: VSTest@2
             displayName: Run tests
             inputs:
-              testSelector: testAssemblies
+              testSelector: $(Pipeline.Workspace)
+              searchFolder: $(Build.SourcesDirectory)
               #searchFolder: '$(Pipeline.Workspace)\fsharp_compiler_artifacts'
               testAssemblyVer2: |
                 artifacts\bin\FSharpSuite.Tests\Release\net9.0\FSharpSuite.Tests.dll
