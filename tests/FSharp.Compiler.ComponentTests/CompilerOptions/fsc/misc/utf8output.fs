@@ -26,3 +26,20 @@ module utf8output =
         |> ignore
 
         Console.OutputEncoding.BodyName |> Assert.shouldBe encoding.BodyName
+
+    [<Fact>]
+    let ``OutputEncoding is restored after running script`` () =
+        let currentEncoding = Console.OutputEncoding
+        use restoreCurrentEncodingAfterTest = { new IDisposable with member _.Dispose() = Console.OutputEncoding <- currentEncoding }
+
+        let encoding = Text.Encoding.GetEncoding("iso-8859-1")
+
+        Console.OutputEncoding <- encoding
+
+        Fsx """printfn "Hello world" """
+        |> withOptionsString "--utf8output"
+        |> runFsi
+        |> shouldSucceed
+        |> ignore
+
+        Console.OutputEncoding.BodyName |> Assert.shouldBe encoding.BodyName
