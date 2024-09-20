@@ -1,6 +1,7 @@
 ﻿module FsUnit
 
 open System.Diagnostics
+//open Xunit
 open NUnit.Framework
 open NUnit.Framework.Constraints
 
@@ -35,15 +36,11 @@ let shouldPairwiseEqual (x: seq<_>) (y: seq<_>) =
     while ex.MoveNext() do countx <- countx + 1
     while ey.MoveNext() do county <- county + 1
     if countx <> county then        
-        Assert.Fail("Collections are of unequal lengths, expected length {0}, actual length is {1}.", countx, county)
+        Assert.Fail($"Collections are of unequal lengths, expected length {countx}, actual length is {county}.")
 
 let notEqual x = NotConstraint(EqualConstraint(x))
 
 let contain x = ContainsConstraint(x)
-
-let haveLength n = Has.Length.EqualTo(n)
-
-let haveCount n = Has.Count.EqualTo(n)
 
 let endWith (s:string) = EndsWithConstraint(s)
 
@@ -62,5 +59,3 @@ let True = TrueConstraint()
 let False = FalseConstraint()
 
 let sameAs x = SameAsConstraint(x)
-
-let throw = Throws.TypeOf
