@@ -238,9 +238,9 @@ type internal Position =
         Position(x.FileIndex, x.Line, x.OriginalLine, x.StartOfLineAbsoluteOffset, x.StartOfLineAbsoluteOffset - 1)
 
     member x.ApplyLineDirective(fileIdx, originalIdx, line) =
-        if fileIdx <> originalIdx then
+        if not <| FileIndex.hasLineMapping fileIdx then
             FileIndex.setLineMappingOrigin fileIdx originalIdx
-            FileIndex.setLineMappingOrigin originalIdx originalIdx
+            FileIndex.setLineMappingOrigin originalIdx originalIdx // to flag that it contains a #line directive
         Position(fileIdx, line, x.OriginalLine, x.AbsoluteOffset, x.AbsoluteOffset)
 
     override p.ToString() = $"({p.Line},{p.Column})"

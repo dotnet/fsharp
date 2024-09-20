@@ -11,17 +11,39 @@ module Nowarn =
     let private warning44Text = "This construct is deprecated"
     
 
-    let consistencySource1 = """
+    let consistencySource1a = """
 module A
 #nowarn "20"
-#line 5 "xyz.fs"
+#line 5 "xyz1a.fs"
 ""
         """
 
-    let consistencySource2 = """
+    // need different file names here because of global table
+    let consistencySource1b = """
 module A
 #nowarn "20"
-#line 1 "xyz.fs"
+#line 5 "xyz1b.fs"
+""
+        """
+
+    let consistencySource2a = """
+module A
+#nowarn "20"
+#line 1 "xyz2a.fs"
+""
+        """
+
+    let consistencySource2b = """
+module A
+#nowarn "20"
+#line 1 "xyz2b.fs"
+""
+        """
+
+    let consistencySource2c = """
+module A
+#nowarn "20"
+#line 1 "xyz2c.fs"
 ""
         """
 
@@ -29,32 +51,56 @@ module A
     [<Fact>]
     let inconsistentInteractionBetweenLineAndNowarn1 () =
 
-        FSharp consistencySource1
-        |> withLangVersion80
+        FSharp consistencySource1a
+        |> withLangVersion90
         |> compile
         |> shouldSucceed
 
     [<Fact>]
     let inconsistentInteractionBetweenLineAndNowarn2 () =
 
-        FSharp consistencySource2
-        |> withLangVersion80
+        FSharp consistencySource2a
+        |> withLangVersion90
         |> compile
         |> shouldSucceed
 
     [<Fact>]
-    let  consistentInteractionBetweenLineAndNowarn1 () =
+    let consistentInteractionBetweenLineAndNowarn1 () =
 
-        FSharp consistencySource1
+        FSharp consistencySource1b
         |> withLangVersionPreview
         |> compile
         |> shouldSucceed
 
     [<Fact>]
-    let  consistentInteractionBetweenLineAndNowarn2 () =
+    let consistentInteractionBetweenLineAndNowarn2 () =
 
-        FSharp consistencySource2
+        FSharp consistencySource2b
         |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let consistentInteractionBetweenLineAndNowarn2AsError () =
+
+        FSharp consistencySource2c
+        |> withLangVersionPreview
+        |> withOptions ["--warnaserror+"]
+        |> compile
+        |> shouldSucceed
+
+
+    let doubleSemiSource = """
+module A
+#nowarn "20";;
+""
+        """
+
+    [<Fact>]
+    let acceptDoubleSemicolonAfterDirective () =
+
+        FSharp doubleSemiSource
+        |> withLangVersion90
         |> compile
         |> shouldSucceed
 
