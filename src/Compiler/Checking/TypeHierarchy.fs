@@ -102,12 +102,12 @@ let mkSystemCollectionsGenericIListTy (g: TcGlobals) ty =
 type SkipUnrefInterfaces = Yes | No
 
 let GetImmediateInterfacesOfMetadataType g amap m skipUnref ty (tcref: TyconRef) tinst =
-    [
+    seq {
         match metadataOfTy g ty with
 #if !NO_TYPEPROVIDERS
         | ProvidedTypeMetadata info ->
             for intfTy in info.ProvidedType.PApplyArray((fun st -> st.GetInterfaces()), "GetInterfaces", m) do
-                ImportProvidedType amap m intfTy
+                yield ImportProvidedType amap m intfTy
 #endif
         | ILTypeMetadata (TILObjectReprData(scoref, _, tdef)) ->
             // ImportILType may fail for an interface if the assembly load set is incomplete and the interface
@@ -123,13 +123,14 @@ let GetImmediateInterfacesOfMetadataType g amap m skipUnref ty (tcref: TyconRef)
                     if checkNullness then
                         let typeAttrs = AttributesFromIL(attrsIdx,attrs)
                         let nullness = {DirectAttributes = typeAttrs; Fallback = FromClass typeAttrs}
-                        RescopeAndImportILType scoref amap m tinst nullness intfTy
+                        yield RescopeAndImportILType scoref amap m tinst nullness intfTy
                     else
-                        RescopeAndImportILTypeSkipNullness scoref amap m tinst intfTy
+                        yield RescopeAndImportILTypeSkipNullness scoref amap m tinst intfTy
 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
             for intfTy in tcref.ImmediateInterfaceTypesOfFSharpTycon do
-               instType (mkInstForAppTy g ty) intfTy ]
+               yield instType (mkInstForAppTy g ty) intfTy
+    }
 
 /// Collect the set of immediate declared interface types for an F# type, but do not
 /// traverse the type hierarchy to collect further interfaces.
@@ -138,7 +139,7 @@ let GetImmediateInterfacesOfMetadataType g amap m skipUnref ty (tcref: TyconRef)
 // IComparable<T> or IEquatable<T>. This is because whether they support these interfaces depend on their
 // constituent types, which may not yet be known in type inference.
 let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
-    [
+    seq {
         match tryAppTy g ty with
         | ValueSome(tcref, tinst) ->
             // Check if this is a measure-annotated type
@@ -159,8 +160,8 @@ let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
 
         // .NET array types are considered to implement IList<T>
         if isArray1DTy g ty then
-            mkSystemCollectionsGenericIListTy g (destArrayTy g ty)
-    ]
+            yield mkSystemCollectionsGenericIListTy g (destArrayTy g ty)
+    }
 
 // Report the interfaces supported by a measure-annotated type.
 //
@@ -185,14 +186,14 @@ let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
 //      There are some exceptions, e.g. IAdditiveIdentity, but these are available3 by different routes in F# and for clarity
 //      it is better to imply omit all
 and GetImmediateInterfacesOfMeasureAnnotatedType skipUnref g amap m ty reprTy =
-    [
+    seq {
         // Suppress any interfaces that derive from IComparable<_> or IEquatable<_>
         // Suppress any interfaces in System.Numerics, since none of them are adequate for units of measure
         for intfTy in GetImmediateInterfacesOfType skipUnref g amap m reprTy do
             if not (ExistsHeadTypeInInterfaceHierarchy g.system_GenericIComparable_tcref skipUnref g amap m intfTy) &&
                not (ExistsHeadTypeInInterfaceHierarchy g.system_GenericIEquatable_tcref skipUnref g amap m intfTy) &&
                not (ExistsSystemNumericsTypeInInterfaceHierarchy skipUnref g amap m intfTy) then
-                intfTy
+                yield intfTy
 
         // NOTE: we should really only report the IComparable<A<'m>> interface for measure-annotated types
         // if the original type supports IComparable<A> somewhere in the hierarchy, likewise IEquatable<A<'m>>.
@@ -200,11 +201,11 @@ and GetImmediateInterfacesOfMeasureAnnotatedType skipUnref g amap m ty reprTy =
         // However since F# 2.0 we have always reported these interfaces for all measure-annotated types.
 
         //if ExistsInInterfaceHierarchy (typeEquiv g (mkAppTy g.system_GenericIComparable_tcref [reprTy])) skipUnref g amap m ty then
-        mkWoNullAppTy g.system_GenericIComparable_tcref [ty]
+        yield mkWoNullAppTy g.system_GenericIComparable_tcref [ty]
 
         //if ExistsInInterfaceHierarchy (typeEquiv g (mkAppTy g.system_GenericIEquatable_tcref [reprTy])) skipUnref g amap m ty then
-        mkWoNullAppTy g.system_GenericIEquatable_tcref [ty]
-    ]
+        yield mkWoNullAppTy g.system_GenericIEquatable_tcref [ty]
+    }
 
 // Check for any System.Numerics type in the interface hierarchy
 and ExistsSystemNumericsTypeInInterfaceHierarchy skipUnref g amap m ity =

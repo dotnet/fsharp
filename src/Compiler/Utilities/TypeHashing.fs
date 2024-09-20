@@ -77,12 +77,9 @@ module internal HashUtilities =
         let demangled = tcref.DisplayNameWithStaticParameters
         let tyconHash = hashEntityRefName tcref demangled
 
-        let stampHash = hash tcref.Stamp
-
         tcref.CompilationPath.AccessPath
         |> hashListOrderMatters (fst >> hashText)
         |> pipeToHash tyconHash
-        |> combineHash stampHash
 
 module HashIL =
 
