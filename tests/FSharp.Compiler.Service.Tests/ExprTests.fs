@@ -3155,7 +3155,7 @@ let ``Test expressions of declarations stress big expressions`` useTransparentCo
     printDeclarations None (List.ofSeq file1.Declarations) |> Seq.toList |> ignore
 
 #if !NETFRAMEWORK && DEBUG
-[<Fact(Skip = "Test is known to fail in DEBUG when not using NetFramework. Use RELEASE configuration or NetFramework to run it.")>]
+[<Theory(Skip = "Test is known to fail in DEBUG when not using NetFramework. Use RELEASE configuration or NetFramework to run it.")>]
 #else
 [<Theory>]
 [<InlineData(false)>]

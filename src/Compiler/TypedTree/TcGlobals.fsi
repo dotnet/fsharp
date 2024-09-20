@@ -152,6 +152,12 @@ type internal TcGlobals =
 
     static member IsInEmbeddableKnownSet: name: string -> bool
 
+    member directoryToResolveRelativePaths: string
+
+    member noDebugAttributes: bool
+
+    member tryFindSysTypeCcuHelper: (string list -> string -> bool -> FSharp.Compiler.TypedTree.CcuThunk option) with get
+
     member AddFieldGeneratedAttributes:
         mdef: FSharp.Compiler.AbstractIL.IL.ILFieldDef -> FSharp.Compiler.AbstractIL.IL.ILFieldDef
 

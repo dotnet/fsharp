@@ -22,6 +22,10 @@
     <OtherFlags>$(OtherFlags) /langversion:preview</OtherFlags>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'"> 
+      <CheckNulls>false</CheckNulls>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(CheckNulls)' == 'true'">
     <Nullable>enable</Nullable>
   </PropertyGroup>
