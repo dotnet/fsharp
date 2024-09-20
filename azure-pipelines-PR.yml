@@ -100,7 +100,7 @@ stages:
         jobs:
 
         # Plain FCS build Windows
-        - job: TomasTestingWithTestsNet472
+        - job: TomasTestingPlainBuildAndPublish
 
           pool:
             name: $(DncEngPublicBuildPool)
@@ -181,6 +181,7 @@ stages:
 
         # NetCoreApp testing
         - job: TomasTestingWithTestsNet90
+          dependsOn: TomasTestingPlainBuildAndPublish
           strategy:
             parallel: 2
           pool:
