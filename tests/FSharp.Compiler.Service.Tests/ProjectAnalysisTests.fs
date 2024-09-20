@@ -5813,7 +5813,7 @@ let ``References from #r nuget are included in script project options`` () =
         |> Seq.choose (fun f -> f.FileName |> Option.map Path.GetFileName)
         |> Seq.distinct
     printfn "%s" (assemblyNames |> String.concat "\n")
-    assemblyNames |> should contain "Dapper.dll"
+    Assert.Contains("Dapper.dll", assemblyNames)
 
 module internal EmptyProject =
     let base2 = getTemporaryFileName ()

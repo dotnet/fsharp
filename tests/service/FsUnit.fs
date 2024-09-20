@@ -1,24 +1,24 @@
 ﻿module FsUnit
 
 open System.Diagnostics
-//open Xunit
-open NUnit.Framework
+open Xunit
 open NUnit.Framework.Constraints
 
 [<DebuggerNonUserCode>]
-let should (f : 'a -> #Constraint) x (y : obj) =
-    let c = f x
+let should (f: 'a -> objnull -> unit) x (y: obj) =
     let y =
         match y with
-        | :? (unit -> unit) -> box (TestDelegate(y :?> unit -> unit))
+        | :? (unit -> unit) -> box (fun () -> (y :?> unit -> unit))
         | _                 -> y
-    Assert.That(y, c)
+    f x y
 
-let equal x = EqualConstraint(x)
+/// Note, xunit does check types by default.
+/// These are artifacts of nunit and not necessary now, just used in many places.
+let equal (expected: 'a) (actual: 'a) = 
+    Assert.Equal<'a>(expected, actual)
 
-/// like "should equal", but validates same-type
 let shouldEqual (x: 'a) (y: 'a) =
-    Assert.AreEqual(x, y, sprintf "Expected: %A\nActual: %A" x y)
+    Assert.Equal<'a>(x, y)
 
 /// Same as 'shouldEqual' but goes pairwise over the collections. Lengths must be equal.
 let shouldPairwiseEqual (x: seq<_>) (y: seq<_>) =
@@ -37,25 +37,5 @@ let shouldPairwiseEqual (x: seq<_>) (y: seq<_>) =
     while ey.MoveNext() do county <- county + 1
     if countx <> county then        
         Assert.Fail($"Collections are of unequal lengths, expected length {countx}, actual length is {county}.")
-
-let notEqual x = NotConstraint(EqualConstraint(x))
-
-let contain x = ContainsConstraint(x)
-
-let endWith (s:string) = EndsWithConstraint(s)
-
-let startWith (s:string) = StartsWithConstraint(s)
-
-let be = id
-
-let Null = NullConstraint()
-
-let Empty = EmptyConstraint()
-
-let EmptyString = EmptyStringConstraint()
-
-let True = TrueConstraint()
-
-let False = FalseConstraint()
 
 let sameAs x = SameAsConstraint(x)
