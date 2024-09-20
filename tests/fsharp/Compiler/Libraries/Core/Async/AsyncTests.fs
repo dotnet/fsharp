@@ -1,14 +1,14 @@
-﻿namespace FSharp.Libraries.UnitTests
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-open System
-open NUnit.Framework
-open FSharp.Compiler.UnitTests
+namespace FSharp.Compiler.UnitTests
 
-[<TestFixture>]
+open Xunit
+open FSharp.Test
+
 module AsyncTests =
     // Regression for FSHARP1.0:5969
     // Async.StartChild: error when wait async is executed more than once
-    [<Test>]
+    [<Fact>]
     let ``Execute Async multiple times``() =
         CompilerAssert.CompileExeAndRun
             """
@@ -30,7 +30,7 @@ exit 0
 
     // Regression for FSHARP1.0:5970
     // Async.StartChild: race in implementation of ResultCell in FSharp.Core
-    [<Test>]
+    [<Fact>]
     let ``Joining StartChild``() =
         CompilerAssert.CompileExeAndRun
             """
@@ -59,7 +59,7 @@ exit 0
             """
 
     // Regression test for FSHARP1.0:6086
-    [<Test>]
+    [<Fact>]
     let ``Mailbox Async dot not StackOverflow``() =
         CompilerAssert.CompileExeAndRun
             """
@@ -132,7 +132,8 @@ exit 0
             """
 
     // Regression for FSHARP1.0:5971
-    [<Test>]
+
+    [<Fact>]
     let ``StartChild do not throw ObjectDisposedException``() =
         CompilerAssert.CompileExeAndRun
             """
@@ -144,8 +145,7 @@ printfn "%A" (b |> Async.RunSynchronously |> Async.RunSynchronously)
 exit 0
             """
 
-
-    [<Test>]
+    [<Fact>]
     let ``StartChild test Trampoline HijackLimit``() =
         CompilerAssert.CompileExeAndRun
             """
