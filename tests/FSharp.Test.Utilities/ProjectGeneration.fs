@@ -226,9 +226,7 @@ let sourceFile fileId deps =
       IsPhysicalFile = false }
 
 
-let OptionsCache = ConcurrentDictionary()
-
-
+let OptionsCache = ConcurrentDictionary<_, FSharpProjectOptions>()
 
 
 type SyntheticProject =
@@ -297,7 +295,7 @@ type SyntheticProject =
 
     member this.GetProjectOptions(checker: FSharpChecker) =
 
-        let cacheKey =
+        let key =
             this.GetAllFiles()
             |> List.collect (fun (p, f) ->
                 [ p.Name
@@ -307,8 +305,7 @@ type SyntheticProject =
             this.FrameworkReferences,
             this.NugetReferences
 
-        if not (OptionsCache.ContainsKey cacheKey) then
-            OptionsCache[cacheKey] <-
+        let factory _ =
                 use _ = Activity.start "SyntheticProject.GetProjectOptions" [ "project", this.Name ]
 
                 let referenceScript =
@@ -353,7 +350,9 @@ type SyntheticProject =
                     OriginalLoadReferences = []
                     Stamp = None }
 
-        OptionsCache[cacheKey]
+        
+        OptionsCache.GetOrAdd(key, factory)
+
 
     member this.GetAllProjects() =
         [ this
