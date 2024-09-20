@@ -50,9 +50,13 @@ module internal ParallelConsole =
         new StringWriter() |> localError.Set
 
 type ParallelConsole =
-    static member OutText = string ParallelConsole.localOut.Value
+    static member OutText =
+        Console.Out.Flush()
+        string ParallelConsole.localOut.Value
 
-    static member ErrorText = string ParallelConsole.localError.Value
+    static member ErrorText =
+        Console.Error.Flush()
+        string ParallelConsole.localError.Value
 
 [<CollectionDefinition(nameof DoNotRunInParallel, DisableParallelization = true)>]
 type DoNotRunInParallel = class end
