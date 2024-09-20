@@ -442,4 +442,16 @@ let typedSeq =
     |> withErrorCode 30
     |> withDiagnosticMessageMatches "Value restriction: The value 'typedSeq' has an inferred generic type"
     |> withDiagnosticMessageMatches "val typedSeq: '_a seq"
- 
+
+[<Fact>]
+let ``Valid sequence expressions``() =
+    Fsx """
+{ 1;10 }
+seq { 1;10 }
+let x = { 1;10 }
+let y = seq { 1;10 }
+    """
+    |> ignoreWarnings
+    |> withLangVersion90
+    |> typecheck
+    |> shouldSucceed
