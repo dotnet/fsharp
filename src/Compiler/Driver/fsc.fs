@@ -550,7 +550,13 @@ let main1
     if tcConfigB.utf8output && Console.OutputEncoding <> Encoding.UTF8 then
         let previousEncoding = Console.OutputEncoding
         Console.OutputEncoding <- Encoding.UTF8
-        disposables.Register({ new IDisposable with member _.Dispose() = Console.OutputEncoding <- previousEncoding })
+
+        disposables.Register(
+            { new IDisposable with
+                member _.Dispose() =
+                    Console.OutputEncoding <- previousEncoding
+            }
+        )
 
     // Display the banner text, if necessary
     if not bannerAlreadyPrinted then

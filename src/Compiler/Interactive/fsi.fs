@@ -4645,7 +4645,13 @@ type FsiEvaluationSession
         if tcConfigB.utf8output && Console.OutputEncoding <> Text.Encoding.UTF8 then
             let previousEncoding = Console.OutputEncoding
             Console.OutputEncoding <- Encoding.UTF8
-            Some ({ new IDisposable with member _.Dispose() = Console.OutputEncoding <-previousEncoding })
+
+            Some(
+                { new IDisposable with
+                    member _.Dispose() =
+                        Console.OutputEncoding <- previousEncoding
+                }
+            )
         else
             None
 
