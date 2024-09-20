@@ -284,6 +284,41 @@ let run r2 r3 =
         ]
     
     [<Fact>]
+    let ``This control construct may only be used if the computation expression builder defines a 'Using' method`` () =
+        Fsx """
+module Result =
+    let zip x1 x2 =
+        match x1,x2 with
+        | Ok x1res, Ok x2res -> Ok (x1res, x2res)
+        | Error e, _ -> Error e
+        | _, Error e -> Error e
+
+type ResultBuilder() =
+    member _.MergeSources(t1: Result<'T,'U>, t2: Result<'T1,'U>) = Result.zip t1 t2
+    member _.BindReturn(x: Result<'T,'U>, f) = Result.map f x
+    member _.Delay(f) = f()
+    
+    member _.TryWith(r: Result<'T,'U>, f) =
+        match r with
+        | Ok x -> Ok x
+        | Error e -> f e
+
+let result = ResultBuilder()
+
+let run r2 r3 =
+    result {
+        use! a = r2
+        return! a
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 708, Line 23, Col 9, Line 23, Col 13, "This control construct may only be used if the computation expression builder defines a 'Using' method")
+        ]
+    
+    [<Fact>]
     let ``do! expressions may not be used in queries`` () =
         Fsx """
 query {
