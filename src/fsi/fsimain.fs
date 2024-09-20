@@ -359,19 +359,6 @@ let MainMain argv =
     ignore argv
     let argv = System.Environment.GetCommandLineArgs()
 
-    let originalInputEncoding = Console.InputEncoding
-    let originalOutputEncoding = Console.OutputEncoding
-
-    use __ =
-        { new IDisposable with
-            member _.Dispose() =
-                try
-                    Console.InputEncoding <- originalInputEncoding
-                    Console.OutputEncoding <- originalOutputEncoding
-                with _ ->
-                    ()
-        }
-
     let timesFlag = argv |> Array.exists (fun x -> x = "/times" || x = "--times")
 
     if timesFlag then

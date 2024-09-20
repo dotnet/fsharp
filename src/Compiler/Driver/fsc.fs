@@ -268,23 +268,15 @@ let AdjustForScriptCompile (tcConfigB: TcConfigBuilder, commandLineSourceFiles, 
 
     List.rev allSources
 
-let SetProcessThreadLocals tcConfigB (disposables: DisposablesTracker) =
+let SetProcessThreadLocals tcConfigB =
     match tcConfigB.preferredUiLang with
     | Some s -> Thread.CurrentThread.CurrentUICulture <- CultureInfo(s)
     | None -> ()
 
     if tcConfigB.utf8output then
-        let originalEncoding = Console.OutputEncoding
         Console.OutputEncoding <- Encoding.UTF8
 
-        disposables.Register(
-            { new IDisposable with
-                member _.Dispose() =
-                    Console.OutputEncoding <- originalEncoding
-            }
-        )
-
-let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, lcidFromCodePage, argv, disposables) =
+let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, lcidFromCodePage, argv) =
     let mutable inputFilesRef = []
 
     let collect name =
@@ -305,7 +297,7 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, lcidFromCodePage, argv,
     | Some _ -> ()
     | None -> tcConfigB.lcid <- lcidFromCodePage
 
-    SetProcessThreadLocals tcConfigB disposables
+    SetProcessThreadLocals tcConfigB
 
     (* step - get dll references *)
     let dllFiles, sourceFiles =
@@ -543,7 +535,7 @@ let main1
         // The ParseCompilerOptions function calls imperative function to process "real" args
         // Rather than start processing, just collect names, then process them.
         try
-            let files = ProcessCommandLineFlags(tcConfigB, lcidFromCodePage, argv, disposables)
+            let files = ProcessCommandLineFlags(tcConfigB, lcidFromCodePage, argv)
             let files = CheckAndReportSourceFileDuplicates(ResizeArray.ofList files)
             AdjustForScriptCompile(tcConfigB, files, lexResourceManager, dependencyProvider)
         with e ->
