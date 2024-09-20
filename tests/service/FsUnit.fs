@@ -2,7 +2,6 @@
 
 open System.Diagnostics
 open Xunit
-open NUnit.Framework.Constraints
 
 [<DebuggerNonUserCode>]
 let should (f: 'a -> objnull -> unit) x (y: obj) =
@@ -37,5 +36,3 @@ let shouldPairwiseEqual (x: seq<_>) (y: seq<_>) =
     while ey.MoveNext() do county <- county + 1
     if countx <> county then        
         Assert.Fail($"Collections are of unequal lengths, expected length {countx}, actual length is {county}.")
-
-let sameAs x = SameAsConstraint(x)
