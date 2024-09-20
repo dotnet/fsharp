@@ -142,7 +142,7 @@ stages:
         # Net472 testing
         - job: TomasTestingWithTestsNet472
           strategy:
-            parallel: 4
+            parallel: 8
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(WindowsMachineQueueName)
@@ -172,7 +172,7 @@ stages:
               testAssemblyVer2: |
                 artifacts\bin\FSharpSuite.Tests\Release\net472\FSharpSuite.Tests.dll
                 !**\obj\**
-              runInParallel: False # This disables multi-threaded test runs
+              #runInParallel: False # This disables multi-threaded test runs
               failOnMinTestsNotRun: True
               minimumExpectedTests: 500
               distributionBatchType: basedOnExecutionTime
@@ -193,8 +193,10 @@ stages:
           steps:
           - download: current
             artifact: fsharp_compiler_artifacts
-          - script: tree '$(Pipeline.Workspace)\fsharp_compiler_artifacts'
-            displayName: Show me what you got
+          - script: tree '$(Pipeline.Workspace)'
+            displayName: Show me what you got Workspace
+          - script: tree '$(System.DefaultWorkingDirectory)'
+            displayName: Show me what you got DefaultWorkingDirectory
           - task: UseDotNet@2
             displayName: install SDK
             inputs:
@@ -207,7 +209,7 @@ stages:
             displayName: Run tests
             inputs:
               testSelector: testAssemblies
-              searchFolder: '$(Pipeline.Workspace)\fsharp_compiler_artifacts'
+              #searchFolder: '$(Pipeline.Workspace)\fsharp_compiler_artifacts'
               testAssemblyVer2: |
                 artifacts\bin\FSharpSuite.Tests\Release\net9.0\FSharpSuite.Tests.dll
                 !**\obj\**
