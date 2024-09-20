@@ -29,7 +29,7 @@ type SkipUnrefInterfaces =
 /// Collect the set of immediate declared interface types for an F# type, but do not
 /// traverse the type hierarchy to collect further interfaces.
 val GetImmediateInterfacesOfType:
-    skipUnref: SkipUnrefInterfaces -> g: TcGlobals -> amap: ImportMap -> m: range -> ty: TType -> TType list
+    skipUnref: SkipUnrefInterfaces -> g: TcGlobals -> amap: ImportMap -> m: range -> ty: TType -> TType seq
 
 /// Indicates whether we should visit multiple instantiations of the same generic interface or not
 [<RequireQualifiedAccess>]

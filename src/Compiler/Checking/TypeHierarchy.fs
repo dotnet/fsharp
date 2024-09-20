@@ -230,7 +230,7 @@ and ExistsInInterfaceHierarchy p skipUnref g amap m intfTy =
     | AppTy g (tcref, tinst) ->
         p intfTy ||
         (GetImmediateInterfacesOfMetadataType g amap m skipUnref intfTy tcref tinst 
-         |> List.exists (ExistsInInterfaceHierarchy p skipUnref g amap m))
+         |> Seq.exists (ExistsInInterfaceHierarchy p skipUnref g amap m))
     | _ -> false
 
 /// Indicates whether we should visit multiple instantiations of the same generic interface or not
@@ -264,7 +264,7 @@ let FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor
         if ndeep > 100 then (errorR(Error((FSComp.SR.recursiveClassHierarchy (showType ty)), m)); (visitedTycon, visited, acc)) else
         let visitedTycon, visited, acc =
             if isInterfaceTy g ty then
-                List.foldBack
+                Seq.foldBack
                    (loop (ndeep+1))
                    (GetImmediateInterfacesOfType skipUnref g amap m ty)
                       (loop ndeep g.obj_ty_noNulls state)
@@ -295,7 +295,7 @@ let FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor
                 | _ ->
                     let state =
                         if followInterfaces then
-                            List.foldBack
+                            Seq.foldBack
                               (loop (ndeep+1))
                               (GetImmediateInterfacesOfType skipUnref g amap m ty)
                               state

@@ -21,6 +21,12 @@ open Internal.Utilities.TypeHashing.HashTypes
 [<Struct; NoComparison;>]
 type CanCoerce = CanCoerce | NoCoerce
 
+module Option =
+    let inline toSeq o =
+        match o with
+        | Some x -> Seq.singleton x
+        | None -> Seq.empty
+
 /// Implements a :> b without coercion based on finalized (no type variable) types
 // Note: This relation is approximate and not part of the language specification.
 //
@@ -56,7 +62,7 @@ let rec TypeDefinitelySubsumesTypeNoCoercion ndeep g amap m ty1 ty2 =
         // Follow the interface hierarchy
         (isInterfaceTy g ty1 &&
             ty2 |> GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m
-                |> List.exists (TypeDefinitelySubsumesTypeNoCoercion (ndeep+1) g amap m ty1))))
+                |> Seq.exists (TypeDefinitelySubsumesTypeNoCoercion (ndeep+1) g amap m ty1))))
 
 let stripAll stripMeasures g ty =
     if stripMeasures then
@@ -155,7 +161,7 @@ let rec TypeFeasiblySubsumesType ndeep g (amap: Import.ImportMap) m ty1 canCoerc
                         if isInterfaceTy g ty1 then
                             let interfaces = GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2
                             // See if any interface in type hierarchy of ty2 is a supertype of ty1
-                            List.exists (TypeFeasiblySubsumesType (ndeep + 1) g amap m ty1 NoCoerce) interfaces
+                            Seq.exists (TypeFeasiblySubsumesType (ndeep + 1) g amap m ty1 NoCoerce) interfaces
                         else
                             false
 
@@ -349,5 +355,5 @@ let IteratedAdjustLambdaToMatchValReprInfo g amap valReprInfo lambdaExpr =
 /// "Single Feasible Type" inference
 /// Look for the unique supertype of ty2 for which ty2 :> ty1 might feasibly hold
 let FindUniqueFeasibleSupertype g amap m ty1 ty2 =
-    let supertypes = Option.toList (GetSuperTypeOfType g amap m ty2) @ (GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2)
-    supertypes |> List.tryFind (TypeFeasiblySubsumesType 0 g amap m ty1 NoCoerce)
+    let supertypes = Seq.append (Option.toSeq (GetSuperTypeOfType g amap m ty2)) (GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2)
+    supertypes |> Seq.tryFind (TypeFeasiblySubsumesType 0 g amap m ty1 NoCoerce)
