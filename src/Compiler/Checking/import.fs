@@ -22,6 +22,8 @@ open FSharp.Compiler.TcGlobals
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
+open Internal.Utilities.TypeHashing
+open Internal.Utilities.TypeHashing.HashTypes
 #endif
 
 /// Represents an interface to some of the functionality of TcImports, for loading assemblies 
@@ -43,7 +45,50 @@ type AssemblyLoader =
     /// Record a root for a [<Generate>] type to help guide static linking & type relocation
     abstract RecordGeneratedTypeRoot : ProviderGeneratedType -> unit
 #endif
-        
+
+[<Struct; NoComparison>]
+type CanCoerce =
+    | CanCoerce
+    | NoCoerce
+
+type [<Struct; NoComparison; CustomEquality>] TTypeCacheKey =
+
+    val ty1: TType
+    val ty2: TType
+    val canCoerce: CanCoerce
+    val tcGlobals: TcGlobals
+
+    new (ty1, ty2, canCoerce, tcGlobals) =
+        { ty1 = ty1; ty2 = ty2; canCoerce = canCoerce; tcGlobals = tcGlobals }
+
+    static member op_Implicit (struct(ty1, ty2, canCoerce, g: TcGlobals)) =
+        TTypeCacheKey(ty1, ty2, canCoerce, g)
+
+    static member op_Explicit(struct(ty1, ty2, canCoerce, g: TcGlobals)) =
+        TTypeCacheKey(ty1, ty2, canCoerce, g)
+
+    interface System.IEquatable<TTypeCacheKey> with
+        member this.Equals other =
+            LanguagePrimitives.PhysicalEquality this.ty1 other.ty1
+            && LanguagePrimitives.PhysicalEquality this.ty2 other.ty2
+            && this.canCoerce = other.canCoerce
+
+    override this.Equals other =
+        match other with
+        | :? TTypeCacheKey as p -> (this :> System.IEquatable<TTypeCacheKey>).Equals p
+        | _ -> false
+
+    override this.GetHashCode (): int =
+        let g = this.tcGlobals
+
+        let ty1 = stripTyEqns g this.ty1
+        let ty2 = stripTyEqns g this.ty2
+
+        let ty1Hash = combineHash (hashStamp g ty1) (hashTType g ty1)
+        let ty2Hash = combineHash (hashStamp g ty2) (hashTType g ty2)
+
+        combineHash (combineHash ty1Hash ty2Hash) (hash this.canCoerce)
+
 //-------------------------------------------------------------------------
 // Import an IL types as F# types.
 //------------------------------------------------------------------------- 
@@ -61,7 +106,7 @@ type ImportMap(g: TcGlobals, assemblyLoader: AssemblyLoader) =
     let typeRefToTyconRefCache = ConcurrentDictionary<ILTypeRef, TyconRef>()
 
     // TODO(vlza): should that be an MRU cache, so we can evict the entries we are not (or checked just once or twice)?
-    let typeSubsumptionCache = ConcurrentDictionary<int, bool>()
+    let typeSubsumptionCache = ConcurrentDictionary<TTypeCacheKey, bool>()
 
     member _.g = g
 
