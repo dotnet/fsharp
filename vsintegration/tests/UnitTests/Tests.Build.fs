@@ -348,7 +348,7 @@ type Build() =
     [<Fact>]
     member public this.TestReferences() =
         let tool = new FSharp.Build.Fsc()
-        let dll = "c:\\sd\\staging\\tools\\nunit\\nunit.framework.dll"
+        let dll = "c:\\sd\\staging\\tools\\xunit\\xunit.core.dll"
         tool.References <- [| MakeTaskItem dll |]
         AssertEqual 1 tool.References.Length 
         let cmd = tool.InternalGenerateResponseFileCommands()
@@ -364,13 +364,13 @@ type Build() =
     [<Fact>]
     member public this.TestReferencePath() =
         let tool = new FSharp.Build.Fsc()
-        let path = "c:\\sd\\staging\\tools\\nunit\\;c:\\Foo"
+        let path = "c:\\sd\\staging\\tools\\xunit\\;c:\\Foo"
         tool.ReferencePath <- path
         AssertEqual path tool.ReferencePath 
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
-                     "--lib:c:\\sd\\staging\\tools\\nunit\\,c:\\Foo" + Environment.NewLine +
+                     "--lib:c:\\sd\\staging\\tools\\xunit\\,c:\\Foo" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
@@ -380,13 +380,13 @@ type Build() =
     [<Fact>]
     member public this.TestReferencePathWithSpaces() =
         let tool = new FSharp.Build.Fsc()
-        let path = "c:\\program files;c:\\sd\\staging\\tools\\nunit;c:\\Foo"
+        let path = "c:\\program files;c:\\sd\\staging\\tools\\xunit;c:\\Foo"
         tool.ReferencePath <- path
         AssertEqual path tool.ReferencePath 
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
-                     "--lib:c:\\program files,c:\\sd\\staging\\tools\\nunit,c:\\Foo" + Environment.NewLine +
+                     "--lib:c:\\program files,c:\\sd\\staging\\tools\\xunit,c:\\Foo" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
