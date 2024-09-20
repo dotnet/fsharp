@@ -62,7 +62,7 @@ module internal WarnScopes =
 
     let private index (fileIndex, warningNumber) =
         (int64 fileIndex <<< 32) + int64 warningNumber
-    
+
     let private warnNumFromIndex (idx: int64) = idx &&& 0xFFFFFFFFL
 
     let private getScopes idx warnScopes =
@@ -91,9 +91,10 @@ module internal WarnScopes =
 
     let ParseAndSaveWarnDirectiveLine (lexbuf: Lexbuf) =
         let convert (p: Internal.Utilities.Text.Lexing.Position) = mkPos p.Line p.Column
+        let idx = lexbuf.StartPos.FileIndex
+        let idx = FileIndex.tryGetLineMappingOrigin idx |> Option.defaultValue idx
 
-        let m =
-            mkFileIndexRange lexbuf.StartPos.FileIndex (convert lexbuf.StartPos) (convert lexbuf.EndPos)
+        let m = mkFileIndexRange idx (convert lexbuf.StartPos) (convert lexbuf.EndPos)
 
         let text = Lexbuf.LexemeString lexbuf
         let directives = getDirectives text m
@@ -102,49 +103,59 @@ module internal WarnScopes =
 
     let ClearLexbufStore (lexbuf: Lexbuf) =
         lexbuf.BufferLocalStore.Remove warnScopeKey |> ignore
-    
+
     let MergeInto (diagnosticOptions: FSharpDiagnosticOptions) (lexbuf: Lexbuf) =
         let (WarnScopeMap warnScopes) = fromLexbuf lexbuf
+
         lock diagnosticOptions (fun () ->
             let (WarnScopeMap current) = diagnosticOptions.WarnScopes
             let warnScopes' = Map.fold (fun wss idx ws -> Map.add idx ws wss) current warnScopes
-            diagnosticOptions.WarnScopes <- WarnScopeMap warnScopes'
-            )
-
-    /// true if m1 contains the start of m2 (#line directives can appear in the middle of an error range)
-    let private contains (m2: range) (m1: range) =
-        m2.StartLine > m1.StartLine && m2.StartLine < m1.EndLine
-
+            diagnosticOptions.WarnScopes <- WarnScopeMap warnScopes')
 
     // *************************************
     // Apply the warn scopes after lexing
     // *************************************
 
+    /// true if m1 contains the start of m2 (#line directives can appear in the middle of an error range)
+    let private contains (m2: range) (m1: range) =
+        m2.StartLine > m1.StartLine && m2.StartLine < m1.EndLine
+
+    let private isEnclosingWarnonScope m scope =
+        match scope with
+        | WarnScope.On wm when contains m wm -> true
+        | WarnScope.OpenOn wm when m.StartLine > wm.StartLine -> true
+        | _ -> false
+
+    let private isEnclosingNowarnScope m scope =
+        match scope with
+        | WarnScope.Off wm when contains m wm -> true
+        | WarnScope.OpenOff wm when m.StartLine > wm.StartLine -> true
+        | _ -> false
+
+    let private isOffScope scope =
+        match scope with
+        | WarnScope.Off _
+        | WarnScope.OpenOff _ -> true
+        | _ -> false
+
     let IsWarnon (WarnScopeMap warnScopes) warningNumber (mo: range option) =
         match mo with
         | None -> false
         | Some m ->
-            let scopes = getScopes (index (m.FileIndex, warningNumber)) warnScopes
-
-            let isEnclosingWarnonScope scope =
-                match scope with
-                | WarnScope.On wm when contains m wm -> true
-                | WarnScope.OpenOn wm when m.StartLine > wm.StartLine -> true
-                | _ -> false
-
-            List.exists isEnclosingWarnonScope scopes
+            if FileIndex.hasLineMapping m.FileIndex then
+                false
+            else
+                let scopes = getScopes (index (m.FileIndex, warningNumber)) warnScopes
+                List.exists (isEnclosingWarnonScope m) scopes
 
     let IsNowarn (WarnScopeMap warnScopes) warningNumber (mo: range option) compatible =
         match mo, compatible with
         | Some m, false ->
-            let scopes = getScopes (index (m.FileIndex, warningNumber)) warnScopes
-
-            let isEnclosingNowarnScope scope =
-                match scope with
-                | WarnScope.Off wm when contains m wm -> true
-                | WarnScope.OpenOff wm when m.StartLine > wm.StartLine -> true
-                | _ -> false
-
-            List.exists isEnclosingNowarnScope scopes
-        | _ ->
-            warnScopes |> Map.exists (fun idx _ -> warnNumFromIndex idx = warningNumber)
+            match FileIndex.tryGetLineMappingOrigin m.FileIndex with
+            | None ->
+                let scopes = getScopes (index (m.FileIndex, warningNumber)) warnScopes
+                List.exists (isEnclosingNowarnScope m) scopes
+            | Some fileIndex ->  // file has #line directives
+                let scopes = getScopes (index (fileIndex, warningNumber)) warnScopes
+                List.exists isOffScope scopes
+        | _ -> warnScopes |> Map.exists (fun idx _ -> warnNumFromIndex idx = warningNumber)

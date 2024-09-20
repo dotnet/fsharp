@@ -185,6 +185,7 @@ module RangeImpl =
 type FileIndexTable() =
     let indexToFileTable = ResizeArray<_>(11)
     let fileToIndexTable = ConcurrentDictionary<string, int>()
+    let lineMappingOrigin = ConcurrentDictionary<int, int>()
 
     // Note: we should likely adjust this code to always normalize. However some testing (and possibly some
     // product behaviour) appears to be sensitive to error messages reporting un-normalized file names.
@@ -237,6 +238,15 @@ type FileIndexTable() =
             failwithf "fileOfFileIndex: invalid argument: n = %d\n" n
 
         indexToFileTable[n]
+    
+    member t.SetLineMappingOrigin n m = lineMappingOrigin[n] <- m
+        
+    member t.TryGetLineMappingOrigin n =
+        match lineMappingOrigin.TryGetValue n with
+        | true, idx -> Some idx
+        | _ -> None
+        
+    member t.HasLineMapping n = lineMappingOrigin.ContainsKey n
 
 [<AutoOpen>]
 module FileIndex =
@@ -257,6 +267,10 @@ module FileIndex =
     let unknownFileName = "unknown"
     let startupFileName = "startup"
     let commandLineArgsFileName = "commandLineArgs"
+    
+    let setLineMappingOrigin n m = fileIndexTable.SetLineMappingOrigin n m
+    let tryGetLineMappingOrigin n = fileIndexTable.TryGetLineMappingOrigin n
+    let hasLineMapping n = fileIndexTable.HasLineMapping n
 
 [<Struct; CustomEquality; NoComparison>]
 [<System.Diagnostics.DebuggerDisplay("({StartLine},{StartColumn}-{EndLine},{EndColumn}) {ShortFileName} -> {DebugCode}")>]
