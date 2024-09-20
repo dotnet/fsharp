@@ -376,17 +376,9 @@ module Tests5 =
     [<Fact>]
     let ``test int32-FSI`` () = singleTestBuildAndRun "core/int32" FSI
 
-module Tests6 =
 
-    [<Fact>]
-    let ``recordResolution-FSC_DEBUG`` () = singleTestBuildAndRun "core/recordResolution" FSC_DEBUG
-
-    [<Fact>]
-    let ``recordResolution-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/recordResolution" FSC_OPTIMIZED
-
-    [<Fact>]
-    let ``recordResolution-FSI`` () = singleTestBuildAndRun "core/recordResolution" FSI
-
+[<Collection(nameof DoNotRunInParallel)>]
+module CancelsDefaultToken =
     // This test has hardcoded expectations about current synchronization context
     // Will be moved out of FsharpSuite.Tests in a later phase for desktop framework
     [<FactForNETCOREAPP>]
@@ -399,6 +391,17 @@ module Tests6 =
     let ``control --tailcalls`` () =
         let cfg =  "core/control"
         singleTestBuildAndRunAux cfg  ["--tailcalls"] FSC_OPTIMIZED
+
+module Tests6 =
+
+    [<Fact>]
+    let ``recordResolution-FSC_DEBUG`` () = singleTestBuildAndRun "core/recordResolution" FSC_DEBUG
+
+    [<Fact>]
+    let ``recordResolution-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/recordResolution" FSC_OPTIMIZED
+
+    [<Fact>]
+    let ``recordResolution-FSI`` () = singleTestBuildAndRun "core/recordResolution" FSI
 
     [<Fact>]
     let ``controlChamenos-FSC_OPTIMIZED`` () =
