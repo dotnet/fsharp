@@ -117,8 +117,6 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
 
                             let enableLiveBuffers = editorOptions.Advanced.IsUseLiveBuffersEnabled
 
-                            let useSyntaxTreeCache = editorOptions.LanguageServicePerformance.UseSyntaxTreeCache
-
                             let enableInMemoryCrossProjectReferences =
                                 editorOptions.LanguageServicePerformance.EnableInMemoryCrossProjectReferences
 
@@ -158,7 +156,6 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                     TelemetryEvents.LanguageServiceStarted,
                                     [|
                                         nameof enableLiveBuffers, enableLiveBuffers
-                                        nameof useSyntaxTreeCache, useSyntaxTreeCache
                                         nameof enableParallelReferenceResolution, enableParallelReferenceResolution
                                         nameof enableInMemoryCrossProjectReferences, enableInMemoryCrossProjectReferences
                                         nameof enableFastFindReferences, enableFastFindReferences
@@ -199,7 +196,6 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                                  }))
                                          else
                                              DocumentSource.FileSystem),
-                                    useSyntaxTreeCache = useSyntaxTreeCache,
                                     useTransparentCompiler = useTransparentCompiler
                                 )
 

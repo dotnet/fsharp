@@ -327,11 +327,6 @@
         <target state="translated">Saydam Derleyiciyi kullan (yeniden başlatma gereklidir)</target>
         <note />
       </trans-unit>
-      <trans-unit id="Use_syntax_tree_cache">
-        <source>Cache parsing results (experimental)</source>
-        <target state="translated">Ayrıştırma sonuçlarını önbelleğe al (deneysel)</target>
-        <note />
-      </trans-unit>
     </body>
   </file>
 </xliff>
