@@ -101,14 +101,9 @@ stages:
 
 
         # Plain FCS build Windows
-        - job: TomasTestingWithTests
+        - job: TomasTestingWithTestsNet472
           strategy:
             parallel: 16
-            matrix:
-              net472:
-                tfm_tests: net472
-              netcore:
-                tfm_tests: net9.0
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(WindowsMachineQueueName)
@@ -138,11 +133,52 @@ stages:
               testSelector: testAssemblies
               searchFolder: $(Build.SourcesDirectory)
               testAssemblyVer2: |
-                artifacts\bin\FSharpSuite.Tests\Release\$(tfm_tests)\FSharpSuite.Tests.dll
+                artifacts\bin\FSharpSuite.Tests\Release\net472\FSharpSuite.Tests.dll
                 !**\obj\**
               runInParallel: False # This disables multi-threaded test runs
               failOnMinTestsNotRun: True
-              minimumExpectedTests: 50
+              minimumExpectedTests: 500
+              distributionBatchType: basedOnExecutionTime
+              configuration: '$(_BuildConfig)'
+              continueOnError: true
+
+        - job: TomasTestingWithTestsNet90
+          strategy:
+            parallel: 16
+          pool:
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          variables:
+          - name: _BuildConfig
+            value: Release
+          steps:
+          - checkout: self
+            clean: true
+          - script: dotnet --list-sdks
+            displayName: Report dotnet SDK versions
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              useGlobalJson: true
+              includePreviewVersions: true
+              workingDirectory: $(Build.SourcesDirectory)
+              installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: .\Build.cmd -pack -c $(_BuildConfig)
+            env:
+              NativeToolsOnMachine: true
+            displayName: Bootstrapped compiler build
+          - task: VSTest@2
+            displayName: Run tests
+            inputs:
+              testSelector: testAssemblies
+              searchFolder: $(Build.SourcesDirectory)
+              testAssemblyVer2: |
+                artifacts\bin\FSharpSuite.Tests\Release\net9.0\FSharpSuite.Tests.dll
+                !**\obj\**
+              runInParallel: False # This disables multi-threaded test runs
+              failOnMinTestsNotRun: True
+              minimumExpectedTests: 500
               distributionBatchType: basedOnExecutionTime
               configuration: '$(_BuildConfig)'
               continueOnError: true
