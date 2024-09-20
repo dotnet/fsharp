@@ -99,11 +99,9 @@ stages:
         helixRepo: dotnet/fsharp
         jobs:
 
-
         # Plain FCS build Windows
         - job: TomasTestingWithTestsNet472
-          strategy:
-            parallel: 16
+
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(WindowsMachineQueueName)
@@ -115,6 +113,45 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              useGlobalJson: true
+              includePreviewVersions: true
+              workingDirectory: $(Build.SourcesDirectory)
+              installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: .\Build.cmd -pack -c $(_BuildConfig)
+            env:
+              NativeToolsOnMachine: true
+            displayName: Bootstrapped compiler build
+          - task: CopyFiles@2
+            displayName: 'Copy all artifacts'
+            inputs:
+              contents: 'artifacts/**'
+              targetFolder: '$(Build.ArtifactStagingDirectory)\artifacts'
+          - task: CopyFiles@2
+            displayName: 'Copy all tests'
+            inputs:
+              contents: 'tests/**'
+              targetFolder: '$(Build.ArtifactStagingDirectory)\tests'
+          - publish: '$(Build.ArtifactStagingDirectory)'
+            displayName: 'Publish all artifacts'
+            artifact: fsharp_compiler_artifacts
+
+        # Net472 testing
+        - job: TomasTestingWithTestsNet472
+          strategy:
+            parallel: 4
+          pool:
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          variables:
+          - name: _BuildConfig
+            value: Release
+          steps:
+          - checkout: self
+            clean: true
           - task: UseDotNet@2
             displayName: install SDK
             inputs:
@@ -142,9 +179,10 @@ stages:
               configuration: '$(_BuildConfig)'
               continueOnError: true
 
+        # NetCoreApp testing
         - job: TomasTestingWithTestsNet90
           strategy:
-            parallel: 16
+            parallel: 2
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(WindowsMachineQueueName)
@@ -152,10 +190,10 @@ stages:
           - name: _BuildConfig
             value: Release
           steps:
-          - checkout: self
-            clean: true
-          - script: dotnet --list-sdks
-            displayName: Report dotnet SDK versions
+          - download: current
+            artifact: fsharp_compiler_artifacts
+          - script: tree '$(Pipeline.Workspace)\fsharp_compiler_artifacts'
+            displayName: Show me what you got
           - task: UseDotNet@2
             displayName: install SDK
             inputs:
@@ -164,15 +202,11 @@ stages:
               includePreviewVersions: true
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Agent.ToolsDirectory)/dotnet
-          - script: .\Build.cmd -pack -c $(_BuildConfig)
-            env:
-              NativeToolsOnMachine: true
-            displayName: Bootstrapped compiler build
           - task: VSTest@2
             displayName: Run tests
             inputs:
               testSelector: testAssemblies
-              searchFolder: $(Build.SourcesDirectory)
+              searchFolder: '$(Pipeline.Workspace)\fsharp_compiler_artifacts'
               testAssemblyVer2: |
                 artifacts\bin\FSharpSuite.Tests\Release\net9.0\FSharpSuite.Tests.dll
                 !**\obj\**
