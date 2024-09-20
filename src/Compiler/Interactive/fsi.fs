@@ -846,7 +846,7 @@ type internal FsiStdinSyphon(errorWriter: TextWriter) =
 /// Encapsulates functions used to write to outWriter and errorWriter
 type internal FsiConsoleOutput(tcConfigB, outWriter: TextWriter, errorWriter: TextWriter) =
 
-    let nullOut = new StreamWriter(Stream.Null) :> TextWriter
+    let nullOut = TextWriter.Null
 
     let fprintfnn (os: TextWriter) fmt =
         Printf.kfprintf
@@ -1202,11 +1202,6 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
     do
         if tcConfigB.clearResultsCache then
             dependencyProvider.ClearResultsCache(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError rangeCmdArgs)
-
-        if tcConfigB.utf8output then
-            let prev = Console.OutputEncoding
-            Console.OutputEncoding <- Encoding.UTF8
-            System.AppDomain.CurrentDomain.ProcessExit.Add(fun _ -> Console.OutputEncoding <- prev)
 
     do
         let firstArg =
@@ -4646,6 +4641,14 @@ type FsiEvaluationSession
         with e ->
             warning (e)
 
+    let restoreEncoding =
+        if tcConfigB.utf8output && Console.OutputEncoding <> Text.Encoding.UTF8 then
+            let previousEncoding = Console.OutputEncoding
+            Console.OutputEncoding <- Encoding.UTF8
+            Some ({ new IDisposable with member _.Dispose() = Console.OutputEncoding <-previousEncoding })
+        else
+            None
+
     do
         updateBannerText () // resetting banner text after parsing options
 
@@ -4789,6 +4792,7 @@ type FsiEvaluationSession
         member _.Dispose() =
             (tcImports :> IDisposable).Dispose()
             uninstallMagicAssemblyResolution.Dispose()
+            restoreEncoding |> Option.iter (fun x -> x.Dispose())
 
     /// Load the dummy interaction, load the initial files, and,
     /// if interacting, start the background thread to read the standard input.
