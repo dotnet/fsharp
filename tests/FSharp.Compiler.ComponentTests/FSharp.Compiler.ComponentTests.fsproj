@@ -35,6 +35,9 @@
     <Compile Include="..\service\FsUnit.fs">
       <Link>FsUnit.fs</Link>
     </Compile>
+    <Compile Include="..\service\DoNotRunInParallel.fs">
+      <Link>DoNotRunInParallel.fs</Link>
+    </Compile>
     <Compile Include="CompilerDirectives\Line.fs" />
     <Compile Include="CompilerDirectives\NonStringArgs.fs" />
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\Basic\Basic.fs" />

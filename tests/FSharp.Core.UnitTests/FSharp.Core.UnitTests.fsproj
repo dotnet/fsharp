@@ -35,6 +35,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\service\DoNotRunInParallel.fs">
+      <Link>DoNotRunInParallel.fs</Link>
+    </Compile>
     <Compile Include="TestFrameworkHelpers.fs" />
     <Compile Include="LibraryTestFx.fs" />
     <Compile Include="FSharp.Core\PrimTypes.fs" />

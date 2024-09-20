@@ -16,6 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\service\DoNotRunInParallel.fs">
+      <Link>DoNotRunInParallel.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\Compiler\Interactive\ControlledExecution.fs" />
     <Compile Include="$(FSharpSourcesRoot)\Compiler\Utilities\RidHelpers.fs" />
     <Compile Include="DependencyManagerInteractiveTests.fs" />

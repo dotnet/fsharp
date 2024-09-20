@@ -21,9 +21,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\service\DoNotRunInParallel.fs">
+      <Link>DoNotRunInParallel.fs</Link>
+    </Compile>
     <Compile Include="..\scripts\scriptlib.fsx">
       <Link>scriptlib.fsx</Link>
-    </Compile>
+    </Compile>  
     <Compile Include="XunitHelpers.fs" />
     <Compile Include="HandleExpects.fs" />
     <Compile Include="single-test.fs" />

@@ -58,9 +58,6 @@ type ParallelConsole =
         Console.Error.Flush()
         string ParallelConsole.localError.Value
 
-[<CollectionDefinition(nameof DoNotRunInParallel, DisableParallelization = true)>]
-type DoNotRunInParallel = class end
-
 // Must by applied on every test assembly that uses ParallelConsole or CompilerAssertHelpers. 
 [<AttributeUsage(AttributeTargets.Assembly)>]
 type InitTestGlobals() =

@@ -8,6 +8,8 @@ open FSharp.Test.Compiler
 open System
 open System.IO
 
+// reportTime uses global state.
+[<Collection(nameof DoNotRunInParallel)>]
 module times =
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/times)
@@ -62,6 +64,7 @@ module times =
             "Typecheck"
             "GC0"
             "Duration"|]
+        |> ignore
 
 
     [<Theory(Skip="Flaky in CI due to file being locked, disabling for now until file closure is resolved."); Directory(__SOURCE_DIRECTORY__, Includes=[|"error_01.fs"|])>]

@@ -15,6 +15,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\service\DoNotRunInParallel.fs">
+      <Link>DoNotRunInParallel.fs</Link>
+    </Compile>
     <Compile Include="WriteCodeFragmentTests.fs" />
     <Compile Include="MapSourceRootsTests.fs" />
   </ItemGroup>
