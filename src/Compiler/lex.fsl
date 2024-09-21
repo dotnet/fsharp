@@ -816,7 +816,9 @@ rule token (args: LexArgs) (skip: bool) = parse
 
             // Construct the new position
             if args.applyLineDirectives then
-                lexbuf.EndPos <- pos.ApplyLineDirective((match file with Some f -> FileIndex.fileIndexOfFile f | None -> pos.FileIndex), pos.FileIndex, line)
+                let fileIndex = match file with Some f -> FileIndex.fileIndexOfFile f | None -> pos.FileIndex
+                lexbuf.EndPos <- pos.ApplyLineDirective(fileIndex, line)
+                WarnScopes.RegisterLineDirective(lexbuf, pos.FileIndex, fileIndex, line)
             else
                 // add a newline when we don't apply a directive since we consumed a newline getting here
                 newline lexbuf
@@ -1082,7 +1084,7 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | anywhite* ("#nowarn" | "#warnon") anystring newline
    {
-     WarnScopes.ParseAndSaveWarnDirectiveLine lexbuf
+     WarnScopes.ParseAndRegisterWarnDirective lexbuf
      newline lexbuf
      let tok = WHITESPACE (LexCont.Token (args.ifdefStack, args.stringNest))
      if not skip then tok else token args skip lexbuf

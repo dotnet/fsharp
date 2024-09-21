@@ -8,18 +8,20 @@ open FSharp.Compiler.UnicodeLexing
 
 module internal WarnScopes =
 
-    /// For use in lex.fsl: #nowarn / #warnon directives are turned into warn scopes and saved in lexbuf.BufferLocalStore
-    val ParseAndSaveWarnDirectiveLine: lexbuf: Lexbuf -> unit
+    /// To be called from lex.fsl to register the line directives for warn scope processing
+    val RegisterLineDirective: lexbuf: Lexbuf * previousFileIndex: int * fileIndex: int * line: int -> unit
     
-    /// Clear the warn scopes in lexbuf.BufferLocalStore for reuse of the lexbuf
+    /// To be called from lex.fsl: #nowarn / #warnon directives are turned into warn scopes and saved
+    val ParseAndRegisterWarnDirective: lexbuf: Lexbuf -> unit
+    
+    /// Clear the WarnScopes data in lexbuf.BufferLocalStore for reuse of the lexbuf
     val ClearLexbufStore: Lexbuf -> unit
 
-    /// Add the warn scopes of a lexed file into the diagnostics options
+    /// Add the WarnScopes data of a lexed file into the diagnostics options
     val MergeInto: FSharpDiagnosticOptions -> Lexbuf -> unit
 
     /// Check if the range is inside a WarnScope.On scope
-    val IsWarnon: WarnScopeMap -> warningNumber: int -> mo: range option -> bool
+    val IsWarnon: FSharpDiagnosticOptions -> warningNumber: int -> mo: range option -> bool
 
     /// Check if the range is inside a WarnScope.Off scope
-    /// compatible = compatible with earlier (< F# 10.0) inconsistent interaction between #line and #nowarn
-    val IsNowarn: WarnScopeMap -> warningNumber: int -> mo: range option -> compatible: bool -> bool
+    val IsNowarn: FSharpDiagnosticOptions -> warningNumber: int -> mo: range option -> bool

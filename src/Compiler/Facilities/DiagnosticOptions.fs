@@ -16,6 +16,9 @@ type WarnScope =
 
 type WarnScopeMap = WarnScopeMap of Map<int64, WarnScope list>
 
+type LineMap = LineMap of Map<int, int>
+    with static member Empty = LineMap Map.empty
+
 [<RequireQualifiedAccess>]
 type FSharpDiagnosticSeverity =
     | Hidden
@@ -31,7 +34,8 @@ type FSharpDiagnosticOptions =
         WarnOn: int list
         WarnAsError: int list
         WarnAsWarn: int list
-        mutable Fsharp8CompatibleNowarn: bool // set after setting compiler options
+        mutable Fsharp9CompatibleNowarn: bool // set after setting compiler options
+        mutable LineMap: LineMap // set after lexing
         mutable WarnScopes: WarnScopeMap // set after lexing
     }
 
@@ -43,7 +47,8 @@ type FSharpDiagnosticOptions =
             WarnOn = []
             WarnAsError = []
             WarnAsWarn = []
-            Fsharp8CompatibleNowarn = false
+            Fsharp9CompatibleNowarn = false
+            LineMap = LineMap.Empty
             WarnScopes = WarnScopeMap Map.empty
         }
 

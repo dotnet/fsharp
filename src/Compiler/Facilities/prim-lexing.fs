@@ -237,10 +237,7 @@ type internal Position =
     member x.ColumnMinusOne =
         Position(x.FileIndex, x.Line, x.OriginalLine, x.StartOfLineAbsoluteOffset, x.StartOfLineAbsoluteOffset - 1)
 
-    member x.ApplyLineDirective(fileIdx, originalIdx, line) =
-        if not <| FileIndex.hasLineMapping fileIdx then
-            FileIndex.setLineMappingOrigin fileIdx originalIdx
-            FileIndex.setLineMappingOrigin originalIdx originalIdx // to flag that it contains a #line directive
+    member x.ApplyLineDirective(fileIdx, line) =
         Position(fileIdx, line, x.OriginalLine, x.AbsoluteOffset, x.AbsoluteOffset)
 
     override p.ToString() = $"({p.Line},{p.Column})"

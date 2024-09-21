@@ -103,7 +103,7 @@ type internal Position =
     member ColumnMinusOne: Position
 
     /// Apply a #line directive.
-    member ApplyLineDirective: fileIdx: int * originalIdx: int * line: int -> Position
+    member ApplyLineDirective: fileIdx: int * line: int -> Position
 
     /// Get an arbitrary position, with the empty string as file name.
     static member Empty: Position

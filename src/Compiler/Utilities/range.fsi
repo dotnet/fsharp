@@ -182,10 +182,6 @@ module internal FileIndex =
     val fileOfFileIndex: FileIndex -> string
 
     val startupFileName: string
-    
-    val setLineMappingOrigin: int -> int -> unit
-    val tryGetLineMappingOrigin: int -> int option
-    val hasLineMapping: int -> bool
 
 module Range =
 

@@ -12,17 +12,40 @@ open System.Text.RegularExpressions
 [<RequireQualifiedAccess>]
 module internal WarnScopes =
 
+    // The keys into the BufferLocalStore used to hold the warn scopes and related data
+    let private warnScopeKey = "WarnScopes"
+    let private lineMapKey = "WarnScopes.LineMaps"
+
+    
+    // *************************************
+    // Collect the line directives to correctly interact with them
+    // *************************************
+
+    let private getLineMap (lexbuf: Lexbuf) =
+        if not <| lexbuf.BufferLocalStore.ContainsKey lineMapKey then
+            lexbuf.BufferLocalStore.Add(lineMapKey, LineMap.Empty)
+        lexbuf.BufferLocalStore[lineMapKey] :?> LineMap
+    
+    let private setLineMap (lexbuf: Lexbuf) lineMap =
+        lexbuf.BufferLocalStore[lineMapKey] <- LineMap lineMap
+
+    let RegisterLineDirective(lexbuf, previousFileIndex, fileIndex, line: int) =
+        let (LineMap lineMap) = getLineMap lexbuf
+        if not <| lineMap.ContainsKey fileIndex then
+            lineMap
+            |> Map.add fileIndex previousFileIndex
+            |> Map.add previousFileIndex previousFileIndex  // to flag that it contains a line directive
+            |> setLineMap lexbuf
+        ignore line // for now
+
+
     // *************************************
     // Collect the warn scopes during lexing
     // *************************************
 
-    // The key into the BufferLocalStore used to hold the warn scopes
-    let private warnScopeKey = "WarnScopes"
-
-    let private fromLexbuf (lexbuf: Lexbuf) : WarnScopeMap =
+    let private getWarnScopes (lexbuf: Lexbuf) =
         if not <| lexbuf.BufferLocalStore.ContainsKey warnScopeKey then
             lexbuf.BufferLocalStore.Add(warnScopeKey, WarnScopeMap Map.empty)
-
         lexbuf.BufferLocalStore[warnScopeKey] :?> WarnScopeMap
 
     [<RequireQualifiedAccess>]
@@ -90,28 +113,36 @@ module internal WarnScopes =
             | scopes -> warnScopes.Add(idx, WarnScope.OpenOn(mkScope m m) :: scopes)
         |> WarnScopeMap
 
-    let ParseAndSaveWarnDirectiveLine (lexbuf: Lexbuf) =
+    let ParseAndRegisterWarnDirective (lexbuf: Lexbuf) =
+        let (LineMap lineMap) = getLineMap lexbuf
         let convert (p: Internal.Utilities.Text.Lexing.Position) = mkPos p.Line p.Column
         let idx = lexbuf.StartPos.FileIndex
-        let idx = FileIndex.tryGetLineMappingOrigin idx |> Option.defaultValue idx
-
+        let idx = lineMap.TryFind idx |> Option.defaultValue idx
         let m = mkFileIndexRange idx (convert lexbuf.StartPos) (convert lexbuf.EndPos)
-
         let text = Lexbuf.LexemeString lexbuf
         let directives = getDirectives text m
-        let warnScopes = (fromLexbuf lexbuf, directives) ||> List.fold processWarnDirective
+        let warnScopes = (getWarnScopes lexbuf, directives) ||> List.fold processWarnDirective
         lexbuf.BufferLocalStore[warnScopeKey] <- warnScopes
 
-    let ClearLexbufStore (lexbuf: Lexbuf) =
-        lexbuf.BufferLocalStore.Remove warnScopeKey |> ignore
+    // *************************************
+    // Move the warnscope data to diagnosticOptions
+    // *************************************
 
     let MergeInto (diagnosticOptions: FSharpDiagnosticOptions) (lexbuf: Lexbuf) =
-        let (WarnScopeMap warnScopes) = fromLexbuf lexbuf
+        let (WarnScopeMap warnScopes) = getWarnScopes lexbuf
+        let (LineMap lineMap) = getLineMap lexbuf
 
         lock diagnosticOptions (fun () ->
             let (WarnScopeMap current) = diagnosticOptions.WarnScopes
             let warnScopes' = Map.fold (fun wss idx ws -> Map.add idx ws wss) current warnScopes
-            diagnosticOptions.WarnScopes <- WarnScopeMap warnScopes')
+            diagnosticOptions.WarnScopes <- WarnScopeMap warnScopes'
+            let (LineMap clm) = diagnosticOptions.LineMap
+            let lineMap' = Map.fold (fun lms idx oidx -> Map.add idx oidx lms) clm lineMap
+            diagnosticOptions.LineMap <- LineMap lineMap'
+            )
+
+    let ClearLexbufStore (lexbuf: Lexbuf) =
+        lexbuf.BufferLocalStore.Remove warnScopeKey |> ignore
 
     // *************************************
     // Apply the warn scopes after lexing
@@ -139,20 +170,24 @@ module internal WarnScopes =
         | WarnScope.OpenOff _ -> true
         | _ -> false
 
-    let IsWarnon (WarnScopeMap warnScopes) warningNumber (mo: range option) =
+    let IsWarnon (diagnosticOptions: FSharpDiagnosticOptions) warningNumber (mo: range option) =
+        let (WarnScopeMap warnScopes) = diagnosticOptions.WarnScopes
+        let (LineMap lineMap) = diagnosticOptions.LineMap
         match mo with
         | None -> false
         | Some m ->
-            if FileIndex.hasLineMapping m.FileIndex then
+            if lineMap.ContainsKey m.FileIndex then
                 false
             else
                 let scopes = getScopes (index (m.FileIndex, warningNumber)) warnScopes
                 List.exists (isEnclosingWarnonScope m) scopes
 
-    let IsNowarn (WarnScopeMap warnScopes) warningNumber (mo: range option) compatible =
-        match mo, compatible with
+    let IsNowarn (diagnosticOptions: FSharpDiagnosticOptions) warningNumber (mo: range option) =
+        let (WarnScopeMap warnScopes) = diagnosticOptions.WarnScopes
+        let (LineMap lineMap) = diagnosticOptions.LineMap
+        match mo, diagnosticOptions.Fsharp9CompatibleNowarn with
         | Some m, false ->
-            match FileIndex.tryGetLineMappingOrigin m.FileIndex with
+            match lineMap.TryFind m.FileIndex with
             | None ->
                 let scopes = getScopes (index (m.FileIndex, warningNumber)) warnScopes
                 List.exists (isEnclosingNowarnScope m) scopes

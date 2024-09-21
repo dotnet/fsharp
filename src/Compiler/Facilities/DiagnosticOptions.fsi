@@ -20,6 +20,10 @@ type WarnScope =
 /// The collected WarnScope objects (collected during lexing)
 type WarnScopeMap = WarnScopeMap of Map<int64, WarnScope list>
 
+/// Information about the mapping implied by the #line directives
+type LineMap = LineMap of Map<int, int>
+    with static member Empty : LineMap
+
 [<RequireQualifiedAccess>]
 type FSharpDiagnosticSeverity =
     | Hidden
@@ -34,7 +38,8 @@ type FSharpDiagnosticOptions =
       WarnOn: int list
       WarnAsError: int list
       WarnAsWarn: int list
-      mutable Fsharp8CompatibleNowarn: bool
+      mutable Fsharp9CompatibleNowarn: bool
+      mutable LineMap: LineMap
       mutable WarnScopes: WarnScopeMap }
 
     static member Default: FSharpDiagnosticOptions

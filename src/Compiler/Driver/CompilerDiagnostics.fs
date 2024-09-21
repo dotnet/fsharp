@@ -413,10 +413,9 @@ type PhasedDiagnostic with
     member x.AdaptedSeverity(options, severity) =
         let n = x.Number
 
-        let localWarnon () = WarnScopes.IsWarnon options.WarnScopes n x.Range
+        let localWarnon () = WarnScopes.IsWarnon options n x.Range
 
-        let localNowarn () =
-            WarnScopes.IsNowarn options.WarnScopes n x.Range options.Fsharp8CompatibleNowarn
+        let localNowarn () = WarnScopes.IsNowarn options n x.Range
 
         let warnOff () =
             List.contains n options.WarnOff && not (localWarnon ()) || localNowarn ()
