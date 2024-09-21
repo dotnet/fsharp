@@ -3134,7 +3134,7 @@ let BigSequenceExpression(outFileOpt,docFileOpt,baseAddressOpt) =
     let createOptions() = createProjectOptions dirName [fileSource1] []
 
 #if !NETFRAMEWORK && DEBUG
-[<Fact(Skip = "Test is known to fail in DEBUG when not using NetFramework. Use RELEASE configuration or NetFramework to run it.")>]
+[<Theory(Skip="Test is known to fail in DEBUG when not using NetFramework. Use RELEASE configuration or NetFramework to run it.")>]
 #else
 [<Theory>]
 [<InlineData(false)>]
