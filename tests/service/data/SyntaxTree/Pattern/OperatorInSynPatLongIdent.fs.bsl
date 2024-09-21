@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Pattern/OperatorInSynPatLongIdent.fs", false,
-      QualifiedNameOfFile OperatorInSynPatLongIdent, [], [],
+      QualifiedNameOfFile OperatorInSynPatLongIdent, [],
       [SynModuleOrNamespace
          ([OperatorInSynPatLongIdent], false, AnonModule,
           [Let

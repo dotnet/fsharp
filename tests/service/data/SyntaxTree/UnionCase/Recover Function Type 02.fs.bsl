@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/UnionCase/Recover Function Type 02.fs", false,
-      QualifiedNameOfFile Recover Function Type 02, [], [],
+      QualifiedNameOfFile Recover Function Type 02, [],
       [SynModuleOrNamespace
          ([Foo], false, DeclaredNamespace,
           [Types

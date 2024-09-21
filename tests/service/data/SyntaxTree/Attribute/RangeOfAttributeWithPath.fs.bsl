@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Attribute/RangeOfAttributeWithPath.fs", false,
-      QualifiedNameOfFile RangeOfAttributeWithPath, [], [],
+      QualifiedNameOfFile RangeOfAttributeWithPath, [],
       [SynModuleOrNamespace
          ([RangeOfAttributeWithPath], false, AnonModule,
           [Attributes

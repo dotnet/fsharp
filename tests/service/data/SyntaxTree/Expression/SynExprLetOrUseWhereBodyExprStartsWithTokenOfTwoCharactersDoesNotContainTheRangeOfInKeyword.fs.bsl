@@ -4,7 +4,7 @@ ImplFile
       false,
       QualifiedNameOfFile
         SynExprLetOrUseWhereBodyExprStartsWithTokenOfTwoCharactersDoesNotContainTheRangeOfInKeyword,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([SynExprLetOrUseWhereBodyExprStartsWithTokenOfTwoCharactersDoesNotContainTheRangeOfInKeyword],
           false, AnonModule,

@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/RegressionOneLinerOptionType.fs", false,
-      QualifiedNameOfFile RegressionOneLinerOptionType, [], [],
+      QualifiedNameOfFile RegressionOneLinerOptionType, [],
       [SynModuleOrNamespace
          ([RegressionOneLinerOptionType], false, AnonModule,
           [Types

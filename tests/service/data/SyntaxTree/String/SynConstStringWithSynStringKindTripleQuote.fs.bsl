@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/String/SynConstStringWithSynStringKindTripleQuote.fs", false,
-      QualifiedNameOfFile SynConstStringWithSynStringKindTripleQuote, [], [],
+      QualifiedNameOfFile SynConstStringWithSynStringKindTripleQuote, [],
       [SynModuleOrNamespace
          ([SynConstStringWithSynStringKindTripleQuote], false, AnonModule,
           [Let

@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/ModuleOrNamespaceSig/Namespace - Keyword 01.fsi",
-      QualifiedNameOfFile Namespace - Keyword 01, [], [],
+      QualifiedNameOfFile Namespace - Keyword 01, [],
       [SynModuleOrNamespaceSig
          ([Foo], false, DeclaredNamespace,
           [NestedModule

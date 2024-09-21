@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Type/RangeOfAttributeShouldBeIncludedInSynTypeDefn.fs", false,
-      QualifiedNameOfFile RangeOfAttributeShouldBeIncludedInSynTypeDefn, [], [],
+      QualifiedNameOfFile RangeOfAttributeShouldBeIncludedInSynTypeDefn, [],
       [SynModuleOrNamespace
          ([RangeOfAttributeShouldBeIncludedInSynTypeDefn], false, AnonModule,
           [Types

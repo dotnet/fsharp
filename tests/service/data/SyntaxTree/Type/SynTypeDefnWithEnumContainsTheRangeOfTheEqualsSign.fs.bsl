@@ -2,7 +2,6 @@ ImplFile
   (ParsedImplFileInput
      ("/root/Type/SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign.fs", false,
       QualifiedNameOfFile SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign, [],
-      [],
       [SynModuleOrNamespace
          ([SynTypeDefnWithEnumContainsTheRangeOfTheEqualsSign], false,
           AnonModule,

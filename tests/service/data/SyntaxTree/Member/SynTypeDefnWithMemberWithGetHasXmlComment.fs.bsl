@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Member/SynTypeDefnWithMemberWithGetHasXmlComment.fs", false,
-      QualifiedNameOfFile SynTypeDefnWithMemberWithGetHasXmlComment, [], [],
+      QualifiedNameOfFile SynTypeDefnWithMemberWithGetHasXmlComment, [],
       [SynModuleOrNamespace
          ([SynTypeDefnWithMemberWithGetHasXmlComment], false, AnonModule,
           [Types

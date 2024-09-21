@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/LeadingKeyword/UseRecKeyword.fs", false,
-      QualifiedNameOfFile UseRecKeyword, [], [],
+      QualifiedNameOfFile UseRecKeyword, [],
       [SynModuleOrNamespace
          ([UseRecKeyword], false, AnonModule,
           [Expr

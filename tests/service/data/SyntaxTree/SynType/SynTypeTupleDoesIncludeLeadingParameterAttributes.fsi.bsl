@@ -2,7 +2,6 @@ SigFile
   (ParsedSigFileInput
      ("/root/SynType/SynTypeTupleDoesIncludeLeadingParameterAttributes.fsi",
       QualifiedNameOfFile SynTypeTupleDoesIncludeLeadingParameterAttributes, [],
-      [],
       [SynModuleOrNamespaceSig
          ([SynTypeTupleDoesIncludeLeadingParameterAttributes], false, AnonModule,
           [Types

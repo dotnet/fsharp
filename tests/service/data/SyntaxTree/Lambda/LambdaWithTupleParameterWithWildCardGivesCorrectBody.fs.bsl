@@ -3,7 +3,7 @@ ImplFile
      ("/root/Lambda/LambdaWithTupleParameterWithWildCardGivesCorrectBody.fs",
       false,
       QualifiedNameOfFile LambdaWithTupleParameterWithWildCardGivesCorrectBody,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([LambdaWithTupleParameterWithWildCardGivesCorrectBody], false,
           AnonModule,

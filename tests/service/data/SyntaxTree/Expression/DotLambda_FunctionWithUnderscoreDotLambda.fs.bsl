@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/DotLambda_FunctionWithUnderscoreDotLambda.fs", false,
-      QualifiedNameOfFile DotLambda_FunctionWithUnderscoreDotLambda, [], [],
+      QualifiedNameOfFile DotLambda_FunctionWithUnderscoreDotLambda, [],
       [SynModuleOrNamespace
          ([DotLambda_FunctionWithUnderscoreDotLambda], false, AnonModule,
           [Let

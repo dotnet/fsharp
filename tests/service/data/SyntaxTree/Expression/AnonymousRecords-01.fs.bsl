@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/AnonymousRecords-01.fs", false,
-      QualifiedNameOfFile AnonymousRecords-01, [], [],
+      QualifiedNameOfFile AnonymousRecords-01, [],
       [SynModuleOrNamespace
          ([AnonymousRecords-01], false, AnonModule,
           [Expr

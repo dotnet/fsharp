@@ -3,7 +3,7 @@ ImplFile
      ("/root/ModuleOrNamespace/DeclaredNamespaceRangeShouldStartAtNamespaceKeyword.fs",
       false,
       QualifiedNameOfFile DeclaredNamespaceRangeShouldStartAtNamespaceKeyword,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([TypeEquality], false, DeclaredNamespace,
           [Types

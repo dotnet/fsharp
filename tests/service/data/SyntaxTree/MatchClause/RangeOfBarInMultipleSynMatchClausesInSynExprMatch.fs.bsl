@@ -3,7 +3,6 @@ ImplFile
      ("/root/MatchClause/RangeOfBarInMultipleSynMatchClausesInSynExprMatch.fs",
       false,
       QualifiedNameOfFile RangeOfBarInMultipleSynMatchClausesInSynExprMatch, [],
-      [],
       [SynModuleOrNamespace
          ([RangeOfBarInMultipleSynMatchClausesInSynExprMatch], false, AnonModule,
           [Expr

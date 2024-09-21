@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Type/MultipleSynEnumCaseContainsRangeOfConstant.fs", false,
-      QualifiedNameOfFile MultipleSynEnumCaseContainsRangeOfConstant, [], [],
+      QualifiedNameOfFile MultipleSynEnumCaseContainsRangeOfConstant, [],
       [SynModuleOrNamespace
          ([MultipleSynEnumCaseContainsRangeOfConstant], false, AnonModule,
           [Types

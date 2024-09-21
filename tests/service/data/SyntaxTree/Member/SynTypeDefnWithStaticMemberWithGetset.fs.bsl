@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Member/SynTypeDefnWithStaticMemberWithGetset.fs", false,
-      QualifiedNameOfFile SynTypeDefnWithStaticMemberWithGetset, [], [],
+      QualifiedNameOfFile SynTypeDefnWithStaticMemberWithGetset, [],
       [SynModuleOrNamespace
          ([SynTypeDefnWithStaticMemberWithGetset], false, AnonModule,
           [Types

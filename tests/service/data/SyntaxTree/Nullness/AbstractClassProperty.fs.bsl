@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/AbstractClassProperty.fs", false,
-      QualifiedNameOfFile AbstractClassProperty, [], [],
+      QualifiedNameOfFile AbstractClassProperty, [],
       [SynModuleOrNamespace
          ([AbstractClassProperty], false, AnonModule,
           [Types

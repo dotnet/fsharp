@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Pattern/OperatorInMatchPattern.fs", false,
-      QualifiedNameOfFile OperatorInMatchPattern, [], [],
+      QualifiedNameOfFile OperatorInMatchPattern, [],
       [SynModuleOrNamespace
          ([OperatorInMatchPattern], false, AnonModule,
           [Expr

@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/SignatureInAbstractMember.fs", false,
-      QualifiedNameOfFile SignatureInAbstractMember, [], [],
+      QualifiedNameOfFile SignatureInAbstractMember, [],
       [SynModuleOrNamespace
          ([SignatureInAbstractMember], false, AnonModule,
           [Types

@@ -2,7 +2,7 @@ SigFile
   (ParsedSigFileInput
      ("/root/SignatureType/SynTypeDefnSigWithUnionContainsTheRangeOfTheEqualsSign.fsi",
       QualifiedNameOfFile SynTypeDefnSigWithUnionContainsTheRangeOfTheEqualsSign,
-      [], [],
+      [],
       [SynModuleOrNamespaceSig
          ([SomeNamespace], false, DeclaredNamespace,
           [Types

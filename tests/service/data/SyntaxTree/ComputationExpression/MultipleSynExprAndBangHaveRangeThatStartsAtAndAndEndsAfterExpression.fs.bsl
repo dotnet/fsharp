@@ -4,7 +4,6 @@ ImplFile
       false,
       QualifiedNameOfFile
         MultipleSynExprAndBangHaveRangeThatStartsAtAndAndEndsAfterExpression, [],
-      [],
       [SynModuleOrNamespace
          ([MultipleSynExprAndBangHaveRangeThatStartsAtAndAndEndsAfterExpression],
           false, AnonModule,

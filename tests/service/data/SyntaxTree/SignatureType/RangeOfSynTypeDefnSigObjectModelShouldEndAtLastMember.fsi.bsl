@@ -2,7 +2,7 @@ SigFile
   (ParsedSigFileInput
      ("/root/SignatureType/RangeOfSynTypeDefnSigObjectModelShouldEndAtLastMember.fsi",
       QualifiedNameOfFile RangeOfSynTypeDefnSigObjectModelShouldEndAtLastMember,
-      [], [],
+      [],
       [SynModuleOrNamespaceSig
          ([X], false, DeclaredNamespace,
           [Types

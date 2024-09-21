@@ -1,7 +1,6 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/ModuleOrNamespace/Module 06.fs", false, QualifiedNameOfFile , [],
-      [],
       [SynModuleOrNamespace
          ([], false, NamedModule, [Expr (Const (Unit, (3,0--3,2)), (3,0--3,2))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,

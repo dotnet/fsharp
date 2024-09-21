@@ -3,7 +3,7 @@ ImplFile
      ("/root/Nullness/GenericTypeNotStructAndOtherConstraint-I_am_Still_Sane.fs",
       false,
       QualifiedNameOfFile GenericTypeNotStructAndOtherConstraint-I_am_Still_Sane,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([GenericTypeNotStructAndOtherConstraint-I_am_Still_Sane], false,
           AnonModule,

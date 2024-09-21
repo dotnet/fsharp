@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/SignatureType/LeadingKeywordInRecursiveTypes.fsi",
-      QualifiedNameOfFile LeadingKeywordInRecursiveTypes, [], [],
+      QualifiedNameOfFile LeadingKeywordInRecursiveTypes, [],
       [SynModuleOrNamespaceSig
          ([LeadingKeywordInRecursiveTypes], false, AnonModule,
           [Types

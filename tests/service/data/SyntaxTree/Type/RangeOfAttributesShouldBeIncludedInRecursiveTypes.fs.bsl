@@ -2,7 +2,6 @@ ImplFile
   (ParsedImplFileInput
      ("/root/Type/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fs", false,
       QualifiedNameOfFile RangeOfAttributesShouldBeIncludedInRecursiveTypes, [],
-      [],
       [SynModuleOrNamespace
          ([RangeOfAttributesShouldBeIncludedInRecursiveTypes], false, AnonModule,
           [Types
