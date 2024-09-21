@@ -382,7 +382,7 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
 
     #sanity check
     if ($ci) { 
-        $args += " -- xUnit.ParallelizeTestCollections=false xUnit.MaxParallelThreads=1"
+        # $args += " -- xUnit.ParallelizeTestCollections=false xUnit.MaxParallelThreads=1"
     }
 
     if ($asBackgroundJob) {

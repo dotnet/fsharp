@@ -27,19 +27,17 @@ module AsyncType =
         let onExeption = cont Exception
         let onCancellation = cont Cancellation
 
-        let expect expected cancellationToken computation =
-            Async.StartWithContinuations(computation, onSuccess expected, onExeption expected, onCancellation expected, ?cancellationToken = cancellationToken)
+        let expect expected computation =
+            Async.StartWithContinuations(computation, onSuccess expected, onExeption expected, onCancellation expected)
 
-        let cancelledToken =
-            let cts = new CancellationTokenSource()
-            cts.Cancel()
-            Some cts.Token
+        async {
+            Async.CancelDefaultToken()
+            return () 
+        } |> expect Cancellation
 
-        async { return () } |> expect Cancellation cancelledToken
+        async { failwith "computation failed" } |> expect Exception
 
-        async { failwith "computation failed" } |> expect Exception None
-
-        async { return () } |> expect Success None
+        async { return () } |> expect Success
 
 
 [<Collection(nameof FSharp.Test.DoNotRunInParallel)>]
