@@ -16,7 +16,6 @@ module internal WarnScopes =
     let private warnScopeKey = "WarnScopes"
     let private lineMapKey = "WarnScopes.LineMaps"
 
-    
     // *************************************
     // Collect the line directives to correctly interact with them
     // *************************************
@@ -24,20 +23,22 @@ module internal WarnScopes =
     let private getLineMap (lexbuf: Lexbuf) =
         if not <| lexbuf.BufferLocalStore.ContainsKey lineMapKey then
             lexbuf.BufferLocalStore.Add(lineMapKey, LineMap.Empty)
+
         lexbuf.BufferLocalStore[lineMapKey] :?> LineMap
-    
+
     let private setLineMap (lexbuf: Lexbuf) lineMap =
         lexbuf.BufferLocalStore[lineMapKey] <- LineMap lineMap
 
-    let RegisterLineDirective(lexbuf, previousFileIndex, fileIndex, line: int) =
+    let RegisterLineDirective (lexbuf, previousFileIndex, fileIndex, line: int) =
         let (LineMap lineMap) = getLineMap lexbuf
+
         if not <| lineMap.ContainsKey fileIndex then
             lineMap
             |> Map.add fileIndex previousFileIndex
-            |> Map.add previousFileIndex previousFileIndex  // to flag that it contains a line directive
+            |> Map.add previousFileIndex previousFileIndex // to flag that it contains a line directive
             |> setLineMap lexbuf
-        ignore line // for now
 
+        ignore line // for now
 
     // *************************************
     // Collect the warn scopes during lexing
@@ -46,6 +47,7 @@ module internal WarnScopes =
     let private getWarnScopes (lexbuf: Lexbuf) =
         if not <| lexbuf.BufferLocalStore.ContainsKey warnScopeKey then
             lexbuf.BufferLocalStore.Add(warnScopeKey, WarnScopeMap Map.empty)
+
         lexbuf.BufferLocalStore[warnScopeKey] :?> WarnScopeMap
 
     [<RequireQualifiedAccess>]
@@ -67,8 +69,7 @@ module internal WarnScopes =
         | false, _ -> None
 
     let private regex =
-        Regex(" *#(nowarn|warnon)(?: +([^ \r\n/;]+))*(?: *(?:;;|\\/\\/).*)?\r?\n",
-            RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
+        Regex(" *#(nowarn|warnon)(?: +([^ \r\n/;]+))*(?: *(?:;;|\\/\\/).*)?\r?\n", RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
 
     let private getDirectives text m =
         let mkDirective (directiveId: string) (m: range) (c: Capture) =
@@ -121,7 +122,10 @@ module internal WarnScopes =
         let m = mkFileIndexRange idx (convert lexbuf.StartPos) (convert lexbuf.EndPos)
         let text = Lexbuf.LexemeString lexbuf
         let directives = getDirectives text m
-        let warnScopes = (getWarnScopes lexbuf, directives) ||> List.fold processWarnDirective
+
+        let warnScopes =
+            (getWarnScopes lexbuf, directives) ||> List.fold processWarnDirective
+
         lexbuf.BufferLocalStore[warnScopeKey] <- warnScopes
 
     // *************************************
@@ -138,8 +142,7 @@ module internal WarnScopes =
             diagnosticOptions.WarnScopes <- WarnScopeMap warnScopes'
             let (LineMap clm) = diagnosticOptions.LineMap
             let lineMap' = Map.fold (fun lms idx oidx -> Map.add idx oidx lms) clm lineMap
-            diagnosticOptions.LineMap <- LineMap lineMap'
-            )
+            diagnosticOptions.LineMap <- LineMap lineMap')
 
     let ClearLexbufStore (lexbuf: Lexbuf) =
         lexbuf.BufferLocalStore.Remove warnScopeKey |> ignore
@@ -173,6 +176,7 @@ module internal WarnScopes =
     let IsWarnon (diagnosticOptions: FSharpDiagnosticOptions) warningNumber (mo: range option) =
         let (WarnScopeMap warnScopes) = diagnosticOptions.WarnScopes
         let (LineMap lineMap) = diagnosticOptions.LineMap
+
         match mo with
         | None -> false
         | Some m ->
@@ -185,13 +189,14 @@ module internal WarnScopes =
     let IsNowarn (diagnosticOptions: FSharpDiagnosticOptions) warningNumber (mo: range option) =
         let (WarnScopeMap warnScopes) = diagnosticOptions.WarnScopes
         let (LineMap lineMap) = diagnosticOptions.LineMap
+
         match mo, diagnosticOptions.FSharp9CompatibleNowarn with
         | Some m, false ->
             match lineMap.TryFind m.FileIndex with
             | None ->
                 let scopes = getScopes (index (m.FileIndex, warningNumber)) warnScopes
                 List.exists (isEnclosingNowarnScope m) scopes
-            | Some fileIndex ->  // file has #line directives
+            | Some fileIndex -> // file has #line directives
                 let scopes = getScopes (index (fileIndex, warningNumber)) warnScopes
                 List.exists isOffScope scopes
         | _ -> warnScopes |> Map.exists (fun idx _ -> warnNumFromIndex idx = warningNumber)

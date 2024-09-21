@@ -21,8 +21,10 @@ type WarnScope =
 type WarnScopeMap = WarnScopeMap of Map<int64, WarnScope list>
 
 /// Information about the mapping implied by the #line directives
-type LineMap = LineMap of Map<int, int>
-    with static member Empty : LineMap
+type LineMap =
+    | LineMap of Map<int, int>
+
+    static member Empty: LineMap
 
 [<RequireQualifiedAccess>]
 type FSharpDiagnosticSeverity =

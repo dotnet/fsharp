@@ -10,10 +10,10 @@ module internal WarnScopes =
 
     /// To be called from lex.fsl to register the line directives for warn scope processing
     val RegisterLineDirective: lexbuf: Lexbuf * previousFileIndex: int * fileIndex: int * line: int -> unit
-    
+
     /// To be called from lex.fsl: #nowarn / #warnon directives are turned into warn scopes and saved
     val ParseAndRegisterWarnDirective: lexbuf: Lexbuf -> unit
-    
+
     /// Clear the WarnScopes data in lexbuf.BufferLocalStore for reuse of the lexbuf
     val ClearLexbufStore: Lexbuf -> unit
 

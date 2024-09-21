@@ -16,8 +16,10 @@ type WarnScope =
 
 type WarnScopeMap = WarnScopeMap of Map<int64, WarnScope list>
 
-type LineMap = LineMap of Map<int, int>
-    with static member Empty = LineMap Map.empty
+type LineMap =
+    | LineMap of Map<int, int>
+
+    static member Empty = LineMap Map.empty
 
 [<RequireQualifiedAccess>]
 type FSharpDiagnosticSeverity =
