@@ -306,49 +306,50 @@ type SyntheticProject =
             this.NugetReferences
 
         let factory _ =
-                use _ = Activity.start "SyntheticProject.GetProjectOptions" [ "project", this.Name ]
+            use _ = Activity.start "SyntheticProject.GetProjectOptions" [ "project", this.Name ]
 
-                let referenceScript =
-                    seq {
-                        yield! this.FrameworkReferences |> Seq.map getFrameworkReference
+            let referenceScript =
+                seq {
+                    yield! this.FrameworkReferences |> Seq.map getFrameworkReference
+                    if not this.NugetReferences.IsEmpty then
                         this.NugetReferences |> getNugetReferences (Some "https://api.nuget.org/v3/index.json")
-                    }
-                    |> String.concat "\n"
+                }
+                |> String.concat "\n"
 
-                let baseOptions, _ =
-                    checker.GetProjectOptionsFromScript(
-                        "file.fsx",
-                        SourceText.ofString referenceScript,
-                        assumeDotNetFramework = false
-                    )
-                    |> Async.RunImmediate
+            let baseOptions, _ =
+                checker.GetProjectOptionsFromScript(
+                    "file.fsx",
+                    SourceText.ofString referenceScript,
+                    assumeDotNetFramework = false
+                )
+                |> Async.RunImmediate
 
-                {
-                    ProjectFileName = this.ProjectFileName
-                    ProjectId = None
-                    SourceFiles =
-                        [| for f in this.SourceFiles do
-                               if f.HasSignatureFile then
-                                   this.ProjectDir ++ f.SignatureFileName
+            {
+                ProjectFileName = this.ProjectFileName
+                ProjectId = None
+                SourceFiles =
+                    [| for f in this.SourceFiles do
+                            if f.HasSignatureFile then
+                                this.ProjectDir ++ f.SignatureFileName
 
-                               this.ProjectDir ++ f.FileName |]
-                    OtherOptions =
-                        Set [
-                           yield! baseOptions.OtherOptions
-                           "--optimize+"
-                           for p in this.DependsOn do
-                               $"-r:{p.OutputFilename}"
-                           yield! this.OtherOptions ]
-                           |> Set.toArray
-                    ReferencedProjects =
-                        [| for p in this.DependsOn do
-                               FSharpReferencedProject.FSharpReference(p.OutputFilename, p.GetProjectOptions checker) |]
-                    IsIncompleteTypeCheckEnvironment = false
-                    UseScriptResolutionRules = this.UseScriptResolutionRules
-                    LoadTime = DateTime()
-                    UnresolvedReferences = None
-                    OriginalLoadReferences = []
-                    Stamp = None }
+                            this.ProjectDir ++ f.FileName |]
+                OtherOptions =
+                    Set [
+                        yield! baseOptions.OtherOptions
+                        "--optimize+"
+                        for p in this.DependsOn do
+                            $"-r:{p.OutputFilename}"
+                        yield! this.OtherOptions ]
+                        |> Set.toArray
+                ReferencedProjects =
+                    [| for p in this.DependsOn do
+                            FSharpReferencedProject.FSharpReference(p.OutputFilename, p.GetProjectOptions checker) |]
+                IsIncompleteTypeCheckEnvironment = false
+                UseScriptResolutionRules = this.UseScriptResolutionRules
+                LoadTime = DateTime()
+                UnresolvedReferences = None
+                OriginalLoadReferences = []
+                Stamp = None }
 
         
         OptionsCache.GetOrAdd(key, factory)
