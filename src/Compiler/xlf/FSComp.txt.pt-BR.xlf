@@ -322,6 +322,11 @@
         <target state="translated">corrigir para resolução de nomes de tipos delegados, consulte https://github.com/dotnet/fsharp/issues/10228</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
+        <source>Deprecate places where 'seq' can be omitted</source>
+        <target state="new">Deprecate places where 'seq' can be omitted</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDiscardUseValue">
         <source>discard pattern in use binding</source>
         <target state="translated">descartar o padrão em uso de associação</target>
@@ -4523,8 +4528,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
-        <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
-        <target state="translated">Expressão de registro, sequência ou computação inválida. Expressões de sequência devem estar na forma 'seq {{ ... }}'</target>
+        <source>Sequence expressions should be of the form 'seq {{ ... }}'</source>
+        <target state="needs-review-translation">Expressão de registro, sequência ou computação inválida. Expressões de sequência devem estar na forma 'seq {{ ... }}'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpressionWithIfRequiresParenthesis">

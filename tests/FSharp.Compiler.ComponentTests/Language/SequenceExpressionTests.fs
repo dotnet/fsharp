@@ -444,14 +444,204 @@ let typedSeq =
     |> withDiagnosticMessageMatches "val typedSeq: '_a seq"
 
 [<Fact>]
-let ``Valid sequence expressions``() =
+let ``Sequence(SynExpr.Sequential) expressions should be of the form 'seq { ... } lang version 9``() =
     Fsx """
 { 1;10 }
-seq { 1;10 }
-let x = { 1;10 }
-let y = seq { 1;10 }
+[| { 1;10 } |]
+let a = { 1;10 }
+let b = [| { 1;10 } |]
+let c = [ { 1;10 } ]
     """
-    |> ignoreWarnings
+    |> withOptions [ "--nowarn:0020" ]
+    |> withLangVersion90
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+      (Error 740, Line 2, Col 1, Line 2, Col 9, "Sequence expressions should be of the form 'seq { ... }'")
+      (Error 740, Line 3, Col 4, Line 3, Col 12, "Sequence expressions should be of the form 'seq { ... }'")
+      (Error 740, Line 4, Col 9, Line 4, Col 17, "Sequence expressions should be of the form 'seq { ... }'")
+      (Error 740, Line 5, Col 12, Line 5, Col 20, "Sequence expressions should be of the form 'seq { ... }'")
+      (Error 740, Line 6, Col 11, Line 6, Col 19, "Sequence expressions should be of the form 'seq { ... }'")
+    ]
+    
+[<Fact>]
+let ``Sequence(SynExpr.Sequential) expressions should be of the form 'seq { ... } lang version preview``() =
+    Fsx """
+{ 1;10 }
+[| { 1;10 } |]
+let a = { 1;10 }
+let b = [| { 1;10 } |]
+let c = [ { 1;10 } ]
+    """
+    |> withOptions [ "--nowarn:0020" ]
+    |> withLangVersionPreview
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+      (Error 740, Line 2, Col 1, Line 2, Col 9, "Sequence expressions should be of the form 'seq { ... }'")
+      (Error 740, Line 3, Col 4, Line 3, Col 12, "Sequence expressions should be of the form 'seq { ... }'")
+      (Error 740, Line 4, Col 9, Line 4, Col 17, "Sequence expressions should be of the form 'seq { ... }'")
+      (Error 740, Line 5, Col 12, Line 5, Col 20, "Sequence expressions should be of the form 'seq { ... }'")
+      (Error 740, Line 6, Col 11, Line 6, Col 19, "Sequence expressions should be of the form 'seq { ... }'")
+    ]
+
+[<Fact>]
+let ``Sequence(SynExpr.IndexRange) expressions should be of the form 'seq { ... } lang version 9``() =
+    Fsx """
+{ 1..10 }
+
+{ 1..5..10 }
+
+[| { 1..10 } |]
+
+[| { 1..5..10 } |]
+
+let a = { 1..10 }
+
+let a3 = { 1..10..20 }
+
+let b = [| { 1..10 } |]
+
+let b3 = [| { 1..10..20 } |]
+
+let c = [ { 1..10 } ]
+
+[| { 1..10 } |]
+
+[| yield { 1..10 } |]
+
+[ { 1..10 } ]
+
+[ { 1..10..10 } ]
+
+[ yield { 1..10 } ]
+
+[ yield { 1..10..20 } ]
+
+ResizeArray({ 1..10 })
+
+ResizeArray({ 1..10..20 })
+
+let fw start finish = [ for x in { start..finish } -> x ]
+
+let fe start finish = [| for x in { start..finish } -> x |]
+
+for x in { 1..10 }  do ()
+
+for x in { 1..5..10 } do ()
+    
+let f = Seq.head
+
+let a2 = f { 1..6 }
+
+let a23 = f { 1..6..10 }
+
+let b2 = set { 1..6 }
+
+let f10 start finish = for x in { start..finish } do ignore (float x ** float x)
+
+let (..) _ _ = "lol"
+
+let lol1 = { 1..10 }
+
+{ 1..5..10 }
+    """
+    |> withOptions [ "--nowarn:0020" ]
     |> withLangVersion90
     |> typecheck
     |> shouldSucceed
+
+[<Fact>]
+let ``Sequence(SynExpr.IndexRange) expressions should be of the form 'seq { ... }``() =
+    Fsx """
+{ 1..10 }
+
+{ 1..5..10 }
+
+[| { 1..10 } |]
+
+[| { 1..5..10 } |]
+
+let a = { 1..10 }
+
+let a3 = { 1..10..20 }
+
+let b = [| { 1..10 } |]
+
+let b3 = [| { 1..10..20 } |]
+
+let c = [ { 1..10 } ]
+
+[| { 1..10 } |]
+
+[| yield { 1..10 } |]
+
+[ { 1..10 } ]
+
+[ { 1..10..10 } ]
+
+[ yield { 1..10 } ]
+
+[ yield { 1..10..20 } ]
+
+ResizeArray({ 1..10 })
+
+ResizeArray({ 1..10..20 })
+
+let fw start finish = [ for x in { start..finish } -> x ]
+
+let fe start finish = [| for x in { start..finish } -> x |]
+
+for x in { 1..10 }  do ()
+
+for x in { 1..5..10 } do ()
+    
+let f = Seq.head
+
+let a2 = f { 1..6 }
+
+let a23 = f { 1..6..10 }
+
+let b2 = set { 1..6 }
+
+let f10 start finish = for x in { start..finish } do ignore (float x ** float x)
+
+let (..) _ _ = "lol"
+
+let lol1 = { 1..10 }
+
+{ 1..5..10 }
+    """
+    |> withOptions [ "--nowarn:0020" ]
+    |> withLangVersionPreview
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        (Warning 740, Line 2, Col 1, Line 2, Col 10, "Sequence expressions should be of the form 'seq { ... }'");
+        (Warning 740, Line 4, Col 1, Line 4, Col 13, "Sequence expressions should be of the form 'seq { ... }'");
+        (Warning 740, Line 6, Col 4, Line 6, Col 13, "Sequence expressions should be of the form 'seq { ... }'");
+        (Warning 740, Line 8, Col 4, Line 8, Col 16, "Sequence expressions should be of the form 'seq { ... }'");
+        (Warning 740, Line 10, Col 9, Line 10, Col 18, "Sequence expressions should be of the form 'seq { ... }'");
+        (Warning 740, Line 12, Col 10, Line 12, Col 23, "Sequence expressions should be of the form 'seq { ... }'");
+        (Warning 740, Line 14, Col 12, Line 14, Col 21, "Sequence expressions should be of the form 'seq { ... }'");
+        (Warning 740, Line 16, Col 13, Line 16, Col 26, "Sequence expressions should be of the form 'seq { ... }'");
+        (Warning 740, Line 18, Col 11, Line 18, Col 20, "Sequence expressions should be of the form 'seq { ... }'");
+        (Warning 740, Line 20, Col 4, Line 20, Col 13, "Sequence expressions should be of the form 'seq { ... }'");
+        (Warning 740, Line 22, Col 10, Line 22, Col 19, "Sequence expressions should be of the form 'seq { ... }'");
+        (Warning 740, Line 24, Col 3, Line 24, Col 12, "Sequence expressions should be of the form 'seq { ... }'");
+        (Warning 740, Line 26, Col 3, Line 26, Col 16, "Sequence expressions should be of the form 'seq { ... }'");
+        (Warning 740, Line 28, Col 9, Line 28, Col 18, "Sequence expressions should be of the form 'seq { ... }'");
+        (Warning 740, Line 30, Col 9, Line 30, Col 22, "Sequence expressions should be of the form 'seq { ... }'");
+        (Warning 740, Line 32, Col 13, Line 32, Col 22, "Sequence expressions should be of the form 'seq { ... }'");
+        (Warning 740, Line 34, Col 13, Line 34, Col 26, "Sequence expressions should be of the form 'seq { ... }'");
+        (Warning 740, Line 36, Col 34, Line 36, Col 51, "Sequence expressions should be of the form 'seq { ... }'");
+        (Warning 740, Line 38, Col 35, Line 38, Col 52, "Sequence expressions should be of the form 'seq { ... }'");
+        (Warning 740, Line 40, Col 10, Line 40, Col 19, "Sequence expressions should be of the form 'seq { ... }'");
+        (Warning 740, Line 42, Col 10, Line 42, Col 22, "Sequence expressions should be of the form 'seq { ... }'");
+        (Warning 740, Line 46, Col 12, Line 46, Col 20, "Sequence expressions should be of the form 'seq { ... }'");
+        (Warning 740, Line 48, Col 13, Line 48, Col 25, "Sequence expressions should be of the form 'seq { ... }'");
+        (Warning 740, Line 50, Col 14, Line 50, Col 22, "Sequence expressions should be of the form 'seq { ... }'");
+        (Warning 740, Line 52, Col 33, Line 52, Col 50, "Sequence expressions should be of the form 'seq { ... }'");
+        (Warning 740, Line 56, Col 12, Line 56, Col 21, "Sequence expressions should be of the form 'seq { ... }'");
+        (Warning 740, Line 58, Col 1, Line 58, Col 13, "Sequence expressions should be of the form 'seq { ... }'")
+    ]

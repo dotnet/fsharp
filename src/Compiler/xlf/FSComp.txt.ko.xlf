@@ -322,6 +322,11 @@
         <target state="translated">대리자 형식 이름의 해결 방법을 수정합니다. https://github.com/dotnet/fsharp/issues/10228 참조하세요.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
+        <source>Deprecate places where 'seq' can be omitted</source>
+        <target state="new">Deprecate places where 'seq' can be omitted</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDiscardUseValue">
         <source>discard pattern in use binding</source>
         <target state="translated">사용 중인 패턴 바인딩 무시</target>
@@ -4523,8 +4528,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
-        <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
-        <target state="translated">레코드, 시퀀스 또는 계산 식이 잘못되었습니다. 시퀀스 식의 형식은 'seq {{ ... }}'여야 합니다.</target>
+        <source>Sequence expressions should be of the form 'seq {{ ... }}'</source>
+        <target state="needs-review-translation">레코드, 시퀀스 또는 계산 식이 잘못되었습니다. 시퀀스 식의 형식은 'seq {{ ... }}'여야 합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpressionWithIfRequiresParenthesis">

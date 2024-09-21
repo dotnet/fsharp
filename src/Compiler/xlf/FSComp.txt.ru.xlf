@@ -322,6 +322,11 @@
         <target state="translated">исправить разрешение имен типов делегатов, см. https://github.com/dotnet/fsharp/issues/10228</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
+        <source>Deprecate places where 'seq' can be omitted</source>
+        <target state="new">Deprecate places where 'seq' can be omitted</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDiscardUseValue">
         <source>discard pattern in use binding</source>
         <target state="translated">шаблон отмены в привязке использования</target>
@@ -4523,8 +4528,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
-        <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
-        <target state="translated">Недопустимая запись, выражение последовательности или вычислительное выражение. Выражения последовательностей должны иметь форму "seq {{ ... }}'</target>
+        <source>Sequence expressions should be of the form 'seq {{ ... }}'</source>
+        <target state="needs-review-translation">Недопустимая запись, выражение последовательности или вычислительное выражение. Выражения последовательностей должны иметь форму "seq {{ ... }}'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpressionWithIfRequiresParenthesis">

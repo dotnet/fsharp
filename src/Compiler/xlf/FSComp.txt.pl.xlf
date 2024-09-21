@@ -322,6 +322,11 @@
         <target state="translated">naprawa rozpoznawania nazw typów delegatów, sprawdź stronę https://github.com/dotnet/fsharp/issues/10228</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
+        <source>Deprecate places where 'seq' can be omitted</source>
+        <target state="new">Deprecate places where 'seq' can be omitted</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDiscardUseValue">
         <source>discard pattern in use binding</source>
         <target state="translated">odrzuć wzorzec w powiązaniu użycia</target>
@@ -4523,8 +4528,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
-        <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
-        <target state="translated">Nieprawidłowe wyrażenie rekordu, sekwencji lub obliczenia. Wyrażenia sekwencji powinny mieć postać „seq {{ ... }}”</target>
+        <source>Sequence expressions should be of the form 'seq {{ ... }}'</source>
+        <target state="needs-review-translation">Nieprawidłowe wyrażenie rekordu, sekwencji lub obliczenia. Wyrażenia sekwencji powinny mieć postać „seq {{ ... }}”</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpressionWithIfRequiresParenthesis">

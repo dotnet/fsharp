@@ -441,32 +441,20 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
     delayedExpr, tpenv
 
 let TcSequenceExpressionEntry (cenv: TcFileState) env (overallTy: OverallTy) tpenv (hasBuilder, comp) m =
-    match comp with
-    | SynExpr.IndexRange _ ->
-        match RewriteRangeExpr comp with
-        | Some replacementExpr -> TcExpr cenv overallTy env tpenv replacementExpr
-        | None ->
-            let implicitYieldEnabled =
-                cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
+    match RewriteRangeExpr comp with
+    | Some replacementExpr ->
+        let deprecatedPlacesWhereSeqCanBeOmitted =
+            cenv.g.langVersion.SupportsFeature LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted
 
-            let validateObjectSequenceOrRecordExpression = not implicitYieldEnabled
+        if
+            deprecatedPlacesWhereSeqCanBeOmitted
+            && not hasBuilder
+            && not cenv.g.compilingFSharpCore
+        then
+            warning (Error(FSComp.SR.tcInvalidSequenceExpressionSyntaxForm (), m))
 
-            match comp with
-            | SimpleSemicolonSequence cenv false _ when validateObjectSequenceOrRecordExpression ->
-                errorR (Error(FSComp.SR.tcInvalidObjectSequenceOrRecordExpression (), m))
-            | _ -> ()
-
-            TcSequenceExpression cenv env tpenv comp overallTy m
-
-    | SynExpr.Sequential _ when not hasBuilder && not cenv.g.compilingFSharpCore ->
-        let rec loopSynExpr synExpr =
-            match synExpr with
-            | SynExpr.Sequential(debugPointAtSequential, isTrueSeq, synExpr1, synExpr2, mWhole, trivia) ->
-                let synExpr1 = loopSynExpr synExpr1
-                let synExpr2 = loopSynExpr synExpr2
-                SynExpr.Sequential(debugPointAtSequential, isTrueSeq, synExpr1, synExpr2, mWhole, trivia)
-            | _ -> synExpr
-
+        TcExpr cenv overallTy env tpenv replacementExpr
+    | None ->
         let implicitYieldEnabled =
             cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
 
@@ -477,17 +465,7 @@ let TcSequenceExpressionEntry (cenv: TcFileState) env (overallTy: OverallTy) tpe
             errorR (Error(FSComp.SR.tcInvalidObjectSequenceOrRecordExpression (), m))
         | _ -> ()
 
-        TcSequenceExpression cenv env tpenv (loopSynExpr comp) overallTy m
-
-    | _ ->
-        let implicitYieldEnabled =
-            cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
-
-        let validateObjectSequenceOrRecordExpression = not implicitYieldEnabled
-
-        match comp with
-        | SimpleSemicolonSequence cenv false _ when validateObjectSequenceOrRecordExpression ->
-            errorR (Error(FSComp.SR.tcInvalidObjectSequenceOrRecordExpression (), m))
-        | _ -> ()
+        if not hasBuilder && not cenv.g.compilingFSharpCore then
+            errorR (Error(FSComp.SR.tcInvalidSequenceExpressionSyntaxForm (), m))
 
         TcSequenceExpression cenv env tpenv comp overallTy m

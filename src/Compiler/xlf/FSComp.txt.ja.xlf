@@ -322,6 +322,11 @@
         <target state="translated">デリゲート型名の解決を修正するには、https://github.com/dotnet/fsharp/issues/10228 を参照してください</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
+        <source>Deprecate places where 'seq' can be omitted</source>
+        <target state="new">Deprecate places where 'seq' can be omitted</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDiscardUseValue">
         <source>discard pattern in use binding</source>
         <target state="translated">使用バインドでパターンを破棄する</target>
@@ -4523,8 +4528,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
-        <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
-        <target state="translated">無効なレコード、シーケンス式、またはコンピュテーション式です。シーケンス式は 'seq {{ ... }}' という形式にしてください。</target>
+        <source>Sequence expressions should be of the form 'seq {{ ... }}'</source>
+        <target state="needs-review-translation">無効なレコード、シーケンス式、またはコンピュテーション式です。シーケンス式は 'seq {{ ... }}' という形式にしてください。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpressionWithIfRequiresParenthesis">
