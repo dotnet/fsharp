@@ -11,6 +11,7 @@ open Xunit
 open System.Threading
 open System.Threading.Tasks
 
+[<Collection(nameof FSharp.Test.DoNotRunInParallel)>]
 module AsyncType =
 
     type ExpectedContinuation = Success | Exception | Cancellation
