@@ -413,6 +413,9 @@ module Tests6 =
         let cfg =  "core/controlChamenos"
         singleTestBuildAndRunAux cfg  ["--tailcalls"] FSI
 
+[<Collection(nameof DoNotRunInParallel)>]
+module ControlMailbox =
+
     [<Fact>]
     let ``controlMailbox-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/controlMailbox" FSC_OPTIMIZED
 
@@ -421,6 +424,8 @@ module Tests6 =
 
     [<Fact>]
     let ``controlMailbox-FSC_OPTIMIZED --tailcalls-`` () = singleTestBuildAndRunAux "core/controlMailbox" ["--tailcalls-"] FSC_OPTIMIZED
+
+module Tests7 =
 
     [<Fact>]
     let ``csext-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/csext" FSC_OPTIMIZED
@@ -446,7 +451,7 @@ module Tests6 =
     [<Fact>]
     let ``math-numbersVS2008-FSI`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSI
 
-module Tests7 =
+module Tests8 =
 
     [<Fact>]
     let ``patterns-FSC_OPTIMIZED`` () = singleTestBuildAndRunVersion "core/patterns" FSC_OPTIMIZED LangVersion.Preview
