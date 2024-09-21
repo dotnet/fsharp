@@ -283,7 +283,7 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, lcidFromCodePage, argv)
     // This is where flags are interpreted by the command line fsc.exe.
     ParseCompilerOptions(collect, GetCoreFscCompilerOptions tcConfigB, List.tail (PostProcessCompilerArgs abbrevArgs argv))
 
-    tcConfigB.diagnosticsOptions.Fsharp9CompatibleNowarn <-
+    tcConfigB.diagnosticsOptions.FSharp9CompatibleNowarn <-
             not <| tcConfigB.langVersion.SupportsFeature LanguageFeature.ScopedNowarn
 
     let inputFiles = List.rev inputFilesRef

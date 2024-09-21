@@ -185,7 +185,7 @@ module internal WarnScopes =
     let IsNowarn (diagnosticOptions: FSharpDiagnosticOptions) warningNumber (mo: range option) =
         let (WarnScopeMap warnScopes) = diagnosticOptions.WarnScopes
         let (LineMap lineMap) = diagnosticOptions.LineMap
-        match mo, diagnosticOptions.Fsharp9CompatibleNowarn with
+        match mo, diagnosticOptions.FSharp9CompatibleNowarn with
         | Some m, false ->
             match lineMap.TryFind m.FileIndex with
             | None ->

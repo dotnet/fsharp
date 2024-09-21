@@ -34,7 +34,7 @@ type FSharpDiagnosticOptions =
         WarnOn: int list
         WarnAsError: int list
         WarnAsWarn: int list
-        mutable Fsharp9CompatibleNowarn: bool // set after setting compiler options
+        mutable FSharp9CompatibleNowarn: bool // set after setting compiler options
         mutable LineMap: LineMap // set after lexing
         mutable WarnScopes: WarnScopeMap // set after lexing
     }
@@ -47,7 +47,7 @@ type FSharpDiagnosticOptions =
             WarnOn = []
             WarnAsError = []
             WarnAsWarn = []
-            Fsharp9CompatibleNowarn = false
+            FSharp9CompatibleNowarn = false
             LineMap = LineMap.Empty
             WarnScopes = WarnScopeMap Map.empty
         }

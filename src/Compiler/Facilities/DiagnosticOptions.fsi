@@ -38,7 +38,7 @@ type FSharpDiagnosticOptions =
       WarnOn: int list
       WarnAsError: int list
       WarnAsWarn: int list
-      mutable Fsharp9CompatibleNowarn: bool
+      mutable FSharp9CompatibleNowarn: bool
       mutable LineMap: LineMap
       mutable WarnScopes: WarnScopeMap }
 
