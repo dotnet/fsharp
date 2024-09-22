@@ -11,7 +11,7 @@ open System.Text
 open System.Diagnostics
 
 module MessageSink =
-    let mutable sinkWriter = Console.Out
+    let sinkWriter = Console.Out
 
 [<AutoOpen>]
 module Scripting =

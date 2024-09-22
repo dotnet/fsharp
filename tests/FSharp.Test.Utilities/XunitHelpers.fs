@@ -41,6 +41,8 @@ module internal ParallelConsole =
     let localError = new RedirectingTextWriter(errorHolder)
 
     do
+        MessageSink.sinkWriter |> ignore
+
         Console.SetIn localIn
         Console.SetOut localOut
         Console.SetError localError

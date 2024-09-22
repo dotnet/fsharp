@@ -1171,4 +1171,3 @@ let b : int = ExtraIdentUserNeverWroteRulezzz
         Assert.Equal(0, checker.Caches.ParseFile.Count)
         Assert.Equal(1, checker.Caches.ParseFileWithoutProject.Count)
     }
-

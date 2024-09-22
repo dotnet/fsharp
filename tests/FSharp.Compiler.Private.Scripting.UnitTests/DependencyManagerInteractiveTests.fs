@@ -672,7 +672,7 @@ x |> Seq.iter(fun r ->
         try Assembly.Load("NoneSuchAssembly") |> ignore with _ -> ()
         Assert.False (assemblyFound, "Invoke the assemblyProbingRoots callback -- Error the AssemblyResolve still fired ")
 
-    [<Fact(Skip="Needs fixing / investigation.")>]
+    [<Fact>]
     member _.``Verify that Dispose cleans up the native paths added``() =
         let nativeProbingRoots () = Seq.empty<string>
 

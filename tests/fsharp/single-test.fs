@@ -192,6 +192,7 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
     </ItemGroup>
     <Copy SourceFiles='@(Libraries)' DestinationFolder='$(OutputPath)' SkipUnchangedFiles='false' />
   </Target>
+
 </Project>"
         template
         |> replace "$(UTILITYSOURCEITEMS)" pc.UtilitySourceItems false false CompileItem.Compile

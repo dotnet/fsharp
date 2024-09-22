@@ -39,6 +39,7 @@ type FactForDESKTOPAttribute() =
         do base.Skip <- "NETCOREAPP is not supported runtime for this kind of test, it is intended for DESKTOP only"
     #endif
 
+
 // This file mimics how Roslyn handles their compilation references for compilation testing
 module Utilities =
 
