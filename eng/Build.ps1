@@ -363,7 +363,6 @@ function VerifyAssemblyVersionsAndSymbols() {
 }
 
 function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [string]$testadapterpath, [boolean] $asBackgroundJob = $false) {
-
     $dotnetPath = InitializeDotNetCli
     $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
     $projectName = [System.IO.Path]::GetFileNameWithoutExtension($testProject)
@@ -380,9 +379,9 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
         $args += " --no-build"
     }
 
-    #sanity check
+    # Disable tests parralelization in CI.
     if ($ci) { 
-        # $args += " -- xUnit.ParallelizeTestCollections=false xUnit.MaxParallelThreads=1"
+        $args += " -- xUnit.ParallelizeTestCollections=false"
     }
 
     if ($asBackgroundJob) {
