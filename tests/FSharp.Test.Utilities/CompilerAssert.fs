@@ -297,23 +297,13 @@ and Compilation =
                 | n -> Some n
             Compilation(sources, output, options, targetFramework, cmplRefs, name, outputDirectory)
 
-module private TestContext =
+module TestContext =
 
-    let useTransparentCompiler = 
+    let UseTransparentCompiler = 
         FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically ||
         not (String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TEST_TRANSPARENT_COMPILER")))
 
-    let localChecker = AsyncLocal<FSharpChecker voption>()
-
-    let createChecker() =
-        let checker = 
-            FSharpChecker.Create(suggestNamesForErrors=true, useTransparentCompiler = useTransparentCompiler)
-        localChecker.Value <- ValueSome checker
-        checker
-
-type TestContext =
-    static member UseTransparentCompiler = TestContext.useTransparentCompiler
-    static member Checker = TestContext.localChecker.Value |> ValueOption.defaultWith TestContext.createChecker
+    let Checker = FSharpChecker.Create(suggestNamesForErrors=true, useTransparentCompiler = UseTransparentCompiler)
 
 module CompilerAssertHelpers =
 

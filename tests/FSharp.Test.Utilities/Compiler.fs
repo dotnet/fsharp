@@ -1042,11 +1042,6 @@ module rec Compiler =
         | _ -> failwith "Script evaluation is only supported for F#."
 
     let getSessionForEval args version = new FSharpScript(additionalArgs=args,quiet=false,langVersion=version)
-    //let getSessionForEval =
-    //    let cache = Collections.Concurrent.ConcurrentDictionary<_, FSharpScript>()
-    //    let factory(args, version) = new FSharpScript(additionalArgs=args,quiet=false,langVersion=version)
-    //    fun args version ->
-    //        cache.GetOrAdd((args, version), factory)
 
     let evalInSharedSession (script:FSharpScript) (cUnit: CompilationUnit)  : CompilationResult =
         match cUnit with
