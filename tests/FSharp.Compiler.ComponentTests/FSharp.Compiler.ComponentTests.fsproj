@@ -221,6 +221,7 @@
     <Compile Include="Language\RegressionTests.fs" />
     <Compile Include="Language\AttributeCheckingTests.fs" />
     <Compile Include="Language\ObsoleteAttributeCheckingTests.fs" />
+    <Compile Include="Language\SequenceExpressions\SequenceExpressionTests.fs" />
     <Compile Include="Language\XmlComments.fs" />
     <Compile Include="Language\CompilerDirectiveTests.fs" />
     <Compile Include="Language\CodeQuotationTests.fs" />
@@ -235,7 +236,6 @@
     <Compile Include="Language\FixedBindings\FixedBindings.fs" />
     <Compile Include="Language\ExtensionMethodTests.fs" />
     <Compile Include="Language\WhileBangTests.fs" />
-    <Compile Include="Language\SequenceExpressionTests.fs" />
     <Compile Include="Language\StaticClassTests.fs" />
     <Compile Include="Language\PrintfFormatTests.fs" />
     <Compile Include="Language\InterfaceTests.fs" />

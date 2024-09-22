@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module Language.SequenceExpressionTests
+module Language.SequenceExpression.SequenceExpressionTests
 
 open FSharp.Test
 open Xunit
@@ -486,18 +486,18 @@ let c = [ { 1;10 } ]
         (Error 740, Line 6, Col 11, Line 6, Col 19, "Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq { ... }'")
     ]
 
-// SOURCE=DeprecatePlacesWhereSeqCanBeOmitted.fs 	# DeprecatePlacesWhereSeqCanBeOmitted.fs
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"DeprecatePlacesWhereSeqCanBeOmitted.fs"|])>]
-let ``IndexRangeWithoutSeq lang version 9`` compilation =
+// SOURCE=E_SequenceExpressions01.fs 	# E_SequenceExpressions01.fs
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SequenceExpressions01.fs"|])>]
+let ``E_SequenceExpressions01 lang version 9`` compilation =
     compilation
     |> withOptions [ "--nowarn:0020" ]
     |> withLangVersion90
     |> typecheck
     |> shouldSucceed
 
-// SOURCE=DeprecatePlacesWhereSeqCanBeOmitted.fs 	# DeprecatePlacesWhereSeqCanBeOmitted.fs
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"DeprecatePlacesWhereSeqCanBeOmitted.fs"|])>]
-let ``E_IndexRangeWithoutSeq lang version preview`` compilation =
+// SOURCE=E_SequenceExpressions01.fs 	# E_SequenceExpressions01.fs
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SequenceExpressions01.fs"|])>]
+let ``E_SequenceExpressions01 lang version preview`` compilation =
     compilation
     |> withOptions [ "--nowarn:0020" ]
     |> withLangVersionPreview
@@ -546,3 +546,21 @@ let ``E_IndexRangeWithoutSeq lang version preview`` compilation =
         (Warning 3873, Line 74, Col 25, Line 74, Col 33, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
         (Warning 3873, Line 76, Col 13, Line 76, Col 20, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
     ]
+
+// SOURCE=SequenceExpressions01.fs 	# SequenceExpressions01.fs
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions01.fs"|])>]
+let ``SequenceExpressions01 lang version 9`` compilation =
+    compilation
+    |> withOptions [ "--nowarn:0020" ]
+    |> withLangVersion90
+    |> typecheck
+    |> shouldSucceed
+    
+// SOURCE=SequenceExpressions01.fs 	# SequenceExpressions01.fs
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions01.fs"|])>]
+let ``SequenceExpressions01 lang version preview`` compilation =
+    compilation
+    |> withOptions [ "--nowarn:0020" ]
+    |> withLangVersionPreview
+    |> typecheck
+    |> shouldSucceed
