@@ -466,6 +466,6 @@ let TcSequenceExpressionEntry (cenv: TcFileState) env (overallTy: OverallTy) tpe
         | _ -> ()
 
         if not hasBuilder && not cenv.g.compilingFSharpCore then
-            errorR (Error(FSComp.SR.tcInvalidSequenceExpressionSyntaxForm (), m))
+            error (Error(FSComp.SR.tcInvalidSequenceExpressionSyntaxForm (), m))
 
         TcSequenceExpression cenv env tpenv comp overallTy m

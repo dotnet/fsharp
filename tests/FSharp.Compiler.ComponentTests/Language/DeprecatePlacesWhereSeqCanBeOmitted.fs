@@ -55,3 +55,22 @@ let (..) _ _ = "lol"
 let lol1 = { 1..10 }
 
 { 1..5..10 }
+
+let resultInt = Seq.length {1..8}
+
+let resultInt2 funcInt  = Seq.map3 funcInt { 1..8 } { 2..9 } { 3..10 }
+
+let verify c = failwith "not implemented"
+
+Seq.splitInto 4 {1..5} |> verify { 1.. 10 }
+
+seq [ {1..4}; {5..7}; {8..10} ]
+
+Seq.allPairs { 1..7 } Seq.empty
+
+Seq.allPairs Seq.empty { 1..7 }
+
+let intArr1 = [| yield! {1..100}
+                 yield! {1..100} |]
+
+Array.ofSeq {1..10}
