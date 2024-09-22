@@ -52,6 +52,11 @@
         <target state="translated">To wyrażenie jest rekordem anonimowym. Użyj {{|...|}} zamiast {{...}}.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkDeprecatePlacesWhereSeqCanBeOmitted">
+        <source>This construct is deprecated. Sequence expressions should be of the form 'seq {{ ... }}'</source>
+        <target state="new">This construct is deprecated. Sequence expressions should be of the form 'seq {{ ... }}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
         <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
         <target state="translated">Zduplikowany parametr. Parametr „{0}” został użyty więcej niż raz w tej metodzie.</target>
@@ -4528,7 +4533,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
-        <source>Sequence expressions should be of the form 'seq {{ ... }}'</source>
+        <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
         <target state="needs-review-translation">Nieprawidłowe wyrażenie rekordu, sekwencji lub obliczenia. Wyrażenia sekwencji powinny mieć postać „seq {{ ... }}”</target>
         <note />
       </trans-unit>

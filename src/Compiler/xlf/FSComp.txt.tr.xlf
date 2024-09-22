@@ -52,6 +52,11 @@
         <target state="translated">Bu ifade, anonim bir kayıt, {{...}} yerine {{|...|}} kullanın.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkDeprecatePlacesWhereSeqCanBeOmitted">
+        <source>This construct is deprecated. Sequence expressions should be of the form 'seq {{ ... }}'</source>
+        <target state="new">This construct is deprecated. Sequence expressions should be of the form 'seq {{ ... }}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
         <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
         <target state="translated">Yinelenen parametre. '{0}' parametresi bu metotta bir kereden fazla kullanıldı.</target>
@@ -4528,7 +4533,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
-        <source>Sequence expressions should be of the form 'seq {{ ... }}'</source>
+        <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
         <target state="needs-review-translation">Geçersiz kayıt, dizi veya hesaplama ifadesi. Dizi ifadeleri 'seq {{ ... }}' biçiminde olmalıdır</target>
         <note />
       </trans-unit>

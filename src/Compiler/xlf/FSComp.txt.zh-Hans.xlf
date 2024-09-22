@@ -52,6 +52,11 @@
         <target state="translated">此表达式是匿名记录，请使用 {{|...|}} 而不是 {{...}}。</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkDeprecatePlacesWhereSeqCanBeOmitted">
+        <source>This construct is deprecated. Sequence expressions should be of the form 'seq {{ ... }}'</source>
+        <target state="new">This construct is deprecated. Sequence expressions should be of the form 'seq {{ ... }}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
         <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
         <target state="translated">参数重复。此方法中多次使用了参数“{0}”。</target>
@@ -4528,7 +4533,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
-        <source>Sequence expressions should be of the form 'seq {{ ... }}'</source>
+        <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
         <target state="needs-review-translation">记录、序列或计算表达式无效。序列表达式的格式应为“seq {{ ... }}”</target>
         <note />
       </trans-unit>

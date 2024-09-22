@@ -52,6 +52,11 @@
         <target state="translated">この式は匿名レコードであり、{{...}} の代わりに {{|...|}} を使用してください。</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkDeprecatePlacesWhereSeqCanBeOmitted">
+        <source>This construct is deprecated. Sequence expressions should be of the form 'seq {{ ... }}'</source>
+        <target state="new">This construct is deprecated. Sequence expressions should be of the form 'seq {{ ... }}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
         <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
         <target state="translated">パラメーターが重複しています。パラメーター '{0}' は、このメソッドで 1 回以上使用されています。</target>
@@ -4528,7 +4533,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
-        <source>Sequence expressions should be of the form 'seq {{ ... }}'</source>
+        <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
         <target state="needs-review-translation">無効なレコード、シーケンス式、またはコンピュテーション式です。シーケンス式は 'seq {{ ... }}' という形式にしてください。</target>
         <note />
       </trans-unit>

@@ -52,6 +52,11 @@
         <target state="translated">Dieser Ausdruck ist ein anonymer Datensatz. Verwenden Sie {{|...|}} anstelle von {{...}}.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkDeprecatePlacesWhereSeqCanBeOmitted">
+        <source>This construct is deprecated. Sequence expressions should be of the form 'seq {{ ... }}'</source>
+        <target state="new">This construct is deprecated. Sequence expressions should be of the form 'seq {{ ... }}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
         <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
         <target state="translated">Doppelter Parameter. Der Parameter „{0}“ wurde in dieser Methode mehrmals verwendet.</target>
@@ -4528,7 +4533,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
-        <source>Sequence expressions should be of the form 'seq {{ ... }}'</source>
+        <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
         <target state="needs-review-translation">Ungültiger Datensatz-, Sequenz- oder Berechnungsausdruck. Sequenzausdrücke müssen das Format "seq {{ ... }}" besitzen.</target>
         <note />
       </trans-unit>

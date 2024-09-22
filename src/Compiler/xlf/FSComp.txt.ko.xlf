@@ -52,6 +52,11 @@
         <target state="translated">이 식은 익명 레코드입니다. {{...}} 대신 {{|...|}}을 사용하세요.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkDeprecatePlacesWhereSeqCanBeOmitted">
+        <source>This construct is deprecated. Sequence expressions should be of the form 'seq {{ ... }}'</source>
+        <target state="new">This construct is deprecated. Sequence expressions should be of the form 'seq {{ ... }}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
         <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
         <target state="translated">매개 변수가 중복되었습니다. 이 메소드에서 매개 변수 '{0}'이(가) 두 번 이상 사용되었습니다.</target>
@@ -4528,7 +4533,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
-        <source>Sequence expressions should be of the form 'seq {{ ... }}'</source>
+        <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
         <target state="needs-review-translation">레코드, 시퀀스 또는 계산 식이 잘못되었습니다. 시퀀스 식의 형식은 'seq {{ ... }}'여야 합니다.</target>
         <note />
       </trans-unit>

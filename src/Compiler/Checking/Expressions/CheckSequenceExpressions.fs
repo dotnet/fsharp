@@ -451,7 +451,7 @@ let TcSequenceExpressionEntry (cenv: TcFileState) env (overallTy: OverallTy) tpe
             && not hasBuilder
             && not cenv.g.compilingFSharpCore
         then
-            warning (Error(FSComp.SR.tcInvalidSequenceExpressionSyntaxForm (), m))
+            warning (Error(FSComp.SR.chkDeprecatePlacesWhereSeqCanBeOmitted (), m))
 
         TcExpr cenv overallTy env tpenv replacementExpr
     | None ->
