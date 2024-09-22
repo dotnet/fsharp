@@ -346,8 +346,8 @@ type ListModule() =
     [<Fact>]
     member _.Except() =
         // integer list
-        let intList1 = [ yield! {1..100}
-                         yield! {1..100} ]
+        let intList1 = [ yield! seq {1..100}
+                         yield! seq {1..100} ]
         let intList2 = [1..10]
         let expectedIntList = [11..100]
 

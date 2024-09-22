@@ -479,7 +479,7 @@ type SeqModule2() =
     member _.Length() =
 
          // integer seq  
-        let resultInt = Seq.length {1..8}
+        let resultInt = Seq.length (seq {1..8})
         if resultInt <> 8 then Assert.Fail()
         
         // string Seq    
@@ -505,7 +505,7 @@ type SeqModule2() =
             | _ when x % 2 = 0 -> 10*x            
             | _ -> x
        
-        let resultInt = Seq.map funcInt { 1..10 }
+        let resultInt = Seq.map funcInt (seq { 1..10 })
         let expectedint = seq [1;20;3;40;5;60;7;80;9;100]
         
         VerifySeqsEqual expectedint resultInt
@@ -531,7 +531,7 @@ type SeqModule2() =
     member _.Map2() =
          // integer Seq
         let funcInt x y = x+y
-        let resultInt = Seq.map2 funcInt { 1..10 } {2..2..20} 
+        let resultInt = Seq.map2 funcInt (seq { 1..10 }) (seq {2..2..20})
         let expectedint = seq [3;6;9;12;15;18;21;24;27;30]
         
         VerifySeqsEqual expectedint resultInt
@@ -558,16 +558,16 @@ type SeqModule2() =
     member _.Map3() = 
         // Integer seq
         let funcInt a b c = (a + b) * c
-        let resultInt = Seq.map3 funcInt { 1..8 } { 2..9 } { 3..10 }
+        let resultInt = Seq.map3 funcInt (seq { 1..8 }) (seq { 2..9 }) (seq { 3..10 })
         let expectedInt = seq [9; 20; 35; 54; 77; 104; 135; 170]
         VerifySeqsEqual expectedInt resultInt
 
         // First seq is shorter
-        VerifySeqsEqual (seq [9; 20]) (Seq.map3 funcInt { 1..2 } { 2..9 } { 3..10 })
+        VerifySeqsEqual (seq [9; 20]) (Seq.map3 funcInt (seq { 1..2 }) (seq { 2..9 }) (seq { 3..10 }))
         // Second seq is shorter
-        VerifySeqsEqual (seq [9; 20; 35]) (Seq.map3 funcInt { 1..8 } { 2..4 } { 3..10 })
+        VerifySeqsEqual (seq [9; 20; 35]) (Seq.map3 funcInt (seq { 1..8 }) (seq { 2..4 }) (seq { 3..10 }))
         // Third seq is shorter
-        VerifySeqsEqual (seq [9; 20; 35; 54]) (Seq.map3 funcInt { 1..8 } { 2..6 } { 3..6 })
+        VerifySeqsEqual (seq [9; 20; 35; 54]) (Seq.map3 funcInt (seq { 1..8 }) (seq { 2..6 }) (seq { 3..6 }))
 
         // String seq
         let funcStr a b c = a + b + c
@@ -812,7 +812,7 @@ type SeqModule2() =
     member _.Collect() =
          // integer Seq
         let funcInt x = seq [x+1]
-        let resultInt = Seq.collect funcInt { 1..10 } 
+        let resultInt = Seq.collect funcInt (seq { 1..10 })
        
         let expectedint = seq {2..11}
         
@@ -843,7 +843,7 @@ type SeqModule2() =
 
          // integer Seq
         let funcInt x y = x+y
-        let resultInt = Seq.mapi funcInt { 10..2..20 } 
+        let resultInt = Seq.mapi funcInt (seq { 10..2..20 })
         let expectedint = seq [10;13;16;19;22;25]
         
         VerifySeqsEqual expectedint resultInt
@@ -871,7 +871,7 @@ type SeqModule2() =
     member _.Mapi2() =
          // integer Seq
         let funcInt x y z = x+y+z
-        let resultInt = Seq.mapi2 funcInt { 1..10 } {2..2..20}
+        let resultInt = Seq.mapi2 funcInt (seq { 1..10 }) (seq {2..2..20})
         let expectedint = seq [3;7;11;15;19;23;27;31;35;39]
 
         VerifySeqsEqual expectedint resultInt
@@ -907,7 +907,7 @@ type SeqModule2() =
     member _.Indexed() =
 
          // integer Seq
-        let resultInt = Seq.indexed { 10..2..20 }
+        let resultInt = Seq.indexed (seq { 10..2..20 })
         let expectedint = seq [(0,10);(1,12);(2,14);(3,16);(4,18);(5,20)]
 
         VerifySeqsEqual expectedint resultInt
@@ -931,7 +931,7 @@ type SeqModule2() =
     [<Fact>]
     member _.Max() =
          // integer Seq
-        let resultInt = Seq.max { 10..20 } 
+        let resultInt = Seq.max (seq { 10..20 })
         
         Assert.AreEqual(20,resultInt)
         
@@ -954,7 +954,7 @@ type SeqModule2() =
     
         // integer Seq
         let funcInt x = x % 8
-        let resultInt = Seq.maxBy funcInt { 2..2..20 } 
+        let resultInt = Seq.maxBy funcInt (seq { 2..2..20 })
         Assert.AreEqual(6,resultInt)
         
         // string Seq
@@ -976,7 +976,7 @@ type SeqModule2() =
     
         // integer Seq
         let funcInt x = x % 8
-        let resultInt = Seq.minBy funcInt { 2..2..20 } 
+        let resultInt = Seq.minBy funcInt (seq { 2..2..20 })
         Assert.AreEqual(8,resultInt)
         
         // string Seq
@@ -998,7 +998,7 @@ type SeqModule2() =
     member _.Min() =
 
          // integer Seq
-        let resultInt = Seq.min { 10..20 } 
+        let resultInt = Seq.min (seq { 10..20 })
         Assert.AreEqual(10,resultInt)
         
         // string Seq
@@ -1017,7 +1017,7 @@ type SeqModule2() =
     [<Fact>]
     member _.Item() =
          // integer Seq
-        let resultInt = Seq.item 3 { 10..20 }
+        let resultInt = Seq.item 3 (seq { 10..20 })
         Assert.AreEqual(13, resultInt)
 
         // string Seq
@@ -1033,11 +1033,11 @@ type SeqModule2() =
 
         // Negative index
         for i = -1 downto -10 do
-           CheckThrowsArgumentException (fun () -> Seq.item i { 10 .. 20 } |> ignore)
+           CheckThrowsArgumentException (fun () -> Seq.item i (seq { 10 .. 20 }) |> ignore)
 
         // Out of range
         for i = 11 to 20 do
-           CheckThrowsArgumentException (fun () -> Seq.item i { 10 .. 20 } |> ignore)
+           CheckThrowsArgumentException (fun () -> Seq.item i (seq { 10 .. 20 }) |> ignore)
 
     [<Fact>]
     member _.``item should fail with correct number of missing elements``() =
@@ -1057,7 +1057,7 @@ type SeqModule2() =
     member _.Of_Array() =
          // integer Seq
         let resultInt = Seq.ofArray [|1..10|]
-        let expectedInt = {1..10}
+        let expectedInt = seq {1..10}
          
         VerifySeqsEqual expectedInt resultInt
         
@@ -1076,7 +1076,7 @@ type SeqModule2() =
     member _.Of_List() =
          // integer Seq
         let resultInt = Seq.ofList [1..10]
-        let expectedInt = {1..10}
+        let expectedInt = seq {1..10}
          
         VerifySeqsEqual expectedInt resultInt
         
@@ -1095,7 +1095,7 @@ type SeqModule2() =
     [<Fact>]
     member _.Pairwise() =
          // integer Seq
-        let resultInt = Seq.pairwise {1..3}
+        let resultInt = Seq.pairwise (seq {1..3})
        
         let expectedInt = seq [1,2;2,3]
          
@@ -1182,7 +1182,7 @@ type SeqModule2() =
     member _.Scan() =
         // integer Seq
         let funcInt x y = x+y
-        let resultInt = Seq.scan funcInt 9 {1..10}
+        let resultInt = Seq.scan funcInt 9 (seq {1..10})
         let expectedInt = seq [9;10;12;15;19;24;30;37;45;54;64]
         VerifySeqsEqual expectedInt resultInt
         
@@ -1207,7 +1207,7 @@ type SeqModule2() =
     member _.ScanBack() =
         // integer Seq
         let funcInt x y = x+y
-        let resultInt = Seq.scanBack funcInt { 1..10 } 9
+        let resultInt = Seq.scanBack funcInt (seq { 1..10 }) 9
         let expectedInt = seq [64;63;61;58;54;49;43;36;28;19;9]
         VerifySeqsEqual expectedInt resultInt
 
@@ -1313,7 +1313,7 @@ type SeqModule2() =
 
         // integer Seq
         let resultInt = Seq.sort (seq [1;3;2;4;6;5;7])
-        let expectedInt = {1..7}
+        let expectedInt = seq {1..7}
         VerifySeqsEqual expectedInt resultInt
         
         // string Seq
@@ -1960,7 +1960,7 @@ type SeqModule2() =
     [<Fact>]
     member _.tryItem() =
         // integer Seq
-        let resultInt = Seq.tryItem 3 { 10..20 }
+        let resultInt = Seq.tryItem 3 (seq { 10..20 })
         Assert.AreEqual(Some(13), resultInt)
 
         // string Seq
@@ -1976,11 +1976,11 @@ type SeqModule2() =
         CheckThrowsArgumentNullException (fun () -> Seq.tryItem 3 nullSeq |> ignore)
 
         // Negative index
-        let resultNegativeIndex = Seq.tryItem -1 { 10..20 }
+        let resultNegativeIndex = Seq.tryItem -1 (seq { 10..20 })
         Assert.AreEqual(None, resultNegativeIndex)
 
         // Index greater than length
-        let resultIndexGreater = Seq.tryItem 31 { 10..20 }
+        let resultIndexGreater = Seq.tryItem 31 (seq { 10..20 })
         Assert.AreEqual(None, resultIndexGreater)
         
     [<Fact>]

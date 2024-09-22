@@ -72,7 +72,7 @@ module private Impl =
                     let ub = a1.GetUpperBound(0)
                     if lb <> a2.GetLowerBound(0) || ub <> a2.GetUpperBound(0) then false
                     else
-                        {lb..ub} |> Seq.forall(fun i -> equals (a1.GetValue(i)) (a2.GetValue(i)))    
+                        seq {lb..ub} |> Seq.forall(fun i -> equals (a1.GetValue(i)) (a2.GetValue(i)))    
         |   _ ->
                 Object.Equals(expected, actual)
 
