@@ -381,7 +381,7 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
 
     # Disable tests parralelization in CI.
     if ($ci) { 
-        $args += " -- xUnit.ParallelizeTestCollections=false"
+        $args += " -- xUnit.ParallelizeTestCollections=false xUnit.MaxParallelThreads=1"
     }
 
     if ($asBackgroundJob) {
