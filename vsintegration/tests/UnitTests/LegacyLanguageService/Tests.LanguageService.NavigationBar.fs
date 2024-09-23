@@ -3,7 +3,7 @@
 namespace Tests.LanguageService.NavigationBar
 
 open System
-open NUnit.Framework
+open Xunit
 open Salsa.Salsa
 open Salsa.VsOpsUtils
 open UnitTests.TestLib.Salsa
@@ -11,9 +11,6 @@ open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 
-[<Ignore("FSROSLYNTODO: Refactor/enable once navigation bars are fully tested")>]
-[<TestFixture>]
-[<Category "LanguageService">]
 type UsingMSBuild() =
     inherit LanguageServiceBaseTests()
 
@@ -100,6 +97,5 @@ type UsingMSBuild() =
     
 
 // Context project system
-[<TestFixture>] 
 type UsingProjectSystem() = 
     inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)

@@ -1,14 +1,11 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-[<NUnit.Framework.TestFixture>]
+
 module Tests.ServiceAnalysis.DocCommentIdParser
 
-open NUnit.Framework
+open Xunit
 open Microsoft.VisualStudio.FSharp.Editor
 
-
-
-
-[<Test>]
+[<Fact>]
 let ``Test DocCommentId parser``() =
     let testData = dict [
         "T:N.X.Nested", DocCommentId.Type ["N"; "X"; "Nested"];

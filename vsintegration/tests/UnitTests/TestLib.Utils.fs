@@ -47,7 +47,7 @@ module Asserts =
         | None -> ()
 
     let AssertBuildSuccessful (result: Microsoft.VisualStudio.FSharp.ProjectSystem.BuildResult) =
-        Assert.IsTrue(result.IsSuccessful, "Expected build to succeed")
+        Assert.True(result.IsSuccessful, "Expected build to succeed")
 
 module UIStuff =
     let SetupSynchronizationContext() =
