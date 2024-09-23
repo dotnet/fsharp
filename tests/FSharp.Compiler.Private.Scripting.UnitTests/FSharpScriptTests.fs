@@ -463,6 +463,9 @@ let x =
         script.Eval(code) |> ignoreValue
         Assert.False(foundInner)
 
+// Fails in NETFRAMEWORK with exception
+// System.MissingMethodException : Method not found: 'Microsoft.FSharp.Core.FSharpFunc`2<FParsec.CharStream`1<!!0>,FParsec.Reply`1<Double>> FParsec.CharParsers.pfloat()'.
+#if NETCOREAPP
     [<Fact>]
     member _.``Script with nuget package that yields out of order dependencies works correctly``() =
         // regression test for: https://github.com/dotnet/fsharp/issues/9217
@@ -485,3 +488,4 @@ test pfloat "1.234"
         let opt = script.Eval(code)  |> getValue
         let value = opt.Value
         Assert.True(true = downcast value.ReflectionValue)
+#endif

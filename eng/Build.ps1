@@ -401,11 +401,8 @@ function TestSolutionUsingMSBuild([string] $testSolution, [string] $targetFramew
     $solutionName = [System.IO.Path]::GetFileNameWithoutExtension($testSolution)
     $testLogPath = "$ArtifactsDir\TestResults\$configuration\${solutionName}_$targetFramework.xml"
     $testBinLogPath = "$LogDir\${solutionName}_$targetFramework.binlog"
-    $args = "test $testSolution -c $configuration -f $targetFramework --test-adapter-path $testadapterpath --logger:console;verbosity=normal --logger ""xunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
+    $args = "test $testSolution -c $configuration -f $targetFramework --test-adapter-path $testadapterpath -v n --logger ""xunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
     $args += " --blame --results-directory $ArtifactsDir\TestResults\$configuration -p:vstestusemsbuildoutput=false"
-
-    ###
-    $args += " --filter ""Script with nuget package that yields out of order dependencies works correctly"" "
 
     if (-not $noVisualStudio -or $norestore) {
         $args += " --no-restore"
