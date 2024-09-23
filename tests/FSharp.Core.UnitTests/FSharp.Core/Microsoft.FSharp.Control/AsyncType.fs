@@ -23,7 +23,7 @@ module AsyncType =
                 failwith $"expected {expected} continuation, but ran {actual}"
 
         let onSuccess = cont Success
-        let onExeption = cont Exception
+        let onException = cont Exception
         let onCancellation = cont Cancellation
 
         let expect expected computation =
