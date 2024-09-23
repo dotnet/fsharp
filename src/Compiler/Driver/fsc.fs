@@ -745,7 +745,7 @@ let main2
                     yield! pragmas
             ]
 
-        GetDiagnosticsLoggerFilteringByScopedPragmas(tcConfig.langVersion, scopedPragmas, tcConfig.diagnosticsOptions, oldLogger)
+        GetDiagnosticsLoggerFilteringByScopedPragmas(true, scopedPragmas, tcConfig.diagnosticsOptions, oldLogger)
 
     SetThreadDiagnosticsLoggerNoUnwind diagnosticsLogger
 

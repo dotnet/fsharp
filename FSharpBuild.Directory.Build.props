@@ -73,8 +73,8 @@
     <EnableXlfLocalization Condition="'$(EnableXlfLocalization)' == '' AND ('$(Configuration)' == 'Proto' OR '$(MonoPackaging)' == 'true')">false</EnableXlfLocalization>    
   </PropertyGroup>
 
-  <!-- source build -->
-  <PropertyGroup Condition="'$(DotNetBuildFromSource)' == 'true' OR '$(ArcadeBuildFromSource)' == 'true'">
+  <!-- Do not publish in source-only modes. This switch is present in both inner and outer builds. -->
+  <PropertyGroup Condition="'$(DotNetBuildSourceOnly)' == 'true'">
     <PublishWindowsPdb>false</PublishWindowsPdb>
   </PropertyGroup>
 

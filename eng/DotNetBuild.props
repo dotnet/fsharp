@@ -13,7 +13,7 @@
   -->
   <Target Name="ConfigureInnerBuildArg"
           BeforeTargets="GetSourceBuildCommandConfiguration"
-          Condition="'$(ArcadeBuildFromSource)' == 'true' or '$(DotNetBuildSourceOnly)' == 'true'">
+          Condition="'$(DotNetBuildSourceOnly)' == 'true'">
     <PropertyGroup>
       <InnerBuildArgs>$(InnerBuildArgs) /p:Projects="$(InnerSourceBuildRepoRoot)\Microsoft.FSharp.Compiler.sln"</InnerBuildArgs>
     </PropertyGroup>
@@ -26,7 +26,7 @@
   <Target Name="BuildBootstrap"
           DependsOnTargets="PrepareInnerSourceBuildRepoRoot"
           BeforeTargets="RunInnerSourceBuildCommand"
-          Condition="'$(ArcadeBuildFromSource)' == 'true' or '$(DotNetBuildSourceOnly)' == 'true'">
+          Condition="'$(DotNetBuildSourceOnly)' == 'true'">
           
     <PropertyGroup>
       <SourceBuildBootstrapTfmArg Condition="$(SourceBuildBootstrapTfm) != ''">--tfm $(SourceBuildBootstrapTfm)</SourceBuildBootstrapTfmArg>
@@ -41,9 +41,9 @@
          -bl enables the binlogs for the tools and Proto builds, which make debugging failures here easier
     -->
     <Exec
-      Command="./build.sh --bootstrap --skipBuild -bl $(SourceBuildBootstrapTfmArg) /p:SourceBuildUseMonoRuntime=$(SourceBuildUseMonoRuntime)"
+      Command="./build.sh --bootstrap --skipBuild -bl $(SourceBuildBootstrapTfmArg) /p:SourceBuildUseMonoRuntime=$(SourceBuildUseMonoRuntime) /p:DotNetBuildSourceOnly=true /p:DotNetBuildInnerRepo=true /p:DotNetBuildRepo=true /p:DotNetBuildOrchestrator=$(DotNetBuildOrchestrator)"
       WorkingDirectory="$(InnerSourceBuildRepoRoot)"
-      EnvironmentVariables="@(InnerBuildEnv);DotNetBuildFromSource=true" />
+      EnvironmentVariables="@(InnerBuildEnv)" />
   </Target>
 
 </Project>

@@ -46,7 +46,7 @@ let mkLocalPrivateAttributeWithDefaultConstructor (g: TcGlobals, name: string) =
         ILTypeDefAccess.Private,
         ILGenericParameterDefs.Empty,
         g.ilg.typ_Attribute,
-        ILTypes.Empty,
+        [],
         ilMethods,
         emptyILFields,
         emptyILTypeDefs,
@@ -140,7 +140,7 @@ let mkLocalPrivateAttributeWithPropertyConstructors
         ILTypeDefAccess.Private,
         ILGenericParameterDefs.Empty,
         g.ilg.typ_Attribute,
-        ILTypes.Empty,
+        [],
         mkILMethods (
             ilCtorDef
             :: (ilElements |> List.fold (fun acc (_, getter, _, _) -> getter @ acc) [])
@@ -205,7 +205,7 @@ let mkLocalPrivateAttributeWithByteAndByteArrayConstructors (g: TcGlobals, name:
         ILTypeDefAccess.Private,
         ILGenericParameterDefs.Empty,
         g.ilg.typ_Attribute,
-        ILTypes.Empty,
+        [],
         mkILMethods ([ ilScalarCtorDef; ilArrayCtorDef ]),
         mkILFields [ fieldDef ],
         emptyILTypeDefs,
@@ -233,7 +233,7 @@ let mkLocalPrivateInt32Enum (g: TcGlobals, tref: ILTypeRef, values: (string * in
         ILTypeDefAccess.Private,
         ILGenericParameterDefs.Empty,
         g.ilg.typ_Enum,
-        ILTypes.Empty,
+        [],
         mkILMethods [],
         mkILFields enumFields,
         emptyILTypeDefs,
