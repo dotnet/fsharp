@@ -545,7 +545,7 @@ type FrameworkImportsCache(size) =
                     lazyWork
             )
         node
-                
+
 
     /// This function strips the "System" assemblies from the tcConfig and returns a age-cached TcImports for them.
     member this.Get(tcConfig: TcConfig) =
@@ -575,7 +575,8 @@ type FrameworkImportsCache(size) =
                         tcGlobals.noDebugAttributes,
                         tcGlobals.pathMap,
                         tcConfig.langVersion,
-                        tcConfig.realsig
+                        tcConfig.realsig,
+                        tcConfig.compilationMode
                     )
 
             else

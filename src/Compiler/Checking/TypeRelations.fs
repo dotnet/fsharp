@@ -115,22 +115,22 @@ let inline TypesFeasiblyEquivStripMeasures g amap m ty1 ty2 =
     TypesFeasiblyEquivalent true 0 g amap m ty1 ty2
 
 let inline TryGetCachedTypeSubsumption (g: TcGlobals) (amap: ImportMap) key =
-    if g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
+    if g.compilationMode = CompilationMode.OneOff && g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
         match amap.TypeSubsumptionCache.TryGetValue(key) with
-        | true, subsumes -> ValueSome subsumes
-        | false, _ -> ValueNone
+        | true, subsumes ->
+            ValueSome subsumes
+        | false, _ ->
+            ValueNone
     else
         ValueNone
 
-let inline UpdateCachedTypeSubsumption (g: TcGlobals) (amap: ImportMap) key subsumes =
-
-    if g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
+let inline UpdateCachedTypeSubsumption (g: TcGlobals) (amap: ImportMap) key subsumes : unit =
+    if g.compilationMode = CompilationMode.OneOff && g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
         amap.TypeSubsumptionCache[key] <- subsumes
 
-    subsumes
 
 /// The feasible coercion relation. Part of the language spec.
-let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: Import.ImportMap) m (ty1: TType) (canCoerce: CanCoerce) (ty2: TType) =
+let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: ImportMap) m (ty1: TType) (canCoerce: CanCoerce) (ty2: TType) =
 
     if ndeep > 100 then
         error(InternalError("Large class hierarchy (possibly recursive, detected in TypeFeasiblySubsumesType), ty1 = " + (DebugPrint.showType ty1), m))
@@ -162,14 +162,13 @@ let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: Import.ImportMap) m
                     elif isAppTy g ty2 && (canCoerce = CanCoerce || isRefTy g ty2) && TypeFeasiblySubsumesTypeWithSupertypeCheck g amap m ndeep ty1 ty2 then
                         true
                     else
-                        if isInterfaceTy g ty1 then
-                            let interfaces = GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2
-                            // See if any interface in type hierarchy of ty2 is a supertype of ty1
-                            Seq.exists (TypeFeasiblySubsumesType (ndeep + 1) g amap m ty1 NoCoerce) interfaces
-                        else
-                            false
+                        let interfaces = GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2
+                        // See if any interface in type hierarchy of ty2 is a supertype of ty1
+                        Seq.exists (TypeFeasiblySubsumesType (ndeep + 1) g amap m ty1 NoCoerce) interfaces
 
         UpdateCachedTypeSubsumption g amap key subsumes
+
+        subsumes
 
 and TypeFeasiblySubsumesTypeWithSupertypeCheck g amap m ndeep ty1 ty2 =
     match GetSuperTypeOfType g amap m ty2 with

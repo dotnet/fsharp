@@ -2,6 +2,15 @@
 
 module internal FSharp.Compiler.TcGlobals
 
+/// Signals how checker/compiler was invoked - from FSC task/process (a one-off compilation), from tooling or from interactive session.
+/// This is used to determine if we want to use certain features in the pipeline, for example, type subsumption cache is only used in one-off compilation now.
+[<RequireQualifiedAccess>]
+type CompilationMode =
+    | Unset       // Default: not set
+    | OneOff      // Running the FSC task/process
+    | Service     // Running from service
+    | Interactive // Running from interactive session
+
 val internal DummyFileNameForRangesWithoutASpecificLocation: string
 
 /// Represents an intrinsic value from FSharp.Core known to the compiler
@@ -147,7 +156,8 @@ type internal TcGlobals =
         noDebugAttributes: bool *
         pathMap: Internal.Utilities.PathMap *
         langVersion: FSharp.Compiler.Features.LanguageVersion *
-        realsig: bool ->
+        realsig: bool *
+        compilationMode: CompilationMode ->
             TcGlobals
 
     static member IsInEmbeddableKnownSet: name: string -> bool
@@ -807,6 +817,8 @@ type internal TcGlobals =
 
     /// Are we assuming all code gen is for F# interactive, with no static linking
     member isInteractive: bool
+
+    member compilationMode: CompilationMode
 
     member isnull_info: IntrinsicValRef
 

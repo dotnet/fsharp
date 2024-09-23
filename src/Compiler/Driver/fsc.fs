@@ -511,7 +511,8 @@ let main1
             defaultCopyFSharpCore = defaultCopyFSharpCore,
             tryGetMetadataSnapshot = tryGetMetadataSnapshot,
             sdkDirOverride = None,
-            rangeForErrors = range0
+            rangeForErrors = range0,
+            compilationMode = CompilationMode.OneOff
         )
 
     tcConfigB.exiter <- exiter

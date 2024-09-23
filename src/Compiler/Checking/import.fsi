@@ -45,6 +45,7 @@ type CanCoerce =
 [<NoComparison; CustomEquality; Struct>]
 type TTypeCacheKey =
     interface System.IEquatable<TTypeCacheKey>
+    interface System.Collections.IStructuralEquatable
     new: ty1: TType * ty2: TType * canCoerce: CanCoerce * tcGlobals: TcGlobals -> TTypeCacheKey
     val ty1: TType
     val ty2: TType

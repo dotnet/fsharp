@@ -8,6 +8,8 @@ open System.Collections.Generic
 open System.Collections.Immutable
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
+open Internal.Utilities.TypeHashing
+open Internal.Utilities.TypeHashing.HashTypes
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.CompilerGlobalState
@@ -22,8 +24,6 @@ open FSharp.Compiler.TcGlobals
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
-open Internal.Utilities.TypeHashing
-open Internal.Utilities.TypeHashing.HashTypes
 #endif
 
 /// Represents an interface to some of the functionality of TcImports, for loading assemblies
@@ -69,25 +69,38 @@ type [<Struct; NoComparison; CustomEquality>] TTypeCacheKey =
 
     interface System.IEquatable<TTypeCacheKey> with
         member this.Equals other =
-            LanguagePrimitives.PhysicalEquality this.ty1 other.ty1
-            && LanguagePrimitives.PhysicalEquality this.ty2 other.ty2
-            && this.canCoerce = other.canCoerce
+            let pe1 = LanguagePrimitives.PhysicalEquality this.ty1 other.ty1
+            let pe2 = LanguagePrimitives.PhysicalEquality this.ty2 other.ty2
+            let canCoerce = this.canCoerce = other.canCoerce
+
+            pe1 && pe2 && canCoerce
+
+    interface System.Collections.IStructuralEquatable with
+        member this.Equals(other: obj, _) : bool =
+            match other with
+            | :? TTypeCacheKey as p -> (this :> System.IEquatable<TTypeCacheKey>).Equals p
+            | _ -> false
+
+        member this.GetHashCode(_) : int =
+            this.GetHashCode()
 
     override this.Equals other =
         match other with
         | :? TTypeCacheKey as p -> (this :> System.IEquatable<TTypeCacheKey>).Equals p
         | _ -> false
 
-    override this.GetHashCode (): int =
+    override this.GetHashCode() : int =
         let g = this.tcGlobals
 
         let ty1 = stripTyEqns g this.ty1
         let ty2 = stripTyEqns g this.ty2
 
-        let ty1Hash = combineHash (hashStamp g ty1) (hashTType g ty1)
-        let ty2Hash = combineHash (hashStamp g ty2) (hashTType g ty2)
+        let ty1Hash = hashTType g ty1
+        let ty2Hash = hashTType g ty2
 
-        combineHash (combineHash ty1Hash ty2Hash) (hash this.canCoerce)
+        let combined = combineHash (combineHash ty1Hash ty2Hash) (hash this.canCoerce)
+
+        combined
 
 //-------------------------------------------------------------------------
 // Import an IL types as F# types.

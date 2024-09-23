@@ -175,6 +175,13 @@ let tname_IsByRefLikeAttribute = "System.Runtime.CompilerServices.IsByRefLikeAtt
 // Table of all these "globals"
 //-------------------------------------------------------------------------
 
+[<RequireQualifiedAccess>]
+type CompilationMode =
+    | Unset
+    | OneOff
+    | Service
+    | Interactive
+
 type TcGlobals(
     compilingFSharpCore: bool,
     ilg: ILGlobals,
@@ -190,10 +197,11 @@ type TcGlobals(
     noDebugAttributes: bool,
     pathMap: PathMap,
     langVersion: LanguageVersion,
-    realsig: bool) =
+    realsig: bool,
+    compilationMode: CompilationMode) =
 
   let v_langFeatureNullness = langVersion.SupportsFeature LanguageFeature.NullnessChecking
-  
+
   let v_knownWithNull =
       if v_langFeatureNullness then KnownWithNull else KnownAmbivalentToNull
 
@@ -1823,6 +1831,8 @@ type TcGlobals(
 
   /// Are we assuming all code gen is for F# interactive, with no static linking
   member _.isInteractive=isInteractive
+
+  member _.compilationMode = compilationMode
 
   /// Indicates if we are generating witness arguments for SRTP constraints. Only done if the FSharp.Core
   /// supports witness arguments.
