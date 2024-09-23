@@ -164,7 +164,7 @@ stages:
             env:
               NativeToolsOnMachine: true
             displayName: Bootstrapped compiler build
-          - task: VSTest@2
+          - task: VSTest@3
             displayName: Run tests
             inputs:
               testSelector: testAssemblies
@@ -210,7 +210,7 @@ stages:
             inputs:
               contents: 'artifacts/**'
               targetFolder: $(Build.SourcesDirectory)
-          - task: VSTest@2
+          - task: VSTest@3
             displayName: Run tests
             inputs:
               testSelector: $(Pipeline.Workspace)
