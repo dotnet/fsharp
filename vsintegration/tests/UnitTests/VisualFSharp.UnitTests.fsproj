@@ -143,7 +143,6 @@
     <PackageReference Include="Microsoft.VisualStudio.Validation" Version="$(MicrosoftVisualStudioValidationVersion)" />
     <PackageReference Include="StreamJsonRpc" Version="$(StreamJsonRpcVersion)" />
     <PackageReference Include="Nerdbank.Streams" Version="$(NerdbankStreamsVersion)" />
-    <PackageReference Include="XunitXml.TestLogger" Version="$(XunitXmlTestLoggerVersion)" />
   </ItemGroup>
 
 </Project>
