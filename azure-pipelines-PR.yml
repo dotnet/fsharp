@@ -142,7 +142,7 @@ stages:
         # Net472 testing
         - job: TomasTestingWithTestsNet472
           strategy:
-            parallel: 3
+            parallel: 8
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(WindowsMachineQueueName)
@@ -213,8 +213,8 @@ stages:
           - task: VSTest@3
             displayName: Run tests
             inputs:
-              testSelector: $(Pipeline.Workspace)
-              searchFolder: $(Build.SourcesDirectory)
+              testSelector: 'testAssemblies'
+              searchFolder: $(Pipeline.Workspace)\fsharp_compiler_artifacts
               #searchFolder: '$(Pipeline.Workspace)\fsharp_compiler_artifacts'
               testAssemblyVer2: |
                 artifacts\bin\FSharpSuite.Tests\Release\net9.0\FSharpSuite.Tests.dll
