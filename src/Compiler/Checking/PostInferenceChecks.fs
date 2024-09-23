@@ -2579,9 +2579,8 @@ let CheckEntityDefn cenv env (tycon: Entity) =
         if not tycon.IsTypeAbbrev then
             let interfaces =
                 GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g cenv.amap m ty
-                |> Seq.collect (AllSuperTypesOfType g cenv.amap m AllowMultiIntfInstantiations.Yes)
-                |> Seq.filter (isInterfaceTy g)
-                |> Seq.toList
+                |> List.collect (AllSuperTypesOfType g cenv.amap m AllowMultiIntfInstantiations.Yes)
+                |> List.filter (isInterfaceTy g)
             CheckMultipleInterfaceInstantiations cenv ty interfaces false m
 
         // Check fields. We check these late because we have to have first checked that the structs are

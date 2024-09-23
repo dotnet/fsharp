@@ -2047,7 +2047,7 @@ module TastDefinitionPrinting =
                 |> List.filter (fun (_, compgen, _) -> not compgen)
                 |> List.map p13
             else
-                GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty |> Seq.toList
+                GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty
 
         let iimplsLs =
             iimpls

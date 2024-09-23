@@ -19,14 +19,6 @@ open Import
 
 #nowarn "3391"
 
-[<RequireQualifiedAccess>]
-module Option =
-    let inline toSeq o =
-        match o with
-        | Some x -> Seq.singleton x
-        | None -> Seq.empty
-
-
 /// Implements a :> b without coercion based on finalized (no type variable) types
 // Note: This relation is approximate and not part of the language specification.
 //
@@ -41,10 +33,8 @@ let rec TypeDefinitelySubsumesTypeNoCoercion ndeep g amap m ty1 ty2 =
     if ndeep > 100 then
         error(InternalError("Large class hierarchy (possibly recursive, detected in TypeDefinitelySubsumesTypeNoCoercion), ty1 = " + (DebugPrint.showType ty1), m))
 
-    if ty1 === ty2 then
-        true
-    elif typeEquiv g ty1 ty2 then
-        true
+    if ty1 === ty2 then true
+    elif typeEquiv g ty1 ty2 then true
     else
         let ty1 = stripTyEqns g ty1
         let ty2 = stripTyEqns g ty2
@@ -61,7 +51,7 @@ let rec TypeDefinitelySubsumesTypeNoCoercion ndeep g amap m ty1 ty2 =
         // Follow the interface hierarchy
         (isInterfaceTy g ty1 &&
             ty2 |> GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m
-                |> Seq.exists (TypeDefinitelySubsumesTypeNoCoercion (ndeep+1) g amap m ty1))))
+                |> List.exists (TypeDefinitelySubsumesTypeNoCoercion (ndeep+1) g amap m ty1))))
 
 let stripAll stripMeasures g ty =
     if stripMeasures then
@@ -78,40 +68,37 @@ let rec TypesFeasiblyEquivalent stripMeasures ndeep g amap m ty1 ty2 =
     let ty1 = stripAll stripMeasures g ty1
     let ty2 = stripAll stripMeasures g ty2
 
-    let equivalent =
-        match ty1, ty2 with
-        | TType_measure _, TType_measure _
-        | TType_var _, _
-        | _, TType_var _ -> true
+    match ty1, ty2 with
+    | TType_measure _, TType_measure _
+    | TType_var _, _
+    | _, TType_var _ -> true
 
-        | TType_app (tcref1, l1, _), TType_app (tcref2, l2, _) when tyconRefEq g tcref1 tcref2 ->
-            List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2
+    | TType_app (tcref1, l1, _), TType_app (tcref2, l2, _) when tyconRefEq g tcref1 tcref2 ->
+        List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2
 
-        | TType_anon (anonInfo1, l1),TType_anon (anonInfo2, l2) ->
-            (evalTupInfoIsStruct anonInfo1.TupInfo = evalTupInfoIsStruct anonInfo2.TupInfo) &&
-            (match anonInfo1.Assembly, anonInfo2.Assembly with ccu1, ccu2 -> ccuEq ccu1 ccu2) &&
-            (anonInfo1.SortedNames = anonInfo2.SortedNames) &&
-            List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2
+    | TType_anon (anonInfo1, l1),TType_anon (anonInfo2, l2) ->
+        (evalTupInfoIsStruct anonInfo1.TupInfo = evalTupInfoIsStruct anonInfo2.TupInfo) &&
+        (match anonInfo1.Assembly, anonInfo2.Assembly with ccu1, ccu2 -> ccuEq ccu1 ccu2) &&
+        (anonInfo1.SortedNames = anonInfo2.SortedNames) &&
+        List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2
 
-        | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2) ->
-            evalTupInfoIsStruct tupInfo1 = evalTupInfoIsStruct tupInfo2 &&
-            List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2
+    | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2) ->
+        evalTupInfoIsStruct tupInfo1 = evalTupInfoIsStruct tupInfo2 &&
+        List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2
 
-        | TType_fun (domainTy1, rangeTy1, _), TType_fun (domainTy2, rangeTy2, _) ->
-            TypesFeasiblyEquivalent stripMeasures ndeep g amap m domainTy1 domainTy2 &&
-            TypesFeasiblyEquivalent stripMeasures ndeep g amap m rangeTy1 rangeTy2
+    | TType_fun (domainTy1, rangeTy1, _), TType_fun (domainTy2, rangeTy2, _) ->
+        TypesFeasiblyEquivalent stripMeasures ndeep g amap m domainTy1 domainTy2 &&
+        TypesFeasiblyEquivalent stripMeasures ndeep g amap m rangeTy1 rangeTy2
 
-        | _ ->
-            false
-
-    equivalent
+    | _ ->
+        false
 
 /// The feasible equivalence relation. Part of the language spec.
-let inline TypesFeasiblyEquiv ndeep g amap m ty1 ty2 =
+let TypesFeasiblyEquiv ndeep g amap m ty1 ty2 =
     TypesFeasiblyEquivalent false ndeep g amap m ty1 ty2
 
 /// The feasible equivalence relation after stripping Measures.
-let inline TypesFeasiblyEquivStripMeasures g amap m ty1 ty2 =
+let TypesFeasiblyEquivStripMeasures g amap m ty1 ty2 =
     TypesFeasiblyEquivalent true 0 g amap m ty1 ty2
 
 let inline TryGetCachedTypeSubsumption (g: TcGlobals) (amap: ImportMap) key =
@@ -354,5 +341,5 @@ let IteratedAdjustLambdaToMatchValReprInfo g amap valReprInfo lambdaExpr =
 /// "Single Feasible Type" inference
 /// Look for the unique supertype of ty2 for which ty2 :> ty1 might feasibly hold
 let FindUniqueFeasibleSupertype g amap m ty1 ty2 =
-    let supertypes = Seq.append (Option.toSeq (GetSuperTypeOfType g amap m ty2)) (GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2)
-    supertypes |> Seq.tryFind (TypeFeasiblySubsumesType 0 g amap m ty1 NoCoerce)
+    let supertypes = Option.toList (GetSuperTypeOfType g amap m ty2) @ (GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2)
+    supertypes |> List.tryFind (TypeFeasiblySubsumesType 0 g amap m ty1 NoCoerce)
