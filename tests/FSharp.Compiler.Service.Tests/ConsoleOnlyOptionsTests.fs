@@ -22,6 +22,7 @@ let ``fsc help text is displayed correctly`` () =
      let blocks = GetCoreFscCompilerOptions builder
      let help = GetHelpFsc builder blocks
      let actualHelp = help.Replace("\r\n", Environment.NewLine)
+     let expectedHelp = expectedHelp.Replace("\r\n", Environment.NewLine)
 
      Assert.Equal(expectedHelp, actualHelp)
 

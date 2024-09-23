@@ -767,18 +767,11 @@ type TcConfigBuilder =
             doTLR = false
             doFinalSimplify = false
             optsOn = false
-            optSettings =
-                { OptimizationSettings.Defaults with
-                    processingMode =
-                        if FSharpExperimentalFeaturesEnabledAutomatically then
-                            OptimizationProcessingMode.Parallel
-                        else
-                            OptimizationProcessingMode.Sequential
-                }
+            optSettings = OptimizationSettings.Defaults
             emitTailcalls = true
             deterministic = false
             concurrentBuild = true
-            parallelIlxGen = FSharpExperimentalFeaturesEnabledAutomatically
+            parallelIlxGen = false
             emitMetadataAssembly = MetadataAssemblyGeneration.None
             preferredUiLang = None
             lcid = None
@@ -824,11 +817,7 @@ type TcConfigBuilder =
             captureIdentifiersWhenParsing = false
             typeCheckingConfig =
                 {
-                    TypeCheckingConfig.Mode =
-                        if FSharpExperimentalFeaturesEnabledAutomatically then
-                            TypeCheckingMode.Graph
-                        else
-                            TypeCheckingMode.Sequential
+                    TypeCheckingConfig.Mode = TypeCheckingMode.Graph
                     DumpGraph = false
                 }
             dumpSignatureData = false

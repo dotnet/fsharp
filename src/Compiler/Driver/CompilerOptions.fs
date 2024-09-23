@@ -571,6 +571,41 @@ let SetDeterministicSwitch (tcConfigB: TcConfigBuilder) switch =
 let SetRealsig (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.realsig <- (switch = OptionSwitch.On)
 
+let SetGraphTypeCheckingSwitch (tcConfigB: TcConfigBuilder) switch =
+    match switch with
+    | OptionSwitch.On ->
+        tcConfigB.typeCheckingConfig <-
+            { tcConfigB.typeCheckingConfig with
+                TypeCheckingConfig.Mode = TypeCheckingMode.Graph
+            }
+
+    | OptionSwitch.Off ->
+        tcConfigB.typeCheckingConfig <-
+            { tcConfigB.typeCheckingConfig with
+                TypeCheckingConfig.Mode = TypeCheckingMode.Sequential
+            }
+
+let SetParallelOptimizationSwitch (tcConfigB: TcConfigBuilder) switch =
+    match switch with
+    | OptionSwitch.On ->
+        tcConfigB.optSettings <-
+            { tcConfigB.optSettings with
+                processingMode = OptimizationProcessingMode.Parallel
+            }
+    | OptionSwitch.Off ->
+        tcConfigB.optSettings <-
+            { tcConfigB.optSettings with
+                processingMode = OptimizationProcessingMode.Sequential
+            }
+
+let SetParallelIlxGenSwitch (tcConfigB: TcConfigBuilder) switch =
+    tcConfigB.parallelIlxGen <- (switch = OptionSwitch.On)
+
+let SetPparallelReferenceResolutionSwitch (tcConfigB: TcConfigBuilder) switch =
+    match switch with
+    | OptionSwitch.On -> tcConfigB.parallelReferenceResolution <- ParallelReferenceResolution.On
+    | OptionSwitch.Off -> tcConfigB.parallelReferenceResolution <- ParallelReferenceResolution.Off
+
 let SetReferenceAssemblyOnlySwitch (tcConfigB: TcConfigBuilder) switch =
     match tcConfigB.emitMetadataAssembly with
     | MetadataAssemblyGeneration.None when (not tcConfigB.standalone) && tcConfigB.extraStaticLinkRoots.IsEmpty ->
@@ -1055,6 +1090,38 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
                 OptionUnit(fun () -> tcConfigB.useReflectionFreeCodeGen <- true),
                 None,
                 Some(FSComp.SR.optsReflectionFree ())
+            )
+
+            CompilerOption(
+                "graphtypechecking",
+                tagNone,
+                OptionSwitch(SetGraphTypeCheckingSwitch tcConfigB),
+                None,
+                Some(FSComp.SR.optsGraphTypeChecking ())
+            )
+
+            CompilerOption(
+                "paralleloptimization",
+                tagNone,
+                OptionSwitch(SetParallelOptimizationSwitch tcConfigB),
+                None,
+                Some(FSComp.SR.optsParallelOptimization ())
+            )
+
+            CompilerOption(
+                "parallelilxgen",
+                tagNone,
+                OptionSwitch(SetParallelIlxGenSwitch tcConfigB),
+                None,
+                Some(FSComp.SR.optsParallelIlxGen ())
+            )
+
+            CompilerOption(
+                "parallelreferenceresolution",
+                tagNone,
+                OptionSwitch(SetPparallelReferenceResolutionSwitch tcConfigB),
+                None,
+                Some(FSComp.SR.optsParallelReferenceResolution ())
             )
         ]
 
