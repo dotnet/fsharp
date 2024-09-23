@@ -139,6 +139,8 @@ type SynExprLetOrUseTrivia =
 [<NoEquality; NoComparison>]
 type SynExprLetOrUseBangTrivia =
     {
+        /// The syntax range of the `let!` or `use!` keyword.
+        LetOrUseBangKeyword: range
         /// The syntax range of the `=` token.
         EqualsRange: range option
     }
