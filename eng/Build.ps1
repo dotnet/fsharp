@@ -615,7 +615,10 @@ try {
     $script:BuildMessage = "Failure running tests"
 
     if ($testCoreClr) {
-        $bgJob = TestUsingMSBuild -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $script:coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\" -asBackgroundJob $true
+        $xunitArgs = ""
+        if ($ci) {
+            $xunitArgs = " -- xUnit.ParallelizeTestCollections=false xUnit.MaxParallelThreads=1"
+        }
 
         TestSolutionUsingMSBuild -testSolution "$RepoRoot\FSharp.sln" -targetFramework $script:coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -xunitArgs $xunitArgs
     }
