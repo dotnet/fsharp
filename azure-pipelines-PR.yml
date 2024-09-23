@@ -488,7 +488,7 @@ stages:
             displayName: Publish Test Results
             inputs:
               testResultsFormat: 'xUnit'
-              testRunTitle: WindowsCompressedMetadata $(_configuration) $(_testKind)
+              testRunTitle: WindowsCompressedMetadata $(_testKind)
               mergeTestResults: true
               testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_configuration)'
