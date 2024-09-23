@@ -488,6 +488,7 @@ stages:
             displayName: Publish Test Results
             inputs:
               testResultsFormat: 'xUnit'
+              testRunTitle: WindowsCompressedMetadata $(_configuration) $(_testKind)
               mergeTestResults: true
               testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_configuration)'
@@ -559,6 +560,7 @@ stages:
             displayName: Publish Test Results
             inputs:
               testResultsFormat: 'xUnit'
+              testRunTitle: Linux
               testResultsFiles: '*.xml'
               mergeTestResults: true
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
@@ -604,6 +606,7 @@ stages:
             inputs:
               testResultsFormat: 'xUnit'
               testResultsFiles: '*.xml'
+              testRunTitle: MacOS
               mergeTestResults: true
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
             continueOnError: true
