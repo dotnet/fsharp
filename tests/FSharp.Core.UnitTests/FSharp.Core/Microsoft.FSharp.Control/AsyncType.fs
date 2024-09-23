@@ -27,7 +27,7 @@ module AsyncType =
         let onCancellation = cont Cancellation
 
         let expect expected computation =
-            Async.StartWithContinuations(computation, onSuccess expected, onExeption expected, onCancellation expected)
+            Async.StartWithContinuations(computation, onSuccess expected, onException expected, onCancellation expected)
 
         async {
             Async.CancelDefaultToken()
