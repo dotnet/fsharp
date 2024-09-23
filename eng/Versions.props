@@ -195,6 +195,7 @@
     <NerdbankStreamsVersion>2.10.69</NerdbankStreamsVersion>
     <XUnitVersion>2.9.0</XUnitVersion>
     <XUnitRunnerVersion>2.8.2</XUnitRunnerVersion>
+    <XunitXmlTestLoggerVersion>3.1.17</XunitXmlTestLoggerVersion>
     <FluentAssertionsVersion>5.10.3</FluentAssertionsVersion>
     <HumanizerCoreVersion>2.2.0</HumanizerCoreVersion>
     <!-- -->
