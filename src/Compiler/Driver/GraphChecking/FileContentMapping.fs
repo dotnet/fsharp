@@ -523,7 +523,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             visit expr (fun exprNodes ->
                 [ yield! exprNodes; yield! List.collect visitSynMatchClause clauses ]
                 |> continuation)
-        | SynExpr.DoBang(expr= expr) -> visit expr continuation
+        | SynExpr.DoBang(expr = expr) -> visit expr continuation
         | SynExpr.WhileBang(whileExpr = whileExpr; doExpr = doExpr) ->
             visit whileExpr (fun whileNodes -> visit doExpr (fun doNodes -> whileNodes @ doNodes |> continuation))
         | SynExpr.LibraryOnlyILAssembly(typeArgs = typeArgs; args = args; retTy = retTy) ->

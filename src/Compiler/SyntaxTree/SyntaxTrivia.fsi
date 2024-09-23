@@ -168,7 +168,7 @@ type SynExprMatchBangTrivia =
         /// The syntax range of the `with` keyword
         WithKeyword: range
     }
-    
+
 /// Represents additional information for SynExpr.DoBang
 [<NoEquality; NoComparison>]
 type SynExprDoBangTrivia =

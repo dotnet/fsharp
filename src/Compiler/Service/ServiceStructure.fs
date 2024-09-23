@@ -254,7 +254,7 @@ module Structure =
                 rcheck Scope.YieldOrReturnBang Collapse.Below r r
                 parseExpr e
 
-            | SynExpr.DoBang(expr= e; range = r) ->
+            | SynExpr.DoBang(expr = e; range = r) ->
                 rcheck Scope.Do Collapse.Below r <| Range.modStart 3 r
                 parseExpr e
 
