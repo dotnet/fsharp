@@ -217,7 +217,7 @@ stages:
               searchFolder: $(Pipeline.Workspace)\fsharp_compiler_artifacts
               #searchFolder: '$(Pipeline.Workspace)\fsharp_compiler_artifacts'
               testAssemblyVer2: |
-                artifacts\bin\FSharpSuite.Tests\Release\net9.0\FSharpSuite.Tests.dll
+                **\FSharpSuite.Tests\Release\net9.0\FSharpSuite.Tests.dll
                 !**\obj\**
               runInParallel: False # This disables multi-threaded test runs
               failOnMinTestsNotRun: True
