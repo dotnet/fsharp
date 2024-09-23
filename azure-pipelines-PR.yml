@@ -142,7 +142,7 @@ stages:
         # Net472 testing
         - job: TomasTestingWithTestsNet472
           strategy:
-            parallel: 8
+            parallel: 3
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(WindowsMachineQueueName)
