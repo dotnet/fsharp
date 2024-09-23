@@ -4,7 +4,7 @@ module UnitTests.TestLib.Salsa
 
 open System
 open System.IO
-open NUnit.Framework
+open Xunit
 open Salsa.Salsa
 open Salsa.VsOpsUtils
 open System.Text.RegularExpressions
@@ -36,7 +36,7 @@ let AssertContainsInOrder(s:string,cs:string list) =
     containsInOrderFrom 0 cs
     
 let AssertContains(value: string, substring: string) =
-    Assert.That(value, Contains.Substring substring)
+    Assert.Contains(substring, value)
         
 let AssertArrayContainsPartialMatchOf(a:string array,c) =
     let found = ref false

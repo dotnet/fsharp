@@ -25,7 +25,7 @@ open Microsoft.Build.Execution
 open Microsoft.Build.Framework
         
 #nowarn "52" // The value has been copied to ensure the original is not mutated
-open NUnit.Framework
+open Xunit
 open UnitTests.TestLib.Utils
 open UnitTests.TestLib.Utils.Asserts
 open UnitTests.TestLib.Utils.FilesystemHelpers
@@ -76,20 +76,6 @@ type TheTests() =
         project.FindNodesOfType(l)
         l.[0]            
         
-    /////////////////////////////////
-    /// Called per test
-    [<SetUp>]
-    member this.Setup() =
-        ()
-
-        
-    [<TearDown>]
-    member this.TearDown() =
-        // help find leaks per-test
-        System.GC.Collect()  
-        System.GC.WaitForPendingFinalizers()
-        ()
-
     /////////////////////////////////
     /// helpers
     static member AssertMatches (r : Regex) (s:string) =
