@@ -27,7 +27,8 @@ ImplFile
                                           InKeyword = None })],
                        YieldOrReturn
                          ((false, true), Const (Unit, (5,11--5,13)), (5,4--5,13)),
-                       (3,4--5,13), { EqualsRange = Some (3,11--3,12) }),
+                       (3,4--5,13), { LetOrUseBangKeyword = (3,4--3,8)
+                                      EqualsRange = Some (3,11--3,12) }),
                     (2,5--6,1)), (2,0--6,1)), (2,0--6,1))], PreXmlDocEmpty, [],
           None, (2,0--6,1), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
