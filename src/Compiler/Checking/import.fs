@@ -105,7 +105,6 @@ type [<Struct; NoComparison; CustomEquality>] TTypeCacheKey =
 type ImportMap(g: TcGlobals, assemblyLoader: AssemblyLoader) =
     let typeRefToTyconRefCache = ConcurrentDictionary<ILTypeRef, TyconRef>()
 
-    // TODO(vlza): should that be an MRU cache, so we can evict the entries we are not (or checked just once or twice)?
     let typeSubsumptionCache = ConcurrentDictionary<TTypeCacheKey, bool>()
 
     member _.g = g

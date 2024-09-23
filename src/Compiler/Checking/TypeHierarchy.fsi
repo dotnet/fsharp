@@ -38,7 +38,7 @@ type AllowMultiIntfInstantiations =
     | No
 
 /// Fold, do not follow interfaces (unless the type is itself an interface)
-val inline FoldPrimaryHierarchyOfType:
+val FoldPrimaryHierarchyOfType:
     f: (TType -> 'a -> 'a) ->
     g: TcGlobals ->
     amap: ImportMap ->
@@ -49,7 +49,7 @@ val inline FoldPrimaryHierarchyOfType:
         'a
 
 /// Fold, following interfaces. Skipping interfaces that lie outside the referenced assembly set is allowed.
-val inline FoldEntireHierarchyOfType:
+val FoldEntireHierarchyOfType:
     f: (TType -> 'a -> 'a) ->
     g: TcGlobals ->
     amap: ImportMap ->
@@ -60,7 +60,7 @@ val inline FoldEntireHierarchyOfType:
         'a
 
 /// Iterate, following interfaces. Skipping interfaces that lie outside the referenced assembly set is allowed.
-val inline IterateEntireHierarchyOfType:
+val IterateEntireHierarchyOfType:
     f: (TType -> unit) ->
     g: TcGlobals ->
     amap: ImportMap ->
@@ -70,7 +70,7 @@ val inline IterateEntireHierarchyOfType:
         unit
 
 /// Search for one element satisfying a predicate, following interfaces
-val inline ExistsInEntireHierarchyOfType:
+val ExistsInEntireHierarchyOfType:
     f: (TType -> bool) ->
     g: TcGlobals ->
     amap: ImportMap ->
@@ -80,11 +80,11 @@ val inline ExistsInEntireHierarchyOfType:
         bool
 
 /// Search for one element where a function returns a 'Some' result, following interfaces
-val inline SearchEntireHierarchyOfType:
+val SearchEntireHierarchyOfType:
     f: (TType -> bool) -> g: TcGlobals -> amap: ImportMap -> m: range -> ty: TType -> TType option
 
 /// Get all super types of the type, including the type itself
-val inline AllSuperTypesOfType:
+val AllSuperTypesOfType:
     g: TcGlobals ->
     amap: ImportMap ->
     m: range ->
@@ -93,7 +93,7 @@ val inline AllSuperTypesOfType:
         TType list
 
 /// Get all interfaces of a type, including the type itself if it is an interface
-val inline AllInterfacesOfType:
+val AllInterfacesOfType:
     g: TcGlobals ->
     amap: ImportMap ->
     m: range ->
@@ -108,11 +108,11 @@ val inline HaveSameHeadType: g: TcGlobals -> ty1: TType -> ty2: TType -> bool
 val inline HasHeadType: g: TcGlobals -> tcref: TyconRef -> ty2: TType -> bool
 
 /// Check if a type exists somewhere in the hierarchy which has the same head type as the given type (note, the given type need not have a head type at all)
-val inline ExistsSameHeadTypeInHierarchy:
+val ExistsSameHeadTypeInHierarchy:
     g: TcGlobals -> amap: ImportMap -> m: range -> typeToSearchFrom: TType -> typeToLookFor: TType -> bool
 
 /// Check if a type exists somewhere in the hierarchy which has the given head type.
-val inline ExistsHeadTypeInEntireHierarchy:
+val ExistsHeadTypeInEntireHierarchy:
     g: TcGlobals -> amap: ImportMap -> m: range -> typeToSearchFrom: TType -> tcrefToLookFor: TyconRef -> bool
 
 /// Read an Abstract IL type from metadata and convert to an F# type.

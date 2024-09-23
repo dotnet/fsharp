@@ -37,10 +37,9 @@ module Option =
 //     ilxgen.fs: GenCoerce (omit unnecessary castclass or isinst instruction)
 //
 let rec TypeDefinitelySubsumesTypeNoCoercion ndeep g amap m ty1 ty2 =
-    // TODO(vlza): Cache?
 
     if ndeep > 100 then
-        error(InternalError("recursive class hierarchy (detected in TypeDefinitelySubsumesTypeNoCoercion), ty1 = " + (DebugPrint.showType ty1), m))
+        error(InternalError("Large class hierarchy (possibly recursive, detected in TypeDefinitelySubsumesTypeNoCoercion), ty1 = " + (DebugPrint.showType ty1), m))
 
     if ty1 === ty2 then
         true
@@ -73,10 +72,8 @@ let stripAll stripMeasures g ty =
 /// The feasible equivalence relation. Part of the language spec.
 let rec TypesFeasiblyEquivalent stripMeasures ndeep g amap m ty1 ty2 =
 
-    // TODO(vlza): Cache?
-
     if ndeep > 100 then
-        error(InternalError("recursive class hierarchy (detected in TypeFeasiblySubsumesType), ty1 = " + (DebugPrint.showType ty1), m));
+        error(InternalError("Large class hierarchy (possibly recursive, detected in TypeFeasiblySubsumesType), ty1 = " + (DebugPrint.showType ty1), m));
 
     let ty1 = stripAll stripMeasures g ty1
     let ty2 = stripAll stripMeasures g ty2
@@ -117,20 +114,33 @@ let inline TypesFeasiblyEquiv ndeep g amap m ty1 ty2 =
 let inline TypesFeasiblyEquivStripMeasures g amap m ty1 ty2 =
     TypesFeasiblyEquivalent true 0 g amap m ty1 ty2
 
+let inline TryGetCachedTypeSubsumption (g: TcGlobals) (amap: ImportMap) key =
+    if g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
+        match amap.TypeSubsumptionCache.TryGetValue(key) with
+        | true, subsumes -> ValueSome subsumes
+        | false, _ -> ValueNone
+    else
+        ValueNone
+
+let inline UpdateCachedTypeSubsumption (g: TcGlobals) (amap: ImportMap) key subsumes =
+
+    if g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
+        amap.TypeSubsumptionCache[key] <- subsumes
+
+    subsumes
+
 /// The feasible coercion relation. Part of the language spec.
 let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: Import.ImportMap) m (ty1: TType) (canCoerce: CanCoerce) (ty2: TType) =
 
     if ndeep > 100 then
-        error(InternalError("recursive class hierarchy (detected in TypeFeasiblySubsumesType), ty1 = " + (DebugPrint.showType ty1), m))
+        error(InternalError("Large class hierarchy (possibly recursive, detected in TypeFeasiblySubsumesType), ty1 = " + (DebugPrint.showType ty1), m))
 
-    let key: TTypeCacheKey = struct(ty1, ty2, canCoerce, g)
+    let key: TTypeCacheKey = struct (ty1, ty2, canCoerce, g)
 
-    match amap.TypeSubsumptionCache.TryGetValue(key) with
-    | true, subsumes ->
-        // printfn $"TypeFeasiblySubsumesType Hit: ty1={DebugPrint.showType ty1}; ty2={DebugPrint.showType ty2}; CanCoerce={canCoerce}; Subsumes={subsumes}; ty1Hash={ty1Hash}; ty2Hash={ty2Hash}; combinedHash={key}"
+    match TryGetCachedTypeSubsumption g amap key with
+    | ValueSome subsumes ->
         subsumes
-    | false, _ ->
-        // printfn $"TypeFeasiblySubsumesType Miss: ty1={DebugPrint.showType ty1}; ty2={DebugPrint.showType ty2}; CanCoerce={canCoerce}; ty1Hash={ty1Hash}; ty2Hash={ty2Hash}; combinedHash={key}"
+    | ValueNone ->
         let subsumes =
             match ty1, ty2 with
             | TType_measure _, TType_measure _
@@ -159,11 +169,7 @@ let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: Import.ImportMap) m
                         else
                             false
 
-        amap.TypeSubsumptionCache[key] <- subsumes
-
-        // printfn $"TypeFeasiblySubsumesType Store: ty1={DebugPrint.showType ty1}; ty2={DebugPrint.showType ty2}; CanCoerce={canCoerce}; Subsumes={subsumes}; ty1Hash={ty1Hash}; ty2Hash={ty2Hash}; combinedHash={key}"
-
-        subsumes
+        UpdateCachedTypeSubsumption g amap key subsumes
 
 and TypeFeasiblySubsumesTypeWithSupertypeCheck g amap m ndeep ty1 ty2 =
     match GetSuperTypeOfType g amap m ty2 with
