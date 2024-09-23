@@ -43,10 +43,10 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
+open Import
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
-open Import
 #endif
 
 //-------------------------------------------------------------------------
