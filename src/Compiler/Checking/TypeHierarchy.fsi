@@ -29,7 +29,7 @@ type SkipUnrefInterfaces =
 /// Collect the set of immediate declared interface types for an F# type, but do not
 /// traverse the type hierarchy to collect further interfaces.
 val GetImmediateInterfacesOfType:
-    skipUnref: SkipUnrefInterfaces -> g: TcGlobals -> amap: ImportMap -> m: range -> ty: TType -> TType seq
+    skipUnref: SkipUnrefInterfaces -> g: TcGlobals -> amap: ImportMap -> m: range -> ty: TType -> TType list
 
 /// Indicates whether we should visit multiple instantiations of the same generic interface or not
 [<RequireQualifiedAccess>]
@@ -102,10 +102,10 @@ val AllInterfacesOfType:
         TType list
 
 /// Check if two types have the same nominal head type
-val inline HaveSameHeadType: g: TcGlobals -> ty1: TType -> ty2: TType -> bool
+val HaveSameHeadType: g: TcGlobals -> ty1: TType -> ty2: TType -> bool
 
 /// Check if a type has a particular head type
-val inline HasHeadType: g: TcGlobals -> tcref: TyconRef -> ty2: TType -> bool
+val HasHeadType: g: TcGlobals -> tcref: TyconRef -> ty2: TType -> bool
 
 /// Check if a type exists somewhere in the hierarchy which has the same head type as the given type (note, the given type need not have a head type at all)
 val ExistsSameHeadTypeInHierarchy:
@@ -116,7 +116,7 @@ val ExistsHeadTypeInEntireHierarchy:
     g: TcGlobals -> amap: ImportMap -> m: range -> typeToSearchFrom: TType -> tcrefToLookFor: TyconRef -> bool
 
 /// Read an Abstract IL type from metadata and convert to an F# type.
-val inline ImportILTypeFromMetadata:
+val ImportILTypeFromMetadata:
     amap: ImportMap ->
     m: range ->
     scoref: ILScopeRef ->
@@ -127,7 +127,7 @@ val inline ImportILTypeFromMetadata:
         TType
 
 /// Read an Abstract IL type from metadata and convert to an F# type, ignoring nullness checking.
-val inline ImportILTypeFromMetadataSkipNullness:
+val ImportILTypeFromMetadataSkipNullness:
     amap: ImportMap -> m: range -> scoref: ILScopeRef -> tinst: TType list -> minst: TType list -> ilTy: ILType -> TType
 
 /// Read an Abstract IL type from metadata, including any attributes that may affect the type itself, and convert to an F# type.
@@ -142,7 +142,7 @@ val ImportILTypeFromMetadataWithAttributes:
         TType
 
 /// Get the parameter type of an IL method.
-val inline ImportParameterTypeFromMetadata:
+val ImportParameterTypeFromMetadata:
     amap: ImportMap ->
     m: range ->
     nullnessSource: Nullness.NullableAttributesSource ->
@@ -154,7 +154,7 @@ val inline ImportParameterTypeFromMetadata:
 
 /// Get the return type of an IL method, taking into account instantiations for type, return attributes and method generic parameters, and
 /// translating 'void' to 'None'.
-val inline ImportReturnTypeFromMetadata:
+val ImportReturnTypeFromMetadata:
     amap: ImportMap ->
     m: range ->
     nullnessSource: Nullness.NullableAttributesSource ->

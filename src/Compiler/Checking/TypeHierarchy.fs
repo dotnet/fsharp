@@ -36,13 +36,13 @@ let GetSuperTypeOfType g amap m ty =
 #if !NO_TYPEPROVIDERS
     let ty =
         match tryTcrefOfAppTy g ty with
-        | ValueSome tcref when tcref.IsProvided -> stripTyEqns g ty
+        | ValueSome tcref when tcref.IsProvided -> stripTyEqns g ty 
         | _ -> stripTyEqnsAndMeasureEqns g ty
 #else
     let ty = stripTyEqnsAndMeasureEqns g ty
 #endif
 
-    let resBeforeNull =
+    let resBeforeNull = 
         match metadataOfTy g ty with
 #if !NO_TYPEPROVIDERS
         | ProvidedTypeMetadata info ->
@@ -85,12 +85,12 @@ let GetSuperTypeOfType g amap m ty =
             else
                 None
 
-    match resBeforeNull with
+    match resBeforeNull with 
     | Some superTy ->
         let nullness = nullnessOfTy g ty
         let superTyWithNull = addNullnessToTy nullness superTy
         Some superTyWithNull
-    | None ->
+    | None -> 
         None
 
 /// Make a type for System.Collections.Generic.IList<ty>
@@ -102,12 +102,12 @@ let mkSystemCollectionsGenericIListTy (g: TcGlobals) ty =
 type SkipUnrefInterfaces = Yes | No
 
 let GetImmediateInterfacesOfMetadataType g amap m skipUnref ty (tcref: TyconRef) tinst =
-    seq {
+    [
         match metadataOfTy g ty with
 #if !NO_TYPEPROVIDERS
         | ProvidedTypeMetadata info ->
             for intfTy in info.ProvidedType.PApplyArray((fun st -> st.GetInterfaces()), "GetInterfaces", m) do
-                yield ImportProvidedType amap m intfTy
+                ImportProvidedType amap m intfTy
 #endif
         | ILTypeMetadata (TILObjectReprData(scoref, _, tdef)) ->
             // ImportILType may fail for an interface if the assembly load set is incomplete and the interface
@@ -123,14 +123,13 @@ let GetImmediateInterfacesOfMetadataType g amap m skipUnref ty (tcref: TyconRef)
                     if checkNullness then
                         let typeAttrs = AttributesFromIL(attrsIdx,attrs)
                         let nullness = {DirectAttributes = typeAttrs; Fallback = FromClass typeAttrs}
-                        yield RescopeAndImportILType scoref amap m tinst nullness intfTy
+                        RescopeAndImportILType scoref amap m tinst nullness intfTy
                     else
-                        yield RescopeAndImportILTypeSkipNullness scoref amap m tinst intfTy
+                        RescopeAndImportILTypeSkipNullness scoref amap m tinst intfTy
 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
             for intfTy in tcref.ImmediateInterfaceTypesOfFSharpTycon do
-               yield instType (mkInstForAppTy g ty) intfTy
-    }
+               instType (mkInstForAppTy g ty) intfTy ]
 
 /// Collect the set of immediate declared interface types for an F# type, but do not
 /// traverse the type hierarchy to collect further interfaces.
@@ -139,7 +138,7 @@ let GetImmediateInterfacesOfMetadataType g amap m skipUnref ty (tcref: TyconRef)
 // IComparable<T> or IEquatable<T>. This is because whether they support these interfaces depend on their
 // constituent types, which may not yet be known in type inference.
 let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
-    seq {
+    [
         match tryAppTy g ty with
         | ValueSome(tcref, tinst) ->
             // Check if this is a measure-annotated type
@@ -160,8 +159,8 @@ let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
 
         // .NET array types are considered to implement IList<T>
         if isArray1DTy g ty then
-            yield mkSystemCollectionsGenericIListTy g (destArrayTy g ty)
-    }
+            mkSystemCollectionsGenericIListTy g (destArrayTy g ty)
+    ]
 
 // Report the interfaces supported by a measure-annotated type.
 //
@@ -186,14 +185,14 @@ let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
 //      There are some exceptions, e.g. IAdditiveIdentity, but these are available3 by different routes in F# and for clarity
 //      it is better to imply omit all
 and GetImmediateInterfacesOfMeasureAnnotatedType skipUnref g amap m ty reprTy =
-    seq {
+    [
         // Suppress any interfaces that derive from IComparable<_> or IEquatable<_>
         // Suppress any interfaces in System.Numerics, since none of them are adequate for units of measure
         for intfTy in GetImmediateInterfacesOfType skipUnref g amap m reprTy do
             if not (ExistsHeadTypeInInterfaceHierarchy g.system_GenericIComparable_tcref skipUnref g amap m intfTy) &&
                not (ExistsHeadTypeInInterfaceHierarchy g.system_GenericIEquatable_tcref skipUnref g amap m intfTy) &&
                not (ExistsSystemNumericsTypeInInterfaceHierarchy skipUnref g amap m intfTy) then
-                yield intfTy
+                intfTy
 
         // NOTE: we should really only report the IComparable<A<'m>> interface for measure-annotated types
         // if the original type supports IComparable<A> somewhere in the hierarchy, likewise IEquatable<A<'m>>.
@@ -201,11 +200,11 @@ and GetImmediateInterfacesOfMeasureAnnotatedType skipUnref g amap m ty reprTy =
         // However since F# 2.0 we have always reported these interfaces for all measure-annotated types.
 
         //if ExistsInInterfaceHierarchy (typeEquiv g (mkAppTy g.system_GenericIComparable_tcref [reprTy])) skipUnref g amap m ty then
-        yield mkWoNullAppTy g.system_GenericIComparable_tcref [ty]
+        mkWoNullAppTy g.system_GenericIComparable_tcref [ty]
 
         //if ExistsInInterfaceHierarchy (typeEquiv g (mkAppTy g.system_GenericIEquatable_tcref [reprTy])) skipUnref g amap m ty then
-        yield mkWoNullAppTy g.system_GenericIEquatable_tcref [ty]
-    }
+        mkWoNullAppTy g.system_GenericIEquatable_tcref [ty]
+    ]
 
 // Check for any System.Numerics type in the interface hierarchy
 and ExistsSystemNumericsTypeInInterfaceHierarchy skipUnref g amap m ity =
@@ -213,11 +212,11 @@ and ExistsSystemNumericsTypeInInterfaceHierarchy skipUnref g amap m ity =
     ExistsInInterfaceHierarchy
         (fun ity2 ->
             match ity2 with
-            | AppTy g (tcref,_) ->
+            | AppTy g (tcref,_) -> 
                 match tcref.CompilationPath.AccessPath with
                 | [("System", _); ("Numerics", _)] -> true
                 | _ -> false
-            | _ -> false)
+            | _ -> false) 
         skipUnref g amap m ity
 
 // Check for IComparable<A>, IEquatable<A> and interfaces that derive from these
@@ -229,8 +228,8 @@ and ExistsInInterfaceHierarchy p skipUnref g amap m intfTy =
     match intfTy with
     | AppTy g (tcref, tinst) ->
         p intfTy ||
-        (GetImmediateInterfacesOfMetadataType g amap m skipUnref intfTy tcref tinst
-         |> Seq.exists (ExistsInInterfaceHierarchy p skipUnref g amap m))
+        (GetImmediateInterfacesOfMetadataType g amap m skipUnref intfTy tcref tinst 
+         |> List.exists (ExistsInInterfaceHierarchy p skipUnref g amap m))
     | _ -> false
 
 /// Indicates whether we should visit multiple instantiations of the same generic interface or not
@@ -242,80 +241,73 @@ type AllowMultiIntfInstantiations = Yes | No
 let FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor g amap m ty acc =
     let rec loop ndeep ty (visitedTycon, visited: TyconRefMultiMap<_>, acc as state) =
 
-        let seenThisTycon =
+        let seenThisTycon = 
             match tryTcrefOfAppTy g ty with
             | ValueSome tcref -> Set.contains tcref.Stamp visitedTycon
             | _ -> false
 
         // Do not visit the same type twice. Could only be doing this if we've seen this tycon
-        if seenThisTycon && List.exists (typeEquiv g ty) (visited.Find (tcrefOfAppTy g ty)) then
-            state
-        else
+        if seenThisTycon && List.exists (typeEquiv g ty) (visited.Find (tcrefOfAppTy g ty)) then state else
 
-            // Do not visit the same tycon twice, e.g. I<int> and I<string>, collect I<int> only, unless directed to allow this
-            if seenThisTycon && allowMultiIntfInst = AllowMultiIntfInstantiations.No then
+        // Do not visit the same tycon twice, e.g. I<int> and I<string>, collect I<int> only, unless directed to allow this
+        if seenThisTycon && allowMultiIntfInst = AllowMultiIntfInstantiations.No then state else
+
+        let state =
+            match tryTcrefOfAppTy g ty with
+            | ValueSome tcref ->
+                let visitedTycon = Set.add tcref.Stamp visitedTycon
+                visitedTycon, visited.Add (tcref, ty), acc
+            | _ ->
                 state
+
+        if ndeep > 100 then (errorR(Error((FSComp.SR.recursiveClassHierarchy (showType ty)), m)); (visitedTycon, visited, acc)) else
+        let visitedTycon, visited, acc =
+            if isInterfaceTy g ty then
+                List.foldBack
+                   (loop (ndeep+1))
+                   (GetImmediateInterfacesOfType skipUnref g amap m ty)
+                      (loop ndeep g.obj_ty_noNulls state)
             else
-
-                let state =
-                    match tryTcrefOfAppTy g ty with
-                    | ValueSome tcref ->
-                        let visitedTycon = Set.add tcref.Stamp visitedTycon
-                        visitedTycon, visited.Add (tcref, ty), acc
-                    | _ ->
+                match tryDestTyparTy g ty with
+                | ValueSome tp ->
+                    let state = loop (ndeep+1) g.obj_ty_noNulls state
+                    List.foldBack
+                        (fun x vacc ->
+                          match x with
+                          | TyparConstraint.MayResolveMember _
+                          | TyparConstraint.DefaultsTo _
+                          | TyparConstraint.SupportsComparison _
+                          | TyparConstraint.SupportsEquality _
+                          | TyparConstraint.IsEnum _
+                          | TyparConstraint.IsDelegate _
+                          | TyparConstraint.SupportsNull _
+                          | TyparConstraint.NotSupportsNull _
+                          | TyparConstraint.IsNonNullableStruct _
+                          | TyparConstraint.IsUnmanaged _
+                          | TyparConstraint.IsReferenceType _
+                          | TyparConstraint.SimpleChoice _
+                          | TyparConstraint.RequiresDefaultConstructor _ -> vacc
+                          | TyparConstraint.CoercesTo(cty, _) ->
+                                  loop (ndeep + 1)  cty vacc)
+                        tp.Constraints
                         state
-
-                if ndeep > 100 then
-                    (errorR(Error((FSComp.SR.recursiveClassHierarchy (showType ty)), m)); (visitedTycon, visited, acc))
-                else
-                    let visitedTycon, visited, acc =
-                        if isInterfaceTy g ty then
-                            Seq.foldBack
-                                (loop (ndeep+1))
-                                (GetImmediateInterfacesOfType skipUnref g amap m ty)
-                                (loop ndeep g.obj_ty_noNulls state)
+                | _ ->
+                    let state =
+                        if followInterfaces then
+                            List.foldBack
+                              (loop (ndeep+1))
+                              (GetImmediateInterfacesOfType skipUnref g amap m ty)
+                              state
                         else
-                            match tryDestTyparTy g ty with
-                            | ValueSome tp ->
-                                let state = loop (ndeep+1) g.obj_ty_noNulls state
-                                List.foldBack
-                                    (fun x vacc ->
-                                    match x with
-                                    | TyparConstraint.MayResolveMember _
-                                    | TyparConstraint.DefaultsTo _
-                                    | TyparConstraint.SupportsComparison _
-                                    | TyparConstraint.SupportsEquality _
-                                    | TyparConstraint.IsEnum _
-                                    | TyparConstraint.IsDelegate _
-                                    | TyparConstraint.SupportsNull _
-                                    | TyparConstraint.NotSupportsNull _
-                                    | TyparConstraint.IsNonNullableStruct _
-                                    | TyparConstraint.IsUnmanaged _
-                                    | TyparConstraint.IsReferenceType _
-                                    | TyparConstraint.SimpleChoice _
-                                    | TyparConstraint.RequiresDefaultConstructor _ -> vacc
-                                    | TyparConstraint.CoercesTo(cty, _) ->
-                                            loop (ndeep + 1)  cty vacc)
-                                    tp.Constraints
-                                    state
-                            | _ ->
-                                let state =
-                                    if followInterfaces then
-                                        Seq.foldBack
-                                            (loop (ndeep+1))
-                                            (GetImmediateInterfacesOfType skipUnref g amap m ty)
-                                            state
-                                    else
-                                        state
-
-                                Option.foldBack
-                                    (loop (ndeep+1))
-                                    (GetSuperTypeOfType g amap m ty)
-                                    state
-
-                    let acc = visitor ty acc
-                    (visitedTycon, visited, acc)
-
+                            state
+                    let state =
+                        Option.foldBack
+                          (loop (ndeep+1))
+                          (GetSuperTypeOfType g amap m ty)
+                          state
+                    state
+        let acc = visitor ty acc
+        (visitedTycon, visited, acc)
     loop 0 ty (Set.empty, TyconRefMultiMap<_>.Empty, acc)  |> p33
 
 /// Fold, do not follow interfaces (unless the type is itself an interface)
@@ -352,7 +344,7 @@ let AllInterfacesOfType g amap m allowMultiIntfInst ty =
     AllSuperTypesOfType g amap m allowMultiIntfInst ty |> List.filter (isInterfaceTy g)
 
 /// Check if two types have the same nominal head type
-let inline HaveSameHeadType g ty1 ty2 =
+let HaveSameHeadType g ty1 ty2 =
     match tryTcrefOfAppTy g ty1 with
     | ValueSome tcref1 ->
         match tryTcrefOfAppTy g ty2 with
@@ -361,7 +353,7 @@ let inline HaveSameHeadType g ty1 ty2 =
     | _ -> false
 
 /// Check if a type has a particular head type
-let inline HasHeadType g tcref ty2 =
+let HasHeadType g tcref ty2 =
     match tryTcrefOfAppTy g ty2 with
     | ValueSome tcref2 -> tyconRefEq g tcref tcref2
     | ValueNone -> false
@@ -375,11 +367,11 @@ let ExistsHeadTypeInEntireHierarchy g amap m typeToSearchFrom tcrefToLookFor =
     ExistsInEntireHierarchyOfType (HasHeadType g tcrefToLookFor) g amap m AllowMultiIntfInstantiations.Yes typeToSearchFrom
 
 /// Read an Abstract IL type from metadata and convert to an F# type.
-let inline ImportILTypeFromMetadata amap m scoref tinst minst nullnessSource ilTy =
+let ImportILTypeFromMetadata amap m scoref tinst minst nullnessSource ilTy =
     RescopeAndImportILType scoref amap m (tinst@minst) nullnessSource ilTy
 
 /// Read an Abstract IL type from metadata and convert to an F# type, ignoring nullness checking.
-let inline ImportILTypeFromMetadataSkipNullness amap m scoref tinst minst ilTy =
+let ImportILTypeFromMetadataSkipNullness amap m scoref tinst minst ilTy =
     RescopeAndImportILTypeSkipNullness scoref amap m (tinst@minst) ilTy
 
 /// Read an Abstract IL type from metadata, including any attributes that may affect the type itself, and convert to an F# type.
@@ -398,12 +390,12 @@ let ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst nullnessSou
         ty
 
 /// Get the parameter type of an IL method.
-let inline ImportParameterTypeFromMetadata amap m nullnessSource ilTy scoref tinst mist =
+let ImportParameterTypeFromMetadata amap m nullnessSource ilTy scoref tinst mist =   
     ImportILTypeFromMetadataWithAttributes amap m scoref tinst mist nullnessSource ilTy
 
 /// Get the return type of an IL method, taking into account instantiations for type, return attributes and method generic parameters, and
 /// translating 'void' to 'None'.
-let inline ImportReturnTypeFromMetadata amap m nullnessSource ilTy scoref tinst minst =
+let ImportReturnTypeFromMetadata amap m nullnessSource ilTy scoref tinst minst =  
     match ilTy with
     | ILType.Void -> None
     | retTy -> Some(ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst nullnessSource retTy )
@@ -431,7 +423,7 @@ let CopyTyparConstraints m tprefInst (tporig: Typar) =
                TyparConstraint.IsEnum (instType tprefInst underlyingTy, m)
            | TyparConstraint.SupportsComparison _ ->
                TyparConstraint.SupportsComparison m
-           | TyparConstraint.NotSupportsNull _ ->
+           | TyparConstraint.NotSupportsNull _ -> 
                TyparConstraint.NotSupportsNull m
            | TyparConstraint.SupportsEquality _ ->
                TyparConstraint.SupportsEquality m
