@@ -2,7 +2,7 @@
 
 #if INTERACTIVE
 //#r @"../../release/net40/bin/FSharp.Compiler.dll"
-#r @"../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
+#r @"../../packages/xunit.assert/2.9.0/lib/net6.0/xunit.assert.dll"
 #load "../../src/scripts/scriptlib.fsx"
 #load "../FSharp.Test.Utilities/TestFramework.fs"
 #load "single-test.fs"
