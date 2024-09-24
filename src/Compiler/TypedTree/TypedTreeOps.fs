@@ -8939,10 +8939,7 @@ let typarEnc _g (gtpsType, gtpsMethod) typar =
             warning(InternalError("Typar not found during XmlDoc generation", typar.Range))
             "``0"
 
-let nullnessEnc (g:TcGlobals) (nullness:Nullness) = 
-    if g.renderNullnessAnnotations then nullness.ToFsharpCodeString() else ""
-
-let rec typeEnc g (gtpsType, gtpsMethod) ty = 
+let rec typeEnc g (gtpsType, gtpsMethod) ty =
     let stripped = stripTyEqnsAndMeasureEqns g ty
     match stripped with 
     | TType_forall _ -> 
@@ -8956,26 +8953,26 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
         let ety = destNativePtrTy g ty
         typeEnc g (gtpsType, gtpsMethod) ety + "*"
 
-    | TType_app (_, _, nullness) when isArrayTy g ty -> 
+    | TType_app (_, _, _nullness) when isArrayTy g ty -> 
         let tcref, tinst = destAppTy g ty        
         let rank = rankOfArrayTyconRef g tcref
         let arraySuffix = "[" + String.concat ", " (List.replicate (rank-1) "0:") + "]"
-        typeEnc g (gtpsType, gtpsMethod) (List.head tinst) + arraySuffix + nullnessEnc g nullness
+        typeEnc g (gtpsType, gtpsMethod) (List.head tinst) + arraySuffix
 
     | TType_ucase (_, tinst)   
     | TType_app (_, tinst, _) -> 
-        let tyName,nullness = 
+        let tyName = 
             let ty = stripTyEqnsAndMeasureEqns g ty
             match ty with
-            | TType_app (tcref, _tinst, nullness) -> 
+            | TType_app (tcref, _tinst, _nullness) -> 
                 // Generic type names are (name + "`" + digits) where name does not contain "`".
                 // In XML doc, when used in type instances, these do not use the ticks.
                 let path = Array.toList (fullMangledPathToTyconRef tcref) @ [tcref.CompiledName]
-                textOfPath (List.map DemangleGenericTypeName path),nullness
+                textOfPath (List.map DemangleGenericTypeName path)
             | _ ->
                 assert false
                 failwith "impossible"
-        tyName + tyargsEnc g (gtpsType, gtpsMethod) tinst + nullnessEnc g nullness
+        tyName + tyargsEnc g (gtpsType, gtpsMethod) tinst
 
     | TType_anon (anonInfo, tinst) -> 
         sprintf "%s%s" anonInfo.ILTypeRef.FullName (tyargsEnc g (gtpsType, gtpsMethod) tinst)
@@ -8986,11 +8983,11 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
         else 
             sprintf "System.Tuple%s"(tyargsEnc g (gtpsType, gtpsMethod) tys)
 
-    | TType_fun (domainTy, rangeTy, nullness) -> 
-        "Microsoft.FSharp.Core.FSharpFunc" + tyargsEnc g (gtpsType, gtpsMethod) [domainTy; rangeTy] + nullnessEnc g nullness
+    | TType_fun (domainTy, rangeTy, _nullness) -> 
+        "Microsoft.FSharp.Core.FSharpFunc" + tyargsEnc g (gtpsType, gtpsMethod) [domainTy; rangeTy]
 
-    | TType_var (typar, nullness) -> 
-        typarEnc g (gtpsType, gtpsMethod) typar + nullnessEnc g nullness
+    | TType_var (typar, _nullness) -> 
+        typarEnc g (gtpsType, gtpsMethod) typar
 
     | TType_measure _ -> "?"
 

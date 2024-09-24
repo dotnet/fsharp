@@ -2,7 +2,6 @@
 
 %{
 
-#nowarn "64" // turn off warnings that type variables used in production annotations are instantiated to concrete type
 #nowarn "1182"  // generated code has lots of unused "parseState"
 #nowarn "3261"  // the generated code would need to properly annotate nulls, e.g. changing System.Object to `obj|null`
 
@@ -2652,8 +2651,9 @@ typeConstraint:
      { SynTypeConstraint.WhereTyparSupportsNull($1, lhs parseState) }
 
   | typar COLON IDENT NULL
-      { if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3 + " (2)"))  
-        SynTypeConstraint.WhereTyparNotSupportsNull($1, lhs parseState) }
+      { if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3 + " (2)"))
+        let trivia : SynTypeConstraintWhereTyparNotSupportsNullTrivia = { ColonRange = rhs parseState 2; NotRange = rhs parseState 3 }
+        SynTypeConstraint.WhereTyparNotSupportsNull($1, lhs parseState, trivia) }
 
   | typar COLON LPAREN classMemberSpfn rparen
      { let tp = $1
@@ -3241,7 +3241,7 @@ cType:
        SynType.App(SynType.LongIdent(SynLongIdent([ident("nativeptr", m)], [], [ Some(IdentTrivia.OriginalNotation "*") ])), None, [$1], [], None, true, m) }
 
   | cType BAR_JUST_BEFORE_NULL NULL
-    { SynType.WithNull($1, false, lhs parseState) }
+    { SynType.WithNull($1, false, lhs parseState, { BarRange = rhs parseState 2 }) }
 
   | cType AMP
      { let m = lhs parseState
@@ -4419,7 +4419,7 @@ declExpr:
      { let spBind = DebugPointAtBinding.Yes(rhs2 parseState 1 5)
        let mEquals = rhs parseState 3
        let m = unionRanges (rhs parseState 1) $8.Range
-       let trivia: SynExprLetOrUseBangTrivia = { EqualsRange = Some mEquals }
+       let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = rhs parseState 1 ; EqualsRange = Some mEquals }
        SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, $4, $7, $8, m, trivia) }
 
   | OBINDER headBindingPattern EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
@@ -4428,7 +4428,7 @@ declExpr:
        let spBind = DebugPointAtBinding.Yes(unionRanges (rhs parseState 1) $4.Range)
        let mEquals = rhs parseState 3
        let m = unionRanges (rhs parseState 1) $8.Range
-       let trivia: SynExprLetOrUseBangTrivia = { EqualsRange = Some mEquals }
+       let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = rhs parseState 1 ; EqualsRange = Some mEquals }
        SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, $4, $7, $8, m, trivia) }
 
   | OBINDER headBindingPattern EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP error %prec expr_let
@@ -4437,12 +4437,12 @@ declExpr:
        let mEquals = rhs parseState 3
        let mAll = unionRanges (rhs parseState 1) (rhs parseState 7)
        let m = $4.Range.EndRange // zero-width range
-       let trivia: SynExprLetOrUseBangTrivia = { EqualsRange = Some mEquals }
+       let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = rhs parseState 1 ; EqualsRange = Some mEquals }
        SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, $4, [], SynExpr.ImplicitZero m, mAll, trivia) }
 
   | DO_BANG typedSequentialExpr IN opt_OBLOCKSEP typedSequentialExprBlock %prec expr_let
      { let spBind = DebugPointAtBinding.NoneAtDo
-       let trivia: SynExprLetOrUseBangTrivia = { EqualsRange = None }
+       let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = Range.Zero; EqualsRange = None }
        SynExpr.LetOrUseBang(spBind, false, true, SynPat.Const(SynConst.Unit, $2.Range), $2, [], $5, unionRanges (rhs parseState 1) $5.Range, trivia) }
 
   | ODO_BANG typedSequentialExprBlock hardwhiteDefnBindingsTerminator %prec expr_let
@@ -6193,7 +6193,7 @@ appTypeConPower:
 
 appTypeCanBeNullable:
   | appTypeWithoutNull BAR_JUST_BEFORE_NULL NULL
-    { SynType.WithNull($1, false, lhs parseState) }
+    { SynType.WithNull($1, false, lhs parseState, { BarRange = rhs parseState 2 }) }
 
   | appTypeWithoutNull
     { $1 }
