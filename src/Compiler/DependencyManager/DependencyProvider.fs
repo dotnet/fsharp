@@ -168,7 +168,7 @@ type ReflectionDependencyManagerProvider
     let keyProperty = keyProperty.GetValue >> string
 
     let helpMessagesProperty =
-        let toStringArray (o: obj) = o :?> string[]
+        let toStringArray (o: objnull) = o :?> string[]
 
         match helpMessagesProperty with
         | Some helpMessagesProperty -> helpMessagesProperty.GetValue >> toStringArray
