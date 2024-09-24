@@ -18,6 +18,22 @@ let typeCheckWithStrictNullness cu =
     |> typecheck
 
 [<Fact>]
+let ``Can cast from objTy to interfaceTy`` () =
+    FSharp """module TestLib
+open System
+let safeHolder =
+    { new obj() with
+            override x.Finalize() = (x :?> IDisposable).Dispose()
+        interface IDisposable with
+            member x.Dispose() =
+                GC.SuppressFinalize x
+    }
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
 let ``Does not duplicate warnings`` () =
     FSharp """
 module MyLib
