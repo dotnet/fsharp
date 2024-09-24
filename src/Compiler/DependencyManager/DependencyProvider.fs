@@ -160,19 +160,19 @@ type ReflectionDependencyManagerProvider
 
     let instance =
         if not (isNull (theType.GetConstructor([| typeof<string option>; typeof<bool> |]))) then
-            Activator.CreateInstance(theType, [| outputDir :> obj; useResultsCache :> obj |])
+            Activator.CreateInstance(theType, [| outputDir :> objnull; useResultsCache :> objnull |])
         else
-            Activator.CreateInstance(theType, [| outputDir :> obj |])
+            Activator.CreateInstance(theType, [| outputDir :> objnull |])
 
-    let nameProperty = nameProperty.GetValue >> string
-    let keyProperty = keyProperty.GetValue >> string
+    let nameProperty (x:objnull) = x |> nameProperty.GetValue |> string
+    let keyProperty (x:objnull) = x |> keyProperty.GetValue |> string
 
-    let helpMessagesProperty =
+    let helpMessagesProperty (x:objnull) =
         let toStringArray (o: objnull) = o :?> string[]
 
         match helpMessagesProperty with
-        | Some helpMessagesProperty -> helpMessagesProperty.GetValue >> toStringArray
-        | None -> fun _ -> [||]
+        | Some helpMessagesProperty -> x |> helpMessagesProperty.GetValue |> toStringArray
+        | None -> [||]
 
     static member InstanceMaker(theType: Type, outputDir: string option, useResultsCache: bool) =
         match

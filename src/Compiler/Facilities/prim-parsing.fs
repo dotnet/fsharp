@@ -125,7 +125,7 @@ type Stack<'a>(n) =
 
     member buf.PrintStack() =
         for i = 0 to (count - 1) do
-            Console.Write("{0}{1}", contents[i], (if i = count - 1 then ":" else "-"))
+            Console.Write("{0}{1}", contents[i] :> objnull, (if i = count - 1 then ":" else "-"))
 
 module Flags =
 #if DEBUG

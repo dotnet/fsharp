@@ -1337,9 +1337,6 @@ module Display =
 
                 if
                     word = "map"
-                    && (match v with
-                        | null -> false
-                        | _ -> true)
                     && tyv.IsGenericType
                     && tyv.GetGenericTypeDefinition() = typedefof<KeyValuePair<int, int>>
                 then
