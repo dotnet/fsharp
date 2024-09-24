@@ -6004,7 +6004,7 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         error(Error(FSComp.SR.tcConstructRequiresSequenceOrComputations(), m))
 
     | SynExpr.DoBang (trivia = { DoBangKeyword = m })
-    | SynExpr.MatchBang (trivia = { MatchBangKeyword = m })
+    | SynExpr.MatchBang (range = m)
     | SynExpr.WhileBang (range = m)
     | SynExpr.LetOrUseBang (trivia = { LetOrUseBangKeyword = m }) ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
