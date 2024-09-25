@@ -61,28 +61,21 @@ type [<Struct; NoComparison; CustomEquality>] TTypeCacheKey =
     new (ty1, ty2, canCoerce, tcGlobals) =
         { ty1 = ty1; ty2 = ty2; canCoerce = canCoerce; tcGlobals = tcGlobals }
 
-    static member op_Implicit (struct(ty1, ty2, canCoerce, g: TcGlobals)) =
-        TTypeCacheKey(ty1, ty2, canCoerce, g)
-
-    static member op_Explicit(struct(ty1, ty2, canCoerce, g: TcGlobals)) =
-        TTypeCacheKey(ty1, ty2, canCoerce, g)
-
     interface System.IEquatable<TTypeCacheKey> with
         member this.Equals other =
-            let pe1 = LanguagePrimitives.PhysicalEquality this.ty1 other.ty1
-            let pe2 = LanguagePrimitives.PhysicalEquality this.ty2 other.ty2
-            let canCoerce = this.canCoerce = other.canCoerce
+            let ty1 = this.ty1
+            let ty2 = this.ty2
+            let otherTy1 = stripTyEqns this.tcGlobals other.ty1
+            let otherTy2 = stripTyEqns this.tcGlobals other.ty2
 
-            pe1 && pe2 && canCoerce
-
-    interface System.Collections.IStructuralEquatable with
-        member this.Equals(other: obj, _) : bool =
-            match other with
-            | :? TTypeCacheKey as p -> (this :> System.IEquatable<TTypeCacheKey>).Equals p
-            | _ -> false
-
-        member this.GetHashCode(_) : int =
-            this.GetHashCode()
+            if stampEquals this.tcGlobals ty1 otherTy1 && stampEquals this.tcGlobals ty2 otherTy2 && this.canCoerce = other.canCoerce then
+                true
+            else
+                (
+                    LanguagePrimitives.PhysicalEquality ty1 otherTy1
+                    && LanguagePrimitives.PhysicalEquality ty2 otherTy2
+                    && this.canCoerce = other.canCoerce
+                )
 
     override this.Equals other =
         match other with
@@ -95,8 +88,8 @@ type [<Struct; NoComparison; CustomEquality>] TTypeCacheKey =
         let ty1 = stripTyEqns g this.ty1
         let ty2 = stripTyEqns g this.ty2
 
-        let ty1Hash = hashTType g ty1
-        let ty2Hash = hashTType g ty2
+        let ty1Hash = combineHash (hashStamp g ty1) (hashTType g ty1)
+        let ty2Hash = combineHash (hashStamp g ty1) (hashTType g ty2)
 
         let combined = combineHash (combineHash ty1Hash ty2Hash) (hash this.canCoerce)
 

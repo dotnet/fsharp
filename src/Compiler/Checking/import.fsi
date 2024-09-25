@@ -42,17 +42,14 @@ type CanCoerce =
     | CanCoerce
     | NoCoerce
 
-[<NoComparison; CustomEquality; Struct>]
+[<Struct; NoComparison; CustomEquality>]
 type TTypeCacheKey =
     interface System.IEquatable<TTypeCacheKey>
-    interface System.Collections.IStructuralEquatable
     new: ty1: TType * ty2: TType * canCoerce: CanCoerce * tcGlobals: TcGlobals -> TTypeCacheKey
     val ty1: TType
     val ty2: TType
     val canCoerce: CanCoerce
     val tcGlobals: TcGlobals
-    static member op_Explicit: struct (TType * TType * CanCoerce * TcGlobals) -> TTypeCacheKey
-    static member op_Implicit: struct (TType * TType * CanCoerce * TcGlobals) -> TTypeCacheKey
     override Equals: other: obj -> bool
     override GetHashCode: unit -> int
 

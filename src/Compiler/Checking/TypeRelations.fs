@@ -122,7 +122,10 @@ let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: ImportMap) m (ty1: 
     if ndeep > 100 then
         error(InternalError("Large class hierarchy (possibly recursive, detected in TypeFeasiblySubsumesType), ty1 = " + (DebugPrint.showType ty1), m))
 
-    let key: TTypeCacheKey = struct (ty1, ty2, canCoerce, g)
+    let ty1 = stripTyEqns g ty1
+    let ty2 = stripTyEqns g ty2
+
+    let key = TTypeCacheKey (ty1, ty2, canCoerce, g)
 
     match TryGetCachedTypeSubsumption g amap key with
     | ValueSome subsumes ->
@@ -131,7 +134,7 @@ let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: ImportMap) m (ty1: 
         let subsumes =
             match ty1, ty2 with
             | TType_measure _, TType_measure _
-            | TType_var _, _  | _, TType_var _ ->
+            | TType_var _, _ | _, TType_var _ ->
                 true
 
             | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2 ->
