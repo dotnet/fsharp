@@ -5990,16 +5990,16 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
         TcQuotationExpr cenv overallTy env tpenv (oper, raw, ast, isFromQueryExpression, m)
 
-    | SynExpr.YieldOrReturn ((isTrueYield, _), _, m)
-    | SynExpr.YieldOrReturnFrom ((isTrueYield, _), _, m) when isTrueYield ->
+    | SynExpr.YieldOrReturn ((isTrueYield, _), _, _m, { YieldOrReturnKeyword = m })
+    | SynExpr.YieldOrReturnFrom ((isTrueYield, _), _, _m, { YieldOrReturnFromKeyword = m }) when isTrueYield ->
         error(Error(FSComp.SR.tcConstructRequiresListArrayOrSequence(), m))
 
-    | SynExpr.YieldOrReturn ((_, isTrueReturn), _, m)
-    | SynExpr.YieldOrReturnFrom ((_, isTrueReturn), _, m) when isTrueReturn ->
+    | SynExpr.YieldOrReturn ((_, isTrueReturn), _, _m, { YieldOrReturnKeyword = m })
+    | SynExpr.YieldOrReturnFrom ((_, isTrueReturn), _, _m, { YieldOrReturnFromKeyword = m }) when isTrueReturn ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpressions(), m))
 
-    | SynExpr.YieldOrReturn (_, _, m)
-    | SynExpr.YieldOrReturnFrom (_, _, m)
+    | SynExpr.YieldOrReturn (trivia = { YieldOrReturnKeyword = m })
+    | SynExpr.YieldOrReturnFrom (trivia = { YieldOrReturnFromKeyword = m })
     | SynExpr.ImplicitZero m ->
         error(Error(FSComp.SR.tcConstructRequiresSequenceOrComputations(), m))
 
