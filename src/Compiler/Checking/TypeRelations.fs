@@ -127,13 +127,7 @@ let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: ImportMap) m (ty1: 
     // Check if language feature supported
     let key = TTypeCacheKey (ty1, ty2, canCoerce, g)
 
-    let result =
-        if g.compilationMode = CompilationMode.OneOff && g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
-            TryGetCachedTypeSubsumption g amap key
-        else
-            ValueNone
-
-    match result with
+    match TryGetCachedTypeSubsumption g amap key with
     | ValueSome subsumes ->
         subsumes
     | ValueNone ->
