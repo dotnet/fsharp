@@ -330,7 +330,7 @@ query {
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3143, Line 3, Col 5, Line 3, Col 20, "'let!', 'use!' and 'do!' expressions may not be used in queries")
+            (Error 3143, Line 3, Col 5, Line 3, Col 8, "'let!', 'use!' and 'do!' expressions may not be used in queries")
         ]
         
     [<Fact>]
@@ -392,7 +392,7 @@ query {
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3143, Line 4, Col 5, Line 4, Col 20, "'let!', 'use!' and 'do!' expressions may not be used in queries")  
+            (Error 3143, Line 4, Col 5, Line 4, Col 8, "'let!', 'use!' and 'do!' expressions may not be used in queries")  
         ]
         
     [<Fact>]
