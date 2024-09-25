@@ -169,6 +169,14 @@ type SynExprMatchBangTrivia =
         WithKeyword: range
     }
 
+/// Represents additional information for SynExpr.DoBang
+[<NoEquality; NoComparison>]
+type SynExprDoBangTrivia =
+    {
+        /// The syntax range of the `do!` keyword
+        DoBangKeyword: range
+    }
+
 /// Represents additional information for SynExpr.AnonRecd
 [<NoEquality; NoComparison>]
 type SynExprAnonRecdTrivia =

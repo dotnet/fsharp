@@ -1592,7 +1592,7 @@ let rec TryTranslateComputationExpression
                 if ceenv.isQuery && not (innerComp1.IsArbExprAndThusAlreadyReportedError) then
                     match innerComp1 with
                     | SynExpr.JoinIn _ -> ()
-                    | SynExpr.DoBang(range = m) -> errorR (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), m))
+                    | SynExpr.DoBang(trivia = { DoBangKeyword = m }) -> errorR (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), m))
                     | _ -> errorR (Error(FSComp.SR.tcUnrecognizedQueryOperator (), innerComp1.RangeOfFirstPortion))
 
                 match
@@ -1657,7 +1657,7 @@ let rec TryTranslateComputationExpression
                 | None ->
                     // "do! expr; cexpr" is treated as { let! () = expr in cexpr }
                     match innerComp1 with
-                    | SynExpr.DoBang(rhsExpr, m) ->
+                    | SynExpr.DoBang(expr = rhsExpr; range = m) ->
                         let sp =
                             match sp with
                             | DebugPointAtSequential.SuppressExpr -> DebugPointAtBinding.NoneAtDo
@@ -2867,7 +2867,7 @@ and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) fir
             // This only occurs in final position in a sequence
             match comp with
             // "do! expr;" in final position is treated as { let! () = expr in return () } when Return is provided (and no Zero with Default attribute is available) or as { let! () = expr in zero } otherwise
-            | SynExpr.DoBang(rhsExpr, m) ->
+            | SynExpr.DoBang(expr = rhsExpr; trivia = { DoBangKeyword = m }) ->
                 let mUnit = rhsExpr.Range
                 let rhsExpr = mkSourceExpr rhsExpr ceenv.sourceMethInfo ceenv.builderValName
 
