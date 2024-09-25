@@ -2394,7 +2394,7 @@ let rec TryTranslateComputationExpression
                         ceenv.builderTy
                 )
             then
-                errorR (Error(FSComp.SR.tcRequireBuilderMethod ("YieldFrom"), m))
+                error (Error(FSComp.SR.tcRequireBuilderMethod ("YieldFrom"), m))
 
             let yieldFromCall = mkSynCall "YieldFrom" m [ yieldFromExpr ] ceenv.builderValName
 
@@ -2411,7 +2411,7 @@ let rec TryTranslateComputationExpression
                 mkSourceExpr synReturnExpr ceenv.sourceMethInfo ceenv.builderValName
 
             if ceenv.isQuery then
-                errorR (Error(FSComp.SR.tcReturnMayNotBeUsedInQueries (), m))
+                error (Error(FSComp.SR.tcReturnMayNotBeUsedInQueries (), m))
 
             if
                 isNil (
@@ -2425,7 +2425,7 @@ let rec TryTranslateComputationExpression
                         ceenv.builderTy
                 )
             then
-                errorR (Error(FSComp.SR.tcRequireBuilderMethod ("ReturnFrom"), m))
+                error (Error(FSComp.SR.tcRequireBuilderMethod ("ReturnFrom"), m))
 
             let returnFromCall =
                 mkSynCall "ReturnFrom" m [ returnFromExpr ] ceenv.builderValName
@@ -2456,7 +2456,7 @@ let rec TryTranslateComputationExpression
                         ceenv.builderTy
                 )
             then
-                errorR (Error(FSComp.SR.tcRequireBuilderMethod methName, m))
+                error (Error(FSComp.SR.tcRequireBuilderMethod methName, m))
 
             let yieldOrReturnCall =
                 mkSynCall methName m [ synYieldOrReturnExpr ] ceenv.builderValName
