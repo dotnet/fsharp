@@ -1832,7 +1832,7 @@ type TcGlobals(
   /// Are we assuming all code gen is for F# interactive, with no static linking
   member _.isInteractive=isInteractive
 
-  member _.compilationMode = compilationMode
+  member val compilationMode = compilationMode
 
   /// Indicates if we are generating witness arguments for SRTP constraints. Only done if the FSharp.Core
   /// supports witness arguments.
