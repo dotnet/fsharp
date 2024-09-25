@@ -12,7 +12,7 @@ open TestFramework
 let internal getProjectReferences (content: string, dllFiles, libDirs, otherFlags) =
     let otherFlags = defaultArg otherFlags []
     let libDirs = defaultArg libDirs []
-    let base1 = tryCreateTemporaryFileName ()
+    let base1 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base1, ".dll")
     let fileName1 = Path.ChangeExtension(base1, ".fs")
     let projFileName = Path.ChangeExtension(base1, ".fsproj")
@@ -144,8 +144,8 @@ let _ = CSharpClass(0)
     match (ctor :?> FSharpMemberOrFunctionOrValue).DeclaringEntity with
     | Some e ->
         let members = e.MembersFunctionsAndValues
-        Seq.exists (fun (mfv : FSharpMemberOrFunctionOrValue) -> mfv.IsConstructor) members |> should be True
-        Seq.exists (fun (mfv : FSharpMemberOrFunctionOrValue) -> mfv.IsEffectivelySameAs ctor) members |> should be True
+        Seq.exists (fun (mfv : FSharpMemberOrFunctionOrValue) -> mfv.IsConstructor) members |> Assert.True
+        Seq.exists (fun (mfv : FSharpMemberOrFunctionOrValue) -> mfv.IsEffectivelySameAs ctor) members |> Assert.True
     | None -> failwith "Expected Some for DeclaringEntity"
 
 let getEntitiesUses source =
@@ -172,7 +172,7 @@ let (s2: FSharp.Compiler.Service.Tests.String) = null
         |> List.filter (fun entity -> entity.LogicalName = "String")
 
     match stringSymbols with
-    | e1 :: e2 :: [] -> e1.IsEffectivelySameAs(e2) |> should be False
+    | e1 :: e2 :: [] -> e1.IsEffectivelySameAs(e2) |> Assert.False
     | _ -> sprintf "Expecting two symbols, got %A" stringSymbols |> failwith
 
 [<Fact>]
@@ -189,5 +189,5 @@ open FSharp.Compiler.Service.Tests.Linq
         |> List.filter (fun entity -> entity.LogicalName = "Linq")
 
     match stringSymbols with
-    | e1 :: e2 :: [] -> e1.IsEffectivelySameAs(e2) |> should be False
+    | e1 :: e2 :: [] -> e1.IsEffectivelySameAs(e2) |> Assert.False
     | _ -> sprintf "Expecting two symbols, got %A" stringSymbols |> failwith

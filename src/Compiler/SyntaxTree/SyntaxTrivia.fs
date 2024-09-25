@@ -93,10 +93,15 @@ type SynExprLetOrUseTrivia =
 [<NoEquality; NoComparison>]
 type SynExprLetOrUseBangTrivia =
     {
+        LetOrUseBangKeyword: range
         EqualsRange: range option
     }
 
-    static member Zero: SynExprLetOrUseBangTrivia = { EqualsRange = None }
+    static member Zero: SynExprLetOrUseBangTrivia =
+        {
+            LetOrUseBangKeyword = Range.Zero
+            EqualsRange = None
+        }
 
 [<NoEquality; NoComparison>]
 type SynExprMatchTrivia =
@@ -270,6 +275,7 @@ type SynBindingTrivia =
 [<NoEquality; NoComparison>]
 type SynExprAndBangTrivia =
     {
+        AndBangKeyword: range
         EqualsRange: range
         InKeyword: range option
     }
@@ -404,6 +410,9 @@ type SynFieldTrivia =
 type SynTypeOrTrivia = { OrKeyword: range }
 
 [<NoEquality; NoComparison>]
+type SynTypeWithNullTrivia = { BarRange: range }
+
+[<NoEquality; NoComparison>]
 type SynBindingReturnInfoTrivia = { ColonRange: range option }
 
 [<NoEquality; NoComparison>]
@@ -428,3 +437,6 @@ type SynMeasureConstantTrivia =
         LessRange: range
         GreaterRange: range
     }
+
+[<NoEquality; NoComparison>]
+type SynTypeConstraintWhereTyparNotSupportsNullTrivia = { ColonRange: range; NotRange: range }

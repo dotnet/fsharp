@@ -114,7 +114,7 @@ The F# tests are split as follows:
 
 ### FSharp Suite
 
-This is compiled using [tests\fsharp\FSharp.Tests.FSharpSuite.fsproj](tests/fsharp/FSharp.Tests.FSharpSuite.fsproj) to a unit test DLL which acts as a driver script. Each individual test is an NUnit test case, and so you can run it like any other NUnit test.
+This is compiled using [tests\fsharp\FSharp.Tests.FSharpSuite.fsproj](tests/fsharp/FSharp.Tests.FSharpSuite.fsproj) to a unit test DLL which acts as a driver script. Each individual test is an xUnit test case, and so you can run it like any other xUnit test.
 
 ```shell
 .\build.cmd net40 test-net40-fsharp
@@ -150,14 +150,6 @@ tests\fsharpqa\source\test.lst   // FSharpQA suite
 Tags are in the left column, paths to to corresponding test folders are in the right column.  If no tags are specified, all tests will be run.
 
 If you want to re-run a particular test area, the easiest way to do so is to set a temporary tag for that area in test.lst (e.g. "RERUN") and adjust `ttags` [run.fsharpqa.test.fsx script](tests/fsharpqa/run.fsharpqa.test.fsx) and run it.
-
-### VisualFSharp.UnitTests, FSharpSuite.Tests
-
-These are all currently NUnit tests (we hope to migrate them to xUnit). You can execute these tests individually via the Visual Studio NUnit3 runner
-extension or the command line via `nunit3-console.exe`.
-
-Note that for compatibility reasons, the IDE unit tests should be run in a 32-bit process,
-using the `--x86` flag to `nunit3-console.exe`
 
 ### Logs and output
 

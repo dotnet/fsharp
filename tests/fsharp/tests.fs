@@ -27,12 +27,6 @@ let FSI = FSI_NETFX
 #endif
 // ^^^^^^^^^^^^ To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test ^^^^^^^^^^^^
 
-let inline getTestsDirectory dir = getTestsDirectory __SOURCE_DIRECTORY__ dir
-let singleTestBuildAndRun = getTestsDirectory >> singleTestBuildAndRun
-let singleTestBuildAndRunVersion = getTestsDirectory >> singleTestBuildAndRunVersion
-let testConfig = getTestsDirectory >> testConfig
-
-
 module CoreTests =
 
 
@@ -72,23 +66,18 @@ module CoreTests =
         exec cfg ("." ++ "test-langversion-46.exe") ""
 
         testOkFile.CheckExists()
-
-    // This test stays in FsharpSuite for a later migration phases, it uses hardcoded #r to a C# compiled cslib.dll inside
-    [<Fact>]
-    let ``quotes-FSC-FSC_DEBUG`` () = singleTestBuildAndRun "core/quotes" FSC_DEBUG
-
-    [<Fact>]
-    let ``quotes-FSC-BASIC`` () = singleTestBuildAndRun "core/quotes" FSC_OPTIMIZED
-
-    [<Fact>]
-    let ``quotes-FSI-BASIC`` () = singleTestBuildAndRun "core/quotes" FSI
 #endif
 
 
     [<Fact>]
     let ``SDKTests`` () =
         let cfg = testConfig "SDKTests"
-        exec cfg cfg.DotNetExe ("msbuild " + Path.Combine(cfg.Directory, "AllSdkTargetsTests.proj") + " /p:Configuration=" + cfg.BUILD_CONFIG)
+
+        let FSharpRepositoryPath = Path.GetFullPath(__SOURCE_DIRECTORY__ ++ ".." ++ "..")
+
+        let projectFile = cfg.Directory ++ "AllSdkTargetsTests.proj"
+
+        exec cfg cfg.DotNetExe ($"msbuild {projectFile} /p:Configuration={cfg.BUILD_CONFIG} -property:FSharpRepositoryPath={FSharpRepositoryPath}")
 
 #if !NETCOREAPP
     [<Fact>]
@@ -651,8 +640,8 @@ module CoreTests =
 
         let fsc_flags_errors_ok = ""
 
-        let rawFileOut = tryCreateTemporaryFileName ()
-        let rawFileErr = tryCreateTemporaryFileName ()
+        let rawFileOut = getTemporaryFileName ()
+        let rawFileErr = getTemporaryFileName ()
         ``fsi <a >b 2>c`` "%s --nologo --preferreduilang:en-US %s" fsc_flags_errors_ok flag ("test.fsx", rawFileOut, rawFileErr)
 
         let removeCDandHelp fromFile toFile =
@@ -818,11 +807,10 @@ module CoreTests =
 
 #endif
 
-#if !NETCOREAPP
+#if !NETCOREAPP    
     [<Fact>]
     let quotes () =
         let cfg = testConfig "core/quotes"
-
 
         csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
 
@@ -863,6 +851,30 @@ module CoreTests =
             exec cfg ("." ++ "test--optimize.exe") ""
             testOkFile.CheckExists()
         end
+
+    // Previously a comment here said:
+    // "This test stays in FsharpSuite for a later migration phases, it uses hardcoded #r to a C# compiled cslib.dll inside"
+    // This is resolved by compiling cslib.dll separately in each test. 
+    [<Fact>]
+    let ``quotes-FSC-FSC_DEBUG`` () =
+        let cfg = testConfig "core/quotes"
+        csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
+
+        singleTestBuildAndRunAux cfg FSC_DEBUG
+
+    [<Fact>]
+    let ``quotes-FSC-BASIC`` () =
+        let cfg = testConfig "core/quotes"
+        csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
+
+        singleTestBuildAndRunAux cfg FSC_OPTIMIZED
+
+    [<Fact>]
+    let ``quotes-FSI-BASIC`` () =
+        let cfg = testConfig "core/quotes"
+        csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
+
+        singleTestBuildAndRunAux cfg FSI
 
     [<Fact; Trait("Category", "parsing")>]
     let parsing () =
@@ -2393,7 +2405,7 @@ module TypecheckTests =
 module FscTests =
     [<Fact>]
     let ``should be raised if AssemblyInformationalVersion has invalid version`` () =
-        let cfg = testConfig (Commands.createTempDir())
+        let cfg = createConfigWithEmptyDirectory()
 
         let code  =
             """
@@ -2418,7 +2430,7 @@ open System.Reflection
 
     [<Fact>]
     let ``should set file version info on generated file`` () =
-        let cfg = testConfig (Commands.createTempDir())
+        let cfg = createConfigWithEmptyDirectory()
 
         let code =
             """
@@ -2477,7 +2489,7 @@ module ProductVersionTest =
     let ``should use correct fallback``() =
 
        for (assemblyVersion, fileVersion, infoVersion, expected) in fallbackTestData () do
-        let cfg = testConfig (Commands.createTempDir())
+        let cfg = createConfigWithEmptyDirectory()
         let dir = cfg.Directory
 
         printfn "Directory: %s" dir
