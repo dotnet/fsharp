@@ -115,7 +115,6 @@ let inline UpdateCachedTypeSubsumption (g: TcGlobals) (amap: ImportMap) key subs
     if g.compilationMode = CompilationMode.OneOff && g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
         amap.TypeSubsumptionCache[key] <- subsumes
 
-
 /// The feasible coercion relation. Part of the language spec.
 let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: ImportMap) m (ty1: TType) (canCoerce: CanCoerce) (ty2: TType) =
 
@@ -125,9 +124,16 @@ let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: ImportMap) m (ty1: 
     let ty1 = stripTyEqns g ty1
     let ty2 = stripTyEqns g ty2
 
+    // Check if language feature supported
     let key = TTypeCacheKey (ty1, ty2, canCoerce, g)
 
-    match TryGetCachedTypeSubsumption g amap key with
+    let result =
+        if g.compilationMode = CompilationMode.OneOff && g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
+            TryGetCachedTypeSubsumption g amap key
+        else
+            ValueNone
+
+    match result with
     | ValueSome subsumes ->
         subsumes
     | ValueNone ->
