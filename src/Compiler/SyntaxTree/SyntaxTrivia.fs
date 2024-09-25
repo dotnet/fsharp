@@ -118,6 +118,9 @@ type SynExprMatchBangTrivia =
     }
 
 [<NoEquality; NoComparison>]
+type SynExprDoBangTrivia = { DoBangKeyword: range }
+
+[<NoEquality; NoComparison>]
 type SynExprAnonRecdTrivia = { OpeningBraceRange: range }
 
 [<NoEquality; NoComparison>]
