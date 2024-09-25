@@ -144,8 +144,8 @@ let _ = CSharpClass(0)
     match (ctor :?> FSharpMemberOrFunctionOrValue).DeclaringEntity with
     | Some e ->
         let members = e.MembersFunctionsAndValues
-        Seq.exists (fun (mfv : FSharpMemberOrFunctionOrValue) -> mfv.IsConstructor) members |> should be True
-        Seq.exists (fun (mfv : FSharpMemberOrFunctionOrValue) -> mfv.IsEffectivelySameAs ctor) members |> should be True
+        Seq.exists (fun (mfv : FSharpMemberOrFunctionOrValue) -> mfv.IsConstructor) members |> Assert.True
+        Seq.exists (fun (mfv : FSharpMemberOrFunctionOrValue) -> mfv.IsEffectivelySameAs ctor) members |> Assert.True
     | None -> failwith "Expected Some for DeclaringEntity"
 
 let getEntitiesUses source =
@@ -172,7 +172,7 @@ let (s2: FSharp.Compiler.Service.Tests.String) = null
         |> List.filter (fun entity -> entity.LogicalName = "String")
 
     match stringSymbols with
-    | e1 :: e2 :: [] -> e1.IsEffectivelySameAs(e2) |> should be False
+    | e1 :: e2 :: [] -> e1.IsEffectivelySameAs(e2) |> Assert.False
     | _ -> sprintf "Expecting two symbols, got %A" stringSymbols |> failwith
 
 [<Fact>]
@@ -189,5 +189,5 @@ open FSharp.Compiler.Service.Tests.Linq
         |> List.filter (fun entity -> entity.LogicalName = "Linq")
 
     match stringSymbols with
-    | e1 :: e2 :: [] -> e1.IsEffectivelySameAs(e2) |> should be False
+    | e1 :: e2 :: [] -> e1.IsEffectivelySameAs(e2) |> Assert.False
     | _ -> sprintf "Expecting two symbols, got %A" stringSymbols |> failwith

@@ -1,11 +1,14 @@
 ﻿module TypeChecks.DependencyResolutionTests
 
 open TypeChecks.TestUtils
-open NUnit.Framework
+open Xunit
 open FSharp.Compiler.GraphChecking
 open Scenarios
 
-[<TestCaseSource(nameof scenarios)>]
+let scenarios = scenarios |> Seq.map (fun p -> [| box p |])
+
+[<Theory>]
+[<MemberData(nameof scenarios)>]
 let ``Supported scenario`` (scenario: Scenario) =
     let files =
         scenario.Files
@@ -18,4 +21,4 @@ let ``Supported scenario`` (scenario: Scenario) =
     for file in scenario.Files do
         let expectedDeps = file.ExpectedDependencies
         let actualDeps = set graph.[file.Index]
-        Assert.AreEqual(expectedDeps, actualDeps, $"Dependencies don't match for {System.IO.Path.GetFileName file.FileName}")
+        Assert.True((expectedDeps = actualDeps), $"Dependencies don't match for {System.IO.Path.GetFileName file.FileName}")

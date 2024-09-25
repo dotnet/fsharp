@@ -4442,11 +4442,14 @@ declExpr:
 
   | DO_BANG typedSequentialExpr IN opt_OBLOCKSEP typedSequentialExprBlock %prec expr_let
      { let spBind = DebugPointAtBinding.NoneAtDo
-       let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = Range.Zero; EqualsRange = None }
-       SynExpr.LetOrUseBang(spBind, false, true, SynPat.Const(SynConst.Unit, $2.Range), $2, [], $5, unionRanges (rhs parseState 1) $5.Range, trivia) }
+       let trivia: SynExprDoBangTrivia = { DoBangKeyword = rhs parseState 1 }
+       let m = unionRanges (rhs parseState 1) $5.Range
+       SynExpr.DoBang($2, m, trivia) }
 
   | ODO_BANG typedSequentialExprBlock hardwhiteDefnBindingsTerminator %prec expr_let
-     { SynExpr.DoBang($2, unionRanges (rhs parseState 1) $2.Range) }
+     {  let trivia: SynExprDoBangTrivia = { DoBangKeyword = rhs parseState 1 }
+        let m = unionRanges (rhs parseState 1) $2.Range
+        SynExpr.DoBang($2, m, trivia) }
 
   | FIXED declExpr
      { SynExpr.Fixed($2, (unionRanges (rhs parseState 1) $2.Range)) }
