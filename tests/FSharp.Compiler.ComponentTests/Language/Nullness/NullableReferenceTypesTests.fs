@@ -21,7 +21,7 @@ let typeCheckWithStrictNullness cu =
 let ``Can cast from objTy to interfaceTy`` () =
     FSharp """module TestLib
 open System
-let safeHolder =
+let safeHolder : IDisposable =
     { new obj() with
             override x.Finalize() = (x :?> IDisposable).Dispose()
         interface IDisposable with

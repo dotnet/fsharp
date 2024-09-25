@@ -12118,7 +12118,7 @@ let LookupGeneratedValue (cenv: cenv) (ctxt: ExecutionContext) eenv (v: Val) =
         None
 
 // Invoke the set_Foo method for a declaration with a value. Used to create variables with values programmatically in fsi.exe.
-let SetGeneratedValue (ctxt: ExecutionContext) eenv isForced (v: Val) (value: obj) =
+let SetGeneratedValue (ctxt: ExecutionContext) eenv isForced (v: Val) (value: objnull) =
     try
         match StorageForVal v.Range v eenv with
         | StaticPropertyWithField(fspec, _, hasLiteralAttr, _, _, _, _f, ilSetterMethRef, _) ->
