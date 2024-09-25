@@ -1856,7 +1856,7 @@ let isObjTyAnyNullness g ty = ty |> stripTyEqns g |> (function TType_app(tcref, 
 let isObjNullTy g ty = 
     ty 
     |> stripTyEqns g 
-    |> (function TType_app(tcref, _, n) when (not g.checkNullness || n.TryEvaluate() = ValueSome(NullnessInfo.WithNull)) 
+    |> (function TType_app(tcref, _, n) when (not g.checkNullness) || (n.TryEvaluate() <> ValueSome(NullnessInfo.WithoutNull)) 
                 -> tyconRefEq g g.system_Object_tcref tcref | _ -> false)
 
 let isObjTyWithoutNull (g:TcGlobals) ty = 

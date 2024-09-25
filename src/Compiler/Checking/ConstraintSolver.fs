@@ -1601,7 +1601,7 @@ and SolveTyparSubtypeOfType (csenv: ConstraintSolverEnv) ndeep m2 trace tp ty1 =
     let g = csenv.g
     if isObjNullTy g ty1 then 
         CompleteD
-    elif isObjTyWithoutNull g ty1 then
+    elif isObjTyAnyNullness g ty1 then
         AddConstraint csenv ndeep m2 trace tp (TyparConstraint.NotSupportsNull csenv.m)
     elif typeEquiv g ty1 (mkTyparTy tp) then 
         CompleteD

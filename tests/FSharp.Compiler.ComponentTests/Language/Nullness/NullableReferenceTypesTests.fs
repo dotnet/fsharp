@@ -17,6 +17,33 @@ let typeCheckWithStrictNullness cu =
     |> withNullnessOptions
     |> typecheck
 
+
+
+[<Fact>]
+let ``Can convert generic value to objnull arg`` () =
+    FSharp """module TestLib
+
+let writeObj(tw:System.IO.TextWriter, a:'a) =
+    tw.Write(a)
+
+writeObj(System.IO.TextWriter.Null,null)
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Can pass nulll to objnull arg`` () =
+    FSharp """module TestLib
+let doStuff args = 
+    let ty = typeof<string>
+    let m = ty.GetMethod("ToString") |> Unchecked.nonNull
+    m.Invoke(null,args)    
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
 [<Fact>]
 let ``Can cast from objTy to interfaceTy`` () =
     FSharp """module TestLib
