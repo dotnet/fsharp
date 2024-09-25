@@ -6,9 +6,9 @@ module internal FSharp.Compiler.TcGlobals
 /// This is used to determine if we want to use certain features in the pipeline, for example, type subsumption cache is only used in one-off compilation now.
 [<RequireQualifiedAccess>]
 type CompilationMode =
-    | Unset       // Default: not set
-    | OneOff      // Running the FSC task/process
-    | Service     // Running from service
+    | Unset // Default: not set
+    | OneOff // Running the FSC task/process
+    | Service // Running from service
     | Interactive // Running from interactive session
 
 val internal DummyFileNameForRangesWithoutASpecificLocation: string

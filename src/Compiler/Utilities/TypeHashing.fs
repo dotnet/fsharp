@@ -139,6 +139,7 @@ module rec HashTypes =
             | TType_app(tcref, _, _) -> tcref.Stamp
             | TType_var(r, _) -> r.Stamp
             | _ -> GenericZero
+
         hash v
 
     /// Hash a reference to a type
