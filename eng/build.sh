@@ -215,9 +215,7 @@ function Test() {
   projectname="${projectname%.*}"
   testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework.xml"
   args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"xunit;LogFilePath=$testlogpath\" --blame --results-directory $artifacts_dir/TestResults/$configuration -p:vstestusemsbuildoutput=false"
-  if [[ "$ci" == true ]]; then
-    args += " -- xUnit.ParallelizeTestCollections=false xUnit.ParallelizeAssembly=false"
-  fi
+
   "$DOTNET_INSTALL_DIR/dotnet" $args || exit $?
 }
 

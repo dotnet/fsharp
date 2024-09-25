@@ -379,10 +379,6 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
         $args += " --no-build"
     }
 
-    if ($ci) {
-        $args += " -- xUnit.ParallelizeTestCollections=false"
-    }
-
     if ($asBackgroundJob) {
         Write-Host("Starting on the background: $args")
         Write-Host("------------------------------------")
@@ -399,13 +395,13 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     }
 }
 
-function TestSolutionUsingMSBuild([string] $testSolution, [string] $targetFramework, [string] $testadapterpath, [string] $xunitArgs = "") {
+function TestSolutionUsingMSBuild([string] $testSolution, [string] $targetFramework, [string] $testadapterpath) {
     $dotnetPath = InitializeDotNetCli
     $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
     $solutionName = [System.IO.Path]::GetFileNameWithoutExtension($testSolution)
     $testLogPath = "$ArtifactsDir\TestResults\$configuration\{assembly}.{framework}.xml"
     $testBinLogPath = "$LogDir\${solutionName}_$targetFramework.binlog"
-    $args = "test $testSolution -c $configuration -f $targetFramework --test-adapter-path $testadapterpath -v n --logger ""xunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
+    $args = "test $testSolution -c $configuration -f $targetFramework --test-adapter-path $testadapterpath -v minimal --logger ""xunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
     $args += " --blame --results-directory $ArtifactsDir\TestResults\$configuration"
 
     if (-not $noVisualStudio -or $norestore) {
@@ -415,8 +411,6 @@ function TestSolutionUsingMSBuild([string] $testSolution, [string] $targetFramew
     if (-not $noVisualStudio) {
         $args += " --no-build"
     }
-
-    $args += $xunitArgs
 
     Write-Host("$args")
     Exec-Console $dotnetExe $args
@@ -616,9 +610,7 @@ try {
     $script:BuildMessage = "Failure running tests"
 
     if ($testCoreClr) {
-        $xunitArgs = if ($ci) { " -- xUnit.ParallelizeTestCollections=false" } else { "" }
- 
-        TestSolutionUsingMSBuild -testSolution "$RepoRoot\FSharp.sln" -targetFramework $script:coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -xunitArgs $xunitArgs
+        TestSolutionUsingMSBuild -testSolution "$RepoRoot\FSharp.sln" -targetFramework $script:coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\"
     }
 
     if ($testDesktop) {
