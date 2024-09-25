@@ -578,7 +578,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                             yield! walkExpr false e
 
                         | SynExpr.YieldOrReturnFrom(_, e, _)
-                        | SynExpr.DoBang(e, _) ->
+                        | SynExpr.DoBang(expr = e) ->
                             yield! checkRange e.Range
                             yield! walkExpr false e
 

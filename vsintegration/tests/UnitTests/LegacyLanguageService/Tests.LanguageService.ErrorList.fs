@@ -4,7 +4,7 @@ namespace Tests.LanguageService.ErrorList
 
 open System
 open System.IO
-open NUnit.Framework
+open Xunit
 open Microsoft.VisualStudio.FSharp
 open Salsa.Salsa
 open Salsa.VsOpsUtils
@@ -13,14 +13,6 @@ open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 
-[<SetUpFixture>]
-type public AssemblyResolverTestFixture () =
-
-    [<OneTimeSetUp>]
-    member public _.Init () = AssemblyResolver.addResolver ()
-
-[<TestFixture>]
-[<Category "LanguageService">] 
 type UsingMSBuild() as this = 
     inherit LanguageServiceBaseTests()
 
@@ -55,7 +47,7 @@ type UsingMSBuild() as this =
 
     let assertContains (errors : list<Error>) text = 
         let ok = errors |> List.exists (fun err -> err.Message = text)
-        Assert.IsTrue(ok, sprintf "Error list should contain '%s' message" text)
+        Assert.True(ok, sprintf "Error list should contain '%s' message" text)
 
     let assertExpectedErrorMessages expected (actual: list<Error>) =
         let normalizeCR input = System.Text.RegularExpressions.Regex.Replace(input, @"\r\n|\n\r|\n|\r", "\r\n")
@@ -66,14 +58,7 @@ type UsingMSBuild() as this =
             |> normalizeCR
         let expected = expected |> String.concat Environment.NewLine |> normalizeCR
         
-        let message = 
-            sprintf """
-=[ expected ]============
-%s
-=[ actual ]==============
-%s
-=========================""" expected actual
-        Assert.AreEqual(expected, actual, message)
+        Assert.Equal(expected, actual)
 
     //verify the error list Count
     member private this.VerifyErrorListCountAtOpenProject(fileContents : string, num : int) =
@@ -99,7 +84,7 @@ type UsingMSBuild() as this =
         
         TakeCoffeeBreak(this.VS) // Wait for the background compiler to catch up.
         let warnList = GetWarnings(project)
-        Assert.AreEqual(expectedNum,warnList.Length)
+        Assert.Equal(expectedNum,warnList.Length)
 
     //verify no the error list 
     member private this.VerifyNoErrorListAtOpenProject(fileContents : string, ?addtlRefAssy : string list) = 
@@ -110,7 +95,7 @@ type UsingMSBuild() as this =
         for error in errorList do
             printfn "%A" error.Severity
             printf "%s\n" (error.ToString()) 
-        Assert.IsTrue(errorList.IsEmpty)
+        Assert.True(errorList.IsEmpty)
     
     //Verify the error list contained the expected string
     member private this.VerifyErrorListContainedExpectedString(fileContents : string, expectedStr : string, ?addtlRefAssy : string list) =
@@ -132,8 +117,7 @@ type UsingMSBuild() as this =
             else
                 failwithf "The error list number is not the expected %d" num
     
-    [<Test>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``OverloadsAndExtensionMethodsForGenericTypes``() = 
         let fileContent = 
             """
@@ -153,13 +137,13 @@ let g (t : T) = t.Count()
         this.VerifyNoErrorListAtOpenProject(fileContent)
 
 
-    [<Test>]
+    [<Fact>]
     member public this.``ErrorsInScriptFile``() = 
         let (solution, project, file) = this.CreateSingleFileProject("", fileKind = SourceFileKind.FSX)
         
         let checkErrors expected = 
             let l = List.length (GetErrors project)
-            Assert.AreEqual(expected, l, "Unexpected number of errors in error list")
+            Assert.Equal(expected, l)
         
         TakeCoffeeBreak(this.VS)
         checkErrors 0
@@ -179,8 +163,7 @@ let g (t : T) = t.Count()
         TakeCoffeeBreak(this.VS)
         checkErrors 0
 
-    [<Test>]
-    [<Ignore("GetErrors function does not work for this case")>]
+    [<Fact(Skip = "GetErrors function does not work for this case")>]
     member public this.``LineDirective``() = 
         use _guard = this.UsingNewVS()
         let fileContents = """
@@ -193,12 +176,12 @@ let g (t : T) = t.Count()
 
         let file = OpenFile(project, "File1.fs")
         let _ = OpenFile(project,"File2.fs")
-        Assert.IsFalse(Build(project).BuildSucceeded)
+        Assert.False(Build(project).BuildSucceeded)
 
         this.VerifyCountAtSpecifiedFile(project,1)
         VerifyErrorListContainedExpectedStr("The value or constructor 'y' is not defined",project)
 
-    [<Test>]
+    [<Fact>]
     member public this.``InvalidConstructorOverload``() = 
         let content = """
         type X private() = 
@@ -213,8 +196,7 @@ let g (t : T) = t.Count()
         CheckErrorList content (assertExpectedErrorMessages expectedMessages)
             
 
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Test>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Query.InvalidJoinRelation.GroupJoin``() = 
         let content = """
 let x = query { 
@@ -226,12 +208,11 @@ let x = query {
             fun errors ->
                 match errors with
                 | [err] ->
-                    Assert.AreEqual("Invalid join relation in 'groupJoin'. Expected 'expr <op> expr', where <op> is =, =?, ?= or ?=?.", err.Message)
+                    Assert.Equal("Invalid join relation in 'groupJoin'. Expected 'expr <op> expr', where <op> is =, =?, ?= or ?=?.", err.Message)
                 | errs -> 
                     Assert.Fail("Unexpected content of error list")
 
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Test>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Query.NonOpenedNullableModule.Join``() = 
         let content = """
 let t = 
@@ -244,12 +225,11 @@ let t =
             fun errors ->
                 match errors with
                 | [err] ->
-                    Assert.AreEqual("The operator '?=?' cannot be resolved. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.", err.Message)
+                    Assert.Equal("The operator '?=?' cannot be resolved. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.", err.Message)
                 | errs -> 
                     Assert.Fail("Unexpected content of error list")
 
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Test>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Query.NonOpenedNullableModule.GroupJoin``() = 
         let content = """
 let t = 
@@ -262,13 +242,12 @@ let t =
             fun errors ->
                 match errors with
                 | [err] ->
-                    Assert.AreEqual("The operator '?=?' cannot be resolved. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.", err.Message)
+                    Assert.Equal("The operator '?=?' cannot be resolved. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.", err.Message)
                 | errs -> 
                     Assert.Fail("Unexpected content of error list")
 
 
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Test>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Query.InvalidJoinRelation.Join``() = 
         let content = """
 let x = 
@@ -282,11 +261,11 @@ let x =
             fun errors ->
                 match errors with
                 | [err] ->
-                    Assert.AreEqual("Invalid join relation in 'join'. Expected 'expr <op> expr', where <op> is =, =?, ?= or ?=?.", err.Message)
+                    Assert.Equal("Invalid join relation in 'join'. Expected 'expr <op> expr', where <op> is =, =?, ?= or ?=?.", err.Message)
                 | errs -> 
                     Assert.Fail("Unexpected content of error list")
 
-    [<Test>]
+    [<Fact>]
     member public this.``InvalidMethodOverload``() = 
         let content = """
         System.Console.WriteLine(null)
@@ -294,7 +273,7 @@ let x =
         let expectedMessages = [ "A unique overload for method 'WriteLine' could not be determined based on type information prior to this program point. A type annotation may be needed.\u001d\u001dKnown type of argument: 'a0 when 'a0: null\u001d\u001dCandidates:\u001d - System.Console.WriteLine(buffer: char array) : unit\u001d - System.Console.WriteLine(format: string, [<System.ParamArray>] arg: obj array) : unit\u001d - System.Console.WriteLine(value: obj) : unit\u001d - System.Console.WriteLine(value: string) : unit" ]
         CheckErrorList content (assertExpectedErrorMessages expectedMessages)
 
-    [<Test>]
+    [<Fact>]
     member public this.``InvalidMethodOverload2``() = 
         let content = """
 type A<'T>() = 
@@ -309,7 +288,7 @@ b.Do(1, 1)
         let expectedMessages = [ "A unique overload for method 'Do' could not be determined based on type information prior to this program point. A type annotation may be needed.\u001d\u001dKnown types of arguments: int * int\u001d\u001dCandidates:\u001d - member A.Do: a: int * b: 'T -> unit\u001d - member A.Do: a: int * b: int -> unit" ]
         CheckErrorList content (assertExpectedErrorMessages expectedMessages)
 
-    [<Test; Category("Expensive")>]
+    [<Fact>]
     member public this.``NoErrorInErrList``() = 
         use _guard = this.UsingNewVS()
         let fileContents1 = """
@@ -343,7 +322,7 @@ b.Do(1, 1)
         TakeCoffeeBreak(this.VS)
         this.VerifyCountAtSpecifiedFile(project,0)
 
-    [<Test; Category("Expensive")>]
+    [<Fact>]
     member public this.``NoLevel4Warning``() = 
         use _guard = this.UsingNewVS()
         let fileContents = """
@@ -361,14 +340,14 @@ b.Do(1, 1)
 
         this.VerifyCountAtSpecifiedFile(project,0)
         
-    [<Test>]
+    [<Fact>]
     //This is an verify action test & example
     member public this.``TestErrorMessage``() =
         let fileContent = """Console.WriteLine("test")"""
         let expectedStr = "The value, namespace, type or module 'Console' is not defined"
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr)
     
-    [<Test>]
+    [<Fact>]
     member public this.``TestWrongKeywordInInterfaceImplementation``() = 
         let fileContent = 
             """
@@ -382,14 +361,11 @@ type staticInInterface =
             
         CheckErrorList fileContent (function
             | err1 :: _ ->
-                Assert.IsTrue(err1.Message.Contains("No static abstract member was found that corresponds to this override"))
+                Assert.True(err1.Message.Contains("No static abstract member was found that corresponds to this override"))
             | x ->
                 Assert.Fail(sprintf "Unexpected errors: %A" x))
     
-    [<Test>]
-    [<Category("TypeProvider")>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Category("TypeProvider.MultipleErrors")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``TypeProvider.MultipleErrors`` () =
         let tpRef = PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")
         let checkList n = 
@@ -402,57 +378,51 @@ type staticInInterface =
             for err in errorList do
                 printfn "Severity: %A, Message: %s" err.Severity err.Message
 
-            Assert.IsTrue(List.length errorList = n, "Unexpected size of error list")
+            Assert.True(List.length errorList = n, "Unexpected size of error list")
             let uniqueErrors = 
                 errorList 
                 |> Seq.map (fun m -> m.Message, m.Severity) 
                 |> set
-            Assert.IsTrue(uniqueErrors.Count = n, "List should not contain duplicate errors")
+            Assert.True(uniqueErrors.Count = n, "List should not contain duplicate errors")
             for x = 0 to (n - 1) do
                 let expectedName = sprintf "The type provider 'DummyProviderForLanguageServiceTesting.TypeProviderThatThrowsErrors' reported an error: Error %d" x
-                Assert.IsTrue(Set.contains (expectedName, Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error) uniqueErrors)
+                Assert.True(Set.contains (expectedName, Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error) uniqueErrors)
 
         for i = 1 to 10 do
             checkList i
 
-    [<Test>]
-    [<Category("Records")>]
+    [<Fact>]
     member public this.``Records.ErrorList.IncorrectBindings1``() = 
         for code in [ "{_}"; "{_ = }"] do
             printfn "checking %s" code
             CheckErrorList code <|
                 fun errs ->
                     printfn "%A" errs
-                    Assert.IsTrue((List.length errs) = 2)
+                    Assert.True((List.length errs) = 2)
                     assertContains errs "Field bindings must have the form 'id = expr;'"
                     assertContains errs "'_' cannot be used as field name"
 
-    [<Test>]
-    [<Category("Records")>]
+    [<Fact>]
     member public this.``Records.ErrorList.IncorrectBindings2``() =
         CheckErrorList "{_ = 1}" <|
             function
-            | [err] -> Assert.AreEqual("'_' cannot be used as field name", err.Message)
+            | [err] -> Assert.Equal("'_' cannot be used as field name", err.Message)
             | x -> printfn "%A" x; Assert.Fail("unexpected content of error list")
 
-    [<Test>]
-    [<Category("Records")>]
+    [<Fact>]
     member public this.``Records.ErrorList.IncorrectBindings3``() =
         CheckErrorList "{a = 1; _; _ = 1}" <|
             fun errs -> 
-                Assert.IsTrue((List.length errs) = 3)
+                Assert.True((List.length errs) = 3)
                 let groupedErrs = errs |> Seq.groupBy (fun e -> e.Message) |> Seq.toList
-                Assert.IsTrue((List.length groupedErrs) = 2)
+                Assert.True((List.length groupedErrs) = 2)
                 for (msg, e) in groupedErrs do
-                    if msg = "'_' cannot be used as field name" then Assert.AreEqual(2, Seq.length e)
-                    elif msg = "Field bindings must have the form 'id = expr;'" then Assert.AreEqual(1, Seq.length e)
+                    if msg = "'_' cannot be used as field name" then Assert.Equal(2, Seq.length e)
+                    elif msg = "Field bindings must have the form 'id = expr;'" then Assert.Equal(1, Seq.length e)
                     else Assert.Fail (sprintf "Unexpected message %s" msg)
 
 
-    [<Test>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Category("TypeProvider")>]
-    [<Category("TypeProvider.StaticParameters")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     //This test case Verify the Error List shows the correct error message when the static parameter type is invalid
     //Intent: We want to make sure that both errors coming from the TP and the compilation of things specific to type provider are properly flagged in the error list.
     member public this.``TypeProvider.StaticParameters.IncorrectType `` () =
@@ -463,10 +433,7 @@ type staticInInterface =
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr,
             addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
     
-    [<Test>]
-    [<Category("TypeProvider")>]
-    [<Category("TypeProvider.StaticParameters")>]
-    [<Ignore("This is ignored because currently the Mock Type Provider is not evaluating the static parameter.")>]
+    [<Fact(Skip = "This is ignored because currently the Mock Type Provider is not evaluating the static parameter.")>]
     //This test case Verify the Error List shows the correct error message when applying invalid static parameter to the provided type
     member public this.``TypeProvider.StaticParameters.Incorrect `` () =
         
@@ -477,10 +444,7 @@ type staticInInterface =
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr,
             addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
    
-    [<Test>]
-    [<Category("TypeProvider")>]
-    [<Category("TypeProvider.StaticParameters")>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     //This test case Verify that Error List shows the correct error message when Type Provider that takes two static parameter is given only one static parameter.
     member public this.``TypeProvider.StaticParameters.IncorrectNumberOfParameter  `` () =
         
@@ -491,9 +455,7 @@ type staticInInterface =
        
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr,
             addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
-    [<Test>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Category("TypeProvider")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``TypeProvider.ProhibitedMethods`` () =
         let cases = 
             [
@@ -509,9 +471,7 @@ type staticInInterface =
                     addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")]
                 )    
     
-    [<Test>]
-    [<Category("TypeProvider")>]
-    [<Category("TypeProvider.StaticParameters")>]
+    [<Fact>]
     //This test case verify that the Error list count is one in the Error list item when given invalid static parameter that raises an error.
     member public this.``TypeProvider.StaticParameters.ErrorListItem `` () =
         
@@ -520,10 +480,7 @@ type staticInInterface =
                             type foo = N1.T< const "Hello World",2>""",
             num = 1) 
     
-    [<Test>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Category("TypeProvider")>]
-    [<Category("TypeProvider.StaticParameters")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     //This test case Verify that there is No Error list count in the Error list item when the file content is correct.
     member public this.``TypeProvider.StaticParameters.NoErrorListCount `` () =
                  
@@ -533,7 +490,7 @@ type staticInInterface =
             addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")]) 
     
 
-    [<Test>]
+    [<Fact>]
     member public this.``NoError.FlagsAndSettings.TargetOptionsRespected``() =
         let fileContent = """
             [<System.Obsolete("x")>]
@@ -544,10 +501,9 @@ type staticInInterface =
 
         TakeCoffeeBreak(this.VS) // Wait for the background compiler to catch up.
         let errorList = GetErrors(project)
-        Assert.IsTrue(errorList.IsEmpty)
+        Assert.True(errorList.IsEmpty)
 
-    [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Fact(Skip = "https://github.com/dotnet/fsharp/issues/6166")>]
     member public this.``UnicodeCharacters``() = 
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -558,12 +514,12 @@ type staticInInterface =
         let file = OpenFile(project,"新規baProgram.fsi")  
         let file = OpenFile(project,"新規bcrogram.fs") 
 
-        Assert.IsFalse(Build(project).BuildSucceeded)
-        Assert.IsTrue(GetErrors(project) 
+        Assert.False(Build(project).BuildSucceeded)
+        Assert.True(GetErrors(project) 
                         |> List.exists(fun error -> (error.ToString().Contains("新規baProgram")))) 
 
     // In this bug, particular warns were still present after nowarn        
-    [<Test>]
+    [<Fact>]
     member public this.``NoWarn.Bug5424``() =  
         let fileContent = """
             #nowarn "67" // this type test or downcast will always hold
@@ -576,7 +532,7 @@ type staticInInterface =
         this.VerifyNoErrorListAtOpenProject(fileContent)
 
     /// FEATURE: Errors in flags are sent in Error list.
-    [<Test>]
+    [<Fact>]
     member public this.``FlagsAndSettings.ErrorsInFlagsDisplayed``() =  
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -587,7 +543,7 @@ type staticInInterface =
         TakeCoffeeBreak(this.VS) // Wait for the background compiler to catch up.
         VerifyErrorListContainedExpectedStr("nonexistent",project)
 
-    [<Test>]
+    [<Fact>]
     member public this.``BackgroundComplier``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """
@@ -614,7 +570,7 @@ type staticInInterface =
                     """,
             num = 2)
 
-    [<Test>]
+    [<Fact>]
     member public this.``CompilerErrorsInErrList1``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """
@@ -624,7 +580,7 @@ type staticInInterface =
                     let a = NoVal""",
             num = 1 )
 
-    // [<Test>] disabled for F#8, legacy service, covered in FCS tests instead
+    // [<Fact>] disabled for F#8, legacy service, covered in FCS tests instead
     member public this.``CompilerErrorsInErrList4``() = 
         this.VerifyNoErrorListAtOpenProject(
             fileContents = """
@@ -644,7 +600,7 @@ type staticInInterface =
   
                 let _fsyacc_gotos = [| 0us; 1us; 2us|] """ )
 
-    [<Test>]
+    [<Fact>]
     member public this.``CompilerErrorsInErrList5``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """                
@@ -653,7 +609,7 @@ type staticInInterface =
                 let x = 0 """,
             num = 1)
 
-    [<Test>]
+    [<Fact>]
     member public this.``CompilerErrorsInErrList6``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """               
@@ -666,7 +622,7 @@ type staticInInterface =
                     | B = 0N """,
             num = 2)
 
-    [<Test>]
+    [<Fact>]
     member public this.``CompilerErrorsInErrList7``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """               
@@ -697,14 +653,14 @@ type staticInInterface =
                 let foo = 1 """,
             num = 5)
 
-    [<Test>]
+    [<Fact>]
     member public this.``CompilerErrorsInErrList8``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """              
                 type EnumInt8s      = | A1 = - 10y """ ,
             num = 1 )
 
-    [<Test>]
+    [<Fact>]
     member public this.``CompilerErrorsInErrList9``() = 
         use _guard = this.UsingNewVS()
         let fileContents1 = """
@@ -732,7 +688,7 @@ type staticInInterface =
         Build(project) |> ignore
         this.VerifyCountAtSpecifiedFile(project,1)
 
-    [<Test>]
+    [<Fact>]
     member public this.``CompilerErrorsInErrList10``() = 
         let fileContents = """
             namespace Errorlist
@@ -744,26 +700,26 @@ type staticInInterface =
 
         this.VerifyCountAtSpecifiedFile(project,1)
 
-    [<Test>]
+    [<Fact>]
     member public this.``DoubleClickErrorListItem``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """
                 let x = x """,
             num = 1)
 
-    [<Test>]
+    [<Fact>]
     member public this.``FixingCodeAfterBuildRemovesErrors01``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """
                 let x = 4 + "x" """,
             num = 2)
 
-    [<Test>]
+    [<Fact>]
     member public this.``FixingCodeAfterBuildRemovesErrors02``() = 
         this.VerifyNoErrorListAtOpenProject(
             fileContents = "let x = 4" )   
                                  
-    [<Test>]
+    [<Fact>]
     member public this.``IncompleteExpression``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """
@@ -775,7 +731,7 @@ type staticInInterface =
                 List.map (fun x -> x + 1) """ ,
             num = 2)
 
-    [<Test>]
+    [<Fact>]
     member public this.``IntellisenseRequest``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """
@@ -783,7 +739,7 @@ type staticInInterface =
                     member a.B(*Marker*) : int = "1" """,
             num = 1)
 
-    [<Test>]
+    [<Fact>]
     member public this.``TypeChecking1``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """
@@ -800,7 +756,7 @@ type staticInInterface =
                     x.Next <- Some x  """,
             num = 1)
             
-    [<Test>]
+    [<Fact>]
     member public this.``TypeChecking2``() = 
         this.VerifyErrorListContainedExpectedString(
             fileContents = """
@@ -817,7 +773,7 @@ type staticInInterface =
                     x.Next <- Some x  """,
             expectedStr = "Foo.Thread option")
             
-    [<Test>]
+    [<Fact>]
     member public this.``TypeChecking3``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """
@@ -833,7 +789,7 @@ type staticInInterface =
                     x.Next <- Some 1 """,
             num = 1)
             
-    [<Test>]
+    [<Fact>]
     member public this.``TypeChecking4``() = 
         this.VerifyErrorListContainedExpectedString(
             fileContents = """
@@ -883,7 +839,7 @@ type staticInInterface =
         AssertContains(tooltip,"string")
 *)
 
-    [<Test>]
+    [<Fact>]
     member public this.``Warning.ConsistentWithLanguageService``() =  
         let fileContent = """
             open System
@@ -892,9 +848,9 @@ type staticInInterface =
         let (_, project, file) = this.CreateSingleFileProject(fileContent, fileKind = SourceFileKind.FSX)
         TakeCoffeeBreak(this.VS) // Wait for the background compiler to catch up.
         let warnList = GetWarnings(project)
-        Assert.AreEqual(20,warnList.Length)
+        Assert.Equal(20,warnList.Length)
 
-    [<Test>]
+    [<Fact>]
     member public this.``Warning.ConsistentWithLanguageService.Comment``() =  
         let fileContent = """
             open System
@@ -903,10 +859,9 @@ type staticInInterface =
         let (_, project, file) = this.CreateSingleFileProject(fileContent, fileKind = SourceFileKind.FSX)
         TakeCoffeeBreak(this.VS) // Wait for the background compiler to catch up.
         let warnList = GetWarnings(project)
-        Assert.AreEqual(0,warnList.Length)
+        Assert.Equal(0,warnList.Length)
 
-    [<Test>]
-    [<Ignore("GetErrors function does not work for this case")>]
+    [<Fact(Skip = "GetErrors function does not work for this case")>]
     member public this.``Errorlist.WorkwithoutNowarning``() =  
         let fileContent = """
             type Fruit (shelfLife : int) as x =
@@ -915,12 +870,11 @@ type staticInInterface =
             """
         let (_, project, file) = this.CreateSingleFileProject(fileContent)
 
-        Assert.IsTrue(Build(project).BuildSucceeded)
+        Assert.True(Build(project).BuildSucceeded)
         TakeCoffeeBreak(this.VS)
         let warnList = GetErrors(project)
-        Assert.AreEqual(1,warnList.Length) 
+        Assert.Equal(1,warnList.Length) 
         
 // Context project system
-[<TestFixture>] 
 type UsingProjectSystem() = 
     inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)

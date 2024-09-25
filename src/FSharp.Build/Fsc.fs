@@ -786,10 +786,10 @@ type public Fsc() as this =
         let builder = generateCommandLineBuilder ()
         builder.GetCapturedArguments() |> String.concat Environment.NewLine
 
-    // expose this to internal components (for nunit testing)
+    // expose this to internal components (for unit testing)
     member internal fsc.InternalGenerateCommandLineCommands() = fsc.GenerateCommandLineCommands()
 
-    // expose this to internal components (for nunit testing)
+    // expose this to internal components (for unit testing)
     member internal fsc.InternalGenerateResponseFileCommands() = fsc.GenerateResponseFileCommands()
 
     member internal fsc.InternalExecuteTool(pathToTool, responseFileCommands, commandLineCommands) =
