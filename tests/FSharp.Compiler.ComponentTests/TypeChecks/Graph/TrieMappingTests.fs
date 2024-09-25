@@ -1,6 +1,6 @@
 ﻿module TypeChecks.TrieMappingTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Compiler.GraphChecking
 open TestUtils
 
@@ -8,7 +8,7 @@ let private noDependencies = Set.empty<int>
 
 let private getLastTrie files = TrieMapping.mkTrie files |> Array.last |> snd
 
-[<Test>]
+[<Fact>]
 let ``Basic trie`` () =
     let sampleFiles =
         [|
@@ -49,22 +49,22 @@ type C = { CX: int; CY: int }
     | current -> Assert.Fail($"mkTrie should always return a TrieNodeInfo.Root, got {current}")
 
     let xNode = trie.Children.["X"]
-    Assert.AreEqual(1, xNode.Children.Count)
+    Assert.Equal(1, xNode.Children.Count)
     Assert.True(Seq.isEmpty xNode.Files)
 
     let yNode = xNode.Children["Y"]
-    Assert.AreEqual(2, yNode.Children.Count)
-    Assert.AreEqual(set [| 2 |], yNode.Files)
+    Assert.Equal(2, yNode.Children.Count)
+    Assert.Equal<Set<FileIndex>>(set [| 2 |], yNode.Files)
 
     let aNode = yNode.Children["A"]
-    Assert.AreEqual(0, aNode.Children.Count)
-    Assert.AreEqual(set [| 0 |], aNode.Files)
+    Assert.Equal(0, aNode.Children.Count)
+    Assert.Equal<Set<FileIndex>>(set [| 0 |], aNode.Files)
 
     let bNode = yNode.Children["B"]
-    Assert.AreEqual(0, bNode.Children.Count)
-    Assert.AreEqual(set [| 1 |], bNode.Files)
+    Assert.Equal(0, bNode.Children.Count)
+    Assert.Equal<Set<FileIndex>>(set [| 1 |], bNode.Files)
 
-[<Test>]
+[<Fact>]
 let ``Toplevel AutoOpen module with prefixed namespace`` () =
     let trie =
         getLastTrie
@@ -87,11 +87,11 @@ let a = 0
 
     // Assert that both A and B expose file index 0
     let aNode = trie.Children.["A"]
-    Assert.AreEqual(set [| 0 |], aNode.Files)
+    Assert.Equal<Set<FileIndex>>(set [| 0 |], aNode.Files)
     let bNode = aNode.Children.["B"]
-    Assert.AreEqual(set [| 0 |], bNode.Files)
+    Assert.Equal<Set<FileIndex>>(set [| 0 |], bNode.Files)
 
-[<Test>]
+[<Fact>]
 let ``Toplevel AutoOpen module with multi prefixed namespace`` () =
     let trie =
         getLastTrie
@@ -114,13 +114,13 @@ let a = 0
 
     // Assert that B and C expose file index 0, namespace A should not.
     let aNode = trie.Children.["A"]
-    Assert.AreEqual(noDependencies, aNode.Files)
+    Assert.Equal<Set<FileIndex>>(noDependencies, aNode.Files)
     let bNode = aNode.Children.["B"]
-    Assert.AreEqual(set [| 0 |], bNode.Files)
+    Assert.Equal<Set<FileIndex>>(set [| 0 |], bNode.Files)
     let cNode = bNode.Children.["C"]
-    Assert.AreEqual(set [| 0 |], cNode.Files)
+    Assert.Equal<Set<FileIndex>>(set [| 0 |], cNode.Files)
 
-[<Test>]
+[<Fact>]
 let ``Global namespace should link files to the root node`` () =
     let trie =
         getLastTrie
@@ -159,9 +159,9 @@ type B = { Y : int }
                 }
             |]
 
-    Assert.AreEqual(set [| 0; 1 |], trie.Files)
+    Assert.Equal<Set<FileIndex>>(set [| 0; 1 |], trie.Files)
 
-[<Test>]
+[<Fact>]
 let ``Module with a single ident and AutoOpen attribute should link files to root`` () =
     let trie =
         getLastTrie
@@ -202,10 +202,10 @@ type B = { Y : int }
                 }
             |]
 
-    Assert.AreEqual(set [| 0; 1 |], trie.Files)
-    Assert.AreEqual(0, trie.Children.Count)
+    Assert.Equal<Set<FileIndex>>(set [| 0; 1 |], trie.Files)
+    Assert.Equal(0, trie.Children.Count)
 
-[<Test>]
+[<Fact>]
 let ``Module with AutoOpen attribute and two ident should expose file at two levels`` () =
     let trie =
         getLastTrie
@@ -226,13 +226,13 @@ type A = { A : int }
                 }
             |]
 
-    Assert.AreEqual(noDependencies, trie.Files)
+    Assert.Equal<Set<FileIndex>>(noDependencies, trie.Files)
     let xNode = trie.Children.["X"]
-    Assert.AreEqual(set [| 0 |], xNode.Files)
+    Assert.Equal<Set<FileIndex>>(set [| 0 |], xNode.Files)
     let yNode = xNode.Children.["Y"]
-    Assert.AreEqual(set [| 0 |], yNode.Files)
+    Assert.Equal<Set<FileIndex>>(set [| 0 |], yNode.Files)
 
-[<Test>]
+[<Fact>]
 let ``Module with AutoOpen attribute and three ident should expose file at last two levels`` () =
     let trie =
         getLastTrie
@@ -253,15 +253,15 @@ type A = { A : int }
                 }
             |]
 
-    Assert.AreEqual(noDependencies, trie.Files)
+    Assert.Equal<Set<FileIndex>>(noDependencies, trie.Files)
     let xNode = trie.Children.["X"]
-    Assert.AreEqual(noDependencies, xNode.Files)
+    Assert.Equal<Set<FileIndex>>(noDependencies, xNode.Files)
     let yNode = xNode.Children.["Y"]
-    Assert.AreEqual(set [| 0 |], yNode.Files)
+    Assert.Equal<Set<FileIndex>>(set [| 0 |], yNode.Files)
     let zNode = yNode.Children.["Z"]
-    Assert.AreEqual(set [| 0 |], zNode.Files)
+    Assert.Equal<Set<FileIndex>>(set [| 0 |], zNode.Files)
 
-[<Test>]
+[<Fact>]
 let ``Nested AutoOpen module in namespace will expose the file to the namespace node`` () =
     let trie =
         getLastTrie
@@ -284,15 +284,15 @@ module Z =
                 }
             |]
 
-    Assert.AreEqual(noDependencies, trie.Files)
+    Assert.Equal<Set<FileIndex>>(noDependencies, trie.Files)
     let xNode = trie.Children.["X"]
-    Assert.AreEqual(noDependencies, xNode.Files)
+    Assert.Equal<Set<FileIndex>>(noDependencies, xNode.Files)
     let yNode = xNode.Children.["Y"]
-    Assert.AreEqual(set [| 0 |], yNode.Files)
+    Assert.Equal<Set<FileIndex>>(set [| 0 |], yNode.Files)
     let zNode = yNode.Children.["Z"]
-    Assert.AreEqual(set [| 0 |], zNode.Files)
+    Assert.Equal<Set<FileIndex>>(set [| 0 |], zNode.Files)
 
-[<Test>]
+[<Fact>]
 let ``Two modules with the same name, only the first file exposes the index`` () =
     let trie =
         getLastTrie
@@ -325,11 +325,11 @@ let _ = ()
                 }
             |]
 
-    Assert.AreEqual(1, trie.Children.Count)
+    Assert.Equal(1, trie.Children.Count)
     let aNode = trie.Children.["A"]
-    Assert.AreEqual(set [| 0 |], aNode.Files)
+    Assert.Equal<Set<FileIndex>>(set [| 0 |], aNode.Files)
 
-[<Test>]
+[<Fact>]
 let ``Two nested modules with the same name, in named namespace`` () =
     let trie =
         getLastTrie
@@ -352,11 +352,11 @@ module ``module`` =
                 }
             |]
 
-    Assert.AreEqual(1, trie.Children.Count)
+    Assert.Equal(1, trie.Children.Count)
     let node = trie.Children.["N"]
-    Assert.AreEqual(1, node.Children.Count)
+    Assert.Equal(1, node.Children.Count)
 
-[<Test>]
+[<Fact>]
 let ``Two nested modules with the same name, in namespace global`` () =
     let trie =
         getLastTrie
@@ -380,9 +380,9 @@ module ``module`` =
             |]
 
     // namespace global leads to a Root entry, no further processing will be done.
-    Assert.AreEqual(set [| 0 |], trie.Files)
+    Assert.Equal<Set<FileIndex>>(set [| 0 |], trie.Files)
 
-[<Test>]
+[<Fact>]
 let ``Two nested modules with the same name, in anonymous module`` () =
     let trie =
         getLastTrie
@@ -403,10 +403,10 @@ module ``module`` =
                 }
             |]
 
-    Assert.AreEqual(1, trie.Children.Count)
+    Assert.Equal(1, trie.Children.Count)
     Assert.True(trie.Children.ContainsKey("module"))
 
-[<Test>]
+[<Fact>]
 let ``Two nested modules with the same name, in nested module`` () =
     let trie =
         getLastTrie
@@ -432,10 +432,10 @@ module B =
             |]
 
     let bNode = trie.Children["A"].Children["B"]
-    Assert.AreEqual(1, bNode.Children.Count)
+    Assert.Equal(1, bNode.Children.Count)
     Assert.True(bNode.Children.ContainsKey("module"))
 
-[<Test>]
+[<Fact>]
 let ``Two nested modules with the same name, in nested module in signature file`` () =
     let trie =
         getLastTrie
@@ -459,10 +459,10 @@ module B =
             |]
 
     let bNode = trie.Children["A"].Children["B"]
-    Assert.AreEqual(1, bNode.Children.Count)
+    Assert.Equal(1, bNode.Children.Count)
     Assert.True(bNode.Children.ContainsKey("module"))
 
-[<Test>]
+[<Fact>]
 let ``Two namespaces with the same name in the same implementation file`` () =
     let trie =
         getLastTrie
@@ -486,9 +486,9 @@ module C = begin end
             |]
 
     let aNode = trie.Children["A"]
-    Assert.AreEqual(2, aNode.Children.Count)
+    Assert.Equal(2, aNode.Children.Count)
 
-[<Test>]
+[<Fact>]
 let ``Two namespaces with the same name in the same signature file`` () =
     let trie =
         getLastTrie
@@ -512,9 +512,9 @@ module C = begin end
             |]
 
     let aNode = trie.Children["A"]
-    Assert.AreEqual(2, aNode.Children.Count)
+    Assert.Equal(2, aNode.Children.Count)
 
-[<Test>]
+[<Fact>]
 let ``Tries are built up incrementally`` () =
     let trie =
         TrieMapping.mkTrie
@@ -542,12 +542,12 @@ let ``Tries are built up incrementally`` () =
             |]
 
     for idx, t in trie do
-        Assert.AreEqual(idx + 1, t.Children.Count)
+        Assert.Equal(idx + 1, t.Children.Count)
 
 
 module InvalidSyntax =
 
-    [<Test>]
+    [<Fact>]
     let ``Unnamed module`` () =
         let trie =
             getLastTrie

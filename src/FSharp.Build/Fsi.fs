@@ -388,10 +388,10 @@ type public Fsi() as this =
         let builder = generateCommandLineBuilder ()
         builder.GetCapturedArguments() |> String.concat Environment.NewLine
 
-    // expose this to internal components (for nunit testing)
+    // expose this to internal components (for unit testing)
     member internal fsi.InternalGenerateCommandLineCommands() = fsi.GenerateCommandLineCommands()
 
-    // expose this to internal components (for nunit testing)
+    // expose this to internal components (for unit testing)
     member internal fsi.InternalGenerateResponseFileCommands() = fsi.GenerateResponseFileCommands()
 
     member internal fsi.InternalExecuteTool(pathToTool, responseFileCommands, commandLineCommands) =
