@@ -184,7 +184,7 @@ type SynExprYieldOrReturnTrivia =
         /// The syntax range of the `yield` or `return` keyword.
         YieldOrReturnKeyword: range
     }
-    
+
     static member Zero: SynExprYieldOrReturnTrivia
 
 /// Represents additional information for SynExpr.YieldOrReturnFrom

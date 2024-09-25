@@ -1545,7 +1545,9 @@ let rec TryTranslateComputationExpression
 
             let dataCompPrior =
                 translatedCtxt (
-                    TranslateComputationExpressionNoQueryOps ceenv (SynExpr.YieldOrReturn((true, false), varSpaceExpr, mClause, SynExprYieldOrReturnTrivia.Zero ))
+                    TranslateComputationExpressionNoQueryOps
+                        ceenv
+                        (SynExpr.YieldOrReturn((true, false), varSpaceExpr, mClause, SynExprYieldOrReturnTrivia.Zero))
                 )
 
             // Rebind using for ...
@@ -1576,7 +1578,9 @@ let rec TryTranslateComputationExpression
                     let isYield = not (customOperationMaintainsVarSpaceUsingBind ceenv nm)
 
                     translatedCtxt (
-                        TranslateComputationExpressionNoQueryOps ceenv (SynExpr.YieldOrReturn((isYield, false), varSpaceExpr, mClause, SynExprYieldOrReturnTrivia.Zero ))
+                        TranslateComputationExpressionNoQueryOps
+                            ceenv
+                            (SynExpr.YieldOrReturn((isYield, false), varSpaceExpr, mClause, SynExprYieldOrReturnTrivia.Zero))
                     )
 
                 // Now run the consumeCustomOpClauses

@@ -362,7 +362,8 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
 
             AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css synYieldExpr.Range NoTrace genOuterTy genExprTy
 
-            let resultExpr = mkCoerceExpr (resultExpr, genOuterTy, synYieldExpr.Range, genExprTy)
+            let resultExpr =
+                mkCoerceExpr (resultExpr, genOuterTy, synYieldExpr.Range, genExprTy)
 
             let resultExpr =
                 if IsControlFlowExpression synYieldExpr then
@@ -372,7 +373,7 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
 
             Some(resultExpr, tpenv)
 
-        | SynExpr.YieldOrReturn(flags= (isYield, _); expr = synYieldExpr; trivia = { YieldOrReturnKeyword = m }) ->
+        | SynExpr.YieldOrReturn(flags = (isYield, _); expr = synYieldExpr; trivia = { YieldOrReturnKeyword = m }) ->
             let env = { env with eIsControlFlow = false }
             let genResultTy = NewInferenceType g
 
