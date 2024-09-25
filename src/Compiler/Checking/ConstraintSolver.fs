@@ -1455,15 +1455,17 @@ and SolveFunTypeEqn csenv ndeep m2 trace cxsln domainTy1 domainTy2 rangeTy1 rang
 //
 // "ty2 casts to ty1"
 // "a value of type ty2 can be used where a value of type ty1 is expected"
-and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) cxsln ty1 ty2 = 
-    // 'a :> obj ---> <solved> 
+and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) cxsln ty1 ty2 =     
     let ndeep = ndeep + 1
     let g = csenv.g
     let canShortcut = not trace.HasTrace
+
+    // 'a :> objnull ---> <solved> 
     if isObjNullTy g ty1 then 
         CompleteD
-    else if isObjTyWithoutNull g ty1 then        
-        SolveTypeUseNotSupportsNull csenv ndeep m2 trace ty2
+    elif isObjTyAnyNullness g ty1 && not csenv.MatchingOnly && not(isTyparTy g ty2) then
+        let nullness t = t |> stripTyEqnsA g canShortcut |> nullnessOfTy g
+        SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 (nullness ty1) (nullness ty2)
     else         
         let sty1 = stripTyEqnsA csenv.g canShortcut ty1
         let sty2 = stripTyEqnsA csenv.g canShortcut ty2
