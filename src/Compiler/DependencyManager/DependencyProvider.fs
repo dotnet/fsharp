@@ -164,10 +164,10 @@ type ReflectionDependencyManagerProvider
         else
             Activator.CreateInstance(theType, [| outputDir :> objnull |])
 
-    let nameProperty (x:objnull) = x |> nameProperty.GetValue |> string
-    let keyProperty (x:objnull) = x |> keyProperty.GetValue |> string
+    let nameProperty (x: objnull) = x |> nameProperty.GetValue |> string
+    let keyProperty (x: objnull) = x |> keyProperty.GetValue |> string
 
-    let helpMessagesProperty (x:objnull) =
+    let helpMessagesProperty (x: objnull) =
         let toStringArray (o: objnull) = o :?> string[]
 
         match helpMessagesProperty with
