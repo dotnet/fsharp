@@ -168,7 +168,7 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
 
         | SynExpr.ImplicitZero m -> Some(mkSeqEmpty cenv env m genOuterTy, tpenv)
 
-        | SynExpr.DoBang(_rhsExpr, m) -> error (Error(FSComp.SR.tcDoBangIllegalInSequenceExpression (), m))
+        | SynExpr.DoBang(trivia = { DoBangKeyword = m }) -> error (Error(FSComp.SR.tcDoBangIllegalInSequenceExpression (), m))
 
         | SynExpr.Sequential(sp, true, innerComp1, innerComp2, m, _) ->
             let env1 =
