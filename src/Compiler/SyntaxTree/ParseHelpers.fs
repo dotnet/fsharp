@@ -1213,3 +1213,11 @@ let mkValField
         mkSynField parseState idOpt typ isMutable access attribs mStaticOpt rangeStart (Some leadingKeyword)
 
     SynMemberDefn.ValField(field, field.Range)
+
+let leadingKeywordIsAbstract = 
+    function
+    | SynLeadingKeyword.Abstract _
+    | SynLeadingKeyword.AbstractMember _
+    | SynLeadingKeyword.StaticAbstract _
+    | SynLeadingKeyword.StaticAbstractMember _ -> true
+    | _ -> false

@@ -985,8 +985,11 @@ classMemberSpfn:
                match optLiteralValue with
                | None -> m
                | Some e -> unionRanges m e.Range
-
+        
        let flags, leadingKeyword = $3
+       if leadingKeywordIsAbstract leadingKeyword && Option.isSome $5 || Option.isSome getterAccess || Option.isSome setterAccess
+       then errorR(Error(FSComp.SR.parsAccessibilityModsIllegalForAbstract(), mWhole))
+
        let flags = flags (getSetAdjuster arity)
        let trivia = { LeadingKeyword = leadingKeyword; InlineKeyword = $4; WithKeyword = mWith; EqualsRange = mEquals }
        let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, vis2, optLiteralValue, mWhole, trivia)

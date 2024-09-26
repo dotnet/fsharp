@@ -160,3 +160,30 @@ module AccessibilityAnnotations_PermittedLocations =
         |> withDiagnostics [
             (Error 531, Line 8, Col 13, Line 8, Col 20, "Accessibility modifiers should come immediately prior to the identifier naming a construct")
         ]
+
+    [<Fact>]
+    let ``Signature File Test: abstract member cannot have access modifiers`` () =
+        Fsi """module Program
+
+type A =
+    abstract internal B: int ->int
+    abstract member internal E: int ->int
+    abstract member C: int with internal get, private set
+    abstract internal D: int with get, set
+    static abstract internal B2: int ->int
+    static abstract member internal E2: int ->int
+    static abstract member C2: int with internal get, private set
+    static abstract internal D2: int with get, set""" 
+        |> withOptions ["--nowarn:3535"]
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 0561, Line 4, Col 5, Line 4, Col 35, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+            (Error 0561, Line 5, Col 5, Line 5, Col 42, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+            (Error 0561, Line 6, Col 5, Line 6, Col 58, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+            (Error 0561, Line 7, Col 5, Line 7, Col 43, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+            (Error 0561, Line 8, Col 5, Line 8, Col 43, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+            (Error 0561, Line 9, Col 5, Line 9, Col 50, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+            (Error 0561, Line 10, Col 5, Line 10, Col 66, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+            (Error 0561, Line 11, Col 5, Line 11, Col 51, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+        ]
