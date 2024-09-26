@@ -2442,7 +2442,7 @@ let rec TryTranslateComputationExpression
             let methName = (if isYield then "Yield" else "Return")
 
             if ceenv.isQuery && not isYield then
-                errorR (Error(FSComp.SR.tcReturnMayNotBeUsedInQueries (), m))
+                error (Error(FSComp.SR.tcReturnMayNotBeUsedInQueries (), m))
 
             if
                 isNil (
