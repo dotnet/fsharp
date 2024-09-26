@@ -132,6 +132,11 @@
         <target state="translated">不要なかっこを削除します (試験段階であり、入力のパフォーマンスに影響する可能性があります)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Reuse_typechecking_results">
+        <source>Cache typechecking results (experimental)</source>
+        <target state="new">Cache typechecking results (experimental)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Send_Additional_Telemetry">
         <source>Send additional performance telemetry</source>
         <target state="translated">追加のパフォーマンス テレメトリを送信する</target>

@@ -233,6 +233,7 @@ type internal BackgroundCompiler =
         enableBackgroundItemKeyStoreAndSemanticClassification: bool *
         enablePartialTypeChecking: bool *
         parallelReferenceResolution: ParallelReferenceResolution *
+        reuseTypecheckingResults: ReuseTypecheckingResults *
         captureIdentifiersWhenParsing: bool *
         getSource: (string -> Async<ISourceText option>) option *
         useChangeNotifications: bool ->

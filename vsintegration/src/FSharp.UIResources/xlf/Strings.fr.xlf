@@ -132,6 +132,11 @@
         <target state="translated">Supprimer les parenthèses inutiles (expérimental, peut affecter les performances de saisie)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Reuse_typechecking_results">
+        <source>Cache typechecking results (experimental)</source>
+        <target state="new">Cache typechecking results (experimental)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Send_Additional_Telemetry">
         <source>Send additional performance telemetry</source>
         <target state="translated">Envoyer une télémétrie de performances supplémentaire</target>

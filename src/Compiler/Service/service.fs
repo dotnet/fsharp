@@ -122,6 +122,7 @@ type FSharpChecker
         enableBackgroundItemKeyStoreAndSemanticClassification,
         enablePartialTypeChecking,
         parallelReferenceResolution,
+        reuseTypecheckingResults,
         captureIdentifiersWhenParsing,
         getSource,
         useChangeNotifications,
@@ -141,6 +142,7 @@ type FSharpChecker
                 enableBackgroundItemKeyStoreAndSemanticClassification,
                 enablePartialTypeChecking,
                 parallelReferenceResolution,
+                reuseTypecheckingResults,
                 captureIdentifiersWhenParsing,
                 getSource,
                 useChangeNotifications
@@ -158,6 +160,7 @@ type FSharpChecker
                 enableBackgroundItemKeyStoreAndSemanticClassification,
                 enablePartialTypeChecking,
                 parallelReferenceResolution,
+                reuseTypecheckingResults,
                 captureIdentifiersWhenParsing,
                 getSource,
                 useChangeNotifications
@@ -204,6 +207,7 @@ type FSharpChecker
             ?enableBackgroundItemKeyStoreAndSemanticClassification,
             ?enablePartialTypeChecking,
             ?parallelReferenceResolution: bool,
+            ?reuseTypecheckingResults: bool,
             ?captureIdentifiersWhenParsing: bool,
             ?documentSource: DocumentSource,
             ?useTransparentCompiler: bool
@@ -238,6 +242,10 @@ type FSharpChecker
             invalidArg "enablePartialTypeChecking" "'keepAssemblyContents' and 'enablePartialTypeChecking' cannot be both enabled."
 
         let parallelReferenceResolution = inferParallelReferenceResolution parallelReferenceResolution
+        let reuseTypecheckingResults = 
+            match reuseTypecheckingResults with
+            | Some true -> ReuseTypecheckingResults.On
+            | _ -> ReuseTypecheckingResults.Off
 
         FSharpChecker(
             legacyReferenceResolver,
@@ -250,6 +258,7 @@ type FSharpChecker
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking,
             parallelReferenceResolution,
+            reuseTypecheckingResults,
             captureIdentifiersWhenParsing,
             (match documentSource with
              | Some(DocumentSource.Custom f) -> Some f

@@ -207,6 +207,11 @@ type ParallelReferenceResolution =
     | On
     | Off
 
+[<RequireQualifiedAccess>]
+type ReuseTypecheckingResults =
+    | On
+    | Off
+
 /// Determines the algorithm used for type-checking.
 [<RequireQualifiedAccess>]
 type TypeCheckingMode =
@@ -517,6 +522,8 @@ type TcConfigBuilder =
         mutable exiter: Exiter
 
         mutable parallelReferenceResolution: ParallelReferenceResolution
+
+        mutable reuseTypecheckingResults: ReuseTypecheckingResults
 
         mutable captureIdentifiersWhenParsing: bool
 
@@ -895,6 +902,8 @@ type TcConfig =
     member exiter: Exiter
 
     member parallelReferenceResolution: ParallelReferenceResolution
+
+    member reuseTypecheckingResults: ReuseTypecheckingResults
 
     member captureIdentifiersWhenParsing: bool
 

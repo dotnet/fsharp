@@ -132,6 +132,11 @@
         <target state="translated">Usuń niepotrzebne nawiasy (eksperymentalne, może to wpłynąć na wydajność pisania)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Reuse_typechecking_results">
+        <source>Cache typechecking results (experimental)</source>
+        <target state="new">Cache typechecking results (experimental)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Send_Additional_Telemetry">
         <source>Send additional performance telemetry</source>
         <target state="translated">Wysyłanie dodatkowych danych telemetrycznych dotyczących wydajności</target>

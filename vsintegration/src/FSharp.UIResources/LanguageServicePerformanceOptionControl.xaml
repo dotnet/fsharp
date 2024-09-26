@@ -48,6 +48,9 @@
                         <CheckBox x:Name="enablePartialTypeChecking"
                                   IsChecked="{Binding EnablePartialTypeChecking}"
                                   Content="{x:Static local:Strings.Enable_partial_type_checking}" />
+                        <CheckBox x:Name="reuseTypecheckingResults"
+                                  IsChecked="{Binding ReuseTypecheckingResults}"
+                                  Content="{x:Static local:Strings.Reuse_Typechecking_Results}" />
                     </StackPanel>
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.IntelliSense_Performance}">

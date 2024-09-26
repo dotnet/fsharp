@@ -324,6 +324,7 @@ type internal TransparentCompiler
         enableBackgroundItemKeyStoreAndSemanticClassification,
         enablePartialTypeChecking,
         parallelReferenceResolution,
+        reuseTypecheckingResults,
         captureIdentifiersWhenParsing,
         getSource: (string -> Async<ISourceText option>) option,
         useChangeNotifications
@@ -371,6 +372,7 @@ type internal TransparentCompiler
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking,
             parallelReferenceResolution,
+            reuseTypecheckingResults,
             captureIdentifiersWhenParsing,
             getSource,
             useChangeNotifications
@@ -818,6 +820,7 @@ type internal TransparentCompiler
                 |> Some
 
             tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
+            tcConfigB.reuseTypecheckingResults <- reuseTypecheckingResults
             tcConfigB.captureIdentifiersWhenParsing <- captureIdentifiersWhenParsing
 
             return tcConfigB, sourceFilesNew, loadClosureOpt
