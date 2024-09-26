@@ -61,7 +61,7 @@ neg61.fs(92,13,92,70): typecheck error FS3142: 'use' expressions may not be used
 
 neg61.fs(97,13,97,17): typecheck error FS3143: 'let!', 'use!' and 'do!' expressions may not be used in queries
 
-neg61.fs(102,13,102,28): typecheck error FS3143: 'let!', 'use!' and 'do!' expressions may not be used in queries
+neg61.fs(102,13,102,16): typecheck error FS3143: 'let!', 'use!' and 'do!' expressions may not be used in queries
 
 neg61.fs(107,13,107,21): typecheck error FS3144: 'return' and 'return!' may not be used in queries
 
