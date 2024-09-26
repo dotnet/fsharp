@@ -1,11 +1,11 @@
 ---
-title: Reusing typecheck results
+title: Reusing typechecking results
 category: Compiler Internals
 categoryindex: 200
 index: 42
 ---
 
-# Reusing typecheck results between compiler runs
+# Reusing typechecking results between compiler runs
 
 Caching and reusing compilation results between compiler runs will be an optimization technique aimed at improving the performance and efficiency of the F# development experience.
 
@@ -136,15 +136,15 @@ The conclusion from the above is that there is a lot of potential in caching - a
 
 We already create the TC graph in `main1` and we are able to dump it (in Mermaid) via the compiler flags.
 
-That means we can force-gen and save the graph which will allow us to skip retypecheck if we detect that the graph is not changed. We should also track all the compilation information (the argument string).
+That means we can force-gen and save the graph which will allow us to skip retypechecking if we detect that the graph is not changed. We should also track all the compilation information (the argument string).
 
 This step won't bring big observable benefits, yet it will create necessary MSBuild hooks to communicate the intermediate files folder towards the compiler, add time-based and hash-based cache invalidation logic, and create testing rails which will include the `clean` and `rebuild` tests to make sure the cache is easily invalidated on demand.
 
-**Stage 2 - skip retypecheck for some files**
+**Stage 2 - skip retypechecking for some files**
 
 In `main1`, we do unpickling (= deserializing) and pickling (= serializing) of the code. This currently happens on the module/namespace basis. 
 
-In this stage, we will fully implement pickling and unpickling of all typechecked files (`CheckedImplFile` per file as well as all other outputs of `main1` which cannot be cheaply recreated like `topAttrs` and `CcuThunk`). Parts of the pickling/unpickling can reuse the primitives already existing in `TypedTreePickle` and built upon them. So we can save acquired typecheck information to the intermediate folder after the typecheck - and for the files not needing retypecheck as per graph diff, skip the phase, instead restoring the typecheck info.
+In this stage, we will fully implement pickling and unpickling of all typechecked files (`CheckedImplFile` per file as well as all other outputs of `main1` which cannot be cheaply recreated like `topAttrs` and `CcuThunk`). Parts of the pickling/unpickling can reuse the primitives already existing in `TypedTreePickle` and built upon them. So we can save acquired typechecking information to the intermediate folder after the typechecking - and for the files not needing retypechecking as per graph diff, skip the phase, instead restoring the typechecking info.
 
 This is likely the biggest amount of work expected but it will hugely benefit the scenarios when only the edge of the graph is affected (think one test in a test project).
 
@@ -166,6 +166,6 @@ This will be a smaller gain for any particular project but a big accumulated one
 
 ## Testing and benchmarking
 
-We should have a compiler switch for this: applying it to current typechecking tests shouldn't make any difference in results. Tests should test that restored cached results + reusing them should be equivalent to fresh typecheck results.
+We should have a compiler switch for this: applying it to current typechecking tests shouldn't make any difference in results. Tests should test that restored cached results + reusing them should be equivalent to fresh typechecking results.
 
 Benchmarks should be added or run at every stage to the `FCSBenchmarks` project. A good inspiration can be workflow-style tests for updating files done by @0101 in Transparent Compiler.
