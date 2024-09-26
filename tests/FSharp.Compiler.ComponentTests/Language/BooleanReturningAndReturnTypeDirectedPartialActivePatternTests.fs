@@ -67,12 +67,12 @@ let (|OddVOption|_|) x = if x % 2 = 1 then ValueSome() else ValueNone
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Error 3350, Line 1, Col 5, Line 1, Col 20, "Feature 'Boolean-returning and return-type-directed partial active patterns' is not available in F# 8.0. Please use language version 9.0 or greater.")
-        (Error 3350, Line 2, Col 5, Line 2, Col 23, "Feature 'Boolean-returning and return-type-directed partial active patterns' is not available in F# 8.0. Please use language version 9.0 or greater.")
+        (Error 3350, Line 1, Col 6, Line 1, Col 17, "Feature 'Boolean-returning and return-type-directed partial active patterns' is not available in F# 8.0. Please use language version 9.0 or greater.")
+        (Error 3350, Line 2, Col 6, Line 2, Col 20, "Feature 'Boolean-returning and return-type-directed partial active patterns' is not available in F# 8.0. Please use language version 9.0 or greater.")
     ]
 
 [<Fact>]
-let ``Can not receive result from bool active pattern`` () =
+let ``Cannot receive result from bool active pattern`` () =
     FSharp """#nowarn "20"
 let (|IsA|_|) x = x = "A"
 

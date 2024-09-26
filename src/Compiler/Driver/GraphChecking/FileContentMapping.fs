@@ -9,6 +9,13 @@ type Continuations = ((FileContentEntry list -> FileContentEntry list) -> FileCo
 let collectFromOption (mapping: 'T -> 'U list) (t: 'T option) : 'U list = List.collect mapping (Option.toList t)
 
 let longIdentToPath (skipLast: bool) (longId: LongIdent) : LongIdentifier =
+
+    // We always skip the "special" `global` identifier.
+    let longId =
+        match longId with
+        | h :: t when h.idText = "`global`" -> t
+        | _ -> longId
+
     match skipLast, longId with
     | true, _ :: _ -> List.take (longId.Length - 1) longId
     | _ -> longId
@@ -516,7 +523,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             visit expr (fun exprNodes ->
                 [ yield! exprNodes; yield! List.collect visitSynMatchClause clauses ]
                 |> continuation)
-        | SynExpr.DoBang(expr, _) -> visit expr continuation
+        | SynExpr.DoBang(expr = expr) -> visit expr continuation
         | SynExpr.WhileBang(whileExpr = whileExpr; doExpr = doExpr) ->
             visit whileExpr (fun whileNodes -> visit doExpr (fun doNodes -> whileNodes @ doNodes |> continuation))
         | SynExpr.LibraryOnlyILAssembly(typeArgs = typeArgs; args = args; retTy = retTy) ->

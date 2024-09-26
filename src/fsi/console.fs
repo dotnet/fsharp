@@ -199,7 +199,7 @@ module internal Utils =
     ///
     /// if BufferWidth = Console.BufferWidth - 1, the output will be
     ///
-    /// #> 一二三四五六七八九零一二三四五六七八九零# (零 is printed, but will not correctly cauculate cursor position)
+    /// #> 一二三四五六七八九零一二三四五六七八九零# (零 is printed, but will not correctly calculate cursor position)
     ///
     /// #一二三四五六七八九零                      # (cursor may appear in the middle of the character)
     ///

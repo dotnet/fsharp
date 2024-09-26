@@ -25,6 +25,7 @@
       <Link>FsUnit.fs</Link>
     </Compile>
     <Compile Include="Common.fs" />
+    <Compile Include="GeneratedCodeSymbolsTests.fs" />
     <Compile Include="AssemblyReaderShim.fs" />
     <Compile Include="ModuleReaderCancellationTests.fs" />
     <Compile Include="EditorTests.fs" />

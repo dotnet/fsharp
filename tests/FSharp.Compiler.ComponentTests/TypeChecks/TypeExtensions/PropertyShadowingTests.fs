@@ -17,7 +17,7 @@ let [<Literal>] folder = __SOURCE_DIRECTORY__ + "/Shadowing"
         "ShadowWithLastOpenedTypeExtensions.fsx"
     |]
 )>]
-let PropertyHidding compilation =
+let PropertyHiding compilation =
     compilation
     |> asFsx
     |> verifyBaselines

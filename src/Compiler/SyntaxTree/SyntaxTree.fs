@@ -332,7 +332,7 @@ type SynTypeConstraint =
 
     | WhereTyparSupportsNull of typar: SynTypar * range: range
 
-    | WhereTyparNotSupportsNull of genericName: SynTypar * range: range
+    | WhereTyparNotSupportsNull of genericName: SynTypar * range: range * trivia: SynTypeConstraintWhereTyparNotSupportsNullTrivia
 
     | WhereTyparIsComparable of typar: SynTypar * range: range
 
@@ -465,7 +465,7 @@ type SynType =
 
     | StaticConstantNamed of ident: SynType * value: SynType * range: range
 
-    | WithNull of innerType: SynType * ambivalent: bool * range: range
+    | WithNull of innerType: SynType * ambivalent: bool * range: range * trivia: SynTypeWithNullTrivia
 
     | Paren of innerType: SynType * range: range
 
@@ -726,7 +726,7 @@ type SynExpr =
         range: range *
         trivia: SynExprMatchBangTrivia
 
-    | DoBang of expr: SynExpr * range: range
+    | DoBang of expr: SynExpr * range: range * trivia: SynExprDoBangTrivia
 
     | WhileBang of whileDebugPoint: DebugPointAtWhile * whileExpr: SynExpr * doExpr: SynExpr * range: range
 
@@ -869,6 +869,14 @@ type SynExprAndBang =
         body: SynExpr *
         range: range *
         trivia: SynExprAndBangTrivia
+
+    member x.Range =
+        match x with
+        | SynExprAndBang(range = range) -> range
+
+    member this.Trivia =
+        match this with
+        | SynExprAndBang(trivia = trivia) -> trivia
 
 [<NoEquality; NoComparison>]
 type SynExprRecordField =

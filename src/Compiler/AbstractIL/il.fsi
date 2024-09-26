@@ -20,7 +20,7 @@ type internal PrimaryAssembly =
     member Name: string
 
     /// Checks if an assembly resolution may represent a primary assembly that actually contains the
-    /// definition of Sytem.Object.  Note that the chosen target primary assembly may not actually be the one
+    /// definition of System.Object.  Note that the chosen target primary assembly may not actually be the one
     /// that contains the definition of System.Object - it is just the one we are choosing to emit for.
     static member IsPossiblePrimaryAssembly: fileName: string -> bool
 
@@ -326,6 +326,15 @@ type ILCallingSignature =
     { CallingConv: ILCallingConv
       ArgTypes: ILTypes
       ReturnType: ILType }
+
+type InterfaceImpl =
+    { Idx: int
+      Type: ILType
+      mutable CustomAttrsStored: ILAttributesStored }
+
+    member CustomAttrs: ILAttributes
+    static member Create: ilType: ILType * customAttrsStored: ILAttributesStored -> InterfaceImpl
+    static member Create: ilType: ILType -> InterfaceImpl
 
 /// Actual generic parameters are  always types.
 type ILGenericArgs = ILType list
@@ -1021,6 +1030,9 @@ type ILGenericParameterDef =
         /// Indicates the type argument must have a public nullary constructor.
         HasDefaultConstructorConstraint: bool
 
+        /// Indicates the type parameter allows ref struct, i.e. an anti constraint.
+        HasAllowsRefStruct: bool
+
         /// Do not use this
         CustomAttrsStored: ILAttributesStored
 
@@ -1515,8 +1527,7 @@ type ILTypeDef =
         name: string *
         attributes: TypeAttributes *
         layout: ILTypeDefLayout *
-        implements: ILTypes *
-        implementsCustomAttrs: (ILAttributesStored * int) list option *
+        implements: InterruptibleLazy<InterfaceImpl list> *
         genericParams: ILGenericParameterDefs *
         extends: ILType option *
         methods: ILMethodDefs *
@@ -1536,8 +1547,7 @@ type ILTypeDef =
         name: string *
         attributes: TypeAttributes *
         layout: ILTypeDefLayout *
-        implements: ILTypes *
-        implementsCustomAttrs: (ILAttributesStored * int) list option *
+        implements: InterruptibleLazy<InterfaceImpl list> *
         genericParams: ILGenericParameterDefs *
         extends: ILType option *
         methods: ILMethodDefs *
@@ -1556,8 +1566,7 @@ type ILTypeDef =
     member GenericParams: ILGenericParameterDefs
     member Layout: ILTypeDefLayout
     member NestedTypes: ILTypeDefs
-    member Implements: ILTypes
-    member ImplementsCustomAttrs: (ILAttributesStored * int) list option
+    member Implements: InterruptibleLazy<InterfaceImpl list>
     member Extends: ILType option
     member Methods: ILMethodDefs
     member SecurityDecls: ILSecurityDecls
@@ -1606,7 +1615,7 @@ type ILTypeDef =
         ?name: string *
         ?attributes: TypeAttributes *
         ?layout: ILTypeDefLayout *
-        ?implements: ILTypes *
+        ?implements: InterruptibleLazy<InterfaceImpl list> *
         ?genericParams: ILGenericParameterDefs *
         ?extends: ILType option *
         ?methods: ILMethodDefs *
@@ -1617,8 +1626,7 @@ type ILTypeDef =
         ?properties: ILPropertyDefs *
         ?newAdditionalFlags: ILTypeDefAdditionalFlags *
         ?customAttrs: ILAttributesStored *
-        ?securityDecls: ILSecurityDecls *
-        ?implementsCustomAttrs: (ILAttributesStored * int) list option ->
+        ?securityDecls: ILSecurityDecls ->
             ILTypeDef
 
 /// Represents a prefix of information for ILTypeDef.
@@ -2158,7 +2166,7 @@ val internal mkILGenericClass:
     ILTypeDefAccess *
     ILGenericParameterDefs *
     ILType *
-    ILType list *
+    InterfaceImpl list *
     ILMethodDefs *
     ILFieldDefs *
     ILTypeDefs *
@@ -2241,6 +2249,8 @@ val internal mkCtorMethSpecForDelegate: ILGlobals -> ILType * bool -> ILMethodSp
 
 /// The toplevel "class" for a module or assembly.
 val internal mkILTypeForGlobalFunctions: ILScopeRef -> ILType
+
+val emptyILInterfaceImpls: InterruptibleLazy<InterfaceImpl list>
 
 /// Making tables of custom attributes, etc.
 val mkILCustomAttrs: ILAttribute list -> ILAttributes

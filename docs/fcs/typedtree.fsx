@@ -279,7 +279,7 @@ and visitObjMember f memb =
     visitExpr f memb.Body
 
 (**
-Let's use this expresssion walker:
+Let's use this expression walker:
 
 *)
 fooExpression |> visitExpr (fun e -> printfn "Visiting %A" e)

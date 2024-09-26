@@ -23,13 +23,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     public class ProjectReferenceNode : ReferenceNode
     {
         /// <summary>
-        /// Containes either null if project reference is OK or instance of Task with error message if project reference is invalid
+        /// Contains either null if project reference is OK or instance of Task with error message if project reference is invalid
         /// i.e. project A references project B when target framework version for B is higher that for A
         /// </summary>
         private Task projectRefError;
 
         /// <summary>
-        /// The name of the assembly this refernce represents
+        /// The name of the assembly this reference represents
         /// </summary>
         private Guid referencedProjectGuid;
 
@@ -56,7 +56,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Possibility for solution listener to update the state on the dangling reference.
-        /// It will be set in OnBeforeUnloadProject then the nopde is invalidated then it is reset to false.
+        /// It will be set in OnBeforeUnloadProject then the node is invalidated then it is reset to false.
         /// </summary>
         private bool isNodeValid = false;
 
@@ -109,8 +109,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Possiblity to shortcut and set the dangling project reference icon.
-        /// It is ussually manipulated by solution listsneres who handle reference updates.
+        /// Possibility to shortcut and set the dangling project reference icon.
+        /// It is usually manipulated by solution listeners who handle reference updates.
         /// </summary>
         public bool IsNodeValid
         {
@@ -173,7 +173,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 pathProperty = prj.Properties.Item("FullPath");
                 if (null == pathProperty)
                 {
-                    // The full path should alway be availabe, but if this is not the
+                    // The full path should alway be available, but if this is not the
                     // case then we have to skip it.
                     return;
                 }
@@ -369,7 +369,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             catch (ArgumentException)
             {
-                // 4951: exeception happens sometimes when ToolBox queries references on worker thread 
+                // 4951: exception happens sometimes when ToolBox queries references on worker thread 
                 // (apparently hitting a race or bad state of referenced project's ConfigurationManager)
                 return null;
             }
@@ -395,7 +395,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return null;
             }
 
-            // Ususally the output path is relative to the project path, but it is possible
+            // Usually the output path is relative to the project path, but it is possible
             // to set it as an absolute path. If it is not absolute, then evaluate its value
             // based on the project directory.
             if (!System.IO.Path.IsPathRooted(outputPath))
@@ -463,17 +463,17 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Constructor for the ReferenceNode. It is called when the project is reloaded, when the project element representing the refernce exists. 
+        /// Constructor for the ReferenceNode. It is called when the project is reloaded, when the project element representing the reference exists. 
         /// </summary>
         internal ProjectReferenceNode(ProjectNode root, ProjectElement element)
             : base(root, element)
         {
             this.referencedProjectRelativePath = this.ItemNode.GetMetadata(ProjectFileConstants.Include);
-            Debug.Assert(!String.IsNullOrEmpty(this.referencedProjectRelativePath), "Could not retrive referenced project path form project file");
+            Debug.Assert(!String.IsNullOrEmpty(this.referencedProjectRelativePath), "Could not retrieve referenced project path form project file");
 
             string guidString = this.ItemNode.GetMetadata(ProjectFileConstants.Project);
 
-            // Continue even if project setttings cannot be read.
+            // Continue even if project settings cannot be read.
             try
             {
                 this.referencedProjectGuid = new Guid(guidString);
@@ -483,11 +483,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             finally
             {
-                Debug.Assert(this.referencedProjectGuid != Guid.Empty, "Could not retrive referenced project guidproject file");
+                Debug.Assert(this.referencedProjectGuid != Guid.Empty, "Could not retrieve referenced project guidproject file");
 
                 this.referencedProjectName = this.ItemNode.GetMetadata(ProjectFileConstants.Name);
 
-                Debug.Assert(!String.IsNullOrEmpty(this.referencedProjectName), "Could not retrive referenced project name form project file");
+                Debug.Assert(!String.IsNullOrEmpty(this.referencedProjectName), "Could not retrieve referenced project name form project file");
             }
 
             Uri uri = new Uri(this.ProjectMgr.BaseURI.Uri, this.referencedProjectRelativePath);
@@ -502,7 +502,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             : base(root)
         {
             Debug.Assert(root != null && !String.IsNullOrEmpty(referencedProjectName) && !String.IsNullOrEmpty(projectReference)
-                && !String.IsNullOrEmpty(projectPath), "Can not add a reference because the input for adding one is invalid.");
+                && !String.IsNullOrEmpty(projectPath), "Cannot add a reference because the input for adding one is invalid.");
             this.referencedProjectName = referencedProjectName;
 
             int indexOfSeparator = projectReference.IndexOf('|');
@@ -510,7 +510,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             string fileName = String.Empty;
 
-            // Unfortunately we cannot use the path part of the projectReference string since it is not resolving correctly relative pathes.
+            // Unfortunately we cannot use the path part of the projectReference string since it is not resolving correctly relative paths.
             if (indexOfSeparator != -1)
             {
                 string projectGuid = projectReference.Substring(0, indexOfSeparator);
@@ -531,7 +531,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
             }
 
-            Debug.Assert(!String.IsNullOrEmpty(fileName), "Can not add a project reference because the input for adding one is invalid.");
+            Debug.Assert(!String.IsNullOrEmpty(fileName), "Cannot add a project reference because the input for adding one is invalid.");
 
             if (!System.IO.Path.IsPathRooted(projectPath))
             {
@@ -544,7 +544,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             string referenceDir = Path.GetDirectoryName(PackageUtilities.GetPathDistance(this.ProjectMgr.BaseURI.Uri, uri));
 
-            Debug.Assert(!String.IsNullOrEmpty(referenceDir), "Can not add a project reference because the input for adding one is invalid.");
+            Debug.Assert(!String.IsNullOrEmpty(referenceDir), "Cannot add a project reference because the input for adding one is invalid.");
 
             string justTheFileName = Path.GetFileName(fileName);
             this.referencedProjectRelativePath = Path.Combine(referenceDir, justTheFileName);
@@ -657,7 +657,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Defines whether this node is valid node for painting the refererence icon.
+        /// Defines whether this node is valid node for painting the reference icon.
         /// </summary>
         /// <returns></returns>
         public override bool CanShowDefaultIcon()
@@ -721,7 +721,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <returns></returns>
         internal override AddReferenceCheckResult CheckIfCanAddReference()
         {
-            // When this method is called this refererence has not yet been added to the hierarchy, only instantiated.
+            // When this method is called this reference has not yet been added to the hierarchy, only instantiated.
             var checkResult = base.CheckIfCanAddReference();
             if (!checkResult.Ok)
                 return checkResult;

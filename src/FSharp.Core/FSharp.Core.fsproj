@@ -34,7 +34,7 @@
     <NuspecFile>FSharp.Core.nuspec</NuspecFile>
     <IsPackable>true</IsPackable>
     <PackageDescription>FSharp.Core redistributables from F# Tools version $(FSProductVersionPrefix) For F# $(FSLanguageVersion).  Contains code from the F# Software Foundation.</PackageDescription>
-    <PackageReleaseNotes>/blob/main/release-notes.md#FSharp-Core-$(FSCoreReleaseNotesVersion)</PackageReleaseNotes>
+    <PackageReleaseNotes>/blob/main/docs/release-notes/.FSharp.Core/$(FSharpLibrariesChangelogVersion).md</PackageReleaseNotes>
     <Configurations>Debug;Release;Proto</Configurations>
   </PropertyGroup>
 
@@ -68,7 +68,7 @@
     <EmbeddedResource Include="ILLink.Substitutions.xml" LogicalName="ILLink.Substitutions.xml" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)' == 'Proto' or '$(BUILDING_USING_DOTNET)' == 'true'">
-    <!-- This can be removed once CompileBefore support is shipped in an rtm relase -->
+    <!-- This can be removed once CompileBefore support is shipped in an rtm release -->
     <CompileBefore Include="prim-types-prelude.fsi">
       <Link>Primitives/prim-types-prelude.fsi</Link>
     </CompileBefore>

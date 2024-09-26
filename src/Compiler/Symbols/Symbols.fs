@@ -1788,7 +1788,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match d with
         | P p -> p.IsUnionCaseTester
         | M m -> m.IsUnionCaseTester
-        | E _ | C _ | V _ -> invalidOp "the value or member is not a property"
+        | V v ->
+            v.IsPropertyGetterMethod &&
+            v.LogicalName.StartsWith("get_Is") &&
+            v.IsImplied && v.MemberApparentEntity.IsUnionTycon
+        | E _ | C _ -> false
 
     member _.EventAddMethod =
         checkIsResolved()
@@ -2797,8 +2801,8 @@ type FSharpAttribute(cenv: SymbolEnv, attrib: AttribInfo) =
             | AttribInfo.FSAttribInfo(g, attrib) ->
                 NicePrint.stringOfFSAttrib (context.Contents g) attrib
             | AttribInfo.ILAttribInfo (g, _, _scoref, cattr, _) -> 
-                let parms, _args = decodeILAttribData cattr 
-                NicePrint.stringOfILAttrib (context.Contents g) (cattr.Method.DeclaringType, parms)
+                let params_, _args = decodeILAttribData cattr 
+                NicePrint.stringOfILAttrib (context.Contents g) (cattr.Method.DeclaringType, params_)
 
     member _.Range = attrib.Range
 

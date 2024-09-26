@@ -1684,34 +1684,6 @@ let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
     let qname = QualifiedNameOfFile.QualifiedNameOfFile(Ident(moduleName, m))
     entity, v, CheckedImplFile.CheckedImplFile(qname, [], mty, contents, false, false, StampMap.Empty, Map.empty)
 
-let scriptingSymbolsPath =
-    let createDirectory (path: string) =
-        lazy
-            try
-                if not (Directory.Exists(path)) then
-                    Directory.CreateDirectory(path) |> ignore
-
-                path
-            with _ ->
-                path
-
-    createDirectory (Path.Combine(Path.GetTempPath(), $"{DateTime.Now:s}-{Guid.NewGuid():n}".Replace(':', '-')))
-
-let deleteScriptingSymbols () =
-    try
-#if !DEBUG
-        if scriptingSymbolsPath.IsValueCreated then
-            if Directory.Exists(scriptingSymbolsPath.Value) then
-                Directory.Delete(scriptingSymbolsPath.Value, true)
-#else
-        ()
-#endif
-    with _ ->
-        ()
-
-AppDomain.CurrentDomain.ProcessExit
-|> Event.add (fun _ -> deleteScriptingSymbols ())
-
 let dynamicCcuName = "FSI-ASSEMBLY"
 
 /// Encapsulates the coordination of the typechecking, optimization and code generation
@@ -1772,6 +1744,33 @@ type internal FsiDynamicCompiler
     let infoReader = InfoReader(tcGlobals, tcImports.GetImportMap())
 
     let reportedAssemblies = Dictionary<string, DateTime>()
+
+    let scriptingSymbolsPath =
+        let createDirectory (path: string) =
+            try
+                if not (Directory.Exists(path)) then
+                    Directory.CreateDirectory(path) |> ignore
+
+                path
+            with _ ->
+                path
+
+        createDirectory (Path.Combine(Path.GetTempPath(), $"{DateTime.Now:s}-{Guid.NewGuid():n}".Replace(':', '-')))
+
+    let deleteScriptingSymbols () =
+        try
+#if !DEBUG
+            if Directory.Exists(scriptingSymbolsPath) then
+                Directory.Delete(scriptingSymbolsPath, true)
+#else
+            ()
+#endif
+        with _ ->
+            ()
+
+    do
+        AppDomain.CurrentDomain.ProcessExit
+        |> Event.add (fun _ -> deleteScriptingSymbols ())
 
     /// Add attributes
     let CreateModuleFragment (tcConfigB: TcConfigBuilder, dynamicCcuName, codegenResults) =
@@ -1850,7 +1849,7 @@ type internal FsiDynamicCompiler
             {
                 ilg = tcGlobals.ilg
                 outfile = $"{multiAssemblyName}-{dynamicAssemblyId}.dll"
-                pdbfile = Some(Path.Combine(scriptingSymbolsPath.Value, $"{multiAssemblyName}-{dynamicAssemblyId}.pdb"))
+                pdbfile = Some(Path.Combine(scriptingSymbolsPath, $"{multiAssemblyName}-{dynamicAssemblyId}.pdb"))
                 emitTailcalls = tcConfig.emitTailcalls
                 deterministic = tcConfig.deterministic
                 portablePDB = true
@@ -2322,7 +2321,7 @@ type internal FsiDynamicCompiler
                                     istate.tcState.TcEnvFromImpls.DisplayEnv,
                                     symbol,
                                     [],
-                                    ItemOccurence.Binding,
+                                    ItemOccurrence.Binding,
                                     v.DeclarationLocation
                                 )
 
@@ -2337,7 +2336,7 @@ type internal FsiDynamicCompiler
                                 istate.tcState.TcEnvFromImpls.DisplayEnv,
                                 symbol,
                                 [],
-                                ItemOccurence.Binding,
+                                ItemOccurrence.Binding,
                                 e.DeclarationLocation
                             )
 
@@ -2630,7 +2629,7 @@ type internal FsiDynamicCompiler
     /// Process any delayed assembly additions.
     member _.ProcessDelayedReferences(ctok, istate) =
 
-        // Grab the dealyed assembly reference additions
+        // Grab the delayed assembly reference additions
         let refs = delayedReferences |> Seq.toList
         delayedReferences.Clear()
 
@@ -2799,13 +2798,13 @@ type internal FsiDynamicCompiler
                                 istate // error already reported
 
                         with _ ->
-                            // An exception occured during processing, so remove the lines causing the error from the package manager list.
+                            // An exception occurred during processing, so remove the lines causing the error from the package manager list.
                             tcConfigB.packageManagerLines <-
                                 PackageManagerLine.RemoveUnprocessedLines packageManagerKey tcConfigB.packageManagerLines
 
                             reraise ())
 
-    member fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncudePathDirective(ctok, istate, directiveKind, path, show, m) =
+    member fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncludePathDirective(ctok, istate, directiveKind, path, show, m) =
         let dm =
             fsiOptions.DependencyProvider.TryFindDependencyManagerInPath(
                 tcConfigB.compilerToolPaths,
@@ -2853,7 +2852,7 @@ type internal FsiDynamicCompiler
                     st),
                  (fun st (m, path, directive) ->
                      let st, _ =
-                         fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncudePathDirective(ctok, st, directive, path, false, m)
+                         fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncludePathDirective(ctok, st, directive, path, false, m)
 
                      st),
                  (fun _ _ -> ()))
@@ -3272,7 +3271,7 @@ type internal FsiInterruptController
 // - The requesting assembly (that is, the assembly that is returned by the ResolveEventArgs.RequestingAssembly property)
 //   was loaded without context.
 //
-// On the coreclr we add an UnmanagedDll Resoution handler to ensure that native dll's can be searched for,
+// On the coreclr we add an UnmanagedDll Resolution handler to ensure that native dll's can be searched for,
 // the desktop version of the Clr does not support this mechanism.
 //
 // For information about contexts, see the Assembly.LoadFrom(String) method overload.
@@ -3783,13 +3782,13 @@ type FsiInteractionProcessor
                 (parsedHashDirectiveStringArguments [ reference ] tcConfigB.langVersion)
                 |> List.head
 
-            fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncudePathDirective(ctok, istate, Directive.Resolution, path, true, m)
+            fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncludePathDirective(ctok, istate, Directive.Resolution, path, true, m)
 
         | ParsedHashDirective("i", [ path ], m) ->
             let path =
                 (parsedHashDirectiveStringArguments [ path ] tcConfigB.langVersion) |> List.head
 
-            fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncudePathDirective(ctok, istate, Directive.Include, path, true, m)
+            fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncludePathDirective(ctok, istate, Directive.Include, path, true, m)
 
         | ParsedHashDirective("I", [ path ], m) ->
             let path =
@@ -3901,7 +3900,7 @@ type FsiInteractionProcessor
             warning (Error((FSComp.SR.fsiInvalidDirective (c, String.concat " " arg)), m))
             istate, Completed None
 
-    /// Most functions return a step status - this decides whether to continue and propogates the
+    /// Most functions return a step status - this decides whether to continue and propagates the
     /// last value produced
     let ProcessStepStatus (istate, cont) lastResult f =
         match cont with

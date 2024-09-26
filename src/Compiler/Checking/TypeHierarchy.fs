@@ -117,17 +117,16 @@ let GetImmediateInterfacesOfMetadataType g amap m skipUnref ty (tcref: TyconRef)
             // succeeded with more reported. There are pathological corner cases where this
             // doesn't apply: e.g. for mscorlib interfaces like IComparable, but we can always
             // assume those are present.
-            match tdef.ImplementsCustomAttrs with
-            | Some attrsList when g.langFeatureNullness && g.checkNullness ->
-                for (attrs,attrsIdx),intfTy in tdef.Implements |> List.zip attrsList do
-                    if skipUnref = SkipUnrefInterfaces.No || CanRescopeAndImportILType scoref amap m intfTy then
+            let checkNullness = g.langFeatureNullness && g.checkNullness
+            for {Idx = attrsIdx; Type = intfTy; CustomAttrsStored = attrs} in tdef.Implements.Value do
+                if skipUnref = SkipUnrefInterfaces.No || CanRescopeAndImportILType scoref amap m intfTy then
+                    if checkNullness then
                         let typeAttrs = AttributesFromIL(attrsIdx,attrs)
                         let nullness = {DirectAttributes = typeAttrs; Fallback = FromClass typeAttrs}
                         RescopeAndImportILType scoref amap m tinst nullness intfTy
-            | _ ->
-                for intfTy in tdef.Implements do
-                    if skipUnref = SkipUnrefInterfaces.No || CanRescopeAndImportILType scoref amap m intfTy then
+                    else
                         RescopeAndImportILTypeSkipNullness scoref amap m tinst intfTy
+
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
             for intfTy in tcref.ImmediateInterfaceTypesOfFSharpTycon do
                instType (mkInstForAppTy g ty) intfTy ]
@@ -137,7 +136,7 @@ let GetImmediateInterfacesOfMetadataType g amap m skipUnref ty (tcref: TyconRef)
 //
 // NOTE: Anonymous record types are not directly considered to implement IComparable,
 // IComparable<T> or IEquatable<T>. This is because whether they support these interfaces depend on their
-// consitutent types, which may not yet be known in type inference.
+// constituent types, which may not yet be known in type inference.
 let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
     [
         match tryAppTy g ty with
@@ -196,7 +195,7 @@ and GetImmediateInterfacesOfMeasureAnnotatedType skipUnref g amap m ty reprTy =
                 intfTy
 
         // NOTE: we should really only report the IComparable<A<'m>> interface for measure-annotated types
-        // if the original type supports IComparable<A> somewhere in the hierarchy, likeiwse IEquatable<A<'m>>.
+        // if the original type supports IComparable<A> somewhere in the hierarchy, likewise IEquatable<A<'m>>.
         //
         // However since F# 2.0 we have always reported these interfaces for all measure-annotated types.
 

@@ -7,6 +7,7 @@
     <IsPackable>false</IsPackable>
     <FSharpCoreImplicitPackageVersion>$(FSharpCoreShippedPackageVersionValue)</FSharpCoreImplicitPackageVersion>
     <DefineConstants>NO_GENERATIVE</DefineConstants>
+    <UnitTestType>xunit</UnitTestType>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,8 +19,6 @@
 
     <PackageReference Include="ComboProvider" Version="1.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.1" />
-    <PackageReference Include="xunit" Version="2.4.2" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.2" />
   </ItemGroup>
 
   <Target Name="RemovePackagesFromCache" BeforeTargets="Restore">

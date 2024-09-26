@@ -93,6 +93,7 @@ type LanguageFeature =
     | LowerSimpleMappingsInComprehensionsToFastLoops
     | ParsedHashDirectiveArgumentNonQuotes
     | EmptyBodiedComputationExpressions
+    | AllowObjectExpressionWithoutOverrides
     | SupportCallerArgumentExpression
 
 /// LanguageVersion management
@@ -212,12 +213,13 @@ type LanguageVersion(versionText) =
                 LanguageFeature.LowerSimpleMappingsInComprehensionsToFastLoops, languageVersion90
                 LanguageFeature.ParsedHashDirectiveArgumentNonQuotes, languageVersion90
                 LanguageFeature.EmptyBodiedComputationExpressions, languageVersion90
+                LanguageFeature.EnforceAttributeTargets, languageVersion90
 
                 // F# preview
                 LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion // not enabled because: https://github.com/dotnet/fsharp/issues/17509
-                LanguageFeature.EnforceAttributeTargets, previewVersion // not enabled because: https://github.com/dotnet/fsharp/issues/17514
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
                 LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, previewVersion
+                LanguageFeature.AllowObjectExpressionWithoutOverrides, previewVersion
                 LanguageFeature.SupportCallerArgumentExpression, previewVersion
             ]
 
@@ -374,6 +376,7 @@ type LanguageVersion(versionText) =
             FSComp.SR.featureLowerSimpleMappingsInComprehensionsToFastLoops ()
         | LanguageFeature.ParsedHashDirectiveArgumentNonQuotes -> FSComp.SR.featureParsedHashDirectiveArgumentNonString ()
         | LanguageFeature.EmptyBodiedComputationExpressions -> FSComp.SR.featureEmptyBodiedComputationExpressions ()
+        | LanguageFeature.AllowObjectExpressionWithoutOverrides -> FSComp.SR.featureAllowObjectExpressionWithoutOverrides ()
         | LanguageFeature.SupportCallerArgumentExpression -> FSComp.SR.featureSupportCallerArgumentExpression ()
 
     /// Get a version string associated with the given feature.

@@ -7,7 +7,7 @@ title: About
 
 # About
 
-The release notes for the [F\# language](./Language.md), [FSharp.Core](./FSharp.Core.md) and [FSharp.Compiler.Service](./FSharp.Compiler.Service.md) are based on the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.  
+The release notes for the [F\# language](./Language.html), [FSharp.Core](./FSharp.Core.html) and [FSharp.Compiler.Service](./FSharp.Compiler.Service.html) are based on the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.  
 The target audience of these release notes are the respective end-users.
 
 ## Writing a changelog entry

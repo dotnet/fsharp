@@ -92,8 +92,11 @@ module CustomAttributes_Basic =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 824, Line 8, Col 5, Line 8, Col 20, "Attributes are not permitted on 'let' bindings in expressions")
-            (Warning 20, Line 8, Col 1, Line 8, Col 41, "The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
+            (Error 824, Line 8, Col 13, Line 8, Col 14, "Attributes are not permitted on 'let' bindings in expressions")
+            (Warning 20, Line 8, Col 28, Line 8, Col 41, "The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
+            (Error 824, Line 10, Col 14, Line 10, Col 15, "Attributes are not permitted on 'let' bindings in expressions")
+            (Error 824, Line 10, Col 26, Line 10, Col 27, "Attributes are not permitted on 'let' bindings in expressions")
+            (Warning 20, Line 8, Col 1, Line 10, Col 60, "The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
         ]
 
     // SOURCE=E_AttributeApplication07.fs					# E_AttributeApplication07.fs
@@ -159,8 +162,7 @@ module CustomAttributes_Basic =
         |> withLangVersionPreview
         |> verifyCompile
         |> shouldFail
-        |> withDiagnostics[
-            (Error 842, Line 8, Col 7, Line 8, Col 104, "This attribute is not valid for use on this language element")
+        |> withDiagnostics [
             (Error 937, Line 9, Col 10, Line 9, Col 12, "Only structs and classes without primary constructors may be given the 'StructLayout' attribute")
         ]
 
@@ -172,7 +174,6 @@ module CustomAttributes_Basic =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 842, Line 8, Col 7, Line 8, Col 104, "This attribute is not valid for use on this language element")
             (Error 937, Line 9, Col 10, Line 9, Col 12, "Only structs and classes without primary constructors may be given the 'StructLayout' attribute")
         ]
 
@@ -184,7 +185,6 @@ module CustomAttributes_Basic =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 842, Line 7, Col 7, Line 7, Col 104, "This attribute is not valid for use on this language element")
             (Error 937, Line 8, Col 10, Line 8, Col 12, "Only structs and classes without primary constructors may be given the 'StructLayout' attribute")
         ]
 

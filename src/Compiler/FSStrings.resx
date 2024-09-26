@@ -196,7 +196,7 @@
     <value>Duplicate definition of {0} '{1}'</value>
   </data>
   <data name="NameClash2" xml:space="preserve">
-    <value>The {0} '{1}' can not be defined because the name '{2}' clashes with the {3} '{4}' in this type or module</value>
+    <value>The {0} '{1}' cannot be defined because the name '{2}' clashes with the {3} '{4}' in this type or module</value>
   </data>
   <data name="Duplicate1" xml:space="preserve">
     <value>Two members called '{0}' have the same signature</value>

@@ -210,7 +210,7 @@ let rec IsControlFlowExpression e =
 //
 // For example
 //    let x = 1 + 1
-// gets extended to inludde the 'let x'.
+// gets extended to include the 'let x'.
 //
 // A corner case: some things that look like simple value bindings get generalized, e.g.
 //    let empty = []
@@ -885,7 +885,7 @@ let rec synExprContainsError inpExpr =
         | SynExpr.TraitCall(_, _, e, _)
         | SynExpr.YieldOrReturn(_, e, _)
         | SynExpr.YieldOrReturnFrom(_, e, _)
-        | SynExpr.DoBang(e, _)
+        | SynExpr.DoBang(e, _, _)
         | SynExpr.Fixed(e, _)
         | SynExpr.DebugPoint(_, _, e)
         | SynExpr.Paren(e, _, _, _) -> walkExpr e
