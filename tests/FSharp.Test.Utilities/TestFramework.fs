@@ -65,7 +65,7 @@ module Commands =
 
     // Execute the process pathToExe passing the arguments: arguments with the working directory: workingDir timeout after timeout milliseconds -1 = wait forever
     // returns exit code, stdio and stderr as string arrays
-    let executeProcess pathToExe arguments workingDir (timeout:int) =
+    let executeProcess pathToExe arguments workingDir =
         match pathToExe with
         | Some path ->
             let commandLine = ResizeArray()
@@ -106,11 +106,7 @@ module Commands =
             if p.Start() then
                 p.BeginOutputReadLine()
                 p.BeginErrorReadLine()
-                if not(p.WaitForExit(timeout)) then
-                    // Timed out resolving throw a diagnostic.
-                    raise (new TimeoutException(sprintf "Timeout executing command '%s' '%s'" (psi.FileName) (psi.Arguments)))
-                else
-                    p.WaitForExit()
+                p.WaitForExit()
     #if DEBUG
             let workingDir' =
                 if workingDir = ""

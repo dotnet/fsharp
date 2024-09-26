@@ -217,8 +217,7 @@ let main argv = 0"""
                     File.WriteAllText(directoryBuildPropsFileName, directoryBuildProps)
                     File.WriteAllText(directoryBuildTargetsFileName, directoryBuildTargets)
 
-                    let timeout = 120000
-                    let exitCode, dotnetoutput, dotneterrors = Commands.executeProcess (Some config.DotNetExe) "build" projectDirectory timeout
+                    let exitCode, dotnetoutput, dotneterrors = Commands.executeProcess (Some config.DotNetExe) "build" projectDirectory
                     
                     if exitCode <> 0 || errors.Length > 0 then
                         errors <- dotneterrors

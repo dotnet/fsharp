@@ -369,7 +369,7 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     $testLogPath = "$ArtifactsDir\TestResults\$configuration\${projectName}_$targetFramework.xml"
     $testBinLogPath = "$LogDir\${projectName}_$targetFramework.binlog"
     $args = "test $testProject -c $configuration -f $targetFramework -v n --test-adapter-path $testadapterpath --logger ""xunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
-    $args += " --blame --results-directory $ArtifactsDir\TestResults\$configuration -p:vstestusemsbuildoutput=false"
+    $args += " --blame --blame-hang-timeout 5minutes --results-directory $ArtifactsDir\TestResults\$configuration -p:vstestusemsbuildoutput=false"
 
     if (-not $noVisualStudio -or $norestore) {
         $args += " --no-restore"
@@ -402,7 +402,7 @@ function TestSolutionUsingMSBuild([string] $testSolution, [string] $targetFramew
     $testLogPath = "$ArtifactsDir\TestResults\$configuration\{assembly}.{framework}.xml"
     $testBinLogPath = "$LogDir\${solutionName}_$targetFramework.binlog"
     $args = "test $testSolution -c $configuration -f $targetFramework --test-adapter-path $testadapterpath -v minimal --logger ""xunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
-    $args += " --blame --results-directory $ArtifactsDir\TestResults\$configuration"
+    $args += " --blame --blame-hang-timeout 5minutes --results-directory $ArtifactsDir\TestResults\$configuration"
 
     if (-not $noVisualStudio -or $norestore) {
         $args += " --no-restore"
