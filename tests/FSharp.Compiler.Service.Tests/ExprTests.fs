@@ -788,12 +788,12 @@ let ``Test Unoptimized Declarations Project1`` useTransparentCompiler =
     printDeclarations None (List.ofSeq file1.Declarations)
       |> Seq.toList
       |> Utils.filterHack
-      |> shouldPairwiseEqual (Utils.filterHack expected)
+      |> shouldEqual (Utils.filterHack expected)
 
     printDeclarations None (List.ofSeq file2.Declarations)
       |> Seq.toList
       |> Utils.filterHack
-      |> shouldPairwiseEqual (Utils.filterHack expected2)
+      |> shouldEqual (Utils.filterHack expected2)
 
     ()
 
@@ -930,12 +930,12 @@ let ``Test Optimized Declarations Project1`` useTransparentCompiler =
     printDeclarations None (List.ofSeq file1.Declarations)
       |> Seq.toList
       |> Utils.filterHack
-      |> shouldPairwiseEqual (Utils.filterHack expected)
+      |> shouldEqual (Utils.filterHack expected)
 
     printDeclarations None (List.ofSeq file2.Declarations)
       |> Seq.toList
       |> Utils.filterHack
-      |> shouldPairwiseEqual (Utils.filterHack expected2)
+      |> shouldEqual (Utils.filterHack expected2)
 
     ()
 
@@ -1045,11 +1045,11 @@ let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimi
 
         // fail test on first line that fails, show difference in output window
         resultUnoptFiltered
-        |> shouldPairwiseEqual expectedUnoptFiltered
+        |> shouldEqual expectedUnoptFiltered
 
         // fail test on first line that fails, show difference in output window
         resultOptFiltered
-        |> shouldPairwiseEqual expectedOptFiltered
+        |> shouldEqual expectedOptFiltered
     end
 
 [<Fact>]
@@ -3134,7 +3134,7 @@ let BigSequenceExpression(outFileOpt,docFileOpt,baseAddressOpt) =
     let createOptions() = createProjectOptions dirName [fileSource1] []
 
 #if !NETFRAMEWORK && DEBUG
-[<Fact(Skip = "Test is known to fail in DEBUG when not using NetFramework. Use RELEASE configuration or NetFramework to run it.")>]
+[<Theory(Skip = "Test is known to fail in DEBUG when not using NetFramework. Use RELEASE configuration or NetFramework to run it.")>]
 #else
 [<Theory>]
 [<InlineData(false)>]
@@ -3263,7 +3263,7 @@ let ``Test ProjectForWitnesses1`` useTransparentCompiler =
       |> Seq.toList
     printfn "actual:\n\n%A" actual
     actual
-      |> shouldPairwiseEqual expected
+      |> shouldEqual expected
 
 
 [<Theory>]
@@ -3380,7 +3380,7 @@ let ``Test ProjectForWitnesses2`` useTransparentCompiler =
       |> Seq.toList
     printfn "actual:\n\n%A" actual
     actual
-      |> shouldPairwiseEqual expected
+      |> shouldEqual expected
 
 //---------------------------------------------------------------------------------------------------------
 // This project is for witness arguments, testing for https://github.com/dotnet/fsharp/issues/10364
@@ -3437,7 +3437,7 @@ let ``Test ProjectForWitnesses3`` useTransparentCompiler =
       |> Seq.toList
     printfn "actual:\n\n%A" actual
     actual
-      |> shouldPairwiseEqual expected
+      |> shouldEqual expected
 
 [<Theory>]
 [<InlineData(false)>]
@@ -3532,7 +3532,7 @@ let ``Test ProjectForWitnesses4 GetWitnessPassingInfo`` useTransparentCompiler =
       |> Seq.toList
     printfn "actual:\n\n%A" actual
     actual
-      |> shouldPairwiseEqual expected
+      |> shouldEqual expected
 
 module internal ProjectForNoWarnHashDirective =
 
