@@ -1132,6 +1132,8 @@ let FSharpSignatureCompressedDataResourceNameB = "FSharpSignatureCompressedDataB
 let FSharpOptimizationDataResourceName2 = "FSharpOptimizationInfo."
 let FSharpSignatureDataResourceName2 = "FSharpSignatureInfo."
 
+let FSharpTcDataResourceName = "FSharpTypecheckingData"
+
 [<Literal>]
 let suffixForVariablesThatMayNotBeEliminated = "$cont"
 

@@ -967,6 +967,11 @@
         <target state="translated">Deaktivieren der impliziten Generierung von Konstrukten mithilfe von Reflektion</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsReuseTcResults">
+        <source>Reuse previous typechecking results for faster compilation</source>
+        <target state="new">Reuse previous typechecking results for faster compilation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsSetLangVersion">
         <source>Specify language version such as 'latest' or 'preview'.</source>
         <target state="translated">Geben Sie eine Sprachversion wie „latest“ oder „preview“ an.</target>

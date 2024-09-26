@@ -967,6 +967,11 @@
         <target state="translated">Yansıma kullanarak yapıların örtük oluşturulmasını devre dışı bırak</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsReuseTcResults">
+        <source>Reuse previous typechecking results for faster compilation</source>
+        <target state="new">Reuse previous typechecking results for faster compilation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsSetLangVersion">
         <source>Specify language version such as 'latest' or 'preview'.</source>
         <target state="translated">'latest' veya 'preview' gibi dil sürümünü belirtin.</target>

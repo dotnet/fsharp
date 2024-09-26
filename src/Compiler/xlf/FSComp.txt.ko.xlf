@@ -967,6 +967,11 @@
         <target state="translated">리플렉션을 사용하여 구문의 암시적 생성 사용 안 함</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsReuseTcResults">
+        <source>Reuse previous typechecking results for faster compilation</source>
+        <target state="new">Reuse previous typechecking results for faster compilation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsSetLangVersion">
         <source>Specify language version such as 'latest' or 'preview'.</source>
         <target state="translated">'latest' 또는 'preview'와 같이 언어 버전을 지정합니다.</target>

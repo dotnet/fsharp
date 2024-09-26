@@ -967,6 +967,11 @@
         <target state="translated">Desabilitar a geração implícita de constructos usando reflexão</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsReuseTcResults">
+        <source>Reuse previous typechecking results for faster compilation</source>
+        <target state="new">Reuse previous typechecking results for faster compilation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsSetLangVersion">
         <source>Specify language version such as 'latest' or 'preview'.</source>
         <target state="translated">Especifique a versão do idioma, como 'última versão' ou 'versão prévia'.</target>

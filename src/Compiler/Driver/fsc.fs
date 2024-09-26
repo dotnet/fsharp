@@ -511,6 +511,7 @@ let main1
         )
 
     tcConfigB.exiter <- exiter
+    tcConfigB.cmdLineArgs <- argv
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     SetOptimizeSwitch tcConfigB OptionSwitch.On
