@@ -352,7 +352,7 @@ tInput.Length
         let value = opt.Value
         Assert.Equal(4L, downcast value.ReflectionValue)
 
-    [<Fact>]
+    [<FSharp.Test.FactForNETCOREAPP>] // usessdkrefs is not a valid option for desktop compiler
     member _.``ML - use assembly with ref dependencies and without refing SMemory``() =
         let code = """
 #r "nuget:Microsoft.ML.OnnxTransformer,1.4.0"
