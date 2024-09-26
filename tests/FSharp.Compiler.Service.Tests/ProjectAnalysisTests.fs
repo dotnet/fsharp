@@ -713,7 +713,7 @@ let ``Test project2 all symbols in signature`` () =
              "field x"; "field y"; "GenericClass`1"; "generic parameter T"; "member .ctor";
              "member GenericMethod"; "generic parameter U"] |> List.sort
 
-    shouldPairwiseEqual e r
+    shouldEqual e r
 
 [<Fact>]
 let ``Test project2 all uses of all signature symbols`` () =
