@@ -2913,35 +2913,18 @@ and [<NoEquality; NoComparison>] ILPreTypeDef =
 
 /// This is a memory-critical class. Very many of these objects get allocated and held to represent the contents of .NET assemblies.
 and [<Sealed>] ILPreTypeDefImpl(nameSpace: string list, name: string, metadataIndex: int32, storage: ILTypeDefStored) =
-    let mutable store: ILTypeDef = Unchecked.defaultof<_>
-    let mutable storage = storage
+    let onDemand =
+        lazy
+        match storage with
+        | ILTypeDefStored.Given td -> td
+        | ILTypeDefStored.Computed f -> f ()
+        | ILTypeDefStored.Reader f -> f metadataIndex
 
     interface ILPreTypeDef with
         member _.Namespace = nameSpace
         member _.Name = name
 
-        member x.GetTypeDef() =
-            match box store with
-            | null ->
-                let syncObj = storage
-                Monitor.Enter(syncObj)
-
-                try
-                    match box store with
-                    | null ->
-                        let value =
-                            match storage with
-                            | ILTypeDefStored.Given td -> td
-                            | ILTypeDefStored.Computed f -> f ()
-                            | ILTypeDefStored.Reader f -> f metadataIndex
-
-                        store <- value
-                        storage <- Unchecked.defaultof<_>
-                        value
-                    | _ -> store
-                finally
-                    Monitor.Exit(syncObj)
-            | _ -> store
+        member x.GetTypeDef() = onDemand.Value
 
 and ILTypeDefStored =
     | Given of ILTypeDef
