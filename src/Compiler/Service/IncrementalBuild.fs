@@ -507,10 +507,12 @@ type FrameworkImportsCache(size) =
     let frameworkTcImportsCache = AgedLookup<AnyCallerThreadToken, FrameworkImportsCacheKey, GraphNode<TcGlobals * TcImports>>(size, areSimilar=(fun (x, y) -> x = y))
 
     /// Reduce the size of the cache in low-memory scenarios
-    member _.Downsize() = frameworkTcImportsCache.Resize(AnyCallerThread, newKeepStrongly=0)
+    member _.Downsize() = lock gate <| fun () ->
+        frameworkTcImportsCache.Resize(AnyCallerThread, newKeepStrongly=0)
 
     /// Clear the cache
-    member _.Clear() = frameworkTcImportsCache.Clear AnyCallerThread
+    member _.Clear() = lock gate <| fun () ->
+        frameworkTcImportsCache.Clear AnyCallerThread
 
     /// This function strips the "System" assemblies from the tcConfig and returns a age-cached TcImports for them.
     member _.GetNode(tcConfig: TcConfig, frameworkDLLs: AssemblyResolution list, nonFrameworkResolutions: AssemblyResolution list) =
