@@ -71,7 +71,7 @@ skip_analyzers=false
 skip_build=false
 prepare_machine=false
 source_build=false
-buildnorealsig=false
+buildnorealsig=true
 properties=""
 
 docker=false
