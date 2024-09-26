@@ -726,7 +726,7 @@ type SynExpr =
         range: range *
         trivia: SynExprMatchBangTrivia
 
-    | DoBang of expr: SynExpr * range: range
+    | DoBang of expr: SynExpr * range: range * trivia: SynExprDoBangTrivia
 
     | WhileBang of whileDebugPoint: DebugPointAtWhile * whileExpr: SynExpr * doExpr: SynExpr * range: range
 
