@@ -487,7 +487,7 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'xUnit'
+              testResultsFormat: 'XUnit'
               testRunTitle: WindowsCompressedMetadata $(_testKind)
               mergeTestResults: true
               testResultsFiles: '*.xml'
@@ -559,7 +559,7 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'xUnit'
+              testResultsFormat: 'XUnit'
               testRunTitle: Linux
               testResultsFiles: '*.xml'
               mergeTestResults: true
@@ -604,7 +604,7 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'xUnit'
+              testResultsFormat: 'XUnit'
               testResultsFiles: '*.xml'
               testRunTitle: MacOS
               mergeTestResults: true

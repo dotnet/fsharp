@@ -29,11 +29,6 @@
     <AssemblyAttribute Include="FSharp.Test.InitTestGlobals" />
   </ItemGroup>
 
-  <PropertyGroup>
-    <DefineConstants Condition="'$(UnitTestType)' == 'xunit'">$(DefineConstants);XUNIT</DefineConstants>
-    <DefineConstants Condition="'$(UnitTestType)' != 'xunit'">$(DefineConstants);NUNIT</DefineConstants>
-  </PropertyGroup>
-
   <ItemGroup>
     <Compile Include="..\service\DoNotRunInParallel.fs">
       <Link>DoNotRunInParallel.fs</Link>
