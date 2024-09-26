@@ -543,7 +543,7 @@ type FrameworkImportsCache(size) =
                         let tcConfigP = TcConfigProvider.Constant tcConfig
                         return! TcImports.BuildFrameworkTcImports (tcConfigP, frameworkDLLs, nonFrameworkResolutions)
                     })
-                    lock gate <| fun () -> frameworkTcImportsCache.Put(AnyCallerThread, key, lazyWork)
+                    frameworkTcImportsCache.Put(AnyCallerThread, key, lazyWork)
                     lazyWork
             )
         node
