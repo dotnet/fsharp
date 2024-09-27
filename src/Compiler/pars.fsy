@@ -987,7 +987,7 @@ classMemberSpfn:
                | Some e -> unionRanges m e.Range
         
        let flags, leadingKeyword = $3
-       if leadingKeywordIsAbstract leadingKeyword && Option.isSome $5 || Option.isSome getterAccess || Option.isSome setterAccess
+       if leadingKeywordIsAbstract leadingKeyword && (Option.isSome $5 || Option.isSome getterAccess || Option.isSome setterAccess)
        then errorR(Error(FSComp.SR.parsAccessibilityModsIllegalForAbstract(), mWhole))
 
        let flags = flags (getSetAdjuster arity)
