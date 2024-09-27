@@ -1214,7 +1214,7 @@ let mkValField
 
     SynMemberDefn.ValField(field, field.Range)
 
-let leadingKeywordIsAbstract = 
+let leadingKeywordIsAbstract =
     function
     | SynLeadingKeyword.Abstract _
     | SynLeadingKeyword.AbstractMember _
