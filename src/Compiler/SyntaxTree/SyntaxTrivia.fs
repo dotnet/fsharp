@@ -89,7 +89,11 @@ type SynExprLetOrUseTrivia =
         InKeyword: range option
     }
 
-    static member Zero: SynExprLetOrUseTrivia = { InKeyword = None; LetOrUseKeyword = Range.Zero }
+    static member Zero: SynExprLetOrUseTrivia =
+        {
+            InKeyword = None
+            LetOrUseKeyword = Range.Zero
+        }
 
 [<NoEquality; NoComparison>]
 type SynExprLetOrUseBangTrivia =
