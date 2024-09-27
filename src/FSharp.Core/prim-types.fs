@@ -890,11 +890,16 @@ namespace Microsoft.FSharp.Core
                           for m = 0 to len4 - 1 do
                             SetArray4D dst (src1+i) (src2+j) (src3+k) (src4+m) (GetArray4D src i j k m)
 
+        let inline defaultIfNull (defaultStr:string) x =
+            match x with
+            | null -> defaultStr
+            | nonNullString -> nonNullString
+
         let inline anyToString nullStr x = 
             match box x with 
-            | :? IFormattable as f -> f.ToString(null, CultureInfo.InvariantCulture)
+            | :? IFormattable as f -> defaultIfNull nullStr (f.ToString(null, CultureInfo.InvariantCulture))
             | null -> nullStr
-            | _ ->  x.ToString()
+            | _ ->  defaultIfNull nullStr (x.ToString())
 
         let anyToStringShowingNull x = anyToString "null" x
 
@@ -5200,8 +5205,8 @@ namespace Microsoft.FSharp.Core
              when 'T : Guid           = let x = (# "" value : Guid #) in x.ToString(null, CultureInfo.InvariantCulture)
              when 'T struct = 
                 match box value with
-                | :? IFormattable as f -> f.ToString(null, CultureInfo.InvariantCulture)
-                | _ -> value.ToString()
+                | :? IFormattable as f -> defaultIfNull "" (f.ToString(null, CultureInfo.InvariantCulture))
+                | _ -> defaultIfNull "" (value.ToString())
 
              // other common mscorlib reference types
              when 'T : StringBuilder =
@@ -5210,7 +5215,7 @@ namespace Microsoft.FSharp.Core
 
              when 'T : IFormattable =
                 if value = unsafeDefault<'T> then ""
-                else let x = (# "" value : IFormattable #) in x.ToString(null, CultureInfo.InvariantCulture)
+                else let x = (# "" value : IFormattable #) in defaultIfNull "" (x.ToString(null, CultureInfo.InvariantCulture))
 
         [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToChar")>]
