@@ -30,8 +30,11 @@ type internal RemoveReturnOrYieldCodeFixProvider [<ImportingConstructor>] () =
                     parseResults.TryRangeOfExprInYieldOrReturn errorRange.Start
                     |> ValueOption.ofOption
                     |> ValueOption.map (fun exprRange -> RoslynHelpers.FSharpRangeToTextSpan(sourceText, exprRange))
-                                                                             // meaning: keyword + spacing before the expression
-                    |> ValueOption.map (fun exprSpan -> [ TextChange(TextSpan(context.Span.Start, exprSpan.Start - context.Span.Start), "") ])
+                    |> ValueOption.map (fun exprSpan ->
+                        [
+                            // meaning: keyword + spacing before the expression
+                            TextChange(TextSpan(context.Span.Start, exprSpan.Start - context.Span.Start), "")
+                        ])
                     |> ValueOption.map (fun changes ->
                         let title =
                             let text = sourceText.GetSubText(context.Span).ToString()
