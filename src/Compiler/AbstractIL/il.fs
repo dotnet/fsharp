@@ -2923,7 +2923,6 @@ and [<Sealed>] ILPreTypeDefImpl(nameSpace: string list, name: string, metadataIn
     interface ILPreTypeDef with
         member _.Namespace = nameSpace
         member _.Name = name
-
         member x.GetTypeDef() = onDemand.Value
 
 and ILTypeDefStored =
