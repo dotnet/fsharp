@@ -19,9 +19,9 @@ neg104.fs(35,19,35,20): parse error FS0010: Unexpected symbol '}' in definition.
 
 neg104.fs(36,1,36,1): parse error FS0010: Incomplete structured construct at or before this point in implementation file
 
-neg104.fs(8,9,8,30): typecheck error FS0750: This construct may only be used within computation expressions
+neg104.fs(8,9,8,15): typecheck error FS0750: This construct may only be used within computation expressions
 
-neg104.fs(10,9,10,30): typecheck error FS0750: This construct may only be used within computation expressions
+neg104.fs(10,9,10,15): typecheck error FS0750: This construct may only be used within computation expressions
 
 neg104.fs(20,9,20,15): typecheck error FS0025: Incomplete pattern matches on this expression.
 
