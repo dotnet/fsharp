@@ -23,4 +23,4 @@ let x = 123
 
     let fileName, options = mkTestFileAndOptions source [| |]
     checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString source, options) |> Async.RunImmediate |> ignore
-    gotRequest |> should be True
+    gotRequest |> Assert.True

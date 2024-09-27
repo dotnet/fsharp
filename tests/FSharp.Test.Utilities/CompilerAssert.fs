@@ -21,7 +21,7 @@ open System.Runtime.Loader
 open FSharp.Test.Utilities
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
-open NUnit.Framework
+open Xunit
 open TestFramework
 open System.Collections.Immutable
 
@@ -149,12 +149,12 @@ type TestCompilation =
                 let diagnostics = c.GetDiagnostics ()
 
                 if not diagnostics.IsEmpty then
-                    NUnit.Framework.Assert.Fail ("CSharp source diagnostics:\n" + (diagnostics |> Seq.map (fun x -> x.GetMessage () + "\n") |> Seq.reduce (+)))
+                    Assert.Fail ("CSharp source diagnostics:\n" + (diagnostics |> Seq.map (fun x -> x.GetMessage () + "\n") |> Seq.reduce (+)))
 
             | TestCompilation.IL (_, result) ->
                 let errors, _ = result.Value
                 if errors.Length > 0 then
-                    NUnit.Framework.Assert.Fail ("IL source errors: " + errors)
+                    Assert.Fail ("IL source errors: " + errors)
 
     member this.EmitAsFile (outputPath: string) =
         match this with
@@ -484,7 +484,7 @@ module rec CompilerAssertHelpers =
         
         let checkEqual k a b =
            if a <> b then
-               Assert.AreEqual(a, b, sprintf $"Mismatch in %s{k}, expected '%A{a}', got '%A{b}'.\nAll errors:\n%s{errorsAsStr}")
+               failwithf $"Mismatch in %s{k}, expected '%A{a}', got '%A{b}'.\nAll errors:\n%s{errorsAsStr}"
 
         checkEqual "Errors"  (Array.length expectedErrors) errors.Length
 
@@ -771,18 +771,18 @@ Updated automatically, please check diffs in your pull request, changes must be 
                 exn |> Option.iter raise)
 
     static member ExecutionHasOutput(cmpl: Compilation, expectedOutput: string) =
-        CompilerAssert.Execute(cmpl, newProcess = true, onOutput = (fun output -> Assert.AreEqual(expectedOutput, output, sprintf "'%s' = '%s'" expectedOutput output)))  
+        CompilerAssert.Execute(cmpl, newProcess = true, onOutput = (fun output -> Assert.Equal(expectedOutput, output)))  
 
     static member Pass (source: string) =
         let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions TargetFramework.Current) |> Async.RunImmediate
 
-        Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
+        Assert.Empty(parseResults.Diagnostics)
 
         match fileAnswer with
         | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted")
         | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
 
-        Assert.IsEmpty(typeCheckResults.Diagnostics, sprintf "Type Check errors: %A" typeCheckResults.Diagnostics)
+        Assert.Empty(typeCheckResults.Diagnostics)
 
     static member PassWithOptions options (source: string) =
         let defaultOptions = defaultProjectOptions TargetFramework.Current
@@ -790,13 +790,13 @@ Updated automatically, please check diffs in your pull request, changes must be 
 
         let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, options) |> Async.RunImmediate
 
-        Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
+        Assert.Empty(parseResults.Diagnostics)
 
         match fileAnswer with
         | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted")
         | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
 
-        Assert.IsEmpty(typeCheckResults.Diagnostics, sprintf "Type Check errors: %A" typeCheckResults.Diagnostics)
+        Assert.Empty(typeCheckResults.Diagnostics)
 
     static member TypeCheckWithErrorsAndOptionsAgainstBaseLine options (sourceDirectory:string) (sourceFile: string) =
         let absoluteSourceFile = System.IO.Path.Combine(sourceDirectory, sourceFile)
@@ -809,7 +809,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
                 { defaultOptions with OtherOptions = Array.append options defaultOptions.OtherOptions; SourceFiles = [|sourceFile|] })
             |> Async.RunImmediate
 
-        Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
+        Assert.Empty(parseResults.Diagnostics)
 
         match fileAnswer with
         | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted")
@@ -827,7 +827,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
             |> String.concat "\n"
         File.WriteAllText(Path.ChangeExtension(absoluteSourceFile,"err"), errorsActual)
 
-        Assert.AreEqual(errorsExpectedBaseLine.Replace("\r\n","\n"), errorsActual.Replace("\r\n","\n"))
+        Assert.Equal(errorsExpectedBaseLine.Replace("\r\n","\n"), errorsActual.Replace("\r\n","\n"))
 
     static member TypeCheckWithOptionsAndName options name (source: string) =
         let errors =
@@ -895,7 +895,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
     static member TypeCheck(options, name, source: string) =
         let parseResults, checkResults = CompilerAssert.ParseAndTypeCheck(options, name, source)
 
-        Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
+        Assert.Empty(parseResults.Diagnostics)
 
         checkResults
 
@@ -1044,7 +1044,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         else
             (expectedErrorMessages, errorMessages)
             ||> Seq.iter2 (fun expectedErrorMessage errorMessage ->
-                Assert.AreEqual(expectedErrorMessage, errorMessage)
+                Assert.Equal(expectedErrorMessage, errorMessage)
         )
 
     static member RunScript source expectedErrorMessages =
@@ -1069,13 +1069,13 @@ Updated automatically, please check diffs in your pull request, changes must be 
             |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLine, e.StartColumn, e.EndLine, e.EndColumn, e.Message)
 
         printfn $"diagnostics: %A{[| for e in errors -> e.Severity, e.ErrorNumber, e.StartLine, e.StartColumn, e.EndLine, e.EndColumn, e.Message |]}"
-        Assert.AreEqual(Array.length expectedParseErrors, errors.Length, sprintf "Parse errors: %A" parseResults.Diagnostics)
+        Assert.True((Array.length expectedParseErrors = errors.Length), sprintf "Parse errors: %A" parseResults.Diagnostics)
 
         Array.zip errors expectedParseErrors
         |> Array.iter (fun (info, expectedError) ->
             let (expectedSeverity: FSharpDiagnosticSeverity, expectedErrorNumber: int, expectedErrorRange: int * int * int * int, expectedErrorMsg: string) = expectedError
-            Assert.AreEqual(expectedSeverity, info.Severity)
-            Assert.AreEqual(expectedErrorNumber, info.ErrorNumber, "expectedErrorNumber")
-            Assert.AreEqual(expectedErrorRange, (info.StartLine, info.StartColumn + 1, info.EndLine, info.EndColumn + 1), "expectedErrorRange")
-            Assert.AreEqual(expectedErrorMsg, info.Message, "expectedErrorMsg")
+            Assert.Equal(expectedSeverity, info.Severity)
+            Assert.Equal(expectedErrorNumber, info.ErrorNumber)
+            Assert.Equal(expectedErrorRange, (info.StartLine, info.StartColumn + 1, info.EndLine, info.EndColumn + 1))
+            Assert.Equal(expectedErrorMsg, info.Message)
         )
