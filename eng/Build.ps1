@@ -401,7 +401,7 @@ function TestSolutionUsingMSBuild([string] $testSolution, [string] $targetFramew
     $solutionName = [System.IO.Path]::GetFileNameWithoutExtension($testSolution)
     $testLogPath = "$ArtifactsDir\TestResults\$configuration\{assembly}.{framework}.xml"
     $testBinLogPath = "$LogDir\${solutionName}_$targetFramework.binlog"
-    $args = "test $testSolution -c $configuration -f $targetFramework --test-adapter-path $testadapterpath -v minimal --logger ""xunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
+    $args = "test $testSolution -c $configuration -f $targetFramework --test-adapter-path $testadapterpath -v n --logger ""xunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
     $args += " --blame --blame-hang-timeout 5minutes --results-directory $ArtifactsDir\TestResults\$configuration"
 
     if (-not $noVisualStudio -or $norestore) {
