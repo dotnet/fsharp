@@ -1048,8 +1048,13 @@ let mkLocalBindings (mWhole, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, 
                 None
             else
                 Some mIn)
+        
+    let mLetOrUse =
+        match decls with
+        | SynBinding(trivia = trivia) :: _ -> trivia.LeadingKeyword.Range
+        | _ -> Range.Zero
 
-    SynExpr.LetOrUse(isRec, isUse, decls, body, mWhole, { InKeyword = mIn })
+    SynExpr.LetOrUse(isRec, isUse, decls, body, mWhole, { LetOrUseKeyword = mLetOrUse ; InKeyword = mIn })
 
 let mkDefnBindings (mWhole, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, _bindingSetRange), attrs, vis, attrsm) =
     if isUse then

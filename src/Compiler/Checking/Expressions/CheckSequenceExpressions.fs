@@ -232,9 +232,10 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
         // 'use x = expr in expr'
         | SynExpr.LetOrUse(
             isUse = true
-            bindings = [ SynBinding(kind = SynBindingKind.Normal; headPat = pat; expr = rhsExpr; debugPoint = spBind) ]
+            bindings = [ SynBinding(kind = SynBindingKind.Normal; headPat = pat; expr = rhsExpr) ]
             body = innerComp
-            range = wholeExprMark) ->
+            range = wholeExprMark
+            trivia = { LetOrUseKeyword = mBind }) ->
 
             let bindPatTy = NewInferenceType g
             let inputExprTy = NewInferenceType g
@@ -251,11 +252,6 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
             let innerExpr, tpenv =
                 let envinner = { envinner with eIsControlFlow = true }
                 tcSequenceExprBody envinner genOuterTy tpenv innerComp
-
-            let mBind =
-                match spBind with
-                | DebugPointAtBinding.Yes m -> m.NoteSourceConstruct(NotedSourceConstruct.Binding)
-                | _ -> inputExpr.Range
 
             let inputExprMark = inputExpr.Range
 

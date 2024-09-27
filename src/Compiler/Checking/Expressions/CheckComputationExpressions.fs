@@ -1801,11 +1801,8 @@ let rec TryTranslateComputationExpression
         | SynExpr.LetOrUse(
             isUse = true
             bindings = [ SynBinding(kind = SynBindingKind.Normal; headPat = pat; expr = rhsExpr; debugPoint = spBind) ]
-            body = innerComp) ->
-            let mBind =
-                match spBind with
-                | DebugPointAtBinding.Yes m -> m
-                | _ -> rhsExpr.Range
+            body = innerComp
+            trivia = { LetOrUseKeyword = mBind }) ->
 
             if ceenv.isQuery then
                 error (Error(FSComp.SR.tcUseMayNotBeUsedInQueries (), mBind))

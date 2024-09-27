@@ -494,3 +494,51 @@ let run r2 r3 =
         |> withDiagnostics [
             (Error 750, Line 3, Col 5, Line 3, Col 11, "This construct may only be used within computation expressions")
         ]
+
+    [<Fact>]
+    let ``use expressions may not be used in queries(SynExpr.Sequential)`` () =
+        Fsx """
+let x11 = 
+    query { for c in [1..10] do
+            use x = { new System.IDisposable with __.Dispose() = () }
+            yield 1  }   
+    """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3142, Line 4, Col 13, Line 4, Col 16, "'use' expressions may not be used in queries")
+        ]
+
+    [<Fact>]
+    let ``use, This control construct may only be used if the computation expression builder defines a 'Using' method`` () =
+        Fsx """
+module Result =
+    let zip x1 x2 =
+        match x1,x2 with
+        | Ok x1res, Ok x2res -> Ok (x1res, x2res)
+        | Error e, _ -> Error e
+        | _, Error e -> Error e
+
+type ResultBuilder() =
+    member _.MergeSources(t1: Result<'T,'U>, t2: Result<'T1,'U>) = Result.zip t1 t2
+    member _.BindReturn(x: Result<'T,'U>, f) = Result.map f x
+    
+    member _.YieldReturn(x: Result<'T,'U>) = x
+    member _.Return(x: 'T) = Ok x
+
+let result = ResultBuilder()
+
+let run r2 r3 =
+    result {
+        use b = r2
+        return Ok 0
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 708, Line 20, Col 9, Line 20, Col 12, "This control construct may only be used if the computation expression builder defines a 'Using' method")
+        ]
+        
