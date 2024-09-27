@@ -22,8 +22,9 @@ ImplFile
                         { LeadingKeyword = UseRec ((3,4--3,7), (3,8--3,11))
                           InlineKeyword = None
                           EqualsRange = Some (3,14--3,15) })],
-                    Const (Unit, (4,4--4,6)), (3,4--4,6), { InKeyword = None }),
-                 (2,0--4,6)), (2,0--4,6))], PreXmlDocEmpty, [], None, (2,0--5,0),
-          { LeadingKeyword = None })], (true, true),
-      { ConditionalDirectives = []
-        CodeComments = [] }, set []))
+                    Const (Unit, (4,4--4,6)), (3,4--4,6),
+                    { LetOrUseKeyword = (3,4--3,11)
+                      InKeyword = None }), (2,0--4,6)), (2,0--4,6))],
+          PreXmlDocEmpty, [], None, (2,0--5,0), { LeadingKeyword = None })],
+      (true, true), { ConditionalDirectives = []
+                      CodeComments = [] }, set []))
