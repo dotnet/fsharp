@@ -562,9 +562,9 @@
         <target state="translated">Błędny specyfikator formatu:{0}</target>
         <note />
       </trans-unit>
-      <trans-unit id="printfBadIntegerForDynamicFomatter">
+      <trans-unit id="printfBadIntegerForDynamicFormatter">
         <source>Bad integer supplied to dynamic formatter</source>
-        <target state="translated">Do dynamicznego modułu formatującego została przekazana błędna liczba całkowita.</target>
+        <target state="new">Bad integer supplied to dynamic formatter</target>
         <note />
       </trans-unit>
       <trans-unit id="printfExpectedPrecision">
@@ -592,9 +592,9 @@
         <target state="translated">To nie jest typ funkcji.</target>
         <note />
       </trans-unit>
-      <trans-unit id="printfPrecisonSpecifierIllegal">
+      <trans-unit id="printfPrecisionSpecifierIllegal">
         <source>Bad format specifier (precision)</source>
-        <target state="translated">Błędny specyfikator formatu (dokładności).</target>
+        <target state="new">Bad format specifier (precision)</target>
         <note />
       </trans-unit>
       <trans-unit id="printfSpecifierAfterIllegal">

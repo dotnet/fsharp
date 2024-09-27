@@ -248,16 +248,16 @@ let mkLocalPrivateInt32Enum (g: TcGlobals, tref: ILTypeRef, values: (string * in
 // Generate Local embeddable versions of framework types when necessary
 //--------------------------------------------------------------------------
 
-let private getPotentiallyEmbedableAttribute (g: TcGlobals) (info: BuiltinAttribInfo) =
+let private getPotentiallyEmbeddableAttribute (g: TcGlobals) (info: BuiltinAttribInfo) =
     let tref = info.TypeRef
     g.TryEmbedILType(tref, (fun () -> mkLocalPrivateAttributeWithDefaultConstructor (g, tref.Name)))
     mkILCustomAttribute (info.TypeRef, [], [], [])
 
 let GetReadOnlyAttribute (g: TcGlobals) =
-    getPotentiallyEmbedableAttribute g g.attrib_IsReadOnlyAttribute
+    getPotentiallyEmbeddableAttribute g g.attrib_IsReadOnlyAttribute
 
 let GetIsUnmanagedAttribute (g: TcGlobals) =
-    getPotentiallyEmbedableAttribute g g.attrib_IsUnmanagedAttribute
+    getPotentiallyEmbeddableAttribute g g.attrib_IsUnmanagedAttribute
 
 let GetDynamicallyAccessedMemberTypes (g: TcGlobals) =
     let tref = g.enum_DynamicallyAccessedMemberTypes.TypeRef
@@ -319,7 +319,7 @@ let GetDynamicDependencyAttribute (g: TcGlobals) memberTypes (ilType: ILType) =
 /// Nested items not being annotated with Nullable attribute themselves are interpreted as being withoutnull
 /// Doing it that way is a heuristical decision supporting limited usage of (| null) annotations and not allowing nulls in >50% of F# code
 /// (if majority of fields/parameters/return values would be nullable, this heuristic would lead to bloat of generated metadata)
-let GetNullableContextAttribute (g: TcGlobals) =
+let GetNullableContextAttribute (g: TcGlobals) flagValue =
     let tref = g.attrib_NullableContextAttribute.TypeRef
 
     g.TryEmbedILType(
@@ -329,7 +329,7 @@ let GetNullableContextAttribute (g: TcGlobals) =
             mkLocalPrivateAttributeWithPropertyConstructors (g, tref.Name, fields, PublicFields))
     )
 
-    mkILCustomAttribute (tref, [ g.ilg.typ_Byte ], [ ILAttribElem.Byte 1uy ], [])
+    mkILCustomAttribute (tref, [ g.ilg.typ_Byte ], [ ILAttribElem.Byte flagValue ], [])
 
 let GetNotNullWhenTrueAttribute (g: TcGlobals) (propNames: string array) =
     let tref = g.attrib_MemberNotNullWhenAttribute.TypeRef
@@ -407,6 +407,11 @@ let rec GetNullnessFromTType (g: TcGlobals) ty =
                 else if isValueType then
                     // Generic value type: 0, followed by the representation of the type arguments in order including containing types
                     yield NullnessInfo.AmbivalentToNull
+                else if
+                    IsUnionTypeWithNullAsTrueValue g tcref.Deref
+                    || TypeHasAllowNull tcref g FSharp.Compiler.Text.Range.Zero
+                then
+                    yield NullnessInfo.WithNull
                 else
                     // Reference type: the nullability (0, 1, or 2), followed by the representation of the type arguments in order including containing types
                     yield nullness.Evaluate()

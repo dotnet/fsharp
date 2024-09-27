@@ -154,16 +154,16 @@ module internal Utilities =
         let result = ResizeArray()
         let mutable insideSQ = false
         let mutable start = 0
-        let isSeperator c = c = ','
+        let isSeparator c = c = ','
 
         for i = 0 to last do
             match text[i], insideSQ with
-            | c, false when isSeperator c -> // split when seeing a separator
+            | c, false when isSeparator c -> // split when seeing a separator
                 result.Add(text.Substring(start, i - start))
                 insideSQ <- false
                 start <- i + 1
             | _, _ when i = last -> result.Add(text.Substring(start, i - start + 1))
-            | c, true when isSeperator c -> // keep reading if a separator is inside quotation
+            | c, true when isSeparator c -> // keep reading if a separator is inside quotation
                 insideSQ <- true
             | '\'', _ when isNotQuotedQuotation text i -> // open or close quotation
                 insideSQ <- not insideSQ // keep reading

@@ -42,7 +42,7 @@ type LoadClosure =
         /// The resolved references along with the ranges of the #r positions in each file.
         References: (string * AssemblyResolution list) list
 
-        /// The resolved pacakge references along with the ranges of the #r positions in each file.
+        /// The resolved package references along with the ranges of the #r positions in each file.
         PackageReferences: (range * string list)[]
 
         /// Whether we're decided to use .NET Framework analysis for this script
@@ -159,7 +159,7 @@ module ScriptPreprocessClosure =
             reduceMemoryUsage
         ) =
 
-        let projectDir = Path.GetDirectoryName fileName
+        let projectDir = !! Path.GetDirectoryName(fileName)
         let isInteractive = (codeContext = CodeContext.CompilationAndEvaluation)
         let isInvalidationSupported = (codeContext = CodeContext.Editing)
 
@@ -460,7 +460,7 @@ module ScriptPreprocessClosure =
 
                         let diagnosticsLogger = CapturingDiagnosticsLogger("FindClosureMetaCommands")
                         use _ = UseDiagnosticsLogger diagnosticsLogger
-                        let pathOfMetaCommandSource = Path.GetDirectoryName fileName
+                        let pathOfMetaCommandSource = !! Path.GetDirectoryName(fileName)
                         let preSources = tcConfig.GetAvailableLoadedSources()
 
                         let tcConfigResult, noWarns =

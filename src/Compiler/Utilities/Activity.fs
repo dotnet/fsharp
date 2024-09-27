@@ -6,6 +6,8 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Text
+open Internal.Utilities.Library
+
 
 module ActivityNames =
     [<Literal>]
@@ -137,16 +139,17 @@ module internal Activity =
                     ActivityStarted = (fun a -> a.AddTag(gcStatsInnerTag, collectGCStats ()) |> ignore),
                     ActivityStopped =
                         (fun a ->
-                            let statsBefore = a.GetTagItem(gcStatsInnerTag) :?> GCStats
                             let statsAfter = collectGCStats ()
                             let p = Process.GetCurrentProcess()
                             a.AddTag(Tags.workingSetMB, p.WorkingSet64 / 1_000_000L) |> ignore
                             a.AddTag(Tags.handles, p.HandleCount) |> ignore
                             a.AddTag(Tags.threads, p.Threads.Count) |> ignore
 
-                            for i = 0 to statsAfter.Length - 1 do
-                                a.AddTag($"gc{i}", statsAfter[i] - statsBefore[i]) |> ignore)
-
+                            match a.GetTagItem(gcStatsInnerTag) with
+                            | :? GCStats as statsBefore ->
+                                for i = 0 to statsAfter.Length - 1 do
+                                    a.AddTag($"gc{i}", statsAfter[i] - statsBefore[i]) |> ignore
+                            | _ -> ())
                 )
 
             ActivitySource.AddActivityListener(l)
@@ -197,11 +200,11 @@ module internal Activity =
 
     module CsvExport =
 
-        let private escapeStringForCsv (o: obj) =
-            if isNull o then
-                ""
-            else
-                let mutable txtVal = o.ToString()
+        let private escapeStringForCsv (o: obj MaybeNull) =
+            match o with
+            | null -> ""
+            | o ->
+                let mutable txtVal = match o.ToString() with | null -> "" | s -> s
                 let hasComma = txtVal.IndexOf(',') > -1
                 let hasQuote = txtVal.IndexOf('"') > -1
 
@@ -216,7 +219,7 @@ module internal Activity =
         let private createCsvRow (a: Activity) =
             let sb = new StringBuilder(128)
 
-            let appendWithLeadingComma (s: string) =
+            let appendWithLeadingComma (s: string MaybeNull) =
                 sb.Append(',') |> ignore
                 sb.Append(s) |> ignore
 
@@ -234,7 +237,7 @@ module internal Activity =
 
             sb.ToString()
 
-        let addCsvFileListener pathToFile =
+        let addCsvFileListener (pathToFile:string) =
             if pathToFile |> File.Exists |> not then
                 File.WriteAllLines(
                     pathToFile,
@@ -256,7 +259,7 @@ module internal Activity =
 
             let l =
                 new ActivityListener(
-                    ShouldListenTo = (fun a -> ActivityNames.AllRelevantNames |> Array.contains a.Name),
+                    ShouldListenTo = (fun a ->ActivityNames.AllRelevantNames |> Array.contains a.Name),
                     Sample = (fun _ -> ActivitySamplingResult.AllData),
                     ActivityStopped = (fun a -> msgQueue.Post(createCsvRow a))
                 )

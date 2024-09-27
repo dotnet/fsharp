@@ -16,7 +16,7 @@ let inline getOtherFile (filePath: string) =
     else
         Path.ChangeExtension(filePath, ".fsi")
 
-/// Checks if the file paht ends with '.fsx' or '.fsscript'
+/// Checks if the file path ends with '.fsx' or '.fsscript'
 let inline isScriptFile (filePath: string) =
     let ext = Path.GetExtension filePath
 

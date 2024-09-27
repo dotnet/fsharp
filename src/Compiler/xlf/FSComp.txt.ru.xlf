@@ -257,6 +257,16 @@
         <target state="translated">дополнительные преобразования на основе типа</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAllowAccessModifiersToAutoPropertiesGettersAndSetters">
+        <source>Allow access modifiers to auto properties getters and setters</source>
+        <target state="new">Allow access modifiers to auto properties getters and setters</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureAllowObjectExpressionWithoutOverrides">
+        <source>Allow object expressions without overrides</source>
+        <target state="new">Allow object expressions without overrides</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAndBang">
         <source>applicative computation expressions</source>
         <target state="translated">применимые вычислительные выражения</target>
@@ -295,6 +305,11 @@
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
         <target state="translated">Выдает предупреждения, если атрибут TailCall используется в нерекурсивных функциях.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureConsistentNowarnLineDirectiveInteraction">
+        <source>The interaction between #nowarn and #line is now consistent.</source>
+        <target state="new">The interaction between #nowarn and #line is now consistent.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
@@ -422,9 +437,9 @@
         <target state="translated">Оптимизирует определенные варианты использования операторов целого диапазона (..) и шага диапазона (.. ..) для быстрых циклов while.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureLowerSimpleMappingsInComprehensionsToDirectCallsToMap">
-        <source>Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to calls to List.map and Array.map when xs is a list or an array, respectively.</source>
-        <target state="translated">Понижает [для x в xs -&gt; f x] и [|для x в xs -&gt; f x|] для вызовов List.map и Array.map, если xs является списком или массивом соответственно.</target>
+      <trans-unit id="featureLowerSimpleMappingsInComprehensionsToFastLoops">
+        <source>Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to fast loops when xs is a list or an array, respectively.</source>
+        <target state="new">Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to fast loops when xs is a list or an array, respectively.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
@@ -528,8 +543,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
-        <source>whitespace relexation</source>
-        <target state="translated">уменьшение строгости для пробелов</target>
+        <source>whitespace relaxation</source>
+        <target state="new">whitespace relaxation</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace2">
@@ -732,6 +747,11 @@
         <target state="translated">Используется в вычислительных выражениях для введения циклической конструкции, в которой условие является результатом другого вычислительного выражения.</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexByteArrayOutisdeAscii">
+        <source>This byte array literal contains {0} non-ASCII characters. All characters should be &lt; 128y.</source>
+        <target state="new">This byte array literal contains {0} non-ASCII characters. All characters should be &lt; 128y.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexByteStringMayNotBeInterpolated">
         <source>a byte string may not be interpolated</source>
         <target state="translated">невозможно выполнить интерполяцию для строки байтов</target>
@@ -747,9 +767,24 @@
         <target state="translated">Регионы IF-FSHARP/IF-CAML больше не поддерживаются</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexInvalidAsciiByteLiteral">
+        <source>This is not a valid byte character literal. The value must be less than or equal to '\127'B.</source>
+        <target state="new">This is not a valid byte character literal. The value must be less than or equal to '\127'B.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexInvalidCharLiteralInString">
+        <source>'{0}' is not a valid character literal.\nNote: Currently the value is wrapped around byte range to '{1}'. In a future F# version this warning will be promoted to an error.</source>
+        <target state="new">'{0}' is not a valid character literal.\nNote: Currently the value is wrapped around byte range to '{1}'. In a future F# version this warning will be promoted to an error.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexInvalidIdentifier">
         <source>This is not a valid identifier</source>
         <target state="translated">Это недопустимый идентификатор</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexInvalidTrigraphAsciiByteLiteral">
+        <source>This is not a valid byte character literal. The value must be less than or equal to '\127'B.\nNote: In a future F# version this warning will be promoted to an error.</source>
+        <target state="new">This is not a valid byte character literal. The value must be less than or equal to '\127'B.\nNote: In a future F# version this warning will be promoted to an error.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
@@ -1007,19 +1042,24 @@
         <target state="translated">Ожидается выражение</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsExpectingField">
-        <source>Expecting record field</source>
-        <target state="translated">Ожидается поле записи</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsExpectingPattern">
         <source>Expecting pattern</source>
         <target state="translated">Ожидается шаблон</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsExpectingRecordField">
+        <source>Expecting record field</source>
+        <target state="new">Expecting record field</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsExpectingType">
         <source>Expecting type</source>
         <target state="translated">Требуется тип</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingUnionCaseField">
+        <source>Expecting union case field</source>
+        <target state="new">Expecting union case field</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
@@ -1088,8 +1128,8 @@
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
-        <source>A constrained generic construct occured in the resumable code specification</source>
-        <target state="translated">В спецификации возобновляемого кода возникла ограниченная универсальная конструкция</target>
+        <source>A constrained generic construct occurred in the resumable code specification</source>
+        <target state="new">A constrained generic construct occurred in the resumable code specification</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsDynamicResumeAtInBody">
@@ -1103,8 +1143,8 @@
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsLetRec">
-        <source>A 'let rec' occured in the resumable code specification</source>
-        <target state="translated">В спецификации возобновляемого кода возникла ошибка "let rec"</target>
+        <source>A 'let rec' occurred in the resumable code specification</source>
+        <target state="new">A 'let rec' occurred in the resumable code specification</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsResumptionInHandlerOrFilter">
@@ -1170,6 +1210,11 @@
       <trans-unit id="suggestedName">
         <source>(Suggested name)</source>
         <target state="translated">(предложенное имя)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAccessModifiersNotAllowedInSRTPConstraint">
+        <source>Access modifiers cannot be applied to an SRTP constraint.</source>
+        <target state="new">Access modifiers cannot be applied to an SRTP constraint.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcActivePatternArgsCountNotMatchArgs">
@@ -1403,8 +1448,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcMissingRequiredMembers">
-        <source>The following required properties have to be initalized:{0}</source>
-        <target state="translated">Необходимо инициализировать следующие обязательные свойства:{0}</target>
+        <source>The following required properties have to be initialized:{0}</source>
+        <target state="new">The following required properties have to be initialized:{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMultipleFieldsInRecord">
@@ -1452,6 +1497,11 @@
         <target state="translated">Значение {0} не является функцией и не поддерживает нотацию индекса.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcNullableToStringOverride">
+        <source>With nullness checking enabled, overrides of .ToString() method must return a non-nullable string. You can handle potential nulls via the built-in string function.</source>
+        <target state="new">With nullness checking enabled, overrides of .ToString() method must return a non-nullable string. You can handle potential nulls via the built-in string function.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcNullnessCheckingNotEnabled">
         <source>The 'nullness checking' language feature is not enabled. This use of a nullness checking construct will be ignored.</source>
         <target state="new">The 'nullness checking' language feature is not enabled. This use of a nullness checking construct will be ignored.</target>
@@ -1480,6 +1530,11 @@
       <trans-unit id="tcParenThenAdjacentListArgumentReserved">
         <source>The syntax '(expr1)[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
         <target state="translated">Синтаксис "(expr1)[expr2]" теперь зарезервирован для индексирования и неоднозначен при использовании в качестве аргумента. См. https://aka.ms/fsharp-index-notation. При вызове функции с несколькими каррированными аргументами добавьте между ними пробел, например "someFunction (expr1) [expr2]".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcPartialActivePattern">
+        <source>Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.</source>
+        <target state="new">Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcPassingWithoutNullToANullableExpectingFunc">
@@ -1528,8 +1583,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeContainsLetRec">
-        <source>Invalid resumable code. A 'let rec' occured in the resumable code specification</source>
-        <target state="translated">Недопустимый возобновляемый код. В спецификации возобновляемого кода возникла ошибка "let rec"</target>
+        <source>Invalid resumable code. A 'let rec' occurred in the resumable code specification</source>
+        <target state="new">Invalid resumable code. A 'let rec' occurred in the resumable code specification</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeFunctionMustBeInline">
@@ -1598,8 +1653,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcTypeDoesNotHaveAnyNull">
-        <source>The type '{0}' does not support a nullness qualitification.</source>
-        <target state="new">The type '{0}' does not support a nullness qualitification.</target>
+        <source>The type '{0}' does not support a nullness qualification.</source>
+        <target state="new">The type '{0}' does not support a nullness qualification.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
@@ -4903,8 +4958,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidActivePatternName">
-        <source>This is not a valid name for an active pattern</source>
-        <target state="translated">Недопустимое имя для активного шаблона</target>
+        <source>'{0}' is not a valid method name. Use a 'let' binding instead.</source>
+        <target state="new">'{0}' is not a valid method name. Use a 'let' binding instead.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcEntryPointAttributeRequiresFunctionInModule">
@@ -5848,8 +5903,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsDebug">
-        <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debuggging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
-        <target state="translated">Укажите тип отладки: full, portable, embedded, pdbonly (если тип отладки не указан, по умолчанию используется тип "{0}", позволяющий подключить отладчик к выполняющейся программе; тип portable представляет собой кроссплатформенный формат; тип embedded — кроссплатформенный формат, встроенный в выходной файл).</target>
+        <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debugging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
+        <target state="new">Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debugging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</target>
         <note />
       </trans-unit>
       <trans-unit id="optsOptimize">
@@ -6468,8 +6523,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexByteArrayCannotEncode">
-        <source>This byte array literal contains characters that do not encode as a single byte</source>
-        <target state="translated">Этот литерал массива байтов содержит знаки, не поддерживающие однобайтовую кодировку</target>
+        <source>This byte array literal contains {0} characters that do not encode as a single byte</source>
+        <target state="new">This byte array literal contains {0} characters that do not encode as a single byte</target>
         <note />
       </trans-unit>
       <trans-unit id="lexIdentEndInMarkReserved">
@@ -6550,11 +6605,6 @@
       <trans-unit id="lexInvalidNumericLiteral">
         <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).</source>
         <target state="translated">Это значение не является допустимым числовым литералом. Допустимые числовые литералы: 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1,0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="lexInvalidByteLiteral">
-        <source>This is not a valid byte literal</source>
-        <target state="translated">Не является допустимым байтовым литералом.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidCharLiteral">
@@ -7108,8 +7158,8 @@
         <note />
       </trans-unit>
       <trans-unit id="fscRemotingError">
-        <source>The resident compilation service was not used because a problem occured in communicating with the server.</source>
-        <target state="translated">Служба резидентной компиляции не использовалась, поскольку возникла проблема при взаимодействии с сервером.</target>
+        <source>The resident compilation service was not used because a problem occurred in communicating with the server.</source>
+        <target state="new">The resident compilation service was not used because a problem occurred in communicating with the server.</target>
         <note />
       </trans-unit>
       <trans-unit id="pathIsInvalid">
@@ -7308,8 +7358,8 @@
         <note />
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToType">
-        <source>An error occured applying the static arguments to a provided type</source>
-        <target state="translated">Ошибка при применении статических аргументов к предоставленному типу</target>
+        <source>An error occurred applying the static arguments to a provided type</source>
+        <target state="new">An error occurred applying the static arguments to a provided type</target>
         <note />
       </trans-unit>
       <trans-unit id="etUnknownStaticArgumentKind">
@@ -7373,8 +7423,8 @@
         <note />
       </trans-unit>
       <trans-unit id="etInvalidTypeProviderAssemblyName">
-        <source>Assembly '{0}' hase TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</source>
-        <target state="translated">У сборки "{0}" имеется атрибут TypeProviderAssembly с недопустимым значением "{1}". Значение должно представлять собой допустимое имя сборки</target>
+        <source>Assembly '{0}' has TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</source>
+        <target state="new">Assembly '{0}' has TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidMemberNameCtor">
@@ -7958,8 +8008,8 @@
         <note />
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToMethod">
-        <source>An error occured applying the static arguments to a provided method</source>
-        <target state="translated">Произошла ошибка при применении статических аргументов к предоставленному методу</target>
+        <source>An error occurred applying the static arguments to a provided method</source>
+        <target state="new">An error occurred applying the static arguments to a provided method</target>
         <note />
       </trans-unit>
       <trans-unit id="pplexUnexpectedChar">
@@ -8087,9 +8137,9 @@
         <target state="translated">Если тип объединения с несколькими регистрами является структурой, все случаи объединения должны иметь уникальные имена. Например: "type A = B of b: int | C of c: int".</target>
         <note />
       </trans-unit>
-      <trans-unit id="CallerMemberNameIsOverriden">
+      <trans-unit id="CallerMemberNameIsOverridden">
         <source>The CallerMemberNameAttribute applied to parameter '{0}' will have no effect. It is overridden by the CallerFilePathAttribute.</source>
-        <target state="translated">Атрибут CallerMemberNameAttribute, примененный для параметра "{0}", не будет действовать. Он будет переопределен атрибутом CallerFilePathAttribute.</target>
+        <target state="new">The CallerMemberNameAttribute applied to parameter '{0}' will have no effect. It is overridden by the CallerFilePathAttribute.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
@@ -8403,8 +8453,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionTry">
-        <source>Used to introduce a block of code that might generate an exception. Used together with with or finally.</source>
-        <target state="translated">Используется для введения блока кода, который может создать исключение. Используется вместе с with или finally.</target>
+        <source>Used to introduce a block of code that might generate an exception. Used together with 'with' or 'finally'.</source>
+        <target state="new">Used to introduce a block of code that might generate an exception. Used together with 'with' or 'finally'.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionType">

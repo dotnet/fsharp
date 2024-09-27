@@ -499,6 +499,16 @@
     IL_0005:  ret
   } 
 
+  .method public static string  giveMeLabelsText() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  call       class MyTestModule/MyDu MyTestModule::giveMeLabel()
+    IL_0005:  tail.
+    IL_0007:  callvirt   instance string [runtime]System.Object::ToString()
+    IL_000c:  ret
+  } 
+
   .method public static class MyTestModule/MyDu createMaybeString(string innerValue) cil managed
   {
     .param [1]

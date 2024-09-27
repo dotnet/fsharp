@@ -20,7 +20,7 @@ type internal PrimaryAssembly =
     member Name: string
 
     /// Checks if an assembly resolution may represent a primary assembly that actually contains the
-    /// definition of Sytem.Object.  Note that the chosen target primary assembly may not actually be the one
+    /// definition of System.Object.  Note that the chosen target primary assembly may not actually be the one
     /// that contains the definition of System.Object - it is just the one we are choosing to emit for.
     static member IsPossiblePrimaryAssembly: fileName: string -> bool
 
@@ -236,6 +236,8 @@ type ILTypeRef =
     member QualifiedName: string
 
     member internal EqualsWithPrimaryScopeRef: ILScopeRef * obj -> bool
+
+    override ToString: unit -> string
 
     interface System.IComparable
 
@@ -664,7 +666,7 @@ type ILFieldInit =
     | Double of double
     | Null
 
-    member AsObject: unit -> obj
+    member AsObject: unit -> objnull
 
 [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
 type internal ILNativeVariant =
@@ -1018,6 +1020,9 @@ type ILGenericParameterDef =
 
         /// Indicates the type argument must have a public nullary constructor.
         HasDefaultConstructorConstraint: bool
+
+        /// Indicates the type parameter allows ref struct, i.e. an anti constraint.
+        HasAllowsRefStruct: bool
 
         /// Do not use this
         CustomAttrsStored: ILAttributesStored
@@ -1546,7 +1551,7 @@ type ILTypeDef =
         properties: ILPropertyDefs *
         additionalFlags: ILTypeDefAdditionalFlags *
         securityDecls: ILSecurityDecls *
-        customAttrs: ILAttributes ->
+        customAttrs: ILAttributesStored ->
             ILTypeDef
 
     member Name: string
@@ -1614,7 +1619,7 @@ type ILTypeDef =
         ?events: ILEventDefs *
         ?properties: ILPropertyDefs *
         ?newAdditionalFlags: ILTypeDefAdditionalFlags *
-        ?customAttrs: ILAttributes *
+        ?customAttrs: ILAttributesStored *
         ?securityDecls: ILSecurityDecls *
         ?implementsCustomAttrs: (ILAttributesStored * int) list option ->
             ILTypeDef

@@ -8,6 +8,8 @@ type MyDu =
 
 let giveMeLabel () = JustLabel
 
+let giveMeLabelsText() : string = giveMeLabel().ToString()
+
 let createMaybeString (innerValue:string|null) = MaybeString innerValue
 
 let processNullableDu (x : (MyDu | null)) : string | null =

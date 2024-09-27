@@ -30,8 +30,10 @@ ImplFile
                                     WithNull
                                       (LongIdent
                                          (SynLongIdent ([string], [], [None])),
-                                       false, (1,25--1,38)), (1,20--1,38)),
-                                 (1,12--1,38), { BarRange = (1,18--1,19) }),
+                                       false, (1,25--1,38),
+                                       { BarRange = (1,32--1,33) }),
+                                    (1,20--1,38)), (1,12--1,38),
+                                 { BarRange = (1,18--1,19) }),
                               Const
                                 (String ("123", Regular, (1,41--1,46)),
                                  (1,41--1,46)), (1,12--1,46),

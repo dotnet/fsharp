@@ -562,9 +562,9 @@
         <target state="translated">書式指定子が正しくありません: {0}</target>
         <note />
       </trans-unit>
-      <trans-unit id="printfBadIntegerForDynamicFomatter">
+      <trans-unit id="printfBadIntegerForDynamicFormatter">
         <source>Bad integer supplied to dynamic formatter</source>
-        <target state="translated">動的フォーマッタに対して指定された整数が正しくありません</target>
+        <target state="new">Bad integer supplied to dynamic formatter</target>
         <note />
       </trans-unit>
       <trans-unit id="printfExpectedPrecision">
@@ -592,9 +592,9 @@
         <target state="translated">関数型ではありません</target>
         <note />
       </trans-unit>
-      <trans-unit id="printfPrecisonSpecifierIllegal">
+      <trans-unit id="printfPrecisionSpecifierIllegal">
         <source>Bad format specifier (precision)</source>
-        <target state="translated">書式指定子 (精度) が正しくありません</target>
+        <target state="new">Bad format specifier (precision)</target>
         <note />
       </trans-unit>
       <trans-unit id="printfSpecifierAfterIllegal">

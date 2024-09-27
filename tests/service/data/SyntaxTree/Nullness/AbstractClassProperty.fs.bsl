@@ -29,11 +29,11 @@ ImplFile
                             SynValTyparDecls (None, true),
                             WithNull
                               (LongIdent (SynLongIdent ([string], [], [None])),
-                               false, (3,24--3,37)),
+                               false, (3,24--3,37), { BarRange = (3,31--3,32) }),
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
                             PreXmlDoc ((3,3), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, None, (3,3--3,51),
+                            Single None, None, (3,3--3,51),
                             { LeadingKeyword = Abstract (3,3--3,11)
                               InlineKeyword = None
                               WithKeyword = Some (3,38--3,42)

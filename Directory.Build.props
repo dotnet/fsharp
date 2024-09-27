@@ -7,13 +7,14 @@
     <RepoRoot Condition="'$(RepoRoot)' == ''">$(MSBuildThisFileDirectory)</RepoRoot>
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
     <FSharpNetCoreProductDefaultTargetFramework>net9.0</FSharpNetCoreProductDefaultTargetFramework>
+    <IgnoreMibc Condition="'$(IgnoreMibc)' == ''">$(DotNetBuildSourceOnly)</IgnoreMibc>
   </PropertyGroup>
 
   <!--
    When developers load the FSharp.Compiler.Service solution we set FSHARPCORE_USE_PACKAGE to true if it hasn't already been set to a value.
    This option ensures that building and testing uses the specified FSharp.Core nuget package instead of the local FSharp.Core project.
    We also disable arcade and reset certain artifacts and compiler paths to use default ones.
-   All settings below can be overriden via CLI switches if needed. -->
+   All settings below can be overridden via CLI switches if needed. -->
 
   <PropertyGroup Condition="'$(SolutionName)' == 'FSharp.Compiler.Service' and '$(BUILDING_USING_DOTNET)' != 'false'">
       <BUILDING_USING_DOTNET>true</BUILDING_USING_DOTNET>
@@ -45,7 +46,10 @@
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
     <DisableAutoSetFscCompilerPath>false</DisableAutoSetFscCompilerPath>
-    <FSHARPCORE_USE_PACKAGE Condition="'$(FSHARPCORE_USE_PACKAGE)' == ''">true</FSHARPCORE_USE_PACKAGE>
+
+    <!-- TODO(vlza): This probably should be `true` once fslib with nullness ships, since shipped library is preferred by default when building this solution. -->
+    <FSHARPCORE_USE_PACKAGE Condition="'$(FSHARPCORE_USE_PACKAGE)' == ''">false</FSHARPCORE_USE_PACKAGE>
+
     <DISABLE_ARCADE Condition="'$(DISABLE_ARCADE)' == ''">true</DISABLE_ARCADE>
     <ArtifactsDir>$(MSBuildThisFileDirectory)artifacts/</ArtifactsDir>
     <OutputPath>$(ArtifactsDir)/bin/$(MSBuildProjectName)/$(Configuration)/</OutputPath>
@@ -56,6 +60,7 @@
     <FsYaccPath>$(ArtifactsDir)/bin/fsyacc/$(Configuration)/$(FSharpNetCoreProductDefaultTargetFramework)/$(RuntimeIdentifier)/fsyacc.dll</FsYaccPath>
     <DefineConstants>NO_CHECKNULLS;BUILDING_WITH_LKG;NO_NULLCHECKING_LIB_SUPPORT;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
+
   <Import Project="$(MSBuildThisFileDirectory)/eng/Versions.props" Condition="'$(DISABLE_ARCADE)' == 'true'" />
 
   <Import Project="FSharpBuild.Directory.Build.props" Condition=" '$(FSharpTestCompilerVersion)' == '' " />
@@ -68,7 +73,7 @@
          we should also support $(NetPrevious) for all releases.
          This will likely include FCS and FSharp.Core as well as shipped products.
          Right now, it only covers products we ship (FSC and FSI), not NuGet packages. -->
-    <When Condition="'$(DotNetBuildFromSource)' == 'true' AND '$(DotNetBuildFromSourceFlavor)' == 'Product'">
+    <When Condition="'$(DotNetBuildSourceOnly)' == 'true' AND '$(DotNetBuildOrchestrator)' == 'true'">
       <PropertyGroup>
         <FSharpNetCoreProductTargetFramework>$(NetCurrent)</FSharpNetCoreProductTargetFramework>
       </PropertyGroup>

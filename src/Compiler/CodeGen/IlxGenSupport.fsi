@@ -23,5 +23,5 @@ val GenAdditionalAttributesForTy: g: TcGlobals -> ty: TypedTree.TType -> ILAttri
 val GetReadOnlyAttribute: g: TcGlobals -> ILAttribute
 val GetIsUnmanagedAttribute: g: TcGlobals -> ILAttribute
 val GetNullableAttribute: g: TcGlobals -> nullnessInfos: TypedTree.NullnessInfo list -> ILAttribute
-val GetNullableContextAttribute: g: TcGlobals -> ILAttribute
+val GetNullableContextAttribute: g: TcGlobals -> byte -> ILAttribute
 val GetNotNullWhenTrueAttribute: g: TcGlobals -> string array -> ILAttribute

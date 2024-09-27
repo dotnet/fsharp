@@ -264,7 +264,7 @@ For value types, a value is passed even though it is always 0
                 | 1 -> this.Data[0] |> mapping
                 // We have a bigger array, indexes map to typars in a depth-first fashion
                 | n when n > this.Idx -> this.Data[this.Idx] |> mapping
-                // This is an errornous case, we need more nullnessinfo then the metadata contains
+                // This is an erroneous case, we need more nullnessinfo then the metadata contains
                 | _ -> 
                     // TODO nullness - once being confident that our bugs are solved and what remains are incoming metadata bugs, remove failwith and replace with dprintfn
                     // Testing with .NET compilers other then Roslyn producing nullness metadata?
@@ -273,12 +273,18 @@ For value types, a value is passed even though it is always 0
 
             member this.Advance() = {Data = this.Data; Idx = this.Idx + 1}
 
+    let inline isSystemNullable (tspec:ILTypeSpec) = 
+        match tspec.Name,tspec.Enclosing with
+        | "Nullable`1",["System"] -> true
+        | "System.Nullable`1",[] -> true
+        | _ -> false
+
     let inline evaluateFirstOrderNullnessAndAdvance (ilt:ILType) (flags:NullableFlags) = 
         match ilt with
         | ILType.Value tspec when tspec.GenericArgs.IsEmpty -> KnownWithoutNull, flags
-        // System.Nullable is special-cased in C# spec for nullnes metadata.
+        // System.Nullable is special-cased in C# spec for nullness metadata.
         // You CAN assign 'null' to it, and when boxed, it CAN be boxed to 'null'.
-        | ILType.Value tspec when tspec.Name = "Nullable`1" && tspec.Enclosing = ["System"] -> KnownWithoutNull, flags
+        | ILType.Value tspec when isSystemNullable tspec -> KnownWithoutNull, flags
         | ILType.Value _  -> KnownWithoutNull, flags.Advance()
         | _ -> flags.GetNullness(), flags.Advance()
 
@@ -876,7 +882,7 @@ let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoad
     CcuThunk.Create(nm, ccuData)
 
 //-------------------------------------------------------------------------
-// From IL types to F# typess
+// From IL types to F# types
 //-------------------------------------------------------------------------
 
 /// Import an IL type as an F# type. importInst gives the context for interpreting type variables.

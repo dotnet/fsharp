@@ -39,7 +39,7 @@ type UsingMSBuild() as this  =
         file
 
     let DoWithAutoCompleteUsingExtraRefs refs otherFlags coffeeBreak fileKind reason (code : string list) marker f  =        
-        // Up to 2 untyped parse operations are OK: we do an initial parse to provide breakpoint valdiation etc. 
+        // Up to 2 untyped parse operations are OK: we do an initial parse to provide breakpoint validation etc. 
         // This might be before the before the background builder is ready to process the foreground typecheck.
         // In this case the background builder calls us back when its ready, and we then request a foreground typecheck 
         let file = createFile code fileKind refs otherFlags
@@ -239,7 +239,7 @@ type UsingMSBuild() as this  =
         MoveCursorToEndOfMarker(file,marker)
 
         // Now delete the property and leave only dot at the end 
-        //  - user is typing fast so replac the content without background compilation
+        //  - user is typing fast so replace the content without background compilation
         ReplaceFileInMemoryWithoutCoffeeBreak file secondSrc      
         let completions = time1 AutoCompleteAtCursor file "Time of first autocomplete."
         AssertCompListIsEmpty(completions)
@@ -249,7 +249,7 @@ type UsingMSBuild() as this  =
         let completions = time1 AutoCompleteAtCursor file "Time of first autocomplete."
         AssertCompListIsEmpty(completions)      
 
-   /////Helper Functios 
+   /////Helper Functions 
         //DotCompList ContainAll At End Of Marker Helper Function
     member private this.VerifyDotCompListContainAllAtEndOfMarker(fileContents : string, marker : string, list : string list) =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents)
@@ -1230,7 +1230,7 @@ for i in 0..a."]
         AssertCtrlSpaceCompleteContains code "for" ["form"] []  // 'for' is a keyword, but should not prevent completion
     
     [<Test>]
-    member public this.``ObjInstance.InheritedClass.MethodsWithDiffAccessbility``() =
+    member public this.``ObjInstance.InheritedClass.MethodsWithDiffAccessibility``() =
         AssertAutoCompleteContainsNoCoffeeBreak 
           [ "type Base =
    val mutable baseField : int
@@ -1250,7 +1250,7 @@ derived.derivedField"]
           [ "baseFieldPrivate"; "derivedFieldPrivate" ] // should not contain
 
     [<Test>]
-    member public this.``ObjInstance.InheritedClass.MethodsWithDiffAccessbilityWithSameNameMethod``() =
+    member public this.``ObjInstance.InheritedClass.MethodsWithDiffAccessibilityWithSameNameMethod``() =
         AssertAutoCompleteContainsNoCoffeeBreak 
           [ "type Base =
    val mutable baseField : int
@@ -1758,7 +1758,7 @@ let x = new MyClass2(0)
         let descr = descrFunc()
         // Check whether the description contains the name only once        
         let occurrences = ("  " + descr + "  ").Split([| "WhileLoop" |], System.StringSplitOptions.None).Length - 1
-        // You'll get two occurrances - one for the signature, and one for the doc
+        // You'll get two occurrences - one for the signature, and one for the doc
         AssertEqualWithMessage(2, occurrences, "The entry for 'Expr.Var' is duplicated.")
       
     /// Testing autocomplete after a dot directly following method call
@@ -1920,7 +1920,7 @@ let x = new MyClass2(0)
              "open Microsoft.FSharp.Math"
              "let x = Mic"
              "let p7 ="
-             "    let seive limit = "
+             "    let sieve limit = "
              "        let isPrime = Array.create (limit+1) true"
              "        for n in"],
             "let x = Mic",
@@ -2114,7 +2114,7 @@ let x = new MyClass2(0)
     // FEATURE: Pressing ctrl+space or ctrl+j will give a list of valid completions.
     
     [<Test>]
-    //Verified atleast "Some" is contained in the Ctrl-Space Completion list
+    //Verified at least "Some" is contained in the Ctrl-Space Completion list
     member public this.``NonDotCompletion``() =  
         this.AssertCtrlSpaceCompletionContains(
             ["let x = S"],
@@ -2173,7 +2173,7 @@ let x = new MyClass2(0)
 
     // No completion list at the end of file. 
     [<Test>]
-    member public this.``Idenfitier.AfterDefined.Bug1545``() = 
+    member public this.``Identifier.AfterDefined.Bug1545``() = 
         this.AutoCompletionListNotEmpty
             ["let x = [|\"hello\"|]"
              "x."]
@@ -2590,7 +2590,7 @@ let aaaaaa = 0
         this.WordByWordSystematicTestWithSpecificExpectations(prefix, suffixes, lines, [""], knownFailures) 
 
     [<Test>]
-    /// This is a sanity check that the multiple-line case is much the same as the single-line cae
+    /// This is a sanity check that the multiple-line case is much the same as the single-line case
     [<Category("QueryExpressions")>]
     [<Category("Expensive")>]
     [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
@@ -3104,7 +3104,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ ] // should not contain 
 
     [<Test>]
-    member public this.``Identifier.FuzzyDefiend.Bug67133``() =  
+    member public this.``Identifier.FuzzyDefined.Bug67133``() =  
         AssertAutoCompleteContainsNoCoffeeBreak
           [ "let gDateTime (arr: System.DateTime[]) ="
             "    arr.[0]." ]
@@ -3113,7 +3113,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           []
 
     [<Test>]
-    member public this.``Identifier.FuzzyDefiend.Bug67133.Negative``() =        
+    member public this.``Identifier.FuzzyDefined.Bug67133.Negative``() =        
         let code = [ "let gDateTime (arr: DateTime[]) ="  // Note: no 'open System', so DateTime is unknown
                      "    arr.[0]." ]
         let (_, _, file) = this.CreateSingleFileProject(code)
@@ -3819,7 +3819,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                         let x = 42")
 
     [<Test>]
-    member public this.``Identifer.InMatchStatemente.Bug72595``() =        
+    member public this.``Identifer.InMatchStatement.Bug72595``() =        
         // in this bug, "match blah with let" caused the lexfilter to go awry, which made things hopeless for the parser, yielding no parse tree and thus no intellisense
         AssertAutoCompleteContains 
             [ @"
@@ -4133,7 +4133,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ ] // should not contain
                                           
     [<Test>]
-    member public this.``IncompleteStatemen.If_C``() =        
+    member public this.``IncompleteStatement.If_C``() =        
         AssertAutoCompleteContains 
           [  
             "let x = \"1\""
@@ -4285,7 +4285,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         gpatcc.AssertExactly(0,0)
 
     // When the module isn't empty, we should show completion for the module
-    // (and not type-inferrence based completion on strings - therefore test for 'Chars')
+    // (and not type-inference based completion on strings - therefore test for 'Chars')
     
     [<Test>]
     member public this.``Obsolete.TopLevelModule``() =
@@ -4307,7 +4307,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
     member public this.``Obsolete.CompletionOnObsoleteType``() =
       this.AutoCompleteObsoleteTest "level <- Module.ObsoleteT" true [ "B" ] [ "Chars" ]
 
-    /// BUG: Referencing a non-existent DLL caused an assert.
+    /// BUG: Referencing a nonexistent DLL caused an assert.
     [<Test;Category("Repro")>]
     member public this.``WithNonExistentDll``() = 
         use _guard = this.UsingNewVS()
@@ -4788,7 +4788,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
 
     // Bunch of crud in empty list. This test asserts that unwanted things don't exist at the top level.
     [<Test>]
-    member public this.``Editor.WhitoutContext.Bug986``() =     
+    member public this.``Editor.WithoutContext.Bug986``() =     
         let code = ["(*mark*)"]
         let (_,_, file) = this.CreateSingleFileProject(code)
 
@@ -4865,7 +4865,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                             
     /// There was a bug (2584) that IntelliSense should treat 'int' as a type instead of treating it as a function
     /// However, this is now deprecated behavior. We want the user to use 'System.Int32' and 
-    /// we generally prefer information from name resolution (aslo see 4405)
+    /// we generally prefer information from name resolution (also see 4405)
     [<Test>]
     member public this.``PrimTypeAndFunc``() =     
         let code =
@@ -5192,7 +5192,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             marker = "(*Marker1*)",
             list = ["PrivateField"; "PrivateMethod"; "PrivateType"])                 
          
-    // Regression for bug 2116 -- Consider making selected item in completion list case-insensitiv         
+    // Regression for bug 2116 -- Consider making selected item in completion list case-insensitive       
     [<Test>]
     member this.``CaseInsensitive``() =
         this.VerifyCtrlSpaceListContainAllAtStartOfMarker(
@@ -5339,7 +5339,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
     [<Test>]
     [<Category("Unit of Measure")>]
     // Verify that we display the correct list of Unit of Measure (Names) in the autocomplete window. 
-    // This also ensures that no UoM are accidenatally added or removed.
+    // This also ensures that no UoM are accidentally added or removed.
     member public this.``UnitMeasure.UnitNames``() =
         AssertAutoCompleteContains
           [ "Microsoft.FSharp.Data.UnitSystems.SI.UnitNames."]
@@ -5352,7 +5352,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
     [<Test>]
     [<Category("Unit of Measure")>]
     // Verify that we display the correct list of Unit of Measure (Symbols) in the autocomplete window. 
-    // This also ensures that no UoM are accidenatally added or removed.
+    // This also ensures that no UoM are accidentally added or removed.
     member public this.``UnitMeasure.UnitSymbols``() =
         AssertAutoCompleteContains
           [ "Microsoft.FSharp.Data.UnitSystems.SI.UnitSymbols."]
@@ -5435,7 +5435,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             list = ["Chars"; "ToString"; "Length"; "GetHashCode"])   
             
     [<Test>]
-    member this.``Idenfifier.String.Negative``() =
+    member this.``Identifier.String.Negative``() =
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """
                 open System
@@ -5984,7 +5984,7 @@ let rec f l =
                     interface IFoo with
                         member this.DoStuff () = "Return a string"
                         member this.DoStuff2 (x, y) z = sprintf "Arguments were (%d, %d) %s" x y z
-                // instanceOfIFoo is an instance of an anonomyous class which implements IFoo
+                // instanceOfIFoo is an instance of an anonymous class which implements IFoo
                 let instanceOfIFoo = {
                                         new IFoo with
                                             member this.DoStuff () = "Implement IFoo"
@@ -6048,7 +6048,7 @@ let rec f l =
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """
                 open System
-                //difine the base class
+                //define the base class
                 type Widget() = 
                     let mutable state = 0 
                     member internal x.MethodInternal() = state 
@@ -6074,7 +6074,7 @@ let rec f l =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 open System
-                //difine the base class
+                //define the base class
                 type Widget() = 
                     let mutable state = 0 
                     member internal x.MethodInternal() = state 
@@ -6203,7 +6203,7 @@ let rec f l =
             list = [])
 
     [<Test>]
-    member this.``VariableIdentifier.MethodsInheritFomeBase``() = 
+    member this.``VariableIdentifier.MethodsInheritFromBase``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 namespace MyNamespace1
@@ -6280,7 +6280,7 @@ let rec f l =
             list = ["Obsolete"])
 
     [<Test>]
-    member this.``ImportStatment.System.ImportDirectly``() = 
+    member this.``ImportStatement.System.ImportDirectly``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 open System(*Mimportstatement1*)
@@ -6289,7 +6289,7 @@ let rec f l =
             list = ["Collections"])
 
     [<Test>]
-    member this.``ImportStatment.System.ImportAsIdentifier``() = 
+    member this.``ImportStatement.System.ImportAsIdentifier``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 open System(*Mimportstatement1*)
@@ -6348,7 +6348,7 @@ let rec f l =
                 let writer = new StreamWriter (tempFile1)
                 writer.WriteLine("Some Data")
                 writer.Close()
-                // Origional signature
+                // Original signature
                 //[<DllImport("kernel32.dll")>]
                 //extern bool CopyFile(string lpExistingFileName, string lpNewFileName, bool bFailIfExists);
                 [<DllImport("kernel32.dll", EntryPoint="CopyFile")>]
@@ -6524,14 +6524,14 @@ let rec f l =
                     type ObsoleteType() = 
                         member this.TestMethod() = 10        
                     [<CompilerMessage("This construct is for ML compatibility.", 62, IsHidden=true)>]
-                    type CompilerMesageType() = 
+                    type CompilerMessageType() = 
                         member this.TestMethod() = 10
                     type TestType() = 
                         member this.TestMethod() = 100
                         [<System.ObsoleteAttribute>]
                         member this.ObsoleteMethod() = 100
                         [<CompilerMessage("This construct is for ML compatibility.", 62, IsHidden=true)>]
-                        member this.CompilerMesageMethod() = 100
+                        member this.CompilerMessageMethod() = 100
                         [<CompilerMessage("This construct is hidden", 1023, IsHidden=true)>]
                         member this.HiddenMethod() = 10
                         [<CompilerMessage("This construct is not hidden", 1023, IsHidden=false)>]
@@ -6556,14 +6556,14 @@ let rec f l =
                     type ObsoleteType() = 
                         member this.TestMethod() = 10        
                     [<CompilerMessage("This construct is for ML compatibility.", 62, IsHidden=true)>]
-                    type CompilerMesageType() = 
+                    type CompilerMessageType() = 
                         member this.TestMethod() = 10
                     type TestType() = 
                         member this.TestMethod() = 100
                         [<System.ObsoleteAttribute>]
                         member this.ObsoleteMethod() = 100
                         [<CompilerMessage("This construct is for ML compatibility.", 62, IsHidden=true)>]
-                        member this.CompilerMesageMethod() = 100
+                        member this.CompilerMessageMethod() = 100
                         [<CompilerMessage("This construct is hidden", 1023, IsHidden=true)>]
                         member this.HiddenMethod() = 10
                         [<CompilerMessage("This construct is not hidden", 1023, IsHidden=false)>]
@@ -6576,7 +6576,7 @@ let rec f l =
                     let b = (new NS1.MyModule.TestType())(*MarkerMethod*)
                 """,
             marker = "(*MarkerType*)",
-            list = ["ObsoleteType";"CompilerMesageType"])
+            list = ["ObsoleteType";"CompilerMessageType"])
 
     [<Test>]
     member this.``Method.DefInDiffNameSpace``() =
@@ -6588,14 +6588,14 @@ let rec f l =
                     type ObsoleteType() = 
                         member this.TestMethod() = 10        
                     [<CompilerMessage("This construct is for ML compatibility.", 62, IsHidden=true)>]
-                    type CompilerMesageType() = 
+                    type CompilerMessageType() = 
                         member this.TestMethod() = 10
                     type TestType() = 
                         member this.TestMethod() = 100
                         [<System.ObsoleteAttribute>]
                         member this.ObsoleteMethod() = 100
                         [<CompilerMessage("This construct is for ML compatibility.", 62, IsHidden=true)>]
-                        member this.CompilerMesageMethod() = 100
+                        member this.CompilerMessageMethod() = 100
                         [<CompilerMessage("This construct is hidden", 1023, IsHidden=true)>]
                         member this.HiddenMethod() = 10
                         [<CompilerMessage("This construct is not hidden", 1023, IsHidden=false)>]
@@ -6621,14 +6621,14 @@ let rec f l =
                     type ObsoleteType() = 
                         member this.TestMethod() = 10        
                     [<CompilerMessage("This construct is for ML compatibility.", 62, IsHidden=true)>]
-                    type CompilerMesageType() = 
+                    type CompilerMessageType() = 
                         member this.TestMethod() = 10
                     type TestType() = 
                         member this.TestMethod() = 100
                         [<System.ObsoleteAttribute>]
                         member this.ObsoleteMethod() = 100
                         [<CompilerMessage("This construct is for ML compatibility.", 62, IsHidden=true)>]
-                        member this.CompilerMesageMethod() = 100
+                        member this.CompilerMessageMethod() = 100
                         [<CompilerMessage("This construct is hidden", 1023, IsHidden=true)>]
                         member this.HiddenMethod() = 10
                         [<CompilerMessage("This construct is not hidden", 1023, IsHidden=false)>]
@@ -6640,7 +6640,7 @@ let rec f l =
                 type x = NS1.MyModule(*MarkerType*)
                 let b = (new NS1.MyModule.TestType())(*MarkerMethod*)""",
             marker = "(*MarkerMethod*)",
-            list = ["ObsoleteMethod";"CompilerMesageMethod";"HiddenMethod"])
+            list = ["ObsoleteMethod";"CompilerMessageMethod";"HiddenMethod"])
 
     [<Test>]
     member this.``ObjInstance.ExtensionMethods.WithDef.Positive``() =
@@ -6738,7 +6738,7 @@ let rec f l =
             marker = "(*MarkerModule*)")
 
     [<Test>]
-    member this.``Identifier.WithouDef``() = 
+    member this.``Identifier.WithoutDef``() = 
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """ abcd(*MarkerUndefinedIdentifier*)  """,
             marker = "(*MarkerUndefinedIdentifier*)") 
@@ -6801,7 +6801,7 @@ let rec f l =
             list = ["P"; "Q"]) 
 
     [<Test>]
-    member this.``Regression1067.ClassUsingGeniricTypeAsAttribute``() =
+    member this.``Regression1067.ClassUsingGenericTypeAsAttribute``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 type GT<'a> =
@@ -6851,7 +6851,7 @@ let rec f l =
     member this.``Regression1911.Expression.InMatchStatement``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
-                type Thingey = { A : bool; B : int }
+                type Thingy = { A : bool; B : int }
 
                 let test = match (List.head [{A = true; B = 0}; {A = false; B = 1}])(*Marker*)""",
             marker = "(*Marker*)",
@@ -6891,7 +6891,7 @@ let rec f l =
         AssertCompListIsEmpty(completions)
 
     [<Test>]
-    member this.``Identifier.AsClassName.Uninitial``() =
+    member this.``Identifier.AsClassName.InInitial``() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """
                 type f1(*MarkerType*) = 
@@ -6899,19 +6899,19 @@ let rec f l =
             marker = "(*MarkerType*)")
 
     [<Test>]
-    member this.``Identifier.AsFunctionName.UnInitial``() =
+    member this.``Identifier.AsFunctionName.InInitial``() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
-            fileContents = """let f2(*MarkerFunctionIndentifier*) x = x+1 """,
-            marker = "(*MarkerFunctionIndentifier*)")
+            fileContents = """let f2(*MarkerFunctionIdentifier*) x = x+1 """,
+            marker = "(*MarkerFunctionIdentifier*)")
 
     [<Test>]
-    member this.``Identifier.AsParameter.UnInitial``() =
+    member this.``Identifier.AsParameter.InInitial``() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """ let f3 x(*MarkerParam*) = x+1""",
             marker = "(*MarkerParam*)")
 
     [<Test>]
-    member this.``Identifier.AsFunctionName.UsingfunKeyword``() =
+    member this.``Identifier.AsFunctionName.UsingFunKeyword``() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """fun f4(*MarkerFunctionDeclaration*)  x -> x+1""",
             marker = "(*MarkerFunctionDeclaration*)")
@@ -7539,9 +7539,9 @@ let rec f l =
             marker = "(*Marker*)",
             list = ["AsyncGetResponse";"GetResponseAsync";"ToString"])  
 
-    //Regression Test of 4405:intelisense has wrong type for identifier, using most recently bound of same name rather than the one in scope?
+    //Regression Test of 4405:intellisense has wrong type for identifier, using most recently bound of same name rather than the one in scope?
     [<Test>]
-    member this.``Regression4405.Identifier.ReBinded``() =
+    member this.``Regression4405.Identifier.ReBound``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 let f x = 
@@ -7658,7 +7658,7 @@ let rec f l =
         AssertCompListContainsAll(completions, ["Ancestors"; "AncestorsAndSelf"])
 
     [<Test>]
-    member this.``Visibility.InternalMethods.DefInSameAssambly``() =
+    member this.``Visibility.InternalMethods.DefInSameAssembly``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 module CodeAccessibility
@@ -7956,7 +7956,7 @@ let rec f l =
             marker = "module BasicTest ")
 
     [<Test>]
-    member this.``Verify no completion in hash derictives``() =
+    member this.``Verify no completion in hash directives``() =
         this.VerifyCtrlSpaceCompListIsEmptyAtEndOfMarker(
             fileContents = """
                 #r (*Marker*)

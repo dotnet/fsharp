@@ -82,13 +82,13 @@ type TaskBuilderBase =
     member inline Return: value: 'T -> TaskCode<'T, 'T>
 
     /// <summary>
-    /// Specifies a unit of task code which excuted using try/finally semantics
+    /// Specifies a unit of task code which executed using try/finally semantics
     /// </summary>
     member inline TryFinally:
         body: TaskCode<'TOverall, 'T> * [<InlineIfLambda>] compensation: (unit -> unit) -> TaskCode<'TOverall, 'T>
 
     /// <summary>
-    /// Specifies a unit of task code which excuted using try/with semantics
+    /// Specifies a unit of task code which executed using try/with semantics
     /// </summary>
     member inline TryWith:
         body: TaskCode<'TOverall, 'T> * catch: (exn -> TaskCode<'TOverall, 'T>) -> TaskCode<'TOverall, 'T>

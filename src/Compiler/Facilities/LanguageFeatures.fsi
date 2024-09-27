@@ -80,9 +80,12 @@ type LanguageFeature =
     | EnforceAttributeTargets
     | LowerInterpolatedStringToConcat
     | LowerIntegralRangesToFastLoops
-    | LowerSimpleMappingsInComprehensionsToDirectCallsToMap
+    | AllowAccessModifiersToAutoPropertiesGettersAndSetters
+    | LowerSimpleMappingsInComprehensionsToFastLoops
     | ParsedHashDirectiveArgumentNonQuotes
     | EmptyBodiedComputationExpressions
+    | AllowObjectExpressionWithoutOverrides
+    | ConsistentNowarnLineDirectiveInteraction
 
 /// LanguageVersion management
 type LanguageVersion =

@@ -27,7 +27,7 @@ open FSharp.Core.CompilerServices
 exception ObsoleteWarning of string * range
 exception ObsoleteError of string * range
 
-let fail() = failwith "This custom attribute has an argument that can not yet be converted using this API"
+let fail() = failwith "This custom attribute has an argument that cannot yet be converted using this API"
 
 let rec private evalILAttribElem elem = 
     match elem with 
@@ -103,8 +103,8 @@ type AttribInfo =
                     let obj = evalFSharpAttribArg g evaluatedExpr
                     ty, obj) 
          | ILAttribInfo (_g, amap, scoref, cattr, m) -> 
-              let parms, _args = decodeILAttribData cattr 
-              [ for argTy, arg in Seq.zip cattr.Method.FormalArgTypes parms ->
+              let params_, _args = decodeILAttribData cattr 
+              [ for argTy, arg in Seq.zip cattr.Method.FormalArgTypes params_ ->
                     // We are skipping nullness check here because this reference is an attribute usage, nullness does not apply.
                     let ty = RescopeAndImportILTypeSkipNullness scoref amap m [] argTy
                     let obj = evalILAttribElem arg
@@ -119,7 +119,7 @@ type AttribInfo =
                     let obj = evalFSharpAttribArg g evaluatedExpr
                     ty, nm, isField, obj) 
          | ILAttribInfo (_g, amap, scoref, cattr, m) -> 
-              let _parms, namedArgs = decodeILAttribData cattr 
+              let _params_, namedArgs = decodeILAttribData cattr 
               [ for nm, argTy, isProp, arg in namedArgs ->
                     // We are skipping nullness check here because this reference is an attribute usage, nullness does not apply.
                     let ty = RescopeAndImportILTypeSkipNullness scoref amap m [] argTy
@@ -152,10 +152,11 @@ let GetAttribInfosOfEntity g amap m (tcref:TyconRef) =
         tcref.Attribs |> List.map (fun a -> FSAttribInfo (g, a))
 
 
-let GetAttribInfosOfMethod amap m minfo = 
+let rec GetAttribInfosOfMethod amap m minfo = 
     match minfo with 
     | ILMeth (g, ilminfo, _) -> ilminfo.RawMetadata.CustomAttrs  |> AttribInfosOfIL g amap ilminfo.MetadataScope m
     | FSMeth (g, _, vref, _) -> vref.Attribs |> AttribInfosOfFS g 
+    | MethInfoWithModifiedReturnType(mi,_) -> GetAttribInfosOfMethod amap m mi
     | DefaultStructCtor _ -> []
 #if !NO_TYPEPROVIDERS
     // TODO: provided attributes
@@ -186,11 +187,12 @@ let GetAttribInfosOfEvent amap m einfo =
 
 /// Analyze three cases for attributes declared on methods: IL-declared attributes, F#-declared attributes and
 /// provided attributes.
-let BindMethInfoAttributes m minfo f1 f2 f3 = 
+let rec BindMethInfoAttributes m minfo f1 f2 f3 = 
     ignore m; ignore f3
     match minfo with 
     | ILMeth (_, x, _) -> f1 x.RawMetadata.CustomAttrs 
     | FSMeth (_, _, vref, _) -> f2 vref.Attribs
+    | MethInfoWithModifiedReturnType(mi,_) -> BindMethInfoAttributes m mi f1 f2 f3
     | DefaultStructCtor _ -> f2 []
 #if !NO_TYPEPROVIDERS
     | ProvidedMeth (_, mi, _, _) -> f3 (mi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)), m))
@@ -235,7 +237,7 @@ let MethInfoHasAttribute g m attribSpec minfo  =
 
 let private CheckCompilerFeatureRequiredAttribute (g: TcGlobals) cattrs msg m =
     // In some cases C# will generate both ObsoleteAttribute and CompilerFeatureRequiredAttribute.
-    // Specifically, when default constructor is generated for class with any reqired members in them.
+    // Specifically, when default constructor is generated for class with any required members in them.
     // ObsoleteAttribute should be ignored if CompilerFeatureRequiredAttribute is present, and its name is "RequiredMembers".
     let (AttribInfo(tref,_)) = g.attrib_CompilerFeatureRequiredAttribute
     match TryDecodeILAttribute tref cattrs with
@@ -380,7 +382,7 @@ let CheckFSharpAttributesForUnseen g attribs _m =
 #if !NO_TYPEPROVIDERS
 /// Indicate if a list of provided attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
 let CheckProvidedAttributesForUnseen (provAttribs: Tainted<IProvidedCustomAttributeProvider>) m = 
-    provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), typeof<ObsoleteAttribute>.FullName).IsSome), m)
+    provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), !! typeof<ObsoleteAttribute>.FullName).IsSome), m)
 #endif
 
 /// Check the attributes associated with a property, returning warnings and errors as data.
@@ -479,7 +481,7 @@ let MethInfoIsUnseen g (m: range) (ty: TType) minfo =
         // just to look at the attributes on IL methods.
         if tcref.IsILTycon then 
                 tcref.ILTyconRawMetadata.CustomAttrs.AsArray()
-                |> Array.exists (fun attr -> attr.Method.DeclaringType.TypeSpec.Name = typeof<TypeProviderEditorHideMethodsAttribute>.FullName)
+                |> Array.exists (fun attr -> attr.Method.DeclaringType.TypeSpec.Name = !! typeof<TypeProviderEditorHideMethodsAttribute>.FullName)
         else 
             false
 #else

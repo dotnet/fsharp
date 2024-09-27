@@ -562,9 +562,9 @@
         <target state="translated">잘못된 형식 지정자: {0}</target>
         <note />
       </trans-unit>
-      <trans-unit id="printfBadIntegerForDynamicFomatter">
+      <trans-unit id="printfBadIntegerForDynamicFormatter">
         <source>Bad integer supplied to dynamic formatter</source>
-        <target state="translated">동적 포맷터에 제공된 정수가 잘못되었습니다.</target>
+        <target state="new">Bad integer supplied to dynamic formatter</target>
         <note />
       </trans-unit>
       <trans-unit id="printfExpectedPrecision">
@@ -592,9 +592,9 @@
         <target state="translated">함수 형식이 아닙니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="printfPrecisonSpecifierIllegal">
+      <trans-unit id="printfPrecisionSpecifierIllegal">
         <source>Bad format specifier (precision)</source>
-        <target state="translated">잘못된 형식 지정자(전체 자릿수)</target>
+        <target state="new">Bad format specifier (precision)</target>
         <note />
       </trans-unit>
       <trans-unit id="printfSpecifierAfterIllegal">

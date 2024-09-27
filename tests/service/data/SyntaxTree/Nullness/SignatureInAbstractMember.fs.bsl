@@ -24,17 +24,17 @@ ImplFile
                               (WithNull
                                  (LongIdent
                                     (SynLongIdent ([string], [], [None])), false,
-                                  (2,31--2,44)),
+                                  (2,31--2,44), { BarRange = (2,38--2,39) }),
                                WithNull
                                  (LongIdent
                                     (SynLongIdent ([string], [], [None])), false,
-                                  (2,48--2,61)), (2,31--2,61),
-                               { ArrowRange = (2,45--2,47) }),
+                                  (2,48--2,61), { BarRange = (2,55--2,56) }),
+                               (2,31--2,61), { ArrowRange = (2,45--2,47) }),
                             SynValInfo
                               ([[SynArgInfo ([], false, None)]],
                                SynArgInfo ([], false, None)), false, false,
                             PreXmlDoc ((2,3), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, None, (2,3--2,61),
+                            Single None, None, (2,3--2,61),
                             { LeadingKeyword =
                                AbstractMember ((2,3--2,11), (2,12--2,18))
                               InlineKeyword = None
