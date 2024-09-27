@@ -12,7 +12,7 @@ open FSharp.Test.Utilities
 open FSharp.Test.ScriptHelpers
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
-open NUnit.Framework
+open Xunit
 open System
 open System.Collections.Immutable
 open System.IO
@@ -510,6 +510,9 @@ module rec Compiler =
     let withLangVersion80 (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:8.0" ] "withLangVersion80 is only supported on F#" cUnit
 
+    let withLangVersion90 (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--langversion:9.0" ] "withLangVersion90 is only supported on F#" cUnit
+
     let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:preview" ] "withLangVersionPreview is only supported on F#" cUnit
 
@@ -585,6 +588,9 @@ module rec Compiler =
         | CS cs -> CS { cs with LangVersion = ver }
         | _ -> failwith "Only supported in C#"
 
+    let withCSharpLanguageVersionPreview =
+        withCSharpLanguageVersion CSharpLanguageVersion.Preview
+
     let withOutputType (outputType : CompileOutput) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS x -> FS { x with OutputType = outputType }
@@ -600,6 +606,12 @@ module rec Compiler =
         match cUnit with
         | FS fs -> FS { fs with Options = fs.Options @ ["--realsig+"] }
         | _ -> failwith "withRealInternalSignatureOn only supported by f#"
+
+    let withRealInternalSignature (realSig: bool) (cUnit: CompilationUnit) : CompilationUnit  =
+        if realSig then
+            cUnit |>  withRealInternalSignatureOn
+        else
+            cUnit |>  withRealInternalSignatureOff
 
     let asExe (cUnit: CompilationUnit) : CompilationUnit =
         withOutputType CompileOutput.Exe cUnit
@@ -718,7 +730,7 @@ module rec Compiler =
         let outputDirectory =
             match fs.OutputDirectory with
             | Some di -> di
-            | None -> DirectoryInfo(tryCreateTemporaryDirectory())
+            | None -> DirectoryInfo(createTemporaryDirectory "compileFSharp")
         let references = processReferences fs.References outputDirectory
         let compilation = Compilation.CreateFromSources([fs.Source] @ fs.AdditionalSources, output, options, fs.TargetFramework, references, name, outputDirectory)
         compileFSharpCompilation compilation fs.IgnoreWarnings (FS fs)
@@ -763,12 +775,12 @@ module rec Compiler =
     let private compileCSharp (csSource: CSharpCompilationSource) : CompilationResult =
 
         let source = csSource.Source.GetSourceText |> Option.defaultValue ""
-        let name = defaultArg csSource.Name (tryCreateTemporaryFileName())
+        let name = defaultArg csSource.Name (getTemporaryFileName())
 
         let outputDirectory =
             match csSource.OutputDirectory with
             | Some di -> di
-            | None -> DirectoryInfo(tryCreateTemporaryDirectory())
+            | None -> DirectoryInfo(createTemporaryDirectory "compileCSharp")
 
         let additionalReferences =
             processReferences csSource.References outputDirectory
@@ -910,7 +922,7 @@ module rec Compiler =
                 let outputDirectory =
                     match fsSource.OutputDirectory with
                     | Some di -> di
-                    | None -> DirectoryInfo(tryCreateTemporaryDirectory())
+                    | None -> DirectoryInfo(createTemporaryDirectory "typecheckResults")
                 let references = processReferences fsSource.References outputDirectory
                 if references.IsEmpty then
                     Array.empty
@@ -1046,7 +1058,7 @@ module rec Compiler =
                 let outputDirectory =
                     match fs.OutputDirectory with
                     | Some di -> di
-                    | None -> DirectoryInfo(tryCreateTemporaryDirectory())
+                    | None -> DirectoryInfo(createTemporaryDirectory "runFsi")
                 outputDirectory.Create()
                 disposals.Add({ new IDisposable with member _.Dispose() = outputDirectory.Delete(true) })
 
@@ -1117,7 +1129,7 @@ Actual:
             fOnFail()
             updateBaseLineIfEnvironmentSaysSo baseline
             createBaselineErrors baseline actual
-            Assert.AreEqual(expected, actual, convenienceBaselineInstructions baseline expected actual)
+            Assert.True((expected = actual), convenienceBaselineInstructions baseline expected actual)
         elif FileSystem.FileExistsShim baseline.FilePath then
             FileSystem.FileDeleteShim baseline.FilePath
 
@@ -1150,7 +1162,7 @@ Actual:
                 createBaselineErrors bsl.FSBaseline errorsActual
                 updateBaseLineIfEnvironmentSaysSo bsl.FSBaseline
                 let errorMsg = (convenienceBaselineInstructions bsl.FSBaseline errorsExpectedBaseLine errorsActual)
-                Assert.AreEqual(errorsExpectedBaseLine, errorsActual, errorMsg)
+                Assert.True((errorsExpectedBaseLine = errorsActual), errorMsg)
             elif FileSystem.FileExistsShim(bsl.FSBaseline.FilePath) then
                 FileSystem.FileDeleteShim(bsl.FSBaseline.FilePath)
 
@@ -1316,7 +1328,7 @@ Actual:
         if reader.ImportScopes.Count < 2 then
             failwith $"Expected to have at least 2 import scopes, but found {reader.ImportScopes.Count}."
 
-        // Sanity check: explicitly test that first import scope is indeed an apty one (i.e. there are no imports).
+        // Sanity check: explicitly test that first import scope is indeed an empty one (i.e. there are no imports).
         let rootScope = reader.ImportScopes.ToImmutableArray().Item(0) |> reader.GetImportScope
 
         let rootScopeImportsLength = rootScope.GetImports().ToImmutableArray().Length
@@ -1400,7 +1412,7 @@ Actual:
 
             verifyPdbFormat reader compilationType
             verifyPdbOptions result.OutputPath reader options
-        | _ -> failwith "Output path is not set, please make sure compilation was successfull."
+        | _ -> failwith "Output path is not set, please make sure compilation was successful."
 
         ()
 
@@ -1418,7 +1430,7 @@ Actual:
                 let pdbPath = Path.ChangeExtension(assemblyPath, ".pdb")
                 if not (FileSystem.FileExistsShim pdbPath) then
                     failwith $"PDB file does not exists: {pdbPath}"
-            | _ -> failwith "Output path is not set, please make sure compilation was successfull."
+            | _ -> failwith "Output path is not set, please make sure compilation was successful."
         match result with
         | CompilationResult.Success r -> verifyPdbExists r
         | _ -> failwith "Result should be \"Success\" in order to verify PDB."
@@ -1430,7 +1442,7 @@ Actual:
                 let pdbPath = Path.ChangeExtension(assemblyPath, ".pdb")
                 if FileSystem.FileExistsShim pdbPath then
                     failwith $"PDB file exists: {pdbPath}"
-            | _ -> failwith "Output path is not set, please make sure compilation was successfull."
+            | _ -> failwith "Output path is not set, please make sure compilation was successful."
         match result with
         | CompilationResult.Success r -> verifyPdbNotExists r
         | _ -> failwith "Result should be \"Success\" in order to verify PDB."
@@ -1482,7 +1494,7 @@ Actual:
 
             let inline checkEqual k a b =
              if a <> b then
-                 Assert.AreEqual(a, b, $"%s{what}: Mismatch in %s{k}, expected '%A{a}', got '%A{b}'.\nAll errors:\n%s{sourceErrorsAsStr}\nExpected errors:\n%s{expectedErrorsAsStr}")
+                 failwith $"%s{what}: Mismatch in %s{k}, expected '%A{a}', got '%A{b}'.\nAll errors:\n%s{sourceErrorsAsStr}\nExpected errors:\n%s{expectedErrorsAsStr}"
 
             // For lists longer than 100 errors:
             expectedErrors |> List.iter System.Diagnostics.Debug.WriteLine
@@ -1492,8 +1504,7 @@ Actual:
 
             (sourceErrors, expectedErrors)
             ||> List.iter2 (fun actual expected ->
-
-                Assert.AreEqual(expected, actual, $"Mismatched error message:\nExpecting: {expected}\nActual:    {actual}\n"))
+                Assert.Equal(expected, actual))
 
         let adjust (adjust: int) (result: CompilationResult) : CompilationResult =
             match result with
@@ -1612,7 +1623,7 @@ Actual:
 
                 match Assert.shouldBeSameMultilineStringSets expectedContent actualErrors with
                 | None -> ()
-                | Some diff -> Assert.That(diff, Is.Empty, path)
+                | Some diff -> Assert.True(String.IsNullOrEmpty(diff), path)
 
                 result
 
@@ -1695,7 +1706,7 @@ Actual:
             | None -> failwith "Execution output is missing, cannot check exit code."
             | Some o ->
                 match o with
-                | ExecutionOutput e -> Assert.AreEqual(e.ExitCode, expectedExitCode, sprintf "Exit code was expected to be: %A, but got %A." expectedExitCode e.ExitCode)
+                | ExecutionOutput e -> Assert.Equal(expectedExitCode, e.ExitCode)
                 | _ -> failwith "Cannot check exit code on this run result."
             result
 
@@ -1732,7 +1743,7 @@ Actual:
         let private assertEvalOutput (selector: FsiValue -> 'T) (value: 'T) (result: CompilationResult) : CompilationResult =
             match result.RunOutput with
             | None -> failwith "Execution output is missing cannot check value."
-            | Some (EvalOutput (Ok (Some e))) -> Assert.AreEqual(value, (selector e))
+            | Some (EvalOutput (Ok (Some e))) -> Assert.Equal<'T>(value, (selector e))
             | Some (EvalOutput (Ok None )) -> failwith "Cannot assert value of evaluation, since it is None."
             | Some (EvalOutput (Result.Error ex)) -> raise ex
             | Some _ -> failwith "Only 'eval' output is supported."

@@ -375,7 +375,7 @@ val mkCompiledTupleTy: TcGlobals -> bool -> TTypes -> TType
 /// Convert from F# tuple creation expression to .NET tuple creation expressions
 val mkCompiledTuple: TcGlobals -> bool -> TTypes * Exprs * range -> TyconRef * TTypes * Exprs * range
 
-/// Make a TAST expression representing getting an item fromm a tuple
+/// Make a TAST expression representing getting an item from a tuple
 val mkGetTupleItemN: TcGlobals -> range -> int -> ILType -> bool -> Expr -> TType -> Expr
 
 /// Evaluate the TupInfo to work out if it is a struct or a ref.  Currently this is very simple
@@ -1079,6 +1079,7 @@ type DisplayEnv =
         shortConstraints: bool
         useColonForReturnType: bool
         showAttributes: bool
+        showCsharpCodeAnalysisAttributes: bool
         showOverrides: bool
         showStaticallyResolvedTyparAnnotations: bool
         showNullnessAnnotations: bool option
@@ -1808,6 +1809,8 @@ val TypeNullIsTrueValue: TcGlobals -> TType -> bool
 
 val TypeNullIsExtraValue: TcGlobals -> range -> TType -> bool
 
+val TypeHasAllowNull: TyconRef -> TcGlobals -> range -> bool
+
 val TypeNullIsExtraValueNew: TcGlobals -> range -> TType -> bool
 
 val TypeNullNever: TcGlobals -> TType -> bool
@@ -2059,8 +2062,6 @@ val mkCallArrayLength: TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkCallArrayGet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallArrayMap: g: TcGlobals -> m: range -> ty1: TType -> ty2: TType -> e1: Expr -> e2: Expr -> Expr
-
 val mkCallArray2DGet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
 
 val mkCallArray3DGet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr
@@ -2074,8 +2075,6 @@ val mkCallArray2DSet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Exp
 val mkCallArray3DSet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
 
 val mkCallArray4DSet: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
-
-val mkCallListMap: g: TcGlobals -> m: range -> ty1: TType -> ty2: TType -> e1: Expr -> e2: Expr -> Expr
 
 val mkCallHash: TcGlobals -> range -> TType -> Expr -> Expr
 
@@ -2696,7 +2695,7 @@ val GetTraitConstraintInfosOfTypars: TcGlobals -> Typars -> TraitConstraintInfo 
 
 val GetTraitWitnessInfosOfTypars: TcGlobals -> numParentTypars: int -> typars: Typars -> TraitWitnessInfos
 
-/// An immutable mappping from witnesses to some data.
+/// An immutable mapping from witnesses to some data.
 ///
 /// Note: this uses an immutable HashMap/Dictionary with an IEqualityComparer that captures TcGlobals, see EmptyTraitWitnessInfoHashMap
 type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>

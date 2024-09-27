@@ -641,6 +641,8 @@ type FSharpChecker
         if isEditing then
             tcConfigB.conditionalDefines <- "EDITING" :: tcConfigB.conditionalDefines
 
+        tcConfigB.realsig <- List.contains "--realsig" argv || List.contains "--realsig+" argv
+
         // Apply command-line arguments and collect more source files if they are in the arguments
         let sourceFilesNew = ApplyCommandLineArgs(tcConfigB, sourceFiles, argv)
         FSharpParsingOptions.FromTcConfigBuilder(tcConfigB, Array.ofList sourceFilesNew, isInteractive), errorScope.Diagnostics
@@ -751,14 +753,14 @@ type CompilerEnvironment() =
     static member IsScriptFile(fileName: string) = ParseAndCheckInputs.IsScript fileName
 
     /// Whether or not this file is compilable
-    static member IsCompilable file =
+    static member IsCompilable(file: string) =
         let ext = Path.GetExtension file
 
         compilableExtensions
         |> List.exists (fun e -> 0 = String.Compare(e, ext, StringComparison.OrdinalIgnoreCase))
 
     /// Whether or not this file should be a single-file project
-    static member MustBeSingleFileProject file =
+    static member MustBeSingleFileProject(file: string) =
         let ext = Path.GetExtension file
 
         singleFileProjectExtensions

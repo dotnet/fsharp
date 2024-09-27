@@ -5,16 +5,29 @@ open FSharp.Test.Compiler
 
 let withNullnessOptions cu =
     cu
-    |> withLangVersionPreview
     |> withCheckNulls
     |> withWarnOn 3261
     |> withWarnOn 3262
+    |> withNoWarn 52 //The value has been copied to ensure the original..
+    |> withNoWarn 60 // Override implementations in augmentations are now deprecated...
     |> withOptions ["--warnaserror+"]
 
 let typeCheckWithStrictNullness cu =
     cu
     |> withNullnessOptions
     |> typecheck
+
+[<Fact>]
+let ``Does not duplicate warnings`` () =
+    FSharp """
+module MyLib
+let getLength (x: string | null) = x.Length
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [Error 3261, Line 3, Col 36, Line 3, Col 44, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."]
+
     
 [<Fact>]
 let ``Cannot pass possibly null value to a strict function``() =
@@ -170,7 +183,7 @@ cache <- name
     |> shouldSucceed
 
 [<Fact>]
-let ``Mutable string binding assigned to null and matched againts null``() = 
+let ``Mutable string binding assigned to null and matched against null``() = 
     FSharp """
 module MyLib
 
@@ -229,7 +242,7 @@ let mkCacheInt32 ()   =
 let ``Can  infer underscore or null``() = 
     FSharp """
 module MyLib
-let iAcceptNullPartiallyInfered(arg: _ | null) = 42
+let iAcceptNullPartiallyInferred(arg: _ | null) = 42
 let iHaveMissingContraint(arg: 'a | null) = 42
     """
     |> asLibrary
@@ -252,9 +265,9 @@ let f6(x: 'a | null when 'a:null) = ()
     |> shouldFail
     |> withDiagnostics 
         [ Error 3261, Line 3, Col 11, Line 3, Col 32, "Nullness warning: The type 'string option' uses 'null' as a representation value but a non-null type is expected."
-          Error 3260, Line 4, Col 11, Line 4, Col 21, "The type 'int' does not support a nullness qualitification."
+          Error 3260, Line 4, Col 11, Line 4, Col 21, "The type 'int' does not support a nullness qualification."
           Error 43, Line 4, Col 11, Line 4, Col 21, "A generic construct requires that the type 'int' have reference semantics, but it does not, i.e. it is a struct"
-          Error 3260, Line 5, Col 11, Line 5, Col 25, "The type '('a * 'b)' does not support a nullness qualitification."
+          Error 3260, Line 5, Col 11, Line 5, Col 25, "The type '('a * 'b)' does not support a nullness qualification."
           Error 3261, Line 6, Col 11, Line 6, Col 28, "Nullness warning: The type ''a option' uses 'null' as a representation value but a non-null type is expected."
           Error 43, Line 7, Col 28, Line 7, Col 37, "The constraints 'struct' and 'not struct' are inconsistent"
           Error 43, Line 8, Col 26, Line 8, Col 33, "The constraints 'null' and 'not null' are inconsistent"]
@@ -287,6 +300,57 @@ let processBool (b:bool) : string =
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldSucceed
+
+[<Literal>]
+let duWithExtensionProvidedToString = """A | B 
+module Functions =
+    let printMyType (x:MyCustomType) : string = "xxx" 
+type MyCustomType with
+    override x.ToString() : string = Functions.printMyType x
+    """
+
+[<Literal>]
+let duWithExtensionProvidedNullableToString = """A | B 
+
+type MyCustomType with
+    override x.ToString() = null
+    """
+
+let toStringCodeSnippet myTypeDef = 
+    FSharp $"""module MyLibrary
+
+type MyCustomType = {myTypeDef}
+
+let onlyWantNotNullString(x:string) = ()
+
+let processBool (x:MyCustomType) =
+    onlyWantNotNullString(x.ToString())
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+
+[<Theory>]
+[<InlineData("A | B ")>]
+[<InlineData( """A | B with override this.ToString() : string = "xyz" """)>]
+[<InlineData( """A | B with override this.ToString() = "xyz" """)>]
+[<InlineData( """A | B with override this.ToString() = System.Console.ReadLine() |> string """)>]
+[<InlineData(duWithExtensionProvidedToString)>]
+[<InlineData("{F : int} ")>]
+[<InlineData(" {| F : string |} ")>]
+[<InlineData(" (struct{| F : string |}) ")>]
+[<InlineData(" int * string ")>]
+[<InlineData(" (struct(string * int)) ")>]
+let ``Generated ToString() methods are not nullable`` (myTypeDef) = 
+    toStringCodeSnippet myTypeDef
+    |> shouldSucceed
+
+[<Theory>]
+[<InlineData( """A | B with override this.ToString() : (string|null) = null """)>]
+[<InlineData(duWithExtensionProvidedNullableToString)>]
+let ``ToString override warns if it returns nullable`` (myTypeDef) = 
+    toStringCodeSnippet myTypeDef
+    |> shouldFail
+    |> withDiagnosticMessage "With nullness checking enabled, overrides of .ToString() method must return a non-nullable string. You can handle potential nulls via the built-in string function."
 
 [<Fact>]
 let ``Printing a nullable string should pass`` () = 
@@ -335,9 +399,9 @@ let ``Type inference with sprintfn`` () =
     FSharp """module MyLibrary
 let needsString(x:string) = ()
 
-let myTopFunction inferedVal = 
-    printfn "This is it %s" inferedVal  // There was a regression infering this to be (string | null)
-    needsString inferedVal
+let myTopFunction inferredVal = 
+    printfn "This is it %s" inferredVal  // There was a regression inferring this to be (string | null)
+    needsString inferredVal
 """
     |> asLibrary
     |> typeCheckWithStrictNullness
@@ -457,8 +521,8 @@ let maybeAnon2 : {|Hello:string|} | null = null
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics 
-            [ Error 3260, Line 4, Col 18, Line 4, Col 41, "The type '{| Hello: string |}' does not support a nullness qualitification."
-              Error 3261, Line 4, Col 44, Line 4, Col 48, "Nullness warning: The type '{| Hello: string |}' does not support 'null'."]
+            [ Error 3260, Line 4, Col 18, Line 4, Col 41, "The type '{| Hello: string |}' does not support a nullness qualification."
+              Error 43, Line 4, Col 44, Line 4, Col 48, "The type '{| Hello: string |}' does not have 'null' as a proper value"]
     
     
 [<Fact>]
@@ -567,8 +631,8 @@ myGenericFunction myValOfX
     |> shouldFail
     |> withDiagnostics     
             [Error 3261, Line 13, Col 19, Line 13, Col 28, "Nullness warning: The type 'string' does not support 'null'."
-             Error 3261, Line 15, Col 20, Line 15, Col 39, "Nullness warning: The type 'System.DateTime' does not support 'null'."
-             Error 3261, Line 16, Col 19, Line 16, Col 22, "Nullness warning: The type 'int' does not support 'null'."]
+             Error 193, Line 15, Col 20, Line 15, Col 39, "The type 'System.DateTime' does not have 'null' as a proper value"
+             Error 1, Line 16, Col 19, Line 16, Col 22, "The type 'int' does not have 'null' as a proper value"]
 
 [<Fact>]
 let ``Null assignment in generic code`` () =
@@ -602,13 +666,31 @@ myNullReturningFunction myValOfY                     |> ignore
     |> shouldFail
     |> withDiagnostics     
                 [Error 3261, Line 17, Col 25, Line 17, Col 34, "Nullness warning: The type 'string' does not support 'null'."
-                 Error 3261, Line 19, Col 26, Line 19, Col 45, "Nullness warning: The type 'System.DateTime' does not support 'null'."
-                 Error 3261, Line 20, Col 25, Line 20, Col 36, "Nullness warning: The type '{| Anon: 'a |}' does not support 'null'."
-                 Error 3261, Line 21, Col 26, Line 21, Col 31, "Nullness warning: The type '('a * 'b * 'c)' does not support 'null'."
-                 Error 3261, Line 23, Col 25, Line 23, Col 33, "Nullness warning: The type 'Y' does not support 'null'."]
+                 Error 193, Line 19, Col 26, Line 19, Col 45, "The type 'System.DateTime' does not have 'null' as a proper value"
+                 Error 1, Line 20, Col 25, Line 20, Col 36, "The type '{| Anon: 'a |}' does not have 'null' as a proper value"
+                 Error 1, Line 21, Col 26, Line 21, Col 31, "The type '('a * 'b * 'c)' does not have 'null' as a proper value"
+                 Error 1, Line 23, Col 25, Line 23, Col 33, "The type 'Y' does not have 'null' as a proper value"]
+
+
+[<Fact>]
+let ``Match null with int`` () =
+    FSharp """module MyLibrary
+let test = 
+    match null with
+    | null -> true
+    | 42 -> false
+
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics 
+             [Error 1, Line 5, Col 7, Line 5, Col 9, "The type 'int' does not have 'null' as a proper value. See also test.fs(3,10)-(3,14)."
+              Error 25, Line 3, Col 11, Line 3, Col 15, "Incomplete pattern matches on this expression."]
+
                  
 [<Fact>]
-let ``Nullnesss support for F# types`` () = 
+let ``Nullness support for F# types`` () = 
     FSharp """module MyLibrary
 type MyDu = A | B
 type MyRecord = {X:int;Y:string}
@@ -657,11 +739,11 @@ looseFunc(maybeTuple2) |> ignore
     |> shouldFail
     |> withDiagnostics     
             [ Error 43, Line 21, Col 12, Line 21, Col 16, "The constraints 'null' and 'not null' are inconsistent"
-              Error 3260, Line 27, Col 18, Line 27, Col 34, "The type '(int * int)' does not support a nullness qualitification."
-              Error 3261, Line 27, Col 37, Line 27, Col 41, "Nullness warning: The type '(int * int)' does not support 'null'."
+              Error 3260, Line 27, Col 18, Line 27, Col 34, "The type '(int * int)' does not support a nullness qualification."
+              Error 43, Line 27, Col 37, Line 27, Col 41, "The type '(int * int)' does not have 'null' as a proper value"
               Error 3261, Line 29, Col 12, Line 29, Col 19, "Nullness warning: The type 'MyDu | null' supports 'null' but a non-null type is expected."
               Error 3261, Line 30, Col 12, Line 30, Col 21, "Nullness warning: The type 'MyRecord | null' supports 'null' but a non-null type is expected."
-              Error 3261, Line 40, Col 36, Line 40, Col 40, "Nullness warning: The type 'Maybe<int * int>' does not support 'null'."]
+              Error 43, Line 40, Col 36, Line 40, Col 40, "The type 'Maybe<int * int>' does not have 'null' as a proper value"]
                 
 [<Fact>]
 let ``Static member on Record with null arg`` () =
@@ -900,3 +982,54 @@ let v3WithNull = f3 (null: obj | null)
               Error 3261, Line 10, Col 11, Line 10, Col 15, "Nullness warning: The type 'obj' does not support 'null'."
               Error 3261, Line 11, Col 35, Line 11, Col 37, "Nullness warning: The type 'String | null' supports 'null' but a non-null type is expected."
               Error 3261, Line 13, Col 22, Line 13, Col 38, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."]
+
+
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``Option type detected as null for NullabilityInfoContext`` () =
+
+    Fsx """
+
+open System
+open System.Reflection
+
+type MyClass(StringOrNull: string | null, StringOption: string option, ObjNull: objnull, ObjOrNull: obj | null) =
+    member val StringOrNull = StringOrNull
+    member val StringOption = StringOption
+    member val ObjNull = ObjNull
+    member val ObjOrNull = ObjOrNull
+
+let classType = typeof<MyClass>
+let ctor = classType.GetConstructors() |> Seq.exactlyOne
+let paramInfos = ctor.GetParameters()
+
+
+let nrtContext = NullabilityInfoContext()
+for paramInfo in paramInfos do
+    let nrtInfo = nrtContext.Create(paramInfo)
+    let readState = nrtInfo.ReadState
+    let writeState = nrtInfo.WriteState
+    printfn $"{paramInfo.Name} => {readState} / {writeState}" """
+    |> withNullnessOptions
+    |> compile
+    |> run
+    |> verifyOutputContains [|"StringOption => Nullable / Nullable"|]
+
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``Option type has WithNull annotation in IL`` () =
+    FSharp """
+module Test
+
+let myOption () : option<string> = None  """
+    |> withNullnessOptions
+    |> compile
+    // The option<> itself is nullable (2), the string inside is not (1)
+    |> verifyIL ["      
+      .method public static class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string> myOption() cil managed
+      {
+        .param [0]
+        .custom instance void [runtime]System.Runtime.CompilerServices.NullableAttribute::.ctor(uint8[]) = ( 01 00 02 00 00 00 02 01 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldnull
+        IL_0001:  ret
+      }"]

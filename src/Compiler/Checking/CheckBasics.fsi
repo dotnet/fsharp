@@ -47,7 +47,7 @@ type CtorInfo =
         /// A handle to the boolean ref cell to hold success of initialized 'this' for 'type X() as x = ...' constructs
         safeInitInfo: SafeInitData
 
-        /// Is the an implicit constructor or an explicit one?
+        /// Is there an implicit constructor or an explicit one?
         ctorIsImplicit: bool
     }
 
@@ -197,7 +197,7 @@ type TcPatPhase2Input =
 /// Represents the context flowed left-to-right through pattern checking
 type TcPatLinearEnv = TcPatLinearEnv of tpenv: UnscopedTyparEnv * names: NameMap<PrelimVal1> * takenNames: Set<string>
 
-/// Represents the flags passsed to TcPat regarding the binding location
+/// Represents the flags passed to TcPat regarding the binding location
 type TcPatValFlags =
     | TcPatValFlags of
         inlineFlag: ValInline *

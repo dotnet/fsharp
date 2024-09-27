@@ -1,11 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 open FSharp.Compiler.Diagnostics
 
-[<TestFixture>]
+
 module ``Validate ExperimentalAttribute and LanguageVersion`` =
 
     let experimentalSource = """
@@ -17,13 +17,13 @@ module TestModule =
     if getString = "A string" then ()
 """
 
-    [<Test>]
+    [<Fact>]
     let ``ExperimentalAttribute nowarn when preview specified``() =
         CompilerAssert.PassWithOptions
             [| "--langversion:preview" |]
             experimentalSource
 
-    [<Test>]
+    [<Fact>]
     let ``ExperimentalAttribute warn when preview not specified``() =
         CompilerAssert.TypeCheckSingleError
             experimentalSource

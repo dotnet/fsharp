@@ -4,7 +4,7 @@ namespace Tests.LanguageService.ErrorRecovery
 
 open System
 open System.IO
-open NUnit.Framework
+open Xunit
 open Salsa.Salsa
 open Salsa.VsOpsUtils
 open UnitTests.TestLib.Salsa
@@ -12,12 +12,10 @@ open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 
-[<TestFixture>]
-[<Category "LanguageService">] 
 type UsingMSBuild()  = 
     inherit LanguageServiceBaseTests()
 
-    //Verify the error list containd the expected string
+    //Verify the error list contained the expected string
     member private this.VerifyErrorListContainedExpectedString(fileContents : string, expectedStr : string) =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents)       
         let errorList = GetErrors(project)
@@ -25,14 +23,13 @@ type UsingMSBuild()  =
             [ for i = 0 to errorList.Length - 1 do
                 yield errorList.[i].Message]
             
-        Assert.IsTrue(errorList
+        Assert.True(errorList
                           |> GetErrorMessages
                           |> Seq.exists (fun errorMessage ->
                                 errorMessage.Contains(expectedStr)))
 
    // Not a recovery case, but make sure we get a squiggle at the unfinished Main()
-    [<Test>]
-    [<Category("error_recovery")>]
+    [<Fact>]
     member public this.``ErrorRecovery.Bug4538_3``() = 
         let fileContent = """
             type MyType() = 
@@ -43,8 +40,7 @@ type UsingMSBuild()  =
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr)
 
     // Not a recovery case, but make sure we get a squiggle at the unfinished Main()
-    [<Test>]
-    [<Category("error_recovery")>]
+    [<Fact>]
     member public this.``ErrorRecovery.Bug4538_4``() =  
         let fileContent = """
             type MyType() = 
@@ -54,8 +50,7 @@ type UsingMSBuild()  =
         let expectedStr = "The block following this 'use' is unfinished. Every code block is an expression and must have a result. 'use' cannot be the final code element in a block. Consider giving this block an explicit result."
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr)
 
-    [<Test>]
-    [<Category("error_recovery")>]
+    [<Fact>]
     member public this.``ErrorRecovery.Bug4881_1``() =  
         let code = 
                                     ["let s = \"\""
@@ -70,8 +65,7 @@ type UsingMSBuild()  =
         let completions = AutoCompleteAtCursor file
         AssertCompListContains(completions,"Split")       
         
-    [<Test>]
-    [<Category("error_recovery")>]
+    [<Fact>]
     member public this.``ErrorRecovery.Bug4881_2``() =  
         let code =
                                     ["let s = \"\""
@@ -87,8 +81,7 @@ type UsingMSBuild()  =
         let completions = AutoCompleteAtCursor file
         AssertCompListContains(completions,"Split")      
 
-    [<Test>]
-    [<Category("error_recovery")>]
+    [<Fact>]
     member public this.``ErrorRecovery.Bug4881_3``() =  
         let code = 
                                     ["let s = \"\""
@@ -105,8 +98,7 @@ type UsingMSBuild()  =
         AssertCompListContains(completions,"Split")  
         
 
-    [<Test>]
-    [<Category("error_recovery")>]
+    [<Fact>]
     member public this.``ErrorRecovery.Bug4881_4``() =  
         let code = 
                                     ["let s = \"\""
@@ -122,8 +114,7 @@ type UsingMSBuild()  =
         
         
     // This case was fixed while investigating 4538.            
-    [<Test>]
-    [<Category("error_recovery")>]
+    [<Fact>]
     member public this.``ErrorRecovery.NotFixing4538_1``() =  
         let code = 
                                     ["type MyType() = "
@@ -139,8 +130,7 @@ type UsingMSBuild()  =
         AssertCompListContains(completions,"MyType")
         
     // This case was fixed while investigating 4538.            
-    [<Test>]
-    [<Category("error_recovery")>]
+    [<Fact>]
     member public this.``ErrorRecovery.NotFixing4538_2``() =  
         let code =
                                     ["type MyType() = "
@@ -156,8 +146,7 @@ type UsingMSBuild()  =
         AssertCompListContains(completions,"MyType")
         
     // This case was fixed while investigating 4538.            
-    [<Test>]
-    [<Category("error_recovery")>]
+    [<Fact>]
     member public this.``ErrorRecovery.NotFixing4538_3``() =  
         let code = 
                                     ["type MyType() = "
@@ -171,8 +160,7 @@ type UsingMSBuild()  =
         let completions = CtrlSpaceCompleteAtCursor file
         AssertCompListContains(completions,"MyType")
         
-    [<Test>]
-    [<Category("error_recovery")>]
+    [<Fact>]
     member public this.``ErrorRecovery.Bug4538_1``() =  
         let code = 
                                     ["type MyType() = "
@@ -187,8 +175,7 @@ type UsingMSBuild()  =
         let completions = CtrlSpaceCompleteAtCursor file
         AssertCompListContains(completions,"MyType")    
         
-    [<Test>]
-    [<Category("error_recovery")>]
+    [<Fact>]
     member public this.``ErrorRecovery.Bug4538_2``() =  
         let code = 
                                     ["type MyType() = "
@@ -207,8 +194,7 @@ type UsingMSBuild()  =
         
       
         
-    [<Test>]
-    [<Category("error_recovery")>]
+    [<Fact>]
     member public this.``ErrorRecovery.Bug4538_5``() =  
         let code = 
                                     ["type MyType() = "
@@ -224,8 +210,7 @@ type UsingMSBuild()  =
         AssertCompListContains(completions,"MyType")          
         
         
-    [<Test>]
-    [<Category("error_recovery")>]
+    [<Fact>]
     member public this.``ErrorRecovery.Bug4594_1``() =  
         let code = 
                                     ["let Bar(xyz) ="
@@ -241,7 +226,7 @@ type UsingMSBuild()  =
     /// In this bug, the Module. at the very end of the file was treated as if it were in the scope
     /// of Module rather than right after it. This check just makes sure we can see a data tip because
     /// Module is available.
-    [<Test>]
+    [<Fact>]
     member public this.``ErrorRecovery.5878_1``() =
         Helper.AssertMemberDataTipContainsInOrder
             (
@@ -268,6 +253,5 @@ type UsingMSBuild()  =
 
 
 // Context project system
-[<TestFixture>] 
 type UsingProjectSystem() = 
     inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)

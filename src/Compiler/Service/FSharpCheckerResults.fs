@@ -20,7 +20,7 @@ open FSharp.Compiler
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckExpressionsOps
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
@@ -203,7 +203,10 @@ module internal FSharpCheckerResultsSettings =
     // Look for DLLs in the location of the service DLL first.
     let defaultFSharpBinariesDir =
         FSharpEnvironment
-            .BinFolderOfDefaultFSharpCompiler(Some(Path.GetDirectoryName(typeof<IncrementalBuilder>.Assembly.Location)))
+            .BinFolderOfDefaultFSharpCompiler(
+                Path.GetDirectoryName(typeof<IncrementalBuilder>.Assembly.Location)
+                |> Option.ofObj
+            )
             .Value
 
 [<Sealed>]
@@ -221,27 +224,27 @@ type FSharpSymbolUse(denv: DisplayEnv, symbol: FSharpSymbol, inst: TyparInstanti
 
     member x.IsDefinition = x.IsFromDefinition
 
-    member _.IsFromDefinition = itemOcc = ItemOccurence.Binding
+    member _.IsFromDefinition = itemOcc = ItemOccurrence.Binding
 
-    member _.IsFromPattern = itemOcc = ItemOccurence.Pattern
+    member _.IsFromPattern = itemOcc = ItemOccurrence.Pattern
 
-    member _.IsFromType = itemOcc = ItemOccurence.UseInType
+    member _.IsFromType = itemOcc = ItemOccurrence.UseInType
 
-    member _.IsFromAttribute = itemOcc = ItemOccurence.UseInAttribute
+    member _.IsFromAttribute = itemOcc = ItemOccurrence.UseInAttribute
 
-    member _.IsFromDispatchSlotImplementation = itemOcc = ItemOccurence.Implemented
+    member _.IsFromDispatchSlotImplementation = itemOcc = ItemOccurrence.Implemented
 
-    member _.IsFromUse = itemOcc = ItemOccurence.Use
+    member _.IsFromUse = itemOcc = ItemOccurrence.Use
 
     member _.IsFromComputationExpression =
         match symbol.Item, itemOcc with
         // 'seq' in 'seq { ... }' gets colored as keywords
-        | Item.Value vref, ItemOccurence.Use when valRefEq denv.g denv.g.seq_vref vref -> true
+        | Item.Value vref, ItemOccurrence.Use when valRefEq denv.g denv.g.seq_vref vref -> true
         // custom builders, custom operations get colored as keywords
-        | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use -> true
+        | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurrence.Use -> true
         | _ -> false
 
-    member _.IsFromOpenStatement = itemOcc = ItemOccurence.Open
+    member _.IsFromOpenStatement = itemOcc = ItemOccurrence.Open
 
     member _.FileName = range.FileName
 
@@ -492,7 +495,7 @@ type internal TypeCheckInfo
         //
         // If we're looking for members using a residue, we'd expect only
         // a single item (pick the first one) and we need the residue (which may be "")
-        | CNR(_, ItemOccurence.InvalidUse, _, _, _, _) :: _, _ -> NameResResult.Empty
+        | CNR(_, ItemOccurrence.InvalidUse, _, _, _, _) :: _, _ -> NameResResult.Empty
 
         | CNR(Item.Types(_, ty :: _), _, denv, nenv, ad, m) :: _, Some _ ->
             let targets =
@@ -518,8 +521,8 @@ type internal TypeCheckInfo
         //   let varA = if b then 0 else varA.
         // then the expression typings get confused (thinking 'varA:int'), so we use name resolution even for usual values.
 
-        | CNR(Item.Value(vref), occurence, denv, nenv, ad, m) :: _, Some _ ->
-            if occurence = ItemOccurence.Binding || occurence = ItemOccurence.Pattern then
+        | CNR(Item.Value(vref), occurrence, denv, nenv, ad, m) :: _, Some _ ->
+            if occurrence = ItemOccurrence.Binding || occurrence = ItemOccurrence.Pattern then
                 // Return empty list to stop further lookup - for value declarations
                 NameResResult.Cancel(denv, m)
             else
@@ -572,8 +575,8 @@ type internal TypeCheckInfo
 
         match items, membersByResidue with
         | CNR(Item.Types(_, ty :: _), _, _, _, _, _) :: _, Some _ -> Some ty
-        | CNR(Item.Value(vref), occurence, _, _, _, _) :: _, Some _ ->
-            if (occurence = ItemOccurence.Binding || occurence = ItemOccurence.Pattern) then
+        | CNR(Item.Value(vref), occurrence, _, _, _, _) :: _, Some _ ->
+            if (occurrence = ItemOccurrence.Binding || occurrence = ItemOccurrence.Pattern) then
                 None
             else
                 Some(StripSelfRefCell(g, vref.BaseOrThisInfo, vref.TauType))
@@ -987,7 +990,7 @@ type internal TypeCheckInfo
         if String.IsNullOrWhiteSpace name then
             None
         else
-            let name = String.lowerCaseFirstChar name
+            let name = String.lowerCaseFirstChar !!name
 
             let unused =
                 sResolutions.CapturedNameResolutions
@@ -2173,7 +2176,7 @@ type internal TypeCheckInfo
                                 items
                                 |> List.map (fun item ->
                                     let symbol = FSharpSymbol.Create(cenv, item.Item)
-                                    FSharpSymbolUse(denv, symbol, item.ItemWithInst.TyparInstantiation, ItemOccurence.Use, m)))
+                                    FSharpSymbolUse(denv, symbol, item.ItemWithInst.TyparInstantiation, ItemOccurrence.Use, m)))
 
                     //end filtering
                     items)
@@ -3019,7 +3022,7 @@ module internal ParseAndCheckFile =
     let parseFile
         (
             sourceText: ISourceText,
-            fileName,
+            fileName: string,
             options: FSharpParsingOptions,
             userOpName: string,
             suggestNamesForErrors: bool,
@@ -3074,7 +3077,7 @@ module internal ParseAndCheckFile =
         (
             tcConfig,
             parsedMainInput,
-            mainInputFileName,
+            mainInputFileName: string,
             loadClosure: LoadClosure option,
             tcImports: TcImports,
             backgroundDiagnostics
@@ -3166,7 +3169,7 @@ module internal ParseAndCheckFile =
             ApplyMetaCommandsFromInputToTcConfig(
                 tcConfig,
                 parsedMainInput,
-                Path.GetDirectoryName mainInputFileName,
+                !! Path.GetDirectoryName(mainInputFileName),
                 tcImports.DependencyProvider
             )
             |> ignore
@@ -3217,7 +3220,7 @@ module internal ParseAndCheckFile =
 
             // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
             let tcConfig =
-                ApplyNoWarnsToTcConfig(tcConfig, parsedMainInput, Path.GetDirectoryName mainInputFileName)
+                ApplyNoWarnsToTcConfig(tcConfig, parsedMainInput, !! Path.GetDirectoryName(mainInputFileName))
 
             // update the error handler with the modified tcConfig
             errHandler.DiagnosticOptions <- tcConfig.diagnosticsOptions
@@ -3410,7 +3413,7 @@ type FSharpCheckFileResults
         | Some(scope, _builderOpt) ->
             scope.GetSymbolUsesAtLocation(line, lineText, colAtEndOfNames, names)
             |> List.map (fun (sym, itemWithInst, denv, m) ->
-                FSharpSymbolUse(denv, sym, itemWithInst.TyparInstantiation, ItemOccurence.Use, m))
+                FSharpSymbolUse(denv, sym, itemWithInst.TyparInstantiation, ItemOccurrence.Use, m))
 
     member _.GetMethodsAsSymbols(line, colAtEndOfNames, lineText, names) =
         match details with
@@ -3419,7 +3422,7 @@ type FSharpCheckFileResults
             scope.GetMethodsAsSymbols(line, lineText, colAtEndOfNames, names)
             |> Option.map (fun (symbols, denv, m) ->
                 symbols
-                |> List.map (fun (sym, itemWithInst) -> FSharpSymbolUse(denv, sym, itemWithInst.TyparInstantiation, ItemOccurence.Use, m)))
+                |> List.map (fun (sym, itemWithInst) -> FSharpSymbolUse(denv, sym, itemWithInst.TyparInstantiation, ItemOccurrence.Use, m)))
 
     member _.GetSymbolAtLocation(line, colAtEndOfNames, lineStr, names) =
         match details with
@@ -3465,10 +3468,10 @@ type FSharpCheckFileResults
                     for symbolUse in symbolUseChunk do
                         cancellationToken |> Option.iter (fun ct -> ct.ThrowIfCancellationRequested())
 
-                        if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
+                        if symbolUse.ItemOccurrence <> ItemOccurrence.RelatedText then
                             let symbol = FSharpSymbol.Create(cenv, symbolUse.ItemWithInst.Item)
                             let inst = symbolUse.ItemWithInst.TyparInstantiation
-                            FSharpSymbolUse(symbolUse.DisplayEnv, symbol, inst, symbolUse.ItemOccurence, symbolUse.Range)
+                            FSharpSymbolUse(symbolUse.DisplayEnv, symbol, inst, symbolUse.ItemOccurrence, symbolUse.Range)
             }
 
     member _.GetUsesOfSymbolInFile(symbol: FSharpSymbol, ?cancellationToken: CancellationToken) =
@@ -3478,12 +3481,12 @@ type FSharpCheckFileResults
             [|
                 for symbolUse in
                     scope.ScopeSymbolUses.GetUsesOfSymbol(symbol.Item)
-                    |> Seq.distinctBy (fun symbolUse -> symbolUse.ItemOccurence, symbolUse.Range) do
+                    |> Seq.distinctBy (fun symbolUse -> symbolUse.ItemOccurrence, symbolUse.Range) do
                     cancellationToken |> Option.iter (fun ct -> ct.ThrowIfCancellationRequested())
 
-                    if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
+                    if symbolUse.ItemOccurrence <> ItemOccurrence.RelatedText then
                         let inst = symbolUse.ItemWithInst.TyparInstantiation
-                        FSharpSymbolUse(symbolUse.DisplayEnv, symbol, inst, symbolUse.ItemOccurence, symbolUse.Range)
+                        FSharpSymbolUse(symbolUse.DisplayEnv, symbol, inst, symbolUse.ItemOccurrence, symbolUse.Range)
             |]
 
     member _.GetVisibleNamespacesAndModulesAtPoint(pos: pos) =
@@ -3833,12 +3836,12 @@ type FSharpCheckProjectResults
                 )
 
         results
-        |> Seq.filter (fun symbolUse -> symbolUse.ItemOccurence <> ItemOccurence.RelatedText)
-        |> Seq.distinctBy (fun symbolUse -> symbolUse.ItemOccurence, symbolUse.Range)
+        |> Seq.filter (fun symbolUse -> symbolUse.ItemOccurrence <> ItemOccurrence.RelatedText)
+        |> Seq.distinctBy (fun symbolUse -> symbolUse.ItemOccurrence, symbolUse.Range)
         |> Seq.map (fun symbolUse ->
             cancellationToken |> Option.iter (fun ct -> ct.ThrowIfCancellationRequested())
             let inst = symbolUse.ItemWithInst.TyparInstantiation
-            FSharpSymbolUse(symbolUse.DisplayEnv, symbol, inst, symbolUse.ItemOccurence, symbolUse.Range))
+            FSharpSymbolUse(symbolUse.DisplayEnv, symbol, inst, symbolUse.ItemOccurrence, symbolUse.Range))
         |> Seq.toArray
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
@@ -3870,10 +3873,10 @@ type FSharpCheckProjectResults
                     for symbolUse in symbolUseChunk do
                         cancellationToken |> Option.iter (fun ct -> ct.ThrowIfCancellationRequested())
 
-                        if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
+                        if symbolUse.ItemOccurrence <> ItemOccurrence.RelatedText then
                             let symbol = FSharpSymbol.Create(cenv, symbolUse.ItemWithInst.Item)
                             let inst = symbolUse.ItemWithInst.TyparInstantiation
-                            FSharpSymbolUse(symbolUse.DisplayEnv, symbol, inst, symbolUse.ItemOccurence, symbolUse.Range)
+                            FSharpSymbolUse(symbolUse.DisplayEnv, symbol, inst, symbolUse.ItemOccurrence, symbolUse.Range)
         |]
 
     member _.ProjectContext =

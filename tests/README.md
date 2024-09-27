@@ -19,7 +19,7 @@
 
 ## Framework for testing
 
-The following test frameworks and libraries will be used for new test projects **[xUnit Test Framework](https://xunit.net/), [FluentAssertions](https://fluentassertions.com/) (+ [FsUnit](https://fsprojects.github.io/FsUnit/) and [FsCheck](https://github.com/fscheck/FsCheck) when needed)**. All existing NUnit test suites will be migrated to xUnit.
+The following test frameworks and libraries will be used for new test projects **[xUnit Test Framework](https://xunit.net/), [FluentAssertions](https://fluentassertions.com/) (+ [FsUnit](https://fsprojects.github.io/FsUnit/) and [FsCheck](https://github.com/fscheck/FsCheck) when needed)**.
 
 **Justification:**
 
@@ -93,14 +93,13 @@ Existing FSharpQA and Cambridge need to be migrated to corresponding test projec
 
 ## Next steps
 
-* [**In Progress**] Migrate existing `NUnit` tests to xUnit.
 * Clean up CompilerAssert.
 * Make PEVerify tests work in netcore/non-windows environment.
 * Start migration of existing (namely, FSharpQA and Cambridge) suites to xUnit-based projects.
 
 ## Open questions:
 
-* As far as I know, [FSharp.Compiler.Service](https://github.com/fsharp/FSharp.Compiler.Service) is dependant on some of the F# compiler tests. Does it have to be changed as well?
+* As far as I know, [FSharp.Compiler.Service](https://github.com/fsharp/FSharp.Compiler.Service) is dependent on some of the F# compiler tests. Does it have to be changed as well?
 
 ## Other
 

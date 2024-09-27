@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
-/// Contains logic to prepare, post-process, filter and emit compiler diagnsotics
+/// Contains logic to prepare, post-process, filter and emit compiler diagnostics
 module internal FSharp.Compiler.CompilerDiagnostics
 
 open System
@@ -210,7 +210,7 @@ type Exception with
         | HashLoadedSourceHasIssues(_, _, _, m)
         | HashLoadedScriptConsideredSource m -> Some m
         // Strip TargetInvocationException wrappers
-        | :? System.Reflection.TargetInvocationException as e -> e.InnerException.DiagnosticRange
+        | :? System.Reflection.TargetInvocationException as e when isNotNull e.InnerException -> (!!e.InnerException).DiagnosticRange
 #if !NO_TYPEPROVIDERS
         | :? TypeProviderError as e -> e.Range |> Some
 #endif
@@ -338,7 +338,7 @@ type Exception with
         | ArgumentsInSigAndImplMismatch _ -> 3218
 
         // Strip TargetInvocationException wrappers
-        | :? TargetInvocationException as e -> e.InnerException.DiagnosticNumber
+        | :? TargetInvocationException as e when isNotNull e.InnerException -> (!!e.InnerException).DiagnosticNumber
         | WrappedError(e, _) -> e.DiagnosticNumber
         | DiagnosticWithText(n, _, _) -> n
         | DiagnosticWithSuggestions(n, _, _, _, _) -> n
@@ -809,7 +809,7 @@ type Exception with
 
         | ErrorFromAddingTypeEquation(error = ConstraintSolverError _ as e) -> e.Output(os, suggestNames)
 
-        | ErrorFromAddingTypeEquation(_g, denv, ty1, ty2, ConstraintSolverTupleDiffLengths(_, contextInfo, tl1, tl2, _, _), m) ->
+        | ErrorFromAddingTypeEquation(_g, denv, ty1, ty2, ConstraintSolverTupleDiffLengths(_, contextInfo, tl1, tl2, m1, m2), m) ->
             let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
             let messageArgs = tl1.Length, ty1, tl2.Length, ty2
 
@@ -826,6 +826,11 @@ type Exception with
                     else
                         os.AppendString(FSComp.SR.listElementHasWrongTypeTuple messageArgs)
                 | _ -> os.AppendString(ErrorFromAddingTypeEquationTuplesE().Format tl1.Length ty1 tl2.Length ty2 tpcs)
+            else
+                os.AppendString(ConstraintSolverTupleDiffLengthsE().Format tl1.Length tl2.Length)
+
+                if m1.StartLine <> m2.StartLine then
+                    os.AppendString(SeeAlsoE().Format(stringOfRange m1))
 
         | ErrorFromAddingTypeEquation(g, denv, ty1, ty2, e, _) ->
             if not (typeEquiv g ty1 ty2) then
@@ -1940,7 +1945,7 @@ type Exception with
             )
 
         // Strip TargetInvocationException wrappers
-        | :? TargetInvocationException as exn -> exn.InnerException.Output(os, suggestNames)
+        | :? TargetInvocationException as e when isNotNull e.InnerException -> (!!e.InnerException).Output(os, suggestNames)
 
         | :? FileNotFoundException as exn -> Printf.bprintf os "%s" exn.Message
 
@@ -2039,6 +2044,8 @@ type FormattedDiagnosticDetailedInfo =
         Location: FormattedDiagnosticLocation option
         Canonical: FormattedDiagnosticCanonicalInformation
         Message: string
+        Context: string option
+        DiagnosticStyle: DiagnosticStyle
     }
 
 [<RequireQualifiedAccess>]
@@ -2046,7 +2053,7 @@ type FormattedDiagnostic =
     | Short of FSharpDiagnosticSeverity * string
     | Long of FSharpDiagnosticSeverity * FormattedDiagnosticDetailedInfo
 
-let FormatDiagnosticLocation (tcConfig: TcConfig) m : FormattedDiagnosticLocation =
+let FormatDiagnosticLocation (tcConfig: TcConfig) (m: Range) : FormattedDiagnosticLocation =
     if equals m rangeStartup || equals m rangeCmdArgs then
         {
             Range = m
@@ -2109,6 +2116,10 @@ let FormatDiagnosticLocation (tcConfig: TcConfig) m : FormattedDiagnosticLocatio
                     sprintf "%s(%d,%d,%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn, m, file
                 else
                     "", m, file
+            | DiagnosticStyle.Rich ->
+                let file = file.Replace('/', Path.DirectorySeparatorChar)
+                let m = withStart (mkPos m.StartLine (m.StartColumn + 1)) m
+                (sprintf "\n  --> %s (%d,%d)" file m.StartLine m.StartColumn), m, file
 
         {
             Range = m
@@ -2149,8 +2160,12 @@ let CollectFormattedDiagnostics (tcConfig: TcConfig, severity: FSharpDiagnosticS
             let text =
                 match tcConfig.diagnosticStyle with
                 // Show the subcategory for --vserrors so that we can fish it out in Visual Studio and use it to determine error stickiness.
+                | DiagnosticStyle.Emacs
+                | DiagnosticStyle.Gcc
+                | DiagnosticStyle.Default
+                | DiagnosticStyle.Test -> sprintf "%s FS%04d: " message errorNumber
                 | DiagnosticStyle.VisualStudio -> sprintf "%s %s FS%04d: " subcategory message errorNumber
-                | _ -> sprintf "%s FS%04d: " message errorNumber
+                | DiagnosticStyle.Rich -> sprintf "%s FS%04d: " message errorNumber
 
             let canonical: FormattedDiagnosticCanonicalInformation =
                 {
@@ -2159,13 +2174,51 @@ let CollectFormattedDiagnostics (tcConfig: TcConfig, severity: FSharpDiagnosticS
                     TextRepresentation = text
                 }
 
-            let message = diagnostic.FormatCore(tcConfig.flatErrors, suggestNames)
+            let message =
+                match tcConfig.diagnosticStyle with
+                | DiagnosticStyle.Emacs
+                | DiagnosticStyle.Gcc
+                | DiagnosticStyle.Default
+                | DiagnosticStyle.Test
+                | DiagnosticStyle.Rich
+                | DiagnosticStyle.VisualStudio -> diagnostic.FormatCore(tcConfig.flatErrors, suggestNames)
+
+            let context =
+                match tcConfig.diagnosticStyle with
+                | DiagnosticStyle.Emacs
+                | DiagnosticStyle.Gcc
+                | DiagnosticStyle.Default
+                | DiagnosticStyle.Test
+                | DiagnosticStyle.VisualStudio -> None
+                | DiagnosticStyle.Rich ->
+                    match diagnostic.Range with
+                    | Some m ->
+                        let content =
+                            m.FileName
+                            |> FileSystem.GetFullFilePathInDirectoryShim tcConfig.implicitIncludeDir
+                            |> System.IO.File.ReadAllLines
+
+                        if m.StartLine = m.EndLine then
+                            $"\n  {m.StartLine} | {content[m.StartLine - 1]}\n"
+                            + $"""{String.make (m.StartColumn + 6) ' '}{String.make (m.EndColumn - m.StartColumn) '^'}"""
+                            |> Some
+                        else
+                            content
+                            |> fun lines -> Array.sub lines (m.StartLine - 1) (m.EndLine - m.StartLine - 1)
+                            |> Array.fold
+                                (fun (context, lineNumber) line -> (context + $"\n{lineNumber} | {line}", lineNumber + 1))
+                                ("", (m.StartLine))
+                            |> fst
+                            |> Some
+                    | None -> None
 
             let entry: FormattedDiagnosticDetailedInfo =
                 {
                     Location = where
+                    Context = context
                     Canonical = canonical
                     Message = message
+                    DiagnosticStyle = tcConfig.diagnosticStyle
                 }
 
             errors.Add(FormattedDiagnostic.Long(severity, entry))
@@ -2193,12 +2246,33 @@ type PhasedDiagnostic with
             match e with
             | FormattedDiagnostic.Short(_, txt) -> buf.AppendString txt
             | FormattedDiagnostic.Long(_, details) ->
-                match details.Location with
-                | Some l when not l.IsEmpty -> buf.AppendString l.TextRepresentation
-                | _ -> ()
+                match details.DiagnosticStyle with
+                | DiagnosticStyle.Emacs
+                | DiagnosticStyle.Gcc
+                | DiagnosticStyle.Test
+                | DiagnosticStyle.VisualStudio
+                | DiagnosticStyle.Default ->
+                    match details.Location with
+                    | Some l when not l.IsEmpty ->
+                        buf.AppendString l.TextRepresentation
 
-                buf.AppendString details.Canonical.TextRepresentation
-                buf.AppendString details.Message
+                        if details.Context.IsSome then
+                            buf.AppendString details.Context.Value
+                    | _ -> ()
+
+                    buf.AppendString details.Canonical.TextRepresentation
+                    buf.AppendString details.Message
+                | DiagnosticStyle.Rich ->
+                    buf.AppendString details.Canonical.TextRepresentation
+                    buf.AppendString details.Message
+
+                    match details.Location with
+                    | Some l when not l.IsEmpty ->
+                        buf.AppendString l.TextRepresentation
+
+                        if details.Context.IsSome then
+                            buf.AppendString details.Context.Value
+                    | _ -> ()
 
     member diagnostic.OutputContext(buf, prefix, fileLineFunction) =
         match diagnostic.Range with

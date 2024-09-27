@@ -101,6 +101,30 @@
     IL_0014:  ret
   } 
 
+  .method public static string[]  threeHappyStrings() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.3
+    IL_0001:  newarr     [runtime]System.String
+    IL_0006:  dup
+    IL_0007:  ldc.i4.0
+    IL_0008:  call       class '<>f__AnonymousType2430756162`3'<string,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>,int32> MyTestModule::giveMeA()
+    IL_000d:  callvirt   instance string [runtime]System.Object::ToString()
+    IL_0012:  stelem     [runtime]System.String
+    IL_0017:  dup
+    IL_0018:  ldc.i4.1
+    IL_0019:  call       class '<>f__AnonymousType2430756162`3'<int32,int32,int32> MyTestModule::giveMeB()
+    IL_001e:  callvirt   instance string [runtime]System.Object::ToString()
+    IL_0023:  stelem     [runtime]System.String
+    IL_0028:  dup
+    IL_0029:  ldc.i4.2
+    IL_002a:  call       class '<>f__AnonymousType2430756162`3'<string,string,string> MyTestModule::giveMeC()
+    IL_002f:  callvirt   instance string [runtime]System.Object::ToString()
+    IL_0034:  stelem     [runtime]System.String
+    IL_0039:  ret
+  } 
+
   .method private specialname rtspecialname static void  .cctor() cil managed
   {
     

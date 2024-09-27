@@ -257,6 +257,16 @@
         <target state="translated">추가 형식-디렉션 변환</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAllowAccessModifiersToAutoPropertiesGettersAndSetters">
+        <source>Allow access modifiers to auto properties getters and setters</source>
+        <target state="new">Allow access modifiers to auto properties getters and setters</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureAllowObjectExpressionWithoutOverrides">
+        <source>Allow object expressions without overrides</source>
+        <target state="new">Allow object expressions without overrides</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAndBang">
         <source>applicative computation expressions</source>
         <target state="translated">적용 가능한 계산 식</target>
@@ -422,9 +432,9 @@
         <target state="translated">정수 계열 범위(..) 및 범위 단계(.. ..) 연산자의 특정 사용을 빠른 while 루프에 최적화합니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureLowerSimpleMappingsInComprehensionsToDirectCallsToMap">
-        <source>Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to calls to List.map and Array.map when xs is a list or an array, respectively.</source>
-        <target state="translated">xs가 각각 목록 또는 배열인 경우 [for x in xs -&gt; f x] 및 [|for x in xs -&gt; f x|]를 List.map 및 Array.map에 대한 호출로 낮춥니다.</target>
+      <trans-unit id="featureLowerSimpleMappingsInComprehensionsToFastLoops">
+        <source>Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to fast loops when xs is a list or an array, respectively.</source>
+        <target state="new">Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to fast loops when xs is a list or an array, respectively.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
@@ -528,7 +538,7 @@
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
-        <source>whitespace relexation</source>
+        <source>whitespace relaxation</source>
         <target state="translated">공백 완화</target>
         <note />
       </trans-unit>
@@ -732,6 +742,11 @@
         <target state="translated">계산 식에서 조건이 다른 계산 식의 결과인 루프 구문을 도입하는 데 사용됩니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexByteArrayOutisdeAscii">
+        <source>This byte array literal contains {0} non-ASCII characters. All characters should be &lt; 128y.</source>
+        <target state="new">This byte array literal contains {0} non-ASCII characters. All characters should be &lt; 128y.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexByteStringMayNotBeInterpolated">
         <source>a byte string may not be interpolated</source>
         <target state="translated">바이트 문자열을 보간하지 못할 수 있습니다.</target>
@@ -747,9 +762,24 @@
         <target state="translated">IF-FSHARP/IF-CAML 영역은 더 이상 지원되지 않습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexInvalidAsciiByteLiteral">
+        <source>This is not a valid byte character literal. The value must be less than or equal to '\127'B.</source>
+        <target state="new">This is not a valid byte character literal. The value must be less than or equal to '\127'B.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexInvalidCharLiteralInString">
+        <source>'{0}' is not a valid character literal.\nNote: Currently the value is wrapped around byte range to '{1}'. In a future F# version this warning will be promoted to an error.</source>
+        <target state="new">'{0}' is not a valid character literal.\nNote: Currently the value is wrapped around byte range to '{1}'. In a future F# version this warning will be promoted to an error.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexInvalidIdentifier">
         <source>This is not a valid identifier</source>
         <target state="translated">유효한 식별자가 아닙니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexInvalidTrigraphAsciiByteLiteral">
+        <source>This is not a valid byte character literal. The value must be less than or equal to '\127'B.\nNote: In a future F# version this warning will be promoted to an error.</source>
+        <target state="new">This is not a valid byte character literal. The value must be less than or equal to '\127'B.\nNote: In a future F# version this warning will be promoted to an error.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
@@ -1007,19 +1037,24 @@
         <target state="translated">식이 필요함</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsExpectingField">
-        <source>Expecting record field</source>
-        <target state="translated">레코드 필드 필요</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsExpectingPattern">
         <source>Expecting pattern</source>
         <target state="translated">예상되는 패턴</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsExpectingRecordField">
+        <source>Expecting record field</source>
+        <target state="new">Expecting record field</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsExpectingType">
         <source>Expecting type</source>
         <target state="translated">예상 형식</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingUnionCaseField">
+        <source>Expecting union case field</source>
+        <target state="new">Expecting union case field</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
@@ -1088,7 +1123,7 @@
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
-        <source>A constrained generic construct occured in the resumable code specification</source>
+        <source>A constrained generic construct occurred in the resumable code specification</source>
         <target state="translated">다시 시작 가능한 코드 사양에서 제약이 있는 제네릭 구문이 발생했습니다.</target>
         <note />
       </trans-unit>
@@ -1103,7 +1138,7 @@
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsLetRec">
-        <source>A 'let rec' occured in the resumable code specification</source>
+        <source>A 'let rec' occurred in the resumable code specification</source>
         <target state="translated">다시 시작 가능한 코드 사양에서 'let rec'가 발생했습니다.</target>
         <note />
       </trans-unit>
@@ -1170,6 +1205,11 @@
       <trans-unit id="suggestedName">
         <source>(Suggested name)</source>
         <target state="translated">(제안된 이름)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAccessModifiersNotAllowedInSRTPConstraint">
+        <source>Access modifiers cannot be applied to an SRTP constraint.</source>
+        <target state="new">Access modifiers cannot be applied to an SRTP constraint.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcActivePatternArgsCountNotMatchArgs">
@@ -1403,7 +1443,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcMissingRequiredMembers">
-        <source>The following required properties have to be initalized:{0}</source>
+        <source>The following required properties have to be initialized:{0}</source>
         <target state="translated">다음 필수 속성을 초기화해야 합니다. {0}</target>
         <note />
       </trans-unit>
@@ -1452,6 +1492,11 @@
         <target state="translated">'{0}' 값은 함수가 아니며 인덱스 표기법을 지원하지 않습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcNullableToStringOverride">
+        <source>With nullness checking enabled, overrides of .ToString() method must return a non-nullable string. You can handle potential nulls via the built-in string function.</source>
+        <target state="new">With nullness checking enabled, overrides of .ToString() method must return a non-nullable string. You can handle potential nulls via the built-in string function.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcNullnessCheckingNotEnabled">
         <source>The 'nullness checking' language feature is not enabled. This use of a nullness checking construct will be ignored.</source>
         <target state="new">The 'nullness checking' language feature is not enabled. This use of a nullness checking construct will be ignored.</target>
@@ -1480,6 +1525,11 @@
       <trans-unit id="tcParenThenAdjacentListArgumentReserved">
         <source>The syntax '(expr1)[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
         <target state="translated">구문 '(expr1)[expr2]'는 이제 인덱싱을 위해 예약되었으며 인수로 사용될 때 모호합니다. https://aka.ms/fsharp-index-notation을 참조하세요. 여러 개의 커리된 인수로 함수를 호출하는 경우 그 사이에 공백을 추가하세요(예: 'someFunction (expr1) [expr2]').</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcPartialActivePattern">
+        <source>Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.</source>
+        <target state="new">Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcPassingWithoutNullToANullableExpectingFunc">
@@ -1528,7 +1578,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeContainsLetRec">
-        <source>Invalid resumable code. A 'let rec' occured in the resumable code specification</source>
+        <source>Invalid resumable code. A 'let rec' occurred in the resumable code specification</source>
         <target state="translated">다시 시작 가능한 코드가 잘못되었습니다. 다시 시작 가능한 코드 사양에서 'let rec'가 발생했습니다.</target>
         <note />
       </trans-unit>
@@ -1598,8 +1648,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcTypeDoesNotHaveAnyNull">
-        <source>The type '{0}' does not support a nullness qualitification.</source>
-        <target state="new">The type '{0}' does not support a nullness qualitification.</target>
+        <source>The type '{0}' does not support a nullness qualification.</source>
+        <target state="new">The type '{0}' does not support a nullness qualification.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
@@ -4903,8 +4953,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidActivePatternName">
-        <source>This is not a valid name for an active pattern</source>
-        <target state="translated">활성 패턴에 대한 올바른 이름이 아닙니다.</target>
+        <source>'{0}' is not a valid method name. Use a 'let' binding instead.</source>
+        <target state="new">'{0}' is not a valid method name. Use a 'let' binding instead.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcEntryPointAttributeRequiresFunctionInModule">
@@ -5848,7 +5898,7 @@
         <note />
       </trans-unit>
       <trans-unit id="optsDebug">
-        <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debuggging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
+        <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debugging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
         <target state="translated">디버깅 형식(full, portable, embedded, pdbonly)을 지정합니다. '{0}'은(는) 디버깅 형식을 지정하지 않은 경우 기본값이며 디버거를 실행 중인 프로그램에 연결할 수 있습니다. 'portable'은 플랫폼 간 형식이고, 'embedded'는 출력 파일에 포함된 플랫폼 간 형식입니다.</target>
         <note />
       </trans-unit>
@@ -6468,8 +6518,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexByteArrayCannotEncode">
-        <source>This byte array literal contains characters that do not encode as a single byte</source>
-        <target state="translated">이 바이트 배열 리터럴에는 단일 바이트로 인코딩되지 않는 문자가 포함되어 있습니다.</target>
+        <source>This byte array literal contains {0} characters that do not encode as a single byte</source>
+        <target state="new">This byte array literal contains {0} characters that do not encode as a single byte</target>
         <note />
       </trans-unit>
       <trans-unit id="lexIdentEndInMarkReserved">
@@ -6550,11 +6600,6 @@
       <trans-unit id="lexInvalidNumericLiteral">
         <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).</source>
         <target state="translated">유효한 숫자 리터럴이 아닙니다. 유효한 숫자 리터럴은 1, 0x1, 0o1, 0b1, 1l(int/int32), 1u(uint/uint32), 1L(int64), 1UL(uint64), 1s(int16), 1us(uint16), 1y(int8/)입니다. sbyte), 1uy(uint8/byte), 1.0(float/double), 1.0f(float32/single), 1.0m(decimal), 1I(bigint).</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="lexInvalidByteLiteral">
-        <source>This is not a valid byte literal</source>
-        <target state="translated">올바른 바이트 리터럴이 아닙니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidCharLiteral">
@@ -7108,7 +7153,7 @@
         <note />
       </trans-unit>
       <trans-unit id="fscRemotingError">
-        <source>The resident compilation service was not used because a problem occured in communicating with the server.</source>
+        <source>The resident compilation service was not used because a problem occurred in communicating with the server.</source>
         <target state="translated">서버와 통신하는 동안 문제가 발생하여 상주 컴파일 서비스를 사용하지 않았습니다.</target>
         <note />
       </trans-unit>
@@ -7308,7 +7353,7 @@
         <note />
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToType">
-        <source>An error occured applying the static arguments to a provided type</source>
+        <source>An error occurred applying the static arguments to a provided type</source>
         <target state="translated">제공된 형식에 정적 인수를 적용하는 동안 오류가 발생했습니다.</target>
         <note />
       </trans-unit>
@@ -7373,7 +7418,7 @@
         <note />
       </trans-unit>
       <trans-unit id="etInvalidTypeProviderAssemblyName">
-        <source>Assembly '{0}' hase TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</source>
+        <source>Assembly '{0}' has TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</source>
         <target state="translated">{0}' 어셈블리에 포함된 TypeProviderAssembly 특성의 값('{1}')이 잘못되었습니다. 값은 올바른 어셈블리 이름이어야 합니다.</target>
         <note />
       </trans-unit>
@@ -7958,7 +8003,7 @@
         <note />
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToMethod">
-        <source>An error occured applying the static arguments to a provided method</source>
+        <source>An error occurred applying the static arguments to a provided method</source>
         <target state="translated">제공된 메서드에 정적 인수를 적용하는 동안 오류가 발생했습니다.</target>
         <note />
       </trans-unit>
@@ -8087,7 +8132,7 @@
         <target state="translated">다중 사례 공용 구조체 형식이 구조체인 경우 모든 공용 구조체 사례의 이름이 고유해야 합니다. 예: 'type A = B of b: int | C 중 C: 정수'.</target>
         <note />
       </trans-unit>
-      <trans-unit id="CallerMemberNameIsOverriden">
+      <trans-unit id="CallerMemberNameIsOverridden">
         <source>The CallerMemberNameAttribute applied to parameter '{0}' will have no effect. It is overridden by the CallerFilePathAttribute.</source>
         <target state="translated">{0}' 매개 변수에 적용되는 CallerMemberNameAttribute는 효과가 없습니다. CallerFilePathAttribute에서 재정의합니다.</target>
         <note />
@@ -8403,8 +8448,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionTry">
-        <source>Used to introduce a block of code that might generate an exception. Used together with with or finally.</source>
-        <target state="translated">예외를 생성할 수 있는 코드 블록을 지정하는 데 사용됩니다. with 또는 finally와 함께 사용됩니다.</target>
+        <source>Used to introduce a block of code that might generate an exception. Used together with 'with' or 'finally'.</source>
+        <target state="needs-review-translation">예외를 생성할 수 있는 코드 블록을 지정하는 데 사용됩니다. with 또는 finally와 함께 사용됩니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionType">

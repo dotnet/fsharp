@@ -1,6 +1,6 @@
 // #Regression #Conformance #TypeInference #Recursion 
 // Regression test for FSharp1.0:5423
-// Title: code sample stack overflow from fsc.exe and brings down VS2008 intelisense
+// Title: code sample stack overflow from fsc.exe and brings down VS2008 intellisense
 
 //<Expects status="error" id="FS0001" span="(20,48-20,49)">This expression was expected to have type</Expects>
 //<Expects status="error" id="FS0001" span="(21,27-21,28)">The type 'myint<'d>' is not compatible with the type 'SfsIntTerm<'a>'</Expects>

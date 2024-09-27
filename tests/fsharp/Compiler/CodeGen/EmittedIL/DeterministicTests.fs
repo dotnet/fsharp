@@ -5,10 +5,10 @@ namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 open System.IO
 open FSharp.Test
 open FSharp.Test.Compiler
-open NUnit.Framework
+open Xunit
 
 
-[<TestFixture>]
+
 module DeterministicTests =
 
     let commonOptions = ["--refonly";"--deterministic";"--nooptimizationdata"]
@@ -61,7 +61,7 @@ let test() =
         mvid1 , mvid2
 
 
-    [<Test>]
+    [<Fact>]
     let ``Simple assembly should be deterministic``() =  
         File.WriteAllText(inputPath, basicCodeSnippet)
 
@@ -71,55 +71,55 @@ let test() =
             |> compileGuid
 
         // Two identical compilations should produce the same MVID
-        Assert.AreEqual(getMvid(), getMvid())
+        Assert.Equal(getMvid(), getMvid())
 
-    [<Test>]
+    [<Fact>]
     let ``Simple assembly with different platform should not be deterministic``() = 
         let mvid1 = getMvid basicCodeSnippet ["--deterministic"]
         let mvid2 = getMvid basicCodeSnippet ["--deterministic";"--platform:Itanium"]
         // No two platforms should produce the same MVID
-        Assert.AreNotEqual(mvid1, mvid2)
+        Assert.NotEqual(mvid1, mvid2)
 
-    [<Test>]
+    [<Fact>]
     let ``Simple reference assembly should be deterministic``() =
         let mvid1, mvid2 = calculateRefAssMvids basicCodeSnippet basicCodeSnippet
-        Assert.AreEqual(mvid1, mvid2)
+        Assert.Equal(mvid1, mvid2)
 
-    [<Test>]
+    [<Fact>]
     let ``Simple reference assembly with different platform should not be deterministic``() =
         let mvid1 = getMvid basicCodeSnippet ["--refonly";"--deterministic"]
         let mvid2 = getMvid basicCodeSnippet ["--refonly";"--deterministic";"--platform:Itanium"]
 
         // No two platforms should produce the same MVID
-        Assert.AreNotEqual(mvid1, mvid2)
+        Assert.NotEqual(mvid1, mvid2)
 
-    [<Test>]
-    let ``False-positive reference assemblies test, different aseemblies' mvid should not match`` () =
+    [<Fact>]
+    let ``False-positive reference assemblies test, different assemblies' mvid should not match`` () =
         let src2 = basicCodeSnippet.Replace("test()","test2()")
         let mvid1, mvid2 = calculateRefAssMvids basicCodeSnippet src2
-        Assert.AreNotEqual(mvid1, mvid2)
+        Assert.NotEqual(mvid1, mvid2)
 
-    [<Test>] 
+    [<Fact>] 
     let ``Reference assemblies should be deterministic when only private function name is different with the same function name length`` () =
         let privCode1 = basicCodeSnippet.Replace("privTest()","privTest1()")
         let privCode2 = basicCodeSnippet.Replace("privTest()","privTest2()")
         let mvid1, mvid2 = calculateRefAssMvids privCode1 privCode2
-        Assert.AreEqual(mvid1, mvid2)
+        Assert.Equal(mvid1, mvid2)
     
     
-    [<Test>] 
+    [<Fact>] 
     let ``Reference assemblies should be deterministic when only private function name is different with the different function name length`` () =
         let src2 = basicCodeSnippet.Replace("privTest()","privTest11()")
         let mvid1, mvid2 = calculateRefAssMvids basicCodeSnippet src2
-        Assert.AreEqual(mvid1, mvid2)
+        Assert.Equal(mvid1, mvid2)
     
-    [<Test>] 
+    [<Fact>] 
     let ``Reference assemblies should be deterministic when only private function body is different`` () =
         let src2 = basicCodeSnippet.Replace("""Console.WriteLine("Private Hello World!")""","""Console.Write("Private Hello World!")""")
         let mvid1, mvid2 = calculateRefAssMvids basicCodeSnippet src2
-        Assert.AreEqual(mvid1, mvid2)
+        Assert.Equal(mvid1, mvid2)
         
-    [<Test>] 
+    [<Fact>] 
     let ``Reference assemblies should be deterministic when only private function return type is different`` () =
 
         let src2 =
@@ -135,9 +135,9 @@ let test() =
     Console.WriteLine()
             """
         let mvid1, mvid2 = calculateRefAssMvids basicCodeSnippet src2
-        Assert.AreEqual(mvid1, mvid2)
+        Assert.Equal(mvid1, mvid2)
      
-    [<Test>] 
+    [<Fact>] 
     let ``Reference assemblies should be deterministic when only private function parameter count is different`` () =
         let src =
             """
@@ -166,9 +166,9 @@ let test() =
             """
 
         let mvid1, mvid2 = calculateRefAssMvids src src2
-        Assert.AreEqual(mvid1, mvid2)
+        Assert.Equal(mvid1, mvid2)
 
-    [<Test>] 
+    [<Fact>] 
     let ``Reference assemblies should be deterministic when only private function parameter count is different and private function is unused`` () =
         let src =
             """
@@ -194,9 +194,9 @@ let test() =
             """
 
         let mvid1, mvid2 = calculateRefAssMvids src src2
-        Assert.AreEqual(mvid1, mvid2)
+        Assert.Equal(mvid1, mvid2)
      
-    [<Test>] 
+    [<Fact>] 
     let ``Reference assemblies should be deterministic when only private function parameter types are different`` () =
         let src =
             """
@@ -225,9 +225,9 @@ let test() =
             """
        
         let mvid1, mvid2 = calculateRefAssMvids src src2
-        Assert.AreEqual(mvid1, mvid2)
+        Assert.Equal(mvid1, mvid2)
         
-    [<Test>] 
+    [<Fact>] 
     let ``Reference assemblies should be deterministic when private function is missing in one of them`` () =
         let src =
             """
@@ -253,9 +253,9 @@ let test() =
             """
 
         let mvid1, mvid2 = calculateRefAssMvids src src2
-        Assert.AreEqual(mvid1, mvid2)
+        Assert.Equal(mvid1, mvid2)
 
-    [<Test>] 
+    [<Fact>] 
     let ``Reference assemblies should be deterministic when inner function is removed`` () =
         let src =
             """
@@ -282,9 +282,9 @@ let test() =
             """
        
         let mvid1, mvid2 = calculateRefAssMvids src src2
-        Assert.AreEqual(mvid1, mvid2)
+        Assert.Equal(mvid1, mvid2)
 
-    [<Test>] 
+    [<Fact>] 
     let ``Reference assemblies should be same when contents of quoted expression change`` () =
         let src =
             """
@@ -301,26 +301,26 @@ let foo () = <@ 2 + 3 @>
             """
 
         let mvid1, mvid2 = calculateRefAssMvids src src2
-        Assert.AreEqual(mvid1, mvid2)
+        Assert.Equal(mvid1, mvid2)
 
-    [<Test>]
+    [<Fact>]
     let ``Reference assemblies must change when a must-inline function changes body`` () =
         let codeBefore = """module ReferenceAssembly
 let inline myFunc x y = x + y"""
         let codeAfter = codeBefore.Replace("+","-")
         let mvid1, mvid2 = calculateRefAssMvids codeBefore codeAfter
-        Assert.AreNotEqual(mvid1,mvid2)
+        Assert.NotEqual(mvid1,mvid2)
 
-    [<Test>]
+    [<Fact>]
     let ``Reference assemblies must not change when a must-inline function does not change`` () =
         let codeBefore = """module ReferenceAssembly
 let inline myFunc x y = x - y"""       
         let mvid1, mvid2 = calculateRefAssMvids codeBefore codeBefore
-        Assert.AreEqual(mvid1,mvid2)
+        Assert.Equal(mvid1,mvid2)
 
-
-    [<TestCase(ivtSnippet, false)>] // If IVT provided -> MVID must reflect internal binding
-    [<TestCase("", true )>] // No IVT => internal binding can be ignored for mvid purposes
+    [<Theory>]
+    [<InlineData(ivtSnippet, false)>] // If IVT provided -> MVID must reflect internal binding
+    [<InlineData("", true )>] // No IVT => internal binding can be ignored for mvid purposes
     let ``Reference assemblies MVID when having internal binding``(additionalSnippet:string, shouldBeStable:bool) =
         let codeAfter = 
             basicCodeSnippet
@@ -330,6 +330,6 @@ let inline myFunc x y = x - y"""
         let mvid1, mvid2 = calculateRefAssMvids basicCodeSnippet codeAfter
 
         if shouldBeStable then
-            Assert.AreEqual(mvid1,mvid2)
+            Assert.Equal(mvid1,mvid2)
         else
-            Assert.AreNotEqual(mvid1,mvid2)
+            Assert.NotEqual(mvid1,mvid2)

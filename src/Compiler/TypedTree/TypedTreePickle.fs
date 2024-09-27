@@ -67,7 +67,11 @@ type PickledDataWithReferences<'rawData> =
 //---------------------------------------------------------------------------
 
 [<NoEquality; NoComparison>]
+#if NO_CHECKNULLS
 type Table<'T> =
+#else
+type Table<'T when 'T: not null> =
+#endif
     { name: string
       tbl: Dictionary<'T, int>
       mutable rows: ResizeArray<'T>
@@ -712,7 +716,7 @@ let p_nleref x st = p_int (encode_nleref st.occus st.ostrings st.onlerefs st.osc
 //
 // NULLNESS - the simpletyp table now holds KnownAmbivalentToNull by default.
 // For old assemblies it is, if we give those assemblies the ambivalent interpretation.
-// For new asemblies compiled with null-checking on it isn't, if the default is to give
+// For new assemblies compiled with null-checking on it isn't, if the default is to give
 // those the KnownWithoutNull interpretation by default.
 let decode_simpletyp st _ccuTab _stringTab nlerefTab a = TType_app(ERefNonLocal (lookup_nleref st nlerefTab a), [], KnownAmbivalentToNull)
 let u_encoded_simpletyp st = u_int  st

@@ -21,8 +21,8 @@ open TestFramework
 
 module internal Project1 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let fileName2 = Path.ChangeExtension(base2, ".fs")
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
@@ -639,8 +639,8 @@ let ``Test file explicit parse all symbols`` () =
 
 module internal Project2 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -713,7 +713,7 @@ let ``Test project2 all symbols in signature`` () =
              "field x"; "field y"; "GenericClass`1"; "generic parameter T"; "member .ctor";
              "member GenericMethod"; "generic parameter U"] |> List.sort
 
-    shouldPairwiseEqual e r
+    shouldEqual e r
 
 [<Fact>]
 let ``Test project2 all uses of all signature symbols`` () =
@@ -835,8 +835,8 @@ let ``Test project2 all uses of all symbols`` () =
 
 module internal Project3 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -1278,8 +1278,8 @@ let ``Test project3 all uses of all signature symbols`` () =
 
 module internal Project4 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -1433,8 +1433,8 @@ let ``Test project4 T symbols`` () =
 module internal Project5 =
 
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -1661,8 +1661,8 @@ let ``Test partial active patterns' exact ranges from uses of symbols`` () =
 
 module internal Project6 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -1714,8 +1714,8 @@ let ``Test project 6 all symbols`` () =
 
 module internal Project7 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -1775,8 +1775,8 @@ let ``Test project 7 all symbols`` () =
 //-----------------------------------------------------------------------------------------
 module internal Project8 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -1859,8 +1859,8 @@ let ``Test project 8 all symbols`` () =
 //-----------------------------------------------------------------------------------------
 module internal Project9 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -1936,8 +1936,8 @@ let ``Test project 9 all symbols`` () =
 
 module internal Project10 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -2018,8 +2018,8 @@ let ``Test Project10 all symbols`` () =
 
 module internal Project11 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -2085,8 +2085,8 @@ let ``Test Project11 all symbols`` () =
 
 module internal Project12 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -2153,8 +2153,8 @@ let ``Test Project12 all symbols`` () =
 
 module internal Project13 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -2309,8 +2309,8 @@ let ``Test Project13 all symbols`` () =
 
 module internal Project14 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -2378,8 +2378,8 @@ let ``Test Project14 all symbols`` () =
 
 module internal Project15 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -2437,9 +2437,9 @@ let ``Test Project15 all symbols`` () =
 
 module internal Project16 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
     let sigFileName1 = Path.ChangeExtension(fileName1, ".fsi")
-    let base2 = tryCreateTemporaryFileName ()
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1Text = """
@@ -2732,8 +2732,8 @@ let ``Test project16 DeclaringEntity`` () =
 
 module internal Project17 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -2821,12 +2821,12 @@ let ``Test Project17 all symbols`` () =
 
 
 //-----------------------------------------------------------------------------------------
-// Misc - generic type definnitions
+// Misc - generic type definitions
 
 module internal Project18 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -2875,8 +2875,8 @@ let ``Test Project18 all symbols`` () =
 
 module internal Project19 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -2954,8 +2954,8 @@ let ``Test Project19 all symbols`` () =
 
 module internal Project20 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -3006,8 +3006,8 @@ let ``Test Project20 all symbols`` () =
 
 module internal Project21 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -3084,8 +3084,8 @@ let ``Test Project21 all symbols`` () =
 
 module internal Project22 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -3223,8 +3223,8 @@ let ``Test Project22 IList properties`` () =
 
 module internal Project23 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -3357,8 +3357,8 @@ let ``Test Project23 extension properties' getters/setters should refer to the c
 // Misc - property symbols
 module internal Project24 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -3660,8 +3660,8 @@ let ``Test symbol uses of properties with both getters and setters`` () =
 // Misc - type provider symbols
 module internal Project25 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -3794,8 +3794,8 @@ let ``Test symbol uses of fully-qualified records`` () =
 
 module internal Project26 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -3885,8 +3885,8 @@ let ``Test Project26 parameter symbols`` () =
 
 module internal Project27 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -3930,8 +3930,8 @@ let ``Test project27 all symbols in signature`` () =
 
 module internal Project28 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -4034,8 +4034,8 @@ let ``Test project28 all symbols in signature`` () =
 #endif
 module internal Project29 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -4090,8 +4090,8 @@ let ``Test project29 event symbols`` () =
 
 module internal Project30 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -4150,8 +4150,8 @@ let ``Test project30 Format attributes`` () =
 
 module internal Project31 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -4283,9 +4283,9 @@ let ``Test project31 Format C# method attributes`` () =
 
 module internal Project32 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
     let sigFileName1 = Path.ChangeExtension(fileName1, ".fsi")
-    let base2 = tryCreateTemporaryFileName ()
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -4355,8 +4355,8 @@ let ``Test Project32 should be able to find impl symbols`` () =
 
 module internal Project33 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -4399,7 +4399,7 @@ let ``Test Project33 extension methods`` () =
              ("GetValue", ["member"; "extmem"])]
 
 module internal Project34 =
-    let directoryPath = tryCreateTemporaryDirectory ()
+    let directoryPath = createTemporaryDirectory "Project34"
     let sourceFileName = Path.Combine(directoryPath, "Program.fs")
     let dllName = Path.ChangeExtension(sourceFileName, ".dll")
     let projFileName = Path.ChangeExtension(sourceFileName, ".fsproj")
@@ -4471,8 +4471,8 @@ let ``Test project34 should report correct accessibility for System.Data.Listene
 
 module internal Project35 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -4548,7 +4548,7 @@ let ``Test project35 CurriedParameterGroups should be available for nested funct
 
 module internal Project35b =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fsx")
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fsx")
     let fileSource1Text = """
 #r "System.dll"
 #r "notexist.dll"
@@ -4612,8 +4612,8 @@ let ``Test project35b Dependency files for check of project`` () =
 
 module internal Project36 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """module Project36
@@ -4709,8 +4709,8 @@ let ``Test project36 FSharpMemberOrFunctionOrValue.LiteralValue`` useTransparent
 
 module internal Project37 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let fileName2 = Path.ChangeExtension(base2, ".fs")
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
@@ -4860,8 +4860,8 @@ let ``Test project37 DeclaringEntity`` () =
 
 module internal Project38 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -4962,8 +4962,8 @@ let ``Test project38 abstract slot information`` () =
 
 module internal Project39 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -5042,8 +5042,8 @@ let ``Test project39 all symbols`` () =
 
 module internal Project40 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -5108,9 +5108,9 @@ let ``Test Project40 all symbols`` () =
 
 module internal Project41 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
     // We need to us a stable name to keep the hashes stable
-    let base2 = Path.Combine(Path.GetDirectoryName(tryCreateTemporaryFileName ()), "stabletmp.tmp")
+    let base2 = Path.Combine(Path.GetDirectoryName(getTemporaryFileName ()), "stabletmp.tmp")
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -5208,10 +5208,10 @@ let ``Test project41 all symbols`` () =
 
 module internal Project42 =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let fileName2 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let fileName2 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
     // We need to us a stable name to keep the hashes stable
-    let base2 = Path.Combine(Path.GetDirectoryName(tryCreateTemporaryFileName ()), "stabletmp.tmp")
+    let base2 = Path.Combine(Path.GetDirectoryName(getTemporaryFileName ()), "stabletmp.tmp")
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -5254,8 +5254,8 @@ let ``Test project42 to ensure cached checked results are invalidated`` () =
 
 module internal ProjectBig =
 
-    let fileNamesI = [ for i in 1 .. 10 -> (i, Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")) ]
-    let base2 = tryCreateTemporaryFileName ()
+    let fileNamesI = [ for i in 1 .. 10 -> (i, Path.ChangeExtension(getTemporaryFileName (), ".fs")) ]
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSources = [ for i,f in fileNamesI -> (f, "module M" + string i) ]
@@ -5290,8 +5290,8 @@ let ``add files with same name from different folders`` () =
 
 module internal ProjectStructUnions =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -5342,8 +5342,8 @@ let ``Test typed AST for struct unions`` useTransparentCompiler = // See https:/
 
 module internal ProjectLineDirectives =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1Text = """
@@ -5409,8 +5409,8 @@ let ``Test diagnostics with line directives ignored`` () =
 [<InlineData false>]
 let ``ParseAndCheckFileResults contains ImplFile list if FSharpChecker is created with keepAssemblyContent flag set to true`` useTransparentCompiler =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1Text = """
@@ -5495,8 +5495,8 @@ let ``#4030, Incremental builder creation warnings 5`` () =
 [<InlineData false>]
 let ``Unused opens in rec module smoke test 1`` useTransparentCompiler =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1Text = """
@@ -5570,8 +5570,8 @@ type UseTheThings(i:int) =
 [<InlineData false>]
 let ``Unused opens in non rec module smoke test 1`` useTransparentCompiler =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1Text = """
@@ -5603,6 +5603,14 @@ open SomeUsedModuleContainingFunction
 open SomeUsedModuleContainingExtensionMember
 open SomeUsedModuleContainingActivePattern
 open SomeUsedModuleContainingUnion
+open type System.DayOfWeek // Used, should not appear.
+open type System.DateTimeKind // Unused, should appear.
+
+type FSharpEnum1 = X = 1 | Y = (1 <<< 1) | Z = (1 <<< 2)
+type FSharpEnum2 = H = 1 | I = (1 <<< 1) | J = (1 <<< 2)
+
+open type FSharpEnum1 // Used, should not appear.
+open type FSharpEnum2 // Unused, should appear.
 
 type UseTheThings(i:int) =
     member x.Value = Dictionary<int,int>() // use something from System.Collections.Generic, as a constructor
@@ -5610,6 +5618,10 @@ type UseTheThings(i:int) =
     member x.UseSomeUsedModuleContainingActivePattern(ActivePattern g) = g
     member x.UseSomeUsedModuleContainingExtensionMember() = (3).Q
     member x.UseSomeUsedModuleContainingUnion() = A
+    member x.UseEnumCase = Monday // Use an enum case from System.DayOfWeek.
+    member x.UseEnumCaseQualified = System.DateTimeKind.Utc // Use a qualified enum case.
+    member x.UseFSharpEnumCase = Y // Use an enum case from FSharpEnum1.
+    member x.UseFSharpEnumCaseQualified = FSharpEnum2.J // Use a qualified enum case.
 """
     let fileSource1 = SourceText.ofString fileSource1Text
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1Text)
@@ -5637,7 +5649,9 @@ type UseTheThings(i:int) =
            (((6, 5), (6, 19)), "open FSharp.Control // unused");
            (((7, 5), (7, 16)), "open FSharp.Data // unused");
            (((8, 5), (8, 25)), "open System.Globalization // unused");
-           (((25, 5), (25, 21)), "open SomeUnusedModule")]
+           (((25, 5), (25, 21)), "open SomeUnusedModule");
+           (((31, 10), (31, 29)), "open type System.DateTimeKind // Unused, should appear.")
+           (((37, 10), (37, 21)), "open type FSharpEnum2 // Unused, should appear.")]
     unusedOpensData |> shouldEqual expected
 
 [<Theory>]
@@ -5645,8 +5659,8 @@ type UseTheThings(i:int) =
 [<InlineData false>]
 let ``Unused opens smoke test auto open`` useTransparentCompiler =
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1Text = """
@@ -5799,10 +5813,10 @@ let ``References from #r nuget are included in script project options`` () =
         |> Seq.choose (fun f -> f.FileName |> Option.map Path.GetFileName)
         |> Seq.distinct
     printfn "%s" (assemblyNames |> String.concat "\n")
-    assemblyNames |> should contain "Dapper.dll"
+    Assert.Contains("Dapper.dll", assemblyNames)
 
 module internal EmptyProject =
-    let base2 = tryCreateTemporaryFileName ()
+    let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
 

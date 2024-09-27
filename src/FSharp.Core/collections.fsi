@@ -101,7 +101,7 @@ module HashIdentity =
     val inline NonStructural<'T> :
         IEqualityComparer< ^T > when ^T: equality and ^T: (static member (=): ^T * ^T -> bool)
 
-    /// <summary>Get an implementation of equality semantics semantics using limited structural equality and structural hashing.</summary>
+    /// <summary>Get an implementation of equality semantics using limited structural equality and structural hashing.</summary>
     ///
     /// <param name="limit">The limit on the number of hashing operations used.</param>
     ///

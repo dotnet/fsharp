@@ -59,7 +59,7 @@ namespace UseMe
 
         let ``global`` = 1
 
-        // THis should still resolve
+        // This should still resolve
         let arr2 = global.Microsoft.FSharp.Collections.Array.map (global.Microsoft.FSharp.Core.Operators.(+) 1) [| 1;2;3;4 |]
 
         let test3 : global.Microsoft.FSharp.Core.int  = 3

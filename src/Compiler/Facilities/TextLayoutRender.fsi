@@ -102,6 +102,7 @@ module internal WordL =
     val leftAngle: Layout
     val keywordModule: Layout
     val keywordNamespace: Layout
+    val keywordReturn: Layout
 
 module internal LeftL =
     val leftParen: Layout

@@ -155,8 +155,8 @@ let AdjustDelegateTy (infoReader: InfoReader) actualTy reqdTy m =
 // NOTE: 
 //   no generic method op_Implicit as yet
 //
-// Search for an adhoc conversion based on op_Implicit, optionally returing a new equational type constraint to 
-// eliminate articifical constrained type variables.
+// Search for an adhoc conversion based on op_Implicit, optionally returning a new equational type constraint to 
+// eliminate artificial constrained type variables.
 //
 // Allow adhoc for X --> Y where there is an op_Implicit from X to Y, and there is
 // no feasible subtype relationship between X and Y.
@@ -308,8 +308,8 @@ let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad
             else 
                 reqdTy, TypeDirectedConversionUsed.No, None
     
-    // Adhoc based on op_Implicit, perhaps returing a new equational type constraint to 
-    // eliminate articifical constrained type variables.
+    // Adhoc based on op_Implicit, perhaps returning a new equational type constraint to 
+    // eliminate artificial constrained type variables.
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions then
          match TryFindRelevantImplicitConversion infoReader ad reqdTy actualTy m with
          | Some (minfo, _staticTy, eqn) -> actualTy, TypeDirectedConversionUsed.Yes(warn (TypeDirectedConversion.Implicit minfo), false, false), Some eqn
@@ -523,6 +523,19 @@ type CalledMeth<'T>
        staticTyOpt: TType option)    
     =
     let g = infoReader.g
+    
+    let minfo =
+        match callerObjArgTys,minfo with
+        | objTy :: [], ILMeth _ when             
+            g.checkNullness 
+            && minfo.DisplayName = "ToString"
+            && minfo.IsNullary
+            && (isAnonRecdTy g objTy || isRecdTy g objTy || isUnionTy g objTy)
+            && (  typeEquiv g g.obj_ty_noNulls minfo.ApparentEnclosingAppType
+               || typeEquiv g g.system_Value_ty minfo.ApparentEnclosingAppType)  -> 
+                MethInfoWithModifiedReturnType(minfo, g.string_ty)
+        | _ -> minfo
+
     let methodRetTy = if minfo.IsConstructor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnType(infoReader.amap, m, calledTyArgs)
 
     let fullCurriedCalledArgs = MakeCalledArgs infoReader.amap m minfo calledTyArgs
@@ -1039,7 +1052,7 @@ let BuildFSharpMethodCall g m (ty, vref: ValRef) valUseFlags minst args =
 
 /// Make a call to a method info. Used by the optimizer and code generator to build 
 /// calls to the type-directed solutions to member constraints.
-let MakeMethInfoCall (amap: ImportMap) m (minfo: MethInfo) minst args staticTyOpt =
+let rec MakeMethInfoCall (amap: ImportMap) m (minfo: MethInfo) minst args staticTyOpt =
     let g = amap.g
     let ccallInfo = ComputeConstrainedCallInfo g amap m staticTyOpt args minfo
     let valUseFlags = 
@@ -1058,6 +1071,8 @@ let MakeMethInfoCall (amap: ImportMap) m (minfo: MethInfo) minst args staticTyOp
 
     | FSMeth(g, ty, vref, _) -> 
         BuildFSharpMethodCall g m (ty, vref) valUseFlags minst args |> fst
+
+    | MethInfoWithModifiedReturnType(mi,_) -> MakeMethInfoCall amap m mi minst args staticTyOpt
 
     | DefaultStructCtor(_, ty) -> 
        mkDefault (m, ty)
@@ -1108,7 +1123,7 @@ let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap: Import.ImportMap, m: ra
 //   minst: the instantiation to apply for a generic method 
 //   objArgs: the 'this' argument, if any 
 //   args: the arguments, if any 
-let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objArgs args staticTyOpt =
+let rec BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objArgs args staticTyOpt =
     let direct = IsBaseCall objArgs
 
     TakeObjAddrForMethodCall g amap minfo isMutable m staticTyOpt objArgs (fun ccallInfo objArgs -> 
@@ -1181,6 +1196,11 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
             let vExpr, vExprTy = tcVal vref valUseFlags (minfo.DeclaringTypeInst @ minst) m
             BuildFSharpMethodApp g m vref vExpr vExprTy allArgs
 
+        | MethInfoWithModifiedReturnType(mi,retTy) ->
+            let expr, exprTy = BuildMethodCall tcVal g amap isMutable m isProp mi valUseFlags minst objArgs args staticTyOpt
+            let expr = mkCoerceExpr(expr, retTy, m, exprTy)
+            expr, retTy
+
         // Build a 'call' to a struct default constructor 
         | DefaultStructCtor (g, ty) -> 
             if g.langFeatureNullness && g.checkNullness then
@@ -1237,7 +1257,7 @@ let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo: MethInfo)  =
                 AccessibleFrom(paths, None) 
         | _ -> ad
 
-    if not (IsTypeAndMethInfoAccessible amap m adOriginal ad minfo) then 
+    if not (minfo.IsProtectedAccessibility && minfo.LogicalName.StartsWithOrdinal("set_")) && not(IsTypeAndMethInfoAccessible amap m adOriginal ad minfo) then 
       error (Error (FSComp.SR.tcMethodNotAccessible(minfo.LogicalName), m))
 
     if isAnyTupleTy g minfo.ApparentEnclosingType && not minfo.IsExtensionMember &&
@@ -1683,7 +1703,7 @@ let AdjustCallerArgs tcVal tcFieldInit eCallerMemberName (infoReader: InfoReader
         AdjustOutCallerArgs g calledMeth mMethExpr
 
     let adjustedNormalUnnamedArgs, setterValueArgs =
-        // IsIndexParamArraySetter onlye occurs for
+        // IsIndexParamArraySetter only occurs for
         //     expr.[indexes] <- value
         // where the 'value' arg to the setter is always the last unnamed argument (there is no syntax to use a named argument for it)
         // Indeed in this case there will be no named/optional/out arguments.
@@ -1727,7 +1747,7 @@ let AdjustCallerArgs tcVal tcFieldInit eCallerMemberName (infoReader: InfoReader
 // This file is not a great place for this functionality to sit, it's here because of BuildMethodCall
 module ProvidedMethodCalls =
 
-    let private convertConstExpr g amap m (constant : Tainted<obj * ProvidedType>) =
+    let private convertConstExpr g amap m (constant : Tainted<objnull * ProvidedType>) =
         let obj, objTy = constant.PApply2(id, m)
         let ty = Import.ImportProvidedType amap m objTy
         let normTy = normalizeEnumTy g ty
@@ -2227,12 +2247,12 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
         match traitInfo.Solution with 
         | None -> None // the trait has been generalized
         | Some _-> 
-        // For these operators, the witness is just a call to the coresponding FSharp.Core operator
+        // For these operators, the witness is just a call to the corresponding FSharp.Core operator
         match g.TryMakeOperatorAsBuiltInWitnessInfo isStringTy isArrayTy traitInfo argExprs with
         | Some (info, tyargs, actualArgExprs) -> 
             tryMkCallCoreFunctionAsBuiltInWitness g info tyargs actualArgExprs m
         | None -> 
-            // For all other built-in operators, the witness is a call to the coresponding BuiltInWitnesses operator
+            // For all other built-in operators, the witness is a call to the corresponding BuiltInWitnesses operator
             // These are called as F# methods not F# functions
             tryMkCallBuiltInWitness g traitInfo argExprs m
         

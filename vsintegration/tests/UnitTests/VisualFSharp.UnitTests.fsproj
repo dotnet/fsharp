@@ -11,11 +11,12 @@
     <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
-    <UnitTestType>nunit</UnitTestType>
+    <UnitTestType>xunit</UnitTestType>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="$(FSharpSourcesRoot)\Compiler\Utilities\NullnessShims.fs" />
     <Compile Include="AssemblyResolver.fs" />
     <Compile Include="$(FSharpSourcesRoot)\Compiler\Utilities\InternalCollections.fsi">
       <Link>Internal.Utilities.Collections.fsi</Link>
@@ -67,7 +68,7 @@
       <Pattern1>{{FSCoreVersion}}</Pattern1>
       <Replacement1>$(FSCoreVersion)</Replacement1>
     </NoneSubstituteText>
-    <None Include="app.runsettings" />
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsc\fscProject\fsc.fsproj" />

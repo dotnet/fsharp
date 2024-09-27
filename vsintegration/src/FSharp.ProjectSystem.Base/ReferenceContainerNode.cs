@@ -105,7 +105,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Returns an instance of the automation object for ReferenceContainerNode
         /// </summary>
-        /// <returns>An intance of the Automation.OAReferenceFolderItem type if succeeeded</returns>
+        /// <returns>An instance of the Automation.OAReferenceFolderItem type if succeeded</returns>
         public override object GetAutomationObject()
         {
             if (this.ProjectMgr == null || this.ProjectMgr.IsClosed)
@@ -117,7 +117,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Disable inline editing of Caption of a ReferendeContainerNode
+        /// Disable inline editing of Caption of a ReferenceContainerNode
         /// </summary>
         /// <returns>null</returns>
         public override string GetEditLabel()
@@ -230,7 +230,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Defines whether this node is valid node for painting the refererences icon.
+        /// Defines whether this node is valid node for painting the references icon.
         /// </summary>
         /// <returns></returns>
         public override bool CanShowDefaultIcon()
@@ -322,7 +322,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }                
             }
 
-            // collect groupled framework references
+            // collect grouped framework references
             if (projectInstanceToSearchExpandedReferences != null)
             {
                 // fetch all 'ReferencePath' items that were resolved from implicitly expanded references (metadata#ResolvedFrom = ImplicitlyExpandTargetFramework)
@@ -358,7 +358,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     var first = grouping.First();
                     var groupedFiles = grouping.Select(x => x.file).ToArray();
 
-                    var versonText = string.Format(
+                    var versionText = string.Format(
                         "{0}.{1}.{2}.{3}",
                         version.Major,
                         version.Minor,
@@ -366,7 +366,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         version.Revision != -1 ? version.Revision : 0
                         );
 
-                    var node = new GroupingReferenceNode(ProjectMgr, first.referenceGroupingDisplayName, first.referenceGrouping, Path.GetDirectoryName(first.file), versonText, groupedFiles);
+                    var node = new GroupingReferenceNode(ProjectMgr, first.referenceGroupingDisplayName, first.referenceGrouping, Path.GetDirectoryName(first.file), versionText, groupedFiles);
                     AddChild(node);
                 }
             }
@@ -435,7 +435,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     node.AddReference();
                     if (null == node.Parent)
                     {
-                        // The reference was not added, so we can not return this item because it
+                        // The reference was not added, so we cannot return this item because it
                         // is not inside the project.
                         return null;
                     }
@@ -536,7 +536,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Creates an assemby or com reference node given a selector data.
+        /// Creates an assembly or com reference node given a selector data.
         /// </summary>
         internal virtual ReferenceNode CreateFileComponent(VSCOMPONENTSELECTORDATA selectorData, AddReferenceDialogTab tab)
         {
@@ -588,7 +588,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Creates an assembly refernce node from a project element.
+        /// Creates an assembly reference node from a project element.
         /// </summary>
         internal virtual AssemblyReferenceNode CreateAssemblyReferenceNode(ProjectElement element, BuildResult buildResult)
         {

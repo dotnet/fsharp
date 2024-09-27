@@ -10,23 +10,17 @@
     <FsYaccPath>$(ArtifactsDir)/bin/fsyacc/$(Configuration)/$(FSharpNetCoreProductDefaultTargetFramework)/$(NETCoreSdkPortableRuntimeIdentifier)/fsyacc.dll</FsYaccPath>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(UnitTestType)' == 'nunit'">
-    <PackageReference Include="NUnit" Version="$(NUnitVersion)" />
-    <PackageReference Include="NUnit3TestAdapter" Version="$(NUnit3TestAdapterVersion)" />
-    <PackageReference Include="NunitXml.TestLogger" Version="$(NunitXmlTestLoggerVersion)" />
-  </ItemGroup>
-
   <ItemGroup Condition="'$(UnitTestType)' == 'xunit'">
     <PackageReference Include="xunit" Version="$(XUnitVersion)" />
     <PackageReference Include="xunit.runner.visualstudio" Version="$(XUnitRunnerVersion)" />
-    <PackageReference Include="NunitXml.TestLogger" Version="$(NunitXmlTestLoggerVersion)" />
+    <PackageReference Include="XunitXml.TestLogger" Version="$(XunitXmlTestLoggerVersion)" />
   </ItemGroup>
 
   <!--
     When .NET gets built from source, make the SDK aware there are bootstrap packages
     for Microsoft.NETCore.App.Runtime.<rid> and Microsoft.NETCore.App.Crossgen2.<rid>.
   -->
-  <ItemGroup Condition="'$(DotNetBuildFromSource)' == 'true'">
+  <ItemGroup Condition="'$(DotNetBuildSourceOnly)' == 'true'">
     <KnownRuntimePack Update="Microsoft.NETCore.App">
       <RuntimePackRuntimeIdentifiers
         Condition="'%(TargetFramework)' == '$(NetCurrent)'">%(RuntimePackRuntimeIdentifiers);$(NETCoreSdkRuntimeIdentifier)</RuntimePackRuntimeIdentifiers>
@@ -37,4 +31,18 @@
     </KnownCrossgen2Pack>
   </ItemGroup>
 
+  <!-- We want to restore ALL the MIBCs when we build anything, since in the future it will contain different profiles, not only the FSC one we got from building Giraffe -->
+  <Import Project="$(MSBuildThisFileDirectory)\eng\restore\optimizationData.targets"/>
+  <ItemGroup>
+    <PackageReference Include="@(MIBCPackage)" />
+  </ItemGroup>
+
+  <Target Name="CopyMIBCWrapper" AfterTargets="Restore" BeforeTargets="Build;Pack">
+    <MSBuild
+      Projects="$(MSBuildThisFileDirectory)eng\restore\optimizationData.targets"
+      Properties="ArtifactsDir=$(MSBuildThisFileDirectory)artifacts\;NuGetPackageRoot=$(NuGetPackageRoot);MibcFiles=$(MibcFiles);optimizationwindows_ntx86MIBCRuntimeVersion=$(optimizationwindows_ntx86MIBCRuntimeVersion);optimizationwindows_ntx64MIBCRuntimeVersion=$(optimizationwindows_ntx64MIBCRuntimeVersion);optimizationwindows_ntarm64MIBCRuntimeVersion=$(optimizationwindows_ntarm64MIBCRuntimeVersion);optimizationlinuxx64MIBCRuntimeVersion=$(optimizationlinuxx64MIBCRuntimeVersion);optimizationlinuxarm64MIBCRuntimeVersion=$(optimizationlinuxarm64MIBCRuntimeVersion)"
+      Targets="CopyMIBC"
+      RemoveProperties="TargetFramework"
+      StopOnFirstFailure="True" />
+  </Target>
 </Project>

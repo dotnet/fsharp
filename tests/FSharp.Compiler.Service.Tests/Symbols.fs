@@ -1,6 +1,5 @@
 module FSharp.Compiler.Service.Tests.Symbols
 
-open System
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
@@ -69,7 +68,7 @@ extern int private c()
         |> List.zip decls
         |> List.iter (fun (actual, expected) ->
             match actual with
-            | SynModuleDecl.Let (_, [SynBinding (accessibility = access)], _) -> Option.map string access |> should equal expected
+            | SynModuleDecl.Let (_, [SynBinding (accessibility = access)], _) -> Option.map string access |> shouldEqual expected
             | decl -> failwithf "unexpected decl: %O" decl)
 
         [ "a", (true, false, false, false)
@@ -80,7 +79,7 @@ extern int private c()
             | :? FSharpMemberOrFunctionOrValue as mfv ->
                 let access = mfv.Accessibility
                 (access.IsPublic, access.IsProtected, access.IsInternal, access.IsPrivate)
-                |> should equal expected
+                |> shouldEqual expected
             | _ -> failwithf "Couldn't get mfv: %s" name)
 
     [<Fact>]
@@ -290,7 +289,7 @@ type E = Ns1.Ns2.T
             match symbolUse.Symbol with
             | :? FSharpEntity as entity ->
                 entity.AbbreviatedType.Format(symbolUse.DisplayContext)
-                |> should equal expectedPrintedType
+                |> shouldEqual expectedPrintedType
 
             | _ -> failwithf "Couldn't get entity: %s" symbolName)
 
@@ -389,7 +388,7 @@ let tester: int folks = Cons(1, Nil)
             match symbolUse.Symbol with
             | :? FSharpMemberOrFunctionOrValue as v ->
                     v.FullType.Format (symbolUse.DisplayContext.WithPrefixGenericParameters())
-                    |> should equal prefixForm
+                    |> shouldEqual prefixForm
             | _ -> failwithf "Couldn't get member: %s" entity
 
     [<Fact>]
@@ -407,7 +406,7 @@ let tester: Folks<int> = Cons(1, Nil)
             match symbolUse.Symbol with
             | :? FSharpMemberOrFunctionOrValue as v ->
                     v.FullType.Format (symbolUse.DisplayContext.WithSuffixGenericParameters())
-                    |> should equal suffixForm
+                    |> shouldEqual suffixForm
             | _ -> failwithf "Couldn't get member: %s" entity
 
     [<Fact>]
@@ -432,7 +431,7 @@ let tester2: int Group = []
                 match symbolUse.Symbol with
                 | :? FSharpMemberOrFunctionOrValue as v ->
                         v.FullType.Format symbolUse.DisplayContext
-                        |> should equal expectedTypeFormat
+                        |> shouldEqual expectedTypeFormat
                 | _ -> failwithf "Couldn't get member: %s" entityName
             )
 
@@ -498,10 +497,10 @@ let f2 b1 b2 b3 b4 b5 =
             | :? FSharpMemberOrFunctionOrValue as mfv ->
                 match symbolTypes.TryGetValue(mfv.DisplayName) with
                 | true, Some expectedType ->
-                    mfv.FullType.TypeDefinition.DisplayName |> should equal expectedType
+                    mfv.FullType.TypeDefinition.DisplayName |> shouldEqual expectedType
                 | true, None ->
-                    mfv.FullType.IsGenericParameter |> should equal true
-                    mfv.FullType.AllInterfaces.Count |> should equal 0
+                    mfv.FullType.IsGenericParameter |> shouldEqual true
+                    mfv.FullType.AllInterfaces.Count |> shouldEqual 0
                 | _ -> ()
             | _ -> ()
 
@@ -1090,18 +1089,31 @@ let builder = Builder ()
 let x = builder { return 3 }
 let y = builder
 let z = Builder () { return 3 }
+
+type A () =
+    let builder = Builder ()
+    let _ = builder { return 3 }
+
+    static member Builder = Builder ()
+
+type System.Object with
+    static member Builder = Builder ()
+
+let c = A.Builder { return 3 }
+let d = System.Object.Builder { return 3 }
 """
+        shouldEqual checkResults.Diagnostics [||]
 
         shouldEqual
             [
                 // type Builder () =
                 (2, 5), false
 
-                // … = Builder ()
-                (6, 14), false
-
                 // let builder = …
                 (6, 4), false
+
+                // … = Builder ()
+                (6, 14), false
 
                 // let x = builder { return 3 }
                 (8, 8), false   // Item.Value _
@@ -1112,9 +1124,37 @@ let z = Builder () { return 3 }
 
                 // let z = Builder () { return 3 }
                 (10, 8), false
+
+                // let builder = …
+                (13, 8), false
+
+                // … = Builder ()
+                (13, 18), false
+
+                // let x = builder { return 3 }
+                (14, 12), false   // Item.Value _
+                (14, 12), true    // Item.CustomBuilder _
+
+                // static member Builder = …
+                (16, 18), false
+
+                // … = Builder ()
+                (16, 28), false
+
+                // static member Builder = …
+                (19, 18), false
+
+                // … = Builder ()
+                (19, 28), false
+
+                // A.Builder { return 3 }
+                (21, 8), false
+
+                // System.Object.Builder { return 3 }
+                (22, 8), false
             ]
             [
-                for symbolUse in checkResults.GetAllUsesOfAllSymbolsInFile() do
+                for symbolUse in checkResults.GetAllUsesOfAllSymbolsInFile() |> Seq.sortBy (fun x -> x.Range.StartLine, x.Range.StartColumn) do
                     match symbolUse.Symbol.DisplayName with
                     | "Builder" | "builder" -> (symbolUse.Range.StartLine, symbolUse.Range.StartColumn), symbolUse.IsFromComputationExpression
                     | _ -> ()

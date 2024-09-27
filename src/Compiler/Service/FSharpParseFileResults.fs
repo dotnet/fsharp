@@ -14,7 +14,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 
 module SourceFileImpl =
-    let IsSignatureFile file =
+    let IsSignatureFile (file: string) =
         let ext = Path.GetExtension file
         0 = String.Compare(".fsi", ext, StringComparison.OrdinalIgnoreCase)
 
@@ -578,7 +578,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                             yield! walkExpr false e
 
                         | SynExpr.YieldOrReturnFrom(_, e, _)
-                        | SynExpr.DoBang(e, _) ->
+                        | SynExpr.DoBang(expr = e) ->
                             yield! checkRange e.Range
                             yield! walkExpr false e
 

@@ -18,7 +18,7 @@ namespace CsharpNamespace
 
             var myStructTuple = (nullString,nullString,1,2,3,4);
             var thisShouldBeAWarningForSecondTypar = MyTestModule.genericValueTypeTest(myStructTuple);
-            var thisShouldNotSayAnything = MyTestModule.genericValueTypeTest(("I am not nulll",null,1,2,3,4));
+            var thisShouldNotSayAnything = MyTestModule.genericValueTypeTest(("I am not null",null,1,2,3,4));
             var thisShouldWarnFor2ndItem = MyTestModule.nonNullableInputOutputFunc(thisShouldNotSayAnything.Item2);
             var thisIsOkBecauseItem1IsNotNullable = MyTestModule.nonNullableInputOutputFunc(thisShouldNotSayAnything.Item1);
 
