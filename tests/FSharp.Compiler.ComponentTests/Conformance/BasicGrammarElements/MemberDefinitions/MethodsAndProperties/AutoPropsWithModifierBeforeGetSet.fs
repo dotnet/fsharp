@@ -132,7 +132,7 @@ type A =
     |> verifyCompile
     |> shouldFail
     |> withDiagnostics [
-        (Error 240, Line 1, Col 1, Line 9, Col 42, "The signature file 'Program' does not have a corresponding implementation file. If an implementation file exists then check the 'module' and 'namespace' declarations in the signature and implementation files match.")
+        (Error 0561, Line 9, Col 5, Line 9, Col 42, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
     ]
 
 [<Fact>]
