@@ -227,7 +227,6 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
     //    targetFramework optimize = "net472" OR net5.0 etc ...
     //    optimize = true or false
     let executeSingleTestBuildAndRun outputType compilerType targetFramework optimize buildOnly =
-        let mutable result = false
         let directory = cfg.Directory
 
         let pc = {
@@ -257,37 +256,31 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
         let propsFileName = Path.Combine(directory, "Directory.Build.props")
         let overridesFileName = Path.Combine(directory, "Directory.Overrides.targets")
         let projectFileName = Path.Combine(directory, Guid.NewGuid().ToString() + ".tmp" + ".fsproj")
-        try
-            emitFile targetsFileName targetsBody
-            emitFile overridesFileName overridesBody
-            let buildOutputFile = Path.Combine(directory, "buildoutput.txt")
-            if outputType = OutputType.Exe then
-                let executeFsc testCompilerVersion targetFramework =
-                    let propsBody = generateProps testCompilerVersion cfg.BUILD_CONFIG
-                    emitFile propsFileName propsBody
-                    let projectBody = generateProjectArtifacts pc outputType targetFramework cfg.BUILD_CONFIG languageVersion
-                    emitFile projectFileName projectBody
-                    let cfg = { cfg with Directory = directory }
-                    let result = execBothToOutNoCheck cfg directory buildOutputFile cfg.DotNetExe  (sprintf "run -f %s" targetFramework)
-                    if not (buildOnly) then
-                        result |> checkResultPassed
-                executeFsc compilerType targetFramework
-                if buildOnly then verifyResults (findFirstSourceFile pc) buildOutputFile
-            else
-                let executeFsi testCompilerVersion targetFramework =
-                    let propsBody = generateProps testCompilerVersion cfg.BUILD_CONFIG
-                    emitFile propsFileName propsBody
-                    let projectBody = generateProjectArtifacts pc outputType  targetFramework cfg.BUILD_CONFIG languageVersion
-                    emitFile projectFileName projectBody
-                    let cfg = { cfg with Directory = directory }
-                    execBothToOutCheckPassed cfg directory buildOutputFile cfg.DotNetExe $"build /t:RunFSharpScriptAndPrintOutput"
-                executeFsi compilerType targetFramework
-            result <- true
-        finally
-            if result then
-                printfn "Configuration: %s" cfg.Directory
-                printfn "Directory: %s" directory
-                printfn "Filename: %s" projectFileName
+        emitFile targetsFileName targetsBody
+        emitFile overridesFileName overridesBody
+        let buildOutputFile = Path.Combine(directory, "buildoutput.txt")
+        if outputType = OutputType.Exe then
+            let executeFsc testCompilerVersion targetFramework =
+                let propsBody = generateProps testCompilerVersion cfg.BUILD_CONFIG
+                emitFile propsFileName propsBody
+                let projectBody = generateProjectArtifacts pc outputType targetFramework cfg.BUILD_CONFIG languageVersion
+                emitFile projectFileName projectBody
+                let cfg = { cfg with Directory = directory }
+                let result = execBothToOutNoCheck cfg directory buildOutputFile cfg.DotNetExe  (sprintf "run -f %s" targetFramework)
+                if not (buildOnly) then
+                    result |> checkResultPassed
+            executeFsc compilerType targetFramework
+            if buildOnly then verifyResults (findFirstSourceFile pc) buildOutputFile
+        else
+            let executeFsi testCompilerVersion targetFramework =
+                let propsBody = generateProps testCompilerVersion cfg.BUILD_CONFIG
+                emitFile propsFileName propsBody
+                let projectBody = generateProjectArtifacts pc outputType  targetFramework cfg.BUILD_CONFIG languageVersion
+                emitFile projectFileName projectBody
+                let cfg = { cfg with Directory = directory }
+                execBothToOutCheckPassed cfg directory buildOutputFile cfg.DotNetExe $"build /t:RunFSharpScriptAndPrintOutput"
+            executeFsi compilerType targetFramework
+
 
     match p with
 #if NETCOREAPP
