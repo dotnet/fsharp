@@ -33,6 +33,7 @@
               WarningLevel="$(WarningLevel)"
               WarningsAsErrors="$(WarningsAsErrors)">
           <Output TaskParameter="CommandLineArgs" ItemName="FsiCommandLineArgs" />
+          <Output TaskParameter="TextOutput" ItemName="FsiTextOutput" />
         </Fsi>
 
       <ItemGroup>
