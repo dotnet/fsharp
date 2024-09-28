@@ -9,13 +9,13 @@ neg59.fs(15,13,15,22): typecheck error FS3096: 'groupJoin' must be followed by a
 
 neg59.fs(15,44,15,45): typecheck error FS0039: The value or constructor 'j' is not defined.
 
-neg59.fs(25,15,25,18): typecheck error FS3147: This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.
+neg59.fs(25,23,25,40): typecheck error FS3147: This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.
 
-neg59.fs(31,15,31,18): typecheck error FS3147: This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.
+neg59.fs(31,23,31,24): typecheck error FS3147: This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.
 
-neg59.fs(36,15,36,18): typecheck error FS3147: This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.
+neg59.fs(36,23,36,40): typecheck error FS3147: This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.
 
-neg59.fs(42,15,42,18): typecheck error FS3147: This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.
+neg59.fs(42,23,42,24): typecheck error FS3147: This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.
 
 neg59.fs(49,15,49,27): typecheck error FS3090: An if/then/else expression may not be used within queries. Consider using either an if/then expression, or use a sequence expression instead.
 
@@ -41,6 +41,6 @@ neg59.fs(113,15,113,25): typecheck error FS3140: 'while' expressions may not be 
 
 neg59.fs(118,15,118,25): typecheck error FS3140: 'while' expressions may not be used in queries
 
-neg59.fs(124,17,124,23): typecheck error FS3144: 'return' and 'return!' may not be used in queries
+neg59.fs(124,17,124,25): typecheck error FS3144: 'return' and 'return!' may not be used in queries
 
-neg59.fs(128,17,128,24): typecheck error FS3144: 'return' and 'return!' may not be used in queries
+neg59.fs(128,17,128,26): typecheck error FS3144: 'return' and 'return!' may not be used in queries

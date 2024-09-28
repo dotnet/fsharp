@@ -57,7 +57,7 @@ neg61.fs(79,13,79,16): typecheck error FS3146: 'try/with' expressions may not be
 
 neg61.fs(86,13,86,16): typecheck error FS3141: 'try/finally' expressions may not be used in queries
 
-neg61.fs(92,13,92,15): typecheck error FS3142: 'use' expressions may not be used in queries
+neg61.fs(92,13,92,16): typecheck error FS3142: 'use' expressions may not be used in queries
 
 neg61.fs(97,13,97,17): typecheck error FS3143: 'let!', 'use!' and 'do!' expressions may not be used in queries
 
@@ -71,13 +71,13 @@ neg61.fs(114,13,114,21): typecheck error FS3145: This is not a known query opera
 
 neg61.fs(114,22,114,23): typecheck error FS0001: The type 'int' does not support the operator 'truncate'
 
-neg61.fs(133,9,133,12): typecheck error FS3147: This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.
+neg61.fs(133,17,133,20): typecheck error FS3147: This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.
 
-neg61.fs(140,9,140,12): typecheck error FS3147: This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.
+neg61.fs(140,17,140,20): typecheck error FS3147: This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.
 
-neg61.fs(148,9,148,12): typecheck error FS3147: This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.
+neg61.fs(148,20,148,23): typecheck error FS3147: This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.
 
-neg61.fs(156,9,156,12): typecheck error FS3147: This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.
+neg61.fs(156,21,156,22): typecheck error FS3147: This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.
 
 neg61.fs(171,13,171,18): typecheck error FS3099: 'sumBy' is used with an incorrect number of arguments. This is a custom operation in this query or computation expression. Expected 1 argument(s), but given 0.
 
