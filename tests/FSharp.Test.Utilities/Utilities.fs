@@ -40,83 +40,21 @@ type FactForDESKTOPAttribute() =
 
 // This file mimics how Roslyn handles their compilation references for compilation testing
 module Utilities =
-
-    type CapturedTextReader() =
-        inherit TextReader()
-        let queue = Queue<char>()
-        member _.ProvideInput(text: string) =
-            for c in text.ToCharArray() do
-                queue.Enqueue(c)
-        override _.Peek() =
-            if queue.Count > 0 then queue.Peek() |> int else -1
-        override _.Read() =
-            if queue.Count > 0 then queue.Dequeue() |> int else -1
-
-    type RedirectConsoleInput() =
-        let oldStdIn = Console.In
-        let newStdIn = new CapturedTextReader()
-        do Console.SetIn(newStdIn)
-        member _.ProvideInput(text: string) =
-            newStdIn.ProvideInput(text)
-        interface IDisposable with
-            member _.Dispose() =
-                Console.SetIn(oldStdIn)
-                newStdIn.Dispose()
-
-    type EventedTextWriter() =
-        inherit TextWriter()
-        let sb = StringBuilder()
-        let lineWritten = Event<string>()
-        member _.LineWritten = lineWritten.Publish
-        override _.Encoding = Encoding.UTF8
-        override _.Write(c: char) =
-            if c = '\n' then
-                let line =
-                    let v = sb.ToString()
-                    if v.EndsWith("\r") then v.Substring(0, v.Length - 1)
-                    else v
-                sb.Clear() |> ignore
-                lineWritten.Trigger(line)
-            else sb.Append(c) |> ignore
-
-    type RedirectConsoleOutput() =
-        let outputProduced = Event<string>()
-        let errorProduced = Event<string>()
+    type RedirectConsole() =
         let oldStdOut = Console.Out
         let oldStdErr = Console.Error
-        let newStdOut = new EventedTextWriter()
-        let newStdErr = new EventedTextWriter()
-
-        do newStdOut.LineWritten.Add outputProduced.Trigger
-        do newStdErr.LineWritten.Add errorProduced.Trigger
+        let newStdOut = new StringWriter()
+        let newStdErr = new StringWriter()
         do Console.SetOut(newStdOut)
         do Console.SetError(newStdErr)
+        member _.Output () = string newStdOut
 
-        member _.OutputProduced = outputProduced.Publish
-
-        member _.ErrorProduced = errorProduced.Publish
+        member _.ErrorOutput () =string newStdErr
 
         interface IDisposable with
             member _.Dispose() =
                 Console.SetOut(oldStdOut)
                 Console.SetError(oldStdErr)
-                newStdOut.Dispose()
-                newStdErr.Dispose()
-
-    type RedirectConsole() =
-        let redirector = new RedirectConsoleOutput()
-        let outputLines = StringBuilder()
-        let errorLines = StringBuilder()
-
-        do redirector.OutputProduced.Add (fun line -> lock outputLines <| fun () -> outputLines.AppendLine line |>ignore)
-        do redirector.ErrorProduced.Add(fun line -> lock errorLines <| fun () -> errorLines.AppendLine line |>ignore)
-
-        member _.Output () = lock outputLines outputLines.ToString
-
-        member _.ErrorOutput () = lock errorLines errorLines.ToString
-
-        interface IDisposable with
-            member _.Dispose() = (redirector :> IDisposable).Dispose()
 
     type Async with
         static member RunImmediate (computation: Async<'T>, ?cancellationToken ) =
