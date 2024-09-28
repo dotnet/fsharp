@@ -442,18 +442,7 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
 
 let TcSequenceExpressionEntry (cenv: TcFileState) env (overallTy: OverallTy) tpenv (hasBuilder, comp) m =
     match RewriteRangeExpr comp with
-    | Some replacementExpr ->
-        let deprecatedPlacesWhereSeqCanBeOmitted =
-            cenv.g.langVersion.SupportsFeature LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted
-
-        if
-            deprecatedPlacesWhereSeqCanBeOmitted
-            && not hasBuilder
-            && not cenv.g.compilingFSharpCore
-        then
-            warning (Error(FSComp.SR.chkDeprecatePlacesWhereSeqCanBeOmitted (), m))
-
-        TcExpr cenv overallTy env tpenv replacementExpr
+    | Some replacementExpr -> TcExpr cenv overallTy env tpenv replacementExpr
     | None ->
         let implicitYieldEnabled =
             cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
