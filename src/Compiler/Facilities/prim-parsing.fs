@@ -151,7 +151,10 @@ module internal Implementation =
     //-------------------------------------------------------------------------
     // Read the tables written by FSYACC.
 
-    type AssocTable(elemTab: uint16[], offsetTab: uint16[], cache: int[], cacheSize: int) =
+    type AssocTable(elemTab: uint16[], offsetTab: uint16[], cache: int[]) =
+    
+        do Array.fill cache 0 cache.Length -1
+        let cacheSize = cache.Length / 2
 
         member t.ReadAssoc(minElemNum, maxElemNum, defaultValueOfAssoc, keyToFind) =
             // do a binary chop on the table
@@ -273,13 +276,8 @@ module internal Implementation =
         let lhsPos = (Array.zeroCreate 2: Position[])
         let reductions = tables.reductions
         let cacheSize = 7919 // the 1000'th prime
-        // Use a simpler hash table with faster lookup, but only one
-        // hash bucket per key.
         let actionTableCache = ArrayPool<int>.Shared.Rent(cacheSize * 2)
         let gotoTableCache = ArrayPool<int>.Shared.Rent(cacheSize * 2)
-        // Clear the arrays since ArrayPool does not
-        Array.Clear(actionTableCache, 0, actionTableCache.Length)
-        Array.Clear(gotoTableCache, 0, gotoTableCache.Length)
 
         use _cacheDisposal =
             { new IDisposable with
@@ -289,10 +287,10 @@ module internal Implementation =
             }
 
         let actionTable =
-            AssocTable(tables.actionTableElements, tables.actionTableRowOffsets, actionTableCache, cacheSize)
+            AssocTable(tables.actionTableElements, tables.actionTableRowOffsets, actionTableCache)
 
         let gotoTable =
-            AssocTable(tables.gotos, tables.sparseGotoTableRowOffsets, gotoTableCache, cacheSize)
+            AssocTable(tables.gotos, tables.sparseGotoTableRowOffsets, gotoTableCache)
 
         let stateToProdIdxsTable =
             IdxToIdxListTable(tables.stateToProdIdxsTableElements, tables.stateToProdIdxsTableRowOffsets)
