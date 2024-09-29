@@ -1047,36 +1047,28 @@ rule token (args: LexArgs) (skip: bool) = parse
      | (IfDefElse,_) :: _rest -> LEX_FAILURE (FSComp.SR.lexHashEndifRequiredForElse())
      | (IfDefIf,_) :: rest ->
        let m = lexbuf.LexemeRange
+       shouldStartLine args lexbuf m (FSComp.SR.lexHashElseMustBeFirst()) ()
        args.ifdefStack <- (IfDefElse,m) :: rest
        LexbufIfdefStore.SaveElseHash(lexbuf, lexed, m)
        let tok = HASH_ELSE(m, lexed, LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Skip(0, m)))
-       let tok = shouldStartLine args lexbuf m (FSComp.SR.lexHashElseMustBeFirst()) tok
-       if not skip then tok else endline (LexerEndlineContinuation.Skip(0, m)) args skip lexbuf }
+       if skip then endline (LexerEndlineContinuation.Skip(0, m)) args skip lexbuf else tok }
 
  | anywhite* "#endif" anywhite* ("//" [^'\n''\r']*)?
    { let lexed = (lexeme lexbuf)
      let m = lexbuf.LexemeRange
+     shouldStartLine args lexbuf m (FSComp.SR.lexHashEndifMustBeFirst()) ()
      match args.ifdefStack with
      | []->  LEX_FAILURE (FSComp.SR.lexHashEndingNoMatchingIf())
      | _ :: rest ->
         args.ifdefStack <- rest
         LexbufIfdefStore.SaveEndIfHash(lexbuf, lexed, m)
         let tok = HASH_ENDIF(m,lexed,LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Token))
-        let tok = shouldStartLine args lexbuf m (FSComp.SR.lexHashEndifMustBeFirst()) tok
         if not skip then tok else endline LexerEndlineContinuation.Token args skip lexbuf }
 
  | "#if"
    { let tok = WHITESPACE (LexCont.Token (args.ifdefStack, args.stringNest))
      let tok = fail args lexbuf (FSComp.SR.lexHashIfMustHaveIdent()) tok
-     if not skip then tok else token args skip lexbuf }
-
- | anywhite* "#if" ident_char+
- | anywhite* "#else" ident_char+
- | anywhite* "#endif" ident_char+
- | anywhite* "#light" ident_char+
-   { let n = (lexeme lexbuf).IndexOf('#')
-     lexbuf.StartPos <- lexbuf.StartPos.ShiftColumnBy(n)
-     HASH_IDENT(lexemeTrimLeft lexbuf (n+1)) }
+     if skip then token args skip lexbuf else tok }
 
  | surrogateChar surrogateChar
 
@@ -1094,15 +1086,15 @@ and ifdefSkip (n: int) (m: range) (args: LexArgs) (skip: bool) = parse
 
      // If #if is the first thing on the line then increase depth, otherwise skip, because it is invalid (e.g. "(**) #if ...")
      if (m.StartColumn <> 0) then
-       if not skip then INACTIVECODE (LexCont.IfDefSkip(args.ifdefStack, args.stringNest, n, m))
-       else ifdefSkip n m args skip lexbuf
+       if skip then ifdefSkip n m args skip lexbuf
+       else INACTIVECODE (LexCont.IfDefSkip(args.ifdefStack, args.stringNest, n, m))
      else
        let lexed = lexeme lexbuf
        let lookup id = List.contains id args.conditionalDefines
        let _, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion lexbuf.StrictIndentation args lookup lexed
        LexbufIfdefStore.SaveIfHash(lexbuf, lexed, expr, m)
        let tok = INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Skip(n+1, m)))
-       if not skip then tok else endline (LexerEndlineContinuation.Skip(n+1, m)) args skip lexbuf }
+       if skip then endline (LexerEndlineContinuation.Skip(n+1, m)) args skip lexbuf else tok }
 
   | anywhite* "#else" anywhite* ("//" [^'\n''\r']*)?
     { let lexed = (lexeme lexbuf)
