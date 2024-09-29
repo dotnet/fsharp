@@ -1030,25 +1030,15 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | anywhite* "#if" anywhite+ anystring
    { let m = lexbuf.LexemeRange
+     shouldStartLine args lexbuf m (FSComp.SR.lexHashIfMustBeFirst()) ()
      let lookup id = List.contains id args.conditionalDefines
      let lexed = lexeme lexbuf
      let isTrue, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion lexbuf.StrictIndentation args lookup lexed
      args.ifdefStack <- (IfDefIf,m) :: args.ifdefStack
      LexbufIfdefStore.SaveIfHash(lexbuf, lexed, expr, m)
-
-     // Get the token; make sure it starts at zero position & return
-     let cont, f =
-         if isTrue then
-             let cont = LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Token)
-             let f = endline LexerEndlineContinuation.Token args skip
-             cont, f
-         else
-             let cont = LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Skip(0, m))
-             let f = endline (LexerEndlineContinuation.Skip(0, m)) args skip
-             cont, f
-
-     let tok = shouldStartLine args lexbuf m (FSComp.SR.lexHashIfMustBeFirst()) (HASH_IF(m,lexed,cont))
-     if not skip then tok else f lexbuf }
+     let contCase = if isTrue then LexerEndlineContinuation.Token else LexerEndlineContinuation.Skip(0, m)
+     let tok = HASH_IF(m, lexed, LexCont.EndLine(args.ifdefStack, args.stringNest, contCase))
+     if skip then endline contCase args skip lexbuf else tok }
 
  | anywhite* "#else" anywhite* ("//" [^'\n''\r']*)?
    { let lexed = (lexeme lexbuf)
