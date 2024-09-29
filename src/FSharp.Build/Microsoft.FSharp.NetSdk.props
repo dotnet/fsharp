@@ -130,6 +130,18 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <PackageReference>
       <GeneratePathProperty>true</GeneratePathProperty>
     </PackageReference>
+
+    <CompileBefore>
+      <CompileOrder>CompileBefore</CompileOrder>
+    </CompileBefore>
+
+    <CompileAfter>
+      <CompileOrder>CompileAfter</CompileOrder>
+    </CompileAfter>
+
+    <CompileLast>
+      <CompileOrder>CompileLast</CompileOrder>
+    </CompileLast>
   </ItemDefinitionGroup>
 
 </Project>
