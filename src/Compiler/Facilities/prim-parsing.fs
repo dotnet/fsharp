@@ -152,7 +152,7 @@ module internal Implementation =
     // Read the tables written by FSYACC.
 
     type AssocTable(elemTab: uint16[], offsetTab: uint16[], cache: int[]) =
-    
+
         do Array.fill cache 0 cache.Length -1
         let cacheSize = cache.Length / 2
 
