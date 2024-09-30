@@ -125,7 +125,7 @@ let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: ImportMap) m (ty1: 
     let ty2 = stripTyEqns g ty2
 
     // Check if language feature supported
-    let key = TTypeCacheKey (ty1, ty2, canCoerce, g)
+    let key = TTypeCacheKey.FromStrippedTypes (ty1, ty2, canCoerce, g)
 
     match TryGetCachedTypeSubsumption g amap key with
     | ValueSome subsumes ->
@@ -154,7 +154,7 @@ let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: ImportMap) m (ty1: 
                     else
                         let interfaces = GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2
                         // See if any interface in type hierarchy of ty2 is a supertype of ty1
-                        Seq.exists (TypeFeasiblySubsumesType (ndeep + 1) g amap m ty1 NoCoerce) interfaces
+                        List.exists (TypeFeasiblySubsumesType (ndeep + 1) g amap m ty1 NoCoerce) interfaces
 
         UpdateCachedTypeSubsumption g amap key subsumes
 

@@ -58,22 +58,20 @@ type [<Struct; NoComparison; CustomEquality>] TTypeCacheKey =
     val canCoerce: CanCoerce
     val tcGlobals: TcGlobals
 
-    new (ty1, ty2, canCoerce, tcGlobals) =
+    private new (ty1, ty2, canCoerce, tcGlobals) =
         { ty1 = ty1; ty2 = ty2; canCoerce = canCoerce; tcGlobals = tcGlobals }
+
+    static member FromStrippedTypes (ty1, ty2, canCoerce, tcGlobals) =
+        TTypeCacheKey(ty1, ty2, canCoerce, tcGlobals)
 
     interface System.IEquatable<TTypeCacheKey> with
         member this.Equals other =
-            let ty1 = this.ty1
-            let ty2 = this.ty2
-            let otherTy1 = stripTyEqns this.tcGlobals other.ty1
-            let otherTy2 = stripTyEqns this.tcGlobals other.ty2
-
-            if stampEquals this.tcGlobals ty1 otherTy1 && stampEquals this.tcGlobals ty2 otherTy2 && this.canCoerce = other.canCoerce then
+            if stampEquals this.tcGlobals this.ty1 other.ty1 && stampEquals this.tcGlobals this.ty2 other.ty2 && this.canCoerce = other.canCoerce then
                 true
             else
                 (
-                    LanguagePrimitives.PhysicalEquality ty1 otherTy1
-                    && LanguagePrimitives.PhysicalEquality ty2 otherTy2
+                    LanguagePrimitives.PhysicalEquality this.ty1 other.ty1
+                    && LanguagePrimitives.PhysicalEquality this.ty2 other.ty2
                     && this.canCoerce = other.canCoerce
                 )
 
@@ -85,11 +83,8 @@ type [<Struct; NoComparison; CustomEquality>] TTypeCacheKey =
     override this.GetHashCode() : int =
         let g = this.tcGlobals
 
-        let ty1 = stripTyEqns g this.ty1
-        let ty2 = stripTyEqns g this.ty2
-
-        let ty1Hash = combineHash (hashStamp g ty1) (hashTType g ty1)
-        let ty2Hash = combineHash (hashStamp g ty1) (hashTType g ty2)
+        let ty1Hash = combineHash (hashStamp g this.ty1) (hashTType g this.ty1)
+        let ty2Hash = combineHash (hashStamp g this.ty1) (hashTType g this.ty2)
 
         let combined = combineHash (combineHash ty1Hash ty2Hash) (hash this.canCoerce)
 
@@ -111,7 +106,7 @@ type [<Struct; NoComparison; CustomEquality>] TTypeCacheKey =
 type ImportMap(g: TcGlobals, assemblyLoader: AssemblyLoader) =
     let typeRefToTyconRefCache = ConcurrentDictionary<ILTypeRef, TyconRef>()
 
-    let typeSubsumptionCache = ConcurrentDictionary<TTypeCacheKey, bool>()
+    let typeSubsumptionCache = ConcurrentDictionary<TTypeCacheKey, bool>(System.Environment.ProcessorCount, 1024)
 
     member _.g = g
 
