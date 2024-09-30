@@ -541,4 +541,37 @@ let run r2 r3 =
         |> withDiagnostics [
             (Error 708, Line 20, Col 9, Line 20, Col 12, "This control construct may only be used if the computation expression builder defines a 'Using' method")
         ]
-        
+
+    [<Fact>]
+    let ``This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.`` () =
+        Fsx """
+let x18rec2 = 
+    query {
+        for d in [1..10] do
+        let rec f x = x + 1 // error expected here - no recursive functions
+        and g x = f x + 2
+        select (f d)
+    }
+    
+let x18inline = 
+    query {
+        for d in [1..10] do
+        let inline f x = x + 1 // error expected here - no inline functions
+        select (f d)
+    }
+    
+let x18mutable = 
+    query {
+        for d in [1..10] do
+        let mutable v = 1 // error expected here - no mutable values
+        select (f d)
+    }
+
+    """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3147, Line 5, Col 17, Line 5, Col 20, "This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.")
+            (Error 3147, Line 13, Col 20, Line 13, Col 23, "This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.")
+            (Error 3147, Line 20, Col 21, Line 20, Col 22, "This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.")
+        ]
