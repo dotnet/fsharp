@@ -448,6 +448,7 @@ and CheckTypeConstraintDeep cenv f g env x =
      | TyparConstraint.NotSupportsNull _
      | TyparConstraint.IsNonNullableStruct _
      | TyparConstraint.IsUnmanaged _
+     | TyparConstraint.AllowsRefStruct _
      | TyparConstraint.IsReferenceType _
      | TyparConstraint.RequiresDefaultConstructor _ -> ()
 
