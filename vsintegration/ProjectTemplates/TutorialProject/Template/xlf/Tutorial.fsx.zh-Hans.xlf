@@ -22,14 +22,14 @@
         <target state="translated">有关 F# 的详细信息，请参见:</target>
         <note />
       </trans-unit>
-      <trans-unit id="SeeDocumentaton">
-        <source>To see this tutorial in documentation form, see:</source>
-        <target state="translated">若要以文档的形式查看此教程，请参阅:</target>
-        <note />
-      </trans-unit>
       <trans-unit id="LearnMoreAbout">
         <source>To learn more about applied F# programming, use</source>
         <target state="translated">若要了解有关已应用的 F# 编程的详细信息，请使用</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SeeDocumentation">
+        <source>To see this tutorial in documentation form, see:</source>
+        <target state="new">To see this tutorial in documentation form, see:</target>
         <note />
       </trans-unit>
       <trans-unit id="ToInstall-Line1">
@@ -743,8 +743,8 @@
         <note />
       </trans-unit>
       <trans-unit id="ArrayAssignment-Line1">
-        <source>You can modify the contents of an an array element by using the left arrow assignment operator.</source>
-        <target state="translated">可使用左箭头赋值运算符来修改数组元素的内容。</target>
+        <source>You can modify the contents of an array element by using the left arrow assignment operator.</source>
+        <target state="new">You can modify the contents of an array element by using the left arrow assignment operator.</target>
         <note />
       </trans-unit>
       <trans-unit id="ArrayAssignment-Line2">
@@ -1008,8 +1008,8 @@
         <note />
       </trans-unit>
       <trans-unit id="CardRank">
-        <source>A Disciminated Union can also be used to represent the rank of a playing card.</source>
-        <target state="translated">可区分联合还可用来表示纸牌的设置级别。</target>
+        <source>A Discriminated Union can also be used to represent the rank of a playing card.</source>
+        <target state="new">A Discriminated Union can also be used to represent the rank of a playing card.</target>
         <note />
       </trans-unit>
       <trans-unit id="CardRankValue">
@@ -1028,8 +1028,8 @@
         <note />
       </trans-unit>
       <trans-unit id="CardType-Line2">
-        <source>It's common to use both Records and Disciminated Unions when representing data.</source>
-        <target state="translated">表示数据时同时使用记录和可区分联合是很常见的。</target>
+        <source>It's common to use both Records and Discriminated Unions when representing data.</source>
+        <target state="new">It's common to use both Records and Discriminated Unions when representing data.</target>
         <note />
       </trans-unit>
       <trans-unit id="ComputeFullDeck">
@@ -1088,8 +1088,8 @@
         <note />
       </trans-unit>
       <trans-unit id="DuRecursiveDef-Line1">
-        <source>Disciminated Unions also support recursive definitions.</source>
-        <target state="translated">可区分联合还支持递归定义。</target>
+        <source>Discriminated Unions also support recursive definitions.</source>
+        <target state="new">Discriminated Unions also support recursive definitions.</target>
         <note />
       </trans-unit>
       <trans-unit id="DuRecursiveDef-Line2">

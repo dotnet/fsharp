@@ -142,7 +142,7 @@ type ValInfos(entries) =
                          (fun (_: ValRef, k: ValLinkageFullKey) -> hash k.PartialKey)
                          (fun (v1, k1) (v2, k2) -> 
                              k1.PartialKey = k2.PartialKey && 
-                             // dismbiguate overloads, somewhat low-perf but only use for a handful of overloads in FSharp.Core
+                             // disambiguate overloads, somewhat low-perf but only use for a handful of overloads in FSharp.Core
                              match k1.TypeForLinkage, k2.TypeForLinkage with
                              | Some _, Some _ -> 
                                  let sig1 = XmlDocSigOfVal g true "" v1.Deref 
@@ -217,8 +217,8 @@ type Summary<'Info> =
       TotalSize: int 
       
       /// Meaning: could mutate, could non-terminate, could raise exception 
-      /// One use: an effect expr can not be eliminated as dead code (e.g. sequencing)
-      /// One use: an effect=false expr can not throw an exception? so try-with is removed.
+      /// One use: an effect expr cannot be eliminated as dead code (e.g. sequencing)
+      /// One use: an effect=false expr cannot throw an exception? so try-with is removed.
       HasEffect: bool  
       
       /// Indicates that a function may make a useful tailcall, hence when called should itself be tailcalled
@@ -2245,7 +2245,7 @@ let TryDetectQueryQuoteAndRun cenv (expr: Expr) =
                 | QuerySelect g (qTy, _, resultElemTy, _, _) 
                 | QueryYield g (qTy, resultElemTy, _) 
                 | QueryYieldFrom g (qTy, resultElemTy, _) 
-                     when typeEquiv g qTy (mkAppTy g.tcref_System_Collections_IEnumerable []) -> 
+                     when typeEquiv g qTy (mkWoNullAppTy g.tcref_System_Collections_IEnumerable []) -> 
 
                     match tryRewriteToSeqCombinators g e with 
                     | Some newSource -> 
@@ -2629,13 +2629,13 @@ and OptimizeExprOpReductionsAfter cenv env (op, tyargs, argsR, arginfos, m) =
         | TOp.UnionCaseFieldGet (cspec, n), [e1info] -> TryOptimizeUnionCaseGet cenv env (e1info, cspec, tyargs, n, m)
         | _ -> None
     match knownValue with 
-    | Some valu -> 
-        match TryOptimizeVal cenv env (None, false, false, valu, m) with 
+    | Some value_ -> 
+        match TryOptimizeVal cenv env (None, false, false, value_, m) with 
         | Some res -> OptimizeExpr cenv env res (* discard e1 since guard ensures it has no effects *)
-        | None -> OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu
+        | None -> OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos value_
     | None -> OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos UnknownValue
 
-and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu =
+and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos value_ =
     let g = cenv.g
 
     // The generic case - we may collect information, but the construction/projection doesn't disappear 
@@ -2644,20 +2644,20 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu =
     let argEffects = OrEffects arginfos
     let argValues = List.map (fun x -> x.Info) arginfos
     let effect = OpHasEffect g m op
-    let cost, valu = 
+    let cost, value_ = 
       match op with
       | TOp.UnionCase c -> 2, MakeValueInfoForUnionCase c (Array.ofList argValues)
-      | TOp.ExnConstr _ -> 2, valu
+      | TOp.ExnConstr _ -> 2, value_
 
       | TOp.Tuple tupInfo -> 
           let isStruct = evalTupInfoIsStruct tupInfo 
-          if isStruct then 0, valu 
+          if isStruct then 0, value_ 
           else 1,MakeValueInfoForTuple (Array.ofList argValues)
 
       | TOp.AnonRecd anonInfo -> 
           let isStruct = evalAnonInfoIsStruct anonInfo 
-          if isStruct then 0, valu 
-          else 1, valu
+          if isStruct then 0, value_ 
+          else 1, value_
 
       | TOp.AnonRecdGet _ 
       | TOp.ValFieldGet _     
@@ -2666,41 +2666,41 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu =
       | TOp.ExnFieldGet _
       | TOp.UnionCaseTagGet _ -> 
           // REVIEW: reduction possible here, and may be very effective
-          1, valu 
+          1, value_ 
 
       | TOp.UnionCaseProof _ -> 
           // We count the proof as size 0
           // We maintain the value of the source of the proof-cast if it is known to be a UnionCaseValue
-          let valu = 
+          let value_ = 
               match argValues[0] with 
               | StripUnionCaseValue (uc, info) -> UnionCaseValue(uc, info) 
-              | _ -> valu
-          0, valu
+              | _ -> value_
+          0, value_
 
       | TOp.ILAsm (instrs, retTypes) -> 
           min instrs.Length 1, 
           mkAssemblyCodeValueInfo g instrs argValues retTypes
 
-      | TOp.Bytes bytes -> bytes.Length/10, valu
-      | TOp.UInt16s bytes -> bytes.Length/10, valu
+      | TOp.Bytes bytes -> bytes.Length/10, value_
+      | TOp.UInt16s bytes -> bytes.Length/10, value_
       | TOp.ValFieldGetAddr _     
       | TOp.Array | TOp.IntegerForLoop _ | TOp.While _ | TOp.TryWith _ | TOp.TryFinally _
       | TOp.ILCall _ | TOp.TraitCall _ | TOp.LValueOp _ | TOp.ValFieldSet _
       | TOp.UnionCaseFieldSet _ | TOp.RefAddrGet _ | TOp.Coerce | TOp.Reraise
       | TOp.UnionCaseFieldGetAddr _   
-      | TOp.ExnFieldSet _ -> 1, valu
+      | TOp.ExnFieldSet _ -> 1, value_
 
       | TOp.Recd (ctorInfo, tcref) ->
           let finfos = tcref.AllInstanceFieldsAsList
           // REVIEW: this seems a little conservative: Allocating a record with a mutable field 
           // is not an effect - only reading or writing the field is. 
-          let valu = 
+          let value_ = 
               match ctorInfo with 
               | RecdExprIsObjInit -> UnknownValue
               | RecdExpr -> 
-                   if argValues.Length <> finfos.Length then valu 
+                   if argValues.Length <> finfos.Length then value_ 
                    else MakeValueInfoForRecord tcref (Array.ofList ((argValues, finfos) ||> List.map2 (fun x f -> if f.IsMutable then UnknownValue else x) ))
-          2, valu  
+          2, value_  
       | TOp.Goto _ | TOp.Label _ | TOp.Return -> assert false; error(InternalError("unexpected goto/label/return in optimization", m))
 
     // Indirect calls to IL code are always taken as tailcalls
@@ -2713,7 +2713,7 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu =
                   FunctionSize=argsFSize + cost
                   HasEffect=argEffects || effect                  
                   MightMakeCriticalTailcall= mayBeCriticalTailcall // discard tailcall info for args - these are not in tailcall position
-                  Info=valu } 
+                  Info=value_ } 
 
     // Replace entire expression with known value? 
     match TryOptimizeValInfo cenv env m vinfo with 
@@ -2724,7 +2724,7 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu =
             FunctionSize=argsFSize + cost
             HasEffect=argEffects || effect
             MightMakeCriticalTailcall= mayBeCriticalTailcall // discard tailcall info for args - these are not in tailcall position
-            Info=valu }
+            Info=value_ }
 
 /// Optimize/analyze a constant node
 and OptimizeConst cenv env expr (c, m, ty) = 
@@ -3137,9 +3137,12 @@ and OptimizeVal cenv env expr (v: ValRef, m) =
 
     | None ->
        if v.ShouldInline then
-           warning(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
+            match valInfoForVal.ValExprInfo with
+            | UnknownValue -> error(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
+            | _ -> warning(Error(FSComp.SR.optFailedToInlineValue(v.DisplayName), m))
        if v.InlineIfLambda then 
            warning(Error(FSComp.SR.optFailedToInlineSuggestedValue(v.DisplayName), m))
+
        expr, (AddValEqualityInfo g m v 
                     { Info=valInfoForVal.ValExprInfo 
                       HasEffect=false 
@@ -3221,7 +3224,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
             // the target takes a tupled argument, so we need to reorder the arg expressions in the
             // arg list, and create a tuple of y & comp
             // push the comparer to the end and box the argument
-            let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty, m, ty) ; comp]]
+            let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty_ambivalent, m, ty) ; comp]]
             Some (DevirtualizeApplication cenv env vref ty tyargs args2 m)
         | _ -> None
         
@@ -3246,7 +3249,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
             Some (DevirtualizeApplication cenv env withcEqualsExactVal ty tyargs args2 m)
         | Some (_, _, withcEqualsVal, _ ), [comp; x; y] -> 
             // push the comparer to the end and box the argument
-            let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty, m, ty) ; comp]]
+            let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty_ambivalent, m, ty) ; comp]]
             Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
         | _ -> None 
       
@@ -3268,7 +3271,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
                let args2 = [x; mkRefTupledNoTypes g m [y; (mkCallGetGenericPEREqualityComparer g m)]]
                Some (DevirtualizeApplication cenv env equalsExact ty tyargs args2 m)
            | None ->
-               let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty, m, ty); (mkCallGetGenericPEREqualityComparer g m)]]
+               let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty_ambivalent, m, ty); (mkCallGetGenericPEREqualityComparer g m)]]
                Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
        | _ -> None     
     
@@ -3851,7 +3854,7 @@ and OptimizeLambdas (vspec: Val option) cenv env valReprInfo expr exprTy =
             () 
 
         // can't inline any values with semi-recursive object references to self or base 
-        let valu =   
+        let value_ =   
           match baseValOpt with 
           | None -> CurriedLambdaValue (lambdaId, arities, bsize, exprR, exprTy) 
           | Some baseVal -> 
@@ -3871,7 +3874,7 @@ and OptimizeLambdas (vspec: Val option) cenv env valReprInfo expr exprTy =
                  FunctionSize=1 
                  HasEffect=false
                  MightMakeCriticalTailcall = false
-                 Info= valu }
+                 Info= value_ }
 
     | _ ->
         OptimizeExpr cenv env expr 
@@ -3883,15 +3886,15 @@ and OptimizeNewDelegateExpr cenv env (lambdaId, vsl, body, remake) =
     let arities = vsl.Length
     let bsize = bodyinfo.TotalSize
     let exprR = remake bodyR
-    let valu = CurriedLambdaValue (lambdaId, arities, bsize, exprR, tyOfExpr g exprR) 
+    let value_ = CurriedLambdaValue (lambdaId, arities, bsize, exprR, tyOfExpr g exprR) 
 
     exprR, { TotalSize=bsize + closureTotalSize (* estimate size of new syntactic closure - expensive, in contrast to a method *)
              FunctionSize=1 
              HasEffect=false
              MightMakeCriticalTailcall = false
-             Info= valu }
+             Info= value_ }
 
-/// Recursive calls that first try to make an expression "fit" the a shape
+/// Recursive calls that first try to make an expression "fit" the shape
 /// where it is about to be consumed.
 and OptimizeExprsThenReshapeAndConsiderSplits cenv env exprs = 
     match exprs with 
@@ -4345,8 +4348,7 @@ and OptimizeModuleDefs cenv (env, bindInfosColl) defs =
     let defs, minfos = List.unzip defs
     (defs, UnionOptimizationInfos minfos), (env, bindInfosColl)
    
-and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit hidden implFile =
-    let g = cenv.g
+and OptimizeImplFileInternal cenv env isIncrementalFragment hidden implFile =
     let (CheckedImplFile (qname, pragmas, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) = implFile
     let env, contentsR, minfo, hidden = 
         // FSI compiles interactive fragments as if you're typing incrementally into one module.
@@ -4358,13 +4360,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit
             // This optimizes and builds minfo ignoring the signature
             let (defR, minfo), (_env, _bindInfosColl) = OptimizeModuleContents cenv (env, []) contents
             let hidden = ComputeImplementationHidingInfoAtAssemblyBoundary defR hidden
-            let minfo =
-                // In F# interactive multi-assembly mode, no internals are accessible across interactive fragments.
-                // In F# interactive single-assembly mode, internals are accessible across interactive fragments.
-                if fsiMultiAssemblyEmit then
-                    AbstractLazyModulInfoByHiding true hidden minfo
-                else
-                    AbstractLazyModulInfoByHiding false hidden minfo
+            let minfo = AbstractLazyModulInfoByHiding false hidden minfo
             let env = BindValsInModuleOrNamespace cenv minfo env
             env, defR, minfo, hidden
         else
@@ -4372,13 +4368,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit
             let mexprR, minfo = OptimizeModuleExprWithSig cenv env signature contents
             let hidden = ComputeSignatureHidingInfoAtAssemblyBoundary signature hidden
             let minfoExternal = AbstractLazyModulInfoByHiding true hidden minfo
-            let env =
-                // In F# interactive multi-assembly mode, internals are not accessible in the 'env' used intra-assembly
-                // In regular fsc compilation, internals are accessible in the 'env' used intra-assembly
-                if g.isInteractive && fsiMultiAssemblyEmit then
-                    BindValsInModuleOrNamespace cenv minfoExternal env
-                else
-                    BindValsInModuleOrNamespace cenv minfo env
+            let env = BindValsInModuleOrNamespace cenv minfo env
             env, mexprR, minfoExternal, hidden
 
     let implFileR = CheckedImplFile (qname, pragmas, signature, contentsR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
@@ -4386,7 +4376,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit
     env, implFileR, minfo, hidden
 
 /// Entry point
-let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncrementalFragment, fsiMultiAssemblyEmit, emitTailcalls, hidden, mimpls) =
+let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncrementalFragment,  emitTailcalls, hidden, mimpls) =
     let cenv = 
         { settings=settings
           scope=ccu 
@@ -4401,7 +4391,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           realsig = tcGlobals.realsig
         }
 
-    let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment fsiMultiAssemblyEmit hidden mimpls  
+    let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls
 
     let optimizeDuringCodeGen disableMethodSplitting expr =
         let env = { env with disableMethodSplitting = env.disableMethodSplitting || disableMethodSplitting }

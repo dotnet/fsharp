@@ -192,6 +192,11 @@
         <target state="translated">Parámetro de tipo conocido: {0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="csNullNotNullConstraintInconsistent">
+        <source>The constraints 'null' and 'not null' are inconsistent</source>
+        <target state="new">The constraints 'null' and 'not null' are inconsistent</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csOverloadCandidateIndexedArgumentTypeMismatch">
         <source>Argument at index {0} doesn't match</source>
         <target state="translated">El argumento del índice {0} no coincide.</target>
@@ -200,6 +205,16 @@
       <trans-unit id="csOverloadCandidateNamedArgumentTypeMismatch">
         <source>Argument '{0}' doesn't match</source>
         <target state="translated">El argumento "{0}" no coincide.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csTypeHasNullAsExtraValue">
+        <source>The type '{0}' supports 'null' but a non-null type is expected</source>
+        <target state="new">The type '{0}' supports 'null' but a non-null type is expected</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csTypeHasNullAsTrueValue">
+        <source>The type '{0}' uses 'null' as a representation value but a non-null type is expected</source>
+        <target state="new">The type '{0}' uses 'null' as a representation value but a non-null type is expected</target>
         <note />
       </trans-unit>
       <trans-unit id="csUnmanagedConstraintInconsistent">
@@ -227,6 +242,11 @@
         <target state="translated">El atributo de ensamblado "{0}" hace referencia a un ensamblado de diseñador "{1}" que no se puede cargar o no existe. Se notificó la excepción: {2} - {3}.</target>
         <note />
       </trans-unit>
+      <trans-unit id="fSharpBannerVersion">
+        <source>{0} for F# {1}</source>
+        <target state="new">{0} for F# {1}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAccessorFunctionShorthand">
         <source>underscore dot shorthand for accessor only function</source>
         <target state="translated">forma abreviada de punto y guion bajo para la función de solo descriptor de acceso</target>
@@ -235,6 +255,16 @@
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
         <target state="translated">conversiones adicionales dirigidas a tipos</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureAllowAccessModifiersToAutoPropertiesGettersAndSetters">
+        <source>Allow access modifiers to auto properties getters and setters</source>
+        <target state="new">Allow access modifiers to auto properties getters and setters</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureAllowObjectExpressionWithoutOverrides">
+        <source>Allow object expressions without overrides</source>
+        <target state="new">Allow object expressions without overrides</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAndBang">
@@ -277,6 +307,11 @@
         <target state="translated">Genera advertencias si el atributo 'TailCall' se usa en funciones no recursivas.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureConsistentNowarnLineDirectiveInteraction">
+        <source>The interaction between #nowarn and #line is now consistent.</source>
+        <target state="new">The interaction between #nowarn and #line is now consistent.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
         <source>Constraint intersection on flexible types</source>
         <target state="translated">Intersección de restricciones en tipos flexibles</target>
@@ -300,6 +335,11 @@
       <trans-unit id="featureDotlessFloat32Literal">
         <source>dotless float32 literal</source>
         <target state="translated">literal float32 sin punto</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureEmptyBodiedComputationExpressions">
+        <source>Support for computation expressions with empty bodies: builder {{ }}</source>
+        <target state="new">Support for computation expressions with empty bodies: builder {{ }}</target>
         <note />
       </trans-unit>
       <trans-unit id="featureEnforceAttributeTargets">
@@ -397,9 +437,9 @@
         <target state="translated">Optimiza ciertos usos de los operadores de intervalo entero (..) y paso de intervalo (.. ..) para acelerar los bucles while.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureLowerSimpleMappingsInComprehensionsToDirectCallsToMap">
-        <source>Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to calls to List.map and Array.map when xs is a list or an array, respectively.</source>
-        <target state="translated">Reduce [for x in xs -&gt; f x] y [|for x in xs -&gt; f x|] a las llamadas a List.map y Array.map cuando xs es una lista o una matriz, respectivamente.</target>
+      <trans-unit id="featureLowerSimpleMappingsInComprehensionsToFastLoops">
+        <source>Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to fast loops when xs is a list or an array, respectively.</source>
+        <target state="new">Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to fast loops when xs is a list or an array, respectively.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
@@ -440,6 +480,11 @@
       <trans-unit id="featureNullableOptionalInterop">
         <source>nullable optional interop</source>
         <target state="translated">interoperabilidad opcional que admite valores NULL</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureNullnessChecking">
+        <source>nullness checking</source>
+        <target state="new">nullness checking</target>
         <note />
       </trans-unit>
       <trans-unit id="featureOpenTypeDeclaration">
@@ -498,8 +543,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
-        <source>whitespace relexation</source>
-        <target state="translated">relajación de espacio en blanco</target>
+        <source>whitespace relaxation</source>
+        <target state="new">whitespace relaxation</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace2">
@@ -702,6 +747,11 @@
         <target state="translated">Se usa en expresiones de cálculo para introducir una construcción de bucle donde la condición es el resultado de otra expresión de cálculo.</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexByteArrayOutisdeAscii">
+        <source>This byte array literal contains {0} non-ASCII characters. All characters should be &lt; 128y.</source>
+        <target state="new">This byte array literal contains {0} non-ASCII characters. All characters should be &lt; 128y.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexByteStringMayNotBeInterpolated">
         <source>a byte string may not be interpolated</source>
         <target state="translated">no se puede interpolar una cadena de bytes</target>
@@ -717,9 +767,24 @@
         <target state="translated">Ya no se admiten las regiones IF-FSHARP/IF-CAML</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexInvalidAsciiByteLiteral">
+        <source>This is not a valid byte character literal. The value must be less than or equal to '\127'B.</source>
+        <target state="new">This is not a valid byte character literal. The value must be less than or equal to '\127'B.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexInvalidCharLiteralInString">
+        <source>'{0}' is not a valid character literal.\nNote: Currently the value is wrapped around byte range to '{1}'. In a future F# version this warning will be promoted to an error.</source>
+        <target state="new">'{0}' is not a valid character literal.\nNote: Currently the value is wrapped around byte range to '{1}'. In a future F# version this warning will be promoted to an error.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexInvalidIdentifier">
         <source>This is not a valid identifier</source>
         <target state="translated">Este nombre no es un identificador válido.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexInvalidTrigraphAsciiByteLiteral">
+        <source>This is not a valid byte character literal. The value must be less than or equal to '\127'B.\nNote: In a future F# version this warning will be promoted to an error.</source>
+        <target state="new">This is not a valid byte character literal. The value must be less than or equal to '\127'B.\nNote: In a future F# version this warning will be promoted to an error.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
@@ -825,6 +890,11 @@
       <trans-unit id="optsAllSigs">
         <source>Print the inferred interfaces of all compilation files to associated signature files</source>
         <target state="translated">Imprimir las interfaces deducidas de todos los archivos de compilación en los archivos de signatura asociados</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsCheckNulls">
+        <source>Enable nullness declarations and checks</source>
+        <target state="new">Enable nullness declarations and checks</target>
         <note />
       </trans-unit>
       <trans-unit id="optsClearResultsCache">
@@ -972,19 +1042,24 @@
         <target state="translated">Se espera una expresión</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsExpectingField">
-        <source>Expecting record field</source>
-        <target state="translated">Se espera un campo de registro</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsExpectingPattern">
         <source>Expecting pattern</source>
         <target state="translated">Se espera un patrón</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsExpectingRecordField">
+        <source>Expecting record field</source>
+        <target state="new">Expecting record field</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsExpectingType">
         <source>Expecting type</source>
         <target state="translated">Tipo esperado</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingUnionCaseField">
+        <source>Expecting union case field</source>
+        <target state="new">Expecting union case field</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
@@ -1053,8 +1128,8 @@
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
-        <source>A constrained generic construct occured in the resumable code specification</source>
-        <target state="translated">En la especificación del código resumible aparecía una construcción genérica restringida</target>
+        <source>A constrained generic construct occurred in the resumable code specification</source>
+        <target state="new">A constrained generic construct occurred in the resumable code specification</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsDynamicResumeAtInBody">
@@ -1068,8 +1143,8 @@
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsLetRec">
-        <source>A 'let rec' occured in the resumable code specification</source>
-        <target state="translated">Se ha producido "let rec" en la especificación de código reanudable</target>
+        <source>A 'let rec' occurred in the resumable code specification</source>
+        <target state="new">A 'let rec' occurred in the resumable code specification</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsResumptionInHandlerOrFilter">
@@ -1135,6 +1210,11 @@
       <trans-unit id="suggestedName">
         <source>(Suggested name)</source>
         <target state="translated">(Nombre sugerido)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAccessModifiersNotAllowedInSRTPConstraint">
+        <source>Access modifiers cannot be applied to an SRTP constraint.</source>
+        <target state="new">Access modifiers cannot be applied to an SRTP constraint.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcActivePatternArgsCountNotMatchArgs">
@@ -1245,6 +1325,11 @@
       <trans-unit id="tcDotLambdaAtNotSupportedExpression">
         <source>Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'.</source>
         <target state="translated">La sintaxis lambda abreviada solo se admite para expresiones atómicas, como el método, la propiedad, el campo o el indexador en el argumento '_' implícito. Por ejemplo: 'let f = _.Length'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcEmptyBodyRequiresBuilderZeroMethod">
+        <source>An empty body may only be used if the computation expression builder defines a 'Zero' method.</source>
+        <target state="new">An empty body may only be used if the computation expression builder defines a 'Zero' method.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
@@ -1363,8 +1448,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcMissingRequiredMembers">
-        <source>The following required properties have to be initalized:{0}</source>
-        <target state="translated">Se deben inicializar las siguientes propiedades necesarias:{0}</target>
+        <source>The following required properties have to be initialized:{0}</source>
+        <target state="new">The following required properties have to be initialized:{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMultipleFieldsInRecord">
@@ -1412,6 +1497,16 @@
         <target state="translated">El valor "{0}" no es una función y no admite la notación de índices.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcNullableToStringOverride">
+        <source>With nullness checking enabled, overrides of .ToString() method must return a non-nullable string. You can handle potential nulls via the built-in string function.</source>
+        <target state="new">With nullness checking enabled, overrides of .ToString() method must return a non-nullable string. You can handle potential nulls via the built-in string function.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNullnessCheckingNotEnabled">
+        <source>The 'nullness checking' language feature is not enabled. This use of a nullness checking construct will be ignored.</source>
+        <target state="new">The 'nullness checking' language feature is not enabled. This use of a nullness checking construct will be ignored.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax 'expr1[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
         <target state="translated">La sintaxis "expr1[expr2]" es ambigua cuando se usa como argumento. Vea https://aka.ms/fsharp-index-notation. Si piensa indexar o segmentar, debe usar "expr1.[expr2]" en la posición del argumento. Si se llama a una función con varios argumentos currificados, se agregará un espacio entre ellos, por ejemplo, "unaFunción expr1 [expr2]".</target>
@@ -1437,6 +1532,41 @@
         <target state="translated">La sintaxis "(expr1)[expr2]" está reservada ahora para la indexación y es ambigua cuando se usa como argumento. Vea https://aka.ms/fsharp-index-notation. Si se llama a una función con varios argumentos currificados, agregue un espacio entre ellos, por ejemplo, "unaFunción (expr1) [expr2]".</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcPartialActivePattern">
+        <source>Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.</source>
+        <target state="new">Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcPassingWithoutNullToANullableExpectingFunc">
+        <source>Value known to be without null passed to a function meant for nullables: {0}</source>
+        <target state="new">Value known to be without null passed to a function meant for nullables: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcPassingWithoutNullToNonNullAP">
+        <source>You can remove this |Null|NonNull| pattern usage.</source>
+        <target state="new">You can remove this |Null|NonNull| pattern usage.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcPassingWithoutNullToNonNullQuickAP">
+        <source>You can remove this |NonNullQuick| pattern usage.</source>
+        <target state="new">You can remove this |NonNullQuick| pattern usage.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcPassingWithoutNullToOptionOfObj">
+        <source>You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value.</source>
+        <target state="new">You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcPassingWithoutNullToValueOptionOfObj">
+        <source>You can create 'ValueSome value' directly instead of 'ofObj', or consider not using a voption for this value.</source>
+        <target state="new">You can create 'ValueSome value' directly instead of 'ofObj', or consider not using a voption for this value.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcPassingWithoutNullTononNullFunction">
+        <source>You can remove this `nonNull` assertion.</source>
+        <target state="new">You can remove this `nonNull` assertion.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSources' and 'Bind' methods</source>
         <target state="translated">La construcción "let! ... and! ..." solo se puede usar si el generador de expresiones de cálculo define un método "{0}" o bien los métodos "MergeSources" y "Bind" adecuados.</target>
@@ -1453,8 +1583,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeContainsLetRec">
-        <source>Invalid resumable code. A 'let rec' occured in the resumable code specification</source>
-        <target state="translated">Código reanudable no válido. Se ha producido "let rec" en la especificación de código reanudable</target>
+        <source>Invalid resumable code. A 'let rec' occurred in the resumable code specification</source>
+        <target state="new">Invalid resumable code. A 'let rec' occurred in the resumable code specification</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeFunctionMustBeInline">
@@ -1520,6 +1650,11 @@
       <trans-unit id="tcTraitMayNotUseComplexThings">
         <source>A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments</source>
         <target state="translated">Un rasgo no puede especificar argumentos opcionales, in, out, ParamArray, CallerInfo o Quote</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTypeDoesNotHaveAnyNull">
+        <source>The type '{0}' does not support a nullness qualification.</source>
+        <target state="new">The type '{0}' does not support a nullness qualification.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
@@ -4823,8 +4958,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidActivePatternName">
-        <source>This is not a valid name for an active pattern</source>
-        <target state="translated">Este no es un nombre válido para un patrón activo.</target>
+        <source>'{0}' is not a valid method name. Use a 'let' binding instead.</source>
+        <target state="new">'{0}' is not a valid method name. Use a 'let' binding instead.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcEntryPointAttributeRequiresFunctionInModule">
@@ -5768,8 +5903,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsDebug">
-        <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debuggging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
-        <target state="translated">Especifique el tipo de depuración: full, portable, embedded, pdbonly. ('{0}' es el valor predeterminado si no se especifica ningún tipo de depuración y permite conectar un depurador a un programa en ejecución, 'portable' es un formato multiplataforma, 'embedded' es un formato multiplataforma insertado en el archivo de salida).</target>
+        <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debugging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
+        <target state="new">Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debugging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</target>
         <note />
       </trans-unit>
       <trans-unit id="optsOptimize">
@@ -6388,8 +6523,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexByteArrayCannotEncode">
-        <source>This byte array literal contains characters that do not encode as a single byte</source>
-        <target state="translated">Este literal de matriz de bytes contiene caracteres que no se codifican como un solo byte.</target>
+        <source>This byte array literal contains {0} characters that do not encode as a single byte</source>
+        <target state="new">This byte array literal contains {0} characters that do not encode as a single byte</target>
         <note />
       </trans-unit>
       <trans-unit id="lexIdentEndInMarkReserved">
@@ -6470,11 +6605,6 @@
       <trans-unit id="lexInvalidNumericLiteral">
         <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).</source>
         <target state="translated">Este literal numérico no es válido. Entre los literales numéricos válidos se incluyen 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="lexInvalidByteLiteral">
-        <source>This is not a valid byte literal</source>
-        <target state="translated">Este no es un literal de byte válido.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidCharLiteral">
@@ -7028,8 +7158,8 @@
         <note />
       </trans-unit>
       <trans-unit id="fscRemotingError">
-        <source>The resident compilation service was not used because a problem occured in communicating with the server.</source>
-        <target state="translated">El servicio de compilación residente no se usó porque se produjo un problema en la comunicación con el servidor.</target>
+        <source>The resident compilation service was not used because a problem occurred in communicating with the server.</source>
+        <target state="new">The resident compilation service was not used because a problem occurred in communicating with the server.</target>
         <note />
       </trans-unit>
       <trans-unit id="pathIsInvalid">
@@ -7228,8 +7358,8 @@
         <note />
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToType">
-        <source>An error occured applying the static arguments to a provided type</source>
-        <target state="translated">Error al aplicar los argumentos estáticos a un tipo proporcionado.</target>
+        <source>An error occurred applying the static arguments to a provided type</source>
+        <target state="new">An error occurred applying the static arguments to a provided type</target>
         <note />
       </trans-unit>
       <trans-unit id="etUnknownStaticArgumentKind">
@@ -7293,8 +7423,8 @@
         <note />
       </trans-unit>
       <trans-unit id="etInvalidTypeProviderAssemblyName">
-        <source>Assembly '{0}' hase TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</source>
-        <target state="translated">El ensamblado '{0}' tiene el atributo TypeProviderAssembly con el valor '{1}' no válido. El valor debe ser un nombre de ensamblado válido.</target>
+        <source>Assembly '{0}' has TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</source>
+        <target state="new">Assembly '{0}' has TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidMemberNameCtor">
@@ -7878,8 +8008,8 @@
         <note />
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToMethod">
-        <source>An error occured applying the static arguments to a provided method</source>
-        <target state="translated">Se produjo un error al aplicar los argumentos estáticos a un método proporcionado</target>
+        <source>An error occurred applying the static arguments to a provided method</source>
+        <target state="new">An error occurred applying the static arguments to a provided method</target>
         <note />
       </trans-unit>
       <trans-unit id="pplexUnexpectedChar">
@@ -8007,9 +8137,9 @@
         <target state="translated">Si un tipo de unión multicase es un struct, todos los casos de unión deben tener nombres únicos. Por ejemplo: 'type A = B of b: int | C of c: int'.</target>
         <note />
       </trans-unit>
-      <trans-unit id="CallerMemberNameIsOverriden">
+      <trans-unit id="CallerMemberNameIsOverridden">
         <source>The CallerMemberNameAttribute applied to parameter '{0}' will have no effect. It is overridden by the CallerFilePathAttribute.</source>
-        <target state="translated">El CallerMemberNameAttribute aplicado al parámetro '{0}' no tendrá ningún efecto. Este se reemplaza por CallerFilePathAttribute.</target>
+        <target state="new">The CallerMemberNameAttribute applied to parameter '{0}' will have no effect. It is overridden by the CallerFilePathAttribute.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
@@ -8323,8 +8453,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionTry">
-        <source>Used to introduce a block of code that might generate an exception. Used together with with or finally.</source>
-        <target state="translated">Se usa para incluir un bloque de código que puede generar una excepción. Se usa junto con with o finally.</target>
+        <source>Used to introduce a block of code that might generate an exception. Used together with 'with' or 'finally'.</source>
+        <target state="new">Used to introduce a block of code that might generate an exception. Used together with 'with' or 'finally'.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionType">

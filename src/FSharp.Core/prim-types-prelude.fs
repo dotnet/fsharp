@@ -6,6 +6,11 @@ namespace Microsoft.FSharp.Core
     // Basic type abbreviations
 
     type obj = System.Object
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
+    type objnull = obj
+#else
+    type objnull = obj | null
+#endif
     type exn = System.Exception
     type nativeint = System.IntPtr
     type unativeint = System.UIntPtr

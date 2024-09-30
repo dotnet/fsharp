@@ -71,13 +71,13 @@ skip_analyzers=false
 skip_build=false
 prepare_machine=false
 source_build=false
-buildnorealsig=false
+buildnorealsig=true
 properties=""
 
 docker=false
 args=""
 
-tfm="net8.0" # This needs to be changed every time it's bumped by arcade/us.
+tfm="net9.0" # This needs to be changed every time it's bumped by arcade/us.
 
 BuildCategory=""
 BuildMessage=""
@@ -241,6 +241,11 @@ function BuildSolution {
   if [[ "$UNAME" == "Darwin" ]]; then
     enable_analyzers=false
   fi
+  
+  local source_build_args=""
+  if [[ "$source_build" == true ]]; then
+    source_build_args="/p:DotNetBuildRepo=true /p:DotNetBuildSourceOnly=true"
+  fi
 
   # NuGet often exceeds the limit of open files on Mac and Linux
   # https://github.com/NuGet/Home/issues/2163
@@ -274,7 +279,7 @@ function BuildSolution {
     fi
 
     BuildMessage="Error building tools"
-    local args=" publish $repo_root/proto.proj $blrestore $bltools /p:Configuration=Proto /p:ArcadeBuildFromSource=$source_build $properties"
+    local args=" publish $repo_root/proto.proj $blrestore $bltools /p:Configuration=Proto $source_build_args $properties"
     echo $args
     "$DOTNET_INSTALL_DIR/dotnet" $args  #$args || exit $?
   fi
@@ -296,8 +301,8 @@ function BuildSolution {
       /p:ContinuousIntegrationBuild=$ci \
       /p:QuietRestore=$quiet_restore \
       /p:QuietRestoreBinaryLog="$binary_log" \
-      /p:ArcadeBuildFromSource=$source_build \
       /p:BuildNoRealsig=$buildnorealsig \
+      $source_build_args \
       $properties
   fi
 }

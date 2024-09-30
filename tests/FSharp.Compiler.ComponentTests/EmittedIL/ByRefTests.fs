@@ -252,7 +252,7 @@ let test () =
             """
 
     [<Fact>]
-    let ``Cannot take native address to get a nativeptr of an immmutable value`` () =
+    let ``Cannot take native address to get a nativeptr of an immutable value`` () =
         CompilerAssert.TypeCheckWithErrors
             """
 #nowarn "51"

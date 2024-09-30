@@ -142,7 +142,7 @@ module IncrementalBuildSyntaxTree =
                     Activity.start "IncrementalBuildSyntaxTree.parse"
                         [|
                             Activity.Tags.fileName, fileName
-                            Activity.Tags.buildPhase, BuildPhase.Parse.ToString()
+                            Activity.Tags.buildPhase, !! BuildPhase.Parse.ToString()
                         |]
 
                 try
@@ -259,12 +259,12 @@ type BoundModel private (
 
             IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked fileName)
             let capturingDiagnosticsLogger = CapturingDiagnosticsLogger("TypeCheck")
-            let diagnosticsLogger = GetDiagnosticsLoggerFilteringByScopedPragmas(false, input.ScopedPragmas, tcConfig.diagnosticsOptions, capturingDiagnosticsLogger)
+            let diagnosticsLogger = GetDiagnosticsLoggerFilteringByScopedPragmas(tcConfig.langVersion, input.ScopedPragmas, tcConfig.diagnosticsOptions, capturingDiagnosticsLogger)
             use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
 
             beforeFileChecked.Trigger fileName
                     
-            ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName fileName, tcImports.DependencyProvider) |> ignore
+            ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, !! Path.GetDirectoryName(fileName), tcImports.DependencyProvider) |> ignore
             let sink = TcResultsSinkImpl(tcGlobals)
             let hadParseErrors = not (Array.isEmpty parseErrors)
             let input, moduleNamesDict = DeduplicateParsedInputModuleName prevTcInfo.moduleNamesDict input
@@ -303,7 +303,7 @@ type BoundModel private (
             return tcInfo, sink, implFile, fileName, newErrors
         }
 
-    let skippedImplemetationTypeCheck =
+    let skippedImplementationTypeCheck =
         match syntaxTreeOpt, prevTcInfo.sigNameOpt with
         | Some syntaxTree, Some (_, qualifiedName) when syntaxTree.HasSignature ->
             let input, _, fileName, _ = syntaxTree.Skip qualifiedName
@@ -385,7 +385,7 @@ type BoundModel private (
         match tcStateOpt with
         | Some tcState -> tcState
         | _ ->
-            match skippedImplemetationTypeCheck with
+            match skippedImplementationTypeCheck with
             | Some tcInfo ->
                 // For skipped implementation sources do full type check only when requested.
                 GraphNode.FromResult tcInfo, tcInfoExtras
@@ -487,14 +487,14 @@ type BoundModel private (
 
 /// Global service state
 type FrameworkImportsCacheKey = 
-    | FrameworkImportsCacheKey of resolvedpath: string list * assemblyName: string * targetFrameworkDirectories: string list * fsharpBinaries: string * langVersion: decimal
+    | FrameworkImportsCacheKey of resolvedpath: string list * assemblyName: string * targetFrameworkDirectories: string list * fsharpBinaries: string * langVersion: decimal * checkNulls: bool
 
     interface ICacheKey<string, FrameworkImportsCacheKey> with
         member this.GetKey() =
-            this |> function FrameworkImportsCacheKey(assemblyName=a) -> a
+            this |> function FrameworkImportsCacheKey(assemblyName=a;checkNulls=c) -> if c then a + "CheckNulls" else a
 
         member this.GetLabel() = 
-            this |> function FrameworkImportsCacheKey(assemblyName=a) -> a
+            this |> function FrameworkImportsCacheKey(assemblyName=a;checkNulls=c) -> if c then a + "CheckNulls" else a
 
         member this.GetVersion() = this
         
@@ -529,7 +529,8 @@ type FrameworkImportsCache(size) =
                     tcConfig.primaryAssembly.Name,
                     tcConfig.GetTargetFrameworkDirectories(),
                     tcConfig.fsharpBinariesDir,
-                    tcConfig.langVersion.SpecifiedVersion)
+                    tcConfig.langVersion.SpecifiedVersion,
+                    tcConfig.checkNullness)
 
         let node =
             lock gate (fun () ->
@@ -553,6 +554,33 @@ type FrameworkImportsCache(size) =
         let frameworkDLLs, nonFrameworkResolutions, unresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
         let node = this.GetNode(tcConfig, frameworkDLLs, nonFrameworkResolutions)
         let! tcGlobals, frameworkTcImports = node.GetOrComputeValue()
+
+        // If the tcGlobals was loaded from a different project, langVersion and realsig may be different 
+        // for each cached project.  So here we create a new tcGlobals, with the existing framework values
+        // and updated realsig and langversion
+        let tcGlobals =
+            if tcGlobals.langVersion.SpecifiedVersion <> tcConfig.langVersion.SpecifiedVersion
+                || tcGlobals.realsig <> tcConfig.realsig then
+                    TcGlobals(
+                        tcGlobals.compilingFSharpCore,
+                        tcGlobals.ilg,
+                        tcGlobals.fslibCcu,
+                        tcGlobals.directoryToResolveRelativePaths,
+                        tcGlobals.mlCompatibility,
+                        tcGlobals.isInteractive,
+                        tcGlobals.checkNullness,
+                        tcGlobals.useReflectionFreeCodeGen,
+                        tcGlobals.tryFindSysTypeCcuHelper,
+                        tcGlobals.emitDebugInfoInQuotations,
+                        tcGlobals.noDebugAttributes,
+                        tcGlobals.pathMap,
+                        tcConfig.langVersion,
+                        tcConfig.realsig
+                    )
+
+            else
+                tcGlobals
+
         return tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolved
       }
 
@@ -609,9 +637,7 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generate
 
     let sigData =
         let _sigDataAttributes, sigDataResources = EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, true)
-        [ for r in sigDataResources  do
-            GetResourceNameAndSignatureDataFunc r
-        ]
+        GetResourceNameAndSignatureDataFuncs sigDataResources
 
     let autoOpenAttrs = topAttrs.assemblyAttrs |> List.choose (List.singleton >> TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_AutoOpenAttribute)
 
@@ -801,12 +827,12 @@ module IncrementalBuilderHelpers =
 
                 let tcAssemblyDataOpt =
                     try
-                        // Assemblies containing type provider components can not successfully be used via cross-assembly references.
+                        // Assemblies containing type provider components cannot successfully be used via cross-assembly references.
                         // We return 'None' for the assembly portion of the cross-assembly reference
                         let hasTypeProviderAssemblyAttrib =
                             topAttrs.assemblyAttrs |> List.exists (fun (Attrib(tcref, _, _, _, _, _, _)) ->
                                 let nm = tcref.CompiledRepresentationForNamedType.BasicQualifiedName
-                                nm = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName)
+                                nm = !! typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName)
 
                         if tcState.CreatesGeneratedProvidedTypes || hasTypeProviderAssemblyAttrib then
                             ProjectAssemblyDataResult.Unavailable true
@@ -1446,6 +1472,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
                 tcConfigB.useSimpleResolution <- (getSwitchValue useSimpleResolutionSwitch) |> Option.isSome
 
+                tcConfigB.realsig <- List.contains "--realsig" commandLineArgs || List.contains "--realsig+" commandLineArgs
+
                 // Apply command-line arguments and collect more source files if they are in the arguments
                 let sourceFilesNew = ApplyCommandLineArgs(tcConfigB, sourceFiles, commandLineArgs)
 
@@ -1456,7 +1484,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     { new IXmlDocumentationInfoLoader with
                         /// Try to load xml documentation associated with an assembly by the same file path with the extension ".xml".
                         member _.TryLoad(assemblyFileName) =
-                            let xmlFileName = Path.ChangeExtension(assemblyFileName, ".xml")
+                            let xmlFileName = !! Path.ChangeExtension(assemblyFileName, ".xml")
 
                             // REVIEW: File IO - Will eventually need to change this to use a file system interface of some sort.
                             XmlDocumentationInfo.TryCreateFromFile(xmlFileName)

@@ -2,18 +2,21 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 open System
 
-[<TestFixture>]
+
 module ``Cast Tests`` =
 
-    [<Test>]
+    let inline isTypeOf<'T> x =
+        Assert.True(typeof<'T>.IsInstanceOfType(x))
+
+    [<Fact>]
     let ``Cast precedence over expression forms``() =
         // Regression test for FSHARP1.0:1247
         // Precedence of type annotations :> and :?> over preceeding expression forms, e.g. if-then-else etc.
 
-        Assert.IsInstanceOf<Object> (2 :> Object)
-        Assert.IsInstanceOf<Object list> [(2 :> Object)]
-        Assert.IsInstanceOf<Object list> [2 :> Object]
+        isTypeOf<Object> (2 :> Object)
+        isTypeOf<Object list> [(2 :> Object)]
+        isTypeOf<Object list> [2 :> Object]

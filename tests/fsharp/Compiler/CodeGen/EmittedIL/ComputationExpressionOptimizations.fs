@@ -3,15 +3,15 @@
 namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 
 open FSharp.Test
-open NUnit.Framework
+open Xunit
 
 open System
 
 #if !DEBUG // sensitive to debug-level code coming across from debug FSharp.Core
-[<TestFixture>]
+
 module ComputationExpressionOptimizations =
 
-    [<Test>]
+    [<Fact>]
     // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
     //
     // This tests a number of code optimizations cooperating together.
@@ -19,7 +19,7 @@ module ComputationExpressionOptimizations =
     // - Computed functions must be reduced.
     //
     // This is for the "sync { ... }" builder that simply runs code synchronously - no
-    // one uses this in practice but it's a good baseline test for the elimination and redution of constructs.
+    // one uses this in practice but it's a good baseline test for the elimination and reduction of constructs.
     //
     let ``check reduction of sample builder for synchronous code``() =
         CompilerAssert.CompileLibraryAndVerifyIL(

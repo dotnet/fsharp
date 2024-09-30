@@ -47,12 +47,17 @@ type internal AsyncLock =
     member Do: f: (unit -> #Task<'b>) -> Task<'b>
 
 /// <summary>
-/// A cache/memoization for computations that makes sure that the same computation wil only be computed once even if it's needed
+/// A cache/memoization for computations that makes sure that the same computation will only be computed once even if it's needed
 /// at multiple places/times.
 ///
 /// Strongly holds at most one result per key.
 /// </summary>
-type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVersion: equality> =
+type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVersion: equality
+#if !NO_CHECKNULLS
+    and 'TKey:not null
+    and 'TVersion:not null
+#endif
+    > =
 
     /// <param name="keepStrongly">Maximum number of strongly held results to keep in the cache</param>
     /// <param name="keepWeakly">Maximum number of weakly held results to keep in the cache</param>

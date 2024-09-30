@@ -52,6 +52,11 @@
         <target state="translated">指定生成输出中包含多少信息</target>
         <note />
       </trans-unit>
+      <trans-unit id="WorkingDirectoryNonexistent">
+        <source>The working directory does not exist:\n'{0}'.</source>
+        <target state="new">The working directory does not exist:\n'{0}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="cli1">
         <source>ECMA-335 CLI compatible framework (location must be provided)</source>
         <target state="translated">ECMA-335 CLI 兼容框架(必须提供位置)</target>
@@ -72,9 +77,9 @@
         <target state="translated">名为“{0}”的文件已经存在，而且已在编辑器中打开。请为要添加的项指定唯一名称，或者先删除现有项。</target>
         <note />
       </trans-unit>
-      <trans-unit id="CanNotSaveFileNotOpeneInEditor">
+      <trans-unit id="CannotSaveFileNotOpenInEditor">
         <source>Cannot save '{0}' as it is not open in the editor.</source>
-        <target state="translated">无法保存“{0}”，因为它未在编辑器中打开。</target>
+        <target state="new">Cannot save '{0}' as it is not open in the editor.</target>
         <note />
       </trans-unit>
       <trans-unit id="Content">
@@ -713,11 +718,6 @@
       <trans-unit id="CannotBuildWhenBuildInProgress">
         <source>Cannot start a build, because another build is already in progress.</source>
         <target state="translated">无法启动生成，因为另一个生成已经在进行中。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="WorkingDirectoryNotExists">
-        <source>The working directory does not exist:\n'{0}'.</source>
-        <target state="translated">工作目录不存在:\n“{0}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="ProjectReferencesDifferentFramework">

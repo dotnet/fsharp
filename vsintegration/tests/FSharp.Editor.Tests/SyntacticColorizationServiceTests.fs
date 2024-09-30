@@ -103,7 +103,7 @@ type SyntacticClassificationServiceTests() =
         )
 
     [<Fact>]
-    member this.Conment_SingleLine_MultiConments() =
+    member this.Comment_SingleLine_MultiComments() =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
                 """
@@ -118,7 +118,7 @@ type SyntacticClassificationServiceTests() =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
                 """
-                let mutliLine x = 5(* Test1MultiLine
+                let multiLine x = 5(* Test1MultiLine
                      Test2MultiLine <@@asdf@@>
                 Test3MultiLine*) + 1(*Test4*)""",
             marker = "Test1",
@@ -131,7 +131,7 @@ type SyntacticClassificationServiceTests() =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
                 """
-                let mutliLine x = 5(* Test1MultiLine
+                let multiLine x = 5(* Test1MultiLine
                      Test2MultiLine <@@asdf@@>
                 Test3MultiLine*) + 1(*Test4*)
                 """,
@@ -145,7 +145,7 @@ type SyntacticClassificationServiceTests() =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
                 """
-                let mutliLine x = 5(* Test1MultiLine
+                let multiLine x = 5(* Test1MultiLine
                      Test2MultiLine <@@asdf@@>
                 Test3MultiLine*) + 1(*Test4*)
                 """,
@@ -159,7 +159,7 @@ type SyntacticClassificationServiceTests() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
                 """
-                let mutliLine x = 5(* Test1MultiLine
+                let multiLine x = 5(* Test1MultiLine
                      Test2MultiLine <@@asdf@@>
                 Test3MultiLine*) + 1(*Test4*)
                 """,
@@ -302,7 +302,7 @@ type SyntacticClassificationServiceTests() =
                   abstract member Poke: int -> unit
                 end
 
-                type wodget = class
+                type widget = class
                   val mutable state: int 
                   interface IPeekPoke with(*Few Lines Later2*)
                     member x.Poke(n) = x.state <- x.state + n
@@ -324,7 +324,7 @@ type SyntacticClassificationServiceTests() =
                   abstract member Poke: int -> unit
                 end
 
-                type wodget = class
+                type widget = class
                   val mutable state: int 
                   interface IPeekPoke with(*Few Lines Later2*)
                     member x.Poke(n) = x.state <- x.state + n
@@ -1090,7 +1090,7 @@ type SyntacticClassificationServiceTests() =
         )
 
     /// FEATURE: Preprocessor keywords #light\#if\#else\#endif are colored with the PreprocessorKeyword color.
-    /// FEATURE: All code in the inactive side of #if\#else\#endif is colored with with InactiveCode color.
+    /// FEATURE: All code in the inactive side of #if\#else\#endif is colored with the InactiveCode color.
     [<Theory>]
     [<InlineData("light (*Light*)", ClassificationTypeNames.PreprocessorKeyword)>]
     [<InlineData("(*Inactive*)", ClassificationTypeNames.ExcludedCode)>]
@@ -1119,7 +1119,7 @@ type SyntacticClassificationServiceTests() =
     /// FEATURE: Preprocessor extended grammar basic check.
     /// FEATURE:  More extensive grammar test is done in compiler unit tests
     [<Fact>]
-    member public this.Preprocesso_ExtendedIfGrammar_Basic01() =
+    member public this.Preprocessor_ExtendedIfGrammar_Basic01() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
                 """

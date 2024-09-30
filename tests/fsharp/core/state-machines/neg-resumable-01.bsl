@@ -1,5 +1,5 @@
 
-neg-resumable-01.fsx(62,17,63,37): typecheck error FS3501: Invalid resumable code. A 'let rec' occured in the resumable code specification
+neg-resumable-01.fsx(62,17,63,37): typecheck error FS3501: Invalid resumable code. A 'let rec' occurred in the resumable code specification
 
 neg-resumable-01.fsx(70,9,70,19): typecheck error FS3402: The construct '__resumeAt' may only be used in valid resumable code.
 

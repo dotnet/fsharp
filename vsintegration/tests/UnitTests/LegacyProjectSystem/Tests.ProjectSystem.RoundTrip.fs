@@ -32,7 +32,7 @@ type RoundTrip() =
             if Regex.IsMatch(fsprojFileText, "<ItemGroup>\s*</ItemGroup>") then
                 Assert.Fail("did not remove empty ItemGroups")
         ))
-        // test idempotentcy (opening with previous-saved results causes no change)
+        // test idempotency (opening with previous-saved results causes no change)
         this.MakeProjectAndDoWithProjectFile([], [], expectedItems.ToString(), (fun project fileName ->
             SaveProject(project)
             let fsprojFileText = File.ReadAllText(fileName)

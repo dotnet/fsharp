@@ -215,7 +215,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     interface System.Collections.IEnumerable
     interface IReadOnlyCollection<KeyValuePair<'Key, 'Value>>
     interface IReadOnlyDictionary<'Key, 'Value>
-    override Equals: obj -> bool
+    override Equals: objnull -> bool
 
 /// <summary>Contains operations for working with values of type <see cref="T:Microsoft.FSharp.Collections.FSharpMap`2"/>.</summary>
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]

@@ -15,12 +15,12 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeHierarchy
 
 let mkIComparableCompareToSlotSig (g: TcGlobals) =
-    TSlotSig("CompareTo", g.mk_IComparable_ty, [], [], [ [ TSlotParam(Some("obj"), g.obj_ty, false, false, false, []) ] ], Some g.int_ty)
+    TSlotSig("CompareTo", g.mk_IComparable_ty, [], [], [ [ TSlotParam(Some("obj"), g.obj_ty_withNulls, false, false, false, []) ] ], Some g.int_ty)
 
 let mkGenericIComparableCompareToSlotSig (g: TcGlobals) ty =
     TSlotSig(
         "CompareTo",
-        (mkAppTy g.system_GenericIComparable_tcref [ ty ]),
+        (mkWoNullAppTy g.system_GenericIComparable_tcref [ ty ]),
         [],
         [],
         [ [ TSlotParam(Some("obj"), ty, false, false, false, []) ] ],
@@ -35,7 +35,7 @@ let mkIStructuralComparableCompareToSlotSig (g: TcGlobals) =
         [],
         [
             [
-                TSlotParam(None, (mkRefTupledTy g [ g.obj_ty; g.IComparer_ty ]), false, false, false, [])
+                TSlotParam(None, (mkRefTupledTy g [ g.obj_ty_withNulls; g.IComparer_ty ]), false, false, false, [])
             ]
         ],
         Some g.int_ty
@@ -44,7 +44,7 @@ let mkIStructuralComparableCompareToSlotSig (g: TcGlobals) =
 let mkGenericIEquatableEqualsSlotSig (g: TcGlobals) ty =
     TSlotSig(
         "Equals",
-        (mkAppTy g.system_GenericIEquatable_tcref [ ty ]),
+        (mkWoNullAppTy g.system_GenericIEquatable_tcref [ ty ]),
         [],
         [],
         [ [ TSlotParam(Some("obj"), ty, false, false, false, []) ] ],
@@ -59,7 +59,7 @@ let mkIStructuralEquatableEqualsSlotSig (g: TcGlobals) =
         [],
         [
             [
-                TSlotParam(None, (mkRefTupledTy g [ g.obj_ty; g.IEqualityComparer_ty ]), false, false, false, [])
+                TSlotParam(None, (mkRefTupledTy g [ g.obj_ty_withNulls; g.IEqualityComparer_ty ]), false, false, false, [])
             ]
         ],
         Some g.bool_ty
@@ -76,10 +76,10 @@ let mkIStructuralEquatableGetHashCodeSlotSig (g: TcGlobals) =
     )
 
 let mkGetHashCodeSlotSig (g: TcGlobals) =
-    TSlotSig("GetHashCode", g.obj_ty, [], [], [ [] ], Some g.int_ty)
+    TSlotSig("GetHashCode", g.obj_ty_noNulls, [], [], [ [] ], Some g.int_ty)
 
 let mkEqualsSlotSig (g: TcGlobals) =
-    TSlotSig("Equals", g.obj_ty, [], [], [ [ TSlotParam(Some("obj"), g.obj_ty, false, false, false, []) ] ], Some g.bool_ty)
+    TSlotSig("Equals", g.obj_ty_noNulls, [], [], [ [ TSlotParam(Some("obj"), g.obj_ty_withNulls, false, false, false, []) ] ], Some g.bool_ty)
 
 //-------------------------------------------------------------------------
 // Helpers associated with code-generation of comparison/hash augmentations
@@ -89,22 +89,22 @@ let mkThisTy g ty =
     if isStructTy g ty then mkByrefTy g ty else ty
 
 let mkCompareObjTy g ty =
-    mkFunTy g (mkThisTy g ty) (mkFunTy g g.obj_ty g.int_ty)
+    mkFunTy g (mkThisTy g ty) (mkFunTy g g.obj_ty_withNulls g.int_ty)
 
 let mkCompareTy g ty =
     mkFunTy g (mkThisTy g ty) (mkFunTy g ty g.int_ty)
 
 let mkCompareWithComparerTy g ty =
-    mkFunTy g (mkThisTy g ty) (mkFunTy g (mkRefTupledTy g [ g.obj_ty; g.IComparer_ty ]) g.int_ty)
+    mkFunTy g (mkThisTy g ty) (mkFunTy g (mkRefTupledTy g [ g.obj_ty_withNulls; g.IComparer_ty ]) g.int_ty)
 
 let mkEqualsObjTy g ty =
-    mkFunTy g (mkThisTy g ty) (mkFunTy g g.obj_ty g.bool_ty)
+    mkFunTy g (mkThisTy g ty) (mkFunTy g g.obj_ty_withNulls g.bool_ty)
 
 let mkEqualsTy g ty =
     mkFunTy g (mkThisTy g ty) (mkFunTy g ty g.bool_ty)
 
 let mkEqualsWithComparerTy g ty =
-    mkFunTy g (mkThisTy g ty) (mkFunTy g (mkRefTupledTy g [ g.obj_ty; g.IEqualityComparer_ty ]) g.bool_ty)
+    mkFunTy g (mkThisTy g ty) (mkFunTy g (mkRefTupledTy g [ g.obj_ty_withNulls; g.IEqualityComparer_ty ]) g.bool_ty)
 
 let mkEqualsWithComparerTyExact g ty =
     mkFunTy g (mkThisTy g ty) (mkFunTy g (mkRefTupledTy g [ ty; g.IEqualityComparer_ty ]) g.bool_ty)
@@ -424,7 +424,7 @@ let mkExnEquality (g: TcGlobals) exnref (exnc: Tycon) =
 
         let cases =
             [
-                mkCase (DecisionTreeTest.IsInst(g.exn_ty, mkAppTy exnref []), mbuilder.AddResultTarget(expr))
+                mkCase (DecisionTreeTest.IsInst(g.exn_ty, mkWoNullAppTy exnref []), mbuilder.AddResultTarget(expr))
             ]
 
         let dflt = Some(mbuilder.AddResultTarget(mkFalse g m))
@@ -455,7 +455,7 @@ let mkExnEqualityWithComparer g exnref (exnc: Tycon) thise thatobje (thatv, that
 
         let cases =
             [
-                mkCase (DecisionTreeTest.IsInst(g.exn_ty, mkAppTy exnref []), mbuilder.AddResultTarget(expr))
+                mkCase (DecisionTreeTest.IsInst(g.exn_ty, mkWoNullAppTy exnref []), mbuilder.AddResultTarget(expr))
             ]
 
         let dflt = mbuilder.AddResultTarget(mkFalse g m)
@@ -1131,7 +1131,7 @@ let CheckAugmentationAttribs isImplementation g amap (tycon: Tycon) =
         hasNominalInterface g.system_GenericIComparable_tcref
 
     let hasExplicitEquals =
-        tycon.HasOverride g "Equals" [ g.obj_ty ]
+        tycon.HasOverride g "Equals" [ g.obj_ty_ambivalent ]
         || hasNominalInterface g.tcref_System_IStructuralEquatable
 
     let hasExplicitGenericEquals = hasNominalInterface g.system_GenericIEquatable_tcref
@@ -1287,7 +1287,7 @@ let mkValSpecAux g m (tcref: TyconRef) ty vis slotsig methn valTy argData isGett
 let mkValSpec g (tcref: TyconRef) ty vis slotsig methn valTy argData isGetter =
     mkValSpecAux g tcref.Range tcref ty vis slotsig methn valTy argData isGetter true
 
-// Unlike other generated items, the 'IsABC' propeties are visible, not considered compiler-generated
+// Unlike other generated items, the 'IsABC' properties are visible, not considered compiler-generated
 let mkImpliedValSpec g m tcref ty vis slotsig methn valTy argData isGetter =
     let v = mkValSpecAux g m tcref ty vis slotsig methn valTy argData isGetter false
     v.SetIsImplied()
@@ -1404,13 +1404,13 @@ let MakeBindingsForCompareAugmentation g (tycon: Tycon) =
                 let tinst, ty = mkMinimalTy g tcref
 
                 let thisv, thise = mkThisVar g m ty
-                let thatobjv, thatobje = mkCompGenLocal m "obj" g.obj_ty
+                let thatobjv, thatobje = mkCompGenLocal m "obj" g.obj_ty_ambivalent
 
                 let comparee =
                     if isUnitTy g ty then
                         mkZero g m
                     else
-                        let thate = mkCoerceExpr (thatobje, ty, m, g.obj_ty)
+                        let thate = mkCoerceExpr (thatobje, ty, m, g.obj_ty_ambivalent)
 
                         mkApps g ((exprForValRef m vref2, vref2.Type), (if isNil tinst then [] else [ tinst ]), [ thise; thate ], m)
 
@@ -1447,8 +1447,8 @@ let MakeBindingsForCompareWithComparerAugmentation g (tycon: Tycon) =
             let compv, compe = mkCompGenLocal m "comp" g.IComparer_ty
 
             let thisv, thise = mkThisVar g m ty
-            let thatobjv, thatobje = mkCompGenLocal m "obj" g.obj_ty
-            let thate = mkCoerceExpr (thatobje, ty, m, g.obj_ty)
+            let thatobjv, thatobje = mkCompGenLocal m "obj" g.obj_ty_ambivalent
+            let thate = mkCoerceExpr (thatobje, ty, m, g.obj_ty_ambivalent)
 
             let rhs =
                 let comparee = comparef g tcref tycon (thisv, thise) (thatobjv, thate) compe
@@ -1506,7 +1506,7 @@ let MakeBindingsForEqualityWithComparerAugmentation (g: TcGlobals) (tycon: Tycon
             let withcEqualsExpr =
                 let tinst, ty = mkMinimalTy g tcref
                 let thisv, thise = mkThisVar g m ty
-                let thatobjv, thatobje = mkCompGenLocal m "obj" g.obj_ty
+                let thatobjv, thatobje = mkCompGenLocal m "obj" g.obj_ty_ambivalent
                 let thatv, thate = mkCompGenLocal m "that" ty
                 let compv, compe = mkCompGenLocal m "comp" g.IEqualityComparer_ty
 
@@ -1602,7 +1602,7 @@ let MakeBindingsForEqualsAugmentation (g: TcGlobals) (tycon: Tycon) =
                 let tinst, ty = mkMinimalTy g tcref
 
                 let thisv, thise = mkThisVar g m ty
-                let thatobjv, thatobje = mkCompGenLocal m "obj" g.obj_ty
+                let thatobjv, thatobje = mkCompGenLocal m "obj" g.obj_ty_ambivalent
 
                 let equalse =
                     if isUnitTy g ty then
@@ -1682,7 +1682,7 @@ let MakeValsForUnionAugmentation g (tcref: TyconRef) =
 
     tcref.UnionCasesAsList
     |> List.map (fun uc ->
-        // Unlike other generated items, the 'IsABC' propeties are visible, not considered compiler-generated
+        // Unlike other generated items, the 'IsABC' properties are visible, not considered compiler-generated
         let v =
             mkImpliedValSpec g uc.Range tcref tmty vis None ("get_Is" + uc.CompiledName) (tps +-> (mkIsCaseTy g tmty)) unitArg true
 

@@ -843,11 +843,11 @@ let main _ =
     [<FactForNETCOREAPP>]
     let ``Interface A with static abstracts can be inherited in interface B and then implemented in type C which inherits B in lang version70`` () =
         Fsx """
-            type IParseable<'T when 'T :> IParseable<'T>> =
+            type IParsable<'T when 'T :> IParsable<'T>> =
                 static abstract member Parse : string -> 'T
 
             type IAction<'T when 'T :> IAction<'T>> =
-                inherit IParseable<'T>
+                inherit IParsable<'T>
 
             type SomeAction = A | B with
                 interface IAction<SomeAction> with
@@ -857,7 +857,7 @@ let main _ =
                         | "B" -> B
                         | _ -> failwith "can't parse"
 
-            let parse<'T when 'T :> IParseable<'T>> (x: string) : 'T = 'T.Parse x
+            let parse<'T when 'T :> IParsable<'T>> (x: string) : 'T = 'T.Parse x
 
             if parse<SomeAction> "A" <> A then
                 failwith "failed"
@@ -870,11 +870,11 @@ let main _ =
     [<FactForNETCOREAPP>]
     let ``Static abstracts can be inherited through multiple levels in lang version70`` () =
         Fsx """
-            type IParseable<'T when 'T :> IParseable<'T>> =
+            type IParsable<'T when 'T :> IParsable<'T>> =
                 static abstract member Parse : string -> 'T
 
             type IAction1<'T when 'T :> IAction1<'T>> =
-                inherit IParseable<'T>
+                inherit IParsable<'T>
 
             type IAction2<'T when 'T :> IAction2<'T>> =
                 inherit IAction1<'T>
@@ -892,7 +892,7 @@ let main _ =
                         | "B" -> B
                         | _ -> failwith "can't parse"
 
-            let parse<'T when 'T :> IParseable<'T>> (x: string) : 'T = 'T.Parse x
+            let parse<'T when 'T :> IParsable<'T>> (x: string) : 'T = 'T.Parse x
             let altParse<'T when 'T :> IAction3<'T>> (x: string) : 'T = 'T.AltParse x
 
             let x: SomeAction = parse "A"
@@ -1266,6 +1266,42 @@ type A () =
         |> shouldFail
         |> withDiagnostics [
             (Error 3867, Line 3, Col 21, Line 3, Col 22, "Classes cannot contain static abstract members.")
+        ]
+    
+    [<Fact>]
+    let ``Access modifiers cannot be applied to an SRTP constraint in preview`` () =
+        FSharp """
+let inline length (x: ^a when ^a: (member public Length: int)) = x.Length
+let inline length2 (x: ^a when ^a: (member Length: int with public get)) = x.Length
+let inline length3 (x: ^a when ^a: (member Length: int with public set)) = x.set_Length(1)
+let inline length4 (x: ^a when ^a: (member public get_Length: unit -> int)) = x.get_Length()
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3871, Line 2, Col 43, Line 2, Col 49, "Access modifiers cannot be applied to an SRTP constraint.")
+            (Error 3871, Line 3, Col 61, Line 3, Col 67, "Access modifiers cannot be applied to an SRTP constraint.")
+            (Error 3871, Line 4, Col 61, Line 4, Col 67, "Access modifiers cannot be applied to an SRTP constraint.")
+            (Error 3871, Line 5, Col 44, Line 5, Col 50, "Access modifiers cannot be applied to an SRTP constraint.")
+        ]
+        
+    [<Fact>]
+    let ``Access modifiers in an SRTP constraint generate warning in F# 8.0`` () =
+        FSharp """
+let inline length (x: ^a when ^a: (member public Length: int)) = x.Length
+let inline length2 (x: ^a when ^a: (member Length: int with public get)) = x.Length
+let inline length3 (x: ^a when ^a: (member Length: int with public set)) = x.set_Length(1)
+let inline length4 (x: ^a when ^a: (member public get_Length: unit -> int)) = x.get_Length()
+        """
+        |> withLangVersion80
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 3871, Line 2, Col 43, Line 2, Col 49, "Access modifiers cannot be applied to an SRTP constraint.")
+            (Warning 3871, Line 3, Col 61, Line 3, Col 67, "Access modifiers cannot be applied to an SRTP constraint.")
+            (Warning 3871, Line 4, Col 61, Line 4, Col 67, "Access modifiers cannot be applied to an SRTP constraint.")
+            (Warning 3871, Line 5, Col 44, Line 5, Col 50, "Access modifiers cannot be applied to an SRTP constraint.")
         ]
 
     [<FactForNETCOREAPP>]

@@ -52,6 +52,11 @@
         <target state="translated">指定組建輸出中要包含多少資訊</target>
         <note />
       </trans-unit>
+      <trans-unit id="WorkingDirectoryNonexistent">
+        <source>The working directory does not exist:\n'{0}'.</source>
+        <target state="new">The working directory does not exist:\n'{0}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="cli1">
         <source>ECMA-335 CLI compatible framework (location must be provided)</source>
         <target state="translated">ECMA-335 CLI 相容架構 (必須提供位置)</target>
@@ -72,9 +77,9 @@
         <target state="translated">已經有名稱為 '{0}' 的檔案，而且已經在編輯器中開啟。請為所要加入的項目指定唯一的名稱，或者先刪除現有的同名項目。</target>
         <note />
       </trans-unit>
-      <trans-unit id="CanNotSaveFileNotOpeneInEditor">
+      <trans-unit id="CannotSaveFileNotOpenInEditor">
         <source>Cannot save '{0}' as it is not open in the editor.</source>
-        <target state="translated">因為 '{0}' 不是在編輯器中開啟的，所以無法儲存。</target>
+        <target state="new">Cannot save '{0}' as it is not open in the editor.</target>
         <note />
       </trans-unit>
       <trans-unit id="Content">
@@ -713,11 +718,6 @@
       <trans-unit id="CannotBuildWhenBuildInProgress">
         <source>Cannot start a build, because another build is already in progress.</source>
         <target state="translated">無法啟動建置，因為另一個建置已經在進行中。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="WorkingDirectoryNotExists">
-        <source>The working directory does not exist:\n'{0}'.</source>
-        <target state="translated">工作目錄不存在:\n'{0}'。</target>
         <note />
       </trans-unit>
       <trans-unit id="ProjectReferencesDifferentFramework">

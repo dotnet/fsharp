@@ -139,7 +139,7 @@ module ``Check no resumption point in fast integer for loop`` =
                     let mutable res = inputValue
                     let mutable count = 0
                     for i = 0 to 9 do 
-                        // Attempt to specify a resumption point in the for loop. THis is not permitted
+                        // Attempt to specify a resumption point in the for loop. This is not permitted
                         // and while loops should be used instead
                         match __resumableEntry() with // we expect an error here - this is not in resumable code 
                         | Some contID ->

@@ -39,6 +39,7 @@ module ILChecker =
         let methodDoubleLine = "^(\s*\.method.*)(?: \s*)$[\r?\n?]^(?: \s*)(.*)\s*$[\r?\n?]^(\s*\{)"
         let methodTripleLine = "^(\s*\.method.*)(?: \s*)$[\r?\n?]^(?: \s*)(.*)\s*$[\r?\n?]^(?: \s*)(.*)\s*$[\r?\n?]^(\s*\{)"
         let normalizeNewLines (text: string) = text.Replace("\r\n", "\n").Replace("\r\n", "\r")
+        let resourceMultiLine = @"(?<resource>\.mresource\s+.*)(?<block>\s*\{[^}]*\})"
 
         let stripComments (text:string) =
             Regex.Replace(text,
@@ -73,15 +74,25 @@ module ILChecker =
             |> unifyRuntimeAssemblyName
             |> unifyImageBase
 
+        let stripManagedResources (text: string) =
+            let result = Regex.Replace(text, "\.mresource public .*\r?\n{\s*}\r?\n", "", RegexOptions.Multiline)
+            result
+        
         // This lets the same test be used when targeting both netfx and netcore.
         let unifyNetStandardVersions (text: string) = text.Replace(".ver 2:0:0:0", ".ver 2:1:0:0")
+
+        let unifyResourceBlock text =
+            let text2 = Regex.Replace(text, resourceMultiLine, (fun (res: Match) -> $"""{res.Groups["resource"].Value} {{ }}"""), RegexOptions.Multiline)
+            text2
 
         ilCode.Trim()
         |> normalizeNewLines
         |> stripComments
         |> unifyingAssemblyNames
         |> unifyMethodLine
+        |> stripManagedResources
         |> unifyNetStandardVersions
+        |> unifyResourceBlock
 
     let private generateIlFile dllFilePath ildasmArgs =
         let ilFilePath = Path.ChangeExtension(dllFilePath, ".il")
@@ -116,6 +127,7 @@ module ILChecker =
 
         let prepareLines (s: string) =
             s.Split('\n')
+                // Skip emitted managed resources
                 |> Array.map(fun e -> e.Trim('\r'))
                 |> Array.skipWhile(String.IsNullOrWhiteSpace)
                 |> Array.rev

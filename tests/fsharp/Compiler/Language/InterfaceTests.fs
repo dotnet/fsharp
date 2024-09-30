@@ -3,14 +3,13 @@
 namespace FSharp.Compiler.UnitTests
 
 open FSharp.Compiler.Diagnostics
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 open FSharp.Test.Utilities
 
-[<TestFixture>]
 module InterfaceTests =
 
-    [<Test>]
+    [<Fact>]
     let ShouldnWork() =
         CompilerAssert.Pass """
 type IGet<'T> =
@@ -162,7 +161,7 @@ assertion (fun (x:float) -> x * 3.0) (fun v ->
         ``Many Instantiations of the same interface - SetUp`` + ``Many Instantiations of the same interface - Asserts``
 
 
-    [<Test>]
+    [<Fact>]
     let MultipleTypedInterfacesFSharp50() =
 
 #if NETSTANDARD
@@ -188,7 +187,7 @@ assertion (fun (x:float) -> x * 3.0) (fun v ->
 
         CompilerAssert.Compile fsCmpl
 
-    [<Test>]
+    [<Fact>]
     let MultipleTypedInterfacesFSharp47() =
         CompilerAssert.TypeCheckWithErrorsAndOptions
             [|
@@ -202,7 +201,7 @@ assertion (fun (x:float) -> x * 3.0) (fun v ->
                 (FSharpDiagnosticSeverity.Error, 3350, (24, 6, 24, 20), "Feature 'interfaces with multiple generic instantiation' is not available in F# 4.7. Please use language version 5.0 or greater.")
             |]
 
-    [<Test>]
+    [<Fact>]
     let MultipleTypedInterfacesFSharp50VerifyIl() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
             [|

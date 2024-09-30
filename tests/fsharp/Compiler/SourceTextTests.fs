@@ -3,32 +3,32 @@
 namespace FSharp.Compiler.UnitTests
 
 open System
-open NUnit.Framework
+open Xunit
 
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Text
 
-[<TestFixture>]
+
 module SourceTextTests =
 
-    [<Test>]
+    [<Fact>]
     let StringText () =
         let text = "test\ntest2\r\ntest3\n\ntest4\ntest5\rtest6\n"
         let sourceText = SourceText.ofString text
 
-        Assert.AreEqual("test",  sourceText.GetLineString(0))
-        Assert.AreEqual("test2", sourceText.GetLineString(1))
-        Assert.AreEqual("test3", sourceText.GetLineString(2))
-        Assert.AreEqual("",      sourceText.GetLineString(3))
-        Assert.AreEqual("test4", sourceText.GetLineString(4))
-        Assert.AreEqual("test5", sourceText.GetLineString(5))
-        Assert.AreEqual("test6", sourceText.GetLineString(6))
-        Assert.AreEqual("",      sourceText.GetLineString(7))
-        Assert.AreEqual(8,       sourceText.GetLineCount())
+        Assert.Equal("test",  sourceText.GetLineString(0))
+        Assert.Equal("test2", sourceText.GetLineString(1))
+        Assert.Equal("test3", sourceText.GetLineString(2))
+        Assert.Equal("",      sourceText.GetLineString(3))
+        Assert.Equal("test4", sourceText.GetLineString(4))
+        Assert.Equal("test5", sourceText.GetLineString(5))
+        Assert.Equal("test6", sourceText.GetLineString(6))
+        Assert.Equal("",      sourceText.GetLineString(7))
+        Assert.Equal(8,       sourceText.GetLineCount())
 
         let (count, length) = sourceText.GetLastCharacterPosition()
-        Assert.AreEqual(8, count)
-        Assert.AreEqual(0, length)
+        Assert.Equal(8, count)
+        Assert.Equal(0, length)
 
         Assert.True(sourceText.SubTextEquals("test", 0))
         Assert.True(sourceText.SubTextEquals("test2", 5))

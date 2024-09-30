@@ -17,10 +17,9 @@ let [<Literal>] folder = __SOURCE_DIRECTORY__ + "/Shadowing"
         "ShadowWithLastOpenedTypeExtensions.fsx"
     |]
 )>]
-let PropertyHidding compilation =
+let PropertyHiding compilation =
     compilation
     |> asFsx
-    |> withOptions ["--langversion:preview"]
     |> verifyBaselines
     |> compileAndRun
     |> shouldSucceed
@@ -60,7 +59,6 @@ let ``PropertyHiding v7.0`` compilation =
 let ``PropertyHiding fails`` compilation =
     compilation
     |> asFsx
-    |> withOptions ["--langversion:preview"]
     |> verifyBaselines
     |> compile
     |> shouldFail

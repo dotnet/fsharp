@@ -12,6 +12,26 @@
         <target state="translated">簽章與實作中類型 '{1}' 的 {0} 定義不相容，因為縮寫不同:\n    {2}\n與\n    {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarning">
+        <source>Nullness warning: {0}.</source>
+        <target state="new">Nullness warning: {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningEquivWithTypes">
+        <source>Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</source>
+        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningWithType">
+        <source>Nullness warning: The type '{0}' does not support 'null'.</source>
+        <target state="new">Nullness warning: The type '{0}' does not support 'null'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningWithTypes">
+        <source>Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</source>
+        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
         <source>Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</source>
         <target state="translated">類型不符。必須是類型為\n    {1}    \n 的元組長度 {0}，但提供的是類型為\n    {3}{4}\n 的元組長度 {2}</target>
@@ -35,6 +55,11 @@
       <trans-unit id="OverrideShouldBeStatic">
         <source> Static member is expected.</source>
         <target state="translated"> 必須是靜態成員。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR_JUST_BEFORE_NULL">
+        <source>symbol '|' (directly before 'null')</source>
+        <target state="new">symbol '|' (directly before 'null')</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
@@ -178,8 +203,8 @@
         <note />
       </trans-unit>
       <trans-unit id="NameClash2">
-        <source>The {0} '{1}' can not be defined because the name '{2}' clashes with the {3} '{4}' in this type or module</source>
-        <target state="translated">無法定義 {0} '{1}'，因為名稱 '{2}' 與這個類型或模組中的 {3} '{4}' 相衝突</target>
+        <source>The {0} '{1}' cannot be defined because the name '{2}' clashes with the {3} '{4}' in this type or module</source>
+        <target state="new">The {0} '{1}' cannot be defined because the name '{2}' clashes with the {3} '{4}' in this type or module</target>
         <note />
       </trans-unit>
       <trans-unit id="Duplicate1">
