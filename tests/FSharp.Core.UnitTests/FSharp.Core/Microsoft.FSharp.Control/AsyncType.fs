@@ -39,7 +39,7 @@ module AsyncType =
 
         async { return () } |> expect Success
 
-
+[<Collection(nameof FSharp.Test.DoNotRunInParallel)>]
 type AsyncType() =
 
     let ignoreSynchCtx f =
