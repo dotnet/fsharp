@@ -944,7 +944,6 @@ type ProjectWorkflowBuilder
         ?checker: FSharpChecker,
         ?useGetSource,
         ?useChangeNotifications,
-        ?useSyntaxTreeCache,
         ?useTransparentCompiler,
         ?runTimeout,
         ?autoStart,
@@ -973,7 +972,6 @@ type ProjectWorkflowBuilder
                 enablePartialTypeChecking = defaultArg enablePartialTypeChecking true,
                 captureIdentifiersWhenParsing = true,
                 documentSource = (if useGetSource then DocumentSource.Custom getSource else DocumentSource.FileSystem),
-                useSyntaxTreeCache = defaultArg useSyntaxTreeCache false,
                 useTransparentCompiler = useTransparentCompiler
             ))
 
