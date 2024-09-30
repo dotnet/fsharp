@@ -194,9 +194,8 @@ let tryAppendXmlDoc (buff: (range * StringBuilder) option) (s:string) =
 
 // Utilities for parsing #if/#else/#endif
 
-let shouldStartLine args lexbuf (m:range) err tok =
-    if (m.StartColumn <> 0) then fail args lexbuf err tok
-    else tok
+let shouldStartLine args lexbuf (m:range) err =
+    if (m.StartColumn <> 0) then fail args lexbuf err ()
 
 let shouldStartFile args lexbuf (m:range) err tok =
     if (m.StartColumn <> 0 || m.StartLine <> 1) then fail args lexbuf err tok
@@ -1030,7 +1029,7 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | anywhite* "#if" anywhite+ anystring
    { let m = lexbuf.LexemeRange
-     shouldStartLine args lexbuf m (FSComp.SR.lexHashIfMustBeFirst()) ()
+     shouldStartLine args lexbuf m (FSComp.SR.lexHashIfMustBeFirst())
      let lookup id = List.contains id args.conditionalDefines
      let lexed = lexeme lexbuf
      let isTrue, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion lexbuf.StrictIndentation args lookup lexed
@@ -1047,7 +1046,7 @@ rule token (args: LexArgs) (skip: bool) = parse
      | (IfDefElse,_) :: _rest -> LEX_FAILURE (FSComp.SR.lexHashEndifRequiredForElse())
      | (IfDefIf,_) :: rest ->
        let m = lexbuf.LexemeRange
-       shouldStartLine args lexbuf m (FSComp.SR.lexHashElseMustBeFirst()) ()
+       shouldStartLine args lexbuf m (FSComp.SR.lexHashElseMustBeFirst())
        args.ifdefStack <- (IfDefElse,m) :: rest
        LexbufIfdefStore.SaveElseHash(lexbuf, lexed, m)
        let tok = HASH_ELSE(m, lexed, LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Skip(0, m)))
@@ -1056,7 +1055,7 @@ rule token (args: LexArgs) (skip: bool) = parse
  | anywhite* "#endif" anywhite* ("//" [^'\n''\r']*)?
    { let lexed = (lexeme lexbuf)
      let m = lexbuf.LexemeRange
-     shouldStartLine args lexbuf m (FSComp.SR.lexHashEndifMustBeFirst()) ()
+     shouldStartLine args lexbuf m (FSComp.SR.lexHashEndifMustBeFirst())
      match args.ifdefStack with
      | []->  LEX_FAILURE (FSComp.SR.lexHashEndingNoMatchingIf())
      | _ :: rest ->
@@ -1114,7 +1113,7 @@ and ifdefSkip (n: int) (m: range) (args: LexArgs) (skip: bool) = parse
            args.ifdefStack <- (IfDefElse,m) :: rest
            if not skip then HASH_ELSE(m,lexed,LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Token))
            else endline LexerEndlineContinuation.Token args skip lexbuf
-       else
+      else
          LexbufIfdefStore.SaveElseHash(lexbuf, lexed, m)
          if not skip then INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Skip(n, m)))
          else endline (LexerEndlineContinuation.Skip(n, m)) args skip lexbuf }
@@ -1136,9 +1135,9 @@ and ifdefSkip (n: int) (m: range) (args: LexArgs) (skip: bool) = parse
               if not skip then HASH_ENDIF(m,lexed,LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Token))
               else endline LexerEndlineContinuation.Token args skip lexbuf
        else
+           shouldStartLine args lexbuf m (FSComp.SR.lexWrongNestedHashEndif())
            LexbufIfdefStore.SaveEndIfHash(lexbuf, lexed, m)
            let tok = INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Skip(n-1, m)))
-           let tok = shouldStartLine args lexbuf m (FSComp.SR.lexWrongNestedHashEndif()) tok
            if not skip then tok else endline (LexerEndlineContinuation.Skip(n-1, m)) args skip lexbuf }
 
   | newline
