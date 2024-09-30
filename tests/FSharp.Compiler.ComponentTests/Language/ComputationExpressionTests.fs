@@ -443,3 +443,54 @@ query {
         |> withDiagnostics [
             (Error 3143, Line 4, Col 5, Line 4, Col 9, "'let!', 'use!' and 'do!' expressions may not be used in queries")
         ]
+
+    [<Fact>]
+    let ``This control construct may only be used if the computation expression builder defines a 'Bind' method(match!)`` () =
+        Fsx """
+module Result =
+    let zip x1 x2 =
+        match x1,x2 with
+        | Ok x1res, Ok x2res -> Ok (x1res, x2res)
+        | Error e, _ -> Error e
+        | _, Error e -> Error e
+
+type ResultBuilder() =
+    member _.MergeSources(t1: Result<'T,'U>, t2: Result<'T1,'U>) = Result.zip t1 t2
+    member _.BindReturn(x: Result<'T,'U>, f) = Result.map f x
+    member _.Delay(f) = f()
+    
+    member _.TryWith(r: Result<'T,'U>, f) =
+        match r with
+        | Ok x -> Ok x
+        | Error e -> f e
+
+let result = ResultBuilder()
+
+let run r2 r3 =
+    result {
+        match! r2 with
+        | Ok x -> return x
+        | Error e -> return e
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 708, Line 23, Col 9, Line 23, Col 15, "This control construct may only be used if the computation expression builder defines a 'Bind' method")
+        ]
+
+    [<Fact>]
+    let ``This construct may only be used within computation expressions(match!)`` () =
+        Fsx """
+let run r2 r3 =
+    match! r2 with
+    | Ok x -> x
+    | Error e -> e
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 750, Line 3, Col 5, Line 3, Col 11, "This construct may only be used within computation expressions")
+        ]
