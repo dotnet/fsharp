@@ -326,8 +326,7 @@ type internal TransparentCompiler
         parallelReferenceResolution,
         captureIdentifiersWhenParsing,
         getSource: (string -> Async<ISourceText option>) option,
-        useChangeNotifications,
-        useSyntaxTreeCache
+        useChangeNotifications
     ) as self =
 
     let documentSource =
@@ -374,8 +373,7 @@ type internal TransparentCompiler
             parallelReferenceResolution,
             captureIdentifiersWhenParsing,
             getSource,
-            useChangeNotifications,
-            useSyntaxTreeCache
+            useChangeNotifications
         )
         :> IBackgroundCompiler
 
