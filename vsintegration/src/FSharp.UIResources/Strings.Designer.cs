@@ -637,15 +637,6 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cache parsing results (experimental).
-        /// </summary>
-        public static string Use_syntax_tree_cache {
-            get {
-                return ResourceManager.GetString("Use_syntax_tree_cache", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Use Transparent Compiler (restart required).
         /// </summary>
         public static string Use_Transparent_Compiler {
