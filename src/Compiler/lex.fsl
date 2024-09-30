@@ -753,7 +753,7 @@ rule token (args: LexArgs) (skip: bool) = parse
        else singleLineComment (None,1,m,m,args) skip lexbuf }
 
  | newline
-     { newline lexbuf
+     { incrLine lexbuf
        if not skip then WHITESPACE (LexCont.Token(args.ifdefStack, args.stringNest))
        else token args skip lexbuf }
 
@@ -820,12 +820,12 @@ rule token (args: LexArgs) (skip: bool) = parse
                 lexbuf.EndPos <- pos.ApplyLineDirective((match file with Some f -> FileIndex.fileIndexOfFile f | None -> pos.FileIndex), line)
             else
                 // add a newline when we don't apply a directive since we consumed a newline getting here
-                newline lexbuf
+                incrLine lexbuf
 
             token args skip lexbuf
         else
             // add a newline when we don't apply a directive since we consumed a newline getting here
-            newline lexbuf
+            incrLine lexbuf
             HASH_LINE (LexCont.Token (args.ifdefStack, args.stringNest))
      }
 
@@ -1143,7 +1143,7 @@ and ifdefSkip (n: int) (m: range) (args: LexArgs) (skip: bool) = parse
            if not skip then tok else endline (LexerEndlineContinuation.IfdefSkip(n-1, m)) args skip lexbuf }
 
   | newline
-    { newline lexbuf; ifdefSkip n m args skip lexbuf }
+    { incrLine lexbuf; ifdefSkip n m args skip lexbuf }
 
   | [^ ' ' '\n' '\r' ]+
 
@@ -1163,7 +1163,7 @@ and ifdefSkip (n: int) (m: range) (args: LexArgs) (skip: bool) = parse
 // or end of file and then calls the lexing function specified by 'cont' - either token or ifdefSkip
 and endline (cont: LexerEndlineContinuation) (args: LexArgs) (skip: bool) = parse
  | newline
-   { newline lexbuf
+   { incrLine lexbuf
      match cont with
      | LexerEndlineContinuation.Token ->
          if not skip then WHITESPACE(LexCont.Token (args.ifdefStack, args.stringNest))
@@ -1192,7 +1192,7 @@ and endline (cont: LexerEndlineContinuation) (args: LexArgs) (skip: bool) = pars
 and singleQuoteString (sargs: LexerStringArgs) (skip: bool) = parse
  |  '\\' newline anywhite*
     { let (_buf, _fin, m, kind, args) = sargs
-      newline lexbuf
+      incrLine lexbuf
       let text = lexeme lexbuf
       let text2 = text |> String.filter (fun c -> c <> ' ' && c <> '\t')
       advanceColumnBy lexbuf (text.Length - text2.Length)
@@ -1321,7 +1321,7 @@ and singleQuoteString (sargs: LexerStringArgs) (skip: bool) = parse
 
  | newline
     { let (buf, _fin, m, kind, args) = sargs
-      newline lexbuf
+      incrLine lexbuf
       addUnicodeString buf (lexeme lexbuf)
       if not skip then
           STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, args.interpolationDelimiterLength, m))
@@ -1390,7 +1390,7 @@ and verbatimString (sargs: LexerStringArgs) (skip: bool) = parse
 
  | newline
     { let (buf, _fin, m, kind, args) = sargs
-      newline lexbuf
+      incrLine lexbuf
       addUnicodeString buf (lexeme lexbuf)
       if not skip then
           STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, args.interpolationDelimiterLength, m))
@@ -1483,7 +1483,7 @@ and tripleQuoteString (sargs: LexerStringArgs) (skip: bool) = parse
 
  | newline
     { let (buf, _fin, m, kind, args) = sargs
-      newline lexbuf
+      incrLine lexbuf
       addUnicodeString buf (lexeme lexbuf)
       if not skip then
           STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, args.interpolationDelimiterLength, m))
@@ -1577,7 +1577,7 @@ and extendedInterpolatedString (sargs: LexerStringArgs) (skip: bool) = parse
 
  | newline
     { let (buf, _fin, m, kind, args) = sargs
-      newline lexbuf
+      incrLine lexbuf
       addUnicodeString buf (lexeme lexbuf)
       if not skip then
           STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.ExtendedInterpolated, kind, args.interpolationDelimiterLength, m))
@@ -1694,7 +1694,7 @@ and singleLineComment (cargs: SingleLineCommentArgs) (skip: bool) = parse
  | newline
      { let buff,_n, mStart, mEnd, args = cargs
        trySaveXmlDoc lexbuf buff
-       newline lexbuf
+       incrLine lexbuf
        // Saves the documentation (if we're collecting any) into a buffer-local variable.
        if not skip then LINE_COMMENT (LexCont.Token(args.ifdefStack, args.stringNest))
        else
@@ -1756,7 +1756,7 @@ and comment (cargs: BlockCommentArgs) (skip: bool) = parse
 
  | newline
     { let n, m, args = cargs
-      newline lexbuf
+      incrLine lexbuf
       if not skip then COMMENT (LexCont.Comment(args.ifdefStack, args.stringNest, n, m))
       else comment cargs skip lexbuf }
  | "*)"
@@ -1790,7 +1790,7 @@ and comment (cargs: BlockCommentArgs) (skip: bool) = parse
 and stringInComment (n: int) (m: range) (args: LexArgs) (skip: bool) = parse
  // Follow string lexing, skipping tokens until it finishes
  |  '\\' newline anywhite*
-     { newline lexbuf
+     { incrLine lexbuf
        if not skip then COMMENT (LexCont.StringInComment(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, n, m))
        else stringInComment n m args skip lexbuf }
 
@@ -1812,7 +1812,7 @@ and stringInComment (n: int) (m: range) (args: LexArgs) (skip: bool) = parse
        else comment (n, m, args) skip lexbuf }
 
  | newline
-     { newline lexbuf
+     { incrLine lexbuf
        if not skip then COMMENT (LexCont.StringInComment(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, n, m))
        else stringInComment n m args skip lexbuf }
 
@@ -1842,7 +1842,7 @@ and verbatimStringInComment (n: int) (m: range) (args: LexArgs) (skip: bool) = p
        else verbatimStringInComment n m args skip lexbuf }
 
  | newline
-     { newline lexbuf
+     { incrLine lexbuf
        if not skip then COMMENT (LexCont.StringInComment(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, n, m))
        else verbatimStringInComment n m args skip lexbuf }
 
@@ -1868,7 +1868,7 @@ and tripleQuoteStringInComment (n: int) (m: range) (args: LexArgs) (skip: bool) 
        else tripleQuoteStringInComment n m args skip lexbuf }
 
  | newline
-     { newline lexbuf
+     { incrLine lexbuf
        if not skip then COMMENT (LexCont.StringInComment(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, n, m))
        else tripleQuoteStringInComment n m args skip lexbuf }
 
@@ -1890,7 +1890,7 @@ and mlOnly (m: range) (args: LexArgs) (skip: bool) = parse
        else mlOnly m args skip lexbuf }
 
  | newline
-     { newline lexbuf
+     { incrLine lexbuf
        if not skip then COMMENT (LexCont.MLOnly(args.ifdefStack, args.stringNest, m))
        else mlOnly m args skip lexbuf }
 
