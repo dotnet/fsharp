@@ -2513,6 +2513,12 @@ type LexFilterImpl (
 
     and rulesForBothSoftWhiteAndHardWhite(tokenTup: TokenTup) =
           match tokenTup.Token with
+          | HASH_IDENT ident ->
+              let hashPos = LexbufState(tokenTup.StartPos, tokenTup.StartPos.ShiftColumnBy(1), false)
+              let identPos = LexbufState(tokenTup.StartPos.ShiftColumnBy(1), tokenTup.EndPos, false)
+              delayToken(TokenTup(IDENT(ident), identPos, tokenTup.LastTokenPos))
+              delayToken(TokenTup(HASH, hashPos, tokenTup.LastTokenPos))
+              true
 
           // Insert HIGH_PRECEDENCE_BRACK_APP if needed
           //    ident[3]

@@ -1071,6 +1071,15 @@ rule token (args: LexArgs) (skip: bool) = parse
      let tok = fail args lexbuf (FSComp.SR.lexHashIfMustHaveIdent()) tok
      if skip then token args skip lexbuf else tok }
 
+ // Let the parser deal with these invalid directives
+ | anywhite* "#if" ident_char+
+ | anywhite* "#else" ident_char+
+ | anywhite* "#endif" ident_char+
+ | anywhite* "#light" ident_char+
+   { let n = (lexeme lexbuf).IndexOf('#')
+     lexbuf.StartPos <- lexbuf.StartPos.ShiftColumnBy(n)
+     HASH_IDENT(lexemeTrimLeft lexbuf (n+1)) }
+
  | surrogateChar surrogateChar
 
  | _

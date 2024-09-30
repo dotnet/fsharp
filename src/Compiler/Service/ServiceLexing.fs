@@ -171,6 +171,7 @@ module internal TokenClassifications =
 
     let tokenInfo token =
         match token with
+        | HASH_IDENT s
         | IDENT s ->
             if s.Length > 0 && Char.ToUpperInvariant s[0] = s[0] then
                 (FSharpTokenColorKind.UpperIdentifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
@@ -1034,6 +1035,9 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
                 | HASH_IF(m, lineStr, cont) when lineStr <> "" -> false, processHashIfLine m.StartColumn lineStr cont
                 | HASH_ELSE(m, lineStr, cont) when lineStr <> "" -> false, processHashEndElse m.StartColumn lineStr 4 cont
                 | HASH_ENDIF(m, lineStr, cont) when lineStr <> "" -> false, processHashEndElse m.StartColumn lineStr 5 cont
+                | HASH_IDENT(ident) ->
+                    delayToken (IDENT ident, leftc + 1, rightc)
+                    false, (HASH, leftc, leftc)
                 | RQUOTE_DOT(s, raw) ->
                     delayToken (DOT, rightc, rightc)
                     false, (RQUOTE(s, raw), leftc, rightc - 1)
