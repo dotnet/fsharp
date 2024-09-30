@@ -66,16 +66,13 @@ module times =
             "Duration"|]
         |> ignore
 
-
-    [<Theory(Skip="Flaky in CI due to file being locked, disabling for now until file closure is resolved."); Directory(__SOURCE_DIRECTORY__, Includes=[|"error_01.fs"|])>]
-    let ``times - to csv file`` compilation =
-        let tempPath = Path.Combine(Path.GetTempPath(),Guid.NewGuid().ToString() + ".csv")
-        use _ = {new IDisposable with
-                     member this.Dispose() = File.Delete(tempPath) }
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"error_01.fs"|])>]
+    let ``times - to csv file`` (compilation: CompilationUnit) =
+        let tempPath = compilation.OutputDirectory ++ "times.csv"
 
         compilation
         |> asFsx
-        |> withOptions ["--times:"+tempPath]
+        |> withOptions ["--times:" + tempPath]
         |> ignoreWarnings     
         |> compile
         |> shouldSucceed
