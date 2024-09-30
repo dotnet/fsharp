@@ -1,13 +1,14 @@
 <Project>
 
-  <UsingTask TaskName="Fsi" AssemblyFile="$(FSharpBuildAssemblyFile)" />
+  <UsingTask TaskName="FsiTestTask" AssemblyFile="$(FSharpBuildAssemblyFile)" />
 
     <Target
         Name="RunFSharpScript"
         Returns=""
         DependsOnTargets="$(CoreCompileDependsOn)"
     >
-        <Fsi  Condition=" '%(_CoreCompileResourceInputs.WithCulture)' != 'true' "
+      <FsiTestTask
+              Condition=" '%(_CoreCompileResourceInputs.WithCulture)' != 'true' "
               CodePage="$(CodePage)"
               DefineConstants="$(DefineConstants)"
               DisabledWarnings="$(NoWarn)"
@@ -34,7 +35,7 @@
               WarningsAsErrors="$(WarningsAsErrors)">
           <Output TaskParameter="CommandLineArgs" ItemName="FsiCommandLineArgs" />
           <Output TaskParameter="TextOutput" ItemName="FsiTextOutput" />
-        </Fsi>
+        </FsiTestTask>
 
       <ItemGroup>
           <_CoreCompileResourceInputs Remove="@(_CoreCompileResourceInputs)" />
