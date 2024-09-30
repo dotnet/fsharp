@@ -17,12 +17,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <AssemblyAttribute Include="FSharp.Test.InitTestGlobals" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="..\service\DoNotRunInParallel.fs">
-      <Link>DoNotRunInParallel.fs</Link>
+    <Compile Include="..\FSharp.Test.Utilities\XunitSetup.fs">
+      <Link>XunitSetup.fs</Link>
     </Compile>
     <Compile Include="..\scripts\scriptlib.fsx">
       <Link>scriptlib.fsx</Link>

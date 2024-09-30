@@ -15,10 +15,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <AssemblyAttribute Include="FSharp.Test.InitTestGlobals" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="expected-help-output.bsl">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
@@ -28,8 +24,8 @@
     <Compile Include="..\service\FsUnit.fs">
       <Link>FsUnit.fs</Link>
     </Compile>
-    <Compile Include="..\service\DoNotRunInParallel.fs">
-      <Link>DoNotRunInParallel.fs</Link>
+    <Compile Include="..\FSharp.Test.Utilities\XunitSetup.fs">
+      <Link>XunitSetup.fs</Link>
     </Compile>
     <Compile Include="Common.fs" />
     <Compile Include="GeneratedCodeSymbolsTests.fs" />

@@ -328,7 +328,7 @@ module CompilerAssertHelpers =
         entryPoint.Invoke(Unchecked.defaultof<obj>, args) |> ignore
 
 #if NETCOREAPP
-    let executeBuiltApp assembly deps isFsx =
+    let executeBuiltApp assemblyPath deps isFsx =
         let ctxt = AssemblyLoadContext("ContextName", true)
         try
             ctxt.add_Resolving(fun ctxt name ->
@@ -337,7 +337,7 @@ module CompilerAssertHelpers =
                 |> Option.map ctxt.LoadFromAssemblyPath
                 |> Option.defaultValue null)
 
-            executeAssemblyEntryPoint (ctxt.LoadFromAssemblyPath assembly) isFsx 
+            executeAssemblyEntryPoint (ctxt.LoadFromAssemblyPath assemblyPath) isFsx 
         finally
             ctxt.Unload()
 #else
@@ -345,8 +345,9 @@ module CompilerAssertHelpers =
         inherit MarshalByRefObject()
 
         member x.ExecuteTestCase assemblyPath (deps: string[]) isFsx =
-            // AppDomain isolates console.
-            ParallelConsole.reset()
+            // Set console streams for the AppDomain.
+            ParallelConsole.initStreamsCapture()
+            ParallelConsole.resetWriters()
 
             AppDomain.CurrentDomain.add_AssemblyResolve(ResolveEventHandler(fun _ args ->
                 deps
@@ -364,7 +365,7 @@ module CompilerAssertHelpers =
         let thisAssemblyDirectory = Path.GetDirectoryName(typeof<Worker>.Assembly.Location)
         let setup = AppDomainSetup(ApplicationBase = thisAssemblyDirectory)
         let testCaseDomain = AppDomain.CreateDomain($"built app {assembly}", null, setup)
-        
+
         let worker =
             (testCaseDomain.CreateInstanceFromAndUnwrap(typeof<Worker>.Assembly.CodeBase, typeof<Worker>.FullName)) :?> Worker
 
@@ -422,27 +423,12 @@ module CompilerAssertHelpers =
         errors, rc, outputFilePath
 
     let compileDisposable (outputDirectory:DirectoryInfo) isExe options targetFramework nameOpt (sources:SourceCodeFileKind list) =
-        let disposeFile path =
-            {
-                new IDisposable with
-                    member _.Dispose() =
-                        try File.Delete path with | _ -> ()
-            }
-        let disposals = ResizeArray<IDisposable>()
-        let disposeList =
-            {
-                new IDisposable with
-                    member _.Dispose() =
-                        for item in disposals do
-                            item.Dispose()
-            }
         let name =
             match nameOpt with
             | Some name -> name
             | _ -> getTemporaryFileNameInDirectory outputDirectory.FullName
 
         let outputFilePath = Path.ChangeExtension (Path.Combine(outputDirectory.FullName, name), if isExe then ".exe" else ".dll")
-        disposals.Add(disposeFile outputFilePath)
         let sources =
             [
                 for item in sources do
@@ -452,7 +438,6 @@ module CompilerAssertHelpers =
                         let source = item.ChangeExtension
                         let destFileName = Path.Combine(outputDirectory.FullName, Path.GetFileName(source.GetSourceFileName))
                         File.WriteAllText (destFileName, text)
-                        disposals.Add(disposeFile destFileName)
                         yield source.WithFileName(destFileName)
                     | None ->
                         // On Disk file
@@ -460,15 +445,9 @@ module CompilerAssertHelpers =
                         let source = item.ChangeExtension
                         let destFileName = Path.Combine(outputDirectory.FullName, Path.GetFileName(source.GetSourceFileName))
                         File.Copy(sourceFileName, destFileName, true)
-                        disposals.Add(disposeFile destFileName)
                         yield source.WithFileName(destFileName)
             ]
-        try
-            disposeList, rawCompile outputFilePath isExe options targetFramework sources
-        with
-        | _ ->
-            disposeList.Dispose()
-            reraise()
+        rawCompile outputFilePath isExe options targetFramework sources
     
     let assertErrors libAdjust ignoreWarnings (errors: FSharpDiagnostic []) expectedErrors =
         let errorMessage (error: FSharpDiagnostic) =
@@ -529,9 +508,9 @@ module CompilerAssertHelpers =
         finally
             try Directory.Delete(tempDir, true) with | _ -> ()
 
-    let rec compileCompilationAux outputDirectory (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * int * string) * string list =
+    let rec compileCompilationAux outputDirectory ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * int * string) * string list =
 
-        let compilationRefs, deps = evaluateReferences outputDirectory disposals ignoreWarnings cmpl
+        let compilationRefs, deps = evaluateReferences outputDirectory ignoreWarnings cmpl
         let isExe, sources, options, targetFramework, name =
             match cmpl with
             | Compilation(sources, output, options, targetFramework, _, name, _) ->
@@ -541,8 +520,7 @@ module CompilerAssertHelpers =
                 targetFramework,
                 name
 
-        let disposal, res = compileDisposable outputDirectory isExe (Array.append options compilationRefs) targetFramework name sources
-        disposals.Add(disposal)
+        let res = compileDisposable outputDirectory isExe (Array.append options compilationRefs) targetFramework name sources
 
         let deps2 =
             compilationRefs
@@ -552,7 +530,7 @@ module CompilerAssertHelpers =
 
         res, (deps @ deps2)
 
-    and evaluateReferences (outputPath:DirectoryInfo) (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : string[] * string list =
+    and evaluateReferences (outputPath:DirectoryInfo) ignoreWarnings (cmpl: Compilation) : string[] * string list =
         match cmpl with
         | Compilation(_, _, _, _, cmpls, _, _) ->
             let compiledRefs =
@@ -560,14 +538,13 @@ module CompilerAssertHelpers =
                 |> List.map (fun cmpl ->
                         match cmpl with
                         | CompilationReference (cmpl, staticLink) ->
-                            compileCompilationAux outputPath disposals ignoreWarnings cmpl, staticLink
+                            compileCompilationAux outputPath ignoreWarnings cmpl, staticLink
                         | TestCompilationReference (cmpl) ->
                             let fileName =
                                 match cmpl with
                                 | TestCompilation.CSharp c when not (String.IsNullOrWhiteSpace c.AssemblyName) -> c.AssemblyName
                                 | _ -> getTemporaryFileNameInDirectory outputPath.FullName
                             let tmp = Path.Combine(outputPath.FullName, Path.ChangeExtension(fileName, ".dll"))
-                            disposals.Add({ new IDisposable with member _.Dispose() = File.Delete tmp })
                             cmpl.EmitAsFile tmp
                             (([||], 0, tmp), []), false)
 
@@ -592,14 +569,8 @@ module CompilerAssertHelpers =
             compilationRefs, deps
 
     let compileCompilation ignoreWarnings (cmpl: Compilation) f =
-        let disposals = ResizeArray()
-        try
-            let outputDirectory = DirectoryInfo(createTemporaryDirectory "compileCompilation")
-            disposals.Add({ new IDisposable with member _.Dispose() = try File.Delete (outputDirectory.FullName) with | _ -> () })
-            f (compileCompilationAux outputDirectory disposals ignoreWarnings cmpl)
-        finally
-            disposals
-            |> Seq.iter (fun x -> x.Dispose())
+        let outputDirectory = DirectoryInfo(createTemporaryDirectory "compileCompilation")
+        f (compileCompilationAux outputDirectory ignoreWarnings cmpl)
 
     // NOTE: This function will not clean up all the compiled projects after itself.
     // The reason behind is so we can compose verification of test runs easier.
@@ -611,7 +582,7 @@ module CompilerAssertHelpers =
             | Compilation _ -> DirectoryInfo(createTemporaryDirectory "returnCompilation")
 
         outputDirectory.Create()
-        compileCompilationAux outputDirectory (ResizeArray()) ignoreWarnings cmpl
+        compileCompilationAux outputDirectory ignoreWarnings cmpl
 
     let unwrapException (ex: exn) = ex.InnerException |> Option.ofObj |> Option.map _.Message |> Option.defaultValue ex.Message
 
@@ -639,9 +610,6 @@ module CompilerAssertHelpers =
 }"""
         let runtimeconfigPath = Path.ChangeExtension(outputFilePath, ".runtimeconfig.json")
         File.WriteAllText(runtimeconfigPath, runtimeconfig)
-        use _disposal =
-            { new IDisposable with
-              member _.Dispose() = try File.Delete runtimeconfigPath with | _ -> () }
 #endif
         let exitCode, output, errors = Commands.executeProcess (Some fileName) arguments (Path.GetDirectoryName(outputFilePath))
         (exitCode, output |> String.concat "\n", errors |> String.concat "\n")

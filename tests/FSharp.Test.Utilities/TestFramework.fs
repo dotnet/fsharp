@@ -4,25 +4,26 @@ module TestFramework
 
 open System
 open System.IO
-open System.Threading
-open System.Text
-open System.Reflection
 open System.Diagnostics
+open System.Reflection
 open Scripting
 open Xunit
 open FSharp.Compiler.IO
-open Xunit.Sdk
 open FSharp.Test
 
 let getShortId() = Guid.NewGuid().ToString().[..7]
 
 // Temporary directory is TempPath + "/FSharp.Test.Utilities/yyy-MM-dd-xxxxxxx/"
 let tempDirectoryOfThisTestRun =
-    let tempDir = Path.GetTempPath()
+    let temp = Path.GetTempPath()
     let today = DateTime.Now.ToString("yyyy-MM-dd")
-    DirectoryInfo(tempDir)
-        .CreateSubdirectory($"FSharp.Test.Utilities/{today}-{getShortId()}")
-        .FullName
+    let directory =
+        DirectoryInfo(temp).CreateSubdirectory($"FSharp.Test.Utilities/{today}-{getShortId()}")
+
+    TestRun.Finished.Add <| fun () ->
+        try directory.Delete(true) with _ -> ()
+
+    directory.FullName
 
 let createTemporaryDirectory (part: string) =
     DirectoryInfo(tempDirectoryOfThisTestRun)

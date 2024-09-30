@@ -45,6 +45,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="XunitSetup.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\Compiler\FSharp.Compiler.Service.fsproj" />
   </ItemGroup>
 
