@@ -2,7 +2,7 @@
 
 namespace Tests.LanguageService.ErrorList
 
-open NUnit.Framework
+open Xunit
 open System
 open System.IO
 open System.Diagnostics
@@ -20,7 +20,6 @@ open Salsa.VsMocks
 type TextSpan = Microsoft.VisualStudio.TextManager.Interop.TextSpan
 type DocumentTask = Microsoft.VisualStudio.FSharp.LanguageService.DocumentTask
 
-[<TestFixture>]
 type TaskReporterTests() = 
     static let err(line) : 'a = 
         printfn "err() called on line %s with %s" line System.Environment.StackTrace 
@@ -93,8 +92,8 @@ type TaskReporterTests() =
 
 // One File Tests
     // For the next two, add tasks to the task list more than once to ensure that
-    // hashing is occuring correctly   
-    [<Test>]
+    // hashing is occurring correctly   
+    [<Fact>]
     member public this.``ErrorList.LanguageServiceErrorsProperlyCoalesced``() =  
         use errorReporter = CreateErrorReporter()
         let mutable span = new TextSpan(iStartLine = 1, iEndLine = 1, iStartIndex = 1, iEndIndex = 2)
@@ -114,7 +113,7 @@ type TaskReporterTests() =
         
         
         
-    [<Test>]
+    [<Fact>]
     member public this.``ErrorList.ProjectSystemErrorsProperlyCoalesced``() =  
         use errorReporter = CreateErrorReporter()
         let mutable span = new TextSpan(iStartLine = 1, iEndLine = 1, iStartIndex = 1, iEndIndex = 2)
@@ -134,7 +133,7 @@ type TaskReporterTests() =
         ()
         
     /// Test for multiple identical errors being properly coalesced in the error list (bug 2151)
-    [<Test>]
+    [<Fact>]
     member public this.``ErrorList.ErrorsProperlyCoalesced``() =  
         use errorReporter = CreateErrorReporter()
         let mutable span = new TextSpan(iStartLine = 1, iEndLine = 1, iStartIndex = 1, iEndIndex = 2)
@@ -153,7 +152,7 @@ type TaskReporterTests() =
         ()
     
     // modify the span, and check to see if we have two tasks now instead of one    
-    [<Test>]
+    [<Fact>]
     member public this.``ErrorList.ProjectSystemErrorsProperlyCoalesced2``() =  
         use errorReporter = CreateErrorReporter()
         let mutable span = new TextSpan(iStartLine = 1, iEndLine = 1, iStartIndex = 1, iEndIndex = 2)
@@ -174,8 +173,8 @@ type TaskReporterTests() =
         AssertEqual (errorReporter.TaskListProvider.Count()) 2
         ()
         
-    /// Ensure that text line markers are only created when a task is output to the the task list
-    [<Test>]
+    /// Ensure that text line markers are only created when a task is output to the task list
+    [<Fact>]
     member public this.``ErrorList.TextLineMarkersCreatedOnce``() =  
         use errorReporter = CreateErrorReporter()
         let mutable span = new TextSpan(iStartLine = 1, iEndLine = 1, iStartIndex = 1, iEndIndex = 2)
@@ -212,7 +211,7 @@ type TaskReporterTests() =
  
     // both files open
     // errors in each file, build - no duplicates  
-    [<Test>]
+    [<Fact>]
     member public this.``ErrorList.TwoFilesBothOpen``() =  
         use errorReporter = CreateErrorReporter()
         let mutable span = new TextSpan(iStartLine = 1, iEndLine = 1, iStartIndex = 1, iEndIndex = 2)
@@ -238,7 +237,7 @@ type TaskReporterTests() =
  
      // file open, one file closed
      // - error in closed file
-    [<Test>]
+    [<Fact>]
     member public this.``ErrorList.TwoFilesOneOpenErrorInOpen``() =  
         use errorReporter = CreateErrorReporter()
         let mutable span = new TextSpan(iStartLine = 1, iEndLine = 1, iStartIndex = 1, iEndIndex = 2)
@@ -268,7 +267,7 @@ type TaskReporterTests() =
         ()           
  
     // all files open - build, then fix - no errors left
-    [<Test>]
+    [<Fact>]
     member public this.``ErrorList.TwoFilesCorrectError``() =  
         use errorReporter = CreateErrorReporter()
         let mutable span = new TextSpan(iStartLine = 1, iEndLine = 1, iStartIndex = 1, iEndIndex = 2)
@@ -314,7 +313,7 @@ type TaskReporterTests() =
         
         
     // Make sure a 'typecheck' is treated as a background task
-    [<Test>]
+    [<Fact>]
     member public this.``ErrorList.BackgroundTaskIsClassified``() =  
         use errorReporter = CreateErrorReporter()
         let mutable span = new TextSpan(iStartLine = 1, iEndLine = 1, iStartIndex = 1, iEndIndex = 2)
@@ -342,7 +341,7 @@ type TaskReporterTests() =
         
         
     // Make sure a 'ilxgen' is treated as a build task
-    [<Test>]
+    [<Fact>]
     member public this.``ErrorList.BuildTaskIsClassified``() =  
         use errorReporter = CreateErrorReporter()
         let mutable span = new TextSpan(iStartLine = 1, iEndLine = 1, iStartIndex = 1, iEndIndex = 2)

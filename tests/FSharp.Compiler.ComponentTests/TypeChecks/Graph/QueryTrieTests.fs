@@ -2,7 +2,7 @@
 
 open System.Collections.Generic
 open System.Collections.Immutable
-open NUnit.Framework
+open Xunit
 open FSharp.Compiler.GraphChecking
 open FSharp.Compiler.GraphChecking.DependencyResolution
 
@@ -36,7 +36,7 @@ let private nestedModule name content =
 
 let private prefIdent (lid: string) =
     let parts = lid.Split(".")
-    Array.take (parts.Length - 1) parts |> List.ofArray |> PrefixedIdentifier
+    Array.take (parts.Length - 1) parts |> List.ofArray |> FileContentEntry.PrefixedIdentifier
 
 // Some hardcoded files that reflect the file content of the first files in the Fantomas.Core project.
 // See https://github.com/fsprojects/fantomas/tree/0938a3daabec80a22d2e17f82aba38456bb793df/src/Fantomas.Core
@@ -757,24 +757,24 @@ let private fantomasCoreTrie: TrieNode =
                 |]
     }
 
-[<Test>]
-let ``Query non existing node in trie`` () =
+[<Fact>]
+let ``Query nonexistent node in trie`` () =
     let result =
         queryTrie fantomasCoreTrie [ "System"; "System"; "Runtime"; "CompilerServices" ]
 
     match result with
-    | QueryTrieNodeResult.NodeDoesNotExist -> Assert.Pass()
+    | QueryTrieNodeResult.NodeDoesNotExist -> ()
     | result -> Assert.Fail $"Unexpected result: %A{result}"
 
-[<Test>]
+[<Fact>]
 let ``Query node that does not expose data in trie`` () =
     let result = queryTrie fantomasCoreTrie [ "Fantomas"; "Core" ]
 
     match result with
-    | QueryTrieNodeResult.NodeDoesNotExposeData -> Assert.Pass()
+    | QueryTrieNodeResult.NodeDoesNotExposeData -> ()
     | result -> Assert.Fail $"Unexpected result: %A{result}"
 
-[<Test>]
+[<Fact>]
 let ``Query module node that exposes one file`` () =
     let result =
         queryTrie fantomasCoreTrie [ "Fantomas"; "Core"; "ISourceTextExtensions" ]
@@ -782,10 +782,10 @@ let ``Query module node that exposes one file`` () =
     match result with
     | QueryTrieNodeResult.NodeExposesData file ->
         let file = Seq.exactlyOne file
-        Assert.AreEqual(indexOf "ISourceTextExtensions.fs", file)
+        Assert.Equal(indexOf "ISourceTextExtensions.fs", file)
     | result -> Assert.Fail $"Unexpected result: %A{result}"
 
-[<Test>]
+[<Fact>]
 let ``ProcessOpenStatement full path match`` () =
     let state =
         FileContentQueryState.Create Set.empty
@@ -794,4 +794,4 @@ let ``ProcessOpenStatement full path match`` () =
         processOpenPath fantomasCoreTrie [ "Fantomas"; "Core"; "AstExtensions" ] state
 
     let dep = Seq.exactlyOne result.FoundDependencies
-    Assert.AreEqual(indexOf "AstExtensions.fsi", dep)
+    Assert.Equal(indexOf "AstExtensions.fsi", dep)

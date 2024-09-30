@@ -35,8 +35,8 @@ param (
     # Options
     [switch][Alias('proto')]$bootstrap,
     [string]$bootstrapConfiguration = "Proto",
-    [string]$bootstrapTfm = "net8.0",
-    [string]$fsharpNetCoreProductTfm = "net8.0",
+    [string]$bootstrapTfm = "net9.0",
+    [string]$fsharpNetCoreProductTfm = "net9.0",
     [switch][Alias('bl')]$binaryLog = $true,
     [switch][Alias('nobl')]$excludeCIBinaryLog = $false,
     [switch][Alias('nolog')]$noBinaryLog = $false,
@@ -64,13 +64,14 @@ param (
     [switch]$testAllButIntegrationAndAot,
     [switch]$testpack,
     [switch]$testAOT,
+    [switch]$testEditor,
     [switch]$testBenchmarks,
     [string]$officialSkipTests = "false",
     [switch]$noVisualStudio,
     [switch]$sourceBuild,
     [switch]$skipBuild,
     [switch]$compressAllMetadata,
-    [switch]$buildnorealsig,
+    [switch]$buildnorealsig = $true,
     [switch]$verifypackageshipstatus = $false,
     [parameter(ValueFromRemainingArguments = $true)][string[]]$properties)
 
@@ -80,7 +81,7 @@ $BuildCategory = ""
 $BuildMessage = ""
 
 $desktopTargetFramework = "net472"
-$coreclrTargetFramework = "net8.0"
+$coreclrTargetFramework = "net9.0"
 
 function Print-Usage() {
     Write-Host "Common settings:"
@@ -119,6 +120,7 @@ function Print-Usage() {
     Write-Host "  -testVs                       Run F# editor unit tests"
     Write-Host "  -testpack                     Verify built packages"
     Write-Host "  -testAOT                      Run AOT/Trimming tests"
+    Write-Host "  -testEditor                   Run VS Editor tests"
     Write-Host "  -testBenchmarks               Build and Run Benchmark suite"
     Write-Host "  -officialSkipTests <bool>     Set to 'true' to skip running tests"
     Write-Host ""
@@ -178,7 +180,11 @@ function Process-Arguments() {
         $script:testFSharpQA = $True
         $script:testIntegration = $False
         $script:testVs = $True
-        $script:testAOT = $False
+        $script:testEditor = $True
+    }
+
+    if($script:testVs) {
+        $script:testEditor = $True
     }
 
     if ([System.Boolean]::Parse($script:officialSkipTests)) {
@@ -286,6 +292,8 @@ function BuildSolution([string] $solutionName, $nopack) {
     # Do not set the property to true explicitly, since that would override value projects might set.
     $suppressExtensionDeployment = if (!$deployExtensions) { "/p:DeployExtension=false" } else { "" }
 
+    $sourceBuildArgs = if ($sourceBuild) { "/p:DotNetBuildSourceOnly=true /p:DotNetBuildRepo=true" } else { "" }
+
     $BUILDING_USING_DOTNET_ORIG = $env:BUILDING_USING_DOTNET
 
     $env:BUILDING_USING_DOTNET="false"
@@ -308,10 +316,10 @@ function BuildSolution([string] $solutionName, $nopack) {
         /p:QuietRestore=$quietRestore `
         /p:QuietRestoreBinaryLog=$binaryLog `
         /p:TestTargetFrameworks=$testTargetFrameworks `
-        /p:DotNetBuildFromSource=$sourceBuild `
         /p:CompressAllMetadata=$CompressAllMetadata `
         /p:BuildNoRealsig=$buildnorealsig `
         /v:$verbosity `
+        $sourceBuildArgs `
         $suppressExtensionDeployment `
         @properties
 
@@ -360,7 +368,7 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     $projectName = [System.IO.Path]::GetFileNameWithoutExtension($testProject)
     $testLogPath = "$ArtifactsDir\TestResults\$configuration\${projectName}_$targetFramework.xml"
     $testBinLogPath = "$LogDir\${projectName}_$targetFramework.binlog"
-    $args = "test $testProject -c $configuration -f $targetFramework -v n --test-adapter-path $testadapterpath --logger ""nunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
+    $args = "test $testProject -c $configuration -f $targetFramework -v n --test-adapter-path $testadapterpath --logger ""xunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
     $args += " --blame --results-directory $ArtifactsDir\TestResults\$configuration -p:vstestusemsbuildoutput=false"
 
     if (-not $noVisualStudio -or $norestore) {
@@ -375,7 +383,7 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
         Write-Host("Starting on the background: $args")
         Write-Host("------------------------------------")
         $bgJob = Start-Job -ScriptBlock {
-            & $using:dotnetExe test $using:testProject -c $using:configuration -f $using:targetFramework -v n --test-adapter-path $using:testadapterpath --logger "nunit;LogFilePath=$using:testLogPath" /bl:$using:testBinLogPath  --blame --results-directory $using:ArtifactsDir\TestResults\$using:configuration
+            & $using:dotnetExe test $using:testProject -c $using:configuration -f $using:targetFramework -v n --test-adapter-path $using:testadapterpath --logger "xunit;LogFilePath=$using:testLogPath" /bl:$using:testBinLogPath  --blame --results-directory $using:ArtifactsDir\TestResults\$using:configuration
             if ($LASTEXITCODE -ne 0) {
                 throw "Command failed to execute with exit code $($LASTEXITCODE): $using:dotnetExe $using:args"
             }
@@ -669,10 +677,14 @@ try {
         TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $script:desktopTargetFramework  -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Private.Scripting.UnitTests\"
     }
 
-    if ($testVs -and -not $noVisualStudio) {
+    if ($testEditor -and -not $noVisualStudio) {
         TestUsingMSBuild -testProject "$RepoRoot\vsintegration\tests\FSharp.Editor.Tests\FSharp.Editor.Tests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Editor.Tests\FSharp.Editor.Tests.fsproj"
+    }
+
+    if ($testVs -and -not $noVisualStudio) {
         TestUsingMSBuild -testProject "$RepoRoot\vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\VisualFSharp.UnitTests\"
     }
+
 
     if ($testIntegration) {
         TestUsingMSBuild -testProject "$RepoRoot\vsintegration\tests\FSharp.Editor.IntegrationTests\FSharp.Editor.IntegrationTests.csproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Editor.IntegrationTests\"

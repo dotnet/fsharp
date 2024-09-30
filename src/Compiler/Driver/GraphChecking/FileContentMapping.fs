@@ -9,6 +9,13 @@ type Continuations = ((FileContentEntry list -> FileContentEntry list) -> FileCo
 let collectFromOption (mapping: 'T -> 'U list) (t: 'T option) : 'U list = List.collect mapping (Option.toList t)
 
 let longIdentToPath (skipLast: bool) (longId: LongIdent) : LongIdentifier =
+
+    // We always skip the "special" `global` identifier.
+    let longId =
+        match longId with
+        | h :: t when h.idText = "`global`" -> t
+        | _ -> longId
+
     match skipLast, longId with
     | true, _ :: _ -> List.take (longId.Length - 1) longId
     | _ -> longId
@@ -250,6 +257,7 @@ let visitSynType (t: SynType) : FileContentEntry list =
             let continuations = List.map (snd >> visit) fields
             Continuation.concatenate continuations continuation
         | SynType.Array(elementType = elementType) -> visit elementType continuation
+        | SynType.WithNull(innerType = innerType) -> visit innerType continuation
         | SynType.Fun(argType, returnType, _, _) ->
             let continuations = List.map visit [ argType; returnType ]
             Continuation.concatenate continuations continuation
@@ -260,6 +268,7 @@ let visitSynType (t: SynType) : FileContentEntry list =
         | SynType.HashConstraint(innerType, _) -> visit innerType continuation
         | SynType.MeasurePower(baseMeasure = baseMeasure) -> visit baseMeasure continuation
         | SynType.StaticConstant _ -> continuation []
+        | SynType.StaticConstantNull _ -> continuation []
         | SynType.StaticConstantExpr(expr, _) -> continuation (visitSynExpr expr)
         | SynType.StaticConstantNamed(ident, value, _) ->
             let continuations = List.map visit [ ident; value ]
@@ -298,6 +307,7 @@ let visitSynTypeConstraint (tc: SynTypeConstraint) : FileContentEntry list =
     | SynTypeConstraint.WhereTyparIsReferenceType _
     | SynTypeConstraint.WhereTyparIsUnmanaged _
     | SynTypeConstraint.WhereTyparSupportsNull _
+    | SynTypeConstraint.WhereTyparNotSupportsNull _
     | SynTypeConstraint.WhereTyparIsComparable _
     | SynTypeConstraint.WhereTyparIsEquatable _ -> []
     | SynTypeConstraint.WhereTyparDefaultsToType(typeName = typeName) -> visitSynType typeName
@@ -513,7 +523,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             visit expr (fun exprNodes ->
                 [ yield! exprNodes; yield! List.collect visitSynMatchClause clauses ]
                 |> continuation)
-        | SynExpr.DoBang(expr, _) -> visit expr continuation
+        | SynExpr.DoBang(expr = expr) -> visit expr continuation
         | SynExpr.WhileBang(whileExpr = whileExpr; doExpr = doExpr) ->
             visit whileExpr (fun whileNodes -> visit doExpr (fun doNodes -> whileNodes @ doNodes |> continuation))
         | SynExpr.LibraryOnlyILAssembly(typeArgs = typeArgs; args = args; retTy = retTy) ->
@@ -595,7 +605,7 @@ let visitPat (p: SynPat) : FileContentEntry list =
         match p with
         | NameofPat moduleNameIdent -> continuation [ visitNameofResult moduleNameIdent ]
         | SynPat.Paren(pat = pat) -> visit pat continuation
-        | SynPat.Typed(pat = pat; targetType = t) -> visit pat (fun nodes -> nodes @ visitSynType t)
+        | SynPat.Typed(pat = pat; targetType = t) -> visit pat (fun nodes -> nodes @ visitSynType t |> continuation)
         | SynPat.Const _ -> continuation []
         | SynPat.Wild _ -> continuation []
         | SynPat.Named _ -> continuation []

@@ -2,7 +2,7 @@
 ///
 /// Each file in the project has a string identifier. It then contains a type and a function.
 /// The function calls functions from all the files the given file depends on and returns their
-/// results + it's own type in a tuple.
+/// results + its own type in a tuple.
 ///
 /// To model changes, we change the type name in a file which results in signatures of all the
 /// dependent files also changing.
@@ -244,7 +244,8 @@ type SyntheticProject =
       UseScriptResolutionRules: bool }
 
     static member Create(?name: string) =
-        let name = defaultArg name $"TestProject_{Guid.NewGuid().ToString()[..7]}"
+        let name = defaultArg name "TestProject"
+        let name = $"{name}_{Guid.NewGuid().ToString()[..7]}"
         let dir = Path.GetFullPath projectRoot
 
         { Name = name
@@ -439,7 +440,7 @@ let private renderFsProj (p: SyntheticProject) =
 
         <PropertyGroup>
             <OutputType>Exe</OutputType>
-            <TargetFramework>net8.0</TargetFramework>
+            <TargetFramework>net9.0</TargetFramework>
         </PropertyGroup>
 
         <ItemGroup>
@@ -742,7 +743,7 @@ module ProjectOperations =
         expectOk result ()
         Assert.NotEqual<string>(oldSignature, newSignature)
 
-    let expectSignatureContains expected result (_oldSignature, newSignature) =
+    let expectSignatureContains (expected: string) result (_oldSignature, newSignature) =
         expectOk result ()
         Assert.Contains(expected, newSignature)
 
@@ -943,7 +944,6 @@ type ProjectWorkflowBuilder
         ?checker: FSharpChecker,
         ?useGetSource,
         ?useChangeNotifications,
-        ?useSyntaxTreeCache,
         ?useTransparentCompiler,
         ?runTimeout,
         ?autoStart,
@@ -972,7 +972,6 @@ type ProjectWorkflowBuilder
                 enablePartialTypeChecking = defaultArg enablePartialTypeChecking true,
                 captureIdentifiersWhenParsing = true,
                 documentSource = (if useGetSource then DocumentSource.Custom getSource else DocumentSource.FileSystem),
-                useSyntaxTreeCache = defaultArg useSyntaxTreeCache false,
                 useTransparentCompiler = useTransparentCompiler
             ))
 

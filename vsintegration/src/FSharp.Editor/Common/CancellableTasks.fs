@@ -915,7 +915,7 @@ module CancellableTasks =
     /// A set of extension methods making it possible to bind against <see cref='T:CancellableTask`1'/> in async computations.
     /// </summary>
     [<AutoOpen>]
-    module AsyncExtenions =
+    module AsyncExtensions =
         type Control.AsyncBuilder with
 
             member inline this.Bind([<InlineIfLambda>] t: CancellableTask<'T>, [<InlineIfLambda>] binder: ('T -> Async<'U>)) : Async<'U> =

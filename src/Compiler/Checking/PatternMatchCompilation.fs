@@ -471,7 +471,7 @@ let computeWhatSuccessfulNullTestImpliesAboutTypeTest g tgtTy2 =
         Implication.Fails
 
 /// Work out what a failing null test implies about a type test (against tgtTy2) for the same
-/// input balue. The answer is "nothing" but it's included for symmetry.
+/// input value. The answer is "nothing" but it's included for symmetry.
 let computeWhatFailingNullTestImpliesAboutTypeTest _g _tgtTy2 =
     Implication.Nothing
 
@@ -509,7 +509,7 @@ let computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 =
     // For any inputs where ':? int' succeeds, ':? string' will fail
     //
     //
-    // This only applies if tgtTy2 is not potetnially related to the sealed type tgtTy1:
+    // This only applies if tgtTy2 is not potentially related to the sealed type tgtTy1:
     //     match x with 
     //     | :? int when false -> ... // note: "when false" used so type test succeeds but proceed to next type test
     //     | :? IComparable -> ...
@@ -611,7 +611,7 @@ let getDiscrimOfPattern (g: TcGlobals) tpinst t =
     | TPat_isinst (srcTy, tgtTy, _, _m) ->
         Some(DecisionTreeTest.IsInst (instType tpinst srcTy, instType tpinst tgtTy))
     | TPat_exnconstr(tcref, _, _m) ->
-        Some(DecisionTreeTest.IsInst (g.exn_ty, mkAppTy tcref []))
+        Some(DecisionTreeTest.IsInst (g.exn_ty, mkWoNullAppTy tcref []))
     | TPat_const (c, _m) ->
         Some(DecisionTreeTest.Const c)
     | TPat_unioncase (c, tyargs', _, _m) ->
@@ -1467,7 +1467,7 @@ let CompilePatternBasic
             | TPat_exnconstr (ecref, argpats, _) ->
 
                 let srcTy1 = g.exn_ty
-                let tgtTy1 = mkAppTy ecref []
+                let tgtTy1 = mkWoNullAppTy ecref []
                 if taken |> List.exists (discrimsEq g (DecisionTreeTest.IsInst (srcTy1, tgtTy1))) then [] else
 
                 match discrim with

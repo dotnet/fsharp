@@ -25,5 +25,5 @@ let f e =
           failwith ""
           
 
-// Origional bug was problem with PEVerify
+// Original bug was problem with PEVerify
 exit 0

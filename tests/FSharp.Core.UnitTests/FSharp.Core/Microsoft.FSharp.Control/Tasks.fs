@@ -1374,7 +1374,7 @@ module Issue12184c =
         task {
             // The overload resolution for Bind commits to 'Task<_>' via overload since no type annotation is available
             //
-            // This should not do an early commit to "task like" nor propogate SRTP constraints from the task-like overload for Bind.
+            // This should not do an early commit to "task like" nor propagate SRTP constraints from the task-like overload for Bind.
             let! result = t
             return result
         }

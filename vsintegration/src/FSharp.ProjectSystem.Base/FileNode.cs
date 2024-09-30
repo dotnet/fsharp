@@ -255,7 +255,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <returns>An errorcode for failure or S_OK.</returns>
         /// <exception cref="InvalidOperationException">if the file cannot be validated</exception>
         /// <devremark> 
-        /// We are going to throw instaed of showing messageboxes, since this method is called from various places where a dialog box does not make sense.
+        /// We are going to throw instead of showing messageboxes, since this method is called from various places where a dialog box does not make sense.
         /// For example the FileNodeProperties are also calling this method. That should not show directly a messagebox.
         /// Also the automation methods are also calling SetEditLabel
         /// </devremark>
@@ -443,7 +443,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Called by the drag&amp;drop implementation to ask the node
-        /// which is being dragged/droped over which nodes should
+        /// which is being dragged/dropped over which nodes should
         /// process the operation.
         /// This allows for dragging to a node that cannot contain
         /// items to let its parent accept the drop, while a reference
@@ -565,9 +565,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             bool isSameFile = NativeMethods.IsSamePath(newFilePath, this.Url);
 
             // Currently we do not support if the new directory is located outside the project cone
-            string projectCannonicalDirecoryName = new Uri(this.ProjectMgr.ProjectFolder).LocalPath;
-            projectCannonicalDirecoryName = projectCannonicalDirecoryName.TrimEnd(Path.DirectorySeparatorChar);
-            if (!isSamePath && newCanonicalDirectoryName.IndexOf(projectCannonicalDirecoryName, StringComparison.OrdinalIgnoreCase) == -1)
+            string projectCanonicalDirectoryName = new Uri(this.ProjectMgr.ProjectFolder).LocalPath;
+            projectCanonicalDirectoryName = projectCanonicalDirectoryName.TrimEnd(Path.DirectorySeparatorChar);
+            if (!isSamePath && newCanonicalDirectoryName.IndexOf(projectCanonicalDirectoryName, StringComparison.OrdinalIgnoreCase) == -1)
             {
                 errorMessage = String.Format(CultureInfo.CurrentCulture, SR.GetString(SR.LinkedItemsAreNotSupported, CultureInfo.CurrentUICulture), Path.GetFileNameWithoutExtension(newFilePath));
                 throw new InvalidOperationException(errorMessage);
@@ -579,7 +579,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 targetContainer = this.Parent;
             }
-            else if (NativeMethods.IsSamePath(newCanonicalDirectoryName, projectCannonicalDirecoryName))
+            else if (NativeMethods.IsSamePath(newCanonicalDirectoryName, projectCanonicalDirectoryName))
             {
                 //the projectnode is the target container
                 targetContainer = this.ProjectMgr;
@@ -625,8 +625,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     // to rename the item.
                     this.RenameFileNode(oldName, newFilePath, targetContainer.ID);
                     OnInvalidateItems(oldParent);
-                    // This is what othe project systems do; for the purposes of source control, the old file is removed, and a new file is added
-                    // (althought the old file stays on disk!)
+                    // This is what other project systems do; for the purposes of source control, the old file is removed, and a new file is added
+                    // (although the old file stays on disk!)
                     this.ProjectMgr.Tracker.OnItemRemoved(oldName, VSREMOVEFILEFLAGS.VSREMOVEFILEFLAGS_NoFlags);
                     this.ProjectMgr.Tracker.OnItemAdded(newFilePath, VSADDFILEFLAGS.VSADDFILEFLAGS_NoFlags);
                 }
@@ -775,9 +775,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     // Do not call virtual methods after this point since the object is in a deleted state.
 
                     // Remove the item created by the add item. We need to do this otherwise we will have two items.
-                    // Please be aware that we have not removed the ItemNode associated to the removed file node from the hierrachy.
+                    // Please be aware that we have not removed the ItemNode associated to the removed file node from the hierarchy.
                     // What we want to achieve here is to reuse the existing build item. 
-                    // We want to link to the newly created node to the existing item node and addd the new include.
+                    // We want to link to the newly created node to the existing item node and add the new include.
 
                     //temporarily keep properties from new itemnode since we are going to overwrite it
                     string newInclude = childAdded.ItemNode.Item.UnevaluatedInclude;
@@ -792,7 +792,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         childAdded.ItemNode.SetMetadata(ProjectFileConstants.DependentUpon, dependentOf);
                     childAdded.ItemNode.RefreshProperties();
 
-                    // Extensibilty events has rename
+                    // Extensibility events has rename
                     this.ProjectMgr.ExtensibilityEventsHelper.FireItemRenamed(childAdded, Path.GetFileName(originalInclude));
 
                     //Update the new document in the RDT.
@@ -865,7 +865,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Tries recovering from a rename failure.
         /// </summary>
         /// <param name="fileThatFailed"> The file that failed to be renamed.</param>
-        /// <param name="originalFileName">The original filenamee</param>
+        /// <param name="originalFileName">The original filename</param>
         public virtual void RecoverFromRenameFailure(string fileThatFailed, string originalFileName)
         {
             // TODO does this do anything useful?  did it ever change in the first place?
@@ -886,7 +886,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// This should be overriden for node that are not saved on disk
+        /// This should be overridden for node that are not saved on disk
         /// </summary>
         /// <param name="oldName">Previous name in storage</param>
         /// <param name="newName">New name in storage</param>
@@ -929,7 +929,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Get's called to rename the eventually running document this hierarchyitem points to
         /// </summary>
-        /// returns FALSE if the doc can not be renamed
+        /// returns FALSE if the doc cannot be renamed
         public bool RenameDocument(string oldName, string newName)
         {
             IVsRunningDocumentTable pRDT = this.GetService(typeof(IVsRunningDocumentTable)) as IVsRunningDocumentTable;

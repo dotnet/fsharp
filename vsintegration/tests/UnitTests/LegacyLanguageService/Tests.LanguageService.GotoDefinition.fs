@@ -4,7 +4,7 @@ namespace Tests.LanguageService.GotoDefinition
 
 open System
 open System.IO
-open NUnit.Framework
+open Xunit
 open Salsa.Salsa
 open Salsa.VsOpsUtils
 open UnitTests.TestLib.Salsa
@@ -15,9 +15,8 @@ open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
+open Xunit
 
-[<TestFixture>]
-[<Category "LanguageService">] 
 type UsingMSBuild()  = 
     inherit LanguageServiceBaseTests()
 
@@ -37,11 +36,11 @@ type UsingMSBuild()  =
         let (_, _, file) = this.CreateSingleFileProject(fileContents, ?references = extraRefs)
         MoveCursorToStartOfMarker (file, marker)
         let result = GotoDefinitionAtCursor file
-        Assert.IsTrue(result.Success, "result.Success")
+        Assert.True(result.Success, "result.Success")
         let actualPos = (result.Span.iStartLine, result.Span.iStartIndex)
         let line = GetLineNumber file (result.Span.iStartLine + 1)
         printfn "Actual line:%s, actual pos:%A" line actualPos
-        Assert.AreEqual(pos, actualPos, "pos")
+        Assert.Equal(pos, actualPos)
                     
     //GoToDefinitionFail Helper Function
     member private this.VerifyGoToDefnFailAtStartOfMarker(fileContents : string,  marker :string,?addtlRefAssy : string list) =
@@ -84,7 +83,7 @@ type UsingMSBuild()  =
                 file 
                 result 
     
-    [<Test>]                                  
+    [<Fact>]                                  
     member this.``Operators.TopLevel``() = 
         this.VerifyGotoDefnSuccessForNonIdentifierAtStartOfMarker(
             fileContents = """
@@ -95,7 +94,7 @@ type UsingMSBuild()  =
             pos=(1,21)
             )
 
-    [<Test>]                                  
+    [<Fact>]                                  
     member this.``Operators.Member``() = 
         this.VerifyGotoDefnSuccessForNonIdentifierAtStartOfMarker(
             fileContents = """
@@ -108,7 +107,7 @@ type UsingMSBuild()  =
             pos=(3,35)
             )
 
-    [<Test>]
+    [<Fact>]
     member public this.``Value``() = 
         this.VerifyGoToDefnSuccessAtStartOfMarker(
             fileContents = """
@@ -123,7 +122,7 @@ type UsingMSBuild()  =
             marker = "valueX (*GotoValDef*)",
             definitionCode = "let valueX = Beta(1.0M, ())(*GotoTypeDef*)")
     
-    [<Test>]
+    [<Fact>]
     member public this.``DisUnionMember``() =
         this.VerifyGoToDefnSuccessAtStartOfMarker(
                             fileContents = """
@@ -138,7 +137,7 @@ type UsingMSBuild()  =
             marker = "Beta(1.0M, ())(*GotoTypeDef*)",
             definitionCode = "| Beta of decimal * unit")        
 
-    [<Test>]
+    [<Fact>]
     member public this.``PrimitiveType``() =
         this.VerifyGoToDefnFailAtStartOfMarker(
             fileContents = """
@@ -146,8 +145,8 @@ type UsingMSBuild()  =
                 let bi = 123456I""",
             marker = "123456I")
            
-    [<Test>]
-    member public this.``OnTypeDefintion``() =
+    [<Fact>]
+    member public this.``OnTypeDefinition``() =
         this.VerifyGoToDefnSuccessAtStartOfMarker(
             fileContents = """
                 //regression test for bug 2516
@@ -157,7 +156,7 @@ type UsingMSBuild()  =
             marker = "One (*Marker1*)",
             definitionCode = "type One (*Marker1*) = One")
 
-    [<Test>]
+    [<Fact>]
     member public this.``Parameter``() = 
         this.VerifyGoToDefnSuccessAtStartOfMarker(
             fileContents = """
@@ -168,13 +167,10 @@ type UsingMSBuild()  =
             marker = "One (*Marker2*)",
             definitionCode = "type One (*Marker1*) = One")    
 
-    [<Test>]
-    [<Category("TypeProvider")>]
-    [<Category("TypeProvider.DefinitionLocationAttribute")>]
     // This test case check the GotoDefinition (i.e. the TypeProviderDefinitionLocation Attribute)
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     // We expect the correct FilePath, Line and Column on provided: Type, Event, Method, and Property
     // TODO: add a case for a provided Field
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``GotoDefinition.TypeProvider.DefinitionLocationAttribute``() =
         use _guard = this.UsingNewVS()
         // Note that the verification helped method is custom because we *do* care about the column as well, 
@@ -190,7 +186,7 @@ type UsingMSBuild()  =
             MoveCursorToStartOfMarker (file,columnMarker)
             let _,column = GetCursorLocation(file)
 
-            // Put curson at start of marker and then hit F12
+            // Put cursor at start of marker and then hit F12
             MoveCursorToStartOfMarker (file, marker)
             let identifier = (GetIdentifierAtCursor file).Value |> fst
             let result = GotoDefinitionAtCursor file
@@ -207,8 +203,8 @@ type UsingMSBuild()  =
             let column' = column - 2
 
             match result.ToOption() with 
-            | Some(span,_) -> Assert.AreEqual(column',span.iStartIndex, "The cursor landed on the incorrect column!") 
-            | None ->  Assert.Fail <| sprintf "Expected to find the definition at column '%d' but GotoDefn failed." column'
+            | Some(span,_) -> Assert.Equal(column',span.iStartIndex) 
+            | None -> failwithf "Expected to find the definition at column '%d' but GotoDefn failed." column'
 
         // Basic scenario on a provided Type
         let ``Type.BasicScenario``() = 
@@ -293,19 +289,19 @@ type UsingMSBuild()  =
         ``Event.BasicScenario``()
 
     
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.NoSourceCodeAvailable``() = 
         this.VerifyGoToDefnFailAtStartOfMarker
             (
                 fileContents = "System.String.Format(\"\")",
                 marker = "ormat",
                 f = (fun (_, result) ->
-                    Assert.IsFalse(result.Success)
-                    Assert.IsTrue(result.ErrorDescription.Contains("Source code is not available"))
+                    Assert.False(result.Success)
+                    Assert.True(result.ErrorDescription.Contains("Source code is not available"))
                     )
             )
     
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.NoIdentifierAtLocation``() = 
         let useCases = 
             [
@@ -319,12 +315,12 @@ type UsingMSBuild()  =
                     fileContents = source,
                     marker = marker,
                     f = (fun (_, result) ->
-                        Assert.IsFalse(result.Success)
-                        Assert.IsTrue(result.ErrorDescription.Contains("Cursor is not on identifier"))
+                        Assert.False(result.Success)
+                        Assert.True(result.ErrorDescription.Contains("Cursor is not on identifier"))
                         )
                 )
 
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.ProvidedTypeNoDefinitionLocationAttribute``() =  
 
         this.VerifyGoToDefnFailAtStartOfMarker
@@ -333,12 +329,11 @@ type UsingMSBuild()  =
                 type T = N1.T<"", 1>
                 """,
                 marker = "T<",
-                f = (fun (_, result) -> Assert.IsFalse(result.Success) ),
+                f = (fun (_, result) -> Assert.False(result.Success) ),
                 addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")]
             )
         
-    [<Test>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``GotoDefinition.ProvidedMemberNoDefinitionLocationAttribute``() = 
         let useCases = 
             [
@@ -359,15 +354,13 @@ type UsingMSBuild()  =
                     fileContents = source,
                     marker = marker,
                     f = (fun (_, result) ->
-                        Assert.IsFalse(result.Success)
+                        Assert.False(result.Success)
                         let expectedText = sprintf "provided member '%s'" name
-                        Assert.IsTrue(result.ErrorDescription.Contains(expectedText))
+                        Assert.True(result.ErrorDescription.Contains(expectedText))
                         ),
                     addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")]
                 )
-    [<Test>]
-    [<Category("TypeProvider")>]
-    [<Category("TypeProvider.DefinitionLocationAttribute.Negative")>]
+    [<Fact>]
     // This test case is when the TypeProviderDefinitionLocationAttribute filepath doesn't exist  for TypeProvider Type
     member public this.``GotoDefinition.TypeProvider.DefinitionLocationAttribute.Type.FileDoesnotExist``() =
         this.VerifyGoToDefnFailAtStartOfMarker(
@@ -379,10 +372,7 @@ type UsingMSBuild()  =
             marker = "T(*GotoValDef*)",
             addtlRefAssy = [PathRelativeToTestAssembly(@"DefinitionLocationAttributeFileDoesnotExist.dll")])
 
-    [<Test>]
-    [<Category("TypeProvider")>]
-    [<Category("TypeProvider.DefinitionLocationAttribute.Negative")>]
-    [<Ignore("Need some work to detect the line doesnot exist.")>]
+    [<Fact(Skip = "Need some work to detect the line does not exist.")>]
     //This test case is when the TypeProviderDefinitionLocationAttribute Line doesn't exist  for TypeProvider Type
     member public this.``GotoDefinition.TypeProvider.DefinitionLocationAttribute.Type.LineDoesnotExist``() =
         this.VerifyGoToDefnFailAtStartOfMarker(
@@ -394,9 +384,7 @@ type UsingMSBuild()  =
             marker = "T(*GotoValDef*)",
             addtlRefAssy = [PathRelativeToTestAssembly(@"DefinitionLocationAttributeLineDoesnotExist.dll")])
      
-    [<Test>]
-    [<Category("TypeProvider")>]
-    [<Category("TypeProvider.DefinitionLocationAttribute.Negative")>]
+    [<Fact>]
     // This test case is when the TypeProviderDefinitionLocationAttribute filepath doesn't exist  for TypeProvider Constructor
     member public this.``GotoDefinition.TypeProvider.DefinitionLocationAttribute.Constructor.FileDoesnotExist``() =
         this.VerifyGoToDefnFailAtStartOfMarker(
@@ -410,9 +398,7 @@ type UsingMSBuild()  =
 
 
          
-    [<Test>]
-    [<Category("TypeProvider")>]
-    [<Category("TypeProvider.DefinitionLocationAttribute.Negative")>]
+    [<Fact>]
     //This test case is when the TypeProviderDefinitionLocationAttribute filepath doesn't exist  for TypeProvider Method
     member public this.``GotoDefinition.TypeProvider.DefinitionLocationAttribute.Method.FileDoesnotExist``() =
         this.VerifyGoToDefnFailAtStartOfMarker(
@@ -424,9 +410,7 @@ type UsingMSBuild()  =
             marker = "M(*GotoValDef*)",
             addtlRefAssy = [PathRelativeToTestAssembly(@"DefinitionLocationAttributeFileDoesnotExist.dll")])
 
-    [<Test>]
-    [<Category("TypeProvider")>]
-    [<Category("TypeProvider.DefinitionLocationAttribute.Negative")>]
+    [<Fact>]
     // This test case is when the TypeProviderDefinitionLocationAttribute filepath doesn't exist  for TypeProvider Property
     member public this.``GotoDefinition.TypeProvider.DefinitionLocationAttribute.Property.FileDoesnotExist``() =
         this.VerifyGoToDefnFailAtStartOfMarker(
@@ -438,9 +422,7 @@ type UsingMSBuild()  =
             marker = "StaticProp(*GotoValDef*)",
             addtlRefAssy = [PathRelativeToTestAssembly(@"DefinitionLocationAttributeFileDoesnotExist.dll")])
     
-    [<Test>]
-    [<Category("TypeProvider")>]
-    [<Category("TypeProvider.DefinitionLocationAttribute.Negative")>]
+    [<Fact>]
     //This test case is when the TypeProviderDefinitionLocationAttribute filepath doesn't exist  for TypeProvider Event
     member public this.``GotoDefinition.TypeProvider.DefinitionLocationAttribute.Event.FileDoesnotExist``() =
         this.VerifyGoToDefnFailAtStartOfMarker(
@@ -453,22 +435,22 @@ type UsingMSBuild()  =
             marker = "Event1(*GotoValDef*)",
             addtlRefAssy = [PathRelativeToTestAssembly(@"DefinitionLocationAttributeFileDoesnotExist.dll")])
 
-    [<Test>]
-    member public this.``ModuleDefintion``() =
+    [<Fact>]
+    member public this.``ModuleDefinition``() =
         this.VerifyGoToDefnSuccessAtStartOfMarker(
             fileContents = """
-                //regretion test for bug 2517
+                //regression test for bug 2517
                 module Foo (*MarkerModuleDefinition*) =
                   let x = ()
                 """,
             marker = "Foo (*MarkerModuleDefinition*)",
             definitionCode = "module Foo (*MarkerModuleDefinition*) =")
 
-    [<Test>]
-    member public this.``Record.Field.Defintion``() = 
+    [<Fact>]
+    member public this.``Record.Field.Definition``() = 
         this.VerifyGoToDefnSuccessAtStartOfMarker(
             fileContents = """
-                //regretion test for bug 2518
+                //regression test for bug 2518
                 type MyRec =
                   { myX (*MarkerXFieldDefinition*) : int
                     myY (*MarkerYFieldDefinition*) : int
@@ -481,11 +463,11 @@ type UsingMSBuild()  =
             marker = "myX (*MarkerXFieldDefinition*)",   
             definitionCode = "{ myX (*MarkerXFieldDefinition*) : int")
 
-    [<Test>]
+    [<Fact>]
     member public this.``Record.Field.Usage``() = 
         this.VerifyGoToDefnSuccessAtStartOfMarker(
             fileContents = """
-                //regretion test for bug 2518
+                //regression test for bug 2518
                 type MyRec =
                   { myX (*MarkerXFieldDefinition*) : int
                     myY (*MarkerYFieldDefinition*) : int
@@ -508,14 +490,14 @@ type UsingMSBuild()  =
     member internal this.GotoDefinitionCheckResultAgainst (exp : (string * string * string) option)(file : OpenFile)(act : GotoDefnResult) : unit =
       match (exp, act.ToOption()) with
       | (Some (toFind, expLine, expFile), Some (span, actFile)) -> printfn "%s" "Result received, as expected; checking."
-                                                                   Assert.AreEqual (expFile, actFile)
+                                                                   Assert.Equal (expFile, actFile)
                                                                    printfn "%s" "Filename matches expected."
                                                                    MoveCursorTo(file, span.iStartLine + 1, span.iStartIndex + 1) // adjust & move to the identifier
                                                                    match GetIdentifierAtCursor file with // REVIEW: actually check that we're on the leftmost character of the identifier
                                                                    | None         -> Assert.Fail("No identifier at cursor!")
-                                                                   | Some (id, _) -> Assert.AreEqual (toFind, id) // are we on the identifier we expect?
+                                                                   | Some (id, _) -> Assert.Equal (toFind, id) // are we on the identifier we expect?
                                                                                      printfn "%s" "Identifier at cursor matches expected."
-                                                                                     Assert.AreEqual (expLine.Trim (), (span.iStartLine |> (+) 1 |> GetLineNumber file).Trim ()) // ignore initial- / final-whitespace-introduced noise; adjust for difference in index numbers
+                                                                                     Assert.Equal (expLine.Trim (), (span.iStartLine |> (+) 1 |> GetLineNumber file).Trim ()) // ignore initial- / final-whitespace-introduced noise; adjust for difference in index numbers
                                                                                      printfn "%s" "Line at cursor matches expected."
       | (None,                            None)                 -> printfn "%s" "No result received, as expected." // sometimes we may expect GotoDefinition to fail, e.g., when the cursor isn't placed on a valid position (i.e., over an identifier, and, maybe, a constant if we decide to support that)
       | (Some _,                          None)                 -> Assert.Fail("No result received, but one was expected!") // distinguish this and the following case to give insight in case of failure
@@ -528,11 +510,11 @@ type UsingMSBuild()  =
     member internal this.GotoDefinitionCheckResultAgainstAnotherFile (proj : OpenProject)(exp : (string * string) option)(act : GotoDefnResult) : unit =
       match (exp, act.ToOption()) with
       | (Some (toFind, expFile), Some (span, actFile)) -> printfn "%s" "Result received, as expected; checking."
-                                                          Assert.AreEqual (expFile, Path.GetFileName actFile)
+                                                          Assert.Equal (expFile, Path.GetFileName actFile)
                                                           printfn "%s" "Filename matches expected."
                                                           let file = OpenFile (proj, actFile)
                                                           let line = span.iStartLine |> ((+) 1) |> GetLineNumber file // need to adjust line number here
-                                                          Assert.AreEqual (toFind, line.Substring (span.iStartIndex, toFind.Length))
+                                                          Assert.Equal (toFind, line.Substring (span.iStartIndex, toFind.Length))
                                                           printfn "%s" "Identifier at cursor matches expected."
       | (None,                   None)                 -> printfn "%s" "No result received, as expected." // sometimes we may expect GotoDefinition to fail, e.g., when the cursor isn't placed on a valid position (i.e., over an identifier, and, maybe, a constant if we decide to support that)
       | (Some _,                 None)                 -> Assert.Fail("No result received, but one was expected!") // distinguish this and the following case to give insight in case of failure
@@ -542,7 +524,7 @@ type UsingMSBuild()  =
     member this.GotoDefinitionTestWithSimpleFile (startLoc : string)(exp : (string * string) option) : unit =
         this.SolutionGotoDefinitionTestWithSimpleFile startLoc exp 
 
-    [<Test>]
+    [<Fact>]
     member this.``GotoDefinition.OverloadResolution``() =
         let lines =
           [ "type D() ="
@@ -559,7 +541,7 @@ type UsingMSBuild()  =
             "d.ToString$4$(\"aaa\") "
           ]
         this.GotoDefinitionTestWithMarkup lines
-    [<Test>]
+    [<Fact>]
     member this.``GotoDefinition.OverloadResolutionForProperties``() =
         let lines = [ "type D() ="
                       "  member this.#1##2#Foo"
@@ -577,7 +559,7 @@ type UsingMSBuild()  =
             ]
         this.GotoDefinitionTestWithMarkup lines
 
-    [<Test>]
+    [<Fact>]
     member this.``GotoDefinition.OverloadResolutionWithOverrides``() =
         let lines =
           [ "[<AbstractClass>]"
@@ -596,7 +578,7 @@ type UsingMSBuild()  =
           ]
         this.GotoDefinitionTestWithMarkup lines
 
-    [<Test>]
+    [<Fact>]
     member this.``GotoDefinition.OverloadResolutionStatics``() =
         let lines =
           [   "type T ="
@@ -608,7 +590,7 @@ type UsingMSBuild()  =
           ]
         this.GotoDefinitionTestWithMarkup lines
 
-    [<Test>]
+    [<Fact>]
     member this.``GotoDefinition.Constructors``() =
         let lines =
           [   "type #1a##1b##1c##1d#B() ="
@@ -677,12 +659,12 @@ type UsingMSBuild()  =
           MoveCursorTo(file, line, col)
           let res = GotoDefinitionAtCursor file
           match res.ToOption() with
-          |   None -> Assert.IsFalse(targets.ContainsKey(marker), sprintf "%s: definition not found " marker)
+          |   None -> Assert.False(targets.ContainsKey(marker), sprintf "%s: definition not found " marker)
           |   Some (span,text) ->
                   match targets.TryGetValue(marker) with
                   |   false, _ ->  Assert.Fail(sprintf "%s: unexpected definition found" marker)
                   |   true, (line1, col1) -> 
-                          Assert.IsTrue(span.iStartIndex = col1 && span.iStartLine = line1, 
+                          Assert.True(span.iStartIndex = col1 && span.iStartLine = line1, 
                                 sprintf "%s: wrong definition found expected %d %d but found %d %d %s" marker line1 col1 span.iStartLine span.iStartIndex text )
 
     
@@ -890,7 +872,7 @@ type UsingMSBuild()  =
     // ensure that we've found the correct position (i.e., these must be unique
     // in any given test source file)
 
-    [<Test>]
+    [<Fact>]
     member this.``GotoDefinition.InheritedMembers``() =
         let lines =
             [ "[<AbstractClass>]"
@@ -910,299 +892,298 @@ type UsingMSBuild()  =
 
 
     /// let #x = () in $x
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.InsideClass.Bug3176`` () =
       this.GotoDefinitionTestWithSimpleFile "id77 (*loc-77*)" (Some("val id77 (*loc-77*) : int", "id77"))
 
     /// let #x = () in $x
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Binding.TrivialLetRHS`` () =
       this.GotoDefinitionTestWithSimpleFile "x (*loc-1*)" (Some("let x = () (*loc-2*)", "x"))
 
     /// let #x = () in x$
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Binding.TrivialLetRHSToRight`` () =
       this.GotoDefinitionTestWithSimpleFile " (*loc-1*)" (Some("let x = () (*loc-2*)", "x"))
 
     /// let $x = () in x
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Binding.TrivialLetLHS`` () =
       this.GotoDefinitionTestWithSimpleFile "x = () (*loc-2*)" (Some("let x = () (*loc-2*)", "x"))
 
     /// let x = () in let #x = () in $x
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Binding.NestedLetWithSameNameRHS`` () =
       this.GotoDefinitionTestWithSimpleFile "x (*loc-4*)" (Some("let x = () (*loc-3*)", "x"))
 
     /// let x = () in let $x = () in x
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Binding.NestedLetWithSameNameLHSInner`` () =
       this.GotoDefinitionTestWithSimpleFile "x = () (*loc-3*)" (Some("let x = () (*loc-3*)", "x"))
 
     /// let $x = () in let x = () in x
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Binding.NestedLetWithSameNameLHSOuter`` () =
       this.GotoDefinitionTestWithSimpleFile "x = () (*loc-5*)" (Some("let x = () (*loc-5*)", "x"))
 
     /// let #x = () in let x = $x in ()
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Binding.NestedLetWithXIsX`` () =
       this.GotoDefinitionTestWithSimpleFile "x (*loc-6*)" (Some("let x = () (*loc-7*)", "x"))
 
     /// let x = () in let rec #x = fun y -> $x y in ()
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Binding.NestedLetWithXRec`` () =
       this.GotoDefinitionTestWithSimpleFile "x y (*loc-8*)" (Some("let rec x = (*loc-9*)", "x"))
 
     /// let x = () in let rec x = fun #y -> x $y in ()
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Binding.NestedLetWithXRecParam`` () =
       this.GotoDefinitionTestWithSimpleFile "y (*loc-8*)" (Some("fun y -> (*loc-10*)", "y"))
 
     /// let #(+) x _ = x in 2 $+ 3
-    [<Test>]
-    [<Ignore "Bug 2514 filed.">]
+    [<Fact(Skip = "Bug 2514 filed.")>]
     member public this.``GotoDefinition.Simple.Binding.Operator`` () =
       this.GotoDefinitionTestWithSimpleFile "+ 3 (*loc-11*)" (Some("let (+) x _ = x (*loc-2*)", "+"))
 
     /// type #Zero =
     /// let f (_ : $Zero) = 0
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Datatype.NullType`` () =
       this.GotoDefinitionTestWithSimpleFile "Zero) : 'a = failwith \"hi\" (*loc-14*)" (Some("type Zero = (*loc-13*)", "Zero"))
 
     /// type One = $One
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Datatype.UnitTypeConsDef`` () =
       this.GotoDefinitionTestWithSimpleFile "One (*loc-15*)" (Some("One (*loc-15*)", "One"))
 
     /// type $One = One
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Datatype.UnitTypeTypenameDef`` () =
       this.GotoDefinitionTestWithSimpleFile "One = (*loc-16*)" (Some("type One = (*loc-16*)", "One"))
 
     /// type One = #One
     /// let f (_ : One) = $One
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Datatype.UnitTypeCons`` () =
       this.GotoDefinitionTestWithSimpleFile "One (*loc-18*)" (Some("One (*loc-15*)", "One"))
 
     /// type #One = One
     /// let f (_ : $One) = One
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Datatype.UnitTypeTypename`` () =
       this.GotoDefinitionTestWithSimpleFile "One) = (*loc-17*)" (Some("type One = (*loc-16*)", "One"))
 
     /// type $Nat = Suc of Nat | Zro
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Datatype.NatTypeTypenameDef`` () =
       this.GotoDefinitionTestWithSimpleFile "Nat = (*loc-19*)" (Some("type Nat = (*loc-19*)", "Nat"))
 
     /// type #Nat = Suc of $Nat | Zro
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Datatype.NatTypeConsArg`` () =
       this.GotoDefinitionTestWithSimpleFile "Nat (*loc-20*)" (Some("type Nat = (*loc-19*)", "Nat"))
 
     /// type Nat = Suc of Nat | #Zro
     /// fun m -> match m with | $Zro -> () | _ -> ()
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Datatype.NatPatZro`` () =
       this.GotoDefinitionTestWithSimpleFile "Zro   -> (*loc-24*)" (Some("| Zro (*loc-21*)", "Zro"))
 
     /// type Nat = $Suc of Nat | Zro
     /// fun m -> match m with | Zro -> () | $Suc _ -> ()
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Datatype.NatPatSuc`` () =
       this.GotoDefinitionTestWithSimpleFile "Suc m -> (*loc-25*)" (Some("| Suc of Nat (*loc-20*)", "Suc"))
 
     /// let rec plus m n = match m with | Zro -> n | Suc #m -> Suc (plus $m n)
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Datatype.NatPatSucVarUse`` () =
       this.GotoDefinitionTestWithSimpleFile "m n) (*loc-26*)" (Some("| Suc m -> (*loc-25*)", "m"))
 
     /// let rec plus m n = match m with | Zro -> n | Suc #m -> Suc (plus $m n)
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Datatype.NatPatSucOuterVarUse`` () =
       this.GotoDefinitionTestWithSimpleFile "n) (*loc-26*)" (Some("let rec plus m n = (*loc-23*)", "n"))
 
     /// type $MyRec = { myX : int ; myY : int }
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Datatype.RecordTypenameDef`` () =
       this.GotoDefinitionTestWithSimpleFile "MyRec = (*loc-27*)" (Some("type MyRec = (*loc-27*)", "MyRec"))
 
     /// type MyRec = { $myX : int ; myY : int }
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Datatype.RecordField1Def`` () =
       this.GotoDefinitionTestWithSimpleFile "myX : int (*loc-28*)" (Some("{ myX : int (*loc-28*)", "myX"))
 
     /// type MyRec = { myX : int ; $myY : int }
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Datatype.RecordField2Def`` () =
       this.GotoDefinitionTestWithSimpleFile "myY : int (*loc-29*)" (Some("myY : int (*loc-29*)", "myY"))
 
     /// type MyRec = { #myX : int ; myY : int }
     /// let rDefault = { $myX = 2 ; myY = 3 }
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Datatype.RecordField1Use`` () =
       this.GotoDefinitionTestWithSimpleFile "myX = 2 (*loc-30*)" (Some("{ myX : int (*loc-28*)", "myX"))
 
     /// type MyRec = { myX : int ; #myY : int }
     /// let rDefault = { myX = 2 ; $myY = 3 }
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Datatype.RecordField2Use`` () =
       this.GotoDefinitionTestWithSimpleFile "myY = 3 (*loc-31*)" (Some("myY : int (*loc-29*)", "myY"))
 
     /// type MyRec = { #myX : int ; myY : int }
     /// let rDefault = { myX = 2 ; myY = 3 }
     /// let _ = { rDefault with $myX = 7 }
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Datatype.RecordField1UseInWith`` () =
       this.GotoDefinitionTestWithSimpleFile "myX = 7 } (*loc-32*)" (Some("{ myX : int (*loc-28*)", "myX"))
 
 
     /// let a = () in let id (x : '$a) : 'a = x
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Polymorph.Leftmost`` () =
       this.GotoDefinitionTestWithSimpleFile "a) (*loc-33*)" (Some("let id (x : 'a) (*loc-33*)", "'a"))
 
     /// let a = () in let id (x : 'a) : '$a = x
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Polymorph.NotLeftmost`` () =
       this.GotoDefinitionTestWithSimpleFile "a = x (*loc-34*)" (Some("let id (x : 'a) (*loc-33*)", "'a"))
 
     /// let foo = () in let f (_ as $foo) = foo in ()
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Tricky.AsPatLHS`` () =
       this.GotoDefinitionTestWithSimpleFile "foo) = (*loc-35*)" (Some("let f (_ as foo) = (*loc-35*)", "foo"))
 
     /// let foo = () in let f (_ as #foo) = $foo in ()
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Tricky.AsPatRHS`` () =
       this.GotoDefinitionTestWithSimpleFile "foo (*loc-36*)" (Some("let f (_ as foo) = (*loc-35*)", "foo"))
 
     /// fun $x x -> x
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Tricky.LambdaMultBind1`` () =
       this.GotoDefinitionTestWithSimpleFile "x (*loc-37*)" (Some("fun x (*loc-37*)", "x"))
 
     /// fun x $x -> x
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Tricky.LambdaMultBind2`` () =
       this.GotoDefinitionTestWithSimpleFile "x -> (*loc-38*)" (Some("x -> (*loc-38*)", "x"))
 
     /// fun x $x -> x
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Tricky.LambdaMultBindBody`` () =
       this.GotoDefinitionTestWithSimpleFile "x (*loc-39*)" (Some("x -> (*loc-38*)", "x"))
 
     /// let f = () in let $f = function f -> f in ()
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Tricky.LotsOfFsFunc`` () =
       this.GotoDefinitionTestWithSimpleFile "f = (*loc-41*)" (Some("let f = (*loc-41*)", "f"))
 
     /// let f = () in let f = function $f -> f in ()
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Tricky.LotsOfFsPat`` () =
       this.GotoDefinitionTestWithSimpleFile "f -> (*loc-42*)" (Some("function f -> (*loc-42*)", "f"))
 
     /// let f = () in let f = function #f -> $f in ()
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Tricky.LotsOfFsUse`` () =
       this.GotoDefinitionTestWithSimpleFile "f (*loc-43*)" (Some("function f -> (*loc-42*)", "f"))
 
     /// let f x = match x with | Suc $x | x -> x
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Tricky.OrPatLeft`` () =
       this.GotoDefinitionTestWithSimpleFile "x (*loc-44*)" (Some("| Suc x (*loc-44*)", "x"))
 
     /// let f x = match x with | Suc x | $x -> x
-    [<Test >]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Tricky.OrPatRight`` () =
       this.GotoDefinitionTestWithSimpleFile "x (*loc-45*)" (Some("| Suc x (*loc-44*)", "x"))  // NOTE: or-patterns bind at first occurrence of the variable
 
     /// let f x = match x with | Suc #y & z -> $y
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Tricky.AndPat`` () =
       this.GotoDefinitionTestWithSimpleFile "y (*loc-46*)" (Some("| Suc y & z -> (*loc-47*)", "y"))
 
     /// let f xs = match xs with | #x :: xs -> $x
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Tricky.ConsPat`` () =
       this.GotoDefinitionTestWithSimpleFile "x (*loc-48*)" (Some("| x :: xs -> (*loc-49*)", "x"))
 
     /// let f p = match p with (#y, z) -> $y
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Tricky.PairPat`` () =
       this.GotoDefinitionTestWithSimpleFile "y (*loc-50*)" (Some("| (y : int, z) -> (*loc-51*)", "y"))
 
     /// fun xs -> match xs with x :: #xs when $xs <> [] -> x :: xs
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Tricky.ConsPatWhenClauseInWhen`` () =
       this.GotoDefinitionTestWithSimpleFile "xs <> [] -> (*loc-52*)" (Some("| x :: xs (*loc-54*)", "xs"))
 
     /// fun xs -> match xs with #x :: xs when xs <> [] -> $x :: xs
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Tricky.ConsPatWhenClauseInWhenRhsX`` () =
       this.GotoDefinitionTestWithSimpleFile "x :: xs (*loc-53*)" (Some("| x :: xs (*loc-54*)", "x"))
 
     /// fun xs -> match xs with x :: #xs when xs <> [] -> x :: $xs
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Tricky.ConsPatWhenClauseInWhenRhsXs`` () =
       this.GotoDefinitionTestWithSimpleFile "xs (*loc-53*)" (Some("| x :: xs (*loc-54*)", "xs"))
 
     /// let x = "$x"
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Tricky.InStringFails`` () =
       this.GotoDefinitionTestWithSimpleFile "x(*loc-72*)" None
 
     /// let x = "hello
     ///          $x
     ///         "
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Tricky.InMultiLineStringFails`` () =
       this.GotoDefinitionTestWithSimpleFile "x(*loc-73*)" None
 
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Tricky.QuotedKeyword`` () =
       this.GotoDefinitionTestWithSimpleFile "let`` = (*loc-74*)" (Some("let rec ``let`` = (*loc-74*)", "``let``"))
 
     /// module $Too = let foo = ()
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Module.DefModname`` () =
       this.GotoDefinitionTestWithSimpleFile "Too = (*loc-55*)" (Some("module Too = (*loc-55*)", "Too"))
 
     /// module Too = $foo = ()
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Module.DefMember`` () =
       this.GotoDefinitionTestWithSimpleFile "foo = 0 (*loc-56*)" (Some("let foo = 0 (*loc-56*)", "foo"))
 
     /// module #Too = foo = ()
     /// module Bar = open $Too
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Module.Open`` () =
       this.GotoDefinitionTestWithSimpleFile "Too (*loc-57*)" (Some("module Too = (*loc-55*)", "Too"))
 
     /// module #Too = foo = ()
     /// $Too.foo
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Module.QualifiedModule`` () =
       this.GotoDefinitionTestWithSimpleFile "Too.foo (*loc-58*)" (Some("module Too = (*loc-55*)", "Too"))
 
     /// module Too = #foo = ()
     /// Too.$foo
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.Module.QualifiedMember`` () =
       this.GotoDefinitionTestWithSimpleFile "foo (*loc-58*)" (Some("let foo = 0 (*loc-56*)", "foo"))
 
     /// type Parity = Even | Odd
     /// let (|$Even|Odd|) x = if x % 0 = 0 then Even else Odd
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.ActivePat.ConsDefLHS`` () =
       this.GotoDefinitionTestWithSimpleFile "Even|Odd|) x = (*loc-59*)" (Some("let (|Even|Odd|) x = (*loc-59*)", "|Even|Odd|"))
 
     /// type Parity = Even | Odd
     /// let (|#Even|Odd|) x = if x % 0 = 0 then $Even else Odd
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.ActivePat.ConsDefRhs`` () =
       this.GotoDefinitionTestWithSimpleFile "Even (*loc-60*)" (Some("let (|Even|Odd|) x = (*loc-59*)", "|Even|Odd|"))
 
@@ -1212,17 +1193,16 @@ type UsingMSBuild()  =
     ///   match x with
     ///   | $Even -> 1
     ///   | Odd  -> 0
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.ActivePat.PatUse`` () =
       this.GotoDefinitionTestWithSimpleFile "Even -> 1 (*loc-61*)" (Some("let (|Even|Odd|) x = (*loc-59*)", "|Even|Odd|"))
 
     /// let patval = (|Even|Odd|) (*loc-61b*)
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Simple.ActivePat.PatUseValue`` () =
       this.GotoDefinitionTestWithSimpleFile "en|Odd|) (*loc-61b*)" (Some("let (|Even|Odd|) x = (*loc-59*)", "|Even|Odd|"))
 
-    [<Test>]
-    [<Ignore("This is currently broken for dev enlistments.")>]
+    [<Fact(Skip = "This is currently broken for dev enlistments.")>]
     member public this.``GotoDefinition.Library.InitialTest`` () =
       this.GotoDefinitionTestWithLib "map (*loc-1*)" (Some("map", "lis.fs"))
 
@@ -1230,32 +1210,32 @@ type UsingMSBuild()  =
 
     /// type #Class$ () =
     ///   member c.Method () = ()
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.ObjectOriented.ClassNameDef`` () =
       this.GotoDefinitionTestWithSimpleFile " () = (*loc-62*)" (Some("type Class () = (*loc-62*)", "Class"))
 
     /// type Class () =
     ///   member c.#Method$ () = ()
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.ObjectOriented.ILMethodDef`` () =
       this.GotoDefinitionTestWithSimpleFile " () = () (*loc-63*)" (Some("member c.Method () = () (*loc-63*)", "c.Method"))
 
     /// type Class () =
     ///   member #c$.Method () = ()
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.ObjectOriented.ThisDef`` () =
       this.GotoDefinitionTestWithSimpleFile ".Method () = () (*loc-63*)" (Some("member c.Method () = () (*loc-63*)", "c"))
 
     /// type Class () =
     ///   static member #Foo$ () = ()
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.ObjectOriented.StaticMethodDef`` () =
       this.GotoDefinitionTestWithSimpleFile " () = () (*loc-64*)" (Some("static member Foo () = () (*loc-64*)", "Foo"))
 
     /// type #Class () =
     ///   member Method () = ()
     /// let c = Class$ ()
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.ObjectOriented.ConstructorUse`` () =
       this.GotoDefinitionTestWithSimpleFile " () (*loc-65*)" (Some("type Class () = (*loc-62*)", "Class"))
 
@@ -1263,27 +1243,27 @@ type UsingMSBuild()  =
     ///   member #Method () = ()
     /// let c = Class ()
     /// c.Method$ ()
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.ObjectOriented.MethodInvocation`` () =
       this.GotoDefinitionTestWithSimpleFile " () (*loc-66*)" (Some("member c.Method () = () (*loc-63*)", "c.Method"))
 
     /// type Class () =
     ///   static member #Foo () = ()
     /// Class.Foo$ ()
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.ObjectOriented.StaticMethodInvocation`` () =
       this.GotoDefinitionTestWithSimpleFile " () (*loc-67*)" (Some("static member Foo () = () (*loc-64*)", "Foo"))
 
     /// type Class () =
     ///   member c.Method# () = c.Method$ ()
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.ObjectOriented.MethodSelfInvocation`` () =
       this.GotoDefinitionTestWithSimpleFile " () (*loc-68*)" (Some("member c.Method  () = c.Method () (*loc-68*)", "c.Method"))
 
     /// type Class () =
     ///   member c.Method1 ()  = c.Method2$ ()
     ///   member #c.Method2 () = c.Method1 ()
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.ObjectOriented.MethodToMethodForward`` () =
       this.GotoDefinitionTestWithSimpleFile " () (*loc-69*)" (Some("member c.Method2 () = c.Method1 () (*loc-70*)", "c.Method2"))
 
@@ -1293,7 +1273,7 @@ type UsingMSBuild()  =
     ///   member c.Method () =
     ///     let #c = Class ()
     ///     c$.Method ()
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.ObjectOriented.ShadowThis`` () =
       this.GotoDefinitionTestWithSimpleFile ".Method () (*loc-71*)" (Some("let c = Class ()", "c"))
 
@@ -1303,11 +1283,11 @@ type UsingMSBuild()  =
     ///   member c.Method () =
     ///     let c = Class ()
     ///     c.Method$ ()
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.ObjectOriented.ShadowThisMethodInvocation`` () =
       this.GotoDefinitionTestWithSimpleFile " () (*loc-71*)" (Some("member c.Method () = () (*loc-63*)", "c.Method"))
 
-    [<Test>]
+    [<Fact>]
     member this.``GotoDefinition.ObjectOriented.StructConstructor`` () =
       let lines = 
         [ "#light"
@@ -1350,7 +1330,7 @@ type UsingMSBuild()  =
       match (QuickParse.GetCompleteIdentifierIsland tolerate s n, exp) with
       | (Some (s1, _, _), Some s2) -> 
         printfn "%s" "Received result, as expected."
-        Assert.AreEqual (s1, s2)
+        Assert.Equal (s1, s2)
       | (None,         None)    -> 
         printfn "%s" "Received no result, as expected."
       | (Some _,       None)    -> 
@@ -1358,53 +1338,53 @@ type UsingMSBuild()  =
       | (None,         Some _)  -> 
         Assert.Fail("Expected result, but didn't receive one!")
 
-    [<Test>]
+    [<Fact>]
     member public this.``GetCompleteIdTest.TrivialBefore`` () =
       for tolerate in [true;false] do
           this.GetCompleteIdTest tolerate "let $ThisIsAnIdentifier = ()" (Some "ThisIsAnIdentifier")
 
-    [<Test>]
+    [<Fact>]
     member public this.``GetCompleteIdTest.TrivialMiddle`` () =
       for tolerate in [true;false] do
           this.GetCompleteIdTest tolerate "let This$IsAnIdentifier = ()" (Some "ThisIsAnIdentifier")
 
-    [<Test>]
+    [<Fact>]
     member public this.``GetCompleteIdTest.TrivialEnd`` () =
       this.GetCompleteIdTest true "let ThisIsAnIdentifier$ = ()" (Some "ThisIsAnIdentifier")
       this.GetCompleteIdTest false "let ThisIsAnIdentifier$ = ()" None
 
-    [<Test>]
+    [<Fact>]
     member public this.``GetCompleteIdTest.GetsUpToDot1`` () =
       for tolerate in [true;false] do
           this.GetCompleteIdTest tolerate "let ThisIsAnIdentifier = Te$st.Moo.Foo.bar" (Some "Test")
 
-    [<Test>]
+    [<Fact>]
     member public this.``GetCompleteIdTest.GetsUpToDot2`` () =
       for tolerate in [true;false] do
           this.GetCompleteIdTest tolerate "let ThisIsAnIdentifier = Test.Mo$o.Foo.bar" (Some "Test.Moo")
 
-    [<Test>]
+    [<Fact>]
     member public this.``GetCompleteIdTest.GetsUpToDot3`` () =
       for tolerate in [true;false] do
           this.GetCompleteIdTest tolerate "let ThisIsAnIdentifier = Test.Moo.Fo$o.bar" (Some "Test.Moo.Foo")
 
-    [<Test>]
+    [<Fact>]
     member public this.``GetCompleteIdTest.GetsUpToDot4`` () =
       for tolerate in [true;false] do
           this.GetCompleteIdTest tolerate "let ThisIsAnIdentifier = Test.Moo.Foo.ba$r" (Some "Test.Moo.Foo.bar")
 
-    [<Test>]
+    [<Fact>]
     member public this.``GetCompleteIdTest.GetsUpToDot5`` () =
       this.GetCompleteIdTest true "let ThisIsAnIdentifier = Test.Moo.Foo.bar$" (Some "Test.Moo.Foo.bar")
       this.GetCompleteIdTest false "let ThisIsAnIdentifier = Test.Moo.Foo.bar$" None
 
-    [<Test>]
+    [<Fact>]
     member public this.``GetCompleteIdTest.GetOperator`` () =
       for tolerate in [true;false] do
           this.GetCompleteIdTest tolerate "let ThisIsAnIdentifier = 3 +$ 4" None
 
 
-    [<Test>]
+    [<Fact>]
     member public this.``Identifier.IsConstructor.Bug2516``() =
         let fileContents = """
             module GotoDefinition
@@ -1413,7 +1393,7 @@ type UsingMSBuild()  =
         let definitionCode = "type One(*Mark1*) = One"
         this.VerifyGoToDefnSuccessAtStartOfMarker(fileContents,"(*Mark1*)",definitionCode) 
         
-    [<Test>]
+    [<Fact>]
     member public this.``Identifier.IsTypeName.Bug2516``() =
         let fileContents = """
             module GotoDefinition
@@ -1422,7 +1402,7 @@ type UsingMSBuild()  =
         let definitionCode = "type One(*Mark1*) = One"
         this.VerifyGoToDefnSuccessAtStartOfMarker(fileContents,"(*Mark2*)",definitionCode)       
        
-    [<Test>]
+    [<Fact>]
     member public this.``ModuleName.OnDefinitionSite.Bug2517``() =
         let fileContents = """
             namespace GotoDefinition
@@ -1432,7 +1412,7 @@ type UsingMSBuild()  =
         this.VerifyGoToDefnSuccessAtStartOfMarker(fileContents,"(*Mark*)",definitionCode) 
 
     /// GotoDef on abbreviation
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.Abbreviation.Bug193064``() =
         let fileContents = """
             type X = int
@@ -1442,7 +1422,7 @@ type UsingMSBuild()  =
 
     /// Verify the GotoDefinition on UoM yield does NOT jump out error dialog, 
     /// will do nothing in automation lab machine or GTD SI.fs on dev machine with enlistment.
-    [<Test>]
+    [<Fact>]
     member public this.``GotoDefinition.UnitOfMeasure.Bug193064``() =
         let fileContents = """
             open Microsoft.FSharp.Data.UnitSystems.SI
@@ -1451,6 +1431,5 @@ type UsingMSBuild()  =
 
 
 // Context project system
-[<TestFixture>]
 type UsingProjectSystem() = 
     inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)

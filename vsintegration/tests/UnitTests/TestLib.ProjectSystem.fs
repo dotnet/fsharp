@@ -25,7 +25,7 @@ open Microsoft.Build.Execution
 open Microsoft.Build.Framework
         
 #nowarn "52" // The value has been copied to ensure the original is not mutated
-open NUnit.Framework
+open Xunit
 open UnitTests.TestLib.Utils
 open UnitTests.TestLib.Utils.Asserts
 open UnitTests.TestLib.Utils.FilesystemHelpers
@@ -77,27 +77,13 @@ type TheTests() =
         l.[0]            
         
     /////////////////////////////////
-    /// Called per test
-    [<SetUp>]
-    member this.Setup() =
-        ()
-
-        
-    [<TearDown>]
-    member this.TearDown() =
-        // help find leaks per-test
-        System.GC.Collect()  
-        System.GC.WaitForPendingFinalizers()
-        ()
-
-    /////////////////////////////////
     /// helpers
     static member AssertMatches (r : Regex) (s:string) =
         if not (r.IsMatch(s)) then
             let msg = sprintf "Expected regex '%s' to match '%s'." (r.ToString()) s
             printfn "%s" msg
             Assert.Fail(msg)
-    // Like AssertMatches, but runs for every prefix of regex up to each occurence of 'c'
+    // Like AssertMatches, but runs for every prefix of regex up to each occurrence of 'c'
     // Is helpful so that, if long regex match fails, you see first prefix that fails
     static member HelpfulAssertMatches (c : char) (regexStr : string) (s:string) =
         let mutable i = regexStr.IndexOf(c, 0)
@@ -400,7 +386,7 @@ type TheTests() =
            "
         String.Format(template, outputType)
         
-    member this.MSBuildProjectMulitplatBoilerplate (outputType : string) : string =
+    member this.MSBuildProjectMultiPlatformBoilerplate (outputType : string) : string =
         let template = @"
   <PropertyGroup>
     <Configuration Condition="" '$(Configuration)' == '' "">Debug</Configuration>
@@ -502,7 +488,7 @@ type TheTests() =
         let actual = [| 0u |]
         project.ConfigProvider.GetPlatformNames(uint32 platformNames.Length, platformNames, actual) |> AssertEqual VSConstants.S_OK
         AssertEqualMsg expectedNames platformNames "List of platform names is different"
-        AssertEqualMsg expectedNames.Length (int actual.[0]) "List of platfrom names is ok, but reported lengths disagree"
+        AssertEqualMsg expectedNames.Length (int actual.[0]) "List of platform names is ok, but reported lengths disagree"
 
 
     member internal this.HelperEnsureAtLeastOne projFileBoilerplate expectedConfigs expectedPlatforms =
@@ -609,7 +595,7 @@ module LanguageServiceExtension =
                         else
                             assem, false  // assem is a simple/fusion name of an assembly
                     let node = referencesFolder.CreateAssemblyReferenceNode(assem, Microsoft.VisualStudio.FSharp.ProjectSystem.AddReferenceDialogTab.BrowseTab, isFullPath)
-                    if node <> null then  // node may be null if reference was to non-existent file
+                    if node <> null then  // node may be null if reference was to nonexistent file
                         if node.AddReference() then
                             // still need to add it to underlying representation (SimpleOpenProject) so that
                             // subsequent Reload() calls will have right info
@@ -624,7 +610,7 @@ module LanguageServiceExtension =
                     let newHooks = 
                      { new ProjectBehaviorHooks with 
 
-                        // Note: CreateProjectHook will callback MakeHierarcyHook and then InitializeProjectHook
+                        // Note: CreateProjectHook will callback MakeHierarchyHook and then InitializeProjectHook
                         member x.CreateProjectHook (projectFilename, files, references, projReferences, disabledWarnings, defines, versionFile, otherFlags, otherMSBuildStuff, targetFrameworkVersion: string) =
                             if projInfo.CreateProjectHookIsEnabled then
                                 hooks.CreateProjectHook (projectFilename, files, references, projReferences, disabledWarnings, defines, versionFile, otherFlags, otherMSBuildStuff, targetFrameworkVersion)

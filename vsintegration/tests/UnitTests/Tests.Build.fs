@@ -2,7 +2,7 @@
 
 namespace Tests
 
-open NUnit.Framework
+open Xunit
 open System
 open System.IO
 open System.Diagnostics
@@ -19,8 +19,7 @@ module HandyExtensions =
             if not (s.MatchesPattern p) then
                 let up = System.Text.RegularExpressions.Regex.Unescape p
                 let message = sprintf "Expected\n%A\nto match pattern\n%A" s up
-                printfn "%s" message
-                Assert.Fail()
+                failwith message
 open HandyExtensions
 
 type MyLogger(f : string -> unit) =
@@ -49,7 +48,6 @@ type FauxHostObject() =
     interface ITaskHost
         // no members
 
-[<TestFixture>]
 type Build() = 
     (* Asserts ----------------------------------------------------------------------------- *)
     let AssertEqual expected actual =
@@ -60,16 +58,7 @@ type Build() =
 
     let MakeTaskItem (itemSpec : string) = new TaskItem(itemSpec) :> ITaskItem
 
-    /// Called per test
-    [<SetUp>]
-    member this.Setup() =
-        ()
-        
-    [<TearDown>]
-    member this.TearDown() =
-        ()
-
-    [<Test>]
+    [<Fact>]
     member public this.TestCodePage() =
         let tool = new FSharp.Build.Fsc()
         printfn "By the way, the registry or app.config tool path is %s" tool.ToolPath
@@ -85,7 +74,7 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestDebugSymbols() =
         let tool = new FSharp.Build.Fsc()
         tool.DebugSymbols <- true
@@ -100,7 +89,7 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestDebugType() =
         let tool = new FSharp.Build.Fsc()
         tool.DebugType <- "pdbONly"
@@ -115,7 +104,7 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestDefineConstants() =
         let tool = new FSharp.Build.Fsc()
         tool.DefineConstants <- [| MakeTaskItem "FOO=3"
@@ -132,7 +121,7 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestDisabledWarnings1() =
         let tool = new FSharp.Build.Fsc()
         tool.DisabledWarnings <- "52;109"
@@ -147,7 +136,7 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestDisabledWarnings2() =
         let tool = new FSharp.Build.Fsc()
         tool.DisabledWarnings <- ";"  // e.g. someone may have <NoWarn>$(NoWarn);$(SomeOtherVar)</NoWarn> and both vars are empty
@@ -161,7 +150,7 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestWarningsNotAsErrors() =
         let tool = new FSharp.Build.Fsc()
         tool.WarningsNotAsErrors <- "52;109"
@@ -176,12 +165,13 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestVersionFile() =
         let tool = new FSharp.Build.Fsc()
         tool.VersionFile <- "src/version"
         AssertEqual "src/version" tool.VersionFile 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--versionfile:src/version" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -190,7 +180,7 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestDocumentationFile() =
         let tool = new FSharp.Build.Fsc()
         tool.DocumentationFile <- "foo.xml"
@@ -205,7 +195,7 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestGenerateInterfaceFile() =
         let tool = new FSharp.Build.Fsc()
         tool.GenerateInterfaceFile <- "foo.fsi"
@@ -220,7 +210,7 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestKeyFile() =
         let tool = new FSharp.Build.Fsc()
         tool.KeyFile <- "key.txt"
@@ -235,7 +225,7 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestNoFramework() =
         let tool = new FSharp.Build.Fsc()
         tool.NoFramework <- true
@@ -250,12 +240,13 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestOptimize() =
         let tool = new FSharp.Build.Fsc()
         tool.Optimize <- false
         AssertEqual false tool.Optimize 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize-" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -263,13 +254,14 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestTailcalls() =
         let tool = new FSharp.Build.Fsc()
         tool.Tailcalls <- true
         AssertEqual true tool.Tailcalls
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
+        // REVIEW we don't put the default, is that desired?
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -277,12 +269,13 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestOtherFlags() =
         let tool = new FSharp.Build.Fsc()
         tool.OtherFlags <- "--yadda yadda"
         AssertEqual "--yadda yadda" tool.OtherFlags 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -292,7 +285,7 @@ type Build() =
                      "yadda")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestOutputAssembly() =
         let tool = new FSharp.Build.Fsc()
         tool.OutputAssembly <- "oUt.dll"
@@ -307,12 +300,13 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestPdbFile() =
         let tool = new FSharp.Build.Fsc()
         tool.PdbFile <- "out.pdb"
         AssertEqual "out.pdb" tool.PdbFile 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--pdb:out.pdb" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -321,12 +315,13 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestPlatform1() =
         let tool = new FSharp.Build.Fsc()
         tool.Platform <- "x64"
         AssertEqual "x64" tool.Platform 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--platform:x64" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -335,12 +330,13 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestPlatform3() =
         let tool = new FSharp.Build.Fsc()
         tool.Platform <- "x86"
         AssertEqual "x86" tool.Platform 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--platform:x86" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -349,13 +345,14 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestReferences() =
         let tool = new FSharp.Build.Fsc()
-        let dll = "c:\\sd\\staging\\tools\\nunit\\nunit.framework.dll"
+        let dll = "c:\\sd\\staging\\tools\\xunit\\xunit.core.dll"
         tool.References <- [| MakeTaskItem dll |]
         AssertEqual 1 tool.References.Length 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "-r:" + dll + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -364,42 +361,45 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestReferencePath() =
         let tool = new FSharp.Build.Fsc()
-        let path = "c:\\sd\\staging\\tools\\nunit\\;c:\\Foo"
+        let path = "c:\\sd\\staging\\tools\\xunit\\;c:\\Foo"
         tool.ReferencePath <- path
         AssertEqual path tool.ReferencePath 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
-                     "--lib:c:\\sd\\staging\\tools\\nunit\\,c:\\Foo" + Environment.NewLine +
+                     "--lib:c:\\sd\\staging\\tools\\xunit\\,c:\\Foo" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestReferencePathWithSpaces() =
         let tool = new FSharp.Build.Fsc()
-        let path = "c:\\program files;c:\\sd\\staging\\tools\\nunit;c:\\Foo"
+        let path = "c:\\program files;c:\\sd\\staging\\tools\\xunit;c:\\Foo"
         tool.ReferencePath <- path
         AssertEqual path tool.ReferencePath 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
-                     "--lib:c:\\program files,c:\\sd\\staging\\tools\\nunit,c:\\Foo" + Environment.NewLine +
+                     "--lib:c:\\program files,c:\\sd\\staging\\tools\\xunit,c:\\Foo" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestResources() =
         let tool = new FSharp.Build.Fsc()
         tool.Resources <- [| MakeTaskItem "Foo.resources" |]
         AssertEqual 1 tool.Resources.Length 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--resource:Foo.resources" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -408,7 +408,7 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestSources() =
         let tool = new FSharp.Build.Fsc()
         let src = "foo.fs"
@@ -416,6 +416,7 @@ type Build() =
         tool.Sources <- [| iti; iti |]
         AssertEqual 2 tool.Sources.Length 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -426,12 +427,13 @@ type Build() =
                     cmd
         ()
 
-    [<Test>]
+    [<Fact>]
     member public this.TestTargetType1() =
         let tool = new FSharp.Build.Fsc()
         tool.TargetType <- "Library"
         AssertEqual "Library" tool.TargetType 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--target:library" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -440,12 +442,13 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestTargetType2() =
         let tool = new FSharp.Build.Fsc()
         tool.TargetType <- "Winexe"
         AssertEqual "Winexe" tool.TargetType 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--target:winexe" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -454,12 +457,13 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestTargetType3() =
         let tool = new FSharp.Build.Fsc()
         tool.TargetType <- "Module"
         AssertEqual "Module" tool.TargetType 
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--target:module" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -468,11 +472,12 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestUtf8Output() =
         let tool = new FSharp.Build.Fsc()
         tool.Utf8Output <- true
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--utf8output" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -481,11 +486,12 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestWin32Res() =
         let tool = new FSharp.Build.Fsc()
         tool.Win32ResourceFile <- "foo.res"
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--win32res:foo.res" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -494,11 +500,12 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd
 
-    [<Test>]
+    [<Fact>]
     member public this.TestWin32Manifest() =
         let tool = new FSharp.Build.Fsc()
         tool.Win32ManifestFile <- "foo.manifest"
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--win32manifest:foo.manifest" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
@@ -507,11 +514,12 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd 
 
-    [<Test>]
+    [<Fact>]
     member public this.TestHighEntropyVA() =
         let tool = new FSharp.Build.Fsc()
         tool.HighEntropyVA <- true
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -519,11 +527,12 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd 
 
-    [<Test>]
+    [<Fact>]
     member public this.TestSubsystemVersion() =
         let tool = new FSharp.Build.Fsc()
         tool.SubsystemVersion <- "6.02"
         let cmd = tool.InternalGenerateResponseFileCommands()
+        printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
@@ -532,7 +541,7 @@ type Build() =
                      "--nocopyfsharpcore")
                     cmd 
 
-    [<Test>]
+    [<Fact>]
     member public this.TestAllCombo() =
         let tool = new FSharp.Build.Fsc()
         tool.CodePage <- "65001"
@@ -619,7 +628,7 @@ type Build() =
             "--define:FOO=3"
             "--define:BAR=4"
             "--doc:foo.xml"
-            "--sig:foo.fsi" 
+            "--sig:foo.fsi"
             "--keyfile:key.txt"
             "--optimize+"
             "--pdb:out.pdb"
@@ -648,7 +657,7 @@ type Build() =
         let expectedSources = [| "foo.fs"; "C:\\Program Files\\spaces.fs" |]
         AssertEqual expectedSources hostObject.Sources
 
-    [<Test>]
+    [<Fact>]
     member public this.``DisabledWarnings build property``() =
         let tool = new FSharp.Build.Fsc()
         tool.DisabledWarnings <- "

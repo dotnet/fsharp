@@ -89,7 +89,6 @@ type LanguageServicePerformanceOptions =
         EnableParallelReferenceResolution: bool
         EnableFastFindReferencesAndRename: bool
         EnablePartialTypeChecking: bool
-        UseSyntaxTreeCache: bool
         KeepAllBackgroundResolutions: bool
         KeepAllBackgroundSymbolUses: bool
         EnableBackgroundItemKeyStoreAndSemanticClassification: bool
@@ -104,7 +103,6 @@ type LanguageServicePerformanceOptions =
             EnableParallelReferenceResolution = false
             EnableFastFindReferencesAndRename = true
             EnablePartialTypeChecking = true
-            UseSyntaxTreeCache = FSharpExperimentalFeaturesEnabledAutomatically
             KeepAllBackgroundResolutions = false
             KeepAllBackgroundSymbolUses = false
             EnableBackgroundItemKeyStoreAndSemanticClassification = true
@@ -222,7 +220,7 @@ module internal OptionsUI =
         override this.CreateView() =
             upcast LanguageServicePerformanceOptionControl()
 
-    [<Guid(Guids.advancedSettingsPageIdSring)>]
+    [<Guid(Guids.advancedSettingsPageIdString)>]
     type internal AdvancedSettingsOptionPage() =
         inherit AbstractOptionPage<AdvancedOptions>()
         override _.CreateView() = upcast AdvancedOptionsControl()

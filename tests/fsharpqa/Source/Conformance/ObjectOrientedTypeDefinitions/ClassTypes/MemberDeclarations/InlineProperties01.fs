@@ -1,6 +1,6 @@
 // #Regression #Conformance #ObjectOrientedTypes #Classes #MethodsAndProperties #MemberDefinitions 
 // Regression test for FSHARP1.0:5173
-// Title: individual get/set properties can not be marked as "inline"
+// Title: individual get/set properties cannot be marked as "inline"
 // Descr: verify that with auto-#light-on, property getters/setters can be marked as inline
 
 type A() = 

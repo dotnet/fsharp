@@ -78,7 +78,7 @@ function Run-Build([string]$rootDir, [string]$increment) {
     /p:ContinuousIntegrationBuild=false `
     /p:OfficialBuildId="" `
     /p:QuietRestore=false `
-    /p:DotNetBuildFromSource=false `
+    /p:DotNetBuildSourceOnly=false `
     /p:Deterministic=true `
     /p:DebugDeterminism=true `
     /p:Features="debug-determinism" `
@@ -404,7 +404,7 @@ try {
 
   $script:bootstrap = $true
   $script:bootstrapConfiguration = "Proto"
-  $script:fsharpNetCoreProductTfm = "net8.0"
+  $script:fsharpNetCoreProductTfm = "net9.0"
   $script:bootstrapTfm = $script:fsharpNetCoreProductTfm
 
   $bootstrapDir = Make-BootstrapBuild

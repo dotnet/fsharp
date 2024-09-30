@@ -115,7 +115,7 @@ let generateTests() =
                                                   else
                                                       yield "// We expect accessing the value 'x' will _not_ trigger initialization of this module"
                                                   yield decl1;
-                                                  yield "// This is a value we can access from the outside to definitely force initialziation of the module"
+                                                  yield "// This is a value we can access from the outside to definitely force initialization of the module"
                                                   yield "let mutable forceInit = 1";
                                                   yield "// This sets a value in another module to indicate that initialization has happened"
                                                   yield sprintf "InitFlag%d.init <- true" n.Value |])

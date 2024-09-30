@@ -530,7 +530,7 @@ let writeSpecToFile (generatorState: GeneratorState) (spec: ParserSpec) (compile
 
       for id,startState in List.zip spec.StartSymbols compiledSpec.startStates do
             if not (types.ContainsKey id) then 
-              failwith ("a %type declaration is required for for start token "+id);
+              failwith ("a %type declaration is required for start token "+id);
             let ty = types.[id] in 
             writer.WriteLine "let %s lexer lexbuf : %s =" id ty;
             writer.WriteLine "    engine lexer lexbuf %d :?> _" startState

@@ -207,19 +207,19 @@
         <target state="translated">Compilatore Transparent (sperimentale)</target>
         <note />
       </trans-unit>
-      <trans-unit id="TransparentCompiler_Discalimer1">
+      <trans-unit id="TransparentCompiler_Disclaimer1">
         <source>WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</source>
-        <target state="translated">AVVISO Il compilatore Transparent non supporta ancora tutte le funzionalità e può causare arresti anomali o fornire risultati non corretti.</target>
+        <target state="new">WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results.</target>
         <note />
       </trans-unit>
-      <trans-unit id="TransparentCompiler_Discalimer2">
+      <trans-unit id="TransparentCompiler_Disclaimer2">
         <source>Use at your own risk!</source>
-        <target state="translated">Usalo a tuo rischio e pericolo.</target>
+        <target state="new">Use at your own risk!</target>
         <note />
       </trans-unit>
-      <trans-unit id="TransparentCompiler_Discalimer3">
+      <trans-unit id="TransparentCompiler_Disclaimer3">
         <source>By checking this you also opt-in for additional performance telemetry</source>
-        <target state="translated">Selezionando questa opzione si acconsente esplicitamente anche alla telemetria aggiuntiva delle prestazioni</target>
+        <target state="new">By checking this you also opt-in for additional performance telemetry</target>
         <note />
       </trans-unit>
       <trans-unit id="Transparent_Compiler_Cache_Factor">
@@ -325,11 +325,6 @@
       <trans-unit id="Use_Transparent_Compiler">
         <source>Use Transparent Compiler (restart required)</source>
         <target state="translated">Usa il compilatore Transparent (riavvio necessario)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Use_syntax_tree_cache">
-        <source>Cache parsing results (experimental)</source>
-        <target state="translated">Risultati dell'analisi della cache (sperimentale)</target>
         <note />
       </trans-unit>
     </body>

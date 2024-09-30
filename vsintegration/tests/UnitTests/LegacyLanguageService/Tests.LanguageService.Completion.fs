@@ -7,7 +7,7 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Salsa.Salsa
 open Salsa.VsMocks
 open Salsa.VsOpsUtils
-open NUnit.Framework
+open Xunit
 open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
@@ -25,7 +25,6 @@ module StandardSettings =
     let AC x y = AutoCompleteExpected(x,y)
     let DC x y = DotCompleteExpected(x,y)
 
-[<TestFixture>][<Category "LanguageService">]  
 type UsingMSBuild() as this  = 
     inherit LanguageServiceBaseTests()
 
@@ -39,7 +38,7 @@ type UsingMSBuild() as this  =
         file
 
     let DoWithAutoCompleteUsingExtraRefs refs otherFlags coffeeBreak fileKind reason (code : string list) marker f  =        
-        // Up to 2 untyped parse operations are OK: we do an initial parse to provide breakpoint valdiation etc. 
+        // Up to 2 untyped parse operations are OK: we do an initial parse to provide breakpoint validation etc. 
         // This might be before the before the background builder is ready to process the foreground typecheck.
         // In this case the background builder calls us back when its ready, and we then request a foreground typecheck 
         let file = createFile code fileKind refs otherFlags
@@ -212,11 +211,10 @@ type UsingMSBuild() as this  =
             fileContents,
             marker,
             (fun completions -> 
-                Assert.AreNotEqual(0,completions.Length)
+                Assert.NotEqual(0,completions.Length)
                 let found = completions |> Array.exists(fun (CompletionItem(s,_,_,_,_)) -> s = expected)
                 if not(found) then 
-                    printfn "Expected: %A to contain %s" completions expected  
-                    Assert.Fail()                
+                    failwithf "Expected: %A to contain %s" completions expected  
             ),
             ?addtlRefAssy = addtlRefAssy
         )
@@ -232,14 +230,14 @@ type UsingMSBuild() as this  =
         let (_, _, file) = this.CreateSingleFileProject(fileContents)
         MoveCursorToEndOfMarker(file,marker)
         let completions = AutoCompleteAtCursor file
-        Assert.AreNotEqual(0,completions.Length)
+        Assert.NotEqual(0,completions.Length)
 
     member public this.TestCompletionNotShowingWhenFastUpdate (firstSrc : string list) secondSrc marker =     
         let (_, _, file) = this.CreateSingleFileProject(firstSrc)
         MoveCursorToEndOfMarker(file,marker)
 
         // Now delete the property and leave only dot at the end 
-        //  - user is typing fast so replac the content without background compilation
+        //  - user is typing fast so replace the content without background compilation
         ReplaceFileInMemoryWithoutCoffeeBreak file secondSrc      
         let completions = time1 AutoCompleteAtCursor file "Time of first autocomplete."
         AssertCompListIsEmpty(completions)
@@ -249,7 +247,7 @@ type UsingMSBuild() as this  =
         let completions = time1 AutoCompleteAtCursor file "Time of first autocomplete."
         AssertCompListIsEmpty(completions)      
 
-   /////Helper Functios 
+   /////Helper Functions 
         //DotCompList ContainAll At End Of Marker Helper Function
     member private this.VerifyDotCompListContainAllAtEndOfMarker(fileContents : string, marker : string, list : string list) =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents)
@@ -270,7 +268,7 @@ type UsingMSBuild() as this  =
         let completions = DotCompletionAtStartOfMarker file marker
         AssertCompListIsEmpty(completions)
 
-    [<Test>]
+    [<Fact>]
     member this.``AutoCompletion.ObjectMethods``() = 
         let code =
             [
@@ -315,7 +313,7 @@ type UsingMSBuild() as this  =
         test "DU_3." "DU_3." ["ExtensionPropObj"; "ExtensionMethodObj"; "Equals"] ["GetHashCode"] // no gethashcode, has equals defined in DU3 type
         test "DU_4." "DU_4." ["ExtensionPropObj"; "ExtensionMethodObj"; "GetHashCode"] ["Equals"] // no equals, has gethashcode defined in DU4 type
 
-    [<Test>]
+    [<Fact>]
     member this.``AutoCompletion.BeforeThis``() = 
         let code = 
             [
@@ -348,9 +346,7 @@ type UsingMSBuild() as this  =
             AssertCtrlSpaceCompletionListIsEmptyNoCoffeeBreak c "this."
             AssertAutoCompleteCompletionListIsEmptyNoCoffeeBreak c "this."
                     
-    [<Test>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Category("TypeProvider")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member this.``TypeProvider.VisibilityChecksForGeneratedTypes``() = 
         let extraRefs = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")]
         let check = DoWithAutoCompleteUsingExtraRefs extraRefs None true SourceFileKind.FS BackgroundRequestReason.MemberSelect
@@ -385,49 +381,48 @@ type UsingMSBuild() as this  =
                 AssertCompListDoesNotContainAny(ci, ["f"; "ProtectedProp"; "ProtectedM"; "PrivateProp"; "PrivateM"])
                 
                
-    [<Test>] member public this.``AdjacentToDot_01``() = testAutoCompleteAdjacentToDot ".."
-    [<Test>] member public this.``AdjacentToDot_02``() = testAutoCompleteAdjacentToDot ".<"
-    [<Test>] member public this.``AdjacentToDot_03``() = testAutoCompleteAdjacentToDot ".>"
-    [<Test>] member public this.``AdjacentToDot_04``() = testAutoCompleteAdjacentToDot ".="
-    [<Test>] member public this.``AdjacentToDot_05``() = testAutoCompleteAdjacentToDot ".!="
-    [<Test>] member public this.``AdjacentToDot_06``() = testAutoCompleteAdjacentToDot ".$"
-    [<Test>] member public this.``AdjacentToDot_07``() = testAutoCompleteAdjacentToDot ".[]"
-    [<Test>] member public this.``AdjacentToDot_08``() = testAutoCompleteAdjacentToDot ".[]<-"
-    [<Test>] member public this.``AdjacentToDot_09``() = testAutoCompleteAdjacentToDot ".[,]<-"
-    [<Test>] member public this.``AdjacentToDot_10``() = testAutoCompleteAdjacentToDot ".[,,]<-"
-    [<Test>] member public this.``AdjacentToDot_11``() = testAutoCompleteAdjacentToDot ".[,,,]<-"
-    [<Test>] member public this.``AdjacentToDot_12``() = testAutoCompleteAdjacentToDot ".[,,,]"
-    [<Test>] member public this.``AdjacentToDot_13``() = testAutoCompleteAdjacentToDot ".[,,]"
-    [<Test>] member public this.``AdjacentToDot_14``() = testAutoCompleteAdjacentToDot ".[,]"
-    [<Test>] member public this.``AdjacentToDot_15``() = testAutoCompleteAdjacentToDot ".[..]"
-    [<Test>] member public this.``AdjacentToDot_16``() = testAutoCompleteAdjacentToDot ".[..,..]"
-    [<Test>] member public this.``AdjacentToDot_17``() = testAutoCompleteAdjacentToDot ".[..,..,..]"
-    [<Test>] member public this.``AdjacentToDot_18``() = testAutoCompleteAdjacentToDot ".[..,..,..,..]"
-    [<Test>] member public this.``AdjacentToDot_19``() = testAutoCompleteAdjacentToDot ".()"
-    [<Test>] member public this.``AdjacentToDot_20``() = testAutoCompleteAdjacentToDot ".()<-"
-    [<Test>] member public this.``AdjacentToDot_02_Negative``() = testAutoCompleteAdjacentToDotNegative ".<"
-    [<Test>] member public this.``AdjacentToDot_03_Negative``() = testAutoCompleteAdjacentToDotNegative ".>"
-    [<Test>] member public this.``AdjacentToDot_04_Negative``() = testAutoCompleteAdjacentToDotNegative ".="
-    [<Test>] member public this.``AdjacentToDot_05_Negative``() = testAutoCompleteAdjacentToDotNegative ".!="
-    [<Test>] member public this.``AdjacentToDot_06_Negative``() = testAutoCompleteAdjacentToDotNegative ".$"
-    [<Test>] member public this.``AdjacentToDot_07_Negative``() = testAutoCompleteAdjacentToDotNegative ".[]"
-    [<Test>] member public this.``AdjacentToDot_08_Negative``() = testAutoCompleteAdjacentToDotNegative ".[]<-"
-    [<Test>] member public this.``AdjacentToDot_09_Negative``() = testAutoCompleteAdjacentToDotNegative ".[,]<-"
-    [<Test>] member public this.``AdjacentToDot_10_Negative``() = testAutoCompleteAdjacentToDotNegative ".[,,]<-"
-    [<Test>] member public this.``AdjacentToDot_11_Negative``() = testAutoCompleteAdjacentToDotNegative ".[,,,]<-"
-    [<Test>] member public this.``AdjacentToDot_12_Negative``() = testAutoCompleteAdjacentToDotNegative ".[,,,]"
-    [<Test>] member public this.``AdjacentToDot_13_Negative``() = testAutoCompleteAdjacentToDotNegative ".[,,]"
-    [<Test>] member public this.``AdjacentToDot_14_Negative``() = testAutoCompleteAdjacentToDotNegative ".[,]"
-    [<Test>] member public this.``AdjacentToDot_15_Negative``() = testAutoCompleteAdjacentToDotNegative ".[..]"
-    [<Test>] member public this.``AdjacentToDot_16_Negative``() = testAutoCompleteAdjacentToDotNegative ".[..,..]"
-    [<Test>] member public this.``AdjacentToDot_17_Negative``() = testAutoCompleteAdjacentToDotNegative ".[..,..,..]"
-    [<Test>] member public this.``AdjacentToDot_18_Negative``() = testAutoCompleteAdjacentToDotNegative ".[..,..,..,..]"
-    [<Test>] member public this.``AdjacentToDot_19_Negative``() = testAutoCompleteAdjacentToDotNegative ".()"
-    [<Test>] member public this.``AdjacentToDot_20_Negative``() = testAutoCompleteAdjacentToDotNegative ".()<-"
-    [<Test>] member public this.``AdjacentToDot_21_Negative``() = testAutoCompleteAdjacentToDotNegative ".+."
+    [<Fact>] member public this.``AdjacentToDot_01``() = testAutoCompleteAdjacentToDot ".."
+    [<Fact>] member public this.``AdjacentToDot_02``() = testAutoCompleteAdjacentToDot ".<"
+    [<Fact>] member public this.``AdjacentToDot_03``() = testAutoCompleteAdjacentToDot ".>"
+    [<Fact>] member public this.``AdjacentToDot_04``() = testAutoCompleteAdjacentToDot ".="
+    [<Fact>] member public this.``AdjacentToDot_05``() = testAutoCompleteAdjacentToDot ".!="
+    [<Fact>] member public this.``AdjacentToDot_06``() = testAutoCompleteAdjacentToDot ".$"
+    [<Fact>] member public this.``AdjacentToDot_07``() = testAutoCompleteAdjacentToDot ".[]"
+    [<Fact>] member public this.``AdjacentToDot_08``() = testAutoCompleteAdjacentToDot ".[]<-"
+    [<Fact>] member public this.``AdjacentToDot_09``() = testAutoCompleteAdjacentToDot ".[,]<-"
+    [<Fact>] member public this.``AdjacentToDot_10``() = testAutoCompleteAdjacentToDot ".[,,]<-"
+    [<Fact>] member public this.``AdjacentToDot_11``() = testAutoCompleteAdjacentToDot ".[,,,]<-"
+    [<Fact>] member public this.``AdjacentToDot_12``() = testAutoCompleteAdjacentToDot ".[,,,]"
+    [<Fact>] member public this.``AdjacentToDot_13``() = testAutoCompleteAdjacentToDot ".[,,]"
+    [<Fact>] member public this.``AdjacentToDot_14``() = testAutoCompleteAdjacentToDot ".[,]"
+    [<Fact>] member public this.``AdjacentToDot_15``() = testAutoCompleteAdjacentToDot ".[..]"
+    [<Fact>] member public this.``AdjacentToDot_16``() = testAutoCompleteAdjacentToDot ".[..,..]"
+    [<Fact>] member public this.``AdjacentToDot_17``() = testAutoCompleteAdjacentToDot ".[..,..,..]"
+    [<Fact>] member public this.``AdjacentToDot_18``() = testAutoCompleteAdjacentToDot ".[..,..,..,..]"
+    [<Fact>] member public this.``AdjacentToDot_19``() = testAutoCompleteAdjacentToDot ".()"
+    [<Fact>] member public this.``AdjacentToDot_20``() = testAutoCompleteAdjacentToDot ".()<-"
+    [<Fact>] member public this.``AdjacentToDot_02_Negative``() = testAutoCompleteAdjacentToDotNegative ".<"
+    [<Fact>] member public this.``AdjacentToDot_03_Negative``() = testAutoCompleteAdjacentToDotNegative ".>"
+    [<Fact>] member public this.``AdjacentToDot_04_Negative``() = testAutoCompleteAdjacentToDotNegative ".="
+    [<Fact>] member public this.``AdjacentToDot_05_Negative``() = testAutoCompleteAdjacentToDotNegative ".!="
+    [<Fact>] member public this.``AdjacentToDot_06_Negative``() = testAutoCompleteAdjacentToDotNegative ".$"
+    [<Fact>] member public this.``AdjacentToDot_07_Negative``() = testAutoCompleteAdjacentToDotNegative ".[]"
+    [<Fact>] member public this.``AdjacentToDot_08_Negative``() = testAutoCompleteAdjacentToDotNegative ".[]<-"
+    [<Fact>] member public this.``AdjacentToDot_09_Negative``() = testAutoCompleteAdjacentToDotNegative ".[,]<-"
+    [<Fact>] member public this.``AdjacentToDot_10_Negative``() = testAutoCompleteAdjacentToDotNegative ".[,,]<-"
+    [<Fact>] member public this.``AdjacentToDot_11_Negative``() = testAutoCompleteAdjacentToDotNegative ".[,,,]<-"
+    [<Fact>] member public this.``AdjacentToDot_12_Negative``() = testAutoCompleteAdjacentToDotNegative ".[,,,]"
+    [<Fact>] member public this.``AdjacentToDot_13_Negative``() = testAutoCompleteAdjacentToDotNegative ".[,,]"
+    [<Fact>] member public this.``AdjacentToDot_14_Negative``() = testAutoCompleteAdjacentToDotNegative ".[,]"
+    [<Fact>] member public this.``AdjacentToDot_15_Negative``() = testAutoCompleteAdjacentToDotNegative ".[..]"
+    [<Fact>] member public this.``AdjacentToDot_16_Negative``() = testAutoCompleteAdjacentToDotNegative ".[..,..]"
+    [<Fact>] member public this.``AdjacentToDot_17_Negative``() = testAutoCompleteAdjacentToDotNegative ".[..,..,..]"
+    [<Fact>] member public this.``AdjacentToDot_18_Negative``() = testAutoCompleteAdjacentToDotNegative ".[..,..,..,..]"
+    [<Fact>] member public this.``AdjacentToDot_19_Negative``() = testAutoCompleteAdjacentToDotNegative ".()"
+    [<Fact>] member public this.``AdjacentToDot_20_Negative``() = testAutoCompleteAdjacentToDotNegative ".()<-"
+    [<Fact>] member public this.``AdjacentToDot_21_Negative``() = testAutoCompleteAdjacentToDotNegative ".+."
 
-    [<Test>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``LambdaOverloads.Completion``() = 
         let prologue = "open System.Linq"
         let cases = 
@@ -452,8 +447,7 @@ type UsingMSBuild() as this  =
             let code = [prologue; case]
             AssertCtrlSpaceCompleteContains code "(*$*)x.Len" ["Length"] []
 
-    [<Test>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Query.CompletionInJoinOn``() = 
         let code = 
             [
@@ -467,7 +461,7 @@ type UsingMSBuild() as this  =
 
 
 
-    [<Test>]
+    [<Fact>]
     member public this.``TupledArgsInLambda.Completion.Bug312557_1``() = 
         let code = 
             [
@@ -477,7 +471,7 @@ type UsingMSBuild() as this  =
             ]
         AssertCtrlSpaceCompleteContains code "(*MARKER*)" ["xxx"; "yyy"] []
 
-    [<Test>]
+    [<Fact>]
     member public this.``TupledArgsInLambda.Completion.Bug312557_2``() = 
         let code = 
             [
@@ -491,7 +485,7 @@ type UsingMSBuild() as this  =
         AssertCtrlSpaceCompleteContains code "b a" ["aaa"; "bbb"] []
         AssertCtrlSpaceCompleteContains code "a b" ["aaa"; "bbb"] []
 
-    [<Test>]
+    [<Fact>]
     member this.``AutoCompletion.OnTypeConstraintError``() =
         let code =
             [
@@ -508,14 +502,12 @@ type UsingMSBuild() as this  =
             ]
         AssertCtrlSpaceCompleteContains code "abcd." ["Bar"; "Equals"; "GetHashCode"; "GetType"; "InternalMethod"; "PublicMethodForIntellisense"; "ToString"] []
 
-    [<Test>]
-    [<Category("RangeOperator")>]
+    [<Fact>]
     member public this.``RangeOperator.IncorrectUsage``() = 
         AssertCtrlSpaceCompletionListIsEmpty [".."] ".."
         AssertCtrlSpaceCompletionListIsEmpty ["..."] "..."
     
-    [<Test>]
-    [<Category("Completion in Inherit")>]
+    [<Fact>]
     member public this.``Inherit.CompletionInConstructorArguments1``() = 
         let code = 
             [
@@ -524,8 +516,7 @@ type UsingMSBuild() as this  =
             ]
         AssertCtrlSpaceCompleteContains code "inherit A(a" ["abs"] []
 
-    [<Test>]
-    [<Category("Completion in Inherit")>]
+    [<Fact>]
     member public this.``Inherit.CompletionInConstructorArguments2``() = 
         let code = 
             [
@@ -534,8 +525,7 @@ type UsingMSBuild() as this  =
             ]
         AssertCtrlSpaceCompleteContains code "System.String." ["Empty"] ["Array"; "Collections"]
     
-    [<Test>]
-    [<Category("Completion in object initializer")>]
+    [<Fact>]
     member public this.``ObjectInitializer.CompletionForProperties``() =
         let typeDef1 = 
             [
@@ -602,8 +592,7 @@ type UsingMSBuild() as this  =
         AssertCtrlSpaceCompleteContains (typeDef4 @ ["new M.A<_, _>(S = 1)"]) "A<_, _>(S = 1" [] ["NonSettableProperty"; "SettableProperty"] 
         AssertCtrlSpaceCompleteContains (typeDef4 @ ["new M.A<_, _>(S = 1,)"]) "A<_, _>(S = 1," ["AnotherSettableProperty"] ["NonSettableProperty"] 
 
-    [<Test>]
-    [<Category("Completion in object initializer")>]
+    [<Fact>]
     member public this.``ObjectInitializer.CompletionForSettableExtensionProperties``() =
         let typeDef = 
             [
@@ -615,8 +604,7 @@ type UsingMSBuild() as this  =
         AssertCtrlSpaceCompleteContains (typeDef @ ["open Ext"; "A((**))"]) "A((**)" ["XYZ"] [] // positive
         AssertCtrlSpaceCompleteContains (typeDef @ ["A((**))"]) "A((**)" [] ["XYZ"] // negative
 
-    [<Test>]
-    [<Category("Completion in object initializer")>]
+    [<Fact>]
     member public this.``ObjectInitializer.CompletionForNamedParameters``() =
         let typeDef1 = 
             [
@@ -639,8 +627,7 @@ type UsingMSBuild() as this  =
         AssertCtrlSpaceCompleteContains (typeDef2 @ ["A.Run<_>(x = 1)"]) ".Run<_>(x" ["xyz"] [] 
         AssertCtrlSpaceCompleteContains (typeDef2 @ ["A.Run<_>(x = 1,)"]) ".Run<_>(x = 1," ["xyz"; "zyx"] [] 
     
-    [<Test>]
-    [<Category("Completion in object initializer")>]
+    [<Fact>]
     member public this.``ObjectInitializer.CompletionForSettablePropertiesInReturnValue``() =
         let typeDef1 = 
             [
@@ -675,8 +662,7 @@ type UsingMSBuild() as this  =
         AssertCtrlSpaceCompleteContains (typeDef2 @ ["A.Run<_>(Settable = 1,)"]) ".Run<_>(Settable = 1," ["Settable0"] ["NonSettable"] 
 
 
-    [<Test>]
-    [<Category("RangeOperator")>]
+    [<Fact>]
     member public this.``RangeOperator.CorrectUsage``() = 
         let useCases = 
             [
@@ -697,7 +683,7 @@ type UsingMSBuild() as this  =
         
 
 
-    [<Test>]
+    [<Fact>]
     member public this.``Array.Length.InForRange``() =
         AssertAutoCompleteContainsNoCoffeeBreak 
           [ "let a = [|1;2;3|]
@@ -706,7 +692,7 @@ for i in 0..a."]
           [ "Length" ] // should contain
           [ ] // should not contain   
     
-    [<Test>]
+    [<Fact>]
     member public this.``ProtectedMembers.BaseClass`` () = 
         let sourceCode = 
             [
@@ -716,7 +702,7 @@ for i in 0..a."]
             ]
         AssertCtrlSpaceCompleteContains sourceCode "x." ["Message"; "HResult"] []
 
-    [<Test>]
+    [<Fact>]
     member public this.``ProtectedMembers.SelfOrDerivedClass`` () = 
         let sources = 
             [
@@ -737,9 +723,7 @@ for i in 0..a."]
             AssertCtrlSpaceCompleteContains src "x." ["Message"; "HResult"] []
 
     
-    [<Test>]
-    [<Ignore("Should be enabled after fixing 279738")>]
-    [<Category("Records")>]
+    [<Fact(Skip = "Should be enabled after fixing 279738")>]
     member public this.``Records.DotCompletion.ConstructingRecords1``() = 
         let prologue = "type OuterRec = {XX : int; YY : string}"
         
@@ -754,8 +738,7 @@ for i in 0..a."]
             let code = [prologue; code]
             AssertCtrlSpaceCompleteContains code marker should ["abs"]
     
-    [<Test>]
-    [<Category("Records")>]
+    [<Fact>]
     member public this.``Records.DotCompletion.ConstructingRecords2``() = 
         let prologue = 
             [
@@ -774,8 +757,7 @@ for i in 0..a."]
             let code = prologue @ [code]
             AssertCtrlSpaceCompleteContains code marker should shouldnot
     
-    [<Test>]
-    [<Category("Records")>]
+    [<Fact>]
     member public this.``Records.CopyOnUpdate``() =
         let prologue = 
             [
@@ -793,8 +775,7 @@ for i in 0..a."]
             let code = prologue @ [code]
             AssertCtrlSpaceCompleteContains code marker ["a"; "b"] ["abs"]
     
-    [<Test>]
-    [<Category("Records")>]
+    [<Fact>]
     member public this.``Records.CopyOnUpdate.NoFieldsCompletionBeforeWith``() =
         let code = 
             [
@@ -804,8 +785,7 @@ for i in 0..a."]
             ]
         AssertCtrlSpaceCompleteContains code "{r " [] ["AAA"]
 
-    [<Test>]
-    [<Category("Records")>]
+    [<Fact>]
     member public this.``Records.Constructors1``() =
         let prologue = 
             [
@@ -825,8 +805,7 @@ for i in 0..a."]
             let code = prologue @ [code]
             AssertCtrlSpaceCompleteContains code marker ["field1"; "field2"] ["abs"]
     
-    [<Test>]
-    [<Category("Records")>]
+    [<Fact>]
     member public this.``Records.Constructors2.UnderscoresInNames``() =
         let prologue = 
             [
@@ -845,14 +824,12 @@ for i in 0..a."]
             AssertCtrlSpaceCompleteContains code marker ["_field1"; "_field2"] ["abs"]  
 
     
-    [<Test>]
-    [<Category("Records")>]
+    [<Fact>]
     member public this.``Records.NestedRecordPatterns``() =
         let code = ["[1..({contents = 5}).]"]
         AssertCtrlSpaceCompleteContains code "5})." ["Value"; "contents"] ["CompareTo"]  
 
-    [<Test>]
-    [<Category("Records")>]
+    [<Fact>]
     member public this.``Records.Separators1``() =
         let useCases = 
             [
@@ -872,8 +849,7 @@ for i in 0..a."]
             printfn "%A" code
             AssertCtrlSpaceCompleteContains code marker ["abs"] ["AAA"; "BBB"]
 
-    [<Test>]
-    [<Category("Records")>]
+    [<Fact>]
     member public this.``Records.Separators2``() =
         let useCases = 
             [
@@ -909,8 +885,7 @@ for i in 0..a."]
             printfn "%A" code
             AssertCtrlSpaceCompleteContains code marker should ["abs"]
     
-    [<Test>]
-    [<Category("Records")>]
+    [<Fact>]
     member public this.``Records.Inherits``() = 
         let prologue = 
             [
@@ -935,8 +910,7 @@ for i in 0..a."]
             printfn "%s" (String.concat "\r\n" code)
             AssertCtrlSpaceCompleteContains code marker should ["abs"]
 
-    [<Test>]
-    [<Category("Records")>]
+    [<Fact>]
     member public this.``Records.MissingBindings``() = 
         let prologue = 
             [
@@ -956,8 +930,7 @@ for i in 0..a."]
             printfn "%s" (String.concat "\r\n" code)
             AssertCtrlSpaceCompleteContains code marker should ["abs"]
 
-    [<Test>]
-    [<Category("Records")>]
+    [<Fact>]
     member public this.``Records.WRONG.ErrorsInFirstBinding``() =
         // errors in the first binding are critical now
         let prologue = 
@@ -976,8 +949,7 @@ for i in 0..a."]
             let code = prologue @ [code]
             AssertCtrlSpaceCompleteContains code marker [] ["field1"; "field2"]
             
-    [<Test>]
-    [<Category("Records")>]
+    [<Fact>]
     member public this.``Records.InferByFieldsInPriorMethodArguments``() =
         
         let prologue = 
@@ -1005,7 +977,7 @@ for i in 0..a."]
             let code = prologue @ [code]
             AssertCtrlSpaceCompleteContains code marker should []
 
-    [<Test>]
+    [<Fact>]
     member this.``Completion.DetectInterfaces``() = 
         let shouldBeInterface =
             [
@@ -1028,7 +1000,7 @@ for i in 0..a."]
             AssertCtrlSpaceCompleteContains ifs "(*M*)" ["seq"] ["obj"]
 
 
-    [<Test>]
+    [<Fact>]
     member this.``Completion.DetectClasses``() = 
     
         let shouldBeClass = 
@@ -1056,7 +1028,7 @@ for i in 0..a."]
         for cls in shouldBeClass do
             AssertCtrlSpaceCompleteContains cls "(*M*)" ["obj"] ["seq"]
 
-    [<Test>]
+    [<Fact>]
     member this.``Completion.DetectUnknownCompletionContext``() = 
         let content = 
             [
@@ -1066,7 +1038,7 @@ for i in 0..a."]
 
         AssertCtrlSpaceCompleteContains content "(*M*)" ["obj"; "seq"] ["abs"]
 
-    [<Test>]
+    [<Fact>]
     member this.``Completion.DetectInvalidCompletionContext``() = 
         let shouldBeInvalid = 
             [
@@ -1105,7 +1077,7 @@ for i in 0..a."]
             AssertCtrlSpaceCompletionListIsEmpty invalid "(*M*)"
 
     
-    [<Test>]
+    [<Fact>]
     member this.``Completion.LongIdentifiers``() = 
         // System.Diagnostics.Debugger.Launch() |> ignore
         AssertCtrlSpaceCompleteContains
@@ -1188,8 +1160,7 @@ for i in 0..a."]
             ["Collections"; "IDisposable"]
             []
 
-    [<Test>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Query.GroupJoin.CompletionInIncorrectJoinRelations``() = 
         let code = 
             [
@@ -1202,8 +1173,7 @@ for i in 0..a."]
         AssertCtrlSpaceCompleteContains code "(x." ["CompareTo"] ["abs"]
         AssertCtrlSpaceCompleteContains code "? y." ["Chars"; "Length"] ["abs"]
 
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Test>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Query.Join.CompletionInIncorrectJoinRelations``() = 
         let code = 
             [
@@ -1216,8 +1186,7 @@ for i in 0..a."]
         AssertCtrlSpaceCompleteContains code "(x." ["CompareTo"] ["abs"]
         AssertCtrlSpaceCompleteContains code "? y." ["Chars"; "Length"] ["abs"]
 
-    [<Test>]
-    [<Ignore("Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
+    [<Fact(Skip = "Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
     member public this.``Query.ForKeywordCanCompleteIntoIdentifier``() = 
         let code = 
             [
@@ -1229,8 +1198,8 @@ for i in 0..a."]
             ]
         AssertCtrlSpaceCompleteContains code "for" ["form"] []  // 'for' is a keyword, but should not prevent completion
     
-    [<Test>]
-    member public this.``ObjInstance.InheritedClass.MethodsWithDiffAccessbility``() =
+    [<Fact>]
+    member public this.``ObjInstance.InheritedClass.MethodsWithDiffAccessibility``() =
         AssertAutoCompleteContainsNoCoffeeBreak 
           [ "type Base =
    val mutable baseField : int
@@ -1249,8 +1218,8 @@ derived.derivedField"]
           [ "baseField"; "derivedField" ] // should contain
           [ "baseFieldPrivate"; "derivedFieldPrivate" ] // should not contain
 
-    [<Test>]
-    member public this.``ObjInstance.InheritedClass.MethodsWithDiffAccessbilityWithSameNameMethod``() =
+    [<Fact>]
+    member public this.``ObjInstance.InheritedClass.MethodsWithDiffAccessibilityWithSameNameMethod``() =
         AssertAutoCompleteContainsNoCoffeeBreak 
           [ "type Base =
    val mutable baseField : int
@@ -1270,7 +1239,7 @@ derived.derivedField"]
           [ "baseField"; "derivedField" ] // should contain
           [ "baseFieldPrivate"; "derivedFieldPrivate" ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``Visibility.InheritedClass.MethodsWithDiffAccessibility``() =
         AssertAutoCompleteContainsNoCoffeeBreak 
           [ "type Base =
@@ -1289,7 +1258,7 @@ type Derived =
           [ "baseField"; "derivedField"; "derivedFieldPrivate" ] // should contain
           [ "baseFieldPrivate" ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``Visibility.InheritedClass.MethodsWithDiffAccessibilityWithSameNameMethod``() =
         AssertAutoCompleteContainsNoCoffeeBreak 
           [ "type Base =
@@ -1309,7 +1278,7 @@ type Derived =
           [ "baseField"; "derivedField"; "derivedFieldPrivate" ] // should contain
           [ "baseFieldPrivate" ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``Visibility.InheritedClass.MethodsWithSameNameMethod``() =
         AssertAutoCompleteContainsNoCoffeeBreak 
           [ "type MyClass =
@@ -1330,7 +1299,7 @@ let x = new MyClass2(0)
           [ "foo" ] // should contain
           [ ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``Identifier.Array.AfterassertKeyword``() =
         AssertAutoCompleteContainsNoCoffeeBreak 
           [ "let x = [1;2;3] "
@@ -1339,7 +1308,7 @@ let x = new MyClass2(0)
           [ "Head" ] // should contain (from List<int>)
           [ "Listeners" ] // should not contain (from System.Diagnostics.Debug)
 
-    [<Test>]
+    [<Fact>]
     member public this.``CtrlSpaceCompletion.Bug130670.Case1``() =
         AssertCtrlSpaceCompleteContainsNoCoffeeBreak 
           [ "let i = async.Return(4)" ]
@@ -1347,7 +1316,7 @@ let x = new MyClass2(0)
           [ "AbstractClassAttribute" ] // should contain (top-level)
           [ "GetType" ] // should not contain (object instance method)
 
-    [<Test>]
+    [<Fact>]
     member public this.``CtrlSpaceCompletion.Bug130670.Case2``() =
         AssertCtrlSpaceCompleteContainsNoCoffeeBreak 
           [ """
@@ -1357,7 +1326,7 @@ let x = new MyClass2(0)
           [ "AbstractClassAttribute" ] // should contain (top-level)
           [ "CompareTo" ] // should not contain (instance method on int)
 
-    [<Test>]
+    [<Fact>]
     member public this.``CtrlSpaceCompletion.Bug294974.Case1``() =
         
         AssertCtrlSpaceCompleteContains
@@ -1368,7 +1337,7 @@ let x = new MyClass2(0)
           [ "xxx" ] // should contain (completions before dot)
           [ "IsEmpty" ] // should not contain (completions after dot)
 
-    [<Test>]
+    [<Fact>]
     member public this.``CtrlSpaceCompletion.Bug294974.Case2``() =
         AssertCtrlSpaceCompleteContains
           [ """
@@ -1378,7 +1347,7 @@ let x = new MyClass2(0)
           [ "AbstractClassAttribute" ] // should contain (top-level)
           [ "IsEmpty" ] // should not contain (completions after dot)
 
-    [<Test>]
+    [<Fact>]
     member public this.``ObsoleteProperties.6377_1``() =
         AssertAutoCompleteContainsNoCoffeeBreak 
           [ "System.Security.SecurityManager." ]
@@ -1386,7 +1355,7 @@ let x = new MyClass2(0)
           [ "GetStandardSandbox" ] // should contain
           [ "get_SecurityEnabled"; "set_SecurityEnabled" ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``ObsoleteProperties.6377_2``() =
         AssertAutoCompleteContainsNoCoffeeBreak 
           [ "System.Threading.Thread.CurrentThread." ]
@@ -1394,7 +1363,7 @@ let x = new MyClass2(0)
           [ "CurrentCulture" ] // should contain: just make sure something shows
           [ "get_ApartmentState"; "set_ApartmentState" ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``PopupsVersusCtrlSpaceOnDotDot.FirstDot.Popup``() =
         AssertAutoCompleteContainsNoCoffeeBreak 
           [ "System.Console..BackgroundColor" ]
@@ -1402,7 +1371,7 @@ let x = new MyClass2(0)
           [ "BackgroundColor" ] // should contain (from prior System.Console)
           [ "abs" ] // should not contain (top-level autocomplete on empty identifier)
 
-    [<Test>]
+    [<Fact>]
     member public this.``PopupsVersusCtrlSpaceOnDotDot.FirstDot.CtrlSpace``() =
         AssertCtrlSpaceCompleteContainsNoCoffeeBreak 
           [ "System.Console..BackgroundColor" ]
@@ -1410,17 +1379,17 @@ let x = new MyClass2(0)
           [ "BackgroundColor" ] // should contain (from prior System.Console)
           [ "abs" ] // should not contain (top-level autocomplete on empty identifier)
 
-    [<Test>]
+    [<Fact>]
     member public this.``DotCompletionInPatternsPartOfLambda``() = 
         let content = ["let _ = fun x . -> x + 1"]
         AssertCtrlSpaceCompletionListIsEmpty content "x ."
 
-    [<Test>]
+    [<Fact>]
     member public this.``DotCompletionInBrokenLambda``() = 
         let content = ["1 |> id (fun x .> x)"]
         AssertCtrlSpaceCompletionListIsEmpty content "x ."
 
-    [<Test>]
+    [<Fact>]
     member public this.``DotCompletionInPatterns``() = 
         let useCases = 
             [
@@ -1433,7 +1402,7 @@ let x = new MyClass2(0)
             AssertCtrlSpaceCompletionListIsEmpty source marker
 
 
-    [<Test>]
+    [<Fact>]
     member public this.``DotCompletionWithBrokenLambda``() = 
         let errors = 
             [
@@ -1458,8 +1427,7 @@ let x = new MyClass2(0)
             AssertCtrlSpaceCompleteContains source marker should shouldnot
 
 
-    [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Fact(Skip = "https://github.com/dotnet/fsharp/issues/6166")>]
     member public this.``AfterConstructor.5039_1``() =
         AssertAutoCompleteContainsNoCoffeeBreak 
           [ "let someCall(x) = null"
@@ -1468,8 +1436,7 @@ let x = new MyClass2(0)
           [ "ReadBlock" ] // should contain (StringReader)
           [ "LastIndexOfAny" ] // should not contain (String)
 
-    [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Fact(Skip = "https://github.com/dotnet/fsharp/issues/6166")>]
     member public this.``AfterConstructor.5039_1.CoffeeBreak``() =
         AssertAutoCompleteContains
           [ "let someCall(x) = null"
@@ -1478,7 +1445,7 @@ let x = new MyClass2(0)
           [ "ReadBlock" ] // should contain (StringReader)
           [ "LastIndexOfAny" ] // should not contain (String)
 
-    [<Test>]
+    [<Fact>]
     member public this.``AfterConstructor.5039_2``() =
         AssertAutoCompleteContainsNoCoffeeBreak 
           [ "System.Random()." ]
@@ -1486,7 +1453,7 @@ let x = new MyClass2(0)
           [ "NextDouble" ] // should contain
           [ ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``AfterConstructor.5039_3``() =
         AssertAutoCompleteContainsNoCoffeeBreak 
           [ "System.Collections.Generic.List<int>()." ]
@@ -1494,7 +1461,7 @@ let x = new MyClass2(0)
           [ "BinarySearch" ] // should contain
           [ ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``AfterConstructor.5039_4``() =
         AssertAutoCompleteContainsNoCoffeeBreak 
           [ "System.Collections.Generic.List()." ]
@@ -1502,7 +1469,7 @@ let x = new MyClass2(0)
           [ "BinarySearch" ] // should contain
           [ ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``Literal.809979``() =
         AssertAutoCompleteContainsNoCoffeeBreak 
           [ "let value=uint64." ]
@@ -1510,7 +1477,7 @@ let x = new MyClass2(0)
           [ ] // should contain
           [ "Parse" ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``NameSpace.AsConstructor``() =        
         AssertCtrlSpaceCompleteContainsNoCoffeeBreak 
           [ "new System.DateTime()" ]
@@ -1518,7 +1485,7 @@ let x = new MyClass2(0)
           ["System";"Array2D"]
           ["DaysInMonth"; "AddDays" ] // should contain top level info, no static or instance DateTime members!
          
-    [<Test>]
+    [<Fact>]
     member public this.``DotAfterApplication1``() = 
         AssertAutoCompleteContainsNoCoffeeBreak
           ["let g a = new System.Random()"
@@ -1527,7 +1494,7 @@ let x = new MyClass2(0)
           ["Next"]
           [ ]
 
-    [<Test>]
+    [<Fact>]
     member public this.``DotAfterApplication2``() = 
         AssertAutoCompleteContainsNoCoffeeBreak
           ["let g a = new System.Random()"
@@ -1536,7 +1503,7 @@ let x = new MyClass2(0)
           ["Head"]
           [ ]
 
-    [<Test>]
+    [<Fact>]
     member public this.``Quickinfo.809979``() =
         AssertAutoCompleteContainsNoCoffeeBreak 
           [ "let value=uint64." ]
@@ -1545,19 +1512,19 @@ let x = new MyClass2(0)
           [ "Parse" ] // should not contain
 
     /// No intellisense in comments/strings!
-    [<Test>]
+    [<Fact>]
     member public this.``InString``() = 
         this.VerifyCtrlSpaceCompListIsEmptyAtEndOfMarker(
             fileContents = """ // System.C """ ,  
             marker = "// System.C" )
-    [<Test>]
+    [<Fact>]
     member public this.``InComment``() = 
         this.VerifyCtrlSpaceCompListIsEmptyAtEndOfMarker(
             fileContents = """ let s = "System.C" """,
             marker = "\"System.C")
                  
     /// Intellisense at the top level (on white space)
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``Identifier.OnWhiteSpace.AtTopLevel``() =  
         AssertCtrlSpaceCompleteContainsNoCoffeeBreak
           ["(*marker*)  "] 
@@ -1566,7 +1533,7 @@ let x = new MyClass2(0)
           ["Int32"]
      
     /// Intellisense at the top level (after a partial token). All matches should be shown even if there is a unique match
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``TopLevelIdentifier.AfterPartialToken1``() =  
         AssertCtrlSpaceCompleteContainsNoCoffeeBreak
           ["let foobaz = 1"
@@ -1575,7 +1542,7 @@ let x = new MyClass2(0)
           ["System";"Array2D";"foobaz"]
           ["Int32"]
 
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``TopLevelIdentifier.AfterPartialToken2``() =  
         AssertCtrlSpaceCompleteContainsNoCoffeeBreak
           ["let foobaz = 1"
@@ -1585,7 +1552,7 @@ let x = new MyClass2(0)
           []
 
 (* these issues have not been fixed yet, but when they are, here are some tests
-    [<Test>]
+    [<Fact>]
     member public this.``AutoComplete.Bug65730``() =        
         AssertAutoCompleteContains 
           [ "let f x y = x.Equals(y)" ]
@@ -1593,7 +1560,7 @@ let x = new MyClass2(0)
           [ "Equals" ] // should contain
           [  ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``AutoComplete.Bug65731_A``() =        
         AssertAutoCompleteContains 
           [ 
@@ -1605,7 +1572,7 @@ let x = new MyClass2(0)
           [ "a" ] // should contain
           [  ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``AutoComplete.Bug65731_B``() =        
         AssertAutoCompleteContains 
           [ 
@@ -1617,7 +1584,7 @@ let x = new MyClass2(0)
           [ "a" ] // should contain
           [  ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``AutoComplete.Bug69654_0``() =        
         let code = [ @"
                         let q =
@@ -1646,7 +1613,7 @@ let x = new MyClass2(0)
 
         gpatcc.AssertExactly(0,0)
 
-    [<Test>]
+    [<Fact>]
     member public this.``AutoComplete.Bug69654_1``() =        
         let code = [ 
                     "let s = async {"
@@ -1685,7 +1652,7 @@ let x = new MyClass2(0)
 
         gpatcc.AssertExactly(0,0)
 
-    [<Test>]
+    [<Fact>]
     member public this.``AutoComplete.Bug69654_2``() =        
         let code = [ 
                     "let s = async {"
@@ -1725,7 +1692,7 @@ let x = new MyClass2(0)
         gpatcc.AssertExactly(0,0)
 *)
 
-    [<Test>]
+    [<Fact>]
     member public this.``List.AfterAddLinqNamespace.Bug3754``() =        
         let code = 
                 ["open System.Xml.Linq"
@@ -1735,7 +1702,7 @@ let x = new MyClass2(0)
         let completions = AutoCompleteAtCursor file
         AssertCompListContainsAll(completions, [ "map"; "filter" ] )
 
-    [<Test>]
+    [<Fact>]
     member public this.``Global``() =    
         AssertAutoCompleteContainsNoCoffeeBreak
           ["global."]
@@ -1743,7 +1710,7 @@ let x = new MyClass2(0)
           ["System"; "Microsoft" ]
           []
 
-    [<Test>]
+    [<Fact>]
     member public this.``Duplicates.Bug4103a``() =        
         let code = 
             [ 
@@ -1758,11 +1725,11 @@ let x = new MyClass2(0)
         let descr = descrFunc()
         // Check whether the description contains the name only once        
         let occurrences = ("  " + descr + "  ").Split([| "WhileLoop" |], System.StringSplitOptions.None).Length - 1
-        // You'll get two occurrances - one for the signature, and one for the doc
+        // You'll get two occurrences - one for the signature, and one for the doc
         AssertEqualWithMessage(2, occurrences, "The entry for 'Expr.Var' is duplicated.")
       
     /// Testing autocomplete after a dot directly following method call
-    [<Test>]
+    [<Fact>]
     member public this.``AfterMethod.Bug2296``() =        
         AssertAutoCompleteContainsNoCoffeeBreak
           [ "type System.Int32 with"
@@ -1773,7 +1740,7 @@ let x = new MyClass2(0)
           []
 
     /// Testing autocomplete after a dot directly following overloaded method call
-    [<Test>]
+    [<Fact>]
     member public this.``AfterMethod.Overloaded.Bug2296``() =      
         AssertAutoCompleteContainsNoCoffeeBreak
           ["type System.Boolean with"
@@ -1783,7 +1750,7 @@ let x = new MyClass2(0)
           ["BooleanMember"]
           []
 
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``BasicGlobalMemberList``() =  
         AssertAutoCompleteContainsNoCoffeeBreak
           ["let x = 1"
@@ -1792,7 +1759,7 @@ let x = new MyClass2(0)
           ["CompareTo"; "GetHashCode"]
           []
 
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``CharLiteral``() =  
         AssertAutoCompleteContainsNoCoffeeBreak
           ["let x = \"foo\""
@@ -1802,7 +1769,7 @@ let x = new MyClass2(0)
           ["CompareTo";"GetHashCode"]
           []
 
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``GlobalMember.ListOnIdentifierEndingWithTick``() =      
         AssertAutoCompleteContainsNoCoffeeBreak
           ["let x' = 1"
@@ -1811,7 +1778,7 @@ let x = new MyClass2(0)
           ["CompareTo";"GetHashCode"]
           []
 
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``GlobalMember.ListOnIdentifierContainingTick``() =   
         AssertAutoCompleteContainsNoCoffeeBreak
           ["let x'y = 1"
@@ -1820,7 +1787,7 @@ let x = new MyClass2(0)
           ["CompareTo";"GetHashCode"]
           []
         
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``GlobalMember.ListWithPartialMember1``() =    
         AssertCtrlSpaceCompleteContainsNoCoffeeBreak
           ["let x = 1"
@@ -1829,7 +1796,7 @@ let x = new MyClass2(0)
           ["CompareTo";"GetHashCode"]
           []
 
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``GlobalMember.ListWithPartialMember2``() =    
         AssertAutoCompleteContainsNoCoffeeBreak
           ["let x = 1"
@@ -1839,7 +1806,7 @@ let x = new MyClass2(0)
           []
 
     /// Wrong intellisense for array              
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``DotOff.Parenthesized.Expr``() =       
         AssertAutoCompleteContainsNoCoffeeBreak
           ["let string_of_int (x:int) = x.ToString()"
@@ -1850,7 +1817,7 @@ let x = new MyClass2(0)
           []
 
     /// Wrong intellisense for array
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``DotOff.ArrayIndexerNotation``() =  
         AssertAutoCompleteContainsNoCoffeeBreak
           ["let string_of_int (x:int) = x.ToString()"
@@ -1861,7 +1828,7 @@ let x = new MyClass2(0)
           []
 
     /// Wrong intellisense for array
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``DotOff.ArraySliceNotation1``() =    
         AssertAutoCompleteContainsNoCoffeeBreak
           ["let string_of_int (x:int) = x.ToString()"
@@ -1873,7 +1840,7 @@ let x = new MyClass2(0)
           ["Length"]
           []
 
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``DotOff.ArraySliceNotation2``() =    
         AssertAutoCompleteContainsNoCoffeeBreak
           ["let string_of_int (x:int) = x.ToString()"
@@ -1885,7 +1852,7 @@ let x = new MyClass2(0)
           ["Length"]
           []
 
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``DotOff.ArraySliceNotation3``() =    
         AssertAutoCompleteContainsNoCoffeeBreak
           ["let string_of_int (x:int) = x.ToString()"
@@ -1897,7 +1864,7 @@ let x = new MyClass2(0)
           ["Length"]
           []
            
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``DotOff.DictionaryIndexer``() =        
         AssertAutoCompleteContainsNoCoffeeBreak
           ["let dict = new System.Collections.Generic.Dictionary<int,string>()"
@@ -1907,26 +1874,26 @@ let x = new MyClass2(0)
           []
 
     /// intellisense on DOT
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``EmptyFile.Dot.Bug1115``() =   
         this.VerifyAutoCompListIsEmptyAtEndOfMarker(
             fileContents = "." ,
             marker = ".")    
 
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``Identifier.NonDottedNamespace.Bug1347``() =     
         this.AssertCtrlSpaceCompletionContains(
             ["open System"
              "open Microsoft.FSharp.Math"
              "let x = Mic"
              "let p7 ="
-             "    let seive limit = "
+             "    let sieve limit = "
              "        let isPrime = Array.create (limit+1) true"
              "        for n in"],
             "let x = Mic",
             "Microsoft")
 
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``MatchStatement.WhenClause.Bug2519``() =   
         AssertAutoCompleteContainsNoCoffeeBreak
           ["type DU = X of int"
@@ -1938,7 +1905,7 @@ let x = new MyClass2(0)
           ["CompareTo";"GetHashCode"]
           []
         
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``String.BeforeIncompleteModuleDefinition.Bug2385``() =     
         AssertAutoCompleteContainsNoCoffeeBreak
           ["let s = \"hello\"."
@@ -1947,7 +1914,7 @@ let x = new MyClass2(0)
           ["Substring";"GetHashCode"]
           []
 
-    [<Test>]
+    [<Fact>]
     member public this.``Project.FsFileWithBuildAction``() =
         AssertAutoCompleteContainsNoCoffeeBreak
           ["let i = 4"
@@ -1958,7 +1925,7 @@ let x = new MyClass2(0)
           []
 
      /// Dotting off a string literal should work.
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``DotOff.String``() =
         AssertAutoCompleteContainsNoCoffeeBreak
           ["\"x\". (*marker*)"
@@ -1968,7 +1935,7 @@ let x = new MyClass2(0)
           []
                    
     /// FEATURE: Pressing dot (.) after an local variable will produce an Intellisense list of members the user may select.
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``BasicLocalMemberList``() = 
         AssertAutoCompleteContainsNoCoffeeBreak 
           ["let MyFunction (s:string) = "
@@ -1979,7 +1946,7 @@ let x = new MyClass2(0)
           ["Substring";"GetHashCode"]
           []
 
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``LocalMemberList.WithPartialMemberEntry1``() = 
         AssertCtrlSpaceCompleteContainsNoCoffeeBreak
           ["let MyFunction (s:string) = "
@@ -1990,7 +1957,7 @@ let x = new MyClass2(0)
           ["Substring";"GetHashCode"]
           []
 
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``LocalMemberList.WithPartialMemberEntry2``() = 
         AssertAutoCompleteContainsNoCoffeeBreak
           ["let MyFunction (s:string) = "
@@ -2001,8 +1968,7 @@ let x = new MyClass2(0)
           ["Substring";"GetHashCode"]
           []
 
-    [<Test;Category("Repro")>]
-    [<Ignore("Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
+    [<Fact(Skip = "Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
     member public this.``CurriedArguments.Regression1``() = 
         AssertCtrlSpaceCompleteContainsNoCoffeeBreak  
            ["let fffff x y = 1"
@@ -2014,7 +1980,7 @@ let x = new MyClass2(0)
            ["fffff"]
            []   
            
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``CurriedArguments.Regression2``() = 
         AssertCtrlSpaceCompleteContainsNoCoffeeBreak  
            ["let fffff x y = 1"
@@ -2026,7 +1992,7 @@ let x = new MyClass2(0)
            ["fffff"]
            []       
            
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``CurriedArguments.Regression3``() = 
         AssertCtrlSpaceCompleteContainsNoCoffeeBreak  
            ["let fffff x y = 1"
@@ -2038,7 +2004,7 @@ let x = new MyClass2(0)
            ["ggggg"]
            []                                 
       
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``CurriedArguments.Regression4``() = 
         AssertCtrlSpaceCompleteContainsNoCoffeeBreak  
            ["let fffff x y = 1"
@@ -2050,7 +2016,7 @@ let x = new MyClass2(0)
            ["ggggg"]
            []
 
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``CurriedArguments.Regression5``() = 
         AssertCtrlSpaceCompleteContainsNoCoffeeBreak  
            ["let fffff x y = 1"
@@ -2062,7 +2028,7 @@ let x = new MyClass2(0)
            ["ggggg"]
            []
 
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``CurriedArguments.Regression6``() = 
         AssertCtrlSpaceCompleteContainsNoCoffeeBreak  
            ["let fffff x y = 1"
@@ -2075,7 +2041,7 @@ let x = new MyClass2(0)
            []
 
     // Test whether standard types appear in the completion list under both F# and .NET name
-    [<Test>]
+    [<Fact>]
     member public this.``StandardTypes.Bug4403``() = 
         AssertCtrlSpaceCompleteContainsNoCoffeeBreak
           ["open System"; "let x=" ]
@@ -2084,7 +2050,7 @@ let x = new MyClass2(0)
           [ ]
 
     // Test whether standard types appear in the completion list under both F# and .NET name            
-    [<Test>]
+    [<Fact>]
     member public this.``ValueDeclarationHidden.Bug4405``() = 
         AssertAutoCompleteContainsNoCoffeeBreak
           [ "do  "
@@ -2094,7 +2060,7 @@ let x = new MyClass2(0)
           ["IndexOf"; "Substring"]
           [ ]
 
-    [<Test>]
+    [<Fact>]
     member public this.``StringFunctions``() = 
         let code = 
             [
@@ -2105,7 +2071,7 @@ let x = new MyClass2(0)
         MoveCursorToEndOfMarker(file,"String.")
         let completions = time1 AutoCompleteAtCursor file "Time of first autocomplete."
         // printf "Completions=%A\n" completions
-        Assert.IsTrue(completions.Length > 0)
+        Assert.True(completions.Length > 0)
         for completion in completions do
             match completion with 
               | CompletionItem(_,_,_,_,DeclarationType.Method) -> ()
@@ -2113,18 +2079,15 @@ let x = new MyClass2(0)
                          
     // FEATURE: Pressing ctrl+space or ctrl+j will give a list of valid completions.
     
-    [<Test>]
-    //Verified atleast "Some" is contained in the Ctrl-Space Completion list
+    [<Fact>]
+    //Verified at least "Some" is contained in the Ctrl-Space Completion list
     member public this.``NonDotCompletion``() =  
         this.AssertCtrlSpaceCompletionContains(
             ["let x = S"],
             "x = S",
             "Some")
      
-    [<Test>]
-    [<Category("TypeProvider")>]
-    [<Category("TypeProvider.EditorHideMethodsAttribute")>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     // This test case checks Pressing ctrl+space on the provided Type instance method shows list of valid completions
     member this.``TypeProvider.EditorHideMethodsAttribute.InstanceMethod.CtrlSpaceCompletionContains``() =
         this.AssertCtrlSpaceCompletionContains(
@@ -2135,10 +2098,7 @@ let x = new MyClass2(0)
             expected = "IM1",    
             addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
     
-    [<Test>]
-    [<Category("TypeProvider")>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Category("TypeProvider.EditorHideMethodsAttribute")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     // This test case checks Pressing ctrl+space on the provided Type Event shows list of valid completions
     member this.``TypeProvider.EditorHideMethodsAttribute.Event.CtrlSpaceCompletionContains``() =
         this.AssertCtrlSpaceCompletionContains(
@@ -2149,9 +2109,7 @@ let x = new MyClass2(0)
             expected = "Event1",          
             addtlRefAssy = [PathRelativeToTestAssembly(@"EditorHideMethodsAttribute.dll")])
      
-    [<Test>]
-    [<Category("TypeProvider")>]
-    [<Category("TypeProvider.EditorHideMethodsAttribute")>]
+    [<Fact>]
     // This test case checks Pressing ctrl+space on the provided Type static parameter and verify "int" is in the list just to make sure bad things don't happen and autocomplete window pops up
     member this.``TypeProvider.EditorHideMethodsAttribute.Type.CtrlSpaceCompletionContains``() =
         this.AssertCtrlSpaceCompletionContains(
@@ -2163,7 +2121,7 @@ let x = new MyClass2(0)
     
         
     // In this bug, pressing dot after this was producing an invalid member list.       
-    [<Test>]
+    [<Fact>]
     member public this.``Class.Self.Bug1544``() =     
         this.VerifyAutoCompListIsEmptyAtEndOfMarker(
             fileContents = "
@@ -2172,14 +2130,14 @@ let x = new MyClass2(0)
             marker = "this.")
 
     // No completion list at the end of file. 
-    [<Test>]
-    member public this.``Idenfitier.AfterDefined.Bug1545``() = 
+    [<Fact>]
+    member public this.``Identifier.AfterDefined.Bug1545``() = 
         this.AutoCompletionListNotEmpty
             ["let x = [|\"hello\"|]"
              "x."]
             "x."                              
 
-    [<Test>]
+    [<Fact>]
     member public this.``Bug243082.DotAfterNewBreaksCompletion`` () = 
         this.AutoCompletionListNotEmpty
             [
@@ -2190,7 +2148,7 @@ let x = new MyClass2(0)
             "let z = new A."]
             "s."        
 
-    [<Test>]
+    [<Fact>]
     member public this.``Bug243082.DotAfterNewBreaksCompletion2`` () = 
         this.AutoCompletionListNotEmpty
             [
@@ -2199,9 +2157,7 @@ let x = new MyClass2(0)
             "new System."]
             "s."        
 
-    [<Test>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Category("QueryExpressions")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member this.``QueryExpression.CtrlSpaceSmokeTest0``() = 
            this.VerifyCtrlSpaceListContainAllAtStartOfMarker(
               fileContents = """
@@ -2211,9 +2167,7 @@ let x = new MyClass2(0)
               list = ["sin"],
               addtlRefAssy=standard40AssemblyRefs )
 
-    [<Test>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Category("QueryExpressions")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member this.``QueryExpression.CtrlSpaceSmokeTest0b``() = 
            this.VerifyCtrlSpaceListContainAllAtStartOfMarker(
               fileContents = """
@@ -2223,9 +2177,7 @@ let x = new MyClass2(0)
               list = ["query"],
               addtlRefAssy=standard40AssemblyRefs   )
 
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Test>]
-    [<Category("QueryExpressions")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member this.``QueryExpression.CtrlSpaceSmokeTest1``() = 
            this.VerifyCtrlSpaceListContainAllAtStartOfMarker(
               fileContents = """
@@ -2235,9 +2187,7 @@ let x = new MyClass2(0)
               list = ["select"],
               addtlRefAssy=standard40AssemblyRefs  )
 
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Test>]
-    [<Category("QueryExpressions")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member this.``QueryExpression.CtrlSpaceSmokeTest1b``() = 
            this.VerifyCtrlSpaceListContainAllAtStartOfMarker(
               fileContents = """
@@ -2249,9 +2199,7 @@ let x = new MyClass2(0)
 
 
 
-    [<Test>]
-    [<Category("QueryExpressions")>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member this.``QueryExpression.CtrlSpaceSmokeTest2``() = 
            this.VerifyCtrlSpaceListContainAllAtStartOfMarker(
               fileContents = """
@@ -2262,9 +2210,7 @@ let x = new MyClass2(0)
               addtlRefAssy=standard40AssemblyRefs  )
 
 
-    [<Test>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Category("QueryExpressions")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member this.``QueryExpression.CtrlSpaceSmokeTest3``() = 
            this.VerifyCtrlSpaceListContainAllAtStartOfMarker(
               fileContents = """
@@ -2275,8 +2221,7 @@ let x = new MyClass2(0)
               addtlRefAssy=standard40AssemblyRefs  )
 
 
-    [<Test>]
-    [<Category("QueryExpressions")>]
+    [<Fact>]
     member this.``QueryExpression.CtrlSpaceSmokeTest3b``() = 
            this.VerifyCtrlSpaceListContainAllAtStartOfMarker(
               fileContents = """
@@ -2288,8 +2233,7 @@ let x = new MyClass2(0)
 
 
 
-    [<Test>]
-    [<Category("QueryExpressions")>]
+    [<Fact>]
     member this.``QueryExpression.CtrlSpaceSmokeTest3c``() = 
            this.VerifyCtrlSpaceListContainAllAtStartOfMarker(
               fileContents = """
@@ -2300,8 +2244,7 @@ let x = new MyClass2(0)
               addtlRefAssy=standard40AssemblyRefs  )
 
 
-    [<Test>]
-    [<Category("QueryExpressions")>]
+    [<Fact>]
     member this.``AsyncExpression.CtrlSpaceSmokeTest3d``() = 
            this.VerifyCtrlSpaceListContainAllAtStartOfMarker(
               fileContents = """
@@ -2349,11 +2292,8 @@ let x = new MyClass2(0)
                                 let y = x + 1
                                 (*TYPING*)""" ]
 
-    [<Test>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     /// This is the case where at (*TYPING*) we first type 1...N-1 characters of the target custom operation and then invoke the completion list, and we check that the completion list contains the custom operation
-    [<Category("QueryExpressions")>]
-    [<Category("Expensive")>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member this.``QueryExpression.CtrlSpaceSystematic1``() = 
        let rec strictPrefixes (s:string) = seq { if s.Length > 1 then let s = s.[0..s.Length-2] in yield s; yield! strictPrefixes s}
        for customOperation in ["select";"skip";"contains";"groupJoin"] do
@@ -2433,10 +2373,7 @@ let x = new MyClass2(0)
         if failures.Count <> 0 || unexpectedSuccesses.Count <> 0 then 
             raise <| new Exception("there were unexpected results, see console output for details")
 
-    [<Test>]
-    [<Category("QueryExpressions")>]
-    [<Category("Expensive")>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Fact(Skip = "https://github.com/dotnet/fsharp/issues/6166")>]
     member this.``QueryExpressions.QueryAndSequenceExpressionWithForYieldLoopSystematic``() = 
 
         let prefix =  """
@@ -2494,9 +2431,7 @@ let aaaaaa = [| "1" |]
 
         this.WordByWordSystematicTestWithSpecificExpectations(prefix, suffixes, lines, ["seq";"query"], knownFailures) 
 
-    [<Test>]
-    [<Category("QueryExpressions")>]
-    [<Category("Expensive")>]
+    [<Fact>]
     /// Incrementally enter a seq{ .. while ...} loop and check for availability of intellisense etc.
     member this.``SequenceExpressions.SequenceExprWithWhileLoopSystematic``() = 
 
@@ -2535,10 +2470,7 @@ let aaaaaa = 0
         this.WordByWordSystematicTestWithSpecificExpectations(prefix, suffixes, lines, [""], knownFailures) 
              
 
-    [<Test>]
-    [<Category("QueryExpressions")>]
-    [<Category("Expensive")>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Fact(Skip = "https://github.com/dotnet/fsharp/issues/6166")>]
     /// Incrementally enter query with a 'join' and check for availability of quick info, auto completion and dot completion 
     member this.``QueryAndOtherExpressions.WordByWordSystematicJoinQueryOnSingleLine``() = 
 
@@ -2589,11 +2521,8 @@ let aaaaaa = 0
 
         this.WordByWordSystematicTestWithSpecificExpectations(prefix, suffixes, lines, [""], knownFailures) 
 
-    [<Test>]
-    /// This is a sanity check that the multiple-line case is much the same as the single-line cae
-    [<Category("QueryExpressions")>]
-    [<Category("Expensive")>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Fact(Skip = "https://github.com/dotnet/fsharp/issues/6166")>]
+    /// This is a sanity check that the multiple-line case is much the same as the single-line case
     member this.``QueryAndOtherExpressions.WordByWordSystematicJoinQueryOnMultipleLine``() = 
 
         let prefix =  """
@@ -2739,8 +2668,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
 
         this.WordByWordSystematicTestWithSpecificExpectations(prefix, suffixes, lines, [""], knownFailures) 
 
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Test>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     /// This is the case where (*TYPING*) nothing has been typed yet and we invoke the completion list
     /// This is a known failure right now for some of the example files above.
     member this.``QueryExpression.CtrlSpaceSystematic2``() = 
@@ -2767,14 +2695,14 @@ let x = query { for bbbb in abbbbc(*D0*) do
         let completions = time1 CtrlSpaceCompleteAtCursor file "Time of first autocomplete."
         AssertCompListContainsAll(completions, expected)
             
-    [<Test>]
+    [<Fact>]
     member public this.``Parameter.CommonCase.Bug2884``() =     
         this.AutoCompleteRecoveryTest
             ([ 
                "type T1(aaa1) ="
                "  do (" ], "do (", [ "aaa1" ])
 
-    [<Test>]
+    [<Fact>]
     member public this.``Parameter.SubsequentLet.Bug2884``() =     
         this.AutoCompleteRecoveryTest
             ([ 
@@ -2782,7 +2710,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                "  do ("
                "let a = 0" ], "do (", [ "aaa1" ]) 
                       
-    [<Test>]
+    [<Fact>]
     member public this.``Parameter.SubsequentMember.Bug2884``() =     
         this.AutoCompleteRecoveryTest
             ([ 
@@ -2791,7 +2719,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                "    do ("
                "  member x.Bar = 0" ], "do (", [ "aaa1"; "aaa2" ])        
 
-    [<Test>]
+    [<Fact>]
     member public this.``Parameter.System.DateTime.Bug2884``() =     
         this.AutoCompleteRecoveryTest
             ([ 
@@ -2799,7 +2727,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                "  member x.Foo(aaa2) = "
                "    let dt = new System.DateTime(" ], "Time(", [ "aaa1"; "aaa2" ])        
 
-    [<Test>]
+    [<Fact>]
     member public this.``Parameter.DirectAfterDefined.Bug2884``() =     
         this.AutoCompleteRecoveryTest
             ([  
@@ -2807,21 +2735,21 @@ let x = query { for bbbb in abbbbc(*D0*) do
                "  let aaa1 = 0"
                "  (" ], "(", [ "aaa1" ])
 
-    [<Test>]
+    [<Fact>]
     member public this.``NotShowInfo.LetBinding.Bug3602``() =  
         this.VerifyAutoCompListIsEmptyAtEndOfMarker(
             fileContents = "let s. = \"Hello world\"
                             ()",
             marker = "let s.")   
     
-    [<Test>]
+    [<Fact>]
     member public this.``NotShowInfo.FunctionParameter.Bug3602``() = 
         this.VerifyAutoCompListIsEmptyAtEndOfMarker(
             fileContents = "let foo s. = s + \"Hello world\"
                             ()",
             marker = "let foo s.") 
                                                
-    [<Test>]
+    [<Fact>]
     member public this.``NotShowInfo.ClassMemberDeclA.Bug3602``() =     
         this.TestCompletionNotShowingWhenFastUpdate
             [ 
@@ -2837,7 +2765,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             "(*marker*) this."
                                             
     // Another test case for the same thing - this goes through a different code path
-    [<Test>]
+    [<Fact>]
     member public this.``NotShowInfo.ClassMemberDeclB.Bug3602``() =     
         this.TestCompletionNotShowingWhenFastUpdate
             [  
@@ -2852,7 +2780,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
               "()" ]        
             "marker$"
 
-    [<Test>]
+    [<Fact>]
     member public this.``ComputationExpression.LetBang``() =     
         AssertAutoCompleteContainsNoCoffeeBreak
             ["let http(url:string) = "
@@ -2884,19 +2812,19 @@ let x = query { for bbbb in abbbbc(*D0*) do
         AssertCompListContainsAll(completions, expected)
         gpatcc.AssertExactly(0,0)
 
-    [<Test>]
+    [<Fact>]
     member public this.``Generics.Typeof``() =        
         this.TestGenericAutoComplete ("let _ = typeof<int>.", [ "Assembly"; "AssemblyQualifiedName"; (* ... *) ])
 
-    [<Test>]
+    [<Fact>]
     member public this.``Generics.NonGenericTypeMembers``() =        
         this.TestGenericAutoComplete ("let _ = GT2.", [ "R"; "S" ])
 
-    [<Test>]
+    [<Fact>]
     member public this.``Generics.GenericTypeMembers``() =        
         this.TestGenericAutoComplete ("let _ = GT<int>.", [ "P"; "Q" ])
 
-   //[<Test>]    // keep disabled unless trying to prove that UnhandledExceptionHandler is working
+   //[<Fact>]    // keep disabled unless trying to prove that UnhandledExceptionHandler is working
     member public this.EnsureThatUnhandledExceptionsCauseAnAssert() =
         // Do something that causes LanguageService to load
         AssertAutoCompleteContains 
@@ -2913,7 +2841,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         t.Start()
         System.Threading.Thread.Sleep(1000)
 
-    [<Test>]
+    [<Fact>]
     member public this.``DotBetweenParens.Bug175360.Case1``() =
         AssertAutoCompleteContains 
             [
@@ -2923,7 +2851,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ "ToDecimal" ] // should contain
             [] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``DotBetweenParens.Bug175360.Case2``() =
         AssertAutoCompleteContains 
             [ "[| 1 |].(0)" ]
@@ -2931,8 +2859,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ "Clone" ] // should contain
             [] // should not contain
 
-    [<Test>]
-    [<Ignore("Not worth fixing right now")>]
+    [<Fact(Skip = "Not worth fixing right now")>]
     member public this.``GenericType.Self.Bug69673_1.01``() =    
         AssertCtrlSpaceCompleteContains
             ["type Base(o:obj) = class end"
@@ -2945,7 +2872,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["this"]
             []
 
-    [<Test>]
+    [<Fact>]
     member public this.``GenericType.Self.Bug69673_1.02``() =    
         AssertCtrlSpaceCompleteContains
             ["type Base(o:obj) = class end"
@@ -2958,7 +2885,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["this"]
             []
 
-    [<Test>]
+    [<Fact>]
     member public this.``GenericType.Self.Bug69673_1.03``() =    
         AssertCtrlSpaceCompleteContains
             ["type Base(o:obj) = class end"
@@ -2971,7 +2898,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["this"]
             []
 
-    [<Test>]
+    [<Fact>]
     member public this.``GenericType.Self.Bug69673_1.04``() =    
         AssertAutoCompleteContains
             ["type Base(o:obj) = class end"
@@ -2984,8 +2911,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["Bar"]
             []
 
-    [<Test>]
-    [<Ignore("this is not worth fixing")>]
+    [<Fact(Skip = "this is not worth fixing")>]
     member public this.``GenericType.Self.Bug69673_2.1``() =  
         AssertAutoCompleteContains
             ["type Base(o:obj) = class end"
@@ -2999,8 +2925,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["this"] 
             []       
             
-    [<Test>]
-    [<Ignore("this is not worth fixing")>]
+    [<Fact(Skip = "this is not worth fixing")>]
     member public this.``GenericType.Self.Bug69673_2.2``() =  
         AssertAutoCompleteContains
             ["type Base(o:obj) = class end"
@@ -3014,7 +2939,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["this"] 
             []                       
 
-    [<Test>]
+    [<Fact>]
     member public this.``UnitMeasure.Bug78932_1``() =        
         AssertAutoCompleteContains 
           [ @"
@@ -3027,7 +2952,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "Kg" ] // should contain
           [  ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``UnitMeasure.Bug78932_2``() =        
         // Note: in this case, pressing '.' does not automatically pop up a completion list in VS, but ctrl-space does get the right list
         // This is just like how
@@ -3044,7 +2969,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "Kg" ] // should contain
           [ ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``Array.AfterOperator...Bug65732_A``() =        
         AssertAutoCompleteContains 
           [ "let r = [1 .. System.Int32.MaxValue]" ]
@@ -3052,7 +2977,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "Int32" ] // should contain
           [ "abs" ] // should not contain (from top level)
 
-    [<Test>]
+    [<Fact>]
     member public this.``Array.AfterOperator...Bug65732_B``() =        
         AssertCtrlSpaceCompleteContains 
           [ "let r = [System.Int32.MaxValue..42]" ]
@@ -3060,7 +2985,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "abs" ] // should contain (top level)
           [ "CompareTo" ] // should not contain (from Int32)
 
-    [<Test>]
+    [<Fact>]
     member public this.``Array.AfterOperator...Bug65732_B2``() =        
         AssertCtrlSpaceCompleteContains 
           [ "let r = [System.Int32.MaxValue.. 42]" ]
@@ -3068,7 +2993,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "abs" ] // should contain (top level)
           [ "CompareTo" ] // should not contain (from Int32)
 
-    [<Test>]
+    [<Fact>]
     member public this.``Array.AfterOperator...Bug65732_B3``() =        
         AssertCtrlSpaceCompleteContains 
           [ "let r = [System.Int32.MaxValue .. 42]" ]
@@ -3076,7 +3001,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "abs" ] // should contain (top level)
           [ "CompareTo" ] // should not contain (from Int32)
 
-    [<Test>]
+    [<Fact>]
     member public this.``Array.AfterOperator...Bug65732_C``() =        
         AssertCtrlSpaceCompleteContains 
           [ "let r = [System.Int32.MaxValue..]" ]
@@ -3084,7 +3009,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "abs" ] // should contain (top level)
           [ "CompareTo" ] // should not contain (from Int32)
 
-    [<Test>]
+    [<Fact>]
     member public this.``Array.AfterOperator...Bug65732_D``() =        
         AssertCtrlSpaceCompleteContains 
           [ "let r = [System.Int32.MaxValue .. ]" ]
@@ -3094,7 +3019,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
 
     // Verify the auto completion after the close-parentheses,
     // there should be auto completion
-    [<Test>]
+    [<Fact>]
     member public this.``Array.AfterParentheses.Bug175360``() =        
         AssertAutoCompleteContainsNoCoffeeBreak 
           [ "let a = 10."
@@ -3103,8 +3028,8 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "ToDecimal" ] // should contain (top level)
           [ ] // should not contain 
 
-    [<Test>]
-    member public this.``Identifier.FuzzyDefiend.Bug67133``() =  
+    [<Fact>]
+    member public this.``Identifier.FuzzyDefined.Bug67133``() =  
         AssertAutoCompleteContainsNoCoffeeBreak
           [ "let gDateTime (arr: System.DateTime[]) ="
             "    arr.[0]." ]
@@ -3112,8 +3037,8 @@ let x = query { for bbbb in abbbbc(*D0*) do
           ["AddDays"]
           []
 
-    [<Test>]
-    member public this.``Identifier.FuzzyDefiend.Bug67133.Negative``() =        
+    [<Fact>]
+    member public this.``Identifier.FuzzyDefined.Bug67133.Negative``() =        
         let code = [ "let gDateTime (arr: DateTime[]) ="  // Note: no 'open System', so DateTime is unknown
                      "    arr.[0]." ]
         let (_, _, file) = this.CreateSingleFileProject(code)
@@ -3124,7 +3049,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         AssertCompListContainsExactly(completions, []) // we don't want any completions on <expr>. when <expr> has unknown type due to errors
         // (In particular, we don't want the "didn't find any completions, so just show top-level entities like 'abs' here" logic to kick in.)
 
-    [<Test>]
+    [<Fact>]
     member public this.``Class.Property.Bug69150_A``() =        
         AssertCtrlSpaceCompleteContains 
           [ "type ClassType(x : int) ="
@@ -3134,7 +3059,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "Value" ] // should contain
           [ "CompareTo" ] // should not contain (from Int32)
 
-    [<Test>]
+    [<Fact>]
     member public this.``Class.Property.Bug69150_B``() =        
         AssertCtrlSpaceCompleteContains 
           [ "type ClassType(x : int) ="
@@ -3144,7 +3069,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "Value" ] // should contain
           [ "CompareTo" ] // should not contain (from Int32)
 
-    [<Test>]
+    [<Fact>]
     member public this.``Class.Property.Bug69150_C``() =        
         AssertCtrlSpaceCompleteContains 
           [ "type ClassType(x : int) ="
@@ -3155,7 +3080,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "Value" ] // should contain
           [ "CompareTo" ] // should not contain (from Int32)
 
-    [<Test>]
+    [<Fact>]
     member public this.``Class.Property.Bug69150_D``() =        
         AssertCtrlSpaceCompleteContains 
           [ "type ClassType(x : int) ="
@@ -3165,7 +3090,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "Value" ] // should contain
           [ "VolatileFieldAttribute" ] // should not contain (from top-level)
 
-    [<Test>]
+    [<Fact>]
     member public this.``Class.Property.Bug69150_E``() =        
         AssertCtrlSpaceCompleteContains 
           [ "type ClassType(x : int) ="
@@ -3175,7 +3100,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "Value" ] // should contain
           [ "VolatileFieldAttribute" ] // should not contain (from top-level)
 
-    [<Test>]
+    [<Fact>]
     member public this.``AssignmentToProperty.Bug231283``() =        
         AssertCtrlSpaceCompleteContains 
             ["""
@@ -3190,7 +3115,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ "AbstractClassAttribute" ] // top-level completions
             [ "Bar" ] // not stuff from the lhs of assignment
 
-    [<Test>]
+    [<Fact>]
     member public this.``Dot.AfterOperator.Bug69159``() =        
         AssertAutoCompleteContains 
           [ "let x1 = [|0..1..10|]." ]
@@ -3198,7 +3123,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "Length" ] // should contain (array)
           [ "abs" ] // should not contain (top-level)
 
-    [<Test>]
+    [<Fact>]
     member public this.``Residues1``() =        
         AssertCtrlSpaceCompleteContains 
           [ "System   .   Int32   .   M" ]
@@ -3206,7 +3131,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "MaxValue"; "MinValue" ] // should contain
           [ "MailboxProcessor"; "Map" ] // should not contain (top-level)
 
-    [<Test>]
+    [<Fact>]
     member public this.``Residues2``() =        
         AssertCtrlSpaceCompleteContains 
           [ "let x = 42"
@@ -3215,7 +3140,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "CompareTo" ] // should contain (Int32)
           [ "CLIEventAttribute"; "Checked"; "Choice" ] // should not contain (top-level)
 
-    [<Test>]
+    [<Fact>]
     member public this.``Residues3``() =        
         AssertCtrlSpaceCompleteContains 
           [ "let x = 42"
@@ -3224,7 +3149,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "CompareTo" ] // should contain (Int32)
           [ "CLIEventAttribute"; "Checked"; "Choice" ] // should not contain (top-level)
 
-    [<Test>]
+    [<Fact>]
     member public this.``Residues4``() =        
         AssertCtrlSpaceCompleteContains 
           [ "let x = 42"
@@ -3233,7 +3158,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "CompareTo" ] // should contain (Int32)
           [ "CLIEventAttribute"; "Checked"; "Choice" ] // should not contain (top-level)
 
-    [<Test>]
+    [<Fact>]
     member public this.``CtrlSpaceInWhiteSpace.Bug133112``() =        
         AssertCtrlSpaceCompleteContains 
           [ """
@@ -3246,7 +3171,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "AbstractClassAttribute" ] // should contain (top-level)
           [ "A"; "B" ] // should not contain (Foo)
 
-    [<Test>]
+    [<Fact>]
     member public this.``Residues5``() =        
         AssertCtrlSpaceCompleteContains 
           [ "let x = 42"
@@ -3254,7 +3179,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           ".  "       // marker
           [ "CompareTo" ] // should contain (Int32)
           [ "CLIEventAttribute"; "Checked"; "Choice" ] // should not contain (top-level)
-    [<Test>]
+    [<Fact>]
     member public this.``CompletionInDifferentEnvs1``() = 
         AssertCtrlSpaceCompleteContains
             ["let f1 num ="
@@ -3265,7 +3190,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["completeword"] // should contain
             [""]
 
-    [<Test>]
+    [<Fact>]
     member public this.``CompletionInDifferentEnvs2``() = 
         AssertCtrlSpaceCompleteContains
             ["let aaa = 1"
@@ -3276,7 +3201,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["aaa"; "aab"]
             ["aac"] 
 
-    [<Test>]
+    [<Fact>]
     member public this.``CompletionInDifferentEnvs3``() = 
         AssertCtrlSpaceCompleteContains
             ["let mb1 = new MailboxProcessor<AsyncReplyChannel<int>>(fun inbox -> async { let! msg = inbox.Receive()"
@@ -3285,7 +3210,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["msg"]
             [] 
 
-    [<Test>]
+    [<Fact>]
     member public this.``CompletionInDifferentEnvs4``() = 
         AssertCtrlSpaceCompleteContains
             ["async {"
@@ -3305,7 +3230,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["b"]
             ["i"]
 
-    [<Test>]
+    [<Fact>]
     member public this.``CompletionForAndBang_BaseLine0``() = 
         AssertCtrlSpaceCompleteContains
             ["type Builder() ="
@@ -3320,7 +3245,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["xxx3"]
             [] 
 
-    [<Test>]
+    [<Fact>]
     member public this.``CompletionForAndBang_BaseLine1``() = 
         AssertCtrlSpaceCompleteContains
             ["type Builder() ="
@@ -3337,7 +3262,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["xxx1"; "xxx2"; "xxx3"]
             [] 
 
-    [<Test>]
+    [<Fact>]
     member public this.``CompletionForAndBang_BaseLine2``() = 
         /// Without closing '}'
         AssertCtrlSpaceCompleteContains
@@ -3354,7 +3279,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["yyy1"; "yyy2"; "yyy3"]
             [] 
 
-    [<Test>]
+    [<Fact>]
     member public this.``CompletionForAndBang_BaseLine3``() = 
         /// Without closing ')'
         AssertCtrlSpaceCompleteContains
@@ -3371,7 +3296,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["zzz1"; "zzz2"; "zzz3"]
             [] 
 
-    [<Test>]
+    [<Fact>]
     member public this.``CompletionForAndBang_BaseLine4``() = 
         AssertCtrlSpaceCompleteContains
             ["type Builder() ="
@@ -3386,7 +3311,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["zzz1"; "zzz3"]
             [] 
 
-    [<Test>]
+    [<Fact>]
     member public this.``CompletionForAndBang_Test_MergeSources_Bind_Return0``() = 
         AssertCtrlSpaceCompleteContainsWithOtherFlags
             "/langversion:preview"
@@ -3404,7 +3329,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["xxx3"; "xxx4"]
             [] 
 
-    [<Test>]
+    [<Fact>]
     member public this.``CompletionForAndBang_Test_MergeSources_Bind_Return1``() = 
         AssertCtrlSpaceCompleteContainsWithOtherFlags
             "/langversion:preview"
@@ -3424,7 +3349,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["xxx1"; "xxx2"; "xxx3"; "xxx4"]
             [] 
 
-    [<Test>]
+    [<Fact>]
     member public this.``CompletionForAndBang_Test_MergeSources_Bind_Return2``() = 
         AssertCtrlSpaceCompleteContainsWithOtherFlags
             "/langversion:preview"
@@ -3443,7 +3368,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["yyy1"; "yyy2"; "yyy3"; "yyy4"]
             [] 
 
-    [<Test>]
+    [<Fact>]
     member public this.``CompletionForAndBang_Test_MergeSources_Bind_Return3``() = 
         AssertCtrlSpaceCompleteContainsWithOtherFlags
             "/langversion:preview"
@@ -3462,7 +3387,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["zzz1"; "zzz2"; "zzz3"; "zzz4"]
             [] 
 
-    [<Test>]
+    [<Fact>]
     member public this.``CompletionForAndBang_Test_MergeSources_Bind_Return4``() = 
         AssertCtrlSpaceCompleteContainsWithOtherFlags
             "/langversion:preview"
@@ -3480,7 +3405,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["zzz1"; "zzz3"; "zzz4"]
             [] 
 
-    [<Test>]
+    [<Fact>]
     member public this.``CompletionForAndBang_Test_Bind2Return0``() = 
         AssertCtrlSpaceCompleteContainsWithOtherFlags
             "/langversion:preview"
@@ -3496,7 +3421,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["xxx3"; "xxx4"]
             [] 
 
-    [<Test>]
+    [<Fact>]
     member public this.``CompletionForAndBang_Test_Bind2Return1``() = 
         AssertCtrlSpaceCompleteContainsWithOtherFlags
             "/langversion:preview"
@@ -3514,7 +3439,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["xxx1"; "xxx2"; "xxx3"; "xxx4"]
             [] 
 
-    [<Test>]
+    [<Fact>]
     member public this.``CompletionForAndBang_Test_Bind2Return2``() = 
         AssertCtrlSpaceCompleteContainsWithOtherFlags
             "/langversion:preview"
@@ -3531,7 +3456,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["yyy1"; "yyy2"; "yyy3"; "yyy4"]
             [] 
 
-    [<Test>]
+    [<Fact>]
     member public this.``CompletionForAndBang_Test_Bind2Return3``() = 
         AssertCtrlSpaceCompleteContainsWithOtherFlags
             "/langversion:preview"
@@ -3548,7 +3473,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["zzz1"; "zzz2"; "zzz3"; "zzz4"]
             [] 
 
-    [<Test>]
+    [<Fact>]
     member public this.``CompletionForAndBang_Test_Bind2Return4``() = 
         AssertCtrlSpaceCompleteContainsWithOtherFlags
             "/langversion:preview"
@@ -3565,7 +3490,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [] 
 
             (**)
-    [<Test>]
+    [<Fact>]
     member public this.``Bug229433.AfterMismatchedParensCauseWeirdParseTreeAndExceptionDuringTypecheck``() =        
         AssertAutoCompleteContains [ """
             type T() =
@@ -3588,7 +3513,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ "Bar"; "X" ]
             []
 
-    [<Test>]
+    [<Fact>]
     member public this.``Bug130733.LongIdSet.CtrlSpace``() =        
         AssertCtrlSpaceCompleteContains [ """
             type C() =
@@ -3600,7 +3525,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ "XX" ]
             []
 
-    [<Test>]
+    [<Fact>]
     member public this.``Bug130733.LongIdSet.Dot``() =        
         AssertAutoCompleteContains [ """
             type C() =
@@ -3612,7 +3537,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ "XX" ]
             []
 
-    [<Test>]
+    [<Fact>]
     member public this.``Bug130733.ExprDotSet.CtrlSpace``() =        
         AssertCtrlSpaceCompleteContains [ """
             type C() =
@@ -3624,7 +3549,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ "XX" ]
             []
 
-    [<Test>]
+    [<Fact>]
     member public this.``Bug130733.ExprDotSet.Dot``() =        
         AssertAutoCompleteContains [ """
             type C() =
@@ -3637,7 +3562,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             []
 
 
-    [<Test>]
+    [<Fact>]
     member public this.``Bug130733.Nested.LongIdSet.CtrlSpace``() =        
         AssertCtrlSpaceCompleteContains [ """
             type C() =
@@ -3650,7 +3575,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ "XX" ]
             []
 
-    [<Test>]
+    [<Fact>]
     member public this.``Bug130733.Nested.LongIdSet.Dot``() =        
         AssertAutoCompleteContains [ """
             type C() =
@@ -3663,7 +3588,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ "XX" ]
             []
 
-    [<Test>]
+    [<Fact>]
     member public this.``Bug130733.Nested.ExprDotSet.CtrlSpace``() =        
         AssertCtrlSpaceCompleteContains [ """
             type C() =
@@ -3676,7 +3601,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ "XX" ]
             []
 
-    [<Test>]
+    [<Fact>]
     member public this.``Bug130733.Nested.ExprDotSet.Dot``() =        
         AssertAutoCompleteContains [ """
             type C() =
@@ -3689,7 +3614,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ "XX" ]
             []
 
-    [<Test>]
+    [<Fact>]
     member public this.``Bug130733.NamedIndexedPropertyGet.Dot``() =        
         AssertAutoCompleteContains [ """
             let str = "foo"
@@ -3698,7 +3623,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ "CompareTo" ] // char
             []
 
-    [<Test>]
+    [<Fact>]
     member public this.``Bug130733.NamedIndexedPropertyGet.CtrlSpace``() =        
         AssertCtrlSpaceCompleteContains [ """
             let str = "foo"
@@ -3707,7 +3632,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ "CompareTo" ] // char
             []
 
-    [<Test>]
+    [<Fact>]
     member public this.``Bug230533.NamedIndexedPropertySet.CtrlSpace.Case1``() =        
         AssertCtrlSpaceCompleteContains [ """
             type Foo() =
@@ -3721,7 +3646,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ "MutableInstanceIndexer" ]
             []
 
-    [<Test>]
+    [<Fact>]
     member public this.``Bug230533.NamedIndexedPropertySet.CtrlSpace.Case2``() =        
         AssertCtrlSpaceCompleteContains [ """
             type Foo() =
@@ -3737,7 +3662,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ "MutableInstanceIndexer" ]
             []
 
-    [<Test>]
+    [<Fact>]
     member public this.``Bug230533.ExprDotSet.CtrlSpace.Case1``() =        
         AssertCtrlSpaceCompleteContains [ """
             type C() =
@@ -3750,7 +3675,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ "XX" ]
             []
 
-    [<Test>]
+    [<Fact>]
     member public this.``Bug230533.ExprDotSet.CtrlSpace.Case2``() =        
         AssertCtrlSpaceCompleteContains [ """
             type C() =
@@ -3763,21 +3688,21 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ "XX" ]
             []
 
-    [<Test>]
+    [<Fact>]
     member public this.``Attribute.WhenAttachedToLet.Bug70080``() =        
         this.AutoCompleteBug70080Helper @"
                     open System
                     [<Attr     // expect AttributeUsage from System namespace
                     let f() = 4"
 
-    [<Test>]
+    [<Fact>]
     member public this.``Attribute.WhenAttachedToType.Bug70080``() =        
         this.AutoCompleteBug70080Helper(@"
                     open System
                     [<Attr     // expect AttributeUsage from System namespace
                     type MyAttr() = inherit Attribute()")
 
-    [<Test>]
+    [<Fact>]
     member public this.``Attribute.WhenAttachedToLetInNamespace.Bug70080``() =        
         this.AutoCompleteBug70080Helper @"
                     namespace Foo
@@ -3785,7 +3710,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                     [<Attr     // expect AttributeUsage from System namespace
                     let f() = 4"
 
-    [<Test>]
+    [<Fact>]
     member public this.``Attribute.WhenAttachedToTypeInNamespace.Bug70080``() =        
         this.AutoCompleteBug70080Helper(@"
                     namespace Foo
@@ -3793,7 +3718,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                     [<Attr     // expect AttributeUsage from System namespace
                     type MyAttr() = inherit Attribute()")
 
-    [<Test>]
+    [<Fact>]
     member public this.``Attribute.WhenAttachedToNothingInNamespace.Bug70080``() =        
         this.AutoCompleteBug70080Helper(@"
                     namespace Foo
@@ -3801,7 +3726,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                     [<Attr     // expect AttributeUsage from System namespace
                     // nothing here")
 
-    [<Test>]
+    [<Fact>]
     member public this.``Attribute.WhenAttachedToModuleInNamespace.Bug70080``() =        
         this.AutoCompleteBug70080Helper(@"
                     namespace Foo
@@ -3810,7 +3735,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                     module Foo = 
                         let x = 42")
 
-    [<Test>]
+    [<Fact>]
     member public this.``Attribute.WhenAttachedToModule.Bug70080``() =        
         this.AutoCompleteBug70080Helper(@"
                     open System
@@ -3818,8 +3743,8 @@ let x = query { for bbbb in abbbbc(*D0*) do
                     module Foo = 
                         let x = 42")
 
-    [<Test>]
-    member public this.``Identifer.InMatchStatemente.Bug72595``() =        
+    [<Fact>]
+    member public this.``Identifer.InMatchStatement.Bug72595``() =        
         // in this bug, "match blah with let" caused the lexfilter to go awry, which made things hopeless for the parser, yielding no parse tree and thus no intellisense
         AssertAutoCompleteContains 
             [ @"
@@ -3842,7 +3767,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ "Chars" ] // should contain
             [ ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``HandleInlineComments1``() =        
         AssertAutoCompleteContains 
           [ "let rrr = System  (* boo! *)  .  Int32  .  MaxValue" ]
@@ -3850,7 +3775,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "Int32"]
           [ "abs" ] // should not contain (top-level)
 
-    [<Test>]
+    [<Fact>]
     member public this.``HandleInlineComments2``() =    
         AssertAutoCompleteContains 
           [ "let rrr = System  (* boo! *)  .  Int32  .  MaxValue" ]
@@ -3858,7 +3783,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "MaxValue" ] // should contain 
           [ "abs" ] // should not contain (top-level)
 
-    [<Test>]
+    [<Fact>]
     member public this.``OpenNamespaceOrModule.CompletionOnlyContainsNamespaceOrModule.Case1``() =        
         AssertAutoCompleteContains 
             [ "open System." ]
@@ -3866,7 +3791,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ "Collections" ] // should contain (namespace)
             [ ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``OpenNamespaceOrModule.CompletionOnlyContainsNamespaceOrModule.Case2``() =        
         AssertAutoCompleteContains 
             [ "open Microsoft.FSharp.Collections.Array." ]
@@ -3874,7 +3799,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ "Parallel" ] // should contain (module)
             [ "map" ] // should not contain (let-bound value)
 
-    [<Test>]
+    [<Fact>]
     member public this.``BY_DESIGN.CommonScenarioThatBegsTheQuestion.Bug73940``() =        
         AssertAutoCompleteContains 
             [ @"
@@ -3887,7 +3812,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ ] // should contain (ideally would be string)
             [ "Chars" ] // should not contain (documenting the undesirable behavior, that this does not show up)
 
-    [<Test>]
+    [<Fact>]
     member public this.``BY_DESIGN.ExplicitlyCloseTheParens.Bug73940``() =        
         AssertAutoCompleteContains 
             [ @"
@@ -3903,7 +3828,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ "Chars" ] // should contain (string)
             [ ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``BY_DESIGN.MismatchedParenthesesAreHardToRecoverFromAndHereIsWhy.Bug73940``() =        
         AssertAutoCompleteContains 
             [ @"
@@ -3920,7 +3845,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ "Chars" ] // should not contain (string)
 
 (*
-    [<Test>]
+    [<Fact>]
     member public this.``AutoComplete.Bug72596_A``() =        
         AssertAutoCompleteContains 
           [ "type ClassType() ="
@@ -3930,7 +3855,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "foo" ] // should not contain
 
 
-    [<Test>]
+    [<Fact>]
     member public this.``AutoComplete.Bug72596_B``() =        
         AssertAutoCompleteContains 
           [ "let f() ="
@@ -3940,7 +3865,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "foo" ] // should not contain
 *)
 
-    [<Test>]
+    [<Fact>]
     member public this.``Expression.MultiLine.Bug66705``() =        
         AssertAutoCompleteContains 
           [ "let x = 4"
@@ -3950,7 +3875,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "ToString" ] // should contain
           [ ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``Expressions.Computation``() =        
         AssertAutoCompleteContains 
           [
@@ -3962,7 +3887,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "Next" ] // should contain
           [ "GetEnumerator" ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``Identifier.DefineByVal.InFsiFile.Bug882304_1``() =        
         AutoCompleteInInterfaceFileContains
           [
@@ -3974,7 +3899,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ ] // should contain
           [ "Equals" ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``NameSpace.InFsiFile.Bug882304_2``() =        
         AutoCompleteInInterfaceFileContains
           [
@@ -3989,7 +3914,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ] // should contain
           [  ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``CLIEvents.DefinedInAssemblies.Bug787438``() =        
         AssertAutoCompleteContains 
           [ "let mb = new MailboxProcessor<int>(fun _ -> ())"
@@ -3998,7 +3923,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "Error" ] // should contain
           [ "add_Error"; "remove_Error" ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.CLIEventsWithByRefArgs() =
         AssertAutoCompleteContains 
           [ "type MyDelegate = delegate of obj * string byref  -> unit"
@@ -4009,7 +3934,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "add_myEvent"; "remove_myEvent" ] // should contain
           [ "myEvent" ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``Identifier.AfterParenthesis.Bug835276``() =        
         AssertAutoCompleteContains 
             [ "let f ( s : string ) ="
@@ -4021,7 +3946,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "Length" ] // should contain
           [ ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``Identifier.AfterParenthesis.Bug6484_1``() =        
         AssertAutoCompleteContains 
             [ "for x in 1..10 do"
@@ -4030,7 +3955,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "CompareTo" ] // should contain (a method on the 'int' type)
           [ ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``Identifier.AfterParenthesis.Bug6484_2``() =        
         AssertAutoCompleteContains 
             [ "for x = 1 to 10 do"
@@ -4039,7 +3964,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "CompareTo" ] // should contain (a method on the 'int' type)
           [ ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``Type.Indexers.Bug4898_1``() =        
         AssertAutoCompleteContains 
           [ 
@@ -4052,7 +3977,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "ToString" ] // should contain
           [ "Value" ] // should not contain      
           
-    [<Test>]
+    [<Fact>]
     member public this.``Type.Indexers.Bug4898_2``() =        
         AssertAutoCompleteContains 
           [ 
@@ -4070,7 +3995,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "ToString" ] // should contain
           [ "Chars" ] // should not contain    
                                              
-    [<Test>]
+    [<Fact>]
     member public this.``Expressions.Sequence``() =        
         AssertAutoCompleteContains 
           [  
@@ -4079,7 +4004,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "GetEnumerator" ] // should contain
           [ ] // should not contain
                       
-    [<Test>]
+    [<Fact>]
     member public this.``LambdaExpression.WithoutClosing.Bug1346``() =        
         AssertAutoCompleteContains 
           [ 
@@ -4093,7 +4018,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "Length" ] // should contain
           [ ] // should not contain
                       
-    [<Test>]
+    [<Fact>]
     member public this.``LambdaExpression.WithoutClosing.Bug1346c``() =        
         AssertAutoCompleteContains 
           [ 
@@ -4107,7 +4032,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "Length" ] // should contain
           [ ] // should not contain
                   
-    [<Test>]
+    [<Fact>]
     member public this.``LambdaExpression.WithoutClosing.Bug1346b``() =        
         AssertAutoCompleteContains 
           [ 
@@ -4122,7 +4047,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "Length" ] // should contain
           [ ] // should not contain
                                            
-    [<Test>]
+    [<Fact>]
     member public this.``IncompleteStatement.If_A``() =        
         AssertAutoCompleteContains 
           [
@@ -4132,8 +4057,8 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "Contains" ] // should contain
           [ ] // should not contain
                                           
-    [<Test>]
-    member public this.``IncompleteStatemen.If_C``() =        
+    [<Fact>]
+    member public this.``IncompleteStatement.If_C``() =        
         AssertAutoCompleteContains 
           [  
             "let x = \"1\""
@@ -4143,7 +4068,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "Contains" ] // should contain
           [ ] // should not contain
                                          
-    [<Test>]
+    [<Fact>]
     member public this.``IncompleteStatement.Try_A``() =        
         AssertAutoCompleteContains 
           [ 
@@ -4153,7 +4078,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "Contains" ] // should contain
           [ ] // should not contain
                       
-    [<Test>]
+    [<Fact>]
     member public this.``IncompleteStatement.Try_B``() =        
         AssertAutoCompleteContains 
           [
@@ -4163,7 +4088,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "Contains" ] // should contain
           [ ] // should not contain
                       
-    [<Test>]
+    [<Fact>]
     member public this.``IncompleteStatement.Try_C``() =        
         AssertAutoCompleteContains 
           [ 
@@ -4173,7 +4098,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "Contains" ] // should contain
           [ ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``IncompleteStatement.Try_D``() =        
         AssertAutoCompleteContains 
           [
@@ -4184,7 +4109,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "Contains" ] // should contain
           [ ] // should not contain
                                         
-    [<Test>]
+    [<Fact>]
     member public this.``IncompleteStatement.Match_A``() =        
         AssertAutoCompleteContains 
           [  
@@ -4194,7 +4119,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "Contains" ] // should contain
           [ ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``IncompleteStatement.Match_C``() =        
         AssertAutoCompleteContains 
           [ 
@@ -4205,7 +4130,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "Contains" ] // should contain
           [ ] // should not contain
 
-    [<Test>]
+    [<Fact>]
     member public this.``IncompleteIfClause.Bug4594``() = 
         AssertCtrlSpaceCompleteContains 
           [ "let Bar(xyz) =";
@@ -4219,7 +4144,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
     (* dot completions on them                                                               *)
  
     // Obsolete and CompilerMessage(IsError=true) should not appear.
-    [<Test>]
+    [<Fact>]
     member public this.``ObsoleteAndOCamlCompatDontAppear``() = 
         let code=
             [    
@@ -4285,30 +4210,30 @@ let x = query { for bbbb in abbbbc(*D0*) do
         gpatcc.AssertExactly(0,0)
 
     // When the module isn't empty, we should show completion for the module
-    // (and not type-inferrence based completion on strings - therefore test for 'Chars')
+    // (and not type-inference based completion on strings - therefore test for 'Chars')
     
-    [<Test>]
+    [<Fact>]
     member public this.``Obsolete.TopLevelModule``() =
       this.AutoCompleteObsoleteTest "level <- O" false [ "None" ] [ "ObsoleteTop"; "Chars" ]
 
-    [<Test>]
+    [<Fact>]
     member public this.``Obsolete.NestedTypeOrModule``() =
       this.AutoCompleteObsoleteTest "level <- Module" true [ "Other" ] [ "ObsoleteM"; "ObsoleteT"; "Chars" ]
 
-    [<Test>]
+    [<Fact>]
     member public this.``Obsolete.CompletionOnObsoleteModule.Bug3992``() =
       this.AutoCompleteObsoleteTest "level <- Module.ObsoleteM" true [ "A" ] [ "ObsoleteNested"; "Chars" ]
 
-    [<Test>]
+    [<Fact>]
     member public this.``Obsolete.DoubleNested``() =
       this.AutoCompleteObsoleteTest "level <- Module.ObsoleteM.ObsoleteNested" true [ "C" ] [ "Chars" ]
 
-    [<Test>]
+    [<Fact>]
     member public this.``Obsolete.CompletionOnObsoleteType``() =
       this.AutoCompleteObsoleteTest "level <- Module.ObsoleteT" true [ "B" ] [ "Chars" ]
 
-    /// BUG: Referencing a non-existent DLL caused an assert.
-    [<Test;Category("Repro")>]
+    /// BUG: Referencing a nonexistent DLL caused an assert.
+    [<Fact>]
     member public this.``WithNonExistentDll``() = 
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -4365,7 +4290,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         // This is some tag in the tooltip that also contains the overload name text
         if descr.Contains("[Signature:") then occurrences - 1 else occurrences
                                       
-    [<Test>]
+    [<Fact>]
     member public this.``Duplicates.Bug4103b``() = 
         for args in 
               [ "Test.", "foo", "foo"; 
@@ -4378,7 +4303,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                 "TestType.", "Event", "TestType.Event" ] do   
             this.AutoCompleteDuplicatesTest args      
 
-    [<Test>]
+    [<Fact>]
     member public this.``Duplicates.Bug4103c``() =       
         let code =
             [  
@@ -4394,7 +4319,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         let occurrences = this.CountMethodOccurrences(descrFunc(), "File.Open")
         AssertEqualWithMessage(3, occurrences, "Found wrong number of overloads for 'File.Open'.")
 
-    [<Test>]
+    [<Fact>]
     member public this.``Duplicates.Bug2094``() =
         let code = 
             [  
@@ -4409,7 +4334,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         let occurrences = this.CountMethodOccurrences(descrFunc(), "Start")
         AssertEqualWithMessage(2, occurrences, sprintf "Found wrong number of overloads for 'MailboxProcessor.Start'.  Found %A." completions)
        
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``WithinMatchClause.Bug1603``() =        
         let code = 
                                     [  
@@ -4424,11 +4349,11 @@ let x = query { for bbbb in abbbbc(*D0*) do
         MoveCursorToEndOfMarker(file,"let y = xx.")
         let completions = AutoCompleteAtCursor file
         // Should contain something
-        Assert.AreNotEqual(0,completions.Length)      
-        Assert.IsTrue(completions |> Array.exists (fun (CompletionItem(name,_,_,_,_)) -> name.Contains("AddMilliseconds")))  
+        Assert.NotEqual(0,completions.Length)      
+        Assert.True(completions |> Array.exists (fun (CompletionItem(name,_,_,_,_)) -> name.Contains("AddMilliseconds")))  
         
     // FEATURE: Saving file N does not cause files 1 to N-1 to re-typecheck (but does cause files N to <end> to 
-    [<Test>]
+    [<Fact>]
     member public this.``Performance.Bug5774``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -4462,8 +4387,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         gpatcc.AssertExactly(notAA[file2], notAA[file2;file3])
 
     /// FEATURE: References added to the project bring corresponding new .NET and F# items into scope.
-    [<Test;Category("ReproX")>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``AfterAssemblyReferenceAdded``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -4476,18 +4400,17 @@ let x = query { for bbbb in abbbbc(*D0*) do
         MoveCursorToEndOfMarker(file,"System.Deployment.Application.")
         let completions = AutoCompleteAtCursor(file)
         // printf "Completions=%A\n" completions
-        Assert.AreEqual(0, completions.Length) // Expect none here because reference hasn't been added.
+        Assert.Equal(0, completions.Length) // Expect none here because reference hasn't been added.
         
         // Now, add a reference to the given assembly.
         this.AddAssemblyReference(project,"System.Deployment")
 
         TakeCoffeeBreak(this.VS)
         let completions = AutoCompleteAtCursor(file)
-        Assert.AreNotEqual(0, completions.Length, "Expected some items in the list after adding a reference.") 
+        Assert.NotEqual(0, completions.Length) 
 
     /// FEATURE: Updating the active project configuration influences the language service
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Test>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``AfterUpdateProjectConfiguration``() = 
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -4505,17 +4428,16 @@ let x = query { for bbbb in abbbbc(*D0*) do
         MoveCursorToEndOfMarker(file,"System.Deployment.Application.")
         let completions = AutoCompleteAtCursor(file)
         // printf "Completions=%A\n" completions
-        Assert.AreEqual(0, completions.Length) // Expect none here because reference hasn't been added.
+        Assert.Equal(0, completions.Length) // Expect none here because reference hasn't been added.
         
         // Now, update active configuration
         SetConfigurationAndPlatform(project, "Foo|x86")
         TakeCoffeeBreak(this.VS)
         let completions = AutoCompleteAtCursor(file)
-        Assert.AreNotEqual(0, completions.Length, "Expected some items in the list after updating configuration.") 
+        Assert.NotEqual(0, completions.Length) 
 
     /// FEATURE: Updating the active project platform influences the language service
-    [<Test>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``AfterUpdateProjectPlatform``() = 
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -4534,16 +4456,16 @@ let x = query { for bbbb in abbbbc(*D0*) do
         MoveCursorToEndOfMarker(file,"System.Deployment.Application.")
         let completions = AutoCompleteAtCursor(file)
         // printf "Completions=%A\n" completions
-        Assert.AreEqual(0, completions.Length) // Expect none here because reference hasn't been added.
+        Assert.Equal(0, completions.Length) // Expect none here because reference hasn't been added.
         
         // Now, update active platform
         SetConfigurationAndPlatform(project, "Debug|x86")
         let completions = AutoCompleteAtCursor(file)
-        Assert.AreNotEqual(0, completions.Length, "Expected some items in the list after updating platform.") 
+        Assert.NotEqual(0, completions.Length) 
 
 (*
 /// FEATURE: The fileName on disk and the fileName in the project can differ in case.
-    [<Test>]
+    [<Fact>]
     member this.``Filenames.MayBeDifferentlyCased``() =
         use _guard = this.UsingNewVS() 
         let solution = this.CreateSolution()
@@ -4556,16 +4478,16 @@ let x = query { for bbbb in abbbbc(*D0*) do
         MoveCursorToEndOfMarker(file,"System.Deployment.Application.")
         let completions = AutoCompleteAtCursor(file)
         // printf "Completions=%A\n" completions
-        Assert.AreEqual(0, completions.Length) // Expect none here because reference hasn't been added.
+        Assert.Equal(0, completions.Length) // Expect none here because reference hasn't been added.
         
         // Now, add a reference to the given assembly.
         this.AddAssemblyReference(project,"System.Deployment")
         let completions = AutoCompleteAtCursor(file)
-        Assert.AreNotEqual(0, completions.Length, "Expected some items in the list after adding a reference.") 
+        Assert.NotEqual(0, completions.Length, "Expected some items in the list after adding a reference.") 
 *)
 
     /// In this bug, a bogus flag caused the rest of flag parsing to be ignored.
-    [<Test>]
+    [<Fact>]
     member public this.``FlagsAndSettings.Bug1969``() = 
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -4580,30 +4502,29 @@ let x = query { for bbbb in abbbbc(*D0*) do
         MoveCursorToEndOfMarker(file,"System.Deployment.Application.")
         let completions = AutoCompleteAtCursor(file)
         // printf "Completions=%A\n" completions
-        Assert.AreEqual(0, completions.Length) // Expect none here because reference hasn't been added.
+        Assert.Equal(0, completions.Length) // Expect none here because reference hasn't been added.
         
         // Add an unknown flag followed by the reference to our assembly.
         let deploymentAssembly = sprintf @"%s\Microsoft.NET\Framework\v4.0.30319\System.Deployment.dll" (System.Environment.GetEnvironmentVariable("windir"))
         SetOtherFlags(project,"--doo-da -r:" + deploymentAssembly) 
         let completions = AutoCompleteAtCursor(file)
         // Now, make sure the reference added after the erroneous reference is still honored.       
-        Assert.AreNotEqual(0, completions.Length, "Expected some items in the list after adding a reference.")         
+        Assert.NotEqual(0, completions.Length)         
         ShowErrors(project)      
         
     /// In this bug there was an exception if the user pressed dot after a long identifier
     /// that was unknown.
-    [<Test>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``OfSystemWindows``() = 
         let code = ["let y=new System.Windows."]
         let (_, _, file) = this.CreateSingleFileProject(code, references = ["System.Windows.Forms"])
         MoveCursorToEndOfMarker(file,"System.Windows.")
         let completions = AutoCompleteAtCursor(file)
         printfn "Completions=%A" completions
-        Assert.AreEqual(3, completions.Length)
+        Assert.Equal(3, completions.Length)
         
     /// Tests whether we're correctly showing both type and module when they have the same name
-    [<Test>]
+    [<Fact>]
     member public this.``ShowSetAsModuleAndType``() = 
         let code = ["let s = Set"]
         let (_, _, file) = this.CreateSingleFileProject(code)
@@ -4619,16 +4540,16 @@ let x = query { for bbbb in abbbbc(*D0*) do
             Assert.Fail("'Set' not found in the completion list")           
         
     /// FEATURE: The user may type namespace followed by dot and see a completion list containing members of that namespace.
-    [<Test>]
+    [<Fact>]
     member public this.``AtNamespaceDot``() = 
         let code = ["let y=new System.String()"]
         let (_, _, file) = this.CreateSingleFileProject(code)
         MoveCursorToEndOfMarker(file,"System.")
         let completions = AutoCompleteAtCursor(file)
-        Assert.IsTrue(completions.Length>0)
+        Assert.True(completions.Length>0)
         
     /// FEATURE: The user will see appropriate glyphs in the autocompletion list.
-    [<Test>]
+    [<Fact>]
     member public this.``OfSeveralModuleMembers``() = 
         let code = 
                                     [ 
@@ -4670,7 +4591,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         MoveCursorToEndOfMarker(file," Module.")
         let completions = time1 AutoCompleteAtCursor file "Time of first autocomplete."
 
-        Assert.IsTrue(completions.Length>0)
+        Assert.True(completions.Length>0)
         for completion in completions do
             match completion with 
               | CompletionItem("A",_,_,_,DeclarationType.EnumMember)                          -> ()
@@ -4700,7 +4621,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         MoveCursorToEndOfMarker(file,"AbbreviationModule.")
         let completions = time1 AutoCompleteAtCursor file "Time of second autocomplete."
         // printf "Completions=%A\n" completions
-        Assert.IsTrue(completions.Length>0)
+        Assert.True(completions.Length>0)
         for completion in completions do
             match completion with 
               | CompletionItem("Int32",_,_,_,_) 
@@ -4722,7 +4643,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
               | CompletionItem("TupleTypeAbbreviation",_,_,_,_) -> ()
               | CompletionItem(name,_,_,_,x) -> failwith (sprintf "Unexpected union member %s seen with declaration type %A" name x)
         
-    [<Test>]
+    [<Fact>]
     member public this.ListFunctions() = 
         let code = 
                                     [ 
@@ -4733,7 +4654,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         MoveCursorToEndOfMarker(file,"List.")
         let completions = time1 AutoCompleteAtCursor file "Time of first autocomplete."
         // printf "Completions=%A\n" completions
-        Assert.IsTrue(completions.Length>0)
+        Assert.True(completions.Length>0)
         for completion in completions do
             match completion with 
               | CompletionItem("Cons",_,_,_,DeclarationType.Method) -> ()
@@ -4743,7 +4664,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
               | CompletionItem(_,_,_,_,DeclarationType.Method) -> ()
               | CompletionItem(name,_,_,_,x) -> failwith (sprintf "Unexpected item %s seen with declaration type %A" name x)
 
-    [<Test>]
+    [<Fact>]
     member public this.``SystemNamespace``() =
         let code =
                                     [ 
@@ -4753,7 +4674,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         MoveCursorToEndOfMarker(file,"System.")
         let completions = time1 AutoCompleteAtCursor file "Time of first autocomplete."
         // printf "Completions=%A\n" completions
-        Assert.IsTrue(completions.Length>0)
+        Assert.True(completions.Length>0)
         
         let AssertIsDecl(name,decl,expected) =
             if decl<>expected then failwith (sprintf "Expected %A for %s but was %A" expected name decl)
@@ -4765,7 +4686,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
               | _ -> ()
       
     // If there is a compile error that prevents a data tip from resolving then show that data tip.
-    [<Test>]
+    [<Fact>]
     member public this.``MemberInfoCompileErrorsShowInDataTip``() =     
         let code = 
                                     [ 
@@ -4779,7 +4700,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
     
         use scope = AutoCompleteMemberDataTipsThrowsScope(this.VS, "Simulated compiler error")
         let completions = time1 CtrlSpaceCompleteAtCursor file "Time of first autocomplete."
-        Assert.IsTrue(completions.Length>0)      
+        Assert.True(completions.Length>0)      
         for completion in completions do 
             let (CompletionItem(_,_,_,descfunc,_)) = completion
             let desc = descfunc()
@@ -4787,8 +4708,8 @@ let x = query { for bbbb in abbbbc(*D0*) do
             AssertContains(desc,"Simulated compiler error")
 
     // Bunch of crud in empty list. This test asserts that unwanted things don't exist at the top level.
-    [<Test>]
-    member public this.``Editor.WhitoutContext.Bug986``() =     
+    [<Fact>]
+    member public this.``Editor.WithoutContext.Bug986``() =     
         let code = ["(*mark*)"]
         let (_,_, file) = this.CreateSingleFileProject(code)
 
@@ -4800,17 +4721,17 @@ let x = query { for bbbb in abbbbc(*D0*) do
               | CompletionItem("ICorRuntimeHost" as s,_,_,_,_) -> failwith (sprintf "Unexpected item %s at top level."  s)
               | _ -> ()
               
-    [<Test>]
+    [<Fact>]
     member public this.``LetBind.TopLevel.Bug1650``() =   
         let code =["let x = "]          
         let (_,_, file) = this.CreateSingleFileProject(code)
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
         MoveCursorToEndOfMarker(file,"let x = ")
         let completions = time1 CtrlSpaceCompleteAtCursor file "Time of first autocomplete."
-        Assert.IsTrue(completions.Length>0)
+        Assert.True(completions.Length>0)
         gpatcc.AssertExactly(0,0)
               
-    [<Test>]
+    [<Fact>]
     member public this.``Identifier.Invalid.Bug876b``() =  
         let code =
                                     [ 
@@ -4822,9 +4743,9 @@ let x = query { for bbbb in abbbbc(*D0*) do
         MoveCursorToEndOfMarker(file,"x.")
         let completions = time1 AutoCompleteAtCursor file "Time of first autocomplete."
         ShowErrors(project)
-        Assert.IsTrue(completions.Length>0)      
+        Assert.True(completions.Length>0)      
         
-    [<Test>]
+    [<Fact>]
     member public this.``Identifier.Invalid.Bug876c``() =     
         let code =
                                     [ 
@@ -4834,9 +4755,9 @@ let x = query { for bbbb in abbbbc(*D0*) do
         let (_,_, file) = this.CreateSingleFileProject(code, references = ["System"; "System.Drawing"; "System.Windows.Forms"])
         MoveCursorToEndOfMarker(file,"x.")
         let completions = time1 AutoCompleteAtCursor file "Time of first autocomplete."
-        Assert.IsTrue(completions.Length>0)     
+        Assert.True(completions.Length>0)     
         
-    [<Test>]
+    [<Fact>]
     member public this.``EnumValue.Bug2449``() =     
         let code =
                                     [ 
@@ -4849,7 +4770,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         let completions = time1 AutoCompleteAtCursor file "Time of first autocomplete."
         AssertCompListDoesNotContain(completions, "value__")
                
-    [<Test>]
+    [<Fact>]
     member public this.``EnumValue.Bug4044``() =   
         let code =
                                     [ 
@@ -4865,8 +4786,8 @@ let x = query { for bbbb in abbbbc(*D0*) do
                             
     /// There was a bug (2584) that IntelliSense should treat 'int' as a type instead of treating it as a function
     /// However, this is now deprecated behavior. We want the user to use 'System.Int32' and 
-    /// we generally prefer information from name resolution (aslo see 4405)
-    [<Test>]
+    /// we generally prefer information from name resolution (also see 4405)
+    [<Fact>]
     member public this.``PrimTypeAndFunc``() =     
         let code =
                                     [ 
@@ -4883,7 +4804,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         AssertCompListDoesNotContain(completions,"MinValue")
            
  /// This is related to Bug1605--since the file couldn't parse there was no information to provide the autocompletion list.    
-    [<Test>]
+    [<Fact>]
     member public this.``MatchStatement.Clause.AfterLetBinds.Bug1603``() = 
         let code =
                                     [ 
@@ -4898,7 +4819,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         MoveCursorToEndOfMarker(file,"xs -> f xs.")
         let completions = time1 AutoCompleteAtCursor file "Time of first autocomplete."
         // printf "Completions=%A\n" completions
-        Assert.IsTrue(completions.Length>0)
+        Assert.True(completions.Length>0)
         
         let mutable count = 0
         
@@ -4915,10 +4836,10 @@ let x = query { for bbbb in abbbbc(*D0*) do
                 AssertIsDecl(name,decl,DeclarationType.Property) 
               | CompletionItem(name,_,_,_,x) -> ()        
         
-        Assert.AreEqual(2,count)
+        Assert.Equal(2,count)
         
     // This was a bug in which the third level of dotting was ignored.
-    [<Test>]
+    [<Fact>]
     member public this.``ThirdLevelOfDotting``() =     
         let code =
                                     [ 
@@ -4928,7 +4849,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         MoveCursorToEndOfMarker(file,"Console.Wr")
         let completions = time1 CtrlSpaceCompleteAtCursor file "Time of first autocomplete."
         // printf "Completions=%A\n" completions
-        Assert.IsTrue(completions.Length>0)
+        Assert.True(completions.Length>0)
         
         let AssertIsDecl(name,decl,expected) =
             if decl<>expected then failwith (sprintf "Expected %A for %s but was %A" expected name decl)
@@ -4940,7 +4861,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
               | CompletionItem(name,_,_,_,x) -> ()
 
     // Test completions in an incomplete computation expression (case 1: for "let")
-    [<Test>]
+    [<Fact>]
     member public this.``ComputationExpressionLet``() =     
         let code =
                     [  
@@ -4953,7 +4874,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         let completions = time1 AutoCompleteAtCursor file "Time of first autocomplete."
         AssertCompListContainsAll(completions, ["Next"])
  
-    [<Test>]
+    [<Fact>]
     member public this.``BestMatch.Bug4320a``() = 
         let code = [ " let x = System." ]
         let (_, _, file) = this.CreateSingleFileProject(code)
@@ -4975,7 +4896,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         AssertEqual(Some ("GCCollectionMode", true, true),   Match "GCC" (Some "GC"))
         AssertEqual(Some ("GCCollectionMode", false, false), Match "GCCZ" (Some "GC"))
     
-    [<Test>]
+    [<Fact>]
     member public this.``BestMatch.Bug4320b``() = 
         let code = [ " let x = List." ]
         let (_, _, file) = this.CreateSingleFileProject(code)
@@ -4987,7 +4908,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         AssertEqual(Some ("empty", false, true),  Match "e")
         AssertEqual(Some ("empty", true, true), Match "em")
       
-    [<Test>]
+    [<Fact>]
     member public this.``BestMatch.Bug5131``() = 
         let code = [ "System.Environment." ]
         let (_, _, file) = this.CreateSingleFileProject(code)
@@ -4998,7 +4919,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         // isPrefix=true means it will be selected, instead of just outlined
         AssertEqual(Some ("OSVersion", true, true),  Match "o")
     
-    [<Test>]
+    [<Fact>]
     member public this.``COMPILED.DefineNotPropagatedToIncrementalBuilder``() =
         use _guard = this.UsingNewVS()
  
@@ -5026,10 +4947,10 @@ let x = query { for bbbb in abbbbc(*D0*) do
         let completionItems = 
             AutoCompleteAtCursor(file)
             |> Array.map (fun (CompletionItem(name, _, _, _, _)) -> name)
-        Assert.AreEqual(1, completionItems.Length, "Expected 1 item in the list")
-        Assert.AreEqual("x", completionItems.[0], "Expected 'x' in the list")
+        Assert.Equal(1, completionItems.Length)
+        Assert.Equal("x", completionItems.[0])
  
-    [<Test>]
+    [<Fact>]
     member public this.``VisualStudio.CloseAndReopenSolution``() = 
         use _guard = this.UsingNewVS()
         // This test exposes what was once a bug, where closing a solution and then re-opening
@@ -5048,17 +4969,16 @@ let x = query { for bbbb in abbbbc(*D0*) do
         MoveCursorToEndOfMarker(file,"x.")
         let completions = time1 AutoCompleteAtCursor file "Time of first autocomplete."
         // printf "Completions=%A\n" completions
-        Assert.IsTrue(completions.Length>0)
+        Assert.True(completions.Length>0)
         this.CloseSolution(solution)
         let project,solution = OpenExistingProject(this.VS, dir, projName)
         let file = List.item 0 (GetOpenFiles(project))
         MoveCursorToEndOfMarker(file,"x.")
         let completions = time1 AutoCompleteAtCursor file "Time of first autocomplete."
         // printf "Completions=%A\n" completions
-        Assert.IsTrue(completions.Length>0)
+        Assert.True(completions.Length>0)
 
-    [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Fact(Skip = "https://github.com/dotnet/fsharp/issues/6166")>]
     member this.``BadCompletionAfterQuicklyTyping.Bug72561``() =        
         let code = [ "        " ]
         let (_, _, file) = this.CreateSingleFileProject(code)
@@ -5079,8 +4999,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         AssertCompListDoesNotContainAny(completions, ["AbstractClassAttribute"]) 
         gpatcc.AssertExactly(0,0)
 
-    [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Fact(Skip = "https://github.com/dotnet/fsharp/issues/6166")>]
     member this.``BadCompletionAfterQuicklyTyping.Bug72561.Noteworthy.NowWorks``() =        
         let code = [ "123      " ]
         let (_, _, file) = this.CreateSingleFileProject(code)
@@ -5102,8 +5021,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         AssertCompListDoesNotContainAny(completions, ["AbstractClassAttribute"]) 
         gpatcc.AssertExactly(0,0)
 
-    [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Fact(Skip = "https://github.com/dotnet/fsharp/issues/6166")>]
     member this.``BadCompletionAfterQuicklyTyping.Bug130733.NowWorks``() =        
         let code = [ "let someCall(x) = null"
                      "let xe = someCall(System.IO.StringReader()  "]
@@ -5167,7 +5085,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         let completions = CtrlSpaceCompleteAtCursor(file)   
         AssertEqual(0,completions.Length)              
                 
-    [<Test>]
+    [<Fact>]
     member this.``Expression.WithoutPreDefinedMethods``() = 
         this.VerifyCtrlSpaceListDoesNotContainAnyAtStartOfMarker(
             fileContents = """
@@ -5175,7 +5093,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             marker = "(*HERE*)",
             list = ["FSharpDelegateEvent"; "PrivateMethod"; "PrivateType"])
                     
-    [<Test>]
+    [<Fact>]
     member this.``Expression.WithPreDefinedMethods``() = 
         this.VerifyCtrlSpaceListContainAllAtStartOfMarker(
             fileContents = """
@@ -5192,8 +5110,8 @@ let x = query { for bbbb in abbbbc(*D0*) do
             marker = "(*Marker1*)",
             list = ["PrivateField"; "PrivateMethod"; "PrivateType"])                 
          
-    // Regression for bug 2116 -- Consider making selected item in completion list case-insensitiv         
-    [<Test>]
+    // Regression for bug 2116 -- Consider making selected item in completion list case-insensitive       
+    [<Fact>]
     member this.``CaseInsensitive``() =
         this.VerifyCtrlSpaceListContainAllAtStartOfMarker(
             fileContents = """
@@ -5210,7 +5128,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             marker = "(*Marker1*)",
             list = ["Xyzzy"; "xYzzy"; "xyZzy"; "xyzZy"; "xyzzY"])  
       
-    [<Test>]
+    [<Fact>]
     member this.``Attributes.CanSeeOpenNamespaces.Bug268290.Case1``() =
         AssertCtrlSpaceCompleteContains 
             ["""
@@ -5222,7 +5140,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["AttributeUsage"]
             []
 
-    [<Test>]
+    [<Fact>]
     member this.``Selection``() =
         AssertCtrlSpaceCompleteContains 
             ["""
@@ -5234,7 +5152,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             []
             
     // Regression test for 1653 -- Both the F# exception and the .NET exception representing it are shown in completion lists
-    [<Test>]
+    [<Fact>]
     member this.``NoDupException.Postive``() = 
         this.VerifyCtrlSpaceListContainAllAtStartOfMarker(
             fileContents = """
@@ -5242,7 +5160,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             marker = "(*MarkerException*)",
             list = ["MatchFailureException"])
 
-    [<Test>]
+    [<Fact>]
     member this.``DotNetException.Negative``() =
         this.VerifyCtrlSpaceListDoesNotContainAnyAtStartOfMarker(
             fileContents = """
@@ -5251,7 +5169,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             list = ["MatchFailure"])        
 
     // Regression for bug 921 -- intellisense case-insensitive? 
-    [<Test>]
+    [<Fact>]
     member this.``CaseInsensitive.MapMethod``() =
         this.VerifyCtrlSpaceListContainAllAtStartOfMarker(
             fileContents = """
@@ -5261,8 +5179,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             list = ["map"])
                         
     //Regression for bug   69644    69654  Fsharp: no completion for an identifier when 'use'd inside an 'async' block
-    [<Test>]
-    [<Ignore("69644 - no completion for an identifier when 'use'd inside an 'async' block")>]
+    [<Fact(Skip = "69644 - no completion for an identifier when 'use'd inside an 'async' block")>]
     member this.``InAsyncAndUseBlock``() =
         this.VerifyCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -5281,7 +5198,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             marker = "(*Marker1*)",
             list = ["reader"])  
 
-    [<Test>]
+    [<Fact>]
     member this.``WithoutOpenNamespace``() =
         AssertCtrlSpaceCompleteContains 
             ["""
@@ -5293,7 +5210,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [] // should
             ["Single"] // should not
 
-    [<Test>]
+    [<Fact>]
     member this.``PrivateVisible``() =
         AssertCtrlSpaceCompleteContains 
             ["""
@@ -5315,7 +5232,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["fieldPrivate";"MethodPrivate";"TypePrivate"]
             []
 
-    [<Test>]
+    [<Fact>]
     member this.``InternalVisible``() =
         AssertCtrlSpaceCompleteContains 
             ["""
@@ -5336,10 +5253,9 @@ let x = query { for bbbb in abbbbc(*D0*) do
             ["fieldInternal";"MethodInternal";"TypeInternal"]  // should
             [] // should not
 
-    [<Test>]
-    [<Category("Unit of Measure")>]
+    [<Fact>]
     // Verify that we display the correct list of Unit of Measure (Names) in the autocomplete window. 
-    // This also ensures that no UoM are accidenatally added or removed.
+    // This also ensures that no UoM are accidentally added or removed.
     member public this.``UnitMeasure.UnitNames``() =
         AssertAutoCompleteContains
           [ "Microsoft.FSharp.Data.UnitSystems.SI.UnitNames."]
@@ -5349,10 +5265,9 @@ let x = query { for bbbb in abbbbc(*D0*) do
             "ohm"; "pascal"; "second"; "siemens"; "sievert"; "tesla"; "volt"; "watt"; "weber";] // should contain; exact match
           [ ] // should not contain 
 
-    [<Test>]
-    [<Category("Unit of Measure")>]
+    [<Fact>]
     // Verify that we display the correct list of Unit of Measure (Symbols) in the autocomplete window. 
-    // This also ensures that no UoM are accidenatally added or removed.
+    // This also ensures that no UoM are accidentally added or removed.
     member public this.``UnitMeasure.UnitSymbols``() =
         AssertAutoCompleteContains
           [ "Microsoft.FSharp.Data.UnitSystems.SI.UnitSymbols."]
@@ -5371,9 +5286,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         AssertCompListContainsAll(completions, contained)
         gpatcc.AssertExactly(0,0)
 
-    [<Test>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Category("Query")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     // Custom operators appear in Intellisense list after entering a valid query operator
     // on the previous line and invoking Intellisense manually
     // Including in a nested query
@@ -5391,9 +5304,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           marker = "do ma",
           contained = [ "maxBy"; "maxByNullable"; ])
 
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Test>]
-    [<Category("Query")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     // Custom operators appear in Intellisense list after entering a valid query operator
     // on the previous line and invoking Intellisense manually
     // Including in a nested query
@@ -5409,7 +5320,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
           marker = "gro",
           contained = [ "groupBy"; "groupJoin"; "groupValBy";])
 
-    [<Test>]
+    [<Fact>]
     member this.``Namespace.System``() =
         this.VerifyDotCompListContainAllAtEndOfMarker(
             fileContents = """
@@ -5422,7 +5333,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             marker = "open System",
             list = [ "IO"; "Collections" ]) 
                     
-    [<Test>]
+    [<Fact>]
     member this.``Identifier.String.Positive``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -5434,8 +5345,8 @@ let x = query { for bbbb in abbbbc(*D0*) do
             marker = "(*usage*)",
             list = ["Chars"; "ToString"; "Length"; "GetHashCode"])   
             
-    [<Test>]
-    member this.``Idenfifier.String.Negative``() =
+    [<Fact>]
+    member this.``Identifier.String.Negative``() =
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """
                 open System
@@ -5448,7 +5359,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
 
     // Verify add_* methods show up for non-standard events. These are events
     // where the associated delegate type does not return "void" 
-    [<Test>]
+    [<Fact>]
     member this.``Event.NonStandard.PrefixMethods``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """System.AppDomain.CurrentDomain(*usage*)""",
@@ -5457,28 +5368,28 @@ let x = query { for bbbb in abbbbc(*D0*) do
         
     // Verify the events do show up. An error is generated when they are used asking the user to use add_* and remove_* instead.
     // That is, they are legitimate name resolutions but do not pass type checking.
-    [<Test>]
+    [<Fact>]
     member this.``Event.NonStandard.VerifyLegitimateNameShowUp``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = "System.AppDomain.CurrentDomain(*usage*)",
             marker = "(*usage*)",
             list = ["AssemblyResolve"; "ReflectionOnlyAssemblyResolve"; "ResourceResolve"; "TypeResolve" ])
 
-    [<Test>]
+    [<Fact>]
     member this.``Array``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = "let arr = [| for i in 1..10 -> i |](*Mexparray*)",
             marker = "(*Mexparray*)",
             list = ["Clone"; "IsFixedSize"]) 
         
-    [<Test>]
+    [<Fact>]
     member this.``List``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = "let lst = [ for i in 1..10 -> i](*Mexplist*)",
             marker = "(*Mexplist*)",
             list = ["Head"; "Tail"]) 
 
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``ExpressionDotting.Regression.Bug187799``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -5490,7 +5401,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             marker = "(*marker*)",
             list = ["Clone"])  // should contain method on array (result of M call)
 
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``ExpressionDotting.Regression.Bug187799.Test2``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -5505,7 +5416,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             marker = "(*marker*)",
             list = ["Clone"])  // should contain method on array (result of M call)
 
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``ExpressionDotting.Regression.Bug187799.Test3``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -5520,7 +5431,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
 
 
 
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``ExpressionDotting.Regression.Bug187799.Test4``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -5533,7 +5444,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             marker = "(*marker*)",
             list = ["InterfaceMethods"])  
 
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``ExpressionDotting.Regression.Bug187799.Test5``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -5545,7 +5456,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             marker = "(*marker*)",
             list = ["GetEnumerator"])  
 
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``ExpressionDotting.Regression.Bug187799.Test6``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -5557,7 +5468,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             marker = "(*marker*)",
             list = ["AddHandler"])  
 
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``ExpressionDotting.Regression.Bug187799.Test7``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -5569,7 +5480,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             marker = "(*marker*)",
             list = ["Assembly"])  
 
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``ExpressionDotting.Regression.Bug187799.Test8``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -5582,7 +5493,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             list = ["CompareTo"])  
 
 
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``ExpressionDotting.Regression.Bug187799.Test9``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -5594,11 +5505,8 @@ let x = query { for bbbb in abbbbc(*D0*) do
             marker = "(*marker*)",
             list = ["CompareTo"])  
 
-    [<Test>]
-    [<Category("TypeProvider")>]
-    [<Category("TypeProvider.EditorHideMethodsAttribute")>]
     // This test case checks that autocomplete on the provided Type DOES NOT show System.Object members
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member this.``TypeProvider.EditorHideMethodsAttribute.Type.DoesnotContain``() =
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """ 
@@ -5608,10 +5516,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             list = ["Equals";"GetHashCode"],            
             addtlRefAssy = [PathRelativeToTestAssembly(@"EditorHideMethodsAttribute.dll")])
 
-    [<Test>]
-    [<Category("TypeProvider")>]
-    [<Category("TypeProvider.EditorHideMethodsAttribute")>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     // This test case checks if autocomplete on the provided Type shows only the Event1 elements
     member this.``TypeProvider.EditorHideMethodsAttribute.Type.Contains``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
@@ -5622,10 +5527,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             list = ["Event1"],            
             addtlRefAssy = [PathRelativeToTestAssembly(@"EditorHideMethodsAttribute.dll")])
     
-    [<Test>]
-    [<Category("TypeProvider")>]
-    [<Category("TypeProvider.EditorHideMethodsAttribute")>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     // This test case checks if autocomplete on the provided Type shows the instance method IM1
     member this.``TypeProvider.EditorHideMethodsAttribute.InstanceMethod.Contains``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
@@ -5636,9 +5538,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             list = ["IM1"],            
             addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
     
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Test>]
-    [<Category("TypeProvider")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     // This test case checks that nested types show up only statically and not on instances
     member this.``TypeProvider.TypeContainsNestedType``() =
         // should have it here
@@ -5657,10 +5557,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             list = ["SomeNestedType"],            
             addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
     
-    [<Test>]
-    [<Category("TypeProvider")>]
-    [<Category("TypeProvider.EditorHideMethodsAttribute")>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     // This test case checks if autocomplete on the provided Event shows only the AddHandler/RemoveHandler elements
     member this.``TypeProvider.EditorHideMethodsAttribute.Event.Contain``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
@@ -5671,9 +5568,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             list = ["AddHandler";"RemoveHandler"],            
             addtlRefAssy = [PathRelativeToTestAssembly(@"EditorHideMethodsAttribute.dll")])
     
-    [<Test>]
-    [<Category("TypeProvider")>]
-    [<Category("TypeProvider.EditorHideMethodsAttribute")>]
+    [<Fact>]
     // This test case checks if autocomplete on the provided Method shows no elements 
     // You can see this as a "negative case" (to check that the usage of the attribute on a method is harmless)
     member this.``TypeProvider.EditorHideMethodsAttribute.Method.Contain``() =
@@ -5683,10 +5578,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             marker = "(*Marker*)",
             addtlRefAssy = [PathRelativeToTestAssembly(@"EditorHideMethodsAttribute.dll")])
 
-    [<Test>]
-    [<Category("TypeProvider")>]
-    [<Category("TypeProvider.EditorHideMethodsAttribute")>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     // This test case checks if autocomplete on the provided Property (the type of which is not synthetic) shows the usual elements... like GetType()
     // 1. I think it does not make sense to use this attribute on a synthetic property unless it's type is also synthetic (already covered)
     // 2. You can see this as a "negative case" (to check that the usage of the attribute is harmless)
@@ -5698,7 +5590,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             list = ["GetType"; "Equals"],   // just a couple of System.Object methods: we expect them to be there!
             addtlRefAssy = [PathRelativeToTestAssembly(@"EditorHideMethodsAttribute.dll")])
                                           
-    [<Test>]
+    [<Fact>]
     member this.CompListInDiffFileTypes() =
         let fileContents = """
             val x:int = 1
@@ -5718,7 +5610,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         let completions = DotCompletionAtStartOfMarker file "(*MarkerInsideSourceFile*)"
         AssertCompListContainsAll(completions, ["CompareTo"; "Equals"])
   
-    [<Test>]
+    [<Fact>]
     member this.ConstrainedTypes() =
         let fileContents = """
             type Pet() = 
@@ -5748,35 +5640,35 @@ let x = query { for bbbb in abbbbc(*D0*) do
         let completions = DotCompletionAtStartOfMarker file "(*Mconstrainedtoint*)"
         AssertCompListContainsAll(completions, ["ToString"])    
 
-    [<Test>]
+    [<Fact>]
     member this.``Literal.Float``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = "let myfloat = (42.0)(*Mconstantfloat*)",
             marker = "(*Mconstantfloat*)",
             list = ["GetType"; "ToString"])
             
-    [<Test>] 
+    [<Fact>] 
     member this.``Literal.String``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """let name = "foo"(*Mconstantstring*)""",
             marker = "(*Mconstantstring*)",
             list = ["Chars"; "Clone"]) 
             
-    [<Test>]
+    [<Fact>]
     member this.``Literal.Int``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = "let typeint = (10)(*Mint*)",
             marker = "(*Mint*)",
             list = ["GetType";"ToString"])
 
-    [<Test>]
+    [<Fact>]
     member this.``Identifier.InLambdaExpression``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = "let funcLambdaExp = fun (x:int)-> x(*MarkerinLambdaExp*)",
             marker = "(*MarkerinLambdaExp*)",
             list = ["ToString"; "Equals"])
 
-    [<Test>]
+    [<Fact>]
     member this.``Identifier.InClass``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -5785,7 +5677,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             marker = "(*MarkerLetBindinClass*)",
             list = ["ToString"; "Equals"])
 
-    [<Test>]
+    [<Fact>]
     member this.``Identifier.InNestedLetBind``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = "
@@ -5796,7 +5688,7 @@ let funcNestedLetBinding (x:int) =
             marker = "(*MarkerNestedLetBind*)",
             list = ["ToString"; "Equals"]) 
 
-    [<Test>]
+    [<Fact>]
     member this.``Identifier.InModule``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = "
@@ -5806,7 +5698,7 @@ module ModuleLetBindIn =
             marker = "(*MarkerLetBindinModule*)",
             list = ["ToString"; "Equals"])
 
-    [<Test>]
+    [<Fact>]
     member this.``Identifier.InMatchStatement``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = "
@@ -5819,7 +5711,7 @@ match x(*MarkerMatchStatement*) with
             marker = "(*MarkerMatchStatement*)",
             list = ["ToString"; "Equals"]) 
 
-    [<Test>]
+    [<Fact>]
     member this.``Identifier.InMatchClause``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = "
@@ -5834,7 +5726,7 @@ let rec f l =
             marker = "(*MarkerMatchClause*)",
             list = ["Add";"Date"]) 
                            
-    [<Test>]
+    [<Fact>]
     member this.``Expression.ListItem``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -5844,7 +5736,7 @@ let rec f l =
             marker = "(*MarkerListItem*)",
             list = ["CompareTo"; "ToString"])
 
-    [<Test>]
+    [<Fact>]
     member this.``Expression.FunctionParameter``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -5854,7 +5746,7 @@ let rec f l =
             marker = "(*MarkerParameter*)",
             list = ["CompareTo"; "ToString"])
 
-    [<Test>]
+    [<Fact>]
     member this.``Expression.Function``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -5864,7 +5756,7 @@ let rec f l =
             marker = "(*MarkerFunction*)",
             list = ["CompareTo"; "ToString"])
 
-    [<Test>]
+    [<Fact>]
     member this.``Expression.RecordPattern``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -5876,7 +5768,7 @@ let rec f l =
             marker = "(*MarkerRecordPattern*)",
             list = ["Value"; "ToString"])
 
-    [<Test>]
+    [<Fact>]
     member this.``Expression.2DArray``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -5886,7 +5778,7 @@ let rec f l =
             marker = "(*Marker2DArray*)",
             list = ["ToString"]) 
 
-    [<Test>]
+    [<Fact>]
     member this.``Expression.LetBind``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -5897,7 +5789,7 @@ let rec f l =
             marker = "(*MarkerContext1*)",
             list = ["CompareTo";"ToString"]) 
 
-    [<Test>]
+    [<Fact>]
     member this.``Expression.WhileLoop``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -5908,14 +5800,14 @@ let rec f l =
             marker = "(*MarkerContext3*)",
             list = ["CompareTo";"ToString"])  
 
-    [<Test>] 
+    [<Fact>] 
     member this.``Expression.List``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """[1;2](*MarkerList*)   """,
             marker = "(*MarkerList*)",
             list = ["Head"; "Item"])
 
-    [<Test>]
+    [<Fact>]
     member this.``Expression.Nested.InLetBind``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -5926,7 +5818,7 @@ let rec f l =
             marker = "(*MarkerNested1*)",
             list = ["Chars";"Length"])
 
-    [<Test>]
+    [<Fact>]
     member this.``Expression.Nested.InWhileLoop``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -5937,7 +5829,7 @@ let rec f l =
             marker = "(*MarkerNested2*)",
             list = ["Chars";"Length"])  
 
-    [<Test>]
+    [<Fact>]
     member this.``Expression.ArrayItem.Positive``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -5947,7 +5839,7 @@ let rec f l =
             marker = "(*MarkerArrayIndexer*)",
             list = ["Chars";"Split"])
 
-    [<Test>]
+    [<Fact>]
     member this.``Expression.ArrayItem.Negative``() =
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """
@@ -5957,7 +5849,7 @@ let rec f l =
             marker = "(*MarkerArrayIndexer*)",
             list = ["IsReadOnly";"Rank"])
                                                                                                                                                                 
-    [<Test>]
+    [<Fact>]
     member this.``ObjInstance.InheritedClass.MethodsDefInBase``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -5972,7 +5864,7 @@ let rec f l =
             marker = "(*Mderived*)",
             list = ["Name"; "dog"])
 
-    [<Test>]
+    [<Fact>]
     member this.``ObjInstance.AnonymousClass.MethodsDefInInterface``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -5984,7 +5876,7 @@ let rec f l =
                     interface IFoo with
                         member this.DoStuff () = "Return a string"
                         member this.DoStuff2 (x, y) z = sprintf "Arguments were (%d, %d) %s" x y z
-                // instanceOfIFoo is an instance of an anonomyous class which implements IFoo
+                // instanceOfIFoo is an instance of an anonymous class which implements IFoo
                 let instanceOfIFoo = {
                                         new IFoo with
                                             member this.DoStuff () = "Implement IFoo"
@@ -5993,7 +5885,7 @@ let rec f l =
             marker = "(*Mexpnewtype*)",
             list = ["DoStuff"; "DoStuff2"])
              
-    [<Test>]
+    [<Fact>]
     member this.``SimpleTypes.SystemTime``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6002,7 +5894,7 @@ let rec f l =
             marker = "(*Mstruct*)",
             list = ["AddDays"; "Date"])
 
-    [<Test>]
+    [<Fact>]
     member this.``SimpleTypes.Record``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6012,7 +5904,7 @@ let rec f l =
             marker = "(*Mrecord*)",
             list = ["DateOfBirth"; "Name"]) 
 
-    [<Test>]
+    [<Fact>]
     member this.``SimpleTypes.Enum``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6027,7 +5919,7 @@ let rec f l =
             marker = "(*Menum*)",
             list = ["GetType"; "ToString"])
 
-    [<Test>]
+    [<Fact>]
     member this.``SimpleTypes.DisUnion``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6043,12 +5935,12 @@ let rec f l =
             marker = "(*Mdiscriminatedunion*)",
             list = ["GetType"; "ToString"])  
 
-    [<Test>]
+    [<Fact>]
     member this.``InheritedClass.BaseClassPrivateMethod.Negative``() =
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """
                 open System
-                //difine the base class
+                //define the base class
                 type Widget() = 
                     let mutable state = 0 
                     member internal x.MethodInternal() = state 
@@ -6069,12 +5961,12 @@ let rec f l =
             marker = "(*MUnShowPrivate*)",
             list = ["MethodPrivate";"fieldPrivate"]) 
 
-    [<Test>]
+    [<Fact>]
     member this.``InheritedClass.BaseClassPublicMethodAndProperty``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 open System
-                //difine the base class
+                //define the base class
                 type Widget() = 
                     let mutable state = 0 
                     member internal x.MethodInternal() = state 
@@ -6095,14 +5987,14 @@ let rec f l =
             marker = "(*MShowPublic*)",
             list = ["MethodPublic";"fieldPublic"])
 
-    [<Test>]
+    [<Fact>]
     member this.``Visibility.InternalNestedClass.Negative``() =
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """System.Console(*Marker1*)""",
             marker = "(*Marker1*)",
             list = ["ControlCDelegateData"])
 
-    [<Test>]
+    [<Fact>]
     member this.``Visibility.PrivateIdentifierInDiffModule.Negative``() = 
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """
@@ -6116,7 +6008,7 @@ let rec f l =
                     Module1(*Marker1*)  """,
             marker = "(*Marker1*)")
 
-    [<Test>]
+    [<Fact>]
     member this.``Visibility.PrivateIdentifierInDiffClass.Negative``() = 
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """
@@ -6133,7 +6025,7 @@ let rec f l =
             marker = "(*MarkerOutType*)",
             list = ["fieldPrivate";"MethodPrivate"]) 
 
-    [<Test>]
+    [<Fact>]
     member this.``Visibility.PrivateFieldInSameClass``() =  
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6150,7 +6042,7 @@ let rec f l =
             marker = "(*MarkerFieldInType*)",
             list = ["PrivateField"]) 
 
-    [<Test>]
+    [<Fact>]
     member this.``Visibility.PrivateMethodInSameClass``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6167,7 +6059,7 @@ let rec f l =
             marker = "(*MarkerMethodInType*)",
             list = ["PrivateMethod"])       
 
-//    [<Test>]
+//    [<Fact>]
     member this.``VariableIdentifier.AsParameter``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6178,7 +6070,7 @@ let rec f l =
             marker = "(*Maftervariable1*)",
             list = ["Tag"])
 
-    [<Test>]
+    [<Fact>]
     member this.``VariableIdentifier.InMeasure.DefineInDiffNamespace``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6202,8 +6094,8 @@ let rec f l =
             marker = "(*Maftervariable2*)",
             list = [])
 
-    [<Test>]
-    member this.``VariableIdentifier.MethodsInheritFomeBase``() = 
+    [<Fact>]
+    member this.``VariableIdentifier.MethodsInheritFromBase``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 namespace MyNamespace1
@@ -6221,7 +6113,7 @@ let rec f l =
             marker = "(*Maftervariable3*)",
             list = ["Name";"Speak"])
 
-    [<Test>]
+    [<Fact>]
     member this.``VariableIdentifier.AsParameter.DefineInDiffNamespace``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6245,7 +6137,7 @@ let rec f l =
             marker = "(*Maftervariable4*)",
             list = ["DuType"])  
 
-    [<Test>]
+    [<Fact>]
     member this.``VariableIdentifier.SystemNamespace``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6269,7 +6161,7 @@ let rec f l =
             marker = "(*Maftervariable5*)",
             list = ["BinaryReader";"Stream";"Directory"]) 
 
-    [<Test>]
+    [<Fact>]
     member this.``LongIdent.AsAttribute``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6279,8 +6171,8 @@ let rec f l =
             marker = "(*Mattribute*)",
             list = ["Obsolete"])
 
-    [<Test>]
-    member this.``ImportStatment.System.ImportDirectly``() = 
+    [<Fact>]
+    member this.``ImportStatement.System.ImportDirectly``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 open System(*Mimportstatement1*)
@@ -6288,8 +6180,8 @@ let rec f l =
             marker = "(*Mimportstatement1*)",
             list = ["Collections"])
 
-    [<Test>]
-    member this.``ImportStatment.System.ImportAsIdentifier``() = 
+    [<Fact>]
+    member this.``ImportStatement.System.ImportAsIdentifier``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 open System(*Mimportstatement1*)
@@ -6297,7 +6189,7 @@ let rec f l =
             marker = "(*Mimportstatement2*)",
             list = ["IO"])  
 
-    [<Test>]
+    [<Fact>]
     member this.``LongIdent.PatternMatch.AsVariable.DefFromDiffNamespace``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6317,7 +6209,7 @@ let rec f l =
             marker = "(*Mpatternmatch1*)",
             list = ["Direction";"ToString"])
 
-    [<Test>]
+    [<Fact>]
     member this.``LongIdent.PatternMatch.AsConstantValue.DefFromDiffNamespace``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6337,7 +6229,7 @@ let rec f l =
             marker = "(*Mpatternmatch2*)",
             list = ["longident"])
 
-    [<Test>]
+    [<Fact>]
     member this.``LongIdent.PInvoke.AsReturnType``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6348,7 +6240,7 @@ let rec f l =
                 let writer = new StreamWriter (tempFile1)
                 writer.WriteLine("Some Data")
                 writer.Close()
-                // Origional signature
+                // Original signature
                 //[<DllImport("kernel32.dll")>]
                 //extern bool CopyFile(string lpExistingFileName, string lpNewFileName, bool bFailIfExists);
                 [<DllImport("kernel32.dll", EntryPoint="CopyFile")>]
@@ -6358,7 +6250,7 @@ let rec f l =
             marker = "(*Mpinvokereturntype*)",
             list = ["Boolean";"Int32"])
 
-    [<Test>]
+    [<Fact>]
     member this.``LongIdent.PInvoke.AsAttribute``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6379,7 +6271,7 @@ let rec f l =
             marker = "(*Mpinvokeattribute*)",
             list = ["SomeAttrib"]) 
 
-    [<Test>]
+    [<Fact>]
     member this.``LongIdent.PInvoke.AsParameterType``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6392,7 +6284,7 @@ let rec f l =
             marker = "(*Mpinvokeparametertype*)",
             list = ["Boolean";"Int32"])
 
-    [<Test>]
+    [<Fact>]
     member this.``LongIdent.Record.AsField``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6405,7 +6297,7 @@ let rec f l =
             marker = "(*Mrecord*)",
             list = ["person"])   
 
-    [<Test>]
+    [<Fact>]
     member this.``LongIdent.DiscUnion.AsTypeParameter.DefInDiffNamespace``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6426,7 +6318,7 @@ let rec f l =
             marker = "(*Mtypeparameter1*)",
             list = ["Dog";"DuType"])
 
-    [<Test>]
+    [<Fact>]
     member this.``LongIdent.AnonymousFunction.AsTypeParameter.DefFromDiffNamespace``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6447,7 +6339,7 @@ let rec f l =
             marker = "(*Mtypeparameter2*)",
             list = ["Tag"])
 
-    [<Test>]
+    [<Fact>]
     member this.``LongIdent.UnitMeasure.AsTypeParameter.DefFromDiffNamespace``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6468,7 +6360,7 @@ let rec f l =
             marker = "(*Mtypeparameter3*)",
             list = [])
 
-    [<Test>]
+    [<Fact>]
     member this.``RedefinedIdentifier.DiffScope.InScope.Positive``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6480,7 +6372,7 @@ let rec f l =
             marker = "(*MarkerShowLastOneWhenInScope*)",
             list = ["DayOfWeek"])  
 
-    [<Test>]
+    [<Fact>]
     member this.``RedefinedIdentifier.DiffScope.InScope.Negative``() =
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """
@@ -6492,7 +6384,7 @@ let rec f l =
             marker = "(*MarkerShowLastOneWhenInScope*)",
             list = ["Chars"]) 
 
-    [<Test>]
+    [<Fact>]
     member this.``RedefinedIdentifier.DiffScope.OutScope.Positive``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6504,7 +6396,7 @@ let rec f l =
             marker = "(*MarkerShowLastOneWhenOutscoped*)",
             list = ["Chars"])
 
-    [<Test>]
+    [<Fact>]
     member this.``ObjInstance.ExtensionMethods.WithoutDef.Negative``() =
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """
@@ -6514,7 +6406,7 @@ let rec f l =
             marker = "(*MWithoutReference*)",
             list = ["NextDice";"DiceValue"])
 
-    [<Test>]
+    [<Fact>]
     member this.``Class.DefInDiffNameSpace``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6524,14 +6416,14 @@ let rec f l =
                     type ObsoleteType() = 
                         member this.TestMethod() = 10        
                     [<CompilerMessage("This construct is for ML compatibility.", 62, IsHidden=true)>]
-                    type CompilerMesageType() = 
+                    type CompilerMessageType() = 
                         member this.TestMethod() = 10
                     type TestType() = 
                         member this.TestMethod() = 100
                         [<System.ObsoleteAttribute>]
                         member this.ObsoleteMethod() = 100
                         [<CompilerMessage("This construct is for ML compatibility.", 62, IsHidden=true)>]
-                        member this.CompilerMesageMethod() = 100
+                        member this.CompilerMessageMethod() = 100
                         [<CompilerMessage("This construct is hidden", 1023, IsHidden=true)>]
                         member this.HiddenMethod() = 10
                         [<CompilerMessage("This construct is not hidden", 1023, IsHidden=false)>]
@@ -6546,7 +6438,7 @@ let rec f l =
             marker = "(*MarkerType*)" ,
             list = ["TestType"])
 
-    [<Test>]
+    [<Fact>]
     member this.``Class.DefInDiffNameSpace.WithAttributes.Negative``() = 
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """
@@ -6556,14 +6448,14 @@ let rec f l =
                     type ObsoleteType() = 
                         member this.TestMethod() = 10        
                     [<CompilerMessage("This construct is for ML compatibility.", 62, IsHidden=true)>]
-                    type CompilerMesageType() = 
+                    type CompilerMessageType() = 
                         member this.TestMethod() = 10
                     type TestType() = 
                         member this.TestMethod() = 100
                         [<System.ObsoleteAttribute>]
                         member this.ObsoleteMethod() = 100
                         [<CompilerMessage("This construct is for ML compatibility.", 62, IsHidden=true)>]
-                        member this.CompilerMesageMethod() = 100
+                        member this.CompilerMessageMethod() = 100
                         [<CompilerMessage("This construct is hidden", 1023, IsHidden=true)>]
                         member this.HiddenMethod() = 10
                         [<CompilerMessage("This construct is not hidden", 1023, IsHidden=false)>]
@@ -6576,9 +6468,9 @@ let rec f l =
                     let b = (new NS1.MyModule.TestType())(*MarkerMethod*)
                 """,
             marker = "(*MarkerType*)",
-            list = ["ObsoleteType";"CompilerMesageType"])
+            list = ["ObsoleteType";"CompilerMessageType"])
 
-    [<Test>]
+    [<Fact>]
     member this.``Method.DefInDiffNameSpace``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6588,14 +6480,14 @@ let rec f l =
                     type ObsoleteType() = 
                         member this.TestMethod() = 10        
                     [<CompilerMessage("This construct is for ML compatibility.", 62, IsHidden=true)>]
-                    type CompilerMesageType() = 
+                    type CompilerMessageType() = 
                         member this.TestMethod() = 10
                     type TestType() = 
                         member this.TestMethod() = 100
                         [<System.ObsoleteAttribute>]
                         member this.ObsoleteMethod() = 100
                         [<CompilerMessage("This construct is for ML compatibility.", 62, IsHidden=true)>]
-                        member this.CompilerMesageMethod() = 100
+                        member this.CompilerMessageMethod() = 100
                         [<CompilerMessage("This construct is hidden", 1023, IsHidden=true)>]
                         member this.HiddenMethod() = 10
                         [<CompilerMessage("This construct is not hidden", 1023, IsHidden=false)>]
@@ -6611,7 +6503,7 @@ let rec f l =
             marker = "(*MarkerMethod*)",
             list = ["TestMethod"; "VisibleMethod";"VisibleMethod2"])
 
-    [<Test>]
+    [<Fact>]
     member this.``Method.DefInDiffNameSpace.WithAttributes.Negative``() =
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """
@@ -6621,14 +6513,14 @@ let rec f l =
                     type ObsoleteType() = 
                         member this.TestMethod() = 10        
                     [<CompilerMessage("This construct is for ML compatibility.", 62, IsHidden=true)>]
-                    type CompilerMesageType() = 
+                    type CompilerMessageType() = 
                         member this.TestMethod() = 10
                     type TestType() = 
                         member this.TestMethod() = 100
                         [<System.ObsoleteAttribute>]
                         member this.ObsoleteMethod() = 100
                         [<CompilerMessage("This construct is for ML compatibility.", 62, IsHidden=true)>]
-                        member this.CompilerMesageMethod() = 100
+                        member this.CompilerMessageMethod() = 100
                         [<CompilerMessage("This construct is hidden", 1023, IsHidden=true)>]
                         member this.HiddenMethod() = 10
                         [<CompilerMessage("This construct is not hidden", 1023, IsHidden=false)>]
@@ -6640,9 +6532,9 @@ let rec f l =
                 type x = NS1.MyModule(*MarkerType*)
                 let b = (new NS1.MyModule.TestType())(*MarkerMethod*)""",
             marker = "(*MarkerMethod*)",
-            list = ["ObsoleteMethod";"CompilerMesageMethod";"HiddenMethod"])
+            list = ["ObsoleteMethod";"CompilerMessageMethod";"HiddenMethod"])
 
-    [<Test>]
+    [<Fact>]
     member this.``ObjInstance.ExtensionMethods.WithDef.Positive``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6657,7 +6549,7 @@ let rec f l =
             marker = "(*MWithReference*)",
             list = ["NextDice";"DiceValue"]) 
 
-    [<Test>]
+    [<Fact>]
     member this.``Keywords.If``() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """
@@ -6665,13 +6557,13 @@ let rec f l =
                     () """,
             marker ="(*MarkerKeywordIf*)")
 
-    [<Test>]
+    [<Fact>]
     member this.``Keywords.Let``() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """let(*MarkerKeywordLet*) a = 1""",
             marker = "(*MarkerKeywordLet*)")
 
-    [<Test>]
+    [<Fact>]
     member this.``Keywords.Match``() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """
@@ -6679,31 +6571,31 @@ let rec f l =
                     | pattern -> exp""",
             marker = "(*MarkerKeywordMatch*)")
 
-    [<Test>]
+    [<Fact>]
     member this.``MacroDirectives.nowarn``() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """#nowarn(*MarkerPreProcessNowarn*)""",
             marker = "(*MarkerPreProcessNowarn*)")
 
-    [<Test>]
+    [<Fact>]
     member this.``MacroDirectives.light``() = 
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """#light(*MarkerPreProcessLight*)""",
             marker = "(*MarkerPreProcessLight*)") 
 
-    [<Test>]
+    [<Fact>]
     member this.``MacroDirectives.define``() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """#define(*MarkerPreProcessDefine*)""",
             marker = "(*MarkerPreProcessDefine*)")
 
-    [<Test>]
+    [<Fact>]
     member this.``MacroDirectives.PreProcessDefine``() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """#define Foo(*MarkerPreProcessDefineConst*)""",
             marker = "(*MarkerPreProcessDefineConst*)")
 
-    [<Test>]
+    [<Fact>]
     member this.``Identifier.InClass.WithoutDef``() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """
@@ -6711,7 +6603,7 @@ let rec f l =
                     val mutable x(*MarkerValue*) : string""",
             marker = "(*MarkerValue*)")
 
-    [<Test>]
+    [<Fact>]
     member this.``Identifier.InDiscUnion.WithoutDef``() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """
@@ -6719,31 +6611,31 @@ let rec f l =
                     |Tag(*MarkerDU*) of int""",
             marker = "(*MarkerDU*)") 
 
-    [<Test>]
+    [<Fact>]
     member this.``Identifier.InRecord.WithoutDef``() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """type Rec =  { X(*MarkerRec*) : int }""",
             marker = "(*MarkerRec*)")
             
-    [<Test>]
+    [<Fact>]
     member this.``Identifier.AsNamespace``() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """namespace Namespace1(*MarkerNamespace*)""",
             marker = "(*MarkerNamespace*)")
 
-    [<Test>]
+    [<Fact>]
     member this.``Identifier.AsModule``() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """module Module1(*MarkerModule*)""",
             marker = "(*MarkerModule*)")
 
-    [<Test>]
-    member this.``Identifier.WithouDef``() = 
+    [<Fact>]
+    member this.``Identifier.WithoutDef``() = 
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """ abcd(*MarkerUndefinedIdentifier*)  """,
             marker = "(*MarkerUndefinedIdentifier*)") 
 
-    [<Test>]
+    [<Fact>]
     member this.``Identifier.InMatch.UnderScore``() = 
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """
@@ -6754,7 +6646,7 @@ let rec f l =
                     |_(*MarkerIdentifierIsUnderScore*) -> 0 """,
             marker = "(*MarkerIdentifierIsUnderScore*)") 
 
-    [<Test>]
+    [<Fact>]
     member this.MemberSelf() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """
@@ -6762,7 +6654,7 @@ let rec f l =
                     member this(*Mmemberself*)""",
             marker = "(*Mmemberself*)")   
 
-    [<Test>]
+    [<Fact>]
     member this.``Expression.InComment``() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """
@@ -6770,14 +6662,14 @@ let rec f l =
                 //open IO = System(*Mcomment*)""",
             marker = "(*Mcomment*)")
 
-    [<Test>]
+    [<Fact>]
     member this.``Expression.InString``() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """let x = "System.Console(*Minstring*)" """,
             marker = "(*Minstring*)")
 
     // Regression test for 1067 -- Completion lists don't work after generic arguments  - for generic functions and for static members of generic types
-    [<Test>]
+    [<Fact>]
     member this.``Regression1067.InstanceOfGenericType``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6800,8 +6692,8 @@ let rec f l =
             marker = "(*Marker2*)",
             list = ["P"; "Q"]) 
 
-    [<Test>]
-    member this.``Regression1067.ClassUsingGeniricTypeAsAttribute``() =
+    [<Fact>]
+    member this.``Regression1067.ClassUsingGenericTypeAsAttribute``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 type GT<'a> =
@@ -6823,7 +6715,7 @@ let rec f l =
             marker = "(*Marker4*)",
             list = ["Assembly"; "FullName"; "GUID"])
 
-    [<Test>] 
+    [<Fact>] 
     member this.NoInfiniteLoopInProperties() =
         let fileContents = """
                 open System.Windows.Forms
@@ -6837,7 +6729,7 @@ let rec f l =
         AssertCompListDoesNotContainAny(completions, ["Nodes"])
     
     // Regression for bug 3225 -- Invalid intellisense when inside of a quotation
-    [<Test>]
+    [<Fact>]
     member this.``Regression3225.Identifier.InQuotation``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6847,11 +6739,11 @@ let rec f l =
            list = ["Chars"; "Length"])
 
     // Regression for bug 1911 -- No completion list of expr in match statement
-    [<Test>]
+    [<Fact>]
     member this.``Regression1911.Expression.InMatchStatement``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
-                type Thingey = { A : bool; B : int }
+                type Thingy = { A : bool; B : int }
 
                 let test = match (List.head [{A = true; B = 0}; {A = false; B = 1}])(*Marker*)""",
             marker = "(*Marker*)",
@@ -6860,8 +6752,7 @@ let rec f l =
           
     // Bug 3627 - Completion lists should be filtered in many contexts
     // This blocks six testcases and is slated for Dev11, so these will be disabled for some time.
-    [<Test>]
-    [<Ignore("Bug 3627 - Completion lists should be filtered in many contexts")>] 
+    [<Fact(Skip = "Bug 3627 - Completion lists should be filtered in many contexts")>] 
     member this.AfterTypeParameter() =
         let fileContents = """
             type Type1 = Tag of string(*MarkerDUTypeParam*)
@@ -6890,41 +6781,40 @@ let rec f l =
         let completions = DotCompletionAtStartOfMarker file "(*MarkerParamTypeof*)"
         AssertCompListIsEmpty(completions)
 
-    [<Test>]
-    member this.``Identifier.AsClassName.Uninitial``() =
+    [<Fact>]
+    member this.``Identifier.AsClassName.InInitial``() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """
                 type f1(*MarkerType*) = 
                     val field: int""",
             marker = "(*MarkerType*)")
 
-    [<Test>]
-    member this.``Identifier.AsFunctionName.UnInitial``() =
+    [<Fact>]
+    member this.``Identifier.AsFunctionName.InInitial``() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
-            fileContents = """let f2(*MarkerFunctionIndentifier*) x = x+1 """,
-            marker = "(*MarkerFunctionIndentifier*)")
+            fileContents = """let f2(*MarkerFunctionIdentifier*) x = x+1 """,
+            marker = "(*MarkerFunctionIdentifier*)")
 
-    [<Test>]
-    member this.``Identifier.AsParameter.UnInitial``() =
+    [<Fact>]
+    member this.``Identifier.AsParameter.InInitial``() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """ let f3 x(*MarkerParam*) = x+1""",
             marker = "(*MarkerParam*)")
 
-    [<Test>]
-    member this.``Identifier.AsFunctionName.UsingfunKeyword``() =
+    [<Fact>]
+    member this.``Identifier.AsFunctionName.UsingFunKeyword``() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """fun f4(*MarkerFunctionDeclaration*)  x -> x+1""",
             marker = "(*MarkerFunctionDeclaration*)")
 
-    [<Test>]
+    [<Fact>]
     member public this.``Identifier.EqualityConstraint.Bug65730``() =  
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """let g3<'a when 'a : equality> (x:'a) = x(*Marker*)""",
             marker = "(*Marker*)",
             list = ["Equals"; "GetHashCode"]) // equality constraint should make these show up
  
-    [<Test>]
-    [<Ignore("this no longer works, but I'm unclear why - now you get all the top-level completions")>]
+    [<Fact(Skip = "this no longer works, but I'm unclear why - now you get all the top-level completions")>]
     member this.``Identifier.InFunctionMatch``() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """
@@ -6933,7 +6823,7 @@ let rec f l =
                     | 2 -> printfn "2" """,
             marker = "(*MarkerFunctionMatch*)")
 
-    [<Test>]
+    [<Fact>]
     member this.``Identifier.This``() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """
@@ -6941,7 +6831,7 @@ let rec f l =
                     member this(*MarkerMemberThis*).Foo () = 3""",
             marker = "(*MarkerMemberThis*)")
 
-    [<Test>]
+    [<Fact>]
     member this.``Identifier.AsProperty``() =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """
@@ -6949,7 +6839,7 @@ let rec f l =
                     member this.Foo(*MarkerMemberThisProperty*) = 1""",
             marker = "(*MarkerMemberThisProperty*)")
 
-    [<Test>]
+    [<Fact>]
     member this.``ExpressionPropertyAssignment.Bug217051``() =  
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6960,7 +6850,7 @@ let rec f l =
             marker = "(*Marker*)",
             list = ["Prop"])
 
-    [<Test>]
+    [<Fact>]
     member this.``ExpressionProperty.Bug234687``() =  
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6971,8 +6861,7 @@ let rec f l =
             marker = "(*Marker*)",
             list = ["CodeBase"]) // expect instance properties of Assembly, not static Assembly methods
 
-    [<Test>]
-    [<Ignore("Bug 3627 - Completion lists should be filtered in many contexts")>] 
+    [<Fact(Skip = "Bug 3627 - Completion lists should be filtered in many contexts")>] 
     member this.NotShowAttribute() =
         let fileContents = """
                 open System
@@ -6995,8 +6884,7 @@ let rec f l =
         let completions = DotCompletionAtStartOfMarker file "(*Mattribute2*)"
         AssertCompListIsEmpty(completions)
         
-    [<Test>]
-    [<Ignore("Bug 3627 - Completion lists should be filtered in many contexts")>] 
+    [<Fact(Skip = "Bug 3627 - Completion lists should be filtered in many contexts")>] 
     member this.NotShowPInvokeSignature() =
         let fileContents = """
                 //open System
@@ -7035,7 +6923,7 @@ let rec f l =
         let completions = DotCompletionAtStartOfMarker file "(*Mparameterlist*)"
         AssertCompListIsEmpty(completions)
 
-    [<Test>]
+    [<Fact>]
     member this.``Basic.Completion.UnfinishedLet``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -7046,8 +6934,7 @@ let rec f l =
             marker = "(*Marker*)",
             list = ["CompareTo"])
 
-    [<Test>]
-    [<Ignore("I don't understand why this test doesn't work, but the product works")>]
+    [<Fact(Skip = "I don't understand why this test doesn't work, but the product works")>]
     member this.``ShortFormSeqExpr.Bug229610``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -7061,7 +6948,7 @@ let rec f l =
             list = ["Value"])
 
     //Regression test for bug 69159 Fsharp: dot completion is mission for an array
-    [<Test>]
+    [<Fact>]
     member this.``Array.InitialUsing..``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """let x1 = [| 0.0 .. 0.1 .. 10.0 |](*Marker*)""",
@@ -7069,8 +6956,7 @@ let rec f l =
             list = ["Length";"Clone";"ToString"])
 
     //Regression test for bug 65740 Fsharp: dot completion is mission after a '#' statement
-    [<Test>]
-    [<Ignore("Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
+    [<Fact(Skip = "Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
     member this.``Identifier.In#Statement``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -7086,7 +6972,7 @@ let rec f l =
 
     //This test is about CompletionList which should be moved to completionList, it's too special to refactor.
     //Regression test for bug 72595 typing quickly yields wrong intellisense
-    [<Test>]
+    [<Fact>]
     member this.``BadCompletionAfterQuicklyTyping``() =        
         let code = [ "        " ]
         let (_, _, file) = this.CreateSingleFileProject(code)
@@ -7105,7 +6991,7 @@ let rec f l =
         AssertCompListContainsAll(completions, ["Length"])
         AssertCompListDoesNotContainAny(completions, ["AbstractClassAttribute"]) 
 
-    [<Test>]
+    [<Fact>]
     member this.``SelfParameter.InDoKeywordScope``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -7115,7 +7001,7 @@ let rec f l =
             marker = "(*Marker*)",
             list = ["ToString"])
 
-    [<Test>]
+    [<Fact>]
     member this.``SelfParameter.InDoKeywordScope.Negative``() =
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """
@@ -7125,7 +7011,7 @@ let rec f l =
             marker = "(*Marker*)",
             list = ["Value";"Contents"])
 
-    [<Test>]
+    [<Fact>]
     member this.``ReOpenNameSpace.StaticProperties``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -7141,7 +7027,7 @@ let rec f l =
             marker = "(*Marker1*)",
             list = ["Prop";"Event"])
 
-    [<Test>]
+    [<Fact>]
     member this.``ReOpenNameSpace.EnumTypes``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -7158,7 +7044,7 @@ let rec f l =
             marker = "(*Marker2*)",
             list = ["Foo"])
 
-    [<Test>]
+    [<Fact>]
     member this.``ReOpenNameSpace.SystemLibrary``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -7171,7 +7057,7 @@ let rec f l =
             marker = "(*Marker3*)",
             list = ["Open"])
 
-    [<Test>]
+    [<Fact>]
     member this.``ReOpenNameSpace.FsharpQuotation``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -7183,7 +7069,7 @@ let rec f l =
             marker = "(*Marker4*)",
             list = ["Value"])
 
-    [<Test>]
+    [<Fact>]
     member this.``ReOpenNameSpace.MailboxProcessor``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -7195,7 +7081,7 @@ let rec f l =
             marker = "(*Marker6*)",
             list = ["Start"])
 
-    [<Test>]
+    [<Fact>]
     member this.``ReopenNamespace.Module``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -7209,7 +7095,7 @@ let rec f l =
             marker = "(*Marker7*)",
             list = ["foo"])
 
-    [<Test>]
+    [<Fact>]
     member this.``Expression.InLetScope``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -7224,7 +7110,7 @@ let rec f l =
             marker = "(*Marker1*)",
             list = ["IsFixedSize";"Initialize"])
 
-    [<Test>]
+    [<Fact>]
     member this.``Expression.InFunScope.FirstParameter``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -7238,7 +7124,7 @@ let rec f l =
             marker = "(*Marker2*)",
             list = ["CompareTo"])
 
-    [<Test>]
+    [<Fact>]
     member this.``Expression.InFunScope.SecParameter``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -7253,7 +7139,7 @@ let rec f l =
             marker = "(*Marker3*)",
             list = ["GetType";"ToString"])
 
-    [<Test>]
+    [<Fact>]
     member this.``Expression.InMatchWhenClause``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -7269,7 +7155,7 @@ let rec f l =
             list = ["CompareTo";"ToString"])
 
     //Regression test for bug 3223 in PS: No intellisense at point
-    [<Test>]
+    [<Fact>]
     member this.``Identifier.InActivePattern.Positive``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -7288,7 +7174,7 @@ let rec f l =
             marker = "(*Marker*)",
             list = ["Attributes";"CallingConvention";"ContainsGenericParameters"])
 
-    [<Test>]
+    [<Fact>]
     member this.``Identifier.InActivePattern.Negative``() =
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """
@@ -7308,7 +7194,7 @@ let rec f l =
             list = ["Head";"ToInt"])
 
    //Regression test of bug 2296:No completion lists on the direct results of a method call
-    [<Test>] 
+    [<Fact>] 
     member this.``Regression2296.DirectResultsOfMethodCall``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -7327,7 +7213,7 @@ let rec f l =
             marker = "(*Marker1*)",
             list = ["Attributes";"CallingConvention";"IsFamily"])
 
-    [<Test>]
+    [<Fact>]
     member this.``Regression2296.DirectResultsOfMethodCall.Negative``() = 
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """
@@ -7346,7 +7232,7 @@ let rec f l =
             marker = "(*Marker1*)",
             list = ["value__"])                     
 
-    [<Test>]
+    [<Fact>]
     member this.``Regression2296.Identifier.String.Reflection01``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -7369,7 +7255,7 @@ let rec f l =
             marker = "(*Marker2*)",
             list = ["CompareTo";"GetType";"ToString"])  
 
-    [<Test>]
+    [<Fact>]
     member this.``Regression2296.Identifier.String.Reflection01.Negative``() = 
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """
@@ -7392,7 +7278,7 @@ let rec f l =
             marker = "(*Marker2*)",
             list = ["value__"])  
 
-    [<Test>]
+    [<Fact>]
     member this.``Regression2296.Identifier.String.Reflection02``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -7416,7 +7302,7 @@ let rec f l =
             marker = "(*Marker3*)",
             list = ["CompareTo";"GetType";"ToString"]) 
 
-    [<Test>]
+    [<Fact>]
     member this.``Regression2296.Identifier.String.Reflection02.Negative``() = 
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """
@@ -7437,7 +7323,7 @@ let rec f l =
             marker = "(*Marker3*)",
             list = ["value__"])  
 
-    [<Test>]
+    [<Fact>]
     member this.``Regression2296.System.StaticMethod.Reflection``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -7462,7 +7348,7 @@ let rec f l =
             marker = "(*Marker4*)",
             list = ["CompareTo";"GetType";"ToString"]) 
 
-    [<Test>]
+    [<Fact>]
     member this.``Regression2296.System.StaticMethod.Reflection.Negative``() =
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """
@@ -7487,7 +7373,7 @@ let rec f l =
             marker = "(*Marker4*)",
             list = ["value__"])    
 
-    [<Test>]
+    [<Fact>]
     member this.``Seq.NearTheEndOfFile``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -7501,8 +7387,7 @@ let rec f l =
             list = ["cache";"find"])
 
     //Regression test of bug 3879: intellisense glitch for computation expression
-    [<Test>]
-    [<Ignore("This is still fail")>]
+    [<Fact(Skip = "This is still fail")>]
     member this.``ComputationExpression.WithClosingBrace``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -7520,8 +7405,7 @@ let rec f l =
             marker = "(*Marker*)",
             list = ["AsyncGetResponse";"GetResponseAsync";"ToString"])
 
-    [<Test>]
-    [<Ignore("This is still fail")>]
+    [<Fact(Skip = "This is still fail")>]
     member this.``ComputationExpression.WithoutClosingBrace``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -7539,9 +7423,9 @@ let rec f l =
             marker = "(*Marker*)",
             list = ["AsyncGetResponse";"GetResponseAsync";"ToString"])  
 
-    //Regression Test of 4405:intelisense has wrong type for identifier, using most recently bound of same name rather than the one in scope?
-    [<Test>]
-    member this.``Regression4405.Identifier.ReBinded``() =
+    //Regression Test of 4405:intellisense has wrong type for identifier, using most recently bound of same name rather than the one in scope?
+    [<Fact>]
+    member this.``Regression4405.Identifier.ReBound``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 let f x = 
@@ -7552,14 +7436,14 @@ let rec f l =
             list = ["Chars";"StartsWith"])
 
     //Regression test for FSharp1.0:4702
-    [<Test>]
+    [<Fact>]
     member this.``Regression4702.SystemWord``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = "System(*Marker*)",
             marker = "(*Marker*)",
             list = ["Console";"Byte";"ArgumentException"])
 
-    [<Test>]
+    [<Fact>]
     member this.``TypeAbbreviation.Positive``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -7569,7 +7453,7 @@ let rec f l =
             marker = "(*Marker1*)",
             list = ["int16";"int32";"int64"])
 
-    [<Test>]
+    [<Fact>]
     member this.``TypeAbbreviation.Negative``() =
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """
@@ -7580,7 +7464,7 @@ let rec f l =
             list = ["Int16";"Int32";"Int64"])    
 
     //Regression test of bug 3754:tupe forwarder bug? intellisense bug?
-    [<Test>]
+    [<Fact>]
     member this.``Regression3754.TypeOfListForward.Positive``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -7604,7 +7488,7 @@ let rec f l =
             marker = "(*Marker*)",
             list = ["append";"choose";"isEmpty"])
 
-    [<Test>]
+    [<Fact>]
     member this.``Regression3754.TypeOfListForward.Negative``() =
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """
@@ -7628,8 +7512,7 @@ let rec f l =
             marker = "Marker",
             list = ["<Note>"])
 
-    [<Test>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member this.``NonApplicableExtensionMembersDoNotAppear.Bug40379``() =
         let code =
                                     [ "open System.Xml.Linq"
@@ -7657,8 +7540,8 @@ let rec f l =
         let completions = AutoCompleteAtCursor file
         AssertCompListContainsAll(completions, ["Ancestors"; "AncestorsAndSelf"])
 
-    [<Test>]
-    member this.``Visibility.InternalMethods.DefInSameAssambly``() =
+    [<Fact>]
+    member this.``Visibility.InternalMethods.DefInSameAssembly``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 module CodeAccessibility
@@ -7677,8 +7560,7 @@ let rec f l =
             marker = "(*MarkerSameAssemb*)",
             list = ["fieldInternal";"MethodInternal"])
 
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Test>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member this.``QueryExpression.DotCompletionSmokeTest1``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -7689,8 +7571,7 @@ let rec f l =
             list = ["Chars";"Length"],
             addtlRefAssy=standard40AssemblyRefs)
 
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Test>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member this.``QueryExpression.DotCompletionSmokeTest2``() = 
            this.VerifyDotCompListContainAllAtStartOfMarker(
               fileContents = """
@@ -7700,8 +7581,7 @@ let rec f l =
               list = ["Chars"; "Length"],
               addtlRefAssy=standard40AssemblyRefs )
 
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Test>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member this.``QueryExpression.DotCompletionSmokeTest0``() = 
            this.VerifyDotCompListContainAllAtStartOfMarker(
               fileContents = """
@@ -7712,8 +7592,7 @@ let rec f l =
               addtlRefAssy=standard40AssemblyRefs )
 
 
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Test>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member this.``QueryExpression.DotCompletionSmokeTest3``() = 
            this.VerifyDotCompListContainAllAtStartOfMarker(
               fileContents = """
@@ -7724,8 +7603,7 @@ let rec f l =
               addtlRefAssy=standard40AssemblyRefs )
 
 
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Test>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member this.``QueryExpression.DotCompletionSystematic1``() = 
       for customOperation in ["select";"sortBy";"where"] do
         let fileContentsList = 
@@ -7783,8 +7661,7 @@ let rec f l =
                 list = ["Chars";"Length"],
                 addtlRefAssy=standard40AssemblyRefs)
 
-    [<Test>] 
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``QueryExpression.InsideJoin.Bug204147``() =        
            this.VerifyDotCompListContainAllAtStartOfMarker(
               fileContents = """
@@ -7842,9 +7719,7 @@ let rec f l =
         let completions = DotCompletionAtStartOfMarker file2 marker
         AssertCompListContainsAll(completions, list) 
 
-    [<Test>]
-    [<Category("Query")>]
-    [<Ignore("196230")>]
+    [<Fact(Skip = "196230")>]
     // Intellisense still appears on arguments when the operator is used in error 
     member public this.``Query.HasErrors.Bug196230``() =
         this.AssertDotCompletionListInQuery(
@@ -7862,10 +7737,8 @@ let rec f l =
               marker = "(*Marker*)",
               list = ["ProductID";"ProductName"] )
 
-    [<Test>]
-    [<Category("Query")>]
     // Intellisense still appears on arguments when the operator is used in error 
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Query.HasErrors2``() =
         this.AssertDotCompletionListInQuery(
               fileContents = """
@@ -7879,9 +7752,7 @@ let rec f l =
               marker = "(*Marker*)",
               list = ["ProductID";"ProductName"] )
 
-    [<Test>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Category("Query")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     // Shadowed variables have correct Intellisense
     member public this.``Query.ShadowedVariables``() =
         this.AssertDotCompletionListInQuery(
@@ -7897,9 +7768,7 @@ let rec f l =
               marker = "(*Marker*)",
               list = ["Category";"ProductName"] )
 
-    [<Test>]
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Category("Query")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     // Intellisense works correctly in a nested query
     member public this.``Query.InNestedQuery``() =
         let fileContents = """
@@ -7917,9 +7786,7 @@ let rec f l =
         this.VerifyDotCompListContainAllAtStartOfMarker(fileContents, "(*Marker2*)", 
             ["Equals";"CompareTo"], queryAssemblyRefs )
 
-    [<Ignore("Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    [<Test>]
-    [<Category("Query")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     // Intellisense works correctly in a nested expression within a lamda
     member public this.``Query.NestedExpressionWithinLamda``() =
         let fileContents = """
@@ -7935,7 +7802,7 @@ let rec f l =
         this.VerifyDotCompListContainAllAtStartOfMarker(fileContents, "(*Marker*)", 
             ["Chars";"Length"], queryAssemblyRefs )
 
-    [<Test>]
+    [<Fact>]
     member this.``Verify no completion on dot after module definition``() = 
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """
@@ -7945,7 +7812,7 @@ let rec f l =
                 let bar = 1""",
             marker = "(*Marker*)")
 
-    [<Test>]
+    [<Fact>]
     member this.``Verify no completion after module definition``() = 
         this.VerifyCtrlSpaceCompListIsEmptyAtEndOfMarker(
             fileContents = """
@@ -7955,8 +7822,8 @@ let rec f l =
                 let bar = 1""",
             marker = "module BasicTest ")
 
-    [<Test>]
-    member this.``Verify no completion in hash derictives``() =
+    [<Fact>]
+    member this.``Verify no completion in hash directives``() =
         this.VerifyCtrlSpaceCompListIsEmptyAtEndOfMarker(
             fileContents = """
                 #r (*Marker*)
@@ -7965,7 +7832,7 @@ let rec f l =
                 let bar = 1""",
             marker = "(*Marker*)")
 
-    [<Test;Category("Repro")>]
+    [<Fact>]
     member public this.``ExpressionDotting.Regression.Bug3709``() = 
         this.VerifyCtrlSpaceListContainAllAtStartOfMarker(
             fileContents = """
@@ -7975,7 +7842,6 @@ let rec f l =
             list = ["EndsWith"])  
 
 // Context project system
-[<TestFixture>] 
 type UsingProjectSystem() = 
     inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)
 

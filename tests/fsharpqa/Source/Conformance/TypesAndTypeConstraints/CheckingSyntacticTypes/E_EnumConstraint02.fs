@@ -1,5 +1,5 @@
 // #Regression #Conformance #TypeConstraints 
-// Verify error when enum constraint is not satisified
+// Verify error when enum constraint is not satisfied
 //<Expects id="FS0001" status="error">The type 'string' is not a CLI enum type$</Expects>
 
 let isEnum (x : 'a when 'a : enum<'b>) = ()

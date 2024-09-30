@@ -134,7 +134,7 @@ module ConvertToSealedViaOpImplicit =
         static member M1(C:C) = 1
     let x = C.M1(2)
 
-module ConvertNoOverloadin =
+module ConvertNoOverloading =
     type C() = 
         static member M1(x:int64) = 1
     let x = C.M1(2)
@@ -455,7 +455,7 @@ module TestInferObjExprTypeParamFromKNownType =
 
 // These tests are activate for the case where warnings are on
 #if NEGATIVE
-module TestAcessibilityOfOpImplicit =
+module TestAccessibilityOfOpImplicit =
     [<Sealed>]
     type C() = 
         static member private op_Implicit(x:int) = C()

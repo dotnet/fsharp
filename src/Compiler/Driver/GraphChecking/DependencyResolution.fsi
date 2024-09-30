@@ -26,7 +26,7 @@ val processOpenPath: trie: TrieNode -> path: LongIdentifier -> state: FileConten
 /// </para>
 /// <para>
 /// The file order is used by the resolution algorithm to remove edges not allowed by the language.
-/// Ie. if file B preceeds file A, the resulting graph will not contain edge B -> A.
+/// Ie. if file B precedes file A, the resulting graph will not contain edge B -> A.
 /// Hence this function cannot, as it stands, be used to help create a "reasonable" file ordering for an unordered set of files.
 /// </para>
 /// </remarks>

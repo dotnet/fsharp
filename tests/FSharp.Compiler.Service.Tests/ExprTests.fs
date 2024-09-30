@@ -3,18 +3,14 @@
 open Xunit
 open FsUnit
 open System
-open System.IO
 open System.Text
 open System.Collections.Generic
-open System.Diagnostics
-open System.Threading
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.IO
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Symbols.FSharpExprPatterns
-open TestFramework
 
 type FSharpCore =
     | FC45
@@ -29,54 +25,13 @@ type FSharpCore =
         | FC47 -> "FSharp.Core 4.7"
         | FC50 -> "FSharp.Core 5.0"
 
+[<Literal>]
+let dirName = "ExprTests"
 
 [<AutoOpen>]
 module internal Utils =
-    let getTempPath() =
-        Path.Combine(Path.GetTempPath(), "ExprTests")
 
-    /// If it doesn't exists, create a folder 'ExprTests' in local user's %TEMP% folder
-    let createTempDir() =
-        let tempPath = getTempPath()
-        do
-            if Directory.Exists tempPath then ()
-            else Directory.CreateDirectory tempPath |> ignore
-
-    /// Returns the file name part of a temp file name created with tryCreateTemporaryFileName ()
-    /// and an added process id and thread id to ensure uniqueness between threads.
-    let getTempFileName() =
-        let tempFileName = tryCreateTemporaryFileName ()
-        try
-            let tempFile, tempExt = Path.GetFileNameWithoutExtension tempFileName, Path.GetExtension tempFileName
-            let procId, threadId = Process.GetCurrentProcess().Id, Thread.CurrentThread.ManagedThreadId
-            String.concat "" [tempFile; "_"; string procId; "_"; string threadId; tempExt]  // ext includes dot
-        finally
-            try
-                FileSystem.FileDeleteShim tempFileName
-            with _ -> ()
-
-    /// Clean up after a test is run. If you need to inspect the create *.fs files, change this function to do nothing, or just break here.
-    let cleanupTempFiles files =
-        { new IDisposable with
-            member _.Dispose() =
-                for fileName in files do
-                    try
-                        // cleanup: only the source file is written to the temp dir.
-                        FileSystem.FileDeleteShim fileName
-                    with _ -> ()
-
-                try
-                    // remove the dir when empty
-                    let tempPath = getTempPath()
-                    if Directory.GetFiles tempPath |> Array.isEmpty then
-                        Directory.Delete tempPath
-                with _ -> () }
-
-    /// Given just a file name, returns it with changed extension located in %TEMP%\ExprTests
-    let getTempFilePathChangeExt tmp ext =
-        Path.Combine(getTempPath(), Path.ChangeExtension(tmp, ext))
-
-    // This behaves slightly differently on Mono versions, 'null' is printed somethimes, 'None' other times
+    // This behaves slightly differently on Mono versions, 'null' is printed sometimes, 'None' other times
     // Presumably this is very small differences in Mono reflection causing F# printing to change behaviour
     // For now just disabling this test. See https://github.com/fsharp/FSharp.Compiler.Service/pull/766
     let filterHack l =
@@ -163,8 +118,8 @@ module internal Utils =
         | [t] :: a ->
             "member " + t.CompiledName + "." + o.Signature.Name + printCurriedParams a + " = " + printExpr 10 o.Body
         | _ -> failwith "wrong this argument in object expression override"
-    and printIimpls iis = String.concat ";" (List.map printImlementation iis)
-    and printImlementation (i, ors) = "interface " + printTy i + " with " + printOverrides ors
+    and printIimpls iis = String.concat ";" (List.map printImplementation iis)
+    and printImplementation (i, ors) = "interface " + printTy i + " with " + printOverrides ors
 
     let rec printFSharpDecls prefix decls =
         seq {
@@ -332,34 +287,18 @@ module internal Utils =
         | DebugPoint(_dp, innerExpr) -> collectMembers innerExpr
         | _ -> failwith (sprintf "unrecognized %+A" e)
 
-    let rec printMembersOfDeclatations ds =
+    let rec printMembersOfDeclarations ds =
         seq {
             for d in ds do
             match d with
             | FSharpImplementationFileDeclaration.Entity(_,ds) ->
-                yield! printMembersOfDeclatations ds
+                yield! printMembersOfDeclarations ds
             | FSharpImplementationFileDeclaration.MemberOrFunctionOrValue(v,vs,e) ->
                 yield printMemberSignature v
                 yield! collectMembers e |> Seq.map printMemberSignature
             | FSharpImplementationFileDeclaration.InitAction(e) ->
                 yield! collectMembers e |> Seq.map printMemberSignature
         }
-
-
-let createOptionsAux fileSources extraArgs =
-    let fileNames = fileSources |> List.map (fun _ -> Utils.getTempFileName())
-    let temp2 = Utils.getTempFileName()
-    let fileNames = fileNames |> List.map (fun temp1 -> Utils.getTempFilePathChangeExt temp1 ".fs")
-    let dllName = Utils.getTempFilePathChangeExt temp2 ".dll"
-    let projFileName = Utils.getTempFilePathChangeExt temp2 ".fsproj"
-
-    Utils.createTempDir()
-    for fileSource: string, fileName in List.zip fileSources fileNames do
-         FileSystem.OpenFileForWriteShim(fileName).Write(fileSource)
-    let args = [| yield! extraArgs; yield! mkProjectCommandLineArgs (dllName, []) |]
-    let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames |> List.toArray }
-
-    Utils.cleanupTempFiles (fileNames @ [dllName; projFileName]), options
 
 //---------------------------------------------------------------------------------------------------------
 // This project is a smoke test for a whole range of standard and obscure expressions
@@ -425,7 +364,7 @@ type ClassWithImplicitConstructor(compiledAsArg: int) =
     static member SM1() = compiledAsStaticField + compiledAsGenericStaticMethod compiledAsStaticField
     static member SM2() = compiledAsStaticMethod()
     //override _.ToString() = base.ToString() + string 999
-    member this.TestCallinToString() = this.ToString()
+    member this.TestCallingToString() = this.ToString()
 
 exception Error of int * int
 
@@ -465,10 +404,10 @@ type ClassWithEventsAndProperties() =
 let c = ClassWithEventsAndProperties()
 let v = c.InstanceProperty
 
-System.Console.WriteLine("777") // do a top-levl action
+System.Console.WriteLine("777") // do a top-level action
 
-let functionWithSubmsumption(x:obj)  =  x :?> string
-//let functionWithCoercion(x:string)  =  (x :> obj) :?> string |> functionWithSubmsumption |> functionWithSubmsumption
+let functionWithSubsumption(x:obj)  =  x :?> string
+//let functionWithCoercion(x:string)  =  (x :> obj) :?> string |> functionWithSubsumption |> functionWithSubsumption
 
 type MultiArgMethods(c:int,d:int) =
    member x.Method(a:int, b : int) = 1
@@ -653,7 +592,7 @@ let testMutableVar = mutableVar 1
 let testMutableConst = mutableConst ()
     """
 
-    let createOptionsWithArgs args = createOptionsAux [ fileSource1; fileSource2 ] args
+    let createOptionsWithArgs args = createProjectOptions dirName [ fileSource1; fileSource2 ] args
 
     let createOptions() = createOptionsWithArgs []
 
@@ -762,7 +701,7 @@ let ``Test Unoptimized Declarations Project1`` useTransparentCompiler =
          "member M2(__) (unitVar1) = __.compiledAsInstanceMethod(()) @ (56,21--56,47)";
          "member SM1(unitVar0) = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),compiledAsStaticField,let x: Microsoft.FSharp.Core.int = compiledAsStaticField in ClassWithImplicitConstructor.compiledAsGenericStaticMethod<Microsoft.FSharp.Core.int> (x)) @ (57,26--57,101)";
          "member SM2(unitVar0) = ClassWithImplicitConstructor.compiledAsStaticMethod (()) @ (58,26--58,50)";
-         "member TestCallinToString(this) (unitVar1) = this.ToString() @ (60,39--60,54)";
+         "member TestCallingToString(this) (unitVar1) = this.ToString() @ (60,40--60,55)";
          "type Error"; "let err = {Data0 = 3; Data1 = 4} @ (64,10--64,20)";
          "let matchOnException(err) = match (if err :? M.Error then $0 else $1) targets ... @ (66,33--66,36)";
          "let upwardForLoop(unitVar0) = let mutable a: Microsoft.FSharp.Core.int = 1 in (for-loop; a) @ (69,16--69,17)";
@@ -784,7 +723,7 @@ let ``Test Unoptimized Declarations Project1`` useTransparentCompiler =
          "let c = new ClassWithEventsAndProperties(()) @ (97,8--97,38)";
          "let v = M.c ().get_InstanceProperty(()) @ (98,8--98,26)";
          "do Console.WriteLine (\"777\")";
-         "let functionWithSubmsumption(x) = IntrinsicFunctions.UnboxGeneric<Microsoft.FSharp.Core.string> (x) @ (102,40--102,52)";
+         "let functionWithSubsumption(x) = IntrinsicFunctions.UnboxGeneric<Microsoft.FSharp.Core.string> (x) @ (102,39--102,51)";
          "type MultiArgMethods";
          "member .ctor(c,d) = (new Object(); ()) @ (105,5--105,20)";
          "member Method(x) (a,b) = 1 @ (106,37--106,38)";
@@ -849,12 +788,12 @@ let ``Test Unoptimized Declarations Project1`` useTransparentCompiler =
     printDeclarations None (List.ofSeq file1.Declarations)
       |> Seq.toList
       |> Utils.filterHack
-      |> shouldPairwiseEqual (Utils.filterHack expected)
+      |> shouldEqual (Utils.filterHack expected)
 
     printDeclarations None (List.ofSeq file2.Declarations)
       |> Seq.toList
       |> Utils.filterHack
-      |> shouldPairwiseEqual (Utils.filterHack expected2)
+      |> shouldEqual (Utils.filterHack expected2)
 
     ()
 
@@ -903,7 +842,7 @@ let ``Test Optimized Declarations Project1`` useTransparentCompiler =
          "member M2(__) (unitVar1) = __.compiledAsInstanceMethod(()) @ (56,21--56,47)";
          "member SM1(unitVar0) = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),compiledAsStaticField,ClassWithImplicitConstructor.compiledAsGenericStaticMethod<Microsoft.FSharp.Core.int> (compiledAsStaticField)) @ (57,26--57,101)";
          "member SM2(unitVar0) = ClassWithImplicitConstructor.compiledAsStaticMethod (()) @ (58,26--58,50)";
-         "member TestCallinToString(this) (unitVar1) = this.ToString() @ (60,39--60,54)";
+         "member TestCallingToString(this) (unitVar1) = this.ToString() @ (60,40--60,55)";
          "type Error"; "let err = {Data0 = 3; Data1 = 4} @ (64,10--64,20)";
          "let matchOnException(err) = match (if err :? M.Error then $0 else $1) targets ... @ (66,33--66,36)";
          "let upwardForLoop(unitVar0) = let mutable a: Microsoft.FSharp.Core.int = 1 in (for-loop; a) @ (69,16--69,17)";
@@ -925,7 +864,7 @@ let ``Test Optimized Declarations Project1`` useTransparentCompiler =
          "let c = new ClassWithEventsAndProperties(()) @ (97,8--97,38)";
          "let v = M.c ().get_InstanceProperty(()) @ (98,8--98,26)";
          "do Console.WriteLine (\"777\")";
-         "let functionWithSubmsumption(x) = IntrinsicFunctions.UnboxGeneric<Microsoft.FSharp.Core.string> (x) @ (102,40--102,52)";
+         "let functionWithSubsumption(x) = IntrinsicFunctions.UnboxGeneric<Microsoft.FSharp.Core.string> (x) @ (102,39--102,51)";
          "type MultiArgMethods";
          "member .ctor(c,d) = (new Object(); ()) @ (105,5--105,20)";
          "member Method(x) (a,b) = 1 @ (106,37--106,38)";
@@ -991,26 +930,26 @@ let ``Test Optimized Declarations Project1`` useTransparentCompiler =
     printDeclarations None (List.ofSeq file1.Declarations)
       |> Seq.toList
       |> Utils.filterHack
-      |> shouldPairwiseEqual (Utils.filterHack expected)
+      |> shouldEqual (Utils.filterHack expected)
 
     printDeclarations None (List.ofSeq file2.Declarations)
       |> Seq.toList
       |> Utils.filterHack
-      |> shouldPairwiseEqual (Utils.filterHack expected2)
+      |> shouldEqual (Utils.filterHack expected2)
 
     ()
 
 let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimized =
 
-    let tempFileName = Utils.getTempFileName()
-    let filePath = Utils.getTempFilePathChangeExt tempFileName ".fs"
-    let dllPath =Utils.getTempFilePathChangeExt tempFileName ".dll"
-    let projFilePath = Utils.getTempFilePathChangeExt tempFileName ".fsproj"
+    let tempFileName = getTempFileName()
+    let filePath = getTempFilePathChangeExt dirName tempFileName ".fs"
+    let dllPath =getTempFilePathChangeExt dirName tempFileName ".dll"
+    let projFilePath = getTempFilePathChangeExt dirName tempFileName ".fsproj"
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=true)
 
     begin
-        use _cleanup = Utils.cleanupTempFiles [filePath; dllPath; projFilePath]
-        createTempDir()
+        use _cleanup = cleanupTempFiles dirName [filePath; dllPath; projFilePath]
+        createTempDir dirName
         let source = String.Format(Project1.operatorTests, dnName, fsName)
         let replace (s:string) r = s.Replace("let " + r, "// let " + r)
         let fileSource = excludedTests |> List.fold replace source
@@ -1106,11 +1045,11 @@ let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimi
 
         // fail test on first line that fails, show difference in output window
         resultUnoptFiltered
-        |> shouldPairwiseEqual expectedUnoptFiltered
+        |> shouldEqual expectedUnoptFiltered
 
         // fail test on first line that fails, show difference in output window
         resultOptFiltered
-        |> shouldPairwiseEqual expectedOptFiltered
+        |> shouldEqual expectedOptFiltered
     end
 
 [<Fact>]
@@ -3192,10 +3131,10 @@ let BigSequenceExpression(outFileOpt,docFileOpt,baseAddressOpt) =
     """
 
 
-    let createOptions() = createOptionsAux [fileSource1] []
+    let createOptions() = createProjectOptions dirName [fileSource1] []
 
 #if !NETFRAMEWORK && DEBUG
-[<Fact(Skip = "Test is known to fail in DEBUG when not using NetFramework. Use RELEASE configuration or NetFramework to run it.")>]
+[<Theory(Skip = "Test is known to fail in DEBUG when not using NetFramework. Use RELEASE configuration or NetFramework to run it.")>]
 #else
 [<Theory>]
 [<InlineData(false)>]
@@ -3216,7 +3155,7 @@ let ``Test expressions of declarations stress big expressions`` useTransparentCo
     printDeclarations None (List.ofSeq file1.Declarations) |> Seq.toList |> ignore
 
 #if !NETFRAMEWORK && DEBUG
-[<Fact(Skip = "Test is known to fail in DEBUG when not using NetFramework. Use RELEASE configuration or NetFramework to run it.")>]
+[<Theory(Skip = "Test is known to fail in DEBUG when not using NetFramework. Use RELEASE configuration or NetFramework to run it.")>]
 #else
 [<Theory>]
 [<InlineData(false)>]
@@ -3279,7 +3218,7 @@ let f7() = callXY (C()) (D())
 let f8() = callXY (D()) (C())
     """
 
-    let createOptions() = createOptionsAux [fileSource1] ["--langversion:7.0"]
+    let createOptions() = createProjectOptions dirName [fileSource1] ["--langversion:7.0"]
 
 [<Theory>]
 [<InlineData(false)>]
@@ -3324,7 +3263,7 @@ let ``Test ProjectForWitnesses1`` useTransparentCompiler =
       |> Seq.toList
     printfn "actual:\n\n%A" actual
     actual
-      |> shouldPairwiseEqual expected
+      |> shouldEqual expected
 
 
 [<Theory>]
@@ -3407,7 +3346,7 @@ type MyNumberWrapper =
     { MyNumber: MyNumber }
     """
 
-    let createOptions() = createOptionsAux [fileSource1] ["--langversion:7.0"]
+    let createOptions() = createProjectOptions dirName [fileSource1] ["--langversion:7.0"]
 
 [<Theory>]
 [<InlineData(false)>]
@@ -3441,7 +3380,7 @@ let ``Test ProjectForWitnesses2`` useTransparentCompiler =
       |> Seq.toList
     printfn "actual:\n\n%A" actual
     actual
-      |> shouldPairwiseEqual expected
+      |> shouldEqual expected
 
 //---------------------------------------------------------------------------------------------------------
 // This project is for witness arguments, testing for https://github.com/dotnet/fsharp/issues/10364
@@ -3465,13 +3404,13 @@ let s2 = sign p1
 
     """
 
-    let createOptions() = createOptionsAux [fileSource1] ["--langversion:7.0"]
+    let createOptions() = createProjectOptions dirName [fileSource1] ["--langversion:7.0"]
 
 [<Theory>]
 [<InlineData(false)>]
 [<InlineData(true)>]
 let ``Test ProjectForWitnesses3`` useTransparentCompiler =
-    let cleanup, options = createOptionsAux [ ProjectForWitnesses3.fileSource1 ] ["--langversion:7.0"]
+    let cleanup, options = createProjectOptions dirName [ ProjectForWitnesses3.fileSource1 ] ["--langversion:7.0"]
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
@@ -3498,7 +3437,7 @@ let ``Test ProjectForWitnesses3`` useTransparentCompiler =
       |> Seq.toList
     printfn "actual:\n\n%A" actual
     actual
-      |> shouldPairwiseEqual expected
+      |> shouldEqual expected
 
 [<Theory>]
 [<InlineData(false)>]
@@ -3563,7 +3502,7 @@ let isNullQuoted (ts : 't[]) =
 
 """
 
-    let createOptions() = createOptionsAux [fileSource1] ["--langversion:7.0"]
+    let createOptions() = createProjectOptions dirName [fileSource1] ["--langversion:7.0"]
 
 [<Theory>]
 [<InlineData(false)>]
@@ -3593,7 +3532,7 @@ let ``Test ProjectForWitnesses4 GetWitnessPassingInfo`` useTransparentCompiler =
       |> Seq.toList
     printfn "actual:\n\n%A" actual
     actual
-      |> shouldPairwiseEqual expected
+      |> shouldEqual expected
 
 module internal ProjectForNoWarnHashDirective =
 
@@ -3603,7 +3542,7 @@ module N.M
 let rec f = new System.EventHandler(fun _ _ -> f.Invoke(null,null))
 """
     
-    let createOptions() = createOptionsAux [fileSource1] []
+    let createOptions() = createProjectOptions dirName [fileSource1] []
     
 [<Theory>]
 [<InlineData(false)>]

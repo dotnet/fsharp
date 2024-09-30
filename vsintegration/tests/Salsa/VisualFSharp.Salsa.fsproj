@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="$(FSharpSourcesRoot)\Compiler\Utilities\NullnessShims.fs"/>
     <EmbeddedText Include="$(FSharpSourcesRoot)\Compiler\Facilities\UtilsStrings.txt" />
     <Compile Include="$(FSharpSourcesRoot)\Compiler\Facilities\CompilerLocation.fs">
       <Link>CompilerLocation.fs</Link>
@@ -65,7 +66,7 @@
     <PackageReference Include="Microsoft.VisualStudio.Utilities" Version="$(MicrosoftVisualStudioUtilitiesVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Validation" Version="$(MicrosoftVisualStudioValidationVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersion)" />
-    <PackageReference Include="NUnit" Version="$(NUnitVersion)" />
+    <PackageReference Include="XUnit" Version="$(XUnitVersion)" />
   </ItemGroup>
 
 </Project>

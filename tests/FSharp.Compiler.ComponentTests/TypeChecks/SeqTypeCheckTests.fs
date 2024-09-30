@@ -4,7 +4,7 @@ open Xunit
 open FSharp.Test.Compiler
 
 [<Fact>]
-let ``Seq expr with impicit yield type checks correctly when two identical record types are present`` () =
+let ``Seq expr with implicit yield type checks correctly when two identical record types are present`` () =
     FSharp """
 module SeqInference
 

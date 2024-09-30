@@ -2,19 +2,18 @@
 
 #if INTERACTIVE
 //#r @"../../release/net40/bin/FSharp.Compiler.dll"
-#r @"../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
+#r @"../../packages/xunit.assert/2.9.0/lib/net6.0/xunit.assert.dll"
 #load "../../src/scripts/scriptlib.fsx"
 #load "../FSharp.Test.Utilities/TestFramework.fs"
 #load "single-test.fs"
 #else
-[<NUnit.Framework.Category "Type Provider";NUnit.Framework.NonParallelizable>]
 module FSharp.Test.FSharpSuite.TypeProviderTests
 #endif
 
 open System
 open System.IO
 open System.Reflection
-open NUnit.Framework
+open Xunit
 open TestFramework
 open Scripting
 open SingleTest
@@ -33,12 +32,16 @@ let FSC_OPTIMIZED = FSC_NETFX (true, false)
 let FSI = FSI_NETFX
 #endif
 
-let inline getTestsDirectory dir = getTestsDirectory __SOURCE_DIRECTORY__ dir
-let testConfig = getTestsDirectory >> testConfig
+let copyHelloWorld cfgDirectory =
+    for helloDir in DirectoryInfo(__SOURCE_DIRECTORY__ + "/typeProviders").GetDirectories("hello*") do
+        DirectoryInfo(cfgDirectory + "\\..").CreateSubdirectory(helloDir.Name).FullName
+        |> copyFilesToDest helloDir.FullName
 
-[<Test>]
+[<Fact>]
 let diamondAssembly () =
     let cfg = testConfig "typeProviders/diamondAssembly"
+
+    copyHelloWorld cfg.Directory
 
     rm cfg "provider.dll"
 
@@ -72,7 +75,7 @@ let diamondAssembly () =
 
     testOkFile.CheckExists()
 
-[<Test>]
+[<Fact>]
 let globalNamespace () =
     let cfg = testConfig "typeProviders/globalNamespace"
 
@@ -146,15 +149,15 @@ let helloWorld p =
 
     peverify cfg (bincompat2 ++ "testlib_client.exe")
 
-[<Test>]
+[<Fact>]
 let ``helloWorld fsc`` () = helloWorld FSC_OPTIMIZED
 
 #if !NETCOREAPP
-[<Test>]
+[<Fact>]
 let ``helloWorld fsi`` () = helloWorld FSI_NETFX_STDIN
 #endif
 
-[<Test>]
+[<Fact>]
 let helloWorldCSharp () =
     let cfg = testConfig "typeProviders/helloWorldCSharp"
 
@@ -176,42 +179,14 @@ let helloWorldCSharp () =
 
     exec cfg ("." ++ "test.exe") ""
 
-
-[<TestCase("neg1")>]
-[<TestCase("neg2")>]
-[<TestCase("neg2c")>]
-[<TestCase("neg2e")>]
-[<TestCase("neg2g")>]
-[<TestCase("neg2h")>]
-[<TestCase("neg4")>]
-[<TestCase("neg6")>]
-[<TestCase("InvalidInvokerExpression")>]
-[<TestCase("providerAttributeErrorConsume")>]
-[<TestCase("ProviderAttribute_EmptyConsume")>]
-[<TestCase("EVIL_PROVIDER_GetNestedNamespaces_Exception")>]
-[<TestCase("EVIL_PROVIDER_NamespaceName_Exception")>]
-[<TestCase("EVIL_PROVIDER_NamespaceName_Empty")>]
-[<TestCase("EVIL_PROVIDER_GetTypes_Exception")>]
-[<TestCase("EVIL_PROVIDER_ResolveTypeName_Exception")>]
-[<TestCase("EVIL_PROVIDER_GetNamespaces_Exception")>]
-[<TestCase("EVIL_PROVIDER_GetStaticParameters_Exception")>]
-[<TestCase("EVIL_PROVIDER_GetInvokerExpression_Exception")>]
-[<TestCase("EVIL_PROVIDER_GetTypes_Null")>]
-[<TestCase("EVIL_PROVIDER_ResolveTypeName_Null")>]
-[<TestCase("EVIL_PROVIDER_GetNamespaces_Null")>]
-[<TestCase("EVIL_PROVIDER_GetStaticParameters_Null")>]
-[<TestCase("EVIL_PROVIDER_GetInvokerExpression_Null")>]
-[<TestCase("EVIL_PROVIDER_DoesNotHaveConstructor")>]
-[<TestCase("EVIL_PROVIDER_ConstructorThrows")>]
-[<TestCase("EVIL_PROVIDER_ReturnsTypeWithIncorrectNameFromApplyStaticArguments")>]
-[<NonParallelizable>]
-let ``negative type provider tests`` (name:string) =
+let singleNegTest name =
     let cfg = testConfig "typeProviders/negTests"
-    let dir = cfg.Directory
+
+    copyHelloWorld cfg.Directory
 
     if requireENCulture () then
 
-        let fileExists = Commands.fileExists dir >> Option.isSome
+        let fileExists = Commands.fileExists cfg.Directory >> Option.isSome
 
         rm cfg "provided.dll"
 
@@ -242,7 +217,7 @@ let ``negative type provider tests`` (name:string) =
         fsc cfg "--out:MostBasicProvider.dll -g --optimize- -a" ["MostBasicProvider.fsx"]
 
         let preprocess name pref =
-            let dirp = (dir |> Commands.pathAddBackslash)
+            let dirp = (cfg.Directory |> Commands.pathAddBackslash)
             do
             FileSystem.OpenFileForReadShim(sprintf "%s%s.%sbslpp" dirp name pref)
                       .ReadAllText()
@@ -260,9 +235,40 @@ let ``negative type provider tests`` (name:string) =
 
         SingleTest.singleNegTest cfg name
 
+[<Theory>]
+[<InlineData("neg1")>]
+[<InlineData("neg2")>]
+[<InlineData("neg2c")>]
+[<InlineData("neg2e")>]
+[<InlineData("neg2g")>]
+[<InlineData("neg2h")>]
+[<InlineData("neg4")>]
+[<InlineData("neg6")>]
+[<InlineData("InvalidInvokerExpression")>]
+[<InlineData("providerAttributeErrorConsume")>]
+[<InlineData("ProviderAttribute_EmptyConsume")>]
+[<InlineData("EVIL_PROVIDER_GetNestedNamespaces_Exception")>]
+[<InlineData("EVIL_PROVIDER_NamespaceName_Exception")>]
+[<InlineData("EVIL_PROVIDER_NamespaceName_Empty")>]
+[<InlineData("EVIL_PROVIDER_GetTypes_Exception")>]
+[<InlineData("EVIL_PROVIDER_ResolveTypeName_Exception")>]
+[<InlineData("EVIL_PROVIDER_GetNamespaces_Exception")>]
+[<InlineData("EVIL_PROVIDER_GetStaticParameters_Exception")>]
+[<InlineData("EVIL_PROVIDER_GetInvokerExpression_Exception")>]
+[<InlineData("EVIL_PROVIDER_GetTypes_Null")>]
+[<InlineData("EVIL_PROVIDER_ResolveTypeName_Null")>]
+[<InlineData("EVIL_PROVIDER_GetNamespaces_Null")>]
+[<InlineData("EVIL_PROVIDER_GetStaticParameters_Null")>]
+[<InlineData("EVIL_PROVIDER_GetInvokerExpression_Null")>]
+[<InlineData("EVIL_PROVIDER_DoesNotHaveConstructor")>]
+[<InlineData("EVIL_PROVIDER_ConstructorThrows")>]
+[<InlineData("EVIL_PROVIDER_ReturnsTypeWithIncorrectNameFromApplyStaticArguments")>]
+let ``negative type provider tests`` (name:string) = singleNegTest name
+
 let splitAssembly subdir project =
-    let subdir = getTestsDirectory subdir
     let cfg = testConfig project
+
+    copyHelloWorld cfg.Directory
 
     let clean() =
         rm cfg "providerDesigner.dll"
@@ -337,15 +343,17 @@ let splitAssembly subdir project =
 
     clean()
 
-[<Test>]
+[<Fact>]
 let splitAssemblyTools () = splitAssembly "tools" "typeProviders/splitAssemblyTools"
 
-[<Test>]
+[<Fact>]
 let splitAssemblyTypeProviders () = splitAssembly "typeproviders" "typeProviders/splitAssemblyTypeproviders"
 
-[<Test>]
+[<Fact>]
 let wedgeAssembly () =
     let cfg = testConfig "typeProviders/wedgeAssembly"
+
+    copyHelloWorld cfg.Directory
 
     rm cfg "provider.dll"
 

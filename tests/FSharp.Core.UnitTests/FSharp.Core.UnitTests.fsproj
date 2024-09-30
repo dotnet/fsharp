@@ -25,11 +25,6 @@
     <TailCalls>true</TailCalls>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <DefineConstants Condition="'$(UnitTestType)' == 'xunit'">$(DefineConstants);XUNIT</DefineConstants>
-    <DefineConstants Condition="'$(UnitTestType)' != 'xunit'">$(DefineConstants);NUNIT</DefineConstants>
-  </PropertyGroup>
-
   <ItemGroup>
     <Compile Include="TestFrameworkHelpers.fs" />
     <Compile Include="LibraryTestFx.fs" />
@@ -90,6 +85,7 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\EventModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Reflection\FSharpReflection.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Quotations\FSharpQuotations.fs" />
+    <Compile Include="Interop\CSharpCollectionExpressions.fs" />
     <Compile Include="StructTuples.fs" />
     <Compile Include="SurfaceArea.fs" />
   </ItemGroup>

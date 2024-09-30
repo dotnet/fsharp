@@ -4,7 +4,7 @@ module UnitTests.TestLib.Salsa
 
 open System
 open System.IO
-open NUnit.Framework
+open Xunit
 open Salsa.Salsa
 open Salsa.VsOpsUtils
 open System.Text.RegularExpressions
@@ -36,7 +36,7 @@ let AssertContainsInOrder(s:string,cs:string list) =
     containsInOrderFrom 0 cs
     
 let AssertContains(value: string, substring: string) =
-    Assert.That(value, Contains.Substring substring)
+    Assert.Contains(substring, value)
         
 let AssertArrayContainsPartialMatchOf(a:string array,c) =
     let found = ref false
@@ -56,7 +56,7 @@ let AssertMatches (r : Regex) (s:string) =
         printfn "Expected regex '%s' to match '%s'." (r.ToString()) s
         Assert.Fail()
         
-// Like AssertMatches, but runs for every prefix of regex up to each occurence of 'c'
+// Like AssertMatches, but runs for every prefix of regex up to each occurrence of 'c'
 // Is helpful so that, if long regex match fails, you see first prefix that fails
 let AssertMatchesRegex (c : char) (regexStr : string) (s:string) =
     let mutable i = regexStr.IndexOf(c, 0)

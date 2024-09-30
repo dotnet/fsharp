@@ -3,9 +3,9 @@
 namespace Scripting
 
 open Xunit
+
 open System
 open FSharp.Test.Compiler
-open FSharp.Compiler.Interactive.Shell
 open FSharp.Test.ScriptHelpers
 
 module ``Interactive tests`` =
@@ -89,3 +89,38 @@ module ``External FSI tests`` =
         |> runFsi
         |> shouldSucceed
 
+
+module MultiEmit =
+
+    [<Theory>]
+    [<InlineData(true)>]
+    [<InlineData(false)>]
+    let ``FSharp record in script`` (useMultiEmit) =
+
+        let args : string array = [| if useMultiEmit then "--multiemit+" else "--multiemit-"|]
+        use session = new FSharpScript(additionalArgs=args)
+
+        let scriptIt submission =
+
+            let result, errors = session.Eval(submission)
+            Assert.Empty(errors)
+            match result with
+            | Ok _ -> ()
+            | _ -> Assert.True(false, $"Failed in line: {submission}")
+
+        [|
+            """type R = { x: int }"""
+            """let a = { x = 7 } """
+            """if a.x <> 7 then failwith $"1: Failed {a.x} <> 7" """
+            """if a.x <> 7 then failwith $"2: Failed {a.x} <> 7" """
+            """if a.x <> 7 then failwith $"3: Failed {a.x} <> 7" """
+            """if a.x <> 7 then failwith $"4: Failed {a.x} <> 7" """
+            """let b = { x = 9 }"""
+            """if a.x <> 7 then failwith $"5: Failed {a.x} <> 7" """
+            """if b.x <> 9 then failwith $"6: Failed {b.x} <> 9" """
+            """let A = {| v = 7.2 |}"""
+            """if A.v <> 7.2 then failwith $"7: Failed {A.v} <> 7.2" """
+            """let B = {| v = 9.3 |}"""
+            """if A.v <> 7.2 then failwith $"8: Failed {A.v} <> 7.2" """
+            """if B.v <> 9.3 then failwith $"9: Failed {A.v} <> 9.3" """
+        |] |> Seq.iter(fun item -> item |> scriptIt)

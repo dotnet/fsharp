@@ -594,27 +594,27 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         /// <summary>
         ///   Looks up a localized string similar to WARNING! Transparent Compiler does not yet support all features and can cause crashes or give incorrect results..
         /// </summary>
-        public static string TransparentCompiler_Discalimer1 {
+        public static string TransparentCompiler_Disclaimer1 {
             get {
-                return ResourceManager.GetString("TransparentCompiler_Discalimer1", resourceCulture);
+                return ResourceManager.GetString("TransparentCompiler_Disclaimer1", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Use at your own risk!.
         /// </summary>
-        public static string TransparentCompiler_Discalimer2 {
+        public static string TransparentCompiler_Disclaimer2 {
             get {
-                return ResourceManager.GetString("TransparentCompiler_Discalimer2", resourceCulture);
+                return ResourceManager.GetString("TransparentCompiler_Disclaimer2", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to By checking this you also opt-in for additional performance telemetry.
         /// </summary>
-        public static string TransparentCompiler_Discalimer3 {
+        public static string TransparentCompiler_Disclaimer3 {
             get {
-                return ResourceManager.GetString("TransparentCompiler_Discalimer3", resourceCulture);
+                return ResourceManager.GetString("TransparentCompiler_Disclaimer3", resourceCulture);
             }
         }
         
@@ -633,15 +633,6 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Unused_opens_code_fix {
             get {
                 return ResourceManager.GetString("Unused_opens_code_fix", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Cache parsing results (experimental).
-        /// </summary>
-        public static string Use_syntax_tree_cache {
-            get {
-                return ResourceManager.GetString("Use_syntax_tree_cache", resourceCulture);
             }
         }
         

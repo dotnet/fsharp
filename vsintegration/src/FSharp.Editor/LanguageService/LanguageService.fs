@@ -53,7 +53,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
 
     // We have a lock just in case if multi-threads try to create a new IFSharpWorkspaceService -
     //     but we only want to have a single instance of the FSharpChecker regardless if there are multiple instances of IFSharpWorkspaceService.
-    //     In VS, we only ever have a single IFSharpWorkspaceService, but for testing we may have mutliple; we still only want a
+    //     In VS, we only ever have a single IFSharpWorkspaceService, but for testing we may have multiple; we still only want a
     //     single FSharpChecker instance shared across them.
     static let gate = obj ()
 
@@ -117,8 +117,6 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
 
                             let enableLiveBuffers = editorOptions.Advanced.IsUseLiveBuffersEnabled
 
-                            let useSyntaxTreeCache = editorOptions.LanguageServicePerformance.UseSyntaxTreeCache
-
                             let enableInMemoryCrossProjectReferences =
                                 editorOptions.LanguageServicePerformance.EnableInMemoryCrossProjectReferences
 
@@ -158,7 +156,6 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                     TelemetryEvents.LanguageServiceStarted,
                                     [|
                                         nameof enableLiveBuffers, enableLiveBuffers
-                                        nameof useSyntaxTreeCache, useSyntaxTreeCache
                                         nameof enableParallelReferenceResolution, enableParallelReferenceResolution
                                         nameof enableInMemoryCrossProjectReferences, enableInMemoryCrossProjectReferences
                                         nameof enableFastFindReferences, enableFastFindReferences
@@ -199,7 +196,6 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                                  }))
                                          else
                                              DocumentSource.FileSystem),
-                                    useSyntaxTreeCache = useSyntaxTreeCache,
                                     useTransparentCompiler = useTransparentCompiler
                                 )
 
@@ -366,7 +362,7 @@ type internal FSharpPackage() as this =
             do! this.JoinableTaskFactory.SwitchToMainThreadAsync()
 
             // FSI-LINKAGE-POINT: sited init
-            FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
+            FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitializeSited (this :> Package) commandService
 
             // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
             let _fsiPropertyPage =

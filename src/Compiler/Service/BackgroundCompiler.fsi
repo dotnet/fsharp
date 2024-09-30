@@ -235,8 +235,7 @@ type internal BackgroundCompiler =
         parallelReferenceResolution: ParallelReferenceResolution *
         captureIdentifiersWhenParsing: bool *
         getSource: (string -> Async<ISourceText option>) option *
-        useChangeNotifications: bool *
-        useSyntaxTreeCache: bool ->
+        useChangeNotifications: bool ->
             BackgroundCompiler
 
     static member ActualCheckFileCount: int

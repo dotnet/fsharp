@@ -4,7 +4,7 @@ namespace UnitTests.TestLib.Utils
 
 open System
 open System.IO
-open NUnit.Framework
+open Xunit
 open Microsoft.VisualStudio
 
 module Asserts =
@@ -47,7 +47,7 @@ module Asserts =
         | None -> ()
 
     let AssertBuildSuccessful (result: Microsoft.VisualStudio.FSharp.ProjectSystem.BuildResult) =
-        Assert.IsTrue(result.IsSuccessful, "Expected build to succeed")
+        Assert.True(result.IsSuccessful, "Expected build to succeed")
 
 module UIStuff =
     let SetupSynchronizationContext() =
@@ -165,12 +165,12 @@ module Spawn =
 
     let private expectCodeOrRaise expectedCode command arguments (exitCode:int) _ = 
         if expectedCode<>exitCode then 
-            failwith(sprintf "%s %s exitted with code %d. Expected %d" command arguments exitCode expectedCode)
+            failwith(sprintf "%s %s exited with code %d. Expected %d" command arguments exitCode expectedCode)
         ()
 
     let private expectCodeWithStatisticsOrExit expectedCode command arguments (exitCode:int) stats :ProcessResults = 
         if expectedCode<>exitCode then 
-            failwith(sprintf "%s %s exitted with code %d. Expected %d" command arguments exitCode expectedCode)
+            failwith(sprintf "%s %s exited with code %d. Expected %d" command arguments exitCode expectedCode)
         stats
 
     let private returnExitCode _ _ (exitCode:int) _= exitCode
@@ -234,7 +234,7 @@ module Spawn =
         match code with
         | 0 | 1 | 2 | 3 -> () // Success.
         | _ -> 
-            printfn "Robocopy %s %s /mir exitted with code %d. Expected 0, 1, 2 or 3." source destination code
+            printfn "Robocopy %s %s /mir exited with code %d. Expected 0, 1, 2 or 3." source destination code
             exit code
 
     /// Submit a specific set of checked out files to Tfs.
@@ -244,7 +244,7 @@ module Spawn =
         // Submit the changes
         match SpawnToTextLines "tf_.exe" "submit %s /comment:\"%s\" /noprompt" files comment with
         | 0,_ -> 
-            printfn "Submited files: %s" files
+            printfn "Submitted files: %s" files
         | 1,_ ->  
             printfn "No changes detected in files: %s" files
         | errorCode,lines ->

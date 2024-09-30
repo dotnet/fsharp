@@ -183,7 +183,7 @@ module ``Auto-generated accessors have CompilerGenerated attribute`` =
         |> should haveAttribute "DebuggerNonUserCodeAttribute"
 
 // Regression: https://github.com/dotnet/fsharp/issues/14652
-module ``Let bindings in classes shoulnd't have DebuggerNonUserCodeAttribute`` =
+module ``Let bindings in classes shouldn't have DebuggerNonUserCodeAttribute`` =
 
     let withRealInternalSignature realSig compilation =
         compilation

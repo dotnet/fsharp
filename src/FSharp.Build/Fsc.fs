@@ -27,7 +27,7 @@ type public Fsc() as this =
     let mutable codePage: string MaybeNull = null
     let mutable commandLineArgs: ITaskItem list = []
     let mutable compilerTools: ITaskItem[] = [||]
-    let mutable compressMetadata = false
+    let mutable compressmetadata: bool option = None
     let mutable debugSymbols = false
     let mutable debugType: string MaybeNull = null
     let mutable defineConstants: ITaskItem[] = [||]
@@ -95,6 +95,7 @@ type public Fsc() as this =
     let mutable vslcid: string MaybeNull = null
     let mutable utf8output: bool = false
     let mutable useReflectionFreeCodeGen: bool = false
+    let mutable nullable: bool option = None
 
     /// Trim whitespace ... spaces, tabs, newlines,returns, Double quotes and single quotes
     let wsCharsToTrim = [| ' '; '\t'; '\"'; '\'' |]
@@ -167,8 +168,7 @@ type public Fsc() as this =
         builder.AppendSwitchIfNotNull("--baseaddress:", baseAddress)
 
         // CompressMetadata
-        if compressMetadata then
-            builder.AppendSwitch("--compressmetadata")
+        builder.AppendOptionalSwitch("--compressmetadata", compressmetadata)
 
         // DefineConstants
         for item in defineConstants do
@@ -196,14 +196,18 @@ type public Fsc() as this =
             builder.AppendSwitch("--optimize-")
 
         // realsig
-        match realsig with
-        | Some true -> builder.AppendSwitch("--realsig+")
-        | Some false -> builder.AppendSwitch("--realsig-")
-        | None -> ()
+        builder.AppendOptionalSwitch("--realsig", realsig)
 
         // Tailcalls
         if not tailcalls then
             builder.AppendSwitch("--tailcalls-")
+
+        match nullable with
+        | Some true ->
+            builder.AppendSwitch("--checknulls+")
+            builder.AppendSwitch("--define:NULLABLE")
+        | Some false -> builder.AppendSwitch("--checknulls-")
+        | None -> ()
 
         // PdbFile
         builder.AppendSwitchIfNotNull("--pdb:", pdbFile)
@@ -230,16 +234,13 @@ type public Fsc() as this =
         // checksumAlgorithm
         builder.AppendSwitchIfNotNull(
             "--checksumalgorithm:",
-            let ToUpperInvariant (s: string) =
-                if isNull s then
-                    null
-                else
-                    s.ToUpperInvariant()
-
-            match ToUpperInvariant(checksumAlgorithm) with
-            | "SHA1" -> "Sha1"
-            | "SHA256" -> "Sha256"
-            | _ -> null
+            match checksumAlgorithm with
+            | Null -> null
+            | NonNull checksumAlgorithm ->
+                match checksumAlgorithm.ToUpperInvariant() with
+                | "SHA1" -> "Sha1"
+                | "SHA256" -> "Sha256"
+                | _ -> null
         )
 
         // Resources
@@ -380,10 +381,13 @@ type public Fsc() as this =
         with get () = compilerTools
         and set (a) = compilerTools <- a
 
-    // CompressMetadata
+    // compressmetadata[+-]
     member _.CompressMetadata
-        with get () = compressMetadata
-        and set (v) = compressMetadata <- v
+        with get () =
+            match compressmetadata with
+            | Some true -> true
+            | _ -> false
+        and set (v) = compressmetadata <- Some v
 
     // -g: Produce debug file. Disables optimizations if a -O flag is not given.
     member _.DebugSymbols
@@ -655,6 +659,18 @@ type public Fsc() as this =
         with get () = subsystemVersion
         and set (p) = subsystemVersion <- p
 
+    member _.Nullable
+        with get () =
+            match nullable with
+            | None -> ""
+            | Some true -> "enable"
+            | Some false -> "disable"
+        and set (p) =
+            match p with
+            | "enable" -> nullable <- Some true
+            | "disable" -> nullable <- Some false
+            | _ -> ()
+
     member _.HighEntropyVA
         with get () = highEntropyVA
         and set (p) = highEntropyVA <- p
@@ -770,10 +786,10 @@ type public Fsc() as this =
         let builder = generateCommandLineBuilder ()
         builder.GetCapturedArguments() |> String.concat Environment.NewLine
 
-    // expose this to internal components (for nunit testing)
+    // expose this to internal components (for unit testing)
     member internal fsc.InternalGenerateCommandLineCommands() = fsc.GenerateCommandLineCommands()
 
-    // expose this to internal components (for nunit testing)
+    // expose this to internal components (for unit testing)
     member internal fsc.InternalGenerateResponseFileCommands() = fsc.GenerateResponseFileCommands()
 
     member internal fsc.InternalExecuteTool(pathToTool, responseFileCommands, commandLineCommands) =

@@ -29,13 +29,13 @@ variables:
   # Should be 'current' release branch name, i.e. 'release/dev17.10' in dotnet/fsharp/refs/heads/main, 'release/dev17.10' in dotnet/fsharp/refs/heads/release/dev17.10 and 'release/dev17.9' in dotnet/fsharp/refs/heads/release/dev17.9
   # Should **never** be 'main' in dotnet/fsharp/refs/heads/main, since it will start inserting to VS twice.
   - name: FSharpReleaseBranchName
-    value: release/dev17.11
+    value: release/dev17.12
   # VS Insertion branch name (NOT the same as F# branch)
   # Should be previous release branch or 'main' in 'main' and 'main' in release branch
   # (since for all *new* release branches we insert into VS main and for all *previous* releases we insert into corresponding VS release),
   # i.e. 'rel/d17.9' *or* 'main' in dotnet/fsharp/refs/heads/main and 'main' in F# dotnet/fsharp/refs/heads/release/dev17.10 (latest release branch)
   - name: VSInsertionTargetBranchName
-    value: rel/d17.11
+    value: main
   - name: _TeamName
     value: FSharp
   - name: TeamName
@@ -85,7 +85,7 @@ extends:
       #                                                  Signed build                                                     #
       #-------------------------------------------------------------------------------------------------------------------#
       # Localization: we only run it for specific release branches
-      - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.11') }}:
+      - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.12') }}:
         - template: /eng/common/templates-official/job/onelocbuild.yml@self
           parameters:
             MirrorRepo: fsharp
@@ -143,7 +143,7 @@ extends:
             - task: PublishTestResults@2
               displayName: Publish Test Results
               inputs:
-                testResultsFormat: 'NUnit'
+                testResultsFormat: 'XUnit'
                 testResultsFiles: '*.xml'
                 searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
               continueOnError: true

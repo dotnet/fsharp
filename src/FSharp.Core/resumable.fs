@@ -63,7 +63,7 @@ and ResumptionFunc<'Data> = delegate of byref<ResumableStateMachine<'Data>> -> b
 
 and [<AbstractClass>] ResumptionDynamicInfo<'Data>(initial: ResumptionFunc<'Data>) =
     member val ResumptionFunc: ResumptionFunc<'Data> = initial with get, set
-    member val ResumptionData: obj = null with get, set
+    member val ResumptionData: objnull = null with get, set
     abstract MoveNext: machine: byref<ResumableStateMachine<'Data>> -> unit
     abstract SetStateMachine: machine: byref<ResumableStateMachine<'Data>> * machineState: IAsyncStateMachine -> unit
 
@@ -75,7 +75,7 @@ type MoveNextMethodImpl<'Data> = delegate of byref<ResumableStateMachine<'Data>>
 /// Defines the implementation of the SetStateMachine method for a struct state machine.
 type SetStateMachineMethodImpl<'Data> = delegate of byref<ResumableStateMachine<'Data>> * IAsyncStateMachine -> unit
 
-/// Defines the implementation of the code reun after the creation of a struct state machine.
+/// Defines the implementation of the code run after the creation of a struct state machine.
 type AfterCode<'Data, 'Result> = delegate of byref<ResumableStateMachine<'Data>> -> 'Result
 
 [<AutoOpen>]
