@@ -327,11 +327,6 @@
         <target state="translated">투명한 컴파일러 사용(다시 시작해야 함)</target>
         <note />
       </trans-unit>
-      <trans-unit id="Use_syntax_tree_cache">
-        <source>Cache parsing results (experimental)</source>
-        <target state="translated">캐시 구문 분석 결과(실험적)</target>
-        <note />
-      </trans-unit>
     </body>
   </file>
 </xliff>

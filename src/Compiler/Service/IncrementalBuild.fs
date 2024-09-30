@@ -888,7 +888,6 @@ type IncrementalBuilderInitialState =
         defaultTimeStamp: DateTime
         mutable isImportsInvalidated: bool
         useChangeNotifications: bool
-        useSyntaxTreeCache: bool
     }
 
     static member Create
@@ -910,8 +909,7 @@ type IncrementalBuilderInitialState =
 #endif
             allDependencies,
             defaultTimeStamp: DateTime,
-            useChangeNotifications: bool,
-            useSyntaxTreeCache
+            useChangeNotifications: bool
         ) =
 
         let initialState =
@@ -937,7 +935,6 @@ type IncrementalBuilderInitialState =
                 defaultTimeStamp = defaultTimeStamp
                 isImportsInvalidated = false
                 useChangeNotifications = useChangeNotifications
-                useSyntaxTreeCache = useSyntaxTreeCache
             }
 #if !NO_TYPEPROVIDERS
         importsInvalidatedByTypeProvider.Publish.Add(fun () -> initialState.isImportsInvalidated <- true)
@@ -1409,8 +1406,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             parallelReferenceResolution,
             captureIdentifiersWhenParsing,
             getSource,
-            useChangeNotifications,
-            useSyntaxTreeCache
+            useChangeNotifications
         ) =
 
       let useSimpleResolutionSwitch = "--simpleresolution"
@@ -1652,8 +1648,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 #endif
                     allDependencies,
                     defaultTimeStamp,
-                    useChangeNotifications,
-                    useSyntaxTreeCache
+                    useChangeNotifications
                 )
 
             let builder = IncrementalBuilder(initialState, IncrementalBuilderState.Create(initialState))
