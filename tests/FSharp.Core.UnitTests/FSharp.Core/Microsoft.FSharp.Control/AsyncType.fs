@@ -24,11 +24,11 @@ module AsyncType =
                 failwith $"expected {expected} continuation, but ran {actual}"
 
         let onSuccess = cont Success
-        let onExeption = cont Exception
+        let onException = cont Exception
         let onCancellation = cont Cancellation
 
         let expect expected computation =
-            Async.StartWithContinuations(computation, onSuccess expected, onExeption expected, onCancellation expected)
+            Async.StartWithContinuations(computation, onSuccess expected, onException expected, onCancellation expected)
 
         async {
             Async.CancelDefaultToken()
@@ -40,7 +40,6 @@ module AsyncType =
         async { return () } |> expect Success
 
 
-[<Collection(nameof FSharp.Test.DoNotRunInParallel)>]
 type AsyncType() =
 
     let ignoreSynchCtx f =

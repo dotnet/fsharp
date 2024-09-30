@@ -505,3 +505,18 @@ test pfloat "1.234"
         let value = opt.Value
         Assert.True(true = downcast value.ReflectionValue)
 #endif
+
+    [<Fact>]
+    member _.``Nuget package with method duplicates differing only in generic arity``() =
+        // regression test for: https://github.com/dotnet/fsharp/issues/17796
+        // Was an internal error
+        let code = """
+#r "nuget: Microsoft.Extensions.DependencyInjection.Abstractions"
+open Microsoft.Extensions.DependencyInjection
+let add (col:IServiceCollection) = 
+    col.AddSingleton<string,string>()
+"""
+        use script = new FSharpScript(additionalArgs=[| |])
+        let _value,diag = script.Eval(code)
+        Assert.Empty(diag)
+
