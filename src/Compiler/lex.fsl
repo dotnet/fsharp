@@ -333,6 +333,8 @@ let ident_char =
 
 let ident = ident_start_char ident_char*
 
+// skip = true:  skip whitespace (used by compiler, fsi etc)
+// skip = false: send artificial tokens for whitespace (used by VS)
 rule token (args: LexArgs) (skip: bool) = parse
  | ident
      { Keywords.KeywordOrIdentifierToken args lexbuf (lexeme lexbuf) }
@@ -1035,11 +1037,11 @@ rule token (args: LexArgs) (skip: bool) = parse
      let isTrue, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion lexbuf.StrictIndentation args lookup lexed
      args.ifdefStack <- (IfDefIf,m) :: args.ifdefStack
      LexbufIfdefStore.SaveIfHash(lexbuf, lexed, expr, m)
-     let contCase = if isTrue then LexerEndlineContinuation.Token else LexerEndlineContinuation.Skip(0, m)
+     let contCase = if isTrue then LexerEndlineContinuation.Token else LexerEndlineContinuation.IfdefSkip(0, m)
      let tok = HASH_IF(m, lexed, LexCont.EndLine(args.ifdefStack, args.stringNest, contCase))
      if skip then endline contCase args skip lexbuf else tok }
 
- | anywhite* "#else" anywhite* ("//" [^'\n''\r']*)?
+ | anywhite* "#else" anywhite* ("//" anystring)?
    { let lexed = (lexeme lexbuf)
      match args.ifdefStack with
      | [] ->  LEX_FAILURE (FSComp.SR.lexHashElseNoMatchingIf())
@@ -1049,10 +1051,10 @@ rule token (args: LexArgs) (skip: bool) = parse
        shouldStartLine args lexbuf m (FSComp.SR.lexHashElseMustBeFirst())
        args.ifdefStack <- (IfDefElse,m) :: rest
        LexbufIfdefStore.SaveElseHash(lexbuf, lexed, m)
-       let tok = HASH_ELSE(m, lexed, LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Skip(0, m)))
-       if skip then endline (LexerEndlineContinuation.Skip(0, m)) args skip lexbuf else tok }
+       let tok = HASH_ELSE(m, lexed, LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(0, m)))
+       if skip then endline (LexerEndlineContinuation.IfdefSkip(0, m)) args skip lexbuf else tok }
 
- | anywhite* "#endif" anywhite* ("//" [^'\n''\r']*)?
+ | anywhite* "#endif" anywhite* ("//" anystring)?
    { let lexed = (lexeme lexbuf)
      let m = lexbuf.LexemeRange
      shouldStartLine args lexbuf m (FSComp.SR.lexHashEndifMustBeFirst())
@@ -1092,10 +1094,10 @@ and ifdefSkip (n: int) (m: range) (args: LexArgs) (skip: bool) = parse
        let lookup id = List.contains id args.conditionalDefines
        let _, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion lexbuf.StrictIndentation args lookup lexed
        LexbufIfdefStore.SaveIfHash(lexbuf, lexed, expr, m)
-       let tok = INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Skip(n+1, m)))
-       if skip then endline (LexerEndlineContinuation.Skip(n+1, m)) args skip lexbuf else tok }
+       let tok = INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(n+1, m)))
+       if skip then endline (LexerEndlineContinuation.IfdefSkip(n+1, m)) args skip lexbuf else tok }
 
-  | anywhite* "#else" anywhite* ("//" [^'\n''\r']*)?
+  | anywhite* "#else" anywhite* ("//" anystring)?
     { let lexed = (lexeme lexbuf)
       let m = lexbuf.LexemeRange
 
@@ -1115,10 +1117,10 @@ and ifdefSkip (n: int) (m: range) (args: LexArgs) (skip: bool) = parse
            else endline LexerEndlineContinuation.Token args skip lexbuf
       else
          LexbufIfdefStore.SaveElseHash(lexbuf, lexed, m)
-         if not skip then INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Skip(n, m)))
-         else endline (LexerEndlineContinuation.Skip(n, m)) args skip lexbuf }
+         if not skip then INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(n, m)))
+         else endline (LexerEndlineContinuation.IfdefSkip(n, m)) args skip lexbuf }
 
-  | anywhite* "#endif" anywhite* ("//" [^'\n''\r']*)?
+  | anywhite* "#endif" anywhite* ("//" anystring)?
     { let lexed = lexeme lexbuf
       let m = lexbuf.LexemeRange
 
@@ -1137,8 +1139,8 @@ and ifdefSkip (n: int) (m: range) (args: LexArgs) (skip: bool) = parse
        else
            shouldStartLine args lexbuf m (FSComp.SR.lexWrongNestedHashEndif())
            LexbufIfdefStore.SaveEndIfHash(lexbuf, lexed, m)
-           let tok = INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Skip(n-1, m)))
-           if not skip then tok else endline (LexerEndlineContinuation.Skip(n-1, m)) args skip lexbuf }
+           let tok = INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(n-1, m)))
+           if not skip then tok else endline (LexerEndlineContinuation.IfdefSkip(n-1, m)) args skip lexbuf }
 
   | newline
     { newline lexbuf; ifdefSkip n m args skip lexbuf }
@@ -1167,7 +1169,7 @@ and endline (cont: LexerEndlineContinuation) (args: LexArgs) (skip: bool) = pars
          if not skip then WHITESPACE(LexCont.Token (args.ifdefStack, args.stringNest))
          else token args skip lexbuf
 
-     | LexerEndlineContinuation.Skip(n, m) ->
+     | LexerEndlineContinuation.IfdefSkip(n, m) ->
          if not skip then INACTIVECODE (LexCont.IfDefSkip(args.ifdefStack, args.stringNest, n, m))
          else ifdefSkip n m args skip lexbuf
    }
@@ -1176,7 +1178,7 @@ and endline (cont: LexerEndlineContinuation) (args: LexArgs) (skip: bool) = pars
    { match cont with
      | LexerEndlineContinuation.Token ->
          EOF(LexCont.Token(args.ifdefStack, args.stringNest))
-     | LexerEndlineContinuation.Skip(n, m) ->
+     | LexerEndlineContinuation.IfdefSkip(n, m) ->
          EOF(LexCont.IfDefSkip(args.ifdefStack, args.stringNest, n, m))
    }
 
