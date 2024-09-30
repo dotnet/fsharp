@@ -25,3 +25,20 @@ let main _ =
         |> withDefines [mydefine]
         |> compileExeAndRun
         |> verifyOutput expectedOutput
+
+    let ifdefSourceExtraEndif = """
+#if MYDEFINE1
+printf "1"
+#endif
+(**)#endif(**)
+0
+"""
+
+    [<Fact>]
+    let extraEndif () =
+
+        FSharp ifdefSourceExtraEndif
+        |> withDefines ["MYDEFINE1"]
+        |> asExe
+        |> compile
+        |> withDiagnosticMessage "#endif has no matching #if in implementation file"

@@ -1057,10 +1057,10 @@ rule token (args: LexArgs) (skip: bool) = parse
  | anywhite* "#endif" anywhite* ("//" anystring)?
    { let lexed = (lexeme lexbuf)
      let m = lexbuf.LexemeRange
-     shouldStartLine args lexbuf m (FSComp.SR.lexHashEndifMustBeFirst())
      match args.ifdefStack with
      | []->  LEX_FAILURE (FSComp.SR.lexHashEndingNoMatchingIf())
      | _ :: rest ->
+        shouldStartLine args lexbuf m (FSComp.SR.lexHashEndifMustBeFirst())
         args.ifdefStack <- rest
         LexbufIfdefStore.SaveEndIfHash(lexbuf, lexed, m)
         let tok = HASH_ENDIF(m,lexed,LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Token))
