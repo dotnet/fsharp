@@ -2560,7 +2560,6 @@ typarDecl:
 postfixTyparDecls:
   | opt_HIGH_PRECEDENCE_TYAPP LESS typarDeclList opt_typeConstraints GREATER
       { let m = rhs2 parseState 2 5
-        if not $2 then warning(Error(FSComp.SR.parsNonAdjacentTypars(), m))
         SynTyparDecls.PostfixList(List.rev $3, $4, m) }
 
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
@@ -2578,7 +2577,6 @@ explicitValTyparDeclsCore:
 explicitValTyparDecls:
   | opt_HIGH_PRECEDENCE_TYAPP LESS explicitValTyparDeclsCore opt_typeConstraints GREATER
       { let m = rhs2 parseState 2 5
-        if not $2 then warning(Error(FSComp.SR.parsNonAdjacentTypars(), m))
         let tps, flex = $3
         let tps = SynTyparDecls.PostfixList(tps, $4, m)
         SynValTyparDecls(Some tps, flex) }

@@ -20,6 +20,40 @@ let c = C()
         |> ignoreWarnings
         |> compile
         |> shouldSucceed
+
+    [<Fact>]
+    let ``mwtest`` () =
+        Fsx """
+let (|Case1|)<'a> (x: 'a) =
+    Case1 x
+
+let value =
+    match 3 with
+    | Case1 x -> x
+
+printf "%A" value
+        """
+        |> asExe
+        |> withOptions ["--nowarn:988"]
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> verifyOutput "3"
+        // |> withDiagnostics [
+        //      (Warning 1189, Line 2, Col 14, Line 2, Col 18, """Remove spaces between the type name and type parameter, e.g. "type C<'T>", not type "C   <'T>". Type parameters must be placed directly adjacent to the type name.""")
+        // ]
+
+    [<Fact>]
+    let ``mwtest with srtp`` () =
+        Fsx """
+let inline (|IsEqual|IsNonEqual|)< ^t  when ^t : equality> (x: ^t)  =
+    if x = x then IsEqual
+    else IsNonEqual
+        """
+        |> asExe
+        |> withOptions ["--nowarn:988"]
+        |> compile
+        |> shouldSucceed
         
     [<Fact>]
     let ``Obsolete attribute warning taken into account when used instantiating a type`` () =
