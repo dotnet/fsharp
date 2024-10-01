@@ -38,7 +38,6 @@
     <Compile Include="FSharpCommandLineBuilder.fs" />
     <Compile Include="Fsc.fs" />
     <Compile Include="Fsi.fs" />
-    <Compile Include="FsiTestTask.fs" />
     <Compile Include="FSharpEmbedResourceText.fs" />
     <Compile Include="FSharpEmbedResXSource.fs" />
     <Compile Include="WriteCodeFragment.fs" />
