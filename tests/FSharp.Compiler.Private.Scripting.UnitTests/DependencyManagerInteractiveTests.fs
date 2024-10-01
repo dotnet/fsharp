@@ -14,51 +14,20 @@ open FSharp.Compiler.Diagnostics
 open FSharp.DependencyManager.Nuget
 open FSharp.Test.ScriptHelpers
 open FSharp.Test
+open FSharp.Test.Utilities
 
 open Internal.Utilities
 
 open Xunit
 
-type scriptHost (?langVersion: LangVersion) = inherit FSharpScript(langVersion=defaultArg langVersion LangVersion.Preview)
-
-/// Native dll resolution is not implemented on desktop
-#if NETCOREAPP
-[<Collection(nameof DoNotRunInParallel)>]
-module NativeDllResolution =
+module Native =
     [<DllImport("NoneExistentDll")>]
     extern int NoneSuch()
 
-    [<Theory>]
-    [<InlineData("netstandard2.0")>]
-    [<InlineData("net9.0")>]
-    [<InlineData("netstandard2.0")>]
-    let ``Verify that Dispose cleans up the native paths added`` framework =
-        let nativeProbingRoots () = Seq.empty<string>
+type scriptHost (?langVersion: LangVersion) = inherit FSharpScript(langVersion=defaultArg langVersion LangVersion.Preview)
 
-        let getPath() = Set (Environment.GetEnvironmentVariable("PATH").Split(';')) - Set [""]
-
-        let reportError =
-            let report errorType code message =
-                match errorType with
-                | ErrorReportType.Error -> printfn "PackageManagementError %d : %s" code message
-                | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
-            ResolvingErrorReport (report)
-
-        let initialPath = getPath()
-
-        do
-            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
-            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-            let result = dp.Resolve(idm, ".fsx", [|"r", "Microsoft.Data.Sqlite,3.1.7"|], reportError, framework)
-            Assert.Equal(true, result.Success)
-            Assert.NotEqual<Set<_>>(getPath() - initialPath, Set.empty)
-
-        Assert.Equal<Set<_>>(getPath() - initialPath, Set.empty)
-
-    let copyHousingToTemp() =
-        let tempName = TestFramework.getTemporaryFileName() + ".csv"
-        File.Copy(__SOURCE_DIRECTORY__ ++ "housing.csv", tempName)
-        tempName
+[<Collection(nameof DoNotRunInParallel)>]
+type DependencyManagerInteractiveTests() =
 
     let getValue ((value: Result<FsiValue option, exn>), (errors: FSharpDiagnostic[])) =
         if errors.Length > 0 then
@@ -71,409 +40,6 @@ module NativeDllResolution =
         errors
 
     let ignoreValue = getValue >> ignore
-
-    [<Fact>]
-    let ``Use NativeResolver to resolve native dlls.``() =
-        // Skip test on arm64, because there is not an arm64 native library
-        if RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then
-            ()
-        else
-        let packagemanagerlines = [|
-            "r", "Microsoft.ML,version=1.4.0-preview"
-            "r", "Microsoft.ML.AutoML,version=0.16.0-preview"
-            "r", "Microsoft.Data.Analysis,version=0.4.0"
-        |]
-
-        let reportError =
-            let report errorType code message =
-                match errorType with
-                | ErrorReportType.Error -> printfn "PackageManagementError %d : %s" code message
-                | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
-            ResolvingErrorReport (report)
-
-        let mutable resolverPackageRoots = Seq.empty<string>
-        let mutable resolverPackageRoots = Seq.empty<string>
-
-        let mutable resolverReferences = Seq.empty<string>
-        let nativeProbingRoots () = resolverPackageRoots
-        let assemblyPaths () = resolverReferences
-
-        // Restore packages, Get Reference dll paths and package roots
-        let result =
-            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
-            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "net9.0")
-
-        Assert.True(result.Success, "resolve failed")
-
-        resolverPackageRoots <- result.Roots
-        resolverReferences <- result.Resolutions
-
-        use _nativeDependencyResolver = new NativeDllResolveHandler(NativeResolutionProbe(nativeProbingRoots))
-
-        // Build and execute script
-        let referenceText =
-            ("", result.Resolutions) ||> Seq.fold(fun acc r -> acc + @"#r @""" + r + "\"" + Environment.NewLine)
-
-        let scriptText = $"""
-{referenceText}
-
-open System
-open System.IO
-open System.Linq
-open Microsoft.Data.Analysis
-
-let Shuffle (arr:int[]) =
-    let rnd = Random()
-    for i in 0 .. arr.Length - 1 do
-        let r = i + rnd.Next(arr.Length - i)
-        let temp = arr.[r]
-        arr.[r] <- arr.[i]
-        arr.[i] <- temp
-    arr
-
-let housingPath = @"{copyHousingToTemp()}"
-let housingData = DataFrame.LoadCsv(housingPath)
-let randomIndices = (Shuffle(Enumerable.Range(0, (int (housingData.Rows.Count) - 1)).ToArray()))
-let testSize = int (float (housingData.Rows.Count) * 0.1)
-let trainRows = randomIndices.[testSize..]
-let testRows = randomIndices.[..testSize]
-let housing_train = housingData.[trainRows]
-
-open Microsoft.ML
-open Microsoft.ML.Data
-open Microsoft.ML.AutoML
-
-let mlContext = MLContext()
-let experiment = mlContext.Auto().CreateRegressionExperiment(maxExperimentTimeInSeconds = 15u)
-let result = experiment.Execute(housing_train, labelColumnName = "median_house_value")
-let details = result.RunDetails
-printfn "{@"%A"}" result
-123
-"""
-
-        use script = new FSharpScript()
-        let opt = script.Eval(scriptText)  |> getValue
-        let value = opt.Value
-        Assert.Equal(123, value.ReflectionValue :?> int32)
-
-    [<Fact(Skip="downloads very large ephemeral packages"); >]
-    let ``Script using TorchSharp``() =
-        let text = """
-#r "nuget:RestoreSources=https://donsyme.pkgs.visualstudio.com/TorchSharp/_packaging/packages2/nuget/v3/index.json"
-#r "nuget:libtorch-cpu,0.3.52118"
-#r "nuget:TorchSharp,0.3.52118"
-
-TorchSharp.Tensor.LongTensor.From([| 0L .. 100L |]).Device
-"""
-
-        if RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
-            use script = new scriptHost()
-            let opt = script.Eval(text) |> getValue
-            let value = opt.Value
-            Assert.Equal(typeof<string>, value.ReflectionType)
-            Assert.Equal("cpu", value.ReflectionValue :?> string)
-        ()
-
-    [<Fact>]
-    let ``Use Dependency Manager to restore packages with native dependencies, build and run script that depends on the results``() =
-        // Skip test on arm64, because there is not an arm64 native library
-        if RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then
-            ()
-        else
-        let packagemanagerlines = [|
-            "r", "Microsoft.ML,version=1.4.0-preview"
-            "r", "Microsoft.ML.AutoML,version=0.16.0-preview"
-            "r", "Microsoft.Data.Analysis,version=0.4.0"
-        |]
-
-        let reportError =
-            let report errorType code message =
-                match errorType with
-                | ErrorReportType.Error -> printfn "PackageManagementError %d : %s" code message
-                | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
-            ResolvingErrorReport (report)
-
-        let mutable resolverPackageRoots = Seq.empty<string>
-        let mutable resolverPackageRoots = Seq.empty<string>
-        let mutable resolverReferences = Seq.empty<string>
-
-        let nativeProbingRoots () = resolverPackageRoots
-        let assemblyProbingPaths () = resolverReferences
-
-        // Restore packages, Get Reference dll paths and package roots
-        let result =
-            use dp = new DependencyProvider(AssemblyResolutionProbe(assemblyProbingPaths), NativeResolutionProbe(nativeProbingRoots), false)
-            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "net9.0")
-
-        Assert.True(result.Success, "resolve failed")
-
-        resolverPackageRoots <- result.Roots
-        resolverReferences <- result.Resolutions
-
-// Build and execute reference
-        let referenceText =
-#if DISABLED_DUE_TO_ISSUE_8588
-//
-// https://github.com/dotnet/fsharp/issues/8588
-            // For this test case use Assembly Qualified References
-            ("", result.Resolutions)
-            ||> Seq.fold(fun acc r ->
-                let assemblyName = AssemblyName.GetAssemblyName(r)
-                acc + "#r @\"" + assemblyName.FullName + "\"" + Environment.NewLine)
-#else
-            // use standard #r for now
-            ("", result.Resolutions)
-            ||> Seq.fold(fun acc r ->
-                acc + "#r @\"" + r + "\"" + Environment.NewLine)
-#endif
-
-        let scriptText = $"""
-{referenceText}
-
-open System
-open System.IO
-open System.Linq
-open Microsoft.Data.Analysis
-
-let Shuffle (arr:int[]) =
-    let rnd = Random()
-    for i in 0 .. arr.Length - 1 do
-        let r = i + rnd.Next(arr.Length - i)
-        let temp = arr.[r]
-        arr.[r] <- arr.[i]
-        arr.[i] <- temp
-    arr
-
-let housingPath = @"{copyHousingToTemp()}"
-let housingData = DataFrame.LoadCsv(housingPath)
-let randomIndices = (Shuffle(Enumerable.Range(0, (int (housingData.Rows.Count) - 1)).ToArray()))
-let testSize = int (float (housingData.Rows.Count) * 0.1)
-let trainRows = randomIndices.[testSize..]
-let testRows = randomIndices.[..testSize]
-let housing_train = housingData.[trainRows]
-
-open Microsoft.ML
-open Microsoft.ML.Data
-open Microsoft.ML.AutoML
-
-let mlContext = MLContext()
-let experiment = mlContext.Auto().CreateRegressionExperiment(maxExperimentTimeInSeconds = 15u)
-let result = experiment.Execute(housing_train, labelColumnName = "median_house_value")
-let details = result.RunDetails
-printfn "{@"%A"}" result
-123
-"""
-
-        // Use the dependency manager to resolve assemblies and native paths
-        use dp = new DependencyProvider(AssemblyResolutionProbe(assemblyProbingPaths), NativeResolutionProbe(nativeProbingRoots), false)
-
-        use script = new FSharpScript()
-        let opt = script.Eval(scriptText)  |> getValue
-        let value = opt.Value
-        Assert.Equal(123, value.ReflectionValue :?> int32)
-
-    [<Fact>]
-    let ``Use AssemblyResolver to resolve assemblies``() =
-        // Skip test on arm64, because there is not an arm64 native library
-        if RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then
-            ()
-        else
-        let packagemanagerlines = [|
-            "r", "Microsoft.ML,version=1.4.0-preview"
-            "r", "Microsoft.ML.AutoML,version=0.16.0-preview"
-            "r", "Microsoft.Data.Analysis,version=0.4.0"
-        |]
-
-        let reportError =
-            let report errorType code message =
-                match errorType with
-                | ErrorReportType.Error -> printfn "PackageManagementError %d : %s" code message
-                | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
-            ResolvingErrorReport (report)
-
-        let mutable resolverPackageRoots = Seq.empty<string>
-        let mutable resolverReferences = Seq.empty<string>
-
-        let nativeProbingRoots () = resolverPackageRoots
-        let assemblyProbingPaths () = resolverReferences
-
-        // Restore packages, Get Reference dll paths and package roots
-        let result =
-            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
-            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "net9.0")
-
-        Assert.True(result.Success, "resolve failed")
-
-        resolverPackageRoots <- result.Roots
-        resolverReferences <- result.Resolutions
-
-        use _assemblyResolver = new AssemblyResolveHandler(AssemblyResolutionProbe(assemblyProbingPaths))
-
-        // Build and execute script
-        let referenceText =
-            ("", result.Resolutions)
-            ||> Seq.fold(fun acc r ->
-                acc + "    @\"" + r + "\";" + Environment.NewLine)
-
-        let code = """
-open System.Reflection
-
-let x = [|
-$(REFERENCES)
-    |]
-
-x |> Seq.iter(fun r ->
-    let name = AssemblyName.GetAssemblyName(r)
-    let asm = Assembly.Load(name)
-    printfn "%A" (asm.FullName)
-    )
-123
-"""
-        let scriptText = code.Replace("$(REFERENCES)", referenceText)
-
-        use script = new FSharpScript()
-        let opt = script.Eval(scriptText)  |> getValue
-        let value = opt.Value
-        Assert.Equal(123, value.ReflectionValue :?> int32)
-
-    [<Fact>]
-    let ``Verify that referencing FSharp.Core fails with FSharp Scripts``() =
-        let packagemanagerlines = [| "r", "FSharp.Core,version=4.7.1" |]
-
-        let reportError =
-            let report errorType code message =
-                match errorType with
-                | ErrorReportType.Error -> printfn "PackageManagementError %d : %s" code message
-                | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
-            ResolvingErrorReport (report)
-
-        let mutable resolverPackageRoots = Seq.empty<string>
-        let mutable resolverReferences = Seq.empty<string>
-
-        let nativeProbingRoots () = resolverPackageRoots
-        let assemblyProbingPaths () = resolverReferences
-
-        // Restore packages, Get Reference dll paths and package roots
-        let result =
-            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
-            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "net9.0")
-
-        // Expected: error FS3217: PackageManager cannot reference the System Package 'FSharp.Core'
-        Assert.False(result.Success, "resolve succeeded but should have failed")
-
-    [<Fact>]
-    let ``Verify that referencing FSharp.Core succeeds with CSharp Scripts``() =
-        let packagemanagerlines = [| "r", "FSharp.Core,version=4.7.1" |]
-
-        let reportError =
-            let report errorType code message =
-                match errorType with
-                | ErrorReportType.Error -> printfn "PackageManagementError %d : %s" code message
-                | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
-            ResolvingErrorReport (report)
-
-        let mutable resolverPackageRoots = Seq.empty<string>
-        let mutable resolverReferences = Seq.empty<string>
-
-        let nativeProbingRoots () = resolverPackageRoots
-        let assemblyProbingPaths () = resolverReferences
-
-        // Restore packages, Get Reference dll paths and package roots
-        let result =
-            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
-            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-            dp.Resolve(idm, ".csx", packagemanagerlines, reportError, "net9.0")
-
-        Assert.True(result.Success, "resolve failed but should have succeeded")
-
-
-    [<Fact>]
-    let ``Verify that Dispose on DependencyProvider unhooks ResolvingUnmanagedDll event handler``() =
-
-        let mutable found = false
-        let nativeProbingRoots () =
-            found <- true
-            Seq.empty<string>
-
-        let reportError =
-            let report errorType code message =
-                match errorType with
-                | ErrorReportType.Error -> printfn "PackageManagementError %d : %s" code message
-                | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
-            ResolvingErrorReport (report)
-
-        // Set up native resolver to resolve dll's
-        do
-            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
-
-            // Invoking a nonexistent dll via pinvoke cause a probe. which should invoke the call back
-            try NoneSuch() |> ignore with _ -> ()
-            Assert.True (found, "Failed to invoke the nativeProbingRoots callback")
-
-        // Here the dispose was invoked which should clear the ResolvingUnmanagedDll handler
-        found <- false
-        try NoneSuch() |> ignore with _ -> ()
-        Assert.False (found, "Invoke the nativeProbingRoots callback -- Error the ResolvingUnmanagedDll still fired ")
-
-        use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
-        let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-
-        if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
-            let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data,3.3.3"|], reportError, "net472")
-            Assert.Equal(true, result.Success)
-            Assert.Equal(1, result.Resolutions |> Seq.length)
-            Assert.Equal(1, result.SourceFiles |> Seq.length)
-            Assert.Equal(2, result.Roots |> Seq.length)
-
-        let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data,3.3.3"|], reportError, "net9.0")
-        Assert.Equal(true, result.Success)
-        Assert.Equal(1, result.Resolutions |> Seq.length)
-        Assert.Equal(1, result.SourceFiles |> Seq.length)
-        Assert.Equal(1, result.Roots |> Seq.length)
-        ()
-
-
-    [<Fact>]
-    let ``Verify that Dispose on DependencyProvider unhooks ResolvingUnmanagedDll and AssemblyResolver event handler``() =
-
-        let mutable assemblyFound = false
-        let assemblyProbingPaths () =
-            assemblyFound <- true
-            Seq.empty<string>
-
-        let mutable nativeFound = false
-        let nativeProbingRoots () =
-            nativeFound <- true
-            Seq.empty<string>
-
-        // Set up native resolver to resolve dll's
-        do
-            use dp = new DependencyProvider(AssemblyResolutionProbe(assemblyProbingPaths), NativeResolutionProbe(nativeProbingRoots), false)
-
-            // Invoking a nonexistent dll via pinvoke cause a probe. which should invoke the call back
-            try NoneSuch() |> ignore with _ -> ()
-            Assert.True (nativeFound, "Failed to invoke the nativeProbingRoots callback")
-
-            // Invoking a nonexistent assembly causes a probe. which should invoke the call back
-            try Assembly.Load("NoneSuchAssembly") |> ignore with _ -> ()
-            Assert.True (assemblyFound, "Failed to invoke the AssemblyResolve handler")
-
-        // Here the dispose was invoked which should clear the ResolvingUnmanagedDll handler
-        nativeFound <- false
-        assemblyFound <- false
-
-        try NoneSuch() |> ignore with _ -> ()
-        Assert.False (nativeFound, "Invoke the nativeProbingRoots callback -- Error the ResolvingUnmanagedDll still fired ")
-
-        try Assembly.Load("NoneSuchAssembly") |> ignore with _ -> ()
-        Assert.False (assemblyFound, "Invoke the assemblyProbingRoots callback -- Error the AssemblyResolve still fired ")
-#endif
-
-type DependencyManagerInteractiveTests() =
 
     [<Fact>]
     member _.``SmokeTest - #r nuget``() =
@@ -677,6 +243,412 @@ type DependencyManagerInteractiveTests() =
         Assert.True((result2.Roots |> Seq.head).EndsWith("/microsoft.extensions.configuration.abstractions/3.1.1/"))
         ()
 
+/// Native dll resolution is not implemented on desktop
+#if NETCOREAPP
+    [<Fact(Skip="downloads very large ephemeral packages"); >]
+    member _.``Script using TorchSharp``() =
+        let text = """
+#r "nuget:RestoreSources=https://donsyme.pkgs.visualstudio.com/TorchSharp/_packaging/packages2/nuget/v3/index.json"
+#r "nuget:libtorch-cpu,0.3.52118"
+#r "nuget:TorchSharp,0.3.52118"
+
+TorchSharp.Tensor.LongTensor.From([| 0L .. 100L |]).Device
+"""
+
+        if RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
+            use script = new scriptHost()
+            let opt = script.Eval(text) |> getValue
+            let value = opt.Value
+            Assert.Equal(typeof<string>, value.ReflectionType)
+            Assert.Equal("cpu", value.ReflectionValue :?> string)
+        ()
+
+
+    [<Fact>]
+    member _.``Use Dependency Manager to restore packages with native dependencies, build and run script that depends on the results``() =
+        // Skip test on arm64, because there is not an arm64 native library
+        if RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then
+            ()
+        else
+        let packagemanagerlines = [|
+            "r", "Microsoft.ML,version=1.4.0-preview"
+            "r", "Microsoft.ML.AutoML,version=0.16.0-preview"
+            "r", "Microsoft.Data.Analysis,version=0.4.0"
+        |]
+
+        let reportError =
+            let report errorType code message =
+                match errorType with
+                | ErrorReportType.Error -> printfn "PackageManagementError %d : %s" code message
+                | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
+            ResolvingErrorReport (report)
+
+        let mutable resolverPackageRoots = Seq.empty<string>
+        let mutable resolverPackageRoots = Seq.empty<string>
+        let mutable resolverReferences = Seq.empty<string>
+
+        let nativeProbingRoots () = resolverPackageRoots
+        let assemblyProbingPaths () = resolverReferences
+
+        // Restore packages, Get Reference dll paths and package roots
+        let result =
+            use dp = new DependencyProvider(AssemblyResolutionProbe(assemblyProbingPaths), NativeResolutionProbe(nativeProbingRoots), false)
+            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "net9.0")
+
+        Assert.True(result.Success, "resolve failed")
+
+        resolverPackageRoots <- result.Roots
+        resolverReferences <- result.Resolutions
+
+// Build and execute reference
+        let referenceText =
+#if DISABLED_DUE_TO_ISSUE_8588
+//
+// https://github.com/dotnet/fsharp/issues/8588
+            // For this test case use Assembly Qualified References
+            ("", result.Resolutions)
+            ||> Seq.fold(fun acc r ->
+                let assemblyName = AssemblyName.GetAssemblyName(r)
+                acc + "#r @\"" + assemblyName.FullName + "\"" + Environment.NewLine)
+#else
+            // use standard #r for now
+            ("", result.Resolutions)
+            ||> Seq.fold(fun acc r ->
+                acc + "#r @\"" + r + "\"" + Environment.NewLine)
+#endif
+
+        let code = @"
+$(REFERENCES)
+
+open System
+open System.IO
+open System.Linq
+open Microsoft.Data.Analysis
+
+let Shuffle (arr:int[]) =
+    let rnd = Random()
+    for i in 0 .. arr.Length - 1 do
+        let r = i + rnd.Next(arr.Length - i)
+        let temp = arr.[r]
+        arr.[r] <- arr.[i]
+        arr.[i] <- temp
+    arr
+
+let housingPath = ""housing.csv""
+let housingData = DataFrame.LoadCsv(housingPath)
+let randomIndices = (Shuffle(Enumerable.Range(0, (int (housingData.Rows.Count) - 1)).ToArray()))
+let testSize = int (float (housingData.Rows.Count) * 0.1)
+let trainRows = randomIndices.[testSize..]
+let testRows = randomIndices.[..testSize]
+let housing_train = housingData.[trainRows]
+
+open Microsoft.ML
+open Microsoft.ML.Data
+open Microsoft.ML.AutoML
+
+let mlContext = MLContext()
+let experiment = mlContext.Auto().CreateRegressionExperiment(maxExperimentTimeInSeconds = 15u)
+let result = experiment.Execute(housing_train, labelColumnName = ""median_house_value"")
+let details = result.RunDetails
+printfn ""%A"" result
+123
+"
+        let scriptText = code.Replace("$(REFERENCES)", referenceText)
+
+        // Use the dependency manager to resolve assemblies and native paths
+        use dp = new DependencyProvider(AssemblyResolutionProbe(assemblyProbingPaths), NativeResolutionProbe(nativeProbingRoots), false)
+
+        use script = new FSharpScript()
+        let opt = script.Eval(scriptText)  |> getValue
+        let value = opt.Value
+        Assert.Equal(123, value.ReflectionValue :?> int32)
+
+    [<Fact>]
+    member _.``Use NativeResolver to resolve native dlls.``() =
+        // Skip test on arm64, because there is not an arm64 native library
+        if RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then
+            ()
+        else
+        let packagemanagerlines = [|
+            "r", "Microsoft.ML,version=1.4.0-preview"
+            "r", "Microsoft.ML.AutoML,version=0.16.0-preview"
+            "r", "Microsoft.Data.Analysis,version=0.4.0"
+        |]
+
+        let reportError =
+            let report errorType code message =
+                match errorType with
+                | ErrorReportType.Error -> printfn "PackageManagementError %d : %s" code message
+                | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
+            ResolvingErrorReport (report)
+
+        let mutable resolverPackageRoots = Seq.empty<string>
+        let mutable resolverPackageRoots = Seq.empty<string>
+
+        let mutable resolverReferences = Seq.empty<string>
+        let nativeProbingRoots () = resolverPackageRoots
+        let assemblyPaths () = resolverReferences
+
+        // Restore packages, Get Reference dll paths and package roots
+        let result =
+            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
+            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "net9.0")
+
+        Assert.True(result.Success, "resolve failed")
+
+        resolverPackageRoots <- result.Roots
+        resolverReferences <- result.Resolutions
+
+        use _nativeDependencyResolver = new NativeDllResolveHandler(NativeResolutionProbe(nativeProbingRoots))
+
+        // Build and execute script
+        let referenceText =
+            ("", result.Resolutions) ||> Seq.fold(fun acc r -> acc + @"#r @""" + r + "\"" + Environment.NewLine)
+
+        let code = @"
+$(REFERENCES)
+
+open System
+open System.IO
+open System.Linq
+open Microsoft.Data.Analysis
+
+let Shuffle (arr:int[]) =
+    let rnd = Random()
+    for i in 0 .. arr.Length - 1 do
+        let r = i + rnd.Next(arr.Length - i)
+        let temp = arr.[r]
+        arr.[r] <- arr.[i]
+        arr.[i] <- temp
+    arr
+
+let housingPath = ""housing.csv""
+let housingData = DataFrame.LoadCsv(housingPath)
+let randomIndices = (Shuffle(Enumerable.Range(0, (int (housingData.Rows.Count) - 1)).ToArray()))
+let testSize = int (float (housingData.Rows.Count) * 0.1)
+let trainRows = randomIndices.[testSize..]
+let testRows = randomIndices.[..testSize]
+let housing_train = housingData.[trainRows]
+
+open Microsoft.ML
+open Microsoft.ML.Data
+open Microsoft.ML.AutoML
+
+let mlContext = MLContext()
+let experiment = mlContext.Auto().CreateRegressionExperiment(maxExperimentTimeInSeconds = 15u)
+let result = experiment.Execute(housing_train, labelColumnName = ""median_house_value"")
+let details = result.RunDetails
+printfn ""%A"" result
+123
+"
+        let scriptText = code.Replace("$(REFERENCES)", referenceText)
+
+        use script = new FSharpScript()
+        let opt = script.Eval(scriptText)  |> getValue
+        let value = opt.Value
+        Assert.Equal(123, value.ReflectionValue :?> int32)
+
+    [<Fact>]
+    member _.``Use AssemblyResolver to resolve assemblies``() =
+        // Skip test on arm64, because there is not an arm64 native library
+        if RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then
+            ()
+        else
+        let packagemanagerlines = [|
+            "r", "Microsoft.ML,version=1.4.0-preview"
+            "r", "Microsoft.ML.AutoML,version=0.16.0-preview"
+            "r", "Microsoft.Data.Analysis,version=0.4.0"
+        |]
+
+        let reportError =
+            let report errorType code message =
+                match errorType with
+                | ErrorReportType.Error -> printfn "PackageManagementError %d : %s" code message
+                | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
+            ResolvingErrorReport (report)
+
+        let mutable resolverPackageRoots = Seq.empty<string>
+        let mutable resolverReferences = Seq.empty<string>
+
+        let nativeProbingRoots () = resolverPackageRoots
+        let assemblyProbingPaths () = resolverReferences
+
+        // Restore packages, Get Reference dll paths and package roots
+        let result =
+            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
+            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "net9.0")
+
+        Assert.True(result.Success, "resolve failed")
+
+        resolverPackageRoots <- result.Roots
+        resolverReferences <- result.Resolutions
+
+        use _assemblyResolver = new AssemblyResolveHandler(AssemblyResolutionProbe(assemblyProbingPaths))
+
+        // Build and execute script
+        let referenceText =
+            ("", result.Resolutions)
+            ||> Seq.fold(fun acc r ->
+                acc + "    @\"" + r + "\";" + Environment.NewLine)
+
+        let code = """
+open System.Reflection
+
+let x = [|
+$(REFERENCES)
+    |]
+
+x |> Seq.iter(fun r ->
+    let name = AssemblyName.GetAssemblyName(r)
+    let asm = Assembly.Load(name)
+    printfn "%A" (asm.FullName)
+    )
+123
+"""
+        let scriptText = code.Replace("$(REFERENCES)", referenceText)
+
+        use script = new FSharpScript()
+        let opt = script.Eval(scriptText)  |> getValue
+        let value = opt.Value
+        Assert.Equal(123, value.ReflectionValue :?> int32)
+
+    [<Fact>]
+    member _.``Verify that referencing FSharp.Core fails with FSharp Scripts``() =
+        let packagemanagerlines = [| "r", "FSharp.Core,version=4.7.1" |]
+
+        let reportError =
+            let report errorType code message =
+                match errorType with
+                | ErrorReportType.Error -> printfn "PackageManagementError %d : %s" code message
+                | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
+            ResolvingErrorReport (report)
+
+        let mutable resolverPackageRoots = Seq.empty<string>
+        let mutable resolverReferences = Seq.empty<string>
+
+        let nativeProbingRoots () = resolverPackageRoots
+        let assemblyProbingPaths () = resolverReferences
+
+        // Restore packages, Get Reference dll paths and package roots
+        let result =
+            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
+            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "net9.0")
+
+        // Expected: error FS3217: PackageManager cannot reference the System Package 'FSharp.Core'
+        Assert.False(result.Success, "resolve succeeded but should have failed")
+
+    [<Fact>]
+    member _.``Verify that referencing FSharp.Core succeeds with CSharp Scripts``() =
+        let packagemanagerlines = [| "r", "FSharp.Core,version=4.7.1" |]
+
+        let reportError =
+            let report errorType code message =
+                match errorType with
+                | ErrorReportType.Error -> printfn "PackageManagementError %d : %s" code message
+                | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
+            ResolvingErrorReport (report)
+
+        let mutable resolverPackageRoots = Seq.empty<string>
+        let mutable resolverReferences = Seq.empty<string>
+
+        let nativeProbingRoots () = resolverPackageRoots
+        let assemblyProbingPaths () = resolverReferences
+
+        // Restore packages, Get Reference dll paths and package roots
+        let result =
+            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
+            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+            dp.Resolve(idm, ".csx", packagemanagerlines, reportError, "net9.0")
+
+        Assert.True(result.Success, "resolve failed but should have succeeded")
+
+
+    [<Fact>]
+    member _.``Verify that Dispose on DependencyProvider unhooks ResolvingUnmanagedDll event handler``() =
+
+        let mutable found = false
+        let nativeProbingRoots () =
+            found <- true
+            Seq.empty<string>
+
+        let reportError =
+            let report errorType code message =
+                match errorType with
+                | ErrorReportType.Error -> printfn "PackageManagementError %d : %s" code message
+                | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
+            ResolvingErrorReport (report)
+
+        // Set up native resolver to resolve dll's
+        do
+            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
+
+            // Invoking a nonexistent dll via pinvoke cause a probe. which should invoke the call back
+            try Native.NoneSuch() |> ignore with _ -> ()
+            Assert.True (found, "Failed to invoke the nativeProbingRoots callback")
+
+        // Here the dispose was invoked which should clear the ResolvingUnmanagedDll handler
+        found <- false
+        try Native.NoneSuch() |> ignore with _ -> ()
+        Assert.False (found, "Invoke the nativeProbingRoots callback -- Error the ResolvingUnmanagedDll still fired ")
+
+        use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+        let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+
+        if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
+            let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data,3.3.3"|], reportError, "net472")
+            Assert.Equal(true, result.Success)
+            Assert.Equal(1, result.Resolutions |> Seq.length)
+            Assert.Equal(1, result.SourceFiles |> Seq.length)
+            Assert.Equal(2, result.Roots |> Seq.length)
+
+        let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data,3.3.3"|], reportError, "net9.0")
+        Assert.Equal(true, result.Success)
+        Assert.Equal(1, result.Resolutions |> Seq.length)
+        Assert.Equal(1, result.SourceFiles |> Seq.length)
+        Assert.Equal(1, result.Roots |> Seq.length)
+        ()
+
+
+    [<Fact>]
+    member _.``Verify that Dispose on DependencyProvider unhooks ResolvingUnmanagedDll and AssemblyResolver event handler``() =
+
+        let mutable assemblyFound = false
+        let assemblyProbingPaths () =
+            assemblyFound <- true
+            Seq.empty<string>
+
+        let mutable nativeFound = false
+        let nativeProbingRoots () =
+            nativeFound <- true
+            Seq.empty<string>
+
+        // Set up native resolver to resolve dll's
+        do
+            use dp = new DependencyProvider(AssemblyResolutionProbe(assemblyProbingPaths), NativeResolutionProbe(nativeProbingRoots), false)
+
+            // Invoking a nonexistent dll via pinvoke cause a probe. which should invoke the call back
+            try Native.NoneSuch() |> ignore with _ -> ()
+            Assert.True (nativeFound, "Failed to invoke the nativeProbingRoots callback")
+
+            // Invoking a nonexistent assembly causes a probe. which should invoke the call back
+            try Assembly.Load("NoneSuchAssembly") |> ignore with _ -> ()
+            Assert.True (assemblyFound, "Failed to invoke the AssemblyResolve handler")
+
+        // Here the dispose was invoked which should clear the ResolvingUnmanagedDll handler
+        nativeFound <- false
+        assemblyFound <- false
+
+        try Native.NoneSuch() |> ignore with _ -> ()
+        Assert.False (nativeFound, "Invoke the nativeProbingRoots callback -- Error the ResolvingUnmanagedDll still fired ")
+
+        try Assembly.Load("NoneSuchAssembly") |> ignore with _ -> ()
+        Assert.False (assemblyFound, "Invoke the assemblyProbingRoots callback -- Error the AssemblyResolve still fired ")
+#endif
+
     [<Fact>]
     member _.``Verify that Dispose on AssemblyResolveHandler unhooks AssemblyResolve event handler``() =
 
@@ -698,6 +670,56 @@ type DependencyManagerInteractiveTests() =
 
         try Assembly.Load("NoneSuchAssembly") |> ignore with _ -> ()
         Assert.False (assemblyFound, "Invoke the assemblyProbingRoots callback -- Error the AssemblyResolve still fired ")
+
+    [<Fact>]
+    member _.``Verify that Dispose cleans up the native paths added``() =
+        let nativeProbingRoots () = Seq.empty<string>
+
+        let appendSemiColon (p:string) =
+            if not(p.EndsWith(";", StringComparison.OrdinalIgnoreCase)) then
+                p + ";"
+            else
+                p
+
+        let reportError =
+            let report errorType code message =
+                match errorType with
+                | ErrorReportType.Error -> printfn "PackageManagementError %d : %s" code message
+                | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
+            ResolvingErrorReport (report)
+
+        let mutable initialPath:string = null
+        let mutable currentPath:string = null
+        let mutable finalPath:string =  null
+        do
+            initialPath <- appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
+            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+            let mutable currentPath:string = null
+            if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
+                let result = dp.Resolve(idm, ".fsx", [|"r", "Microsoft.Data.Sqlite,3.1.7"|], reportError, "netstandard2.0")
+                Assert.Equal(true, result.Success)
+                currentPath <-  appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+        finalPath <- appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+        Assert.True(currentPath <> initialPath)     // The path was modified by #r "nuget: ..."
+        Assert.Equal(finalPath, initialPath)        // IDispose correctly cleaned up the path
+
+        initialPath <- null
+        currentPath <- null
+        finalPath <-  null
+        do
+            initialPath <- appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+            let mutable currentPath:string = null
+            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
+            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+            let result = dp.Resolve(idm, ".fsx", [|"r", "Microsoft.Data.Sqlite,3.1.7"|], reportError, "net9.0")
+            Assert.Equal(true, result.Success)
+            currentPath <-  appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+        finalPath <- appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+        Assert.True(currentPath <> initialPath)      // The path was modified by #r "nuget: ..."
+        Assert.Equal(finalPath, initialPath)        // IDispose correctly cleaned up the path
+
+        ()
 
     [<Fact>]
     member _.``Verify that #help produces help text for fsi + dependency manager``() =
