@@ -393,7 +393,7 @@ let ``Cancel running jobs with the same key`` cancelDuplicate expectFinished =
                 member _.GetVersion() = 1
                 member _.GetLabel() = "key1" }
 
-    cache.Get(key1, work job1started.Set job1finished.Set) |> Async.Start
+    cache.Get(key1, work job1started.Set job1finished.Set) |> Async.Catch |> Async.Ignore |> Async.Start
 
     job1started.Wait()
 
@@ -403,7 +403,7 @@ let ``Cancel running jobs with the same key`` cancelDuplicate expectFinished =
                 member _.GetVersion() = key1.GetVersion() + 1
                 member _.GetLabel() = "key2" }
 
-    cache.Get(key2, work job2started.Set job2finished.Set ) |> Async.Start
+    cache.Get(key2, work job2started.Set job2finished.Set ) |> Async.Catch |> Async.Ignore |> Async.Start
 
     job2started.Wait()
 
@@ -415,7 +415,6 @@ let ``Cancel running jobs with the same key`` cancelDuplicate expectFinished =
         job1finished.Wait()
 
     Assert.Equal((2, expectFinished), (started, finished))
-
 
 type DummyException(msg) =
     inherit Exception(msg)
@@ -555,4 +554,3 @@ let ``We get diagnostics from the job that failed`` () =
 
         Assert.Equal<_ list>(["job error"], messages)
     }
-
