@@ -2913,7 +2913,7 @@ and [<NoEquality; NoComparison>] ILPreTypeDef =
 
 /// This is a memory-critical class. Very many of these objects get allocated and held to represent the contents of .NET assemblies.
 and [<Sealed>] ILPreTypeDefImpl(nameSpace: string list, name: string, metadataIndex: int32, storage: ILTypeDefStored) =
-    let onDemand =
+    let stored =
         lazy
         match storage with
         | ILTypeDefStored.Given td -> td
@@ -2923,7 +2923,7 @@ and [<Sealed>] ILPreTypeDefImpl(nameSpace: string list, name: string, metadataIn
     interface ILPreTypeDef with
         member _.Namespace = nameSpace
         member _.Name = name
-        member x.GetTypeDef() = onDemand.Value
+        member x.GetTypeDef() = stored.Value
 
 and ILTypeDefStored =
     | Given of ILTypeDef
