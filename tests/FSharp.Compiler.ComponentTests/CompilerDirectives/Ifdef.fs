@@ -26,7 +26,7 @@ let main _ =
         |> compileExeAndRun
         |> verifyOutput expectedOutput
 
-    let ifdefSourceExtraEndif = """
+    let sourceExtraEndif = """
 #if MYDEFINE1
 printf "1"
 #endif
@@ -37,8 +37,21 @@ printf "1"
     [<Fact>]
     let extraEndif () =
 
-        FSharp ifdefSourceExtraEndif
+        FSharp sourceExtraEndif
         |> withDefines ["MYDEFINE1"]
         |> asExe
         |> compile
         |> withDiagnosticMessage "#endif has no matching #if in implementation file"
+
+    let sourceUnknownHash = """
+module A
+#ifxx
+#abc
+"""
+
+    [<Fact>]
+    let unknownHashDirectiveIsIgnored () =
+
+        FSharp sourceUnknownHash
+        |> compile
+        |> shouldSucceed
