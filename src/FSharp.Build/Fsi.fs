@@ -161,11 +161,33 @@ type public Fsi() as this =
 
         builder
 
-    let outputWriter = new StringWriter()
+    let mutable bufferLimit = None
 
-    override _.LogEventsFromTextOutput(line, msgImportance) =
-        outputWriter.WriteLine(line)
+    let textOutput =
+        lazy System.Collections.Generic.Queue<_>(defaultArg bufferLimit 1024)
+
+    override this.LogEventsFromTextOutput(line, msgImportance) =
+        if this.CaptureTextOutput then
+            textOutput.Value.Enqueue line
+
+            match bufferLimit with
+            | Some limit when textOutput.Value.Count > limit -> textOutput.Value.Dequeue() |> ignore
+            | _ -> ()
+
         base.LogEventsFromTextOutput(line, msgImportance)
+
+    member _.BufferLimit
+        with get () = defaultArg bufferLimit 0
+        and set limit = bufferLimit <- if limit = 0 then None else Some limit
+
+    member val CaptureTextOutput = false with get, set
+
+    [<Output>]
+    member this.TextOutput =
+        if this.CaptureTextOutput then
+            textOutput.Value |> String.concat Environment.NewLine
+        else
+            String.Empty
 
     // --codepage <int>: Specify the codepage to use when opening source files
     member _.CodePage
@@ -288,9 +310,6 @@ type public Fsi() as this =
     member _.CommandLineArgs
         with get () = List.toArray commandLineArgs
         and set value = commandLineArgs <- List.ofArray value
-
-    [<Output>]
-    member _.TextOutput = outputWriter.ToString()
 
     // ToolTask methods
     override _.ToolName = "fsi.exe"
