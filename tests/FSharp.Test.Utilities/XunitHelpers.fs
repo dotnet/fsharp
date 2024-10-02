@@ -68,9 +68,10 @@ type TestRun(sink) =
     static member Finished = testRunFinishedEvent.Publish
     interface IDisposable with
         member _.Dispose() =
-            // Try to release files locked by AssemblyLoadContext.
+            // Try to release files locked by AssemblyLoadContext, AppDomains etc.
             GC.Collect()
             GC.WaitForPendingFinalizers()
+            GC.Collect()
 
             testRunFinishedEvent.Trigger()
             base.Dispose()
