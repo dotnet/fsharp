@@ -465,20 +465,19 @@ type AsyncModule() =
 
     [<Fact>]
     member _.``error on one workflow should cancel all others``() =
-        let counter = 
-            async {
-                let mutable counter = 0
-                let job i = async { 
-                    if i = 55 then failwith "boom" 
-                    else 
-                        do! Async.Sleep 1000 
-                        counter <- counter + 1
-                }
+        let go = new ManualResetEvent(false)
+        let mutable counter = 0
+        let job i = async {               
+            if i = 55 then
+                go.Set() |> ignore
+                failwith "boom" 
+            else 
+                do! Async.AwaitWaitHandle go |> Async.Ignore
+                counter <- counter + 1
+        }
 
-                let! _ = Async.Parallel [ for i in 1 .. 100 -> job i ] |> Async.Catch
-                do! Async.Sleep 5000
-                return counter
-            } |> Async.RunSynchronously
+        let t = Async.Parallel [ for i in 1 .. 100 -> job i ] |> Async.Catch |> Async.Ignore |> Async.StartAsTask
+        t.Wait()
 
         Assert.AreEqual(0, counter)
 
@@ -639,7 +638,6 @@ type AsyncModule() =
     member _.``Parallel with maxDegreeOfParallelism`` () =
         let mutable i = 1
         let action j = async {
-            do! Async.Sleep 1
             Assert.Equal(j, i)
             i <- i + 1
         }

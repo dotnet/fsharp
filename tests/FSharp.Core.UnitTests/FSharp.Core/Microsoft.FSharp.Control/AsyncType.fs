@@ -235,7 +235,8 @@ type AsyncType() =
         use t = Async.StartAsTask a
         let mutable exceptionThrown = false
         try
-            waitASec t
+            // waitASec t
+            t.Wait()
         with
             e -> exceptionThrown <- true
         Assert.True (t.IsFaulted)
@@ -273,7 +274,7 @@ type AsyncType() =
 //        printfn "%A" t.Status
         let mutable exceptionThrown = false
         try
-            waitASec t
+            t.Wait()
         with e -> exceptionThrown <- true
         Assert.True (exceptionThrown)
         Assert.True(t.IsCanceled)
@@ -306,56 +307,50 @@ type AsyncType() =
         use t = Async.StartImmediateAsTask a
         let mutable exceptionThrown = false
         try
-            waitASec t
+            t.Wait()
         with
             e -> exceptionThrown <- true
         Assert.True (t.IsFaulted)
         Assert.True(exceptionThrown)
 
-#if IGNORED
     [<Fact>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/4337")>]
     member _.CancellationPropagatesToImmediateTask () =
         let a = async {
-                while true do ()
+                while true do
+                    do! Async.Sleep 100
             }
         use t = Async.StartImmediateAsTask a
         Async.CancelDefaultToken ()
         let mutable exceptionThrown = false
         try
-            waitASec t
+            t.Wait()
         with e -> exceptionThrown <- true
         Assert.True (exceptionThrown)
         Assert.True(t.IsCanceled)
-#endif
 
-#if IGNORED
     [<Fact>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/4337")>]
     member _.CancellationPropagatesToGroupImmediate () =
         let ewh = new ManualResetEvent(false)
-        let cancelled = ref false
+        let mutable cancelled = false
         let a = async {
-                use! holder = Async.OnCancel (fun _ -> cancelled := true)
+                use! holder = Async.OnCancel (fun _ -> cancelled <- true)
                 ewh.Set() |> Assert.True
-                while true do ()
+                while true do
+                    do! Async.Sleep 100
             }
         let cts = new CancellationTokenSource()
         let token = cts.Token
         use t =
             Async.StartImmediateAsTask(a, cancellationToken=token)
-//        printfn "%A" t.Status
         ewh.WaitOne() |> Assert.True
         cts.Cancel()
-//        printfn "%A" t.Status
         let mutable exceptionThrown = false
         try
-            waitASec t
+            t.Wait()
         with e -> exceptionThrown <- true
         Assert.True (exceptionThrown)
         Assert.True(t.IsCanceled)
-        Assert.True(!cancelled)
-#endif
+        Assert.True(cancelled)
 
     [<Fact>]
     member _.TaskAsyncValue () =
@@ -415,8 +410,7 @@ type AsyncType() =
               }
         Async.RunSynchronously(a) |> Assert.True
 
-    // test is flaky: https://github.com/dotnet/fsharp/issues/11586
-    //[<Fact>]
+    [<Fact>]
     member _.TaskAsyncValueCancellation () =
         use ewh = new ManualResetEvent(false)
         let cts = new CancellationTokenSource()
@@ -434,9 +428,11 @@ type AsyncType() =
                    :? TaskCanceledException -> 
                       ewh.Set() |> ignore // this is ok
             }
-        Async.Start a
+        let t1 = Async.StartAsTask a
         cts.Cancel()
         ewh.WaitOne(10000) |> ignore
+        // Don't leave unobserved background tasks, because they can crash the test run.
+        t1.Wait()
 
     [<Fact>]
     member _.NonGenericTaskAsyncValue () =
@@ -477,9 +473,10 @@ type AsyncType() =
                    :? TaskCanceledException -> 
                       ewh.Set() |> ignore // this is ok
             }
-        Async.Start a
+        let t1 = Async.StartAsTask a
         cts.Cancel()
         ewh.WaitOne(10000) |> ignore
+        t1.Wait()
 
     [<Fact>]
     member _.CancellationExceptionThrown () =

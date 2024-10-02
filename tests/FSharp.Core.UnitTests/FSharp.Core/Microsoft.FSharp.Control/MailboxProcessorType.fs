@@ -208,6 +208,7 @@ type MailboxProcessorType() =
         let receiveEv = new ManualResetEvent(false)
         let postEv = new ManualResetEvent(false)
         let finishedEv = new ManualResetEvent(false)
+        let mutable finish = false 
         let mb =
             MailboxProcessor.Start (
                 fun inbox -> async {
@@ -219,11 +220,11 @@ type MailboxProcessorType() =
                 })
         let post =
             async {
-                while true do
+                while not finish do
                     let r = postEv.WaitOne()
                     postEv.Reset() |> ignore
                     mb.Post(fun () -> ())
-            } |> Async.Start
+            } |> Async.StartAsTask
         for i in 0 .. 100000 do
             if i % 2 = 0 then
                 receiveEv.Set() |> ignore
@@ -235,11 +236,16 @@ type MailboxProcessorType() =
             finishedEv.WaitOne() |> ignore
             finishedEv.Reset() |> ignore
 
+        finish <- true
+        postEv.Set() |> ignore
+        post.Wait()
+
     [<Fact>]
     member this.``Receive Races with Post on timeout``() =
         let receiveEv = new ManualResetEvent(false)
         let postEv = new ManualResetEvent(false)
         let finishedEv = new ManualResetEvent(false)
+        let mutable finished = false
         let mb =
             MailboxProcessor.Start (
                 fun inbox -> async {
@@ -254,11 +260,12 @@ type MailboxProcessorType() =
 
         let post =
             async {
-                while true do
+                while not finished do
                     let r = postEv.WaitOne()
                     postEv.Reset() |> ignore
                     mb.Post(fun () -> ())
-            } |> Async.Start
+            }
+            |> Async.StartAsTask
 
         for i in 0 .. 10000 do
             if i % 2 = 0 then
@@ -274,11 +281,16 @@ type MailboxProcessorType() =
 
             finishedEv.Reset() |> ignore
 
+        finished <- true
+        postEv.Set() |> ignore
+        post.Wait()
+
     [<Fact>]
     member this.``TryReceive Races with Post on timeout``() =
         let receiveEv = new ManualResetEvent(false)
         let postEv = new ManualResetEvent(false)
         let finishedEv = new ManualResetEvent(false)
+        let mutable finished = false
         let mb =
             MailboxProcessor.Start (
                 fun inbox -> async {
@@ -293,11 +305,11 @@ type MailboxProcessorType() =
 
         let post =
             async {
-                while true do
+                while not finished do
                     let r = postEv.WaitOne()
                     postEv.Reset() |> ignore
                     mb.Post(fun () -> ())
-            } |> Async.Start
+            } |> Async.StartAsTask
 
         for i in 0 .. 10000 do
             if i % 2 = 0 then
@@ -312,6 +324,10 @@ type MailboxProcessorType() =
                     raise <| Exception("Mailbox should not fail!", isErrored.Result)
 
             finishedEv.Reset() |> ignore
+
+        finished <- true
+        postEv.Set() |> ignore
+        post.Wait()
 
     [<Fact>]
     member this.``After dispose is called, mailbox should stop receiving and processing messages``() = task {
