@@ -174,9 +174,8 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (restart required);
-Cache parsing results (experimental)</source>
-        <target state="translated">F# 项目和缓存性能选项；
+Enable fast find references &amp; rename (restart required)</source>
+        <target state="needs-review-translation">F# 项目和缓存性能选项；
 启用内存中跨项目引用；
 Enable_partial_type_checking;
 IntelliSense 性能选项；

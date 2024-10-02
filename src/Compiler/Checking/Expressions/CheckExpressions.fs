@@ -5163,6 +5163,7 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
                         | TyparConstraint.SupportsComparison _
                         | TyparConstraint.SupportsEquality _
                         | TyparConstraint.DefaultsTo (ty = Unit)
+                        | TyparConstraint.AllowsRefStruct _
                         | TyparConstraint.MayResolveMember _ -> true
 
                         // Any other kind of constraint is incompatible with unit.
@@ -6003,10 +6004,10 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     | SynExpr.ImplicitZero m ->
         error(Error(FSComp.SR.tcConstructRequiresSequenceOrComputations(), m))
 
-    | SynExpr.DoBang (_, m)
-    | SynExpr.MatchBang (range = m)
+    | SynExpr.DoBang (trivia = { DoBangKeyword = m })
+    | SynExpr.MatchBang (trivia = { MatchBangKeyword = m })
     | SynExpr.WhileBang (range = m)
-    | SynExpr.LetOrUseBang (range = m) ->
+    | SynExpr.LetOrUseBang (trivia = { LetOrUseBangKeyword = m }) ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
 
     | SynExpr.IndexFromEnd (rightExpr, m) ->

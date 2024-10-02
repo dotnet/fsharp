@@ -125,7 +125,6 @@ type FSharpChecker
         captureIdentifiersWhenParsing,
         getSource,
         useChangeNotifications,
-        useSyntaxTreeCache,
         useTransparentCompiler
     ) =
 
@@ -144,8 +143,7 @@ type FSharpChecker
                 parallelReferenceResolution,
                 captureIdentifiersWhenParsing,
                 getSource,
-                useChangeNotifications,
-                useSyntaxTreeCache
+                useChangeNotifications
             )
             :> IBackgroundCompiler
         else
@@ -162,8 +160,7 @@ type FSharpChecker
                 parallelReferenceResolution,
                 captureIdentifiersWhenParsing,
                 getSource,
-                useChangeNotifications,
-                useSyntaxTreeCache
+                useChangeNotifications
             )
             :> IBackgroundCompiler
 
@@ -209,7 +206,6 @@ type FSharpChecker
             ?parallelReferenceResolution: bool,
             ?captureIdentifiersWhenParsing: bool,
             ?documentSource: DocumentSource,
-            ?useSyntaxTreeCache: bool,
             ?useTransparentCompiler: bool
         ) =
 
@@ -238,8 +234,6 @@ type FSharpChecker
             | Some(DocumentSource.Custom _) -> true
             | _ -> false
 
-        let useSyntaxTreeCache = defaultArg useSyntaxTreeCache true
-
         if keepAssemblyContents && enablePartialTypeChecking then
             invalidArg "enablePartialTypeChecking" "'keepAssemblyContents' and 'enablePartialTypeChecking' cannot be both enabled."
 
@@ -261,7 +255,6 @@ type FSharpChecker
              | Some(DocumentSource.Custom f) -> Some f
              | _ -> None),
             useChangeNotifications,
-            useSyntaxTreeCache,
             useTransparentCompiler
         )
 

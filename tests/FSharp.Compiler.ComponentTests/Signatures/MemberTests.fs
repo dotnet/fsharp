@@ -15,8 +15,7 @@ type Foo() =
     member f.X with internal get (key1, key2) = true and public set (key1, key2) value = ()
 """
     |> printSignatures
-    |> should
-        equal
+    |> assertEqualIgnoreLineEnding
         """
 module Foo
 
@@ -38,8 +37,7 @@ type Foo() =
     member f.Y with public get () = 'y' and internal set y = ignore<char> y
 """
     |> printSignatures
-    |> should
-        equal
+    |> assertEqualIgnoreLineEnding
         """
 module Foo
 
