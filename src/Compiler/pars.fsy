@@ -4419,7 +4419,7 @@ declExpr:
      { let spBind = DebugPointAtBinding.Yes(rhs2 parseState 1 5)
        let mEquals = rhs parseState 3
        let m = unionRanges (rhs parseState 1) $8.Range
-       let trivia: SynExprLetOrUseBangTrivia = { EqualsRange = Some mEquals }
+       let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = rhs parseState 1 ; EqualsRange = Some mEquals }
        SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, $4, $7, $8, m, trivia) }
 
   | OBINDER headBindingPattern EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
@@ -4428,7 +4428,7 @@ declExpr:
        let spBind = DebugPointAtBinding.Yes(unionRanges (rhs parseState 1) $4.Range)
        let mEquals = rhs parseState 3
        let m = unionRanges (rhs parseState 1) $8.Range
-       let trivia: SynExprLetOrUseBangTrivia = { EqualsRange = Some mEquals }
+       let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = rhs parseState 1 ; EqualsRange = Some mEquals }
        SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, $4, $7, $8, m, trivia) }
 
   | OBINDER headBindingPattern EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP error %prec expr_let
@@ -4437,12 +4437,12 @@ declExpr:
        let mEquals = rhs parseState 3
        let mAll = unionRanges (rhs parseState 1) (rhs parseState 7)
        let m = $4.Range.EndRange // zero-width range
-       let trivia: SynExprLetOrUseBangTrivia = { EqualsRange = Some mEquals }
+       let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = rhs parseState 1 ; EqualsRange = Some mEquals }
        SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, $4, [], SynExpr.ImplicitZero m, mAll, trivia) }
 
   | DO_BANG typedSequentialExpr IN opt_OBLOCKSEP typedSequentialExprBlock %prec expr_let
      { let spBind = DebugPointAtBinding.NoneAtDo
-       let trivia: SynExprLetOrUseBangTrivia = { EqualsRange = None }
+       let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = Range.Zero; EqualsRange = None }
        SynExpr.LetOrUseBang(spBind, false, true, SynPat.Const(SynConst.Unit, $2.Range), $2, [], $5, unionRanges (rhs parseState 1) $5.Range, trivia) }
 
   | ODO_BANG typedSequentialExprBlock hardwhiteDefnBindingsTerminator %prec expr_let
