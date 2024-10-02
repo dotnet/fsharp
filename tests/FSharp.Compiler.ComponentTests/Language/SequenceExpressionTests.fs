@@ -455,3 +455,16 @@ let f2 = yield! [ 3; 4 ]
         (Error 747, Line 2, Col 10, Line 2, Col 15, "This construct may only be used within list, array and sequence expressions, e.g. expressions of the form 'seq { ... }', '[ ... ]' or '[| ... |]'. These use the syntax 'for ... in ... do ... yield...' to generate elements");
         (Error 747, Line 3, Col 10, Line 3, Col 16, "This construct may only be used within list, array and sequence expressions, e.g. expressions of the form 'seq { ... }', '[ ... ]' or '[| ... |]'. These use the syntax 'for ... in ... do ... yield...' to generate elements")
     ]
+    
+[<Fact>]
+let ``return may only be used within list, array, and sequence expressions``() =
+    Fsx """
+let f1 = return [ 3; 4 ] 
+let f2 = return! [ 3; 4 ] 
+    """
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        (Error 748, Line 2, Col 10, Line 2, Col 16, "This construct may only be used within computation expressions. To return a value from an ordinary function simply write the expression without 'return'.");
+        (Error 748, Line 3, Col 10, Line 3, Col 17, "This construct may only be used within computation expressions. To return a value from an ordinary function simply write the expression without 'return'.")
+    ]
