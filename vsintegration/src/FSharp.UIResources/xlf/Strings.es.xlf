@@ -327,11 +327,6 @@
         <target state="translated">Uso del compilador transparente (es necesario reiniciar)</target>
         <note />
       </trans-unit>
-      <trans-unit id="Use_syntax_tree_cache">
-        <source>Cache parsing results (experimental)</source>
-        <target state="translated">Resultados del análisis de la caché (experimental)</target>
-        <note />
-      </trans-unit>
     </body>
   </file>
 </xliff>
