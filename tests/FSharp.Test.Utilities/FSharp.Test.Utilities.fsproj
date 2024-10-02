@@ -64,6 +64,9 @@
     <!-- CompilerAssert dependencies.
          Make sure they are getting built with the Utilities. -->
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Build\FSharp.Build.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsi\fsiProject\fsi.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsc\fscProject\fsc.fsproj" />
   </ItemGroup>
 
 
