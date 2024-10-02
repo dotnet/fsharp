@@ -33,6 +33,7 @@
     </Compile>
     <Compile Include="CompilerDirectives\Line.fs" />
     <Compile Include="CompilerDirectives\NonStringArgs.fs" />
+    <Compile Include="CompilerDirectives\Ifdef.fs" />
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\Basic\Basic.fs" />
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\OnOverridesAndIFaceImpl\OnOverridesAndIFaceImpl.fs" />
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\OnTypeMembers\OnTypeMembers.fs" />

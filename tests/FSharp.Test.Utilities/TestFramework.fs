@@ -62,69 +62,66 @@ module Commands =
     // Execute the process pathToExe passing the arguments: arguments with the working directory: workingDir timeout after timeout milliseconds -1 = wait forever
     // returns exit code, stdio and stderr as string arrays
     let executeProcess pathToExe arguments workingDir (timeout:int) =
-        match pathToExe with
-        | Some path ->
-            let commandLine = ResizeArray()
-            let errorsList = ResizeArray()
-            let outputList = ResizeArray()
-            let errorslock = obj()
-            let outputlock = obj()
-            let outputDataReceived (message: string) =
-                if not (isNull message) then
-                    lock outputlock (fun () -> outputList.Add(message))
+        let commandLine = ResizeArray()
+        let errorsList = ResizeArray()
+        let outputList = ResizeArray()
+        let errorslock = obj()
+        let outputlock = obj()
+        let outputDataReceived (message: string) =
+            if not (isNull message) then
+                lock outputlock (fun () -> outputList.Add(message))
 
-            let errorDataReceived (message: string) =
-                if not (isNull message) then
-                    lock errorslock (fun () -> errorsList.Add(message))
+        let errorDataReceived (message: string) =
+            if not (isNull message) then
+                lock errorslock (fun () -> errorsList.Add(message))
 
-            commandLine.Add $"cd {workingDir}"
-            commandLine.Add $"{path} {arguments} /bl"
+        commandLine.Add $"cd {workingDir}"
+        commandLine.Add $"{pathToExe} {arguments} /bl"
 
-            let psi = ProcessStartInfo()
-            psi.FileName <- path
-            psi.WorkingDirectory <- workingDir
-            psi.RedirectStandardOutput <- true
-            psi.RedirectStandardError <- true
-            psi.Arguments <- arguments
-            psi.CreateNoWindow <- true
-            // When running tests, we want to roll forward to minor versions (including previews).
-            psi.EnvironmentVariables["DOTNET_ROLL_FORWARD"] <- "LatestMajor"
-            psi.EnvironmentVariables["DOTNET_ROLL_FORWARD_TO_PRERELEASE"] <- "1"
-            psi.EnvironmentVariables.Remove("MSBuildSDKsPath")          // Host can sometimes add this, and it can break things
-            psi.UseShellExecute <- false
+        let psi = ProcessStartInfo()
+        psi.FileName <- pathToExe
+        psi.WorkingDirectory <- workingDir
+        psi.RedirectStandardOutput <- true
+        psi.RedirectStandardError <- true
+        psi.Arguments <- arguments
+        psi.CreateNoWindow <- true
+        // When running tests, we want to roll forward to minor versions (including previews).
+        psi.EnvironmentVariables["DOTNET_ROLL_FORWARD"] <- "LatestMajor"
+        psi.EnvironmentVariables["DOTNET_ROLL_FORWARD_TO_PRERELEASE"] <- "1"
+        psi.EnvironmentVariables.Remove("MSBuildSDKsPath")          // Host can sometimes add this, and it can break things
+        psi.UseShellExecute <- false
 
-            use p = new Process()
-            p.StartInfo <- psi
+        use p = new Process()
+        p.StartInfo <- psi
 
-            p.OutputDataReceived.Add(fun a -> outputDataReceived a.Data)
-            p.ErrorDataReceived.Add(fun a ->  errorDataReceived a.Data)
+        p.OutputDataReceived.Add(fun a -> outputDataReceived a.Data)
+        p.ErrorDataReceived.Add(fun a ->  errorDataReceived a.Data)
 
-            if p.Start() then
-                p.BeginOutputReadLine()
-                p.BeginErrorReadLine()
-                if not(p.WaitForExit(timeout)) then
-                    // Timed out resolving throw a diagnostic.
-                    raise (new TimeoutException(sprintf "Timeout executing command '%s' '%s'" (psi.FileName) (psi.Arguments)))
-                else
-                    p.WaitForExit()
-    #if DEBUG
-            let workingDir' =
-                if workingDir = ""
-                then
-                    // Assign working dir to prevent default to C:\Windows\System32
-                    let executionLocation = Assembly.GetExecutingAssembly().Location
-                    Path.GetDirectoryName executionLocation
-                else
-                    workingDir
+        if p.Start() then
+            p.BeginOutputReadLine()
+            p.BeginErrorReadLine()
+            if not(p.WaitForExit(timeout)) then
+                // Timed out resolving throw a diagnostic.
+                raise (new TimeoutException(sprintf "Timeout executing command '%s' '%s'" (psi.FileName) (psi.Arguments)))
+            else
+                p.WaitForExit()
+#if DEBUG
+        let workingDir' =
+            if workingDir = ""
+            then
+                // Assign working dir to prevent default to C:\Windows\System32
+                let executionLocation = Assembly.GetExecutingAssembly().Location
+                Path.GetDirectoryName executionLocation
+            else
+                workingDir
 
-            lock gate (fun () ->
-                File.WriteAllLines(Path.Combine(workingDir', "commandline.txt"), commandLine)
-                File.WriteAllLines(Path.Combine(workingDir', "StandardOutput.txt"), outputList)
-                File.WriteAllLines(Path.Combine(workingDir', "StandardError.txt"), errorsList)
-            )
-    #endif
-            p.ExitCode, outputList.ToArray(), errorsList.ToArray()
-        | None -> -1, Array.empty, Array.empty
+        lock gate (fun () ->
+            File.WriteAllLines(Path.Combine(workingDir', "commandline.txt"), commandLine)
+            File.WriteAllLines(Path.Combine(workingDir', "StandardOutput.txt"), outputList)
+            File.WriteAllLines(Path.Combine(workingDir', "StandardError.txt"), errorsList)
+        )
+#endif
+        p.ExitCode, outputList.ToArray(), errorsList.ToArray()
 
     let getfullpath workDir (path:string) =
         let rooted =

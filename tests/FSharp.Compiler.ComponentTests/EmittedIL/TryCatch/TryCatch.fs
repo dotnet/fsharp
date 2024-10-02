@@ -56,9 +56,9 @@ let ``Stackoverflow reproduction`` compilation =
     | CompilationResult.Success ({OutputPath = Some dllFile} as s) -> 
        let fsharpCoreFile = typeof<voption<_>>.Assembly.Location
        File.Copy(fsharpCoreFile, Path.Combine(Path.GetDirectoryName(dllFile), Path.GetFileName(fsharpCoreFile)), true)
-       let exitCode, _stdout, _stderr =  CompilerAssert.ExecuteAndReturnResult (dllFile, isFsx=false, deps = s.Dependencies, newProcess=true)
+       let _exitCode, _stdout, stderr, _exn =  CompilerAssert.ExecuteAndReturnResult (dllFile, isFsx=false, deps = s.Dependencies, newProcess=true)
 
-       Assert.NotEqual(0,exitCode)
+       Assert.Equal("Stack overflow.", stderr[..14])
 
     | _ -> failwith (sprintf "%A" compilationResult)
 

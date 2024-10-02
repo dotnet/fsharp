@@ -72,10 +72,10 @@ module CompileHelpers =
 
         try
             f exiter
-            0
+            None
         with e ->
             stopProcessingRecovery e range0
-            1
+            Some e
 
     /// Compile using the given flags.  Source files names are resolved via the FileSystem API. The output file must be given by a -o flag.
     let compileFromArgs (ctok, argv: string[], legacyReferenceResolver, tcImportsCapture, dynamicAssemblyCreator) =
