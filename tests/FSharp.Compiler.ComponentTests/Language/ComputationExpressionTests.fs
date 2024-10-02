@@ -494,3 +494,39 @@ let run r2 r3 =
         |> withDiagnostics [
             (Error 750, Line 3, Col 5, Line 3, Col 11, "This construct may only be used within computation expressions")
         ]
+        
+    [<Fact>]
+    let ``This control construct may only be used if the computation expression builder defines a 'Yield' method`` () =
+        Fsx """
+let f3 =
+    async {
+        if true then
+            yield "a"
+        else
+            yield "b"
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 708, Line 5, Col 13, Line 5, Col 18, "This control construct may only be used if the computation expression builder defines a 'Yield' method")
+        ]
+        
+    [<Fact>]
+    let ``This control construct may only be used if the computation expression builder defines a 'YieldFrom' method`` () =
+        Fsx """
+let f3 =
+    async {
+        if true then
+            yield! "a"
+        else
+            yield "b"
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 708, Line 5, Col 13, Line 5, Col 19, "This control construct may only be used if the computation expression builder defines a 'YieldFrom' method")
+        ]
