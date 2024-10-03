@@ -184,19 +184,6 @@ module Commands =
     let fsc workDir exec (dotNetExe: FilePath) (fscExe: FilePath) flags srcFiles =
         let args = (sprintf "%s %s" flags (srcFiles |> Seq.ofList |> String.concat " "))
 
-#if FSC_IN_PROCESS
-        // This is not yet complete
-        printfn "Hosted Compiler:"
-        printfn "workdir: %A\nargs: %A"workdir args
-        let fscCompiler = FSharp.Compiler.Hosted.FscCompiler()
-        let exitCode, _stdin, _stdout = FSharp.Compiler.Hosted.CompilerHelpers.fscCompile workDir (FSharp.Compiler.Hosted.CompilerHelpers.parseCommandLine args)
-
-        match exitCode with
-        | 0 -> CmdResult.Success
-        | err ->
-            let msg = sprintf "Error running command '%s' with args '%s' in directory '%s'" fscExe args workDir
-            CmdResult.ErrorLevel (msg, err)
-#else
         ignore workDir
 #if NETCOREAPP
         exec dotNetExe (fscExe + " " + args)
@@ -205,7 +192,6 @@ module Commands =
         printfn "fscExe: %A" fscExe
         printfn "args: %A" args
         exec fscExe args
-#endif
 #endif
 
     let csc exec cscExe flags srcFiles =

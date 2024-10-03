@@ -192,7 +192,6 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
     </ItemGroup>
     <Copy SourceFiles='@(Libraries)' DestinationFolder='$(OutputPath)' SkipUnchangedFiles='false' />
   </Target>
-
 </Project>"
         template
         |> replace "$(UTILITYSOURCEITEMS)" pc.UtilitySourceItems false false CompileItem.Compile
@@ -280,7 +279,6 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
                 let cfg = { cfg with Directory = directory }
                 execBothToOutCheckPassed cfg directory buildOutputFile cfg.DotNetExe $"build /t:RunFSharpScriptAndPrintOutput"
             executeFsi compilerType targetFramework
-
 
     match p with
 #if NETCOREAPP
