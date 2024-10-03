@@ -56,5 +56,5 @@ module Ex3 =
   let a2 = { FA = 1 }
   let r = a2 :> A2 //this produces warnings, but proves that a2 is indeed of type A2.
   
-System.IO.File.WriteAllText("test.ok","ok") 
+printf "TEST PASSED OK" ; 
 exit 0
