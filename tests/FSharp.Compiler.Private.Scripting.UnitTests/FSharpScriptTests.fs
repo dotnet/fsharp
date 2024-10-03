@@ -352,6 +352,22 @@ tInput.Length
         let value = opt.Value
         Assert.Equal(4L, downcast value.ReflectionValue)
 
+    [<FSharp.Test.FactForNETCOREAPP>] // usessdkrefs is not a valid option for desktop compiler
+    member _.``ML - use assembly with ref dependencies and without refing SMemory``() =
+        let code = """
+#r "nuget:Microsoft.ML.OnnxTransformer,1.4.0"
+
+open System
+open System.Numerics.Tensors
+let inputValues = [| 12.0; 10.0; 17.0; 5.0 |]
+let tInput = new DenseTensor<float>(inputValues.AsMemory(), new ReadOnlySpan<int>([|4|]))
+tInput.Length
+"""
+        use script = new FSharpScript(additionalArgs=[| "/usesdkrefs-" |])
+        let opt = script.Eval(code)  |> getValue
+        let value = opt.Value
+        Assert.Equal(4L, downcast value.ReflectionValue)
+
     [<Fact>]
     member _.``System.Device.Gpio - Ensure we reference the runtime version of the assembly``() =
         let code = """
@@ -486,3 +502,17 @@ test pfloat "1.234"
         let opt = script.Eval(code)  |> getValue
         let value = opt.Value
         Assert.True(true = downcast value.ReflectionValue)
+
+    [<Fact>]
+    member _.``Nuget package with method duplicates differing only in generic arity``() =
+        // regression test for: https://github.com/dotnet/fsharp/issues/17796
+        // Was an internal error
+        let code = """
+#r "nuget: Microsoft.Extensions.DependencyInjection.Abstractions"
+open Microsoft.Extensions.DependencyInjection
+let add (col:IServiceCollection) = 
+    col.AddSingleton<string,string>()
+"""
+        use script = new FSharpScript(additionalArgs=[| |])
+        let _value,diag = script.Eval(code)
+        Assert.Empty(diag)

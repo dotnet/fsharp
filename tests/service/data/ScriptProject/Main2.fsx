@@ -1,6 +1,0 @@
-#load "Lib1.fsx"
-#load "Lib2.fsx"
-#load "Lib3.fs"
-Lib1.add3 5 |> printfn "%i"
-Lib2.add4 5 |> printfn "%i"
-Lib3.add6 5 |> printfn "%i"
