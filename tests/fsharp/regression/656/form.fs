@@ -928,5 +928,5 @@ do Application.Run(mainForm)
 
 let _ = 
    (System.Console.Out.WriteLine "Test Passed"; 
-        System.IO.File.WriteAllText("test.ok", "ok"); 
+        printf "TEST PASSED OK" ; 
         exit 0)

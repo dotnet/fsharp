@@ -5163,6 +5163,7 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
                         | TyparConstraint.SupportsComparison _
                         | TyparConstraint.SupportsEquality _
                         | TyparConstraint.DefaultsTo (ty = Unit)
+                        | TyparConstraint.AllowsRefStruct _
                         | TyparConstraint.MayResolveMember _ -> true
 
                         // Any other kind of constraint is incompatible with unit.

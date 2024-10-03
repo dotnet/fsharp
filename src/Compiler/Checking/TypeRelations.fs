@@ -151,19 +151,13 @@ let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) =
              match tpc with 
              | TyparConstraint.CoercesTo(x, m) -> 
                  join m x, m
-             | TyparConstraint.MayResolveMember(_traitInfo, m) -> 
-                 (maxTy, isRefined), m
              | TyparConstraint.SimpleChoice(_, m) -> 
                  errorR(Error(FSComp.SR.typrelCannotResolveAmbiguityInPrintf(), m))
                  (maxTy, isRefined), m
              | TyparConstraint.SupportsNull m -> 
                  ((addNullnessToTy KnownWithNull maxTy), isRefined), m
-             | TyparConstraint.NotSupportsNull m -> 
-                 (maxTy, isRefined), m // NOTE: this doesn't "force" non-nullness, since it is the default choice in 'obj' or 'int'
              | TyparConstraint.SupportsComparison m -> 
                  join m g.mk_IComparable_ty, m
-             | TyparConstraint.SupportsEquality m -> 
-                 (maxTy, isRefined), m
              | TyparConstraint.IsEnum(_, m) -> 
                  errorR(Error(FSComp.SR.typrelCannotResolveAmbiguityInEnum(), m))
                  (maxTy, isRefined), m
@@ -175,12 +169,15 @@ let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) =
              | TyparConstraint.IsUnmanaged m ->
                  errorR(Error(FSComp.SR.typrelCannotResolveAmbiguityInUnmanaged(), m))
                  (maxTy, isRefined), m
-             | TyparConstraint.RequiresDefaultConstructor m -> 
+             | TyparConstraint.NotSupportsNull m // NOTE: this doesn't "force" non-nullness, since it is the default choice in 'obj' or 'int'
+             | TyparConstraint.SupportsEquality m
+             | TyparConstraint.AllowsRefStruct m
+             | TyparConstraint.RequiresDefaultConstructor m
+             | TyparConstraint.IsReferenceType m
+             | TyparConstraint.MayResolveMember(_, m)
+             | TyparConstraint.DefaultsTo(_,_, m) -> 
                  (maxTy, isRefined), m
-             | TyparConstraint.IsReferenceType m -> 
-                 (maxTy, isRefined), m
-             | TyparConstraint.DefaultsTo(_priority, _ty, m) -> 
-                 (maxTy, isRefined), m)
+             )
 
     if g.langVersion.SupportsFeature LanguageFeature.DiagnosticForObjInference then
         match tp.Kind with

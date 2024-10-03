@@ -272,7 +272,8 @@ and remapTyparConstraintsAux tyenv cs =
          | TyparConstraint.SupportsEquality _ 
          | TyparConstraint.SupportsNull _ 
          | TyparConstraint.NotSupportsNull _ 
-         | TyparConstraint.IsUnmanaged _ 
+         | TyparConstraint.IsUnmanaged _
+         | TyparConstraint.AllowsRefStruct _
          | TyparConstraint.IsNonNullableStruct _ 
          | TyparConstraint.IsReferenceType _ 
          | TyparConstraint.RequiresDefaultConstructor _ -> Some x)
@@ -1039,6 +1040,7 @@ and typarConstraintsAEquivAux erasureFlag g aenv tpc1 tpc2 =
     | TyparConstraint.IsNonNullableStruct _, TyparConstraint.IsNonNullableStruct _
     | TyparConstraint.IsReferenceType _, TyparConstraint.IsReferenceType _ 
     | TyparConstraint.IsUnmanaged _, TyparConstraint.IsUnmanaged _
+    | TyparConstraint.AllowsRefStruct _, TyparConstraint.AllowsRefStruct _
     | TyparConstraint.RequiresDefaultConstructor _, TyparConstraint.RequiresDefaultConstructor _ -> true
     | _ -> false
 
@@ -2358,6 +2360,7 @@ and accFreeInTyparConstraint opts tpc acc =
     | TyparConstraint.IsNonNullableStruct _ 
     | TyparConstraint.IsReferenceType _ 
     | TyparConstraint.IsUnmanaged _
+    | TyparConstraint.AllowsRefStruct _
     | TyparConstraint.RequiresDefaultConstructor _ -> acc
 
 and accFreeInTrait opts (TTrait(tys, _, _, argTys, retTy, _, sln)) acc = 
@@ -2493,6 +2496,7 @@ and accFreeInTyparConstraintLeftToRight g cxFlag thruFlag acc tpc =
     | TyparConstraint.NotSupportsNull _ 
     | TyparConstraint.IsNonNullableStruct _ 
     | TyparConstraint.IsUnmanaged _
+    | TyparConstraint.AllowsRefStruct _
     | TyparConstraint.IsReferenceType _ 
     | TyparConstraint.RequiresDefaultConstructor _ -> acc
 
@@ -4236,6 +4240,8 @@ module DebugPrint =
             wordL (tagText "not null") |> constraintPrefix
         | TyparConstraint.IsUnmanaged _ ->
             wordL (tagText "unmanaged") |> constraintPrefix
+        | TyparConstraint.AllowsRefStruct _ ->
+            wordL (tagText "allows ref struct") |> constraintPrefix
         | TyparConstraint.SimpleChoice(tys, _) ->
             bracketL (sepListL (sepL (tagText "|")) (List.map (auxTypeL env) tys)) |> constraintPrefix
         | TyparConstraint.RequiresDefaultConstructor _ ->

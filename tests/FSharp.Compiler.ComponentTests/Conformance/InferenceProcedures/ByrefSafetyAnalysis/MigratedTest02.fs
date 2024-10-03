@@ -57,4 +57,4 @@ module Tests =
     let test3 () =
         StaticTest.Test2 // is passing, but probably shouldn't be
 
-printfn "Test Passed"
+printf "TEST PASSED OK" 
