@@ -58,7 +58,7 @@ let ``Stackoverflow reproduction`` compilation =
        File.Copy(fsharpCoreFile, Path.Combine(Path.GetDirectoryName(dllFile), Path.GetFileName(fsharpCoreFile)), true)
        let _exitCode, _stdout, stderr, _exn =  CompilerAssert.ExecuteAndReturnResult (dllFile, isFsx=false, deps = s.Dependencies, newProcess=true)
 
-       Assert.Contains("tack overflow", stderr)
+       Assert.True(stderr.Contains "stack overflow" || stderr.Contains "StackOverflow")
 
     | _ -> failwith (sprintf "%A" compilationResult)
 
