@@ -237,11 +237,13 @@ module internal Activity =
 
             sb.ToString()
 
-        let addCsvFileListener (pathToFile:string) =
-            let newFile = pathToFile |> File.Exists |> not 
-            let sw = new StreamWriter(path = pathToFile, append = true)
-
-            if newFile then sw.WriteLine(
+        let addCsvFileListener (pathToFile: string) =
+            let newFile = pathToFile |> File.Exists |> not
+            // FileShare.Read to avoid sporadic file locking during tests. 
+            let stream = new FileStream(pathToFile, FileMode.Append, FileAccess.Write, FileShare.Read)
+            let csvWriter = new StreamWriter(stream)
+ 
+            if newFile then csvWriter.WriteLine(
                 "Name,StartTime,EndTime,Duration(s),Id,ParentId,RootId,"
                 + String.concat "," Tags.AllKnownTags)
 
@@ -250,21 +252,21 @@ module internal Activity =
                     async {
                         while true do
                             let! msg = inbox.Receive()
-                            do! sw.WriteLineAsync(msg) |> Async.AwaitTask
+                            do! csvWriter.WriteLineAsync(msg) |> Async.AwaitTask
                     })
 
-            let l =
+            let listener =
                 new ActivityListener(
                     ShouldListenTo = (fun a ->ActivityNames.AllRelevantNames |> Array.contains a.Name),
                     Sample = (fun _ -> ActivitySamplingResult.AllData),
                     ActivityStopped = (fun a -> msgQueue.Post(createCsvRow a))
                 )
 
-            ActivitySource.AddActivityListener(l)
+            ActivitySource.AddActivityListener(listener)
 
             { new IDisposable with
                 member this.Dispose() =
-                    l.Dispose() // Unregister from listening new activities first
+                    listener.Dispose() // Unregister from listening new activities first
                     (msgQueue :> IDisposable).Dispose() // Wait for the msg queue to be written out
-                    sw.Dispose() // Only then flush the messages and close the file
+                    csvWriter.Dispose() // Only then flush the messages and close the file
             }

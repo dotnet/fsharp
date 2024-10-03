@@ -76,10 +76,13 @@ module times =
         |> ignoreWarnings     
         |> compile
         |> shouldSucceed
-        |> ignore<CompilationResult>
+        |> ignore
         
-        let csvContents = File.ReadAllLines(tempPath)
+        // Shared access to avoid sporadic file locking during tests. 
+        use reader = new StreamReader(new FileStream(tempPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+        let header = reader.ReadLine()
+        Assert.Contains("Name,StartTime,EndTime,Duration(s),Id,ParentId,RootId", header)
 
-        Assert.Contains("Name,StartTime,EndTime,Duration(s),Id,ParentId,RootId",csvContents[0])
-        Assert.Contains(csvContents, fun row -> row.Contains("Typecheck"))
-        Assert.Contains(csvContents, fun row -> row.Contains("Parse inputs"))
+        let csvContents = reader.ReadToEnd()
+        Assert.Contains("Typecheck", csvContents)
+        Assert.Contains("Parse inputs", csvContents)
