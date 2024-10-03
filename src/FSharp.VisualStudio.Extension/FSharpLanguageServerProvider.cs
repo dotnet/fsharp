@@ -210,6 +210,7 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
             List<string> commandLineArgs = [];
             if (projectPath != null)
             {
+                var configs = project.ActiveConfigurations.ToList();
                 // There can be multiple Active Configurations, e.g. one for net8.0 and one for net472
                 // TODO For now taking any single one of them, but we might actually want to pick specific one
                 var config = project.ActiveConfigurations.FirstOrDefault();

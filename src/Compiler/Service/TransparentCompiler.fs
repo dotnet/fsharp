@@ -826,8 +826,8 @@ type internal TransparentCompiler
     let mutable BootstrapInfoIdCounter = 0
 
     /// Bootstrap info that does not depend source files
-    let ComputeBootstrapInfoStatic (projectSnapshot: ProjectCore, tcConfig: TcConfig, assemblyName: string, loadClosureOpt) =
-        let cacheKey = projectSnapshot.CacheKeyWith("BootstrapInfoStatic", assemblyName)
+    let ComputeBootstrapInfoStatic (projectSnapshot: ProjectSnapshotBase<_>, tcConfig: TcConfig, assemblyName: string, loadClosureOpt) =
+        let cacheKey = projectSnapshot.BaseCacheKeyWith("BootstrapInfoStatic", assemblyName)
 
         caches.BootstrapInfoStatic.Get(
             cacheKey,
@@ -957,7 +957,7 @@ type internal TransparentCompiler
             let outFile, _, assemblyName = tcConfigB.DecideNames sourceFiles
 
             let! bootstrapId, tcImports, tcGlobals, initialTcInfo, importsInvalidatedByTypeProvider =
-                ComputeBootstrapInfoStatic(projectSnapshot.ProjectCore, tcConfig, assemblyName, loadClosureOpt)
+                ComputeBootstrapInfoStatic(projectSnapshot, tcConfig, assemblyName, loadClosureOpt)
 
             // Check for the existence of loaded sources and prepend them to the sources list if present.
             let loadedSources =
@@ -1056,7 +1056,7 @@ type internal TransparentCompiler
                 |> Seq.map (fun f -> LoadSource f isExe (f.FileName = bootstrapInfo.LastFileName))
                 |> MultipleDiagnosticsLoggers.Parallel
 
-            return ProjectSnapshotWithSources(projectSnapshot.ProjectCore, sources |> Array.toList)
+            return ProjectSnapshotWithSources(projectSnapshot.ProjectCore, projectSnapshot.ReferencedProjects, sources |> Array.toList)
 
         }
 
@@ -1467,7 +1467,7 @@ type internal TransparentCompiler
                 |> Seq.map (ComputeParseFile projectSnapshot tcConfig)
                 |> MultipleDiagnosticsLoggers.Parallel
 
-            return ProjectSnapshotBase<_>(projectSnapshot.ProjectCore, parsedInputs |> Array.toList)
+            return ProjectSnapshotBase<_>(projectSnapshot.ProjectCore, projectSnapshot.ReferencedProjects, parsedInputs |> Array.toList)
         }
 
     // Type check file and all its dependencies

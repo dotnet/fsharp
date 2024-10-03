@@ -160,7 +160,6 @@ type ContextHolder(intialWorkspace, lspServices: ILspServices) =
             enablePartialTypeChecking = true,
             parallelReferenceResolution = true,
             captureIdentifiersWhenParsing = true,
-            useSyntaxTreeCache = true,
             useTransparentCompiler = true
         )
 

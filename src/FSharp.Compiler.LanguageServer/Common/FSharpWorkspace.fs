@@ -1,12 +1,51 @@
 namespace FSharp.Compiler.LanguageServer.Common
 
 open FSharp.Compiler.Text
+open System.Collections.Generic
 
 #nowarn "57"
 
 open System
 open System.Threading.Tasks
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
+
+
+type DependencyNode<'Identifier, 'Value> =
+    { 
+        Id: 'Identifier 
+        Value: 'Value option
+
+        // TODO: optional if it's root node
+        Compute: DependencyNode<'Identifier, 'Value> seq -> 'Value
+    }
+
+type DependencyGraph<'Id, 'Val when 'Id :equality >() =
+    let nodes = Dictionary<'Id, DependencyNode<'Id, 'Val>>()
+    let dependencies = Dictionary<'Id, HashSet<'Id>>()
+    let dependents = Dictionary<'Id, HashSet<'Id>>()
+
+    member this.AddNode(id: 'Id, value: 'Val) =
+        let node = { Id = id; Value = Some value; Compute = (fun _ -> value) }
+        nodes.Add(id, node)
+
+    member this.AddNode(id: 'Id, dependsOn: 'Id seq, value: DependencyNode<_, _> seq -> 'Val  ) =
+        if nodes.ContainsKey id then
+            failwithf "Node with id %A already exists" id
+        
+        let node = { Id = id; Value = None; Compute = value }
+        nodes.Add(id, node)
+        dependencies.Add(id, HashSet(dependsOn))
+        for dep in dependsOn do
+            match dependents.TryGetValue dep with
+            | true, set -> set.Add id |> ignore
+            | false, _ -> dependents.Add(dep, HashSet([| id |]))
+            
+
+type internal WorkspaceProject =
+    | CommandLineArgs of string list
+    | Draft of ProjectCore * FSharpFileSnapshot list
+    | Snapshot of FSharpProjectSnapshot
+
 
 /// Holds a project snapshot and a queue of changes that will be applied to it when it's requested
 ///
