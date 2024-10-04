@@ -17,6 +17,49 @@ let typeCheckWithStrictNullness cu =
     |> withNullnessOptions
     |> typecheck
 
+
+
+[<Fact>]
+let ``Can convert generic value to objnull arg`` () =
+    FSharp """module TestLib
+
+let writeObj(tw:System.IO.TextWriter, a:'a) =
+    tw.Write(a)
+
+writeObj(System.IO.TextWriter.Null,null)
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Can pass nulll to objnull arg`` () =
+    FSharp """module TestLib
+let doStuff args = 
+    let ty = typeof<string>
+    let m = ty.GetMethod("ToString") |> Unchecked.nonNull
+    m.Invoke(null,args)    
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Can cast from objTy to interfaceTy`` () =
+    FSharp """module TestLib
+open System
+let safeHolder : IDisposable =
+    { new obj() with
+            override x.Finalize() = (x :?> IDisposable).Dispose()
+        interface IDisposable with
+            member x.Dispose() =
+                GC.SuppressFinalize x
+    }
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
 [<Fact>]
 let ``Does not duplicate warnings`` () =
     FSharp """
@@ -27,6 +70,66 @@ let getLength (x: string | null) = x.Length
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics [Error 3261, Line 3, Col 36, Line 3, Col 44, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."]
+
+[<Fact>]
+let ``Does report warning on obj to static member`` () =
+    FSharp """
+type Test() =
+    member _.XX(o:obj) = ()
+    static member X(o: obj) = ()
+    static member XString(x:string) = ()
+let x: obj | null = null
+Test.X x // warning expected
+let y2 = Test.X(x) // warning also expected
+Test.X(null:(obj|null)) // warning also expected
+let t = Test()
+t.XX(x)
+Test.XString(null)
+Test.XString("x":(string|null))
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics 
+              [ Error 3261, Line 7, Col 8, Line 7, Col 9, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
+                Error 3261, Line 7, Col 1, Line 7, Col 9, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
+                Error 3261, Line 8, Col 17, Line 8, Col 18, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
+                Error 3261, Line 8, Col 10, Line 8, Col 19, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
+                Error 3261, Line 9, Col 8, Line 9, Col 23, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
+                Error 3261, Line 9, Col 1, Line 9, Col 24, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
+                Error 3261, Line 11, Col 6, Line 11, Col 7, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
+                Error 3261, Line 11, Col 1, Line 11, Col 8, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
+                Error 3261, Line 12, Col 14, Line 12, Col 18, "Nullness warning: The type 'string' does not support 'null'."
+                Error 3261, Line 13, Col 14, Line 13, Col 31, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."]
+
+[<Fact>]
+let ``Typar infered to nonnull obj`` () =
+
+    FSharp """module Tests
+let asObj(x:obj) = x
+let asObjNull(x:objnull) = x
+
+let genericWithoutNull x = asObj x
+let genericWithNull x = asObjNull x
+
+let result0 = genericWithoutNull null
+let result1 = genericWithoutNull ("":(obj|null))
+let result2 = genericWithoutNull 15
+let result3 = genericWithoutNull "xxx"
+let result4 = genericWithoutNull ("xxx":(string|null))
+let result5 = genericWithNull null
+let result6 = genericWithNull 15
+let result7 = genericWithNull "xxx"
+let result8 = genericWithNull ("":(obj|null))
+
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics 
+            [ Error 43, Line 8, Col 34, Line 8, Col 38, "The constraints 'null' and 'not null' are inconsistent"
+              Error 3261, Line 9, Col 35, Line 9, Col 48, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
+              Error 3261, Line 12, Col 35, Line 12, Col 54, "Nullness warning: The type 'string | null' supports 'null' but a non-null type is expected."]
 
     
 [<Fact>]
@@ -608,10 +711,16 @@ strictFunc("hi") |> ignore   """
 [<Fact>]
 let ``Supports null in generic code`` () =
     FSharp """module MyLibrary
-let myGenericFunction p = 
+let myGenericFunctionForInnerNotNull (p:_|null) = 
     match p with
     | null -> ()
-    | p -> printfn "%s" (p.ToString()) 
+    | nnp -> printfn "%s" (nnp.ToString()) 
+
+let myGenericFunctionSupportingNull (p) = 
+    match p with
+    | null -> 0
+    | nnp -> hash nnp
+
 
 [<AllowNullLiteral>]
 type X(p:int) =
@@ -619,20 +728,15 @@ type X(p:int) =
 
 let myValOfX : X = null
 
-myGenericFunction "HiThere"
-myGenericFunction ("HiThere":string | null)
-myGenericFunction (System.DateTime.Now)
-myGenericFunction 123
-myGenericFunction myValOfX
+myGenericFunctionForInnerNotNull "HiThere"
+myGenericFunctionForInnerNotNull ("HiThere":string | null)
+myGenericFunctionSupportingNull myValOfX |> ignore
+myGenericFunctionSupportingNull ("HiThere":string | null) |> ignore
 
 """
     |> asLibrary
     |> typeCheckWithStrictNullness
-    |> shouldFail
-    |> withDiagnostics     
-            [Error 3261, Line 13, Col 19, Line 13, Col 28, "Nullness warning: The type 'string' does not support 'null'."
-             Error 193, Line 15, Col 20, Line 15, Col 39, "The type 'System.DateTime' does not have 'null' as a proper value"
-             Error 1, Line 16, Col 19, Line 16, Col 22, "The type 'int' does not have 'null' as a proper value"]
+    |> shouldSucceed
 
 [<Fact>]
 let ``Null assignment in generic code`` () =

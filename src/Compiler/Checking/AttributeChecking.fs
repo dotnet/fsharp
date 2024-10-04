@@ -466,9 +466,9 @@ let MethInfoIsUnseen g (m: range) (ty: TType) minfo =
 
     let isUnseenByHidingAttribute () = 
 #if !NO_TYPEPROVIDERS
-        not (isObjTy g ty) &&
+        not (isObjTyAnyNullness g ty) &&
         isAppTy g ty &&
-        isObjTy g minfo.ApparentEnclosingType &&
+        isObjTyAnyNullness g minfo.ApparentEnclosingType &&
         let tcref = tcrefOfAppTy g ty 
         match tcref.TypeReprInfo with 
         | TProvidedTypeRepr info -> 
