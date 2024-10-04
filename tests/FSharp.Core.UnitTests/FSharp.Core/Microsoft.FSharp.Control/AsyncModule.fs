@@ -7,6 +7,7 @@ namespace FSharp.Core.UnitTests.Control
 
 open System
 open System.Threading
+open System.Threading.Tasks
 open FSharp.Core.UnitTests.LibraryTestFx
 open Xunit
 open FsCheck
@@ -377,23 +378,25 @@ type AsyncModule() =
 
     [<Fact>]
     member _.``AwaitWaitHandle.DisposedWaitHandle2``() = 
-        let wh = new System.Threading.ManualResetEvent(false)
-        let barrier = new System.Threading.ManualResetEvent(false)
+        let wh = new ManualResetEvent(false)
+        let started = new ManualResetEventSlim(false)
 
-        let test = async {
-            let! timeout = Async.AwaitWaitHandle(wh, 10000)
-            Assert.False(timeout, "Timeout expected")
-            barrier.Set() |> ignore
+        let test = 
+            async {
+                started.Set()
+                let! timeout = Async.AwaitWaitHandle(wh, 5000)
+                Assert.False(timeout, "Timeout expected")
             }
-        Async.Start test
+            |> Async.StartAsTask
 
-        // await 3 secs then dispose waithandle - nothing should happen
-        let timeout = wait barrier 3000
-        Assert.False(timeout, "Barrier was reached too early")
-        dispose wh
-        
-        let ok = wait barrier 10000
-        if not ok then Assert.Fail("Async computation was not completed in given time")
+        task {
+            started.Wait()
+            // Wait a moment then dispose waithandle - nothing should happen
+            do! Task.Delay 500
+            Assert.False(test.IsCompleted, "Test completed too early")
+            dispose wh
+            do! test
+        }
 
     [<Fact>]
     member _.``RunSynchronously.NoThreadJumpsAndTimeout``() = 
