@@ -3782,11 +3782,11 @@ and GenCoerce cenv cgbuf eenv (e, tgtTy, m, srcTy) sequel =
     else
         GenExpr cenv cgbuf eenv e Continue
 
-        if not (isObjTy g srcTy) then
+        if not (isObjTyAnyNullness g srcTy) then
             let ilFromTy = GenType cenv m eenv.tyenv srcTy
             CG.EmitInstr cgbuf (pop 1) (Push [ g.ilg.typ_Object ]) (I_box ilFromTy)
 
-        if not (isObjTy g tgtTy) then
+        if not (isObjTyAnyNullness g tgtTy) then
             let ilToTy = GenType cenv m eenv.tyenv tgtTy
             CG.EmitInstr cgbuf (pop 1) (Push [ ilToTy ]) (I_unbox_any ilToTy)
 
@@ -12118,7 +12118,7 @@ let LookupGeneratedValue (cenv: cenv) (ctxt: ExecutionContext) eenv (v: Val) =
         None
 
 // Invoke the set_Foo method for a declaration with a value. Used to create variables with values programmatically in fsi.exe.
-let SetGeneratedValue (ctxt: ExecutionContext) eenv isForced (v: Val) (value: obj) =
+let SetGeneratedValue (ctxt: ExecutionContext) eenv isForced (v: Val) (value: objnull) =
     try
         match StorageForVal v.Range v eenv with
         | StaticPropertyWithField(fspec, _, hasLiteralAttr, _, _, _, _f, ilSetterMethRef, _) ->

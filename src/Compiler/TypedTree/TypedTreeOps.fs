@@ -1853,7 +1853,20 @@ let isArray1DTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -
 
 let isUnitTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tyconRefEq g g.unit_tcr_canon tcref | _ -> false) 
 
-let isObjTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tyconRefEq g g.system_Object_tcref tcref | _ -> false) 
+let isObjTyAnyNullness g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tyconRefEq g g.system_Object_tcref tcref | _ -> false) 
+
+let isObjNullTy g ty = 
+    ty 
+    |> stripTyEqns g 
+    |> (function TType_app(tcref, _, n) when (not g.checkNullness) || (n.TryEvaluate() <> ValueSome(NullnessInfo.WithoutNull)) 
+                -> tyconRefEq g g.system_Object_tcref tcref | _ -> false)
+
+let isObjTyWithoutNull (g:TcGlobals) ty = 
+    g.checkNullness &&
+    ty 
+    |> stripTyEqns g 
+    |> (function TType_app(tcref, _, n) when (n.TryEvaluate() = ValueSome(NullnessInfo.WithoutNull)) 
+                -> tyconRefEq g g.system_Object_tcref tcref | _ -> false) 
 
 let isValueTypeTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tyconRefEq g g.system_Value_tcref tcref | _ -> false) 
 
