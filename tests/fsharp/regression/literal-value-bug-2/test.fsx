@@ -30,7 +30,7 @@ let result =
         1
 
 if result = 0 then 
-    System.IO.File.WriteAllText("test.ok","ok"); 
+    printf "TEST PASSED OK"; 
     printfn "Succeeded" 
 else
     printfn "Failed: %d" result
