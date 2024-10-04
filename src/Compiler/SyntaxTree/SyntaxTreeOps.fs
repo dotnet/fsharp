@@ -885,7 +885,7 @@ let rec synExprContainsError inpExpr =
         | SynExpr.TraitCall(_, _, e, _)
         | SynExpr.YieldOrReturn(_, e, _)
         | SynExpr.YieldOrReturnFrom(_, e, _)
-        | SynExpr.DoBang(e, _)
+        | SynExpr.DoBang(e, _, _)
         | SynExpr.Fixed(e, _)
         | SynExpr.DebugPoint(_, _, e)
         | SynExpr.Paren(e, _, _, _) -> walkExpr e

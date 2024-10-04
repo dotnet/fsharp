@@ -404,6 +404,7 @@ module internal TokenClassifications =
 
         | HASH_LIGHT _
         | HASH_LINE _
+        | WARN_DIRECTIVE _
         | HASH_IF _
         | HASH_ELSE _
         | HASH_ENDIF _ -> (FSharpTokenColorKind.PreprocessorKeyword, FSharpTokenCharKind.WhiteSpace, FSharpTokenTriggerClass.None)
@@ -934,6 +935,16 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
             // Process: anywhite* ("//" [^'\n''\r']*)?
             let offset = beforeIdent + identLength
             processWhiteAndComment str offset delay cont)
+    
+    let processWarnDirective (str: string) leftc rightc cont =
+        let hashIdx = str.IndexOf("#", StringComparison.Ordinal)
+        let directive = WARN_DIRECTIVE(str, cont), leftc + hashIdx, rightc
+
+        if (hashIdx <> 0) then
+            delayToken directive
+            WHITESPACE cont, leftc, rightc + hashIdx - 1
+        else
+            directive
 
     // Set up the initial file position
     do
@@ -1035,6 +1046,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
                 | HASH_IF(m, lineStr, cont) when lineStr <> "" -> false, processHashIfLine m.StartColumn lineStr cont
                 | HASH_ELSE(m, lineStr, cont) when lineStr <> "" -> false, processHashEndElse m.StartColumn lineStr 4 cont
                 | HASH_ENDIF(m, lineStr, cont) when lineStr <> "" -> false, processHashEndElse m.StartColumn lineStr 5 cont
+                | WARN_DIRECTIVE(s, cont) -> false, processWarnDirective s leftc rightc cont
                 | HASH_IDENT(ident) ->
                     delayToken (IDENT ident, leftc + 1, rightc)
                     false, (HASH, leftc, leftc)
@@ -1173,9 +1185,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
                     | true, "silentCd"
                     | true, "q"
                     | true, "quit"
-                    | true, "help"
-                    // These are for script and non-script
-                    | _, "nowarn" ->
+                    | true, "help" ->
                         // Merge both tokens into one.
                         let lexcontFinal =
                             if isCached then
@@ -1286,6 +1296,7 @@ type FSharpTokenKind =
     | HashIf
     | HashElse
     | HashEndIf
+    | WarnDirective
     | CommentTrivia
     | WhitespaceTrivia
     | HashLine
@@ -1497,6 +1508,7 @@ type FSharpToken =
         | HASH_IF _ -> FSharpTokenKind.HashIf
         | HASH_ELSE _ -> FSharpTokenKind.HashElse
         | HASH_ENDIF _ -> FSharpTokenKind.HashEndIf
+        | WARN_DIRECTIVE _ -> FSharpTokenKind.WarnDirective
         | COMMENT _ -> FSharpTokenKind.CommentTrivia
         | WHITESPACE _ -> FSharpTokenKind.WhitespaceTrivia
         | HASH_LINE _ -> FSharpTokenKind.HashLine

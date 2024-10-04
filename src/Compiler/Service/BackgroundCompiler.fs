@@ -266,8 +266,7 @@ type internal BackgroundCompiler
         parallelReferenceResolution,
         captureIdentifiersWhenParsing,
         getSource: (string -> Async<ISourceText option>) option,
-        useChangeNotifications,
-        useSyntaxTreeCache
+        useChangeNotifications
     ) as self =
 
     let beforeFileChecked = Event<string * FSharpProjectOptions>()
@@ -403,8 +402,7 @@ type internal BackgroundCompiler
                     parallelReferenceResolution,
                     captureIdentifiersWhenParsing,
                     getSource,
-                    useChangeNotifications,
-                    useSyntaxTreeCache
+                    useChangeNotifications
                 )
 
             match builderOpt with
@@ -1377,8 +1375,6 @@ type internal BackgroundCompiler
                     yield! otherFlags
                     for r in loadClosure.References do
                         yield "-r:" + fst r
-                    for code, _ in loadClosure.NoWarns do
-                        yield "--nowarn:" + code
                 |]
 
             let options =

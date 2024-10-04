@@ -910,7 +910,7 @@ type SynExpr =
 
     /// F# syntax: do! expr
     /// Computation expressions only
-    | DoBang of expr: SynExpr * range: range
+    | DoBang of expr: SynExpr * range: range * trivia: SynExprDoBangTrivia
 
     /// F# syntax: 'while! ... do ...'
     | WhileBang of whileDebugPoint: DebugPointAtWhile * whileExpr: SynExpr * doExpr: SynExpr * range: range

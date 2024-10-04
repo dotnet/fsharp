@@ -817,6 +817,11 @@
         <target state="translated">İlişkilendirilmiş dize, eşleşmeyen kapatma küme ayraçları içeriyor.</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexWarnDirectiveMustBeFirst">
+        <source>#nowarn/#warnon directives must appear as the first non-whitespace characters on a line</source>
+        <target state="new">#nowarn/#warnon directives must appear as the first non-whitespace characters on a line</target>
+        <note />
+      </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">
         <source>All elements of a list must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">Bir listenin tüm öğeleri örtük olarak ilk öğenin türüne dönüştürülebilir olmalıdır. Burada ilk öğe {0} uzunluğunda türü\n {1} \nolan bir demet. Bu öğe ise {2} uzunluğunda türü\n {3} \nolan bir demet.</target>

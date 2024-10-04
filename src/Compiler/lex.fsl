@@ -1090,6 +1090,15 @@ rule token (args: LexArgs) (skip: bool) = parse
      if not skip then tok else token args skip lexbuf
    }
 
+   // We parse and process warn directives here during lexing, including anything that might be an argument.
+   // But we stop early enough to pass to the parser ";;" (for compatibility) and "//" (for coloring).
+ | anywhite* ("#nowarn" | "#warnon") anywhite+ [^';''/''\r''\n']+
+   { shouldStartLine args lexbuf lexbuf.LexemeRange (FSComp.SR.lexWarnDirectiveMustBeFirst()) ()
+     WarnScopes.ParseAndRegisterWarnDirective lexbuf
+     let n = (lexeme lexbuf).IndexOf('#')
+     lexbuf.StartPos <- lexbuf.StartPos.ShiftColumnBy(n)
+     WARN_DIRECTIVE(lexemeTrimLeft lexbuf (n+1), LexCont.Token (args.ifdefStack, args.stringNest)) }
+
  | surrogateChar surrogateChar
 
  | _

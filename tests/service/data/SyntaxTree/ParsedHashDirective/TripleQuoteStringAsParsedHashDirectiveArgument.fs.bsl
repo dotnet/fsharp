@@ -5,6 +5,9 @@ ImplFile
       [],
       [SynModuleOrNamespace
          ([TripleQuoteStringAsParsedHashDirectiveArgument], false, AnonModule,
-          [], PreXmlDocEmpty, [], None, (3,0--3,0), { LeadingKeyword = None })],
-      (true, true), { ConditionalDirectives = []
-                      CodeComments = [] }, set []))
+          [HashDirective
+             (ParsedHashDirective ("WARN_DIRECTIVE_DUMMY", [], (2,0--2,16)),
+              (2,0--2,16))], PreXmlDocEmpty, [], None, (2,0--2,16),
+          { LeadingKeyword = None })], (true, true),
+      { ConditionalDirectives = []
+        CodeComments = [] }, set []))

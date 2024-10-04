@@ -69,7 +69,7 @@ module internal WarnScopes =
         | false, _ -> None
 
     let private regex =
-        Regex(" *#(nowarn|warnon)(?: +([^ \r\n/;]+))*(?: *(?:;;|\\/\\/).*)?\r?\n", RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
+        Regex(" *#(nowarn|warnon)(?: +([^ \r\n/;]+))*(?: *(?:;;|\\/\\/).*)?", RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
 
     let private getDirectives text m =
         let mkDirective (directiveId: string) (m: range) (c: Capture) =
@@ -144,8 +144,8 @@ module internal WarnScopes =
             let lineMap' = Map.fold (fun lms idx oidx -> Map.add idx oidx lms) clm lineMap
             diagnosticOptions.LineMap <- LineMap lineMap')
 
-    let ClearLexbufStore (lexbuf: Lexbuf) =
         lexbuf.BufferLocalStore.Remove warnScopeKey |> ignore
+        lexbuf.BufferLocalStore.Remove lineMapKey |> ignore
 
     // *************************************
     // Apply the warn scopes after lexing

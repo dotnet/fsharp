@@ -2532,6 +2532,9 @@ type TyparConstraint =
     
     /// A constraint that a type is .NET unmanaged type
     | IsUnmanaged of range: range
+    
+    /// An anti-constraint indicating that ref structs (e.g. Span<>) are allowed here
+    | AllowsRefStruct of range:range
 
     // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]

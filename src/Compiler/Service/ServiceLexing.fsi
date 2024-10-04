@@ -371,6 +371,7 @@ type public FSharpTokenKind =
     | HashIf
     | HashElse
     | HashEndIf
+    | WarnDirective
     | CommentTrivia
     | WhitespaceTrivia
     | HashLine

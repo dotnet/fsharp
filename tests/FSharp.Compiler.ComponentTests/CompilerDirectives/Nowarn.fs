@@ -94,16 +94,33 @@ module A
 module A
 #nowarn "20";;
 ""
+#warnon "20"  // comment
+""
         """
 
     [<Fact>]
     let acceptDoubleSemicolonAfterDirective () =
 
         FSharp doubleSemiSource
-        |> withLangVersion90
+        |> withLangVersionPreview
+        |> compile
+        |> withDiagnostics [
+            Warning 20, Line 6, Col 1, Line 6, Col 3, warning20Text
+        ]
+
+    let private sourceForNowarnInsideModule = """
+namespace A
+module B =
+    #nowarn "9999"
+    type C = int
+"""
+
+    [<Fact>]
+    let nowarnInModule () =
+        FSharp sourceForNowarnInsideModule
+        |> withLangVersionPreview
         |> compile
         |> shouldSucceed
-
 
     let private sourceForWarningIsSuppressed = """
 module A
@@ -127,7 +144,7 @@ match None with None -> ()
         ]
 
     let private sigSourceForWarningIsSuppressedInSigFile = """
-module A
+namespace A
 open System
 [<Obsolete>]
 type T = class end
@@ -141,7 +158,7 @@ type T5 = T
     """
     
     let private sourceForWarningIsSuppressedInSigFile = """
-module A
+namespace A
 #nowarn "44"
 open System
 [<Obsolete>]

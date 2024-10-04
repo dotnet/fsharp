@@ -39,7 +39,8 @@ ImplFile
                                           EqualsRange = (5,13--5,14)
                                           InKeyword = None })],
                        YieldOrReturn ((false, true), Ident bar, (6,4--6,14)),
-                       (3,4--6,14), { EqualsRange = Some (3,13--3,14) }),
+                       (3,4--6,14), { LetOrUseBangKeyword = (3,4--3,8)
+                                      EqualsRange = Some (3,13--3,14) }),
                     (2,6--7,1)), (2,0--7,1)), (2,0--7,1))], PreXmlDocEmpty, [],
           None, (2,0--7,1), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []

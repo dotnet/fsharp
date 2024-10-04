@@ -326,8 +326,7 @@ type internal TransparentCompiler
         parallelReferenceResolution,
         captureIdentifiersWhenParsing,
         getSource: (string -> Async<ISourceText option>) option,
-        useChangeNotifications,
-        useSyntaxTreeCache
+        useChangeNotifications
     ) as self =
 
     let documentSource =
@@ -374,8 +373,7 @@ type internal TransparentCompiler
             parallelReferenceResolution,
             captureIdentifiersWhenParsing,
             getSource,
-            useChangeNotifications,
-            useSyntaxTreeCache
+            useChangeNotifications
         )
         :> IBackgroundCompiler
 
@@ -2347,8 +2345,6 @@ type internal TransparentCompiler
                         yield "--noframework"
                         yield "--warn:3"
                         yield! otherFlags
-                        for code, _ in loadClosure.NoWarns do
-                            yield "--nowarn:" + code
                     ]
 
                 // Once we do have the script closure, we can populate the cache to re-use can later.

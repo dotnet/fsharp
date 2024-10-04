@@ -817,6 +817,11 @@
         <target state="translated">La cadena interpolada contiene llaves de cierre no coincidentes.</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexWarnDirectiveMustBeFirst">
+        <source>#nowarn/#warnon directives must appear as the first non-whitespace characters on a line</source>
+        <target state="new">#nowarn/#warnon directives must appear as the first non-whitespace characters on a line</target>
+        <note />
+      </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">
         <source>All elements of a list must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">Todos los elementos de una lista deben convertirse implícitamente en el tipo del primer elemento, que aquí es una tupla de longitud {0} de tipo\n    {1}    \nEste elemento es una tupla de longitud {2} de tipo\n    {3}    \n</target>

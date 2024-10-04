@@ -448,6 +448,7 @@ and CheckTypeConstraintDeep cenv f g env x =
      | TyparConstraint.NotSupportsNull _
      | TyparConstraint.IsNonNullableStruct _
      | TyparConstraint.IsUnmanaged _
+     | TyparConstraint.AllowsRefStruct _
      | TyparConstraint.IsReferenceType _
      | TyparConstraint.RequiresDefaultConstructor _ -> ()
 
@@ -1957,7 +1958,8 @@ and CheckAttribArgExpr cenv env expr =
         | Const.Single _
         | Const.Char _
         | Const.Zero
-        | Const.String _  -> ()
+        | Const.String _  
+        | Const.Decimal _ -> ()
         | _ ->
             if cenv.reportErrors then
                 errorR (Error (FSComp.SR.tastNotAConstantExpression(), m))

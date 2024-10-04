@@ -78,7 +78,7 @@ val ParseInput:
 
 /// A general routine to process hash directives
 val ProcessMetaCommandsFromInput:
-    ('T -> range * string -> 'T) * ('T -> range * string * Directive -> 'T) * ('T -> range * string -> unit) ->
+    ('T -> range * string * Directive -> 'T) * ('T -> range * string -> unit) ->
         TcConfigBuilder * ParsedInput * string * 'T ->
             'T
 

@@ -14,9 +14,6 @@ module internal WarnScopes =
     /// To be called from lex.fsl: #nowarn / #warnon directives are turned into warn scopes and saved
     val ParseAndRegisterWarnDirective: lexbuf: Lexbuf -> unit
 
-    /// Clear the WarnScopes data in lexbuf.BufferLocalStore for reuse of the lexbuf
-    val ClearLexbufStore: Lexbuf -> unit
-
     /// Add the WarnScopes data of a lexed file into the diagnostics options
     val MergeInto: FSharpDiagnosticOptions -> Lexbuf -> unit
 

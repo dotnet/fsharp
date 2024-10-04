@@ -898,7 +898,7 @@ type internal DiagnosticsLoggerThatStopsOnFirstError
     override _.DiagnosticSink(diagnostic, severity) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
 
-        match diagnostic.AdaptedSeverity(tcConfig.diagnosticsOptions, severity) with
+        match diagnostic.AdjustedSeverity(tcConfig.diagnosticsOptions, severity) with
         | FSharpDiagnosticSeverity.Error ->
             fsiStdinSyphon.PrintDiagnostic(tcConfig, diagnostic)
             errorCount <- errorCount + 1
@@ -2839,8 +2839,7 @@ type internal FsiDynamicCompiler
         ) =
         WithImplicitHome (tcConfigB, directoryName sourceFile) (fun () ->
             ProcessMetaCommandsFromInput
-                ((fun st _ -> st),
-                 (fun st (m, path, directive) ->
+                ((fun st (m, path, directive) ->
                      let st, _ =
                          fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncludePathDirective(ctok, st, directive, path, false, m)
 
@@ -3690,7 +3689,7 @@ type FsiInteractionProcessor
             error (Error(FSIstrings.SR.fsiDirectoryDoesNotExist (path), m))
 
     /// Parse one interaction. Called on the parser thread.
-    let ParseInteraction (tokenizer: LexFilter.LexFilter) =
+    let ParseInteraction diagnosticOptions (tokenizer: LexFilter.LexFilter) =
         let mutable lastToken = Parser.ELSE // Any token besides SEMICOLON_SEMICOLON will do for initial value
 
         try
@@ -3705,6 +3704,8 @@ type FsiInteractionProcessor
                         tok
 
                     Parser.interaction lexerWhichSavesLastToken tokenizer.LexBuffer)
+                    
+            WarnScopes.MergeInto diagnosticOptions tokenizer.LexBuffer
 
             Some input
         with e ->
@@ -3734,7 +3735,7 @@ type FsiInteractionProcessor
         let tokenizer =
             fsiStdinLexerProvider.CreateBufferLexer("hdummy.fsx", lexbuf, diagnosticsLogger)
 
-        let parsedInteraction = ParseInteraction tokenizer
+        let parsedInteraction = ParseInteraction tcConfigB.diagnosticsOptions tokenizer
 
         match parsedInteraction with
         | Some(ParsedScriptInteraction.Definitions([ SynModuleDecl.Expr(e, _) ], _)) ->
@@ -4150,6 +4151,7 @@ type FsiInteractionProcessor
             runCodeOnMainThread,
             istate: FsiDynamicCompilerState,
             tokenizer: LexFilter.LexFilter,
+            diagnosticOptions,
             diagnosticsLogger,
             ?cancellationToken: CancellationToken
         ) =
@@ -4176,8 +4178,8 @@ type FsiInteractionProcessor
 
                 // Parse the interaction. When FSI.EXE is waiting for input from the console the
                 // parser thread is blocked somewhere deep this call.
-                let action = ParseInteraction tokenizer
-
+                let action = ParseInteraction diagnosticOptions tokenizer
+                
                 if progress then
                     fprintfn fsiConsoleOutput.Out "returned from ParseInteraction...calling runCodeOnMainThread..."
 
@@ -4214,7 +4216,7 @@ type FsiInteractionProcessor
 
             let rec run istate =
                 let status =
-                    processor.ParseAndExecuteInteractionFromLexbuf((fun f istate -> f ctok istate), istate, tokenizer, diagnosticsLogger)
+                    processor.ParseAndExecuteInteractionFromLexbuf((fun f istate -> f ctok istate), istate, tokenizer, tcConfigB.diagnosticsOptions, diagnosticsLogger)
 
                 ProcessStepStatus status None (fun _ istate -> run istate)
 
@@ -4294,7 +4296,7 @@ type FsiInteractionProcessor
 
         currState
         |> InteractiveCatch diagnosticsLogger (fun istate ->
-            let expr = ParseInteraction tokenizer
+            let expr = ParseInteraction tcConfigB.diagnosticsOptions tokenizer
             ExecuteParsedInteractionOnMainThread(ctok, diagnosticsLogger, expr, istate, cancellationToken))
         |> commitResult
 
@@ -4347,7 +4349,7 @@ type FsiInteractionProcessor
     // mainForm.Invoke to pipe a message back through the form's main event loop. (The message
     // is a delegate to execute on the main Thread)
     //
-    member processor.StartStdinReadAndProcessThread diagnosticsLogger =
+    member processor.StartStdinReadAndProcessThread(diagnosticOptions, diagnosticsLogger) =
 
         if progress then
             fprintfn fsiConsoleOutput.Out "creating stdinReaderThread"
@@ -4381,6 +4383,7 @@ type FsiInteractionProcessor
                                         runCodeOnMainThread,
                                         currState,
                                         currTokenizer,
+                                        diagnosticOptions,
                                         diagnosticsLogger
                                     )
 
@@ -4688,7 +4691,7 @@ type FsiEvaluationSession
     let lexResourceManager = LexResourceManager()
 
     /// The lock stops the type checker running at the same time as the server intellisense implementation.
-    let tcLockObject = box 7 // any new object will do
+    let tcLockObject = box 7 |> Unchecked.nonNull // any new object will do
 
     let resolveAssemblyRef (aref: ILAssemblyRef) =
         // Explanation: This callback is invoked during compilation to resolve assembly references
@@ -4979,7 +4982,7 @@ type FsiEvaluationSession
                 | _ -> ())
 
             fsiInteractionProcessor.LoadInitialFiles(ctokRun, diagnosticsLogger)
-            fsiInteractionProcessor.StartStdinReadAndProcessThread(diagnosticsLogger)
+            fsiInteractionProcessor.StartStdinReadAndProcessThread(tcConfigB.diagnosticsOptions, diagnosticsLogger)
 
             DriveFsiEventLoop(fsi, fsiInterruptController, fsiConsoleOutput)
 

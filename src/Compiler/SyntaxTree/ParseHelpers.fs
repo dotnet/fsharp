@@ -109,7 +109,7 @@ module LexbufLocalXmlDocStore =
         |> unbox<XmlDocCollector>
 
     let ClearXmlDoc (lexbuf: Lexbuf) =
-        lexbuf.BufferLocalStore[xmlDocKey] <- box (XmlDocCollector())
+        lexbuf.BufferLocalStore[xmlDocKey] <- box (XmlDocCollector()) |> Unchecked.nonNull
 
     /// Called from the lexer to save a single line of XML doc comment.
     let SaveXmlDocLine (lexbuf: Lexbuf, lineText, range: range) =

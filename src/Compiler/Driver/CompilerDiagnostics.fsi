@@ -63,7 +63,7 @@ type PhasedDiagnostic with
     member FormatCore: flattenErrors: bool * suggestNames: bool -> string
 
     /// Compute new severity according to the various diagnostics options
-    member AdaptedSeverity: FSharpDiagnosticOptions * FSharpDiagnosticSeverity -> FSharpDiagnosticSeverity
+    member AdjustedSeverity: FSharpDiagnosticOptions * FSharpDiagnosticSeverity -> FSharpDiagnosticSeverity
 
     /// Output all of a diagnostic to a buffer, including range
     member Output: buf: StringBuilder * tcConfig: TcConfig * severity: FSharpDiagnosticSeverity -> unit
