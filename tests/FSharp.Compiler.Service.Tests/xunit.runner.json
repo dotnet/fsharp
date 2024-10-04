@@ -1,4 +1,6 @@
 ﻿{
   "$schema": "https://xunit.net/schema/current/xunit.runner.schema.json",
-  "shadowCopy": false
+  "shadowCopy": false,
+  "parallelizeAssembly": true,
+  "maxParallelThreads": "4.0x"
 }
