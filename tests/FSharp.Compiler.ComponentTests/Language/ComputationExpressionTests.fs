@@ -603,4 +603,45 @@ let run r2 r3 =
         |> shouldFail
         |> withDiagnostics [
             (Error 708, Line 24, Col 19, Line 24, Col 26, "This control construct may only be used if the computation expression builder defines a 'ReturnFrom' method")
+        ]        
+
+    [<Fact>]
+    let ``Type constraint mismatch when using return!`` () =
+        Fsx """
+open System.Threading.Tasks
+
+let maybeTask = task { return false }
+
+let indexHandler (): Task<string> = 
+    task {
+        return! maybeTask
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 193, Line 8, Col 17, Line 8, Col 26, "Type constraint mismatch. The type \n    'TaskCode<bool,bool>'    \nis not compatible with type\n    'TaskCode<string,string>'    \n")
+        ]
+
+    [<Fact>]
+    let ``Type constraint mismatch when using return`` () =
+        Fsx """
+open System.Threading.Tasks
+
+let maybeTask = task { return false }
+
+let indexHandler (): Task<string> = 
+    task {
+        return maybeTask
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 8, Col 16, Line 8, Col 25, "This expression was expected to have type
+    'string'    
+but here has type
+    'Task<bool>'    ")
         ]

@@ -2378,7 +2378,7 @@ let rec TryTranslateComputationExpression
 
             Some(translatedCtxt callExpr)
 
-        | SynExpr.YieldOrReturnFrom((true, _), synYieldExpr, _m, { YieldOrReturnFromKeyword = m }) ->
+        | SynExpr.YieldOrReturnFrom((true, _), synYieldExpr, _, { YieldOrReturnFromKeyword = m }) ->
             let yieldFromExpr =
                 mkSourceExpr synYieldExpr ceenv.sourceMethInfo ceenv.builderValName
 
@@ -2396,7 +2396,7 @@ let rec TryTranslateComputationExpression
             then
                 error (Error(FSComp.SR.tcRequireBuilderMethod ("YieldFrom"), m))
 
-            let yieldFromCall = mkSynCall "YieldFrom" m [ yieldFromExpr ] ceenv.builderValName
+            let yieldFromCall = mkSynCall "YieldFrom" synYieldExpr.Range [ yieldFromExpr ] ceenv.builderValName
 
             let yieldFromCall =
                 if IsControlFlowExpression synYieldExpr then
@@ -2406,7 +2406,7 @@ let rec TryTranslateComputationExpression
 
             Some(translatedCtxt yieldFromCall)
 
-        | SynExpr.YieldOrReturnFrom((false, _), synReturnExpr, _m, { YieldOrReturnFromKeyword = m }) ->
+        | SynExpr.YieldOrReturnFrom((false, _), synReturnExpr, _, { YieldOrReturnFromKeyword = m }) ->
             let returnFromExpr =
                 mkSourceExpr synReturnExpr ceenv.sourceMethInfo ceenv.builderValName
 
@@ -2428,7 +2428,7 @@ let rec TryTranslateComputationExpression
                 error (Error(FSComp.SR.tcRequireBuilderMethod ("ReturnFrom"), m))
 
             let returnFromCall =
-                mkSynCall "ReturnFrom" m [ returnFromExpr ] ceenv.builderValName
+                mkSynCall "ReturnFrom" synReturnExpr.Range [ returnFromExpr ] ceenv.builderValName
 
             let returnFromCall =
                 if IsControlFlowExpression synReturnExpr then
@@ -2438,7 +2438,7 @@ let rec TryTranslateComputationExpression
 
             Some(translatedCtxt returnFromCall)
 
-        | SynExpr.YieldOrReturn((isYield, _), synYieldOrReturnExpr, _m, { YieldOrReturnKeyword = m }) ->
+        | SynExpr.YieldOrReturn((isYield, _), synYieldOrReturnExpr, _, { YieldOrReturnKeyword = m }) ->
             let methName = (if isYield then "Yield" else "Return")
 
             if ceenv.isQuery && not isYield then
@@ -2459,7 +2459,7 @@ let rec TryTranslateComputationExpression
                 error (Error(FSComp.SR.tcRequireBuilderMethod methName, m))
 
             let yieldOrReturnCall =
-                mkSynCall methName m [ synYieldOrReturnExpr ] ceenv.builderValName
+                mkSynCall methName synYieldOrReturnExpr.Range [ synYieldOrReturnExpr ] ceenv.builderValName
 
             let yieldOrReturnCall =
                 if IsControlFlowExpression synYieldOrReturnExpr then
