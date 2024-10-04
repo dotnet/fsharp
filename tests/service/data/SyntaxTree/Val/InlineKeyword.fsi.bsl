@@ -1,6 +1,6 @@
 SigFile
   (ParsedSigFileInput
-     ("/root/Val/InlineKeyword.fsi", QualifiedNameOfFile InlineKeyword, [], [],
+     ("/root/Val/InlineKeyword.fsi", QualifiedNameOfFile InlineKeyword, [],
       [SynModuleOrNamespaceSig
          ([X], false, DeclaredNamespace,
           [Val

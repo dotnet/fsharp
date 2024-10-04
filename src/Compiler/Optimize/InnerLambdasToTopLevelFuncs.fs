@@ -1332,9 +1332,9 @@ module Pass4_RewriteAssembly =
             let rhs, z = TransModuleContents penv z rhs
             ModuleOrNamespaceBinding.Module(nm, rhs), z
 
-    let TransImplFile penv z (CheckedImplFile (fragName, pragmas, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) =
+    let TransImplFile penv z (CheckedImplFile (fragName, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) =
         let contentsR, z = TransModuleContents penv z contents
-        (CheckedImplFile (fragName, pragmas, signature, contentsR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)), z
+        (CheckedImplFile (fragName, signature, contentsR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)), z
 
 //-------------------------------------------------------------------------
 // pass5: copyExpr

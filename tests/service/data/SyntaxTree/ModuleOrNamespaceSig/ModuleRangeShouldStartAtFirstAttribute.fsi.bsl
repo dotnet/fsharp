@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/ModuleOrNamespaceSig/ModuleRangeShouldStartAtFirstAttribute.fsi",
-      QualifiedNameOfFile Bar, [], [],
+      QualifiedNameOfFile Bar, [],
       [SynModuleOrNamespaceSig
          ([Bar], false, NamedModule,
           [Val

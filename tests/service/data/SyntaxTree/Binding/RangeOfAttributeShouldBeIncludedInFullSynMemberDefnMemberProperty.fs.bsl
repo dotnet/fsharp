@@ -4,7 +4,6 @@ ImplFile
       false,
       QualifiedNameOfFile
         RangeOfAttributeShouldBeIncludedInFullSynMemberDefnMemberProperty, [],
-      [],
       [SynModuleOrNamespace
          ([RangeOfAttributeShouldBeIncludedInFullSynMemberDefnMemberProperty],
           false, AnonModule,

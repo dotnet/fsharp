@@ -2,7 +2,7 @@ ImplFile
   (ParsedImplFileInput
      ("/root/Expression/SynExprRecordFieldsContainCorrectAmountOfTrivia.fs",
       false, QualifiedNameOfFile SynExprRecordFieldsContainCorrectAmountOfTrivia,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([SynExprRecordFieldsContainCorrectAmountOfTrivia], false, AnonModule,
           [Expr

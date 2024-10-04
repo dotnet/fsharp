@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/NestedModule/RangeOfBeginEnd.fs", false,
-      QualifiedNameOfFile RangeOfBeginEnd, [], [],
+      QualifiedNameOfFile RangeOfBeginEnd, [],
       [SynModuleOrNamespace
          ([X], false, DeclaredNamespace,
           [NestedModule

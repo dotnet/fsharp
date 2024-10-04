@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Measure/Constant - 04.fs", false, QualifiedNameOfFile M, [], [],
+     ("/root/Measure/Constant - 04.fs", false, QualifiedNameOfFile M, [],
       [SynModuleOrNamespace
          ([M], false, NamedModule,
           [Expr

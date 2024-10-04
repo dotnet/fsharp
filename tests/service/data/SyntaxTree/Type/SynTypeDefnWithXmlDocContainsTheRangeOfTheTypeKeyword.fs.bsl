@@ -3,7 +3,7 @@ ImplFile
      ("/root/Type/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs",
       false,
       QualifiedNameOfFile SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword], false,
           AnonModule,

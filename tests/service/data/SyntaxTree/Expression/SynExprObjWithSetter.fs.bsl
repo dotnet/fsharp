@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/SynExprObjWithSetter.fs", false,
-      QualifiedNameOfFile SynExprObjWithSetter, [], [],
+      QualifiedNameOfFile SynExprObjWithSetter, [],
       [SynModuleOrNamespace
          ([SynExprObjWithSetter], false, AnonModule,
           [Types

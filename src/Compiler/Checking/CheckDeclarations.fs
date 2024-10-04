@@ -5722,7 +5722,7 @@ let CheckOneImplFile
         synImplFile,
         diagnosticOptions) =
 
-    let (ParsedImplFileInput (fileName, isScript, qualNameOfFile, scopedPragmas, _, implFileFrags, isLastCompiland, _, _)) = synImplFile
+    let (ParsedImplFileInput (fileName, isScript, qualNameOfFile, _, implFileFrags, isLastCompiland, _, _)) = synImplFile
     let infoReader = InfoReader(g, amap)
 
     cancellable {
@@ -5861,7 +5861,7 @@ let CheckOneImplFile
            |> Array.map (fun (KeyValue(k,v)) -> (k,v))
            |> Map
 
-        let implFile = CheckedImplFile (qualNameOfFile, scopedPragmas, implFileTy, implFileContents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
+        let implFile = CheckedImplFile (qualNameOfFile, implFileTy, implFileContents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
 
         return (topAttrs, implFile, envAtEnd, cenv.createsGeneratedProvidedTypes)
      } 

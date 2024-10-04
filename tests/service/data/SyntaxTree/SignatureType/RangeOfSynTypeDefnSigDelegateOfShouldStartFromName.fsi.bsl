@@ -2,7 +2,6 @@ SigFile
   (ParsedSigFileInput
      ("/root/SignatureType/RangeOfSynTypeDefnSigDelegateOfShouldStartFromName.fsi",
       QualifiedNameOfFile RangeOfSynTypeDefnSigDelegateOfShouldStartFromName, [],
-      [],
       [SynModuleOrNamespaceSig
          ([Y], false, DeclaredNamespace,
           [Types

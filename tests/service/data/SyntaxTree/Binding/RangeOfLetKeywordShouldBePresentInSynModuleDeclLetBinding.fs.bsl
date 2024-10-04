@@ -3,7 +3,7 @@ ImplFile
      ("/root/Binding/RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBinding.fs",
       false,
       QualifiedNameOfFile
-        RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBinding, [], [],
+        RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBinding, [],
       [SynModuleOrNamespace
          ([RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBinding], false,
           AnonModule,

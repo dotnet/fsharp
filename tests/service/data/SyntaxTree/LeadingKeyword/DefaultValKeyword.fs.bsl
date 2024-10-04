@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/LeadingKeyword/DefaultValKeyword.fs", false,
-      QualifiedNameOfFile DefaultValKeyword, [], [],
+      QualifiedNameOfFile DefaultValKeyword, [],
       [SynModuleOrNamespace
          ([DefaultValKeyword], false, AnonModule,
           [Types

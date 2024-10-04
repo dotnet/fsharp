@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/LeadingKeyword/StaticValKeyword.fsi",
-      QualifiedNameOfFile StaticValKeyword, [], [],
+      QualifiedNameOfFile StaticValKeyword, [],
       [SynModuleOrNamespaceSig
          ([Meh], false, DeclaredNamespace,
           [Types

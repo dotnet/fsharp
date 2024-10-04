@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Member/GetSetMember 01.fs", false, QualifiedNameOfFile Foo, [], [],
+     ("/root/Member/GetSetMember 01.fs", false, QualifiedNameOfFile Foo, [],
       [SynModuleOrNamespace
          ([Foo], false, NamedModule,
           [Types

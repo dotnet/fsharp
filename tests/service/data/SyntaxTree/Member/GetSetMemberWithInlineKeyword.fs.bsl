@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Member/GetSetMemberWithInlineKeyword.fs", false,
-      QualifiedNameOfFile GetSetMemberWithInlineKeyword, [], [],
+      QualifiedNameOfFile GetSetMemberWithInlineKeyword, [],
       [SynModuleOrNamespace
          ([GetSetMemberWithInlineKeyword], false, AnonModule,
           [Types

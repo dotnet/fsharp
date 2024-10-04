@@ -4,7 +4,7 @@ ImplFile
       false,
       QualifiedNameOfFile
         InheritSynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([InheritSynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField],
           false, AnonModule,

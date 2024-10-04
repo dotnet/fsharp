@@ -2,7 +2,6 @@ SigFile
   (ParsedSigFileInput
      ("/root/ModuleOrNamespaceSig/RangeMemberReturnsRangeOfSynModuleOrNamespaceSig.fsi",
       QualifiedNameOfFile RangeMemberReturnsRangeOfSynModuleOrNamespaceSig, [],
-      [],
       [SynModuleOrNamespaceSig
          ([Foobar], false, DeclaredNamespace,
           [Types

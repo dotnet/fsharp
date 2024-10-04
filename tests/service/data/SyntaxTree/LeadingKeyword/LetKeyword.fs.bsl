@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/LeadingKeyword/LetKeyword.fs", false,
-      QualifiedNameOfFile LetKeyword, [], [],
+      QualifiedNameOfFile LetKeyword, [],
       [SynModuleOrNamespace
          ([LetKeyword], false, AnonModule,
           [Let

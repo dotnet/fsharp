@@ -2,7 +2,7 @@ SigFile
   (ParsedSigFileInput
      ("/root/SignatureType/SynExceptionSigShouldContainsTheRangeOfTheWithKeyword.fsi",
       QualifiedNameOfFile SynExceptionSigShouldContainsTheRangeOfTheWithKeyword,
-      [], [],
+      [],
       [SynModuleOrNamespaceSig
          ([X], false, DeclaredNamespace,
           [Exception

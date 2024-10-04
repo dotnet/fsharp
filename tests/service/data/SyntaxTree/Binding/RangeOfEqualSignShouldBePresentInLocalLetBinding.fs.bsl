@@ -2,7 +2,6 @@ ImplFile
   (ParsedImplFileInput
      ("/root/Binding/RangeOfEqualSignShouldBePresentInLocalLetBinding.fs", false,
       QualifiedNameOfFile RangeOfEqualSignShouldBePresentInLocalLetBinding, [],
-      [],
       [SynModuleOrNamespace
          ([RangeOfEqualSignShouldBePresentInLocalLetBinding], false, AnonModule,
           [Expr

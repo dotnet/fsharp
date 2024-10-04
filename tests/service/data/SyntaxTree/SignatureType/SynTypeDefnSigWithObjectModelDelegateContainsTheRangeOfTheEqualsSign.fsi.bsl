@@ -3,7 +3,6 @@ SigFile
      ("/root/SignatureType/SynTypeDefnSigWithObjectModelDelegateContainsTheRangeOfTheEqualsSign.fsi",
       QualifiedNameOfFile
         SynTypeDefnSigWithObjectModelDelegateContainsTheRangeOfTheEqualsSign, [],
-      [],
       [SynModuleOrNamespaceSig
          ([Foo], false, DeclaredNamespace,
           [Types

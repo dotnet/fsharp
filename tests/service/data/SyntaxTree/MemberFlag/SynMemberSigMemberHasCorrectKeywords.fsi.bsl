@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/MemberFlag/SynMemberSigMemberHasCorrectKeywords.fsi",
-      QualifiedNameOfFile SynMemberSigMemberHasCorrectKeywords, [], [],
+      QualifiedNameOfFile SynMemberSigMemberHasCorrectKeywords, [],
       [SynModuleOrNamespaceSig
          ([X], false, DeclaredNamespace,
           [Types

@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Type/AttributesInOptionalNamedMemberParameter.fs", false,
-      QualifiedNameOfFile AttributesInOptionalNamedMemberParameter, [], [],
+      QualifiedNameOfFile AttributesInOptionalNamedMemberParameter, [],
       [SynModuleOrNamespace
          ([AttributesInOptionalNamedMemberParameter], false, AnonModule,
           [Types

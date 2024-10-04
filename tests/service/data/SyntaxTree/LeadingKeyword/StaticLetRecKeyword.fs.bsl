@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/LeadingKeyword/StaticLetRecKeyword.fs", false,
-      QualifiedNameOfFile StaticLetRecKeyword, [], [],
+      QualifiedNameOfFile StaticLetRecKeyword, [],
       [SynModuleOrNamespace
          ([StaticLetRecKeyword], false, AnonModule,
           [Types

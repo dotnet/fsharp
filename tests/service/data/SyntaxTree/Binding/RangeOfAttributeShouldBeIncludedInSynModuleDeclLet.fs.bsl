@@ -3,7 +3,6 @@ ImplFile
      ("/root/Binding/RangeOfAttributeShouldBeIncludedInSynModuleDeclLet.fs",
       false,
       QualifiedNameOfFile RangeOfAttributeShouldBeIncludedInSynModuleDeclLet, [],
-      [],
       [SynModuleOrNamespace
          ([RangeOfAttributeShouldBeIncludedInSynModuleDeclLet], false,
           AnonModule,

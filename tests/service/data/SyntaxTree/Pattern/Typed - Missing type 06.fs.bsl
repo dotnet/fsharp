@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Pattern/Typed - Missing type 06.fs", false,
-      QualifiedNameOfFile Module, [], [],
+      QualifiedNameOfFile Module, [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Expr

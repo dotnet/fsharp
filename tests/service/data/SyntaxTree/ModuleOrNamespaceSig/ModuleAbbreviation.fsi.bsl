@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/ModuleOrNamespaceSig/ModuleAbbreviation.fsi",
-      QualifiedNameOfFile Foo, [], [],
+      QualifiedNameOfFile Foo, [],
       [SynModuleOrNamespaceSig
          ([Foo], false, NamedModule,
           [Open

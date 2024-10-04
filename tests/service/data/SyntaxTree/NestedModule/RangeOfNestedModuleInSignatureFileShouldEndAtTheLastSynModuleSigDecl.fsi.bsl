@@ -3,7 +3,6 @@ SigFile
      ("/root/NestedModule/RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl.fsi",
       QualifiedNameOfFile
         RangeOfNestedModuleInSignatureFileShouldEndAtTheLastSynModuleSigDecl, [],
-      [],
       [SynModuleOrNamespaceSig
          ([Microsoft; FSharp; Core], false, DeclaredNamespace,
           [Open

@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/SynIdent/IncompleteLongIdent 02.fs", false,
-      QualifiedNameOfFile Module, [], [],
+      QualifiedNameOfFile Module, [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Expr

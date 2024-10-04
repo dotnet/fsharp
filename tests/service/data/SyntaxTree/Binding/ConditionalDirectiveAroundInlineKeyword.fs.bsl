@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Binding/ConditionalDirectiveAroundInlineKeyword.fs", false,
-      QualifiedNameOfFile ConditionalDirectiveAroundInlineKeyword, [], [],
+      QualifiedNameOfFile ConditionalDirectiveAroundInlineKeyword, [],
       [SynModuleOrNamespace
          ([ConditionalDirectiveAroundInlineKeyword], false, AnonModule,
           [Let

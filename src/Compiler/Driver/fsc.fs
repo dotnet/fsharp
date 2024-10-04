@@ -76,7 +76,8 @@ type DiagnosticsLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, 
     override x.DiagnosticSink(diagnostic, severity) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
 
-        if diagnostic.ReportAsError(tcConfig.diagnosticsOptions, severity) then
+        match diagnostic.AdjustedSeverity(tcConfigB.diagnosticsOptions, severity) with
+        | FSharpDiagnosticSeverity.Error ->
             if errors >= tcConfig.maxErrors then
                 x.HandleTooManyErrors(FSComp.SR.fscTooManyErrors ())
                 exiter.Exit 1
@@ -92,11 +93,8 @@ type DiagnosticsLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, 
                 Debug.Assert(false, sprintf "Lookup exception in compiler: %s" (diagnostic.Exception.ToString()))
             | _ -> ()
 
-        elif diagnostic.ReportAsWarning(tcConfig.diagnosticsOptions, severity) then
-            x.HandleIssue(tcConfig, diagnostic, FSharpDiagnosticSeverity.Warning)
-
-        elif diagnostic.ReportAsInfo(tcConfig.diagnosticsOptions, severity) then
-            x.HandleIssue(tcConfig, diagnostic, severity)
+        | FSharpDiagnosticSeverity.Hidden -> ()
+        | s -> x.HandleIssue(tcConfig, diagnostic, s)
 
 /// Create an error logger that counts and prints errors
 let ConsoleDiagnosticsLogger (tcConfigB: TcConfigBuilder, exiter: Exiter) =
@@ -236,11 +234,6 @@ let AdjustForScriptCompile (tcConfigB: TcConfigBuilder, commandLineSourceFiles, 
             references
             |> List.iter (fun r -> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
 
-            // Also record the other declarations from the script.
-            closure.NoWarns
-            |> List.collect (fun (n, ms) -> ms |> List.map (fun m -> m, n))
-            |> List.iter (fun (x, m) -> tcConfigB.TurnWarningOff(x, m))
-
             closure.SourceFiles |> List.map fst |> List.iter AddIfNotPresent
             closure.AllRootFileDiagnostics |> List.iter diagnosticSink
 
@@ -289,6 +282,8 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, lcidFromCodePage, argv)
 
     // This is where flags are interpreted by the command line fsc.exe.
     ParseCompilerOptions(collect, GetCoreFscCompilerOptions tcConfigB, List.tail (PostProcessCompilerArgs abbrevArgs argv))
+
+    tcConfigB.diagnosticsOptions.FSharp9CompatibleNowarn <- not <| tcConfigB.langVersion.SupportsFeature LanguageFeature.ScopedNowarn
 
     let inputFiles = List.rev inputFilesRef
 
@@ -739,13 +734,7 @@ let main2
     let oldLogger = diagnosticsLogger
 
     let diagnosticsLogger =
-        let scopedPragmas =
-            [
-                for CheckedImplFile(pragmas = pragmas) in typedImplFiles do
-                    yield! pragmas
-            ]
-
-        GetDiagnosticsLoggerFilteringByScopedPragmas(true, scopedPragmas, tcConfig.diagnosticsOptions, oldLogger)
+        GetDiagnosticsLoggerFilteringByScopedPragmas(tcConfig.diagnosticsOptions, oldLogger)
 
     SetThreadDiagnosticsLoggerNoUnwind diagnosticsLogger
 

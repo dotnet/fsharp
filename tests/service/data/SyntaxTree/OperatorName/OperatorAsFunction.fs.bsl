@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/OperatorName/OperatorAsFunction.fs", false,
-      QualifiedNameOfFile OperatorAsFunction, [], [],
+      QualifiedNameOfFile OperatorAsFunction, [],
       [SynModuleOrNamespace
          ([OperatorAsFunction], false, AnonModule,
           [Expr

@@ -816,7 +816,9 @@ rule token (args: LexArgs) (skip: bool) = parse
 
             // Construct the new position
             if args.applyLineDirectives then
-                lexbuf.EndPos <- pos.ApplyLineDirective((match file with Some f -> FileIndex.fileIndexOfFile f | None -> pos.FileIndex), line)
+                let fileIndex = match file with Some f -> FileIndex.fileIndexOfFile f | None -> pos.FileIndex
+                lexbuf.EndPos <- pos.ApplyLineDirective(fileIndex, line)
+                WarnScopes.RegisterLineDirective(lexbuf, pos.FileIndex, fileIndex, line)
             else
                 // add a newline when we don't apply a directive since we consumed a newline getting here
                 newline lexbuf
@@ -1087,6 +1089,15 @@ rule token (args: LexArgs) (skip: bool) = parse
    { let n = (lexeme lexbuf).IndexOf('#')
      lexbuf.StartPos <- lexbuf.StartPos.ShiftColumnBy(n)
      HASH_IDENT(lexemeTrimLeft lexbuf (n+1)) }
+
+   // We parse and process warn directives here during lexing, including anything that might be an argument.
+   // But we stop early enough to pass to the parser ";;" (for compatibility) and "//" (for coloring).
+ | anywhite* ("#nowarn" | "#warnon") anywhite+ [^';''/''\r''\n']+
+   { shouldStartLine args lexbuf lexbuf.LexemeRange (FSComp.SR.lexWarnDirectiveMustBeFirst()) ()
+     WarnScopes.ParseAndRegisterWarnDirective lexbuf
+     let n = (lexeme lexbuf).IndexOf('#')
+     lexbuf.StartPos <- lexbuf.StartPos.ShiftColumnBy(n)
+     WARN_DIRECTIVE(lexemeTrimLeft lexbuf (n+1), LexCont.Token (args.ifdefStack, args.stringNest)) }
 
  | surrogateChar surrogateChar
 

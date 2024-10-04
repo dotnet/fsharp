@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Member/Implicit ctor - Type - Tuple 02.fs", false,
-      QualifiedNameOfFile Module, [], [],
+      QualifiedNameOfFile Module, [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Types

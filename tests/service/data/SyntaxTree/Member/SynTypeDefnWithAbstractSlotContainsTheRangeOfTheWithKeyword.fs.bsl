@@ -3,7 +3,7 @@ ImplFile
      ("/root/Member/SynTypeDefnWithAbstractSlotContainsTheRangeOfTheWithKeyword.fs",
       false,
       QualifiedNameOfFile
-        SynTypeDefnWithAbstractSlotContainsTheRangeOfTheWithKeyword, [], [],
+        SynTypeDefnWithAbstractSlotContainsTheRangeOfTheWithKeyword, [],
       [SynModuleOrNamespace
          ([SynTypeDefnWithAbstractSlotContainsTheRangeOfTheWithKeyword], false,
           AnonModule,
