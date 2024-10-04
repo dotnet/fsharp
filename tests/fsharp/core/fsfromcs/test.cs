@@ -311,7 +311,7 @@ type discr3_1_1_1 = Discr3_1_1_0_A of int | Discr3_1_1_0_B of int | Discr3_0_0_0
       //let tup3 = (2,3,4)
       //let tup4 = (2,3,4,5)
 
-        System.Console.WriteLine("Test Passed.");
+        System.Console.WriteLine("TEST PASSED OK");
 
       return 0;
    }

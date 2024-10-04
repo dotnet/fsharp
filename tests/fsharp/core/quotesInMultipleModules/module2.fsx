@@ -37,7 +37,7 @@ if not test3 then
 
 if test1 && test2 && test3 then
     stdout.WriteLine "Test Passed"; 
-    System.IO.File.WriteAllText("test.ok","ok"); 
+    printf "TEST PASSED OK"; 
     exit 0
 else
     exit 1

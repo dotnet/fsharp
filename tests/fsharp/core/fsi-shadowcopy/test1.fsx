@@ -23,8 +23,7 @@ let next = compiled 30000;;
 //compile will fail because shadow copy is disabled
 if next = false then
     printfn "Succeeded -- compile fail because file locked due to --shadowcopyreferences-"
-    use os = System.IO.File.CreateText "test1.ok" 
-    os.Close()
+    printf "TEST PASSED OK" ;
 else
     printfn "Failed -- compile succeeded but should have failed due to file lock because of --shadowcopyReferences-.  Suspect test error";;
 

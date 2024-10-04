@@ -2940,6 +2940,6 @@ let inline translate opcode =
 let translate2 opcode = translate opcode
 
 do (System.Console.Out.WriteLine "Test Passed"; 
-    System.IO.File.WriteAllText("test.ok", "ok"); 
+    printf "TEST PASSED OK" ; 
     exit 0)
 

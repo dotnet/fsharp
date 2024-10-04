@@ -131,6 +131,10 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
       <GeneratePathProperty>true</GeneratePathProperty>
     </PackageReference>
 
+    <CompileFirst>
+      <CompileOrder>CompileFirst</CompileOrder>
+    </CompileFirst>
+
     <CompileBefore>
       <CompileOrder>CompileBefore</CompileOrder>
     </CompileBefore>

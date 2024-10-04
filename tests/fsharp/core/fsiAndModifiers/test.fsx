@@ -139,7 +139,7 @@ module PinTests =
 
 
 if errors.IsEmpty then 
-    System.IO.File.WriteAllText("test.ok", "")
+    printf "TEST PASSED OK" ;
     exit(0)
 else 
     for error in errors do 
