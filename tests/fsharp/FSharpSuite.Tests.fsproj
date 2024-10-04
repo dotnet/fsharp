@@ -19,9 +19,6 @@
   <ItemGroup>
     <Compile Include="..\FSharp.Test.Utilities\XunitSetup.fs">
       <Link>XunitSetup.fs</Link>
-    </Compile>
-    <Compile Include="..\scripts\scriptlib.fsx">
-      <Link>scriptlib.fsx</Link>
     </Compile>  
     <Compile Include="XunitHelpers.fs" />
     <Compile Include="HandleExpects.fs" />
