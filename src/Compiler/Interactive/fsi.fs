@@ -3882,8 +3882,7 @@ type FsiInteractionProcessor
 
             istate, Completed None
 
-        | ParsedHashDirective("WARN_DIRECTIVE_DUMMY", _, _) ->
-            istate, Completed None
+        | ParsedHashDirective("WARN_DIRECTIVE_DUMMY", _, _) -> istate, Completed None
 
         | ParsedHashDirective(c, hashArguments, m) ->
             let arg = (parsedHashDirectiveArguments hashArguments tcConfigB.langVersion)
