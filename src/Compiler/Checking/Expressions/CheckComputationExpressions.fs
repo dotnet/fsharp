@@ -2396,7 +2396,8 @@ let rec TryTranslateComputationExpression
             then
                 error (Error(FSComp.SR.tcRequireBuilderMethod ("YieldFrom"), m))
 
-            let yieldFromCall = mkSynCall "YieldFrom" synYieldExpr.Range [ yieldFromExpr ] ceenv.builderValName
+            let yieldFromCall =
+                mkSynCall "YieldFrom" synYieldExpr.Range [ yieldFromExpr ] ceenv.builderValName
 
             let yieldFromCall =
                 if IsControlFlowExpression synYieldExpr then
