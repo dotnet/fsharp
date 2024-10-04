@@ -89,6 +89,12 @@ let ``SupportsNull`` compilation =
     |> withNoWarn 52
     |> verifyCompilation DoNotOptimize
 
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"GenericCode.fs"|])>]
+let ``GenericCode`` compilation =  
+    compilation
+    |> withNoWarn 52
+    |> verifyCompilation DoNotOptimize
+
 
 module Interop  =
     open System.IO
