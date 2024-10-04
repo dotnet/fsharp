@@ -500,7 +500,7 @@ type UsingMSBuild() as this =
         AssertNoErrorsOrWarnings(project)  
         
     // #nowarn seen in closed .fsx is global to the closure
-    [<Fact>]
+    [<Fact(Skip="#Nowarn no longer transitive")>]
     member public this.``Fsx.NoError.ScriptClosure.TransitiveLoad16``() =  
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
