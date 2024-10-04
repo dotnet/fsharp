@@ -513,3 +513,58 @@ type MailboxProcessorType() =
         // If StartImmediate worked correctly, the information should be identical since
         // the threads should be the same.
         Assert.Equal(callingThreadInfo, mailboxThreadInfo)
+
+module MailboxProcessorType =
+
+    [<Fact>]
+    let TryScan () =
+        let tcs = TaskCompletionSource<_>()
+        use mailbox =
+            new MailboxProcessor<Message>(fun inbox -> async {
+                do! 
+                    inbox.TryScan( function
+                        | Reset -> async { tcs.SetResult "Reset processed" } |> Some
+                        | _ -> None)
+                    |> Async.Ignore
+            })
+        mailbox.Start()
+
+        for i in 1 .. 100 do
+            mailbox.Post(Increment i)
+        mailbox.Post Reset
+
+        Assert.Equal("Reset processed", tcs.Task.Result)
+        Assert.Equal(100, mailbox.CurrentQueueLength)
+
+    [<Fact>]
+    let ``TryScan with timeout`` () =
+        let tcs = TaskCompletionSource<_>()
+        use mailbox =
+            new MailboxProcessor<Message>(fun inbox ->
+                let rec loop i = async {
+                    match!                     
+                        inbox.TryScan( function
+                            | Reset -> async { tcs.SetResult i } |> Some
+                            | _ -> None)
+                    with
+                    | None -> do! loop (i + 1)
+                     | _ -> ()
+                }
+                loop 1
+            )
+        mailbox.DefaultTimeout <- 10
+        mailbox.Start()
+
+        use cts = new CancellationTokenSource()
+        cts.CancelAfter 100
+        let iteration = 
+            task { 
+                while not cts.IsCancellationRequested do
+                    mailbox.Post(Increment 1)
+                    do! Task.Delay 1
+                mailbox.Post Reset
+
+                return! tcs.Task
+            }
+
+        Assert.True(iteration.Result > 1, "TryScan did not timeout")
