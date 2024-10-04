@@ -11,6 +11,7 @@ open Xunit
 open System.Threading
 open System.Threading.Tasks
 
+// Cancels default token.
 [<Collection(nameof FSharp.Test.DoNotRunInParallel)>]
 module AsyncType =
 

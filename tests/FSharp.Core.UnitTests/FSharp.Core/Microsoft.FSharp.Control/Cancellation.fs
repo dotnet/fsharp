@@ -8,7 +8,7 @@ open Xunit
 open FSharp.Test
 open System.Threading
 
-[<Collection(nameof DoNotRunInParallel)>]
+// [<Collection(nameof DoNotRunInParallel)>]
 type CancellationType() =
 
     [<Fact>]

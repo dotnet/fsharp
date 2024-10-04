@@ -148,7 +148,7 @@ module LeakUtils =
 
 // ---------------------------------------------------
 
-[<Collection(nameof FSharp.Test.DoNotRunInParallel)>]
+// [<Collection(nameof FSharp.Test.DoNotRunInParallel)>]
 type AsyncModule() =
     
     /// Simple asynchronous task that delays 200ms and returns a list of the current tick count

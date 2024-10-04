@@ -24,7 +24,7 @@ type StartImmediateThreadInfo =
 type StartImmediateMessage =
     | GetThreadInfo of AsyncReplyChannel<StartImmediateThreadInfo>
 
-[<Collection(nameof FSharp.Test.DoNotRunInParallel)>]
+// [<Collection(nameof FSharp.Test.DoNotRunInParallel)>]
 type MailboxProcessorType() =
 
     let getSimpleMailbox() =
@@ -555,13 +555,11 @@ module MailboxProcessorType =
         mailbox.DefaultTimeout <- 10
         mailbox.Start()
 
-        use cts = new CancellationTokenSource()
-        cts.CancelAfter 100
         let iteration = 
             task { 
-                while not cts.IsCancellationRequested do
+                for i in 1 .. 100 do
                     mailbox.Post(Increment 1)
-                    do! Task.Delay 1
+                    do! Task.Delay 10
                 mailbox.Post Reset
 
                 return! tcs.Task

@@ -25,7 +25,7 @@ let file2 = """
 module File2
 let B = File1.A + File1.A"""
 
-
+// FileSystem is a global shared resource.
 [<Collection(nameof DoNotRunInParallel)>]
 type internal MyFileSystem() =
     inherit DefaultFileSystem()
