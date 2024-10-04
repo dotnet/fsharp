@@ -1082,13 +1082,13 @@ rule token (args: LexArgs) (skip: bool) = parse
      let tok = fail args lexbuf (FSComp.SR.lexHashIfMustHaveIdent()) tok
      if not skip then tok else token args skip lexbuf }
 
- | anywhite* ("#nowarn" | "#warnon") anystring newline
-   {
-     WarnScopes.ParseAndRegisterWarnDirective lexbuf
-     newline lexbuf
-     let tok = WHITESPACE (LexCont.Token (args.ifdefStack, args.stringNest))
-     if not skip then tok else token args skip lexbuf
-   }
+ | anywhite* "#if" ident_char+
+ | anywhite* "#else" ident_char+
+ | anywhite* "#endif" ident_char+
+ | anywhite* "#light" ident_char+
+   { let n = (lexeme lexbuf).IndexOf('#')
+     lexbuf.StartPos <- lexbuf.StartPos.ShiftColumnBy(n)
+     HASH_IDENT(lexemeTrimLeft lexbuf (n+1)) }
 
    // We parse and process warn directives here during lexing, including anything that might be an argument.
    // But we stop early enough to pass to the parser ";;" (for compatibility) and "//" (for coloring).

@@ -102,7 +102,6 @@ let reusingLexbufForParsing lexbuf f =
     use _ = UseBuildPhase BuildPhase.Parse
     LexbufLocalXmlDocStore.ClearXmlDoc lexbuf
     LexbufCommentStore.ClearComments lexbuf
-    WarnScopes.ClearLexbufStore lexbuf
 
     try
         f ()
