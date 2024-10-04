@@ -62,7 +62,9 @@ type ResetConsoleWriters() =
 
 type TestRun(sink) =
     inherit XunitTestFramework(sink)
-    do ParallelConsole.initStreamsCapture()
+    do
+        MessageSink.sinkWriter |> ignore
+        ParallelConsole.initStreamsCapture()
 
     static let testRunFinishedEvent = Event<unit>()
     static member Finished = testRunFinishedEvent.Publish
