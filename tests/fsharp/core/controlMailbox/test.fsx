@@ -229,37 +229,44 @@ module MailboxProcessorBasicTests =
                  return !received})
                 n
 
-        //for i in 1..10 do
-        //    for sleep in [0;1;10] do
-        //        for timeout in [10;1;0] do
-        //            checkAsync 
-        //               (sprintf "cf72361: MailboxProcessor TryScan w/timeout=%d sleep=%d iteration=%d" timeout sleep i) 
-        //               (task {
-        //                let found = TaskCompletionSource()
-        //                let timedOut = ref None
-        //                let mb = new MailboxProcessor<int>(fun inbox ->
-        //                        async {
-        //                                let result = ref None
-        //                                let count = ref 0
-        //                                while (!result).IsNone && !count < 5 do
-        //                                    let! curResult = inbox.TryScan((fun i -> if i >= 0 then async { return i } |> Some  else None), timeout=timeout)
-        //                                    result := curResult
-        //                                    count := !count + 1
-        //                                match !result with
-        //                                |   None -> 
-        //                                        timedOut := Some true
-        //                                |   Some i -> 
-        //                                        timedOut := Some false
-        //                        })
-        //                mb.Start()
-        //                let w = System.Diagnostics.Stopwatch()
-        //                w.Start()
-        //                while w.ElapsedMilliseconds < 1000L && (!timedOut).IsNone do
-        //                    mb.Post(-1)
-        //                    do! Task.Yield()
-        //                mb.Post(0)
-        //                return !timedOut})
-        //               (Some true)
+#if TESTS_AS_APP
+        for i in 1..10 do
+            for sleep in [0;1;10] do
+                for timeout in [10;1;0] do
+                    checkAsync 
+                       (sprintf "cf72361: MailboxProcessor TryScan w/timeout=%d sleep=%d iteration=%d" timeout sleep i) 
+                       (task {
+                        let found = TaskCompletionSource()
+                        let timedOut = ref None
+                        use mb = new MailboxProcessor<int>(fun inbox ->
+                                async {
+                                        let result = ref None
+                                        let count = ref 0
+                                        while (!result).IsNone && !count < 5 do
+                                            let! curResult = inbox.TryScan((fun i -> if i >= 0 then async { return i } |> Some  else None), timeout=timeout)
+                                            result := curResult
+                                            count := !count + 1
+                                        match !result with
+                                        |   None -> 
+                                                timedOut := Some true
+                                        |   Some i -> 
+                                                timedOut := Some false
+                                })
+                        mb.Start()
+
+                        let cts = new System.Threading.CancellationTokenSource()
+                        cts.CancelAfter(1000)
+                        while not cts.IsCancellationRequested && (!timedOut).IsNone do
+                            mb.Post(-1)
+                            do! Task.Delay(1)
+
+                        mb.Post(0)
+  
+                        do! Task.Delay(sleep)
+
+                        return !timedOut})
+                       (Some true)
+#endif
 
         checkAsync "cf72361: MailboxProcessor TryScan wo/timeout" 
            (task {
@@ -584,10 +591,10 @@ let RunAll() =
     timeout_tpar_def()
     // ToDo: 7/31/2008: Disabled because of probable timing issue.  QA needs to re-enable post-CTP.
     // Tracked by bug FSharp 1.0:2891
-    ///test15()
+    // test15()
     // ToDo: 7/31/2008: Disabled because of probable timing issue.  QA needs to re-enable post-CTP.
     // Tracked by bug FSharp 1.0:2891
-    //test15b()
+    // test15b()
     LotsOfMessages.test().Wait()
 
 #if TESTS_AS_APP

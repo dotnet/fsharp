@@ -413,7 +413,7 @@ module Tests6 =
         let cfg =  "core/controlChamenos"
         singleTestBuildAndRunAux cfg  ["--tailcalls"] FSI
 
-[<Collection(nameof DoNotRunInParallel)>]
+// [<Collection(nameof DoNotRunInParallel)>]
 module ControlMailbox =
 
     [<Fact>]
