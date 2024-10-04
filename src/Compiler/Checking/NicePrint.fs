@@ -2191,7 +2191,7 @@ module TastDefinitionPrinting =
         let inherits = 
             [ if not (suppressInheritanceAndInterfacesForTyInSimplifiedDisplays g amap m ty) then 
                 match GetSuperTypeOfType g amap m ty with 
-                | Some superTy when not (isObjTy g superTy) && not (isValueTypeTy g superTy) ->
+                | Some superTy when not (isObjTyAnyNullness g superTy) && not (isValueTypeTy g superTy) ->
                     superTy
                 | _ -> ()
             ]
