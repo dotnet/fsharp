@@ -935,7 +935,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
             // Process: anywhite* ("//" [^'\n''\r']*)?
             let offset = beforeIdent + identLength
             processWhiteAndComment str offset delay cont)
-    
+
     let processWarnDirective (str: string) leftc rightc cont =
         let hashIdx = str.IndexOf("#", StringComparison.Ordinal)
         let directive = WARN_DIRECTIVE(str, cont), leftc + hashIdx, rightc

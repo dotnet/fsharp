@@ -2840,10 +2840,10 @@ type internal FsiDynamicCompiler
         WithImplicitHome (tcConfigB, directoryName sourceFile) (fun () ->
             ProcessMetaCommandsFromInput
                 ((fun st (m, path, directive) ->
-                     let st, _ =
-                         fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncludePathDirective(ctok, st, directive, path, false, m)
+                    let st, _ =
+                        fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncludePathDirective(ctok, st, directive, path, false, m)
 
-                     st),
+                    st),
                  (fun _ _ -> ()))
                 (tcConfigB, input, !! Path.GetDirectoryName(sourceFile), istate))
 
@@ -3704,7 +3704,7 @@ type FsiInteractionProcessor
                         tok
 
                     Parser.interaction lexerWhichSavesLastToken tokenizer.LexBuffer)
-                    
+
             WarnScopes.MergeInto diagnosticOptions tokenizer.LexBuffer
 
             Some input
@@ -4179,7 +4179,7 @@ type FsiInteractionProcessor
                 // Parse the interaction. When FSI.EXE is waiting for input from the console the
                 // parser thread is blocked somewhere deep this call.
                 let action = ParseInteraction diagnosticOptions tokenizer
-                
+
                 if progress then
                     fprintfn fsiConsoleOutput.Out "returned from ParseInteraction...calling runCodeOnMainThread..."
 
@@ -4216,7 +4216,13 @@ type FsiInteractionProcessor
 
             let rec run istate =
                 let status =
-                    processor.ParseAndExecuteInteractionFromLexbuf((fun f istate -> f ctok istate), istate, tokenizer, tcConfigB.diagnosticsOptions, diagnosticsLogger)
+                    processor.ParseAndExecuteInteractionFromLexbuf(
+                        (fun f istate -> f ctok istate),
+                        istate,
+                        tokenizer,
+                        tcConfigB.diagnosticsOptions,
+                        diagnosticsLogger
+                    )
 
                 ProcessStepStatus status None (fun _ istate -> run istate)
 

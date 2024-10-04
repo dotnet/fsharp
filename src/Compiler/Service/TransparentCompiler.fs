@@ -2340,12 +2340,7 @@ type internal TransparentCompiler
                         assumeDotNetFramework
                         otherFlags
 
-                let otherFlags =
-                    [
-                        yield "--noframework"
-                        yield "--warn:3"
-                        yield! otherFlags
-                    ]
+                let otherFlags = [ yield "--noframework"; yield "--warn:3"; yield! otherFlags ]
 
                 // Once we do have the script closure, we can populate the cache to re-use can later.
                 let loadClosureKey =

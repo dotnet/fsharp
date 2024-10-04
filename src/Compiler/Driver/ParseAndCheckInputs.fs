@@ -932,7 +932,7 @@ let ProcessMetaCommandsFromInput
         decls
         |> List.iter (fun d ->
             match d with
-            | SynModuleSigDecl.HashDirective(ParsedHashDirective("WARN_DIRECTIVE_DUMMY",_,_), _) -> ()
+            | SynModuleSigDecl.HashDirective(ParsedHashDirective("WARN_DIRECTIVE_DUMMY", _, _), _) -> ()
             | SynModuleSigDecl.HashDirective(_, m) -> warning (Error(FSComp.SR.buildDirectivesInModulesAreIgnored (), m))
             | SynModuleSigDecl.NestedModule(moduleDecls = subDecls) -> WarnOnIgnoredSpecDecls subDecls
             | _ -> ())
@@ -941,7 +941,7 @@ let ProcessMetaCommandsFromInput
         decls
         |> List.iter (fun d ->
             match d with
-            | SynModuleDecl.HashDirective(ParsedHashDirective("WARN_DIRECTIVE_DUMMY",_,_), _) -> ()
+            | SynModuleDecl.HashDirective(ParsedHashDirective("WARN_DIRECTIVE_DUMMY", _, _), _) -> ()
             | SynModuleDecl.HashDirective(_, m) -> warning (Error(FSComp.SR.buildDirectivesInModulesAreIgnored (), m))
             | SynModuleDecl.NestedModule(decls = subDecls) -> WarnOnIgnoredImplDecls subDecls
             | _ -> ())

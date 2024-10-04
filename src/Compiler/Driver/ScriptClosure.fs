@@ -271,9 +271,7 @@ module ScriptPreprocessClosure =
             tcConfigB.AddLoadedSource(m, s, pathOfMetaCommandSource)
 
         try
-            ProcessMetaCommandsFromInput
-                (addReferenceDirective, addLoadedSource)
-                (tcConfigB, inp, pathOfMetaCommandSource, ())
+            ProcessMetaCommandsFromInput (addReferenceDirective, addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())
         with ReportedError _ ->
             // Recover by using whatever did end up in the tcConfig
             ()
