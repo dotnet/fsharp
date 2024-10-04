@@ -979,7 +979,7 @@ type ProvidedExprType =
     | ProvidedTryFinallyExpr of ProvidedExpr * ProvidedExpr
     | ProvidedLambdaExpr of ProvidedVar * ProvidedExpr
     | ProvidedCallExpr of ProvidedExpr option * ProvidedMethodInfo * ProvidedExpr[] 
-    | ProvidedConstantExpr of obj * ProvidedType
+    | ProvidedConstantExpr of objnull * ProvidedType
     | ProvidedDefaultExpr of ProvidedType
     | ProvidedNewTupleExpr of ProvidedExpr[]
     | ProvidedTupleGetExpr of ProvidedExpr * int
