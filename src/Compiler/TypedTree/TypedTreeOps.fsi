@@ -1666,8 +1666,14 @@ val rankOfArrayTyconRef: TcGlobals -> TyconRef -> int
 /// Determine if a type is the F# unit type
 val isUnitTy: TcGlobals -> TType -> bool
 
-/// Determine if a type is the System.Object type
-val isObjTy: TcGlobals -> TType -> bool
+/// Determine if a type is the System.Object type with any nullness qualifier
+val isObjTyAnyNullness: TcGlobals -> TType -> bool
+
+/// Determine if a type is the (System.Object | null) type. Allows either nullness if null checking is disabled.
+val isObjNullTy: TcGlobals -> TType -> bool
+
+/// Determine if a type is a strictly non-nullable System.Object type. If nullness checking is disabled, this returns false.
+val isObjTyWithoutNull: TcGlobals -> TType -> bool
 
 /// Determine if a type is the System.ValueType type
 val isValueTypeTy: TcGlobals -> TType -> bool
