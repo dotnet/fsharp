@@ -70,6 +70,10 @@ module times =
     let ``times - to csv file`` (compilation: CompilationUnit) =
         let tempPath = compilation.OutputDirectory ++ "times.csv"
 
+        use watcher = new FileSystemWatcher(compilation.OutputDirectory, Filter = "times.csv", EnableRaisingEvents = true)
+        let changed = System.Threading.Tasks.TaskCompletionSource<_>()
+        watcher.Changed.Add (changed.TrySetResult >> ignore)
+
         compilation
         |> asFsx
         |> withOptions ["--times:" + tempPath]
@@ -77,12 +81,14 @@ module times =
         |> compile
         |> shouldSucceed
         |> ignore
-        
+
+        changed.Task.Wait()
+
         // Shared access to avoid sporadic file locking during tests. 
         use reader = new StreamReader(new FileStream(tempPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
         let header = reader.ReadLine()
         Assert.Contains("Name,StartTime,EndTime,Duration(s),Id,ParentId,RootId", header)
-
+        
         let csvContents = reader.ReadToEnd()
         Assert.Contains("Typecheck", csvContents)
         Assert.Contains("Parse inputs", csvContents)

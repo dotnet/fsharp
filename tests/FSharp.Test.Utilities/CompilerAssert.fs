@@ -299,9 +299,9 @@ and Compilation =
 
 module TestContext =
 
-    let UseTransparentCompiler = false
-        //FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically ||
-        //not (String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TEST_TRANSPARENT_COMPILER")))
+    let UseTransparentCompiler =
+        FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically ||
+        not (String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TEST_TRANSPARENT_COMPILER")))
 
     let Checker = FSharpChecker.Create(suggestNamesForErrors=true, useTransparentCompiler = UseTransparentCompiler)
 
