@@ -1440,8 +1440,7 @@ type UsingMSBuild() as this =
                "#r \"\""
                "#reference \"\""
                "#load \"\""
-               "#line 52"
-               "#nowarn 72"]        
+               "#line 52"]        
             )
                                  
     /// There was a problem where an unclosed reference picked up the text of the reference on the next line.
