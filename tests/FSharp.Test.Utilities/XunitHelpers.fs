@@ -74,6 +74,7 @@ type TestRun(sink) =
             GC.Collect()
             GC.WaitForPendingFinalizers()
             GC.Collect()
+            GC.WaitForPendingFinalizers()
 
             testRunFinishedEvent.Trigger()
             base.Dispose()

@@ -344,32 +344,33 @@ module CompilerAssertHelpers =
     type Worker () =
         inherit MarshalByRefObject()
 
-        member x.ExecuteTestCase assemblyPath (deps: string[]) isFsx =
+        member x.ExecuteTestCase assemblyPath isFsx =
             // Set console streams for the AppDomain.
             ParallelConsole.initStreamsCapture()
             ParallelConsole.resetWriters()
-
-            AppDomain.CurrentDomain.add_AssemblyResolve(ResolveEventHandler(fun _ args ->
-                deps
-                |> Array.tryFind (fun (x: string) -> Path.GetFileNameWithoutExtension x = AssemblyName(args.Name).Name)
-                |> Option.bind (fun x -> if FileSystem.FileExistsShim x then Some x else None)
-                |> Option.map Assembly.LoadFile
-                |> Option.defaultValue null))
-
             let assembly = Assembly.LoadFrom assemblyPath
             let ex = try executeAssemblyEntryPoint assembly isFsx; None with ex -> Some ex
             ParallelConsole.OutText, ParallelConsole.ErrorText, ex
                 
-
-    let executeBuiltApp assembly deps isFsx =
+    let executeBuiltApp assembly dependecies isFsx =
         let thisAssemblyDirectory = Path.GetDirectoryName(typeof<Worker>.Assembly.Location)
         let setup = AppDomainSetup(ApplicationBase = thisAssemblyDirectory)
         let testCaseDomain = AppDomain.CreateDomain($"built app {assembly}", null, setup)
 
+        testCaseDomain.add_AssemblyResolve(fun _ args ->
+            dependecies
+            |> List.tryFind (fun path -> Path.GetFileNameWithoutExtension path = AssemblyName(args.Name).Name)
+            |> Option.filter FileSystem.FileExistsShim
+            |> Option.map Assembly.LoadFile
+            |> Option.toObj
+        )
+
         let worker =
             (testCaseDomain.CreateInstanceFromAndUnwrap(typeof<Worker>.Assembly.CodeBase, typeof<Worker>.FullName)) :?> Worker
 
-        let out, error, ex = worker.ExecuteTestCase assembly (deps |> Array.ofList) isFsx
+        let out, error, ex = worker.ExecuteTestCase assembly isFsx
+
+        AppDomain.Unload testCaseDomain
 
         printf $"{out}"
         eprintf $"{error}"
