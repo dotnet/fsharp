@@ -335,7 +335,7 @@ module CompilerAssertHelpers =
                 deps
                 |> List.tryFind (fun (x: string) -> Path.GetFileNameWithoutExtension x = name.Name)
                 |> Option.map ctxt.LoadFromAssemblyPath
-                |> Option.defaultValue null)
+                |> Option.toObj)
 
             executeAssemblyEntryPoint (ctxt.LoadFromAssemblyPath assemblyPath) isFsx 
         finally
