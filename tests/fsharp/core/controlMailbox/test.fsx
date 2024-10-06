@@ -297,24 +297,22 @@ module MailboxProcessorErrorEventTests =
             "c32398u9330: MailboxProcessor Error (0)"
             (task {
              let mb1 = new MailboxProcessor<int>(fun inbox -> async { return () })
-             let res = ref 100
-             mb1.Error.Add(fun _ -> res := 0)
+             mb1.Error.Add(fun _ -> failwith "unexpected error event")
              mb1.Start();
              do! Task.Delay(200)
-             return !res})
+             return 100})
             100
 
         // Make sure the event does get raised if error
-        checkAsync 
+        check
             "c32398u9331: MailboxProcessor Error (1)"
-            (task {
-             let mb1 = new MailboxProcessor<int>(fun inbox -> async { failwith "fail" })
-             let res = ref 0
-             mb1.Error.Add(fun _ -> res := 100)
+            (let mb1 = new MailboxProcessor<int>(fun inbox -> async { failwith "fail" })
+             use res = new System.Threading.ManualResetEventSlim(false)
+             mb1.Error.Add(fun _ -> res.Set())
              mb1.Start();
-             do! Task.Delay(200)
-             return !res} )
-            100
+             res.Wait()
+             true)
+            true
 
         // Make sure the event does get raised after message receive 
         checkAsync
