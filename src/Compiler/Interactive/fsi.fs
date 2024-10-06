@@ -4693,7 +4693,7 @@ type FsiEvaluationSession
     let lexResourceManager = LexResourceManager()
 
     /// The lock stops the type checker running at the same time as the server intellisense implementation.
-    let tcLockObject = box 7 // any new object will do
+    let tcLockObject = box 7 |> Unchecked.nonNull // any new object will do
 
     let resolveAssemblyRef (aref: ILAssemblyRef) =
         // Explanation: This callback is invoked during compilation to resolve assembly references

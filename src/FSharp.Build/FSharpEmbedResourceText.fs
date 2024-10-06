@@ -295,7 +295,7 @@ open Printf
     #endif
 
 
-    static let mkFunctionValue (tys: System.Type[]) (impl:obj->obj) =
+    static let mkFunctionValue (tys: System.Type[]) (impl:objnull->objnull) =
         FSharpValue.MakeFunction(FSharpType.MakeFunctionType(tys.[0],tys.[1]), impl)
 
     static let funTyC = typeof<(obj -> obj)>.GetGenericTypeDefinition()

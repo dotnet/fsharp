@@ -515,3 +515,48 @@ let success,version = System.Version.TryParse(null)
     |> assertAndGetSingleToolTipText
     |> Assert.shouldBeEquivalentTo ("""System.Version.TryParse([<NotNullWhenAttribute (true)>] input: string | null,
                         [<NotNullWhenAttribute (true)>] result: byref<System.Version | null>) : bool""" |> normalize)
+    
+[<FactForNETCOREAPP>]
+let ``Allows ref struct is shown on BCL interface declaration`` () =   
+    let source = """module Foo
+open System
+let myAction : Action<int> | null = null
+"""
+    let checkResults = getCheckResults source [|"--checknulls+";"--langversion:preview"|]
+    checkResults.GetToolTip(3, 21, "let myAction : Action<int> | null = null", [ "Action" ], FSharpTokenTag.Identifier)   
+    |> assertAndGetSingleToolTipText
+    |> Assert.shouldStartWith ("""type Action<'T (allows ref struct)>""" |> normalize)
+    
+[<FactForNETCOREAPP>]
+let ``Allows ref struct is shown for each T on BCL interface declaration`` () =   
+    let source = """module Foo
+open System
+let myAction : Action<int,_,_,_> | null = null
+"""
+    let checkResults = getCheckResults source [|"--checknulls+";"--langversion:preview"|]
+    checkResults.GetToolTip(3, 21, "let myAction : Action<int,_,_,_> | null = null", [ "Action" ], FSharpTokenTag.Identifier)   
+    |> assertAndGetSingleToolTipText
+    |> Assert.shouldStartWith ("""type Action<'T1,'T2,'T3,'T4 (allows ref struct and allows ref struct and allows ref struct and allows ref struct)>""" |> normalize)
+    
+[<FactForNETCOREAPP>]
+let ``Allows ref struct is shown on BCL method usage`` () =
+    let source = """module Foo
+open System
+open System.Collections.Generic
+let doIt (dict:Dictionary<'a,'b>) = dict.GetAlternateLookup<'a,'b,ReadOnlySpan<char>>()
+"""
+    let checkResults = getCheckResults source [|"--langversion:preview"|]
+    checkResults.GetToolTip(4, 59, "let doIt (dict:Dictionary<'a,'b>) = dict.GetAlternateLookup<'a,'b,ReadOnlySpan<char>>()", [ "GetAlternateLookup" ], FSharpTokenTag.Identifier)   
+    |> assertAndGetSingleToolTipText
+    |> Assert.shouldContain ("""'TAlternateKey (allows ref struct)""" |> normalize)
+    
+[<FactForNETCOREAPP>]
+let ``Allows ref struct is not shown on BCL interface usage`` () =   
+    let source = """module Foo
+open System
+let doIt(myAction : Action<int>) = myAction.Invoke(42)
+"""
+    let checkResults = getCheckResults source [|"--langversion:preview"|]
+    checkResults.GetToolTip(3, 43, "let doIt(myAction : Action<int>) = myAction.Invoke(42)", [ "myAction" ], FSharpTokenTag.Identifier)   
+    |> assertAndGetSingleToolTipText
+    |> Assert.shouldBeEquivalentTo ("""val myAction: Action<int>""" |> normalize)
