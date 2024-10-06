@@ -65,14 +65,3 @@ type TestRun(sink) =
     do
         MessageSink.sinkWriter |> ignore
         ParallelConsole.initStreamsCapture()
-
-    static let testRunFinishedEvent = Event<unit>()
-    static member Finished = testRunFinishedEvent.Publish
-    interface IDisposable with
-        member _.Dispose() =
-            // Try to release files locked by AssemblyLoadContext, AppDomains etc.
-            GC.Collect()
-            GC.WaitForPendingFinalizers()
-
-            testRunFinishedEvent.Trigger()
-            base.Dispose()

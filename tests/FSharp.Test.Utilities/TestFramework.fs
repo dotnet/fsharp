@@ -20,9 +20,6 @@ let tempDirectoryOfThisTestRun =
     let directory =
         DirectoryInfo(temp).CreateSubdirectory($"FSharp.Test.Utilities/{today}-{getShortId()}")
 
-    TestRun.Finished.Add <| fun () ->
-        try directory.Delete(true) with _ -> ()
-
     directory.FullName
 
 let createTemporaryDirectory (part: string) =
