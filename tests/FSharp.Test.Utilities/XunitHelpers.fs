@@ -73,8 +73,6 @@ type TestRun(sink) =
             // Try to release files locked by AssemblyLoadContext, AppDomains etc.
             GC.Collect()
             GC.WaitForPendingFinalizers()
-            GC.Collect()
-            GC.WaitForPendingFinalizers()
 
             testRunFinishedEvent.Trigger()
             base.Dispose()
