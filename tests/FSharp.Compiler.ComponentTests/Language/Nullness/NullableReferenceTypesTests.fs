@@ -158,8 +158,7 @@ type T () =
     """
     |> asLibrary
     |> typeCheckWithStrictNullness
-    |> shouldFail
-    |> withDiagnostics []
+    |> shouldSucceed
 
 [<Theory>]
 [<InlineData("fileExists(path)")>]
