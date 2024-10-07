@@ -7,6 +7,7 @@ open FSharp.Core.UnitTests.LibraryTestFx
 open Xunit
 open FSharp.Test
 open System.Threading
+open System.Threading.Tasks
 
 
 type CancellationType() =
@@ -230,6 +231,7 @@ type CancellationType() =
             }               
         asyncs |> Async.Parallel |> Async.RunSynchronously |> ignore
 
+    // See https://github.com/dotnet/fsharp/issues/3254
     [<Fact>]
     member this.AwaitTaskCancellationAfterAsyncTokenCancellation() =
         let StartCatchCancellation cancellationToken (work) =
@@ -263,30 +265,43 @@ type CancellationType() =
 
         let cts = new CancellationTokenSource()
         let tcs = System.Threading.Tasks.TaskCompletionSource<_>()
-        let t =
+        let test() =
             async {
                 do! tcs.Task |> Async.AwaitTask
             }
-            |> StartAsTaskProperCancel None (Some cts.Token)
+            |> StartAsTaskProperCancel None (Some cts.Token) :> Task
 
         // First cancel the token, then set the task as cancelled.
-        let t1 =
-            async {
-                do! Async.Sleep 100
-                cts.Cancel()
-                do! Async.Sleep 100
-                tcs.TrySetException (TimeoutException "Task timed out after token.")
-                    |> ignore
-            }
-            |> Async.StartAsTask
+        async {
+            do! Async.Sleep 100
+            cts.Cancel()
+            do! Async.Sleep 100
+            tcs.TrySetException (TimeoutException "Task timed out after token.")
+            |> ignore
+        } |> Async.Start
 
-        try
-            let res = t.Wait(2000)
-            let msg = sprintf "Excepted TimeoutException wrapped in an AggregateException, but got %A" res
-            printfn "failure msg: %s" msg
-            Assert.Fail (msg)
-        with :? AggregateException as agg -> ()
-        t1.Wait()
+        task {
+            let! agg = Assert.ThrowsAsync<AggregateException>(test)
+            let inner = agg.InnerException
+            Assert.True(inner :? TimeoutException, $"Excepted TimeoutException wrapped in an AggregateException, but got %A{inner}")
+        }
+
+    // Simpler regression test for https://github.com/dotnet/fsharp/issues/3254
+    [<Fact>]
+    member this.AwaitTaskCancellationAfterAsyncTokenCancellation2() =
+        let tcs = new TaskCompletionSource<int>()
+        let cts = new CancellationTokenSource()
+        let _ = cts.Token.Register(fun () -> tcs.SetResult 42)
+        Assert.ThrowsAsync<TaskCanceledException>( fun () ->
+            Async.StartAsTask(
+                async {
+                    cts.CancelAfter 100
+                    let! result = tcs.Task |> Async.AwaitTask
+                    return result
+                },
+                cancellationToken = cts.Token
+            )
+        )
 
     [<Fact>]
     member this.Equality() =
