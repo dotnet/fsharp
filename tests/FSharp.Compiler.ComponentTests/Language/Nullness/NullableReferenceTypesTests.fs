@@ -41,6 +41,22 @@ let nonStrictFunc(x:string | null) = strictFunc(x)
     |> shouldFail
     |> withDiagnostics [
         Error 3261, Line 4, Col 49, Line 4, Col 50, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."]
+ 
+[<Fact>]
+let ``Can have nullable prop of same type T within a custom type T``() =
+    FSharp """
+module MyLib
+type T () =
+    //let mutable v : T | null = null
+    member val P : T | null = null with get, set
+    member this.M() =
+        //v <- null
+        this.P <- null
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics []
 
 [<Theory>]
 [<InlineData("fileExists(path)")>]
