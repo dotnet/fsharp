@@ -2,4 +2,4 @@
 #load "b1.fs"
 #load "b2.fsi" "b2.fs" 
 
-let os = System.IO.File.CreateText "test.ok" in os.Close() 
+printf "TEST PASSED OK" ; 

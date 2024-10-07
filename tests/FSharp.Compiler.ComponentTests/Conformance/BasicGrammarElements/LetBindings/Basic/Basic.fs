@@ -144,13 +144,12 @@ module LetBindings_Basic =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 267, Line 11, Col 18, Line 11, Col 19, "This is not a valid constant expression or custom attribute value")
-            (Error 837, Line 11, Col 13, Line 11, Col 31, "This is not a valid constant expression")
-            (Error 267, Line 14, Col 13, Line 14, Col 17, "This is not a valid constant expression or custom attribute value")
-            (Error 267, Line 17, Col 13, Line 17, Col 15, "This is not a valid constant expression or custom attribute value")
-            (Error 267, Line 20, Col 13, Line 20, Col 17, "This is not a valid constant expression or custom attribute value")
-            (Error 267, Line 23, Col 13, Line 23, Col 18, "This is not a valid constant expression or custom attribute value")
-            (Warning 3178, Line 26, Col 13, Line 26, Col 26, "This is not valid literal expression. The [<Literal>] attribute will be ignored.")
+            (Error 267, Line 10, Col 18, Line 10, Col 19, "This is not a valid constant expression or custom attribute value")
+            (Error 837, Line 10, Col 13, Line 10, Col 31, "This is not a valid constant expression")
+            (Error 267, Line 16, Col 13, Line 16, Col 15, "This is not a valid constant expression or custom attribute value")
+            (Error 267, Line 19, Col 13, Line 19, Col 17, "This is not a valid constant expression or custom attribute value")
+            (Error 267, Line 22, Col 13, Line 22, Col 18, "This is not a valid constant expression or custom attribute value")
+            (Warning 3178, Line 25, Col 13, Line 25, Col 26, "This is not valid literal expression. The [<Literal>] attribute will be ignored.")
         ]
 
     // SOURCE=E_Pathological01.fs SCFLAGS=--test:ErrorRanges                   # E_Pathological01.fs

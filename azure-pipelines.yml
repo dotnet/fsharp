@@ -73,6 +73,9 @@ extends:
       sbom:
         enabled: false # VS SBOM is generated with other steps
         justificationForDisabling: 'SBOM for F# is generated via build process. Will be migrated at later date.'
+      tsa:
+        enabled: true
+        configFile: '$(Build.SourcesDirectory)/eng/TSAConfig.gdntsa'
       sourceAnalysisPool:
         name: NetCore1ESPool-Svc-Internal
         image: 1es-windows-2022
@@ -143,7 +146,7 @@ extends:
             - task: PublishTestResults@2
               displayName: Publish Test Results
               inputs:
-                testResultsFormat: 'NUnit'
+                testResultsFormat: 'XUnit'
                 testResultsFiles: '*.xml'
                 searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
               continueOnError: true

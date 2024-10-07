@@ -2144,11 +2144,6 @@ and typeDefReader ctxtH : ILTypeDefStored =
             else
                 let mutable attrIdx = attrsStartIdx
 
-                let looksLikeSystemAssembly =
-                    ctxt.fileName.EndsWith("System.Runtime.dll")
-                    || ctxt.fileName.EndsWith("mscorlib.dll")
-                    || ctxt.fileName.EndsWith("netstandard.dll")
-
                 while attrIdx <= attrsEndIdx && not containsExtensionMethods do
                     let mutable addr = ctxt.rowAddr TableNames.CustomAttribute attrIdx
                     // skip parentIndex to read typeIndex
@@ -2159,12 +2154,9 @@ and typeDefReader ctxtH : ILTypeDefStored =
                     let name =
                         if attrTypeIndex.tag = cat_MethodDef then
                             // the ExtensionAttribute constructor can be cat_MethodDef if the metadata is read from the assembly
-                            // in which the corresponding attribute is defined -- from the system library
-                            if not looksLikeSystemAssembly then
-                                ""
-                            else
-                                let _, (_, nameIdx, namespaceIdx, _, _, _) = seekMethodDefParent ctxt attrCtorIdx
-                                readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
+                            // in which the corresponding attribute is defined
+                            let _, (_, nameIdx, namespaceIdx, _, _, _) = seekMethodDefParent ctxt attrCtorIdx
+                            readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
                         else
                             let mutable addr = ctxt.rowAddr TableNames.MemberRef attrCtorIdx
                             let mrpTag = seekReadMemberRefParentIdx ctxt mdv &addr
@@ -2192,8 +2184,7 @@ and typeDefReader ctxtH : ILTypeDefStored =
         let fdefs = seekReadFields ctxt (numTypars, hasLayout) fieldsIdx endFieldsIdx
         let nested = seekReadNestedTypeDefs ctxt idx
 
-        let impls, intImplsAttrs =
-            seekReadInterfaceImpls ctxt mdv numTypars idx |> List.unzip
+        let impls = seekReadInterfaceImpls ctxt mdv numTypars idx
 
         let mimpls = seekReadMethodImpls ctxt numTypars idx
         let props = seekReadProperties ctxt numTypars idx
@@ -2206,7 +2197,6 @@ and typeDefReader ctxtH : ILTypeDefStored =
             layout = layout,
             nestedTypes = nested,
             implements = impls,
-            implementsCustomAttrs = Some intImplsAttrs,
             extends = super,
             methods = mdefs,
             securityDeclsStored = ctxt.securityDeclsReader_TypeDef,
@@ -2240,19 +2230,26 @@ and seekReadNestedTypeDefs (ctxt: ILMetadataReader) tidx =
         |])
 
 and seekReadInterfaceImpls (ctxt: ILMetadataReader) mdv numTypars tidx =
-    seekReadIndexedRows (
-        ctxt.getNumRows TableNames.InterfaceImpl,
-        id,
-        id,
-        (fun idx ->
-            let mutable addr = ctxt.rowAddr TableNames.InterfaceImpl idx
-            let _tidx = seekReadUntaggedIdx TableNames.TypeDef ctxt mdv &addr
-            simpleIndexCompare tidx _tidx),
-        isSorted ctxt TableNames.InterfaceImpl,
-        (fun idx ->
-            let intfIdx = seekReadInterfaceIdx ctxt mdv idx
-            seekReadTypeDefOrRef ctxt numTypars AsObject [] intfIdx, (ctxt.customAttrsReader_InterfaceImpl, idx))
-    )
+    InterruptibleLazy(fun () ->
+        seekReadIndexedRows (
+            ctxt.getNumRows TableNames.InterfaceImpl,
+            id,
+            id,
+            (fun idx ->
+                let mutable addr = ctxt.rowAddr TableNames.InterfaceImpl idx
+                let _tidx = seekReadUntaggedIdx TableNames.TypeDef ctxt mdv &addr
+                simpleIndexCompare tidx _tidx),
+            isSorted ctxt TableNames.InterfaceImpl,
+            (fun idx ->
+                let intfIdx = seekReadInterfaceIdx ctxt mdv idx
+                let ilType = seekReadTypeDefOrRef ctxt numTypars AsObject [] intfIdx
+
+                {
+                    Idx = idx
+                    Type = ilType
+                    CustomAttrsStored = ctxt.customAttrsReader_InterfaceImpl
+                })
+        ))
 
 and seekReadGenericParams ctxt numTypars (a, b) : ILGenericParameterDefs =
     ctxt.seekReadGenericParams (GenericParamsIdx(numTypars, a, b))

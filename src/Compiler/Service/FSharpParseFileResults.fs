@@ -573,12 +573,12 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                             yield! checkRange m
                             yield! walkExpr isControlFlow innerExpr
 
-                        | SynExpr.YieldOrReturn(_, e, m) ->
+                        | SynExpr.YieldOrReturn(_, e, m, _) ->
                             yield! checkRange m
                             yield! walkExpr false e
 
-                        | SynExpr.YieldOrReturnFrom(_, e, _)
-                        | SynExpr.DoBang(e, _) ->
+                        | SynExpr.YieldOrReturnFrom(_, e, _, _)
+                        | SynExpr.DoBang(expr = e) ->
                             yield! checkRange e.Range
                             yield! walkExpr false e
 

@@ -2227,7 +2227,8 @@ type AnonTypeGenerationTable() =
 
             let ilInterfaceTys =
                 [
-                    for intfTy, _, _ in tcaug.tcaug_interfaces -> GenType cenv m (TypeReprEnv.Empty.ForTypars tps) intfTy
+                    for intfTy, _, _ in tcaug.tcaug_interfaces ->
+                        GenType cenv m (TypeReprEnv.Empty.ForTypars tps) intfTy |> InterfaceImpl.Create
                 ]
 
             let ilTypeDef =
@@ -3781,11 +3782,11 @@ and GenCoerce cenv cgbuf eenv (e, tgtTy, m, srcTy) sequel =
     else
         GenExpr cenv cgbuf eenv e Continue
 
-        if not (isObjTy g srcTy) then
+        if not (isObjTyAnyNullness g srcTy) then
             let ilFromTy = GenType cenv m eenv.tyenv srcTy
             CG.EmitInstr cgbuf (pop 1) (Push [ g.ilg.typ_Object ]) (I_box ilFromTy)
 
-        if not (isObjTy g tgtTy) then
+        if not (isObjTyAnyNullness g tgtTy) then
             let ilToTy = GenType cenv m eenv.tyenv tgtTy
             CG.EmitInstr cgbuf (pop 1) (Push [ ilToTy ]) (I_unbox_any ilToTy)
 
@@ -6023,7 +6024,8 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
     let interfaceTys =
         GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g cenv.amap m templateStructTy
 
-    let ilInterfaceTys = List.map (GenType cenv m eenvinner.tyenv) interfaceTys
+    let ilInterfaceTys =
+        List.map (GenType cenv m eenvinner.tyenv >> InterfaceImpl.Create) interfaceTys
 
     let super = g.iltyp_ValueType
 
@@ -6254,8 +6256,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
             methods = mkILMethods mdefs,
             methodImpls = mkILMethodImpls mimpls,
             nestedTypes = emptyILTypeDefs,
-            implements = ilInterfaceTys,
-            implementsCustomAttrs = None,
+            implements = InterruptibleLazy.FromValue(ilInterfaceTys),
             extends = Some super,
             additionalFlags = ILTypeDefAdditionalFlags.None,
             securityDecls = emptyILSecurityDecls
@@ -6381,7 +6382,8 @@ and GenObjectExpr cenv cgbuf eenvouter objExpr (baseType, baseValOpt, basecall, 
     let mimpls = mimpls |> List.choose id // choose the ones that actually have method impls
 
     let interfaceTys =
-        interfaceImpls |> List.map (fst >> GenType cenv m eenvinner.tyenv)
+        interfaceImpls
+        |> List.map (fst >> GenType cenv m eenvinner.tyenv >> InterfaceImpl.Create)
 
     let super =
         (if isInterfaceTy g baseType then
@@ -6390,7 +6392,11 @@ and GenObjectExpr cenv cgbuf eenvouter objExpr (baseType, baseValOpt, basecall, 
              ilCloRetTy)
 
     let interfaceTys =
-        interfaceTys @ (if isInterfaceTy g baseType then [ ilCloRetTy ] else [])
+        interfaceTys
+        @ (if isInterfaceTy g baseType then
+               [ InterfaceImpl.Create(ilCloRetTy) ]
+           else
+               [])
 
     let cloTypeDefs =
         GenClosureTypeDefs
@@ -6688,8 +6694,7 @@ and GenClosureTypeDefs
             methods = mkILMethods mdefs,
             methodImpls = mkILMethodImpls mimpls,
             nestedTypes = emptyILTypeDefs,
-            implements = ilIntfTys,
-            implementsCustomAttrs = None,
+            implements = InterruptibleLazy.FromValue(ilIntfTys),
             extends = Some ext,
             additionalFlags = ILTypeDefAdditionalFlags.None,
             securityDecls = emptyILSecurityDecls
@@ -8558,10 +8563,15 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
 
             let ilFieldDef = mkILStaticField (fspec.Name, fty, None, None, access)
 
+            let isDecimalConstant =
+                match vref.LiteralValue with
+                | Some(Const.Decimal _) -> true
+                | _ -> false
+
             let ilFieldDef =
                 match vref.LiteralValue with
-                | Some konst -> ilFieldDef.WithLiteralDefaultValue(Some(GenFieldInit m konst))
-                | None -> ilFieldDef
+                | Some konst when not isDecimalConstant -> ilFieldDef.WithLiteralDefaultValue(Some(GenFieldInit m konst))
+                | _ -> ilFieldDef
 
             let ilFieldDef =
                 let isClassInitializer = (cgbuf.MethodName = ".cctor")
@@ -8573,6 +8583,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
                         || not isClassInitializer
                         || hasLiteralAttr
                     )
+                    || isDecimalConstant
                 )
 
             let ilAttribs =
@@ -8584,6 +8595,64 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
                     GenAttrs cenv eenv vspec.Attribs // literals have no property, so preserve all the attributes on the field itself
 
             let ilAttribs = GenAdditionalAttributesForTy g vspec.Type @ ilAttribs
+
+            let ilAttribs =
+                if isDecimalConstant then
+                    match vref.LiteralValue with
+                    | Some(Const.Decimal d) ->
+                        match System.Decimal.GetBits d with
+                        | [| lo; med; hi; signExp |] ->
+                            let scale = (min (((signExp &&& 0xFF0000) >>> 16) &&& 0xFF) 28) |> byte
+                            let sign = if (signExp &&& 0x80000000) <> 0 then 1uy else 0uy
+
+                            let attrib =
+                                mkILCustomAttribute (
+                                    g.attrib_DecimalConstantAttribute.TypeRef,
+                                    [
+                                        g.ilg.typ_Byte
+                                        g.ilg.typ_Byte
+                                        g.ilg.typ_Int32
+                                        g.ilg.typ_Int32
+                                        g.ilg.typ_Int32
+                                    ],
+                                    [
+                                        ILAttribElem.Byte scale
+                                        ILAttribElem.Byte sign
+                                        ILAttribElem.UInt32(uint32 hi)
+                                        ILAttribElem.UInt32(uint32 med)
+                                        ILAttribElem.UInt32(uint32 lo)
+                                    ],
+                                    []
+                                )
+
+                            let ilInstrs =
+                                [
+                                    mkLdcInt32 lo
+                                    mkLdcInt32 med
+                                    mkLdcInt32 hi
+                                    mkLdcInt32 (int32 sign)
+                                    mkLdcInt32 (int32 scale)
+                                    mkNormalNewobj (
+                                        mkILCtorMethSpecForTy (
+                                            fspec.ActualType,
+                                            [
+                                                g.ilg.typ_Int32
+                                                g.ilg.typ_Int32
+                                                g.ilg.typ_Int32
+                                                g.ilg.typ_Bool
+                                                g.ilg.typ_Byte
+                                            ]
+                                        )
+                                    )
+                                    mkNormalStsfld fspec
+                                ]
+
+                            CG.EmitInstrs cgbuf (pop 0) (Push0) ilInstrs
+                            [ attrib ]
+                        | _ -> failwith "unreachable"
+                    | _ -> failwith "unreachable"
+                else
+                    ilAttribs
 
             let ilFieldDef =
                 ilFieldDef.With(customAttrs = mkILCustomAttrs (ilAttribs @ [ g.DebuggerBrowsableNeverAttribute ]))
@@ -10770,23 +10839,20 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
             let ilThisTy = GenType cenv m eenvinner.tyenv thisTy
             let tref = ilThisTy.TypeRef
             let ilGenParams = GenGenericParams cenv eenvinner tycon.TyparsNoRange
+            let checkNullness = g.langFeatureNullness && g.checkNullness
 
             let ilIntfTys =
                 tycon.ImmediateInterfaceTypesOfFSharpTycon
-                |> List.map (GenType cenv m eenvinner.tyenv)
+                |> List.map (fun x ->
+                    let ilType = GenType cenv m eenvinner.tyenv x
 
-            let ilIntCustomAttrs =
-                if g.langFeatureNullness && g.checkNullness && not (isNil ilIntfTys) then
-                    tycon.ImmediateInterfaceTypesOfFSharpTycon
-                    |> List.map (
-                        GenAdditionalAttributesForTy g
-                        >> mkILCustomAttrs
-                        >> ILAttributesStored.Given
-                        >> (fun x -> x, 0)
-                    )
-                    |> Some
-                else
-                    None
+                    let customAttrs =
+                        if checkNullness then
+                            GenAdditionalAttributesForTy g x |> mkILCustomAttrs |> ILAttributesStored.Given
+                        else
+                            emptyILCustomAttrsStored
+
+                    InterfaceImpl.Create(ilType, customAttrs))
 
             let ilTypeName = tref.Name
 
@@ -11447,11 +11513,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             .WithSerializable(isSerializable)
                             .WithAbstract(isAbstract)
                             .WithImport(isComInteropTy g thisTy)
-                            .With(
-                                methodImpls = mkILMethodImpls methodImpls,
-                                newAdditionalFlags = additionalFlags,
-                                implementsCustomAttrs = ilIntCustomAttrs
-                            )
+                            .With(methodImpls = mkILMethodImpls methodImpls, newAdditionalFlags = additionalFlags)
 
                     let tdLayout, tdEncoding =
                         match TryFindFSharpAttribute g g.attrib_StructLayoutAttribute tycon.Attribs with
@@ -11613,8 +11675,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             methods = mkILMethods ilMethods,
                             methodImpls = mkILMethodImpls methodImpls,
                             nestedTypes = emptyILTypeDefs,
-                            implements = ilIntfTys,
-                            implementsCustomAttrs = None,
+                            implements = InterruptibleLazy.FromValue(ilIntfTys),
                             extends =
                                 Some(
                                     if tycon.IsStructOrEnumTycon then
@@ -11837,7 +11898,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
 
         let interfaces =
             exnc.ImmediateInterfaceTypesOfFSharpTycon
-            |> List.map (GenType cenv m eenv.tyenv)
+            |> List.map (GenType cenv m eenv.tyenv >> InterfaceImpl.Create)
 
         let tdef =
             mkILGenericClass (
@@ -12121,7 +12182,7 @@ let LookupGeneratedValue (cenv: cenv) (ctxt: ExecutionContext) eenv (v: Val) =
         None
 
 // Invoke the set_Foo method for a declaration with a value. Used to create variables with values programmatically in fsi.exe.
-let SetGeneratedValue (ctxt: ExecutionContext) eenv isForced (v: Val) (value: obj) =
+let SetGeneratedValue (ctxt: ExecutionContext) eenv isForced (v: Val) (value: objnull) =
     try
         match StorageForVal v.Range v eenv with
         | StaticPropertyWithField(fspec, _, hasLiteralAttr, _, _, _, _f, ilSetterMethRef, _) ->
