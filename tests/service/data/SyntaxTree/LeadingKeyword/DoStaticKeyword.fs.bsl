@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/LeadingKeyword/DoStaticKeyword.fs", false,
-      QualifiedNameOfFile DoStaticKeyword, [], [],
+      QualifiedNameOfFile DoStaticKeyword, [],
       [SynModuleOrNamespace
          ([DoStaticKeyword], false, AnonModule,
           [Types

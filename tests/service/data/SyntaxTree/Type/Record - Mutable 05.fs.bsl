@@ -1,7 +1,6 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Type/Record - Mutable 05.fs", false, QualifiedNameOfFile Module, [],
-      [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Types

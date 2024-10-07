@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/MatchClause/Missing pat 04.fs", false, QualifiedNameOfFile Module,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Expr

@@ -2,7 +2,6 @@ SigFile
   (ParsedSigFileInput
      ("/root/ConditionalDirective/NestedIfEndifWithComplexExpressionsSignatureFile.fsi",
       QualifiedNameOfFile NestedIfEndifWithComplexExpressionsSignatureFile, [],
-      [],
       [SynModuleOrNamespaceSig
          ([Foobar], false, DeclaredNamespace,
           [Val

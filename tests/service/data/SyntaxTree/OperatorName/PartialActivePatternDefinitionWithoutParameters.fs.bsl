@@ -2,7 +2,7 @@ ImplFile
   (ParsedImplFileInput
      ("/root/OperatorName/PartialActivePatternDefinitionWithoutParameters.fs",
       false, QualifiedNameOfFile PartialActivePatternDefinitionWithoutParameters,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([PartialActivePatternDefinitionWithoutParameters], false, AnonModule,
           [Let

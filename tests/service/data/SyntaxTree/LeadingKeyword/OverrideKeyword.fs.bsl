@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/LeadingKeyword/OverrideKeyword.fs", false,
-      QualifiedNameOfFile OverrideKeyword, [], [],
+      QualifiedNameOfFile OverrideKeyword, [],
       [SynModuleOrNamespace
          ([OverrideKeyword], false, AnonModule,
           [Types

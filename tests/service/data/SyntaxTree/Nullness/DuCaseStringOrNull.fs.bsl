@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/DuCaseStringOrNull.fs", false,
-      QualifiedNameOfFile DuCaseStringOrNull, [], [],
+      QualifiedNameOfFile DuCaseStringOrNull, [],
       [SynModuleOrNamespace
          ([DuCaseStringOrNull], false, AnonModule,
           [Types

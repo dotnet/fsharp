@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Type/SynTypeTupleWithStruct.fs", false,
-      QualifiedNameOfFile SynTypeTupleWithStruct, [], [],
+      QualifiedNameOfFile SynTypeTupleWithStruct, [],
       [SynModuleOrNamespace
          ([SynTypeTupleWithStruct], false, AnonModule,
           [Let

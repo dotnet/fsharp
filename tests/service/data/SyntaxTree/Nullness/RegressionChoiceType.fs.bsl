@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/RegressionChoiceType.fs", false,
-      QualifiedNameOfFile RegressionChoiceType, [], [],
+      QualifiedNameOfFile RegressionChoiceType, [],
       [SynModuleOrNamespace
          ([RegressionChoiceType], false, AnonModule,
           [Types

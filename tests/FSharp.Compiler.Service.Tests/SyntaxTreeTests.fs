@@ -95,7 +95,6 @@ let private sanitizeAST (sourceDirectoryValue: string) (ast: ParsedInput) : Pars
     | ParsedInput.ImplFile(ParsedImplFileInput(fileName,
                                                isScript,
                                                qualifiedNameOfFile,
-                                               scopedPragmas,
                                                hashDirectives,
                                                contents,
                                                flags,
@@ -105,7 +104,6 @@ let private sanitizeAST (sourceDirectoryValue: string) (ast: ParsedInput) : Pars
             fileName,
             isScript,
             qualifiedNameOfFile,
-            scopedPragmas,
             List.map mapParsedHashDirective hashDirectives,
             List.map mapSynModuleOrNamespace contents,
             flags,
@@ -113,11 +111,10 @@ let private sanitizeAST (sourceDirectoryValue: string) (ast: ParsedInput) : Pars
             identifiers
         )
         |> ParsedInput.ImplFile
-    | ParsedInput.SigFile(ParsedSigFileInput(fileName, qualifiedNameOfFile, scopedPragmas, hashDirectives, contents, trivia, identifiers)) ->
+    | ParsedInput.SigFile(ParsedSigFileInput(fileName, qualifiedNameOfFile, hashDirectives, contents, trivia, identifiers)) ->
         ParsedSigFileInput(
             fileName,
             qualifiedNameOfFile,
-            scopedPragmas,
             List.map mapParsedHashDirective hashDirectives,
             List.map mapSynModuleOrNamespaceSig contents,
             trivia,

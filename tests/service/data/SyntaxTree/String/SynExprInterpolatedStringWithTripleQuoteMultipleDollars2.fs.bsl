@@ -3,7 +3,7 @@ ImplFile
      ("/root/String/SynExprInterpolatedStringWithTripleQuoteMultipleDollars2.fs",
       false,
       QualifiedNameOfFile
-        SynExprInterpolatedStringWithTripleQuoteMultipleDollars2, [], [],
+        SynExprInterpolatedStringWithTripleQuoteMultipleDollars2, [],
       [SynModuleOrNamespace
          ([SynExprInterpolatedStringWithTripleQuoteMultipleDollars2], false,
           AnonModule,

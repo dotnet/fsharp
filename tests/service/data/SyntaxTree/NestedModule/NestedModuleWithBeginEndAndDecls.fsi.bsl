@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/NestedModule/NestedModuleWithBeginEndAndDecls.fsi",
-      QualifiedNameOfFile NestedModuleWithBeginEndAndDecls, [], [],
+      QualifiedNameOfFile NestedModuleWithBeginEndAndDecls, [],
       [SynModuleOrNamespaceSig
          ([X], false, DeclaredNamespace,
           [NestedModule

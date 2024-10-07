@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/NestedModule/IncompleteNestedModuleSigShouldBePresent.fsi",
-      QualifiedNameOfFile A.B, [], [],
+      QualifiedNameOfFile A.B, [],
       [SynModuleOrNamespaceSig
          ([A; B], false, NamedModule,
           [NestedModule

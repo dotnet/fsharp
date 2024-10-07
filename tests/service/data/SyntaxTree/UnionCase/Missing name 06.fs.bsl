@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/UnionCase/Missing name 06.fs", false, QualifiedNameOfFile Module,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Types

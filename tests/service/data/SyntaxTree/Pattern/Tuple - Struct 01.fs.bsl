@@ -1,7 +1,6 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Pattern/Tuple - Struct 01.fs", false, QualifiedNameOfFile Tuple, [],
-      [],
       [SynModuleOrNamespace
          ([Tuple], false, NamedModule,
           [Let

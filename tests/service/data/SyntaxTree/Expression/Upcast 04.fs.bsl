@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Expression/Upcast 04.fs", false, QualifiedNameOfFile Module, [], [],
+     ("/root/Expression/Upcast 04.fs", false, QualifiedNameOfFile Module, [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Expr

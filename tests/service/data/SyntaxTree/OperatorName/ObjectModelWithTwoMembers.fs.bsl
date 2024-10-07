@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/OperatorName/ObjectModelWithTwoMembers.fs", false,
-      QualifiedNameOfFile ObjectModelWithTwoMembers, [], [],
+      QualifiedNameOfFile ObjectModelWithTwoMembers, [],
       [SynModuleOrNamespace
          ([ObjectModelWithTwoMembers], false, AnonModule,
           [Types

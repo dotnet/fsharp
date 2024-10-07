@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/OperatorName/QualifiedOperatorExpression.fs", false,
-      QualifiedNameOfFile QualifiedOperatorExpression, [], [],
+      QualifiedNameOfFile QualifiedOperatorExpression, [],
       [SynModuleOrNamespace
          ([QualifiedOperatorExpression], false, AnonModule,
           [Let

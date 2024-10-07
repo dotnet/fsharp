@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/CodeComment/CommentAfterSourceCode.fs", false,
-      QualifiedNameOfFile CommentAfterSourceCode, [], [],
+      QualifiedNameOfFile CommentAfterSourceCode, [],
       [SynModuleOrNamespace
          ([CommentAfterSourceCode], false, AnonModule,
           [Expr

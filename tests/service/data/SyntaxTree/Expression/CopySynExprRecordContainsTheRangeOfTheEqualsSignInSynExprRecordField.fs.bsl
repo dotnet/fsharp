@@ -4,7 +4,6 @@ ImplFile
       false,
       QualifiedNameOfFile
         CopySynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField, [],
-      [],
       [SynModuleOrNamespace
          ([CopySynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField],
           false, AnonModule,

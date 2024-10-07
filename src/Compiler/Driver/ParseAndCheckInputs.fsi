@@ -78,15 +78,12 @@ val ParseInput:
 
 /// A general routine to process hash directives
 val ProcessMetaCommandsFromInput:
-    ('T -> range * string -> 'T) * ('T -> range * string * Directive -> 'T) * ('T -> range * string -> unit) ->
+    ('T -> range * string * Directive -> 'T) * ('T -> range * string -> unit) ->
         TcConfigBuilder * ParsedInput * string * 'T ->
             'T
 
 /// Process all the #r, #I etc. in an input.  For non-scripts report warnings about ignored directives.
 val ApplyMetaCommandsFromInputToTcConfig: TcConfig * ParsedInput * string * DependencyProvider -> TcConfig
-
-/// Process the #nowarn in an input and integrate them into the TcConfig
-val ApplyNoWarnsToTcConfig: TcConfig * ParsedInput * string -> TcConfig
 
 /// Parse one input stream
 val ParseOneInputStream:

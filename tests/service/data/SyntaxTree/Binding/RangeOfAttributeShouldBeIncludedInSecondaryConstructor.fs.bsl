@@ -3,7 +3,7 @@ ImplFile
      ("/root/Binding/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs",
       false,
       QualifiedNameOfFile RangeOfAttributeShouldBeIncludedInSecondaryConstructor,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([RangeOfAttributeShouldBeIncludedInSecondaryConstructor], false,
           AnonModule,

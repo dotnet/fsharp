@@ -2,7 +2,6 @@ SigFile
   (ParsedSigFileInput
      ("/root/SignatureType/RangeOfAttributeShouldBeIncludedInSynTypeDefnSig.fsi",
       QualifiedNameOfFile RangeOfAttributeShouldBeIncludedInSynTypeDefnSig, [],
-      [],
       [SynModuleOrNamespaceSig
          ([SomeNamespace], false, DeclaredNamespace,
           [Types

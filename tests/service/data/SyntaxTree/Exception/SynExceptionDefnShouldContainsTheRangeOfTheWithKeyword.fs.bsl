@@ -3,7 +3,7 @@ ImplFile
      ("/root/Exception/SynExceptionDefnShouldContainsTheRangeOfTheWithKeyword.fs",
       false,
       QualifiedNameOfFile SynExceptionDefnShouldContainsTheRangeOfTheWithKeyword,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([X], false, DeclaredNamespace,
           [Exception

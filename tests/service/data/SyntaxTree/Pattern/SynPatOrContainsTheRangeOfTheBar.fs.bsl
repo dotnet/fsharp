@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Pattern/SynPatOrContainsTheRangeOfTheBar.fs", false,
-      QualifiedNameOfFile SynPatOrContainsTheRangeOfTheBar, [], [],
+      QualifiedNameOfFile SynPatOrContainsTheRangeOfTheBar, [],
       [SynModuleOrNamespace
          ([SynPatOrContainsTheRangeOfTheBar], false, AnonModule,
           [Expr

@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/MemberFlag/SynMemberDefnAutoPropertyHasCorrectKeyword.fs", false,
-      QualifiedNameOfFile SynMemberDefnAutoPropertyHasCorrectKeyword, [], [],
+      QualifiedNameOfFile SynMemberDefnAutoPropertyHasCorrectKeyword, [],
       [SynModuleOrNamespace
          ([SynMemberDefnAutoPropertyHasCorrectKeyword], false, AnonModule,
           [Types

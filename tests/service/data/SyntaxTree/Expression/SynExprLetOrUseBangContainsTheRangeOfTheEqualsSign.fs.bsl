@@ -3,7 +3,6 @@ ImplFile
      ("/root/Expression/SynExprLetOrUseBangContainsTheRangeOfTheEqualsSign.fs",
       false,
       QualifiedNameOfFile SynExprLetOrUseBangContainsTheRangeOfTheEqualsSign, [],
-      [],
       [SynModuleOrNamespace
          ([SynExprLetOrUseBangContainsTheRangeOfTheEqualsSign], false,
           AnonModule,

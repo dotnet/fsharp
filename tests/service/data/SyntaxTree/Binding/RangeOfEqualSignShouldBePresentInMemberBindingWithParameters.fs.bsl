@@ -3,7 +3,7 @@ ImplFile
      ("/root/Binding/RangeOfEqualSignShouldBePresentInMemberBindingWithParameters.fs",
       false,
       QualifiedNameOfFile
-        RangeOfEqualSignShouldBePresentInMemberBindingWithParameters, [], [],
+        RangeOfEqualSignShouldBePresentInMemberBindingWithParameters, [],
       [SynModuleOrNamespace
          ([RangeOfEqualSignShouldBePresentInMemberBindingWithParameters], false,
           AnonModule,

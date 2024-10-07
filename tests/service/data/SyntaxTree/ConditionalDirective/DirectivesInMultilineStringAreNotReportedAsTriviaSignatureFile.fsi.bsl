@@ -2,7 +2,7 @@ SigFile
   (ParsedSigFileInput
      ("/root/ConditionalDirective/DirectivesInMultilineStringAreNotReportedAsTriviaSignatureFile.fsi",
       QualifiedNameOfFile
-        DirectivesInMultilineStringAreNotReportedAsTriviaSignatureFile, [], [],
+        DirectivesInMultilineStringAreNotReportedAsTriviaSignatureFile, [],
       [SynModuleOrNamespaceSig
          ([Foobar], false, DeclaredNamespace,
           [Val

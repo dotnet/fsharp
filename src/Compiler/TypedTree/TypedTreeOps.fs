@@ -6473,10 +6473,10 @@ and remapAndRenameModBind ctxt compgen tmenv x =
         ModuleOrNamespaceBinding.Module(mspec, def)
 
 and remapImplFile ctxt compgen tmenv implFile = 
-    let (CheckedImplFile (fragName, pragmas, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) = implFile
+    let (CheckedImplFile (fragName, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) = implFile
     let contentsR = copyAndRemapModDef ctxt compgen tmenv contents
     let signatureR, tmenv = copyAndRemapAndBindModTy ctxt compgen tmenv signature
-    let implFileR = CheckedImplFile (fragName, pragmas, signatureR, contentsR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
+    let implFileR = CheckedImplFile (fragName, signatureR, contentsR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
     implFileR, tmenv
 
 // Entry points
@@ -9778,9 +9778,9 @@ and rewriteModuleOrNamespaceBindings env mbinds =
     List.map (rewriteModuleOrNamespaceBinding env) mbinds
 
 and RewriteImplFile env implFile =
-    let (CheckedImplFile (fragName, pragmas, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) = implFile
+    let (CheckedImplFile (fragName, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) = implFile
     let contentsR = rewriteModuleOrNamespaceContents env contents
-    let implFileR = CheckedImplFile (fragName, pragmas, signature, contentsR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
+    let implFileR = CheckedImplFile (fragName, signature, contentsR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
     implFileR
 
 //--------------------------------------------------------------------------

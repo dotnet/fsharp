@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/LeadingKeyword/LetRecKeyword.fs", false,
-      QualifiedNameOfFile LetRecKeyword, [], [],
+      QualifiedNameOfFile LetRecKeyword, [],
       [SynModuleOrNamespace
          ([LetRecKeyword], false, AnonModule,
           [Let

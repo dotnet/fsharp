@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/RegressionListType.fs", false,
-      QualifiedNameOfFile RegressionListType, [], [],
+      QualifiedNameOfFile RegressionListType, [],
       [SynModuleOrNamespace
          ([RegressionListType], false, AnonModule,
           [Types

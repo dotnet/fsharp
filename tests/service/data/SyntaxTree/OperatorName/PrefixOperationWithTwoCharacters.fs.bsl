@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/OperatorName/PrefixOperationWithTwoCharacters.fs", false,
-      QualifiedNameOfFile PrefixOperationWithTwoCharacters, [], [],
+      QualifiedNameOfFile PrefixOperationWithTwoCharacters, [],
       [SynModuleOrNamespace
          ([PrefixOperationWithTwoCharacters], false, AnonModule,
           [Expr

@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/RegressionOrPattern.fs", false,
-      QualifiedNameOfFile RegressionOrPattern, [], [],
+      QualifiedNameOfFile RegressionOrPattern, [],
       [SynModuleOrNamespace
          ([RegressionOrPattern], false, AnonModule,
           [Expr

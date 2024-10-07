@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Lambda/ComplexArgumentsLambdaHasArrowRange.fs", false,
-      QualifiedNameOfFile ComplexArgumentsLambdaHasArrowRange, [], [],
+      QualifiedNameOfFile ComplexArgumentsLambdaHasArrowRange, [],
       [SynModuleOrNamespace
          ([ComplexArgumentsLambdaHasArrowRange], false, AnonModule,
           [Expr

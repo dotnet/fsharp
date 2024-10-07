@@ -2,7 +2,6 @@ SigFile
   (ParsedSigFileInput
      ("/root/SignatureType/RangeOfSynTypeDefnSigRecordShouldEndAtLastMember.fsi",
       QualifiedNameOfFile RangeOfSynTypeDefnSigRecordShouldEndAtLastMember, [],
-      [],
       [SynModuleOrNamespaceSig
          ([X], false, DeclaredNamespace,
           [Types

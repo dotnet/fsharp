@@ -3,7 +3,7 @@ ImplFile
      ("/root/Binding/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs",
       false,
       QualifiedNameOfFile
-        RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings, [], [],
+        RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings, [],
       [SynModuleOrNamespace
          ([RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings], false,
           AnonModule,

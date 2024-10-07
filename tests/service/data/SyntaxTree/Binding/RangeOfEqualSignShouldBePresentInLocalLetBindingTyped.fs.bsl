@@ -3,7 +3,7 @@ ImplFile
      ("/root/Binding/RangeOfEqualSignShouldBePresentInLocalLetBindingTyped.fs",
       false,
       QualifiedNameOfFile RangeOfEqualSignShouldBePresentInLocalLetBindingTyped,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([RangeOfEqualSignShouldBePresentInLocalLetBindingTyped], false,
           AnonModule,

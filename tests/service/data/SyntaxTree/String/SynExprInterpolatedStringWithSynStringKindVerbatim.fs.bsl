@@ -3,7 +3,6 @@ ImplFile
      ("/root/String/SynExprInterpolatedStringWithSynStringKindVerbatim.fs",
       false,
       QualifiedNameOfFile SynExprInterpolatedStringWithSynStringKindVerbatim, [],
-      [],
       [SynModuleOrNamespace
          ([SynExprInterpolatedStringWithSynStringKindVerbatim], false,
           AnonModule,

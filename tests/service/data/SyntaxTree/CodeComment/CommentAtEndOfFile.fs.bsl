@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/CodeComment/CommentAtEndOfFile.fs", false,
-      QualifiedNameOfFile CommentAtEndOfFile, [], [],
+      QualifiedNameOfFile CommentAtEndOfFile, [],
       [SynModuleOrNamespace
          ([CommentAtEndOfFile], false, AnonModule, [Expr (Ident x, (2,0--2,1))],
           PreXmlDocEmpty, [], None, (2,0--2,1), { LeadingKeyword = None })],

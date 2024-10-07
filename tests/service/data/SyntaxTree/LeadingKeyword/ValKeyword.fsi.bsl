@@ -1,7 +1,6 @@
 SigFile
   (ParsedSigFileInput
      ("/root/LeadingKeyword/ValKeyword.fsi", QualifiedNameOfFile ValKeyword, [],
-      [],
       [SynModuleOrNamespaceSig
          ([X], false, DeclaredNamespace,
           [Types

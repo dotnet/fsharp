@@ -3218,10 +3218,6 @@ module internal ParseAndCheckFile =
 
             use _unwindBP = UseBuildPhase BuildPhase.TypeCheck
 
-            // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
-            let tcConfig =
-                ApplyNoWarnsToTcConfig(tcConfig, parsedMainInput, !! Path.GetDirectoryName(mainInputFileName))
-
             // update the error handler with the modified tcConfig
             errHandler.DiagnosticOptions <- tcConfig.diagnosticsOptions
 

@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/UnionCase/PrivateKeywordHasRange.fs", false,
-      QualifiedNameOfFile PrivateKeywordHasRange, [], [],
+      QualifiedNameOfFile PrivateKeywordHasRange, [],
       [SynModuleOrNamespace
          ([PrivateKeywordHasRange], false, AnonModule,
           [Types

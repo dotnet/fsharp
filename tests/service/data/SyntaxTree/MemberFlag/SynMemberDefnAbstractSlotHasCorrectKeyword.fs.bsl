@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/MemberFlag/SynMemberDefnAbstractSlotHasCorrectKeyword.fs", false,
-      QualifiedNameOfFile SynMemberDefnAbstractSlotHasCorrectKeyword, [], [],
+      QualifiedNameOfFile SynMemberDefnAbstractSlotHasCorrectKeyword, [],
       [SynModuleOrNamespace
          ([SynMemberDefnAbstractSlotHasCorrectKeyword], false, AnonModule,
           [Types

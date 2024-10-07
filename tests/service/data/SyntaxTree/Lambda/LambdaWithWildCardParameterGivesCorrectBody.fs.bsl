@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Lambda/LambdaWithWildCardParameterGivesCorrectBody.fs", false,
-      QualifiedNameOfFile LambdaWithWildCardParameterGivesCorrectBody, [], [],
+      QualifiedNameOfFile LambdaWithWildCardParameterGivesCorrectBody, [],
       [SynModuleOrNamespace
          ([LambdaWithWildCardParameterGivesCorrectBody], false, AnonModule,
           [Expr

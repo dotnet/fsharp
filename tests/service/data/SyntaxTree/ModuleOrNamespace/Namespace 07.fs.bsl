@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/ModuleOrNamespace/Namespace 07.fs", false,
-      QualifiedNameOfFile Namespace 07, [], [],
+      QualifiedNameOfFile Namespace 07, [],
       [SynModuleOrNamespace
          ([], false, DeclaredNamespace,
           [Types

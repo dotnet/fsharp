@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/SignatureType/RangeOfMembersShouldBeIncludedInSynExceptionSigAndSynModuleSigDeclException.fsi",
-      QualifiedNameOfFile FSharp.Compiler.ParseHelpers, [], [],
+      QualifiedNameOfFile FSharp.Compiler.ParseHelpers, [],
       [SynModuleOrNamespaceSig
          ([FSharp; Compiler; ParseHelpers], false, NamedModule,
           [Exception

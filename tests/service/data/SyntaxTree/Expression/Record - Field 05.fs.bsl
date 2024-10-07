@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/Record - Field 05.fs", false, QualifiedNameOfFile Foo,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([Foo], false, NamedModule,
           [Expr

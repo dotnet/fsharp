@@ -2,7 +2,6 @@ ImplFile
   (ParsedImplFileInput
      ("/root/ParsedHashDirective/RegularStringAsParsedHashDirectiveArgument.fs",
       false, QualifiedNameOfFile RegularStringAsParsedHashDirectiveArgument, [],
-      [],
       [SynModuleOrNamespace
          ([RegularStringAsParsedHashDirectiveArgument], false, AnonModule,
           [HashDirective

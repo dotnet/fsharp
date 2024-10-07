@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/UnionCase/SingleSynUnionCaseHasBarRange.fs", false,
-      QualifiedNameOfFile SingleSynUnionCaseHasBarRange, [], [],
+      QualifiedNameOfFile SingleSynUnionCaseHasBarRange, [],
       [SynModuleOrNamespace
          ([SingleSynUnionCaseHasBarRange], false, AnonModule,
           [Types

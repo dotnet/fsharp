@@ -1375,8 +1375,6 @@ type internal BackgroundCompiler
                     yield! otherFlags
                     for r in loadClosure.References do
                         yield "-r:" + fst r
-                    for code, _ in loadClosure.NoWarns do
-                        yield "--nowarn:" + code
                 |]
 
             let options =

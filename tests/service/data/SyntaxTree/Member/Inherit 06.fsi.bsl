@@ -1,6 +1,6 @@
 SigFile
   (ParsedSigFileInput
-     ("/root/Member/Inherit 06.fsi", QualifiedNameOfFile Module, [], [],
+     ("/root/Member/Inherit 06.fsi", QualifiedNameOfFile Module, [],
       [SynModuleOrNamespaceSig
          ([Module], false, NamedModule,
           [Types

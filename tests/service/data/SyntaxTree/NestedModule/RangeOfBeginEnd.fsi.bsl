@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/NestedModule/RangeOfBeginEnd.fsi",
-      QualifiedNameOfFile RangeOfBeginEnd, [], [],
+      QualifiedNameOfFile RangeOfBeginEnd, [],
       [SynModuleOrNamespaceSig
          ([X], false, DeclaredNamespace,
           [NestedModule

@@ -3,7 +3,7 @@ ImplFile
      ("/root/Expression/SynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField.fs",
       false,
       QualifiedNameOfFile
-        SynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField, [], [],
+        SynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField, [],
       [SynModuleOrNamespace
          ([SynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField],
           false, AnonModule,

@@ -3,7 +3,7 @@ ImplFile
      ("/root/CodeComment/TripleSlashCommentShouldBeCapturedIfUsedInAnInvalidLocation.fs",
       false,
       QualifiedNameOfFile
-        TripleSlashCommentShouldBeCapturedIfUsedInAnInvalidLocation, [], [],
+        TripleSlashCommentShouldBeCapturedIfUsedInAnInvalidLocation, [],
       [SynModuleOrNamespace
          ([TripleSlashCommentShouldBeCapturedIfUsedInAnInvalidLocation], false,
           AnonModule,

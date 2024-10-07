@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/OperatorName/NamedParameter.fs", false,
-      QualifiedNameOfFile NamedParameter, [], [],
+      QualifiedNameOfFile NamedParameter, [],
       [SynModuleOrNamespace
          ([NamedParameter], false, AnonModule,
           [Expr

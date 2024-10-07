@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/DotLambda_NotAllowedFunctionExpressionWithArg.fs", false,
-      QualifiedNameOfFile DotLambda_NotAllowedFunctionExpressionWithArg, [], [],
+      QualifiedNameOfFile DotLambda_NotAllowedFunctionExpressionWithArg, [],
       [SynModuleOrNamespace
          ([DotLambda_NotAllowedFunctionExpressionWithArg], false, AnonModule,
           [Let

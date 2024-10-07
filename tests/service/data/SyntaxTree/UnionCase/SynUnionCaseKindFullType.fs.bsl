@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/UnionCase/SynUnionCaseKindFullType.fs", false,
-      QualifiedNameOfFile SynUnionCaseKindFullType, [], [],
+      QualifiedNameOfFile SynUnionCaseKindFullType, [],
       [SynModuleOrNamespace
          ([SynUnionCaseKindFullType], false, AnonModule,
           [Types

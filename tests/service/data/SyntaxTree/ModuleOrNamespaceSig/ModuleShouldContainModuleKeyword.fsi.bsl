@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/ModuleOrNamespaceSig/ModuleShouldContainModuleKeyword.fsi",
-      QualifiedNameOfFile Bar, [], [],
+      QualifiedNameOfFile Bar, [],
       [SynModuleOrNamespaceSig
          ([Bar], false, NamedModule,
           [Val

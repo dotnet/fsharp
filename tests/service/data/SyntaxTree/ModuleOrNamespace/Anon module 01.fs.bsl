@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/ModuleOrNamespace/Anon module 01.fs", false,
-      QualifiedNameOfFile Anon module 01, [], [],
+      QualifiedNameOfFile Anon module 01, [],
       [SynModuleOrNamespace
          ([Anon module 01], false, AnonModule,
           [Expr (Const (Unit, (1,0--1,2)), (1,0--1,2))], PreXmlDocEmpty, [],

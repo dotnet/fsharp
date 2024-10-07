@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/String/InterpolatedStringOffsideInModule.fs", false,
-      QualifiedNameOfFile InterpolatedStringOffsideInModule, [], [],
+      QualifiedNameOfFile InterpolatedStringOffsideInModule, [],
       [SynModuleOrNamespace
          ([InterpolatedStringOffsideInModule], false, AnonModule,
           [NestedModule

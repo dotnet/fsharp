@@ -6,133 +6,6 @@ open FSharp.Test.Compiler
 
 module NonStringArgs =
 
-    [<InlineData("8.0")>]
-    [<InlineData("9.0")>]
-    [<Theory>]
-    let ``#nowarn - errors`` (languageVersion) =
-
-        FSharp """
-#nowarn "988"
-#nowarn FS
-#nowarn FSBLAH
-#nowarn ACME 
-#nowarn "FS"
-#nowarn "FSBLAH"
-#nowarn "ACME"
-        """
-        |> withLangVersion languageVersion
-        |> asExe
-        |> compile
-        |> shouldFail
-        |> withDiagnostics[
-            if languageVersion = "8.0" then
-                (Warning 203, Line 6, Col 1, Line 6, Col 13, "Invalid warning number 'FS'")
-                (Error 3350, Line 3, Col 9, Line 3, Col 11, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
-                (Error 3350, Line 4, Col 9, Line 4, Col 15, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
-                (Error 3350, Line 5, Col 9, Line 5, Col 13, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
-            else
-                (Warning 203, Line 3, Col 1, Line 3, Col 11, "Invalid warning number 'FS'")
-                (Warning 203, Line 6, Col 1, Line 6, Col 13, "Invalid warning number 'FS'")
-            ]
-
-
-    [<InlineData("8.0")>]
-    [<InlineData("9.0")>]
-    [<Theory>]
-    let ``#nowarn - errors - collected`` (languageVersion) =
-
-        FSharp """
-#nowarn
-    "988"
-    FS
-    FSBLAH
-    ACME 
-    "FS"
-    "FSBLAH"
-    "ACME"
-        """
-        |> withLangVersion languageVersion
-        |> asExe
-        |> compile
-        |> shouldFail
-        |> withDiagnostics[
-            if languageVersion = "8.0" then
-                (Warning 203, Line 2, Col 1, Line 9, Col 11, "Invalid warning number 'FS'")
-                (Error 3350, Line 4, Col 5, Line 4, Col 7, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
-                (Error 3350, Line 5, Col 5, Line 5, Col 11, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
-                (Error 3350, Line 6, Col 5, Line 6, Col 9, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
-            else
-                (Warning 203, Line 2, Col 1, Line 9, Col 11, "Invalid warning number 'FS'")
-            ]
-
-
-    [<InlineData("8.0")>]
-    [<InlineData("9.0")>]
-    [<Theory>]
-    let ``#nowarn - errors - inline`` (languageVersion) =
-
-        FSharp """
-#nowarn "988"
-#nowarn FS FSBLAH ACME "FS" "FSBLAH" "ACME"
-        """
-        |> withLangVersion languageVersion
-        |> asExe
-        |> compile
-        |> shouldFail
-        |> withDiagnostics [
-            if languageVersion = "8.0" then
-                (Warning 203, Line 3, Col 1, Line 3, Col 44, "Invalid warning number 'FS'")
-                (Error 3350, Line 3, Col 9, Line 3, Col 11, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
-                (Error 3350, Line 3, Col 12, Line 3, Col 18, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
-                (Error 3350, Line 3, Col 19, Line 3, Col 23, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
-            else
-                (Warning 203, Line 3, Col 1, Line 3, Col 44, "Invalid warning number 'FS'")
-            ]
-
-
-    [<InlineData("8.0")>]
-    [<InlineData("9.0")>]
-    [<Theory>]
-    let ``#nowarn - realcode`` (langVersion) =
-
-        let compileResult =
-            FSharp """
-#nowarn 20 FS1104 "3391" "FS3221"
-
-module Exception =
-    exception ``Crazy@name.p`` of string
-
-module Decimal =
-    type T1 = { a : decimal }
-    module M0 =
-        type T1 = { a : int;}
-    let x = { a = 10 }              // error - 'expecting decimal' (which means we are not seeing M0.T1)
-
-module MismatchedYields =
-    let collection () = [
-        yield "Hello"
-        "And this"
-        ]
-module DoBinding =
-    let square x = x * x
-    square 32
-            """
-            |> withLangVersion langVersion
-            |> asExe
-            |> compile
-
-        if langVersion = "8.0" then
-            compileResult
-            |> shouldFail
-            |> withDiagnostics [
-                (Warning 1104, Line 5, Col 15, Line 5, Col 31, "Identifiers containing '@' are reserved for use in F# code generation")
-                (Error 3350, Line 2, Col 9, Line 2, Col 11, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
-                (Error 3350, Line 2, Col 12, Line 2, Col 18, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
-                ]
-        else
-            compileResult
-            |> shouldSucceed
-
 
     [<InlineData("8.0")>]
     [<InlineData("9.0")>]
@@ -248,7 +121,7 @@ printfn "Hello, World"
         |> asExe
         |> compile
         |> shouldFail
-        |> withDiagnostics[
+        |> withDiagnostics [
             (Error 76, Line 2, Col 9, Line 2, Col 11, "This directive may only be used in F# script files (extensions .fsx or .fsscript). Either remove the directive, move this code to a script file or delimit the directive with '#if INTERACTIVE'/'#endif'.")
             (Error 76, Line 3, Col 9, Line 3, Col 14, "This directive may only be used in F# script files (extensions .fsx or .fsscript). Either remove the directive, move this code to a script file or delimit the directive with '#if INTERACTIVE'/'#endif'.")
             (Error 76, Line 4, Col 9, Line 4, Col 17, "This directive may only be used in F# script files (extensions .fsx or .fsscript). Either remove the directive, move this code to a script file or delimit the directive with '#if INTERACTIVE'/'#endif'.")

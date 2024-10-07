@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/SynExprAnonRecdWithStructKeyword.fs", false,
-      QualifiedNameOfFile SynExprAnonRecdWithStructKeyword, [], [],
+      QualifiedNameOfFile SynExprAnonRecdWithStructKeyword, [],
       [SynModuleOrNamespace
          ([SynExprAnonRecdWithStructKeyword], false, AnonModule,
           [Expr

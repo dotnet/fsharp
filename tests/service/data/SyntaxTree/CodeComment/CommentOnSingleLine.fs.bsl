@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/CodeComment/CommentOnSingleLine.fs", false,
-      QualifiedNameOfFile CommentOnSingleLine, [], [],
+      QualifiedNameOfFile CommentOnSingleLine, [],
       [SynModuleOrNamespace
          ([CommentOnSingleLine], false, AnonModule,
           [Expr

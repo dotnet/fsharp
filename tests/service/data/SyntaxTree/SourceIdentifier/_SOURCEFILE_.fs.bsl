@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/SourceIdentifier/_SOURCEFILE_.fs", false,
-      QualifiedNameOfFile _SOURCEFILE_, [], [],
+      QualifiedNameOfFile _SOURCEFILE_, [],
       [SynModuleOrNamespace
          ([_SOURCEFILE_], false, AnonModule,
           [Expr

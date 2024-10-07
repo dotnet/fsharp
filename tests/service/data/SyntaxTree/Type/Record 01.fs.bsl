@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Type/Record 01.fs", false, QualifiedNameOfFile Foo, [], [],
+     ("/root/Type/Record 01.fs", false, QualifiedNameOfFile Foo, [],
       [SynModuleOrNamespace
          ([Foo], false, NamedModule,
           [Types

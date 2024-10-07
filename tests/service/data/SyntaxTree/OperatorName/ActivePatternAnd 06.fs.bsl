@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/OperatorName/ActivePatternAnd 06.fs", false,
-      QualifiedNameOfFile ActivePatternAnd 06, [], [],
+      QualifiedNameOfFile ActivePatternAnd 06, [],
       [SynModuleOrNamespace
          ([ActivePatternAnd 06], false, AnonModule,
           [Let

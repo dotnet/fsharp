@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/DotLambda - _ Recovery - Eof.fsx", true,
-      QualifiedNameOfFile DotLambda - _ Recovery - Eof$fsx, [], [],
+      QualifiedNameOfFile DotLambda - _ Recovery - Eof$fsx, [],
       [SynModuleOrNamespace
          ([DotLambda - _ Recovery - Eof], false, AnonModule,
           [Expr

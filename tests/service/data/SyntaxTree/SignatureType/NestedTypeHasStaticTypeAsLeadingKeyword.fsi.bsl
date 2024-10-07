@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/SignatureType/NestedTypeHasStaticTypeAsLeadingKeyword.fsi",
-      QualifiedNameOfFile NestedTypeHasStaticTypeAsLeadingKeyword, [], [],
+      QualifiedNameOfFile NestedTypeHasStaticTypeAsLeadingKeyword, [],
       [SynModuleOrNamespaceSig
          ([NestedTypeHasStaticTypeAsLeadingKeyword], false, AnonModule,
           [Types

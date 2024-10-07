@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/MatchClause/RangeOfArrowInSynMatchClause.fs", false,
-      QualifiedNameOfFile RangeOfArrowInSynMatchClause, [], [],
+      QualifiedNameOfFile RangeOfArrowInSynMatchClause, [],
       [SynModuleOrNamespace
          ([RangeOfArrowInSynMatchClause], false, AnonModule,
           [Expr
