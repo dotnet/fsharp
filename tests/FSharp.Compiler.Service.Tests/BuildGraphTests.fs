@@ -385,22 +385,17 @@ module BuildGraphTests =
 
             for i in 1 .. 300 do
                 async {
-                    Interlocked.Increment(&count) |> ignore
-                    errorR (ExampleException $"{i}")
+                    errorR (ExampleException $"{Interlocked.Increment(&count)}")
+                    error (ExampleException $"{Interlocked.Increment(&count)}")
                 }
         ]
 
-        let run =
-            tasks |> MultipleDiagnosticsLoggers.Parallel |> Async.Catch |> Async.StartAsTask
+        task {
+            do! tasks |> MultipleDiagnosticsLoggers.Parallel |> Async.Catch |> Async.Ignore
 
-        Assert.True(
-            run.Wait(1000),
-            "MultipleDiagnosticsLoggers.Parallel did not finish."
-        )
-
-        // Diagnostics from all started tasks should be collected despite the exception.
-        errorCountShouldBe count
-
+            // Diagnostics from all started tasks should be collected despite the exception.
+            errorCountShouldBe count
+        }
 
     [<Fact>]
     let ``AsyncLocal diagnostics context flows correctly`` () =
