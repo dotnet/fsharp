@@ -7668,8 +7668,22 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewTyped(FSharp.C
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewUpcast(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewWhile(FSharp.Compiler.Syntax.DebugPointAtWhile, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewWhileBang(FSharp.Compiler.Syntax.DebugPointAtWhile, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewYieldOrReturn(System.Tuple`2[System.Boolean,System.Boolean], FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewYieldOrReturnFrom(System.Tuple`2[System.Boolean,System.Boolean], FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynExpr+YieldOrReturn: FSharp.Compiler.SyntaxTrivia.SynExprYieldOrReturnTrivia get_trivia()
+FSharp.Compiler.Syntax.SynExpr+YieldOrReturn: FSharp.Compiler.SyntaxTrivia.SynExprYieldOrReturnTrivia trivia
+FSharp.Compiler.Syntax.SynExpr+YieldOrReturnFrom: FSharp.Compiler.SyntaxTrivia.SynExprYieldOrReturnFromTrivia get_trivia()
+FSharp.Compiler.Syntax.SynExpr+YieldOrReturnFrom: FSharp.Compiler.SyntaxTrivia.SynExprYieldOrReturnFromTrivia trivia
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewYieldOrReturn(System.Tuple`2[System.Boolean,System.Boolean], FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynExprYieldOrReturnTrivia)
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewYieldOrReturnFrom(System.Tuple`2[System.Boolean,System.Boolean], FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynExprYieldOrReturnFromTrivia)
+FSharp.Compiler.SyntaxTrivia.SynExprYieldOrReturnFromTrivia: FSharp.Compiler.Text.Range YieldOrReturnFromKeyword
+FSharp.Compiler.SyntaxTrivia.SynExprYieldOrReturnFromTrivia: FSharp.Compiler.Text.Range get_YieldOrReturnFromKeyword()
+FSharp.Compiler.SyntaxTrivia.SynExprYieldOrReturnFromTrivia: System.String ToString()
+FSharp.Compiler.SyntaxTrivia.SynExprYieldOrReturnFromTrivia: Void .ctor(FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTrivia.SynExprYieldOrReturnTrivia: FSharp.Compiler.SyntaxTrivia.SynExprYieldOrReturnTrivia Zero
+FSharp.Compiler.SyntaxTrivia.SynExprYieldOrReturnTrivia: FSharp.Compiler.SyntaxTrivia.SynExprYieldOrReturnTrivia get_Zero()
+FSharp.Compiler.SyntaxTrivia.SynExprYieldOrReturnTrivia: FSharp.Compiler.Text.Range YieldOrReturnKeyword
+FSharp.Compiler.SyntaxTrivia.SynExprYieldOrReturnTrivia: FSharp.Compiler.Text.Range get_YieldOrReturnKeyword()
+FSharp.Compiler.SyntaxTrivia.SynExprYieldOrReturnTrivia: System.String ToString()
+FSharp.Compiler.SyntaxTrivia.SynExprYieldOrReturnTrivia: Void .ctor(FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+AddressOf
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+AnonRecd
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+App
