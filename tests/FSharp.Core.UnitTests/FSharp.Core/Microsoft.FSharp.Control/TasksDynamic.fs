@@ -357,15 +357,16 @@ type Basics() =
     [<Fact>]
     member _.testNonBlocking() =
         printfn "Running testNonBlocking..."
-        let sw = Stopwatch()
-        sw.Start()
+        let allowContinue = new SemaphoreSlim(0)
+        let finished = new ManualResetEventSlim()
         let t =
             taskDynamic {
-                do! Task.Yield()
+                do! allowContinue.WaitAsync()
                 Thread.Sleep(100)
+                finished.Set()
             }
-        sw.Stop()
-        require (sw.ElapsedMilliseconds < 50L) "sleep blocked caller"
+        allowContinue.Release() |> ignore
+        require (not finished.IsSet) "sleep blocked caller"
         t.Wait()
 
     [<Fact>]
@@ -982,58 +983,60 @@ type Basics() =
     [<Fact>]
     member _.testExceptionThrownInFinally() =
         printfn "running testExceptionThrownInFinally"
-        for i in 1 .. 5 do 
-            let mutable ranInitial = false
-            let mutable ranNext = false
+        for i in 1 .. 5 do
+            use stepOutside = new SemaphoreSlim(0)
+            use ranInitial = new ManualResetEventSlim()
+            use ranNext = new ManualResetEventSlim()
             let mutable ranFinally = 0
             let t =
                 taskDynamic {
                     try
-                        ranInitial <- true
+                        ranInitial.Set()
                         do! Task.Yield()
                         Thread.Sleep(100) // shouldn't be blocking so we should get through to requires before this finishes
-                        ranNext <- true
+                        ranNext.Set()
                     finally
                         ranFinally <- ranFinally + 1
                         failtest "finally exn!"
                 }
-            require ranInitial "didn't run initial"
-            require (not ranNext) "ran next too early"
+            require ranInitial.IsSet "didn't run initial"
+            require (not ranNext.IsSet) "ran next too early"
             try
                 t.Wait()
                 require false "shouldn't get here"
             with
             | _ -> ()
-            require ranNext "didn't run next"
+            require ranNext.IsSet "didn't run next"
             require (ranFinally = 1) "didn't run finally exactly once"
 
     [<Fact>]
     member _.test2ndExceptionThrownInFinally() =
         printfn "running test2ndExceptionThrownInFinally"
         for i in 1 .. 5 do 
-            let mutable ranInitial = false
-            let mutable ranNext = false
+            use ranInitial = new ManualResetEventSlim()
+            use continueTask = new SemaphoreSlim(0)
+            use ranNext = new ManualResetEventSlim()
             let mutable ranFinally = 0
             let t =
                 taskDynamic {
                     try
-                        ranInitial <- true
+                        ranInitial.Set()
+                        do! continueTask.WaitAsync()
+                        ranNext.Set()
                         do! Task.Yield()
-                        Thread.Sleep(100) // shouldn't be blocking so we should get through to requires before this finishes
-                        ranNext <- true
                         failtest "uhoh"
                     finally
                         ranFinally <- ranFinally + 1
                         failtest "2nd exn!"
                 }
-            require ranInitial "didn't run initial"
-            require (not ranNext) "ran next too early"
+            ranInitial.Wait()
+            continueTask.Release() |> ignore
             try
                 t.Wait()
                 require false "shouldn't get here"
             with
             | _ -> ()
-            require ranNext "didn't run next"
+            require ranNext.IsSet "didn't run next"
             require (ranFinally = 1) "didn't run finally exactly once"
     
     [<Fact>]

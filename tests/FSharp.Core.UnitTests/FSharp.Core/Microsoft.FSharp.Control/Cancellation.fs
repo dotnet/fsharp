@@ -5,6 +5,7 @@ namespace FSharp.Core.UnitTests.Control
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
 open Xunit
+open FSharp.Test
 open System.Threading
 
 
@@ -269,13 +270,15 @@ type CancellationType() =
             |> StartAsTaskProperCancel None (Some cts.Token)
 
         // First cancel the token, then set the task as cancelled.
-        async {
-            do! Async.Sleep 100
-            cts.Cancel()
-            do! Async.Sleep 100
-            tcs.TrySetException (TimeoutException "Task timed out after token.")
-                |> ignore
-        } |> Async.Start
+        let t1 =
+            async {
+                do! Async.Sleep 100
+                cts.Cancel()
+                do! Async.Sleep 100
+                tcs.TrySetException (TimeoutException "Task timed out after token.")
+                    |> ignore
+            }
+            |> Async.StartAsTask
 
         try
             let res = t.Wait(2000)
@@ -283,6 +286,7 @@ type CancellationType() =
             printfn "failure msg: %s" msg
             Assert.Fail (msg)
         with :? AggregateException as agg -> ()
+        t1.Wait()
 
     [<Fact>]
     member this.Equality() =
