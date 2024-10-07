@@ -63,9 +63,9 @@ neg61.fs(97,13,97,17): typecheck error FS3143: 'let!', 'use!' and 'do!' expressi
 
 neg61.fs(102,13,102,16): typecheck error FS3143: 'let!', 'use!' and 'do!' expressions may not be used in queries
 
-neg61.fs(107,13,107,21): typecheck error FS3144: 'return' and 'return!' may not be used in queries
+neg61.fs(107,13,107,19): typecheck error FS3144: 'return' and 'return!' may not be used in queries
 
-neg61.fs(111,13,111,24): typecheck error FS3144: 'return' and 'return!' may not be used in queries
+neg61.fs(111,13,111,20): typecheck error FS3144: 'return' and 'return!' may not be used in queries
 
 neg61.fs(114,13,114,21): typecheck error FS3145: This is not a known query operator. Query operators are identifiers such as 'select', 'where', 'sortBy', 'thenBy', 'groupBy', 'groupValBy', 'join', 'groupJoin', 'sumBy' and 'averageBy', defined using corresponding methods on the 'QueryBuilder' type.
 

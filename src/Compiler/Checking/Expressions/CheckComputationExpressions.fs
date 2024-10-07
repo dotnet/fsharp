@@ -1545,7 +1545,9 @@ let rec TryTranslateComputationExpression
 
             let dataCompPrior =
                 translatedCtxt (
-                    TranslateComputationExpressionNoQueryOps ceenv (SynExpr.YieldOrReturn((true, false), varSpaceExpr, mClause))
+                    TranslateComputationExpressionNoQueryOps
+                        ceenv
+                        (SynExpr.YieldOrReturn((true, false), varSpaceExpr, mClause, SynExprYieldOrReturnTrivia.Zero))
                 )
 
             // Rebind using for ...
@@ -1576,7 +1578,9 @@ let rec TryTranslateComputationExpression
                     let isYield = not (customOperationMaintainsVarSpaceUsingBind ceenv nm)
 
                     translatedCtxt (
-                        TranslateComputationExpressionNoQueryOps ceenv (SynExpr.YieldOrReturn((isYield, false), varSpaceExpr, mClause))
+                        TranslateComputationExpressionNoQueryOps
+                            ceenv
+                            (SynExpr.YieldOrReturn((isYield, false), varSpaceExpr, mClause, SynExprYieldOrReturnTrivia.Zero))
                     )
 
                 // Now run the consumeCustomOpClauses
@@ -2374,7 +2378,7 @@ let rec TryTranslateComputationExpression
 
             Some(translatedCtxt callExpr)
 
-        | SynExpr.YieldOrReturnFrom((true, _), synYieldExpr, m) ->
+        | SynExpr.YieldOrReturnFrom((true, _), synYieldExpr, _, { YieldOrReturnFromKeyword = m }) ->
             let yieldFromExpr =
                 mkSourceExpr synYieldExpr ceenv.sourceMethInfo ceenv.builderValName
 
@@ -2392,7 +2396,8 @@ let rec TryTranslateComputationExpression
             then
                 error (Error(FSComp.SR.tcRequireBuilderMethod ("YieldFrom"), m))
 
-            let yieldFromCall = mkSynCall "YieldFrom" m [ yieldFromExpr ] ceenv.builderValName
+            let yieldFromCall =
+                mkSynCall "YieldFrom" synYieldExpr.Range [ yieldFromExpr ] ceenv.builderValName
 
             let yieldFromCall =
                 if IsControlFlowExpression synYieldExpr then
@@ -2402,7 +2407,7 @@ let rec TryTranslateComputationExpression
 
             Some(translatedCtxt yieldFromCall)
 
-        | SynExpr.YieldOrReturnFrom((false, _), synReturnExpr, m) ->
+        | SynExpr.YieldOrReturnFrom((false, _), synReturnExpr, _, { YieldOrReturnFromKeyword = m }) ->
             let returnFromExpr =
                 mkSourceExpr synReturnExpr ceenv.sourceMethInfo ceenv.builderValName
 
@@ -2424,7 +2429,7 @@ let rec TryTranslateComputationExpression
                 error (Error(FSComp.SR.tcRequireBuilderMethod ("ReturnFrom"), m))
 
             let returnFromCall =
-                mkSynCall "ReturnFrom" m [ returnFromExpr ] ceenv.builderValName
+                mkSynCall "ReturnFrom" synReturnExpr.Range [ returnFromExpr ] ceenv.builderValName
 
             let returnFromCall =
                 if IsControlFlowExpression synReturnExpr then
@@ -2434,7 +2439,7 @@ let rec TryTranslateComputationExpression
 
             Some(translatedCtxt returnFromCall)
 
-        | SynExpr.YieldOrReturn((isYield, _), synYieldOrReturnExpr, m) ->
+        | SynExpr.YieldOrReturn((isYield, _), synYieldOrReturnExpr, _, { YieldOrReturnKeyword = m }) ->
             let methName = (if isYield then "Yield" else "Return")
 
             if ceenv.isQuery && not isYield then
@@ -2452,10 +2457,10 @@ let rec TryTranslateComputationExpression
                         ceenv.builderTy
                 )
             then
-                error (Error(FSComp.SR.tcRequireBuilderMethod (methName), m))
+                error (Error(FSComp.SR.tcRequireBuilderMethod methName, m))
 
             let yieldOrReturnCall =
-                mkSynCall methName m [ synYieldOrReturnExpr ] ceenv.builderValName
+                mkSynCall methName synYieldOrReturnExpr.Range [ synYieldOrReturnExpr ] ceenv.builderValName
 
             let yieldOrReturnCall =
                 if IsControlFlowExpression synYieldOrReturnExpr then
@@ -2759,7 +2764,7 @@ and TranslateComputationExpressionBind
 /// The inner option indicates if a custom operation is involved inside
 and convertSimpleReturnToExpr (ceenv: ComputationExpressionContext<'a>) comp varSpace innerComp =
     match innerComp with
-    | SynExpr.YieldOrReturn((false, _), returnExpr, m) ->
+    | SynExpr.YieldOrReturn((false, _), returnExpr, m, _) ->
         let returnExpr = SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes m, false, returnExpr)
         Some(returnExpr, None)
 
@@ -2901,7 +2906,7 @@ and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) fir
                         with
                         | minfo :: _ when MethInfoHasAttribute ceenv.cenv.g m ceenv.cenv.g.attrib_DefaultValueAttribute minfo ->
                             SynExpr.ImplicitZero m
-                        | _ -> SynExpr.YieldOrReturn((false, true), SynExpr.Const(SynConst.Unit, m), m)
+                        | _ -> SynExpr.YieldOrReturn((false, true), SynExpr.Const(SynConst.Unit, m), m, SynExprYieldOrReturnTrivia.Zero)
 
                 let letBangBind =
                     SynExpr.LetOrUseBang(
