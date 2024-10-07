@@ -358,16 +358,6 @@ let evaluateSession (argv: string[]) =
 let MainMain argv =
     ignore argv
     let argv = System.Environment.GetCommandLineArgs()
-    let savedOut = Console.Out
-
-    use __ =
-        { new IDisposable with
-            member _.Dispose() =
-                try
-                    Console.SetOut(savedOut)
-                with _ ->
-                    ()
-        }
 
     let timesFlag = argv |> Array.exists (fun x -> x = "/times" || x = "--times")
 
