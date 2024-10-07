@@ -8,7 +8,7 @@ open FSharp.Test
 module AsyncTests =
     // Regression for FSHARP1.0:5969
     // Async.StartChild: error when wait async is executed more than once
-    [<Fact(Skip = "This was not executed for years, now it fails - investigate")>]
+    [<Fact>]
     let ``Execute Async multiple times``() =
         CompilerAssert.CompileExeAndRun
             """
@@ -24,13 +24,12 @@ let a = async {
                 return result
             } |> Async.RunSynchronously
 
-exit 0
             """
 
 
     // Regression for FSHARP1.0:5970
     // Async.StartChild: race in implementation of ResultCell in FSharp.Core
-    [<Fact(Skip = "This was not executed for years, now it fails - investigate")>]
+    [<Fact>]
     let ``Joining StartChild``() =
         CompilerAssert.CompileExeAndRun
             """
@@ -54,12 +53,10 @@ let r =
     with _ -> 
                      (0,0)     
 
-exit 0
-
             """
 
     // Regression test for FSHARP1.0:6086
-    [<Fact(Skip = "This was not executed for years, now it fails - investigate")>]
+    [<Fact>]
     let ``Mailbox Async dot not StackOverflow``() =
         CompilerAssert.CompileExeAndRun
             """
@@ -128,12 +125,11 @@ for meet in meets do
     printfn "%d" meet
 printfn "Total: %d in %O"  (Seq.sum meets) (watch.Elapsed)
 
-exit 0
             """
 
     // Regression for FSHARP1.0:5971
 
-    [<Fact(Skip = "This was not executed for years, now it fails - investigate")>]
+    [<Fact>]
     let ``StartChild do not throw ObjectDisposedException``() =
         CompilerAssert.CompileExeAndRun
             """
@@ -142,10 +138,9 @@ module M
 let b = async {return 5} |> Async.StartChild
 printfn "%A" (b |> Async.RunSynchronously |> Async.RunSynchronously)
 
-exit 0
             """
 
-    [<Fact(Skip = "This was not executed for years, now it fails - investigate")>]
+    [<Fact>]
     let ``StartChild test Trampoline HijackLimit``() =
         CompilerAssert.CompileExeAndRun
             """
@@ -164,5 +159,4 @@ let r =
             ()
     } |> Async.RunSynchronously
 
-exit 0
             """
