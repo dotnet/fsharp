@@ -39,7 +39,7 @@
     <!-- Set PublishReadyToRun to speed up the build. -->
     <EnablePublishReadyToRun>true</EnablePublishReadyToRun>
     <!-- Crossgen2 is not built with source-built Mono-based .NET SDKs. -->
-    <EnablePublishReadyToRun Condition="'$(SourceBuildUseMonoRuntime)' == 'true'">false</EnablePublishReadyToRun>
+    <EnablePublishReadyToRun Condition="'$(DotNetBuildUseMonoRuntime)' == 'true'">false</EnablePublishReadyToRun>
   </PropertyGroup>
 
   <Import Project="$(RepoRoot)/Directory.Build.props.user" Condition="Exists('$(RepoRoot)/Directory.Build.props.user')" />
