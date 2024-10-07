@@ -403,7 +403,7 @@ function TestSolutionUsingMSBuild([string] $testSolution, [string] $targetFramew
     $testBinLogPath = "$LogDir\${solutionName}_$targetFramework.binlog"
     $cpuLimit = ""
     if ($ci) {
-        $cpuLimit = "-m:$maxCpuCount"
+    #    $cpuLimit = "-m:$maxCpuCount"
     }
 
     $args = "test $cpuLimit $testSolution -c $configuration -f $targetFramework --test-adapter-path $testadapterpath -v n --logger ""xunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
