@@ -214,7 +214,7 @@ function Test() {
   projectname=$(basename -- "$testproject")
   projectname="${projectname%.*}"
   testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework.xml"
-  args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"xunit;LogFilePath=$testlogpath\" --blame --blame-hang-timeout 5minutes --results-directory $artifacts_dir/TestResults/$configuration -p:vstestusemsbuildoutput=false -- xUnit.MaxparallelThreads=4"
+  args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"xunit;LogFilePath=$testlogpath\" --blame --results-directory $artifacts_dir/TestResults/$configuration -p:vstestusemsbuildoutput=false"
   "$DOTNET_INSTALL_DIR/dotnet" $args || exit $?
 }
 
