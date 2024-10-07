@@ -27,6 +27,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<Compile Include="common\DependencyGraph.fs" />
 		<Compile Include="Common\LifecycleManager.fs" />
 		<Compile Include="Common\CapabilitiesManager.fs" />
 		<Compile Include="Common\FSharpWorkspace.fs" />

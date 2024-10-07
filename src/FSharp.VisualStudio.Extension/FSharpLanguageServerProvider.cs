@@ -244,7 +244,7 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
             }
         }
 
-        FSharpWorkspace workspace;
+        var workspace = new FSharpWorkspace();
 
         try
         {
@@ -254,16 +254,16 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
                 var lines = args.Item2.Split(';'); // XXX Probably not robust enough
                 var path = args.Item1;
 
+                workspace.AddCommandLineArgs(path, lines);
+
                 string directoryPath = Path.GetDirectoryName(path) ?? throw new Exception("Directory path should not be null");
                 var snapshot = FSharpProjectSnapshot.FromCommandLineArgs(
                     lines, directoryPath, Path.GetFileName(path));
                 snapshots.Add(snapshot);
             }
-            workspace = FSharpWorkspace.Create(snapshots);
         }
         catch
         {
-            workspace = FSharpWorkspace.Create([]);
         }
 
         var ((clientStream, serverStream), _server) = FSharpLanguageServer.Create(workspace, (serviceCollection) =>

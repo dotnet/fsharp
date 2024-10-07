@@ -2,6 +2,8 @@ namespace FSharp.Compiler.LanguageServer.Common
 
 open FSharp.Compiler.Text
 open System.Collections.Generic
+open DependencyGraph
+open System.IO
 
 #nowarn "57"
 
@@ -9,42 +11,42 @@ open System
 open System.Threading.Tasks
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 
+[<RequireQualifiedAccess>]
+type internal WorkspaceNodeKey =
+    // TODO: maybe this should be URI
+    | SourceFile of filePath: string
+    | ReferenceOnDisk of filePath: string
+    | ProjectCore of ProjectIdentifier
+    | ProjectBase of ProjectIdentifier
+    | ProjectSnapshot of ProjectIdentifier
 
-type DependencyNode<'Identifier, 'Value> =
-    { 
-        Id: 'Identifier 
-        Value: 'Value option
-
-        // TODO: optional if it's root node
-        Compute: DependencyNode<'Identifier, 'Value> seq -> 'Value
-    }
-
-type DependencyGraph<'Id, 'Val when 'Id :equality >() =
-    let nodes = Dictionary<'Id, DependencyNode<'Id, 'Val>>()
-    let dependencies = Dictionary<'Id, HashSet<'Id>>()
-    let dependents = Dictionary<'Id, HashSet<'Id>>()
-
-    member this.AddNode(id: 'Id, value: 'Val) =
-        let node = { Id = id; Value = Some value; Compute = (fun _ -> value) }
-        nodes.Add(id, node)
-
-    member this.AddNode(id: 'Id, dependsOn: 'Id seq, value: DependencyNode<_, _> seq -> 'Val  ) =
-        if nodes.ContainsKey id then
-            failwithf "Node with id %A already exists" id
-        
-        let node = { Id = id; Value = None; Compute = value }
-        nodes.Add(id, node)
-        dependencies.Add(id, HashSet(dependsOn))
-        for dep in dependsOn do
-            match dependents.TryGetValue dep with
-            | true, set -> set.Add id |> ignore
-            | false, _ -> dependents.Add(dep, HashSet([| id |]))
-            
-
-type internal WorkspaceProject =
-    | CommandLineArgs of string list
-    | Draft of ProjectCore * FSharpFileSnapshot list
-    | Snapshot of FSharpProjectSnapshot
+[<RequireQualifiedAccess>]
+type internal WorkspaceNodeValue =
+    | SourceFile of FSharpFileSnapshot
+    | ReferenceOnDisk of ReferenceOnDisk
+    | ProjectCore of ProjectCore
+    | ProjectBase of ProjectCore * FSharpReferencedProjectSnapshot list
+    | ProjectSnapshot of FSharpProjectSnapshot
+    member this.UnwrapSourceFile() =
+        match this with
+        | SourceFile f -> f
+        | x -> failwithf "Expected SourceFile, got %A" x
+    member this.UnwrapReferenceOnDisk() =
+        match this with
+        | ReferenceOnDisk r -> r
+        | x -> failwithf "Expected ReferenceOnDisk, got %A" x
+    member this.UnwrapProjectCore() =
+        match this with
+        | ProjectCore p -> p
+        | x -> failwithf "Expected ProjectCore, got %A" x
+    member this.UnwrapProjectBase() =
+        match this with
+        | ProjectBase (p, refs) -> p, refs
+        | x -> failwithf "Expected ProjectBase, got %A" x
+    member this.UnwrapProjectSnapshot() =
+        match this with
+        | ProjectSnapshot p -> p
+        | x -> failwithf "Expected ProjectSnapshot, got %A" x
 
 
 /// Holds a project snapshot and a queue of changes that will be applied to it when it's requested
@@ -97,77 +99,130 @@ type SnapshotHolder(snapshot: FSharpProjectSnapshot, changedFiles: Set<string>, 
     static member Of(snapshot: FSharpProjectSnapshot) =
         SnapshotHolder(snapshot, Set.empty, Map.empty)
 
-type FSharpWorkspace
-    private
-    (
-        projects: Map<FSharpProjectIdentifier, SnapshotHolder>,
-        openFiles: Map<string, string>,
-        fileMap: Map<string, Set<FSharpProjectIdentifier>>
-    ) =
+type FSharpWorkspace() =
+    
+    let depGraph = DependencyGraph()
 
-    let updateProjectsWithFile (file: Uri) f (projects: Map<FSharpProjectIdentifier, SnapshotHolder>) =
-        fileMap
-        |> Map.tryFind file.LocalPath
-        |> Option.map (fun identifier ->
-            (projects, identifier)
-            ||> Seq.fold (fun projects identifier ->
-                let snapshotHolder = projects[identifier]
-                projects.Add(identifier, f snapshotHolder)))
-        |> Option.defaultValue projects
+    member this.OpenFile(file: Uri, content: string) =
+        // No changes in the dep graph. If we already read the contents from disk we don't want to invalidate it. 
+        this
 
-    member _.Projects = projects
-    member _.OpenFiles = openFiles
-    member _.FileMap = fileMap
+    member this.CloseFile(file: Uri) =
+        // No changes in the dep graph. Next change will come if we get notified by file watcher. 
+        this
 
-    member this.OpenFile(file: Uri, content: string) = this.ChangeFile(file, content)
+    member this.ChangeFile(file: Uri, content: string) =
+        
+        depGraph.AddOrUpdateNode(WorkspaceNodeKey.SourceFile file.LocalPath, WorkspaceNodeValue.SourceFile (FSharpFileSnapshot.Create(file.LocalPath, content.GetHashCode().ToString(), fun () -> content |> SourceTextNew.ofString |> Task.FromResult))) 
+        |> ignore
+        
+        this
 
-    member _.CloseFile(file: Uri) =
-        let openFiles = openFiles.Remove(file.LocalPath)
+    member _.AddCommandLineArgs(projectPath: string, compilerArgs: string seq) =
 
-        FSharpWorkspace(
-            projects =
-                (projects
-                 |> updateProjectsWithFile file _.WithoutFileChanged(file.LocalPath, openFiles)),
-            openFiles = openFiles,
-            fileMap = fileMap
-        )
+        let findOutputFileName args =
+            args
+            |> Seq.tryFind (fun (x: string) -> x.StartsWith("-o:"))
+            |> Option.map (fun x -> x.Substring(3))
 
-    member _.ChangeFile(file: Uri, content: string) =
+        let outputPath = 
+            findOutputFileName compilerArgs
+            |> Option.defaultWith (fun () -> failwith "Invalid command line arguments for F# project, output file name not found")
+        
+        let projectIdentifier = ProjectIdentifier (projectPath, outputPath)
 
-        // TODO: should we assert that the file is open?
+        let directoryPath = Path.GetDirectoryName(projectPath)
 
-        let openFiles = openFiles.Add(file.LocalPath, content)
+        let fsharpFileExtensions = set [| ".fs"; ".fsi"; ".fsx" |]
 
-        FSharpWorkspace(
-            projects =
-                (projects
-                 |> updateProjectsWithFile file _.WithFileChanged(file.LocalPath, openFiles)),
-            openFiles = openFiles,
-            fileMap = fileMap
-        )
+        let isFSharpFile (file: string) =
+            Set.exists (fun (ext: string) -> file.EndsWith(ext, StringComparison.Ordinal)) fsharpFileExtensions
+
+        let isReference: string -> bool = _.StartsWith("-r:")
+
+        let fsharpFiles =
+            compilerArgs
+            |> Seq.choose (fun (line: string) ->
+                if not (isFSharpFile line) then
+                    None
+                else
+
+                    let fullPath = Path.Combine(directoryPath, line)
+                    if not (File.Exists fullPath) then None else Some fullPath)
+            |> Seq.map(fun path -> 
+                WorkspaceNodeKey.SourceFile path,
+                WorkspaceNodeValue.SourceFile (FSharpFileSnapshot.CreateFromFileSystem path))
+            |> depGraph.AddList
+
+        let referencesOnDisk =
+            compilerArgs 
+            |> Seq.filter isReference 
+            |> Seq.map _.Substring(3) 
+            |> Seq.map (fun path -> 
+                WorkspaceNodeKey.ReferenceOnDisk path,
+                WorkspaceNodeValue.ReferenceOnDisk {
+                         Path = path
+                         LastModified = File.GetLastWriteTimeUtc path
+                     })
+            |> depGraph.AddList
+            
+
+        let otherOptions =
+            compilerArgs
+            |> Seq.filter (not << isReference)
+            |> Seq.filter (not << isFSharpFile)
+            |> Seq.toList
+
+        let projectCore = 
+            referencesOnDisk
+                .AddDependentNode(WorkspaceNodeKey.ProjectCore projectIdentifier, (fun refsOnDiskNodes ->
+                    let refsOnDisk = refsOnDiskNodes |> Seq.map _.UnwrapReferenceOnDisk() |> Seq.toList
+
+                    ProjectCore(
+                        ProjectFileName = projectPath,
+                        ProjectId = None,
+                        ReferencesOnDisk = refsOnDisk,
+                        OtherOptions = otherOptions,
+                        IsIncompleteTypeCheckEnvironment = false,
+                        UseScriptResolutionRules = false,
+                        LoadTime = DateTime.Now,
+                        UnresolvedReferences = None,
+                        OriginalLoadReferences = [],
+                        Stamp = None) 
+
+                        |> WorkspaceNodeValue.ProjectCore))
+
+        let projectBase = 
+            projectCore.AddDependentNode(WorkspaceNodeKey.ProjectBase projectIdentifier, (fun deps ->
+                let projectCore = deps |> Seq.head |> _.UnwrapProjectCore()
+                let referencedProjects = 
+                    deps 
+                    |> Seq.skip 1 
+                    |> Seq.map _.UnwrapProjectSnapshot()
+                    |> Seq.map (fun s -> FSharpReferencedProjectSnapshot.FSharpReference (s.OutputFileName |> Option.defaultWith(fun () -> failwith "project doesn't have output filename"), s))
+                    |> Seq.toList
+                WorkspaceNodeValue.ProjectBase(projectCore, referencedProjects)))
+
+        projectBase.And(fsharpFiles).AddDependentNode(WorkspaceNodeKey.ProjectSnapshot projectIdentifier, (fun deps ->
+        
+            let projectCore, referencedProjects = deps |> Seq.head |> _.UnwrapProjectBase()
+            let sourceFiles = deps |> Seq.skip 1 |> Seq.map _.UnwrapSourceFile() |> Seq.toList
+
+            ProjectSnapshot(projectCore, referencedProjects, sourceFiles) 
+            |> FSharpProjectSnapshot 
+            |> WorkspaceNodeValue.ProjectSnapshot)) 
+            |> ignore
 
     member _.GetSnapshotForFile(file: Uri) =
-        fileMap
-        |> Map.tryFind file.LocalPath
+
+        depGraph.GetDependentsOf(WorkspaceNodeKey.SourceFile file.LocalPath)
 
         // TODO: eventually we need to deal with choosing the appropriate project here
         // Hopefully we will be able to do it through receiving project context from LSP
         // Otherwise we have to keep track of which project/configuration is active
-        |> Option.bind Seq.tryHead
+        |> Seq.tryHead // For now just get the first one
 
-        |> Option.bind projects.TryFind
-        |> Option.map _.GetSnapshot()
+        |> Option.map depGraph.GetValue             
+        |> Option.map _.UnwrapProjectSnapshot()
 
-    static member Create(projects: FSharpProjectSnapshot seq) =
-        FSharpWorkspace(
-            projects = Map.ofSeq (projects |> Seq.map (fun p -> p.Identifier, SnapshotHolder.Of p)),
-            openFiles = Map.empty,
-            fileMap =
-                (projects
-                 |> Seq.collect (fun p ->
-                     p.ProjectSnapshot.SourceFileNames
-                     |> Seq.map (fun f -> Uri(f).LocalPath, p.Identifier))
-                 |> Seq.groupBy fst
-                 |> Seq.map (fun (f, ps) -> f, Set.ofSeq (ps |> Seq.map snd))
-                 |> Map.ofSeq)
-        )
+

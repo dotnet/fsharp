@@ -535,14 +535,14 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
     member _.OtherOptions = projectSnapshot.OtherOptions
     member _.ReferencedProjects = projectSnapshot.ReferencedProjects
 
-    member _.IsIncompleteTypeCheckEnvironment =
-        projectSnapshot.IsIncompleteTypeCheckEnvironment
+    member _.IsIncompleteTypeCheckEnvironment = projectSnapshot.IsIncompleteTypeCheckEnvironment
 
     member _.UseScriptResolutionRules = projectSnapshot.UseScriptResolutionRules
     member _.LoadTime = projectSnapshot.LoadTime
     member _.UnresolvedReferences = projectSnapshot.UnresolvedReferences
     member _.OriginalLoadReferences = projectSnapshot.OriginalLoadReferences
     member _.Stamp = projectSnapshot.Stamp
+    member _.OutputFileName = projectSnapshot.OutputFileName
 
     static member Create
         (

@@ -147,7 +147,7 @@ type FSharpRequestContext(lspServices: ILspServices, logger: ILspLogger, workspa
             })
         |> Option.defaultValue (async { return [||] })
 
-type ContextHolder(intialWorkspace, lspServices: ILspServices) =
+type ContextHolder(workspace, lspServices: ILspServices) =
 
     let logger = lspServices.GetRequiredService<ILspLogger>()
 
@@ -164,7 +164,7 @@ type ContextHolder(intialWorkspace, lspServices: ILspServices) =
         )
 
     let mutable context =
-        FSharpRequestContext(lspServices, logger, intialWorkspace, checker)
+        FSharpRequestContext(lspServices, logger, workspace, checker)
 
     member _.GetContext() = context
 
