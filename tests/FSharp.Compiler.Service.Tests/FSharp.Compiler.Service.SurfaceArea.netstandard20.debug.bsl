@@ -10231,7 +10231,9 @@ FSharp.Compiler.SyntaxTrivia.SynExprLetOrUseTrivia: FSharp.Compiler.SyntaxTrivia
 FSharp.Compiler.SyntaxTrivia.SynExprLetOrUseTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] InKeyword
 FSharp.Compiler.SyntaxTrivia.SynExprLetOrUseTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_InKeyword()
 FSharp.Compiler.SyntaxTrivia.SynExprLetOrUseTrivia: System.String ToString()
-FSharp.Compiler.SyntaxTrivia.SynExprLetOrUseTrivia: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
+FSharp.Compiler.SyntaxTrivia.SynExprLetOrUseTrivia: FSharp.Compiler.Text.Range LetOrUseKeyword
+FSharp.Compiler.SyntaxTrivia.SynExprLetOrUseTrivia: FSharp.Compiler.Text.Range get_LetOrUseKeyword()
+FSharp.Compiler.SyntaxTrivia.SynExprLetOrUseTrivia: Void .ctor(FSharp.Compiler.Text.Range, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
 FSharp.Compiler.SyntaxTrivia.SynExprMatchBangTrivia: FSharp.Compiler.Text.Range MatchBangKeyword
 FSharp.Compiler.SyntaxTrivia.SynExprMatchBangTrivia: FSharp.Compiler.Text.Range WithKeyword
 FSharp.Compiler.SyntaxTrivia.SynExprMatchBangTrivia: FSharp.Compiler.Text.Range get_MatchBangKeyword()
