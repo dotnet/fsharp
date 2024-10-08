@@ -5556,10 +5556,25 @@ recdExprCore:
             None, l
        | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsFieldBinding ()) }
 
+  | appExpr recdExprBindings opt_seps_recd
+     { match $1 with
+       | LongOrSingleIdent(false, (SynLongIdent _ as ident), None, m) ->
+            let f = mkRecdField (SynLongIdent([List.last ident.LongIdent], [], []))
+            let l = List.rev $2
+            let expr = SynExpr.LongIdent(false, ident, None, m)
+            let l = rebindRanges (f, None, Some expr) l $3
+            (None, l)
+       | _ -> raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsFieldBinding()) }
+
   | appExpr
-    { let mExpr = rhs parseState 1
-      reportParseErrorAt mExpr (FSComp.SR.parsFieldBinding ())
-      Some($1, (mExpr.EndRange, None)), [] }
+    { match $1 with
+      | LongOrSingleIdent(false, (SynLongIdent _ as ident), None, m) ->
+           let f = mkRecdField (SynLongIdent([List.last ident.LongIdent], [], []))
+           let l = []
+           let expr = SynExpr.LongIdent(false, ident, None, m)
+           let l = rebindRanges (f, None, Some expr) l None
+           (None, l)
+      | _ -> raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsFieldBinding()) }
 
 /*
     handles cases when identifier can start from the underscore
@@ -5626,7 +5641,7 @@ seps_recd:
 
 
 /* identifier can start from the underscore */
-pathOrUnderscore :
+pathOrUnderscore:
   | path
     { mkRecdField $1 }
 
@@ -5658,8 +5673,11 @@ recdBinding:
        ($1, Some mEquals, None) }
 
   | pathOrUnderscore
-     { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsFieldBinding())
-       ($1, None, None) }
+     { //reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsFieldBinding())
+       let ident, b = $1
+       let f = SynLongIdent([List.last ident.LongIdent], [], []), b
+       let expr = SynExpr.LongIdent(false, ident, None, rhs parseState 1)
+       (f, None, Some expr) }
 
   | pathOrUnderscore ends_coming_soon_or_recover
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsFieldBinding())
