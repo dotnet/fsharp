@@ -240,34 +240,44 @@ module MailboxProcessorBasicTests =
                  return !received})
                 n
 
+
+(* Disabled for timing issues. Some replacement TryScan tests were added to FSharp.Core.UnitTests.
+
         for i in 1..10 do
             for sleep in [0;1;10] do
                 for timeout in [10;1;0] do
-                    checkAsync 
+                    check 
                        (sprintf "cf72361: MailboxProcessor TryScan w/timeout=%d sleep=%d iteration=%d" timeout sleep i) 
-                       (
-                        let timedOut = TaskCompletionSource<_>()
-                        use mb = new MailboxProcessor<int>(fun inbox ->
-                            async {
-                                let! result = inbox.TryScan((fun i -> if i >= 0 then async { return i } |> Some  else None), timeout=timeout)
-                                timedOut.SetResult result.IsNone
-                            }
-                        )
+                       (let timedOut = ref None
+                        let mb = new MailboxProcessor<int>(fun inbox ->
+                                async {
+                                        let result = ref None
+                                        let count = ref 0
+                                        while (!result).IsNone && !count < 5 do
+                                            let! curResult = inbox.TryScan((fun i -> if i >= 0 then async { return i } |> Some  else None), timeout=timeout)
+                                            result := curResult
+                                            count := !count + 1
+                                        match !result with
+                                        |   None -> 
+                                                timedOut := Some true
+                                        |   Some i -> 
+                                                timedOut := Some false
+                                })
                         mb.Start()
-                        
-                        let _ = task {
-                            do! Task.Delay 1000
-                            timedOut.TrySetResult false |> ignore
-                        }
+                        let w = System.Diagnostics.Stopwatch()
+                        w.Start()
+                        while w.ElapsedMilliseconds < 1000L && (!timedOut).IsNone do
+                            mb.Post(-1)
+#if NETCOREAPP
+                            Task.Delay(1).Wait();
+#else
+                            System.Threading.Thread.Sleep(1)
+#endif
+                        mb.Post(0)
+                        !timedOut)
+                       (Some true)
 
-                        task { 
-                            while not timedOut.Task.IsCompleted do
-                                do! Task.Delay sleep
-                                mb.Post(-1)
-                            return! timedOut.Task
-                        }
-                       )
-                       (true)
+*)
 
         checkAsync "cf72361: MailboxProcessor TryScan wo/timeout" 
            (task {
