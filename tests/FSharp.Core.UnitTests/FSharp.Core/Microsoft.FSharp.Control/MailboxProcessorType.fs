@@ -215,8 +215,7 @@ type MailboxProcessorType() =
                         receiveEv.WaitOne() |> ignore
                         let! (msg) = inbox.Receive ()
                         finishedEv.Set() |> ignore
-                },
-                cancellationToken = cts.Token)
+                })
         let post =
             async {
                 while not cts.IsCancellationRequested do
@@ -251,18 +250,16 @@ type MailboxProcessorType() =
                         receiveEv.WaitOne() |> ignore
                         let! (msg) = inbox.Receive (5000)
                         finishedEv.Set() |> ignore
-                },
-                cancellationToken = cts.Token)
+                })
 
         let isErrored = mb.Error |> Async.AwaitEvent |> Async.StartAsTask
 
         let post =
-            async {
+            backgroundTask {
                 while not cts.IsCancellationRequested do
                     postEv.WaitOne() |> ignore
                     mb.Post(fun () -> ())
             }
-            |> Async.StartAsTask
 
         for i in 0 .. 10000 do
             if i % 2 = 0 then
@@ -294,17 +291,17 @@ type MailboxProcessorType() =
                         receiveEv.WaitOne() |> ignore
                         let! (msg) = inbox.TryReceive (5000)
                         finishedEv.Set() |> ignore
-                },
-                cancellationToken = cts.Token)
+                }
+            )
 
         let isErrored = mb.Error |> Async.AwaitEvent |> Async.StartAsTask
 
         let post =
-            async {
+            backgroundTask {
                 while not cts.IsCancellationRequested do
                     postEv.WaitOne() |> ignore
                     mb.Post(fun () -> ())
-            } |> Async.StartAsTask
+            }
 
         for i in 0 .. 10000 do
             if i % 2 = 0 then
@@ -319,12 +316,10 @@ type MailboxProcessorType() =
                     raise <| Exception("Mailbox should not fail!", isErrored.Result)
 
         cts.Cancel()
-        // Let the post task finish.
         postEv.Set() |> ignore
         post.Wait()
 
-    // TODO: Attempts to access disposed event at mailbox.fs:193
-    [<Fact(Skip="Possible bug in MailBoxProcessor disposal")>]
+    [<Fact>]
     member this.``After dispose is called, mailbox should stop receiving and processing messages``() = task {
         let mutable isSkip = false
         let mutable actualSkipMessagesCount = 0
@@ -332,9 +327,8 @@ type MailboxProcessorType() =
         let sleepDueTime = 100
         let expectedMessagesCount = 2
         use mre = new ManualResetEventSlim(false)
-        use cts = new CancellationTokenSource()
         let mb =
-            MailboxProcessor.Start((fun b ->
+            MailboxProcessor.Start(fun b ->
                 let rec loop() =
                      async {
                         match! b.Receive() with
@@ -351,8 +345,7 @@ type MailboxProcessorType() =
                                 return! loop()
                         | _ -> ()
                     }
-                loop()),
-                cancellationToken = cts.Token
+                loop()
             )
         let post() = Increment 1 |> mb.Post
 
@@ -367,7 +360,6 @@ type MailboxProcessorType() =
         Assert.Equal(expectedMessagesCount, actualMessagesCount)
         Assert.Equal(0, actualSkipMessagesCount)
         Assert.Equal(0, mb.CurrentQueueLength)
-        cts.Cancel()
     }
 
     [<Fact>]
@@ -378,7 +370,6 @@ type MailboxProcessorType() =
         let sleepDueTime = 100
         let expectedMessagesCount = 2
         use mre = new ManualResetEventSlim(false)
-        use cts = new CancellationTokenSource()
         let mb =
             MailboxProcessor.Start((fun b ->
                 let rec loop() =
@@ -398,8 +389,7 @@ type MailboxProcessorType() =
                         | _ -> ()
                     }
                 loop()),
-                true,
-                cancellationToken = cts.Token
+                true
             )
         let post() = Increment 1 |> mb.Post
 
@@ -414,7 +404,7 @@ type MailboxProcessorType() =
         Assert.Equal(expectedMessagesCount, actualMessagesCount)
         Assert.Equal(0, actualSkipMessagesCount)
         Assert.Equal(0, mb.CurrentQueueLength)
-        cts.Cancel()
+
     }
 
     [<Fact>]
@@ -549,7 +539,7 @@ module MailboxProcessorType =
                             | _ -> None)
                     with
                     | None -> do! loop (i + 1)
-                     | _ -> ()
+                    | _ -> ()
                 }
                 loop 1
             )
