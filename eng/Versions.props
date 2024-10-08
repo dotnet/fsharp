@@ -43,7 +43,7 @@
     <FSharpCorePreviewPackageVersionValue>$(FSCorePackageVersionValue)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersionValue>
     <!-- -->
     <!-- FSharp tools for Visual Studio version number -->
-    <FSToolsMajorVersion>12</FSToolsMajorVersion>
+    <FSToolsMajorVersion>13</FSToolsMajorVersion>
     <FSToolsMinorVersion>9</FSToolsMinorVersion>
     <FSToolsBuildVersion>$(FSBuildVersion)</FSToolsBuildVersion>
     <FSToolsRevisionVersion>$(FSRevisionVersion)</FSToolsRevisionVersion>
@@ -53,7 +53,7 @@
   <PropertyGroup>
     <!-- These have to be in sync with latest release branch -->
     <VSMajorVersion>17</VSMajorVersion>
-    <VSMinorVersion>12</VSMinorVersion>
+    <VSMinorVersion>13</VSMinorVersion>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
