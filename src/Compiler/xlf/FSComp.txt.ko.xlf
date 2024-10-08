@@ -307,11 +307,6 @@
         <target state="translated">'TailCall' 특성이 비 재귀 함수에 사용되는 경우 경고를 발생합니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureConsistentNowarnLineDirectiveInteraction">
-        <source>The interaction between #nowarn and #line is now consistent.</source>
-        <target state="new">The interaction between #nowarn and #line is now consistent.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
         <source>Constraint intersection on flexible types</source>
         <target state="translated">유연한 형식의 제약 조건 교집합</target>

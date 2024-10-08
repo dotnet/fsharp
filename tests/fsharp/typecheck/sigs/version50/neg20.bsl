@@ -98,7 +98,7 @@ but given a
     'B list'    
 The type 'A' does not match the type 'B'
 
-neg20.fs(80,23,80,39): typecheck error FS0193: Type constraint mismatch. The type 
+neg20.fs(80,30,80,39): typecheck error FS0193: Type constraint mismatch. The type 
     'C list'    
 is not compatible with type
     'B seq'    

@@ -201,7 +201,7 @@ let main argv =
     // test2
     for _ in CreateBadImageFormatException () do ()
 
-    System.IO.File.WriteAllText("test.ok","ok"); 
+    printf "TEST PASSED OK"; 
 
     match failures with 
     | [] -> 

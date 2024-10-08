@@ -2,7 +2,6 @@
 
 %{
 
-#nowarn "64" // turn off warnings that type variables used in production annotations are instantiated to concrete type
 #nowarn "1182"  // generated code has lots of unused "parseState"
 #nowarn "3261"  // the generated code would need to properly annotate nulls, e.g. changing System.Object to `obj|null`
 
@@ -4403,24 +4402,28 @@ declExpr:
         exprFromParseError (SynExpr.ForEach(spFor, spIn, SeqExprOnly false, true, $2, arbExpr ("forLoopCollection", mFor), arbExpr ("forLoopBody3", mForLoopBodyArb), mForLoopAll)) }
 
   | YIELD declExpr
-     { SynExpr.YieldOrReturn(($1, not $1), $2, unionRanges (rhs parseState 1) $2.Range) }
+     { let trivia: SynExprYieldOrReturnTrivia = { YieldOrReturnKeyword = rhs parseState 1 }
+       SynExpr.YieldOrReturn(($1, not $1), $2, (unionRanges (rhs parseState 1) $2.Range), trivia) }
 
   | YIELD_BANG declExpr
-     { SynExpr.YieldOrReturnFrom(($1, not $1), $2, unionRanges (rhs parseState 1) $2.Range) }
+     {  let trivia: SynExprYieldOrReturnFromTrivia = { YieldOrReturnFromKeyword = rhs parseState 1 }
+        SynExpr.YieldOrReturnFrom(($1, not $1), $2, (unionRanges (rhs parseState 1) $2.Range), trivia) }
 
   | YIELD recover
      { let mYieldAll = rhs parseState 1
-       SynExpr.YieldOrReturn(($1, not $1), arbExpr ("yield", mYieldAll), mYieldAll) }
+       let trivia: SynExprYieldOrReturnTrivia = { YieldOrReturnKeyword = rhs parseState 1 }
+       SynExpr.YieldOrReturn(($1, not $1), arbExpr ("yield", mYieldAll), mYieldAll, trivia) }
 
   | YIELD_BANG recover
      { let mYieldAll = rhs parseState 1
-       SynExpr.YieldOrReturnFrom(($1, not $1), arbExpr ("yield!", mYieldAll), mYieldAll) }
+       let trivia: SynExprYieldOrReturnFromTrivia = { YieldOrReturnFromKeyword = rhs parseState 1 }
+       SynExpr.YieldOrReturnFrom(($1, not $1), arbExpr ("yield!", mYieldAll), mYieldAll, trivia) }
 
   | BINDER headBindingPattern EQUALS typedSequentialExprBlock IN opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
      { let spBind = DebugPointAtBinding.Yes(rhs2 parseState 1 5)
        let mEquals = rhs parseState 3
        let m = unionRanges (rhs parseState 1) $8.Range
-       let trivia: SynExprLetOrUseBangTrivia = { EqualsRange = Some mEquals }
+       let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = rhs parseState 1 ; EqualsRange = Some mEquals }
        SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, $4, $7, $8, m, trivia) }
 
   | OBINDER headBindingPattern EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
@@ -4429,7 +4432,7 @@ declExpr:
        let spBind = DebugPointAtBinding.Yes(unionRanges (rhs parseState 1) $4.Range)
        let mEquals = rhs parseState 3
        let m = unionRanges (rhs parseState 1) $8.Range
-       let trivia: SynExprLetOrUseBangTrivia = { EqualsRange = Some mEquals }
+       let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = rhs parseState 1 ; EqualsRange = Some mEquals }
        SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, $4, $7, $8, m, trivia) }
 
   | OBINDER headBindingPattern EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP error %prec expr_let
@@ -4438,16 +4441,19 @@ declExpr:
        let mEquals = rhs parseState 3
        let mAll = unionRanges (rhs parseState 1) (rhs parseState 7)
        let m = $4.Range.EndRange // zero-width range
-       let trivia: SynExprLetOrUseBangTrivia = { EqualsRange = Some mEquals }
+       let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = rhs parseState 1 ; EqualsRange = Some mEquals }
        SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, $4, [], SynExpr.ImplicitZero m, mAll, trivia) }
 
   | DO_BANG typedSequentialExpr IN opt_OBLOCKSEP typedSequentialExprBlock %prec expr_let
      { let spBind = DebugPointAtBinding.NoneAtDo
-       let trivia: SynExprLetOrUseBangTrivia = { EqualsRange = None }
-       SynExpr.LetOrUseBang(spBind, false, true, SynPat.Const(SynConst.Unit, $2.Range), $2, [], $5, unionRanges (rhs parseState 1) $5.Range, trivia) }
+       let trivia: SynExprDoBangTrivia = { DoBangKeyword = rhs parseState 1 }
+       let m = unionRanges (rhs parseState 1) $5.Range
+       SynExpr.DoBang($2, m, trivia) }
 
   | ODO_BANG typedSequentialExprBlock hardwhiteDefnBindingsTerminator %prec expr_let
-     { SynExpr.DoBang($2, unionRanges (rhs parseState 1) $2.Range) }
+     {  let trivia: SynExprDoBangTrivia = { DoBangKeyword = rhs parseState 1 }
+        let m = unionRanges (rhs parseState 1) $2.Range
+        SynExpr.DoBang($2, m, trivia) }
 
   | FIXED declExpr
      { SynExpr.Fixed($2, (unionRanges (rhs parseState 1) $2.Range)) }
@@ -4456,7 +4462,8 @@ declExpr:
      { errorR(Error(FSComp.SR.parsArrowUseIsLimited(), lhs parseState))
        let mArrow = rhs parseState 1
        let expr = $2 mArrow
-       SynExpr.YieldOrReturn((true, true), expr, (unionRanges mArrow expr.Range)) }
+       let trivia: SynExprYieldOrReturnTrivia = { YieldOrReturnKeyword = rhs parseState 1 }
+       SynExpr.YieldOrReturn((true, true), expr, (unionRanges mArrow expr.Range), trivia) }
 
   | declExpr COLON_QMARK typ
       { SynExpr.TypeTest($1, $3, unionRanges $1.Range $3.Range) }
@@ -5454,7 +5461,8 @@ arrowThenExprR:
   | RARROW typedSequentialExprBlockR
       { let mArrow = rhs parseState 1
         let expr = $2 mArrow
-        SynExpr.YieldOrReturn((true, false), expr, unionRanges mArrow expr.Range) }
+        let trivia: SynExprYieldOrReturnTrivia = { YieldOrReturnKeyword = mArrow }
+        SynExpr.YieldOrReturn((true, false), expr, (unionRanges mArrow expr.Range), trivia) }
 
 forLoopBinder:
   | parenPattern IN declExpr

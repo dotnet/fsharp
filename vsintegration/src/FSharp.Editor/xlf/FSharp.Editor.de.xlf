@@ -174,9 +174,8 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (restart required);
-Cache parsing results (experimental)</source>
-        <target state="translated">Optionen zur F#-Projekt- und Cacheleistung;
+Enable fast find references &amp; rename (restart required)</source>
+        <target state="needs-review-translation">Optionen zur F#-Projekt- und Cacheleistung;
 Proj_ektübergreifende Verweise im Arbeitsspeicher aktivieren;
 Aktivieren der partiellen Typüberprüfung;
 Optionen zur IntelliSense-Leistung;
