@@ -494,3 +494,154 @@ let run r2 r3 =
         |> withDiagnostics [
             (Error 750, Line 3, Col 5, Line 3, Col 11, "This construct may only be used within computation expressions")
         ]
+        
+    [<Fact>]
+    let ``This control construct may only be used if the computation expression builder defines a 'Yield' method`` () =
+        Fsx """
+let f3 =
+    async {
+        if true then
+            yield "a"
+        else
+            yield "b"
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 708, Line 5, Col 13, Line 5, Col 18, "This control construct may only be used if the computation expression builder defines a 'Yield' method")
+        ]
+        
+    [<Fact>]
+    let ``This control construct may only be used if the computation expression builder defines a 'YieldFrom' method`` () =
+        Fsx """
+let f3 =
+    async {
+        if true then
+            yield! "a"
+        else
+            yield "b"
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 708, Line 5, Col 13, Line 5, Col 19, "This control construct may only be used if the computation expression builder defines a 'YieldFrom' method")
+        ]
+    
+
+    [<Fact>]
+    let ``This control construct may only be used if the computation expression builder defines a 'Return' method`` () =
+        Fsx """
+module Result =
+    let zip x1 x2 =
+        match x1,x2 with
+        | Ok x1res, Ok x2res -> Ok (x1res, x2res)
+        | Error e, _ -> Error e
+        | _, Error e -> Error e
+
+type ResultBuilder() =
+    member _.MergeSources(t1: Result<'T,'U>, t2: Result<'T1,'U>) = Result.zip t1 t2
+    member _.BindReturn(x: Result<'T,'U>, f) = Result.map f x
+    member _.Delay(f) = f()
+    
+    member _.TryWith(r: Result<'T,'U>, f) =
+        match r with
+        | Ok x -> Ok x
+        | Error e -> f e
+
+let result = ResultBuilder()
+
+let run r2 r3 =
+    result {
+        match r2 with
+        | Ok x -> return x
+        | Error e -> return e
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 708, Line 24, Col 19, Line 24, Col 25, "This control construct may only be used if the computation expression builder defines a 'Return' method")
+        ]
+        
+
+    [<Fact>]
+    let ``This control construct may only be used if the computation expression builder defines a 'ReturnFrom' method`` () =
+        Fsx """
+module Result =
+    let zip x1 x2 =
+        match x1,x2 with
+        | Ok x1res, Ok x2res -> Ok (x1res, x2res)
+        | Error e, _ -> Error e
+        | _, Error e -> Error e
+
+type ResultBuilder() =
+    member _.MergeSources(t1: Result<'T,'U>, t2: Result<'T1,'U>) = Result.zip t1 t2
+    member _.BindReturn(x: Result<'T,'U>, f) = Result.map f x
+    member _.Delay(f) = f()
+    
+    member _.TryWith(r: Result<'T,'U>, f) =
+        match r with
+        | Ok x -> Ok x
+        | Error e -> f e
+
+let result = ResultBuilder()
+
+let run r2 r3 =
+    result {
+        match r2 with
+        | Ok x -> return! x
+        | Error e -> return e
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 708, Line 24, Col 19, Line 24, Col 26, "This control construct may only be used if the computation expression builder defines a 'ReturnFrom' method")
+        ]        
+
+    [<Fact>]
+    let ``Type constraint mismatch when using return!`` () =
+        Fsx """
+open System.Threading.Tasks
+
+let maybeTask = task { return false }
+
+let indexHandler (): Task<string> = 
+    task {
+        return! maybeTask
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 193, Line 8, Col 17, Line 8, Col 26, "Type constraint mismatch. The type \n    'TaskCode<bool,bool>'    \nis not compatible with type\n    'TaskCode<string,string>'    \n")
+        ]
+
+    [<Fact>]
+    let ``Type constraint mismatch when using return`` () =
+        Fsx """
+open System.Threading.Tasks
+
+let maybeTask = task { return false }
+
+let indexHandler (): Task<string> = 
+    task {
+        return maybeTask
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 8, Col 16, Line 8, Col 25, "This expression was expected to have type
+    'string'    
+but here has type
+    'Task<bool>'    ")
+        ]

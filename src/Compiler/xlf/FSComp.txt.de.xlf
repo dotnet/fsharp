@@ -549,7 +549,7 @@
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
         <source>whitespace relaxation</source>
-        <target state="translated">Lockerung für Leerraum</target>
+        <target state="new">whitespace relaxation</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace2">
@@ -1134,7 +1134,7 @@
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
         <source>A constrained generic construct occurred in the resumable code specification</source>
-        <target state="translated">In der fortsetzbaren Codespezifikation ist ein eingeschränktes generisches Konstrukt aufgetreten.</target>
+        <target state="new">A constrained generic construct occurred in the resumable code specification</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsDynamicResumeAtInBody">
@@ -1149,7 +1149,7 @@
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsLetRec">
         <source>A 'let rec' occurred in the resumable code specification</source>
-        <target state="translated">"Let rec" ist in der fortsetzbaren Codespezifikation aufgetreten.</target>
+        <target state="new">A 'let rec' occurred in the resumable code specification</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsResumptionInHandlerOrFilter">
@@ -1454,7 +1454,7 @@
       </trans-unit>
       <trans-unit id="tcMissingRequiredMembers">
         <source>The following required properties have to be initialized:{0}</source>
-        <target state="translated">Die folgenden erforderlichen Eigenschaften müssen initialisiert werden:{0}</target>
+        <target state="new">The following required properties have to be initialized:{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMultipleFieldsInRecord">
@@ -1589,7 +1589,7 @@
       </trans-unit>
       <trans-unit id="tcResumableCodeContainsLetRec">
         <source>Invalid resumable code. A 'let rec' occurred in the resumable code specification</source>
-        <target state="translated">Ungültiger fortsetzbarer Code. "Let rec" ist in der fortsetzbaren Codespezifikation aufgetreten</target>
+        <target state="new">Invalid resumable code. A 'let rec' occurred in the resumable code specification</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeFunctionMustBeInline">
@@ -5909,7 +5909,7 @@
       </trans-unit>
       <trans-unit id="optsDebug">
         <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debugging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
-        <target state="translated">Geben Sie den Debugtyp an: full, portable, embedded, pdbonly. ("{0}" ist der Standardwert, wenn kein Debugtyp angegeben wird, und ermöglicht das Anfügen eines Debuggers an ein aktuell ausgeführtes Programm. "portable" ist ein plattformübergreifendes Format, "embedded" ein plattformübergreifendes, in die Ausgabedatei eingebettetes Format).</target>
+        <target state="new">Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debugging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</target>
         <note />
       </trans-unit>
       <trans-unit id="optsOptimize">
@@ -7164,7 +7164,7 @@
       </trans-unit>
       <trans-unit id="fscRemotingError">
         <source>The resident compilation service was not used because a problem occurred in communicating with the server.</source>
-        <target state="translated">Der residente Kompilierungsdienst wurde nicht verwendet, da bei der Kommunikation mit dem Server ein Problem aufgetreten ist.</target>
+        <target state="new">The resident compilation service was not used because a problem occurred in communicating with the server.</target>
         <note />
       </trans-unit>
       <trans-unit id="pathIsInvalid">
@@ -7364,7 +7364,7 @@
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToType">
         <source>An error occurred applying the static arguments to a provided type</source>
-        <target state="translated">Fehler beim Anwenden des statischen Arguments auf einen angegebenen Typ.</target>
+        <target state="new">An error occurred applying the static arguments to a provided type</target>
         <note />
       </trans-unit>
       <trans-unit id="etUnknownStaticArgumentKind">
@@ -7429,7 +7429,7 @@
       </trans-unit>
       <trans-unit id="etInvalidTypeProviderAssemblyName">
         <source>Assembly '{0}' has TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</source>
-        <target state="translated">Assembly '{0}' verfügt über ein TypeProviderAssembly-Attribut mit dem ungültigen Wert '{1}'. Beim Wert sollte es sich um einen gültigen Assemblynamen handeln.</target>
+        <target state="new">Assembly '{0}' has TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidMemberNameCtor">
@@ -8014,7 +8014,7 @@
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToMethod">
         <source>An error occurred applying the static arguments to a provided method</source>
-        <target state="translated">Fehler beim Anwenden der statischen Argumente auf eine angegebene Methode.</target>
+        <target state="new">An error occurred applying the static arguments to a provided method</target>
         <note />
       </trans-unit>
       <trans-unit id="pplexUnexpectedChar">
@@ -8144,7 +8144,7 @@
       </trans-unit>
       <trans-unit id="CallerMemberNameIsOverridden">
         <source>The CallerMemberNameAttribute applied to parameter '{0}' will have no effect. It is overridden by the CallerFilePathAttribute.</source>
-        <target state="translated">Das auf Parameter "{0}" angewendete CallerMemberNameAttribute hat keine Auswirkung. Es wird vom CallerFilePathAttribute überschrieben.</target>
+        <target state="new">The CallerMemberNameAttribute applied to parameter '{0}' will have no effect. It is overridden by the CallerFilePathAttribute.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
@@ -8459,7 +8459,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionTry">
         <source>Used to introduce a block of code that might generate an exception. Used together with 'with' or 'finally'.</source>
-        <target state="needs-review-translation">Wird verwendet, um einen Codeblock einzuführen, der unter Umständen eine Ausnahme generiert. Wird zusammen mit "with" oder "finally" verwendet.</target>
+        <target state="new">Used to introduce a block of code that might generate an exception. Used together with 'with' or 'finally'.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionType">
