@@ -179,6 +179,24 @@ type SynExprDoBangTrivia =
         DoBangKeyword: range
     }
 
+/// Represents additional information for SynExpr.YieldOrReturn
+[<NoEquality; NoComparison>]
+type SynExprYieldOrReturnTrivia =
+    {
+        /// The syntax range of the `yield` or `return` keyword.
+        YieldOrReturnKeyword: range
+    }
+
+    static member Zero: SynExprYieldOrReturnTrivia
+
+/// Represents additional information for SynExpr.YieldOrReturnFrom
+[<NoEquality; NoComparison>]
+type SynExprYieldOrReturnFromTrivia =
+    {
+        /// The syntax range of the `yield!` or `return!` keyword.
+        YieldOrReturnFromKeyword: range
+    }
+
 /// Represents additional information for SynExpr.AnonRecd
 [<NoEquality; NoComparison>]
 type SynExprAnonRecdTrivia =

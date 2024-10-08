@@ -15,7 +15,8 @@ ImplFile
                       ((true, false),
                        ArbitraryAfterError
                          ("typedSequentialExprBlockR1", (3,16--3,16)),
-                       (3,14--3,16)), (3,2--3,16)), (3,0--3,18)), (3,0--3,18))],
+                       (3,14--3,16), { YieldOrReturnKeyword = (3,14--3,16) }),
+                    (3,2--3,16)), (3,0--3,18)), (3,0--3,18))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--3,18), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
