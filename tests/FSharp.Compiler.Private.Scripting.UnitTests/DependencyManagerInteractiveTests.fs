@@ -150,8 +150,7 @@ type DependencyManagerInteractiveTests() =
         Assert.Equal(0, result.Roots |> Seq.length)
         ()
 
-
-    [<Fact(Skip="failing on main")>]
+    [<Fact>]
     member _.``Multiple Instances of DependencyProvider should be isolated``() =
 
         let assemblyProbingPaths () = Seq.empty<string>

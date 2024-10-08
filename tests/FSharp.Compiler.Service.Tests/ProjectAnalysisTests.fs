@@ -128,7 +128,7 @@ let ``Test project1 and make sure TcImports gets cleaned up`` () =
 
     //collect 2 more times for good measure,
     // See for example: https://github.com/dotnet/runtime/discussions/108081
-    GC.Collect()
+    GC.Collect(2, GCCollectionMode.Forced, true)
     GC.WaitForPendingFinalizers()
     GC.Collect()
     GC.WaitForPendingFinalizers()
