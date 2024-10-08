@@ -31,6 +31,9 @@
     <Compile Include="..\service\FsUnit.fs">
       <Link>FsUnit.fs</Link>
     </Compile>
+    <Compile Include="..\FSharp.Test.Utilities\XunitSetup.fs">
+      <Link>XunitSetup.fs</Link>
+    </Compile>
     <Compile Include="CompilerDirectives\Line.fs" />
     <Compile Include="CompilerDirectives\NonStringArgs.fs" />
     <Compile Include="Conformance\BasicGrammarElements\AccessibilityAnnotations\Basic\Basic.fs" />
@@ -287,6 +290,7 @@
     <Compile Include="CompilerOptions\fsc\highentropyva.fs" />
     <Compile Include="CompilerOptions\fsc\langversion.fs" />
     <Compile Include="CompilerOptions\fsc\misc\misc.fs" />
+    <Compile Include="CompilerOptions\fsc\misc\utf8output.fs" />
     <Compile Include="CompilerOptions\fsc\noframework\noframework.fs" />
     <Compile Include="CompilerOptions\fsc\platform\platform.fs" />
     <Compile Include="CompilerOptions\fsc\times\times.fs" />

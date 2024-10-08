@@ -24,8 +24,7 @@ module PEVerifier =
 
     let private exec exe args =
         let arguments = args |> String.concat " "
-        let timeout = 30000
-        let exitCode, _output, errors = Commands.executeProcess (Some exe) arguments "" timeout
+        let exitCode, _output, errors = Commands.executeProcess (Some exe) arguments ""
         let errors = errors |> String.concat Environment.NewLine
         errors, exitCode
 

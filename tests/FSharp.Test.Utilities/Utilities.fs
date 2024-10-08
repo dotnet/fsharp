@@ -18,6 +18,7 @@ open System.Collections.Generic
 open FSharp.Compiler.CodeAnalysis
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
+open Xunit.Sdk
 
 
 type TheoryForNETCOREAPPAttribute() =
@@ -40,25 +41,10 @@ type FactForDESKTOPAttribute() =
 
 // This file mimics how Roslyn handles their compilation references for compilation testing
 module Utilities =
-    type RedirectConsole() =
-        let oldStdOut = Console.Out
-        let oldStdErr = Console.Error
-        let newStdOut = new StringWriter()
-        let newStdErr = new StringWriter()
-        do Console.SetOut(newStdOut)
-        do Console.SetError(newStdErr)
-        member _.Output () = string newStdOut
-
-        member _.ErrorOutput () =string newStdErr
-
-        interface IDisposable with
-            member _.Dispose() =
-                Console.SetOut(oldStdOut)
-                Console.SetError(oldStdErr)
 
     type Async with
         static member RunImmediate (computation: Async<'T>, ?cancellationToken ) =
-            let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
+            let cancellationToken = defaultArg cancellationToken CancellationToken.None
             let ts = TaskCompletionSource<'T>()
             let task = ts.Task
             Async.StartWithContinuations(
@@ -68,20 +54,6 @@ module Utilities =
                 (fun _ -> ts.SetCanceled()),
                 cancellationToken)
             task.Result
-
-    /// Disposable type to implement a simple resolve handler that searches the currently loaded assemblies to see if the requested assembly is already loaded.
-    type AlreadyLoadedAppDomainResolver () =
-        let resolveHandler =
-            ResolveEventHandler(fun _ args ->
-                let assemblies = AppDomain.CurrentDomain.GetAssemblies()
-                let assembly = assemblies |> Array.tryFind(fun a -> String.Compare(a.FullName, args.Name,StringComparison.OrdinalIgnoreCase) = 0)
-                assembly |> Option.defaultValue Unchecked.defaultof<Assembly>
-                )
-        do AppDomain.CurrentDomain.add_AssemblyResolve(resolveHandler)
-
-        interface IDisposable with
-            member this.Dispose() = AppDomain.CurrentDomain.remove_AssemblyResolve(resolveHandler)
-
 
     [<RequireQualifiedAccess>]
     type TargetFramework =
@@ -244,8 +216,7 @@ let main argv = 0"""
                     File.WriteAllText(directoryBuildPropsFileName, directoryBuildProps)
                     File.WriteAllText(directoryBuildTargetsFileName, directoryBuildTargets)
 
-                    let timeout = 120000
-                    let exitCode, dotnetoutput, dotneterrors = Commands.executeProcess (Some config.DotNetExe) "build" projectDirectory timeout
+                    let exitCode, dotnetoutput, dotneterrors = Commands.executeProcess (Some config.DotNetExe) "build" projectDirectory
                     
                     if exitCode <> 0 || errors.Length > 0 then
                         errors <- dotneterrors

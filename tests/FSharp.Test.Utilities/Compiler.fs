@@ -175,8 +175,13 @@ module rec Compiler =
           StdOut:   string
           StdErr:   string }
 
+    type EvalOutput =
+        { Result: Result<FsiValue option, exn>
+          StdOut: string
+          StdErr: string }
+
     type RunOutput =
-        | EvalOutput of Result<FsiValue option, exn>
+        | EvalOutput of EvalOutput
         | ExecutionOutput of ExecutionOutput
 
     type SourceCodeFileName = string
@@ -698,7 +703,6 @@ module rec Compiler =
 
     let private compileFSharpCompilation compilation ignoreWarnings (cUnit: CompilationUnit) : CompilationResult =
 
-        use redirect = new RedirectConsole()
         let ((err: FSharpDiagnostic[], rc: int, outputFilePath: string), deps) =
             CompilerAssert.CompileRaw(compilation, ignoreWarnings)
 
@@ -711,7 +715,7 @@ module rec Compiler =
             Adjust        = 0
             PerFileErrors = diagnostics
             Diagnostics   = diagnostics |> List.map snd
-            Output        = Some (RunOutput.ExecutionOutput { ExitCode = rc; StdOut = redirect.Output(); StdErr = redirect.ErrorOutput() })
+            Output        = Some (RunOutput.ExecutionOutput { ExitCode = rc; StdOut = ParallelConsole.OutText; StdErr = ParallelConsole.ErrorText })
             Compilation   = cUnit
         }
 
@@ -918,7 +922,6 @@ module rec Compiler =
             let fileName = fsSource.Source.ChangeExtension.GetSourceFileName
 
             let references =
-                let disposals = ResizeArray<IDisposable>()
                 let outputDirectory =
                     match fsSource.OutputDirectory with
                     | Some di -> di
@@ -928,10 +931,9 @@ module rec Compiler =
                     Array.empty
                 else
                     outputDirectory.Create()
-                    disposals.Add({ new IDisposable with member _.Dispose() = outputDirectory.Delete(true) })
                     // Note that only the references are relevant here
                     let compilation = Compilation.Compilation([], CompileOutput.Exe,Array.empty, TargetFramework.Current, references, None, None)
-                    evaluateReferences outputDirectory disposals fsSource.IgnoreWarnings compilation
+                    evaluateReferences outputDirectory fsSource.IgnoreWarnings compilation
                     |> fst
             
             let options =
@@ -979,8 +981,6 @@ module rec Compiler =
                         | _ -> false
                     | _ -> false
                 let exitCode, output, errors = CompilerAssert.ExecuteAndReturnResult (p, isFsx, s.Dependencies, false)
-                printfn "---------output-------\n%s\n-------"  output
-                printfn "---------errors-------\n%s\n-------"  errors
                 let executionResult = { s with Output = Some (ExecutionOutput { ExitCode = exitCode; StdOut = output; StdErr = errors }) }
                 if exitCode = 0 then
                     CompilationResult.Success executionResult
@@ -991,7 +991,7 @@ module rec Compiler =
 
     let compileExeAndRun = asExe >> compileAndRun
 
-    let private processScriptResults fs (evalResult: Result<FsiValue option, exn>, err: FSharpDiagnostic[])  =
+    let private processScriptResults fs (evalResult: Result<FsiValue option, exn>, err: FSharpDiagnostic[]) outputWritten errorsWritten =
         let perFileDiagnostics = err |> fromFSharpDiagnostic
         let diagnostics = perFileDiagnostics |> List.map snd
         let (errors, warnings) = partitionErrors diagnostics
@@ -1001,7 +1001,7 @@ module rec Compiler =
               Adjust       = 0
               Diagnostics  = if fs.IgnoreWarnings then errors else diagnostics
               PerFileErrors = perFileDiagnostics
-              Output       = Some (EvalOutput evalResult)
+              Output       = Some (EvalOutput ({Result = evalResult; StdOut = outputWritten; StdErr = errorsWritten}))
               Compilation  = FS fs }
 
         let evalError = match evalResult with Ok _ -> false | _ -> true
@@ -1013,7 +1013,9 @@ module rec Compiler =
 
     let private evalFSharp (fs: FSharpCompilationSource) (script:FSharpScript) : CompilationResult =
         let source = fs.Source.GetSourceText |> Option.defaultValue ""
-        script.Eval(source) |> (processScriptResults fs)
+        let result = script.Eval(source)
+        let outputWritten, errorsWritten = script.GetOutput(), script.GetErrorOutput()
+        processScriptResults fs result outputWritten errorsWritten
 
     let scriptingShim = Path.Combine(__SOURCE_DIRECTORY__,"ScriptingShims.fsx")
     let private evalScriptFromDisk (fs: FSharpCompilationSource) (script:FSharpScript) : CompilationResult =
@@ -1025,7 +1027,9 @@ module rec Compiler =
             |> List.map (sprintf " @\"%s\"")
             |> String.Concat
 
-        script.Eval("#load " + fileNames ) |> (processScriptResults fs)
+        let result = script.Eval("#load " + fileNames)
+        let outputWritten, errorsWritten = script.GetOutput(), script.GetErrorOutput()
+        processScriptResults fs result outputWritten errorsWritten
 
     let eval (cUnit: CompilationUnit) : CompilationResult =
         match cUnit with
@@ -1050,60 +1054,53 @@ module rec Compiler =
     let runFsi (cUnit: CompilationUnit) : CompilationResult =
         match cUnit with
         | FS fs ->
-            let disposals = ResizeArray<IDisposable>()
-            try
-                let source = fs.Source.GetSourceText |> Option.defaultValue ""
-                let name = fs.Name |> Option.defaultValue "unnamed"
-                let options = fs.Options |> Array.ofList
-                let outputDirectory =
-                    match fs.OutputDirectory with
-                    | Some di -> di
-                    | None -> DirectoryInfo(createTemporaryDirectory "runFsi")
-                outputDirectory.Create()
-                disposals.Add({ new IDisposable with member _.Dispose() = outputDirectory.Delete(true) })
+            let source = fs.Source.GetSourceText |> Option.defaultValue ""
+            let name = fs.Name |> Option.defaultValue "unnamed"
+            let options = fs.Options |> Array.ofList
+            let outputDirectory =
+                match fs.OutputDirectory with
+                | Some di -> di
+                | None -> DirectoryInfo(createTemporaryDirectory "runFsi")
+            outputDirectory.Create()
 
-                let references = processReferences fs.References outputDirectory
-                let cmpl = Compilation.Create(fs.Source, fs.OutputType, options, fs.TargetFramework, references, name, outputDirectory)
-                let _compilationRefs, _deps = evaluateReferences outputDirectory disposals fs.IgnoreWarnings cmpl
-                let options =
-                    let opts = new ResizeArray<string>(fs.Options)
+            let references = processReferences fs.References outputDirectory
+            let cmpl = Compilation.Create(fs.Source, fs.OutputType, options, fs.TargetFramework, references, name, outputDirectory)
+            let _compilationRefs, _deps = evaluateReferences outputDirectory fs.IgnoreWarnings cmpl
+            let options =
+                let opts = new ResizeArray<string>(fs.Options)
 
-                    // For every built reference add a -I path so that fsi can find it easily
-                    for reference in references do
-                        match reference with
-                        | CompilationReference( cmpl, _) ->
-                            match cmpl with
-                            | Compilation(_sources, _outputType, _options, _targetFramework, _references, _name, outputDirectory) ->
-                                if outputDirectory.IsSome then
-                                    opts.Add($"-I:\"{(outputDirectory.Value.FullName)}\"")
-                        | _ -> ()
-                    opts.ToArray()
-                let errors, stdOut = CompilerAssert.RunScriptWithOptionsAndReturnResult options source
+                // For every built reference add a -I path so that fsi can find it easily
+                for reference in references do
+                    match reference with
+                    | CompilationReference( cmpl, _) ->
+                        match cmpl with
+                        | Compilation(_sources, _outputType, _options, _targetFramework, _references, _name, outputDirectory) ->
+                            if outputDirectory.IsSome then
+                                opts.Add($"-I:\"{(outputDirectory.Value.FullName)}\"")
+                    | _ -> ()
+                opts.ToArray()
+            let errors, stdOut = CompilerAssert.RunScriptWithOptionsAndReturnResult options source
 
-                let executionOutputwithStdOut: RunOutput option =
-                    ExecutionOutput { StdOut = stdOut; ExitCode = 0; StdErr = "" }
-                    |> Some
-                let result =
-                    { OutputPath   = None
-                      Dependencies = []
-                      Adjust       = 0
-                      Diagnostics  = []
-                      PerFileErrors= []
-                      Output       = executionOutputwithStdOut
-                      Compilation  = cUnit }
+            let executionOutputwithStdOut: RunOutput option =
+                ExecutionOutput { StdOut = stdOut; ExitCode = 0; StdErr = "" }
+                |> Some
+            let result =
+              { OutputPath   = None
+                Dependencies = []
+                Adjust       = 0
+                Diagnostics  = []
+                PerFileErrors= []
+                Output       = executionOutputwithStdOut
+                Compilation  = cUnit }
 
-                if errors.Count > 0 then
-                    let output = ExecutionOutput {
-                        ExitCode = -1
-                        StdOut   = String.Empty
-                        StdErr   = ((errors |> String.concat "\n").Replace("\r\n","\n")) }
-                    CompilationResult.Failure { result with Output = Some output }
-                else
-                    CompilationResult.Success result
-
-            finally
-                disposals
-                |> Seq.iter (fun x -> x.Dispose())
+            if errors.Count > 0 then
+                let output = ExecutionOutput {
+                    ExitCode = -1
+                    StdOut   = String.Empty
+                    StdErr   = ((errors |> String.concat "\n").Replace("\r\n","\n")) }
+                CompilationResult.Failure { result with Output = Some output }
+            else
+                CompilationResult.Success result
 
         | _ -> failwith "FSI running only supports F#."
 
@@ -1282,7 +1279,7 @@ Actual:
         | Some actual ->
             let expected = stripVersion (normalizeNewlines expected)
             if expected <> actual then
-                failwith $"""Output does not match expected: ------------{Environment.NewLine}{expected}{Environment.NewLine}Actual: ------------{Environment.NewLine}{actual}{Environment.NewLine}"""
+                failwith $"""Output does not match expected:{Environment.NewLine}{expected}{Environment.NewLine}Actual:{Environment.NewLine}{actual}{Environment.NewLine}"""
             else
                 cResult
 
@@ -1295,7 +1292,7 @@ Actual:
         | Some actual ->
             for item in expected do
                 if not(actual.Contains(item)) then
-                    failwith $"""Output does not match expected: ------------{Environment.NewLine}{item}{Environment.NewLine}Actual: ------------{Environment.NewLine}{actual}{Environment.NewLine}"""
+                    failwith $"""Output does not match expected:{Environment.NewLine}{item}{Environment.NewLine}Actual:{Environment.NewLine}{actual}{Environment.NewLine}"""
             cResult
 
     type ImportScope = { Kind: ImportDefinitionKind; Name: string }
@@ -1520,10 +1517,14 @@ Actual:
                       match r.Output with
                       | Some (ExecutionOutput output) ->
                           sprintf "----output-----\n%s\n----error-------\n%s\n----------" output.StdOut output.StdErr
-                      | Some (EvalOutput (Result.Error exn) ) ->
-                          sprintf "----script error-----\n%s\n----------" (exn.ToString())
-                      | Some (EvalOutput (Result.Ok fsiVal) ) ->
-                          sprintf "----script output-----\n%A\n----------" (fsiVal)
+                      | Some (EvalOutput output) ->                                  
+                            match output.Result with
+                            | Result.Error exn ->
+                                sprintf "----script error-----\n%s\n----------" (exn.ToString())
+                                sprintf "----output-----\n%s\n----error-------\n%s\n----------" output.StdOut output.StdErr
+                            | Result.Ok fsiVal ->
+                                sprintf "----script output-----\n%A\n----------" (fsiVal)
+                                sprintf "----output-----\n%s\n----error-------\n%s\n----------" output.StdOut output.StdErr
                       | _ -> () ]
                     |> String.concat "\n"
                 failwith message
@@ -1743,9 +1744,11 @@ Actual:
         let private assertEvalOutput (selector: FsiValue -> 'T) (value: 'T) (result: CompilationResult) : CompilationResult =
             match result.RunOutput with
             | None -> failwith "Execution output is missing cannot check value."
-            | Some (EvalOutput (Ok (Some e))) -> Assert.Equal<'T>(value, (selector e))
-            | Some (EvalOutput (Ok None )) -> failwith "Cannot assert value of evaluation, since it is None."
-            | Some (EvalOutput (Result.Error ex)) -> raise ex
+            | Some (EvalOutput output) ->
+                match output.Result with
+                | Ok (Some e) -> Assert.Equal<'T>(value, (selector e))
+                | Ok None -> failwith "Cannot assert value of evaluation, since it is None."
+                | Result.Error ex -> raise ex
             | Some _ -> failwith "Only 'eval' output is supported."
             result
 

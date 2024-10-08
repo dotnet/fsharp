@@ -75,6 +75,7 @@ module CoreTests =
         exec cfg cfg.DotNetExe ($"msbuild {projectFile} /p:Configuration={cfg.BUILD_CONFIG} -property:FSharpRepositoryPath={FSharpRepositoryPath}")
 
 #if !NETCOREAPP
+module CoreTests1 =
     [<Fact>]
     let ``attributes-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/attributes" FSC_OPTIMIZED
 
@@ -255,6 +256,7 @@ module CoreTests =
 
 
 #if !NETCOREAPP
+module CoreTests2 =
 
     // Requires winforms will not run on coreclr
     [<Fact>]
@@ -763,7 +765,8 @@ module CoreTests =
 
 #endif
 
-#if !NETCOREAPP    
+#if !NETCOREAPP
+module CoreTests3 =
     [<Fact>]
     let quotes () =
         let cfg = testConfig "core/quotes"
@@ -1172,6 +1175,7 @@ module CoreTests =
 
 
 #if !NETCOREAPP
+module CoreTests4 =
     [<Fact>]
     let ``measures-FSC_NETFX_TEST_ROUNDTRIP_AS_DLL`` () = singleTestBuildAndRun "core/measures" FSC_NETFX_TEST_ROUNDTRIP_AS_DLL
 
@@ -1338,6 +1342,7 @@ module CoreTests =
 
 
 #if !NETCOREAPP
+module CoreTests5 =
     [<Fact>]
     let refnormalization () =
         let cfg = testConfig "core/refnormalization"
