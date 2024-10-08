@@ -98,7 +98,7 @@ module CustomAttributes_AttributeUsage =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargets01.fs"|])>]
     let ``E_AttributeTargets01_fs`` compilation =
         compilation
-        |> withLangVersionPreview
+        |> withLangVersion90
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -134,7 +134,7 @@ module CustomAttributes_AttributeUsage =
     let ``E_AttributeTargetIsField01_fs`` compilation =
         compilation
         |> withOptions ["--nowarn:25"]
-        |> withLangVersionPreview
+        |> withLangVersion90
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -187,7 +187,7 @@ module CustomAttributes_AttributeUsage =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsMethod02.fs"|])>]
     let ``E_AttributeTargetIsMethod02_fs`` compilation =
         compilation
-        |> withLangVersionPreview
+        |> withLangVersion90
         |> withOptions ["--nowarn:25"]
         |> verifyCompile
         |> shouldFail
@@ -218,7 +218,7 @@ module CustomAttributes_AttributeUsage =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsMethod03.fs"|])>]
     let ``E_AttributeTargetIsMethod03_fs`` compilation =
         compilation
-        |> withLangVersionPreview
+        |> withLangVersion90
         |> withOptions ["--nowarn:25"]
         |> verifyCompile
         |> shouldFail
@@ -336,7 +336,7 @@ module CustomAttributes_AttributeUsage =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsStruct.fs"|])>]
     let ``E_AttributeTargetIsStruct_fs`` compilation =
         compilation
-        |> withLangVersionPreview
+        |> withLangVersion90
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -366,7 +366,7 @@ module CustomAttributes_AttributeUsage =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass.fs"|])>]
     let ``E_AttributeTargetIsClass_fs`` compilation =
         compilation
-        |> withLangVersionPreview
+        |> withLangVersion90
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -387,7 +387,7 @@ module CustomAttributes_AttributeUsage =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass01.fs"|])>]
     let ``E_AttributeTargetIsClass01_fs`` compilation =
         compilation
-        |> withLangVersionPreview
+        |> withLangVersion90
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -485,7 +485,7 @@ module CustomAttributes_AttributeUsage =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField03.fs"|])>]
     let ``E_AttributeTargetIsField03_fs`` compilation =
         compilation
-        |> withLangVersionPreview
+        |> withLangVersion90
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -505,7 +505,7 @@ module CustomAttributes_AttributeUsage =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsProperty01.fs"|])>]
     let ``E_AttributeTargetIsProperty01_fs`` compilation =
         compilation
-        |> withLangVersionPreview
+        |> withLangVersion90
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -525,7 +525,7 @@ module CustomAttributes_AttributeUsage =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsCtor01.fs"|])>]
     let ``E_AttributeTargetIsCtor01_fs`` compilation =
         compilation
-        |> withLangVersionPreview
+        |> withLangVersion90
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -562,7 +562,7 @@ module CustomAttributes_AttributeUsage =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsEnum01.fs"|])>]
     let ``E_AttributeTargetIsEnum01_fs`` compilation =
         compilation
-        |> withLangVersionPreview
+        |> withLangVersion90
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -599,7 +599,7 @@ module CustomAttributes_AttributeUsage =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsDelegate01.fs"|])>]
     let ``E_AttributeTargetsIsDelegate01_fs`` compilation =
         compilation
-        |> withLangVersionPreview
+        |> withLangVersion90
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -648,7 +648,7 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsInterface.fs"|])>]
     let ``E_AttributeTargetIsInterface_fs`` compilation =
         compilation
-        |> withLangVersionPreview
+        |> withLangVersion90
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -670,7 +670,7 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass02.fs"|])>]
     let ``E_AttributeTargetIsClass02_fs`` compilation =
         compilation
-        |> withLangVersionPreview
+        |> withLangVersion90
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -698,9 +698,9 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
     
     // SOURCE=CLIMutableAttribute01.fs	# CLIMutableAttribute01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CLIMutableAttribute01.fs"|])>]
-    let ``CLIMutableAttribute01 preview`` compilation =
+    let ``CLIMutableAttribute01 90`` compilation =
         compilation
-        |> withLangVersionPreview
+        |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
         
@@ -724,9 +724,9 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
     
     // SOURCE=E_CLIMutableAttribute.fs	# E_CLIMutableAttribute.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_CLIMutableAttribute.fs"|])>]
-    let ``E_CLIMutableAttribute preview`` compilation =
+    let ``E_CLIMutableAttribute 90`` compilation =
         compilation
-        |> withLangVersionPreview
+        |> withLangVersion90
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -761,9 +761,9 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
     
     // SOURCE=E_AllowNullLiteral.fs	# E_AllowNullLiteral.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AllowNullLiteral.fs"|])>]
-    let ``E_AllowNullLiteral preview`` compilation =
+    let ``E_AllowNullLiteral 90`` compilation =
         compilation
-        |> withLangVersionPreview
+        |> withLangVersion90
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -788,9 +788,9 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
     
     // SOURCE=AllowNullLiteral01.fs	# AllowNullLiteral01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AllowNullLiteral01.fs"|])>]
-    let ``AllowNullLiteral01 preview`` compilation =
+    let ``AllowNullLiteral01 90`` compilation =
         compilation
-        |> withLangVersionPreview
+        |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
         
@@ -816,9 +816,9 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
     
     // SOURCE=E_VolatileField.fs	# E_VolatileField.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_VolatileField.fs"|])>]
-    let ``E_VolatileField preview`` compilation =
+    let ``E_VolatileField 90`` compilation =
         compilation
-        |> withLangVersionPreview
+        |> withLangVersion90
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -844,9 +844,9 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
     
     // SOURCE=VolatileField01.fs	# VolatileField01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"VolatileField01.fs"|])>]
-    let ``VolatileField01 preview`` compilation =
+    let ``VolatileField01 90`` compilation =
         compilation
-        |> withLangVersionPreview
+        |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
         
@@ -865,9 +865,9 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
     
     // SOURCE=E_SealedAttribute01.fs	# E_SealedAttribute01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SealedAttribute01.fs"|])>]
-    let ``E_SealedAttribute01 preview`` compilation =
+    let ``E_SealedAttribute01 90`` compilation =
         compilation
-        |> withLangVersionPreview
+        |> withLangVersion90
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -893,9 +893,9 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
 
     // SOURCE=E_StructLayout01.fs	# E_StructLayout01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_StructLayout01.fs"|])>]
-    let ``E_StructLayout01 preview`` compilation =
+    let ``E_StructLayout01 90`` compilation =
         compilation
-        |> withLangVersionPreview
+        |> withLangVersion90
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -925,7 +925,7 @@ and [<ApplicationTenantJsonDerivedType>]
         """
 
     [<InlineData("8.0")>]
-    [<InlineData("preview")>]
+    [<InlineData("9.0")>]
     [<Theory>]
     let ``Regression for - F# 9 compiler cannot find constructor for attribute`` langVersion =
         FSharp missingConstructorRepro
@@ -933,3 +933,36 @@ and [<ApplicationTenantJsonDerivedType>]
         |> verifyCompile
         |> shouldSucceed
 #endif
+
+    [<Fact>] // Regression for https://github.com/dotnet/fsharp/issues/14304
+    let ``Construct an object with default and params parameters using parameterless constructor`` () =
+        Fsx """
+open System
+open System.Runtime.InteropServices
+
+type DefaultAndParams([<Optional; DefaultParameterValue(1)>]x: int, [<ParamArray>] value: string[]) =
+    inherit Attribute()
+
+type ParamsOnly([<ParamArray>] value: string[]) =
+    inherit Attribute()
+
+type DefaultOnly([<Optional; DefaultParameterValue(1)>]x: int) =
+    inherit Attribute()
+
+[<DefaultAndParams>]
+type Q1 = struct end
+
+[<DefaultAndParams(x = 1)>] // ok
+type Q11 = struct end
+
+[<DefaultAndParams(value = [||])>] // ok
+type Q12 = struct end
+
+[<ParamsOnly>]
+type Q2 = struct end
+
+[<DefaultOnly>]
+type Q3 = struct end
+        """
+        |> typecheck
+        |> shouldSucceed
