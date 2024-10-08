@@ -1768,7 +1768,7 @@ module GenericPropertyConstraintSolvedByRecord =
 /// overload, even before the full signature of the trait constraint was known.
 module MethodOverloadingForTraitConstraintsIsNotDeterminedUntilSignatureIsKnown =
     type X =
-        static member Method (a: obj) = 1
+        static member Method (a: objnull) = 1
         static member Method (a: int) = 2
         static member Method (a: int64) = 3
 
@@ -2339,7 +2339,7 @@ module TestSubtypeMatching11 =
     [<Sealed>]
     type E() = inherit A()
 
-    let toName (x: obj * obj) =
+    let toName (x: objnull * objnull) =
         match x with
         | null, :? E -> "0E"
         | (:? A), :? E -> "AE"
@@ -2418,7 +2418,7 @@ module TestSubtypeMatching12 =
     type C() =
         interface IC
 
-    let toName (x: obj) =
+    let toName (x: objnull) =
         match x with
         | null -> "null"
         | :? IA when false -> "IA fail"
@@ -2444,7 +2444,7 @@ module TestSubtypeMatching13 =
     type C() =
         interface IC
 
-    let toName (x: obj) =
+    let toName (x: objnull) =
         match x with
         | null when false -> "null"
         | :? IA -> "IA"

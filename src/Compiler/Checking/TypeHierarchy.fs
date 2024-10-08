@@ -67,7 +67,7 @@ let GetSuperTypeOfType g amap m ty =
                 Some (instType (mkInstForAppTy g ty) (superOfTycon g tcref.Deref))
             elif isArrayTy g ty then
                 Some g.system_Array_ty
-            elif isRefTy g ty && not (isObjTy g ty) then
+            elif isRefTy g ty && not (isObjTyAnyNullness g ty) then
                 Some g.obj_ty_noNulls
             elif isStructTupleTy g ty then
                 Some g.system_Value_ty

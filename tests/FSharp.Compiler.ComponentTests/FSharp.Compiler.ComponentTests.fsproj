@@ -117,6 +117,7 @@
     <Compile Include="Conformance\PatternMatching\TypeConstraint\TypeConstraint.fs" />
     <Compile Include="Conformance\PatternMatching\Union\Union.fs" />
     <Compile Include="Conformance\PatternMatching\Wildcard\Wildcard.fs" />
+    <Compile Include="Conformance\PatternMatching\Decimal\Decimal.fs" />
     <Compile Include="Conformance\Printing\Printing.fs" />
     <Compile Include="Conformance\PseudoCustomAttributes\PseudoCustomAttributes.fs" />
     <Compile Include="Conformance\Types\RecordTypes\AnonymousRecords.fs" />
@@ -259,6 +260,7 @@
     <Compile Include="Interop\ByrefTests.fs" />
     <Compile Include="Interop\ParamArrayMigrated.fs" />
     <Compile Include="Interop\ParamArray.fs" />
+    <Compile Include="Interop\Literals.fs" />
     <Compile Include="Scripting\Interactive.fs" />
     <Compile Include="TypeChecks\SeqTypeCheckTests.fs" />
     <Compile Include="TypeChecks\CheckDeclarationsTests.fs" />
