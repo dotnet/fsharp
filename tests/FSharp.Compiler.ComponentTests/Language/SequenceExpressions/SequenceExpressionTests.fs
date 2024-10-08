@@ -469,3 +469,124 @@ let f2 = return! [ 3; 4 ]
         (Error 748, Line 2, Col 10, Line 2, Col 16, "This construct may only be used within computation expressions. To return a value from an ordinary function simply write the expression without 'return'.");
         (Error 748, Line 3, Col 10, Line 3, Col 17, "This construct may only be used within computation expressions. To return a value from an ordinary function simply write the expression without 'return'.")
     ]
+
+[<Fact>]
+let ``Sequence(SynExpr.Sequential) expressions should be of the form 'seq { ... } lang version 9``() =
+    Fsx """
+{ 1;10 }
+[| { 1;10 } |]
+let a = { 1;10 }
+let b = [| { 1;10 } |]
+let c = [ { 1;10 } ]
+    """
+    |> withOptions [ "--nowarn:0020" ]
+    |> withLangVersion90
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        (Error 740, Line 2, Col 1, Line 2, Col 9, "Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq { ... }'")
+        (Error 740, Line 3, Col 4, Line 3, Col 12, "Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq { ... }'")
+        (Error 740, Line 4, Col 9, Line 4, Col 17, "Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq { ... }'")
+        (Error 740, Line 5, Col 12, Line 5, Col 20, "Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq { ... }'")
+        (Error 740, Line 6, Col 11, Line 6, Col 19, "Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq { ... }'")
+    ]
+    
+[<Fact>]
+let ``Sequence(SynExpr.Sequential) expressions should be of the form 'seq { ... } lang version preview``() =
+    Fsx """
+{ 1;10 }
+[| { 1;10 } |]
+let a = { 1;10 }
+let b = [| { 1;10 } |]
+let c = [ { 1;10 } ]
+    """
+    |> withOptions [ "--nowarn:0020" ]
+    |> withLangVersionPreview
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        (Error 740, Line 2, Col 1, Line 2, Col 9, "Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq { ... }'")
+        (Error 740, Line 3, Col 4, Line 3, Col 12, "Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq { ... }'")
+        (Error 740, Line 4, Col 9, Line 4, Col 17, "Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq { ... }'")
+        (Error 740, Line 5, Col 12, Line 5, Col 20, "Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq { ... }'")
+        (Error 740, Line 6, Col 11, Line 6, Col 19, "Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq { ... }'")
+    ]
+
+// SOURCE=E_SequenceExpressions01.fs 	# E_SequenceExpressions01.fs
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SequenceExpressions01.fs"|])>]
+let ``E_SequenceExpressions01 lang version 9`` compilation =
+    compilation
+    |> withOptions [ "--nowarn:0020" ]
+    |> withLangVersion90
+    |> typecheck
+    |> shouldSucceed
+
+// SOURCE=E_SequenceExpressions01.fs 	# E_SequenceExpressions01.fs
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SequenceExpressions01.fs"|])>]
+let ``E_SequenceExpressions01 lang version preview`` compilation =
+    compilation
+    |> withOptions [ "--nowarn:0020" ]
+    |> withLangVersionPreview
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        (Warning 3873, Line 1, Col 1, Line 1, Col 10, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 3, Col 1, Line 3, Col 13, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 5, Col 4, Line 5, Col 13, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 7, Col 4, Line 7, Col 16, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 9, Col 9, Line 9, Col 18, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 11, Col 10, Line 11, Col 23, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 13, Col 12, Line 13, Col 21, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 15, Col 13, Line 15, Col 26, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 17, Col 11, Line 17, Col 20, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 19, Col 4, Line 19, Col 13, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 21, Col 10, Line 21, Col 19, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 23, Col 3, Line 23, Col 12, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 25, Col 3, Line 25, Col 16, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 27, Col 9, Line 27, Col 18, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 29, Col 9, Line 29, Col 22, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 31, Col 13, Line 31, Col 22, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 33, Col 13, Line 33, Col 26, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 35, Col 34, Line 35, Col 51, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 37, Col 35, Line 37, Col 52, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 39, Col 10, Line 39, Col 19, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 41, Col 10, Line 41, Col 22, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 45, Col 12, Line 45, Col 20, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 47, Col 13, Line 47, Col 25, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 49, Col 14, Line 49, Col 22, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 51, Col 33, Line 51, Col 50, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 55, Col 12, Line 55, Col 21, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 57, Col 1, Line 57, Col 13, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 59, Col 28, Line 59, Col 34, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 61, Col 44, Line 61, Col 52, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 61, Col 53, Line 61, Col 61, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 61, Col 62, Line 61, Col 71, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 65, Col 17, Line 65, Col 23, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 65, Col 34, Line 65, Col 44, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 67, Col 7, Line 67, Col 13, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 67, Col 15, Line 67, Col 21, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 67, Col 23, Line 67, Col 30, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 69, Col 14, Line 69, Col 22, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 71, Col 24, Line 71, Col 32, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 73, Col 25, Line 73, Col 33, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 74, Col 25, Line 74, Col 33, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+        (Warning 3873, Line 76, Col 13, Line 76, Col 20, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
+    ]
+
+// SOURCE=SequenceExpressions01.fs 	# SequenceExpressions01.fs
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions01.fs"|])>]
+let ``SequenceExpressions01 lang version 9`` compilation =
+    compilation
+    |> withOptions [ "--nowarn:0020" ]
+    |> withLangVersion90
+    |> typecheck
+    |> shouldSucceed
+    
+// SOURCE=SequenceExpressions01.fs 	# SequenceExpressions01.fs
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions01.fs"|])>]
+let ``SequenceExpressions01 lang version preview`` compilation =
+    compilation
+    |> withOptions [ "--nowarn:0020" ]
+    |> withLangVersionPreview
+    |> typecheck
+    |> shouldSucceed
