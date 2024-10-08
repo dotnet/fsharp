@@ -1082,7 +1082,7 @@ let TryDestStandardDelegateType (infoReader: InfoReader) m ad delTy =
     let g = infoReader.g
     let (SigOfFunctionForDelegate(_, delArgTys, delRetTy, _)) = GetSigOfFunctionForDelegate infoReader delTy m ad
     match delArgTys with 
-    | senderTy :: argTys when (isObjTy g senderTy) && not (List.exists (isByrefTy g) argTys)  -> Some(mkRefTupledTy g argTys, delRetTy)
+    | senderTy :: argTys when (isObjTyAnyNullness g senderTy) && not (List.exists (isByrefTy g) argTys)  -> Some(mkRefTupledTy g argTys, delRetTy)
     | _ -> None
 
 

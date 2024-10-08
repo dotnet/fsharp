@@ -597,5 +597,5 @@ printfn "Touching value in module Lib85..."
 printfn "    --> Lib85.x = %A" Lib85.x
 printfn "Checking this did cause initialization of module Lib85..."
 checkInitialized "Lib85" InitFlag85.init
-System.IO.File.WriteAllText("test.ok","ok")
+printf "TEST PASSED OK" ;
 exit 0
