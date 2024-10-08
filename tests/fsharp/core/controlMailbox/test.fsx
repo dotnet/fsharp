@@ -29,6 +29,17 @@ let report_failure s =
      log (sprintf "FAILURE: %s failed" s)
   )
 
+#if !NETCOREAPP
+System.AppDomain.CurrentDomain.UnhandledException.AddHandler(
+       fun _ (args:System.UnhandledExceptionEventArgs) ->
+          lock syncObj (fun () ->
+                let e = args.ExceptionObject :?> System.Exception
+                printfn "Exception: %s at %s" (e.ToString()) e.StackTrace
+                failures <- (args.ExceptionObject :?> System.Exception).ToString() :: failures
+             )
+)
+#endif
+
 let test s b = stderr.Write(s:string);  if b then stderr.WriteLine " OK" else report_failure s 
 
 let checkQuiet s x1 x2 = 
@@ -45,6 +56,7 @@ let checkAsync s (x1: Task<_>) x2 = check s x1.Result x2
 open Microsoft.FSharp.Control
 
 module MailboxProcessorBasicTests = 
+
     let test() =
         check 
             "c32398u6: MailboxProcessor null"
@@ -56,7 +68,6 @@ module MailboxProcessorBasicTests =
             )
 
             100
-
 
         check 
             "c32398u7: MailboxProcessor Receive/PostAndReply"
@@ -221,7 +232,7 @@ module MailboxProcessorBasicTests =
                  mb1.Post(0)
 
                  mb1.Start();
-                 for i in 1 .. n-1 do
+                 for i in 0 .. n-1 do
                      mb1.Post(i)
                      do! Task.Yield()
                  while !received < n do
@@ -229,16 +240,16 @@ module MailboxProcessorBasicTests =
                  return !received})
                 n
 
-#if TESTS_AS_APP
+
+(* Disabled for timing issues. Some replacement TryScan tests were added to FSharp.Core.UnitTests.
+
         for i in 1..10 do
             for sleep in [0;1;10] do
                 for timeout in [10;1;0] do
-                    checkAsync 
+                    check 
                        (sprintf "cf72361: MailboxProcessor TryScan w/timeout=%d sleep=%d iteration=%d" timeout sleep i) 
-                       (task {
-                        let found = TaskCompletionSource()
-                        let timedOut = ref None
-                        use mb = new MailboxProcessor<int>(fun inbox ->
+                       (let timedOut = ref None
+                        let mb = new MailboxProcessor<int>(fun inbox ->
                                 async {
                                         let result = ref None
                                         let count = ref 0
@@ -253,20 +264,20 @@ module MailboxProcessorBasicTests =
                                                 timedOut := Some false
                                 })
                         mb.Start()
-
-                        let cts = new System.Threading.CancellationTokenSource()
-                        cts.CancelAfter(1000)
-                        while not cts.IsCancellationRequested && (!timedOut).IsNone do
+                        let w = System.Diagnostics.Stopwatch()
+                        w.Start()
+                        while w.ElapsedMilliseconds < 1000L && (!timedOut).IsNone do
                             mb.Post(-1)
-                            do! Task.Delay(1)
-
-                        mb.Post(0)
-  
-                        do! Task.Delay(sleep)
-
-                        return !timedOut})
-                       (Some true)
+#if NETCOREAPP
+                            Task.Delay(1).Wait();
+#else
+                            System.Threading.Thread.Sleep(1)
 #endif
+                        mb.Post(0)
+                        !timedOut)
+                       (Some true)
+
+*)
 
         checkAsync "cf72361: MailboxProcessor TryScan wo/timeout" 
            (task {
@@ -318,7 +329,7 @@ module MailboxProcessorErrorEventTests =
         checkAsync
             "c32398u9332: MailboxProcessor Error (2)"
             (
-                let tcs = TaskCompletionSource<_>()
+                let errorNumber = TaskCompletionSource<_>()
 
                 let mb1 = new MailboxProcessor<int>( fun inbox -> async {
                        let! msg = inbox.Receive() 
@@ -326,22 +337,14 @@ module MailboxProcessorErrorEventTests =
                    })
 
                 mb1.Error.Add(function
-                   | Err n -> tcs.SetResult n
+                   | Err n -> errorNumber.SetResult n
                    | _ -> 
                        check "rwe90r - unexpected error" 0 1 )
 
                 mb1.Start();
                 mb1.Post 100
 
-                let timeOut = task {
-                    do! Task.Delay 10_000
-                    return 0
-                }
-
-                task {
-                    let! result = Task.WhenAny(tcs.Task, timeOut)
-                    return! result
-                }
+                errorNumber.Task
             )
             100
         
@@ -535,15 +538,6 @@ let timeout_para_def() =
     try tbox.PostAndAsyncReply(ignore) |> Async.RunSynchronously |> ignore
         test "default timeout & PostAndAsyncReply" false
     with _ -> test "default timeout & PostAndAsyncReply" true
-
-// Useful class: put "checkpoints" in the code.
-// Check they are called in the right order.
-type Path(str) =
-    let mutable current = 0
-    member p.Check n = check (str + " #" + string (current+1)) n (current+1)
-                       current <- n
-
-
 
 module LotsOfMessages = 
     let test () =

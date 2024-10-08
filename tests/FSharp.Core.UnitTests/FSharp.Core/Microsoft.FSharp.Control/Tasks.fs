@@ -247,12 +247,12 @@ type Basics() =
         let t =
             task {
                 do! allowContinue.WaitAsync()
-                Thread.Sleep(200)
+                Thread.Sleep(100)
                 finished.Set()
             }
         allowContinue.Release() |> ignore
-        requireNotSet finished "sleep blocked caller"
-        finished.Wait()
+        require (not finished.IsSet) "sleep blocked caller"
+        t.Wait()
 
     [<Fact>]
     member _.testCatching1() =
@@ -915,29 +915,30 @@ type Basics() =
     [<Fact>]
     member _.testExceptionThrownInFinally() =
         printfn "running testExceptionThrownInFinally"
-        for i in 1 .. 5 do 
-            let mutable ranInitial = false
-            let mutable ranNext = false
+        for i in 1 .. 5 do
+            use stepOutside = new SemaphoreSlim(0)
+            use ranInitial = new ManualResetEventSlim()
+            use ranNext = new ManualResetEventSlim()
             let mutable ranFinally = 0
             let t =
                 task {
                     try
-                        ranInitial <- true
+                        ranInitial.Set()
                         do! Task.Yield()
                         Thread.Sleep(100) // shouldn't be blocking so we should get through to requires before this finishes
-                        ranNext <- true
+                        ranNext.Set()
                     finally
                         ranFinally <- ranFinally + 1
                         failtest "finally exn!"
                 }
-            require ranInitial "didn't run initial"
-            require (not ranNext) "ran next too early"
+            require ranInitial.IsSet "didn't run initial"
+            require (not ranNext.IsSet) "ran next too early"
             try
                 t.Wait()
                 require false "shouldn't get here"
             with
             | _ -> ()
-            require ranNext "didn't run next"
+            require ranNext.IsSet "didn't run next"
             require (ranFinally = 1) "didn't run finally exactly once"
 
     [<Fact>]
@@ -967,7 +968,7 @@ type Basics() =
                 require false "shouldn't get here"
             with
             | _ -> ()
-            requireSet ranNext "didn't run next"
+            require ranNext.IsSet "didn't run next"
             require (ranFinally = 1) "didn't run finally exactly once"
     
     [<Fact>]

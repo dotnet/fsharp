@@ -368,12 +368,12 @@ type Basics() =
         let finished = new ManualResetEventSlim()
         let t =
             taskDynamic {
-                do! Task.Yield()
-                allowContinue.Wait()
+                do! allowContinue.WaitAsync()
+                Thread.Sleep(100)
                 finished.Set()
             }
         allowContinue.Release() |> ignore
-        requireNotSet finished "sleep blocked caller"
+        require (not finished.IsSet) "sleep blocked caller"
         t.Wait()
 
     [<Fact>]
@@ -999,22 +999,21 @@ type Basics() =
                 taskDynamic {
                     try
                         ranInitial.Set()
-                        do! stepOutside.WaitAsync()
-                        Thread.Sleep(200)
+                        do! Task.Yield()
+                        Thread.Sleep(100) // shouldn't be blocking so we should get through to requires before this finishes
                         ranNext.Set()
                     finally
                         ranFinally <- ranFinally + 1
                         failtest "finally exn!"
                 }
-            requireSet ranInitial "didn't run initial"
-            stepOutside.Release() |> ignore
-            requireNotSet ranNext "ran next too early"
+            require ranInitial.IsSet "didn't run initial"
+            require (not ranNext.IsSet) "ran next too early"
             try
                 t.Wait()
                 require false "shouldn't get here"
             with
             | _ -> ()
-            requireSet ranNext "didn't run next"
+            require ranNext.IsSet "didn't run next"
             require (ranFinally = 1) "didn't run finally exactly once"
 
     [<Fact>]
@@ -1044,7 +1043,7 @@ type Basics() =
                 require false "shouldn't get here"
             with
             | _ -> ()
-            requireSet ranNext "didn't run next"
+            require ranNext.IsSet "didn't run next"
             require (ranFinally = 1) "didn't run finally exactly once"
     
     [<Fact>]
