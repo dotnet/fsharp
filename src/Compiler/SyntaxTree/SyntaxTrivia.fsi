@@ -129,6 +129,8 @@ type SynExprDotLambdaTrivia =
 [<NoEquality; NoComparison>]
 type SynExprLetOrUseTrivia =
     {
+        /// The syntax range of the `let` or `use` keyword.
+        LetOrUseKeyword: range
         /// The syntax range of the `in` keyword.
         InKeyword: range option
     }
@@ -139,6 +141,8 @@ type SynExprLetOrUseTrivia =
 [<NoEquality; NoComparison>]
 type SynExprLetOrUseBangTrivia =
     {
+        /// The syntax range of the `let!` or `use!` keyword.
+        LetOrUseBangKeyword: range
         /// The syntax range of the `=` token.
         EqualsRange: range option
     }
@@ -165,6 +169,32 @@ type SynExprMatchBangTrivia =
 
         /// The syntax range of the `with` keyword
         WithKeyword: range
+    }
+
+/// Represents additional information for SynExpr.DoBang
+[<NoEquality; NoComparison>]
+type SynExprDoBangTrivia =
+    {
+        /// The syntax range of the `do!` keyword
+        DoBangKeyword: range
+    }
+
+/// Represents additional information for SynExpr.YieldOrReturn
+[<NoEquality; NoComparison>]
+type SynExprYieldOrReturnTrivia =
+    {
+        /// The syntax range of the `yield` or `return` keyword.
+        YieldOrReturnKeyword: range
+    }
+
+    static member Zero: SynExprYieldOrReturnTrivia
+
+/// Represents additional information for SynExpr.YieldOrReturnFrom
+[<NoEquality; NoComparison>]
+type SynExprYieldOrReturnFromTrivia =
+    {
+        /// The syntax range of the `yield!` or `return!` keyword.
+        YieldOrReturnFromKeyword: range
     }
 
 /// Represents additional information for SynExpr.AnonRecd

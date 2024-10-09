@@ -33,11 +33,11 @@ neg107.fsx(28,55,28,66): typecheck error FS0425: The type of a first-class funct
 
 neg107.fsx(30,49,30,54): typecheck error FS0406: The byref-typed variable 'a' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.
 
-neg107.fsx(30,57,30,65): typecheck error FS0406: The byref-typed variable 'a' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.
+neg107.fsx(30,64,30,65): typecheck error FS0406: The byref-typed variable 'a' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.
 
 neg107.fsx(31,70,31,75): typecheck error FS0406: The byref-typed variable 'a' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.
 
-neg107.fsx(31,78,31,86): typecheck error FS0406: The byref-typed variable 'a' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.
+neg107.fsx(31,85,31,86): typecheck error FS0406: The byref-typed variable 'a' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.
 
 neg107.fsx(32,13,32,30): typecheck error FS3301: The function or method has an invalid return type 'Async<Span<int>>'. This is not permitted by the rules of Common IL.
 
@@ -49,13 +49,13 @@ neg107.fsx(32,48,32,53): typecheck error FS0406: The byref-typed variable 'a' is
 
 neg107.fsx(32,48,32,53): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
-neg107.fsx(32,56,32,64): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+neg107.fsx(32,63,32,64): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
-neg107.fsx(32,56,32,64): typecheck error FS0406: The byref-typed variable 'a' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.
+neg107.fsx(32,63,32,64): typecheck error FS0406: The byref-typed variable 'a' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.
 
-neg107.fsx(32,56,32,64): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+neg107.fsx(32,63,32,64): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
-neg107.fsx(32,56,32,64): typecheck error FS0425: The type of a first-class function cannot contain byrefs
+neg107.fsx(32,63,32,64): typecheck error FS0425: The type of a first-class function cannot contain byrefs
 
 neg107.fsx(32,48,32,53): typecheck error FS0425: The type of a first-class function cannot contain byrefs
 
@@ -69,13 +69,13 @@ neg107.fsx(33,56,33,61): typecheck error FS0406: The byref-typed variable 'a' is
 
 neg107.fsx(33,56,33,61): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
-neg107.fsx(33,64,33,72): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+neg107.fsx(33,71,33,72): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
-neg107.fsx(33,64,33,72): typecheck error FS0406: The byref-typed variable 'a' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.
+neg107.fsx(33,71,33,72): typecheck error FS0406: The byref-typed variable 'a' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.
 
-neg107.fsx(33,64,33,72): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+neg107.fsx(33,71,33,72): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
-neg107.fsx(33,64,33,72): typecheck error FS0425: The type of a first-class function cannot contain byrefs
+neg107.fsx(33,71,33,72): typecheck error FS0425: The type of a first-class function cannot contain byrefs
 
 neg107.fsx(33,56,33,61): typecheck error FS0425: The type of a first-class function cannot contain byrefs
 

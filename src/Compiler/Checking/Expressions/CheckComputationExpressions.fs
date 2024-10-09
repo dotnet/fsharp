@@ -1545,7 +1545,9 @@ let rec TryTranslateComputationExpression
 
             let dataCompPrior =
                 translatedCtxt (
-                    TranslateComputationExpressionNoQueryOps ceenv (SynExpr.YieldOrReturn((true, false), varSpaceExpr, mClause))
+                    TranslateComputationExpressionNoQueryOps
+                        ceenv
+                        (SynExpr.YieldOrReturn((true, false), varSpaceExpr, mClause, SynExprYieldOrReturnTrivia.Zero))
                 )
 
             // Rebind using for ...
@@ -1576,7 +1578,9 @@ let rec TryTranslateComputationExpression
                     let isYield = not (customOperationMaintainsVarSpaceUsingBind ceenv nm)
 
                     translatedCtxt (
-                        TranslateComputationExpressionNoQueryOps ceenv (SynExpr.YieldOrReturn((isYield, false), varSpaceExpr, mClause))
+                        TranslateComputationExpressionNoQueryOps
+                            ceenv
+                            (SynExpr.YieldOrReturn((isYield, false), varSpaceExpr, mClause, SynExprYieldOrReturnTrivia.Zero))
                     )
 
                 // Now run the consumeCustomOpClauses
@@ -1589,10 +1593,10 @@ let rec TryTranslateComputationExpression
                 Some(TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace innerComp2 translatedCtxt)
 
             else
-
                 if ceenv.isQuery && not (innerComp1.IsArbExprAndThusAlreadyReportedError) then
                     match innerComp1 with
-                    | SynExpr.JoinIn _ -> () // an error will be reported later when we process innerComp1 as a sequential
+                    | SynExpr.JoinIn _ -> ()
+                    | SynExpr.DoBang(trivia = { DoBangKeyword = m }) -> errorR (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), m))
                     | _ -> errorR (Error(FSComp.SR.tcUnrecognizedQueryOperator (), innerComp1.RangeOfFirstPortion))
 
                 match
@@ -1657,7 +1661,7 @@ let rec TryTranslateComputationExpression
                 | None ->
                     // "do! expr; cexpr" is treated as { let! () = expr in cexpr }
                     match innerComp1 with
-                    | SynExpr.DoBang(rhsExpr, m) ->
+                    | SynExpr.DoBang(expr = rhsExpr; range = m) ->
                         let sp =
                             match sp with
                             | DebugPointAtSequential.SuppressExpr -> DebugPointAtBinding.NoneAtDo
@@ -1801,11 +1805,8 @@ let rec TryTranslateComputationExpression
         | SynExpr.LetOrUse(
             isUse = true
             bindings = [ SynBinding(kind = SynBindingKind.Normal; headPat = pat; expr = rhsExpr; debugPoint = spBind) ]
-            body = innerComp) ->
-            let mBind =
-                match spBind with
-                | DebugPointAtBinding.Yes m -> m
-                | _ -> rhsExpr.Range
+            body = innerComp
+            trivia = { LetOrUseKeyword = mBind }) ->
 
             if ceenv.isQuery then
                 error (Error(FSComp.SR.tcUseMayNotBeUsedInQueries (), mBind))
@@ -1854,12 +1855,14 @@ let rec TryTranslateComputationExpression
         //  or
         //    --> build.BindReturn(e1, (fun _argN -> match _argN with pat -> expr-without-return))
         | SynExpr.LetOrUseBang(
-            bindDebugPoint = spBind; isUse = false; isFromSource = isFromSource; pat = pat; rhs = rhsExpr; andBangs = []; body = innerComp) ->
-
-            let mBind =
-                match spBind with
-                | DebugPointAtBinding.Yes m -> m
-                | _ -> rhsExpr.Range
+            bindDebugPoint = spBind
+            isUse = false
+            isFromSource = isFromSource
+            pat = pat
+            rhs = rhsExpr
+            andBangs = []
+            body = innerComp
+            trivia = { LetOrUseBangKeyword = mBind }) ->
 
             if ceenv.isQuery then
                 error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), mBind))
@@ -1900,7 +1903,8 @@ let rec TryTranslateComputationExpression
             pat = SynPat.Named(ident = SynIdent(id, _); isThisVal = false) as pat
             rhs = rhsExpr
             andBangs = []
-            body = innerComp)
+            body = innerComp
+            trivia = { LetOrUseBangKeyword = mBind })
         | SynExpr.LetOrUseBang(
             bindDebugPoint = spBind
             isUse = true
@@ -1908,12 +1912,8 @@ let rec TryTranslateComputationExpression
             pat = SynPat.LongIdent(longDotId = SynLongIdent(id = [ id ])) as pat
             rhs = rhsExpr
             andBangs = []
-            body = innerComp) ->
-
-            let mBind =
-                match spBind with
-                | DebugPointAtBinding.Yes m -> m
-                | _ -> rhsExpr.Range
+            body = innerComp
+            trivia = { LetOrUseBangKeyword = mBind }) ->
 
             if ceenv.isQuery then
                 error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), mBind))
@@ -1988,9 +1988,9 @@ let rec TryTranslateComputationExpression
             Some(translatedCtxt bindExpr)
 
         // 'use! pat = e1 ... in e2' where 'pat' is not a simple name -> error
-        | SynExpr.LetOrUseBang(isUse = true; pat = pat; andBangs = andBangs) ->
+        | SynExpr.LetOrUseBang(isUse = true; andBangs = andBangs; trivia = { LetOrUseBangKeyword = mBind }) ->
             if isNil andBangs then
-                error (Error(FSComp.SR.tcInvalidUseBangBinding (), pat.Range))
+                error (Error(FSComp.SR.tcInvalidUseBangBinding (), mBind))
             else
                 let m =
                     match andBangs with
@@ -2013,17 +2013,17 @@ let rec TryTranslateComputationExpression
             rhs = letRhsExpr
             andBangs = andBangBindings
             body = innerComp
-            range = letBindRange) ->
+            trivia = { LetOrUseBangKeyword = mBind }) ->
             if not (cenv.g.langVersion.SupportsFeature LanguageFeature.AndBang) then
-                error (Error(FSComp.SR.tcAndBangNotSupported (), comp.Range))
+                let andBangRange =
+                    match andBangBindings with
+                    | [] -> comp.Range
+                    | h :: _ -> h.Trivia.AndBangKeyword
+
+                error (Error(FSComp.SR.tcAndBangNotSupported (), andBangRange))
 
             if ceenv.isQuery then
-                error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), letBindRange))
-
-            let mBind =
-                match spBind with
-                | DebugPointAtBinding.Yes m -> m
-                | _ -> letRhsExpr.Range
+                error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), mBind))
 
             let sources =
                 (letRhsExpr
@@ -2375,7 +2375,7 @@ let rec TryTranslateComputationExpression
 
             Some(translatedCtxt callExpr)
 
-        | SynExpr.YieldOrReturnFrom((true, _), synYieldExpr, m) ->
+        | SynExpr.YieldOrReturnFrom((true, _), synYieldExpr, _, { YieldOrReturnFromKeyword = m }) ->
             let yieldFromExpr =
                 mkSourceExpr synYieldExpr ceenv.sourceMethInfo ceenv.builderValName
 
@@ -2393,7 +2393,8 @@ let rec TryTranslateComputationExpression
             then
                 error (Error(FSComp.SR.tcRequireBuilderMethod ("YieldFrom"), m))
 
-            let yieldFromCall = mkSynCall "YieldFrom" m [ yieldFromExpr ] ceenv.builderValName
+            let yieldFromCall =
+                mkSynCall "YieldFrom" synYieldExpr.Range [ yieldFromExpr ] ceenv.builderValName
 
             let yieldFromCall =
                 if IsControlFlowExpression synYieldExpr then
@@ -2403,7 +2404,7 @@ let rec TryTranslateComputationExpression
 
             Some(translatedCtxt yieldFromCall)
 
-        | SynExpr.YieldOrReturnFrom((false, _), synReturnExpr, m) ->
+        | SynExpr.YieldOrReturnFrom((false, _), synReturnExpr, _, { YieldOrReturnFromKeyword = m }) ->
             let returnFromExpr =
                 mkSourceExpr synReturnExpr ceenv.sourceMethInfo ceenv.builderValName
 
@@ -2425,7 +2426,7 @@ let rec TryTranslateComputationExpression
                 error (Error(FSComp.SR.tcRequireBuilderMethod ("ReturnFrom"), m))
 
             let returnFromCall =
-                mkSynCall "ReturnFrom" m [ returnFromExpr ] ceenv.builderValName
+                mkSynCall "ReturnFrom" synReturnExpr.Range [ returnFromExpr ] ceenv.builderValName
 
             let returnFromCall =
                 if IsControlFlowExpression synReturnExpr then
@@ -2435,7 +2436,7 @@ let rec TryTranslateComputationExpression
 
             Some(translatedCtxt returnFromCall)
 
-        | SynExpr.YieldOrReturn((isYield, _), synYieldOrReturnExpr, m) ->
+        | SynExpr.YieldOrReturn((isYield, _), synYieldOrReturnExpr, _, { YieldOrReturnKeyword = m }) ->
             let methName = (if isYield then "Yield" else "Return")
 
             if ceenv.isQuery && not isYield then
@@ -2453,10 +2454,10 @@ let rec TryTranslateComputationExpression
                         ceenv.builderTy
                 )
             then
-                error (Error(FSComp.SR.tcRequireBuilderMethod (methName), m))
+                error (Error(FSComp.SR.tcRequireBuilderMethod methName, m))
 
             let yieldOrReturnCall =
-                mkSynCall methName m [ synYieldOrReturnExpr ] ceenv.builderValName
+                mkSynCall methName synYieldOrReturnExpr.Range [ synYieldOrReturnExpr ] ceenv.builderValName
 
             let yieldOrReturnCall =
                 if IsControlFlowExpression synYieldOrReturnExpr then
@@ -2760,7 +2761,7 @@ and TranslateComputationExpressionBind
 /// The inner option indicates if a custom operation is involved inside
 and convertSimpleReturnToExpr (ceenv: ComputationExpressionContext<'a>) comp varSpace innerComp =
     match innerComp with
-    | SynExpr.YieldOrReturn((false, _), returnExpr, m) ->
+    | SynExpr.YieldOrReturn((false, _), returnExpr, m, _) ->
         let returnExpr = SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes m, false, returnExpr)
         Some(returnExpr, None)
 
@@ -2868,7 +2869,7 @@ and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) fir
             // This only occurs in final position in a sequence
             match comp with
             // "do! expr;" in final position is treated as { let! () = expr in return () } when Return is provided (and no Zero with Default attribute is available) or as { let! () = expr in zero } otherwise
-            | SynExpr.DoBang(rhsExpr, m) ->
+            | SynExpr.DoBang(expr = rhsExpr; trivia = { DoBangKeyword = m }) ->
                 let mUnit = rhsExpr.Range
                 let rhsExpr = mkSourceExpr rhsExpr ceenv.sourceMethInfo ceenv.builderValName
 
@@ -2902,7 +2903,7 @@ and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) fir
                         with
                         | minfo :: _ when MethInfoHasAttribute ceenv.cenv.g m ceenv.cenv.g.attrib_DefaultValueAttribute minfo ->
                             SynExpr.ImplicitZero m
-                        | _ -> SynExpr.YieldOrReturn((false, true), SynExpr.Const(SynConst.Unit, m), m)
+                        | _ -> SynExpr.YieldOrReturn((false, true), SynExpr.Const(SynConst.Unit, m), m, SynExprYieldOrReturnTrivia.Zero)
 
                 let letBangBind =
                     SynExpr.LetOrUseBang(

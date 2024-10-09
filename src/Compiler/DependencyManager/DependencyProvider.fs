@@ -160,19 +160,19 @@ type ReflectionDependencyManagerProvider
 
     let instance =
         if not (isNull (theType.GetConstructor([| typeof<string option>; typeof<bool> |]))) then
-            Activator.CreateInstance(theType, [| outputDir :> obj; useResultsCache :> obj |])
+            Activator.CreateInstance(theType, [| outputDir :> objnull; useResultsCache :> objnull |])
         else
-            Activator.CreateInstance(theType, [| outputDir :> obj |])
+            Activator.CreateInstance(theType, [| outputDir :> objnull |])
 
-    let nameProperty = nameProperty.GetValue >> string
-    let keyProperty = keyProperty.GetValue >> string
+    let nameProperty (x: objnull) = x |> nameProperty.GetValue |> string
+    let keyProperty (x: objnull) = x |> keyProperty.GetValue |> string
 
-    let helpMessagesProperty =
-        let toStringArray (o: obj) = o :?> string[]
+    let helpMessagesProperty (x: objnull) =
+        let toStringArray (o: objnull) = o :?> string[]
 
         match helpMessagesProperty with
-        | Some helpMessagesProperty -> helpMessagesProperty.GetValue >> toStringArray
-        | None -> fun _ -> [||]
+        | Some helpMessagesProperty -> x |> helpMessagesProperty.GetValue |> toStringArray
+        | None -> [||]
 
     static member InstanceMaker(theType: Type, outputDir: string option, useResultsCache: bool) =
         match
@@ -453,14 +453,18 @@ type ReflectionDependencyManagerProvider
                     None, [||]
 
             match method with
+            | None -> ReflectionDependencyManagerProvider.MakeResultFromFields(false, [||], [||], Seq.empty, Seq.empty, Seq.empty)
             | Some m ->
-                let result = m.Invoke(instance, arguments)
+                match m.Invoke(instance, arguments) with
+                | null -> ReflectionDependencyManagerProvider.MakeResultFromFields(false, [||], [||], Seq.empty, Seq.empty, Seq.empty)
 
                 // Verify the number of arguments returned in the tuple returned by resolvedependencies, it can be:
                 //     1 - object with properties
                 //     3 - (bool * string list * string list)
                 // Support legacy api return shape (bool, seq<string>, seq<string>) --- original paket packagemanager
-                if FSharpType.IsTuple(result.GetType()) then
+                | result when FSharpType.IsTuple(result.GetType()) |> not ->
+                    ReflectionDependencyManagerProvider.MakeResultFromObject(result)
+                | result ->
                     // Verify the number of arguments returned in the tuple returned by resolvedependencies, it can be:
                     //     3 - (bool * string list * string list)
                     let success, sourceFiles, packageRoots =
@@ -474,10 +478,6 @@ type ReflectionDependencyManagerProvider
                         | _ -> false, seqEmpty, seqEmpty
 
                     ReflectionDependencyManagerProvider.MakeResultFromFields(success, [||], [||], Seq.empty, sourceFiles, packageRoots)
-                else
-                    ReflectionDependencyManagerProvider.MakeResultFromObject(result)
-
-            | None -> ReflectionDependencyManagerProvider.MakeResultFromFields(false, [||], [||], Seq.empty, Seq.empty, Seq.empty)
 
 /// Provides DependencyManagement functions.
 /// Class is IDisposable

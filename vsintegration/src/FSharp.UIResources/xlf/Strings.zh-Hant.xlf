@@ -327,11 +327,6 @@
         <target state="translated">使用透明編譯器 (需要重新啟動)</target>
         <note />
       </trans-unit>
-      <trans-unit id="Use_syntax_tree_cache">
-        <source>Cache parsing results (experimental)</source>
-        <target state="translated">快取剖析結果 (實驗性)</target>
-        <note />
-      </trans-unit>
     </body>
   </file>
 </xliff>

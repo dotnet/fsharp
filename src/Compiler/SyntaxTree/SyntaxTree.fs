@@ -704,9 +704,9 @@ type SynExpr =
 
     | SequentialOrImplicitYield of debugPoint: DebugPointAtSequential * expr1: SynExpr * expr2: SynExpr * ifNotStmt: SynExpr * range: range
 
-    | YieldOrReturn of flags: (bool * bool) * expr: SynExpr * range: range
+    | YieldOrReturn of flags: (bool * bool) * expr: SynExpr * range: range * trivia: SynExprYieldOrReturnTrivia
 
-    | YieldOrReturnFrom of flags: (bool * bool) * expr: SynExpr * range: range
+    | YieldOrReturnFrom of flags: (bool * bool) * expr: SynExpr * range: range * trivia: SynExprYieldOrReturnFromTrivia
 
     | LetOrUseBang of
         bindDebugPoint: DebugPointAtBinding *
@@ -726,7 +726,7 @@ type SynExpr =
         range: range *
         trivia: SynExprMatchBangTrivia
 
-    | DoBang of expr: SynExpr * range: range
+    | DoBang of expr: SynExpr * range: range * trivia: SynExprDoBangTrivia
 
     | WhileBang of whileDebugPoint: DebugPointAtWhile * whileExpr: SynExpr * doExpr: SynExpr * range: range
 

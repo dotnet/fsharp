@@ -5,19 +5,19 @@ module CompilationFromCmdlineArgsTests =
     open System
     open System.IO
     open FSharp.Compiler.CodeAnalysis
-    open NUnit.Framework
+    open Xunit
     open CompilationTests
 
     // Point to a generated args.txt file.
     // Use scrape.fsx to generate an args.txt from a binary log file.
     // The path needs to be absolute.
-    let localProjects: string list =
+    let localProjects =
         [
             @"C:\Projects\fantomas\src\Fantomas.Core\Fantomas.Core.args.txt"
             @"C:\Projects\FsAutoComplete\src\FsAutoComplete\FsAutoComplete.args.txt"
             @"C:\Projects\fsharp\src\Compiler\FSharp.Compiler.Service.args.txt"
             @"C:\Projects\fsharp\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.args.txt"
-        ]
+        ] |> Seq.map (fun p -> [| box p |])
 
     let checker = FSharpChecker.Create()
 
@@ -38,21 +38,21 @@ module CompilationFromCmdlineArgsTests =
                     yield! methodOptions method
                 |]
 
-            let diagnostics, exitCode = checker.Compile(args) |> Async.RunSynchronously
+            let diagnostics, exn = checker.Compile(args) |> Async.RunSynchronously
 
             for diag in diagnostics do
                 printfn "%A" diag
 
-            Assert.That(exitCode, Is.Zero)
+            Assert.Equal(exn, None)
         finally
             Environment.CurrentDirectory <- oldWorkDir
 
-    [<TestCaseSource(nameof localProjects)>]
-    [<Explicit("Slow, only useful as a sanity check that the test codebase is sound and type-checks using the old method")>]
+    [<MemberData(nameof localProjects)>]
+    [<Theory(Skip = "Slow, only useful as a sanity check that the test codebase is sound and type-checks using the old method")>]
     let ``Test sequential type-checking`` (projectArgumentsFilePath: string) =
         testCompilerFromArgs Method.Sequential projectArgumentsFilePath
 
-    [<TestCaseSource(nameof localProjects)>]
-    [<Explicit("This only runs with the explicitly mentioned projects above")>]
+    [<MemberData(nameof localProjects)>]
+    [<Theory(Skip = "This should only run with the explicitly mentioned projects above")>]
     let ``Test graph-based type-checking`` (projectArgumentsFilePath: string) =
         testCompilerFromArgs Method.Graph projectArgumentsFilePath
