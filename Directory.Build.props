@@ -10,6 +10,11 @@
     <IgnoreMibc Condition="'$(IgnoreMibc)' == ''">$(DotNetBuildSourceOnly)</IgnoreMibc>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <!-- TODO: This needs to be removed once we merge/release the new SDK. -->
+    <NoWarn>$(NoWarn);FS0064</NoWarn>
+  </PropertyGroup>
+
   <!--
    When developers load the FSharp.Compiler.Service solution we set FSHARPCORE_USE_PACKAGE to true if it hasn't already been set to a value.
    This option ensures that building and testing uses the specified FSharp.Core nuget package instead of the local FSharp.Core project.
