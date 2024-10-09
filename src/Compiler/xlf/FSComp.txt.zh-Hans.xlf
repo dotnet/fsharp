@@ -307,11 +307,6 @@
         <target state="translated">如果在非递归函数上使用“TailCall”属性，则引发警告。</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureConsistentNowarnLineDirectiveInteraction">
-        <source>The interaction between #nowarn and #line is now consistent.</source>
-        <target state="new">The interaction between #nowarn and #line is now consistent.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
         <source>Constraint intersection on flexible types</source>
         <target state="translated">灵活类型的约束交集</target>
