@@ -10,10 +10,6 @@
     <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
     <NoWarn>$(NoWarn);1204</NoWarn> <!-- This construct is for use in the FSharp.Core library and should not be used directly -->
     <NoWarn>$(NoWarn);NU5125</NoWarn>
-
-    <!-- TODO: This needs to be removed once we merge/release the new SDK with noward and line fixes. -->
-    <NoWarn>$(NoWarn);1182</NoWarn>
-
     <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
@@ -28,8 +24,10 @@
     <TargetFrameworks Condition=" '$(OfficialBuildId)' == '' AND '$(FSharpNetCoreProductDefaultTargetFramework)' != '' AND '$(Configuration)' != 'Proto' AND '$(SKIP_NETCURRENT_FSC_BUILD)' != 'true' ">$(FSharpNetCoreProductDefaultTargetFramework);$(TargetFrameworks)</TargetFrameworks>
     <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);FSHARPCORE_USE_PACKAGE</DefineConstants>
     <OtherFlags>$(OtherFlags) --extraoptimizationloops:1</OtherFlags>
-    <!-- 1182: Unused variables -->
-    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+
+    <!-- TODO: This needs to be re-enabled once we merge/release the new SDK with noward and line fixes. -->
+    <!-- 1182: Unused variables
+    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags> -->
     <!-- 3218: ArgumentsInSigAndImplMismatch -->
     <OtherFlags>$(OtherFlags) --warnon:3218</OtherFlags>
     <!-- 3390: xmlDocBadlyFormed -->
