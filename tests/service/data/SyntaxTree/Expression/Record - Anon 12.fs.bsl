@@ -7,9 +7,7 @@ ImplFile
           [Expr
              (AnonRecd
                 (false, None,
-                 [(SynLongIdent ([F1], [], []), None,
-                   LongIdent
-                     (false, SynLongIdent ([F1], [], [None]), None, (3,3--3,5)));
+                 [(SynLongIdent ([F1], [], []), None, Ident F1);
                   (SynLongIdent ([F2], [], [None]), Some (4,6--4,7),
                    Const (Int32 2, (4,8--4,9)))], (3,0--4,12),
                  { OpeningBraceRange = (3,0--3,2) }), (3,0--4,12))],

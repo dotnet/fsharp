@@ -452,6 +452,40 @@ let TcSequenceExpressionEntry (cenv: TcFileState) env (overallTy: OverallTy) tpe
         | _ -> ()
 
         if not hasBuilder && not cenv.g.compilingFSharpCore then
-            error (Error(FSComp.SR.tcInvalidSequenceExpressionSyntaxForm (), m))
+            let (|MaybeRecordField|_|) =
+                function
+                | LongOrSingleIdent(false, (SynLongIdent _ as ident), None, _) as expr1 ->
+                    let f =
+                        ParseHelpers.mkRecdField (SynLongIdent([ List.last ident.LongIdent ], [], []))
 
-        TcSequenceExpression cenv env tpenv comp overallTy m
+                    ValueSome(SynExprRecordField(f, None, Some expr1, None))
+                | SynExpr.App(ExprAtomicFlag.NonAtomic,
+                              false,
+                              SynExpr.App(ExprAtomicFlag.NonAtomic,
+                                          true,
+                                          SynExpr.LongIdent(longDotId = SynLongIdent(id = [ ident ])),
+                                          LongOrSingleIdent(false, (SynLongIdent _ as lid), None, _),
+                                          _),
+                              rhs,
+                              _) when ident.idText = "op_Equality" ->
+                    let f = ParseHelpers.mkRecdField lid
+                    ValueSome(SynExprRecordField(f, Some ident.idRange, Some rhs, None))
+                | _ -> ValueNone
+
+            let rec sequentialToRecordExpression fields (comp: SynExpr) =
+                match comp with
+                | SynExpr.Sequential(expr1 = MaybeRecordField field; expr2 = expr2) -> sequentialToRecordExpression (field :: fields) expr2
+                | MaybeRecordField field -> ValueSome(SynExpr.Record(None, None, List.rev (field :: fields), comp.Range))
+                | _ -> ValueNone
+
+            match comp with
+            | MaybeRecordField field ->
+                SynExpr.Record(None, None, [ field ], comp.Range)
+                |> TcExpr cenv overallTy env tpenv
+            | SynExpr.Sequential _ ->
+                match sequentialToRecordExpression [] comp with
+                | ValueSome expr -> TcExpr cenv overallTy env tpenv expr
+                | ValueNone -> error (Error(FSComp.SR.tcInvalidSequenceExpressionSyntaxForm (), m))
+            | _ -> error (Error(FSComp.SR.tcInvalidSequenceExpressionSyntaxForm (), m))
+        else
+            TcSequenceExpression cenv env tpenv comp overallTy m
