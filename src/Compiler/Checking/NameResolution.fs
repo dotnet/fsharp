@@ -4422,14 +4422,14 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
         //
         // Don't show GetHashCode or Equals for F# types that admit equality as an abnormal operation
         let isUnseenDueToBasicObjRules =
-            not (isObjTy g ty) &&
+            not (isObjTyAnyNullness g ty) &&
             not minfo.IsExtensionMember &&
             match minfo.LogicalName with
             | "GetType"  -> false
-            | "GetHashCode"  -> isObjTy g minfo.ApparentEnclosingType && not (AugmentTypeDefinitions.TypeDefinitelyHasEquality g ty)
+            | "GetHashCode"  -> isObjTyAnyNullness g minfo.ApparentEnclosingType && not (AugmentTypeDefinitions.TypeDefinitelyHasEquality g ty)
             | "ToString" -> false
             | "Equals" ->
-                if not (isObjTy g minfo.ApparentEnclosingType) then
+                if not (isObjTyAnyNullness g minfo.ApparentEnclosingType) then
                     // declaring type is not System.Object - show it
                     false
                 elif minfo.IsInstance then
@@ -4440,7 +4440,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
                     true
             | _ ->
                 // filter out self methods of obj type
-                isObjTy g minfo.ApparentEnclosingType
+                isObjTyAnyNullness g minfo.ApparentEnclosingType
 
         let result =
             not isUnseenDueToBasicObjRules &&
@@ -5121,14 +5121,14 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
                 //
                 // Don't show GetHashCode or Equals for F# types that admit equality as an abnormal operation
                 let isUnseenDueToBasicObjRules =
-                    not (isObjTy g ty) &&
+                    not (isObjTyAnyNullness g ty) &&
                     not minfo.IsExtensionMember &&
                     match minfo.LogicalName with
                     | "GetType"  -> false
-                    | "GetHashCode"  -> isObjTy g minfo.ApparentEnclosingType && not (AugmentTypeDefinitions.TypeDefinitelyHasEquality g ty)
+                    | "GetHashCode"  -> isObjTyAnyNullness g minfo.ApparentEnclosingType && not (AugmentTypeDefinitions.TypeDefinitelyHasEquality g ty)
                     | "ToString" -> false
                     | "Equals" ->
-                        if not (isObjTy g minfo.ApparentEnclosingType) then
+                        if not (isObjTyAnyNullness g minfo.ApparentEnclosingType) then
                             // declaring type is not System.Object - show it
                             false
                         elif minfo.IsInstance then
@@ -5139,7 +5139,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
                             true
                     | _ ->
                         // filter out self methods of obj type
-                        isObjTy g minfo.ApparentEnclosingType
+                        isObjTyAnyNullness g minfo.ApparentEnclosingType
                 let result =
                     not isUnseenDueToBasicObjRules &&
                     not minfo.IsInstance = statics &&

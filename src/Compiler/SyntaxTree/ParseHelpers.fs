@@ -108,7 +108,7 @@ module LexbufLocalXmlDocStore =
         |> unbox<XmlDocCollector>
 
     let ClearXmlDoc (lexbuf: Lexbuf) =
-        lexbuf.BufferLocalStore[xmlDocKey] <- box (XmlDocCollector())
+        lexbuf.BufferLocalStore[xmlDocKey] <- box (XmlDocCollector()) |> Unchecked.nonNull
 
     /// Called from the lexer to save a single line of XML doc comment.
     let SaveXmlDocLine (lexbuf: Lexbuf, lineText, range: range) =
@@ -1050,7 +1050,22 @@ let mkLocalBindings (mWhole, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, 
             else
                 Some mIn)
 
-    SynExpr.LetOrUse(isRec, isUse, decls, body, mWhole, { InKeyword = mIn })
+    let mLetOrUse =
+        match decls with
+        | SynBinding(trivia = trivia) :: _ -> trivia.LeadingKeyword.Range
+        | _ -> Range.Zero
+
+    SynExpr.LetOrUse(
+        isRec,
+        isUse,
+        decls,
+        body,
+        mWhole,
+        {
+            LetOrUseKeyword = mLetOrUse
+            InKeyword = mIn
+        }
+    )
 
 let mkDefnBindings (mWhole, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, _bindingSetRange), attrs, vis, attrsm) =
     if isUse then
