@@ -47,8 +47,7 @@
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
     <DisableAutoSetFscCompilerPath>false</DisableAutoSetFscCompilerPath>
 
-    <!-- TODO(vlza): This probably should be `true` once fslib with nullness ships, since shipped library is preferred by default when building this solution. -->
-    <FSHARPCORE_USE_PACKAGE Condition="'$(FSHARPCORE_USE_PACKAGE)' == ''">false</FSHARPCORE_USE_PACKAGE>
+    <FSHARPCORE_USE_PACKAGE Condition="'$(FSHARPCORE_USE_PACKAGE)' == ''">true</FSHARPCORE_USE_PACKAGE>
 
     <DISABLE_ARCADE Condition="'$(DISABLE_ARCADE)' == ''">true</DISABLE_ARCADE>
     <ArtifactsDir>$(MSBuildThisFileDirectory)artifacts/</ArtifactsDir>
