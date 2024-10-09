@@ -11,8 +11,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <!-- TODO: This needs to be removed once we merge/release the new SDK. -->
-    <NoWarn>$(NoWarn);FS0064</NoWarn>
+    <!-- TODO: These need to be removed once we merge/release the new SDK with noward and line fixes. -->
+    <NoWarn>$(NoWarn);FS0064;FS1182</NoWarn>
   </PropertyGroup>
 
   <!--
