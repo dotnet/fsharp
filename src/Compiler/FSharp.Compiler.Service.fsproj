@@ -10,6 +10,8 @@
     <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
     <NoWarn>$(NoWarn);1204</NoWarn> <!-- This construct is for use in the FSharp.Core library and should not be used directly -->
     <NoWarn>$(NoWarn);NU5125</NoWarn>
+    <NoWarn>$(NoWarn);64;1182;1204</NoWarn>         <!--Temporary fix for sourcebuild -->
+    <OtherFlags>$(OtherFlags) --warnaserror-:1182</OtherFlags>         <!--Temporary fix for sourcebuild -->
     <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
