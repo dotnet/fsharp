@@ -246,11 +246,11 @@ module Structure =
                 rcheck Scope.New Collapse.Below r e.Range
                 parseExpr e
 
-            | SynExpr.YieldOrReturn(_, e, r) ->
+            | SynExpr.YieldOrReturn(_, e, r, _) ->
                 rcheck Scope.YieldOrReturn Collapse.Below r r
                 parseExpr e
 
-            | SynExpr.YieldOrReturnFrom(_, e, r) ->
+            | SynExpr.YieldOrReturnFrom(_, e, r, _) ->
                 rcheck Scope.YieldOrReturnBang Collapse.Below r r
                 parseExpr e
 

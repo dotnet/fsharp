@@ -474,6 +474,8 @@ type internal TcGlobals =
 
     member attrib_SkipLocalsInitAttribute: BuiltinAttribInfo
 
+    member attrib_DecimalConstantAttribute: BuiltinAttribInfo
+
     member attrib_StructAttribute: BuiltinAttribInfo
 
     member attrib_StructLayoutAttribute: BuiltinAttribInfo

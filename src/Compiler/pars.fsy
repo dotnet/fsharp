@@ -4402,18 +4402,22 @@ declExpr:
         exprFromParseError (SynExpr.ForEach(spFor, spIn, SeqExprOnly false, true, $2, arbExpr ("forLoopCollection", mFor), arbExpr ("forLoopBody3", mForLoopBodyArb), mForLoopAll)) }
 
   | YIELD declExpr
-     { SynExpr.YieldOrReturn(($1, not $1), $2, unionRanges (rhs parseState 1) $2.Range) }
+     { let trivia: SynExprYieldOrReturnTrivia = { YieldOrReturnKeyword = rhs parseState 1 }
+       SynExpr.YieldOrReturn(($1, not $1), $2, (unionRanges (rhs parseState 1) $2.Range), trivia) }
 
   | YIELD_BANG declExpr
-     { SynExpr.YieldOrReturnFrom(($1, not $1), $2, unionRanges (rhs parseState 1) $2.Range) }
+     {  let trivia: SynExprYieldOrReturnFromTrivia = { YieldOrReturnFromKeyword = rhs parseState 1 }
+        SynExpr.YieldOrReturnFrom(($1, not $1), $2, (unionRanges (rhs parseState 1) $2.Range), trivia) }
 
   | YIELD recover
      { let mYieldAll = rhs parseState 1
-       SynExpr.YieldOrReturn(($1, not $1), arbExpr ("yield", mYieldAll), mYieldAll) }
+       let trivia: SynExprYieldOrReturnTrivia = { YieldOrReturnKeyword = rhs parseState 1 }
+       SynExpr.YieldOrReturn(($1, not $1), arbExpr ("yield", mYieldAll), mYieldAll, trivia) }
 
   | YIELD_BANG recover
      { let mYieldAll = rhs parseState 1
-       SynExpr.YieldOrReturnFrom(($1, not $1), arbExpr ("yield!", mYieldAll), mYieldAll) }
+       let trivia: SynExprYieldOrReturnFromTrivia = { YieldOrReturnFromKeyword = rhs parseState 1 }
+       SynExpr.YieldOrReturnFrom(($1, not $1), arbExpr ("yield!", mYieldAll), mYieldAll, trivia) }
 
   | BINDER headBindingPattern EQUALS typedSequentialExprBlock IN opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
      { let spBind = DebugPointAtBinding.Yes(rhs2 parseState 1 5)
@@ -4458,7 +4462,8 @@ declExpr:
      { errorR(Error(FSComp.SR.parsArrowUseIsLimited(), lhs parseState))
        let mArrow = rhs parseState 1
        let expr = $2 mArrow
-       SynExpr.YieldOrReturn((true, true), expr, (unionRanges mArrow expr.Range)) }
+       let trivia: SynExprYieldOrReturnTrivia = { YieldOrReturnKeyword = rhs parseState 1 }
+       SynExpr.YieldOrReturn((true, true), expr, (unionRanges mArrow expr.Range), trivia) }
 
   | declExpr COLON_QMARK typ
       { SynExpr.TypeTest($1, $3, unionRanges $1.Range $3.Range) }
@@ -5456,7 +5461,8 @@ arrowThenExprR:
   | RARROW typedSequentialExprBlockR
       { let mArrow = rhs parseState 1
         let expr = $2 mArrow
-        SynExpr.YieldOrReturn((true, false), expr, unionRanges mArrow expr.Range) }
+        let trivia: SynExprYieldOrReturnTrivia = { YieldOrReturnKeyword = mArrow }
+        SynExpr.YieldOrReturn((true, false), expr, (unionRanges mArrow expr.Range), trivia) }
 
 forLoopBinder:
   | parenPattern IN declExpr
