@@ -152,6 +152,6 @@ let Gaussian1DPriorFactorNode((var: VariableNode<Gaussian1D>), mean, variance) =
 let _ = 
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
   else (stdout.WriteLine "Test Passed"; 
-        System.IO.File.WriteAllText("test.ok","ok"); 
+        printf "TEST PASSED OK"; 
         exit 0)
 

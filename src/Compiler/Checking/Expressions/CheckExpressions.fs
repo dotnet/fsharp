@@ -3283,7 +3283,7 @@ let AnalyzeArbitraryExprAsEnumerable (cenv: cenv) (env: TcEnv) localAlloc m expr
 
         let enumElemTy =
 
-            if isObjTy g enumElemTy then
+            if isObjTyAnyNullness g enumElemTy then
                 // Look for an 'Item' property, or a set of these with consistent return types
                 let allEquivReturnTypes (minfo: MethInfo) (others: MethInfo list) =
                     let returnTy = minfo.GetFSharpReturnType(cenv.amap, m, [])
@@ -5163,6 +5163,7 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
                         | TyparConstraint.SupportsComparison _
                         | TyparConstraint.SupportsEquality _
                         | TyparConstraint.DefaultsTo (ty = Unit)
+                        | TyparConstraint.AllowsRefStruct _
                         | TyparConstraint.MayResolveMember _ -> true
 
                         // Any other kind of constraint is incompatible with unit.
@@ -5990,23 +5991,23 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
         TcQuotationExpr cenv overallTy env tpenv (oper, raw, ast, isFromQueryExpression, m)
 
-    | SynExpr.YieldOrReturn ((isTrueYield, _), _, m)
-    | SynExpr.YieldOrReturnFrom ((isTrueYield, _), _, m) when isTrueYield ->
+    | SynExpr.YieldOrReturn ((isTrueYield, _), _, _m, { YieldOrReturnKeyword = m })
+    | SynExpr.YieldOrReturnFrom ((isTrueYield, _), _, _m, { YieldOrReturnFromKeyword = m }) when isTrueYield ->
         error(Error(FSComp.SR.tcConstructRequiresListArrayOrSequence(), m))
 
-    | SynExpr.YieldOrReturn ((_, isTrueReturn), _, m)
-    | SynExpr.YieldOrReturnFrom ((_, isTrueReturn), _, m) when isTrueReturn ->
+    | SynExpr.YieldOrReturn ((_, isTrueReturn), _, _m, { YieldOrReturnKeyword = m })
+    | SynExpr.YieldOrReturnFrom ((_, isTrueReturn), _, _m, { YieldOrReturnFromKeyword = m }) when isTrueReturn ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpressions(), m))
 
-    | SynExpr.YieldOrReturn (_, _, m)
-    | SynExpr.YieldOrReturnFrom (_, _, m)
+    | SynExpr.YieldOrReturn (trivia = { YieldOrReturnKeyword = m })
+    | SynExpr.YieldOrReturnFrom (trivia = { YieldOrReturnFromKeyword = m })
     | SynExpr.ImplicitZero m ->
         error(Error(FSComp.SR.tcConstructRequiresSequenceOrComputations(), m))
 
-    | SynExpr.DoBang (_, m)
-    | SynExpr.MatchBang (range = m)
+    | SynExpr.DoBang (trivia = { DoBangKeyword = m })
+    | SynExpr.MatchBang (trivia = { MatchBangKeyword = m })
     | SynExpr.WhileBang (range = m)
-    | SynExpr.LetOrUseBang (range = m) ->
+    | SynExpr.LetOrUseBang (trivia = { LetOrUseBangKeyword = m }) ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
 
     | SynExpr.IndexFromEnd (rightExpr, m) ->
@@ -6194,7 +6195,7 @@ and TcExprObjectExpr (cenv: cenv) overallTy env tpenv (synObjTy, argopt, binds, 
                 errorR(Error(FSComp.SR.tcCannotInheritFromErasedType(), m))
             (m, intfTy, overrides), tpenv)
 
-    let realObjTy = if isObjTy g objTy && not (isNil extraImpls) then (p23 (List.head extraImpls)) else objTy
+    let realObjTy = if isObjTyAnyNullness g objTy && not (isNil extraImpls) then (p23 (List.head extraImpls)) else objTy
 
     TcPropagatingExprLeafThenConvert cenv overallTy realObjTy env (* canAdhoc *) m (fun () ->
         TcObjectExpr cenv env tpenv (objTy, realObjTy, argopt, binds, extraImpls, mObjTy, mNewExpr, m)
@@ -7319,7 +7320,7 @@ and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: strin
     let formatTy = mkPrintfFormatTy g aty bty cty dty ety
 
     // This might qualify as a format string - check via a type directed rule
-    let ok = not (isObjTy g overallTy.Commit) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit formatTy
+    let ok = not (isObjTyAnyNullness g overallTy.Commit) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit formatTy
 
     if ok then
         // Parse the format string to work out the phantom types
@@ -7398,7 +7399,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
             Choice1Of2 (true, newFormatMethod)
 
         // ... or if that fails then may be a FormattableString by a type-directed rule....
-        elif (not (isObjTy g overallTy.Commit) &&
+        elif (not (isObjTyAnyNullness g overallTy.Commit) &&
               ((g.system_FormattableString_tcref.CanDeref && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit g.system_FormattableString_ty)
                || (g.system_IFormattable_tcref.CanDeref && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit g.system_IFormattable_ty))) then
 
@@ -7419,7 +7420,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
             | None -> languageFeatureNotSupportedInLibraryError LanguageFeature.StringInterpolation m
 
         // ... or if that fails then may be a PrintfFormat by a type-directed rule....
-        elif not (isObjTy g overallTy.Commit) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit formatTy then
+        elif not (isObjTyAnyNullness g overallTy.Commit) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit formatTy then
 
             // And if that succeeds, the printerTy and printerResultTy must be the same (there are no curried arguments)
             UnifyTypes cenv env m printerTy printerResultTy

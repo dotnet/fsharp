@@ -2144,11 +2144,6 @@ and typeDefReader ctxtH : ILTypeDefStored =
             else
                 let mutable attrIdx = attrsStartIdx
 
-                let looksLikeSystemAssembly =
-                    ctxt.fileName.EndsWith("System.Runtime.dll")
-                    || ctxt.fileName.EndsWith("mscorlib.dll")
-                    || ctxt.fileName.EndsWith("netstandard.dll")
-
                 while attrIdx <= attrsEndIdx && not containsExtensionMethods do
                     let mutable addr = ctxt.rowAddr TableNames.CustomAttribute attrIdx
                     // skip parentIndex to read typeIndex
@@ -2159,12 +2154,9 @@ and typeDefReader ctxtH : ILTypeDefStored =
                     let name =
                         if attrTypeIndex.tag = cat_MethodDef then
                             // the ExtensionAttribute constructor can be cat_MethodDef if the metadata is read from the assembly
-                            // in which the corresponding attribute is defined -- from the system library
-                            if not looksLikeSystemAssembly then
-                                ""
-                            else
-                                let _, (_, nameIdx, namespaceIdx, _, _, _) = seekMethodDefParent ctxt attrCtorIdx
-                                readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
+                            // in which the corresponding attribute is defined
+                            let _, (_, nameIdx, namespaceIdx, _, _, _) = seekMethodDefParent ctxt attrCtorIdx
+                            readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
                         else
                             let mutable addr = ctxt.rowAddr TableNames.MemberRef attrCtorIdx
                             let mrpTag = seekReadMemberRefParentIdx ctxt mdv &addr

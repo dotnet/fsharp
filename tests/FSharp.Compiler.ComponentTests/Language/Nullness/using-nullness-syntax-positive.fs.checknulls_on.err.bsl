@@ -31,5 +31,6 @@ using-nullness-syntax-positive.fs (154,40)-(154,44) typecheck error Nullness war
 using-nullness-syntax-positive.fs (159,36)-(159,40) typecheck error Nullness warning: The type 'String' does not support 'null'.
 using-nullness-syntax-positive.fs (162,41)-(162,45) typecheck error Nullness warning: The type 'String' does not support 'null'.
 using-nullness-syntax-positive.fs (164,37)-(164,41) typecheck error Nullness warning: The type 'String' does not support 'null'.
+using-nullness-syntax-positive.fs (173,42)-(173,46) typecheck error The constraints 'null' and 'not null' are inconsistent
 using-nullness-syntax-positive.fs (183,14)-(183,16) typecheck error Nullness warning: The type 'string' does not support 'null'.
 using-nullness-syntax-positive.fs (189,17)-(189,26) typecheck error Nullness warning: The type 'String' does not support 'null'.

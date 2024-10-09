@@ -67,7 +67,7 @@ let GetSuperTypeOfType g amap m ty =
                 Some (instType (mkInstForAppTy g ty) (superOfTycon g tcref.Deref))
             elif isArrayTy g ty then
                 Some g.system_Array_ty
-            elif isRefTy g ty && not (isObjTy g ty) then
+            elif isRefTy g ty && not (isObjTyAnyNullness g ty) then
                 Some g.obj_ty_noNulls
             elif isStructTupleTy g ty then
                 Some g.system_Value_ty
@@ -284,6 +284,7 @@ let FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor
                           | TyparConstraint.NotSupportsNull _
                           | TyparConstraint.IsNonNullableStruct _
                           | TyparConstraint.IsUnmanaged _
+                          | TyparConstraint.AllowsRefStruct _
                           | TyparConstraint.IsReferenceType _
                           | TyparConstraint.SimpleChoice _
                           | TyparConstraint.RequiresDefaultConstructor _ -> vacc
@@ -411,7 +412,9 @@ let ImportReturnTypeFromMetadata amap m nullnessSource ilTy scoref tinst minst =
 
 let CopyTyparConstraints m tprefInst (tporig: Typar) =
     tporig.Constraints
-    |>  List.map (fun tpc ->
+    // F# does not have escape analysis for authoring 'allows ref struct' generic code. Therefore, typar is not copied, can only come from C# authored code
+    |> List.filter (fun tp -> match tp with | TyparConstraint.AllowsRefStruct _ -> false | _ -> true)
+    |> List.map (fun tpc ->
            match tpc with
            | TyparConstraint.CoercesTo(ty, _) ->
                TyparConstraint.CoercesTo (instType tprefInst ty, m)
@@ -433,6 +436,7 @@ let CopyTyparConstraints m tprefInst (tporig: Typar) =
                TyparConstraint.IsNonNullableStruct m
            | TyparConstraint.IsUnmanaged _ ->
                TyparConstraint.IsUnmanaged m
+           | TyparConstraint.AllowsRefStruct _ -> failwith "impossible, filtered above"
            | TyparConstraint.IsReferenceType _ ->
                TyparConstraint.IsReferenceType m
            | TyparConstraint.SimpleChoice (tys, _) ->
