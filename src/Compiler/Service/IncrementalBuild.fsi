@@ -296,8 +296,7 @@ type internal IncrementalBuilder =
         parallelReferenceResolution: ParallelReferenceResolution *
         captureIdentifiersWhenParsing: bool *
         getSource: (string -> Async<ISourceText option>) option *
-        useChangeNotifications: bool *
-        useSyntaxTreeCache: bool ->
+        useChangeNotifications: bool ->
             Async<IncrementalBuilder option * FSharpDiagnostic[]>
 
 /// Generalized Incremental Builder. This is exposed only for unit testing purposes.
