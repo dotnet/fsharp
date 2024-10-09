@@ -94,7 +94,8 @@ module CompletionProviderTests =
 
         if actualNames <> expected then
             failwithf
-                "Expected:\n%s,\nbut was:\n%s\nactual with sort text:\n%s"
+                "After fileContents \"%s\" expected:\n%s,\nbut was:\n%s\nactual with sort text:\n%s"
+                fileContents
                 (String.Join("; ", expected |> List.map (sprintf "\"%s\"")))
                 (String.Join("; ", actualNames |> List.map (sprintf "\"%s\"")))
                 (String.Join("\n", actual |> List.map (fun x -> sprintf "%s => %s" x.DisplayText x.SortText)))

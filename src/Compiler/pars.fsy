@@ -5556,6 +5556,7 @@ recdExprCore:
             None, l
        | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsFieldBinding ()) }
 
+  /* handles case like { x }  */
   | appExpr recdExprBindings opt_seps_recd
      { match $1 with
        | LongOrSingleIdent(false, (SynLongIdent _ as ident), None, m) ->
@@ -5570,10 +5571,8 @@ recdExprCore:
     { match $1 with
       | LongOrSingleIdent(false, (SynLongIdent _ as ident), None, m) ->
            let f = mkRecdField (SynLongIdent([List.last ident.LongIdent], [], []))
-           let l = []
            let expr = SynExpr.LongIdent(false, ident, None, m)
-           let l = rebindRanges (f, None, Some expr) l None
-           (None, l)
+           (None, [ SynExprRecordField(f, None, Some expr, None) ])
       | _ -> raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsFieldBinding()) }
 
 /*
@@ -5673,8 +5672,7 @@ recdBinding:
        ($1, Some mEquals, None) }
 
   | pathOrUnderscore
-     { //reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsFieldBinding())
-       let ident, b = $1
+     { let ident, b = $1
        let f = SynLongIdent([List.last ident.LongIdent], [], []), b
        let expr = SynExpr.LongIdent(false, ident, None, rhs parseState 1)
        (f, None, Some expr) }
