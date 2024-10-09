@@ -175,17 +175,16 @@ Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (restart required)</source>
-        <target state="needs-review-translation">Options relatives aux performances de la mise en cache et des projets F#; 
-Activer les références de projet croisé en mémoire; 
+        <target state="new">F# Project and Caching Performance Options;
+Enable in-memory cross project references;
 Enable_partial_type_checking;
-Options relatives aux performances d’IntelliSense; 
-Activer les données périmées pour les fonctionnalités IntelliSense; 
-Délai avant l’utilisation des résultats périmés (en millisecondes); 
-Parallélisation (Nécessite un redémarrage); 
-Activer la vérification de type parallèle avec les fichiers de signature; 
-Activer la résolution de référence parallèle; 
-Activer la recherche rapide de références et le renommage (redémarrage requis);
-Résultats de l’analyse du cache (expérimental)</target>
+IntelliSense Performance Options;
+Enable stale data for IntelliSense features;
+Time until stale results are used (in milliseconds);
+Parallelization (requires restart);
+Enable parallel type checking with signature files;
+Enable parallel reference resolution;
+Enable fast find references &amp; rename (restart required)</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
