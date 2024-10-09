@@ -27,7 +27,7 @@
 
     <!-- TODO: This needs to be re-enabled once we merge/release the new SDK with noward and line fixes. -->
     <!-- 1182: Unused variables -->
-    <OtherFlags>$(OtherFlags) --warnoff:1182</OtherFlags>
+    <OtherFlags>$(OtherFlags) --nowarn:1182</OtherFlags>
 
     <!-- 3218: ArgumentsInSigAndImplMismatch -->
     <OtherFlags>$(OtherFlags) --warnon:3218</OtherFlags>
