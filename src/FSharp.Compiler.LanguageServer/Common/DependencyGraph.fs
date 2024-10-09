@@ -19,81 +19,156 @@ let insert key value (dict: Dictionary<_, _>)=
     | false, _ -> dict.Add(key, value)
 
 
-// TODO: thread safety
-type DependencyGraph<'Id, 'Val when 'Id :equality >() =
-    let nodes = Dictionary<'Id, DependencyNode<'Id, 'Val>>()
-    let dependencies = Dictionary<'Id, HashSet<'Id>>()
-    let dependents = Dictionary<'Id, HashSet<'Id>>()
-
-    let rec invalidateDependents (id: 'Id) =
-        match dependents.TryGetValue id with
-        | true, set ->
-            for dependent in set do
-                nodes.[dependent] <- { nodes.[dependent] with Value = None }
-                invalidateDependents dependent
-        | false, _ -> ()
-
-    let addNode node =
-        nodes |> insert node.Id node
-        invalidateDependents node.Id
-
-    member _.Debug = {|
-        Nodes = nodes
-        Dependencies = dependencies
-        Dependents = dependents
-        |}
-
-    member this.AddOrUpdateNode(id: 'Id, value: 'Val) =
-        addNode { Id = id; Value = Some value; Compute = (fun _ -> value) }
-        GraphBuilder(this, [id])
-
-    member this.AddList(nodes: ('Id * 'Val) seq) =
-        nodes |> Seq.iter (fun (id, value) -> addNode { Id = id; Value = Some value; Compute = (fun _ -> value) })
-        GraphBuilder(this, nodes |> Seq.map fst)
-
-    member this.AddOrUpdateNode(id: 'Id, dependsOn: 'Id seq, value: 'Val seq -> 'Val  ) =
-        addNode { Id = id; Value = None; Compute = value }
-        
-        match dependencies.TryGetValue id with
-        | true, oldDependencies ->
-            for dep in oldDependencies do
-                match dependents.TryGetValue dep with
-                | true, set -> set.Remove id |> ignore
-                | _ -> ()
-        | _ -> ()
-
-        dependencies |> insert id (HashSet dependsOn)
-        
-        for dep in dependsOn do
-            match dependents.TryGetValue dep with
-            | true, set -> set.Add id |> ignore
-            | false, _ -> dependents.Add(dep, HashSet([| id |]))
-
-        GraphBuilder(this, [id])
-
-    member this.GetValue(id: 'Id) =
-        let node = nodes.[id]
-        match node.Value with
-        | Some value -> value
-        | None ->
-            let dependencies = dependencies.[id]
-            let values = dependencies |> Seq.map (fun id -> this.GetValue id)
-            let value = node.Compute values
-            nodes.[id] <- { node with Value = Some value }
-            value
-
-    member this.GetDependentsOf(identifier: 'Id) =
-        match dependents.TryGetValue identifier with
-        | true, set -> set |> Seq.map id
-        | false, _ -> Seq.empty
-
-
-and GraphBuilder<'Id, 'Val when 'Id :equality> internal (graph: DependencyGraph<'Id, 'Val>, ids: 'Id seq) =
+type IDependencyGraph<'Id, 'Val when 'Id: equality> =
     
-    member private _.Ids = ids
+    abstract member AddOrUpdateNode: id:'Id * value:'Val -> IGraphBuilder<'Id, 'Val>
+    abstract member AddList: nodes: ('Id * 'Val) seq -> IGraphBuilder<'Id, 'Val>
+    abstract member AddOrUpdateNode: id: 'Id * dependsOn: 'Id seq * compute: ('Val seq -> 'Val) -> IGraphBuilder<'Id, 'Val>
+    abstract member GetValue: id: 'Id -> 'Val
+    abstract member GetDependentsOf: id: 'Id -> 'Id seq
+    abstract member AddDependency: node: 'Id * dependsOn: 'Id -> unit
+    abstract member RemoveDependency: node: 'Id * noLongerDependsOn: 'Id -> unit
+    abstract member UpdateNode: id: 'Id * update: ('Val -> 'Val) -> unit
 
-    member _.AddDependentNode(id, compute) =
-        graph.AddOrUpdateNode(id, ids, compute)
+
+and IGraphBuilder<'Id, 'Val when 'Id: equality> =
+    
+    abstract member Ids: 'Id seq
+    abstract member AddDependentNode: 'Id * ('Val seq -> 'Val) -> IGraphBuilder<'Id, 'Val>
+    abstract member And: IGraphBuilder<'Id, 'Val> -> IGraphBuilder<'Id, 'Val>
+
+
+module Internal =
+
+    type DependencyGraph<'Id, 'Val when 'Id :equality >() =
+        let nodes = Dictionary<'Id, DependencyNode<'Id, 'Val>>()
+        let dependencies = Dictionary<'Id, HashSet<'Id>>()
+        let dependents = Dictionary<'Id, HashSet<'Id>>()
+
+        let rec invalidateDependents (id: 'Id) =
+            match dependents.TryGetValue id with
+            | true, set ->
+                for dependent in set do
+                    nodes.[dependent] <- { nodes.[dependent] with Value = None }
+                    invalidateDependents dependent
+            | false, _ -> ()
+
+        let invalidateNodeAndDependents id =
+            nodes[id] <- { nodes[id] with Value = None }
+            invalidateDependents id
+
+        let addNode node =
+            nodes |> insert node.Id node
+            invalidateDependents node.Id
+
+        member _.Debug = {|
+            Nodes = nodes
+            Dependencies = dependencies
+            Dependents = dependents
+            |}
+
+        member this.AddOrUpdateNode(id: 'Id, value: 'Val) =
+            addNode { Id = id; Value = Some value; Compute = (fun _ -> value) }
+            GraphBuilder(this, [id]) :> IGraphBuilder<'Id, 'Val>
+
+        member this.AddList(nodes: ('Id * 'Val) seq) =
+            nodes |> Seq.iter (fun (id, value) -> addNode { Id = id; Value = Some value; Compute = (fun _ -> value) })
+            GraphBuilder(this, nodes |> Seq.map fst) :> IGraphBuilder<'Id, 'Val>
+
+        member this.AddOrUpdateNode(id: 'Id, dependsOn: 'Id seq, value: 'Val seq -> 'Val  ) =
+            addNode { Id = id; Value = None; Compute = value }
+        
+            match dependencies.TryGetValue id with
+            | true, oldDependencies ->
+                for dep in oldDependencies do
+                    match dependents.TryGetValue dep with
+                    | true, set -> set.Remove id |> ignore
+                    | _ -> ()
+            | _ -> ()
+
+            dependencies |> insert id (HashSet dependsOn)
+        
+            for dep in dependsOn do
+                match dependents.TryGetValue dep with
+                | true, set -> set.Add id |> ignore
+                | false, _ -> dependents.Add(dep, HashSet([| id |]))
+
+            GraphBuilder(this, [id]) :> IGraphBuilder<'Id, 'Val>
+
+        member this.GetValue(id: 'Id) =
+            let node = nodes[id]
+            match node.Value with
+            | Some value -> value
+            | None ->
+                let dependencies = dependencies.[id]
+                let values = dependencies |> Seq.map (fun id -> this.GetValue id)
+                let value = node.Compute values
+                nodes.[id] <- { node with Value = Some value }
+                value
+
+        member this.GetDependentsOf(identifier: 'Id) =
+            match dependents.TryGetValue identifier with
+            | true, set -> set |> Seq.map id
+            | false, _ -> Seq.empty
+
+        member this.AddDependency(node: 'Id, dependsOn: 'Id) =
+            match dependencies.TryGetValue node with
+            | true, deps -> deps.Add dependsOn |> ignore
+            | false, _ -> dependencies.Add(node, HashSet([| dependsOn |]))
+            match dependents.TryGetValue dependsOn with
+            | true, deps -> deps.Add node |> ignore
+            | false, _ -> dependents.Add(dependsOn, HashSet([| node |]))
+            invalidateDependents dependsOn
+
+        member this.RemoveDependency(node: 'Id, noLongerDependsOn: 'Id) =
+            match dependencies.TryGetValue node with
+            | true, deps -> deps.Remove noLongerDependsOn |> ignore
+            | false, _ -> ()
+            match dependents.TryGetValue noLongerDependsOn with
+            | true, deps -> deps.Remove node |> ignore
+            | false, _ -> ()
+            invalidateNodeAndDependents node
+
+        member this.UpdateNode(id: 'Id, update: 'Val -> 'Val) =
+            this.GetValue id 
+            |> update
+            |> fun value -> this.AddOrUpdateNode(id, value) |> ignore
+
+    and GraphBuilder<'Id, 'Val when 'Id :equality> internal (graph: DependencyGraph<'Id, 'Val>, ids: 'Id seq) =
+
+        interface IGraphBuilder<'Id, 'Val> with
+    
+            member _.Ids = ids
+
+            member _.AddDependentNode(id, compute) =
+                graph.AddOrUpdateNode(id, ids, compute)
             
-    member _.And(graphBuilder: GraphBuilder<'Id, 'Val>) =
-        GraphBuilder(graph, seq { yield! ids; yield! graphBuilder.Ids })
+            member _.And(graphBuilder: IGraphBuilder<'Id, 'Val>) =
+                GraphBuilder(graph, seq { yield! ids; yield! graphBuilder.Ids })
+
+open Internal
+
+
+type LockOperatedDependencyGraph<'Id, 'Val when 'Id: equality>() =
+    
+    let lockObj = System.Object()
+    let graph = DependencyGraph<'Id, 'Val>()
+
+    interface IDependencyGraph<'Id, 'Val> with
+
+        member _.AddDependency(node: 'Id, dependsOn: 'Id): unit = 
+            lock lockObj (fun () -> graph.AddDependency(node, dependsOn))
+        member _.AddList(nodes: ('Id * 'Val) seq): IGraphBuilder<'Id,'Val> = 
+            lock lockObj (fun () -> graph.AddList(nodes))
+        member _.AddOrUpdateNode(id: 'Id, value: 'Val): IGraphBuilder<'Id,'Val> = 
+            lock lockObj (fun () -> graph.AddOrUpdateNode(id, value))
+        member _.AddOrUpdateNode(id: 'Id, dependsOn: 'Id seq, compute: 'Val seq -> 'Val): IGraphBuilder<'Id,'Val> = 
+            lock lockObj (fun () -> graph.AddOrUpdateNode(id, dependsOn, compute))
+        member _.GetDependentsOf(id: 'Id): 'Id seq = 
+            lock lockObj (fun () -> graph.GetDependentsOf(id))
+        member _.GetValue(id: 'Id): 'Val = 
+            lock lockObj (fun () -> graph.GetValue(id))
+        member _.UpdateNode(id: 'Id, update: 'Val -> 'Val): unit = 
+            lock lockObj (fun () -> graph.UpdateNode(id, update))
+        member _.RemoveDependency(node: 'Id, noLongerDependsOn: 'Id): unit = 
+            lock lockObj (fun () -> graph.RemoveDependency(node, noLongerDependsOn))

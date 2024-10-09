@@ -194,76 +194,104 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
     {
         var ws = this.Extensibility.Workspaces();
 
+
         IQueryResults<IProjectSnapshot>? result = await ws.QueryProjectsAsync(project => project
             .With(p => p.ActiveConfigurations
                 .With(c => c.RuleResultsByRuleName("CompilerCommandLineArgs")
                     .With(r => r.RuleName)
                     .With(r => r.Items)))
+            .With(p => p.ProjectReferences
+                .With(r => r.ReferencedProjectPath)
+                .With(r => r.CanonicalName)
+                .With(r => r.Id)
+                .With(r => r.Name)
+                .With(r => r.ProjectGuid)
+                .With(r => r.ReferencedProjectId)
+                .With(r => r.ReferenceType))
+
             .With(p => new { p.ActiveConfigurations, p.Id, p.Guid }), cancellationToken);
 
 
-        List<(string, string)> projectsAndCommandLineArgs = [];
+
+        var workspace = new FSharpWorkspace();
+
+        var projectMap = new Dictionary<string, List<FSharpProjectIdentifier>>();
+        var projectReferences = new Dictionary<FSharpProjectIdentifier, List<string>>();
+
         foreach (var project in result)
         {
             project.Id.TryGetValue("ProjectPath", out var projectPath);
 
             List<string> commandLineArgs = [];
+
             if (projectPath != null)
             {
                 var configs = project.ActiveConfigurations.ToList();
                 // There can be multiple Active Configurations, e.g. one for net8.0 and one for net472
                 // TODO For now taking any single one of them, but we might actually want to pick specific one
-                var config = project.ActiveConfigurations.FirstOrDefault();
-                if (config != null)
+                foreach (var config in configs)
                 {
-                    foreach (var ruleResults in config.RuleResults)
+                    if (config != null)
                     {
-                        // XXX Idk why `.Where` does not work with these IAsyncQuerable type
-                        if (ruleResults?.RuleName == "CompilerCommandLineArgs")
+                        foreach (var ruleResults in config.RuleResults)
                         {
-                            // XXX Not sure why there would be more than one item for this rule result
-                            // Taking first one, ignoring the rest
-                            var args = ruleResults?.Items?.FirstOrDefault()?.Name;
-                            if (args != null) commandLineArgs.Add(args);
+                            // XXX Idk why `.Where` does not work with these IAsyncQuerable type
+                            if (ruleResults?.RuleName == "CompilerCommandLineArgs")
+                            {
+                                // XXX Not sure why there would be more than one item for this rule result
+                                // Taking first one, ignoring the rest
+                                var args = ruleResults?.Items?.FirstOrDefault()?.Name;
+                                if (args != null) commandLineArgs.Add(args);
+                            }
                         }
                     }
+
                 }
                 if (commandLineArgs.Count > 0)
                 {
-                    projectsAndCommandLineArgs.Add((projectPath, commandLineArgs[0]));
+                    var projectIdentifiers = commandLineArgs.Select(args => workspace.AddCommandLineArgs(projectPath, args.Split(';'))).ToList();
+
+                    projectMap.Add(projectPath, projectIdentifiers);
+
+                    var references = new List<string>();
+
+                    foreach (var reference in project.ProjectReferences)
+                    {
+                        if (reference.ReferencedProjectPath != null)
+                        {
+                            references.Add(reference.ReferencedProjectPath);
+                        }
+                    }
+
+                    foreach (var projectIdentifier in projectIdentifiers)
+                    {
+                        projectReferences.Add(projectIdentifier, references);
+                    }
+                }
+
+                try
+                {
+                    this.ProcessProject(project);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex);
                 }
             }
-
-            try
-            {
-                this.ProcessProject(project);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex);
-            }
         }
 
-        var workspace = new FSharpWorkspace();
-
-        try
+        foreach (var kv in projectReferences)
         {
-            List<FSharpProjectSnapshot> snapshots = [];
-            foreach(var args in projectsAndCommandLineArgs)
-            {
-                var lines = args.Item2.Split(';'); // XXX Probably not robust enough
-                var path = args.Item1;
+            var projectIdentifier = kv.Key;
+            var references = kv.Value;
 
-                workspace.AddCommandLineArgs(path, lines);
+            var referencedProjectIdentifiers = references
+                // TODO: If referenced project path is not in project map, we just skip it. We should probably add some diagnostics
+                .Where(projectMap.ContainsKey)
+                // TODO: we don't know how to choose the correct configuration of the project, so for now we just take the first one
+                .Select(r => projectMap[r].First());
 
-                string directoryPath = Path.GetDirectoryName(path) ?? throw new Exception("Directory path should not be null");
-                var snapshot = FSharpProjectSnapshot.FromCommandLineArgs(
-                    lines, directoryPath, Path.GetFileName(path));
-                snapshots.Add(snapshot);
-            }
-        }
-        catch
-        {
+            workspace.AddProjectReferences(projectIdentifier, referencedProjectIdentifiers);
         }
 
         var ((clientStream, serverStream), _server) = FSharpLanguageServer.Create(workspace, (serviceCollection) =>

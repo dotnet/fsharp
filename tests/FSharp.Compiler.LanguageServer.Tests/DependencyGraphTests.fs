@@ -1,7 +1,7 @@
 module DependencyGraphTests
 
 
-open FSharp.Compiler.LanguageServer.Common.DependencyGraph
+open FSharp.Compiler.LanguageServer.Common.DependencyGraph.Internal
 open Xunit
 
 
@@ -60,4 +60,18 @@ let ``Dependencies are ordered`` () =
     let expectedResult = input |> List.map (fun x -> if x = 35 then 42 else x)
     Assert.Equal<int list>(expectedResult, graph.GetValue(101))
 
+[<Fact>]
+let ``We can add a dependency between existing nodes`` () =
+    let graph = DependencyGraph()
+    graph.AddOrUpdateNode(1, [1])
+        .AddDependentNode(2, fun deps -> deps |> Seq.concat |> Seq.toList) |> ignore
+
+    graph.AddOrUpdateNode(3, [3]) |> ignore
+
+    Assert.Equal<int list>([1], graph.GetValue(2))
+
+    graph.AddDependency(2, 3)
+
+    Assert.Equal<int list>([1; 3], graph.GetValue(2))
+    
 

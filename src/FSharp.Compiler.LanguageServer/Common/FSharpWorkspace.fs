@@ -16,9 +16,9 @@ type internal WorkspaceNodeKey =
     // TODO: maybe this should be URI
     | SourceFile of filePath: string
     | ReferenceOnDisk of filePath: string
-    | ProjectCore of ProjectIdentifier
-    | ProjectBase of ProjectIdentifier
-    | ProjectSnapshot of ProjectIdentifier
+    | ProjectCore of FSharpProjectIdentifier
+    | ProjectBase of FSharpProjectIdentifier
+    | ProjectSnapshot of FSharpProjectIdentifier
 
 [<RequireQualifiedAccess>]
 type internal WorkspaceNodeValue =
@@ -49,59 +49,9 @@ type internal WorkspaceNodeValue =
         | x -> failwithf "Expected ProjectSnapshot, got %A" x
 
 
-/// Holds a project snapshot and a queue of changes that will be applied to it when it's requested
-///
-/// The assumption is that this is faster than actually applying the changes to the snapshot immediately and that
-/// we will be doing this on potentially every keystroke. But this should probably be measured at some point.
-type SnapshotHolder(snapshot: FSharpProjectSnapshot, changedFiles: Set<string>, openFiles: Map<string, string>) =
-
-    let applyFileChangesToSnapshot () =
-        let files =
-            changedFiles
-            |> Seq.map (fun filePath ->
-                match openFiles.TryFind filePath with
-                | Some content ->
-                    FSharpFileSnapshot.Create(
-                        filePath,
-                        DateTime.Now.Ticks.ToString(),
-                        fun () -> content |> SourceTextNew.ofString |> Task.FromResult
-                    )
-                | None -> FSharpFileSnapshot.CreateFromFileSystem(filePath))
-            |> Seq.toList
-
-        snapshot.Replace files
-
-    // We don't want to mutate the workspace by applying the changes when snapshot is requested because that would force the language
-    // requests to be processed sequentially. So instead we keep the change application under lazy so it's still only computed if needed
-    // and only once and workspace doesn't change.
-    let appliedChanges =
-        lazy SnapshotHolder(applyFileChangesToSnapshot (), Set.empty, openFiles)
-
-    member private _.snapshot = snapshot
-    member private _.changedFiles = changedFiles
-
-    member private this.GetMostUpToDateInstance() =
-        if appliedChanges.IsValueCreated then
-            appliedChanges.Value
-        else
-            this
-
-    member this.WithFileChanged(file, openFiles) =
-        let previous = this.GetMostUpToDateInstance()
-        SnapshotHolder(previous.snapshot, previous.changedFiles.Add file, openFiles)
-
-    member this.WithoutFileChanged(file, openFiles) =
-        let previous = this.GetMostUpToDateInstance()
-        SnapshotHolder(previous.snapshot, previous.changedFiles.Remove file, openFiles)
-
-    member _.GetSnapshot() = appliedChanges.Value.snapshot
-
-    static member Of(snapshot: FSharpProjectSnapshot) =
-        SnapshotHolder(snapshot, Set.empty, Map.empty)
-
 type FSharpWorkspace() =
     
-    let depGraph = DependencyGraph()
+    let depGraph = LockOperatedDependencyGraph() :> IDependencyGraph<_, _>
 
     member this.OpenFile(file: Uri, content: string) =
         // No changes in the dep graph. If we already read the contents from disk we don't want to invalidate it. 
@@ -129,7 +79,7 @@ type FSharpWorkspace() =
             findOutputFileName compilerArgs
             |> Option.defaultWith (fun () -> failwith "Invalid command line arguments for F# project, output file name not found")
         
-        let projectIdentifier = ProjectIdentifier (projectPath, outputPath)
+        let projectIdentifier = FSharpProjectIdentifier (projectPath, outputPath)
 
         let directoryPath = Path.GetDirectoryName(projectPath)
 
@@ -157,15 +107,19 @@ type FSharpWorkspace() =
         let referencesOnDisk =
             compilerArgs 
             |> Seq.filter isReference 
-            |> Seq.map _.Substring(3) 
-            |> Seq.map (fun path -> 
-                WorkspaceNodeKey.ReferenceOnDisk path,
-                WorkspaceNodeValue.ReferenceOnDisk {
+            |> Seq.map _.Substring(3)
+            |> Seq.map (fun path ->
+                {
                          Path = path
                          LastModified = File.GetLastWriteTimeUtc path
                      })
-            |> depGraph.AddList
             
+        let referencesOnDiskNodes = 
+            referencesOnDisk 
+            |> Seq.map (fun r -> 
+                WorkspaceNodeKey.ReferenceOnDisk r.Path,
+                WorkspaceNodeValue.ReferenceOnDisk r )
+            |> depGraph.AddList
 
         let otherOptions =
             compilerArgs
@@ -174,7 +128,7 @@ type FSharpWorkspace() =
             |> Seq.toList
 
         let projectCore = 
-            referencesOnDisk
+            referencesOnDiskNodes
                 .AddDependentNode(WorkspaceNodeKey.ProjectCore projectIdentifier, (fun refsOnDiskNodes ->
                     let refsOnDisk = refsOnDiskNodes |> Seq.map _.UnwrapReferenceOnDisk() |> Seq.toList
 
@@ -213,6 +167,19 @@ type FSharpWorkspace() =
             |> WorkspaceNodeValue.ProjectSnapshot)) 
             |> ignore
 
+        projectIdentifier 
+
+    member _.AddProjectReferences(project: FSharpProjectIdentifier, references: FSharpProjectIdentifier seq) =
+        references
+        |> Seq.iter (fun reference ->
+            
+            let outputPath = reference |> function (FSharpProjectIdentifier (_, outputPath)) -> outputPath
+
+            depGraph.AddDependency(WorkspaceNodeKey.ProjectBase project, dependsOn=WorkspaceNodeKey.ProjectSnapshot reference)
+            depGraph.RemoveDependency(WorkspaceNodeKey.ProjectCore project, noLongerDependsOn=WorkspaceNodeKey.ReferenceOnDisk outputPath)
+            )
+        // TODO: might need to remove the -r: references from the project core; maybe even remove the particular reference on disk from the graph
+
     member _.GetSnapshotForFile(file: Uri) =
 
         depGraph.GetDependentsOf(WorkspaceNodeKey.SourceFile file.LocalPath)
@@ -224,5 +191,3 @@ type FSharpWorkspace() =
 
         |> Option.map depGraph.GetValue             
         |> Option.map _.UnwrapProjectSnapshot()
-
-
