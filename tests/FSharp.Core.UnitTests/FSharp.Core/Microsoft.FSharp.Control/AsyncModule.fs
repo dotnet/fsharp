@@ -467,21 +467,24 @@ type AsyncModule() =
 
     [<Fact>]
     member _.``error on one workflow should cancel all others``() =
-        let go = new ManualResetEvent(false)
-        let mutable counter = 0
-        let job i = async {               
-            if i = 55 then
-                go.Set() |> ignore
+        task {
+            use failOnlyOne = new Semaphore(0, 1)
+            let mutable cancelled = 0
+            let mutable started = 0
+
+            let job i = async {
+                use! holder = Async.OnCancel (fun () -> Interlocked.Increment &cancelled |> ignore)
+                Interlocked.Increment &started |> ignore
+                do! failOnlyOne |> Async.AwaitWaitHandle |> Async.Ignore
                 failwith "boom" 
-            else 
-                do! Async.AwaitWaitHandle go |> Async.Ignore
-                counter <- counter + 1
+            }
+
+            let test = Async.Parallel [ for i in 1 .. 100 -> job i ] |> Async.Catch |> Async.Ignore |> Async.StartAsTask
+            do! Task.Delay 100
+            failOnlyOne.Release() |> ignore
+            do! test
+            Assert.Equal(started - 1, cancelled)
         }
-
-        let t = Async.Parallel [ for i in 1 .. 100 -> job i ] |> Async.Catch |> Async.Ignore |> Async.StartAsTask
-        t.Wait()
-
-        Assert.AreEqual(0, counter)
 
     [<Fact>]
     member _.``AwaitWaitHandle.ExceptionsAfterTimeout``() = 
