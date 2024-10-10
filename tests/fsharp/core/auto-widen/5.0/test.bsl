@@ -9,7 +9,7 @@ test.fsx(14,20,14,41): typecheck error FS0001: This expression was expected to h
 but here has type
     'int'    
 
-test.fsx(17,20,17,44): typecheck error FS0001: This expression was expected to have type
+test.fsx(17,33,17,38): typecheck error FS0001: This expression was expected to have type
     'obj'    
 but here has type
     'int'    
@@ -149,7 +149,7 @@ test.fsx(69,26,69,29): typecheck error FS0001: This expression was expected to h
 but here has type
     'int'    
 
-test.fsx(93,13,93,20): typecheck error FS0041: No overloads match for method 'M1'.
+test.fsx(93,15,93,17): typecheck error FS0041: No overloads match for method 'M1'.
 
 Known type of argument: int
 
@@ -157,7 +157,7 @@ Available overloads:
  - static member C.M1: x: int64 -> unit // Argument 'x' doesn't match
  - static member C.M1: x: string -> 'a0 // Argument 'x' doesn't match
 
-test.fsx(99,13,99,22): typecheck error FS0041: No overloads match for method 'M1'.
+test.fsx(99,15,99,17): typecheck error FS0041: No overloads match for method 'M1'.
 
 Known type of argument: x: int
 
@@ -170,7 +170,7 @@ test.fsx(116,20,116,21): typecheck error FS0001: This expression was expected to
 but here has type
     'int'    
 
-test.fsx(121,14,121,21): typecheck error FS0041: No overloads match for method 'M1'.
+test.fsx(121,16,121,18): typecheck error FS0041: No overloads match for method 'M1'.
 
 Known type of argument: int
 
@@ -188,7 +188,7 @@ test.fsx(122,22,122,23): typecheck error FS0001: This expression was expected to
 but here has type
     'int'    
 
-test.fsx(127,14,127,21): typecheck error FS0041: No overloads match for method 'M1'.
+test.fsx(127,16,127,18): typecheck error FS0041: No overloads match for method 'M1'.
 
 Known type of argument: int
 

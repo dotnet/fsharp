@@ -94,11 +94,11 @@ module ByrefSafetyAnalysis =
             (Error 412, Line 178, Col 13, Line 178, Col 24, "A type instantiation involves a byref type. This is not permitted by the rules of Common IL.")
             (Error 412, Line 183, Col 9, Line 183, Col 20, "A type instantiation involves a byref type. This is not permitted by the rules of Common IL.")
             (Error 412, Line 187, Col 13, Line 187, Col 14, "A type instantiation involves a byref type. This is not permitted by the rules of Common IL.")
-            (Error 412, Line 187, Col 17, Line 187, Col 32, "A type instantiation involves a byref type. This is not permitted by the rules of Common IL.")
-            (Error 425, Line 187, Col 17, Line 187, Col 32, "The type of a first-class function cannot contain byrefs")
+            (Error 412, Line 187, Col 28, Line 187, Col 32, "A type instantiation involves a byref type. This is not permitted by the rules of Common IL.")
+            (Error 425, Line 187, Col 28, Line 187, Col 32, "The type of a first-class function cannot contain byrefs")
             (Error 412, Line 191, Col 13, Line 191, Col 14, "A type instantiation involves a byref type. This is not permitted by the rules of Common IL.")
-            (Error 412, Line 193, Col 13, Line 193, Col 28, "A type instantiation involves a byref type. This is not permitted by the rules of Common IL.")
-            (Error 412, Line 198, Col 9, Line 198, Col 24, "A type instantiation involves a byref type. This is not permitted by the rules of Common IL.")
+            (Error 412, Line 193, Col 24, Line 193, Col 28, "A type instantiation involves a byref type. This is not permitted by the rules of Common IL.")
+            (Error 412, Line 198, Col 20, Line 198, Col 24, "A type instantiation involves a byref type. This is not permitted by the rules of Common IL.")
             (Error 3301, Line 201, Col 9, Line 201, Col 15, "The function or method has an invalid return type '(byref<int> * int)'. This is not permitted by the rules of Common IL.")
             (Error 412, Line 203, Col 10, Line 203, Col 15, "A type instantiation involves a byref type. This is not permitted by the rules of Common IL.")
             (Error 421, Line 203, Col 11, Line 203, Col 12, "The address of the variable 'x' cannot be used at this point")
@@ -134,19 +134,19 @@ module ByrefSafetyAnalysis =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3237, Line 23, Col 18, Line 23, Col 28, "Cannot call the byref extension method 'Test2. 'this' parameter requires the value to be mutable or a non-readonly byref type.")
+            (Error 3237, Line 23, Col 21, Line 23, Col 28, "Cannot call the byref extension method 'Test2. 'this' parameter requires the value to be mutable or a non-readonly byref type.")
             (Error 1, Line 24, Col 9, Line 24, Col 11, "Type mismatch. Expecting a
     'byref<DateTime>'    
 but given a
     'inref<DateTime>'    
 The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
-            (Error 3237, Line 28, Col 9, Line 28, Col 20, "Cannot call the byref extension method 'Change. 'this' parameter requires the value to be mutable or a non-readonly byref type.")
-            (Error 3237, Line 33, Col 19, Line 33, Col 30, "Cannot call the byref extension method 'Test2. 'this' parameter requires the value to be mutable or a non-readonly byref type.")
-            (Error 3237, Line 39, Col 9, Line 39, Col 21, "Cannot call the byref extension method 'Change. 'this' parameter requires the value to be mutable or a non-readonly byref type.")
-            (Error 3239, Line 43, Col 17, Line 43, Col 29, "Cannot partially apply the extension method 'NotChange' because the first parameter is a byref type.")
-            (Error 3239, Line 44, Col 17, Line 44, Col 24, "Cannot partially apply the extension method 'Test' because the first parameter is a byref type.")
-            (Error 3239, Line 45, Col 17, Line 45, Col 26, "Cannot partially apply the extension method 'Change' because the first parameter is a byref type.")
-            (Error 3239, Line 46, Col 17, Line 46, Col 25, "Cannot partially apply the extension method 'Test2' because the first parameter is a byref type.")
+            (Error 3237, Line 28, Col 12, Line 28, Col 20, "Cannot call the byref extension method 'Change. 'this' parameter requires the value to be mutable or a non-readonly byref type.")
+            (Error 3237, Line 33, Col 23, Line 33, Col 30, "Cannot call the byref extension method 'Test2. 'this' parameter requires the value to be mutable or a non-readonly byref type.")
+            (Error 3237, Line 39, Col 13, Line 39, Col 21, "Cannot call the byref extension method 'Change. 'this' parameter requires the value to be mutable or a non-readonly byref type.")
+            (Error 3239, Line 43, Col 20, Line 43, Col 29, "Cannot partially apply the extension method 'NotChange' because the first parameter is a byref type.")
+            (Error 3239, Line 44, Col 20, Line 44, Col 24, "Cannot partially apply the extension method 'Test' because the first parameter is a byref type.")
+            (Error 3239, Line 45, Col 20, Line 45, Col 26, "Cannot partially apply the extension method 'Change' because the first parameter is a byref type.")
+            (Error 3239, Line 46, Col 20, Line 46, Col 25, "Cannot partially apply the extension method 'Test2' because the first parameter is a byref type.")
         ]
     
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TryGetValue.fs"|])>]
@@ -532,7 +532,7 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         |> shouldFail
         |> withDiagnostics [
             (Error 39, Line 1, Col 18, Line 1, Col 19, "The type 'S' is not defined.")
-            (Error 72, Line 1, Col 24, Line 1, Col 27, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
+            (Error 72, Line 1, Col 26, Line 1, Col 27, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
         ]
     
     [<Fact>]

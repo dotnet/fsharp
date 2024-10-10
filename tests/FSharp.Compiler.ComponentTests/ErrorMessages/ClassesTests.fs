@@ -816,3 +816,24 @@ type A() =
             """
             |> typecheck
             |> shouldSucceed
+
+    [<Fact>]
+    let ``No matching overload error uses an accurate range``() =
+        FSharp """
+type T() =
+    static member Instance = T()
+    member _.Method(_: double) = ()
+    member _.Method(_: int) = ()
+T.Instance.Method("")
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 41, Line 6, Col 12, Line 6, Col 18, "No overloads match for method 'Method'.
+
+Known type of argument: string
+
+Available overloads:
+ - member T.Method: double -> unit // Argument at index 1 doesn't match
+ - member T.Method: int -> unit // Argument at index 1 doesn't match")
+        ]

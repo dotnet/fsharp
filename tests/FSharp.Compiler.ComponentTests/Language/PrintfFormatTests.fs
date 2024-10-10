@@ -91,5 +91,5 @@ let bad2 = sprintf Library.Version
     |> shouldFail
     |> withDiagnostics [
         (Error 3350, Line 7, Col 20, Line 7, Col 26, "Feature 'String values marked as literals and IL constants as printf format' is not available in F# 7.0. Please use language version 8.0 or greater.")
-        (Error 3350, Line 9, Col 20, Line 9, Col 35, "Feature 'String values marked as literals and IL constants as printf format' is not available in F# 7.0. Please use language version 8.0 or greater.")
+        (Error 3350, Line 9, Col 28, Line 9, Col 35, "Feature 'String values marked as literals and IL constants as printf format' is not available in F# 7.0. Please use language version 8.0 or greater.")
     ]
