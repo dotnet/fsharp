@@ -67,7 +67,7 @@ let GetSuperTypeOfType g amap m ty =
                 Some (instType (mkInstForAppTy g ty) (superOfTycon g tcref.Deref))
             elif isArrayTy g ty then
                 Some g.system_Array_ty
-            elif isRefTy g ty && not (isObjTy g ty) then
+            elif isRefTy g ty && not (isObjTyAnyNullness g ty) then
                 Some g.obj_ty_noNulls
             elif isStructTupleTy g ty then
                 Some g.system_Value_ty
@@ -117,17 +117,16 @@ let GetImmediateInterfacesOfMetadataType g amap m skipUnref ty (tcref: TyconRef)
             // succeeded with more reported. There are pathological corner cases where this
             // doesn't apply: e.g. for mscorlib interfaces like IComparable, but we can always
             // assume those are present.
-            match tdef.ImplementsCustomAttrs with
-            | Some attrsList when g.langFeatureNullness && g.checkNullness ->
-                for (attrs,attrsIdx),intfTy in tdef.Implements |> List.zip attrsList do
-                    if skipUnref = SkipUnrefInterfaces.No || CanRescopeAndImportILType scoref amap m intfTy then
+            let checkNullness = g.langFeatureNullness && g.checkNullness
+            for {Idx = attrsIdx; Type = intfTy; CustomAttrsStored = attrs} in tdef.Implements.Value do
+                if skipUnref = SkipUnrefInterfaces.No || CanRescopeAndImportILType scoref amap m intfTy then
+                    if checkNullness then
                         let typeAttrs = AttributesFromIL(attrsIdx,attrs)
                         let nullness = {DirectAttributes = typeAttrs; Fallback = FromClass typeAttrs}
                         RescopeAndImportILType scoref amap m tinst nullness intfTy
-            | _ ->
-                for intfTy in tdef.Implements do
-                    if skipUnref = SkipUnrefInterfaces.No || CanRescopeAndImportILType scoref amap m intfTy then
+                    else
                         RescopeAndImportILTypeSkipNullness scoref amap m tinst intfTy
+
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
             for intfTy in tcref.ImmediateInterfaceTypesOfFSharpTycon do
                instType (mkInstForAppTy g ty) intfTy ]

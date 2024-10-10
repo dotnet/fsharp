@@ -44,7 +44,7 @@ and FormatSelectionRange =
 """
     |> printSignatures
     |> prependNewline
-    |> should equal
+    |> assertEqualIgnoreLineEnding
         """
 namespace Foo.Types
 
@@ -87,7 +87,7 @@ type List<'E> with
     member this.X = this.Head
 """
     |> printSignatures
-    |> should equal
+    |> assertEqualIgnoreLineEnding
         """
 module Extensions
 type List<'E> with
@@ -104,7 +104,7 @@ type Map<'K, 'V when 'K: comparison> with
     member m.X (t: 'T) (k: 'K) = Some k, ({| n = [|k|] |}, 0)
 """
     |> printSignatures
-    |> should equal
+    |> assertEqualIgnoreLineEnding
         """
 module Extensions
 type Map<'K,'V when 'K: comparison> with
@@ -126,7 +126,7 @@ type ConcurrentDictionary<'key, 'value> with
     | _ -> None
 """
     |> printSignatures
-    |> should equal
+    |> assertEqualIgnoreLineEnding
         """
 module Extensions
 type System.Collections.Concurrent.ConcurrentDictionary<'key,'value> with
@@ -161,7 +161,7 @@ type DataItem< ^input> with
         DataItem.Create< ^input>(stringValue, friendlyStringValue, item)
 """
     |> printSignatures
-    |> should equal
+    |> assertEqualIgnoreLineEnding
         """
 module Extensions
 
@@ -237,7 +237,7 @@ type Foo =
   member x.Bar with get () = 5 and set v = ignore<int> v
 """
     |> printSignatures
-    |> should equal
+    |> assertEqualIgnoreLineEnding
         """
 module Lib
 
@@ -254,7 +254,7 @@ type Foo =
   member x.Bar with get (a:int) = 5 and set (a:int) v = ignore<int> v
 """
     |> printSignatures
-    |> should equal
+    |> assertEqualIgnoreLineEnding
         """
 module Lib
 

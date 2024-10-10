@@ -38,7 +38,6 @@ type public FSharpChecker =
     /// <param name="parallelReferenceResolution">Indicates whether to resolve references in parallel.</param>
     /// <param name="captureIdentifiersWhenParsing">When set to true we create a set of all identifiers for each parsed file which can be used to speed up finding references.</param>
     /// <param name="documentSource">Default: FileSystem. You can use Custom source to provide a function that will return the source for a given file path instead of reading it from the file system. Note that with this option the FSharpChecker will also not monitor the file system for file changes. It will expect to be notified of changes via the NotifyFileChanged method.</param>
-    /// <param name="useSyntaxTreeCache">Default: true. Indicates whether to keep parsing results in a cache.</param>
     /// <param name="useTransparentCompiler">Default: false. Indicates whether we use a new experimental background compiler. This does not yet support all features</param>
     static member Create:
         ?projectCacheSize: int *
@@ -54,8 +53,6 @@ type public FSharpChecker =
         ?captureIdentifiersWhenParsing: bool *
         [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?documentSource:
             DocumentSource *
-        [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?useSyntaxTreeCache:
-            bool *
         [<Experimental "This parameter is experimental and likely to be removed in the future.">] ?useTransparentCompiler:
             bool ->
             FSharpChecker

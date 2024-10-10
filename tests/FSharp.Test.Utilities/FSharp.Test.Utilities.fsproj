@@ -62,7 +62,6 @@
 
 
   <ItemGroup>
-    <PackageReference Include="NUnit" Version="$(NUnitVersion)" /> <!-- TODO: This should be removed once all NUnit frameworks are migrated to xUnit -->
     <PackageReference Include="xunit" Version="$(XUnitVersion)" />
     <PackageReference Include="FluentAssertions" Version="$(FluentAssertionsVersion)" />
   </ItemGroup>

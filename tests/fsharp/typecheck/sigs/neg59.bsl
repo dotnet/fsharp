@@ -41,6 +41,6 @@ neg59.fs(113,15,113,25): typecheck error FS3140: 'while' expressions may not be 
 
 neg59.fs(118,15,118,25): typecheck error FS3140: 'while' expressions may not be used in queries
 
-neg59.fs(124,17,124,25): typecheck error FS3144: 'return' and 'return!' may not be used in queries
+neg59.fs(124,17,124,23): typecheck error FS3144: 'return' and 'return!' may not be used in queries
 
-neg59.fs(128,17,128,26): typecheck error FS3144: 'return' and 'return!' may not be used in queries
+neg59.fs(128,17,128,24): typecheck error FS3144: 'return' and 'return!' may not be used in queries

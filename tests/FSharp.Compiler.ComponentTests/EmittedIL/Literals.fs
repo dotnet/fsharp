@@ -176,35 +176,94 @@ let [<Literal>] x = System.Int32.MaxValue + 1
         }
 
     [<Fact>]
-    let ``Compilation fails when using decimal arithmetic in literal``() =
+    let ``Arithmetic can be used for constructing decimal literals``() =
         FSharp """
 module LiteralArithmetic
 
-let [<Literal>] x = 1m + 1m
+[<Literal>]
+let x = 1m + 2m
         """
         |> withLangVersion80
         |> compile
-        |> shouldFail
-        |> withResults [
-            { Error = Error 267
-              Range = { StartLine = 4
-                        StartColumn = 21
-                        EndLine = 4
-                        EndColumn = 23 }
-              Message = "This is not a valid constant expression or custom attribute value" }
-            { Error = Error 267
-              Range = { StartLine = 4
-                        StartColumn = 26
-                        EndLine = 4
-                        EndColumn = 28 }
-              Message = "This is not a valid constant expression or custom attribute value" }
-            { Error = Error 267
-              Range = { StartLine = 4
-                        StartColumn = 21
-                        EndLine = 4
-                        EndColumn = 28 }
-              Message = "This is not a valid constant expression or custom attribute value" }
+        |> shouldSucceed
+        |> verifyIL [
+            """.field public static initonly valuetype [runtime]System.Decimal x"""
+            """.custom instance void [runtime]System.Runtime.CompilerServices.DecimalConstantAttribute::.ctor(uint8,
+                                                                                                        uint8,
+                                                                                                        int32,
+                                                                                                        int32,
+                                                                                                        int32) = ( 01 00 00 00 00 00 00 00 00 00 00 00 03 00 00 00 
+                                                                                                                   00 00 )"""
+            """.maxstack  8"""
+            """IL_0000:  ldc.i4.3"""
+            """IL_0001:  ldc.i4.0"""
+            """IL_0002:  ldc.i4.0"""
+            """IL_0003:  ldc.i4.0"""
+            """IL_0004:  ldc.i4.0"""
+            """IL_0005:  newobj     instance void [runtime]System.Decimal::.ctor(int32,
+                                                                             int32,
+                                                                             int32,
+                                                                             bool,
+                                                                             uint8)"""
+            """IL_000a:  stsfld     valuetype [runtime]System.Decimal LiteralArithmetic::x"""
+            """IL_000f:  ret"""
         ]
+
+    [<Fact>]
+    let ``Pattern matching decimal literal``() =
+        FSharp """
+module PatternMatch
+
+[<Literal>]
+let x = 5m
+
+let test () =
+    match x with
+    | 5m -> 0
+    | _ -> 1
+        """
+        |> withLangVersion80
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            """.field public static initonly valuetype [runtime]System.Decimal x"""
+            """  .custom instance void [runtime]System.Runtime.CompilerServices.DecimalConstantAttribute::.ctor(uint8,
+                                                                                                        uint8,
+                                                                                                        int32,
+                                                                                                        int32,
+                                                                                                        int32) = ( 01 00 00 00 00 00 00 00 00 00 00 00 05 00 00 00 
+                                                                                                                   00 00 )"""
+            """IL_0016:  call       bool [netstandard]System.Decimal::op_Equality(valuetype [netstandard]System.Decimal,
+                                                                       valuetype [netstandard]System.Decimal)"""
+            """.maxstack  8"""
+            """IL_0000:  ldc.i4.5"""
+            """IL_0001:  ldc.i4.0"""
+            """IL_0002:  ldc.i4.0"""
+            """IL_0003:  ldc.i4.0"""
+            """IL_0004:  ldc.i4.0"""
+            """IL_0005:  newobj     instance void [runtime]System.Decimal::.ctor(int32,
+                                                                             int32,
+                                                                             int32,
+                                                                             bool,
+                                                                             uint8)"""
+            """IL_000a:  stsfld     valuetype [runtime]System.Decimal PatternMatch::x"""
+            """IL_000f:  ret"""
+        ]
+
+    [<Fact>]
+    let ``Multiple decimals literals can be created``() =
+        FSharp """
+module DecimalLiterals
+
+[<Literal>]
+let x = 41m
+
+[<Literal>]
+let y = 42m
+        """
+        |> withLangVersion80
+        |> compile
+        |> shouldSucceed
 
     [<Fact>]
     let ``Compilation fails when using arithmetic with a non-literal in literal``() =

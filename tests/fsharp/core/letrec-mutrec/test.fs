@@ -203,6 +203,6 @@ do
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
 
 do (stdout.WriteLine "Test Passed"; 
-    System.IO.File.WriteAllText("test.ok","ok"); 
+    printf "TEST PASSED OK"; 
     exit 0)
 #endif

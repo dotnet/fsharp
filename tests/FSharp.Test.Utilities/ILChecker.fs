@@ -6,7 +6,7 @@ open System
 open System.IO
 open System.Text.RegularExpressions
 
-open NUnit.Framework
+open Xunit
 open TestFramework
 
 [<RequireQualifiedAccess>]

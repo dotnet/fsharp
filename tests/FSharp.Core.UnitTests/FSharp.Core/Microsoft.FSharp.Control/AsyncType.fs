@@ -11,10 +11,34 @@ open Xunit
 open System.Threading
 open System.Threading.Tasks
 
-type RunWithContinuationsTest_WhatToDo =
-    | Exit
-    | Cancel
-    | Throw
+module AsyncType =
+
+    type ExpectedContinuation = Success | Exception | Cancellation
+
+    [<Fact>]
+    let startWithContinuations() =
+
+        let cont actual expected _ =
+            if expected <> actual then
+                failwith $"expected {expected} continuation, but ran {actual}"
+
+        let onSuccess = cont Success
+        let onException = cont Exception
+        let onCancellation = cont Cancellation
+
+        let expect expected computation =
+            Async.StartWithContinuations(computation, onSuccess expected, onException expected, onCancellation expected)
+
+        async {
+            Async.CancelDefaultToken()
+            return () 
+        } |> expect Cancellation
+
+        async { failwith "computation failed" } |> expect Exception
+
+        async { return () } |> expect Success
+
+
 
 type AsyncType() =
 
@@ -27,58 +51,6 @@ type AsyncType() =
     let waitASec (t:Task) =
         let result = t.Wait(TimeSpan(hours=0,minutes=0,seconds=1))
         Assert.True(result, "Task did not finish after waiting for a second.")
-
-    [<Fact>]
-    member _.StartWithContinuations() =
-
-        let mutable whatToDo = Exit
-
-        let asyncWorkflow() =
-            async {
-                let currentState = whatToDo
-
-                // Act
-                let result =
-                    match currentState with
-                    | Exit   -> 1
-                    | Cancel -> Async.CancelDefaultToken()
-                                sleep(1 * 1000)
-                                0
-                    | Throw  -> raise <| System.Exception("You asked me to do it!")
-
-                return result
-            }
-
-        let onSuccess x   =
-            match whatToDo with
-            | Cancel | Throw
-                -> Assert.Fail("Expected onSuccess but whatToDo was not Exit", [| whatToDo |])
-            | Exit
-                -> ()
-
-        let onException x =
-            match whatToDo with
-            | Exit | Cancel
-                -> Assert.Fail("Expected onException but whatToDo was not Throw", [| whatToDo |])
-            | Throw  -> ()
-
-        let onCancel x    =
-            match whatToDo with
-            | Exit | Throw
-                -> Assert.Fail("Expected onCancel but whatToDo was not Cancel", [| whatToDo |])
-            | Cancel -> ()
-
-        // Run it once.
-        whatToDo <- Exit
-        Async.StartWithContinuations(asyncWorkflow(), onSuccess, onException, onCancel)
-
-        whatToDo <- Cancel
-        Async.StartWithContinuations(asyncWorkflow(), onSuccess, onException, onCancel)
-
-        whatToDo <- Throw
-        Async.StartWithContinuations(asyncWorkflow(), onSuccess, onException, onCancel)
-
-        ()
 
     [<Fact>]
     member _.AsyncRunSynchronouslyReusesThreadPoolThread() =
