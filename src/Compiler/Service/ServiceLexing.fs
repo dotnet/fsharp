@@ -734,7 +734,7 @@ module internal LexerStateEncoding =
             )
         | LexCont.EndLine(ifdefs, stringNest, econt) ->
             match econt with
-            | LexerEndlineContinuation.Skip(n, m) ->
+            | LexerEndlineContinuation.IfdefSkip(n, m) ->
                 encodeLexCont (
                     FSharpTokenizerColorState.EndLineThenSkip,
                     int64 n,
@@ -834,7 +834,7 @@ module internal LexerStateEncoding =
             | FSharpTokenizerColorState.ExtendedInterpolatedString ->
                 LexCont.String(ifdefs, stringNest, LexerStringStyle.ExtendedInterpolated, stringKind, delimLen, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.EndLineThenSkip ->
-                LexCont.EndLine(ifdefs, stringNest, LexerEndlineContinuation.Skip(n1, mkRange "file" p1 p1))
+                LexCont.EndLine(ifdefs, stringNest, LexerEndlineContinuation.IfdefSkip(n1, mkRange "file" p1 p1))
             | FSharpTokenizerColorState.EndLineThenToken -> LexCont.EndLine(ifdefs, stringNest, LexerEndlineContinuation.Token)
             | _ -> LexCont.Token([], stringNest)
 
