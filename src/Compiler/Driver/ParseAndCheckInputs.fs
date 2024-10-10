@@ -228,9 +228,9 @@ let GetScopedPragmasForHashDirective hd (langVersion: LanguageVersion) =
                     match supportsNonStringArguments, s with
                     | _, ParsedHashDirectiveArgument.SourceIdentifier _ -> None
                     | true, ParsedHashDirectiveArgument.LongIdent _ -> None
-                    | true, ParsedHashDirectiveArgument.Int32(n, m) -> GetWarningNumber(m, string n, langVersion)
-                    | true, ParsedHashDirectiveArgument.Ident(s, m) -> GetWarningNumber(m, s.idText, langVersion)
-                    | _, ParsedHashDirectiveArgument.String(s, _, m) -> GetWarningNumber(m, s, langVersion)
+                    | true, ParsedHashDirectiveArgument.Int32(n, m) -> GetWarningNumber(m, string n, langVersion, false)
+                    | true, ParsedHashDirectiveArgument.Ident(s, m) -> GetWarningNumber(m, s.idText, langVersion, false)
+                    | _, ParsedHashDirectiveArgument.String(s, _, m) -> GetWarningNumber(m, s, langVersion, false)
                     | _ -> None
 
                 match warningNumber with

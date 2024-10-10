@@ -91,9 +91,9 @@ let ResolveFileUsingPaths (paths, m, fileName) =
         let searchMessage = String.concat "\n " paths
         raise (FileNameNotResolved(fileName, searchMessage, m))
 
-let GetWarningNumber (m, warningNumberString: string, (langVersion: LanguageVersion)) =
+let GetWarningNumber (m, warningNumberString: string, (langVersion: LanguageVersion), isCompilerOption: bool) =
     let argFeature = LanguageFeature.ParsedHashDirectiveArgumentNonQuotes
-    let prefixSupported = langVersion.SupportsFeature(argFeature)
+    let prefixSupported = langVersion.SupportsFeature(argFeature) || isCompilerOption
 
     let warn err =
         warning err
@@ -931,7 +931,7 @@ type TcConfigBuilder =
     member tcConfigB.TurnWarningOff(m, s: string) =
         use _ = UseBuildPhase BuildPhase.Parameter
 
-        match GetWarningNumber(m, s, tcConfigB.langVersion) with
+        match GetWarningNumber(m, s, tcConfigB.langVersion, true) with
         | None -> ()
         | Some n ->
             // nowarn:62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
@@ -946,7 +946,7 @@ type TcConfigBuilder =
     member tcConfigB.TurnWarningOn(m, s: string) =
         use _ = UseBuildPhase BuildPhase.Parameter
 
-        match GetWarningNumber(m, s, tcConfigB.langVersion) with
+        match GetWarningNumber(m, s, tcConfigB.langVersion, true) with
         | None -> ()
         | Some n ->
             // warnon 62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus

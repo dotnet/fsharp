@@ -145,8 +145,9 @@ module TestCompilerWarningLevel =
         compilation
         |> asExe
         |> withOptions ["--nowarn:NU0000;FS40;NU0001;FS21"]
-        |> compileAndRun
-        |> shouldSucceed
+        |> compile
+        |> shouldFail
+        |> withWarningCodes [203; 203]
         |> ignore
 
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"warn40.fs"|])>]
