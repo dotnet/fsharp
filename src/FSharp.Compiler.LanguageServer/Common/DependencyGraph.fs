@@ -30,7 +30,7 @@ type IDependencyGraph<'Id, 'Val when 'Id: equality> =
 and IThreadSafeDependencyGraph<'Id, 'Val when 'Id: equality> =
     inherit IDependencyGraph<'Id, 'Val>
 
-    abstract member Transact: (IDependencyGraph<'Id, 'Val> -> unit) -> unit
+    abstract member Transact<'a>: (IDependencyGraph<'Id, 'Val> -> 'a) -> 'a
 
 and IGraphBuilder<'Id, 'Val when 'Id: equality> =
 

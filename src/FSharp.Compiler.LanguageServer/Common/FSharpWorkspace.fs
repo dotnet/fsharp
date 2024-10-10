@@ -5,7 +5,7 @@ open System.Collections.Generic
 open DependencyGraph
 open System.IO
 
-#nowarn "57"
+//#nowarn "57"
 
 open System
 open System.Threading.Tasks
@@ -55,7 +55,7 @@ type internal WorkspaceNodeValue =
 
 type FSharpWorkspace() =
 
-    let depGraph = LockOperatedDependencyGraph() :> IDependencyGraph<_, _>
+    let depGraph = LockOperatedDependencyGraph() :> IThreadSafeDependencyGraph<_, _>
 
     member this.OpenFile(file: Uri, content: string) =
         // No changes in the dep graph. If we already read the contents from disk we don't want to invalidate it.
@@ -103,19 +103,6 @@ type FSharpWorkspace() =
 
         let isReference: string -> bool = _.StartsWith("-r:")
 
-        let fsharpFiles =
-            compilerArgs
-            |> Seq.choose (fun (line: string) ->
-                if not (isFSharpFile line) then
-                    None
-                else
-
-                    let fullPath = Path.Combine(directoryPath, line)
-                    if not (File.Exists fullPath) then None else Some fullPath)
-            |> Seq.map (fun path ->
-                WorkspaceNodeKey.SourceFile path, WorkspaceNodeValue.SourceFile(FSharpFileSnapshot.CreateFromFileSystem path))
-            |> depGraph.AddList
-
         let referencesOnDisk =
             compilerArgs
             |> Seq.filter isReference
@@ -126,102 +113,121 @@ type FSharpWorkspace() =
                     LastModified = File.GetLastWriteTimeUtc path
                 })
 
-        let referencesOnDiskNodes =
-            referencesOnDisk
-            |> Seq.map (fun r -> WorkspaceNodeKey.ReferenceOnDisk r.Path, WorkspaceNodeValue.ReferenceOnDisk r)
-            |> depGraph.AddList
-
         let otherOptions =
             compilerArgs
             |> Seq.filter (not << isReference)
             |> Seq.filter (not << isFSharpFile)
             |> Seq.toList
 
-        let projectCore =
-            referencesOnDiskNodes.AddDependentNode(
-                WorkspaceNodeKey.ProjectCore projectIdentifier,
-                (fun refsOnDiskNodes ->
-                    let refsOnDisk = refsOnDiskNodes |> Seq.map _.UnwrapReferenceOnDisk() |> Seq.toList
+        depGraph.Transact(fun depGraph ->
 
-                    ProjectCore(
-                        ProjectFileName = projectPath,
-                        ProjectId = None,
-                        ReferencesOnDisk = refsOnDisk,
-                        OtherOptions = otherOptions,
-                        IsIncompleteTypeCheckEnvironment = false,
-                        UseScriptResolutionRules = false,
-                        LoadTime = DateTime.Now,
-                        UnresolvedReferences = None,
-                        OriginalLoadReferences = [],
-                        Stamp = None
-                    )
+            let fsharpFiles =
+                compilerArgs
+                |> Seq.choose (fun (line: string) ->
+                    if not (isFSharpFile line) then
+                        None
+                    else
+                        let fullPath = Path.Combine(directoryPath, line)
+                        if not (File.Exists fullPath) then None else Some fullPath)
+                |> Seq.map (fun path ->
+                    WorkspaceNodeKey.SourceFile path, WorkspaceNodeValue.SourceFile(FSharpFileSnapshot.CreateFromFileSystem path))
+                |> depGraph.AddList
 
-                    |> WorkspaceNodeValue.ProjectCore)
-            )
+            let referencesOnDiskNodes =
+                referencesOnDisk
+                |> Seq.map (fun r -> WorkspaceNodeKey.ReferenceOnDisk r.Path, WorkspaceNodeValue.ReferenceOnDisk r)
+                |> depGraph.AddList
 
-        let projectBase =
-            projectCore.AddDependentNode(
-                WorkspaceNodeKey.ProjectBase projectIdentifier,
-                (fun deps ->
-                    let projectCore = deps |> Seq.head |> _.UnwrapProjectCore()
+            let projectCore =
+                referencesOnDiskNodes.AddDependentNode(
+                    WorkspaceNodeKey.ProjectCore projectIdentifier,
+                    (fun refsOnDiskNodes ->
+                        let refsOnDisk = refsOnDiskNodes |> Seq.map _.UnwrapReferenceOnDisk() |> Seq.toList
 
-                    let referencedProjects =
-                        deps
-                        |> Seq.skip 1
-                        |> Seq.map _.UnwrapProjectSnapshot()
-                        |> Seq.map (fun s ->
-                            FSharpReferencedProjectSnapshot.FSharpReference(
-                                s.OutputFileName
-                                |> Option.defaultWith (fun () -> failwith "project doesn't have output filename"),
-                                s
-                            ))
-                        |> Seq.toList
+                        ProjectCore(
+                            ProjectFileName = projectPath,
+                            ProjectId = None,
+                            ReferencesOnDisk = refsOnDisk,
+                            OtherOptions = otherOptions,
+                            IsIncompleteTypeCheckEnvironment = false,
+                            UseScriptResolutionRules = false,
+                            LoadTime = DateTime.Now,
+                            UnresolvedReferences = None,
+                            OriginalLoadReferences = [],
+                            Stamp = None
+                        )
 
-                    WorkspaceNodeValue.ProjectBase(projectCore, referencedProjects))
-            )
+                        |> WorkspaceNodeValue.ProjectCore)
+                )
 
-        projectBase
-            .And(fsharpFiles)
-            .AddDependentNode(
-                WorkspaceNodeKey.ProjectSnapshot projectIdentifier,
-                (fun deps ->
+            let projectBase =
+                projectCore.AddDependentNode(
+                    WorkspaceNodeKey.ProjectBase projectIdentifier,
+                    (fun deps ->
+                        let projectCore = deps |> Seq.head |> _.UnwrapProjectCore()
 
-                    let projectCore, referencedProjects = deps |> Seq.head |> _.UnwrapProjectBase()
-                    let sourceFiles = deps |> Seq.skip 1 |> Seq.map _.UnwrapSourceFile() |> Seq.toList
+                        let referencedProjects =
+                            deps
+                            |> Seq.skip 1
+                            |> Seq.map _.UnwrapProjectSnapshot()
+                            |> Seq.map (fun s ->
+                                FSharpReferencedProjectSnapshot.FSharpReference(
+                                    s.OutputFileName
+                                    |> Option.defaultWith (fun () -> failwith "project doesn't have output filename"),
+                                    s
+                                ))
+                            |> Seq.toList
 
-                    ProjectSnapshot(projectCore, referencedProjects, sourceFiles)
-                    |> FSharpProjectSnapshot
-                    |> WorkspaceNodeValue.ProjectSnapshot)
-            )
-        |> ignore
+                        WorkspaceNodeValue.ProjectBase(projectCore, referencedProjects))
+                )
 
-        projectIdentifier
+            projectBase
+                .And(fsharpFiles)
+                .AddDependentNode(
+                    WorkspaceNodeKey.ProjectSnapshot projectIdentifier,
+                    (fun deps ->
+
+                        let projectCore, referencedProjects = deps |> Seq.head |> _.UnwrapProjectBase()
+                        let sourceFiles = deps |> Seq.skip 1 |> Seq.map _.UnwrapSourceFile() |> Seq.toList
+
+                        ProjectSnapshot(projectCore, referencedProjects, sourceFiles)
+                        |> FSharpProjectSnapshot
+                        |> WorkspaceNodeValue.ProjectSnapshot)
+                )
+            |> ignore
+
+            projectIdentifier)
 
     member _.AddProjectReferences(project: FSharpProjectIdentifier, references: FSharpProjectIdentifier seq) =
-        references
-        |> Seq.iter (fun reference ->
+        depGraph.Transact(fun depGraph ->
 
-            let outputPath =
-                reference
-                |> function
-                    | (FSharpProjectIdentifier(_, outputPath)) -> outputPath
+            references
+            |> Seq.iter (fun reference ->
 
-            depGraph.AddDependency(WorkspaceNodeKey.ProjectBase project, dependsOn = WorkspaceNodeKey.ProjectSnapshot reference)
+                //let outputPath =
+                //    reference
+                //    |> function
+                //        | (FSharpProjectIdentifier(_, outputPath)) -> outputPath
 
-            depGraph.RemoveDependency(
-                WorkspaceNodeKey.ProjectCore project,
-                noLongerDependsOn = WorkspaceNodeKey.ReferenceOnDisk outputPath
+                depGraph.AddDependency(WorkspaceNodeKey.ProjectBase project, dependsOn = WorkspaceNodeKey.ProjectSnapshot reference)
+
+            // hopefully not needed
+            //depGraph.RemoveDependency(
+            //    WorkspaceNodeKey.ProjectCore project,
+            //    noLongerDependsOn = WorkspaceNodeKey.ReferenceOnDisk outputPath
+            //))
             ))
     // TODO: might need to remove the -r: references from the project core; maybe even remove the particular reference on disk from the graph
 
     member _.GetSnapshotForFile(file: Uri) =
+        depGraph.Transact(fun depGraph ->
 
-        depGraph.GetDependentsOf(WorkspaceNodeKey.SourceFile file.LocalPath)
+            depGraph.GetDependentsOf(WorkspaceNodeKey.SourceFile file.LocalPath)
 
-        // TODO: eventually we need to deal with choosing the appropriate project here
-        // Hopefully we will be able to do it through receiving project context from LSP
-        // Otherwise we have to keep track of which project/configuration is active
-        |> Seq.tryHead // For now just get the first one
+            // TODO: eventually we need to deal with choosing the appropriate project here
+            // Hopefully we will be able to do it through receiving project context from LSP
+            // Otherwise we have to keep track of which project/configuration is active
+            |> Seq.tryHead // For now just get the first one
 
-        |> Option.map depGraph.GetValue
-        |> Option.map _.UnwrapProjectSnapshot()
+            |> Option.map depGraph.GetValue
+            |> Option.map _.UnwrapProjectSnapshot())
