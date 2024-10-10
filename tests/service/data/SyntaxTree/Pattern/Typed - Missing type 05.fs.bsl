@@ -30,7 +30,8 @@ ImplFile
                              InlineKeyword = None
                              EqualsRange = None })],
                        ArbitraryAfterError ("seqExpr", (4,10--4,10)),
-                       (4,4--4,10), { InKeyword = None }), (4,4--4,10)),
+                       (4,4--4,10), { LetOrUseKeyword = (4,4--4,7)
+                                      InKeyword = None }), (4,4--4,10)),
                  (3,0--4,10)), (3,0--4,10))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--4,10), { LeadingKeyword = Module (1,0--1,6) })], (true, true),

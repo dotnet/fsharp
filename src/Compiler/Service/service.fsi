@@ -400,11 +400,12 @@ type public FSharpChecker =
     /// Compile using the given flags.  Source files names are resolved via the FileSystem API.
     /// The output file must be given by a -o flag.
     /// The first argument is ignored and can just be "fsc.exe".
+    /// The method returns the collected diagnostics, and (possibly) a terminating exception.
     /// </summary>
     ///
     /// <param name="argv">The command line arguments for the project build.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member Compile: argv: string[] * ?userOpName: string -> Async<FSharpDiagnostic[] * int>
+    member Compile: argv: string[] * ?userOpName: string -> Async<FSharpDiagnostic[] * exn option>
 
     /// <summary>
     /// Try to get type check results for a file. This looks up the results of recent type checks of the

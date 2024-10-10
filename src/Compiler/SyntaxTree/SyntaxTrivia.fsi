@@ -129,6 +129,8 @@ type SynExprDotLambdaTrivia =
 [<NoEquality; NoComparison>]
 type SynExprLetOrUseTrivia =
     {
+        /// The syntax range of the `let` or `use` keyword.
+        LetOrUseKeyword: range
         /// The syntax range of the `in` keyword.
         InKeyword: range option
     }
