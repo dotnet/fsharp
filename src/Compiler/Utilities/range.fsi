@@ -107,6 +107,44 @@ type Range =
     /// service operations like dot-completion.
     member IsSynthetic: bool 
 
+    member HasOriginalRange: bool
+
+    /// The start line of the range
+    member OriginalStartLine: int
+
+    /// The start column of the range
+    member OriginalStartColumn: int
+
+    /// The line number for the end position of the range
+    member OriginalEndLine: int
+
+    /// The column number for the end position of the range
+    member OriginalEndColumn: int
+
+    /// The start position of the range
+    member OriginalStart: pos
+
+    /// The end position of the range
+    member OriginalEnd: pos
+
+    /// The empty range that is located at the start position of the range
+    member OriginalStartRange: range
+
+    /// The empty range that is located at the end position of the range
+    member OriginalEndRange: range
+
+    /// The file index for the range
+    member internal OriginalFileIndex: int
+
+    /// The file name for the file of the range
+    member OriginalFileName: string
+
+    /// Synthetic marks ranges which are produced by intermediate compilation phases. This
+    /// bit signifies that the range covers something that should not be visible to language
+    /// service operations like dot-completion.
+    member OriginalIsSynthetic: bool 
+
+
     /// Convert a range to be synthetic
     member internal MakeSynthetic: unit -> range
 
@@ -191,6 +229,8 @@ module Range =
     /// This view of range marks uses file indexes explicitly 
     val mkFileIndexRange: FileIndex -> pos -> pos -> range
 
+    val mkFileIndexRangeWithOriginRange: FileIndex -> pos -> pos -> FileIndex -> pos -> pos -> range
+
     /// This view hides the use of file indexes and just uses filenames 
     val mkRange: string -> pos -> pos -> range
 
@@ -269,4 +309,20 @@ module Line =
     /// Convert a line number from one-based line counting (used internally in the F# compiler and in F# error messages) to zero-based line counting (used by Visual Studio)
     val toZ: int -> Line0 
 
+/// Store code file content. Use to implement `CallerArgumentExpression`
+module internal FileContent =
 
+    /// Read all file contents
+    val readFileContents: fileNames: string list -> unit
+
+    type IFileContentGetLine =
+        abstract GetLine: fileName: string -> line: int -> string
+        abstract GetLineNewLineMark: fileName: string -> string
+
+    /// Get a line string from already read files.
+    ///
+    /// Used by `getCodeText` to support `CallerArgumentExpression` in F# Interactive 
+    val mutable getLineDynamic: IFileContentGetLine
+
+    /// Get code text of the specific `range`
+    val getCodeText: range -> string
