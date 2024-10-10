@@ -112,7 +112,8 @@ let ``Abstract Properties Test: access modifiers are not allowed`` () =
     |> withDiagnostics [
         (Error 0561, Line 6, Col 5, Line 6, Col 51, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
         (Error 0561, Line 8, Col 5, Line 8, Col 51, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
-        (Error 0561, Line 10, Col 5, Line 10, Col 60, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+        (Error 0561, Line 10, Col 34, Line 10, Col 42, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+        (Error 0561, Line 10, Col 48, Line 10, Col 56, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
         (Error 0561, Line 12, Col 5, Line 12, Col 46, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
         (Error 0561, Line 14, Col 5, Line 14, Col 46, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
     ]
@@ -132,7 +133,7 @@ type A =
     |> verifyCompile
     |> shouldFail
     |> withDiagnostics [
-        (Error 0561, Line 9, Col 5, Line 9, Col 42, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+        (Error 0561, Line 9, Col 31, Line 9, Col 38, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
     ]
 
 [<Fact>]
