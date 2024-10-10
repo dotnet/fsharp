@@ -473,8 +473,8 @@ type AsyncModule() =
             let mutable started = 0
 
             let job i = async {
-                use! holder = Async.OnCancel (fun () -> Interlocked.Increment &cancelled |> ignore)
                 Interlocked.Increment &started |> ignore
+                use! holder = Async.OnCancel (fun () -> Interlocked.Increment &cancelled |> ignore)
                 do! failOnlyOne |> Async.AwaitWaitHandle |> Async.Ignore
                 failwith "boom" 
             }
