@@ -54,16 +54,20 @@ type AsyncType() =
 
     [<Fact>]
     member _.AsyncRunSynchronouslyReusesThreadPoolThread() =
-        let action = async { async { () } |> Async.RunSynchronously }
-        let computation =
-            [| for i in 1 .. 1000 -> action |]
-            |> Async.Parallel
+        let action _ =
+            async {
+                return
+                    async { return Thread.CurrentThread.ManagedThreadId }
+                    |> Async.RunSynchronously
+            }
         // This test needs approximately 1000 ThreadPool threads
         // if Async.RunSynchronously doesn't reuse them.
-        // In such case TimeoutException is raised
-        // since ThreadPool cannot provide 1000 threads in 1 second
-        // (the number of threads in ThreadPool is adjusted slowly).
-        Async.RunSynchronously(computation, timeout = 1000) |> ignore
+        let usedThreads =
+            Seq.init 1000 action
+            |> Async.Parallel
+            |> Async.RunSynchronously
+            |> Set.ofArray
+        Assert.True(usedThreads.Count < 256, $"RunSynchronously used {usedThreads.Count} threads.")
 
     [<Theory>]
     [<InlineData("int32")>]
