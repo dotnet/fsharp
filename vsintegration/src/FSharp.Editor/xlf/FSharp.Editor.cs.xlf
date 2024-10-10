@@ -174,9 +174,8 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (restart required);
-Cache parsing results (experimental)</source>
-        <target state="translated">Možnosti výkonu pro ukládání do mezipaměti a projekt F#;
+Enable fast find references &amp; rename (restart required)</source>
+        <target state="needs-review-translation">Možnosti výkonu pro ukládání do mezipaměti a projekt F#;
 Povolit odkazy mezi projekty v paměti;
 Povolit_částečnou_kontrolu_typu;
 Možnosti výkonu pro IntelliSense;

@@ -2,7 +2,7 @@
 
 #if INTERACTIVE
 //#r @"../../release/net40/bin/FSharp.Compiler.dll"
-#r @"../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
+#r @"../../packages/xunit.assert/2.9.0/lib/net6.0/xunit.assert.dll"
 #load "../../src/scripts/scriptlib.fsx"
 #load "../FSharp.Test.Utilities/TestFramework.fs"
 #load "single-test.fs"
@@ -69,11 +69,9 @@ let diamondAssembly () =
 
     exec cfg ("." ++ "test3.exe") ""
 
-    use testOkFile = fileguard cfg "test.ok"
+    
 
-    fsi cfg "%s" cfg.fsi_flags ["test3.fsx"]
-
-    testOkFile.CheckExists()
+    fsiCheckPassed cfg "%s" cfg.fsi_flags ["test3.fsx"]
 
 [<Fact>]
 let globalNamespace () =
@@ -286,18 +284,16 @@ let splitAssembly subdir project =
     fsc cfg "--out:test.exe -r:provider.dll" ["test.fsx"]
 
     begin
-        use testOkFile = fileguard cfg "test.ok"
+        
 
-        exec cfg ("." ++ "test.exe") ""
+        execAndCheckPassed cfg ("." ++ "test.exe") ""
 
-        testOkFile.CheckExists()
     end
 
     begin
-        use testOkFile = fileguard cfg "test.ok"
+        
 
-        fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
-        testOkFile.CheckExists()
+        fsiCheckPassed cfg "%s" cfg.fsi_flags ["test.fsx"]
     end
 
     // Do the same thing with different load locations for the type provider design-time component
@@ -326,19 +322,16 @@ let splitAssembly subdir project =
 
         fsc cfg "--out:test.exe -r:provider.dll" ["test.fsx"]
 
-        begin
-            use testOkFile = fileguard cfg "test.ok"
+        begin        
 
-            exec cfg ("." ++ "test.exe") ""
+            execAndCheckPassed cfg ("." ++ "test.exe") ""
 
-            testOkFile.CheckExists()
         end
 
         begin
-            use testOkFile = fileguard cfg "test.ok"
+            
 
-            fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
-            testOkFile.CheckExists()
+            fsiCheckPassed cfg "%s" cfg.fsi_flags ["test.fsx"]
         end
 
     clean()

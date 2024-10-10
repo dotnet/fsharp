@@ -174,9 +174,8 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (restart required);
-Cache parsing results (experimental)</source>
-        <target state="translated">Параметры производительности проекта и кэширования F#; 
+Enable fast find references &amp; rename (restart required)</source>
+        <target state="needs-review-translation">Параметры производительности проекта и кэширования F#; 
 Включить перекрестные ссылки проектов в памяти; 
 Enable_partial_type_checking; 
 Параметры производительности IntelliSense; 

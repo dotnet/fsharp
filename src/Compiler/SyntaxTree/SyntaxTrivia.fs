@@ -85,18 +85,28 @@ type SynExprDotLambdaTrivia =
 [<NoEquality; NoComparison>]
 type SynExprLetOrUseTrivia =
     {
+        LetOrUseKeyword: range
         InKeyword: range option
     }
 
-    static member Zero: SynExprLetOrUseTrivia = { InKeyword = None }
+    static member Zero: SynExprLetOrUseTrivia =
+        {
+            InKeyword = None
+            LetOrUseKeyword = Range.Zero
+        }
 
 [<NoEquality; NoComparison>]
 type SynExprLetOrUseBangTrivia =
     {
+        LetOrUseBangKeyword: range
         EqualsRange: range option
     }
 
-    static member Zero: SynExprLetOrUseBangTrivia = { EqualsRange = None }
+    static member Zero: SynExprLetOrUseBangTrivia =
+        {
+            LetOrUseBangKeyword = Range.Zero
+            EqualsRange = None
+        }
 
 [<NoEquality; NoComparison>]
 type SynExprMatchTrivia =
@@ -111,6 +121,28 @@ type SynExprMatchBangTrivia =
         MatchBangKeyword: range
         WithKeyword: range
     }
+
+[<NoEquality; NoComparison>]
+type SynExprYieldOrReturnTrivia =
+    {
+        YieldOrReturnKeyword: range
+    }
+
+    static member Zero: SynExprYieldOrReturnTrivia = { YieldOrReturnKeyword = Range.Zero }
+
+[<NoEquality; NoComparison>]
+type SynExprYieldOrReturnFromTrivia =
+    {
+        YieldOrReturnFromKeyword: range
+    }
+
+    static member Zero: SynExprYieldOrReturnFromTrivia =
+        {
+            YieldOrReturnFromKeyword = Range.Zero
+        }
+
+[<NoEquality; NoComparison>]
+type SynExprDoBangTrivia = { DoBangKeyword: range }
 
 [<NoEquality; NoComparison>]
 type SynExprAnonRecdTrivia = { OpeningBraceRange: range }
