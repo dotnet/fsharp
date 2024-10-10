@@ -67,7 +67,7 @@ type LexerIfdefStack = LexerIfdefStackEntries
 
 type LexerEndlineContinuation =
     | Token
-    | Skip of int * range: range
+    | IfdefSkip of int * range: range
 
 type LexerIfdefExpression =
     | IfdefAnd of LexerIfdefExpression * LexerIfdefExpression

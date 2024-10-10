@@ -165,9 +165,10 @@ type LexerIfdefStack = LexerIfdefStackEntries
 /// Specifies how the 'endline' function in the lexer should continue after
 /// it reaches end of line or eof. The options are to continue with 'token' function
 /// or to continue with 'skip' function.
+[<RequireQualifiedAccess>]
 type LexerEndlineContinuation =
     | Token
-    | Skip of int * range: range
+    | IfdefSkip of int * range: range
 
 type LexerIfdefExpression =
     | IfdefAnd of LexerIfdefExpression * LexerIfdefExpression
@@ -967,7 +968,7 @@ let checkEndOfFileError t =
 
     | LexCont.MLOnly(_, _, m) -> reportParseErrorAt m (FSComp.SR.parsEofInIfOcaml ())
 
-    | LexCont.EndLine(_, _, LexerEndlineContinuation.Skip(_, m)) -> reportParseErrorAt m (FSComp.SR.parsEofInDirective ())
+    | LexCont.EndLine(_, _, LexerEndlineContinuation.IfdefSkip(_, m)) -> reportParseErrorAt m (FSComp.SR.parsEofInDirective ())
 
     | LexCont.EndLine(endifs, nesting, LexerEndlineContinuation.Token)
     | LexCont.Token(endifs, nesting) ->
