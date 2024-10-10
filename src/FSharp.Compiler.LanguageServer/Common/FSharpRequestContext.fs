@@ -39,7 +39,10 @@ module TokenTypes =
         FSharpLexer.Tokenize(
             source,
             tokenCallback,
-            flags = (FSharpLexerFlags.Default &&& ~~~FSharpLexerFlags.Compiling &&& ~~~FSharpLexerFlags.UseLexFilter),
+            flags =
+                (FSharpLexerFlags.Default
+                 &&& ~~~FSharpLexerFlags.Compiling
+                 &&& ~~~FSharpLexerFlags.UseLexFilter),
             filePath = fileName
         )
 
@@ -71,7 +74,8 @@ module TokenTypes =
         | SemanticClassificationType.Printf -> SemanticTokenTypes.Keyword
         | _ -> SemanticTokenTypes.Comment
 
-    let toIndex (x: string) = SemanticTokenTypes.AllTypes |> Seq.findIndex (fun y -> y = x)
+    let toIndex (x: string) =
+        SemanticTokenTypes.AllTypes |> Seq.findIndex (fun y -> y = x)
 
 type FSharpRequestContext(lspServices: ILspServices, logger: ILspLogger, workspace: FSharpWorkspace, checker: FSharpChecker) =
     member _.LspServices = lspServices
@@ -112,37 +116,61 @@ type FSharpRequestContext(lspServices: ILspServices, logger: ILspLogger, workspa
                     |> _.GetSource()
                     |> Async.AwaitTask
 
-                let syntacticClassifications = TokenTypes.GetSyntacticTokenTypes source file.LocalPath
+                let syntacticClassifications =
+                    TokenTypes.GetSyntacticTokenTypes source file.LocalPath
 
                 let lspFormatTokens =
                     semanticClassifications
                     |> Array.map (fun item -> (item.Range, item.Type |> TokenTypes.FSharpTokenTypeToLSP |> TokenTypes.toIndex))
-                    |> Array.append (syntacticClassifications|> List.map (fun (r, t) -> (r, TokenTypes.toIndex t)) |> Array.ofList)
+                    |> Array.append (
+                        syntacticClassifications
+                        |> List.map (fun (r, t) -> (r, TokenTypes.toIndex t))
+                        |> Array.ofList
+                    )
                     |> Array.map (fun (r, tokType) ->
                         let length = r.EndColumn - r.StartColumn // XXX Does not deal with multiline tokens?
-                        {| startLine = r.StartLine - 1; startCol = r.StartColumn; length = length; tokType = tokType; tokMods = 0 |})
-                        //(startLine, startCol, length, tokType, tokMods))
+
+                        {|
+                            startLine = r.StartLine - 1
+                            startCol = r.StartColumn
+                            length = length
+                            tokType = tokType
+                            tokMods = 0
+                        |})
+                    //(startLine, startCol, length, tokType, tokMods))
                     |> Array.sortWith (fun x1 x2 ->
                         let c = x1.startLine.CompareTo(x2.startLine)
-                        if c <> 0 then c
-                        else x1.startCol.CompareTo(x2.startCol))
+                        if c <> 0 then c else x1.startCol.CompareTo(x2.startCol))
 
                 let tokensRelative =
                     lspFormatTokens
-                    |> Array.append [| {| startLine = 0; startCol = 0; length = 0; tokType = 0; tokMods = 0 |} |]
+                    |> Array.append
+                        [|
+                            {|
+                                startLine = 0
+                                startCol = 0
+                                length = 0
+                                tokType = 0
+                                tokMods = 0
+                            |}
+                        |]
                     |> Array.pairwise
                     |> Array.map (fun (prev, this) ->
                         {|
                             startLine = this.startLine - prev.startLine
-                            startCol = (if prev.startLine = this.startLine then this.startCol - prev.startCol else this.startCol)
+                            startCol =
+                                (if prev.startLine = this.startLine then
+                                     this.startCol - prev.startCol
+                                 else
+                                     this.startCol)
                             length = this.length
                             tokType = this.tokType
                             tokMods = this.tokMods
                         |})
 
-                return tokensRelative
-                    |> Array.map (fun tok ->
-                        [| tok.startLine; tok.startCol; tok.length; tok.tokType; tok.tokMods |])
+                return
+                    tokensRelative
+                    |> Array.map (fun tok -> [| tok.startLine; tok.startCol; tok.length; tok.tokType; tok.tokMods |])
                     |> Array.concat
             })
         |> Option.defaultValue (async { return [||] })
@@ -163,8 +191,7 @@ type ContextHolder(workspace, lspServices: ILspServices) =
             useTransparentCompiler = true
         )
 
-    let mutable context =
-        FSharpRequestContext(lspServices, logger, workspace, checker)
+    let mutable context = FSharpRequestContext(lspServices, logger, workspace, checker)
 
     member _.GetContext() = context
 
@@ -184,4 +211,3 @@ type FShapRequestContextFactory(lspServices: ILspServices) =
             lspServices.GetRequiredService<ContextHolder>()
             |> _.GetContext()
             |> Task.FromResult
-

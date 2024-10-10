@@ -171,16 +171,14 @@ type ReferenceOnDisk =
     { Path: string; LastModified: DateTime }
 
 /// A snapshot of an F# project. The source file type can differ based on which stage of compilation the snapshot is used for.
-type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>(
-    projectCore: ProjectCore, 
-    referencedProjects: FSharpReferencedProjectSnapshot list,
-    sourceFiles: 'T list) =
+type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
+    (projectCore: ProjectCore, referencedProjects: FSharpReferencedProjectSnapshot list, sourceFiles: 'T list) =
 
     // Version of project without source files
-    let baseVersion = 
-        lazy 
+    let baseVersion =
+        lazy
             (projectCore.Version
-            |> Md5Hasher.addBytes' (referencedProjects |> Seq.map _.Version))
+             |> Md5Hasher.addBytes' (referencedProjects |> Seq.map _.Version))
 
     let baseVersionString = lazy (baseVersion.Value |> Md5Hasher.toString)
 
@@ -371,7 +369,7 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>(
         fileKey.WithExtraVersion(fileSnapshot.Version |> Md5Hasher.toString)
 
     /// Cache key for the project without source files
-    member this.BaseCacheKeyWith(label, version) = baseCacheKeyWith(label, version)
+    member this.BaseCacheKeyWith(label, version) = baseCacheKeyWith (label, version)
 
 /// Project snapshot with filenames and versions given as initial input
 and internal ProjectSnapshot = ProjectSnapshotBase<FSharpFileSnapshot>
@@ -421,7 +419,8 @@ and internal ProjectCore
 
     let outputFileName = lazy (OtherOptions |> findOutputFileName)
 
-    let identifier = lazy (ProjectFileName, outputFileName.Value |> Option.defaultValue "")
+    let identifier =
+        lazy (ProjectFileName, outputFileName.Value |> Option.defaultValue "")
 
     member val ProjectDirectory = !! Path.GetDirectoryName(ProjectFileName)
     member _.OutputFileName = outputFileName.Value
@@ -436,14 +435,13 @@ and internal ProjectCore
     member _.ProjectId = ProjectId
     member _.ReferencesOnDisk = ReferencesOnDisk
     member _.OtherOptions = OtherOptions
-    
+
     member _.IsIncompleteTypeCheckEnvironment = IsIncompleteTypeCheckEnvironment
     member _.UseScriptResolutionRules = UseScriptResolutionRules
     member _.LoadTime = LoadTime
     member _.UnresolvedReferences = UnresolvedReferences
     member _.OriginalLoadReferences = OriginalLoadReferences
     member _.Stamp = Stamp
-
 
 and [<NoComparison; CustomEquality; Experimental("This FCS API is experimental and subject to change.")>] FSharpReferencedProjectSnapshot =
     /// <summary>
@@ -491,11 +489,11 @@ and [<NoComparison; CustomEquality; Experimental("This FCS API is experimental a
     static member CreateFSharp(projectOutputFile, snapshot: FSharpProjectSnapshot) =
         FSharpReference(projectOutputFile, snapshot)
 
-    member this.Version = 
+    member this.Version =
         match this with
-            | FSharpReference(_name, p) -> p.ProjectSnapshot.SignatureVersion
-            | PEReference(getStamp, _) -> Md5Hasher.empty |> Md5Hasher.addDateTime (getStamp ())
-            | ILModuleReference(_name, getStamp, _) -> Md5Hasher.empty |> Md5Hasher.addDateTime (getStamp ())
+        | FSharpReference(_name, p) -> p.ProjectSnapshot.SignatureVersion
+        | PEReference(getStamp, _) -> Md5Hasher.empty |> Md5Hasher.addDateTime (getStamp ())
+        | ILModuleReference(_name, getStamp, _) -> Md5Hasher.empty |> Md5Hasher.addDateTime (getStamp ())
 
     override this.Equals(o) =
         match o with
@@ -535,7 +533,8 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
     member _.OtherOptions = projectSnapshot.OtherOptions
     member _.ReferencedProjects = projectSnapshot.ReferencedProjects
 
-    member _.IsIncompleteTypeCheckEnvironment = projectSnapshot.IsIncompleteTypeCheckEnvironment
+    member _.IsIncompleteTypeCheckEnvironment =
+        projectSnapshot.IsIncompleteTypeCheckEnvironment
 
     member _.UseScriptResolutionRules = projectSnapshot.UseScriptResolutionRules
     member _.LoadTime = projectSnapshot.LoadTime
@@ -574,7 +573,8 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
                 stamp
             )
 
-        ProjectSnapshotBase(projectCore, referencedProjects, sourceFiles) |> FSharpProjectSnapshot
+        ProjectSnapshotBase(projectCore, referencedProjects, sourceFiles)
+        |> FSharpProjectSnapshot
 
     static member FromOptions(options: FSharpProjectOptions, getFileSnapshot, ?snapshotAccumulator) =
         let snapshotAccumulator = defaultArg snapshotAccumulator (Dictionary())
@@ -676,7 +676,7 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
 
         let compilerArgs = File.ReadAllLines responseFile.FullName
 
-        let directoryName : string =
+        let directoryName: string =
             match responseFile.DirectoryName with
             | null -> failwith "Directory name of the response file is null"
             | str -> str
