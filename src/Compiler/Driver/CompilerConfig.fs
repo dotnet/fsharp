@@ -91,24 +91,24 @@ let ResolveFileUsingPaths (paths, m, fileName) =
         let searchMessage = String.concat "\n " paths
         raise (FileNameNotResolved(fileName, searchMessage, m))
 
-let GetWarningNumber (m, warningNumber: string, prefixSupported) =
-    try
-        let warningNumber =
-            if warningNumber.StartsWithOrdinal "FS" then
-                if prefixSupported then
-                    warningNumber.Substring 2
-                else
-                    raise (new ArgumentException())
-            else
-                warningNumber
+let GetWarningNumber (m, warningNumberString: string, (langVersion: LanguageVersion)) =
+    let argFeature = LanguageFeature.ParsedHashDirectiveArgumentNonQuotes
+    let prefixSupported = langVersion.SupportsFeature(argFeature)
 
-        if Char.IsDigit(warningNumber[0]) then
-            Some(int32 warningNumber)
-        else
-            None
-    with _ ->
-        warning (Error(FSComp.SR.buildInvalidWarningNumber warningNumber, m))
+    let warn err =
+        warning err
         None
+
+    if (warningNumberString.StartsWithOrdinal "FS") then
+        match prefixSupported, System.Int32.TryParse(warningNumberString.Substring 2) with
+        | true, (true, i) -> Some i
+        | true, (false, _)
+        | false, (false, _) -> warn (Error(FSComp.SR.buildInvalidWarningNumber warningNumberString, m))
+        | false, (true, _) -> warn (languageFeatureError langVersion argFeature m)
+    else
+        match System.Int32.TryParse warningNumberString with
+        | true, i -> Some i
+        | false, _ -> warn (Error(FSComp.SR.buildInvalidWarningNumber warningNumberString, m))
 
 let ComputeMakePathAbsolute implicitIncludeDir (path: string) =
     try
@@ -931,7 +931,7 @@ type TcConfigBuilder =
     member tcConfigB.TurnWarningOff(m, s: string) =
         use _ = UseBuildPhase BuildPhase.Parameter
 
-        match GetWarningNumber(m, s, tcConfigB.langVersion.SupportsFeature(LanguageFeature.ParsedHashDirectiveArgumentNonQuotes)) with
+        match GetWarningNumber(m, s, tcConfigB.langVersion) with
         | None -> ()
         | Some n ->
             // nowarn:62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
@@ -946,7 +946,7 @@ type TcConfigBuilder =
     member tcConfigB.TurnWarningOn(m, s: string) =
         use _ = UseBuildPhase BuildPhase.Parameter
 
-        match GetWarningNumber(m, s, tcConfigB.langVersion.SupportsFeature(LanguageFeature.ParsedHashDirectiveArgumentNonQuotes)) with
+        match GetWarningNumber(m, s, tcConfigB.langVersion) with
         | None -> ()
         | Some n ->
             // warnon 62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
