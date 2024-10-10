@@ -31,7 +31,7 @@ module AccessibilityAnnotations_PermittedLocations =
             (Error 531, Line 19, Col 5, Line 19, Col 12, "Accessibility modifiers should come immediately prior to the identifier naming a construct")
             (Error 531, Line 20, Col 5, Line 20, Col 13, "Accessibility modifiers should come immediately prior to the identifier naming a construct")
             (Error 561, Line 21, Col 14, Line 21, Col 20, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
-            (Error 561, Line 21, Col 14, Line 22, Col 62, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+            (Error 561, Line 22, Col 14, Line 22, Col 21, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
             (Error 561, Line 23, Col 14, Line 23, Col 22, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
         ]
 
