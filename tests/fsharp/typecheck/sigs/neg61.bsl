@@ -57,7 +57,7 @@ neg61.fs(79,13,79,16): typecheck error FS3146: 'try/with' expressions may not be
 
 neg61.fs(86,13,86,16): typecheck error FS3141: 'try/finally' expressions may not be used in queries
 
-neg61.fs(92,13,92,70): typecheck error FS3142: 'use' expressions may not be used in queries
+neg61.fs(92,13,92,16): typecheck error FS3142: 'use' expressions may not be used in queries
 
 neg61.fs(97,13,97,17): typecheck error FS3143: 'let!', 'use!' and 'do!' expressions may not be used in queries
 
