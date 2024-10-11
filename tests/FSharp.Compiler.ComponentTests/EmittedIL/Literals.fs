@@ -169,7 +169,7 @@ let [<Literal>] x = System.Int32.MaxValue + 1
         |> withResult {
             Error = Error 3177
             Range = { StartLine = 4
-                      StartColumn = 24
+                      StartColumn = 34
                       EndLine = 4
                       EndColumn = 46 }
             Message = "This literal expression or attribute argument results in an arithmetic overflow."
@@ -434,7 +434,7 @@ let [<Literal>] x = 1 + System.DateTime.Now.Hour
 #endif
             { Error = Error 267
               Range = { StartLine = 4
-                        StartColumn = 25
+                        StartColumn = 45
                         EndLine = 4
                         EndColumn = 49 }
               Message = "This is not a valid constant expression or custom attribute value" }

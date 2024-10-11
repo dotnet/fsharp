@@ -218,14 +218,14 @@ let ``Consumption of nullable C# - no generics, just strings in methods and fiel
     |> compile
     |> shouldFail
     |> withDiagnostics [
-        Error 3261, Line 5, Col 40, Line 5, Col 85, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
-        Error 3261, Line 5, Col 40, Line 5, Col 85, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."
-        Error 3261, Line 14, Col 34, Line 14, Col 62, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."
-        Error 3261, Line 16, Col 35, Line 16, Col 39, "Nullness warning: The type 'string' does not support 'null'."
-        Error 3261, Line 25, Col 85, Line 25, Col 97, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."
-        Error 3261, Line 28, Col 99, Line 28, Col 111, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."
-        Error 3261, Line 30, Col 97, Line 30, Col 109, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."
-        
+        (Error 3261, Line 5, Col 40, Line 5, Col 85, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability.")
+        (Error 3261, Line 5, Col 54, Line 5, Col 83, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability.")
+        (Error 3261, Line 5, Col 40, Line 5, Col 85, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability.")
+        (Error 3261, Line 14, Col 48, Line 14, Col 62, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability.")
+        (Error 3261, Line 16, Col 35, Line 16, Col 39, "Nullness warning: The type 'string' does not support 'null'.")
+        (Error 3261, Line 25, Col 85, Line 25, Col 97, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability.")
+        (Error 3261, Line 28, Col 99, Line 28, Col 111, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability.")
+        (Error 3261, Line 30, Col 97, Line 30, Col 109, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability.")
       ]
   
 [<FactForNETCOREAPP>]
@@ -259,6 +259,6 @@ let theOtherOne = NullableClass.nullableImmArrayOfNotNullStrings
     |> compile
     |> shouldFail
     |> withDiagnostics 
-                [Error 3261, Line 7, Col 18, Line 7, Col 36, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."]
+                [Error 3261, Line 7, Col 30, Line 7, Col 36, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."]
 
             

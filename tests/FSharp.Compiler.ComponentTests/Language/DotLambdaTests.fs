@@ -322,8 +322,8 @@ let onlyIdC (ids: MyId list) = ids |> List.choose _.IdC
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 23, Line 7, Col 17, Line 7, Col 20, "The member 'IdA' can not be defined because the name 'IdA' clashes with the union case 'IdA' in this type or module");
+            (Error 23, Line 7, Col 17, Line 7, Col 20, "The member 'IdA' cannot be defined because the name 'IdA' clashes with the union case 'IdA' in this type or module");
             (Error 812, Line 22, Col 53, Line 22, Col 56, "The syntax 'expr.id' may only be used with record labels, properties and fields");
-            (Error 23, Line 17, Col 17, Line 17, Col 20, "The member 'IdC' can not be defined because the name 'IdC' clashes with the union case 'IdC' in this type or module");
+            (Error 23, Line 17, Col 17, Line 17, Col 20, "The member 'IdC' cannot be defined because the name 'IdC' clashes with the union case 'IdC' in this type or module");
             (Error 812, Line 24, Col 53, Line 24, Col 56, "The syntax 'expr.id' may only be used with record labels, properties and fields")
         ]
