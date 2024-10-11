@@ -92,31 +92,35 @@ let ResolveFileUsingPaths (paths, m, fileName) =
         let searchMessage = String.concat "\n " paths
         raise (FileNameNotResolved(fileName, searchMessage, m))
 
-let private optionRegex = Regex("""^()[A-Z]*(\d+)$""", RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
+let private optionRegex = Regex("""^(FS)?(\d+)$""", RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
+let private optionRegexIgnore = Regex("""^([A-Z]*)(\d+)$""", RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
 let private codeRegex = Regex("""^(\"?)(?:(?:FS)?(\d+))\1$""", RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
 let private codeRegex8 = Regex("""^"()(\d+)"$""", RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
-let private codeRegex8fs = Regex("""^"FS.*"$""", RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
+let private codeRegex8prefix = Regex("""^"FS.*"$""", RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
 let private codeRegex8ignore = Regex("""^"\d*\D+\d*"$""", RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
 let private codeRegex8nonQuote = Regex("""^[^"].+$""", RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
 
 let GetWarningNumber (m, numStr: string, (langVersion: LanguageVersion), isCompilerOption: bool) =
     let argFeature = LanguageFeature.ParsedHashDirectiveArgumentNonQuotes
     let prefixSupported = langVersion.SupportsFeature(argFeature) || isCompilerOption
+    let warnInvalid() = warning(Error(FSComp.SR.buildInvalidWarningNumber numStr, m))
 
-    let getNum (regex: Regex) =
+    let getNum (regex: Regex) failAction =
         let mtch = regex.Match numStr
         if not mtch.Success || mtch.Groups.Count <> 3 || mtch.Groups[2].Captures.Count <> 1 then
-            warning(Error(FSComp.SR.buildInvalidWarningNumber numStr, m))
+            failAction()
             None
         else Some (int mtch.Groups[2].Captures[0].Value)
     
-    if isCompilerOption then getNum optionRegex
-    elif prefixSupported then getNum codeRegex
-    elif codeRegex8nonQuote.Match(numStr).Success || codeRegex8fs.Match(numStr).Success then
+    if isCompilerOption then
+        getNum optionRegex (fun () -> 
+            if not <| optionRegexIgnore.Match(numStr).Success then warnInvalid())
+    elif prefixSupported then getNum codeRegex warnInvalid
+    elif codeRegex8nonQuote.Match(numStr).Success || codeRegex8prefix.Match(numStr).Success then
         warning(languageFeatureError langVersion argFeature m)
         None
     elif codeRegex8ignore.Match(numStr).Success then None
-    else getNum codeRegex8
+    else getNum codeRegex8 warnInvalid
 
 
 let ComputeMakePathAbsolute implicitIncludeDir (path: string) =

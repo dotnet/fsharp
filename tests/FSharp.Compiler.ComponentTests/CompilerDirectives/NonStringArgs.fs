@@ -158,16 +158,18 @@ module DoBinding =
     let ``#nowarn - errors - compiler options`` (languageVersion) =
 
         FSharp """
-()
+match None with None -> ()      // creates FS0025
+""                              // creates FS0020
         """
         |> withLangVersion languageVersion
-        |> withOptions ["--nowarn:988"; "--nowarn:FS25"; "--nowarn:FS"; "--nowarn:FSBLAH"; "--nowarn:NU0001"]
+        |> withOptions ["--nowarn:NU0988"; "--nowarn:FS25"; "--nowarn:20"; "--nowarn:FS"; "--nowarn:FSBLAH"]
         |> asExe
         |> compile
         |> shouldFail
         |> withDiagnostics [
-                (Warning 203, Line 0, Col 1, Line 0, Col 1, "Invalid warning number 'FS'");
-                (Warning 203, Line 0, Col 1, Line 0, Col 1, "Invalid warning number 'FSBLAH'");
+                (Warning 203, Line 0, Col 1, Line 0, Col 1, "Invalid warning number 'FS'")
+                (Warning 203, Line 0, Col 1, Line 0, Col 1, "Invalid warning number 'FSBLAH'")
+                (Warning 988, Line 3, Col 3, Line 3, Col 3, "Main module of program is empty: nothing will happen when it is run")
             ]
 
 
