@@ -155,6 +155,26 @@ module DoBinding =
     [<InlineData("8.0")>]
     [<InlineData("9.0")>]
     [<Theory>]
+    let ``#nowarn - errors - compiler options`` (languageVersion) =
+
+        FSharp """
+()
+        """
+        |> withLangVersion languageVersion
+        |> withOptions ["--nowarn:988"; "--nowarn:FS"; "--nowarn:FSBLAH"; "--nowarn:NU0001"]
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+                (Warning 203, Line 0, Col 1, Line 0, Col 1, "Invalid warning number 'FS'");
+                (Warning 203, Line 0, Col 1, Line 0, Col 1, "Invalid warning number 'FSBLAH'");
+                (Warning 203, Line 0, Col 1, Line 0, Col 1, "Invalid warning number 'NU0001'")
+            ]
+
+
+    [<InlineData("8.0")>]
+    [<InlineData("9.0")>]
+    [<Theory>]
     let ``#time - mixed - Fsc`` (langversion) =
 
         Fsx """
