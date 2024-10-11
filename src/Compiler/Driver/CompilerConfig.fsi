@@ -923,7 +923,7 @@ val TryResolveFileUsingPaths: paths: string seq * m: range * fileName: string ->
 val ResolveFileUsingPaths: paths: string seq * m: range * fileName: string -> string
 
 val GetWarningNumber:
-    m: range * warningNumberString: string * langVersion: LanguageVersion * isCompilerOption: bool -> int option
+    m: range * numStr: string * langVersion: LanguageVersion * isCompilerOption: bool -> int option
 
 /// Get the name used for FSharp.Core
 val GetFSharpCoreLibraryName: unit -> string
