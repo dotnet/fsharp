@@ -1,7 +1,7 @@
 
 test.fsx(11,20,11,21): typecheck error FS3388: This expression implicitly converts type 'int' to type 'obj'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(14,20,14,41): typecheck error FS3388: This expression implicitly converts type 'int' to type 'obj'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(14,33,14,41): typecheck error FS3388: This expression implicitly converts type 'int' to type 'obj'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(20,21,20,24): typecheck error FS3388: This expression implicitly converts type 'int * int' to type 'obj'. See https://aka.ms/fsharp-implicit-convs.
 
@@ -65,17 +65,17 @@ test.fsx(61,32,61,33): typecheck error FS3389: This expression uses a built-in i
 
 test.fsx(61,32,61,33): typecheck error FS3388: This expression implicitly converts type 'int' to type 'float'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(63,22,63,43): typecheck error FS3389: This expression uses a built-in implicit conversion to convert type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(63,35,63,43): typecheck error FS3389: This expression uses a built-in implicit conversion to convert type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(63,22,63,43): typecheck error FS3388: This expression implicitly converts type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(63,35,63,43): typecheck error FS3388: This expression implicitly converts type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(64,28,64,49): typecheck error FS3389: This expression uses a built-in implicit conversion to convert type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(64,41,64,49): typecheck error FS3389: This expression uses a built-in implicit conversion to convert type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(64,28,64,49): typecheck error FS3388: This expression implicitly converts type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(64,41,64,49): typecheck error FS3388: This expression implicitly converts type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(64,50,64,71): typecheck error FS3389: This expression uses a built-in implicit conversion to convert type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(64,63,64,71): typecheck error FS3389: This expression uses a built-in implicit conversion to convert type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(64,50,64,71): typecheck error FS3388: This expression implicitly converts type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(64,63,64,71): typecheck error FS3388: This expression implicitly converts type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(67,20,67,23): typecheck error FS3388: This expression implicitly converts type 'int' to type 'obj'. See https://aka.ms/fsharp-implicit-convs.
 
@@ -147,14 +147,9 @@ test.fsx(165,18,165,19): typecheck error FS3395: This expression uses the implic
 
 test.fsx(165,18,165,19): typecheck error FS3388: This expression implicitly converts type 'int' to type 'C'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(172,18,172,19): typecheck error FS3395: This expression uses the implicit conversion 'static member Y.op_Implicit: y: Y -> X' to convert type 'Y' to type 'X'.
-
 test.fsx(172,18,172,21): typecheck error FS3395: This expression uses the implicit conversion 'static member Y.op_Implicit: y: Y -> X' to convert type 'Y' to type 'X'.
-test.fsx(482,18,482,19): typecheck error FS3387: This expression has type 'B' and is only made compatible with type 'C' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:
-test.fsx(482,18,482,19): typecheck error FS3395: This expression uses the implicit conversion 'static member B.op_Implicit: x: B -> C' to convert type 'B' to type 'C'.
-test.fsx(507,18,507,19): typecheck error FS3395: This expression uses the implicit conversion 'static member C.op_Implicit: x: B -> C' to convert type 'B' to type 'C'.
-test.fsx(519,18,519,19): typecheck error FS3395: This expression uses the implicit conversion 'static member B.op_Implicit: x: B -> C' to convert type 'B' to type 'C'.
-test.fsx(538,18,538,19): typecheck error FS3395: This expression uses the implicit conversion 'static member C.op_Implicit: x: B -> C' to convert type 'B' to type 'C'.
+
+test.fsx(172,18,172,19): typecheck error FS3395: This expression uses the implicit conversion 'static member Y.op_Implicit: y: Y -> X' to convert type 'Y' to type 'X'.
 
 test.fsx(178,20,178,21): typecheck error FS3391: This expression uses the implicit conversion 'static member C.op_Implicit: x: 'T -> C<'T>' to convert type 'int' to type 'C<int>'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn "3391".
 
@@ -258,7 +253,7 @@ test.fsx(258,30,258,38): typecheck error FS3388: This expression implicitly conv
 
 test.fsx(260,36,260,38): typecheck error FS3388: This expression implicitly converts type 'Numerics.BigInteger' to type 'IComparable'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(263,44,263,63): typecheck error FS3388: This expression implicitly converts type 'string' to type 'IComparable<string>'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(263,58,263,63): typecheck error FS3388: This expression implicitly converts type 'string' to type 'IComparable<string>'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(275,35,275,36): typecheck error FS3388: This expression implicitly converts type 'int' to type 'obj'. See https://aka.ms/fsharp-implicit-convs.
 
@@ -585,11 +580,23 @@ test.fsx(482,18,482,21): typecheck error FS3387: This expression has type 'B' an
 
 test.fsx(482,18,482,21): typecheck error FS3395: This expression uses the implicit conversion 'static member B.op_Implicit: x: B -> C' to convert type 'B' to type 'C'.
 
+test.fsx(482,18,482,19): typecheck error FS3387: This expression has type 'B' and is only made compatible with type 'C' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:
+   static member B.op_Implicit: x: B -> C
+   static member C.op_Implicit: x: B -> C
+
+test.fsx(482,18,482,19): typecheck error FS3395: This expression uses the implicit conversion 'static member B.op_Implicit: x: B -> C' to convert type 'B' to type 'C'.
+
 test.fsx(507,18,507,21): typecheck error FS3395: This expression uses the implicit conversion 'static member C.op_Implicit: x: B -> C' to convert type 'B' to type 'C'.
+
+test.fsx(507,18,507,19): typecheck error FS3395: This expression uses the implicit conversion 'static member C.op_Implicit: x: B -> C' to convert type 'B' to type 'C'.
 
 test.fsx(519,18,519,21): typecheck error FS3395: This expression uses the implicit conversion 'static member B.op_Implicit: x: B -> C' to convert type 'B' to type 'C'.
 
+test.fsx(519,18,519,19): typecheck error FS3395: This expression uses the implicit conversion 'static member B.op_Implicit: x: B -> C' to convert type 'B' to type 'C'.
+
 test.fsx(538,18,538,21): typecheck error FS3395: This expression uses the implicit conversion 'static member C.op_Implicit: x: B -> C' to convert type 'B' to type 'C'.
+
+test.fsx(538,18,538,19): typecheck error FS3395: This expression uses the implicit conversion 'static member C.op_Implicit: x: B -> C' to convert type 'B' to type 'C'.
 
 test.fsx(543,30,543,31): typecheck error FS0001: This expression was expected to have type
     'float32'    
