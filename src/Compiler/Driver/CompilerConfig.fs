@@ -106,9 +106,10 @@ let GetWarningNumber (m, warningNumberString: string, (langVersion: LanguageVers
         | false, (false, _) -> warn (Error(FSComp.SR.buildInvalidWarningNumber warningNumberString, m))
         | false, (true, _) -> warn (languageFeatureError langVersion argFeature m)
     else
-        match System.Int32.TryParse warningNumberString with
-        | true, i -> Some i
-        | false, _ -> warn (Error(FSComp.SR.buildInvalidWarningNumber warningNumberString, m))
+        match prefixSupported, System.Int32.TryParse warningNumberString with
+        | _, (true, i) -> Some i
+        | true, (false, _) -> warn (Error(FSComp.SR.buildInvalidWarningNumber warningNumberString, m))
+        | false, (false, _) -> None
 
 let ComputeMakePathAbsolute implicitIncludeDir (path: string) =
     try

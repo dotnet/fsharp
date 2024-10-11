@@ -28,7 +28,6 @@ module NonStringArgs =
             if languageVersion = "8.0" then
                 (Warning 203, Line 6, Col 9, Line 6, Col 13, "Invalid warning number 'FS'")
                 (Warning 203, Line 7, Col 9, Line 7, Col 17, "Invalid warning number 'FSBLAH'")
-                (Warning 203, Line 8, Col 9, Line 8, Col 15, "Invalid warning number 'ACME'")
                 (Error 3350, Line 3, Col 9, Line 3, Col 11, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
                 (Error 3350, Line 4, Col 9, Line 4, Col 15, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
                 (Error 3350, Line 5, Col 9, Line 5, Col 13, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
@@ -65,7 +64,6 @@ module NonStringArgs =
             if languageVersion = "8.0" then
                 (Warning 203, Line 7, Col 5, Line 7, Col 9, "Invalid warning number 'FS'")
                 (Warning 203, Line 8, Col 5, Line 8, Col 13, "Invalid warning number 'FSBLAH'")
-                (Warning 203, Line 9, Col 5, Line 9, Col 11, "Invalid warning number 'ACME'")
                 (Error 3350, Line 4, Col 5, Line 4, Col 7, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
                 (Error 3350, Line 5, Col 5, Line 5, Col 11, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
                 (Error 3350, Line 6, Col 5, Line 6, Col 9, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
@@ -96,7 +94,6 @@ module NonStringArgs =
             if languageVersion = "8.0" then
                 (Warning 203, Line 3, Col 24, Line 3, Col 28, "Invalid warning number 'FS'")
                 (Warning 203, Line 3, Col 29, Line 3, Col 37, "Invalid warning number 'FSBLAH'")
-                (Warning 203, Line 3, Col 38, Line 3, Col 44, "Invalid warning number 'ACME'")
                 (Error 3350, Line 3, Col 9, Line 3, Col 11, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
                 (Error 3350, Line 3, Col 12, Line 3, Col 18, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
                 (Error 3350, Line 3, Col 19, Line 3, Col 23, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
