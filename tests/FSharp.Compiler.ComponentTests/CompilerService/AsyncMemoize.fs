@@ -98,6 +98,7 @@ let ``We can cancel a job`` () =
         let ctsCancelled = new ManualResetEventSlim(false)
 
         let computation = async {
+            use! _catch = Async.OnCancel ignore
             jobStarted.Set()
             ctsCancelled.Wait()
             do! async { }
