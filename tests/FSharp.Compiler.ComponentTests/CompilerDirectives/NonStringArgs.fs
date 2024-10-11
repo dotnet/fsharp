@@ -161,14 +161,13 @@ module DoBinding =
 ()
         """
         |> withLangVersion languageVersion
-        |> withOptions ["--nowarn:988"; "--nowarn:FS"; "--nowarn:FSBLAH"; "--nowarn:NU0001"]
+        |> withOptions ["--nowarn:988"; "--nowarn:FS25"; "--nowarn:FS"; "--nowarn:FSBLAH"; "--nowarn:NU0001"]
         |> asExe
         |> compile
         |> shouldFail
         |> withDiagnostics [
                 (Warning 203, Line 0, Col 1, Line 0, Col 1, "Invalid warning number 'FS'");
                 (Warning 203, Line 0, Col 1, Line 0, Col 1, "Invalid warning number 'FSBLAH'");
-                (Warning 203, Line 0, Col 1, Line 0, Col 1, "Invalid warning number 'NU0001'")
             ]
 
 

@@ -92,7 +92,7 @@ let ResolveFileUsingPaths (paths, m, fileName) =
         let searchMessage = String.concat "\n " paths
         raise (FileNameNotResolved(fileName, searchMessage, m))
 
-let private optionRegex = Regex("""^()[A-Z]?(\d+)$""", RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
+let private optionRegex = Regex("""^()[A-Z]*(\d+)$""", RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
 let private codeRegex = Regex("""^(\"?)(?:(?:FS)?(\d+))\1$""", RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
 let private codeRegex8 = Regex("""^"()(\d+)"$""", RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
 let private codeRegex8fs = Regex("""^"FS.*"$""", RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
