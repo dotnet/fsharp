@@ -216,5 +216,5 @@ let processRecord (recd:MyRecordFullOfWrongStuff<Span<Span<Uri>>>) =
                   Error 412, Line 10, Col 7, Line 10, Col 13, "A type instantiation involves a byref type. This is not permitted by the rules of Common IL."
                   Error 3300, Line 12, Col 20, Line 12, Col 24, "The parameter 'recd' has an invalid type 'MyRecordFullOfWrongStuff<Span<Span<Uri>>>'. This is not permitted by the rules of Common IL."
                   Error 412, Line 13, Col 5, Line 13, Col 22, "A type instantiation involves a byref type. This is not permitted by the rules of Common IL."
-                  Error 412, Line 13, Col 5, Line 13, Col 16, "A type instantiation involves a byref type. This is not permitted by the rules of Common IL." ]
+                  Error 412, Line 13, Col 10, Line 13, Col 16, "A type instantiation involves a byref type. This is not permitted by the rules of Common IL." ]
                   

@@ -94,7 +94,7 @@ Test.XString("x":(string|null))
               [ Error 3261, Line 7, Col 8, Line 7, Col 9, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
                 Error 3261, Line 7, Col 6, Line 7, Col 7, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
                 Error 3261, Line 8, Col 17, Line 8, Col 18, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
-                Error 3261, Line 8, Col 10, Line 8, Col 19, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
+                Error 3261, Line 8, Col 15, Line 8, Col 16, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
                 Error 3261, Line 9, Col 8, Line 9, Col 23, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
                 Error 3261, Line 9, Col 1, Line 9, Col 24, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
                 Error 3261, Line 11, Col 6, Line 11, Col 7, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."

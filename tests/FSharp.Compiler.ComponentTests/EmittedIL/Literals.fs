@@ -169,7 +169,7 @@ let [<Literal>] x = System.Int32.MaxValue + 1
         |> withResult {
             Error = Error 3177
             Range = { StartLine = 4
-                      StartColumn = 21
+                      StartColumn = 24
                       EndLine = 4
                       EndColumn = 46 }
             Message = "This literal expression or attribute argument results in an arithmetic overflow."
@@ -427,7 +427,7 @@ let [<Literal>] x = 1 + System.DateTime.Now.Hour
 #if !NETCOREAPP
             { Error = Warning 52
               Range = { StartLine = 4
-                        StartColumn = 25
+                        StartColumn = 45
                         EndLine = 4
                         EndColumn = 49 }
               Message = "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed" }
