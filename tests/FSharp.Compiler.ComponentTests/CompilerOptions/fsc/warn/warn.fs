@@ -142,7 +142,7 @@ module TestCompilerWarningLevel =
 
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"warn40.fs"|])>]
     let ``warn40_fs --nowarn:NU0000;FS40;NU0001`` compilation =
-         compilation
+        compilation
         |> asExe
         |> withOptions ["--nowarn:NU0000;FS40;NU0001;FS21"]
         |> compileAndRun

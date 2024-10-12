@@ -217,20 +217,15 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, fileName, intf) 
         SynModuleOrNamespaceSig(lid, isRecursive, kind, decls, xmlDoc, attributes, None, range, trivia)
 
 let GetScopedPragmasForHashDirective hd (langVersion: LanguageVersion) =
-    let supportsNonStringArguments =
-        langVersion.SupportsFeature(LanguageFeature.ParsedHashDirectiveArgumentNonQuotes)
-
     [
         match hd with
-        | ParsedHashDirective("nowarn", numbers, m) ->
-            for s in numbers do
+        | ParsedHashDirective("nowarn", args, m) ->
+            for s in args do
                 let warningNumber =
-                    match supportsNonStringArguments, s with
-                    | _, ParsedHashDirectiveArgument.SourceIdentifier _ -> None
-                    | true, ParsedHashDirectiveArgument.LongIdent _ -> None
-                    | true, ParsedHashDirectiveArgument.Int32(n, m) -> GetWarningNumber(m, string n, langVersion, false)
-                    | true, ParsedHashDirectiveArgument.Ident(s, m) -> GetWarningNumber(m, s.idText, langVersion, false)
-                    | _, ParsedHashDirectiveArgument.String(s, _, m) -> GetWarningNumber(m, $"\"{s}\"", langVersion, false)
+                    match s with
+                    | ParsedHashDirectiveArgument.Int32(n, m) -> GetWarningNumber(m, string n, langVersion, false)
+                    | ParsedHashDirectiveArgument.Ident(s, m) -> GetWarningNumber(m, s.idText, langVersion, false)
+                    | ParsedHashDirectiveArgument.String(s, _, m) -> GetWarningNumber(m, $"\"{s}\"", langVersion, false)
                     | _ -> None
 
                 match warningNumber with
@@ -912,7 +907,9 @@ let ProcessMetaCommandsFromInput
                 state
 
             | ParsedHashDirective("nowarn", hashArguments, m) ->
-                let arguments = parsedHashDirectiveArguments hashArguments tcConfig.langVersion
+                let arguments =
+                    parsedHashDirectiveArgumentsNoCheck hashArguments tcConfig.langVersion
+
                 List.fold (fun state d -> nowarnF state (m, d)) state arguments
 
             | ParsedHashDirective(("reference" | "r") as c, [], m) ->

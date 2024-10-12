@@ -95,44 +95,43 @@ let ResolveFileUsingPaths (paths, m, fileName) =
 let private regexCompiled = RegexOptions.Compiled ||| RegexOptions.CultureInvariant
 let private optionRegex = Regex("""^(FS)?(\d+)$""", regexCompiled)
 let private optionRegexIgnore = Regex("""^([A-Z]*)(\d+)$""", regexCompiled)
-let private codeRegex = Regex("""^(\"?)(?:(?:FS)?(\d+))\1$""", regexCompiled)
-let private codeRegex8 = Regex("""^"()(\d+)"$""", regexCompiled)
+let private codeRegex = Regex("""^("?)(?:(?:FS)?(\d+))\1$""", regexCompiled)
+let private codeRegex8 = Regex("""^(")(\d+)"$""", regexCompiled)
+let private codeRegex8nonQuote = Regex("""^[^"].+$""", regexCompiled)
 let private codeRegex8prefix = Regex("""^"FS.*"$""", regexCompiled)
 let private codeRegex8ignore = Regex("""^"\d*\D+\d*"$""", regexCompiled)
-let private codeRegex8nonQuote = Regex("""^[^"].+$""", regexCompiled)
 
 let GetWarningNumber (m, numStr: string, (langVersion: LanguageVersion), isCompilerOption: bool) =
     let argFeature = LanguageFeature.ParsedHashDirectiveArgumentNonQuotes
-    let prefixSupported = langVersion.SupportsFeature(argFeature) || isCompilerOption
+    let prefixSupported = langVersion.SupportsFeature(argFeature)
 
     let warnInvalid () =
         warning (Error(FSComp.SR.buildInvalidWarningNumber numStr, m))
 
-    let getNum (regex: Regex) failAction =
+    let getNumber (regex: Regex) failAction =
         let mtch = regex.Match numStr
 
-        if not mtch.Success || mtch.Groups.Count <> 3 || mtch.Groups[2].Captures.Count <> 1 then
+        if mtch.Success then
+            Some(int mtch.Groups[2].Captures[0].Value)
+        else
             failAction ()
             None
-        else
-            Some(int mtch.Groups[2].Captures[0].Value)
+
+    let matches (regex: Regex) = regex.Match(numStr).Success
 
     if isCompilerOption then
-        getNum optionRegex (fun () ->
-            if not <| optionRegexIgnore.Match(numStr).Success then
+        getNumber optionRegex (fun () ->
+            if not (matches optionRegexIgnore) then
                 warnInvalid ())
     elif prefixSupported then
-        getNum codeRegex warnInvalid
-    elif
-        codeRegex8nonQuote.Match(numStr).Success
-        || codeRegex8prefix.Match(numStr).Success
-    then
-        warning (languageFeatureError langVersion argFeature m)
+        getNumber codeRegex warnInvalid
+    elif matches codeRegex8nonQuote || matches codeRegex8prefix then
+        errorR (languageFeatureError langVersion argFeature m)
         None
-    elif codeRegex8ignore.Match(numStr).Success then
+    elif matches codeRegex8ignore then
         None
     else
-        getNum codeRegex8 warnInvalid
+        getNumber codeRegex8 warnInvalid
 
 let ComputeMakePathAbsolute implicitIncludeDir (path: string) =
     try
