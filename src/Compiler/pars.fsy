@@ -2713,8 +2713,8 @@ barAndgrabXmlDoc:
        grabXmlDoc(parseState, [], 1), mBar }
 
 attrUnionCaseDecls:
-  | attrUnionCaseDecl barAndgrabXmlDoc attrUnionCaseDecls
-     { (fun xmlDocAndBar -> $1 xmlDocAndBar :: $3 $2) }
+  | attrUnionCaseDecl barAndgrabXmlDoc attrUnionCaseDecls 
+     { (fun xmlDocAndBar -> $1 xmlDocAndBar :: $3 $2)  }
 
   | attrUnionCaseDecl
      { (fun xmlDocAndBar -> [ $1 xmlDocAndBar ]) }
@@ -5675,7 +5675,7 @@ recdBinding:
        reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsFieldBinding())
        ($1, Some mEquals, None) }
 
-  | pathOrUnderscore
+  | pathOrUnderscore ends_coming_soon_or_recover
      { let ident, b = $1
        let f = SynLongIdent([List.last ident.LongIdent], [], []), b
        let expr = SynExpr.LongIdent(false, ident, None, rhs parseState 1)
