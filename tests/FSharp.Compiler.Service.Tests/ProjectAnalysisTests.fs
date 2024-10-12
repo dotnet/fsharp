@@ -1526,7 +1526,7 @@ let ``Test project 5 all symbols`` () =
              "Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators.(~&)", "file1",
              ((15, 34), (15, 35)), []);
             ("val floatvalue", "floatvalue", "file1", ((15, 35), (15, 45)), []);
-            ("member TryParse", "System.Double.TryParse", "file1", ((15, 6), (15, 28)), []);
+            ("member TryParse", "System.Double.TryParse", "file1", ((15, 20), (15, 28)), []);
             ("Some", "Microsoft.FSharp.Core.Option<_>.Some", "file1", ((15, 52), (15, 56)),
              []); ("val floatvalue", "floatvalue", "file1", ((15, 57), (15, 67)), []);
             ("None", "Microsoft.FSharp.Core.Option<_>.None", "file1", ((16, 8), (16, 12)),
