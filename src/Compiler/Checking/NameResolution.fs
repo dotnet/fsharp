@@ -4064,14 +4064,15 @@ let private ResolveExprDotLongIdent (ncenv: NameResolver) m ad nenv ty (id: Iden
     | _ ->
         ForceRaise adhocDotSearchAccessible
 
-let ComputeItemRange wholem (lid: Ident list) rest =
-    match rest with
-    | [] -> wholem
-    | _ ->
-        let ids = List.truncate (max 0 (lid.Length - rest.Length)) lid
-        match ids with
-        | [] -> wholem
-        | _ -> rangeOfLid ids
+let ComputeItemRange wholem (lid: Ident list) =
+    if List.isEmpty lid then
+        wholem
+    else
+        lid
+        |> List.tryLast
+        |> Option.map (fun id -> id.idRange)
+        |> Option.defaultValue wholem
+
 
 /// Filters method groups that will be sent to Visual Studio IntelliSense
 /// to include only static/instance members
@@ -4119,7 +4120,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
     match ResolveExprLongIdent sink ncenv wholem ad nenv typeNameResInfo lid maybeAppliedArgExpr with 
     | Exception e -> Exception e 
     | Result (tinstEnclosing, item1, rest) ->
-    let itemRange = ComputeItemRange wholem lid rest
+    let itemRange = ComputeItemRange wholem lid
 
     let item = FilterMethodGroups ncenv itemRange item1 true
 
@@ -4189,7 +4190,7 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
             | id :: rest ->
                 ResolveExprDotLongIdent ncenv wholem ad nenv ty id rest typeNameResInfo findFlag maybeAppliedArgExpr
             | _ -> error(InternalError("ResolveExprDotLongIdentAndComputeRange", wholem))
-        let itemRange = ComputeItemRange wholem lid rest
+        let itemRange = ComputeItemRange wholem lid
         resInfo, item, rest, itemRange
 
     // "true" resolution

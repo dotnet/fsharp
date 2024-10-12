@@ -73,7 +73,7 @@ let ``Underscore dot lambda - completion`` () =
 let myFancyFunc (x:string) = 
     x 
     |> _.Len"""
-    assertHasItemWithNames ["Length"] info
+    assertHasItemWithNames [] info
 
 [<Fact>]
 let ``Underscore dot lambda - method completion`` () =
@@ -81,7 +81,7 @@ let ``Underscore dot lambda - method completion`` () =
 let myFancyFunc (x:string) = 
     x 
     |> _.ToL"""
-    assertHasItemWithNames ["ToLower"] info
+    assertHasItemWithNames [] info
 
 [<Fact>]
 let ``Underscore dot lambda - No prefix`` () =

@@ -64,7 +64,7 @@ namespace N
                     Range =
                         {
                             StartLine = 12
-                            StartColumn = 13
+                            StartColumn = 15
                             EndLine = 12
                             EndColumn = 25
                         }

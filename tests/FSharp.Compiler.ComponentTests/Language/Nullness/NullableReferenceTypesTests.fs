@@ -69,7 +69,7 @@ let getLength (x: string | null) = x.Length
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics [Error 3261, Line 3, Col 36, Line 3, Col 44, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."]
+    |> withDiagnostics [Error 3261, Line 3, Col 38, Line 3, Col 44, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."]
 
 [<Fact>]
 let ``Does report warning on obj to static member`` () =
@@ -90,17 +90,18 @@ Test.XString("x":(string|null))
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics 
-              [ Error 3261, Line 7, Col 8, Line 7, Col 9, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
-                Error 3261, Line 7, Col 1, Line 7, Col 9, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
-                Error 3261, Line 8, Col 17, Line 8, Col 18, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
-                Error 3261, Line 8, Col 10, Line 8, Col 19, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
-                Error 3261, Line 9, Col 8, Line 9, Col 23, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
-                Error 3261, Line 9, Col 1, Line 9, Col 24, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
-                Error 3261, Line 11, Col 6, Line 11, Col 7, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
-                Error 3261, Line 11, Col 1, Line 11, Col 8, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
-                Error 3261, Line 12, Col 14, Line 12, Col 18, "Nullness warning: The type 'string' does not support 'null'."
-                Error 3261, Line 13, Col 14, Line 13, Col 31, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."]
+    |> withDiagnostics [
+        (Error 3261, Line 7, Col 8, Line 7, Col 9, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected.")
+        (Error 3261, Line 7, Col 6, Line 7, Col 7, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability.")
+        (Error 3261, Line 8, Col 17, Line 8, Col 18, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected.")
+        (Error 3261, Line 8, Col 15, Line 8, Col 16, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability.")
+        (Error 3261, Line 9, Col 8, Line 9, Col 23, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected.")
+        (Error 3261, Line 9, Col 6, Line 9, Col 7, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability.")
+        (Error 3261, Line 11, Col 6, Line 11, Col 7, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected.")
+        (Error 3261, Line 11, Col 3, Line 11, Col 5, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability.")
+        (Error 3261, Line 12, Col 14, Line 12, Col 18, "Nullness warning: The type 'string' does not support 'null'.")
+        (Error 3261, Line 13, Col 14, Line 13, Col 31, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability.")
+    ]
 
 [<Fact>]
 let ``Typar infered to nonnull obj`` () =
@@ -770,7 +771,7 @@ myNullReturningFunction myValOfY                     |> ignore
     |> shouldFail
     |> withDiagnostics     
                 [Error 3261, Line 17, Col 25, Line 17, Col 34, "Nullness warning: The type 'string' does not support 'null'."
-                 Error 193, Line 19, Col 26, Line 19, Col 45, "The type 'System.DateTime' does not have 'null' as a proper value"
+                 Error 193, Line 19, Col 42, Line 19, Col 45, "The type 'System.DateTime' does not have 'null' as a proper value"
                  Error 1, Line 20, Col 25, Line 20, Col 36, "The type '{| Anon: 'a |}' does not have 'null' as a proper value"
                  Error 1, Line 21, Col 26, Line 21, Col 31, "The type '('a * 'b * 'c)' does not have 'null' as a proper value"
                  Error 1, Line 23, Col 25, Line 23, Col 33, "The type 'Y' does not have 'null' as a proper value"]
