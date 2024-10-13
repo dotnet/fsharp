@@ -646,7 +646,7 @@ try {
 
     if ($testDesktop -and $ci) { 
         # Run FSharpSuite in the background because it's very slow in the CI.
-        $bgJob1 = TestUsingMSBuild -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\" -backgroundJob 1 -settings "-- xUnit.MaxParallelThreads=4.0x"
+        $bgJob1 = TestUsingMSBuild -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\" -backgroundJob 1
         # Split ComponentTests run into two processes using filter.
         $bgJob2 = TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -backgroundJob 2 -settings "--filter ""FullyQualifiedName!~Conformance&FullyQualifiedName!~Miscellaneous"" "
         $bgJob3 = TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -backgroundJob 3 -settings "--filter ""FullyQualifiedName~Conformance|FullyQualifiedName~Miscellaneous"" "
