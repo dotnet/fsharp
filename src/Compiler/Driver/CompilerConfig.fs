@@ -92,21 +92,17 @@ let ResolveFileUsingPaths (paths, m, fileName) =
         let searchMessage = String.concat "\n " paths
         raise (FileNameNotResolved(fileName, searchMessage, m))
 
-let private regexCompiled = RegexOptions.Compiled ||| RegexOptions.CultureInvariant
-let private optionRegex = Regex("""^(FS)?(\d+)$""", regexCompiled)
-let private optionRegexIgnore = Regex("""^([A-Z]*)(\d+)$""", regexCompiled)
-let private codeRegex = Regex("""^("?)(?:(?:FS)?(\d+))\1$""", regexCompiled)
-let private codeRegex8 = Regex("""^(")(\d+)"$""", regexCompiled)
-let private codeRegex8nonQuote = Regex("""^[^"].+$""", regexCompiled)
-let private codeRegex8prefix = Regex("""^"FS.*"$""", regexCompiled)
-let private codeRegex8ignore = Regex("""^"\d*\D+\d*"$""", regexCompiled)
+let private rxOptions = RegexOptions.Compiled ||| RegexOptions.CultureInvariant
+let private flagsRx = Regex("""^(FS)?(\d+)$""", rxOptions)
+let private flagsIgnoreRx = Regex("""^([A-Z]+)(\d+)$""", rxOptions)
+let private codeRx = Regex("""^("?)(?:(?:FS)?(\d+))\1$""", rxOptions)
+let private code8Rx = Regex("""^(")(\d+)"$""", rxOptions)
+let private code8nonQuotesRx = Regex("""^[^"].+$""", rxOptions)
+let private code8prefixRx = Regex("""^"FS.*"$""", rxOptions)
 
-let GetWarningNumber (m, numStr: string, (langVersion: LanguageVersion), isCompilerOption: bool) =
+let GetWarningNumber (m, numStr: string, langVersion: LanguageVersion, isCompilerOption: bool) =
     let argFeature = LanguageFeature.ParsedHashDirectiveArgumentNonQuotes
-    let prefixSupported = langVersion.SupportsFeature(argFeature)
-
-    let warnInvalid () =
-        warning (Error(FSComp.SR.buildInvalidWarningNumber numStr, m))
+    let errorInvalid = Error(FSComp.SR.buildInvalidWarningNumber numStr, m)
 
     let getNumber (regex: Regex) failAction =
         let mtch = regex.Match numStr
@@ -117,21 +113,20 @@ let GetWarningNumber (m, numStr: string, (langVersion: LanguageVersion), isCompi
             failAction ()
             None
 
-    let matches (regex: Regex) = regex.Match(numStr).Success
-
     if isCompilerOption then
-        getNumber optionRegex (fun () ->
-            if not (matches optionRegexIgnore) then
-                warnInvalid ())
-    elif prefixSupported then
-        getNumber codeRegex warnInvalid
-    elif matches codeRegex8nonQuote || matches codeRegex8prefix then
+        getNumber flagsRx (fun () ->
+            if not (flagsIgnoreRx.Match(numStr).Success) then
+                warning errorInvalid)
+    elif langVersion.SupportsFeature(argFeature) then
+        getNumber codeRx (fun () -> warning errorInvalid)
+    elif code8nonQuotesRx.Match(numStr).Success then
         errorR (languageFeatureError langVersion argFeature m)
         None
-    elif matches codeRegex8ignore then
+    elif code8prefixRx.Match(numStr).Success then
+        warning errorInvalid
         None
     else
-        getNumber codeRegex8 warnInvalid
+        getNumber code8Rx (fun () -> ())
 
 let ComputeMakePathAbsolute implicitIncludeDir (path: string) =
     try
