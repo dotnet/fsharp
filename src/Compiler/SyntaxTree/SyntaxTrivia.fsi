@@ -524,10 +524,7 @@ type SynMemberDefnAbstractSlotTrivia =
 
 /// Represents additional information for SynMemberDefn.Inherit
 [<NoEquality; NoComparison>]
-type SynMemberDefnInheritTrivia =
-    {
-        InheritKeyword: range
-    }
+type SynMemberDefnInheritTrivia = { InheritKeyword: range }
 
 /// Represents additional information for SynField
 [<NoEquality; NoComparison>]
