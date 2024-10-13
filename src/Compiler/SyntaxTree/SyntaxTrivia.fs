@@ -419,6 +419,12 @@ type SynMemberDefnAbstractSlotTrivia =
     }
 
     static member Zero = { GetSetKeywords = None }
+ 
+[<NoEquality; NoComparison>]
+type SynMemberDefnInheritTrivia =
+    {
+        InheritKeyword: range
+    }
 
 [<NoEquality; NoComparison>]
 type SynFieldTrivia =
