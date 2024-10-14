@@ -10,6 +10,11 @@
     <IgnoreMibc Condition="'$(IgnoreMibc)' == ''">$(DotNetBuildSourceOnly)</IgnoreMibc>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <!-- TODO: These need to be removed once we merge/release the new SDK with noward and line fixes. -->
+    <NoWarn>$(NoWarn);FS0064;FS1182</NoWarn>
+  </PropertyGroup>
+
   <!--
    When developers load the FSharp.Compiler.Service solution we set FSHARPCORE_USE_PACKAGE to true if it hasn't already been set to a value.
    This option ensures that building and testing uses the specified FSharp.Core nuget package instead of the local FSharp.Core project.
@@ -47,8 +52,7 @@
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
     <DisableAutoSetFscCompilerPath>false</DisableAutoSetFscCompilerPath>
 
-    <!-- TODO(vlza): This probably should be `true` once fslib with nullness ships, since shipped library is preferred by default when building this solution. -->
-    <FSHARPCORE_USE_PACKAGE Condition="'$(FSHARPCORE_USE_PACKAGE)' == ''">false</FSHARPCORE_USE_PACKAGE>
+    <FSHARPCORE_USE_PACKAGE Condition="'$(FSHARPCORE_USE_PACKAGE)' == ''">true</FSHARPCORE_USE_PACKAGE>
 
     <DISABLE_ARCADE Condition="'$(DISABLE_ARCADE)' == ''">true</DISABLE_ARCADE>
     <ArtifactsDir>$(MSBuildThisFileDirectory)artifacts/</ArtifactsDir>

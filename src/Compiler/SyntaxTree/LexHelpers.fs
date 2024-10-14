@@ -249,7 +249,7 @@ let errorsInByteStringBuffer (buf: ByteBuffer) =
     else
         None
 
-let newline (lexbuf: LexBuffer<_>) = lexbuf.EndPos <- lexbuf.EndPos.NextLine
+let incrLine (lexbuf: LexBuffer<_>) = lexbuf.EndPos <- lexbuf.EndPos.NextLine
 
 let advanceColumnBy (lexbuf: LexBuffer<_>) n =
     lexbuf.EndPos <- lexbuf.EndPos.ShiftColumnBy(n)
