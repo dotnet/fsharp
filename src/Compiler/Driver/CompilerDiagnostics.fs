@@ -424,18 +424,16 @@ type PhasedDiagnostic with
         | FSharpDiagnosticSeverity.Error -> FSharpDiagnosticSeverity.Error
         | FSharpDiagnosticSeverity.Warning when
             x.IsEnabled(severity, options)
-            && not (List.contains n options.WarnAsWarn)
             && ((options.GlobalWarnAsError && not (warnOff ()))
                 || List.contains n options.WarnAsError && not (localNowarn ()))
+            && not (List.contains n options.WarnAsWarn)
             ->
             FSharpDiagnosticSeverity.Error
         | FSharpDiagnosticSeverity.Info when List.contains n options.WarnAsError && not (localNowarn ()) -> FSharpDiagnosticSeverity.Error
-
         | FSharpDiagnosticSeverity.Warning when x.IsEnabled(severity, options) && not (warnOff ()) -> FSharpDiagnosticSeverity.Warning
+        | FSharpDiagnosticSeverity.Warning when localWarnon () -> FSharpDiagnosticSeverity.Warning
         | FSharpDiagnosticSeverity.Info when List.contains n options.WarnOn && not (warnOff ()) -> FSharpDiagnosticSeverity.Warning
-
         | FSharpDiagnosticSeverity.Info when x.IsEnabled(severity, options) && not (warnOff ()) -> FSharpDiagnosticSeverity.Info
-
         | _ -> FSharpDiagnosticSeverity.Hidden
 
 [<AutoOpen>]

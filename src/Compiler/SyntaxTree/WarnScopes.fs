@@ -7,6 +7,10 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Features
+open Internal.Utilities.Library
+open System
 open System.Text.RegularExpressions
 
 [<RequireQualifiedAccess>]
@@ -55,35 +59,60 @@ module internal WarnScopes =
         | Nowarn of int * range
         | Warnon of int * range
 
-    let private getWarningNumber (s: string) =
-        let s =
-            if s.StartsWith "\"" && s.EndsWith "\"" then
-                s.Substring(1, s.Length - 2)
+    let private getNumber (langVersion: LanguageVersion) m (ns: string) =
+        let argFeature = LanguageFeature.ParsedHashDirectiveArgumentNonQuotes
+
+        let removeQuotes (s: string) =
+            if s.StartsWithOrdinal "\"" && s.EndsWithOrdinal "\"" then
+                if s.StartsWithOrdinal "\"\"\"" && s.EndsWithOrdinal "\"\"\"" then
+                    Some(s.Substring(3, s.Length - 6))
+                else
+                    Some(s.Substring(1, s.Length - 2))
+            elif tryCheckLanguageFeatureAndRecover langVersion argFeature m then
+                Some s
             else
-                s
+                None
 
-        let s = if s.StartsWith "FS" then s[2..] else s
+        let removePrefix (s: string) =
+            if (s.StartsWithOrdinal "FS" && langVersion.SupportsFeature argFeature) then
+                Some(s.Substring 2, s)
+            else
+                Some(s, s)
 
-        match System.Int32.TryParse s with
-        | true, i -> Some i
-        | false, _ -> None
+        let parseInt (s: string, displ) =
+            match System.Int32.TryParse s with
+            | true, i -> Some i
+            | false, _ ->
+                warning (Error(FSComp.SR.buildInvalidWarningNumber displ, m))
+                None
+
+        ns |> removeQuotes |> Option.bind removePrefix |> Option.bind parseInt
 
     let private regex =
         Regex(" *#(nowarn|warnon)(?: +([^ \r\n/;]+))*(?: *(?:;;|\\/\\/).*)?", RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
 
-    let private getDirectives text m =
+    let private getDirectives langVersion text m =
         let mkDirective (directiveId: string) (m: range) (c: Capture) =
-            let argRange () =
-                Range.withEnd (mkPos m.StartLine (c.Index + c.Length - 1)) (Range.shiftStart 0 c.Index m)
+            let argRange =
+                withEnd (mkPos m.StartLine (c.Index + c.Length)) (shiftStart 0 c.Index m)
 
-            match directiveId, getWarningNumber c.Value with
-            | "nowarn", Some n -> Some(WarnDirective.Nowarn(n, argRange ()))
-            | "warnon", Some n -> Some(WarnDirective.Warnon(n, argRange ()))
-            | _ -> None
+            match directiveId, getNumber langVersion argRange c.Value with
+            | "nowarn", Some n -> Some(WarnDirective.Nowarn(n, argRange))
+            | "warnon", Some n -> Some(WarnDirective.Warnon(n, argRange))
+            | _, Some n -> failwith $"getDirectives: unexpected directive id {directiveId}"
+            | _, None -> None
 
         let mGroups = (regex.Match text).Groups
         let dIdent = mGroups[1].Value
-        [ for c in mGroups[2].Captures -> c ] |> List.choose (mkDirective dIdent m)
+        let argCaptures = mGroups[2].Captures
+
+        if dIdent = "warnon" then
+            checkLanguageFeatureError langVersion LanguageFeature.ScopedNowarn m
+
+        if argCaptures.Count = 0 then
+            errorR (Error(FSComp.SR.lexWarnDirectiveMustHaveArgs (), m))
+
+        [ for c in argCaptures -> c ] |> List.choose (mkDirective dIdent m)
 
     let private index (fileIndex, warningNumber) =
         (int64 fileIndex <<< 32) + int64 warningNumber
@@ -96,21 +125,27 @@ module internal WarnScopes =
     let private mkScope (m1: range) (m2: range) =
         mkFileIndexRange m1.FileIndex m1.Start m2.End
 
-    let private processWarnDirective (WarnScopeMap warnScopes) (wd: WarnDirective) =
+    let private processWarnDirective (langVersion: LanguageVersion) (WarnScopeMap warnScopes) (wd: WarnDirective) =
         match wd with
         | WarnDirective.Nowarn(n, m) ->
             let idx = index (m.FileIndex, n)
 
             match getScopes idx warnScopes with
             | WarnScope.OpenOn m' :: t -> warnScopes.Add(idx, WarnScope.On(mkScope m' m) :: t)
-            | WarnScope.OpenOff _ :: _ -> warnScopes
+            | WarnScope.OpenOff m' :: _ ->
+                if langVersion.SupportsFeature LanguageFeature.ScopedNowarn then
+                    warning (Error(FSComp.SR.lexWarnDirectivesMustMatch ("#nowarn", m'.StartLine), m))
+
+                warnScopes
             | scopes -> warnScopes.Add(idx, WarnScope.OpenOff(mkScope m m) :: scopes)
         | WarnDirective.Warnon(n, m) ->
             let idx = index (m.FileIndex, n)
 
             match getScopes idx warnScopes with
             | WarnScope.OpenOff m' :: t -> warnScopes.Add(idx, WarnScope.Off(mkScope m' m) :: t)
-            | WarnScope.OpenOn _ :: _ -> warnScopes
+            | WarnScope.OpenOn m' :: _ ->
+                warning (Error(FSComp.SR.lexWarnDirectivesMustMatch ("#warnon", m'.StartLine), m))
+                warnScopes
             | scopes -> warnScopes.Add(idx, WarnScope.OpenOn(mkScope m m) :: scopes)
         |> WarnScopeMap
 
@@ -121,10 +156,11 @@ module internal WarnScopes =
         let idx = lineMap.TryFind idx |> Option.defaultValue idx
         let m = mkFileIndexRange idx (convert lexbuf.StartPos) (convert lexbuf.EndPos)
         let text = Lexbuf.LexemeString lexbuf
-        let directives = getDirectives text m
+        let directives = getDirectives lexbuf.LanguageVersion text m
 
         let warnScopes =
-            (getWarnScopes lexbuf, directives) ||> List.fold processWarnDirective
+            (getWarnScopes lexbuf, directives)
+            ||> List.fold (processWarnDirective lexbuf.LanguageVersion)
 
         lexbuf.BufferLocalStore[warnScopeKey] <- warnScopes
 
@@ -177,14 +213,14 @@ module internal WarnScopes =
         let (WarnScopeMap warnScopes) = diagnosticOptions.WarnScopes
         let (LineMap lineMap) = diagnosticOptions.LineMap
 
-        match mo with
-        | None -> false
-        | Some m ->
+        match mo, diagnosticOptions.FSharp9CompatibleNowarn with
+        | Some m, false ->
             if lineMap.ContainsKey m.FileIndex then
                 false
             else
                 let scopes = getScopes (index (m.FileIndex, warningNumber)) warnScopes
                 List.exists (isEnclosingWarnonScope m) scopes
+        | _ -> false
 
     let IsNowarn (diagnosticOptions: FSharpDiagnosticOptions) warningNumber (mo: range option) =
         let (WarnScopeMap warnScopes) = diagnosticOptions.WarnScopes

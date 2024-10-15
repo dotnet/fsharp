@@ -263,6 +263,7 @@ type BoundModel private (
 
             beforeFileChecked.Trigger fileName
                     
+            CheckLegacyWarnDirectivePlacement(tcConfig.langVersion, tcConfig.diagnosticsOptions.WarnScopes, input)
             ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, !! Path.GetDirectoryName(fileName), tcImports.DependencyProvider) |> ignore
             let sink = TcResultsSinkImpl(tcGlobals)
             let hadParseErrors = not (Array.isEmpty parseErrors)

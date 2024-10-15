@@ -932,7 +932,6 @@ let ProcessMetaCommandsFromInput
         decls
         |> List.iter (fun d ->
             match d with
-            | SynModuleSigDecl.HashDirective(ParsedHashDirective("WARN_DIRECTIVE_DUMMY", _, _), _) -> ()
             | SynModuleSigDecl.HashDirective(_, m) -> warning (Error(FSComp.SR.buildDirectivesInModulesAreIgnored (), m))
             | SynModuleSigDecl.NestedModule(moduleDecls = subDecls) -> WarnOnIgnoredSpecDecls subDecls
             | _ -> ())
@@ -941,7 +940,6 @@ let ProcessMetaCommandsFromInput
         decls
         |> List.iter (fun d ->
             match d with
-            | SynModuleDecl.HashDirective(ParsedHashDirective("WARN_DIRECTIVE_DUMMY", _, _), _) -> ()
             | SynModuleDecl.HashDirective(_, m) -> warning (Error(FSComp.SR.buildDirectivesInModulesAreIgnored (), m))
             | SynModuleDecl.NestedModule(decls = subDecls) -> WarnOnIgnoredImplDecls subDecls
             | _ -> ())
@@ -992,6 +990,42 @@ let ApplyMetaCommandsFromInputToTcConfig (tcConfig: TcConfig, inp: ParsedInput, 
 
     ProcessMetaCommandsFromInput (addReferenceDirective, addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())
     TcConfig.Create(tcConfigB, validate = false)
+
+let CheckLegacyWarnDirectivePlacement (langVersion: LanguageVersion, WarnScopeMap warnScopes, inp: ParsedInput) =
+    if not (langVersion.SupportsFeature LanguageFeature.ScopedNowarn) then
+
+        let sigSubmoduleRanges (SynModuleOrNamespaceSig(decls = decls)) =
+            decls
+            |> List.choose (function
+                | SynModuleSigDecl.NestedModule(range = m) -> Some m
+                | _ -> None)
+
+        let implSubmoduleRanges (SynModuleOrNamespace(decls = decls)) =
+            decls
+            |> List.choose (function
+                | SynModuleDecl.NestedModule(range = m) -> Some m
+                | _ -> None)
+
+        let subModuleRanges =
+            match inp with
+            | ParsedInput.SigFile sigFile -> sigFile.Contents |> List.collect sigSubmoduleRanges
+            | ParsedInput.ImplFile implFile -> implFile.Contents |> List.collect implSubmoduleRanges
+
+        let getDirectiveLines warnScope =
+            match warnScope with
+            | WarnScope.Off m
+            | WarnScope.On m
+            | WarnScope.OpenOff m
+            | WarnScope.OpenOn m -> [ m.StartLine; m.EndLine ]
+
+        let warnLines =
+            warnScopes.Values |> Seq.toList |> List.collect (List.collect getDirectiveLines)
+
+        for mm in subModuleRanges do
+            for line in warnLines do
+                if line > mm.StartLine && line <= mm.EndLine then
+                    let m = withStartEnd (mkPos line 0) (mkPos (line + 1) 0) mm
+                    warning(Error(FSComp.SR.buildDirectivesInModulesAreIgnored(), m))
 
 /// Build the initial type checking environment
 let GetInitialTcEnv (assemblyName: string, initm: range, tcConfig: TcConfig, tcImports: TcImports, tcGlobals) =

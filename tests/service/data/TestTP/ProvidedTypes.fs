@@ -6876,8 +6876,6 @@ module internal AssemblyReader =
 
 namespace ProviderImplementation.ProvidedTypes
 
-    #nowarn "1182"
-
     //
     // The on-disk assemblies are read by AssemblyReader.
     //
@@ -8269,7 +8267,6 @@ namespace ProviderImplementation.ProvidedTypes
 
 
     #nowarn "8796"
-    #nowarn "1182"
 
     open System
     open System.Diagnostics
@@ -9492,7 +9489,6 @@ namespace ProviderImplementation.ProvidedTypes
 
 namespace ProviderImplementation.ProvidedTypes
 
-    #nowarn "1182"
     module BinaryWriter =
 
         open System
@@ -13496,7 +13492,6 @@ namespace ProviderImplementation.ProvidedTypes
 
 namespace ProviderImplementation.ProvidedTypes
 
-    #nowarn "1182"
     open System
     open System.Diagnostics
     open System.IO
@@ -15715,7 +15710,6 @@ namespace ProviderImplementation.ProvidedTypes
 
 namespace ProviderImplementation.ProvidedTypes
 
-    #nowarn "1182"
     open System
     open System.Diagnostics
     open System.IO

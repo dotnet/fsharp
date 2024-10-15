@@ -31,7 +31,8 @@ ImplFile
                          { LeadingKeyword = Let (2,4--2,7)
                            InlineKeyword = None
                            EqualsRange = Some (2,10--2,11) })], Ident b,
-                     (2,4--5,5), { InKeyword = None }), (1,4--1,5), NoneAtLet,
+                     (2,4--5,5), { LetOrUseKeyword = (2,4--2,7)
+                                   InKeyword = None }), (1,4--1,5), NoneAtLet,
                   { LeadingKeyword = Let (1,0--1,3)
                     InlineKeyword = None
                     EqualsRange = Some (1,6--1,7) })], (1,0--5,5))],

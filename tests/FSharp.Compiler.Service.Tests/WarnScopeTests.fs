@@ -18,7 +18,7 @@ match None with None -> ()
 [<Fact>]
 let WarnScopesWorkAsExpected () =
     let file = "WarnScopesInScript.fs"
-    let parseResult, typeCheckResults = parseAndCheckScript(file, sourceForWarnScopes)
+    let parseResult, typeCheckResults = parseAndCheckScriptPreview(file, sourceForWarnScopes)
     Assert.Equal(parseResult.Diagnostics.Length, 0)
     Assert.Equal(typeCheckResults.Diagnostics.Length, 2)
     Assert.Equal(typeCheckResults.Diagnostics[0].ErrorNumber, 25)

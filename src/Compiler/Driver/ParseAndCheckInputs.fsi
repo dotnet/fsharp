@@ -13,6 +13,7 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.GraphChecking
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
@@ -82,8 +83,11 @@ val ProcessMetaCommandsFromInput:
         TcConfigBuilder * ParsedInput * string * 'T ->
             'T
 
-/// Process all the #r, #I etc. in an input.  For non-scripts report warnings about ignored directives.
+/// Process all the #r, #I etc. in an input.
 val ApplyMetaCommandsFromInputToTcConfig: TcConfig * ParsedInput * string * DependencyProvider -> TcConfig
+
+/// Report warnings about ignored warn directives.
+val CheckLegacyWarnDirectivePlacement: LanguageVersion * WarnScopeMap * ParsedInput -> unit
 
 /// Parse one input stream
 val ParseOneInputStream:

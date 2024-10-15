@@ -3622,7 +3622,11 @@ module EstablishTypeDefinitionCores =
                         // Note: for a mutually recursive set we can't check this condition 
                         // until "isSealedTy" and "isClassTy" give reliable results. 
                         superTy |> Option.iter (fun ty -> 
-                            let m = match inherits with | [] -> m | (_, m, _) :: _ -> m
+                            let m =
+                                match inherits with
+                                | [] -> m
+                                | (synType, _, _) :: _ -> synType.Range
+
                             if isSealedTy g ty then 
                                 errorR(Error(FSComp.SR.tcCannotInheritFromSealedType(), m))
                             elif not (isClassTy g ty) then 
@@ -4292,7 +4296,7 @@ module TcDeclarations =
              | SynMemberDefn.AutoProperty (range=m) :: _ -> errorR(InternalError("List.takeUntil is wrong, have auto property", m))
              | SynMemberDefn.ImplicitInherit (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveOneInherit(), m))
              | SynMemberDefn.LetBindings (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveLocalBindingsBeforeMembers(), m))
-             | SynMemberDefn.Inherit (range=m) :: _ -> errorR(Error(FSComp.SR.tcInheritDeclarationMissingArguments(), m))
+             | SynMemberDefn.Inherit (trivia= { InheritKeyword = m }) :: _ -> errorR(Error(FSComp.SR.tcInheritDeclarationMissingArguments(), m))
              | SynMemberDefn.NestedType (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypesCannotContainNestedTypes(), m))
              | _ -> ()
         | ds ->
@@ -4464,7 +4468,7 @@ module TcDeclarations =
             let implements2 = members |> List.choose (function SynMemberDefn.Interface (interfaceType=ty) -> Some(ty, ty.Range) | _ -> None)
             let inherits =
                 members |> List.choose (function 
-                    | SynMemberDefn.Inherit (ty, idOpt, m) -> Some(ty, m, idOpt)
+                    | SynMemberDefn.Inherit (ty, idOpt, m, _) -> Some(ty, m, idOpt)
                     | SynMemberDefn.ImplicitInherit (ty, _, idOpt, m) -> Some(ty, m, idOpt)
                     | _ -> None)
 

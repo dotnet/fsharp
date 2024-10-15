@@ -1784,5 +1784,7 @@ featureAllowAccessModifiersToAutoPropertiesGettersAndSetters,"Allow access modif
 3871,tcAccessModifiersNotAllowedInSRTPConstraint,"Access modifiers cannot be applied to an SRTP constraint."
 featureAllowObjectExpressionWithoutOverrides,"Allow object expressions without overrides"
 3872,tcPartialActivePattern,"Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern."
-featureScopedNowarn,"Support for scoped enabling / disabling of warnings by #warn and #nowarn directives"
+featureScopedNowarn,"Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules"
 3873,lexWarnDirectiveMustBeFirst,"#nowarn/#warnon directives must appear as the first non-whitespace characters on a line"
+3874,lexWarnDirectiveMustHaveArgs,"Warn directives must have warning number(s) as argument(s)"
+3875,lexWarnDirectivesMustMatch,"There is another %s for this warning already in line %d."

@@ -35,7 +35,8 @@ ImplFile
                                            InlineKeyword = None
                                            EqualsRange = Some (4,10--4,11) })],
                     Const (Unit, (5,4--5,6)), (3,4--5,6),
-                    { InKeyword = Some (4,15--4,17) }), (2,0--5,6)), (2,0--5,6))],
+                    { LetOrUseKeyword = (3,4--3,11)
+                      InKeyword = Some (4,15--4,17) }), (2,0--5,6)), (2,0--5,6))],
           PreXmlDocEmpty, [], None, (2,0--6,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
                       CodeComments = [] }, set []))

@@ -254,13 +254,7 @@ module ScriptPreprocessClosure =
             errorRecovery exn m
             []
 
-    let ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn
-        (
-            tcConfig: TcConfig,
-            inp: ParsedInput,
-            pathOfMetaCommandSource,
-            dependencyProvider
-        ) =
+    let ApplyMetaCommandsFromInputToTcConfig (tcConfig: TcConfig, inp: ParsedInput, pathOfMetaCommandSource, dependencyProvider) =
 
         let tcConfigB = tcConfig.CloneToBuilder()
 
@@ -454,14 +448,10 @@ module ScriptPreprocessClosure =
                         use _ = UseDiagnosticsLogger diagnosticsLogger
                         let pathOfMetaCommandSource = !! Path.GetDirectoryName(fileName)
                         let preSources = tcConfig.GetAvailableLoadedSources()
+                        CheckLegacyWarnDirectivePlacement(tcConfig.langVersion, tcConfig.diagnosticsOptions.WarnScopes, parseResult)
 
                         let tcConfigResult =
-                            ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn(
-                                tcConfig,
-                                parseResult,
-                                pathOfMetaCommandSource,
-                                dependencyProvider
-                            )
+                            ApplyMetaCommandsFromInputToTcConfig(tcConfig, parseResult, pathOfMetaCommandSource, dependencyProvider)
 
                         tcConfig <- tcConfigResult // We accumulate the tcConfig in order to collect assembly references
 

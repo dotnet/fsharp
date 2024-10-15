@@ -4359,6 +4359,12 @@ type NullnessVar() =
 
     member nv.IsSolved = solution.IsSome
 
+    member nv.IsFullySolved = 
+        match solution with
+        | None -> false
+        | Some (Nullness.Known _) -> true
+        | Some (Nullness.Variable v) -> v.IsFullySolved
+
     member nv.Set(nullness) = 
        assert (not nv.IsSolved) 
        solution <- Some nullness

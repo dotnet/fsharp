@@ -643,7 +643,9 @@ let main1
     if not tcConfig.continueAfterParseFailure then
         AbortOnError(diagnosticsLogger, exiter)
 
-    // Apply any nowarn flags
+    for input in inputs do
+        CheckLegacyWarnDirectivePlacement(tcConfig.langVersion, tcConfig.diagnosticsOptions.WarnScopes, fst input)
+
     let tcConfig =
         (tcConfig, inputs)
         ||> List.fold (fun z (input, sourceFileDirectory) ->

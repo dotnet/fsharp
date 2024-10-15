@@ -3075,7 +3075,7 @@ module internal ParseAndCheckFile =
 
     let ApplyLoadClosure
         (
-            tcConfig,
+            tcConfig: TcConfig,
             parsedMainInput,
             mainInputFileName: string,
             loadClosure: LoadClosure option,
@@ -3165,6 +3165,7 @@ module internal ParseAndCheckFile =
                 | FSharpDiagnosticSeverity.Hidden -> ()
 
         | None ->
+            CheckLegacyWarnDirectivePlacement(tcConfig.langVersion, tcConfig.diagnosticsOptions.WarnScopes, parsedMainInput)
             // For non-scripts, check for disallow #r and #load.
             ApplyMetaCommandsFromInputToTcConfig(
                 tcConfig,

@@ -735,7 +735,7 @@ module internal LexerStateEncoding =
             )
         | LexCont.EndLine(ifdefs, stringNest, econt) ->
             match econt with
-            | LexerEndlineContinuation.Skip(n, m) ->
+            | LexerEndlineContinuation.IfdefSkip(n, m) ->
                 encodeLexCont (
                     FSharpTokenizerColorState.EndLineThenSkip,
                     int64 n,
@@ -835,7 +835,7 @@ module internal LexerStateEncoding =
             | FSharpTokenizerColorState.ExtendedInterpolatedString ->
                 LexCont.String(ifdefs, stringNest, LexerStringStyle.ExtendedInterpolated, stringKind, delimLen, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.EndLineThenSkip ->
-                LexCont.EndLine(ifdefs, stringNest, LexerEndlineContinuation.Skip(n1, mkRange "file" p1 p1))
+                LexCont.EndLine(ifdefs, stringNest, LexerEndlineContinuation.IfdefSkip(n1, mkRange "file" p1 p1))
             | FSharpTokenizerColorState.EndLineThenToken -> LexCont.EndLine(ifdefs, stringNest, LexerEndlineContinuation.Token)
             | _ -> LexCont.Token([], stringNest)
 
@@ -938,13 +938,18 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
 
     let processWarnDirective (str: string) leftc rightc cont =
         let hashIdx = str.IndexOf("#", StringComparison.Ordinal)
-        let directive = WARN_DIRECTIVE(str, cont), leftc + hashIdx, rightc
+        let commentIdx = str.IndexOf("//", StringComparison.Ordinal)
 
-        if (hashIdx <> 0) then
-            delayToken directive
-            WHITESPACE cont, leftc, rightc + hashIdx - 1
+        if commentIdx > 0 then
+            delayToken (COMMENT cont, leftc + commentIdx - 1, rightc)
+
+        let rightc = if commentIdx > 0 then leftc + commentIdx else rightc
+
+        if (hashIdx > 0) then
+            delayToken (WARN_DIRECTIVE(range0, "", cont), hashIdx, rightc)
+            WHITESPACE cont, leftc, leftc + hashIdx - 1
         else
-            directive
+            WARN_DIRECTIVE(range0, "", cont), leftc, rightc
 
     // Set up the initial file position
     do
@@ -1046,7 +1051,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
                 | HASH_IF(m, lineStr, cont) when lineStr <> "" -> false, processHashIfLine m.StartColumn lineStr cont
                 | HASH_ELSE(m, lineStr, cont) when lineStr <> "" -> false, processHashEndElse m.StartColumn lineStr 4 cont
                 | HASH_ENDIF(m, lineStr, cont) when lineStr <> "" -> false, processHashEndElse m.StartColumn lineStr 5 cont
-                | WARN_DIRECTIVE(s, cont) -> false, processWarnDirective s leftc rightc cont
+                | WARN_DIRECTIVE(m, s, cont) -> false, processWarnDirective s leftc rightc cont
                 | HASH_IDENT(ident) ->
                     delayToken (IDENT ident, leftc + 1, rightc)
                     false, (HASH, leftc, leftc)
