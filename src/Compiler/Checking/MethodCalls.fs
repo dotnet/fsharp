@@ -1319,7 +1319,7 @@ let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, d
                     | Some einfo -> 
                         match delArgVals with 
                         | [] -> error(nonStandardEventError einfo.EventName m)
-                        | h :: _ when not (isObjTy g h.Type) -> error(nonStandardEventError einfo.EventName m)
+                        | h :: _ when not (isObjTyAnyNullness g h.Type) -> error(nonStandardEventError einfo.EventName m)
                         | h :: t -> [exprForVal m h; mkRefTupledVars g m t] 
                     | None -> 
                         if isNil delArgTys then [mkUnit g m] else List.map (exprForVal m) delArgVals
