@@ -1,6 +1,7 @@
 ﻿namespace FSharp.Compiler.GraphChecking
 
 open System.Collections.Generic
+open System.IO
 open System.Text
 open FSharp.Compiler.IO
 
@@ -108,3 +109,16 @@ module internal Graph =
             FileSystem.OpenFileForWriteShim(path, fileMode = System.IO.FileMode.Create)
 
         graph |> serialiseToMermaid |> out.WriteAllText
+
+    let asString (graph: Graph<FileIndex * string>) =
+        let sb = StringBuilder()
+        let appendLine (line: string) = sb.AppendLine(line) |> ignore
+
+        for KeyValue((idx, fileName), _) in graph do
+            appendLine $"%i{idx}[\"%s{fileName}\"]"
+
+        for KeyValue((idx, _), deps) in graph do
+            for depIdx, _depFileName in deps do
+                appendLine $"%i{idx} --> %i{depIdx}"
+
+        sb.ToString()

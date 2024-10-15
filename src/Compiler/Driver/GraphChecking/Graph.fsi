@@ -25,3 +25,5 @@ module internal Graph =
     val serialiseToMermaid: graph: Graph<FileIndex * string> -> string
     /// Create a simple Mermaid graph and save it under the path specified.
     val writeMermaidToFile: path: string -> graph: Graph<FileIndex * string> -> unit
+    /// Serialize the graph to a string
+    val asString: graph: Graph<FileIndex * string> -> string
