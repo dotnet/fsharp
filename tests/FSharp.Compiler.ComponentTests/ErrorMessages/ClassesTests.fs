@@ -816,3 +816,18 @@ type A() =
             """
             |> typecheck
             |> shouldSucceed
+            
+    [<Fact>]
+    let ``This 'inherit' declaration specifies the inherited type but no arguments. Consider supplying arguments, e. g. 'inherit BaseType(args)'`` () =
+        Fsx """
+type IA = interface end
+
+type Class() =
+    inherit IA
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 961, Line 5, Col 5, Line 5, Col 12, "This 'inherit' declaration specifies the inherited type but no arguments. Consider supplying arguments, e.g. 'inherit BaseType(args)'.")
+            (Error 946, Line 5, Col 13, Line 5, Col 15, "Cannot inherit from interface type. Use interface ... with instead.")
+        ]
