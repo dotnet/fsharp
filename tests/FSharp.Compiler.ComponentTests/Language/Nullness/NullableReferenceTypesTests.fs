@@ -150,10 +150,10 @@ let ``Can have nullable prop of same type T within a custom type T``() =
     FSharp """
 module MyLib
 type T () =
-    //let mutable v : T | null = null
+    let mutable v : T | null = null
     member val P : T | null = null with get, set
     member this.M() =
-        //v <- null
+        v <- null
         this.P <- null
     """
     |> asLibrary
