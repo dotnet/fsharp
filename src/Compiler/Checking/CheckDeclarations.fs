@@ -3340,12 +3340,13 @@ module EstablishTypeDefinitionCores =
                                 | (synType, _, _) :: _ -> synType.Range
                           if not firstPass && not (match kind with SynTypeDefnKind.Class -> true | _ -> false) then
                               errorR (Error(FSComp.SR.tcStructsInterfacesEnumsDelegatesMayNotInheritFromOtherTypes(), inheritRange)) 
-                          CheckSuperType cenv ty m 
+                          CheckSuperType cenv ty inheritRange 
                           if isTyparTy g ty then 
                               if firstPass then 
                                   errorR(Error(FSComp.SR.tcCannotInheritFromVariableType(), inheritRange)) 
                               Some g.obj_ty_noNulls // a "super" that is a variable type causes grief later
-                          else                          
+                          else             
+                                       
                               Some ty 
                       | _ -> 
                           error(Error(FSComp.SR.tcTypesCannotInheritFromMultipleConcreteTypes(), m))
