@@ -3322,7 +3322,7 @@ module EstablishTypeDefinitionCores =
                   | SynTypeDefnSimpleRepr.Record _ ->
                       if tycon.IsStructRecordOrUnionTycon then Some(g.system_Value_ty)
                       else None
-                  | SynTypeDefnSimpleRepr.General (kind, _, slotsigs, fields, isConcrete, _, _, _) ->
+                  | SynTypeDefnSimpleRepr.General (kind, inherits, slotsigs, fields, isConcrete, _, _, _) ->
                       let kind = InferTyconKind g (kind, attrs, slotsigs, fields, inSig, isConcrete, m)
                                            
                       match inheritedTys with 
@@ -3333,13 +3333,17 @@ module EstablishTypeDefinitionCores =
                           | SynTypeDefnKind.Opaque | SynTypeDefnKind.Class | SynTypeDefnKind.Interface -> None
                           | _ -> error(InternalError("should have inferred tycon kind", m)) 
 
-                      | [(ty, m)] -> 
-                          if not firstPass && not (match kind with SynTypeDefnKind.Class -> true | _ -> false) then 
-                              errorR (Error(FSComp.SR.tcStructsInterfacesEnumsDelegatesMayNotInheritFromOtherTypes(), m)) 
+                      | [(ty, m)] ->
+                          let inheritRange =
+                                match inherits with
+                                | [] -> m
+                                | (synType, _, _) :: _ -> synType.Range
+                          if not firstPass && not (match kind with SynTypeDefnKind.Class -> true | _ -> false) then
+                              errorR (Error(FSComp.SR.tcStructsInterfacesEnumsDelegatesMayNotInheritFromOtherTypes(), inheritRange)) 
                           CheckSuperType cenv ty m 
                           if isTyparTy g ty then 
                               if firstPass then 
-                                  errorR(Error(FSComp.SR.tcCannotInheritFromVariableType(), m)) 
+                                  errorR(Error(FSComp.SR.tcCannotInheritFromVariableType(), inheritRange)) 
                               Some g.obj_ty_noNulls // a "super" that is a variable type causes grief later
                           else                          
                               Some ty 
