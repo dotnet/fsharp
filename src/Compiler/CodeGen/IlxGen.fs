@@ -1197,6 +1197,10 @@ and IlxGenEnv =
         /// Full list of enclosing bound values. First non-compiler-generated element is used to help give nice names for closures and other expressions.
         letBoundVars: ValRef list
 
+
+        /// nested type generic parameters for currentloc
+        nestedTypars: Zset<Typar>
+
         /// The set of IL local variable indexes currently in use by lexically scoped variables, to allow reuse on different branches.
         /// Really an integer set.
         liveLocals: IntMap<unit>
@@ -1259,7 +1263,7 @@ let AddTyparsToEnv typars (eenv: IlxGenEnv) =
 
 let AddSignatureRemapInfo _msg (rpi, mhi) eenv =
     { eenv with
-        sigToImplRemapInfo = (mkRepackageRemapping rpi, mhi) :: eenv.sigToImplRemapInfo
+        sigToImplRemapInfo = (mkRepackageRemapping rpi eenv.realsig, mhi) :: eenv.sigToImplRemapInfo
     }
 
 //--------------------------------------------------------------------------
@@ -1281,7 +1285,7 @@ let AddStorageForVal (g: TcGlobals) (v, s) eenv =
     if g.compilingFSharpCore then
         // Passing an empty remap is sufficient for FSharp.Core.dll because it turns out the remapped type signature can
         // still be resolved.
-        match tryRescopeVal g.fslibCcu Remap.Empty v with
+        match tryRescopeVal g.fslibCcu {Remap.Empty with realsig = g.realsig} v with
         | ValueNone -> eenv
         | ValueSome vref ->
             match vref.TryDeref with
@@ -6892,14 +6896,6 @@ and GenFreevar cenv m eenvouter tyenvinner (fv: Val) =
 and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames expr =
     let g = cenv.g
 
-    // Choose a base name for the closure
-    let basename =
-        let boundv = eenv.letBoundVars |> List.tryFind (fun v -> not v.IsCompilerGenerated)
-
-        match boundv with
-        | Some v -> v.CompiledName cenv.g.CompilerGlobalState
-        | None -> "clo"
-
     // Get a unique stamp for the closure. This must be stable for things that can be part of a let rec.
     let uniq =
         match expr with
@@ -6909,18 +6905,28 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
         | _ -> newUnique ()
 
     // Choose a name for the closure
-    let ilCloTypeRef =
+    let ilCloTypeRef, initialFreeTyvars =
+        let boundvar =
+            eenv.letBoundVars |> List.tryFind (fun v -> not v.IsCompilerGenerated)
+
+        let basename =
+            match boundvar with
+            | Some v -> v.CompiledName cenv.g.CompilerGlobalState
+            | None -> "clo"
+
         // FSharp 1.0 bug 3404: System.Reflection doesn't like '.' and '`' in type names
         let basenameSafeForUseAsTypename = CleanUpGeneratedTypeName basename
-
-        let suffixmark = expr.Range
 
         let cloName =
             // Ensure that we have an g.CompilerGlobalState
             assert (g.CompilerGlobalState |> Option.isSome)
-            g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, suffixmark, uniq)
+            g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, expr.Range, uniq)
 
-        NestedTypeRefForCompLoc eenv.cloc cloName
+        let ilCloTypeRef = NestedTypeRefForCompLoc eenv.cloc cloName
+
+        let initialFreeTyvars = { emptyFreeTyvars with FreeTypars = eenv.nestedTypars }
+
+        ilCloTypeRef, initialFreeTyvars
 
     // Collect the free variables of the closure
     let cloFreeVarResults =
@@ -6931,7 +6937,8 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
             | None -> opts
             | Some(tcref, _, typars, _) -> opts.WithTemplateReplacement(tyconRefEq g tcref, typars)
 
-        freeInExpr opts expr
+        //freeInExpr opts expr
+        accFreeInExpr opts expr { emptyFreeVars with FreeTyvars = initialFreeTyvars }
 
     // Partition the free variables when some can be accessed from places besides the immediate environment
     // Also filter out the current value being bound, if any, as it is available from the "this"
@@ -8166,7 +8173,7 @@ and GenLetRecFixup cenv cgbuf eenv (ilxCloSpec: IlxClosureSpec, e, ilField: ILFi
     CG.EmitInstr cgbuf (pop 2) Push0 (mkNormalStfld (mkILFieldSpec (ilField.FieldRef, ilxCloSpec.ILType)))
 
 /// Generate letrec bindings
-and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (dict: Dictionary<Stamp, ILTypeRef> option) =
+and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (dict: Dictionary<Stamp, Entity * ILTypeRef> option) =
 
     // 'let rec' bindings are always considered to be in loops, that is each may have backward branches for the
     // tailcalls back to the entry point. This means we don't rely on zero-init of mutable locals
@@ -8320,7 +8327,8 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) (
                     ||> List.fold (fun forwardReferenceSet (bind: Binding) ->
                         GenBinding cenv cgbuf eenv bind false
                         updateForwardReferenceSet bind forwardReferenceSet)
-                | true, tref ->
+                | true, (tc, tref) ->
+                    let eenv = { eenv with nestedTypars = (eenv.nestedTypars |> Zset.addList tc.TyparsNoRange) }
                     CodeGenInitMethod
                         cenv
                         cgbuf
@@ -10250,7 +10258,7 @@ and GenModuleOrNamespaceContents cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo 
     | TMDefRec(_isRec, opens, tycons, mbinds, m) ->
         let eenvinner = AddDebugImportsToEnv cenv eenv opens
 
-        let dict = Some(Dictionary<Stamp, ILTypeRef>())
+        let dict = Some(Dictionary<Stamp, Entity * ILTypeRef>())
 
         for tc in tycons do
             let optTref =
@@ -10260,7 +10268,7 @@ and GenModuleOrNamespaceContents cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo 
                     GenTypeDef cenv cgbuf.mgbuf lazyInitInfo eenv m tc
 
             match optTref with
-            | Some tref -> dict.Value.Add(tc.Stamp, tref)
+            | Some tref -> dict.Value.Add(tc.Stamp, (tc, tref))
             | None -> ()
 
         // Generate chunks of non-nested bindings together to allow recursive fixups.
@@ -11984,6 +11992,7 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
         someTypeInThisAssembly = g.ilg.typ_Object // dummy value
         isFinalFile = false
         letBoundVars = []
+        nestedTypars = Zset.empty typarOrder
         liveLocals = IntMap.empty ()
         innerVals = []
         sigToImplRemapInfo = [] (* "module remap info" *)

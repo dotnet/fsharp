@@ -123,7 +123,10 @@ let emptyTyparInst = ([]: TyparInstantiation)
 
 [<NoEquality; NoComparison>]
 type Remap =
-    { tpinst: TyparInstantiation
+    { /// are we producing real signature files
+      realsig: bool
+
+      tpinst: TyparInstantiation
 
       /// Values to remap
       valRemap: ValRemap
@@ -134,14 +137,12 @@ type Remap =
       /// Remove existing trait solutions?
       removeTraitSolutions: bool }
 
-let emptyRemap = 
-    { tpinst = emptyTyparInst
-      tyconRefRemap = emptyTyconRefRemap
-      valRemap = ValMap.Empty
-      removeTraitSolutions = false }
-
-type Remap with 
-    static member Empty = emptyRemap
+    static member Empty ={
+        realsig = false
+        tpinst = []
+        tyconRefRemap = TyconRefMap<_>.Empty
+        valRemap = ValMap.Empty
+        removeTraitSolutions = false }
 
 //--------------------------------------------------------------------------
 // Substitute for type variables and remap type constructors 
@@ -150,8 +151,8 @@ type Remap with
 let addTyconRefRemap tcref1 tcref2 tmenv = 
     { tmenv with tyconRefRemap = tmenv.tyconRefRemap.Add tcref1 tcref2 }
 
-let isRemapEmpty remap = 
-    isNil remap.tpinst && 
+let isRemapEmpty remap =
+    isNil remap.tpinst &&
     remap.tyconRefRemap.IsEmpty && 
     remap.valRemap.IsEmpty 
 
@@ -325,14 +326,18 @@ and bindTypars tps tyargs tpinst =
 // See notes below on remapTypeFull for why we have a function that accepts remapAttribs as an argument 
 and copyAndRemapAndBindTyparsFull remapAttrib tyenv tps =
     match tps with 
-    | [] -> tps, tyenv 
-    | _ -> 
-      let tpsR = copyTypars false tps
-      let tyenv = { tyenv with tpinst = bindTypars tps (generalizeTypars tpsR) tyenv.tpinst } 
-      (tps, tpsR) ||> List.iter2 (fun tporig tp -> 
-         tp.SetConstraints (remapTyparConstraintsAux tyenv tporig.Constraints)
-         tp.SetAttribs (tporig.Attribs |> remapAttrib))
-      tpsR, tyenv
+    | [] -> tps, tyenv
+    | _ ->
+        match tyenv.realsig with
+        | true ->
+            tps, tyenv
+        | false ->
+            let tpsR = copyTypars false tps
+            let tyenv = { tyenv with tpinst = bindTypars tps (generalizeTypars tpsR) tyenv.tpinst }
+            (tps, tpsR) ||> List.iter2 (fun tporig tp ->
+                 tp.SetConstraints (remapTyparConstraintsAux tyenv tporig.Constraints)
+                 tp.SetAttribs (tporig.Attribs |> remapAttrib))
+            tpsR, tyenv
 
 // copies bound typars, extends tpinst 
 and copyAndRemapAndBindTypars tyenv tps =
@@ -403,11 +408,7 @@ let remapSlotSig remapAttrib tyenv (TSlotSig(nm, ty, ctps, methTypars, paraml, r
     let methTyparsR, tyenvinner = copyAndRemapAndBindTyparsFull remapAttrib tyenvinner methTypars
     TSlotSig(nm, tyR, ctpsR, methTyparsR, List.mapSquared (remapParam tyenvinner) paraml, Option.map (remapTypeAux tyenvinner) retTy) 
 
-let mkInstRemap tpinst = 
-    { tyconRefRemap = emptyTyconRefRemap
-      tpinst = tpinst
-      valRemap = ValMap.Empty
-      removeTraitSolutions = false }
+let mkInstRemap tpinst = { Remap.Empty with tpinst = tpinst }
 
 // entry points for "typar -> TType" instantiation 
 let instType tpinst x = if isNil tpinst then x else remapTypeAux (mkInstRemap tpinst) x
@@ -4853,11 +4854,11 @@ type SignatureHidingInfo =
 let addValRemap v vNew tmenv = 
     { tmenv with valRemap= tmenv.valRemap.Add v (mkLocalValRef vNew) }
 
-let mkRepackageRemapping mrpi = 
-    { valRemap = ValMap.OfList (mrpi.RepackagedVals |> List.map (fun (vref, x) -> vref.Deref, x))
-      tpinst = emptyTyparInst
-      tyconRefRemap = TyconRefMap.OfList mrpi.RepackagedEntities
-      removeTraitSolutions = false }
+let mkRepackageRemapping mrpi (realsig: bool) =
+    { Remap.Empty with
+        realsig = realsig
+        valRemap = ValMap.OfList (mrpi.RepackagedVals |> List.map (fun (vref, x) -> vref.Deref, x))
+        tyconRefRemap = TyconRefMap.OfList mrpi.RepackagedEntities }
 
 //--------------------------------------------------------------------------
 // Compute instances of the above for mty -> mty
@@ -6495,15 +6496,15 @@ let remapPossibleForallTy g tmenv ty =
 
 let copyModuleOrNamespaceType g compgen mtyp =
     let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
-    copyAndRemapAndBindModTy ctxt compgen Remap.Empty mtyp |> fst
+    copyAndRemapAndBindModTy ctxt compgen {Remap.Empty with realsig = g.realsig} mtyp |> fst
 
 let copyExpr g compgen e =
     let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
-    remapExprImpl ctxt compgen Remap.Empty e    
+    remapExprImpl ctxt compgen {Remap.Empty with realsig = g.realsig} e
 
 let copyImplFile g compgen e =
     let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
-    remapImplFile ctxt compgen Remap.Empty e |> fst
+    remapImplFile ctxt compgen {Remap.Empty with realsig = g.realsig} e |> fst
 
 let instExpr g tpinst e =
     let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
@@ -9788,7 +9789,7 @@ and RewriteImplFile env implFile =
 // accessed via non local references.
 //--------------------------------------------------------------------------
 
-let MakeExportRemapping viewedCcu (mspec: ModuleOrNamespace) = 
+let MakeExportRemapping viewedCcu (mspec: ModuleOrNamespace) realsig = 
 
     let accEntityRemap (entity: Entity) acc = 
         match tryRescopeEntity viewedCcu entity with 
@@ -9812,7 +9813,7 @@ let MakeExportRemapping viewedCcu (mspec: ModuleOrNamespace) =
     let entities = allEntitiesOfModuleOrNamespaceTy mty
     let vs = allValsOfModuleOrNamespaceTy mty
     // Remap the entities first so we can correctly remap the types in the signatures of the ValLinkageFullKey's in the value references
-    let acc = List.foldBack accEntityRemap entities Remap.Empty
+    let acc = List.foldBack accEntityRemap entities { Remap.Empty with realsig = realsig }
     let allRemap = List.foldBack accValRemap vs acc
     allRemap
 

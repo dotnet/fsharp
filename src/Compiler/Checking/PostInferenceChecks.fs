@@ -2664,9 +2664,9 @@ and CheckModuleSpec cenv env mbind =
         let env = { env with reflect = env.reflect || HasFSharpAttribute cenv.g cenv.g.attrib_ReflectedDefinitionAttribute mspec.Attribs }
         CheckDefnInModule cenv env rhs
 
-let CheckImplFileContents cenv env implFileTy implFileContents  =
+let CheckImplFileContents cenv env implFileTy implFileContents =
     let rpi, mhi = ComputeRemappingFromImplementationToSignature cenv.g implFileContents implFileTy
-    let env = { env with sigToImplRemapInfo = (mkRepackageRemapping rpi, mhi) :: env.sigToImplRemapInfo }
+    let env = { env with sigToImplRemapInfo = (mkRepackageRemapping rpi cenv.g.realsig, mhi) :: env.sigToImplRemapInfo }
     UpdatePrettyTyparNames.updateModuleOrNamespaceType implFileTy
     CheckDefnInModule cenv env implFileContents
 
