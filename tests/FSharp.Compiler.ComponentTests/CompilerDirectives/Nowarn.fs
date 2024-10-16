@@ -48,7 +48,8 @@ module Nowarn =
         "type T5 = T"
     ]
     
-    let private testData = [
+    let private testData =
+        [
         vp, [], [fs [intro; make20]], [Warning 20, 2]
         vp, [], [fs [intro; nowarn 20; make20]], []
         vp, [], [fs [intro; "#nowarn 20;;"; make20]], []
@@ -85,18 +86,21 @@ module Nowarn =
         vp, [], [fsx [intro; make25; nowarn 25; make25; warnon 25; make25]], [Warning 25, 2; Warning 25, 6]
         v9, [], [fsx [intro; make25; nowarn 25; make25; warnon 25; make25]], [Error 3350, 5]
         vp, [], [fs [intro; "let x ="; nowarn 20; "    1"; warnon 20; "    2"; "    3"; "4"]], [Warning 20, 6; Warning 20, 8]
-        vp, [], [fs [intro; nowarn 20; nowarn 20; warnon 20; make20]], [Warning 3875, 3; Warning 20, 5]
-        v9, [], [fs [intro; nowarn 20; nowarn 20; warnon 20; make20]], [Error 3350, 4]
+        vp, [], [fs [intro; nowarn 20; nowarn 20; warnon 20; make20]], [Information 3875, 3; Warning 20, 5]
+        vp, [], [fs [intro; nowarn 20; warnon 20; warnon 20; make20]], [Warning 3875, 4; Warning 20, 5]
         vp, [], [fs [intro; "#nowarn \"\"\"20\"\"\" "; make20]], []
         ]
-
-    let testMemberData =
-        testData |> List.mapi (fun i (v, fl, sources, diags) -> [|
+        |> List.mapi (fun i (v, fl, sources, diags) -> [|
             box (i + 1)
             box v
             box fl
             box (List.toArray sources)
             box (List.toArray diags) |])
+
+    let testMemberData =
+        match System.Int32.TryParse(System.Environment.GetEnvironmentVariable("NowarnSingleTest")) with
+        | true, n when n > 0 && n <= testData.Length -> [testData[n-1]]
+        | _ -> testData
 
     let private testFailed (expected: (ErrorType * int) list) (actual: ErrorInfo list) =
         expected.Length <> actual.Length

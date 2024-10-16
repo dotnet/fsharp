@@ -132,10 +132,10 @@ module internal WarnScopes =
 
             match getScopes idx warnScopes with
             | WarnScope.OpenOn m' :: t -> warnScopes.Add(idx, WarnScope.On(mkScope m' m) :: t)
-            | WarnScope.OpenOff m' :: _ ->
+            | WarnScope.OpenOff m' :: _
+            | WarnScope.On m' :: _ ->
                 if langVersion.SupportsFeature LanguageFeature.ScopedNowarn then
-                    warning (Error(FSComp.SR.lexWarnDirectivesMustMatch ("#nowarn", m'.StartLine), m))
-
+                    informationalWarning (Error(FSComp.SR.lexWarnDirectivesMustMatch ("#nowarn", m'.StartLine), m))
                 warnScopes
             | scopes -> warnScopes.Add(idx, WarnScope.OpenOff(mkScope m m) :: scopes)
         | WarnDirective.Warnon(n, m) ->
@@ -143,8 +143,9 @@ module internal WarnScopes =
 
             match getScopes idx warnScopes with
             | WarnScope.OpenOff m' :: t -> warnScopes.Add(idx, WarnScope.Off(mkScope m' m) :: t)
-            | WarnScope.OpenOn m' :: _ ->
-                warning (Error(FSComp.SR.lexWarnDirectivesMustMatch ("#warnon", m'.StartLine), m))
+            | WarnScope.OpenOn m' :: _
+            | WarnScope.Off m' :: _ ->
+                warning (Error(FSComp.SR.lexWarnDirectivesMustMatch ("#warnon", m'.EndLine), m))
                 warnScopes
             | scopes -> warnScopes.Add(idx, WarnScope.OpenOn(mkScope m m) :: scopes)
         |> WarnScopeMap
