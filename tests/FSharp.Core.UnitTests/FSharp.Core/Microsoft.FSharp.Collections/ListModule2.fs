@@ -367,7 +367,7 @@ type ListModule02() =
     [<Fact>]
     member this.Of_Seq() =
         // integer List  
-        let resultInt = List.ofSeq {1..10}        
+        let resultInt = List.ofSeq (seq {1..10})        
         Assert.AreEqual([1..10], resultInt)
         
         // string List    
