@@ -2321,7 +2321,8 @@ inheritsDefn:
 
   | INHERIT atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP atomicExprAfterType optBaseSpec
      { let mDecl = unionRanges (rhs parseState 1) $4.Range
-       SynMemberDefn.ImplicitInherit($2, $4, $5, mDecl) }
+       let trivia = { InheritKeyword = rhs parseState 1 }
+       SynMemberDefn.ImplicitInherit($2, $4, $5, mDecl, trivia) }
 
   | INHERIT ends_coming_soon_or_recover
      { let mDecl = (rhs parseState 1)

@@ -850,3 +850,38 @@ type C5 = class inherit System.MulticastDelegate override x.ToString() = ""  end
             (Error 771, Line 5, Col 25, Line 5, Col 40, "The types System.ValueType, System.Enum, System.Delegate, System.MulticastDelegate and System.Array cannot be used as super types in an object expression or class");
             (Error 771, Line 6, Col 25, Line 6, Col 49, "The types System.ValueType, System.Enum, System.Delegate, System.MulticastDelegate and System.Array cannot be used as super types in an object expression or class")
         ]
+        
+
+    [<Fact>]
+    let ``Types can inherit from a single concrete type`` () =
+        Fsx """
+type ClassA() = class end
+
+type Class() =
+    inherit ClassA()
+        """
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Types cannot inherit from multiple concrete types.`` () =
+        Fsx """
+type ClassA() = class end
+
+type ClassB() = class end
+
+type ClassC() = class end
+
+type Class() =
+    inherit ClassA()
+    inherit ClassB()
+    inherit ClassC()
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 959, Line 10, Col 5, Line 10, Col 12, "Type definitions may only have one 'inherit' specification and it must be the first declaration")
+            (Error 959, Line 11, Col 5, Line 11, Col 12, "Type definitions may only have one 'inherit' specification and it must be the first declaration")
+            (Error 932, Line 10, Col 13, Line 10, Col 19, "Types cannot inherit from multiple concrete types")
+            (Error 932, Line 11, Col 13, Line 11, Col 19, "Types cannot inherit from multiple concrete types")
+        ]

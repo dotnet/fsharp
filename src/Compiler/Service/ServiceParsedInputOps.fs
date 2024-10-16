@@ -905,7 +905,7 @@ module ParsedInput =
             | SynMemberDefn.ImplicitCtor(attributes = Attributes attrs; ctorArgs = pat) ->
                 List.tryPick walkAttribute attrs |> Option.orElseWith (fun _ -> walkPat pat)
 
-            | SynMemberDefn.ImplicitInherit(t, e, _, _) -> walkType t |> Option.orElseWith (fun () -> walkExpr e)
+            | SynMemberDefn.ImplicitInherit(t, e, _, _, _) -> walkType t |> Option.orElseWith (fun () -> walkExpr e)
 
             | SynMemberDefn.LetBindings(bindings, _, _, _) -> List.tryPick walkBinding bindings
 
@@ -2233,7 +2233,7 @@ module ParsedInput =
             | SynMemberDefn.ImplicitCtor(attributes = Attributes attrs; ctorArgs = pat) ->
                 List.iter walkAttribute attrs
                 walkPat pat
-            | SynMemberDefn.ImplicitInherit(t, e, _, _) ->
+            | SynMemberDefn.ImplicitInherit(t, e, _, _, _) ->
                 walkType t
                 walkExpr e
             | SynMemberDefn.LetBindings(bindings, _, _, _) -> List.iter walkBinding bindings

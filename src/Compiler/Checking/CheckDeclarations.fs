@@ -1090,7 +1090,7 @@ module MutRecBindingChecking =
 
                             [Phase2AIncrClassCtor (staticCtorInfo, Some incrCtorInfo)], innerState
                               
-                        | Some (SynMemberDefn.ImplicitInherit (ty, arg, _baseIdOpt, m)), _ ->
+                        | Some (SynMemberDefn.ImplicitInherit (ty, arg, _baseIdOpt, m, _)), _ ->
                             if tcref.TypeOrMeasureKind = TyparKind.Measure then
                                 error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m))
 
@@ -3324,7 +3324,6 @@ module EstablishTypeDefinitionCores =
                       else None
                   | SynTypeDefnSimpleRepr.General (kind, inherits, slotsigs, fields, isConcrete, _, _, _) ->
                       let kind = InferTyconKind g (kind, attrs, slotsigs, fields, inSig, isConcrete, m)
-                                           
                       match inheritedTys with 
                       | [] -> 
                           match kind with 
@@ -3335,9 +3334,9 @@ module EstablishTypeDefinitionCores =
 
                       | [(ty, m)] ->
                           let inheritRange =
-                                match inherits with
-                                | [] -> m
-                                | (synType, _, _) :: _ -> synType.Range
+                              match inherits with
+                              | [] -> m
+                              | (synType, _, _) :: _ -> synType.Range       
                           if not firstPass && not (match kind with SynTypeDefnKind.Class -> true | _ -> false) then
                               errorR (Error(FSComp.SR.tcStructsInterfacesEnumsDelegatesMayNotInheritFromOtherTypes(), inheritRange)) 
                           CheckSuperType cenv ty inheritRange 
@@ -3345,11 +3344,13 @@ module EstablishTypeDefinitionCores =
                               if firstPass then 
                                   errorR(Error(FSComp.SR.tcCannotInheritFromVariableType(), inheritRange)) 
                               Some g.obj_ty_noNulls // a "super" that is a variable type causes grief later
-                          else             
-                                       
+                          else                  
                               Some ty 
-                      | _ -> 
-                          error(Error(FSComp.SR.tcTypesCannotInheritFromMultipleConcreteTypes(), m))
+                      | _ ->
+                          inherits
+                          |> List.skip 1
+                          |> List.iter (fun (synType, _, _) -> errorR(Error(FSComp.SR.tcTypesCannotInheritFromMultipleConcreteTypes(), synType.Range)))
+                          None
 
                   | SynTypeDefnSimpleRepr.Enum _ -> 
                       Some(g.system_Enum_ty) 
@@ -4291,19 +4292,20 @@ module TcDeclarations =
             let _, ds = ds |> List.takeUntil (function SynMemberDefn.LetBindings _ -> false | _ -> true) 
 
             // Skip over 'let' and 'do' bindings
-            let _, ds = ds |> List.takeUntil (allFalse [isMember;isAbstractSlot;isInterface;isAutoProperty]) 
-
-            match ds with
-             | SynMemberDefn.Member (range=m) :: _ -> errorR(InternalError("List.takeUntil is wrong, have binding", m))
-             | SynMemberDefn.AbstractSlot (range=m) :: _ -> errorR(InternalError("List.takeUntil is wrong, have slotsig", m))
-             | SynMemberDefn.Interface (range=m) :: _ -> errorR(InternalError("List.takeUntil is wrong, have interface", m))
-             | SynMemberDefn.ImplicitCtor (range=m) :: _ -> errorR(InternalError("implicit class construction with two implicit constructions", m))
-             | SynMemberDefn.AutoProperty (range=m) :: _ -> errorR(InternalError("List.takeUntil is wrong, have auto property", m))
-             | SynMemberDefn.ImplicitInherit (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveOneInherit(), m))
-             | SynMemberDefn.LetBindings (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveLocalBindingsBeforeMembers(), m))
-             | SynMemberDefn.Inherit (trivia= { InheritKeyword = m }) :: _ -> errorR(Error(FSComp.SR.tcInheritDeclarationMissingArguments(), m))
-             | SynMemberDefn.NestedType (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypesCannotContainNestedTypes(), m))
-             | _ -> ()
+            let _, ds = ds |> List.takeUntil (allFalse [isMember;isAbstractSlot;isInterface;isAutoProperty])
+            
+            for dfn in ds do
+                match dfn with
+                 | SynMemberDefn.Member (range=m) -> errorR(InternalError("List.takeUntil is wrong, have binding", m))
+                 | SynMemberDefn.AbstractSlot (range=m)  -> errorR(InternalError("List.takeUntil is wrong, have slotsig", m))
+                 | SynMemberDefn.Interface (range=m) -> errorR(InternalError("List.takeUntil is wrong, have interface", m))
+                 | SynMemberDefn.ImplicitCtor (range=m) -> errorR(InternalError("implicit class construction with two implicit constructions", m))
+                 | SynMemberDefn.AutoProperty (range=m)  -> errorR(InternalError("List.takeUntil is wrong, have auto property", m))
+                 | SynMemberDefn.ImplicitInherit (trivia= { InheritKeyword = m }) -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveOneInherit(), m))
+                 | SynMemberDefn.LetBindings (range=m)  -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveLocalBindingsBeforeMembers(), m))
+                 | SynMemberDefn.Inherit (trivia= { InheritKeyword = m }) -> errorR(Error(FSComp.SR.tcInheritDeclarationMissingArguments(), m))
+                 | SynMemberDefn.NestedType (range=m) -> errorR(Error(FSComp.SR.tcTypesCannotContainNestedTypes(), m))
+                 | _ -> ()
         | ds ->
              // Check for duplicated parameters in abstract methods
              // Check for an interface implementation with auto properties on constructor-less types
@@ -4474,7 +4476,7 @@ module TcDeclarations =
             let inherits =
                 members |> List.choose (function 
                     | SynMemberDefn.Inherit (ty, idOpt, m, _) -> Some(ty, m, idOpt)
-                    | SynMemberDefn.ImplicitInherit (ty, _, idOpt, m) -> Some(ty, m, idOpt)
+                    | SynMemberDefn.ImplicitInherit (ty, _, idOpt, m, _) -> Some(ty, m, idOpt)
                     | _ -> None)
 
             //let nestedTycons = cspec |> List.choose (function SynMemberDefn.NestedType (x, _, _) -> Some x | _ -> None)
