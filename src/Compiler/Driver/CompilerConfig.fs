@@ -92,20 +92,13 @@ let ResolveFileUsingPaths (paths, m, fileName) =
         let searchMessage = String.concat "\n " paths
         raise (FileNameNotResolved(fileName, searchMessage, m))
 
-let private rxOptions = RegexOptions.Compiled ||| RegexOptions.CultureInvariant
-let private flagsRx = Regex("""^(FS)?(\d+)$""", rxOptions)
-let private flagsIgnoreRx = Regex("""^([A-Z]+)(\d+)$""", rxOptions)
-let private codeRx = Regex("""^("?)(?:(?:FS)?(\d+))\1$""", rxOptions)
-let private code8Rx = Regex("""^(")(\d+)"$""", rxOptions)
-let private code8nonQuotesRx = Regex("""^[^"].+$""", rxOptions)
-let private code8prefixRx = Regex("""^"FS.*"$""", rxOptions)
-
 let GetWarningNumber (m, numStr: string, langVersion: LanguageVersion, isCompilerOption: bool) =
     let argFeature = LanguageFeature.ParsedHashDirectiveArgumentNonQuotes
     let errorInvalid = Error(FSComp.SR.buildInvalidWarningNumber numStr, m)
+    let rxOptions = RegexOptions.CultureInvariant
 
-    let getNumber (regex: Regex) failAction =
-        let mtch = regex.Match numStr
+    let getNumber regexString failAction =
+        let mtch = Regex(regexString, rxOptions).Match(numStr)
 
         if mtch.Success then
             Some(int mtch.Groups[2].Captures[0].Value)
@@ -113,20 +106,23 @@ let GetWarningNumber (m, numStr: string, langVersion: LanguageVersion, isCompile
             failAction ()
             None
 
+    let matches regexString =
+        Regex(regexString, rxOptions).Match(numStr).Success
+
     if isCompilerOption then
-        getNumber flagsRx (fun () ->
-            if not (flagsIgnoreRx.Match(numStr).Success) then
+        getNumber """^(FS)?(\d+)$""" (fun () ->
+            if not (matches """^([A-Z]+)(\d+)$""") then
                 warning errorInvalid)
     elif langVersion.SupportsFeature(argFeature) then
-        getNumber codeRx (fun () -> warning errorInvalid)
-    elif code8nonQuotesRx.Match(numStr).Success then
+        getNumber """^("?)(?:(?:FS)?(\d+))\1$""" (fun () -> warning errorInvalid)
+    elif matches """^[^"].+$""" then
         errorR (languageFeatureError langVersion argFeature m)
         None
-    elif code8prefixRx.Match(numStr).Success then
+    elif matches """^"FS.*"$""" then
         warning errorInvalid
         None
     else
-        getNumber code8Rx (fun () -> ())
+        getNumber """^(")(\d+)"$""" (fun () -> ())
 
 let ComputeMakePathAbsolute implicitIncludeDir (path: string) =
     try
