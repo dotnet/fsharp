@@ -1488,7 +1488,12 @@ type SynMemberDefn =
         range: range *
         trivia: SynMemberDefnImplicitCtorTrivia
 
-    | ImplicitInherit of inheritType: SynType * inheritArgs: SynExpr * inheritAlias: Ident option * range: range * trivia: SynMemberDefnInheritTrivia
+    | ImplicitInherit of
+        inheritType: SynType *
+        inheritArgs: SynExpr *
+        inheritAlias: Ident option *
+        range: range *
+        trivia: SynMemberDefnInheritTrivia
 
     | LetBindings of bindings: SynBinding list * isStatic: bool * isRecursive: bool * range: range
 
