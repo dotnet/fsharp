@@ -175,17 +175,16 @@ Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
 Enable fast find references &amp; rename (restart required)</source>
-        <target state="needs-review-translation">Параметры производительности проекта и кэширования F#; 
-Включить перекрестные ссылки проектов в памяти; 
-Enable_partial_type_checking; 
-Параметры производительности IntelliSense; 
-Включите устаревшие данные для функций IntelliSense; 
-Время до использования устаревших результатов (в миллисекундах); 
-Распараллеливание (требуется перезагрузка); 
-Включить параллельную проверку типов с файлами сигнатур; 
-Включить параллельное разрешение ссылок; 
-Включить быстрый поиск ссылок и переименование (требуется перезагрузка); 
-Результаты анализа кэша (экспериментальная функция)</target>
+        <target state="new">F# Project and Caching Performance Options;
+Enable in-memory cross project references;
+Enable_partial_type_checking;
+IntelliSense Performance Options;
+Enable stale data for IntelliSense features;
+Time until stale results are used (in milliseconds);
+Parallelization (requires restart);
+Enable parallel type checking with signature files;
+Enable parallel reference resolution;
+Enable fast find references &amp; rename (restart required)</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
