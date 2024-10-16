@@ -7151,7 +7151,7 @@ and CheckSuperType (cenv: cenv) ty m =
        typeEquiv g ty g.system_Array_ty ||
        typeEquiv g ty g.system_MulticastDelegate_ty ||
        typeEquiv g ty g.system_Delegate_ty then
-         error(Error(FSComp.SR.tcPredefinedTypeCannotBeUsedAsSuperType(), m))
+         errorR(Error(FSComp.SR.tcPredefinedTypeCannotBeUsedAsSuperType(), m))
 
     if isErasedType g ty then
         errorR(Error(FSComp.SR.tcCannotInheritFromErasedType(), m))
