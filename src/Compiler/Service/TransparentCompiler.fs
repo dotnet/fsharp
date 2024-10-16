@@ -2394,6 +2394,7 @@ type internal TransparentCompiler
                     FSharpProjectSnapshot.Create(
                         fileName + ".fsproj",
                         None,
+                        None,
                         sourceFiles,
                         references,
                         otherFlags,

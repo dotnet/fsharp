@@ -4,7 +4,7 @@ open System.Collections.Generic
 
 type DependencyNode<'Identifier, 'Value> =
     {
-        Id: 'Identifier
+        Id: 'Identifier // TODO: probably not needed
         Value: 'Value option
 
         // TODO: optional if it's root node
@@ -26,6 +26,7 @@ type IDependencyGraph<'Id, 'Val when 'Id: equality> =
     abstract member AddDependency: node: 'Id * dependsOn: 'Id -> unit
     abstract member RemoveDependency: node: 'Id * noLongerDependsOn: 'Id -> unit
     abstract member UpdateNode: id: 'Id * update: ('Val -> 'Val) -> unit
+    abstract member Debug_GetNodes: ('Id -> bool) -> DependencyNode<'Id, 'Val> seq
 
 and IThreadSafeDependencyGraph<'Id, 'Val when 'Id: equality> =
     inherit IDependencyGraph<'Id, 'Val>
@@ -161,7 +162,14 @@ module Internal =
             |> update
             |> fun value -> this.AddOrUpdateNode(id, value) |> ignore
 
+        member this.Debug_GetNodes(predicate: 'Id -> bool): DependencyNode<'Id,'Val> seq =
+            nodes.Values |> Seq.filter (fun node -> predicate node.Id)
+
+
         interface IDependencyGraph<'Id, 'Val> with
+
+            member this.Debug_GetNodes(predicate)= self.Debug_GetNodes(predicate)
+
             member _.AddOrUpdateNode(id, value) = self.AddOrUpdateNode(id, value)
             member _.AddList(nodes) = self.AddList(nodes)
 
@@ -195,6 +203,7 @@ module Internal =
                 )
 
 open Internal
+open System.Runtime.CompilerServices
 
 type LockOperatedDependencyGraph<'Id, 'Val when 'Id: equality>() as self =
 
@@ -228,3 +237,57 @@ type LockOperatedDependencyGraph<'Id, 'Val when 'Id: equality>() as self =
             lock lockObj (fun () -> graph.RemoveDependency(node, noLongerDependsOn))
 
         member _.Transact(f) = lock lockObj (fun () -> f graph)
+
+        member _.Debug_GetNodes(predicate) =
+            lock lockObj (fun () -> graph.Debug_GetNodes(predicate))
+
+
+
+[<Extension>]
+type GraphExtensions =
+
+    [<Extension>]
+    static member Unpack(node: 'NodeValue, unpacker) =
+        match unpacker node with
+        | Some value -> value
+        | None -> failwith $"Expected {unpacker} but got: {node}"
+
+    [<Extension>]
+    static member UnpackOne(dependencies: 'NodeValue seq, unpacker: 'NodeValue -> 'UnpackedDependency option) =
+        dependencies
+        |> Seq.tryExactlyOne
+        |> Option.bind unpacker
+        |> Option.defaultWith (fun () ->
+            failwith $"Expected exactly one dependency matching {unpacker} but got: %A{dependencies |> Seq.toArray}")
+
+    [<Extension>]
+    static member UnpackMany(dependencies: 'NodeValue seq, unpacker) =
+        let results =
+            dependencies
+            |> Seq.choose unpacker
+
+        if dependencies |> Seq.length <> (results |> Seq.length) then
+            failwith $"Expected all dependencies to match {unpacker} but got: %A{dependencies |> Seq.toArray}"
+
+        results
+
+    [<Extension>]
+    static member UnpackOneMany(dependencies: 'NodeValue seq, headUnpacker, tailUnpacker) =
+        let mutable oneResult = None
+        let manyResult = new ResizeArray<_>()
+        let extras = new ResizeArray<_>()
+
+        for item in dependencies do
+            match headUnpacker item, tailUnpacker item with
+            | Some head, _ -> oneResult <- Some head
+            | None, Some item -> manyResult.Add item |> ignore
+            | None, None -> extras.Add item |> ignore
+
+        match oneResult with
+        | None -> failwith $"Expected exactly one dependency matching {headUnpacker} but didn't find any"
+        | Some head ->
+            if extras.Count > 0 then
+                failwith $"Found extra dependencies: %A{extras.ToArray()}"
+
+            head, seq manyResult
+

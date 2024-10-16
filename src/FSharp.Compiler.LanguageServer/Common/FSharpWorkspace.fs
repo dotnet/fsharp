@@ -4,8 +4,9 @@ open FSharp.Compiler.Text
 open System.Collections.Generic
 open DependencyGraph
 open System.IO
+open System.Runtime.CompilerServices
 
-//#nowarn "57"
+#nowarn "57"
 
 open System
 open System.Threading.Tasks
@@ -28,34 +29,44 @@ type internal WorkspaceNodeValue =
     | ProjectBase of ProjectCore * FSharpReferencedProjectSnapshot list
     | ProjectSnapshot of FSharpProjectSnapshot
 
-    member this.UnwrapSourceFile() =
-        match this with
-        | SourceFile f -> f
-        | x -> failwithf "Expected SourceFile, got %A" x
 
-    member this.UnwrapReferenceOnDisk() =
-        match this with
-        | ReferenceOnDisk r -> r
-        | x -> failwithf "Expected ReferenceOnDisk, got %A" x
+module internal WorkspaceNode =
 
-    member this.UnwrapProjectCore() =
-        match this with
-        | ProjectCore p -> p
-        | x -> failwithf "Expected ProjectCore, got %A" x
+    let projectCore value =
+        match value with
+        | WorkspaceNodeValue.ProjectCore p -> Some p
+        | _ -> None
 
-    member this.UnwrapProjectBase() =
-        match this with
-        | ProjectBase(p, refs) -> p, refs
-        | x -> failwithf "Expected ProjectBase, got %A" x
+    let projectSnapshot value =
+        match value with
+        | WorkspaceNodeValue.ProjectSnapshot p -> Some p
+        | _ -> None
 
-    member this.UnwrapProjectSnapshot() =
-        match this with
-        | ProjectSnapshot p -> p
-        | x -> failwithf "Expected ProjectSnapshot, got %A" x
+    let projectBase value =
+        match value with
+        | WorkspaceNodeValue.ProjectBase(p, refs) -> Some(p, refs)
+        | _ -> None
+
+    let sourceFile value =
+        match value with
+        | WorkspaceNodeValue.SourceFile f -> Some f
+        | _ -> None
+
+    let referenceOnDisk value =
+        match value with
+        | WorkspaceNodeValue.ReferenceOnDisk r -> Some r
+        | _ -> None
 
 type FSharpWorkspace() =
 
     let depGraph = LockOperatedDependencyGraph() :> IThreadSafeDependencyGraph<_, _>
+
+    member internal this.Debug = {|
+        Snapshots =
+            depGraph.Debug_GetNodes (function | WorkspaceNodeKey.ProjectSnapshot _ -> true | _ -> false)
+
+    |}
+
 
     member this.OpenFile(file: Uri, content: string) =
         // No changes in the dep graph. If we already read the contents from disk we don't want to invalidate it.
@@ -81,16 +92,14 @@ type FSharpWorkspace() =
 
         this
 
-    member _.AddCommandLineArgs(projectPath: string, compilerArgs: string seq) =
-
-        let findOutputFileName args =
-            args
-            |> Seq.tryFind (fun (x: string) -> x.StartsWith("-o:"))
-            |> Option.map (fun x -> x.Substring(3))
+    member _.AddCommandLineArgs(projectPath: string, outputPath: string | null, compilerArgs: string seq) =
 
         let outputPath =
-            findOutputFileName compilerArgs
-            |> Option.defaultWith (fun () -> failwith "Invalid command line arguments for F# project, output file name not found")
+            outputPath
+            |> Option.ofObj
+            // TODO: maybe there are cases where it's appropriate to not have output path?
+            |> Option.defaultWith (fun () ->
+                failwith "Output path can't be null for an F# project")
 
         let projectIdentifier = FSharpProjectIdentifier(projectPath, outputPath)
 
@@ -141,11 +150,12 @@ type FSharpWorkspace() =
             let projectCore =
                 referencesOnDiskNodes.AddDependentNode(
                     WorkspaceNodeKey.ProjectCore projectIdentifier,
-                    (fun refsOnDiskNodes ->
-                        let refsOnDisk = refsOnDiskNodes |> Seq.map _.UnwrapReferenceOnDisk() |> Seq.toList
+                    (fun deps ->
+                        let refsOnDisk = deps.UnpackMany WorkspaceNode.referenceOnDisk |> Seq.toList
 
                         ProjectCore(
                             ProjectFileName = projectPath,
+                            OutputFileName = Some outputPath,
                             ProjectId = None,
                             ReferencesOnDisk = refsOnDisk,
                             OtherOptions = otherOptions,
@@ -164,12 +174,11 @@ type FSharpWorkspace() =
                 projectCore.AddDependentNode(
                     WorkspaceNodeKey.ProjectBase projectIdentifier,
                     (fun deps ->
-                        let projectCore = deps |> Seq.head |> _.UnwrapProjectCore()
+                        let projectCore, referencedProjects =
+                            deps.UnpackOneMany(WorkspaceNode.projectCore, WorkspaceNode.projectSnapshot)
 
                         let referencedProjects =
-                            deps
-                            |> Seq.skip 1
-                            |> Seq.map _.UnwrapProjectSnapshot()
+                            referencedProjects
                             |> Seq.map (fun s ->
                                 FSharpReferencedProjectSnapshot.FSharpReference(
                                     s.OutputFileName
@@ -187,10 +196,10 @@ type FSharpWorkspace() =
                     WorkspaceNodeKey.ProjectSnapshot projectIdentifier,
                     (fun deps ->
 
-                        let projectCore, referencedProjects = deps |> Seq.head |> _.UnwrapProjectBase()
-                        let sourceFiles = deps |> Seq.skip 1 |> Seq.map _.UnwrapSourceFile() |> Seq.toList
+                        let (projectCore, referencedProjects), sourceFiles =
+                            deps.UnpackOneMany(WorkspaceNode.projectBase, WorkspaceNode.sourceFile)
 
-                        ProjectSnapshot(projectCore, referencedProjects, sourceFiles)
+                        ProjectSnapshot(projectCore, referencedProjects, sourceFiles |> Seq.toList)
                         |> FSharpProjectSnapshot
                         |> WorkspaceNodeValue.ProjectSnapshot)
                 )
@@ -230,4 +239,4 @@ type FSharpWorkspace() =
             |> Seq.tryHead // For now just get the first one
 
             |> Option.map depGraph.GetValue
-            |> Option.map _.UnwrapProjectSnapshot())
+            |> Option.map _.Unpack(WorkspaceNode.projectSnapshot))

@@ -82,8 +82,8 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
                 Range = false
             },
             HoverProvider = new HoverOptions()
-            { 
-                WorkDoneProgress = true 
+            {
+                WorkDoneProgress = true
             }
         };
         return capabilities;
@@ -194,9 +194,12 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
     {
         var ws = this.Extensibility.Workspaces();
 
-
         IQueryResults<IProjectSnapshot>? result = await ws.QueryProjectsAsync(project => project
             .With(p => p.ActiveConfigurations
+                .With(c => c.ConfigurationDimensions.With(d => d.Name).With(d => d.Value))
+                .With(c => c.Properties.With(p => p.Name).With(p => p.Value))
+                .With(c => c.OutputGroups.With(g => g.Name).With(g => g.Outputs.With(o => o.Name).With(o => o.FinalOutputPath).With(o => o.RootRelativeURL)))
+                //.With(c => c.PropertiesByName("OutputPath"))
                 .With(c => c.RuleResultsByRuleName("CompilerCommandLineArgs")
                     .With(r => r.RuleName)
                     .With(r => r.Items)))
@@ -212,7 +215,6 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
             .With(p => new { p.ActiveConfigurations, p.Id, p.Guid }), cancellationToken);
 
 
-
         var workspace = new FSharpWorkspace();
 
         var projectMap = new Dictionary<string, List<FSharpProjectIdentifier>>();
@@ -222,9 +224,9 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
         {
             project.Id.TryGetValue("ProjectPath", out var projectPath);
 
-            List<string> commandLineArgs = [];
+            List<(string?, string)> projectInfos = [];
 
-            if (projectPath != null)
+            if (projectPath != null && projectPath.ToLower().EndsWith(".fsproj"))
             {
                 var configs = project.ActiveConfigurations.ToList();
                 // There can be multiple Active Configurations, e.g. one for net8.0 and one for net472
@@ -233,6 +235,29 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
                 {
                     if (config != null)
                     {
+                        // Extract bin output path for each active config
+                        var data = config.OutputGroups;
+
+                        string? outputPath = null;
+                        foreach (var group in data)
+                        {
+                            if (group.Name == "Built")
+                            {
+                                foreach (var output in group.Outputs)
+                                {
+                                    if (output.FinalOutputPath != null && (output.FinalOutputPath.ToLower().EndsWith(".dll") || output.FinalOutputPath.ToLower().EndsWith(".exe")))
+                                    {
+                                        outputPath = output.FinalOutputPath;
+                                        break;
+                                    }
+                                }
+                                if (outputPath != null)
+                                {
+                                    break;
+                                }
+                            }
+                        }
+
                         foreach (var ruleResults in config.RuleResults)
                         {
                             // XXX Idk why `.Where` does not work with these IAsyncQuerable type
@@ -241,15 +266,14 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
                                 // XXX Not sure why there would be more than one item for this rule result
                                 // Taking first one, ignoring the rest
                                 var args = ruleResults?.Items?.FirstOrDefault()?.Name;
-                                if (args != null) commandLineArgs.Add(args);
+                                if (args != null) projectInfos.Add((outputPath, args));
                             }
                         }
                     }
-
                 }
-                if (commandLineArgs.Count > 0)
+                if (projectInfos.Count > 0)
                 {
-                    var projectIdentifiers = commandLineArgs.Select(args => workspace.AddCommandLineArgs(projectPath, args.Split(';'))).ToList();
+                    var projectIdentifiers = projectInfos.Select(args => workspace.AddCommandLineArgs(projectPath, args.Item1, args.Item2.Split(';'))).ToList();
 
                     projectMap.Add(projectPath, projectIdentifiers);
 

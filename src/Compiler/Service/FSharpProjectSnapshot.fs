@@ -382,6 +382,7 @@ and internal ProjectSnapshotWithSources = ProjectSnapshotBase<FSharpFileSnapshot
 and internal ProjectCore
     (
         ProjectFileName: string,
+        OutputFileName: string option,
         ProjectId: string option,
         ReferencesOnDisk: ReferenceOnDisk list,
         OtherOptions: string list,
@@ -417,7 +418,7 @@ and internal ProjectCore
              }
              |> Seq.toList)
 
-    let outputFileName = lazy (OtherOptions |> findOutputFileName)
+    let outputFileName = lazy (OutputFileName |> Option.orElseWith (fun () ->  OtherOptions |> findOutputFileName))
 
     let identifier =
         lazy (ProjectFileName, outputFileName.Value |> Option.defaultValue "")
@@ -546,6 +547,7 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
     static member Create
         (
             projectFileName: string,
+            outputFileName: string option,
             projectId: string option,
             sourceFiles: FSharpFileSnapshot list,
             referencesOnDisk: ReferenceOnDisk list,
@@ -562,6 +564,7 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
         let projectCore =
             ProjectCore(
                 projectFileName,
+                outputFileName,
                 projectId,
                 referencesOnDisk,
                 otherOptions,
@@ -622,6 +625,7 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
                 let snapshot =
                     FSharpProjectSnapshot.Create(
                         projectFileName = options.ProjectFileName,
+                        outputFileName = None,
                         projectId = options.ProjectId,
                         sourceFiles = (sourceFiles |> List.ofArray),
                         referencesOnDisk = (referencesOnDisk |> List.ofArray),
@@ -713,6 +717,7 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
 
         FSharpProjectSnapshot.Create(
             projectFileName = projectFileName,
+            outputFileName = None,
             projectId = None,
             sourceFiles = (fsharpFiles |> List.map FSharpFileSnapshot.CreateFromFileSystem),
             referencesOnDisk =
