@@ -4291,21 +4291,24 @@ module TcDeclarations =
             // Skip over 'let' and 'do' bindings
             let _, ds = ds |> List.takeUntil (function SynMemberDefn.LetBindings _ -> false | _ -> true) 
 
-            // Skip over 'let' and 'do' bindings
-            let _, ds = ds |> List.takeUntil (allFalse [isMember;isAbstractSlot;isInterface;isAutoProperty])
-            
-            for dfn in ds do
-                match dfn with
-                 | SynMemberDefn.Member (range=m) -> errorR(InternalError("List.takeUntil is wrong, have binding", m))
-                 | SynMemberDefn.AbstractSlot (range=m)  -> errorR(InternalError("List.takeUntil is wrong, have slotsig", m))
-                 | SynMemberDefn.Interface (range=m) -> errorR(InternalError("List.takeUntil is wrong, have interface", m))
-                 | SynMemberDefn.ImplicitCtor (range=m) -> errorR(InternalError("implicit class construction with two implicit constructions", m))
-                 | SynMemberDefn.AutoProperty (range=m)  -> errorR(InternalError("List.takeUntil is wrong, have auto property", m))
-                 | SynMemberDefn.ImplicitInherit (trivia= { InheritKeyword = m }) -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveOneInherit(), m))
-                 | SynMemberDefn.LetBindings (range=m)  -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveLocalBindingsBeforeMembers(), m))
-                 | SynMemberDefn.Inherit (trivia= { InheritKeyword = m }) -> errorR(Error(FSComp.SR.tcInheritDeclarationMissingArguments(), m))
-                 | SynMemberDefn.NestedType (range=m) -> errorR(Error(FSComp.SR.tcTypesCannotContainNestedTypes(), m))
-                 | _ -> ()
+            // Skip over member bindings, abstract slots, interfaces and auto properties
+            let _, ds = ds |> List.takeUntil (allFalse [isMember;isAbstractSlot;isInterface;isAutoProperty]) 
+
+            match ds with
+             | SynMemberDefn.Member (range=m) :: _ -> errorR(InternalError("List.takeUntil is wrong, have binding", m))
+             | SynMemberDefn.AbstractSlot (range=m) :: _ -> errorR(InternalError("List.takeUntil is wrong, have slotsig", m))
+             | SynMemberDefn.Interface (range=m) :: _ -> errorR(InternalError("List.takeUntil is wrong, have interface", m))
+             | SynMemberDefn.ImplicitCtor (range=m) :: _ -> errorR(InternalError("implicit class construction with two implicit constructions", m))
+             | SynMemberDefn.AutoProperty (range=m) :: _ -> errorR(InternalError("List.takeUntil is wrong, have auto property", m))
+             | SynMemberDefn.LetBindings (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveLocalBindingsBeforeMembers(), m))
+             | SynMemberDefn.Inherit (trivia= { InheritKeyword = m }) :: _ -> errorR(Error(FSComp.SR.tcInheritDeclarationMissingArguments(), m))
+             | SynMemberDefn.NestedType (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypesCannotContainNestedTypes(), m))
+             | rest ->
+                 for dfn in rest do
+                     match dfn with
+                     | SynMemberDefn.ImplicitInherit (trivia= { InheritKeyword = m }) ->
+                         errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveOneInherit(), m))
+                     | _ -> ()
         | ds ->
              // Check for duplicated parameters in abstract methods
              // Check for an interface implementation with auto properties on constructor-less types
