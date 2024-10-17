@@ -378,6 +378,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.EmptyBodiedComputationExpressions -> FSComp.SR.featureEmptyBodiedComputationExpressions ()
         | LanguageFeature.AllowObjectExpressionWithoutOverrides -> FSComp.SR.featureAllowObjectExpressionWithoutOverrides ()
         | LanguageFeature.WarnOnUppercaseIdentifiersInPatterns -> FSComp.SR.featureWarnOnUppercaseIdentifiersInPatterns ()
+
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
         match features.TryGetValue feature with
