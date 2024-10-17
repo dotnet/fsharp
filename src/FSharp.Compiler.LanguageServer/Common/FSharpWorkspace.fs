@@ -12,6 +12,7 @@ open System.Threading
 open System
 open System.Threading.Tasks
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
+open Internal.Utilities.Collections
 
 [<RequireQualifiedAccess>]
 type internal WorkspaceNodeKey =
@@ -21,6 +22,13 @@ type internal WorkspaceNodeKey =
     | ProjectCore of FSharpProjectIdentifier
     | ProjectBase of FSharpProjectIdentifier
     | ProjectSnapshot of FSharpProjectIdentifier
+    override this.ToString() =
+        match this with
+        | SourceFile path -> $"File {shortPath path}"
+        | ReferenceOnDisk path -> $"Reference {shortPath path}"
+        | ProjectCore id -> $"ProjectCore {id}"
+        | ProjectBase id -> $"ProjectBase {id}"
+        | ProjectSnapshot id -> $"ProjectSnapshot {id}"
 
 [<RequireQualifiedAccess>]
 type internal WorkspaceNodeValue =
@@ -71,6 +79,10 @@ type FSharpWorkspace() =
                     | _ -> false)
 
         |}
+
+    member this.Debug_DumpMermaid(path) =
+        let content = depGraph.Debug_RenderMermaid()
+        File.WriteAllText(path, content)
 
     // TODO: we might need something more sophisticated eventually
     // for now it's important that the result id is unique every time
@@ -221,20 +233,15 @@ type FSharpWorkspace() =
             references
             |> Seq.iter (fun reference ->
 
-                //let outputPath =
-                //    reference
-                //    |> function
-                //        | (FSharpProjectIdentifier(_, outputPath)) -> outputPath
-
                 depGraph.AddDependency(WorkspaceNodeKey.ProjectBase project, dependsOn = WorkspaceNodeKey.ProjectSnapshot reference)
 
-            // hopefully not needed
-            //depGraph.RemoveDependency(
-            //    WorkspaceNodeKey.ProjectCore project,
-            //    noLongerDependsOn = WorkspaceNodeKey.ReferenceOnDisk outputPath
-            //))
-            ))
-    // TODO: might need to remove the -r: references from the project core; maybe even remove the particular reference on disk from the graph
+                // TODO: Review:
+                // Remove the on-disk reference to the same project. We don't need to invalidate results if it changes since we have it in memory anyway.
+                depGraph.RemoveDependency(
+                    WorkspaceNodeKey.ProjectCore project,
+                    noLongerDependsOn = WorkspaceNodeKey.ReferenceOnDisk reference.OutputFileName
+                ))
+            )
 
     member _.GetSnapshotForFile(file: Uri) =
         depGraph.Transact(fun depGraph ->

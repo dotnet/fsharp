@@ -4,6 +4,7 @@
 		<OutputType>Exe</OutputType>
 		<TargetFramework>net8.0</TargetFramework>
 		<CheckNulls>true</CheckNulls>
+
 	</PropertyGroup>
 
 	<ItemGroup Label="Package References">
@@ -12,6 +13,10 @@
 		<!--<PackageReference Include="Microsoft.CodeAnalysis.LanguageServer.Protocol" Version="4.10.0-1.24067.1" />-->
 		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol" Version="17.10.13-preview" />
 		<PackageReference Include="StreamJsonRpc" Version="2.17.13" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="FSharp.VisualStudio.Extension" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -121,7 +121,7 @@ internal class VsDiagnosticsHandler
 
        var vsReport = new VSInternalDiagnosticReport
         {
-            ResultId = report.ResultId, 
+            ResultId = report.ResultId,
             //Identifier = 1,
             //Version = 1,
 
@@ -325,6 +325,8 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
             serviceCollection.AddSingleton<IMethodHandler, VsDiagnosticsHandler>();
             serviceCollection.AddSingleton<IMethodHandler, SemanticTokensHandler>();
         });
+
+        workspace.Debug_DumpMermaid("D:\\code\\fsharp\\dep-graph.md");
 
         return new DuplexPipe(
             PipeReader.Create(clientStream),

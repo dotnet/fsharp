@@ -27,6 +27,7 @@ type IDependencyGraph<'Id, 'Val when 'Id: equality> =
     abstract member RemoveDependency: node: 'Id * noLongerDependsOn: 'Id -> unit
     abstract member UpdateNode: id: 'Id * update: ('Val -> 'Val) -> unit
     abstract member Debug_GetNodes: ('Id -> bool) -> DependencyNode<'Id, 'Val> seq
+    abstract member Debug_RenderMermaid : unit -> string
 
 and IThreadSafeDependencyGraph<'Id, 'Val when 'Id: equality> =
     inherit IDependencyGraph<'Id, 'Val>
@@ -165,6 +166,26 @@ module Internal =
         member this.Debug_GetNodes(predicate: 'Id -> bool): DependencyNode<'Id,'Val> seq =
             nodes.Values |> Seq.filter (fun node -> predicate node.Id)
 
+        member _.Debug_RenderMermaid() =
+            // We need to give each node a number so the graph is easy to render
+            let nodeNumbersById = Dictionary()
+            nodes.Keys |> Seq.indexed |> Seq.iter (fun (x, y) -> nodeNumbersById.Add(y, x))
+
+            let content =
+                dependencies
+                |> Seq.collect (fun kv ->
+                    let node = kv.Key
+                    let nodeNumber = nodeNumbersById[node]
+
+                    let deps = kv.Value |> Seq.map (fun dep -> nodeNumbersById[dep], dep)
+                    deps |> Seq.map (fun (depNumber, dep) ->
+                        $"{nodeNumber}[{node}] --> {depNumber}[{dep}]"
+                    )
+                )
+                |> String.concat "\n"
+
+            $"```mermaid\n\ngraph TD\n\n{content}\n\n```"
+
 
         interface IDependencyGraph<'Id, 'Val> with
 
@@ -184,6 +205,9 @@ module Internal =
                 self.RemoveDependency(node, noLongerDependsOn)
 
             member _.UpdateNode(id, update) = self.UpdateNode(id, update)
+
+            member _.Debug_RenderMermaid() = self.Debug_RenderMermaid()
+
 
     and GraphBuilder<'Id, 'Val when 'Id: equality> internal (graph: IDependencyGraph<'Id, 'Val>, ids: 'Id seq) =
 
@@ -240,6 +264,9 @@ type LockOperatedDependencyGraph<'Id, 'Val when 'Id: equality and 'Id: not null>
 
         member _.Debug_GetNodes(predicate) =
             lock lockObj (fun () -> graph.Debug_GetNodes(predicate))
+
+        member _.Debug_RenderMermaid() =
+            lock lockObj (fun () -> graph.Debug_RenderMermaid())
 
 
 
