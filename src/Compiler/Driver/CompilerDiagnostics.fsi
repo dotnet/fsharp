@@ -61,14 +61,8 @@ type PhasedDiagnostic with
     /// Format the core of the diagnostic as a string. Doesn't include the range information.
     member FormatCore: flattenErrors: bool * suggestNames: bool -> string
 
-    /// Indicates if a diagnostic should be reported as an informational
-    member ReportAsInfo: FSharpDiagnosticOptions * FSharpDiagnosticSeverity -> bool
-
-    /// Indicates if a diagnostic should be reported as a warning
-    member ReportAsWarning: FSharpDiagnosticOptions * FSharpDiagnosticSeverity -> bool
-
-    /// Indicates if a diagnostic should be reported as an error
-    member ReportAsError: FSharpDiagnosticOptions * FSharpDiagnosticSeverity -> bool
+    /// Compute new severity according to the various diagnostics options
+    member AdjustedSeverity: FSharpDiagnosticOptions * FSharpDiagnosticSeverity -> FSharpDiagnosticSeverity
 
     /// Output all of a diagnostic to a buffer, including range
     member Output: buf: StringBuilder * tcConfig: TcConfig * severity: FSharpDiagnosticSeverity -> unit

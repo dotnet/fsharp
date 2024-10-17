@@ -409,47 +409,26 @@ type PhasedDiagnostic with
                 (severity = FSharpDiagnosticSeverity.Info && level > 0)
                 || (severity = FSharpDiagnosticSeverity.Warning && level >= x.WarningLevel)
 
-    /// Indicates if a diagnostic should be reported as an informational
-    member x.ReportAsInfo(options, severity) =
-        match severity with
-        | FSharpDiagnosticSeverity.Error -> false
-        | FSharpDiagnosticSeverity.Warning -> false
-        | FSharpDiagnosticSeverity.Info -> x.IsEnabled(severity, options) && not (List.contains x.Number options.WarnOff)
-        | FSharpDiagnosticSeverity.Hidden -> false
+    member x.AdjustedSeverity(options, severity) =
+        let n = x.Number
 
-    /// Indicates if a diagnostic should be reported as a warning
-    member x.ReportAsWarning(options, severity) =
-        match severity with
-        | FSharpDiagnosticSeverity.Error -> false
-
-        | FSharpDiagnosticSeverity.Warning -> x.IsEnabled(severity, options) && not (List.contains x.Number options.WarnOff)
-
-        // Informational become warning if explicitly on and not explicitly off
-        | FSharpDiagnosticSeverity.Info ->
-            let n = x.Number
-            List.contains n options.WarnOn && not (List.contains n options.WarnOff)
-
-        | FSharpDiagnosticSeverity.Hidden -> false
-
-    /// Indicates if a diagnostic should be reported as an error
-    member x.ReportAsError(options, severity) =
+        let warnOff () =
+            List.contains n options.WarnOff
 
         match severity with
-        | FSharpDiagnosticSeverity.Error -> true
-
-        // Warnings become errors in some situations
-        | FSharpDiagnosticSeverity.Warning ->
-            let n = x.Number
-
+        | FSharpDiagnosticSeverity.Error -> FSharpDiagnosticSeverity.Error
+        | FSharpDiagnosticSeverity.Warning when
             x.IsEnabled(severity, options)
-            && not (List.contains n options.WarnAsWarn)
-            && ((options.GlobalWarnAsError && not (List.contains n options.WarnOff))
+            && ((options.GlobalWarnAsError && not (warnOff ()))
                 || List.contains n options.WarnAsError)
-
-        // Informational become errors if explicitly WarnAsError
-        | FSharpDiagnosticSeverity.Info -> List.contains x.Number options.WarnAsError
-
-        | FSharpDiagnosticSeverity.Hidden -> false
+            && not (List.contains n options.WarnAsWarn)
+            ->
+            FSharpDiagnosticSeverity.Error
+        | FSharpDiagnosticSeverity.Warning when x.IsEnabled(severity, options) && not (warnOff ()) -> FSharpDiagnosticSeverity.Warning
+        | FSharpDiagnosticSeverity.Info when List.contains n options.WarnAsError -> FSharpDiagnosticSeverity.Error
+        | FSharpDiagnosticSeverity.Info when List.contains n options.WarnOn && not (warnOff ()) -> FSharpDiagnosticSeverity.Warning
+        | FSharpDiagnosticSeverity.Info when x.IsEnabled(severity, options) && not (warnOff ()) -> FSharpDiagnosticSeverity.Info
+        | _ -> FSharpDiagnosticSeverity.Hidden
 
 [<AutoOpen>]
 module OldStyleMessages =
@@ -2333,12 +2312,9 @@ type DiagnosticsLoggerFilteringByScopedPragmas
                 | None -> true
 
             if report then
-                if diagnostic.ReportAsError(diagnosticOptions, severity) then
-                    diagnosticsLogger.DiagnosticSink(diagnostic, FSharpDiagnosticSeverity.Error)
-                elif diagnostic.ReportAsWarning(diagnosticOptions, severity) then
-                    diagnosticsLogger.DiagnosticSink(diagnostic, FSharpDiagnosticSeverity.Warning)
-                elif diagnostic.ReportAsInfo(diagnosticOptions, severity) then
-                    diagnosticsLogger.DiagnosticSink(diagnostic, severity)
+                match diagnostic.AdjustedSeverity(diagnosticOptions, severity) with
+                | FSharpDiagnosticSeverity.Hidden -> ()
+                | s -> diagnosticsLogger.DiagnosticSink(diagnostic, s)
 
     override _.ErrorCount = diagnosticsLogger.ErrorCount
 
