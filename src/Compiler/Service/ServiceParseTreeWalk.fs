@@ -958,7 +958,7 @@ module SyntaxTraversal =
 
             | SynMemberDefn.ImplicitCtor(ctorArgs = pat) -> traverseSynSimplePats path pat
 
-            | SynMemberDefn.ImplicitInherit(synType, synExpr, _identOption, range) ->
+            | SynMemberDefn.ImplicitInherit(synType, synExpr, _identOption, range, _) ->
                 [
                     dive () synType.Range (fun () ->
                         match traverseInherit (synType, range) with
