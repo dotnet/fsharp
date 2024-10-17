@@ -612,6 +612,11 @@
         <target state="translated">C#과 F#의 관리되지 않는 제네릭 제약 조건 간의 Interop(추가 modreq 내보내기)</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureWarnOnUppercaseIdentifiersInPatterns">
+        <source>Warn on uppercase identifiers in patterns</source>
+        <target state="new">Warn on uppercase identifiers in patterns</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureWarningIndexedPropertiesGetSetSameType">
         <source>Indexed properties getter and setter must have the same type</source>
         <target state="translated">인덱싱된 속성 getter와 setter의 형식이 같아야 합니다.</target>

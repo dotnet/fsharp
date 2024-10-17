@@ -612,6 +612,11 @@
         <target state="translated">Interopérabilité entre les contraintes génériques non gérées de C# et F# (émettre un modreq supplémentaire)</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureWarnOnUppercaseIdentifiersInPatterns">
+        <source>Warn on uppercase identifiers in patterns</source>
+        <target state="new">Warn on uppercase identifiers in patterns</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureWarningIndexedPropertiesGetSetSameType">
         <source>Indexed properties getter and setter must have the same type</source>
         <target state="translated">Les propriétés indexées getter et setter doivent avoir le même type</target>
