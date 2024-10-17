@@ -77,6 +77,13 @@ module TokenTypes =
     let toIndex (x: string) =
         SemanticTokenTypes.AllTypes |> Seq.findIndex (fun y -> y = x)
 
+type FSharpDiagnosticReport internal (diagnostics, resultId) =
+
+    member _.Diagnostics = diagnostics
+
+    /// The result ID of the diagnostics. This needs to be unique for each version of the document in order to be able to clear old diagnostics.
+    member _.ResultId = resultId.ToString()
+
 type FSharpRequestContext(lspServices: ILspServices, logger: ILspLogger, workspace: FSharpWorkspace, checker: FSharpChecker) =
     member _.LspServices = lspServices
     member _.Logger = logger
@@ -85,18 +92,24 @@ type FSharpRequestContext(lspServices: ILspServices, logger: ILspLogger, workspa
 
     // TODO: split to parse and check diagnostics
     member _.GetDiagnosticsForFile(file: Uri) =
+        async {
 
-        workspace.GetSnapshotForFile file
-        |> Option.map (fun snapshot ->
-            async {
-                let! parseResult, checkFileAnswer = checker.ParseAndCheckFileInProject(file.LocalPath, snapshot, "LSP Get diagnostics")
+            let! diagnostics =
+                workspace.GetSnapshotForFile file
+                |> Option.map (fun snapshot ->
+                    async {
+                        let! parseResult, checkFileAnswer =
+                            checker.ParseAndCheckFileInProject(file.LocalPath, snapshot, "LSP Get diagnostics")
 
-                return
-                    match checkFileAnswer with
-                    | FSharpCheckFileAnswer.Succeeded result -> result.Diagnostics
-                    | FSharpCheckFileAnswer.Aborted -> parseResult.Diagnostics
-            })
-        |> Option.defaultValue (async.Return [||])
+                        return
+                            match checkFileAnswer with
+                            | FSharpCheckFileAnswer.Succeeded result -> result.Diagnostics
+                            | FSharpCheckFileAnswer.Aborted -> parseResult.Diagnostics
+                    })
+                |> Option.defaultValue (async.Return [||])
+
+            return FSharpDiagnosticReport(diagnostics, workspace.GetDiagnosticResultId())
+        }
 
     member _.GetSemanticTokensForFile(file: Uri) =
 

@@ -418,7 +418,10 @@ and internal ProjectCore
              }
              |> Seq.toList)
 
-    let outputFileName = lazy (OutputFileName |> Option.orElseWith (fun () ->  OtherOptions |> findOutputFileName))
+    let outputFileName =
+        lazy
+            (OutputFileName
+             |> Option.orElseWith (fun () -> OtherOptions |> findOutputFileName))
 
     let identifier =
         lazy (ProjectFileName, outputFileName.Value |> Option.defaultValue "")

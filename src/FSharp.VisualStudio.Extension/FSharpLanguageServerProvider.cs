@@ -117,15 +117,16 @@ internal class VsDiagnosticsHandler
     [LanguageServerEndpoint(VSInternalMethods.DocumentPullDiagnosticName)]
     public async Task<VSInternalDiagnosticReport[]> HandleRequestAsync(VSInternalDocumentDiagnosticsParams request, FSharpRequestContext context, CancellationToken cancellationToken)
     {
-        var result = await context.GetDiagnosticsForFile(request!.TextDocument!.Uri).Please(cancellationToken);
+       var report = await context.GetDiagnosticsForFile(request!.TextDocument!.Uri).Please(cancellationToken);
 
-        var rep = new VSInternalDiagnosticReport
+       var vsReport = new VSInternalDiagnosticReport
         {
-            ResultId = "potato1", // Has to be present for diagnostic to show up
-            //Identifier = 69,
+            ResultId = report.ResultId, 
+            //Identifier = 1,
             //Version = 1,
+
             Diagnostics =
-                 result.Select(d =>
+                 report.Diagnostics.Select(d =>
 
                  new Diagnostic
                  {
@@ -143,7 +144,7 @@ internal class VsDiagnosticsHandler
              ).ToArray()
         };
 
-        return [rep];
+        return [vsReport];
     }
 
     [LanguageServerEndpoint("textDocument/_vs_getProjectContexts")]

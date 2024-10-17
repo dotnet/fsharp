@@ -41,7 +41,7 @@ and IGraphBuilder<'Id, 'Val when 'Id: equality> =
 
 module Internal =
 
-    type DependencyGraph<'Id, 'Val when 'Id: equality>(?graphBuilder: 'Id seq -> IGraphBuilder<_, _>) as self =
+    type DependencyGraph<'Id, 'Val when 'Id: equality and 'Id: not null>(?graphBuilder: 'Id seq -> IGraphBuilder<_, _>) as self =
         let nodes = Dictionary<'Id, DependencyNode<'Id, 'Val>>()
         let dependencies = Dictionary<'Id, HashSet<'Id>>()
         let dependents = Dictionary<'Id, HashSet<'Id>>()
@@ -205,7 +205,7 @@ module Internal =
 open Internal
 open System.Runtime.CompilerServices
 
-type LockOperatedDependencyGraph<'Id, 'Val when 'Id: equality>() as self =
+type LockOperatedDependencyGraph<'Id, 'Val when 'Id: equality and 'Id: not null>() as self =
 
     let lockObj = System.Object()
     let graph = DependencyGraph<_, _>(fun x -> GraphBuilder(self, x))
@@ -272,19 +272,19 @@ type GraphExtensions =
         results
 
     [<Extension>]
-    static member UnpackOneMany(dependencies: 'NodeValue seq, headUnpacker, tailUnpacker) =
+    static member UnpackOneMany(dependencies: 'NodeValue seq, oneUnpacker, manyUnpacker) =
         let mutable oneResult = None
         let manyResult = new ResizeArray<_>()
         let extras = new ResizeArray<_>()
 
-        for item in dependencies do
-            match headUnpacker item, tailUnpacker item with
-            | Some head, _ -> oneResult <- Some head
+        for dependency in dependencies do
+            match oneUnpacker dependency, manyUnpacker dependency with
+            | Some item, _ -> oneResult <- Some item
             | None, Some item -> manyResult.Add item |> ignore
-            | None, None -> extras.Add item |> ignore
+            | None, None -> extras.Add dependency |> ignore
 
         match oneResult with
-        | None -> failwith $"Expected exactly one dependency matching {headUnpacker} but didn't find any"
+        | None -> failwith $"Expected exactly one dependency matching {oneUnpacker} but didn't find any"
         | Some head ->
             if extras.Count > 0 then
                 failwith $"Found extra dependencies: %A{extras.ToArray()}"

@@ -5,6 +5,7 @@ open System.Collections.Generic
 open DependencyGraph
 open System.IO
 open System.Runtime.CompilerServices
+open System.Threading
 
 #nowarn "57"
 
@@ -28,7 +29,6 @@ type internal WorkspaceNodeValue =
     | ProjectCore of ProjectCore
     | ProjectBase of ProjectCore * FSharpReferencedProjectSnapshot list
     | ProjectSnapshot of FSharpProjectSnapshot
-
 
 module internal WorkspaceNode =
 
@@ -61,12 +61,21 @@ type FSharpWorkspace() =
 
     let depGraph = LockOperatedDependencyGraph() :> IThreadSafeDependencyGraph<_, _>
 
-    member internal this.Debug = {|
-        Snapshots =
-            depGraph.Debug_GetNodes (function | WorkspaceNodeKey.ProjectSnapshot _ -> true | _ -> false)
+    let mutable resultIdCounter = 0
 
-    |}
+    member internal this.Debug =
+        {|
+            Snapshots =
+                depGraph.Debug_GetNodes (function
+                    | WorkspaceNodeKey.ProjectSnapshot _ -> true
+                    | _ -> false)
 
+        |}
+
+    // TODO: we might need something more sophisticated eventually
+    // for now it's important that the result id is unique every time
+    // in order to be able to clear previous diagnostics
+    member this.GetDiagnosticResultId() = Interlocked.Increment(&resultIdCounter)
 
     member this.OpenFile(file: Uri, content: string) =
         // No changes in the dep graph. If we already read the contents from disk we don't want to invalidate it.
@@ -98,8 +107,7 @@ type FSharpWorkspace() =
             outputPath
             |> Option.ofObj
             // TODO: maybe there are cases where it's appropriate to not have output path?
-            |> Option.defaultWith (fun () ->
-                failwith "Output path can't be null for an F# project")
+            |> Option.defaultWith (fun () -> failwith "Output path can't be null for an F# project")
 
         let projectIdentifier = FSharpProjectIdentifier(projectPath, outputPath)
 
