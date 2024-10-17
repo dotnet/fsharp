@@ -217,7 +217,10 @@ but here has type
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
-        |> shouldSucceed
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 49, Line 14, Col 7, Line 14, Col 8, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+        ]
         
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern13.fs"|])>]
     let ``Union - E_UnionPattern13_fs - --test:ErrorRanges`` compilation =
@@ -226,7 +229,7 @@ but here has type
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 49, Line 14, Col 7, Line 14, Col 10, "Uppercase variable identifiers with 3 or more characters should not generally be used in patterns, and may indicate a missing open declaration, require qualified access or a misspelt pattern name.")
+        |> withSingleDiagnostic (Warning 49, Line 14, Col 7, Line 14, Col 10, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
     
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern14.fs"|])>]
     let ``Union - E_UnionPattern14_fs - --test:ErrorRanges`` compilation =
@@ -236,7 +239,7 @@ but here has type
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Warning 49, Line 11, Col 7, Line 11, Col 10, "Uppercase variable identifiers with 3 or more characters should not generally be used in patterns, and may indicate a missing open declaration, require qualified access or a misspelt pattern name.")
+            (Warning 49, Line 11, Col 7, Line 11, Col 10, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
             (Warning 26, Line 11, Col 7, Line 11, Col 10, "This rule will never be matched")
             (Warning 26, Line 12, Col 7, Line 12, Col 10, "This rule will never be matched")
         ]
@@ -249,8 +252,10 @@ but here has type
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Warning 49, Line 12, Col 7, Line 12, Col 10, "Uppercase variable identifiers with 3 or more characters should not generally be used in patterns, and may indicate a missing open declaration, require qualified access or a misspelt pattern name.")
-            (Warning 26, Line 11, Col 7, Line 11, Col 9, "This rule will never be matched")
+            (Warning 49, Line 10, Col 7, Line 10, Col 9, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 11, Col 7, Line 11, Col 9, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 12, Col 7, Line 12, Col 10, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 26, Line 11, Col 7, Line 11, Col 9, "This rule will never be matched");
             (Warning 26, Line 12, Col 7, Line 12, Col 10, "This rule will never be matched")
         ]
         
@@ -262,6 +267,8 @@ but here has type
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Warning 26, Line 11, Col 7, Line 11, Col 9, "This rule will never be matched")
+            (Warning 49, Line 10, Col 7, Line 10, Col 9, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.");
+            (Warning 49, Line 11, Col 7, Line 11, Col 9, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.");
+            (Warning 26, Line 11, Col 7, Line 11, Col 9, "This rule will never be matched");
             (Warning 26, Line 12, Col 7, Line 12, Col 10, "This rule will never be matched")
         ]

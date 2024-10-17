@@ -1,6 +1,6 @@
 module One =
-    let CallGenericStaticMethod = failwithf "CallGenericStaticMethod"
+    let CallGenericStaticMethod x = failwithf "CallGenericStaticMethod"
 
-    let MakeGenericStaticMethod = failwithf "MakeGenericStaticMethod"
+    let MakeGenericStaticMethod x = failwithf "MakeGenericStaticMethod"
 
     let MakersCallers FSS = CallGenericStaticMethod FSS, MakeGenericStaticMethod FSS
