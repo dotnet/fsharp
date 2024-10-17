@@ -13,7 +13,8 @@ ImplFile
                     (Unspecified,
                      [Inherit
                         (LongIdent (SynLongIdent ([], [], [])), None,
-                         (4,4--4,11))], (4,4--4,11)), [], None, (3,5--4,11),
+                         (4,4--4,11), { InheritKeyword = (4,4--4,11) })],
+                     (4,4--4,11)), [], None, (3,5--4,11),
                   { LeadingKeyword = Type (3,0--3,4)
                     EqualsRange = Some (3,7--3,8)
                     WithKeyword = None })], (3,0--4,11))],

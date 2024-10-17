@@ -5,37 +5,37 @@
       "commands": [
         "dotnet-counters"
       ],
-      "version": "8.0.460601"
+      "version": "8.0.547301"
     },
     "dotnet-dump": {
       "commands": [
         "dotnet-dump"
       ],
-      "version": "8.0.460601"
+      "version": "8.0.547301"
     },
     "dotnet-gcdump": {
       "commands": [
         "dotnet-gcdump"
       ],
-      "version": "8.0.460601"
+      "version": "8.0.547301"
     },
     "dotnet-sos": {
       "commands": [
         "dotnet-sos"
       ],
-      "version": "8.0.460601"
+      "version": "8.0.547301"
     },
     "dotnet-symbol": {
       "commands": [
         "dotnet-symbol"
       ],
-      "version": "1.0.460401"
+      "version": "8.0.547301"
     },
     "dotnet-trace": {
       "commands": [
         "dotnet-trace"
       ],
-      "version": "8.0.460601"
+      "version": "8.0.547301"
     },
     "fantomas": {
       "commands": [

@@ -2,7 +2,7 @@
 // Verify error when trying to inherit from a struct type
 // Regression test for FSHARP1.0:2803
 //<Expects status="notin">FS0191: Cannot inherit from interface type</Expects>
-//<Expects id="FS0945" status="error" span="(17,5)">Cannot inherit a sealed type</Expects>
+//<Expects id="FS0945" status="error" span="(17,13)">Cannot inherit a sealed type</Expects>
 
 
 type StructType = struct

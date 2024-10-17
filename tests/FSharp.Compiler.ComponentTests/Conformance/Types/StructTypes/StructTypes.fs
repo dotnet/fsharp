@@ -38,3 +38,15 @@ module StructTypes =
         |> shouldSucceed
         |> ignore
 
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Inheritance.fs"|])>]
+    let ``StructTypes - E_Inheritance.fs`` compilation =
+        compilation
+        |> asFsx
+        |> withOptions ["--warnaserror+"; "--nowarn:988"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 931, Line 6, Col 12, Line 6, Col 20, "Structs, interfaces, enums and delegates cannot inherit from other types");
+            (Error 946, Line 6, Col 12, Line 6, Col 20, "Cannot inherit from interface type. Use interface ... with instead.")
+        ]
+

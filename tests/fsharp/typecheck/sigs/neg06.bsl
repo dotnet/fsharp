@@ -10,7 +10,7 @@ neg06.fs(24,6,24,30): typecheck error FS0944: Abbreviated types cannot be given 
 
 neg06.fs(27,6,27,33): typecheck error FS0942: Delegate types are always sealed
 
-neg06.fs(31,9,31,29): typecheck error FS0945: Cannot inherit a sealed type
+neg06.fs(31,17,31,27): typecheck error FS0945: Cannot inherit a sealed type
 
 neg06.fs(37,6,37,29): typecheck error FS0954: This type definition involves an immediate cyclic reference through a struct field or inheritance relation
 

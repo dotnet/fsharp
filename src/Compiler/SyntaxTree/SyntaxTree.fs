@@ -1496,7 +1496,7 @@ type SynMemberDefn =
 
     | Interface of interfaceType: SynType * withKeyword: range option * members: SynMemberDefns option * range: range
 
-    | Inherit of baseType: SynType * asIdent: Ident option * range: range
+    | Inherit of baseType: SynType * asIdent: Ident option * range: range * trivia: SynMemberDefnInheritTrivia
 
     | ValField of fieldInfo: SynField * range: range
 
