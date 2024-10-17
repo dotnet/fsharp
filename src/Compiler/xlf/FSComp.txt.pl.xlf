@@ -612,6 +612,11 @@
         <target state="translated">Międzyoperacyjnie między niezarządzanym ograniczeniem ogólnym języka C# i F# (emituj dodatkowe modreq)</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureWarnOnUppercaseIdentifiersInPatterns">
+        <source>Warn on uppercase identifiers in patterns</source>
+        <target state="new">Warn on uppercase identifiers in patterns</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureWarningIndexedPropertiesGetSetSameType">
         <source>Indexed properties getter and setter must have the same type</source>
         <target state="translated">Metoda pobierająca i metoda ustawiająca właściwości indeksowanych muszą mieć taki sam typ.</target>
