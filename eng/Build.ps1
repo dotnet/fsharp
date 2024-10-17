@@ -668,18 +668,18 @@ try {
 
     if ($testDesktop -and $ci) { 
         # Run FSharpSuite in the background because it's very slow in the CI.
-        $bgJob1 = TestSolutionUsingMSBuild -testSolution "$RepoRoot\FSharp.sln" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -backgroundJob 1 -settings "--no-build -m:2 --filter ""(Project=FSharpSuite.Tests|Project=FSharp.Compiler.ComponentTests)&ExecutionNode=1"" "
-        $bgJob2 = TestSolutionUsingMSBuild -testSolution "$RepoRoot\FSharp.sln" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -backgroundJob 2 -settings "--no-build -m:2 --filter ""(Project=FSharpSuite.Tests|Project=FSharp.Compiler.ComponentTests)&ExecutionNode=2"" "
-        $bgJob3 = TestSolutionUsingMSBuild -testSolution "$RepoRoot\FSharp.sln" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -backgroundJob 3 -settings "--no-build -m:2 --filter ""(Project=FSharpSuite.Tests|Project=FSharp.Compiler.ComponentTests)&ExecutionNode=3"" "
-        $bgJob4 = TestSolutionUsingMSBuild -testSolution "$RepoRoot\FSharp.sln" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -backgroundJob 4 -settings "--no-build -m:2 --filter ""(Project=FSharpSuite.Tests|Project=FSharp.Compiler.ComponentTests)&ExecutionNode=4"" "
+        $bgJob1 = TestUsingMSBuild -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\" -backgroundJob 1 -settings "--filter ExecutionNode=1"
+        $bgJob2 = TestUsingMSBuild -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\" -backgroundJob 2 -settings "--filter ExecutionNode=2"
+        $bgJob3 = TestUsingMSBuild -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\" -backgroundJob 3 -settings "--filter ExecutionNode=3"
+        $bgJob4 = TestUsingMSBuild -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\" -backgroundJob 4 -settings "--filter ExecutionNode=4"
 
+        TestSolutionUsingMSBuild -testSolution "$RepoRoot\FSharp.sln" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -settings "--no-build --filter ""Project!=FSharpSuite.Tests"" "
+        
         # Collect output from background job
         Receive -job $bgJob1
         Receive -job $bgJob2
         Receive -job $bgJob3
         Receive -job $bgJob4 
-
-        TestSolutionUsingMSBuild -testSolution "$RepoRoot\FSharp.sln" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -settings "--no-build --filter ""Project!=FSharpSuite.Tests&Project!=FSharp.Compiler.ComponentTests"" "
 
     }
 
