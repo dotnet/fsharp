@@ -20,7 +20,7 @@ ImplFile
                   ObjectModel
                     (Unspecified,
                      [ImplicitCtor
-                        (None, [], SimplePats ([], [], (3,9--3,11)), None,
+                        (None, [], Const (Unit, (3,9--3,11)), None,
                          PreXmlDoc ((3,9), FSharp.Compiler.Xml.XmlDocCollector),
                          (3,5--3,9), { AsKeyword = None });
                       AbstractSlot
@@ -31,7 +31,7 @@ ImplFile
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
                             PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, None, (4,4--4,54),
+                            Single None, None, (4,4--4,54),
                             { LeadingKeyword = Abstract (4,4--4,12)
                               InlineKeyword = None
                               WithKeyword = Some (4,46--4,50)
@@ -46,7 +46,7 @@ ImplFile
                      (4,4--4,54)), [],
                   Some
                     (ImplicitCtor
-                       (None, [], SimplePats ([], [], (3,9--3,11)), None,
+                       (None, [], Const (Unit, (3,9--3,11)), None,
                         PreXmlDoc ((3,9), FSharp.Compiler.Xml.XmlDocCollector),
                         (3,5--3,9), { AsKeyword = None })), (2,0--4,54),
                   { LeadingKeyword = Type (3,0--3,4)
@@ -73,7 +73,7 @@ ImplFile
                               SynValInfo
                                 ([[SynArgInfo ([], false, None)];
                                   [SynArgInfo ([], false, Some v)]],
-                                 SynArgInfo ([], false, None)), None, None),
+                                 SynArgInfo ([], false, None)), None),
                            LongIdent
                              (SynLongIdent
                                 ([this; AbstractClassPropertySet],

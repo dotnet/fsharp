@@ -98,7 +98,7 @@ type HelpContextServiceTests() =
         TestF1Keywords(keywords, file)
 
     [<Fact>]
-    member _.``F1 help keyword Regression.DotNetMethod.854364``() =
+    member _.``F1 help keyword Regression.DotNetMethod-854364``() =
         let file = [ "let i : int = 42"; "i.ToStri$ng()"; "i.ToStri$ng(\"format\")" ]
         let keywords = [ Some "System.Int32.ToString"; Some "System.Int32.ToString" ]
         TestF1Keywords(keywords, file)
@@ -335,16 +335,16 @@ type HelpContextServiceTests() =
         TestF1Keywords(keywords, file)
 
     [<Fact>]
-    member _.``F1 help keyword Regression.NewInstance.854367``() =
+    member _.``F1 help keyword Regression.NewInstance-854367``() =
         let file = [ "let q : System.Runtime.Remoting.TypeE$ntry = null" ]
         let keywords = [ Some "System.Runtime.Remoting.TypeEntry" ]
         TestF1Keywords(keywords, file)
 
     [<Fact>]
-    member _.``F1 help keyword Regression.NewInstance.854367.2``() =
+    member _.``F1 help keyword Regression.NewInstance-854367-2``() =
         let file =
             [
-                "let q1 = new System.Runtime.Remoting.Type$Entry()" // this consutrctor exists but is not accessible (it is protected), but the help entry still goes to the type
+                "let q1 = new System.Runtime.Remoting.Type$Entry()" // this constructor exists but is not accessible (it is protected), but the help entry still goes to the type
             ]
 
         let keywords = [ Some "System.Runtime.Remoting.TypeEntry" ]

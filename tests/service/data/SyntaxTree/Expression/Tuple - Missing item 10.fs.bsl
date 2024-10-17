@@ -10,9 +10,8 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
-                     None), Named (SynIdent (x, None), false, None, (3,4--3,5)),
-                  None,
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
+                  Named (SynIdent (x, None), false, None, (3,4--3,5)), None,
                   Tuple
                     (false,
                      [Const (Int32 1, (3,8--3,9));
@@ -26,5 +25,6 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(4,0)-(4,0) parse error Possible incorrect indentation: this token is offside of context started at position (3:9). Try indenting this token further or using standard formatting conventions.
+(4,0)-(4,0) parse error Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (3:9). Try indenting this further.
+To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
 (3,9)-(3,10) parse error Expected an expression after this point

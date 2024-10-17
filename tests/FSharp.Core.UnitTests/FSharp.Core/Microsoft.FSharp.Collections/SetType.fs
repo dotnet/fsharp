@@ -16,7 +16,7 @@ open Xunit
 Make sure each method works on:
 * Empty set
 * Single-element set
-* Sets with 4 more more elements
+* Sets with 4 or more elements
 *)
 
 type SetType() =
@@ -331,3 +331,17 @@ type SetType() =
         Assert.AreEqual(sec.MaximumElement, 7)
         Assert.AreEqual(Set.maxElement fir, 6)
         Assert.AreEqual(Set.maxElement sec, 7)
+
+#if NET8_0_OR_GREATER
+
+#nowarn "1204" // FS1204: This type/method is for compiler use and should not be used directly.
+
+/// Tests for methods on the static, non-generic Set type.
+module FSharpSet =
+    [<Fact>]
+    let ``Set.Create creates a set from a ReadOnlySpan`` () =
+        let expected = set [1..10]
+        let span = ReadOnlySpan [|1..10|]
+        let actual = Set.Create span
+        Assert.Equal<Set<int>>(expected, actual)
+#endif

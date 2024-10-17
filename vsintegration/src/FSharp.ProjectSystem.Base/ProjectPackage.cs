@@ -28,7 +28,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private List<SolutionListener> solutionListeners = new List<SolutionListener>();
 
         /// <summary>
-        /// Add your listener to this list. They should be added in the overridden Initialize befaore calling the base.
+        /// Add your listener to this list. They should be added in the overridden Initialize before calling the base.
         /// </summary>
         internal IList<SolutionListener> SolutionListeners
         {

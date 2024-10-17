@@ -1,9 +1,9 @@
 
 neg10.fsi(9,6,9,7): typecheck error FS0249: Two type definitions named 'x' occur in namespace 'N' in two parts of this assembly
 
-neg10.fs(11,17,11,27): typecheck error FS0946: Cannot inherit from interface type. Use interface ... with instead.
+neg10.fs(11,25,11,27): typecheck error FS0946: Cannot inherit from interface type. Use interface ... with instead.
 
-neg10.fs(13,17,13,26): typecheck error FS0945: Cannot inherit a sealed type
+neg10.fs(13,25,13,26): typecheck error FS0945: Cannot inherit a sealed type
 
 neg10.fs(15,22,15,32): typecheck error FS0887: The type 'C1' is not an interface type
 
@@ -29,7 +29,7 @@ neg10.fs(25,16,25,53): typecheck error FS0001: This type parameter cannot be ins
 
 neg10.fs(54,17,54,20): typecheck error FS0060: Override implementations in augmentations are now deprecated. Override implementations should be given as part of the initial declaration of a type.
 
-neg10.fs(66,19,66,21): typecheck error FS0069: Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.
+neg10.fs(66,19,66,21): typecheck error FS0069: Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using '#nowarn "69"' if you have checked this is not the case.
 
 neg10.fs(77,13,77,34): typecheck error FS0896: Enumerations cannot have members
 
@@ -116,7 +116,7 @@ is not compatible with type
 
 neg10.fs(245,50,245,51): typecheck error FS0193: A type parameter is missing a constraint 'when 'b :> C'
 
-neg10.fs(245,17,245,40): typecheck error FS0043: A type parameter is missing a constraint 'when 'b :> C'
+neg10.fs(245,17,245,20): typecheck error FS0043: A type parameter is missing a constraint 'when 'b :> C'
 
 neg10.fs(251,49,251,61): typecheck error FS0001: The type '('a -> 'a)' does not support the 'equality' constraint because it is a function type
 

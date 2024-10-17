@@ -2,7 +2,7 @@
 #light
 
 // Verify error if you declare a setter twice
-//<Expects id="FS0037" status="error">Duplicate definition of value 'Vector.set_Length.2'</Expects>
+
 
 type Vector3 = 
     | Vector3 of float * float * float

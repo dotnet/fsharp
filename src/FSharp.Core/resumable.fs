@@ -63,7 +63,7 @@ and ResumptionFunc<'Data> = delegate of byref<ResumableStateMachine<'Data>> -> b
 
 and [<AbstractClass>] ResumptionDynamicInfo<'Data>(initial: ResumptionFunc<'Data>) =
     member val ResumptionFunc: ResumptionFunc<'Data> = initial with get, set
-    member val ResumptionData: obj = null with get, set
+    member val ResumptionData: objnull = null with get, set
     abstract MoveNext: machine: byref<ResumableStateMachine<'Data>> -> unit
     abstract SetStateMachine: machine: byref<ResumableStateMachine<'Data>> * machineState: IAsyncStateMachine -> unit
 
@@ -75,7 +75,7 @@ type MoveNextMethodImpl<'Data> = delegate of byref<ResumableStateMachine<'Data>>
 /// Defines the implementation of the SetStateMachine method for a struct state machine.
 type SetStateMachineMethodImpl<'Data> = delegate of byref<ResumableStateMachine<'Data>> * IAsyncStateMachine -> unit
 
-/// Defines the implementation of the code reun after the creation of a struct state machine.
+/// Defines the implementation of the code run after the creation of a struct state machine.
 type AfterCode<'Data, 'Result> = delegate of byref<ResumableStateMachine<'Data>> -> 'Result
 
 [<AutoOpen>]
@@ -115,6 +115,7 @@ module StateMachineHelpers =
             "__stateMachine should always be guarded by __useResumableCode and only used in valid state machine implementations"
 
 module ResumableCode =
+    open System.Runtime.ExceptionServices
 
     let inline GetResumptionFunc (sm: byref<ResumableStateMachine<'Data>>) =
         sm.ResumptionDynamicInfo.ResumptionFunc
@@ -294,7 +295,10 @@ module ResumableCode =
             // reraise at the end of the finally block
             match savedExn with
             | None -> true
-            | Some exn -> raise exn
+            | Some exn ->
+                // This should preserve initial location for the failure (file + line, given they're available).
+                ExceptionDispatchInfo.Capture(exn).Throw()
+                true
         else
             let rf = GetResumptionFunc &sm
 
@@ -384,7 +388,7 @@ module ResumableCode =
                 if __stack_fin then
                     match savedExn with
                     | None -> ()
-                    | Some exn -> raise exn
+                    | Some exn -> ExceptionDispatchInfo.Capture(exn).Throw()
 
                 __stack_fin
             //-- RESUMABLE CODE END

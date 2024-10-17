@@ -1,8 +1,8 @@
 // #Regression #Conformance #TypesAndModules #Unions 
 // Union Types
 // Discriminated union cases names must begin with an uppercase letter
-//<Expects id="FS0053" span="(9,12-9,13)" status="error">Discriminated union cases and exception labels must be uppercase identifiers</Expects>
-//<Expects id="FS0053" span="(10,12-10,13)" status="error">Discriminated union cases and exception labels must be uppercase identifiers</Expects>
+
+
 
 #light
 

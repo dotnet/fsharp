@@ -82,13 +82,13 @@ type TaskBuilderBase =
     member inline Return: value: 'T -> TaskCode<'T, 'T>
 
     /// <summary>
-    /// Specifies a unit of task code which excuted using try/finally semantics
+    /// Specifies a unit of task code which executed using try/finally semantics
     /// </summary>
     member inline TryFinally:
         body: TaskCode<'TOverall, 'T> * [<InlineIfLambda>] compensation: (unit -> unit) -> TaskCode<'TOverall, 'T>
 
     /// <summary>
-    /// Specifies a unit of task code which excuted using try/with semantics
+    /// Specifies a unit of task code which executed using try/with semantics
     /// </summary>
     member inline TryWith:
         body: TaskCode<'TOverall, 'T> * catch: (exn -> TaskCode<'TOverall, 'T>) -> TaskCode<'TOverall, 'T>
@@ -163,7 +163,7 @@ module TaskBuilder =
     /// <remarks>
     /// If the task is created on a foreground thread (where <see cref="P:System.Threading.SynchronizationContext.Current"/> is non-null)
     /// its body is executed on a background thread using <see cref="M:System.Threading.Tasks.Task.Run"/>.
-    /// If created on a background thread (where <see cref="P:System.Threading.SynchronizationContext.Current"/> is null) it is executed immeidately
+    /// If created on a background thread (where <see cref="P:System.Threading.SynchronizationContext.Current"/> is null) it is executed
     /// immediately on that thread.
     /// </remarks>
     ///

@@ -21,7 +21,7 @@ type T = class end
 [<Sealed; AbstractClass>]
 type T = class end
         """
-         |> withLangVersionPreview
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
 
@@ -31,7 +31,7 @@ type T = class end
 [<Sealed; AbstractClass>]
 type T() = class end
         """
-         |> withLangVersionPreview
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
 
@@ -51,7 +51,7 @@ type T() = class end
 [<Sealed; AbstractClass>]
 type T(x: int) = class end
         """
-         |> withLangVersionPreview
+         |> withLangVersion80
          |> compile
          |> shouldFail
          |> withDiagnostics [
@@ -75,7 +75,7 @@ type T(x: int) = class end
 type T =
     new () = {}
         """
-         |> withLangVersionPreview
+         |> withLangVersion80
          |> compile
          |> shouldFail
          |> withDiagnostics [
@@ -100,7 +100,7 @@ type T =
 type T(x: int) =
     new () = T(42)
         """
-         |> withLangVersionPreview
+         |> withLangVersion80
          |> compile
          |> shouldFail
          |> withDiagnostics [
@@ -136,7 +136,7 @@ type ListDebugView<'T>(l: 'T list) = class end
 [<Sealed; AbstractClass>]
 type ListDebugView<'T>(l: 'T list) = class end
         """
-         |> withLangVersionPreview
+         |> withLangVersion80
          |> compile
          |> shouldFail
          |> withDiagnostics [
@@ -152,7 +152,7 @@ type B =
     val mutable G : int
     new () = { F = 3; G = 3 }
         """
-         |> withLangVersionPreview
+         |> withLangVersion80
          |> compile
          |> shouldFail
          |> withDiagnostics [
@@ -162,8 +162,9 @@ type B =
          ]
 
     [<Theory>]
-    [<InlineData("preview")>]
     [<InlineData("7.0")>]
+    [<InlineData("8.0")>]
+    [<InlineData("preview")>]
     let ``Mutually recursive type definition that using custom attributes``(langVersion) =
         let code = """
         module Test
@@ -225,7 +226,7 @@ type T() =
     member this.M() = ()
     static member X = 1
         """
-         |> withLangVersionPreview
+         |> withLangVersion80
          |> compile
          |> shouldFail
          |> withDiagnostics [
@@ -252,7 +253,7 @@ type T() =
     static member M() = ()
     static member X = T.M()
         """
-         |> withLangVersionPreview
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
          
@@ -312,7 +313,7 @@ type C() =
     let a = 1
     static let X = 1
         """
-         |> withLangVersionPreview
+         |> withLangVersion80
          |> compile
          |> shouldFail
          |> withDiagnostics [
@@ -327,7 +328,7 @@ type C() =
     let rec a = 1
     static let X = 1
         """
-         |> withLangVersionPreview
+         |> withLangVersion80
          |> compile
          |> shouldFail
          |> withDiagnostics [
@@ -342,7 +343,7 @@ type C() =
     static let a = 1
     static let X = a
         """
-         |> withLangVersionPreview
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
          
@@ -354,7 +355,7 @@ type C() =
     static let rec a = 1
     static let X = a
         """
-         |> withLangVersionPreview
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
          
@@ -399,7 +400,7 @@ type C() =
     interface MyInterface with
         member this.M() = ()
         """
-         |> withLangVersionPreview
+         |> withLangVersion80
          |> compile
          |> shouldFail
          |> withDiagnostics [
@@ -417,7 +418,7 @@ type C =
     interface MyInterface with
         member this.M() = ()
         """
-         |> withLangVersionPreview
+         |> withLangVersion80
          |> compile
          |> shouldFail
          |> withDiagnostics [
@@ -460,7 +461,7 @@ type T =
     abstract C : i:int -> int
     abstract D : i:int -> int
         """
-         |> withLangVersionPreview
+         |> withLangVersion80
          |> compile
          |> shouldFail
          |> withDiagnostics [
@@ -476,7 +477,7 @@ type T() =
     abstract C : i:int -> int
     abstract D : i:int -> int
         """
-         |> withLangVersionPreview
+         |> withLangVersion80
          |> compile
          |> shouldFail
          |> withDiagnostics [
@@ -526,7 +527,7 @@ type ConsoleRetriever =
             stdin.ReadLine()
         """
          |> withNoWarn 3535
-         |> withLangVersionPreview
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
          
@@ -549,7 +550,7 @@ type ConsoleRetriever() =
             stdin.ReadLine()
         """
          |> withNoWarn 3535
-         |> withLangVersionPreview
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
          
@@ -603,7 +604,7 @@ type T =
     
     static member Get() = T.F
         """
-         |> withLangVersionPreview
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
          
@@ -621,7 +622,7 @@ type T() =
     
     static member Get() = T.F
         """
-         |> withLangVersionPreview
+         |> withLangVersion80
          |> compile
          |> shouldSucceed
          
@@ -649,8 +650,8 @@ type B() =
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Error 880, Line 4, Col 9, Line 4, Col 16, "Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.")
-             (Error 880, Line 5, Col 17, Line 5, Col 24, "Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.")
+             (Error 880, Line 4, Col 9, Line 4, Col 10, "Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.")
+             (Error 880, Line 5, Col 17, Line 5, Col 18, "Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.")
          ]
 
     [<Fact>]
@@ -661,7 +662,7 @@ type B =
     val F : int
     val mutable G : int
         """
-         |> withLangVersionPreview
+         |> withLangVersion80
          |> compile
          |> shouldFail
          |> withDiagnostics [
@@ -677,12 +678,12 @@ type B() =
     val F : int
     val mutable G : int
         """
-         |> withLangVersionPreview
+         |> withLangVersion80
          |> compile
          |> shouldFail
          |> withDiagnostics [
-             (Error 880, Line 4, Col 9, Line 4, Col 16, "Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.")
-             (Error 880, Line 5, Col 17, Line 5, Col 24, "Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.")
+             (Error 880, Line 4, Col 9, Line 4, Col 10, "Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.")
+             (Error 880, Line 5, Col 17, Line 5, Col 18, "Uninitialized 'val' fields must be mutable and marked with the '[<DefaultValue>]' attribute. Consider using a 'let' binding instead of a 'val' field.")
              (Warning 3558, Line 4, Col 9, Line 4, Col 10, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
              (Warning 3558, Line 5, Col 17, Line 5, Col 18, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
          ]
@@ -709,7 +710,7 @@ type T =
     member _.Item1 with set i value = ()
     member _.Item2 with get i = 3 and set i value = ()
         """
-         |> withLangVersionPreview
+         |> withLangVersion80
          |> compile
          |> shouldFail
          |> withDiagnostics [
@@ -760,7 +761,7 @@ type T =
     new () = { F = 3; G = 3 }
     new (x, y) = { F = x; G = y }
         """
-         |> withLangVersionPreview
+         |> withLangVersion80
          |> compile
          |> shouldFail
          |> withDiagnostics [

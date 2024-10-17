@@ -13,106 +13,48 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open TestFramework
-open NUnit.Framework
+open Xunit
 open System.Collections.Generic
+open FSharp.Compiler.CodeAnalysis
+open Newtonsoft.Json
+open Newtonsoft.Json.Linq
+
 
 type TheoryForNETCOREAPPAttribute() =
-    inherit Xunit.TheoryAttribute()
+    inherit TheoryAttribute()
     #if !NETCOREAPP
         do base.Skip <- "Only NETCOREAPP is supported runtime for this kind of test."
     #endif
 
 type FactForNETCOREAPPAttribute() =
-    inherit Xunit.FactAttribute()
+    inherit FactAttribute()
     #if !NETCOREAPP    
         do base.Skip <- "Only NETCOREAPP is supported runtime for this kind of test."
     #endif
 
 type FactForDESKTOPAttribute() =
-    inherit Xunit.FactAttribute()
+    inherit FactAttribute()
     #if NETCOREAPP
         do base.Skip <- "NETCOREAPP is not supported runtime for this kind of test, it is intended for DESKTOP only"
     #endif
 
 // This file mimics how Roslyn handles their compilation references for compilation testing
 module Utilities =
-
-    type CapturedTextReader() =
-        inherit TextReader()
-        let queue = Queue<char>()
-        member _.ProvideInput(text: string) =
-            for c in text.ToCharArray() do
-                queue.Enqueue(c)
-        override _.Peek() =
-            if queue.Count > 0 then queue.Peek() |> int else -1
-        override _.Read() =
-            if queue.Count > 0 then queue.Dequeue() |> int else -1
-
-    type RedirectConsoleInput() =
-        let oldStdIn = Console.In
-        let newStdIn = new CapturedTextReader()
-        do Console.SetIn(newStdIn)
-        member _.ProvideInput(text: string) =
-            newStdIn.ProvideInput(text)
-        interface IDisposable with
-            member _.Dispose() =
-                Console.SetIn(oldStdIn)
-                newStdIn.Dispose()
-
-    type EventedTextWriter() =
-        inherit TextWriter()
-        let sb = StringBuilder()
-        let lineWritten = Event<string>()
-        member _.LineWritten = lineWritten.Publish
-        override _.Encoding = Encoding.UTF8
-        override _.Write(c: char) =
-            if c = '\n' then
-                let line =
-                    let v = sb.ToString()
-                    if v.EndsWith("\r") then v.Substring(0, v.Length - 1)
-                    else v
-                sb.Clear() |> ignore
-                lineWritten.Trigger(line)
-            else sb.Append(c) |> ignore
-
-    type RedirectConsoleOutput() =
-        let outputProduced = Event<string>()
-        let errorProduced = Event<string>()
+    type RedirectConsole() =
         let oldStdOut = Console.Out
         let oldStdErr = Console.Error
-        let newStdOut = new EventedTextWriter()
-        let newStdErr = new EventedTextWriter()
-
-        do newStdOut.LineWritten.Add outputProduced.Trigger
-        do newStdErr.LineWritten.Add errorProduced.Trigger
+        let newStdOut = new StringWriter()
+        let newStdErr = new StringWriter()
         do Console.SetOut(newStdOut)
         do Console.SetError(newStdErr)
+        member _.Output () = string newStdOut
 
-        member _.OutputProduced = outputProduced.Publish
-
-        member _.ErrorProduced = errorProduced.Publish
+        member _.ErrorOutput () =string newStdErr
 
         interface IDisposable with
             member _.Dispose() =
                 Console.SetOut(oldStdOut)
                 Console.SetError(oldStdErr)
-                newStdOut.Dispose()
-                newStdErr.Dispose()
-
-    type RedirectConsole() =
-        let redirector = new RedirectConsoleOutput()
-        let outputLines = StringBuilder()
-        let errorLines = StringBuilder()
-
-        do redirector.OutputProduced.Add (fun line -> outputLines.AppendLine line |>ignore)
-        do redirector.ErrorProduced.Add(fun line -> errorLines.AppendLine line |>ignore)
-
-        member _.Output () = outputLines.ToString()
-
-        member _.ErrorOutput () = errorLines.ToString()
-
-        interface IDisposable with
-            member _.Dispose() = (redirector :> IDisposable).Dispose()
 
     type Async with
         static member RunImmediate (computation: Async<'T>, ?cancellationToken ) =
@@ -277,8 +219,8 @@ open System
 let main argv = 0"""
 
         let private getNetCoreAppReferences =
-            let mutable output = ""
-            let mutable errors = ""
+            let mutable output = [||]
+            let mutable errors = [||]
             let mutable cleanUp = true
             let pathToArtifacts = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "../../../.."))
             if Path.GetFileName(pathToArtifacts) <> "artifacts" then failwith "CompilerAssert did not find artifacts directory --- has the location changed????"
@@ -294,7 +236,7 @@ let main argv = 0"""
                     let directoryBuildTargetsFileName = Path.Combine(projectDirectory, "Directory.Build.targets")
                     let frameworkReferencesFileName = Path.Combine(projectDirectory, "FrameworkReferences.txt")
 #if NETCOREAPP
-                    File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net7.0").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
+                    File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net9.0").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
 #else
                     File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net472").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
 #endif
@@ -302,10 +244,12 @@ let main argv = 0"""
                     File.WriteAllText(directoryBuildPropsFileName, directoryBuildProps)
                     File.WriteAllText(directoryBuildTargetsFileName, directoryBuildTargets)
 
-                    let timeout = 30000
-                    let exitCode, output, errors = Commands.executeProcess (Some config.DotNetExe) "build" projectDirectory timeout
-
+                    let timeout = 120000
+                    let exitCode, dotnetoutput, dotneterrors = Commands.executeProcess config.DotNetExe "build" projectDirectory timeout
+                    
                     if exitCode <> 0 || errors.Length > 0 then
+                        errors <- dotneterrors
+                        output <- dotnetoutput
                         printfn "Output:\n=======\n"
                         output |> Seq.iter(fun line -> printfn "STDOUT:%s\n" line)
                         printfn "Errors:\n=======\n"
@@ -315,12 +259,18 @@ let main argv = 0"""
                     File.ReadLines(frameworkReferencesFileName) |> Seq.toArray
                 with | e ->
                     cleanUp <- false
-                    printfn "Project directory: %s" projectDirectory
-                    printfn "STDOUT: %s" output
-                    File.WriteAllText(Path.Combine(projectDirectory, "project.stdout"), output)
-                    printfn "STDERR: %s" errors
-                    File.WriteAllText(Path.Combine(projectDirectory, "project.stderror"), errors)
-                    raise (new Exception (sprintf "An error occurred getting netcoreapp references: %A" e))
+                    let message =
+                        let output = output |> String.concat "\nSTDOUT: "
+                        let errors = errors |> String.concat "\nSTDERR: "
+                        File.WriteAllText(Path.Combine(projectDirectory, "project.stdout"), output)
+                        File.WriteAllText(Path.Combine(projectDirectory, "project.stderror"), errors)
+                        $"""                        
+Project directory: %s{projectDirectory}
+STDOUT: %s{output}
+STDERR: %s{errors}
+An error occurred getting netcoreapp references: %A{e}
+"""
+                    raise (Exception (message, e))
             finally
                 if cleanUp then
                     try Directory.Delete(projectDirectory, recursive=true) with | _ -> ()
@@ -373,3 +323,10 @@ let main argv = 0"""
                 | TargetFramework.NetStandard20 -> netStandard20Files.Value |> Seq.toArray
                 | TargetFramework.NetCoreApp31 -> [||]                            //ToDo --- Perhaps NetCoreApp31Files 
                 | TargetFramework.Current -> currentReferences
+
+
+module internal FSharpProjectSnapshotSerialization =
+
+    let serializeSnapshotToJson (snapshot: FSharpProjectSnapshot) =
+
+        JsonConvert.SerializeObject(snapshot, Formatting.Indented, new JsonSerializerSettings(ReferenceLoopHandling = ReferenceLoopHandling.Ignore))

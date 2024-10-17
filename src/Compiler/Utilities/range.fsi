@@ -39,7 +39,7 @@ type internal NotedSourceConstruct =
     /// This does include "expr; cexpr" sequentials where the "expr" is interpreted as an implicit yield + Combine call
     | Combine
 
-    /// Notes that a range is related to an implied "Delay"m "Quote" or "Run" at the entry to a computation expression. THis doesn't
+    /// Notes that a range is related to an implied "Delay"m "Quote" or "Run" at the entry to a computation expression. This doesn't
     /// apply to the "Delay" calls added for try/with, try/finally, while or for constructs.
     | DelayOrQuoteOrRun
 
@@ -56,7 +56,7 @@ type Position =
     /// The encoding of the position as a 64-bit integer
     member internal Encoding: int64
 
-    /// Check if the position is adjacent to another postition
+    /// Check if the position is adjacent to another position
     member internal IsAdjacentTo: otherPos: Position -> bool
 
     /// Decode a position fro a 64-bit integer

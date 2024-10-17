@@ -9,7 +9,7 @@ open FSharp.Test.Compiler
 module langversion =
 
     [<Fact>]
-    let ``fsc langversion is case insensitive - --langversion:pRevIew``() =
+    let ``fsc langversion is case-insensitive - --langversion:pRevIew``() =
         FSharp """
 printfn "Hello, World"
         """
@@ -20,7 +20,7 @@ printfn "Hello, World"
         |> ignore
 
     [<Fact>]
-    let ``fsi langversion is case insensitive - --langversion:pRevIew``() =
+    let ``fsi langversion is case-insensitive - --langversion:pRevIew``() =
         FSharp """
 printfn "Hello, World"
         """
@@ -31,7 +31,7 @@ printfn "Hello, World"
         |> ignore
 
     [<Fact>]
-    let ``fsc langversion is case insensitive - --langversion:laTestmaJor``() =
+    let ``fsc langversion is case-insensitive - --langversion:laTestmaJor``() =
         FSharp """
 printfn "Hello, World"
         """
@@ -42,7 +42,7 @@ printfn "Hello, World"
         |> ignore
 
     [<Fact>]
-    let ``fsi langversion is case insensitive - --langversion:laTestmaJor``() =
+    let ``fsi langversion is case-insensitive - --langversion:laTestmaJor``() =
         FSharp """
 printfn "Hello, World"
         """

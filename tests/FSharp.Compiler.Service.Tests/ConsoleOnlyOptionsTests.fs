@@ -6,10 +6,10 @@ open System
 open System.IO
 open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.Text.Range
-open NUnit.Framework
+open Xunit
 open TestDoubles
 
-[<Test>]
+[<Fact>]
 let ``fsc help text is displayed correctly`` () =
 
      let builder = getArbitraryTcConfigBuilder()
@@ -23,24 +23,24 @@ let ``fsc help text is displayed correctly`` () =
      let help = GetHelpFsc builder blocks
      let actualHelp = help.Replace("\r\n", Environment.NewLine)
 
-     Assert.AreEqual(expectedHelp, actualHelp, $"Expected: '{expectedHelp}'\n Actual: '{actualHelp}'") |> ignore
+     Assert.Equal(expectedHelp, actualHelp)
 
-[<Test>]
+[<Fact>]
 let ``FSC version is displayed correctly`` () =
     let builder = getArbitraryTcConfigBuilder()
     let expectedVersionPattern = @"Microsoft \(R\) F# Compiler version \d+\.\d+\.\d+\.\d+ for F# \d+\.\d+"
 
     let version = GetVersion builder
 
-    Assert.That(version, Does.Match expectedVersionPattern)
+    Assert.Matches(expectedVersionPattern, version)
 
-[<Test>]
+[<Fact>]
 let ``Language versions are displayed correctly`` () =
     let versions = GetLanguageVersions()
 
-    StringAssert.Contains("Supported language versions", versions)
-    StringAssert.Contains("preview", versions)
-    StringAssert.Contains("default", versions)
-    StringAssert.Contains("latest", versions)
-    StringAssert.Contains("latestmajor", versions)
-    StringAssert.Contains("(Default)", versions)
+    Assert.Contains("Supported language versions", versions)
+    Assert.Contains("preview", versions)
+    Assert.Contains("default", versions)
+    Assert.Contains("latest", versions)
+    Assert.Contains("latestmajor", versions)
+    Assert.Contains("(Default)", versions)

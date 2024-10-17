@@ -769,11 +769,11 @@ module internal Tokenizer =
         // Each of them has MatchedLength = 3. So, we take the first GREATER and skip the other two).
         //
         // Generic type parameters: we convert QUOTE + IDENT tokens into single IDENT token, altering its LeftColumn
-        // and FullMathedLength (for "'type" which is tokenized as (QUOTE, left=2) + (IDENT, left=3, length=4)
+        // and FullMatchedLength (for "'type" which is tokenized as (QUOTE, left=2) + (IDENT, left=3, length=4)
         // we'll get (IDENT, left=2, length=5).
         //
         // Statically resolved type parameters: we convert INFIX_AT_HAT_OP + IDENT tokens into single IDENT token, altering its LeftColumn
-        // and FullMathedLength (for "^type" which is tokenized as (INFIX_AT_HAT_OP, left=2) + (IDENT, left=3, length=4)
+        // and FullMatchedLength (for "^type" which is tokenized as (INFIX_AT_HAT_OP, left=2) + (IDENT, left=3, length=4)
         // we'll get (IDENT, left=2, length=5).
         let draftTokens =
             let tokensCount = savedTokens.Length
@@ -782,7 +782,7 @@ module internal Tokenizer =
             ||> Array.foldi (fun (acc, lastToken: DraftTokenInfo voption) index token ->
                 match lastToken with
                 | ValueSome t when token.LeftColumn <= t.RightColumn -> acc, lastToken
-                | ValueSome ({ Kind = LexerSymbolKind.ActivePattern } as lastToken) when
+                | ValueSome({ Kind = LexerSymbolKind.ActivePattern } as lastToken) when
                     wholeActivePatterns
                     && (token.Tag = FSharpTokenTag.BAR
                         || token.Tag = FSharpTokenTag.IDENT
@@ -825,7 +825,7 @@ module internal Tokenizer =
                                     LeftColumn = token.LeftColumn - 1
                                     MatchedLength = 1
                                 }
-                            | ValueSome ({ Kind = LexerSymbolKind.ActivePattern } as ap) when
+                            | ValueSome({ Kind = LexerSymbolKind.ActivePattern } as ap) when
                                 wholeActivePatterns && token.Tag = FSharpTokenTag.RPAREN
                                 ->
                                 {
@@ -925,7 +925,7 @@ module internal Tokenizer =
 
         lineData, textLinePos, contents
 
-    let inline tokenizeLine (documentKey, sourceText, position, fileName, defines, langVersion, strictIndentation, cancellationToken) =
+    let tokenizeLine (documentKey, sourceText, position, fileName, defines, langVersion, strictIndentation, cancellationToken) =
         try
             let lineData, _, _ =
                 getCachedSourceLineData (

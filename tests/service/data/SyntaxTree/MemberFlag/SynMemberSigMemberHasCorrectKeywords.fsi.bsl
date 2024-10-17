@@ -20,7 +20,7 @@ SigFile
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
                             PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, None, (5,4--5,20),
+                            Single None, None, (5,4--5,20),
                             { LeadingKeyword = Abstract (5,4--5,12)
                               InlineKeyword = None
                               WithKeyword = None
@@ -40,7 +40,7 @@ SigFile
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
                             PreXmlDoc ((6,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, None, (6,4--6,30),
+                            Single None, None, (6,4--6,30),
                             { LeadingKeyword =
                                AbstractMember ((6,4--6,12), (6,13--6,19))
                               InlineKeyword = None
@@ -61,7 +61,7 @@ SigFile
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
                             PreXmlDoc ((7,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, None, (7,4--7,28),
+                            Single None, None, (7,4--7,28),
                             { LeadingKeyword =
                                StaticMember ((7,4--7,10), (7,11--7,17))
                               InlineKeyword = None
@@ -82,7 +82,7 @@ SigFile
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
                             PreXmlDoc ((8,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, None, (8,4--8,18),
+                            Single None, None, (8,4--8,18),
                             { LeadingKeyword = Member (8,4--8,10)
                               InlineKeyword = None
                               WithKeyword = None
@@ -102,7 +102,7 @@ SigFile
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
                             PreXmlDoc ((9,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, None, (9,4--9,20),
+                            Single None, None, (9,4--9,20),
                             { LeadingKeyword = Override (9,4--9,12)
                               InlineKeyword = None
                               WithKeyword = None
@@ -122,7 +122,7 @@ SigFile
                             SynValInfo ([], SynArgInfo ([], false, None)), false,
                             false,
                             PreXmlDoc ((10,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, None, (10,4--10,19),
+                            Single None, None, (10,4--10,19),
                             { LeadingKeyword = Default (10,4--10,11)
                               InlineKeyword = None
                               WithKeyword = None

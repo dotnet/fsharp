@@ -3,6 +3,7 @@
 module FSharp.Compiler.AbstractIL.IL
 
 open FSharp.Compiler.IO
+open Internal.Utilities.Library
 
 #nowarn "49"
 #nowarn "343" // The type 'ILAssemblyRef' implements 'System.IComparable' explicitly but provides no corresponding override for 'Object.Equals'.
@@ -29,16 +30,14 @@ let _ =
     if logging then
         dprintn "* warning: Il.logging is on"
 
-let notlazy v = Lazy<_>.CreateFromValue v
-
 /// A little ugly, but the idea is that if a data structure does not
 /// contain lazy values then we don't add laziness. So if the thing to map
 /// is already evaluated then immediately apply the function.
-let lazyMap f (x: Lazy<_>) =
+let lazyMap f (x: InterruptibleLazy<_>) =
     if x.IsValueCreated then
         notlazy (f (x.Force()))
     else
-        lazy (f (x.Force()))
+        InterruptibleLazy(fun _ -> f (x.Force()))
 
 [<RequireQualifiedAccess>]
 type PrimaryAssembly =
@@ -55,10 +54,10 @@ type PrimaryAssembly =
     static member IsPossiblePrimaryAssembly(fileName: string) =
         let name = System.IO.Path.GetFileNameWithoutExtension(fileName)
 
-        String.Compare(name, "mscorlib", true) <> 0
-        || String.Compare(name, "System.Runtime", true) <> 0
-        || String.Compare(name, "netstandard", true) <> 0
-        || String.Compare(name, "System.Private.CoreLib", true) <> 0
+        String.Equals(name, "System.Runtime", StringComparison.OrdinalIgnoreCase)
+        || String.Equals(name, "mscorlib", StringComparison.OrdinalIgnoreCase)
+        || String.Equals(name, "netstandard", StringComparison.OrdinalIgnoreCase)
+        || String.Equals(name, "System.Private.CoreLib", StringComparison.OrdinalIgnoreCase)
 
 // --------------------------------------------------------------------
 // Utilities: type names
@@ -91,22 +90,24 @@ let rec splitNamespaceAux (nm: string) =
     | -1 -> [ nm ]
     | idx ->
         let s1, s2 = splitNameAt nm idx
-        let s1 = memoizeNamespacePartTable.GetOrAdd(s1, id)
+        let s1 = memoizeNamespacePartTable.GetOrAdd(s1, s1)
         s1 :: splitNamespaceAux s2
 
+// Cache this as a delegate.
+let splitNamespaceAuxDelegate = Func<string, string list> splitNamespaceAux
+
 let splitNamespace nm =
-    memoizeNamespaceTable.GetOrAdd(nm, splitNamespaceAux)
+    memoizeNamespaceTable.GetOrAdd(nm, splitNamespaceAuxDelegate)
 
 // ++GLOBAL MUTABLE STATE (concurrency-safe)
 let memoizeNamespaceArrayTable = ConcurrentDictionary<string, string[]>()
 
+// Cache this as a delegate.
+let splitNamespaceToArrayDelegate =
+    Func<string, string array>(splitNamespace >> Array.ofList)
+
 let splitNamespaceToArray nm =
-    memoizeNamespaceArrayTable.GetOrAdd(
-        nm,
-        fun nm ->
-            let x = Array.ofList (splitNamespace nm)
-            x
-    )
+    memoizeNamespaceArrayTable.GetOrAdd(nm, splitNamespaceToArrayDelegate)
 
 let splitILTypeName (nm: string) =
     match nm.LastIndexOf '.' with
@@ -157,15 +158,23 @@ let splitTypeNameRightAux (nm: string) =
         let s1, s2 = splitNameAt nm idx
         Some s1, s2
 
+// Cache this as a delegate.
+let splitTypeNameRightAuxDelegate =
+    Func<string, string option * string> splitTypeNameRightAux
+
 let splitTypeNameRight nm =
-    memoizeNamespaceRightTable.GetOrAdd(nm, splitTypeNameRightAux)
+    memoizeNamespaceRightTable.GetOrAdd(nm, splitTypeNameRightAuxDelegate)
 
 // --------------------------------------------------------------------
 // Ordered lists with a lookup table
 // --------------------------------------------------------------------
 
 /// This is used to store event, property and field maps.
-type LazyOrderedMultiMap<'Key, 'Data when 'Key: equality>(keyf: 'Data -> 'Key, lazyItems: Lazy<'Data list>) =
+type LazyOrderedMultiMap<'Key, 'Data when 'Key: equality
+#if !NO_CHECKNULLS
+    and 'Key:not null
+#endif
+    >(keyf: 'Data -> 'Key, lazyItems: InterruptibleLazy<'Data list>) =
 
     let quickMap =
         lazyItems
@@ -433,8 +442,8 @@ let AssemblyRefUniqueStampGenerator = UniqueStampGenerator<AssemblyRefData>()
 type ILAssemblyRef(data) =
     let pkToken key =
         match key with
-        | Some (PublicKey bytes) -> Some(PublicKey(SHA1.sha1HashBytes bytes))
-        | Some (PublicKeyToken token) -> Some(PublicKey token)
+        | Some(PublicKey bytes) -> Some(PublicKey(SHA1.sha1HashBytes bytes))
+        | Some(PublicKeyToken token) -> Some(PublicKey token)
         | None -> None
 
     let uniqueStamp =
@@ -510,7 +519,8 @@ type ILAssemblyRef(data) =
 
         let retargetable = aname.Flags = AssemblyNameFlags.Retargetable
 
-        ILAssemblyRef.Create(aname.Name, None, publicKey, retargetable, version, locale)
+        let name = match aname.Name with | null -> aname.FullName | name -> name
+        ILAssemblyRef.Create(name, None, publicKey, retargetable, version, locale)
 
     member aref.QualifiedName =
         let b = StringBuilder(100)
@@ -650,9 +660,9 @@ type ILCallingConv =
 
     | Callconv of ILThisConvention * ILArgConvention
 
-    member x.ThisConv = let (Callconv (a, _b)) = x in a
+    member x.ThisConv = let (Callconv(a, _b)) = x in a
 
-    member x.BasicConv = let (Callconv (_a, b)) = x in b
+    member x.BasicConv = let (Callconv(_a, b)) = x in b
 
     member x.IsInstance =
         match x.ThisConv with
@@ -806,7 +816,7 @@ type ILTypeRef =
     member tref.AddQualifiedNameExtension basic =
         let sco = tref.Scope.QualifiedName
 
-        if sco = "" then
+        if String.IsNullOrEmpty(sco) then
             basic
         else
             String.concat ", " [ basic; sco ]
@@ -818,7 +828,7 @@ type ILTypeRef =
     member x.DebugText = x.ToString()
 
     /// For debugging
-    override x.ToString() = x.FullName
+    override x.ToString() : string = x.FullName
 
 and [<StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugText}")>] ILTypeSpec =
     {
@@ -870,7 +880,7 @@ and [<StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugT
         && (x.GenericArgs = y.GenericArgs)
 
     override x.ToString() =
-        x.TypeRef.ToString() + if isNil x.GenericArgs then "" else "<...>"
+        x.TypeRef.FullName + if isNil x.GenericArgs then "" else "<...>"
 
 and [<RequireQualifiedAccess; StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugText}")>] ILType =
     | Void
@@ -886,8 +896,8 @@ and [<RequireQualifiedAccess; StructuralEquality; StructuralComparison; Structur
     member x.BasicQualifiedName =
         match x with
         | ILType.TypeVar n -> "!" + string n
-        | ILType.Modified (_, _ty1, ty2) -> ty2.BasicQualifiedName
-        | ILType.Array (ILArrayShape s, ty) -> ty.BasicQualifiedName + "[" + String(',', s.Length - 1) + "]"
+        | ILType.Modified(_, _ty1, ty2) -> ty2.BasicQualifiedName
+        | ILType.Array(ILArrayShape s, ty) -> ty.BasicQualifiedName + "[" + String(',', s.Length - 1) + "]"
         | ILType.Value tr
         | ILType.Boxed tr -> tr.BasicQualifiedName
         | ILType.Void -> "void"
@@ -898,8 +908,8 @@ and [<RequireQualifiedAccess; StructuralEquality; StructuralComparison; Structur
     member x.AddQualifiedNameExtension basic =
         match x with
         | ILType.TypeVar _n -> basic
-        | ILType.Modified (_, _ty1, ty2) -> ty2.AddQualifiedNameExtension basic
-        | ILType.Array (ILArrayShape (_s), ty) -> ty.AddQualifiedNameExtension basic
+        | ILType.Modified(_, _ty1, ty2) -> ty2.AddQualifiedNameExtension basic
+        | ILType.Array(ILArrayShape(_s), ty) -> ty.AddQualifiedNameExtension basic
         | ILType.Value tr
         | ILType.Boxed tr -> tr.AddQualifiedNameExtension basic
         | ILType.Void -> failwith "void"
@@ -1012,8 +1022,9 @@ type ILMethodRef =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() =
-        x.DeclaringTypeRef.ToString() + "::" + x.Name + "(...)"
+    member x.FullName = x.DeclaringTypeRef.FullName + "::" + x.Name + "(...)"
+
+    override x.ToString() = x.FullName
 
 [<StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugText}")>]
 type ILFieldRef =
@@ -1028,7 +1039,7 @@ type ILFieldRef =
     member x.DebugText = x.ToString()
 
     override x.ToString() =
-        x.DeclaringTypeRef.ToString() + "::" + x.Name
+        x.DeclaringTypeRef.FullName + "::" + x.Name
 
 [<StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugText}")>]
 type ILMethodSpec =
@@ -1067,7 +1078,7 @@ type ILMethodSpec =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = x.MethodRef.ToString() + "(...)"
+    override x.ToString() = x.MethodRef.FullName + "(...)"
 
 [<StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugText}")>]
 type ILFieldSpec =
@@ -1191,24 +1202,24 @@ type ILAttribute =
 
     member x.Method =
         match x with
-        | Encoded (method, _, _)
-        | Decoded (method, _, _) -> method
+        | Encoded(method, _, _)
+        | Decoded(method, _, _) -> method
 
     member x.Elements =
         match x with
-        | Encoded (_, _, elements) -> elements
-        | Decoded (_, fixedArgs, namedArgs) -> fixedArgs @ (namedArgs |> List.map (fun (_, _, _, e) -> e))
+        | Encoded(_, _, elements) -> elements
+        | Decoded(_, fixedArgs, namedArgs) -> fixedArgs @ (namedArgs |> List.map (fun (_, _, _, e) -> e))
 
     member x.WithMethod(method: ILMethodSpec) =
         match x with
-        | Encoded (_, data, elements) -> Encoded(method, data, elements)
-        | Decoded (_, fixedArgs, namedArgs) -> Decoded(method, fixedArgs, namedArgs)
+        | Encoded(_, data, elements) -> Encoded(method, data, elements)
+        | Decoded(_, fixedArgs, namedArgs) -> Decoded(method, fixedArgs, namedArgs)
 
     /// For debugging
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = x.Method.ToString() + "(...)"
+    override x.ToString() = x.Method.MethodRef.FullName
 
 [<NoEquality; NoComparison; Struct>]
 type ILAttributes(array: ILAttribute[]) =
@@ -1252,6 +1263,9 @@ let storeILCustomAttrs (attrs: ILAttributes) =
         emptyILCustomAttrsStored
     else
         ILAttributesStored.Given attrs
+
+let mkILCustomAttrsComputed f =
+    ILAttributesStored.Reader(fun _ -> f ())
 
 let mkILCustomAttrsReader f = ILAttributesStored.Reader f
 
@@ -1563,7 +1577,7 @@ type ILFieldInit =
         | ILFieldInit.UInt64 u64 -> box u64
         | ILFieldInit.Single ieee32 -> box ieee32
         | ILFieldInit.Double ieee64 -> box ieee64
-        | ILFieldInit.Null -> (null :> Object)
+        | ILFieldInit.Null -> (null :> objnull)
 
 // --------------------------------------------------------------------
 // Native Types, for marshalling to the native C interface.
@@ -1805,9 +1819,9 @@ type ILReturn =
 type ILOverridesSpec =
     | OverridesSpec of ILMethodRef * ILType
 
-    member x.MethodRef = let (OverridesSpec (mr, _ty)) = x in mr
+    member x.MethodRef = let (OverridesSpec(mr, _ty)) = x in mr
 
-    member x.DeclaringType = let (OverridesSpec (_mr, ty)) = x in ty
+    member x.DeclaringType = let (OverridesSpec(_mr, ty)) = x in ty
 
     override x.ToString() =
         "overrides " + x.DeclaringType.ToString() + "::" + x.MethodRef.ToString()
@@ -1822,7 +1836,7 @@ type ILMethodVirtualInfo =
 
 [<RequireQualifiedAccess>]
 type MethodBody =
-    | IL of Lazy<ILMethodBody>
+    | IL of InterruptibleLazy<ILMethodBody>
     | PInvoke of Lazy<PInvokeMethod> (* platform invoke to native *)
     | Abstract
     | Native
@@ -1848,9 +1862,10 @@ type ILGenericParameterDef =
         Name: string
         Constraints: ILTypes
         Variance: ILGenericVariance
-        HasReferenceTypeConstraint: bool
+        HasReferenceTypeConstraint: bool        
         HasNotNullableValueTypeConstraint: bool
         HasDefaultConstructorConstraint: bool
+        HasAllowsRefStruct: bool
         CustomAttrsStored: ILAttributesStored
         MetadataIndex: int32
     }
@@ -1894,6 +1909,23 @@ let inline conditionalAdd condition flagToAdd source =
 
 let NoMetadataIdx = -1
 
+type InterfaceImpl =
+    { Idx: int; Type: ILType; mutable CustomAttrsStored: ILAttributesStored }
+
+    member x.CustomAttrs =
+        match x.CustomAttrsStored with
+        | ILAttributesStored.Reader f ->
+            let res = ILAttributes(f x.Idx)
+            x.CustomAttrsStored <- ILAttributesStored.Given res
+            res
+        | ILAttributesStored.Given attrs -> attrs
+        
+    static member Create(ilType: ILType, customAttrsStored: ILAttributesStored) =
+        { Idx = NoMetadataIdx; Type = ilType; CustomAttrsStored = customAttrsStored }
+
+    static member Create(ilType: ILType) = InterfaceImpl.Create(ilType, emptyILCustomAttrsStored)
+
+
 [<NoComparison; NoEquality; StructuredFormatDisplay("{DebugText}")>]
 type ILMethodDef
     (
@@ -1903,7 +1935,7 @@ type ILMethodDef
         callingConv: ILCallingConv,
         parameters: ILParameters,
         ret: ILReturn,
-        body: Lazy<MethodBody>,
+        body: InterruptibleLazy<MethodBody>,
         isEntryPoint: bool,
         genericParams: ILGenericParameterDefs,
         securityDeclsStored: ILSecurityDeclsStored,
@@ -1962,7 +1994,7 @@ type ILMethodDef
             ?callingConv: ILCallingConv,
             ?parameters: ILParameters,
             ?ret: ILReturn,
-            ?body: Lazy<MethodBody>,
+            ?body: InterruptibleLazy<MethodBody>,
             ?securityDecls: ILSecurityDecls,
             ?isEntryPoint: bool,
             ?genericParams: ILGenericParameterDefs,
@@ -2142,24 +2174,21 @@ type ILMethodDef
 type MethodDefMap = Map<string, ILMethodDef list>
 
 [<Sealed>]
-type ILMethodDefs(f: unit -> ILMethodDef[]) =
+type ILMethodDefs(f) =
+    inherit DelayInitArrayMap<ILMethodDef, string, ILMethodDef list>(f)
 
-    let mutable array = InlineDelayInit<_>(f)
+    override this.CreateDictionary(arr) =
+        let t = Dictionary(arr.Length)
 
-    let mutable dict =
-        InlineDelayInit<_>(fun () ->
-            let arr = array.Value
-            let t = Dictionary<_, _>()
+        for i = arr.Length - 1 downto 0 do
+            let y = arr[i]
+            let key = y.Name
 
-            for i = arr.Length - 1 downto 0 do
-                let y = arr[i]
-                let key = y.Name
+            match t.TryGetValue key with
+            | true, m -> t[key] <- y :: m
+            | _ -> t[key] <- [ y ]
 
-                match t.TryGetValue key with
-                | true, m -> t[key] <- y :: m
-                | _ -> t[key] <- [ y ]
-
-            t)
+        t
 
     interface IEnumerable with
         member x.GetEnumerator() =
@@ -2167,14 +2196,13 @@ type ILMethodDefs(f: unit -> ILMethodDef[]) =
 
     interface IEnumerable<ILMethodDef> with
         member x.GetEnumerator() =
-            (array.Value :> IEnumerable<ILMethodDef>).GetEnumerator()
+            (x.GetArray() :> IEnumerable<ILMethodDef>).GetEnumerator()
 
-    member x.AsArray() = array.Value
-
-    member x.AsList() = array.Value |> Array.toList
+    member x.AsArray() = x.GetArray()
+    member x.AsList() = x.GetArray() |> Array.toList
 
     member x.FindByName nm =
-        match dict.Value.TryGetValue nm with
+        match x.GetDictionary().TryGetValue nm with
         | true, m -> m
         | _ -> []
 
@@ -2472,7 +2500,7 @@ type ILMethodImplDef =
 
 // Index table by name and arity.
 type ILMethodImplDefs =
-    | ILMethodImpls of Lazy<MethodImplsMap>
+    | ILMethodImpls of InterruptibleLazy<MethodImplsMap>
 
     member x.AsList() =
         let (ILMethodImpls ltab) = x in Map.foldBack (fun _x y r -> y @ r) (ltab.Force()) []
@@ -2610,13 +2638,21 @@ let convertInitSemantics (init: ILTypeInit) =
     | ILTypeInit.BeforeField -> TypeAttributes.BeforeFieldInit
     | ILTypeInit.OnAny -> enum 0
 
+[<Flags>]
+type ILTypeDefAdditionalFlags =
+    | None = 0
+    | IsKnownToBeAttribute = 1
+    /// The type can contain extension methods,
+    /// or this information may not be available at the time the ILTypeDef is created
+    | CanContainExtensionMethods = 2
+
 [<NoComparison; NoEquality; StructuredFormatDisplay("{DebugText}")>]
 type ILTypeDef
     (
         name: string,
         attributes: TypeAttributes,
         layout: ILTypeDefLayout,
-        implements: ILTypes,
+        implements: InterruptibleLazy<InterfaceImpl list>,
         genericParams: ILGenericParameterDefs,
         extends: ILType option,
         methods: ILMethodDefs,
@@ -2625,13 +2661,15 @@ type ILTypeDef
         methodImpls: ILMethodImplDefs,
         events: ILEventDefs,
         properties: ILPropertyDefs,
-        isKnownToBeAttribute: bool,
+        additionalFlags: ILTypeDefAdditionalFlags,
         securityDeclsStored: ILSecurityDeclsStored,
         customAttrsStored: ILAttributesStored,
         metadataIndex: int32
     ) =
 
     let mutable customAttrsStored = customAttrsStored
+
+    let hasFlag flag = additionalFlags &&& flag = flag
 
     new(name,
         attributes,
@@ -2645,7 +2683,7 @@ type ILTypeDef
         methodImpls,
         events,
         properties,
-        isKnownToBeAttribute,
+        additionalFlags,
         securityDecls,
         customAttrs) =
         ILTypeDef(
@@ -2661,9 +2699,9 @@ type ILTypeDef
             methodImpls,
             events,
             properties,
-            isKnownToBeAttribute,
+            additionalFlags,
             storeILSecurityDecls securityDecls,
-            storeILCustomAttrs customAttrs,
+            customAttrs,
             NoMetadataIdx
         )
 
@@ -2693,7 +2731,10 @@ type ILTypeDef
 
     member _.Properties = properties
 
-    member _.IsKnownToBeAttribute = isKnownToBeAttribute
+    member _.IsKnownToBeAttribute = hasFlag ILTypeDefAdditionalFlags.IsKnownToBeAttribute
+
+    member _.CanContainExtensionMethods =
+        hasFlag ILTypeDefAdditionalFlags.CanContainExtensionMethods
 
     member _.CustomAttrsStored = customAttrsStored
 
@@ -2713,7 +2754,7 @@ type ILTypeDef
             ?methodImpls,
             ?events,
             ?properties,
-            ?isKnownToBeAttribute,
+            ?newAdditionalFlags,
             ?customAttrs,
             ?securityDecls
         ) =
@@ -2731,11 +2772,11 @@ type ILTypeDef
             methodImpls = defaultArg methodImpls x.MethodImpls,
             events = defaultArg events x.Events,
             properties = defaultArg properties x.Properties,
-            isKnownToBeAttribute = defaultArg isKnownToBeAttribute x.IsKnownToBeAttribute,
-            customAttrs = defaultArg customAttrs x.CustomAttrs
+            additionalFlags = defaultArg newAdditionalFlags additionalFlags,
+            customAttrs = defaultArg customAttrs (x.CustomAttrsStored)
         )
 
-    member x.CustomAttrs =
+    member x.CustomAttrs: ILAttributes =
         match customAttrsStored with
         | ILAttributesStored.Reader f ->
             let res = ILAttributes(f x.MetadataIndex)
@@ -2830,25 +2871,22 @@ type ILTypeDef
     override x.ToString() = "type " + x.Name
 
 and [<Sealed>] ILTypeDefs(f: unit -> ILPreTypeDef[]) =
+    inherit DelayInitArrayMap<ILPreTypeDef, string list * string, ILPreTypeDef>(f)
 
-    let mutable array = InlineDelayInit<_>(f)
+    override this.CreateDictionary(arr) =
+        let t = Dictionary(arr.Length, HashIdentity.Structural)
 
-    let mutable dict =
-        InlineDelayInit<_>(fun () ->
-            let arr = array.Value
-            let t = Dictionary<_, _>(HashIdentity.Structural)
+        for pre in arr do
+            let key = pre.Namespace, pre.Name
+            t[key] <- pre
 
-            for pre in arr do
-                let key = pre.Namespace, pre.Name
-                t[key] <- pre
+        ReadOnlyDictionary t
 
-            ReadOnlyDictionary t)
+    member x.AsArray() =
+        [| for pre in x.GetArray() -> pre.GetTypeDef() |]
 
-    member _.AsArray() =
-        [| for pre in array.Value -> pre.GetTypeDef() |]
-
-    member _.AsList() =
-        [ for pre in array.Value -> pre.GetTypeDef() ]
+    member x.AsList() =
+        [ for pre in x.GetArray() -> pre.GetTypeDef() ]
 
     interface IEnumerable with
         member x.GetEnumerator() =
@@ -2856,17 +2894,17 @@ and [<Sealed>] ILTypeDefs(f: unit -> ILPreTypeDef[]) =
 
     interface IEnumerable<ILTypeDef> with
         member x.GetEnumerator() =
-            (seq { for pre in array.Value -> pre.GetTypeDef() }).GetEnumerator()
+            (seq { for pre in x.GetArray() -> pre.GetTypeDef() }).GetEnumerator()
 
-    member _.AsArrayOfPreTypeDefs() = array.Value
+    member x.AsArrayOfPreTypeDefs() = x.GetArray()
 
-    member _.FindByName nm =
+    member x.FindByName nm =
         let ns, n = splitILTypeName nm
-        dict.Value[ (ns, n) ].GetTypeDef()
+        x.GetDictionary().[(ns, n)].GetTypeDef()
 
-    member _.ExistsByName nm =
+    member x.ExistsByName nm =
         let ns, n = splitILTypeName nm
-        dict.Value.ContainsKey((ns, n))
+        x.GetDictionary().ContainsKey((ns, n))
 
 and [<NoEquality; NoComparison>] ILPreTypeDef =
     abstract Namespace: string list
@@ -2875,22 +2913,17 @@ and [<NoEquality; NoComparison>] ILPreTypeDef =
 
 /// This is a memory-critical class. Very many of these objects get allocated and held to represent the contents of .NET assemblies.
 and [<Sealed>] ILPreTypeDefImpl(nameSpace: string list, name: string, metadataIndex: int32, storage: ILTypeDefStored) =
-    let mutable store: ILTypeDef = Unchecked.defaultof<_>
+    let stored =
+        lazy
+        match storage with
+        | ILTypeDefStored.Given td -> td
+        | ILTypeDefStored.Computed f -> f ()
+        | ILTypeDefStored.Reader f -> f metadataIndex
 
     interface ILPreTypeDef with
         member _.Namespace = nameSpace
         member _.Name = name
-
-        member x.GetTypeDef() =
-            match box store with
-            | null ->
-                match storage with
-                | ILTypeDefStored.Given td ->
-                    store <- td
-                    td
-                | ILTypeDefStored.Computed f -> LazyInitializer.EnsureInitialized<ILTypeDef>(&store, Func<_>(fun () -> f ()))
-                | ILTypeDefStored.Reader f -> LazyInitializer.EnsureInitialized<ILTypeDef>(&store, Func<_>(fun () -> f metadataIndex))
-            | _ -> store
+        member x.GetTypeDef() = stored.Value
 
 and ILTypeDefStored =
     | Given of ILTypeDef
@@ -2913,7 +2946,7 @@ type ILNestedExportedType =
     override x.ToString() = "exported type " + x.Name
 
 and ILNestedExportedTypes =
-    | ILNestedExportedTypes of Lazy<Map<string, ILNestedExportedType>>
+    | ILNestedExportedTypes of InterruptibleLazy<Map<string, ILNestedExportedType>>
 
     member x.AsList() =
         let (ILNestedExportedTypes ltab) = x in Map.foldBack (fun _x y r -> y :: r) (ltab.Force()) []
@@ -2937,7 +2970,7 @@ and [<NoComparison; NoEquality>] ILExportedTypeOrForwarder =
     override x.ToString() = "exported type " + x.Name
 
 and ILExportedTypesAndForwarders =
-    | ILExportedTypesAndForwarders of Lazy<Map<string, ILExportedTypeOrForwarder>>
+    | ILExportedTypesAndForwarders of InterruptibleLazy<Map<string, ILExportedTypeOrForwarder>>
 
     member x.AsList() =
         let (ILExportedTypesAndForwarders ltab) = x in Map.foldBack (fun _x y r -> y :: r) (ltab.Force()) []
@@ -3243,6 +3276,7 @@ let mkILSimpleTypar nm =
         HasReferenceTypeConstraint = false
         HasNotNullableValueTypeConstraint = false
         HasDefaultConstructorConstraint = false
+        HasAllowsRefStruct = false
         CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
         MetadataIndex = NoMetadataIdx
     }
@@ -3291,6 +3325,8 @@ let mkILTypeDefs l = mkILTypeDefsFromArray (Array.ofList l)
 let mkILTypeDefsComputed f = ILTypeDefs f
 let emptyILTypeDefs = mkILTypeDefsFromArray [||]
 
+let emptyILInterfaceImpls = InterruptibleLazy<InterfaceImpl list>.FromValue([])
+
 // --------------------------------------------------------------------
 // Operations on method tables.
 // --------------------------------------------------------------------
@@ -3332,7 +3368,7 @@ let isILArrTy ty =
 
 let destILArrTy ty =
     match ty with
-    | ILType.Array (shape, ty) -> (shape, ty)
+    | ILType.Array(shape, ty) -> (shape, ty)
     | _ -> failwith "destILArrTy"
 
 // --------------------------------------------------------------------
@@ -3412,6 +3448,11 @@ type ILGlobals(primaryScopeRef: ILScopeRef, equivPrimaryAssemblyRefs: ILAssembly
 
     let mkSysILTypeRef nm = mkILTyRef (primaryScopeRef, nm)
 
+    let byteIlType = ILType.Value(mkILNonGenericTySpec (mkSysILTypeRef tname_Byte))
+
+    let stringIlType =
+        mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_String))
+
     member _.primaryAssemblyScopeRef = primaryScopeRef
 
     member x.primaryAssemblyRef =
@@ -3429,7 +3470,7 @@ type ILGlobals(primaryScopeRef: ILScopeRef, equivPrimaryAssemblyRefs: ILAssembly
 
     member val typ_Object = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_Object))
 
-    member val typ_String = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_String))
+    member val typ_String = stringIlType
 
     member val typ_Array = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_Array))
 
@@ -3443,7 +3484,11 @@ type ILGlobals(primaryScopeRef: ILScopeRef, equivPrimaryAssemblyRefs: ILAssembly
 
     member val typ_Int64 = ILType.Value(mkILNonGenericTySpec (mkSysILTypeRef tname_Int64))
 
-    member val typ_Byte = ILType.Value(mkILNonGenericTySpec (mkSysILTypeRef tname_Byte))
+    member val typ_Byte = byteIlType
+
+    member val typ_ByteArray = ILType.Array(ILArrayShape.SingleDimensional, byteIlType)
+
+    member val typ_StringArray = ILType.Array(ILArrayShape.SingleDimensional, stringIlType)
 
     member val typ_UInt16 = ILType.Value(mkILNonGenericTySpec (mkSysILTypeRef tname_UInt16))
 
@@ -3542,7 +3587,7 @@ let isILValueTy =
 
 let rec stripILModifiedFromTy (ty: ILType) =
     match ty with
-    | ILType.Modified (_, _, ty) -> stripILModifiedFromTy ty
+    | ILType.Modified(_, _, ty) -> stripILModifiedFromTy ty
     | _ -> ty
 
 let isBuiltInTySpec (ilg: ILGlobals) (tspec: ILTypeSpec) n =
@@ -3650,7 +3695,7 @@ and rescopeILType scoref ty =
         let cr2 = rescopeILTypeSpec scoref cr1
 
         if cr1 === cr2 then ty else mkILBoxedType cr2
-    | ILType.Array (s, ety1) ->
+    | ILType.Array(s, ety1) ->
         let ety2 = rescopeILType scoref ety1
 
         if ety1 === ety2 then ty else ILType.Array(s, ety2)
@@ -3658,7 +3703,7 @@ and rescopeILType scoref ty =
         let cr2 = rescopeILTypeSpec scoref cr1
 
         if cr1 === cr2 then ty else ILType.Value cr2
-    | ILType.Modified (b, tref, ty) -> ILType.Modified(b, rescopeILTypeRef scoref tref, rescopeILType scoref ty)
+    | ILType.Modified(b, tref, ty) -> ILType.Modified(b, rescopeILTypeRef scoref tref, rescopeILType scoref ty)
     | x -> x
 
 and rescopeILTypes scoref i =
@@ -3695,7 +3740,7 @@ and instILTypeAux numFree (inst: ILGenericArgs) ty =
     match ty with
     | ILType.Ptr t -> ILType.Ptr(instILTypeAux numFree inst t)
     | ILType.FunctionPointer t -> ILType.FunctionPointer(instILCallSigAux numFree inst t)
-    | ILType.Array (a, t) -> ILType.Array(a, instILTypeAux numFree inst t)
+    | ILType.Array(a, t) -> ILType.Array(a, instILTypeAux numFree inst t)
     | ILType.Byref t -> ILType.Byref(instILTypeAux numFree inst t)
     | ILType.Boxed cr -> mkILBoxedType (instILTypeSpecAux numFree inst cr)
     | ILType.Value cr -> ILType.Value(instILTypeSpecAux numFree inst cr)
@@ -3778,7 +3823,7 @@ let mkILMethodBody (initlocals, locals, maxstack, code, tag, imports) : ILMethod
 
 let mkMethodBody (zeroinit, locals, maxstack, code, tag, imports) =
     let ilCode = mkILMethodBody (zeroinit, locals, maxstack, code, tag, imports)
-    MethodBody.IL(lazy ilCode)
+    MethodBody.IL(InterruptibleLazy.FromValue ilCode)
 
 // --------------------------------------------------------------------
 // Make a constructor
@@ -3817,7 +3862,7 @@ let mkILCtor (access, args, impl) =
 let mkCallBaseConstructor (ty, args: ILType list) =
     [ mkLdarg0 ]
     @ List.mapi (fun i _ -> mkLdarg (uint16 (i + 1))) args
-      @ [ mkNormalCall (mkILCtorMethSpecForTy (ty, [])) ]
+    @ [ mkNormalCall (mkILCtorMethSpecForTy (ty, [])) ]
 
 let mkNormalStfld fspec = I_stfld(Aligned, Nonvolatile, fspec)
 
@@ -3947,6 +3992,29 @@ let mdef_code2code f (md: ILMethodDef) =
     let b = MethodBody.IL(notlazy ilCode)
     md.With(body = notlazy b)
 
+let appendInstrsToCode (instrs: ILInstr list) (c2: ILCode) =
+    let instrs = Array.ofList instrs
+
+    match
+        c2.Instrs
+        |> Array.tryFindIndexBack (fun instr ->
+            match instr with
+            | I_ret -> true
+            | _ -> false)
+    with
+    | Some 0 ->
+        { c2 with
+            Instrs = Array.concat [| instrs; c2.Instrs |]
+        }
+    | Some index ->
+        { c2 with
+            Instrs = Array.concat [| c2.Instrs[.. index - 1]; instrs; c2.Instrs[index..] |]
+        }
+    | None ->
+        { c2 with
+            Instrs = Array.append c2.Instrs instrs
+        }
+
 let prependInstrsToCode (instrs: ILInstr list) (c2: ILCode) =
     let instrs = Array.ofList instrs
     let n = instrs.Length
@@ -3979,6 +4047,9 @@ let prependInstrsToCode (instrs: ILInstr list) (c2: ILCode) =
             Labels = labels
             Instrs = Array.append instrs c2.Instrs
         }
+
+let appendInstrsToMethod newCode md =
+    mdef_code2code (appendInstrsToCode newCode) md
 
 let prependInstrsToMethod newCode md =
     mdef_code2code (prependInstrsToCode newCode) md
@@ -4092,7 +4163,7 @@ let mkILExportedTypes l =
     ILExportedTypesAndForwarders(notlazy (List.foldBack addExportedTypeToTable l Map.empty))
 
 let mkILExportedTypesLazy (l: Lazy<_>) =
-    ILExportedTypesAndForwarders(lazy (List.foldBack addExportedTypeToTable (l.Force()) Map.empty))
+    ILExportedTypesAndForwarders(InterruptibleLazy(fun _ -> List.foldBack addExportedTypeToTable (l.Force()) Map.empty))
 
 let addNestedExportedTypeToTable (y: ILNestedExportedType) tab = Map.add y.Name y tab
 
@@ -4110,7 +4181,7 @@ let mkILNestedExportedTypes l =
     ILNestedExportedTypes(notlazy (List.foldBack addNestedExportedTypeToTable l Map.empty))
 
 let mkILNestedExportedTypesLazy (l: Lazy<_>) =
-    ILNestedExportedTypes(lazy (List.foldBack addNestedExportedTypeToTable (l.Force()) Map.empty))
+    ILNestedExportedTypes(InterruptibleLazy(fun _ -> List.foldBack addNestedExportedTypeToTable (l.Force()) Map.empty))
 
 let mkILResources l = ILResources l
 let emptyILResources = ILResources []
@@ -4124,7 +4195,7 @@ let mkILMethodImpls l =
     ILMethodImpls(notlazy (List.foldBack addMethodImplToTable l Map.empty))
 
 let mkILMethodImplsLazy l =
-    ILMethodImpls(lazy (List.foldBack addMethodImplToTable (Lazy.force l) Map.empty))
+    ILMethodImpls(InterruptibleLazy(fun _ -> List.foldBack addMethodImplToTable (Lazy.force l) Map.empty))
 
 let emptyILMethodImpls = mkILMethodImpls []
 
@@ -4163,7 +4234,7 @@ let mkILSimpleStorageCtor (baseTySpec, ty, extraParams, flds, access, tag, impor
 let mkILStorageCtor (preblock, ty, flds, access, tag, imports) =
     mkILStorageCtorWithParamNames (preblock, ty, [], addParamNames flds, access, tag, imports)
 
-let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nestedTypes, props, events, attrs, init) =
+let mkILGenericClass (nm, access, genparams, extends, impls, methods, fields, nestedTypes, props, events, attrs, init) =
     let attributes =
         convertTypeAccessFlags access
         ||| TypeAttributes.AutoLayout
@@ -4177,17 +4248,17 @@ let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nes
         name = nm,
         attributes = attributes,
         genericParams = genparams,
-        implements = impl,
+        implements = InterruptibleLazy.FromValue(impls),
         layout = ILTypeDefLayout.Auto,
         extends = Some extends,
         methods = methods,
         fields = fields,
         nestedTypes = nestedTypes,
-        customAttrs = attrs,
+        customAttrs = storeILCustomAttrs attrs,
         methodImpls = emptyILMethodImpls,
         properties = props,
         events = events,
-        isKnownToBeAttribute = false,
+        additionalFlags = ILTypeDefAdditionalFlags.None,
         securityDecls = emptyILSecurityDecls
     )
 
@@ -4201,17 +4272,17 @@ let mkRawDataValueTypeDef (iltyp_ValueType: ILType) (nm, size, pack) =
              ||| TypeAttributes.ExplicitLayout
              ||| TypeAttributes.BeforeFieldInit
              ||| TypeAttributes.AnsiClass),
-        implements = [],
+        implements = emptyILInterfaceImpls,
         extends = Some iltyp_ValueType,
         layout = ILTypeDefLayout.Explicit { Size = Some size; Pack = Some pack },
         methods = emptyILMethods,
         fields = emptyILFields,
         nestedTypes = emptyILTypeDefs,
-        customAttrs = emptyILCustomAttrs,
+        customAttrs = emptyILCustomAttrsStored,
         methodImpls = emptyILMethodImpls,
         properties = emptyILProperties,
         events = emptyILEvents,
-        isKnownToBeAttribute = false,
+        additionalFlags = ILTypeDefAdditionalFlags.None,
         securityDecls = emptyILSecurityDecls
     )
 
@@ -4327,7 +4398,7 @@ let buildILCode (_methName: string) lab2pc instrs tryspecs localspecs : ILCode =
 // Detecting Delegates
 // --------------------------------------------------------------------
 
-let mkILDelegateMethods access (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IAsyncResult) (parms, rtv: ILReturn) =
+let mkILDelegateMethods access (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IAsyncResult) (params_, rtv: ILReturn) =
     let retTy = rtv.Type
 
     let one nm args ret =
@@ -4350,10 +4421,10 @@ let mkILDelegateMethods access (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IAsy
 
     [
         ctor
-        one "Invoke" parms retTy
+        one "Invoke" params_ retTy
         one
             "BeginInvoke"
-            (parms
+            (params_
              @ [
                  mkILParamNamed ("callback", iltyp_AsyncCallback)
                  mkILParamNamed ("objects", ilg.typ_Object)
@@ -4638,7 +4709,7 @@ let rec encodeCustomAttrElemType x =
     | ILType.Boxed tspec when tspec.Name = tname_Object -> [| 0x51uy |]
     | ILType.Boxed tspec when tspec.Name = tname_Type -> [| 0x50uy |]
     | ILType.Value tspec -> Array.append [| 0x55uy |] (encodeCustomAttrString tspec.TypeRef.QualifiedName)
-    | ILType.Array (shape, elemType) when shape = ILArrayShape.SingleDimensional ->
+    | ILType.Array(shape, elemType) when shape = ILArrayShape.SingleDimensional ->
         Array.append [| et_SZARRAY |] (encodeCustomAttrElemType elemType)
     | _ -> failwith "encodeCustomAttrElemType: unrecognized custom element type"
 
@@ -4661,7 +4732,7 @@ let rec encodeCustomAttrElemTypeForObject x =
     | ILAttribElem.Null -> [| et_STRING |] // yes, the 0xe prefix is used when passing a "null" to a property or argument of type "object" here
     | ILAttribElem.Single _ -> [| et_R4 |]
     | ILAttribElem.Double _ -> [| et_R8 |]
-    | ILAttribElem.Array (elemTy, _) -> [| yield et_SZARRAY; yield! encodeCustomAttrElemType elemTy |]
+    | ILAttribElem.Array(elemTy, _) -> [| yield et_SZARRAY; yield! encodeCustomAttrElemType elemTy |]
 
 let tspan = TimeSpan(DateTime.UtcNow.Ticks - DateTime(2000, 1, 1).Ticks)
 
@@ -4769,7 +4840,7 @@ let rec encodeCustomAttrPrimValue c =
     | ILAttribElem.Type None
     | ILAttribElem.TypeRef None
     | ILAttribElem.Null -> [| 0xFFuy |]
-    | ILAttribElem.String (Some s) -> encodeCustomAttrString s
+    | ILAttribElem.String(Some s) -> encodeCustomAttrString s
     | ILAttribElem.Char x -> u16AsBytes (uint16 x)
     | ILAttribElem.SByte x -> i8AsBytes x
     | ILAttribElem.Int16 x -> i16AsBytes x
@@ -4781,9 +4852,9 @@ let rec encodeCustomAttrPrimValue c =
     | ILAttribElem.UInt64 x -> u64AsBytes x
     | ILAttribElem.Single x -> ieee32AsBytes x
     | ILAttribElem.Double x -> ieee64AsBytes x
-    | ILAttribElem.Type (Some ty) -> encodeCustomAttrString ty.QualifiedName
-    | ILAttribElem.TypeRef (Some tref) -> encodeCustomAttrString tref.QualifiedName
-    | ILAttribElem.Array (_, elems) ->
+    | ILAttribElem.Type(Some ty) -> encodeCustomAttrString ty.QualifiedName
+    | ILAttribElem.TypeRef(Some tref) -> encodeCustomAttrString tref.QualifiedName
+    | ILAttribElem.Array(_, elems) ->
         [|
             yield! i32AsBytes elems.Length
             for elem in elems do
@@ -4797,8 +4868,8 @@ and encodeCustomAttrValue ty c =
             yield! encodeCustomAttrElemTypeForObject c
             yield! encodeCustomAttrPrimValue c
         |]
-    | ILType.Array (shape, _), ILAttribElem.Null when shape = ILArrayShape.SingleDimensional -> [| yield! i32AsBytes 0xFFFFFFFF |]
-    | ILType.Array (shape, elemType), ILAttribElem.Array (_, elems) when shape = ILArrayShape.SingleDimensional ->
+    | ILType.Array(shape, _), ILAttribElem.Null when shape = ILArrayShape.SingleDimensional -> [| yield! i32AsBytes 0xFFFFFFFF |]
+    | ILType.Array(shape, elemType), ILAttribElem.Array(_, elems) when shape = ILArrayShape.SingleDimensional ->
         [|
             yield! i32AsBytes elems.Length
             for elem in elems do
@@ -4838,8 +4909,8 @@ let mkILCustomAttribute (tref, argTys, argvs, propvs) =
 
 let getCustomAttrData cattr =
     match cattr with
-    | ILAttribute.Encoded (_, data, _) -> data
-    | ILAttribute.Decoded (mspec, fixedArgs, namedArgs) -> encodeCustomAttrArgs mspec fixedArgs namedArgs
+    | ILAttribute.Encoded(_, data, _) -> data
+    | ILAttribute.Decoded(mspec, fixedArgs, namedArgs) -> encodeCustomAttrArgs mspec fixedArgs namedArgs
 
 // ILSecurityDecl is a 'blob' having the following format:
 // - A byte containing a period (.).
@@ -5066,8 +5137,8 @@ type ILTypeSigParser(tstring: string) =
 
 let decodeILAttribData (ca: ILAttribute) =
     match ca with
-    | ILAttribute.Decoded (_, fixedArgs, namedArgs) -> fixedArgs, namedArgs
-    | ILAttribute.Encoded (_, bytes, _) ->
+    | ILAttribute.Decoded(_, fixedArgs, namedArgs) -> fixedArgs, namedArgs
+    | ILAttribute.Encoded(_, bytes, _) ->
 
         let sigptr = 0
         let bb0, sigptr = sigptr_get_byte bytes sigptr
@@ -5113,7 +5184,7 @@ let decodeILAttribData (ca: ILAttribute) =
                 ILAttribElem.Char(char (int32 n)), sigptr
             | ILType.Value tspec when tspec.Name = "System.Boolean" ->
                 let n, sigptr = sigptr_get_byte bytes sigptr
-                ILAttribElem.Bool(not (n = 0)), sigptr
+                ILAttribElem.Bool(n <> 0), sigptr
             | ILType.Boxed tspec when tspec.Name = "System.String" ->
                 let n, sigptr = sigptr_get_serstring_possibly_null bytes sigptr
                 ILAttribElem.String n, sigptr
@@ -5136,7 +5207,7 @@ let decodeILAttribData (ca: ILAttribute) =
                 else
                     let ty, sigptr = decodeCustomAttrElemType bytes sigptr et
                     parseVal ty sigptr
-            | ILType.Array (shape, elemTy) when shape = ILArrayShape.SingleDimensional ->
+            | ILType.Array(shape, elemTy) when shape = ILArrayShape.SingleDimensional ->
                 let n, sigptr = sigptr_get_i32 bytes sigptr
 
                 if n = 0xFFFFFFFF then
@@ -5256,10 +5327,10 @@ let rec refsOfILType s x =
     match x with
     | ILType.Void
     | ILType.TypeVar _ -> ()
-    | ILType.Modified (_, ty1, ty2) ->
+    | ILType.Modified(_, ty1, ty2) ->
         refsOfILTypeRef s ty1
         refsOfILType s ty2
-    | ILType.Array (_, ty)
+    | ILType.Array(_, ty)
     | ILType.Ptr ty
     | ILType.Byref ty -> refsOfILType s ty
     | ILType.Value tr
@@ -5289,7 +5360,7 @@ and refsOfILFieldRef s x =
     refsOfILType s x.Type
     s.refsFs.Add x |> ignore
 
-and refsOfILOverridesSpec s (OverridesSpec (mref, ty)) =
+and refsOfILOverridesSpec s (OverridesSpec(mref, ty)) =
     refsOfILMethodRef s mref
     refsOfILType s ty
 
@@ -5312,9 +5383,9 @@ and refsOfILToken s x =
 
 and refsOfILCustomAttrElem s (elem: ILAttribElem) =
     match elem with
-    | Type (Some ty) -> refsOfILType s ty
-    | TypeRef (Some tref) -> refsOfILTypeRef s tref
-    | Array (ty, els) ->
+    | Type(Some ty) -> refsOfILType s ty
+    | TypeRef(Some tref) -> refsOfILTypeRef s tref
+    | Array(ty, els) ->
         refsOfILType s ty
         refsOfILCustomAttrElems s els
     | _ -> ()
@@ -5333,41 +5404,41 @@ and refsOfILVarArgs s tyso = Option.iter (refsOfILTypes s) tyso
 
 and refsOfILInstr s x =
     match x with
-    | I_call (_, mr, varargs)
-    | I_newobj (mr, varargs)
-    | I_callvirt (_, mr, varargs) ->
+    | I_call(_, mr, varargs)
+    | I_newobj(mr, varargs)
+    | I_callvirt(_, mr, varargs) ->
         refsOfILMethodSpec s mr
         refsOfILVarArgs s varargs
-    | I_callconstraint (_, _, tr, mr, varargs) ->
+    | I_callconstraint(_, _, tr, mr, varargs) ->
         refsOfILType s tr
         refsOfILMethodSpec s mr
         refsOfILVarArgs s varargs
-    | I_calli (_, callsig, varargs) ->
+    | I_calli(_, callsig, varargs) ->
         refsOfILCallsig s callsig
         refsOfILVarArgs s varargs
     | I_jmp mr
     | I_ldftn mr
     | I_ldvirtftn mr -> refsOfILMethodSpec s mr
-    | I_ldsfld (_, fr)
-    | I_ldfld (_, _, fr)
+    | I_ldsfld(_, fr)
+    | I_ldfld(_, _, fr)
     | I_ldsflda fr
     | I_ldflda fr
-    | I_stsfld (_, fr)
-    | I_stfld (_, _, fr) -> refsOfILFieldSpec s fr
+    | I_stsfld(_, fr)
+    | I_stfld(_, _, fr) -> refsOfILFieldSpec s fr
     | I_isinst ty
     | I_castclass ty
     | I_cpobj ty
     | I_initobj ty
-    | I_ldobj (_, _, ty)
-    | I_stobj (_, _, ty)
+    | I_ldobj(_, _, ty)
+    | I_stobj(_, _, ty)
     | I_box ty
     | I_unbox ty
     | I_unbox_any ty
     | I_sizeof ty
-    | I_ldelem_any (_, ty)
-    | I_ldelema (_, _, _, ty)
-    | I_stelem_any (_, ty)
-    | I_newarr (_, ty)
+    | I_ldelem_any(_, ty)
+    | I_ldelema(_, _, _, ty)
+    | I_stelem_any(_, ty)
+    | I_newarr(_, ty)
     | I_mkrefany ty
     | I_refanyval ty
     | EI_ilzero ty -> refsOfILType s ty
@@ -5443,7 +5514,7 @@ and refsOfILCode s (c: ILCode) =
 
     for exnClause in c.Exceptions do
         match exnClause.Clause with
-        | ILExceptionClause.TypeCatch (ilTy, _) -> refsOfILType s ilTy
+        | ILExceptionClause.TypeCatch(ilTy, _) -> refsOfILType s ilTy
         | _ -> ()
 
 and refsOfILMethodBody s (il: ILMethodBody) =
@@ -5507,7 +5578,7 @@ and refsOfILMethodImpl s m =
 and refsOfILTypeDef s (td: ILTypeDef) =
     refsOfILTypeDefs s td.NestedTypes
     refsOfILGenericParams s td.GenericParams
-    refsOfILTypes s td.Implements
+    refsOfILTypes s (td.Implements.Value |> List.map _.Type)
     Option.iter (refsOfILType s) td.Extends
     refsOfILMethodDefs s td.Methods
     refsOfILFieldDefs s (td.Fields.AsList())
@@ -5526,7 +5597,7 @@ and refsOfILExportedTypes s (tab: ILExportedTypesAndForwarders) =
 and refsOfILResourceLocation s x =
     match x with
     | ILResourceLocation.Local _ -> ()
-    | ILResourceLocation.File (mref, _) -> refsOfILModuleRef s mref
+    | ILResourceLocation.File(mref, _) -> refsOfILModuleRef s mref
     | ILResourceLocation.Assembly aref -> refsOfILAssemblyRef s aref
 
 and refsOfILResource s x =
@@ -5582,9 +5653,9 @@ and unscopeILType ty =
     | ILType.FunctionPointer t -> ILType.FunctionPointer(unscopeILCallSig t)
     | ILType.Byref t -> ILType.Byref(unscopeILType t)
     | ILType.Boxed cr -> mkILBoxedType (unscopeILTypeSpec cr)
-    | ILType.Array (s, ty) -> ILType.Array(s, unscopeILType ty)
+    | ILType.Array(s, ty) -> ILType.Array(s, unscopeILType ty)
     | ILType.Value cr -> ILType.Value(unscopeILTypeSpec cr)
-    | ILType.Modified (b, tref, ty) -> ILType.Modified(b, unscopeILTypeRef tref, unscopeILType ty)
+    | ILType.Modified(b, tref, ty) -> ILType.Modified(b, unscopeILTypeRef tref, unscopeILType ty)
     | x -> x
 
 and unscopeILTypes i =
@@ -5609,10 +5680,9 @@ let resolveILMethodRefWithRescope r (td: ILTypeDef) (mref: ILMethodRef) =
         possibles
         |> List.filter (fun md ->
             mref.CallingConv = md.CallingConv
-            &&
-            // REVIEW: this uses equality on ILType. For CMOD_OPTIONAL this is not going to be correct
-            (md.Parameters, argTypes)
-            ||> List.lengthsEqAndForall2 (fun p1 p2 -> r p1.Type = p2)
+            && (md.Parameters, argTypes)
+               ||> List.lengthsEqAndForall2 (fun p1 p2 -> r p1.Type = p2)
+            && md.GenericParams.Length = mref.GenericArity
             &&
             // REVIEW: this uses equality on ILType. For CMOD_OPTIONAL this is not going to be correct
             r md.Return.Type = retType)

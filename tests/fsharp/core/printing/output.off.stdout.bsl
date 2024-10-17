@@ -248,6 +248,7 @@ type 'a T4063 = | AT4063 of 'a
     #load "file.fs" ...;;                         // Load the given file(s) as if compiled and referenced
     #time ["on"|"off"];;                          // Toggle timing on/off
     #help;;                                       // Display help
+    #help "idn";;                                 // Display documentation for an identifier, e.g. #help "List.map";;
     #r "nuget:FSharp.Data, 3.1.2";;               // Load Nuget Package 'FSharp.Data' version '3.1.2'
     #r "nuget:FSharp.Data";;                      // Load Nuget Package 'FSharp.Data' with the highest version
     #clear;;                                      // Clear screen
@@ -257,6 +258,27 @@ type 'a T4063 = | AT4063 of 'a
 
 
 
+> val it: string = "Check #help for an identifier"
+
+
+Description:
+Builds a new collection whose elements are the results of applying the given function
+to each of the elements of the collection.
+
+Parameters:
+- mapping: The function to transform elements from the input list.
+- list: The input list.
+Returns:
+The list of transformed elements.
+
+Examples:
+let inputs = [ "a"; "bbb"; "cc" ]
+
+inputs |> List.map (fun x -> x.Length)
+// Evaluates to [ 1; 3; 2 ]
+
+Full name: Microsoft.FSharp.Collections.ListModule.map
+Assembly: FSharp.Core.dll
 > val it: string = "Check #time on and then off"
 
 > 
@@ -548,7 +570,7 @@ module Test4343e =
     val dB: D<int>
     val dAB: D<int> * D<int> * D<int> list
     val dC: D<bool>
-    val boxed_dABC: obj list
+    val boxed_dABC: objnull list
 type F1 =
   inherit System.Windows.Forms.Form
   interface System.IDisposable
@@ -1673,7 +1695,7 @@ type System.Int32 with
 
 > val f: ``parameter with spaces in name`` : int -> int
 
-> val functionWhichTakesAParameterPeeciselyPlusButNotOpAddition:
+> val functionWhichTakesAParameterPreciselyPlusButNotOpAddition:
   ``+`` : (int -> int -> int) -> int
 
 > val functionWhichTakesAParameterOpAddition: (+) : (int -> int -> int) -> int
@@ -1778,7 +1800,7 @@ val ShortName: string = "hi"
 
 > val list2: int list
 
-module FSI_0317.
+module FSI_0319.
        A8a951db8294f99e95ae1d276a7ddaefd93d1548e6bf749bdeae55d2649682b3
 
 {"ImmutableField0":6}
@@ -1800,7 +1822,7 @@ val it: unit = ()
 
 > val it: {| AnonRecordField2: int |} = { AnonRecordField2 = 11 }
 
-module FSI_0324.Project.fsproj
+module FSI_0326.Project.fsproj
 
 type R3 =
   { ImmutableField3: int }

@@ -134,7 +134,7 @@ let SampleArithmetic3() =
     let pi1 = float   3 + 0.1415 
     let pi2 = float 3 + 0.1415   // identical - int32 and int are the same
     let pi3 = float 3 + 0.1415   // identical - A.to_B and B.of_A often both exist
-    let pi4 = float 3          + 0.1415   // identical - 'float' is an addiitonal ahortcuts
+    let pi4 = float 3          + 0.1415   // identical - 'float' is an additional shortcut
     printf "pi1 = %f, pi2 = %f, pi3 = %f\n" pi1 pi2 pi3;
   
     let i1 = int   3.1415 
@@ -744,12 +744,12 @@ let EnumerateCSVFile1() =
     let test = CSVFileEnumerator(@"test.csv")  
     printf "-------Enumeration 1------\n";
     test |> Seq.iter (sprintf "%A" >> printf "line %s\n");
-    // Now do it again, this time determining the numer of entries on each line.
+    // Now do it again, this time determining the number of entries on each line.
     // Note how the file is read from the start again, since each enumeration is 
     // independent.
     printf "-------Enumeration 2------\n";
     test |> Seq.iter (List.length >> printf "line has %d entries\n");
-    // Now do it again, this time determining the numer of entries on each line.
+    // Now do it again, this time determining the number of entries on each line.
     // Note how the file is read from the start again, since each enumeration is 
     // independent.
     printf "-------Enumeration 3------\n";
@@ -1006,7 +1006,7 @@ with
         | EasyOptionInt.Some x -> new Nullable<int>(x)
 end
 
-let getPoistiveInt2() = 
+let getPositiveInt2() = 
     let i = rand.Next(10)
     match i with
     | 0 -> EasyOptionInt.None
@@ -1841,7 +1841,7 @@ let aa =
   match !failures with 
   | false -> 
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
+      printf "TEST PASSED OK" ;
       exit 0
   | _ -> 
       stdout.WriteLine "Test Failed"

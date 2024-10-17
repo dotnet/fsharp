@@ -61,7 +61,7 @@ type internal ConvertCSharpUsingToFSharpOpenCodeFixProvider [<ImportingConstruct
                     match diagnostic.Id with
                     // using is included in the squiggly
                     | "FS0201" when errorText.Contains("using ") -> true
-                    // using is not included in the squiqqly
+                    // using is not included in the squiggly
                     | "FS0039" when isCSharpUsingShapeWithPos context.Span sourceText -> true
                     | _ -> false
 

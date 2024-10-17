@@ -31,7 +31,7 @@ module private Atomic =
 type DelegateEvent<'Delegate when 'Delegate :> System.Delegate>() =
     let mutable multicast: System.Delegate = null
 
-    member x.Trigger(args: obj[]) =
+    member x.Trigger(args: objnull array) =
         match multicast with
         | null -> ()
         | d -> d.DynamicInvoke(args) |> ignore
@@ -54,30 +54,30 @@ type EventDelegee<'Args>(observer: System.IObserver<'Args>) =
                 assert false
                 null // should not be called, one-argument case don't use makeTuple function
 
-    member x.Invoke(_sender: obj, args: 'Args) =
+    member x.Invoke(_sender: objnull, args: 'Args) =
         observer.OnNext args
 
-    member x.Invoke(_sender: obj, a, b) =
+    member x.Invoke(_sender: objnull, a, b) =
         let args = makeTuple ([| a; b |]) :?> 'Args
         observer.OnNext args
 
-    member x.Invoke(_sender: obj, a, b, c) =
+    member x.Invoke(_sender: objnull, a, b, c) =
         let args = makeTuple ([| a; b; c |]) :?> 'Args
         observer.OnNext args
 
-    member x.Invoke(_sender: obj, a, b, c, d) =
+    member x.Invoke(_sender: objnull, a, b, c, d) =
         let args = makeTuple ([| a; b; c; d |]) :?> 'Args
         observer.OnNext args
 
-    member x.Invoke(_sender: obj, a, b, c, d, e) =
+    member x.Invoke(_sender: objnull, a, b, c, d, e) =
         let args = makeTuple ([| a; b; c; d; e |]) :?> 'Args
         observer.OnNext args
 
-    member x.Invoke(_sender: obj, a, b, c, d, e, f) =
+    member x.Invoke(_sender: objnull, a, b, c, d, e, f) =
         let args = makeTuple ([| a; b; c; d; e; f |]) :?> 'Args
         observer.OnNext args
 
-type EventWrapper<'Delegate, 'Args> = delegate of 'Delegate * obj * 'Args -> unit
+type EventWrapper<'Delegate, 'Args> = delegate of 'Delegate * objnull * 'Args -> unit
 
 [<CompiledName("FSharpEvent`2")>]
 type Event<'Delegate, 'Args
@@ -92,7 +92,7 @@ type Event<'Delegate, 'Args
             ||| BindingFlags.NonPublic
             ||| BindingFlags.DeclaredOnly
 
-        let mi = typeof<'Delegate>.GetMethod ("Invoke", instanceBindingFlags)
+        let mi = typeof<'Delegate>.GetMethod("Invoke", instanceBindingFlags)
         let actualTypes = mi.GetParameters() |> Array.map (fun p -> p.ParameterType)
         mi, actualTypes.[1..]
 
@@ -113,7 +113,7 @@ type Event<'Delegate, 'Args
             ||| BindingFlags.DeclaredOnly
 
         let mi =
-            typeof<EventDelegee<'Args>>.GetMethods (instanceBindingFlags)
+            typeof<EventDelegee<'Args>>.GetMethods(instanceBindingFlags)
             |> Seq.filter (fun mi -> mi.Name = "Invoke" && mi.GetParameters().Length = argTypes.Length + 1)
             |> Seq.exactlyOne
 
@@ -122,7 +122,7 @@ type Event<'Delegate, 'Args
         else
             mi
 
-    member x.Trigger(sender: obj, args: 'Args) =
+    member x.Trigger(sender: objnull, args: 'Args) =
         // Copy multicast value into local variable to avoid changing during member call.
         let multicast = multicast
 

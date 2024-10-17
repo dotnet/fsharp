@@ -45,7 +45,7 @@ let f = List.filter (fun (x: {| Id: int; Name: string |}) -> x.Id = 7) db
     Assert.Equal(expected, actual)
 
 [<Fact>]
-let ``Doesn't fix FS0072 for generic infered types`` () =
+let ``Doesn't fix FS0072 for generic inferred types`` () =
     let code =
         """
 let f x =

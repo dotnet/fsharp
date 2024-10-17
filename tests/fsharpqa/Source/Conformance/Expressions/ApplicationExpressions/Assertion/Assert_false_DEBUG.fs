@@ -23,7 +23,7 @@ System.Diagnostics.Trace.Listeners.Remove("Default")
 System.Diagnostics.Trace.Listeners.Add(mtl)
 
 (* Finally execute the testcase. Since DEBUG is defined, the assert will fire!  *)
-(* Rememeber that assert is really System.Diagnostics.Debug.Assert(): this will *)
+(* Remember that assert is really System.Diagnostics.Debug.Assert(): this will  *)
 (* enumerate on all the listeners and invoke the Fail() method on them, i.e.    *)
 (* invoke mtl.Fail(), which exits with 0 to signal the test passed!             *)
 assert(false)

@@ -24,13 +24,15 @@ type SymbolUse =
 type FSharpSymbol with
 
     member this.IsInternalToProject =
+        let publicOrInternal = this.Accessibility.IsPublic || this.Accessibility.IsInternal
+
         match this with
         | :? FSharpParameter -> true
-        | :? FSharpMemberOrFunctionOrValue as m -> not m.IsModuleValueOrMember || not m.Accessibility.IsPublic
-        | :? FSharpEntity as m -> not m.Accessibility.IsPublic
+        | :? FSharpMemberOrFunctionOrValue as m -> not m.IsModuleValueOrMember || not publicOrInternal
+        | :? FSharpEntity -> not publicOrInternal
         | :? FSharpGenericParameter -> true
-        | :? FSharpUnionCase as m -> not m.Accessibility.IsPublic
-        | :? FSharpField as m -> not m.Accessibility.IsPublic
+        | :? FSharpUnionCase -> not publicOrInternal
+        | :? FSharpField -> not publicOrInternal
         | _ -> false
 
 type FSharpSymbolUse with

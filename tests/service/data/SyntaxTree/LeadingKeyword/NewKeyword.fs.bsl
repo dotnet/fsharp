@@ -13,7 +13,7 @@ ImplFile
                   ObjectModel
                     (Unspecified,
                      [ImplicitCtor
-                        (None, [], SimplePats ([], [], (2,6--2,8)), None,
+                        (None, [], Const (Unit, (2,6--2,8)), None,
                          PreXmlDoc ((2,6), FSharp.Compiler.Xml.XmlDocCollector),
                          (2,5--2,6), { AsKeyword = None });
                       Member
@@ -29,7 +29,7 @@ ImplFile
                                       MemberKind = Constructor },
                                SynValInfo
                                  ([[SynArgInfo ([], false, Some message)]],
-                                  SynArgInfo ([], false, None)), None, None),
+                                  SynArgInfo ([], false, None)), None),
                             LongIdent
                               (SynLongIdent ([new], [], [None]), None,
                                Some (SynValTyparDecls (None, false)),
@@ -53,7 +53,7 @@ ImplFile
                      (3,4--3,30)), [],
                   Some
                     (ImplicitCtor
-                       (None, [], SimplePats ([], [], (2,6--2,8)), None,
+                       (None, [], Const (Unit, (2,6--2,8)), None,
                         PreXmlDoc ((2,6), FSharp.Compiler.Xml.XmlDocCollector),
                         (2,5--2,6), { AsKeyword = None })), (2,5--3,30),
                   { LeadingKeyword = Type (2,0--2,4)

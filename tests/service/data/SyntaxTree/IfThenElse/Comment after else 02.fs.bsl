@@ -19,8 +19,10 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [BlockComment (3,5--3,33)] }, set []))
 
-(2,0)-(2,1) parse error Possible incorrect indentation: this token is offside of context started at position (1:1). Try indenting this token further or using standard formatting conventions.
+(2,0)-(2,1) parse error Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (1:1). Try indenting this further.
+To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
 (2,0)-(2,1) parse error Expecting expression
 (3,0)-(3,36) parse error Unexpected keyword 'elif' in implementation file
-(4,0)-(4,1) parse error Possible incorrect indentation: this token is offside of context started at position (3:1). Try indenting this token further or using standard formatting conventions.
+(4,0)-(4,1) parse error Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (3:1). Try indenting this further.
+To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
 (1,0)-(2,0) parse warning The declarations in this file will be placed in an implicit module 'Comment after else 02' based on the file name 'Comment after else 02.fs'. However this is not a valid F# identifier, so the contents will not be accessible from other files. Consider renaming the file or adding a 'module' or 'namespace' declaration at the top of the file.

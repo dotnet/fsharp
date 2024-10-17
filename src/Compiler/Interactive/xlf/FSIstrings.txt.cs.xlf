@@ -17,6 +17,11 @@
         <target state="translated">Vymazat obrazovku</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiIntroTextHashhelpdocInfo">
+        <source>Display documentation for an identifier, e.g. #help \"List.map\";;</source>
+        <target state="translated">Zobrazit dokumentaci k identifikátoru, např. #help \"List.map\";;</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
         <target state="translated">Operaci nešlo dokončit z důvodu dřívější chyby.</target>

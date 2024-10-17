@@ -4,12 +4,10 @@ open System.IO
 open BenchmarkDotNet.Attributes
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Test.ProjectGeneration
-
-[<Literal>]
-let FSharpCategory = "fsharp"
+open FSharp.Benchmarks.Common.Categories
 
 [<MemoryDiagnoser>]
-[<BenchmarkCategory(FSharpCategory)>]
+[<BenchmarkCategory(LongCategory)>]
 type GraphTypeCheckingBenchmarks() =
 
     let size = 250

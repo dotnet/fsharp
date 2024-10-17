@@ -41,7 +41,7 @@ let DetupleRewriteStackGuardDepth = StackGuard.GetDepthOption "DetupleRewrite"
 // A1: If the function called only wants the fields of the tuple.
 // A2: If all call sites allocate a tuple argument,
 //     then can factor that tuple creation into the function,
-//     and hope the optimiser will eliminate it if possible.
+//     and hope the optimizer will eliminate it if possible.
 //     e.g. if only the fields are required.
 //
 // The COLLAPSE transform is based on answer A2...
@@ -149,15 +149,16 @@ let DetupleRewriteStackGuardDepth = StackGuard.GetDepthOption "DetupleRewrite"
 //       in these new cases, take care to have let binding sequence (eval order...)
 
 
-// Merge a tyapp node and and app node.
+// Merge a tyapp node and app node.
+[<return: Struct>]
 let (|TyappAndApp|_|) e =
     match e with
     | Expr.App(f, fty, tys, args, m) ->
         match stripDebugPoints (stripExpr f) with
-        | Expr.App(f2, fty2, tys2, [], m2) -> Some(f2, fty2, tys2 @ tys, args, m2)
-        | Expr.App _ -> Some(f, fty, tys, args, m) (* has args, so not combine ty args *)
-        | f -> Some(f, fty, tys, args, m)
-    | _ -> None
+        | Expr.App(f2, fty2, tys2, [], m2) -> ValueSome(f2, fty2, tys2 @ tys, args, m2)
+        | Expr.App _ -> ValueSome(f, fty, tys, args, m) (* has args, so not combine ty args *)
+        | f -> ValueSome(f, fty, tys, args, m)
+    | _ -> ValueNone
 
 [<AutoOpen>]
 module GlobalUsageAnalysis =
@@ -720,7 +721,7 @@ type penv =
       ccu: CcuThunk
       g: TcGlobals }
 
-let hasTransfrom penv f = Zmap.tryFind f penv.transforms
+let hasTransform penv f = Zmap.tryFind f penv.transforms
 
 //-------------------------------------------------------------------------
 // pass - app fixup - collapseArgs
@@ -827,7 +828,7 @@ let fixupApp (penv: penv) (fx, fty, tys, args, m) =
     | Expr.Val(vref, _, vm) ->
         let f = vref.Deref
 
-        match hasTransfrom penv f with
+        match hasTransform penv f with
         | Some trans ->
             // fix it
             let callPattern = trans.transformCallPattern
@@ -881,7 +882,7 @@ let passBind penv (TBind(fOrig, repr, letSeqPtOpt) as bind) =
     let g = penv.g
     let m = fOrig.Range
 
-    match hasTransfrom penv fOrig with
+    match hasTransform penv fOrig with
     | None ->
         // fOrig no transform
         bind

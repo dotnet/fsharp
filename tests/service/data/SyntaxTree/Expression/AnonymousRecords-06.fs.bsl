@@ -13,7 +13,7 @@ ImplFile
                     (None,
                      SynValInfo
                        ([[SynArgInfo ([], false, Some x)]],
-                        SynArgInfo ([], false, None)), None, None),
+                        SynArgInfo ([], false, None)), None),
                   LongIdent
                     (SynLongIdent ([f], [], [None]), None, None,
                      Pats [Named (SynIdent (x, None), false, None, (1,6--1,7))],

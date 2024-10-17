@@ -119,7 +119,7 @@ module internal XmlDocumentation =
             collector.Add(TaggedText.tagText line)
 
  
-    /// Append an XmlCommnet to the segment.
+    /// Append an XmlComment to the segment.
     let AppendXmlComment_DEPRECATED(documentationProvider:IDocumentationBuilder_DEPRECATED, sink: ITaggedTextCollector_DEPRECATED, xml, showExceptions, showParameters, paramName) =
         match xml with
         | FSharpXmlDoc.None -> ()

@@ -15,7 +15,7 @@ module internal FSharpDependencyManager =
 [<Class>]
 type ResolveDependenciesResult =
 
-    /// Succeded?
+    /// Succeeded?
     member Success: bool
 
     /// The resolution output log
@@ -39,7 +39,7 @@ type ResolveDependenciesResult =
     ///     the dependency manager will be able to probe and resolve any native dependencies
     ///     required by the nuget package.
     ///
-    /// This path is also equivant to
+    /// This path is also equivalent to
     ///     #I @"c:\somepath\to\packages\ResolvedPackage\1.1.1\"
     member Roots: seq<string>
 

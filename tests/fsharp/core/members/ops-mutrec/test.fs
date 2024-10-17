@@ -57,7 +57,7 @@ module OverloadSamples =
     // we would use the standard F# pattern of defining a type 
     // (i.e. it's data representation), then defining
     // a module that carries the operations associated with the type, then 
-    // using an augmentation to assocaite the operations with the type.  However
+    // using an augmentation to associate the operations with the type.  However
     // here we've just added the augmentation straight away.
 
     type IntVector = 
@@ -122,7 +122,7 @@ module OverloadSamples =
     type 'a GenericVector 
       with
         // Nb. For an operator associated with a generic type 
-        // the the type parameters involved in the operator's definition must be the same 
+        // the type parameters involved in the operator's definition must be the same 
         // as the type parameters of the enclosing class.
         static member (+) ((x : 'a GenericVector),(y : 'a GenericVector)) = add x y
       end
@@ -382,6 +382,6 @@ module TraitCallsAndConstructors =
 let _ = 
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
   else (stdout.WriteLine "Test Passed"; 
-        System.IO.File.WriteAllText("test.ok","ok"); 
+        printf "TEST PASSED OK"
         exit 0)
 

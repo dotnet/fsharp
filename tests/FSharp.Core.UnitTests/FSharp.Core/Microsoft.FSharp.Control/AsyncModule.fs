@@ -7,6 +7,7 @@ namespace FSharp.Core.UnitTests.Control
 
 open System
 open System.Threading
+open System.Threading.Tasks
 open FSharp.Core.UnitTests.LibraryTestFx
 open Xunit
 open FsCheck
@@ -273,8 +274,7 @@ type AsyncModule() =
             }
         Async.RunSynchronously test
 
-    // test is flaky: https://github.com/dotnet/fsharp/issues/11586
-    //[<Fact>]
+    [<Fact(Skip="test is flaky: https://github.com/dotnet/fsharp/issues/11586")>]
     member _.``OnCancel.RaceBetweenCancellationHandlerAndDisposingHandlerRegistration``() = 
         let test() = 
             use flag = new ManualResetEvent(false)
@@ -297,8 +297,7 @@ type AsyncModule() =
 
         for _i = 1 to 300 do test()
 
-    // test is flaky: https://github.com/dotnet/fsharp/issues/11586
-    //[<Fact>]
+    [<Fact(Skip="test is flaky: https://github.com/dotnet/fsharp/issues/11586")>]
     member _.``OnCancel.RaceBetweenCancellationAndDispose``() = 
         let mutable flag = 0
         let cts = new System.Threading.CancellationTokenSource()
@@ -316,8 +315,7 @@ type AsyncModule() =
             :? System.OperationCanceledException -> ()
         Assert.AreEqual(1, flag)
 
-    // test is flaky: https://github.com/dotnet/fsharp/issues/11586
-    //[<Fact>]
+    [<Fact(Skip="test is flaky: https://github.com/dotnet/fsharp/issues/11586")>]
     member _.``OnCancel.CancelThatWasSignalledBeforeRunningTheComputation``() = 
         let test() = 
             let cts = new System.Threading.CancellationTokenSource()
@@ -379,23 +377,25 @@ type AsyncModule() =
 
     [<Fact>]
     member _.``AwaitWaitHandle.DisposedWaitHandle2``() = 
-        let wh = new System.Threading.ManualResetEvent(false)
-        let barrier = new System.Threading.ManualResetEvent(false)
+        let wh = new ManualResetEvent(false)
+        let started = new ManualResetEventSlim(false)
 
-        let test = async {
-            let! timeout = Async.AwaitWaitHandle(wh, 10000)
-            Assert.False(timeout, "Timeout expected")
-            barrier.Set() |> ignore
+        let test = 
+            async {
+                started.Set()
+                let! timeout = Async.AwaitWaitHandle(wh, 5000)
+                Assert.False(timeout, "Timeout expected")
             }
-        Async.Start test
+            |> Async.StartAsTask
 
-        // await 3 secs then dispose waithandle - nothing should happen
-        let timeout = wait barrier 3000
-        Assert.False(timeout, "Barrier was reached too early")
-        dispose wh
-        
-        let ok = wait barrier 10000
-        if not ok then Assert.Fail("Async computation was not completed in given time")
+        task {
+            started.Wait()
+            // Wait a moment then dispose waithandle - nothing should happen
+            do! Task.Delay 500
+            Assert.False(test.IsCompleted, "Test completed too early")
+            dispose wh
+            do! test
+        }
 
     [<Fact>]
     member _.``RunSynchronously.NoThreadJumpsAndTimeout``() = 
@@ -467,22 +467,24 @@ type AsyncModule() =
 
     [<Fact>]
     member _.``error on one workflow should cancel all others``() =
-        let counter = 
-            async {
-                let mutable counter = 0
-                let job i = async { 
-                    if i = 55 then failwith "boom" 
-                    else 
-                        do! Async.Sleep 1000 
-                        counter <- counter + 1
-                }
+        task {
+            use failOnlyOne = new Semaphore(0, 1)
+            let mutable cancelled = 0
+            let mutable started = 0
 
-                let! _ = Async.Parallel [ for i in 1 .. 100 -> job i ] |> Async.Catch
-                do! Async.Sleep 5000
-                return counter
-            } |> Async.RunSynchronously
+            let job i = async {
+                Interlocked.Increment &started |> ignore
+                use! holder = Async.OnCancel (fun () -> Interlocked.Increment &cancelled |> ignore)
+                do! failOnlyOne |> Async.AwaitWaitHandle |> Async.Ignore
+                failwith "boom" 
+            }
 
-        Assert.AreEqual(0, counter)
+            let test = Async.Parallel [ for i in 1 .. 100 -> job i ] |> Async.Catch |> Async.Ignore |> Async.StartAsTask
+            do! Task.Delay 100
+            failOnlyOne.Release() |> ignore
+            do! test
+            Assert.Equal(started - 1, cancelled)
+        }
 
     [<Fact>]
     member _.``AwaitWaitHandle.ExceptionsAfterTimeout``() = 
@@ -641,7 +643,6 @@ type AsyncModule() =
     member _.``Parallel with maxDegreeOfParallelism`` () =
         let mutable i = 1
         let action j = async {
-            do! Async.Sleep 1
             Assert.Equal(j, i)
             i <- i + 1
         }
@@ -651,7 +652,7 @@ type AsyncModule() =
         Async.RunSynchronously(computation) |> ignore
 
     [<Fact>]
-    member _.``maxDegreeOfParallelism can not be 0`` () =
+    member _.``maxDegreeOfParallelism cannot be 0`` () =
         try
             [| for i in 1 .. 10 -> async { return i } |]
             |> fun cs -> Async.Parallel(cs, 0)
@@ -663,7 +664,7 @@ type AsyncModule() =
             Assert.True(exc.Message.Contains("maxDegreeOfParallelism must be positive, was 0"))
 
     [<Fact>]
-    member _.``maxDegreeOfParallelism can not be negative`` () =
+    member _.``maxDegreeOfParallelism cannot be negative`` () =
         try
             [| for i in 1 .. 10 -> async { return i } |]
             |> fun cs -> Async.Parallel(cs, -1)

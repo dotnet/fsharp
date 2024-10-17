@@ -10,9 +10,9 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
-                     None), Named (SynIdent (a, None), false, None, (3,4--3,5)),
-                  None, Const (Unit, (3,8--3,10)), (3,4--3,5), Yes (3,0--3,10),
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
+                  Named (SynIdent (a, None), false, None, (3,4--3,5)), None,
+                  Const (Unit, (3,8--3,10)), (3,4--3,5), Yes (3,0--3,10),
                   { LeadingKeyword = Let (3,0--3,3)
                     InlineKeyword = None
                     EqualsRange = Some (3,6--3,7) })], (3,0--3,10));
@@ -37,7 +37,8 @@ ImplFile
                                   LongIdent
                                     (SynLongIdent ([string], [], [None])), false,
                                   PreXmlDoc ((7,12), FSharp.Compiler.Xml.XmlDocCollector),
-                                  None, (7,12--7,18), { LeadingKeyword = None })],
+                                  None, (7,12--7,18), { LeadingKeyword = None
+                                                        MutableKeyword = None })],
                             PreXmlDoc ((7,4), FSharp.Compiler.Xml.XmlDocCollector),
                             None, (7,6--7,18), { BarRange = Some (7,4--7,5) });
                          SynUnionCase
@@ -48,7 +49,8 @@ ImplFile
                                   LongIdent (SynLongIdent ([int], [], [None])),
                                   false,
                                   PreXmlDoc ((8,15), FSharp.Compiler.Xml.XmlDocCollector),
-                                  None, (8,15--8,18), { LeadingKeyword = None })],
+                                  None, (8,15--8,18), { LeadingKeyword = None
+                                                        MutableKeyword = None })],
                             PreXmlDoc ((8,4), FSharp.Compiler.Xml.XmlDocCollector),
                             None, (8,6--8,18), { BarRange = Some (8,4--8,5) });
                          SynUnionCase
@@ -58,7 +60,8 @@ ImplFile
                                  ([], false, None,
                                   StaticConstant (Int32 4, (9,12--9,13)), false,
                                   PreXmlDoc ((9,12), FSharp.Compiler.Xml.XmlDocCollector),
-                                  None, (9,12--9,13), { LeadingKeyword = None })],
+                                  None, (9,12--9,13), { LeadingKeyword = None
+                                                        MutableKeyword = None })],
                             PreXmlDoc ((9,4), FSharp.Compiler.Xml.XmlDocCollector),
                             None, (9,6--9,13), { BarRange = Some (9,4--9,5) })],
                         (6,4--9,13)), (6,4--9,13)), [], None, (5,5--9,13),
@@ -71,8 +74,7 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((11,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
-                     None),
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
                   Named (SynIdent (b, None), false, None, (11,4--11,5)), None,
                   Const (Unit, (11,8--11,10)), (11,4--11,5), Yes (11,0--11,10),
                   { LeadingKeyword = Let (11,0--11,3)

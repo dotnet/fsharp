@@ -52,6 +52,11 @@
         <target state="translated">Specificare la quantità di informazioni incluse nell'output di compilazione</target>
         <note />
       </trans-unit>
+      <trans-unit id="WorkingDirectoryNonexistent">
+        <source>The working directory does not exist:\n'{0}'.</source>
+        <target state="new">The working directory does not exist:\n'{0}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="cli1">
         <source>ECMA-335 CLI compatible framework (location must be provided)</source>
         <target state="translated">Framework compatibile con lo standard ECMA-335 CLI (è necessario fornire il percorso)</target>
@@ -72,9 +77,9 @@
         <target state="translated">Un file con il nome '{0}' esiste già ed è aperto in un editor. Assegnare un nome univoco all'elemento che si sta aggiungendo o eliminare l'elemento esistente.</target>
         <note />
       </trans-unit>
-      <trans-unit id="CanNotSaveFileNotOpeneInEditor">
+      <trans-unit id="CannotSaveFileNotOpenInEditor">
         <source>Cannot save '{0}' as it is not open in the editor.</source>
-        <target state="translated">Non è possibile salvare '{0}' perché non è aperto nell'editor.</target>
+        <target state="new">Cannot save '{0}' as it is not open in the editor.</target>
         <note />
       </trans-unit>
       <trans-unit id="Content">
@@ -713,11 +718,6 @@
       <trans-unit id="CannotBuildWhenBuildInProgress">
         <source>Cannot start a build, because another build is already in progress.</source>
         <target state="translated">Non è possibile avviare una compilazione perché ne è già in corso un'altra.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="WorkingDirectoryNotExists">
-        <source>The working directory does not exist:\n'{0}'.</source>
-        <target state="translated">La directory di lavoro non esiste:\n'{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="ProjectReferencesDifferentFramework">

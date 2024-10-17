@@ -168,7 +168,7 @@
   <data name="CannotAddFileThatIsOpenInEditor" xml:space="preserve">
     <value>A file with name '{0}' already exists and is open in an editor. Please give a unique name to the item you are adding, or delete the existing item first.</value>
   </data>
-  <data name="CanNotSaveFileNotOpeneInEditor" xml:space="preserve">
+  <data name="CannotSaveFileNotOpenInEditor" xml:space="preserve">
     <value>Cannot save '{0}' as it is not open in the editor.</value>
   </data>
   <data name="Content" xml:space="preserve">
@@ -566,7 +566,7 @@
   <data name="CannotBuildWhenBuildInProgress" xml:space="preserve">
     <value>Cannot start a build, because another build is already in progress.</value>
   </data>
-  <data name="WorkingDirectoryNotExists" xml:space="preserve">
+  <data name="WorkingDirectoryNonexistent" xml:space="preserve">
     <value>The working directory does not exist:\n'{0}'.</value>
   </data>
   <data name="ProjectReferencesDifferentFramework" xml:space="preserve">

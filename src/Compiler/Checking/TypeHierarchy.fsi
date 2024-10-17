@@ -117,6 +117,17 @@ val ExistsHeadTypeInEntireHierarchy:
 
 /// Read an Abstract IL type from metadata and convert to an F# type.
 val ImportILTypeFromMetadata:
+    amap: ImportMap ->
+    m: range ->
+    scoref: ILScopeRef ->
+    tinst: TType list ->
+    minst: TType list ->
+    nullnessSource: Nullness.NullableAttributesSource ->
+    ilTy: ILType ->
+        TType
+
+/// Read an Abstract IL type from metadata and convert to an F# type, ignoring nullness checking.
+val ImportILTypeFromMetadataSkipNullness:
     amap: ImportMap -> m: range -> scoref: ILScopeRef -> tinst: TType list -> minst: TType list -> ilTy: ILType -> TType
 
 /// Read an Abstract IL type from metadata, including any attributes that may affect the type itself, and convert to an F# type.
@@ -126,16 +137,16 @@ val ImportILTypeFromMetadataWithAttributes:
     scoref: ILScopeRef ->
     tinst: TType list ->
     minst: TType list ->
+    nullnessSource: Nullness.NullableAttributesSource ->
     ilTy: ILType ->
-    getCattrs: (unit -> ILAttributes) ->
         TType
 
 /// Get the parameter type of an IL method.
 val ImportParameterTypeFromMetadata:
     amap: ImportMap ->
     m: range ->
+    nullnessSource: Nullness.NullableAttributesSource ->
     ilTy: ILType ->
-    getCattrs: (unit -> ILAttributes) ->
     scoref: ILScopeRef ->
     tinst: TType list ->
     mist: TType list ->
@@ -146,8 +157,8 @@ val ImportParameterTypeFromMetadata:
 val ImportReturnTypeFromMetadata:
     amap: ImportMap ->
     m: range ->
+    nullnessSource: Nullness.NullableAttributesSource ->
     ilTy: ILType ->
-    getCattrs: (unit -> ILAttributes) ->
     scoref: ILScopeRef ->
     tinst: TType list ->
     minst: TType list ->

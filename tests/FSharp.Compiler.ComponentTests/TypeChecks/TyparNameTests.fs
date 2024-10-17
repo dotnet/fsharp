@@ -14,7 +14,7 @@ module TyparNameTests =
         (additionalFile: SourceCodeFileKind)
         : string array =
         let typeCheckResult =
-            cUnit |> withAdditionalSourceFile additionalFile |> typecheckProject false
+            cUnit |> withAdditionalSourceFile additionalFile |> typecheckProject false CompilerAssertHelpers.UseTransparentCompiler
 
         assert (Array.isEmpty typeCheckResult.Diagnostics)
 

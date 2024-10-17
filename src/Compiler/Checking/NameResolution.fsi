@@ -94,9 +94,6 @@ type Item =
     /// Represents the resolution of a name to a constructor
     | CtorGroup of string * MethInfo list
 
-    /// Represents the resolution of a name to the fake constructor simulated for an interface type.
-    | FakeInterfaceCtor of TType
-
     /// Represents the resolution of a name to a delegate
     | DelegateCtor of TType
 
@@ -376,7 +373,7 @@ type TypeNameResolutionInfo =
 
 /// Represents the kind of the occurrence when reporting a name in name resolution
 [<RequireQualifiedAccess; Struct>]
-type internal ItemOccurence =
+type internal ItemOccurrence =
     | Binding
     | Use
     | UseInType
@@ -385,6 +382,7 @@ type internal ItemOccurence =
     | Implemented
     | RelatedText
     | Open
+    | InvalidUse
 
 /// Check for equality, up to signature matching
 val ItemsAreEffectivelyEqual: TcGlobals -> Item -> Item -> bool
@@ -404,7 +402,7 @@ type internal CapturedNameResolution =
     member ItemWithInst: ItemWithInst
 
     /// Information about the occurrence of the symbol
-    member ItemOccurence: ItemOccurence
+    member ItemOccurrence: ItemOccurrence
 
     /// Information about printing. For example, should redundant keywords be hidden?
     member DisplayEnv: DisplayEnv
@@ -443,7 +441,7 @@ type internal TcResolutions =
 [<Struct>]
 type TcSymbolUseData =
     { ItemWithInst: ItemWithInst
-      ItemOccurence: ItemOccurence
+      ItemOccurrence: ItemOccurrence
       DisplayEnv: DisplayEnv
       Range: range }
 
@@ -484,17 +482,17 @@ type ITypecheckResultsSink =
 
     /// Record that a name resolution occurred at a specific location in the source
     abstract NotifyNameResolution:
-        pos * Item * TyparInstantiation * ItemOccurence * NameResolutionEnv * AccessorDomain * range * bool -> unit
+        pos * Item * TyparInstantiation * ItemOccurrence * NameResolutionEnv * AccessorDomain * range * bool -> unit
 
     /// Record that a method group name resolution occurred at a specific location in the source
     abstract NotifyMethodGroupNameResolution:
-        pos * Item * Item * TyparInstantiation * ItemOccurence * NameResolutionEnv * AccessorDomain * range * bool ->
+        pos * Item * Item * TyparInstantiation * ItemOccurrence * NameResolutionEnv * AccessorDomain * range * bool ->
             unit
 
     /// Record that a printf format specifier occurred at a specific location in the source
     abstract NotifyFormatSpecifierLocation: range * int -> unit
 
-    /// Record that an open declaration occured in a given scope range
+    /// Record that an open declaration occurred in a given scope range
     abstract NotifyOpenDeclaration: OpenDeclaration -> unit
 
     /// Get the current source
@@ -598,6 +596,12 @@ type AfterResolution =
         (MethInfo * PropInfo option * TyparInstantiation -> unit) *
         (unit -> unit)
 
+/// Indicates whether we want to report found items to the name resolution sink
+[<RequireQualifiedAccess>]
+type ShouldNotifySink =
+    | Yes
+    | No
+
 /// Temporarily redirect reporting of name resolution and type checking results
 val internal WithNewTypecheckResultsSink: ITypecheckResultsSink * TcResultsSink -> System.IDisposable
 
@@ -609,17 +613,17 @@ val internal CallEnvSink: TcResultsSink -> range * NameResolutionEnv * AccessorD
 
 /// Report a specific name resolution at a source range
 val internal CallNameResolutionSink:
-    TcResultsSink -> range * NameResolutionEnv * Item * TyparInstantiation * ItemOccurence * AccessorDomain -> unit
+    TcResultsSink -> range * NameResolutionEnv * Item * TyparInstantiation * ItemOccurrence * AccessorDomain -> unit
 
 /// Report a specific method group name resolution at a source range
 val internal CallMethodGroupNameResolutionSink:
     TcResultsSink ->
-    range * NameResolutionEnv * Item * Item * TyparInstantiation * ItemOccurence * AccessorDomain ->
+    range * NameResolutionEnv * Item * Item * TyparInstantiation * ItemOccurrence * AccessorDomain ->
         unit
 
 /// Report a specific name resolution at a source range, replacing any previous resolutions
 val internal CallNameResolutionSinkReplacing:
-    TcResultsSink -> range * NameResolutionEnv * Item * TyparInstantiation * ItemOccurence * AccessorDomain -> unit
+    TcResultsSink -> range * NameResolutionEnv * Item * TyparInstantiation * ItemOccurrence * AccessorDomain -> unit
 
 /// Report a specific name resolution at a source range
 val internal CallExprHasTypeSink: TcResultsSink -> range * NameResolutionEnv * TType * AccessorDomain -> unit
@@ -672,6 +676,67 @@ exception internal UpperCaseIdentifierInPattern of range
 /// Generate a new reference to a record field with a fresh type instantiation
 val FreshenRecdFieldRef: NameResolver -> range -> RecdFieldRef -> RecdFieldInfo
 
+/// Create a type variable representing the use of a "_" in F# code
+val NewAnonTypar: TyparKind * range * TyparRigidity * TyparStaticReq * TyparDynamicReq -> Typar
+
+val NewNamedInferenceMeasureVar: range * TyparRigidity * TyparStaticReq * Ident -> Typar
+
+val NewNamedInferenceMeasureVar: range * TyparRigidity * TyparStaticReq * Ident -> Typar
+
+val NewInferenceMeasurePar: unit -> Typar
+
+/// Create an inference type variable
+val NewInferenceType: TcGlobals -> TType
+
+/// Create an inference type variable for the kind of a byref pointer
+val NewByRefKindInferenceType: TcGlobals -> range -> TType
+
+/// Create an inference type variable representing an error condition when checking an expression
+val NewErrorType: unit -> TType
+
+/// Create an inference type variable representing an error condition when checking a measure
+val NewErrorMeasure: unit -> Measure
+
+/// Create a list of inference type variables, one for each element in the input list
+val NewInferenceTypes: TcGlobals -> 'T list -> TType list
+
+/// Given a set of type parameters, make new inference type variables for
+/// each and ensure that the constraints on the new type variables are adjusted.
+///
+/// Returns the inference type variables as a list of types.
+val FreshenTypars: g: TcGlobals -> range -> Typars -> TType list
+
+/// Given a method, which may be generic, make new inference type variables for
+/// its generic parameters, and ensure that the constraints the new type variables are adjusted.
+///
+/// Returns the inference type variables as a list of types.
+val FreshenMethInfo: range -> MethInfo -> TType list
+
+/// Given a set of formal type parameters and their constraints, make new inference type variables for
+/// each and ensure that the constraints on the new type variables are adjusted to refer to these.
+///
+/// Returns
+///   1. the new type parameters
+///   2. the instantiation mapping old type parameters to inference variables
+///   3. the inference type variables as a list of types.
+val FreshenAndFixupTypars:
+    g: TcGlobals ->
+    m: range ->
+    rigid: TyparRigidity ->
+    fctps: Typars ->
+    tinst: TType list ->
+    tpsorig: Typar list ->
+        Typar list * TyparInstantiation * TTypes
+
+/// Given a set of type parameters, make new inference type variables for
+/// each and ensure that the constraints on the new type variables are adjusted.
+///
+/// Returns
+///   1. the new type parameters
+///   2. the instantiation mapping old type parameters to inference variables
+///   3. the inference type variables as a list of types.
+val FreshenTypeInst: g: TcGlobals -> m: range -> tpsorig: Typar list -> Typar list * TyparInstantiation * TTypes
+
 /// Resolve a long identifier to a namespace, module.
 val internal ResolveLongIdentAsModuleOrNamespace:
     sink: TcResultsSink ->
@@ -684,6 +749,7 @@ val internal ResolveLongIdentAsModuleOrNamespace:
     id: Ident ->
     rest: Ident list ->
     isOpenDecl: bool ->
+    notifySink: ShouldNotifySink ->
         ResultOrException<(int * ModuleOrNamespaceRef * ModuleOrNamespaceType) list>
 
 /// Resolve a long identifier to an object constructor.
@@ -728,20 +794,20 @@ val internal ResolveTypeLongIdentInTyconRef:
     m: range ->
     tcref: TyconRef ->
     lid: Ident list ->
-        TyconRef
+        TyconRef * TypeInst
 
 /// Resolve a long identifier to a type definition
 val internal ResolveTypeLongIdent:
     sink: TcResultsSink ->
     ncenv: NameResolver ->
-    occurence: ItemOccurence ->
+    occurrence: ItemOccurrence ->
     fullyQualified: FullyQualifiedFlag ->
     nenv: NameResolutionEnv ->
     ad: AccessorDomain ->
     lid: Ident list ->
     staticResInfo: TypeNameResolutionStaticArgsInfo ->
     genOk: PermitDirectReferenceToGeneratedType ->
-        ResultOrException<EnclosingTypeInst * TyconRef>
+        ResultOrException<EnclosingTypeInst * TyconRef * TypeInst>
 
 /// Resolve a long identifier to a field
 val internal ResolveField:
@@ -774,11 +840,12 @@ val internal ResolveExprLongIdent:
     nenv: NameResolutionEnv ->
     typeNameResInfo: TypeNameResolutionInfo ->
     lid: Ident list ->
+    maybeAppliedArgExpr: SynExpr option ->
         ResultOrException<EnclosingTypeInst * Item * Ident list>
 
 val internal getRecordFieldsInScope: NameResolutionEnv -> Item list
 
-/// Resolve a (possibly incomplete) long identifier to a loist of possible class or record fields
+/// Resolve a (possibly incomplete) long identifier to a list of possible class or record fields
 val internal ResolvePartialLongIdentToClassOrRecdFields:
     NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> bool -> bool -> Item list
 
@@ -794,6 +861,7 @@ val internal ResolveLongIdentAsExprAndComputeRange:
     nenv: NameResolutionEnv ->
     typeNameResInfo: TypeNameResolutionInfo ->
     lid: Ident list ->
+    maybeAppliedArgExpr: SynExpr option ->
         ResultOrException<EnclosingTypeInst * Item * range * Ident list * AfterResolution>
 
 /// Resolve a long identifier occurring in an expression position, qualified by a type.
@@ -808,6 +876,7 @@ val internal ResolveExprDotLongIdentAndComputeRange:
     typeNameResInfo: TypeNameResolutionInfo ->
     findFlag: FindMemberFlag ->
     staticOnly: bool ->
+    maybeAppliedArgExpr: SynExpr option ->
         Item * range * Ident list * AfterResolution
 
 /// A generator of type instantiations used when no more specific type instantiation is known.

@@ -1,7 +1,7 @@
 // #Conformance #PatternMatching #ActivePatterns 
 #light
 
-// Test ability to spedify multiple active patterns in the same pattern match
+// Test ability to specify multiple active patterns in the same pattern match
 
 let (|A|_|) x = if x = 'A' then Some() else None
 let (|B|_|) x = if x = 'B' then Some() else None

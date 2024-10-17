@@ -348,7 +348,7 @@ do
             foo (Some 5)
         @>
     let baseLine = """
-[DebugRange(344:16 - 344:21)] <{ 
+[DebugRange(344:16 - 344:19)] <{ 
 let foo : FSharpFunc`2 = 
     [DebugRange(345:16 - 347:29)] <{ 
     (fun x : FSharpOption`1 -> 
@@ -452,7 +452,7 @@ do
             f Unchecked.defaultof<_>
         @>
     let baseLine = """
-[DebugRange(451:16 - 451:25)] <{ 
+[DebugRange(451:16 - 451:17)] <{ 
 let f : FSharpFunc`2 = 
     [DebugRange(451:28 - 451:31)] <{ 
     (fun x : A -> 
@@ -646,7 +646,7 @@ let aa =
   match !failures with 
   | 0 -> 
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
+      printf "TEST PASSED OK" ;
       exit 0
   | _ -> 
       stdout.WriteLine "Test Failed"

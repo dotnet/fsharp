@@ -3,15 +3,15 @@
 namespace FSharp.Compiler.UnitTests
 
 open System
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 
 #if !NETCOREAPP
-[<TestFixture>]
+
 module StringConcatOptimizationTests =
 
     // helper methods in this test only run on the full framework
-    [<Test>]
+    [<Fact>]
     let Optimizations () =
         let baseSource = """
 module Test

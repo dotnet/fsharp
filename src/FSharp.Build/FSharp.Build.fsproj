@@ -4,22 +4,24 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework Condition="'$(Configuration)' != 'Proto'">netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <TargetFrameworks Condition="'$(Configuration)' == 'Proto'">netstandard2.0</TargetFrameworks>
     <AssemblyName>FSharp.Build</AssemblyName>
     <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
     <AllowCrossTargeting>true</AllowCrossTargeting>
+    <CheckNulls>true</CheckNulls>
     <DefineConstants>$(DefineConstants);LOCALIZATION_FSBUILD</DefineConstants>
     <NoWarn>$(NoWarn);NU1701;FS0075</NoWarn>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <LangVersion>7.0</LangVersion>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
-    <Configurations>Debug;Release;Proto;ReleaseCompressed</Configurations>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
+    <Configurations>Debug;Release;Proto</Configurations>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
   </PropertyGroup>
 
   <!--  The FSharp.Build dll does not provide a referencable public interface although it's used for testing -->
-  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
-      <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
-      <NoOptimizationData>true</NoOptimizationData>
+  <PropertyGroup>
+    <NoOptimizationData>true</NoOptimizationData>
+    <NoInterfaceData>false</NoInterfaceData>
+    <CompressMetadata>true</CompressMetadata>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
@@ -29,6 +31,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
+    <Compile Include="..\Compiler\Utilities\NullnessShims.fs" />
     <EmbeddedText Include="FSBuild.txt" />
     <EmbeddedText Include="..\Compiler\Facilities\UtilsStrings.txt" />
     <Compile Include="..\Compiler\Facilities\CompilerLocation.fs" />
@@ -50,13 +53,13 @@
       <Pattern1>{{FSCorePackageVersionValue}}</Pattern1>
       <Replacement1>$(FSharpCoreShippedPackageVersionValue)</Replacement1>
     </NoneSubstituteText>
-    <NoneSubstituteText Include="Microsoft.FSharp.Core.NetSdk.props" CopyToOutputDirectory="PreserveNewest">
+    <NoneSubstituteText Include="Microsoft.FSharp.Core.NetSdk.props" CopyToOutputDirectory="PreserveNewest" Condition="'$(Configuration)' != 'Proto'">
       <TargetFileName>Microsoft.FSharp.Core.NetSdk.props</TargetFileName>
       <SubDir>Release\</SubDir>
       <Pattern1>{{FSCorePackageVersionValue}}</Pattern1>
       <Replacement1>$(FSCorePackageVersionValue)</Replacement1>
     </NoneSubstituteText>
-    <NoneSubstituteText Include="Microsoft.FSharp.Core.NetSdk.props" CopyToOutputDirectory="PreserveNewest">
+    <NoneSubstituteText Include="Microsoft.FSharp.Core.NetSdk.props" CopyToOutputDirectory="PreserveNewest" Condition="'$(Configuration)' != 'Proto'">
       <TargetFileName>Microsoft.FSharp.Core.NetSdk.props</TargetFileName>
       <SubDir>Shipping\</SubDir>
       <Pattern1>{{FSCorePackageVersionValue}}</Pattern1>

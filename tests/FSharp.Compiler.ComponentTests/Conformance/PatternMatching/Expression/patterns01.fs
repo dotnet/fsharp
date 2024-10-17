@@ -1,7 +1,7 @@
 // #Conformance #PatternMatching 
 #light
 
-// Verify the first verticle bar in a pattern match is optinal.
+// Verify the first vertical bar in a pattern match is optional.
 
 let test1 x = match x with "0" -> 0 | "1" -> 1 | _ -> -1
 

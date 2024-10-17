@@ -2,6 +2,7 @@
 
 namespace FSharp.Compiler.EditorServices
 
+open System
 open System.Collections.Generic
 open System.Runtime.CompilerServices
 open Internal.Utilities.Library
@@ -50,6 +51,11 @@ module UnusedOpens =
                         if not entity.IsNamespace && not entity.IsFSharpModule then
                             for fv in entity.MembersFunctionsAndValues do
                                 fv
+
+                            if entity.IsEnum then
+                                for field in entity.FSharpFields do
+                                    if field.IsStatic && field.IsLiteral then
+                                        field
                     |]
 
                 HashSet<_>(symbols, symbolHash)
@@ -295,12 +301,19 @@ module UnusedOpens =
     /// Async to allow cancellation.
     let getUnusedOpens (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string) : Async<range list> =
         async {
-            let! ct = Async.CancellationToken
-            let symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
-            let symbolUses = filterSymbolUses getSourceLineStr symbolUses
-            let symbolUses = splitSymbolUses symbolUses
-            let openStatements = getOpenStatements checkFileResults.OpenDeclarations
-            return! filterOpenStatements symbolUses openStatements
+            if checkFileResults.OpenDeclarations.Length = 0 then
+                return []
+            else
+                let! ct = Async.CancellationToken
+                let symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
+                let symbolUses = filterSymbolUses getSourceLineStr symbolUses
+                let symbolUses = splitSymbolUses symbolUses
+                let openStatements = getOpenStatements checkFileResults.OpenDeclarations
+
+                if openStatements.Length = 0 then
+                    return []
+                else
+                    return! filterOpenStatements symbolUses openStatements
         }
 
 module SimplifyNames =
@@ -331,7 +344,10 @@ module SimplifyNames =
                             - partialName.PartialIdent.Length
                             - (getPlidLength partialName.QualifyingIdents)
 
-                        if partialName.PartialIdent = "" || List.isEmpty partialName.QualifyingIdents then
+                        if
+                            String.IsNullOrEmpty(partialName.PartialIdent)
+                            || List.isEmpty partialName.QualifyingIdents
+                        then
                             None
                         else
                             Some(symbolUse, partialName.QualifyingIdents, plidStartCol, partialName.PartialIdent))
@@ -373,7 +389,7 @@ module SimplifyNames =
                         r.EndColumn - name.Length - (getPlidLength necessaryPlid)
 
                     let unnecessaryRange =
-                        mkRange r.FileName (Position.mkPos r.StartLine plidStartCol) (Position.mkPos r.EndLine necessaryPlidStartCol)
+                        withStartEnd (Position.mkPos r.StartLine plidStartCol) (Position.mkPos r.EndLine necessaryPlidStartCol) r
 
                     let relativeName = (String.concat "." plid) + "." + name
 
@@ -434,7 +450,7 @@ module UnusedDeclarations =
                 su.IsFromDefinition
                 && su.Symbol.DeclarationLocation.IsSome
                 && (isScript || su.IsPrivateToFile)
-                && not (su.Symbol.DisplayName.StartsWith "_")
+                && not (su.Symbol.DisplayName.StartsWithOrdinal "_")
                 && isPotentiallyUnusedDeclaration su.Symbol
             then
                 Some(su, usages.Contains su.Symbol.DeclarationLocation.Value)

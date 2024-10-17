@@ -3,9 +3,11 @@ neg_anon_2.fs(6,38,6,39): parse error FS0010: Unexpected symbol '}' in binding. 
 
 neg_anon_2.fs(6,29,6,31): parse error FS0605: Unmatched '{|'
 
-neg_anon_2.fs(8,5,8,8): parse error FS0058: Possible incorrect indentation: this token is offside of context started at position (6:5). Try indenting this token further or using standard formatting conventions.
+neg_anon_2.fs(8,5,8,8): parse error FS0058: Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (6:5). Try indenting this further.
+To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
 
-neg_anon_2.fs(10,5,10,9): parse error FS0058: Possible incorrect indentation: this token is offside of context started at position (8:5). Try indenting this token further or using standard formatting conventions.
+neg_anon_2.fs(10,5,10,9): parse error FS0058: Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (8:5). Try indenting this further.
+To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
 
 neg_anon_2.fs(10,5,10,9): parse error FS0010: Unexpected keyword 'type' in binding. Expected incomplete structured construct at or before this point or other token.
 

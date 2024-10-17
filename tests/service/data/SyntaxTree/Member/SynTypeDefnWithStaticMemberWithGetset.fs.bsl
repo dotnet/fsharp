@@ -27,8 +27,7 @@ ImplFile
                                       GetterOrSetterIsCompilerGenerated = false
                                       MemberKind = PropertyGet },
                                   SynValInfo
-                                    ([[]], SynArgInfo ([], false, None)), None,
-                                  None),
+                                    ([[]], SynArgInfo ([], false, None)), None),
                                LongIdent
                                  (SynLongIdent ([ReadWrite2], [], [None]),
                                   Some get, None,
@@ -51,7 +50,8 @@ ImplFile
                                            [(5,47--5,48)], (5,35--5,50)),
                                         (5,34--5,35), Some (5,50--5,51),
                                         (5,34--5,51)), (5,22--5,51)),
-                                  Const (Int32 4, (5,53--5,54)), (5,22--5,54)),
+                                  Const (Int32 4, (5,53--5,54)), (5,22--5,54),
+                                  { SeparatorRange = Some (5,51--5,52) }),
                                (5,13--5,19), NoneAtInvisible,
                                { LeadingKeyword =
                                   StaticMember ((3,4--3,10), (3,11--3,17))
@@ -72,7 +72,7 @@ ImplFile
                                       MemberKind = PropertySet },
                                   SynValInfo
                                     ([[SynArgInfo ([], false, Some x)]],
-                                     SynArgInfo ([], false, None)), None, None),
+                                     SynArgInfo ([], false, None)), None),
                                LongIdent
                                  (SynLongIdent ([ReadWrite2], [], [None]),
                                   Some set, None,

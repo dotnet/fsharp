@@ -72,6 +72,6 @@ printf "x = %b\n" (X x = X 3)
 printf "x = %d\n" (3 : x_t)
 ;;
 
-begin ignore (3 : x_t); ignore (3 : Nested.x_t); ignore (3 : Test1.Nested.x_t); ignore (3 : Test1.x_t); let os = System.IO.File.CreateText "test.ok" in os.Close() end;;
+begin ignore (3 : x_t); ignore (3 : Nested.x_t); ignore (3 : Test1.Nested.x_t); ignore (3 : Test1.x_t); printf "TEST PASSED OK" end;;
 #quit;; 
 

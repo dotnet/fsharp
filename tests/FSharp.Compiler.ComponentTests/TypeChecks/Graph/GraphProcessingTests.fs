@@ -2,15 +2,15 @@
 
 open System.Threading
 open FSharp.Compiler.GraphChecking.GraphProcessing
-open NUnit.Framework
+open Xunit
 
-[<Test>]
+[<Fact>]
 let ``When processing a node throws an exception, an exception is raised with the original exception included`` () =
     let graph = [1, [|2|]; 2, [||]] |> readOnlyDict
     let work (_processor : int -> ProcessedNode<int, string>) (_node : NodeInfo<int>) : string = failwith "Work exception"
     
     let exn =
-        Assert.Throws<System.Exception>(
+        Assert.Throws<GraphProcessingException>(
             fun () ->
                 processGraph
                     graph
@@ -18,6 +18,6 @@ let ``When processing a node throws an exception, an exception is raised with th
                     CancellationToken.None
                 |> ignore
         )
-    Assert.That(exn.Message, Is.EqualTo("Encountered exception when processing item '2'"))
-    Assert.That(exn.InnerException, Is.Not.Null)
-    Assert.That(exn.InnerException.Message, Is.EqualTo("Work exception"))
+    Assert.Equal(exn.Message, "Encountered exception when processing item '2'")
+    Assert.NotNull(exn.InnerException)
+    Assert.Equal(exn.InnerException.Message, "Work exception")

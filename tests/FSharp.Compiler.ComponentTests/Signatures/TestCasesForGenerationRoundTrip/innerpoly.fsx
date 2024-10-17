@@ -208,7 +208,7 @@ module Bug1126BenjaminTeuber = begin
                 printf "%i" value  
             done 
         let CallPrintAll (values : int seq) =        
-            printfn "Caling Sum" ;
+            printfn "Calling Sum" ;
             values |> PrintAll in           
             printfn "Done" ;
         let MyFun () =                    

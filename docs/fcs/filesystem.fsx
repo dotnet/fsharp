@@ -130,6 +130,9 @@ let B = File1.A + File1.A"""
         member _.IsStableFileHeuristic(path) =
             defaultFileSystem.IsStableFileHeuristic(path)
 
+        member this.ChangeExtensionShim(path, extension) =
+            defaultFileSystem.ChangeExtensionShim(path, extension)
+
 let myFileSystem = MyFileSystem()
 FileSystem <- MyFileSystem()
 

@@ -5,7 +5,7 @@ namespace FSharp.Compiler.UnitTests
 open System
 open System.IO
 open FSharp.Compiler.Diagnostics
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 open FSharp.Test.Utilities
 open FSharp.Test.Compiler
@@ -15,7 +15,7 @@ open Microsoft.CodeAnalysis.CSharp
 open FSharp.Compiler.Text
 open TestFramework
 
-[<TestFixture>]
+
 module MultiProjectTests =
 
     let AssertInMemoryCSharpReferenceIsValid () =
@@ -86,15 +86,15 @@ let test() =
             try File.Delete(outputFilePath) with | _ -> ()
             reraise()
 
-    let createOnDisk src =
-        let tmpFilePath = tryCreateTemporaryFileName ()
+    let createOnDisk (src: string) =
+        let tmpFilePath = getTemporaryFileName ()
         let tmpRealFilePath = Path.ChangeExtension(tmpFilePath, ".fs")
         try File.Delete(tmpFilePath) with | _ -> ()
         File.WriteAllText(tmpRealFilePath, src)
         tmpRealFilePath
 
-    let createOnDiskCompiledAsDll checker src =
-        let tmpFilePath = tryCreateTemporaryFileName ()
+    let createOnDiskCompiledAsDll checker (src: string) =
+        let tmpFilePath = getTemporaryFileName ()
         let tmpRealFilePath = Path.ChangeExtension(tmpFilePath, ".fs")
         try File.Delete(tmpFilePath) with | _ -> ()
         File.WriteAllText(tmpRealFilePath, src)
@@ -107,7 +107,7 @@ let test() =
         finally
             try File.Delete(tmpRealFilePath) with | _ -> ()
 
-    let updateFileOnDisk filePath src =
+    let updateFileOnDisk filePath (src: string) =
         File.WriteAllText(filePath, src)
 
     let updateCompiledDllOnDisk checker (dllPath: string) src =
@@ -121,18 +121,18 @@ let test() =
         finally
             try File.Delete(filePath) with | _ -> ()
 
-    [<Test>]
+    [<Fact>]
     let ``Using a CSharp reference project in-memory``() =
         AssertInMemoryCSharpReferenceIsValid() |> ignore
 
-    [<Test;NonParallelizable>]
+    [<Fact>]
     let ``Using a CSharp reference project in-memory and it gets GCed``() =
         let weakRef = AssertInMemoryCSharpReferenceIsValid()
         CompilerAssert.Checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
         GC.Collect(2, GCCollectionMode.Forced, true)
         Assert.shouldBeFalse(weakRef.IsAlive)
 
-    [<Test>]
+    [<Fact>]
     let ``Using compiler service, file referencing a DLL will correctly update when the referenced DLL file changes``() =
         let checker = CompilerAssert.Checker
 
@@ -168,7 +168,7 @@ let x = Script1.x
                 checker.ParseAndCheckProject(fsOptions1)
                 |> Async.RunImmediate
 
-            Assert.IsEmpty(checkProjectResults1.Diagnostics)
+            Assert.Empty(checkProjectResults1.Diagnostics)
 
             // Create script with that uses Script1 and function x and function y
             updateFileOnDisk filePath1
@@ -184,7 +184,7 @@ let y = Script1.y
                 checker.ParseAndCheckProject(fsOptions1)
                 |> Async.RunImmediate
 
-            Assert.IsNotEmpty(checkProjectResults2.Diagnostics)
+            Assert.NotEmpty(checkProjectResults2.Diagnostics)
 
             // Create an assembly with the module Script1 and function x and function y
             updateCompiledDllOnDisk checker dllPath1
@@ -200,7 +200,7 @@ let y = 1
                 checker.ParseAndCheckProject(fsOptions1)
                 |> Async.RunImmediate
 
-            Assert.IsEmpty(checkProjectResults3.Diagnostics)
+            Assert.Empty(checkProjectResults3.Diagnostics)
 
         finally
             try File.Delete(dllPath1) with | _ -> ()

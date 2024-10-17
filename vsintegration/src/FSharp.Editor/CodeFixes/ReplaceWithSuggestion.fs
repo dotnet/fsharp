@@ -12,55 +12,51 @@ open Microsoft.CodeAnalysis.CodeFixes
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.Text
+
 open CancellableTasks
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = CodeFix.ReplaceWithSuggestion); Shared>]
-type internal ReplaceWithSuggestionCodeFixProvider [<ImportingConstructor>] (settings: EditorOptions) =
+type internal ReplaceWithSuggestionCodeFixProvider [<ImportingConstructor>] () =
     inherit CodeFixProvider()
 
-    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039", "FS1129", "FS0495")
+    override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039", "FS0495", "FS1129")
 
-    override _.RegisterCodeFixesAsync context : Task =
-        asyncMaybe {
-            do! Option.guard settings.CodeFixes.SuggestNamesForErrors
+    override this.RegisterCodeFixesAsync context =
+        if context.Document.Project.IsFSharpCodeFixesSuggestNamesForErrorsEnabled then
+            context.RegisterFsharpFixes this
+        else
+            Task.CompletedTask
 
-            let document = context.Document
+    interface IFSharpMultiCodeFixProvider with
+        member _.GetCodeFixesAsync context =
+            cancellableTask {
+                let! parseFileResults, checkFileResults =
+                    context.Document.GetFSharpParseAndCheckResultsAsync(nameof ReplaceWithSuggestionCodeFixProvider)
 
-            let! parseFileResults, checkFileResults =
-                document.GetFSharpParseAndCheckResultsAsync(nameof (ReplaceWithSuggestionCodeFixProvider))
-                |> CancellableTask.start context.CancellationToken
-                |> Async.AwaitTask
-                |> liftAsync
+                let! sourceText = context.GetSourceTextAsync()
+                let! unresolvedIdentifierText = context.GetSquigglyTextAsync()
+                let pos = context.Span.End
+                let caretLinePos = sourceText.Lines.GetLinePosition(pos)
+                let! fcsCaretLineNumber, lineText = context.GetLineNumberAndText pos
 
-            // This is all needed to get a declaration list
-            let! sourceText = document.GetTextAsync(context.CancellationToken)
-            let unresolvedIdentifierText = sourceText.GetSubText(context.Span).ToString()
-            let pos = context.Span.End
-            let caretLinePos = sourceText.Lines.GetLinePosition(pos)
-            let caretLine = sourceText.Lines.GetLineFromPosition(pos)
-            let fcsCaretLineNumber = Line.fromZ caretLinePos.Line
-            let lineText = caretLine.ToString()
+                let partialName =
+                    QuickParse.GetPartialLongNameEx(lineText, caretLinePos.Character - 1)
 
-            let partialName =
-                QuickParse.GetPartialLongNameEx(lineText, caretLinePos.Character - 1)
+                let declInfo =
+                    checkFileResults.GetDeclarationListInfo(Some parseFileResults, fcsCaretLineNumber, lineText, partialName)
 
-            let declInfo =
-                checkFileResults.GetDeclarationListInfo(Some parseFileResults, fcsCaretLineNumber, lineText, partialName)
+                let addNames addToBuffer =
+                    for item in declInfo.Items do
+                        addToBuffer item.NameInList
 
-            let addNames (addToBuffer: string -> unit) =
-                for item in declInfo.Items do
-                    addToBuffer item.NameInList
+                return
+                    CompilerDiagnostics.GetSuggestedNames addNames unresolvedIdentifierText
+                    |> Seq.map (fun suggestion ->
+                        let replacement = PrettyNaming.NormalizeIdentifierBackticks suggestion
 
-            for suggestion in CompilerDiagnostics.GetSuggestedNames addNames unresolvedIdentifierText do
-                let replacement = PrettyNaming.NormalizeIdentifierBackticks suggestion
-
-                do
-                    context.RegisterFsharpFix(
-                        CodeFix.ReplaceWithSuggestion,
-                        CompilerDiagnostics.GetErrorMessage(FSharpDiagnosticKind.ReplaceWithSuggestion suggestion),
-                        [| TextChange(context.Span, replacement) |]
-                    )
-        }
-        |> Async.Ignore
-        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+                        {
+                            Name = CodeFix.ReplaceWithSuggestion
+                            Message = CompilerDiagnostics.GetErrorMessage(FSharpDiagnosticKind.ReplaceWithSuggestion suggestion)
+                            Changes = [ TextChange(context.Span, replacement) ]
+                        })
+            }

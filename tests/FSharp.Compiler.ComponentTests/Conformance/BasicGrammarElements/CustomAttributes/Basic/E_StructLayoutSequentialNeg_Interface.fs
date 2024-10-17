@@ -1,6 +1,6 @@
 // #Regression #Conformance #DeclarationElements #Attributes 
 // Regression: FSB 4014
-// Need to tighten up our imlementation of StructLayout.Sequential.
+// Need to tighten up our implementation of StructLayout.Sequential.
 //<Expects status="error" span="(8,10-8,12)" id="FS0937">Only structs and classes without primary constructors may be given the 'StructLayout' attribute$</Expects>
 
 module NegativeTests = 

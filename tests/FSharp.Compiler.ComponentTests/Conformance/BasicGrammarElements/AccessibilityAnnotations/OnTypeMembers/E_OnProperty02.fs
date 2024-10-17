@@ -1,7 +1,7 @@
 // #Regression #Conformance #DeclarationElements #Accessibility #MethodsAndProperties #MemberDefinitions 
 // Regression test for FSharp1.0:4169
 // Title: Accessibility modifier in front of property is ignored if either get() or set() is mentioned explicitly
-// Verify accessibility annotations can not be duplicated in various places with properties
+// Verify accessibility annotations cannot be duplicated in various places with properties
 
 //<Expects status="error" id="FS0010" span="(15,49-15,50)">Unexpected symbol '\)' in pattern</Expects>
 //<Expects status="error" id="FS0558" span="(16,36-16,50)">Multiple accessibilities given for property getter or setter</Expects>

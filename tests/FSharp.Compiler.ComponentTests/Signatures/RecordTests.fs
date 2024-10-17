@@ -19,8 +19,7 @@ type PullActions =
         }
 """
     |> printSignaturesWith 80
-    |> should
-        equal
+    |> assertEqualIgnoreLineEnding
         """
 module SignatureFileGeneration.MyModule
 
@@ -63,7 +62,7 @@ type SomeTypeName =
 """
     |> printSignatures
     |> prependNewline
-    |> should equal
+    |> assertEqualIgnoreLineEnding
         """
 namespace MyApp.Types
 

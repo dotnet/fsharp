@@ -16,6 +16,9 @@ type DocumentCache<'Value when 'Value: not struct>(name: string, ?cacheItemPolic
     let policy =
         defaultArg cacheItemPolicy (CacheItemPolicy(SlidingExpiration = (TimeSpan.FromSeconds defaultSlidingExpiration)))
 
+    new(name: string, slidingExpirationSeconds: float) =
+        new DocumentCache<'Value>(name, CacheItemPolicy(SlidingExpiration = (TimeSpan.FromSeconds slidingExpirationSeconds)))
+
     member _.TryGetValueAsync(doc: Document) =
         cancellableTask {
             let! ct = CancellableTask.getCancellationToken ()

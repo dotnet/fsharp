@@ -39,7 +39,7 @@ module internal VsUserData =
     let vsBufferMoniker = Guid("978A8E17-4DF8-432A-9623-D530A26452BC")
 
     // This is the file name of the buffer.
-    let GetBufferMonker (ud: IVsUserData) : string =
+    let GetBufferMoniker (ud: IVsUserData) : string =
         downcast Com.ThrowOnFailure1(ud.GetData(ref vsBufferMoniker))
 
 module internal VsTextLines =
@@ -57,7 +57,7 @@ module internal VsTextLines =
     /// Get the file name of the given buffer (via IVsUserData). Not all buffers have a file. This will be an exception.
     let GetFilename (buffer: IVsTextLines) =
         let ud = (box buffer) :?> IVsUserData
-        VsUserData.GetBufferMonker(ud)
+        VsUserData.GetBufferMoniker(ud)
 
     /// Get the string contents of a given buffer (the current snapshot).
     let GetFileContents (buffer: IVsTextBuffer, editorAdaptersFactoryService: IVsEditorAdaptersFactoryService) =

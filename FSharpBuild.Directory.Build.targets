@@ -2,7 +2,6 @@
 
   <Import Project="Sdk.targets" Sdk="Microsoft.DotNet.Arcade.Sdk" Condition="'$(DISABLE_ARCADE)' != 'true'"/>
   <Import Project="eng\targets\Imports.targets" Condition="'$(DISABLE_ARCADE)' != 'true'"/>
-  <Import Project="eng\targets\NGenBinaries.targets" Condition="'$(DISABLE_ARCADE)' != 'true'"/>
   <Import Project="eng\targets\NuGet.targets" Condition="'$(DISABLE_ARCADE)' != 'true'"/>
   <Import Project="FSharp.Profiles.props" />
 
@@ -89,6 +88,14 @@
     </ItemGroup>
   </Target>
 
+      <!-- SDK targets override -->
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto' AND '$(DisableCompilerRedirection)'!='true' AND Exists('$(ProtoOutputPath)')">
+    <FSharpBuildAssemblyFileOverride>$(ProtoOutputPath)\fsc\FSharp.Build.dll</FSharpBuildAssemblyFileOverride>
+  </PropertyGroup>  
+  <UsingTask TaskName="FSharpEmbedResourceText" AssemblyFile="$(FSharpBuildAssemblyFileOverride)" Override="true" Condition="'$(Configuration)' != 'Proto' AND '$(DisableCompilerRedirection)'!='true' AND Exists('$(ProtoOutputPath)')" />
+  <UsingTask TaskName="FSharpEmbedResXSource" AssemblyFile="$(FSharpBuildAssemblyFileOverride)" Override="true" Condition="'$(Configuration)' != 'Proto' AND '$(DisableCompilerRedirection)'!='true' AND Exists('$(ProtoOutputPath)')" />   
+
+
   <Target Name="BeforeResGen"
           Inputs="@(EmbeddedResource->'$(IntermediateOutputPath)%(Filename)%(Extension)')"
           Outputs="@(EmbeddedResource->'$(IntermediateOutputPath)resources\%(Filename)%(Extension)')"
@@ -147,7 +154,7 @@
           Condition="'$(IsPackable)'=='true'">
 
     <PropertyGroup>
-      <_GitUrl>$([System.Text.RegularExpressions.Regex]::Replace($(ScmRepositoryUrl), ".git$", ""))</_GitUrl>
+      <_GitUrl>https://github.com/dotnet/fsharp</_GitUrl>
       <PackageReleaseNotes>$(_GitUrl)$(PackageReleaseNotes)</PackageReleaseNotes>
     </PropertyGroup>
   </Target>

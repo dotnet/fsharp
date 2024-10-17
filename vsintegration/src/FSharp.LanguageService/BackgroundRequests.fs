@@ -281,7 +281,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
     member fls.TriggerParseFile(view: IVsTextView, source: ISource) = 
         source.BeginBackgroundRequest(0, 0, new TokenInfo(), BackgroundRequestReason.ParseFile, view, RequireFreshResults.No, new BackgroundRequestResultHandler(source.HandleUntypedParseOrFullTypeCheckResponse))
 
-    // Called before a Goto Definition to wait a moment to synchonize the parse
+    // Called before a Goto Definition to wait a moment to synchronize the parse
     member fls.TrySynchronizeParseFileInformation(view: IVsTextView, source: ISource, millisecondsTimeout:int) =
 
         if isNull lastParseFileRequest || lastParseFileRequest.Timestamp <> source.ChangeCount then

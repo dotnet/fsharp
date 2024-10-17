@@ -45,6 +45,9 @@ function simpleLibraryUse16 at line 63 causes no side effects
 function simpleLibraryUse17 at line 64 causes side effects or may not terminate
 function simpleLibraryUse18 at line 65 causes side effects or may not terminate
 function simpleLibraryUse19 at line 66 causes side effects or may not terminate
+function IsSetEmpty at line 69 causes no side effects
+function IsSetNode at line 70 causes no side effects
+function IsSetOne at line 71 causes no side effects
 function complexDataAnalysisFunction at line 73 causes no side effects
 function complexDataConstructionFunction at line 81 causes side effects or may not terminate
 function veryComplexDataConstructionFunction at line 90 causes side effects or may not terminate

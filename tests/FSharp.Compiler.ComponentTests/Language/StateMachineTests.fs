@@ -106,3 +106,58 @@ for i in 1 .. 100 do
         |> withOptimize
         |> compileExeAndRun
         |> shouldSucceed
+
+    [<Fact>] // https://github.com/dotnet/fsharp/issues/16068
+    let ``Decision tree with 32+ binds with nested expression is not getting splitted and state machine is successfully statically compiles``() = 
+        FSharp """
+module Testing
+
+let test () =
+    task {
+        if true then
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            ()
+    }
+
+[<EntryPoint>]
+let main _ =
+    test () |> ignore
+    printfn "Hello, World!"
+    0
+"""
+        |> ignoreWarnings
+        |> withOptimize
+        |> compileExeAndRun
+        |> shouldSucceed

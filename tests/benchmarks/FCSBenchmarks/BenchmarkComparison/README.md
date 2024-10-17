@@ -12,7 +12,7 @@ To run a benchmark for a local FCS in the current codebase you can run the bench
 
 ```dotnet run --project HistoricalBenchmark.fsproj -c Release --filter *```
 
-To run a comparison use the `runner.ipynb` .NET notebook
+To run a comparison use the `runner.ipynb` .NET notebook.
 
 ## How it works
 
@@ -35,9 +35,4 @@ As of now the minimum supported version of FCS is 13.0.0
 
 ## Sample results
 
-Below is a sample result of running the notebook locally with a selection of versions:
-![a](./sample_result.png?raw=true)
-
-## Other
-
-You can find this document under 'tests/benchmarks/FCSBenchmarks/BenchmarkComparison/README.md'.
+See sample results in the dedicated [sample_results](./sample_results/) folder.

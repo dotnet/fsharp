@@ -3,6 +3,8 @@
 %{
 open FSharp.Compiler.DiagnosticsLogger
 
+#nowarn "3261"  // the generated code would need to properly annotate nulls, e.g. changing System.Object to `obj|null`
+
 let dummy       = IfdefId("DUMMY")
 
 let doNothing _ dflt=

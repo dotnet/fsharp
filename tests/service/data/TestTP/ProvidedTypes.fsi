@@ -40,7 +40,7 @@ type ProvidedParameter =
 type ProvidedStaticParameter =
     inherit ParameterInfo
 
-    /// Create a new provided static parameter, for use with DefineStaticParamaeters on a provided type definition.
+    /// Create a new provided static parameter, for use with DefineStaticParameters on a provided type definition.
     new: parameterName: string * parameterType: Type * ?parameterDefaultValue: obj -> ProvidedStaticParameter
 
     /// Add XML documentation information to this provided constructor
@@ -427,7 +427,7 @@ type ProvidedTypesContext =
         /// this method should not be used directly when authoring a type provider.
     member ConvertTargetTypeToSource: Type -> Type
 
-        /// Returns a quotation rebuilt with resepct to the types from the target referenced assemblies.  Normally
+        /// Returns a quotation rebuilt with respect to the types from the target referenced assemblies.  Normally
         /// this method should not be used directly when authoring a type provider.
     member ConvertSourceExprToTarget: Expr -> Expr
 
@@ -491,7 +491,7 @@ type TypeProviderForNamespaces =
     /// Invoked by the host of the type provider to get the static parameters for a method.
     member GetStaticParametersForMethod: MethodBase -> ParameterInfo[]
 
-    /// Invoked by the host of the type provider to apply the static argumetns for a method.
+    /// Invoked by the host of the type provider to apply the static arguments for a method.
     member ApplyStaticArgumentsForMethod: MethodBase * string * obj[] -> MethodBase
 
 #if !FX_NO_LOCAL_FILESYSTEM

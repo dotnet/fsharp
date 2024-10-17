@@ -3,13 +3,13 @@
 namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 
 open FSharp.Test
-open NUnit.Framework
+open Xunit
 
 #if !DEBUG // sensitive to debug-level code coming across from debug FSharp.Core
-[<TestFixture>]
+
 module DelegateAndFuncOptimizations =
 
-    [<Test>]
+    [<Fact>]
     // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
     let ``Reduce function via InlineIfLambda``() =
         CompilerAssert.CompileLibraryAndVerifyIL(
@@ -153,7 +153,7 @@ type C =
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
     let ``Reduce delegate invoke via InlineIfLambda``() =
         CompilerAssert.CompileLibraryAndVerifyIL(
@@ -301,7 +301,7 @@ type C =
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
     let ``Reduce computed function invoke``() =
         CompilerAssert.CompileLibraryAndVerifyIL(
@@ -341,7 +341,7 @@ let ApplyComputedFunction(c: int) =
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
     let ``Reduce Computed Delegate``() =
         CompilerAssert.CompileLibraryAndVerifyIL(
@@ -381,7 +381,7 @@ let ApplyComputedDelegate(c: int) =
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
     let ``Reduce Computed Function with irreducible match``() =
         CompilerAssert.CompileLibraryAndVerifyIL(
@@ -433,7 +433,7 @@ let ApplyComputedFunction(c: int) =
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
     let ``Immediately apply computed function in sequential``() =
         CompilerAssert.CompileLibraryAndVerifyIL(
@@ -492,8 +492,10 @@ let ApplyComputedFunction(c: int) =
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
+    // See also https://github.com/dotnet/fsharp/issues/17607 for a regression caused by realsig+ becoming default
+    // This test case must keep using direct call to ReduceComputedDelegate, and not a FSharpFunc invocation.
     let ``Reduce Computed Delegate with let rec``() =
         CompilerAssert.CompileLibraryAndVerifyIL(
             """
@@ -524,7 +526,7 @@ let ApplyComputedDelegate(c: int) =
   IL_001d:  ldc.i4.3
   IL_001e:  add
   IL_001f:  ret
-} 
+  } 
             """
             ]))
 

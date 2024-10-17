@@ -167,7 +167,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return Microsoft.VisualStudio.VSConstants.S_OK;
         }
 
-        /// <summary>Returnt the CodeWindowManager that created this view filter.</summary>
+        /// <summary>Return the CodeWindowManager that created this view filter.</summary>
         public CodeWindowManager CodeWindowManager {
             get { return this.mgr; }
         }

@@ -570,7 +570,7 @@ module TypedTest = begin
 end
 
 (*
-module SubstiutionTest = begin
+module SubstitutionTest = begin
   let tm = (<@ (fun x y -> x + y + y) @>)
   // TEST INVALID - this match fails because a variable is escaping.
   let Some(x,y,y') = Template <@. (fun x y -> _ + _ + _) .@> tm
@@ -742,7 +742,7 @@ module Test72594 =
     let effect (i:int) = ()
     let foo () = ()
     let foo1 () =         
-        let i = 1 // prevent uncurring of foo1
+        let i = 1 // prevent uncurrying of foo1
         fun () -> ()    
     let foo2 () () = ()
 
@@ -1669,10 +1669,10 @@ module MoreQuotationsTests =
 
         let _ = <@@ v.ExtensionMethod0 @@> |> checkQuoteString "fqekhec16" """Lambda (unitVar, Call (None, Object.ExtensionMethod0, [PropertyGet (None, v, [])]))"""
         let _ = <@@ v.ExtensionMethod1 @@> |> checkQuoteString "fqekhec17" """Lambda (unitVar, Call (None, Object.ExtensionMethod1, [PropertyGet (None, v, [])]))"""
-        let _ = <@@ v.ExtensionMethod2 @@> |> checkQuoteString "fqekhec18" """Lambda (arg00, Call (None, Object.ExtensionMethod2, [PropertyGet (None, v, []), arg00]))"""
-        let _ = <@@ v.ExtensionMethod3 @@> |> checkQuoteString "fqekhec19" """Lambda (arg00, Call (None, Object.ExtensionMethod3, [PropertyGet (None, v, []), arg00]))"""
-        let _ = <@@ v.ExtensionMethod4 @@> |> checkQuoteString "fqekhec20" """Lambda (tupledArg, Let (arg00, TupleGet (tupledArg, 0), Let (arg01, TupleGet (tupledArg, 1), Call (None, Object.ExtensionMethod4, [PropertyGet (None, v, []), arg00, arg01]))))"""
-        let _ = <@@ v.ExtensionMethod5 @@> |> checkQuoteString "fqekhec21" """Lambda (arg00, Call (None, Object.ExtensionMethod5, [PropertyGet (None, v, []), arg00]))"""
+        let _ = <@@ v.ExtensionMethod2 @@> |> checkQuoteString "fqekhec18" """Lambda (y, Call (None, Object.ExtensionMethod2, [PropertyGet (None, v, []), y]))"""
+        let _ = <@@ v.ExtensionMethod3 @@> |> checkQuoteString "fqekhec19" """Lambda (y, Call (None, Object.ExtensionMethod3, [PropertyGet (None, v, []), y]))"""
+        let _ = <@@ v.ExtensionMethod4 @@> |> checkQuoteString "fqekhec20" """Lambda (tupledArg, Let (y, TupleGet (tupledArg, 0), Let (z, TupleGet (tupledArg, 1), Call (None, Object.ExtensionMethod4, [PropertyGet (None, v, []), y, z]))))"""
+        let _ = <@@ v.ExtensionMethod5 @@> |> checkQuoteString "fqekhec21" """Lambda (y, Call (None, Object.ExtensionMethod5, [PropertyGet (None, v, []), y]))"""
 
         let v2 = 3
         let _ = <@@ v2.ExtensionMethod0() @@> |> checkQuoteString "fqekhec22" """Call (None, Object.ExtensionMethod0, [Coerce (PropertyGet (None, v2, []), Object)])"""
@@ -1689,10 +1689,10 @@ module MoreQuotationsTests =
 
         let _ = <@@ v2.ExtensionMethod0 @@> |> checkQuoteString "fqekhec33" """Lambda (unitVar, Call (None, Object.ExtensionMethod0, [Coerce (PropertyGet (None, v2, []), Object)]))"""
         let _ = <@@ v2.ExtensionMethod1 @@> |> checkQuoteString "fqekhec34" """Lambda (unitVar, Call (None, Object.ExtensionMethod1, [Coerce (PropertyGet (None, v2, []), Object)]))"""
-        let _ = <@@ v2.ExtensionMethod2 @@> |> checkQuoteString "fqekhec35" """Lambda (arg00, Call (None, Object.ExtensionMethod2, [Coerce (PropertyGet (None, v2, []), Object), arg00]))"""
-        let _ = <@@ v2.ExtensionMethod3 @@> |> checkQuoteString "fqekhec36" """Lambda (arg00, Call (None, Object.ExtensionMethod3, [Coerce (PropertyGet (None, v2, []), Object), arg00]))"""
-        let _ = <@@ v2.ExtensionMethod4 @@> |> checkQuoteString "fqekhec37" """Lambda (tupledArg, Let (arg00, TupleGet (tupledArg, 0), Let (arg01, TupleGet (tupledArg, 1), Call (None, Object.ExtensionMethod4, [Coerce (PropertyGet (None, v2, []), Object), arg00, arg01]))))"""
-        let _ = <@@ v2.ExtensionMethod5 @@> |> checkQuoteString "fqekhec38" """Lambda (arg00, Call (None, Object.ExtensionMethod5, [Coerce (PropertyGet (None, v2, []), Object), arg00]))"""
+        let _ = <@@ v2.ExtensionMethod2 @@> |> checkQuoteString "fqekhec35" """Lambda (y, Call (None, Object.ExtensionMethod2, [Coerce (PropertyGet (None, v2, []), Object), y]))"""
+        let _ = <@@ v2.ExtensionMethod3 @@> |> checkQuoteString "fqekhec36" """Lambda (y, Call (None, Object.ExtensionMethod3, [Coerce (PropertyGet (None, v2, []), Object), y]))"""
+        let _ = <@@ v2.ExtensionMethod4 @@> |> checkQuoteString "fqekhec37" """Lambda (tupledArg, Let (y, TupleGet (tupledArg, 0), Let (z, TupleGet (tupledArg, 1), Call (None, Object.ExtensionMethod4, [Coerce (PropertyGet (None, v2, []), Object), y, z]))))"""
+        let _ = <@@ v2.ExtensionMethod5 @@> |> checkQuoteString "fqekhec38" """Lambda (y, Call (None, Object.ExtensionMethod5, [Coerce (PropertyGet (None, v2, []), Object), y]))"""
 
         let _ = <@@ v2.Int32ExtensionMethod0() @@> |> checkQuoteString "fqekhec39" """Call (None, Int32.Int32ExtensionMethod0, [PropertyGet (None, v2, [])])"""
         let _ = <@@ v2.Int32ExtensionMethod1() @@> |> checkQuoteString "fqekhec40" """Call (None, Int32.Int32ExtensionMethod1, [PropertyGet (None, v2, [])])"""
@@ -1708,10 +1708,10 @@ module MoreQuotationsTests =
 
         let _ = <@@ v2.Int32ExtensionMethod0 @@> |> checkQuoteString "fqekhec50" """Lambda (unitVar, Call (None, Int32.Int32ExtensionMethod0, [PropertyGet (None, v2, [])]))"""
         let _ = <@@ v2.Int32ExtensionMethod1 @@> |> checkQuoteString "fqekhec51" """Lambda (unitVar, Call (None, Int32.Int32ExtensionMethod1, [PropertyGet (None, v2, [])]))"""
-        let _ = <@@ v2.Int32ExtensionMethod2 @@> |> checkQuoteString "fqekhec52" """Lambda (arg00, Call (None, Int32.Int32ExtensionMethod2, [PropertyGet (None, v2, []), arg00]))"""
-        let _ = <@@ v2.Int32ExtensionMethod3 @@> |> checkQuoteString "fqekhec53" """Lambda (arg00, Call (None, Int32.Int32ExtensionMethod3, [PropertyGet (None, v2, []), arg00]))"""
-        let _ = <@@ v2.Int32ExtensionMethod4 @@> |> checkQuoteString "fqekhec54" """Lambda (tupledArg, Let (arg00, TupleGet (tupledArg, 0), Let (arg01, TupleGet (tupledArg, 1), Call (None, Int32.Int32ExtensionMethod4, [PropertyGet (None, v2, []), arg00, arg01]))))"""
-        let _ = <@@ v2.Int32ExtensionMethod5 @@> |> checkQuoteString "fqekhec55" """Lambda (arg00, Call (None, Int32.Int32ExtensionMethod5, [PropertyGet (None, v2, []), arg00]))"""
+        let _ = <@@ v2.Int32ExtensionMethod2 @@> |> checkQuoteString "fqekhec52" """Lambda (y, Call (None, Int32.Int32ExtensionMethod2, [PropertyGet (None, v2, []), y]))"""
+        let _ = <@@ v2.Int32ExtensionMethod3 @@> |> checkQuoteString "fqekhec53" """Lambda (y, Call (None, Int32.Int32ExtensionMethod3, [PropertyGet (None, v2, []), y]))"""
+        let _ = <@@ v2.Int32ExtensionMethod4 @@> |> checkQuoteString "fqekhec54" """Lambda (tupledArg, Let (y, TupleGet (tupledArg, 0), Let (z, TupleGet (tupledArg, 1), Call (None, Int32.Int32ExtensionMethod4, [PropertyGet (None, v2, []), y, z]))))"""
+        let _ = <@@ v2.Int32ExtensionMethod5 @@> |> checkQuoteString "fqekhec55" """Lambda (y, Call (None, Int32.Int32ExtensionMethod5, [PropertyGet (None, v2, []), y]))"""
 
 
 module QuotationConstructionTests = 
@@ -1857,7 +1857,7 @@ module EqualityOnVarDoesntFail =
     
 module RelatedChange3628 =
     // Fix for 3628 translates "do x" into "do (x;())" when x is not unit typed.
-    // This regression checks the quotated form.
+    // This regression checks the quoted form.
 
     open System
     open Microsoft.FSharp.Quotations
@@ -2156,7 +2156,7 @@ module IndexedPropertySetTest =
             | PropertySet (inst, pi, l, es) ->
                 match inst with
                 | Some(e) ->
-                    Expr.PropertySet(e, pi, es, l) // swaping params 2 and 3 e.g. (e, pi, l.[0], [es]) yield to OK
+                    Expr.PropertySet(e, pi, es, l) // swapping params 2 and 3 e.g. (e, pi, l.[0], [es]) yield to OK
                 | _ -> failwith ""
             | _ -> failwith ""   
 
@@ -2561,7 +2561,7 @@ module LoopsOverArraysInQuotations =
         )
 
 module QuotationOfResizeArrayIteration = 
-    // Quotation of an iteration which implictly does a "use" on a value of struct type
+    // Quotation of an iteration which implicitly does a "use" on a value of struct type
     let q = 
       let a = ResizeArray<_>()
       <@ for i in a do ignore i @>
@@ -5591,7 +5591,7 @@ module QuotationOfConcreteTraitCalls =
 // Check we can take ReflectedDefinition of things involving multiple implicit witnesses and trait calls
 module QuotationsOfGenericCodeWithMultipleWitnesses =
 
-    // This has three type paramters and two witnesses, one for + and one for -
+    // This has three type parameters and two witnesses, one for + and one for -
     [<ReflectedDefinition>]
     let inline f1 x y z = (x + y) - z
 
@@ -5889,7 +5889,7 @@ module Interpolation =
                              NewArray (Object, Call (None, Box, [Value (1)])),
                              Value (<null>))])"""
 
-module TestQuotationWithIdetnicalStaticInstanceMethods = 
+module TestQuotationWithIdenticalStaticInstanceMethods = 
     type C() =
         static member M(c: int) = 1 + c
         member this.M(c: int) = 2 + c
@@ -5938,10 +5938,9 @@ let aa =
   match !failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
+      printf "TEST PASSED OK" ;
       exit 0
   | errs -> 
       printfn "Test Failed, errors = %A" errs
       exit 1
 #endif
-

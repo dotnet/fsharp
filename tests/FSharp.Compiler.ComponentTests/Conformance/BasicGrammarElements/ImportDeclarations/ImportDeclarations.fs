@@ -73,6 +73,7 @@ module ImportDeclarations =
             (Error 10, Line 9, Col 5, Line 9, Col 9, "Unexpected keyword 'open' in binding. Expected incomplete structured construct at or before this point or other token.")
             (Error 10, Line 17, Col 9, Line 17, Col 13, "Unexpected keyword 'open' in binding")
             (Error 10, Line 23, Col 9, Line 23, Col 13, "Unexpected keyword 'open' in expression")
+            (Error 3567, Line 23, Col 9, Line 23, Col 13, "Expecting member body")
         ]
 
     // SOURCE=OpenNestedModule01.fs					# OpenNestedModule01.fs
@@ -107,4 +108,75 @@ module ImportDeclarations =
         |> verifyCompileAndRun
         |> shouldSucceed
 
+    [<FactForNETCOREAPP>]
+    let ImplementImportedAbstractBaseMethodsFailsIfUsed ()=
+        FSharp """
+module Testing
 
+open System.Text.Json
+open System.Text.Json.Serialization
+
+type StringTrimJsonSerializer(o: JsonSerializerOptions) =
+    inherit JsonConverter<string>()
+
+    override this.Read(reader, _, _) =
+        match reader.TokenType with
+        | JsonTokenType.String -> reader.GetString().Trim()
+        | _ -> JsonException("Type is not a string") |> raise
+
+    override this.Write(writer, objectToWrite, options) = base.Write(writer, objectToWrite, options)
+
+type SomeType = { AField: string }
+
+let serialize item =
+    let options = JsonSerializerOptions()
+    StringTrimJsonSerializer options |> options.Converters.Add
+    JsonSerializer.Serialize(item, options)
+
+[<EntryPoint>]
+let main _ =
+    { AField = "a" }
+    |> serialize
+    |> ignore
+    0"""
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1201, Line 15, Col 59, Line 15, Col 101, "Cannot call an abstract base member: 'Write'")
+        ]
+
+
+    [<FactForNETCOREAPP>]
+    let ImplementImportedAbstractBaseMethodsFailsIfNotUsed ()=
+        FSharp """
+module Testing
+
+open System.Text.Json
+open System.Text.Json.Serialization
+
+type StringTrimJsonSerializer(o: JsonSerializerOptions) =
+    inherit JsonConverter<string>()
+    override this.Read(reader, _, _) =
+        match reader.TokenType with
+        | JsonTokenType.String -> reader.GetString().Trim()
+        | _ -> JsonException("Type is not a string") |> raise
+    override this.Write(writer, objectToWrite, options) = base.Write(writer, objectToWrite, options)
+
+type SomeType = { AField: int }
+
+let serialize item =
+    let options = JsonSerializerOptions()
+    StringTrimJsonSerializer options |> options.Converters.Add
+    JsonSerializer.Serialize(item, options)
+
+[<EntryPoint>]
+let main _ =
+    { AField = 1 }
+    |> serialize
+    |>ignore
+    0"""
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1201, Line 13, Col 59, Line 13, Col 101, "Cannot call an abstract base member: 'Write'")
+        ]

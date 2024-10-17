@@ -492,7 +492,7 @@ let iter<'a when 'a : equality> (xs : 'a []) f' =
     list |> Seq.toList = (xs @ xs @ xs)
 
 [<Fact>]
-let ``iter looks at every element exactly once and in order - consistenly over all collections`` () =
+let ``iter looks at every element exactly once and in order - consistently over all collections`` () =
     smallerSizeCheck iter<int>
     smallerSizeCheck iter<string>
     smallerSizeCheck iter<NormalFloat>
@@ -513,7 +513,7 @@ let iter2<'a when 'a : equality> (xs' : ('a*'a) []) f' =
     list |> Seq.toList = (xs @ xs @ xs)
 
 [<Fact>]
-let ``iter2 looks at every element exactly once and in order - consistenly over all collections when size is equal`` () =
+let ``iter2 looks at every element exactly once and in order - consistently over all collections when size is equal`` () =
     smallerSizeCheck iter2<int>
     smallerSizeCheck iter2<string>
     smallerSizeCheck iter2<NormalFloat>
@@ -535,7 +535,7 @@ let iteri<'a when 'a : equality> (xs : 'a []) f' =
       indices |> Seq.toList = ([0..xs.Length-1] @ [0..xs.Length-1] @ [0..xs.Length-1])
 
 [<Fact>]
-let ``iteri looks at every element exactly once and in order - consistenly over all collections`` () =
+let ``iteri looks at every element exactly once and in order - consistently over all collections`` () =
     smallerSizeCheck iteri<int>
     smallerSizeCheck iteri<string>
     smallerSizeCheck iteri<NormalFloat>
@@ -559,7 +559,7 @@ let iteri2<'a when 'a : equality> (xs' : ('a*'a) []) f' =
       indices |> Seq.toList = ([0..xs.Length-1] @ [0..xs.Length-1] @ [0..xs.Length-1])
 
 [<Fact>]
-let ``iteri2 looks at every element exactly once and in order - consistenly over all collections when size is equal`` () =
+let ``iteri2 looks at every element exactly once and in order - consistently over all collections when size is equal`` () =
     smallerSizeCheck iteri2<int>
     smallerSizeCheck iteri2<string>
     smallerSizeCheck iteri2<NormalFloat>
@@ -617,7 +617,7 @@ let map2<'a when 'a : equality> (xs' : ('a*'a) []) f' =
       list |> Seq.toList = (xs @ xs @ xs)
 
 [<Fact>]
-let ``map2 looks at every element exactly once and in order - consistenly over all collections when size is equal`` () =
+let ``map2 looks at every element exactly once and in order - consistently over all collections when size is equal`` () =
     smallerSizeCheck map2<int>
     smallerSizeCheck map2<string>
     smallerSizeCheck map2<NormalFloat>
@@ -640,7 +640,7 @@ let map3<'a when 'a : equality> (xs' : ('a*'a*'a) []) f' =
       list |> Seq.toList = (xs @ xs @ xs)
 
 [<Fact>]
-let ``map3 looks at every element exactly once and in order - consistenly over all collections when size is equal`` () =
+let ``map3 looks at every element exactly once and in order - consistently over all collections when size is equal`` () =
     smallerSizeCheck map3<int>
     smallerSizeCheck map3<string>
     smallerSizeCheck map3<NormalFloat>
@@ -703,7 +703,7 @@ let mapi2<'a when 'a : equality> (xs' : ('a*'a) []) f' =
       (Seq.toList indices = [0..xs.Length-1] @ [0..xs.Length-1] @ [0..xs.Length-1])
 
 [<Fact>]
-let ``mapi2 looks at every element exactly once and in order - consistenly over all collections when size is equal`` () =
+let ``mapi2 looks at every element exactly once and in order - consistently over all collections when size is equal`` () =
     smallerSizeCheck mapi2<int>
     smallerSizeCheck mapi2<string>
     smallerSizeCheck mapi2<NormalFloat>

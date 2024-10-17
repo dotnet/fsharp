@@ -3,12 +3,12 @@
 namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 
 open FSharp.Test
-open NUnit.Framework
+open Xunit
 
-[<TestFixture>]
+
 module DebugScopes =
 
-    [<Test>]
+    [<Fact>]
     let SimpleFunction() =
         CompilerAssert.CompileLibraryAndVerifyDebugInfoWithOptions(
             [|"--debug:portable"; "--optimize-"; "--optimize-"|],
@@ -20,7 +20,7 @@ let f x =
     2
             """)
 
-    [<Test>]
+    [<Fact>]
     let SimpleShadowingFunction() =
         CompilerAssert.CompileLibraryAndVerifyDebugInfoWithOptions(
             [|"--debug:portable"; "--optimize-"; "--optimize-"|],
@@ -34,7 +34,7 @@ let f x =
     2
             """)
 
-    [<Test>]
+    [<Fact>]
     let ComplexShadowingFunction() =
         CompilerAssert.CompileLibraryAndVerifyDebugInfoWithOptions(
             [|"--debug:portable"; "--optimize-"; "--optimize-"|],

@@ -466,23 +466,23 @@ type MapModule() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
         let resultValueMap = Map.partition (fun x y  -> x%2 = 0) valueKeyMap         
-        let choosed = [(2,"b"); (4,"d")] |> Map.ofList
-        let notChoosed = [(3,"c"); (5,"e")] |> Map.ofList
-        Assert.AreEqual(resultValueMap,(choosed,notChoosed))
+        let chosen = [(2,"b"); (4,"d")] |> Map.ofList
+        let notChosen = [(3,"c"); (5,"e")] |> Map.ofList
+        Assert.AreEqual(resultValueMap,(chosen,notChosen))
         
         // reference keys
         let refMap = Map.ofSeq [for c in ["."; ".."; "..."; "...."] do yield (c, c.Length) ]
         let resultRefMap = refMap |>  Map.partition  (fun x y  -> x.Length >2 )        
-        let choosed = [( "...",3); ("....",4)] |> Map.ofList
-        let notChoosed = [(".",1); ("..",2)] |> Map.ofList
-        Assert.AreEqual(resultRefMap,(choosed,notChoosed))
+        let chosen = [( "...",3); ("....",4)] |> Map.ofList
+        let notChosen = [(".",1); ("..",2)] |> Map.ofList
+        Assert.AreEqual(resultRefMap,(chosen,notChosen))
         
         // One-element Map
         let oeleMap = Map.ofSeq [(1, "one")]
         let resultOele = Map.partition  (fun x y  -> x<4) oeleMap     
-        let choosed = [(1,"one")] |> Map.ofList
-        let notChoosed = Map.empty<int,string>
-        Assert.AreEqual(resultOele,(choosed,notChoosed))
+        let chosen = [(1,"one")] |> Map.ofList
+        let notChosen = Map.empty<int,string>
+        Assert.AreEqual(resultOele,(chosen,notChosen))
         
         // empty Map
         let eptMap = Map.empty

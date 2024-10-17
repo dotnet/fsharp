@@ -11,7 +11,7 @@ type internal Zset<'T> = Internal.Utilities.Collections.Tagged.Set<'T>
 module internal Zset =
 
     let empty (ord: IComparer<'T>) =
-        Internal.Utilities.Collections.Tagged.Set<_, _>.Empty (ord)
+        Internal.Utilities.Collections.Tagged.Set<_, _>.Empty(ord)
 
     let isEmpty (s: Zset<_>) = s.IsEmpty
 
@@ -38,19 +38,19 @@ module internal Zset =
     let subset (s1: Zset<_>) (s2: Zset<_>) = s1.IsSubsetOf s2
 
     let equal (s1: Zset<_>) (s2: Zset<_>) =
-        Internal.Utilities.Collections.Tagged.Set<_, _>.Equality (s1, s2)
+        Internal.Utilities.Collections.Tagged.Set<_, _>.Equality(s1, s2)
 
     let elements (s: Zset<_>) = s.ToList()
 
     let filter predicate (s: Zset<_>) = s.Filter predicate
 
     let union (s1: Zset<_>) (s2: Zset<_>) =
-        Internal.Utilities.Collections.Tagged.Set<_, _>.Union (s1, s2)
+        Internal.Utilities.Collections.Tagged.Set<_, _>.Union(s1, s2)
 
     let inter (s1: Zset<_>) (s2: Zset<_>) =
-        Internal.Utilities.Collections.Tagged.Set<_, _>.Intersection (s1, s2)
+        Internal.Utilities.Collections.Tagged.Set<_, _>.Intersection(s1, s2)
 
     let diff (s1: Zset<_>) (s2: Zset<_>) =
-        Internal.Utilities.Collections.Tagged.Set<_, _>.Difference (s1, s2)
+        Internal.Utilities.Collections.Tagged.Set<_, _>.Difference(s1, s2)
 
     let memberOf m k = contains k m

@@ -87,7 +87,7 @@ module internal Guids =
 
     [<Literal>]
     /// "9007718C-357A-4327-A193-AB3EC38D7EE8"
-    let advancedSettingsPageIdSring = "9007718C-357A-4327-A193-AB3EC38D7EE8"
+    let advancedSettingsPageIdString = "9007718C-357A-4327-A193-AB3EC38D7EE8"
 
     [<Literal>]
     /// "9EBEBCE8-A79B-46B0-A8C5-A9818AEED17D"
@@ -148,6 +148,9 @@ module internal CodeFix =
     let FixIndexerAccess = "FixIndexerAccess"
 
     [<Literal>]
+    let ImplementInterface = "ImplementInterface"
+
+    [<Literal>]
     let RemoveReturnOrYield = "RemoveReturnOrYield"
 
     [<Literal>]
@@ -162,6 +165,9 @@ module internal CodeFix =
 
     [<Literal>]
     let MakeDeclarationMutable = "MakeDeclarationMutable"
+
+    [<Literal>]
+    let MissingReference = "MissingReference"
 
     [<Literal>]
     let ChangePrefixNegationToInfixSubtraction =
@@ -199,3 +205,6 @@ module internal CodeFix =
 
     [<Literal>]
     let RemoveSuperfluousCapture = "RemoveSuperfluousCapture"
+
+    [<Literal>]
+    let RemoveUnnecessaryParentheses = "RemoveUnnecessaryParentheses"

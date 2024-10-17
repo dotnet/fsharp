@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:Microsoft.VisualStudio.FSharp.UIResources"
              mc:Ignorable="d" 
-             d:DesignHeight="300" d:DesignWidth="400">
+             d:DesignHeight="600" d:DesignWidth="400">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -21,7 +21,7 @@
                               Content="{x:Static local:Strings.Show_guides}"/>
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.Outlining}">
-                    <CheckBox x:Name="toggleOutloning" IsChecked="{Binding IsOutliningEnabled}"
+                    <CheckBox x:Name="toggleOutlining" IsChecked="{Binding IsOutliningEnabled}"
                               Content="{x:Static local:Strings.Show_Outlining}"/>
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.Inline_Hints}">
@@ -35,8 +35,19 @@
                     </StackPanel>
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.LiveBuffers}">
-                    <CheckBox x:Name="toggleLiveBuffers" IsChecked="{Binding IsLiveBuffersEnabled}"
+                    <CheckBox x:Name="toggleLiveBuffers" IsChecked="{Binding IsUseLiveBuffersEnabled}"
                               Content="{x:Static local:Strings.Enable_Live_Buffers}"/>
+                </GroupBox>
+                <GroupBox Header="{x:Static local:Strings.TransparentCompiler}">
+                    <StackPanel>
+                        <Label Content="{x:Static local:Strings.TransparentCompiler_Disclaimer1}" />
+                        <Label Content="{x:Static local:Strings.TransparentCompiler_Disclaimer2}" />
+                        <Label Content="{x:Static local:Strings.TransparentCompiler_Disclaimer3}" />
+                    <CheckBox x:Name="toggleTransparentCompiler" IsChecked="{Binding UseTransparentCompiler}"
+                              Content="{x:Static local:Strings.Use_Transparent_Compiler}"/>
+                    <CheckBox x:Name="snapshotReuse" IsChecked="{Binding TransparentCompilerSnapshotReuse}"
+                              Content="{x:Static local:Strings.Transparent_Compiler_Snapshot_Reuse}"/>
+                    </StackPanel>
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.AdditionalTelemetry}">
                     <CheckBox x:Name="toggleSendAdditionalTelemetry" IsChecked="{Binding SendAdditionalTelemetry}"

@@ -7,7 +7,7 @@
     type ı = int
 
     module M0 =
-        type T1 = { ı : ı;}                     // no conclict with type defined above
+        type T1 = { ı : ı;}                     // no conflict with type defined above
 
     let x : M0.T1 = { ı = 1 }
 

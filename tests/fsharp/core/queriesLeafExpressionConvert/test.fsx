@@ -675,7 +675,7 @@ module LeafExpressionEvaluationTests =
         // checkEval "castingunits13" (<@ 2un |> LanguagePrimitives.UIntPtrWithMeasure<m> |> unativeint @>) 2un
 
 
-    module LargerAutomaticDiferentiationTest_FSharp_1_0_Bug_3498 = 
+    module LargerAutomaticDifferentiationTest_FSharp_1_0_Bug_3498 = 
 
         let q = 
             <@ (fun (x1:double) -> 
@@ -1004,7 +1004,7 @@ let aa =
   match !failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
+      printf "TEST PASSED OK" ;
       exit 0
   | _ -> 
       stdout.WriteLine "Test Failed"

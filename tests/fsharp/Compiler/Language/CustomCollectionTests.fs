@@ -1,12 +1,12 @@
 ﻿namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 open FSharp.Compiler.Diagnostics
 
-[<TestFixture>]
+
 module CustomCollectionTests =
-    [<Test>]
+    [<Fact>]
     let ``Custom collection with Item and GetReverseIndex should support reverse index mutation``() =
         CompilerAssert.CompileExeAndRunWithOptions(
             [| "--langversion:preview" |],
@@ -23,7 +23,7 @@ a[^"2"] <- "-1"
 if a["2"] <> "2 -1" then failwithf "expected 2 -1 but got %A" a["2"]
              """)
 
-    [<Test>]
+    [<Fact>]
     let ``Custom collection with GetSlice and GetReverseIndex should support reverse index set slicing``() =
         CompilerAssert.CompileExeAndRunWithOptions(
             [| "--langversion:preview" |],
@@ -41,7 +41,7 @@ a[^"2"..^"1"] <- "-1"
 if a["2".."1"] <> "2 1 -1" then failwithf "expected 2 1 -1 but got %A" a["2".."1"]           
             """)
  
-    [<Test>]
+    [<Fact>]
     let ``Custom collection with Item and GetReverseIndex should support reverse index indexing``() =
         CompilerAssert.CompileExeAndRunWithOptions([| "--langversion:preview" |],
             """
@@ -56,7 +56,7 @@ let a = foo()
 if a[^2] <> 12 then failwith "expected 12"
             """)
 
-    [<Test>]
+    [<Fact>]
     let ``Custom collection with Item and GetReverseIndex should support n-rank reverse index mutation``() =
         CompilerAssert.CompileExeAndRunWithOptions(
             [| "--langversion:preview" |],
@@ -74,7 +74,7 @@ a[^"1",^"2"] <- "3"
 if a[""] <> "0 1 1 2 3" then failwithf "expected 0 1 1 2 3 but got %A" a[""]
             """)
 
-    [<Test>]
+    [<Fact>]
     let ``Custom collection with Item and GetReverseIndex should support n-rank reverse index indexing``() =
         CompilerAssert.CompileExeAndRunWithOptions(
             [| "--langversion:preview" |],
@@ -90,7 +90,7 @@ let a = foo()
 if a[^2,^1] <> 24 then failwithf "expected 23 but got %A" a[^2,^1]
             """)
 
-    [<Test>]
+    [<Fact>]
     let ``Custom collection with Item and no GetReverseIndex should not support reverse index indexing``() =
         CompilerAssert.TypeCheckSingleErrorWithOptions
             [| "--langversion:preview" |]
@@ -109,7 +109,7 @@ if a.[^2] <> 12 then failwith "expected 12"
             (9,7,9,9)
             "The type 'foo' does not define the field, constructor or member 'GetReverseIndex'."
 
-    [<Test>]
+    [<Fact>]
     let ``Custom collection with GetSlice and GetReverseIndex should support reverse index slicing``() =
         CompilerAssert.CompileExeAndRunWithOptions(
             [| "--langversion:preview" |],
@@ -129,7 +129,7 @@ let a = foo()
 if a[^2..1] <> 13 then failwith "expected 13"
             """)
  
-    [<Test>]
+    [<Fact>]
     let ``Custom collection without GetReverseIndex should not support reverse index slicing``() =
         CompilerAssert.TypeCheckSingleErrorWithOptions [| "--langversion:preview" |]
             """

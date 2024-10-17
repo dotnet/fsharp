@@ -37,7 +37,7 @@ type private Disposable() =
     do Disposable.constructedTimes <- Disposable.constructedTimes + 1
 
     static member DisposeCallCount() = Disposable.disposedTimes
-    static member ConsturctorCallCount() = Disposable.constructedTimes
+    static member ConstructorCallCount() = Disposable.constructedTimes
 
     interface System.IDisposable with
         member _.Dispose() =
@@ -51,7 +51,7 @@ let disposeCalls = Disposable.DisposeCallCount()
 if disposeCalls <> 1 then
     failwith "was not disposed or disposed too many times"
 
-let ctorCalls = Disposable.ConsturctorCallCount()
+let ctorCalls = Disposable.ConstructorCallCount()
 if ctorCalls <> 1 then
     failwithf "unexpected constructor call count: %i" ctorCalls
 

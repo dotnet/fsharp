@@ -2,7 +2,7 @@
 
 module FSharp.Compiler.Service.Tests.VisualStudioVersusConsoleContextTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Compiler.CompilerOptions
 open TestDoubles
 
@@ -16,7 +16,7 @@ let private getOptionsFromOptionBlocks blocks =
     
     List.collect GetOptionsOfBlock blocks
 
-[<Test>] // controls https://github.com/dotnet/fsharp/issues/13549
+[<Fact>] // controls https://github.com/dotnet/fsharp/issues/13549
 let ``Console-only options are filtered out for fsc in the VS context`` () =
     // just a random thing to make things work
     let builder = getArbitraryTcConfigBuilder()
@@ -25,7 +25,7 @@ let ``Console-only options are filtered out for fsc in the VS context`` () =
     let options = getOptionsFromOptionBlocks blocks
 
     // this is a very whitebox testing but arguably better than nothing
-    Assert.IsFalse(
+    Assert.False(
         options 
         |> List.exists (function 
             | CompilerOption (_, _, OptionConsoleOnly _, _, _) -> true

@@ -174,7 +174,7 @@ module internal {1} =
                             let generateLiteral = getBooleanMetadata "GenerateLiterals" true item
 
                             match generateSource item.ItemSpec moduleName generateLegacy generateLiteral with
-                            | Some (source) -> yield TaskItem(source) :> ITaskItem
+                            | Some(source) -> yield TaskItem(source) :> ITaskItem
                             | None -> success <- false
                 |]
 

@@ -43,6 +43,27 @@ type MailboxProcessor<'Msg> =
     /// <example-tbd></example-tbd>
     new: body: (MailboxProcessor<'Msg> -> Async<unit>) * ?cancellationToken: CancellationToken -> MailboxProcessor<'Msg>
 
+    /// <summary>Creates an agent. The <c>body</c> function is used to generate the asynchronous
+    /// computation executed by the agent. This function is not executed until
+    /// <c>Start</c> is called.</summary>
+    ///
+    /// <param name="body">The function to produce an asynchronous computation that will be executed
+    /// as the read loop for the MailboxProcessor when Start is called.</param>
+    /// <param name="isThrowExceptionAfterDisposed">A flag denoting that an exception will be thrown
+    /// when <see cref="F:Microsoft.FSharp.Control.MailboxProcessor.Post"/> is called
+    /// after <see cref="F:Microsoft.FSharp.Control.MailboxProcessor"/> has been disposed.</param>
+    /// <param name="cancellationToken">An optional cancellation token for the <c>body</c>.
+    /// Defaults to <c>Async.DefaultCancellationToken</c>.</param>
+    ///
+    /// <returns>The created MailboxProcessor.</returns>
+    ///
+    /// <example-tbd></example-tbd>
+    new:
+        body: (MailboxProcessor<'Msg> -> Async<unit>) *
+        isThrowExceptionAfterDisposed: bool *
+        ?cancellationToken: CancellationToken ->
+            MailboxProcessor<'Msg>
+
     /// <summary>Creates and starts an agent. The <c>body</c> function is used to generate the asynchronous
     /// computation executed by the agent.</summary>
     ///
@@ -57,6 +78,26 @@ type MailboxProcessor<'Msg> =
     static member Start:
         body: (MailboxProcessor<'Msg> -> Async<unit>) * ?cancellationToken: CancellationToken -> MailboxProcessor<'Msg>
 
+    /// <summary>Creates and starts an agent. The <c>body</c> function is used to generate the asynchronous
+    /// computation executed by the agent.</summary>
+    ///
+    /// <param name="body">The function to produce an asynchronous computation that will be executed
+    /// as the read loop for the MailboxProcessor when Start is called.</param>
+    /// <param name="isThrowExceptionAfterDisposed">A flag denoting that an exception will be thrown
+    /// when <see cref="F:Microsoft.FSharp.Control.MailboxProcessor.Post"/> is called
+    /// after <see cref="F:Microsoft.FSharp.Control.MailboxProcessor"/> has been disposed.</param>
+    /// <param name="cancellationToken">An optional cancellation token for the <c>body</c>.
+    /// Defaults to <c>Async.DefaultCancellationToken</c>.</param>
+    ///
+    /// <returns>The created MailboxProcessor.</returns>
+    ///
+    /// <example-tbd></example-tbd>
+    static member Start:
+        body: (MailboxProcessor<'Msg> -> Async<unit>) *
+        isThrowExceptionAfterDisposed: bool *
+        ?cancellationToken: CancellationToken ->
+            MailboxProcessor<'Msg>
+
     /// <summary>Creates and starts an agent immediately on the current operating system thread. The <c>body</c>
     /// function is used to generate the asynchronous computation executed by the agent.</summary>
     ///
@@ -70,6 +111,26 @@ type MailboxProcessor<'Msg> =
     /// <example-tbd></example-tbd>
     static member StartImmediate:
         body: (MailboxProcessor<'Msg> -> Async<unit>) * ?cancellationToken: CancellationToken -> MailboxProcessor<'Msg>
+
+    /// <summary>Creates and starts an agent immediately on the current operating system thread. The <c>body</c>
+    /// function is used to generate the asynchronous computation executed by the agent.</summary>
+    ///
+    /// <param name="body">The function to produce an asynchronous computation that will be executed
+    /// as the read loop for the MailboxProcessor when StartImmediately is called.</param>
+    /// <param name="isThrowExceptionAfterDisposed">A flag denotes will be thrown exception
+    /// when <see cref="F:Microsoft.FSharp.Control.MailboxProcessor.Post"/> is called
+    /// after <see cref="F:Microsoft.FSharp.Control.MailboxProcessor"/> disposed.</param>
+    /// <param name="cancellationToken">An optional cancellation token for the <c>body</c>.
+    /// Defaults to <c>Async.DefaultCancellationToken</c>.</param>
+    ///
+    /// <returns>The created MailboxProcessor.</returns>
+    ///
+    /// <example-tbd></example-tbd>
+    static member StartImmediate:
+        body: (MailboxProcessor<'Msg> -> Async<unit>) *
+        isThrowExceptionAfterDisposed: bool *
+        ?cancellationToken: CancellationToken ->
+            MailboxProcessor<'Msg>
 
     /// <summary>Posts a message to the message queue of the MailboxProcessor, asynchronously.</summary>
     ///

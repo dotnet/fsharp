@@ -40,7 +40,7 @@ ImplFile
                                       MemberKind = Member },
                                SynValInfo
                                  ([[SynArgInfo ([], false, None)]; []],
-                                  SynArgInfo ([], false, None)), None, None),
+                                  SynArgInfo ([], false, None)), None),
                             LongIdent
                               (SynLongIdent ([Norm], [], [None]), None, None,
                                Pats [], None, (4,42--4,46)),
@@ -76,4 +76,4 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(5,0)-(5,0) parse error Incomplete structured construct at or before this point in member definition. Expected 'with', '=' or other token.
+(5,0)-(5,0) parse error Expecting member body

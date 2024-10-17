@@ -274,7 +274,7 @@ module SomeRandomOperatorConstraints = begin
 end
 
 (* This test is funky because the type constraint on the variable associated with parameter 'x' *)
-(* invloves the type variable from the enclosing class.  This exposed a bug with fixing up type *)
+(* involves the type variable from the enclosing class.  This exposed a bug with fixing up type *)
 (* constraints correctly. *)
 module NestedGenericMethodWithSubtypeConstraint = begin
     type I<'a> =
@@ -356,7 +356,7 @@ module SimpleDatatypeInModuleThatFailedToLoad = begin
 end
     
     
-module AttrbuteArgTest = 
+module AttributeArgTest = 
     [<System.AttributeUsage (System.AttributeTargets.Class,AllowMultiple=false)>]  
     [<Sealed>]
     type RowAttribute(values: obj[]) = 
@@ -1088,7 +1088,7 @@ module InnerConstrainedClosureTests =
             printfn "hello, %A" z
         /// This uses the local type function in another closure that also captures one of the outer arguments
         let h() = g(3,y)
-        // This just returnes the closure to make sure we don't optimize it all away
+        // This just returns the closure to make sure we don't optimize it all away
         h
 
 
@@ -1099,7 +1099,7 @@ module InnerConstrainedClosureTests =
             printfn "hello, %A" z
         /// This uses the local type function in another closure that also captures one of the outer arguments
         let h() = g(3)
-        // This just returnes the closure to make sure we don't optimize it all away
+        // This just returns the closure to make sure we don't optimize it all away
         h
             
     let Example3 (y:'b,z:'a) = 
@@ -1108,7 +1108,7 @@ module InnerConstrainedClosureTests =
             printfn "hello, %A" z
         /// This uses the local type function in another closure that also captures one of the outer arguments
         let h() = g(3,y)
-        // This just returnes the closure to make sure we don't optimize it all away
+        // This just returns the closure to make sure we don't optimize it all away
         h
 
     let Example4 (y:'b,z:'a) = 
@@ -1119,7 +1119,7 @@ module InnerConstrainedClosureTests =
         let h1() = g(3,4,y)
         /// This uses the local type function in another closure that also captures one of the outer arguments
         let h2() = g("3","4",y)
-        // This just returnes the closure to make sure we don't optimize it all away
+        // This just returns the closure to make sure we don't optimize it all away
         h1,h2
 
 
@@ -1132,7 +1132,7 @@ module InnerConstrainedClosureTests =
         let h1() = g(3,4,y)
         /// This uses the local type function in another closure that also captures one of the outer arguments
         let h2() = g("3","4",y)
-        // This just returnes the closure to make sure we don't optimize it all away
+        // This just returns the closure to make sure we don't optimize it all away
         h1,h2
 
     let Example6 (y:'b,z:'a) = 
@@ -1461,7 +1461,7 @@ module Test_Dev10_Bug_917383 =
 
 /// This gave  a peverify error due to bad codegen
 module DevDiv_Bug_918202 = 
-    type sideffect = (unit -> unit) 
+    type sideeffect = (unit -> unit) 
     type 'a refopt = 'a ref option 
     type FwdRev<'x,'xb>(rev) = 
          let rev : 'xb refopt       = rev 
@@ -1766,9 +1766,9 @@ module GenericPropertyConstraintSolvedByRecord =
 
 /// In this case, the presence of the Method(obj) overload meant overload resolution was being applied and resolving to that
 /// overload, even before the full signature of the trait constraint was known.
-module MethodOverloadingForTraitConstraintsIsNotDeterminedUntilSignatureIsKnnown =
+module MethodOverloadingForTraitConstraintsIsNotDeterminedUntilSignatureIsKnown =
     type X =
-        static member Method (a: obj) = 1
+        static member Method (a: objnull) = 1
         static member Method (a: int) = 2
         static member Method (a: int64) = 3
 
@@ -2339,7 +2339,7 @@ module TestSubtypeMatching11 =
     [<Sealed>]
     type E() = inherit A()
 
-    let toName (x: obj * obj) =
+    let toName (x: objnull * objnull) =
         match x with
         | null, :? E -> "0E"
         | (:? A), :? E -> "AE"
@@ -2418,7 +2418,7 @@ module TestSubtypeMatching12 =
     type C() =
         interface IC
 
-    let toName (x: obj) =
+    let toName (x: objnull) =
         match x with
         | null -> "null"
         | :? IA when false -> "IA fail"
@@ -2444,7 +2444,7 @@ module TestSubtypeMatching13 =
     type C() =
         interface IC
 
-    let toName (x: obj) =
+    let toName (x: objnull) =
         match x with
         | null when false -> "null"
         | :? IA -> "IA"
@@ -2545,7 +2545,7 @@ let aa =
   match !failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
+      printf "TEST PASSED OK" ;
       exit 0
   | _ -> 
       stdout.WriteLine "Test Failed"

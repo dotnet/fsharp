@@ -2,6 +2,7 @@
 
 namespace FSharp.Compiler.Symbols
 
+open System
 open System.IO
 
 open Internal.Utilities.Library  
@@ -117,8 +118,7 @@ module internal SymbolHelpers =
         | Item.ImplicitOp (_, {contents = Some(TraitConstraintSln.FSMethSln(vref=vref))}) -> Some vref.Range
         | Item.ImplicitOp _ -> None
         | Item.UnqualifiedType tcrefs -> tcrefs |> List.tryPick (rangeOfEntityRef preferFlag >> Some)
-        | Item.DelegateCtor ty 
-        | Item.FakeInterfaceCtor ty -> ty |> tryNiceEntityRefOfTyOption |> Option.map (rangeOfEntityRef preferFlag)
+        | Item.DelegateCtor ty -> ty |> tryNiceEntityRefOfTyOption |> Option.map (rangeOfEntityRef preferFlag)
         | Item.NewDef _ -> None
 
     // Provided type definitions do not have a useful F# CCU for the purposes of goto-definition.
@@ -189,7 +189,6 @@ module internal SymbolHelpers =
         | Item.Types(_, tys) ->
             tys |> List.tryPick (tryNiceEntityRefOfTyOption >> Option.bind computeCcuOfTyconRef)
 
-        | Item.FakeInterfaceCtor(ty)
         | Item.DelegateCtor(ty) ->
             ty |> tryNiceEntityRefOfTyOption |> Option.bind computeCcuOfTyconRef
 
@@ -255,7 +254,7 @@ module internal SymbolHelpers =
         | FSharpXmlDoc.None
         | FSharpXmlDoc.FromXmlText _ -> xmlDoc
         | FSharpXmlDoc.FromXmlFile(dllName, xmlSig) ->
-            TryFindXmlDocByAssemblyNameAndSig infoReader (Path.GetFileNameWithoutExtension dllName) xmlSig
+            TryFindXmlDocByAssemblyNameAndSig infoReader (!!Path.GetFileNameWithoutExtension(dllName)) xmlSig
             |> Option.map FSharpXmlDoc.FromXmlText
             |> Option.defaultValue xmlDoc
 
@@ -282,11 +281,10 @@ module internal SymbolHelpers =
         | Item.ILField finfo ->
             mkXmlComment (GetXmlDocSigOfILFieldInfo infoReader m finfo)
 
-        | Item.FakeInterfaceCtor ty
         | Item.DelegateCtor ty
         | Item.Types(_, ty :: _) ->
             match ty with
-            | AbbrevOrAppTy tcref ->
+            | AbbrevOrAppTy(tcref, _) ->
                 mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
             | _ -> FSharpXmlDoc.None
 
@@ -358,13 +356,13 @@ module internal SymbolHelpers =
         [ for tp, ty in prettyTyparInst -> 
             wordL (tagTypeParameter ("'" + tp.DisplayName))  ^^ wordL (tagText (FSComp.SR.descriptionWordIs())) ^^ NicePrint.layoutType denv ty  ]
 
+    [<return: Struct>]
     let (|ItemWhereTypIsPreferred|_|) item = 
         match item with 
         | Item.DelegateCtor ty
         | Item.CtorGroup(_, [DefaultStructCtor(_, ty)])
-        | Item.FakeInterfaceCtor ty
-        | Item.Types(_, [ty])  -> Some ty
-        | _ -> None
+        | Item.Types(_, [ty])  -> ValueSome ty
+        | _ -> ValueNone
 
     /// Specifies functions for comparing 'Item' objects with respect to the user 
     /// (this means that some values that are not technically equal are treated as equal 
@@ -397,7 +395,6 @@ module internal SymbolHelpers =
               | Item.ActivePatternResult _
               | Item.AnonRecdField _
               | Item.OtherName _
-              | Item.FakeInterfaceCtor _
               | Item.ImplicitOp _
               | Item.NewDef _
               | Item.UnionCaseField _
@@ -409,66 +406,72 @@ module internal SymbolHelpers =
               //| _ -> false
               
           member x.Equals(item1, item2) = 
-            // This may explore assemblies that are not in the reference set.
-            // In this case just bail out and assume items are not equal
-            protectAssemblyExploration false (fun () -> 
-              let equalHeadTypes(ty1, ty2) =
-                  match tryTcrefOfAppTy g ty1 with
-                  | ValueSome tcref1 ->
-                    match tryTcrefOfAppTy g ty2 with
-                    | ValueSome tcref2 -> tyconRefEq g tcref1 tcref2
-                    | _ -> typeEquiv g ty1 ty2
-                  | _ -> typeEquiv g ty1 ty2
+#if !NO_CHECKNULLS
+            match item1,item2 with
+            | null,null -> true
+            | null,_ | _,null -> false
+            | item1,item2 ->
+#endif
+                // This may explore assemblies that are not in the reference set.
+                // In this case just bail out and assume items are not equal
+                protectAssemblyExploration false (fun () -> 
+                  let equalHeadTypes(ty1, ty2) =
+                      match tryTcrefOfAppTy g ty1 with
+                      | ValueSome tcref1 ->
+                        match tryTcrefOfAppTy g ty2 with
+                        | ValueSome tcref2 -> tyconRefEq g tcref1 tcref2
+                        | _ -> typeEquiv g ty1 ty2
+                      | _ -> typeEquiv g ty1 ty2
 
-              ItemsAreEffectivelyEqual g item1 item2 || 
+                  ItemsAreEffectivelyEqual g item1 item2 || 
 
-              // Much of this logic is already covered by 'ItemsAreEffectivelyEqual'
-              match item1, item2 with 
-              | Item.DelegateCtor ty1, Item.DelegateCtor ty2 -> equalHeadTypes(ty1, ty2)
-              | Item.Types(dn1, ty1 :: _), Item.Types(dn2, ty2 :: _) ->
-                  // Bug 4403: We need to compare names as well, because 'int' and 'Int32' are physically the same type, but we want to show both
-                  dn1 = dn2 && equalHeadTypes(ty1, ty2) 
+                  // Much of this logic is already covered by 'ItemsAreEffectivelyEqual'
+                  match item1, item2 with 
+                  | Item.DelegateCtor ty1, Item.DelegateCtor ty2 -> equalHeadTypes(ty1, ty2)
+                  | Item.Types(dn1, ty1 :: _), Item.Types(dn2, ty2 :: _) ->
+                      // Bug 4403: We need to compare names as well, because 'int' and 'Int32' are physically the same type, but we want to show both
+                      dn1 = dn2 && equalHeadTypes(ty1, ty2) 
               
-              // Prefer a type to a DefaultStructCtor, a DelegateCtor and a FakeInterfaceCtor 
-              | ItemWhereTypIsPreferred ty1, ItemWhereTypIsPreferred ty2 -> equalHeadTypes(ty1, ty2) 
+                  // Prefer a type to a DefaultStructCtor, a DelegateCtor and a FakeInterfaceCtor 
+                  | ItemWhereTypIsPreferred ty1, ItemWhereTypIsPreferred ty2 -> equalHeadTypes(ty1, ty2) 
 
-              | Item.ExnCase tcref1, Item.ExnCase tcref2 -> tyconRefEq g tcref1 tcref2
-              | Item.ILField(fld1), Item.ILField(fld2) ->
-                  ILFieldInfo.ILFieldInfosUseIdenticalDefinitions fld1 fld2
-              | Item.CustomOperation (_, _, Some minfo1), Item.CustomOperation (_, _, Some minfo2) -> 
-                    MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2
-              | Item.TypeVar (nm1, tp1), Item.TypeVar (nm2, tp2) -> 
-                    (nm1 = nm2) && typarRefEq tp1 tp2
-              | Item.ModuleOrNamespaces(modref1 :: _), Item.ModuleOrNamespaces(modref2 :: _) -> fullDisplayTextOfModRef modref1 = fullDisplayTextOfModRef modref2
-              | Item.SetterArg(id1, _), Item.SetterArg(id2, _) -> Range.equals id1.idRange id2.idRange && id1.idText = id2.idText
-              | Item.MethodGroup(_, meths1, _), Item.MethodGroup(_, meths2, _) -> 
-                  Seq.zip meths1 meths2 |> Seq.forall (fun (minfo1, minfo2) ->
-                    MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
-              | (Item.Value vref1 | Item.CustomBuilder (_, vref1)), (Item.Value vref2 | Item.CustomBuilder (_, vref2)) -> 
-                  valRefEq g vref1 vref2
-              | Item.ActivePatternCase(APElemRef(_apinfo1, vref1, idx1, _)), Item.ActivePatternCase(APElemRef(_apinfo2, vref2, idx2, _)) ->
-                  idx1 = idx2 && valRefEq g vref1 vref2
-              | Item.UnionCase(UnionCaseInfo(_, ur1), _), Item.UnionCase(UnionCaseInfo(_, ur2), _) -> 
-                  g.unionCaseRefEq ur1 ur2
-              | Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref1, n1))), Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref2, n2))) -> 
-                  (tyconRefEq g tcref1 tcref2) && (n1 = n2) // there is no direct function as in the previous case
-              | Item.Property(info = pi1s), Item.Property(info = pi2s) -> 
-                  (pi1s, pi2s) ||> List.forall2 (fun pi1 pi2 -> PropInfo.PropInfosUseIdenticalDefinitions pi1 pi2)
-              | Item.Event evt1, Item.Event evt2 -> 
-                  EventInfo.EventInfosUseIdenticalDefinitions evt1 evt2
-              | Item.AnonRecdField(anon1, _, i1, _), Item.AnonRecdField(anon2, _, i2, _) ->
-                 anonInfoEquiv anon1 anon2 && i1 = i2
-              | Item.Trait traitInfo1, Item.Trait traitInfo2 ->
-                 (traitInfo1.MemberLogicalName = traitInfo2.MemberLogicalName)
-              | Item.CtorGroup(_, meths1), Item.CtorGroup(_, meths2) ->
-                  (meths1, meths2)
-                  ||> List.forall2 (fun minfo1 minfo2 -> MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
-              | Item.UnqualifiedType tcrefs1, Item.UnqualifiedType tcrefs2 ->
-                  (tcrefs1, tcrefs2)
-                  ||> List.forall2 (fun tcref1 tcref2 -> tyconRefEq g tcref1 tcref2)
-              | Item.Types(_, [AbbrevOrAppTy tcref1]), Item.UnqualifiedType([tcref2]) -> tyconRefEq g tcref1 tcref2
-              | Item.UnqualifiedType([tcref1]), Item.Types(_, [AbbrevOrAppTy tcref2]) -> tyconRefEq g tcref1 tcref2
-              | _ -> false)
+                  | Item.ExnCase tcref1, Item.ExnCase tcref2 -> tyconRefEq g tcref1 tcref2
+                  | Item.ILField(fld1), Item.ILField(fld2) ->
+                      ILFieldInfo.ILFieldInfosUseIdenticalDefinitions fld1 fld2
+                  | Item.CustomOperation (_, _, Some minfo1), Item.CustomOperation (_, _, Some minfo2) -> 
+                        MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2
+                  | Item.TypeVar (nm1, tp1), Item.TypeVar (nm2, tp2) -> 
+                        (nm1 = nm2) && typarRefEq tp1 tp2
+                  | Item.ModuleOrNamespaces(modref1 :: _), Item.ModuleOrNamespaces(modref2 :: _) -> fullDisplayTextOfModRef modref1 = fullDisplayTextOfModRef modref2
+                  | Item.SetterArg(id1, _), Item.SetterArg(id2, _) -> Range.equals id1.idRange id2.idRange && id1.idText = id2.idText
+                  | Item.MethodGroup(_, meths1, _), Item.MethodGroup(_, meths2, _) -> 
+                      Seq.zip meths1 meths2 |> Seq.forall (fun (minfo1, minfo2) ->
+                        MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
+                  | (Item.Value vref1 | Item.CustomBuilder (_, vref1)), (Item.Value vref2 | Item.CustomBuilder (_, vref2)) -> 
+                      valRefEq g vref1 vref2
+                  | Item.ActivePatternCase(APElemRef(_apinfo1, vref1, idx1, _)), Item.ActivePatternCase(APElemRef(_apinfo2, vref2, idx2, _)) ->
+                      idx1 = idx2 && valRefEq g vref1 vref2
+                  | Item.UnionCase(UnionCaseInfo(_, ur1), _), Item.UnionCase(UnionCaseInfo(_, ur2), _) -> 
+                      g.unionCaseRefEq ur1 ur2
+                  | Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref1, n1))), Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref2, n2))) -> 
+                      (tyconRefEq g tcref1 tcref2) && (n1 = n2) // there is no direct function as in the previous case
+                  | Item.Property(info = pi1s), Item.Property(info = pi2s) -> 
+                      (pi1s, pi2s) ||> List.forall2 PropInfo.PropInfosUseIdenticalDefinitions
+                  | Item.Event evt1, Item.Event evt2 -> 
+                      EventInfo.EventInfosUseIdenticalDefinitions evt1 evt2
+                  | Item.AnonRecdField(anon1, _, i1, _), Item.AnonRecdField(anon2, _, i2, _) ->
+                     anonInfoEquiv anon1 anon2 && i1 = i2
+                  | Item.Trait traitInfo1, Item.Trait traitInfo2 ->
+                     (traitInfo1.MemberLogicalName = traitInfo2.MemberLogicalName)
+                  | Item.CtorGroup(_, meths1), Item.CtorGroup(_, meths2) ->
+                      (meths1, meths2)
+                      ||> List.forall2 MethInfo.MethInfosUseIdenticalDefinitions
+                  | Item.UnqualifiedType tcrefs1, Item.UnqualifiedType tcrefs2 ->
+                      (tcrefs1, tcrefs2)
+                      ||> List.forall2 (fun tcref1 tcref2 -> tyconRefEq g tcref1 tcref2)
+                  | Item.Types(_, [AbbrevOrAppTy(tcref1, _)]), Item.UnqualifiedType([tcref2]) -> tyconRefEq g tcref1 tcref2
+                  | Item.UnqualifiedType([tcref1]), Item.Types(_, [AbbrevOrAppTy(tcref2, _)]) -> tyconRefEq g tcref1 tcref2
+                  | _ -> false)
               
           member x.GetHashCode item =
             // This may explore assemblies that are not in the reference set.
@@ -503,7 +506,6 @@ module internal SymbolHelpers =
               | Item.ActivePatternResult _
               | Item.AnonRecdField _
               | Item.OtherName _
-              | Item.FakeInterfaceCtor _
               | Item.ImplicitOp _
               | Item.NewDef _
               | Item.UnionCaseField _
@@ -546,6 +548,7 @@ module internal SymbolHelpers =
     let SimplerDisplayEnv denv = 
         { denv with shortConstraints=true
                     showStaticallyResolvedTyparAnnotations=false
+                    showNullnessAnnotations = Some true
                     abbreviateAdditionalConstraints=false
                     suppressNestedTypes=true
                     maxMembers=Some EnvMisc2.maxMembers }
@@ -570,7 +573,6 @@ module internal SymbolHelpers =
         | Item.MethodGroup(_, _, Some minfo) -> buildString (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef; bprintf os ".%s" minfo.DisplayName)        
         | Item.MethodGroup(_, minfo :: _, _) -> buildString (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef; bprintf os ".%s" minfo.DisplayName)        
         | Item.UnqualifiedType (tcref :: _) -> buildString (fun os -> NicePrint.outputTyconRef denv os tcref)
-        | Item.FakeInterfaceCtor ty 
         | Item.DelegateCtor ty 
         | Item.Types(_, ty :: _) -> 
             match tryTcrefOfAppTy g ty with
@@ -654,7 +656,7 @@ module internal SymbolHelpers =
         | Item.Types(_, tys) ->
             let doc =
                 match tys with
-                | AbbrevOrAppTy tcref :: _ ->
+                | AbbrevOrAppTy(tcref, _) :: _ ->
                     if tyconRefUsesLocalXmlDoc g.compilingFSharpCore tcref || tcref.XmlDoc.NonEmpty then
                         Some tcref.XmlDoc
                     else
@@ -715,7 +717,6 @@ module internal SymbolHelpers =
         | Item.ActivePatternResult _
         | Item.NewDef _
         | Item.ILField _
-        | Item.FakeInterfaceCtor _
         | Item.DelegateCtor _ ->
         //|  _ ->
             GetXmlCommentForItemAux None infoReader m item
@@ -737,19 +738,21 @@ module internal SymbolHelpers =
 #if !NO_TYPEPROVIDERS
 
     /// Determine if an item is a provided type 
+    [<return: Struct>]
     let (|ItemIsProvidedType|_|) g item =
         match item with
         | Item.Types(_name, tys) ->
             match tys with
             | [AppTy g (tcref, _typeInst)] ->
                 if tcref.IsProvidedErasedTycon || tcref.IsProvidedGeneratedTycon then
-                    Some tcref
+                    ValueSome tcref
                 else
-                    None
-            | _ -> None
-        | _ -> None
+                    ValueNone
+            | _ -> ValueNone
+        | _ -> ValueNone
 
     /// Determine if an item is a provided type that has static parameters
+    [<return: Struct>]
     let (|ItemIsProvidedTypeWithStaticArguments|_|) m g item =
         match item with
         | Item.Types(_name, tys) ->
@@ -762,38 +765,40 @@ module internal SymbolHelpers =
                         | _ -> failwith "unreachable"
                     let staticParameters = typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, provider) -> typeBeforeArguments.GetStaticParameters provider), range=m) 
                     let staticParameters = staticParameters.PApplyArray(id, "GetStaticParameters", m)
-                    Some staticParameters
+                    ValueSome staticParameters
                 else
-                    None
-            | _ -> None
-        | _ -> None
+                    ValueNone
+            | _ -> ValueNone
+        | _ -> ValueNone
 
+    [<return: Struct>]
     let (|ItemIsProvidedMethodWithStaticArguments|_|) item =
         match item with
         // Prefer the static parameters from the uninstantiated method info
         | Item.MethodGroup(_, _, Some minfo) ->
             match minfo.ProvidedStaticParameterInfo  with 
-            | Some (_, staticParameters) -> Some staticParameters
-            | _ -> None
+            | Some (_, staticParameters) -> ValueSome staticParameters
+            | _ -> ValueNone
         | Item.MethodGroup(_, [minfo], _) ->
             match minfo.ProvidedStaticParameterInfo  with 
-            | Some (_, staticParameters) -> Some staticParameters
-            | _ -> None
-        | _ -> None
+            | Some (_, staticParameters) -> ValueSome staticParameters
+            | _ -> ValueNone
+        | _ -> ValueNone
 
     /// Determine if an item has static arguments
+    [<return: Struct>]
     let (|ItemIsWithStaticArguments|_|) m g item =
         match item with
-        | ItemIsProvidedTypeWithStaticArguments m g staticParameters -> Some staticParameters
-        | ItemIsProvidedMethodWithStaticArguments staticParameters -> Some staticParameters
-        | _ -> None
+        | ItemIsProvidedTypeWithStaticArguments m g staticParameters -> ValueSome staticParameters
+        | ItemIsProvidedMethodWithStaticArguments staticParameters -> ValueSome staticParameters
+        | _ -> ValueNone
 
 #endif
 
     /// Get the "F1 Keyword" associated with an item, for looking up documentation help indexes on the web
     let rec GetF1Keyword (g: TcGlobals) item = 
 
-        let getKeywordForMethInfo (minfo : MethInfo) =
+        let rec getKeywordForMethInfo (minfo : MethInfo) =
             match minfo with 
             | FSMeth(_, _, vref, _) ->
                 match vref.TryDeclaringEntity with
@@ -808,6 +813,7 @@ module internal SymbolHelpers =
                     if nGenericParams > 0 then "``"+(nGenericParams.ToString()) else ""
                 sprintf "%s.%s%s" typeString minfo.RawMetadata.Name paramString |> Some
 
+            | MethInfoWithModifiedReturnType(mi,_) -> getKeywordForMethInfo mi
             | DefaultStructCtor _  -> None
 #if !NO_TYPEPROVIDERS
             | ProvidedMeth _ -> None
@@ -847,7 +853,6 @@ module internal SymbolHelpers =
 #endif
         | Item.Types(_, AppTy g (tcref, _) :: _) 
         | Item.DelegateCtor(AppTy g (tcref, _))
-        | Item.FakeInterfaceCtor(AppTy g (tcref, _))
         | Item.UnqualifiedType (tcref :: _)
         | Item.ExnCase tcref -> 
             // strip off any abbreviation
@@ -858,7 +863,6 @@ module internal SymbolHelpers =
         // Pathological cases of the above
         | Item.Types _ 
         | Item.DelegateCtor _
-        | Item.FakeInterfaceCtor _
         | Item.UnqualifiedType [] -> 
             None
 
@@ -875,7 +879,7 @@ module internal SymbolHelpers =
                         // works similar to generation of xml-docs at tastops.fs, probably too similar
                         // TODO: check if this code can be implemented using xml-doc generation functionality
                         let prefix = path.AccessPath |> Seq.map fst |> String.concat "."
-                        let fullName = if prefix = "" then modref.CompiledName else prefix + "." + modref.CompiledName
+                        let fullName = if String.IsNullOrEmpty(prefix) then modref.CompiledName else prefix + "." + modref.CompiledName
                         Some fullName
                         )
 #endif
@@ -957,7 +961,6 @@ module internal SymbolHelpers =
             minfos |> List.map (fun minfo -> { Item = Item.MethodGroup(nm, [minfo], orig); TyparInstantiation = item.TyparInstantiation })
         | Item.CtorGroup(nm, cinfos) ->
             cinfos |> List.map (fun minfo -> { Item = Item.CtorGroup(nm, [minfo]); TyparInstantiation = item.TyparInstantiation }) 
-        | Item.FakeInterfaceCtor _
         | Item.DelegateCtor _ -> [item]
         | Item.NewDef _ 
         | Item.ILField _ -> []

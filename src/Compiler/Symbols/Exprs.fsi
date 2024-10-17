@@ -126,7 +126,12 @@ module public FSharpExprPatterns =
     /// Like Call but also indicates witness arguments
     val (|CallWithWitnesses|_|):
         FSharpExpr ->
-            (FSharpExpr option * FSharpMemberOrFunctionOrValue * FSharpType list * FSharpType list * FSharpExpr list * FSharpExpr list) option
+            (FSharpExpr option *
+            FSharpMemberOrFunctionOrValue *
+            FSharpType list *
+            FSharpType list *
+            FSharpExpr list *
+            FSharpExpr list) option
 
     /// Matches expressions which are calls to object constructors
     val (|NewObject|_|): FSharpExpr -> (FSharpMemberOrFunctionOrValue * FSharpType list * FSharpExpr list) option
@@ -225,7 +230,13 @@ module public FSharpExprPatterns =
     /// Matches try/with expressions
     val (|TryWith|_|):
         FSharpExpr ->
-            (FSharpExpr * FSharpMemberOrFunctionOrValue * FSharpExpr * FSharpMemberOrFunctionOrValue * FSharpExpr * DebugPointAtTry * DebugPointAtWith) option
+            (FSharpExpr *
+            FSharpMemberOrFunctionOrValue *
+            FSharpExpr *
+            FSharpMemberOrFunctionOrValue *
+            FSharpExpr *
+            DebugPointAtTry *
+            DebugPointAtWith) option
 
     /// Matches expressions which create an instance of a delegate type
     val (|NewDelegate|_|): FSharpExpr -> (FSharpType * FSharpExpr) option
@@ -251,6 +262,3 @@ module public FSharpExprPatterns =
 
     /// Indicates a witness argument index from the witness arguments supplied to the enclosing method
     val (|WitnessArg|_|): FSharpExpr -> int option
-
-    /// Matches an expression with a debug point
-    val (|DebugPoint|_|): FSharpExpr -> (DebugPointAtLeafExpr * FSharpExpr) option

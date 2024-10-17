@@ -7,6 +7,7 @@ open FSharp.Test.Compiler
 
 module SeqExpressionTailCalls =
 
+    // Note: no realsignature variations are performed because these test cases do not involve any static initialization
     let verifyCompilation compilation =
         compilation
         |> withOptions [ "--test:EmitFeeFeeAs100001" ]
@@ -25,6 +26,6 @@ module SeqExpressionTailCalls =
 
     // SOURCE=SeqExpressionTailCalls02.fs SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd SeqExpressionTailCalls02.exe"	# SeqExpressionTailCalls02.fs -
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SeqExpressionTailCalls02.fs"|])>]
-    let ``SeqExpressionSteppingTest02_fs`` compilation =
+    let ``SeqExpressionTailCalls02_fs`` compilation =
         compilation
         |> verifyCompilation

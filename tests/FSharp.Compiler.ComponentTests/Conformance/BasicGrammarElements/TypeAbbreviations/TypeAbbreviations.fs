@@ -150,14 +150,14 @@ module TypeAbbreviations =
             (Error 10, Line 6, Col 16, Line 6, Col 18, "Unexpected start of quotation in type definition")
         ]
 
-    //SOURCE=E_InheritTypeAbrev.fs                                                                              # E_InheritTypeAbrev.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_InheritTypeAbrev.fs"|])>]
-    let ``E_InheritTypeAbrev_fs`` compilation =
+    //SOURCE=E_InheritTypeAbbrev.fs                                                                              # E_InheritTypeAbbrev.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_InheritTypeAbbrev.fs"|])>]
+    let ``E_InheritTypeAbbrev_fs`` compilation =
         compilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 945, Line 9, Col 9, Line 9, Col 22, "Cannot inherit a sealed type")
+            (Error 945, Line 9, Col 17, Line 9, Col 22, "Cannot inherit a sealed type")
         ]
 
     //SOURCE=E_PrivateTypeAbbreviation02.fs SCFLAGS="--test:ErrorRanges"                                        # E_PrivateTypeAbbreviation02.fs

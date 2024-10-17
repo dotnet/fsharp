@@ -1,0 +1,78 @@
+name: Repository lockdown check
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    branches:
+        - 'main'
+        - 'release/*'
+permissions:
+  issues: write
+  pull-requests: write
+jobs:
+  repository_lockdown:
+    permissions:
+       issues: write
+       pull-requests: write
+    env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check if lockdown is in place
+      run: |
+        set -e
+        if [[ ${{ vars.LOCKDOWN }} == "true" ]]; then
+          exit 1
+        fi
+    # Did bot already comment the PR?
+    - name: Find Comment
+      if: (success() || failure())
+      uses: peter-evans/find-comment@v2.4.0
+      id: fc
+      with:
+        issue-number: ${{github.event.pull_request.number}}
+        comment-author: 'github-actions[bot]'
+        body-includes: '<!-- DO_NOT_REMOVE: repository_lockdown -->'
+    # If not, create a new comment
+    - name: Create comment
+      if: steps.fc.outputs.comment-id == '' && failure()
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ github.token }}
+        script: |
+            let body = "<!-- DO_NOT_REMOVE: repository_lockdown -->\n\n> [!CAUTION]\n>Repository is on lockdown for maintenance, all merges are on hold."
+            const comment = await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+            });
+            return comment.data.id;
+    # If yes, update the comment
+    - name: Update comment
+      if: steps.fc.outputs.comment-id != '' && failure()
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ github.token }}
+        script: |
+            let body = "<!-- DO_NOT_REMOVE: repository_lockdown -->\n\n> [!CAUTION]\n>Repository is on lockdown for maintenance, all merges are on hold."
+            const comment = await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: ${{steps.fc.outputs.comment-id}},
+                body: body
+            });
+            return comment.data.id;
+    # If comment exists, but we are no longer in maintenance mode, delete the comment.
+    - name: Delete comment
+      if: steps.fc.outputs.comment-id != '' && success()
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ github.token }}
+        script: |
+            let body = "<!-- DO_NOT_REMOVE: repository_lockdown -->\n\n> [!CAUTION]\n>Repository is on lockdown for maintenance, all merges are on hold."
+            const comment = await github.rest.issues.deleteComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: ${{steps.fc.outputs.comment-id}}
+            });
+            return 0;

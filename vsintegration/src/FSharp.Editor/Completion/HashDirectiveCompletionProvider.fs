@@ -29,11 +29,7 @@ type internal HashCompletion =
         }
 
 type internal HashDirectiveCompletionProvider
-    (
-        workspace: Workspace,
-        projectInfoManager: FSharpProjectOptionsManager,
-        completions: HashCompletion list
-    ) =
+    (workspace: Workspace, projectInfoManager: FSharpProjectOptionsManager, completions: HashCompletion list) =
 
     inherit FSharpCommonCompletionProviderBase()
 
@@ -55,8 +51,8 @@ type internal HashDirectiveCompletionProvider
             position
         )
 
-    let getFileGlyph (extention: string) =
-        match extention with
+    let getFileGlyph (extension: string) =
+        match extension with
         | ".exe"
         | ".dll" -> Some Glyph.Assembly
         | _ -> None

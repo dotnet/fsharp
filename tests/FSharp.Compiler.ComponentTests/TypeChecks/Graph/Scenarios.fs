@@ -2,41 +2,36 @@
 
 open TestUtils
 
-type Scenario =
+type FileInScenario =
     {
-        Name: string
-        Files: FileInScenario array
-    }
-
-    override x.ToString() = x.Name
-
-and FileInScenario =
-    {
-        FileWithAST: TestFileWithAST
+        Index: int
+        FileName: string
         ExpectedDependencies: Set<int>
         Content: string
     }
 
+type Scenario =
+    {
+        Name: string
+        Files: FileInScenario list
+    }
+
+    override x.ToString() = x.Name
+
 let private scenario name files =
-    let files = files |> List.toArray |> Array.mapi (fun idx f -> f idx)
+    let files = files |> List.mapi (fun idx f -> f idx)
     { Name = name; Files = files }
 
 let private sourceFile fileName content (dependencies: Set<int>) =
     fun idx ->
-        let fileWithAST =
-            {
-                Idx = idx
-                AST = parseSourceCode (fileName, content)
-                File = fileName
-            }
-
         {
-            FileWithAST = fileWithAST
+            Index = idx
+            FileName = fileName
             ExpectedDependencies = dependencies
             Content = content
         }
 
-let internal codebases =
+let internal scenarios =
     [
         scenario
             "Link via full open statement"
@@ -256,7 +251,7 @@ module Y.C
 
 // This open statement does not do anything.
 // It can safely be removed, but because of its presence we need to link it to something that exposes the namespace X.
-// We try and pick the file with the lowest index 
+// We try and pick the file with the lowest index
 open X
 
 let c = 0
@@ -572,7 +567,7 @@ type Bar() =
     static member Foo () : unit =
         failwith ""
 
-let Foo () : unit = 
+let Foo () : unit =
     Bar.Foo ()
 """
                     (set [| 0 |])
@@ -611,5 +606,483 @@ open Foo.Bar // ghost dependency
 open Foo.Bar.Y // Y.fs
 """
                     (set [| 1 |])
+            ]
+        scenario
+            "Identifier in type augmentation can link files"
+            [
+                sourceFile
+                    "PoolingValueTasks.fs"
+                    """
+namespace IcedTasks
+
+module PoolingValueTasks =
+    type PoolingValueTaskBuilderBase() =
+        class
+        end
+"""
+                    Set.empty
+                sourceFile
+                    "ColdTask.fs"
+                    """
+namespace IcedTasks
+
+module ColdTasks =
+    module AsyncExtensions =
+        type PoolingValueTasks.PoolingValueTaskBuilderBase with
+            member this.Source (a:int) = a
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Identifier in type augmentation in signature file can link files"
+            [
+                sourceFile
+                    "PoolingValueTasks.fsi"
+                    """
+namespace IcedTasks
+
+module PoolingValueTasks =
+    type PoolingValueTaskBuilderBase =
+        class
+            new: unit -> PoolingValueTaskBuilderBase
+        end
+"""
+                    Set.empty
+                sourceFile
+                    "PoolingValueTasks.fs"
+                    """
+namespace IcedTasks
+
+module PoolingValueTasks =
+    type PoolingValueTaskBuilderBase() =
+        class
+        end
+"""
+                    (set [| 0 |])
+                sourceFile
+                    "ColdTask.fsi"
+                    """
+namespace IcedTasks
+
+module ColdTasks =
+    module AsyncExtensions =
+        type PoolingValueTasks.PoolingValueTaskBuilderBase with
+
+            member Source: a: int -> int
+"""
+                    (set [| 0 |])
+                sourceFile
+                    "ColdTask.fs"
+                    """
+namespace IcedTasks
+
+module ColdTasks =
+    module AsyncExtensions =
+        type PoolingValueTasks.PoolingValueTaskBuilderBase with
+            member this.Source (a:int) = a
+"""
+                    (set [| 0; 2 |])
+            ]
+        scenario
+            "ModuleSuffix clash"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace F.General
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module F
+
+let br () = ()
+"""
+                    Set.empty
+
+                sourceFile
+                    "C.fs"
+                    """
+module S
+
+[<EntryPoint>]
+let main _ =
+    F.br ()
+    0
+"""
+                    (set [| 1 |])
+            ]
+        scenario
+            "ModuleSuffix clash, module before namespace"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module F
+
+let br () = ()
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+namespace F.General
+"""
+                    Set.empty
+
+                sourceFile
+                    "C.fs"
+                    """
+module S
+
+[<EntryPoint>]
+let main _ =
+    F.br ()
+    0
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Ghost dependency via top-level namespace"
+            [
+                sourceFile
+                    "Graph.fs"
+                    """
+namespace Graphoscope.Graph
+
+type UndirectedGraph = obj
+"""
+                    Set.empty
+                sourceFile
+                    "DiGraph.fs"
+                    """
+namespace Graphoscope
+
+open Graphoscope
+
+type DiGraph = obj
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Unused namespace should be detected"
+            [
+                sourceFile
+                    "File1.fs"
+                    """
+namespace My.Great.Namespace
+"""
+                    Set.empty
+
+                sourceFile
+                    "File2.fs"
+                    """
+namespace My.Great.Namespace
+
+open My.Great.Namespace
+
+type Foo = class end
+"""
+                    (set [| 0 |])
+
+                sourceFile
+                    "Program"
+                    """
+module RunMe
+printfn "Hello"
+"""
+                    Set.empty
+            ]
+        scenario
+            "Nameof module with namespace"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace X.Y.Z
+
+module Foo =
+    let x = 2
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+namespace X.Y.Z
+
+module Point =
+    let y = nameof Foo
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Nameof module without namespace"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+module Foo
+
+let x = 2
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Point
+
+let y = nameof Foo
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Single module name should always be checked, regardless of own namespace"
+            [
+                sourceFile "X.fs" "namespace X.Y" Set.empty
+                sourceFile
+                    "A.fs"
+                    """
+module Foo
+
+let x = 2
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+namespace X.Y
+
+type T() =
+    let _ = nameof Foo
+"""
+                    (set [| 1 |])
+            ]
+        scenario
+            "nameof pattern"
+            [
+                sourceFile "A.fs" "module Foo" Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Bar
+
+do
+    match "" with
+    | nameof Foo -> ()
+    | _ -> ()
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "parentheses around module name in nameof pattern"
+            [
+                sourceFile "A.fs" "module Foo" Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Bar
+
+do
+    match "" with
+    | nameof ((Foo)) -> ()
+    | _ -> ()
+"""
+                    (set [| 0 |])
+            ]
+
+        scenario
+            "parentheses around module name in nameof expression"
+            [
+                sourceFile "A.fs" "module Foo" Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module Bar
+
+let _ = nameof ((Foo))
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "prefixed module name in nameof expression"
+            [
+                sourceFile "A.fs" "module X.Y.Z" Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module B
+
+open System.ComponentModel
+
+[<Description(nameof X.Y.Z)>]
+let v = 2
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "prefixed module name in nameof pattern"
+            [
+                sourceFile "A.fs" "module X.Y.Z" Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module B
+
+do ignore (match "" with | nameof X.Y.Z -> () | _ -> ())
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "nameof type with generic parameters"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace A
+
+module B =
+    module C =
+        type D = class end
+"""
+                    Set.empty
+                sourceFile
+                    "Z.fs"
+                    """
+module Z
+
+open System.Threading.Tasks
+
+let _ = nameof Task<A.B.C.D>
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "exception syntax in namespace"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace Foo
+
+exception internal Blah
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+namespace Foo
+
+module Program =
+
+    [<EntryPoint>]
+    let main _ =
+        raise Blah
+        0
+"""
+                    (set [| 0 |])
+        ]
+        scenario
+            "exception syntax in namespace signature"
+            [
+                sourceFile
+                    "A.fsi"
+                    """
+namespace Foo
+
+exception internal Blah
+"""
+                    Set.empty
+                sourceFile
+                    "A.fs"
+                    """
+namespace Foo
+
+exception internal Blah
+"""
+                    (set [| 0 |])
+                sourceFile
+                    "B.fs"
+                    """
+namespace Foo
+
+module Program =
+
+    [<EntryPoint>]
+    let main _ =
+        raise Blah
+        0
+"""
+                    (set [| 0 |])
+        ]
+        scenario
+            "fully qualified type in tuple constructor pattern"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+namespace MyRootNamespace.A
+
+type Foo() = class end
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+namespace MyRootNamespace.A.B
+
+type Bar(foo: MyRootNamespace.A.Foo, s: string) = class end
+"""
+                    (set [| 0 |])
+            ]
+        scenario
+            "Library with using global namespace"
+            [
+                sourceFile
+                    "Library.fs"
+                    """
+namespace Lib
+module File1 =
+    let mutable discState = System.DateTime.Now
+
+module File2 =
+    [<Struct>]
+    type DiscState(rep : int) =
+        member this.Rep = rep
+
+    let mutable discState = DiscState(0)
+                    """
+                    Set.empty
+                sourceFile
+                    "App.fs"
+                    """
+module X
+let v = global.Lib.File1.discState.Second
+let v2 = global.Lib.File2.discState.Rep
+                    """
+                    (set [| 0 |])
+            ]
+        scenario
+            "Library with using global namespace as module alias"
+            [
+                sourceFile
+                    "Library.fs"
+                    """
+namespace Z
+
+module N =
+    let mutable discState = System.DateTime.Now
+                    """
+                    Set.empty
+                sourceFile
+                    "App.fs"
+                    """
+module X
+
+module Y = global.Z.N
+                    """
+                    (set [| 0 |])
             ]
     ]

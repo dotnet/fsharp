@@ -258,7 +258,7 @@ let LexerStateToNfa ctx (macros: Map<string,_>) (clauses: Clause list) =
         // These cases unwind the difficult cases in the syntax that rely on knowing the
         // entire alphabet.
         //
-        // Note we've delayed the expension of these until we've worked out all the 'special' Unicode characters
+        // Note we've delayed the expansion of these until we've worked out all the 'special' Unicode characters
         // mentioned in the entire lexer spec, i.e. we wait until GetAlphabet returns a reliable and stable answer.
         | Inp (UnicodeCategory uc) ->
             let re = Alt(fun ctx -> 

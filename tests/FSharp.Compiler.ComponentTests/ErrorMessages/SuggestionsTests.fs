@@ -77,7 +77,7 @@ let x = N.MyUnion.``My Case2``
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 39, Line 9, Col 19, Line 9,Col 31,
-                                 ("The type 'MyUnion' does not define the field, constructor or member 'My Case2'. Maybe you want one of the following:" + Environment.NewLine + "   Case2" + Environment.NewLine + "   ``My Case1``"))
+                                 ("The type 'MyUnion' does not define the field, constructor or member 'My Case2'. Maybe you want one of the following:" + Environment.NewLine + "   Case2" + Environment.NewLine + "   ``My Case1``" + Environment.NewLine + "   IsMy Case1"))
 
 
     [<Fact>]
@@ -129,22 +129,22 @@ module Collections =
 
     let f () = printfn "%s" "Hello"
 
-open Collectons
+open Collections_
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 39, Line 6, Col 6, Line 6, Col 16,
-                                 ("The namespace or module 'Collectons' is not defined. Maybe you want one of the following:" + Environment.NewLine + "   Collections"))
+        |> withSingleDiagnostic (Error 39, Line 6, Col 6, Line 6, Col 18,
+                                 ("The namespace or module 'Collections_' is not defined. Maybe you want one of the following:" + Environment.NewLine + "   Collections"))
 
     [<Fact>]
     let ``Suggest Namespaces`` () =
         FSharp """
-open System.Collectons
+open System.Lema
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 39, Line 2, Col 13, Line 2, Col 23,
-                                 "The namespace 'Collectons' is not defined.")
+        |> withSingleDiagnostic (Error 39, Line 2, Col 13, Line 2, Col 17,
+                                 "The namespace 'Lema' is not defined.")
 
     [<Fact>]
     let ``Suggest Record Labels`` () =
@@ -224,7 +224,7 @@ let u = MyUnion.AntherCase
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 39, Line 6, Col 17, Line 6, Col 27,
-                                 ("The type 'MyUnion' does not define the field, constructor or member 'AntherCase'. Maybe you want one of the following:" + Environment.NewLine + "   AnotherCase"))
+                                 ("The type 'MyUnion' does not define the field, constructor or member 'AntherCase'. Maybe you want one of the following:" + Environment.NewLine + "   AnotherCase" + Environment.NewLine + "   IsAnotherCase"))
 
     [<Fact>]
     let ``Suggest Union Type for RequireQualifiedAccess Unions`` () =

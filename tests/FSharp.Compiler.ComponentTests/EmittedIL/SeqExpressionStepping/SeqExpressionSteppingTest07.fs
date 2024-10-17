@@ -6,11 +6,11 @@ let f () = [ if (r <- r + 1; true) then yield! failwith "" ]
 printfn "res = %A" (try f () with Failure _ -> [r])
 
 
-let testSimpleForEachSeqLoopWithOneStatement inp =
+let testSimpleForEachSeqLoopWithOneStatement (inp: int seq) =
     for x in inp do
        System.Console.WriteLine("{0}", x)
 
-let testSimpleForEachSeqLoopWithTwoStatements inp =
+let testSimpleForEachSeqLoopWithTwoStatements (inp: int seq) =
     for x in inp do
        System.Console.WriteLine("{0}", x)
        System.Console.WriteLine("{0}", x)

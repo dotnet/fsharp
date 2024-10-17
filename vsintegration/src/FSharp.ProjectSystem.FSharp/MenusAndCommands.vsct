@@ -5,7 +5,7 @@
   <Extern href="vsshlids.h"/>
   <Include href="KnownImageIds.vsct"/>
 
-  <!-- Stake a claime to existing commands so they aren't marked as unused and removed. -->
+  <!-- Stake a claim to existing commands so they aren't marked as unused and removed. -->
   <UsedCommands>
     <UsedCommand guid="guidVSStd97" id="cmdidCut"/>
     <UsedCommand guid="guidVSStd97" id="cmdidCopy"/>
@@ -332,25 +332,25 @@
     <KeyBinding guid ="guidVSStd11" id ="cmdidExecuteSelectionInInteractive" editor="guidFSharpEditorFactory" key1="VK_RETURN" mod1="Alt"  />
     <KeyBinding guid ="guidVSStd11" id ="cmdidExecuteLineInInteractive" editor="guidFSharpEditorFactory" key1="VK_OEM_7" mod1="Alt"  />
 
-    <!-- CRTL-ALT-F for FSI window - following similar bindings for "other windows" -->
+    <!-- CTRL-ALT-F for FSI window - following similar bindings for "other windows" -->
     <KeyBinding guid="guidFsiPackageCmdSet" id="cmdidFsiToolWindow"    editor="guidVSStd97" key1="F" mod1="Control Alt" />
 
-    <!-- CRTL-Break when in FSI ToolWindow is Interrupt -->
+    <!-- CTRL-Break when in FSI ToolWindow is Interrupt -->
     <KeyBinding guid="guidVSStd11" id="cmdidInteractiveSessionInterrupt" editor="guidFsiToolWindow" key1="VK_CANCEL" mod1="Control" />
 
-    <!-- CRTL-Alt-R when in FSI ToolWindow is Reset -->
+    <!-- CTRL-Alt-R when in FSI ToolWindow is Reset -->
     <KeyBinding guid="guidVSStd11" id="cmdidInteractiveSessionRestart" editor="guidFsiToolWindow" key1="R" mod1="Control Alt" />
 
-     <!-- CRTL-Alt-C when in FSI ToolWindow is Clear All -->
+     <!-- CTRL-Alt-C when in FSI ToolWindow is Clear All -->
     <KeyBinding guid="guidVSStd97" id="cmdidClearPane" editor="guidFsiToolWindow" key1="C" mod1="Control Alt" />
 
-    <!-- CRTL-Alt-D when in FSI ToolWindow is attach debugger -->
+    <!-- CTRL-Alt-D when in FSI ToolWindow is attach debugger -->
     <KeyBinding guid="guidFsiConsoleCmdSet" id="cmdidAttachDebugger" editor="guidFsiToolWindow" key1="D" mod1="Control Alt" />
 
-    <!-- CRTL-Shift-D when in FSI ToolWindow is detach debugger -->
+    <!-- CTRL-Shift-D when in FSI ToolWindow is detach debugger -->
     <KeyBinding guid="guidFsiConsoleCmdSet" id="cmdidDetachDebugger" editor="guidFsiToolWindow" key1="D" mod1="Control Shift" />
 
-    <!-- CRTL-Shift-D when in FSI ToolWindow is detach debugger -->
+    <!-- CTRL-Shift-D when in FSI ToolWindow is detach debugger -->
     <KeyBinding guid="guidFsiConsoleCmdSet" id="cmdidQuitProcess" editor="guidFsiToolWindow" key1="Q" mod1="Control Alt" />
 
     <KeyBinding guid="FSharpProjectCmdSet" id="MoveUpCmd" editor="SlnExplorerGuid" key1="VK_UP" mod1="Alt" />

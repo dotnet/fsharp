@@ -4,8 +4,6 @@ namespace ErrorMessages
 
 open Xunit
 open FSharp.Test.Compiler
-open FSharp.Test.Utilities
-open NUnit.Framework
 open FSharp.Compiler.Diagnostics
 open FSharp.Test
 

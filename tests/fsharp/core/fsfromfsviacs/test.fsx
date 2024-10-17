@@ -177,9 +177,9 @@ module TestConsumeCSharpOptionalParameter =
     check "acsoptional23982f55" (let f = SomeClass.MethodTakingNullables in ((f : Nullable<int> * string * Nullable<double> -> int) (Nullable 1,"aaaa",Nullable 3.0))) 8
 
 
-// This tests overloaded variaitons of the methods, where the overloads vary by type but not nullability
+// This tests overloaded variations of the methods, where the overloads vary by type but not nullability
 //
-// The CHECK_ERRORS cases are not execpted to compile
+// The CHECK_ERRORS cases are not excepted to compile
 module TestConsumeCSharpOptionalParameterOverloads = 
     open System
     open CSharpOptionalParameters
@@ -487,7 +487,7 @@ let _ =
   match !failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
+      printf "TEST PASSED OK" ;
       exit 0
   | _ -> 
       stdout.WriteLine "Test Failed"

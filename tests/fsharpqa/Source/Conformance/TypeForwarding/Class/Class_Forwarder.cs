@@ -92,7 +92,7 @@ public class Constraint_OnlyForwarder<T> where T : struct
     }
 }
 
-public class Constraint_NonVialatedForwarder<T> where T : class
+public class Constraint_NonViolatedForwarder<T> where T : class
 {
     public int getValue()
     {
@@ -108,14 +108,14 @@ public class Constraint_Both<T> where T : class
     }
 }
 
-public class Constraint_BothNonVialated<T> where T : class
+public class Constraint_BothNonViolated<T> where T : class
 {
     public int getValue()
     {
         return -1;
     }
 }
-public class Constraint_BothVialated<T> where T : struct
+public class Constraint_BothViolated<T> where T : struct
 {
     public int getValue()
     {

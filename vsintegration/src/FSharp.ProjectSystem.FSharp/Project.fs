@@ -158,21 +158,22 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
         member this.Advise(callbackOwnerKey, callback) =
             notificationsDict.[callbackOwnerKey] <- callback
 
-    // Used to get us sorted appropriately with the other MSFT products in the splash screen and about box
-    [<Guid("591E80E4-5F44-11d3-8BDC-00C04F8EC28C")>]
-    [<InterfaceType(ComInterfaceType.InterfaceIsIUnknown)>]
-    [<ComImport>] 
-    [<Interface>] 
-    [<ComVisible(true)>]
-    [<System.Runtime.InteropServices.ClassInterface(ClassInterfaceType.None)>]
-    type public IVsMicrosoftInstalledProduct =
-        inherit IVsInstalledProduct
-        abstract IdBmpSplashM : byref<uint32> -> unit
-        abstract OfficialNameM : on : byref<string> -> unit
-        abstract ProductIDM : pid : byref<string> -> unit
-        abstract ProductDetailsM : pd : byref<string> -> unit
-        abstract IdIcoLogoForAboutboxM : byref<uint32> -> unit            
-        abstract ProductRegistryName : prn : byref<string> -> unit
+    // // Used to get us sorted appropriately with the other MSFT products in the splash screen and about box
+    // [<Guid("591E80E4-5F44-11d3-8BDC-00C04F8EC28C")>]
+    // [<InterfaceType(ComInterfaceType.InterfaceIsIUnknown)>]
+    // [<ComImport>]
+    // [<ComVisible(true)>]
+    // [<System.Runtime.InteropServices.ClassInterface(ClassInterfaceType.None)>]
+    // [<AbstractClass>]
+    // type public IVsMicrosoftInstalledProduct =
+    //     interface IVsInstalledProduct
+    //
+    //     abstract IdBmpSplashM : byref<uint32> -> unit
+    //     abstract OfficialNameM : on : byref<string> -> unit
+    //     abstract ProductIDM : pid : byref<string> -> unit
+    //     abstract ProductDetailsM : pd : byref<string> -> unit
+    //     abstract IdIcoLogoForAboutboxM : byref<uint32> -> unit            
+    //     abstract ProductRegistryName : prn : byref<string> -> unit
 
     exception internal ExitedOk
     exception internal ExitedWithError
@@ -1528,7 +1529,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             // (fsc.exe does give a warning when this is missing)
             interface IVsProjectSpecificEditorMap with 
                 member x.GetSpecificEditorType( _mkDocument:string, guidEditorType:byref<Guid> ) =
-                    // Ideally we should at this point initalize a File extension to EditorFactory guid Map e.g.
+                    // Ideally we should at this point initialize a File extension to EditorFactory guid Map e.g.
                     // in the registry hive so that more editors can be added without changing this part of the
                     // code. FSharp only makes usage of one Editor Factory and therefore we will return 
                     // that guid
@@ -1542,7 +1543,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     VSConstants.E_NOTIMPL
 
                 member x.GetSpecificEditorType( _mkDocument:string, guidEditorType:byref<Guid> ) =
-                    // Ideally we should at this point initalize a File extension to EditorFactory guid Map e.g.
+                    // Ideally we should at this point initialize a File extension to EditorFactory guid Map e.g.
                     // in the registry hive so that more editors can be added without changing this part of the
                     // code. FSharp only makes usage of one Editor Factory and therefore we will return 
                     // that guid
@@ -1844,7 +1845,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 let currentMoniker = this.Node.GetTargetFrameworkMoniker()
                 let currentFrameworkName = new System.Runtime.Versioning.FrameworkName(currentMoniker)
                 let newMoniker = new System.Runtime.Versioning.FrameworkName(currentFrameworkName.Identifier, version, currentFrameworkName.Profile)                                                
-                let fullName = // TODO: 5571 tarcks replacing this with newMoniker.FullName
+                let fullName = // TODO: 5571 tracks replacing this with newMoniker.FullName
                     let s = sprintf "%s,Version=v%s" currentFrameworkName.Identifier (version.ToString(2))
                     if String.IsNullOrEmpty(newMoniker.Profile) then s
                     else s + (sprintf ",Profile=%s" newMoniker.Profile)                

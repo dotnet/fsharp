@@ -31,7 +31,7 @@ let rec TypeDefinitelySubsumesTypeNoCoercion ndeep g amap m ty1 ty2 =
     let ty1 = stripTyEqns g ty1
     let ty2 = stripTyEqns g ty2
     // F# reference types are subtypes of type 'obj'
-    (typeEquiv g ty1 g.obj_ty && isRefTy g ty2) ||
+    (typeEquiv g ty1 g.obj_ty_ambivalent && isRefTy g ty2) ||
     // Follow the supertype chain
     (isAppTy g ty2 &&
      isRefTy g ty2 && 
@@ -117,7 +117,7 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
 
     | _ -> 
         // F# reference types are subtypes of type 'obj' 
-        (isObjTy g ty1 && (canCoerce = CanCoerce || isRefTy g ty2)) 
+        (isObjTyAnyNullness g ty1 && (canCoerce = CanCoerce || isRefTy g ty2)) 
         ||
         (isAppTy g ty2 &&
          (canCoerce = CanCoerce || isRefTy g ty2) && 
@@ -138,7 +138,7 @@ let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) =
     let (maxTy, isRefined), m =
          let initialTy = 
              match tp.Kind with 
-             | TyparKind.Type -> g.obj_ty 
+             | TyparKind.Type -> g.obj_ty_noNulls
              | TyparKind.Measure -> TType_measure Measure.One
          // Loop through the constraints computing the lub
          (((initialTy, false), m), tp.Constraints) ||> List.fold (fun ((maxTy, isRefined), _) tpc ->
@@ -151,17 +151,13 @@ let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) =
              match tpc with 
              | TyparConstraint.CoercesTo(x, m) -> 
                  join m x, m
-             | TyparConstraint.MayResolveMember(_traitInfo, m) -> 
-                 (maxTy, isRefined), m
              | TyparConstraint.SimpleChoice(_, m) -> 
                  errorR(Error(FSComp.SR.typrelCannotResolveAmbiguityInPrintf(), m))
                  (maxTy, isRefined), m
              | TyparConstraint.SupportsNull m -> 
-                 (maxTy, isRefined), m
+                 ((addNullnessToTy KnownWithNull maxTy), isRefined), m
              | TyparConstraint.SupportsComparison m -> 
                  join m g.mk_IComparable_ty, m
-             | TyparConstraint.SupportsEquality m -> 
-                 (maxTy, isRefined), m
              | TyparConstraint.IsEnum(_, m) -> 
                  errorR(Error(FSComp.SR.typrelCannotResolveAmbiguityInEnum(), m))
                  (maxTy, isRefined), m
@@ -173,12 +169,15 @@ let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) =
              | TyparConstraint.IsUnmanaged m ->
                  errorR(Error(FSComp.SR.typrelCannotResolveAmbiguityInUnmanaged(), m))
                  (maxTy, isRefined), m
-             | TyparConstraint.RequiresDefaultConstructor m -> 
+             | TyparConstraint.NotSupportsNull m // NOTE: this doesn't "force" non-nullness, since it is the default choice in 'obj' or 'int'
+             | TyparConstraint.SupportsEquality m
+             | TyparConstraint.AllowsRefStruct m
+             | TyparConstraint.RequiresDefaultConstructor m
+             | TyparConstraint.IsReferenceType m
+             | TyparConstraint.MayResolveMember(_, m)
+             | TyparConstraint.DefaultsTo(_,_, m) -> 
                  (maxTy, isRefined), m
-             | TyparConstraint.IsReferenceType m -> 
-                 (maxTy, isRefined), m
-             | TyparConstraint.DefaultsTo(_priority, _ty, m) -> 
-                 (maxTy, isRefined), m)
+             )
 
     if g.langVersion.SupportsFeature LanguageFeature.DiagnosticForObjInference then
         match tp.Kind with

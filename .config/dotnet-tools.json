@@ -1,12 +1,48 @@
 {
-  "version": 1,
   "isRoot": true,
   "tools": {
+    "dotnet-counters": {
+      "commands": [
+        "dotnet-counters"
+      ],
+      "version": "8.0.547301"
+    },
+    "dotnet-dump": {
+      "commands": [
+        "dotnet-dump"
+      ],
+      "version": "8.0.547301"
+    },
+    "dotnet-gcdump": {
+      "commands": [
+        "dotnet-gcdump"
+      ],
+      "version": "8.0.547301"
+    },
+    "dotnet-sos": {
+      "commands": [
+        "dotnet-sos"
+      ],
+      "version": "8.0.547301"
+    },
+    "dotnet-symbol": {
+      "commands": [
+        "dotnet-symbol"
+      ],
+      "version": "8.0.547301"
+    },
+    "dotnet-trace": {
+      "commands": [
+        "dotnet-trace"
+      ],
+      "version": "8.0.547301"
+    },
     "fantomas": {
-      "version": "5.0.3",
       "commands": [
         "fantomas"
-      ]
+      ],
+      "version": "6.2.3"
     }
-  }
+  },
+  "version": 1
 }

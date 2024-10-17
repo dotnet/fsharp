@@ -3,8 +3,10 @@
 namespace FSharp.Compiler.CodeAnalysis
 
 open System
+open System.Collections.Generic
 open System.IO
 open System.Threading
+open System.Threading.Tasks
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
@@ -25,6 +27,14 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
+
+open Internal.Utilities.Collections
+
+[<Experimental "This type is experimental and likely to be removed in the future.">]
+[<RequireQualifiedAccess>]
+type DocumentSource =
+    | FileSystem
+    | Custom of (string -> Async<ISourceText option>)
 
 /// Delays the creation of an ILModuleReader
 [<Sealed>]
@@ -47,7 +57,7 @@ type public FSharpProjectOptions =
         // Note that this may not reduce to just the project directory, because there may be two projects in the same directory.
         ProjectFileName: string
 
-        /// This is the unique identifier for the project, it is case sensitive. If it's None, will key off of ProjectFileName in our caching.
+        /// This is the unique identifier for the project, it is case-sensitive. If it's None, will key off of ProjectFileName in our caching.
         ProjectId: string option
 
         /// The files in the project
@@ -182,7 +192,7 @@ type public FSharpSymbolUse =
 
     // For internal use only
     internal new:
-        denv: DisplayEnv * symbol: FSharpSymbol * inst: TyparInstantiation * itemOcc: ItemOccurence * range: range ->
+        denv: DisplayEnv * symbol: FSharpSymbol * inst: TyparInstantiation * itemOcc: ItemOccurrence * range: range ->
             FSharpSymbolUse
 
 /// Represents the checking context implied by the ProjectOptions
@@ -443,7 +453,7 @@ type public FSharpCheckFileResults =
         tcConfig: TcConfig *
         tcGlobals: TcGlobals *
         isIncompleteTypeCheckEnvironment: bool *
-        builder: IncrementalBuilder *
+        builder: IncrementalBuilder option *
         projectOptions: FSharpProjectOptions *
         dependencyFiles: string[] *
         creationErrors: FSharpDiagnostic[] *
@@ -477,7 +487,7 @@ type public FSharpCheckFileResults =
         backgroundDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[] *
         isIncompleteTypeCheckEnvironment: bool *
         projectOptions: FSharpProjectOptions *
-        builder: IncrementalBuilder *
+        builder: IncrementalBuilder option *
         dependencyFiles: string[] *
         creationErrors: FSharpDiagnostic[] *
         parseErrors: FSharpDiagnostic[] *
@@ -532,7 +542,19 @@ type public FSharpCheckProjectResults =
         tcConfigOption: TcConfig option *
         keepAssemblyContents: bool *
         diagnostics: FSharpDiagnostic[] *
-        details: (TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * Choice<IncrementalBuilder, TcSymbolUses> * TopAttribs option * (unit -> IRawFSharpAssemblyData option) * ILAssemblyRef * AccessorDomain * CheckedImplFile list option * string[] * FSharpProjectOptions) option ->
+        details:
+            (TcGlobals *
+            TcImports *
+            CcuThunk *
+            ModuleOrNamespaceType *
+            Choice<IncrementalBuilder, Async<TcSymbolUses seq>> *
+            TopAttribs option *
+            (unit -> IRawFSharpAssemblyData option) *
+            ILAssemblyRef *
+            AccessorDomain *
+            CheckedImplFile list option *
+            string[] *
+            FSharpProjectOptions) option ->
             FSharpCheckProjectResults
 
 module internal ParseAndCheckFile =
@@ -556,6 +578,29 @@ module internal ParseAndCheckFile =
         suggestNamesForErrors: bool *
         ct: CancellationToken ->
             (range * range)[]
+
+    /// Diagnostics handler for parsing & type checking while processing a single file
+    type DiagnosticsHandler =
+        new:
+            reportErrors: bool *
+            mainInputFileName: string *
+            diagnosticsOptions: FSharpDiagnosticOptions *
+            sourceText: ISourceText *
+            suggestNamesForErrors: bool *
+            flatErrors: bool ->
+                DiagnosticsHandler
+
+        member DiagnosticsLogger: DiagnosticsLogger
+
+        member ErrorCount: int
+
+        member DiagnosticOptions: FSharpDiagnosticOptions with set
+
+        member AnyErrors: bool
+
+        member CollectedPhasedDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) array
+
+        member CollectedDiagnostics: symbolEnv: SymbolEnv option -> FSharpDiagnostic array
 
 // An object to typecheck source in a given typechecking environment.
 // Used internally to provide intellisense over F# Interactive.

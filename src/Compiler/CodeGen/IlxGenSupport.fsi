@@ -19,6 +19,9 @@ val mkLdfldMethodDef:
 
 val GetDynamicDependencyAttribute: g: TcGlobals -> memberTypes: int32 -> ilType: ILType -> ILAttribute
 val GenReadOnlyModReqIfNecessary: g: TcGlobals -> ty: TypedTree.TType -> ilTy: ILType -> ILType
-val GenReadOnlyAttributeIfNecessary: g: TcGlobals -> ty: TypedTree.TType -> ILAttribute option
+val GenAdditionalAttributesForTy: g: TcGlobals -> ty: TypedTree.TType -> ILAttribute list
 val GetReadOnlyAttribute: g: TcGlobals -> ILAttribute
 val GetIsUnmanagedAttribute: g: TcGlobals -> ILAttribute
+val GetNullableAttribute: g: TcGlobals -> nullnessInfos: TypedTree.NullnessInfo list -> ILAttribute
+val GetNullableContextAttribute: g: TcGlobals -> byte -> ILAttribute
+val GetNotNullWhenTrueAttribute: g: TcGlobals -> string array -> ILAttribute

@@ -13,9 +13,8 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
-                     None), Named (SynIdent (a, None), false, None, (2,4--2,5)),
-                  None,
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
+                  Named (SynIdent (a, None), false, None, (2,4--2,5)), None,
                   LetOrUse
                     (false, false,
                      [SynBinding
@@ -25,7 +24,7 @@ ImplFile
                            (None,
                             SynValInfo
                               ([[SynArgInfo ([], false, Some c)]],
-                               SynArgInfo ([], false, None)), None, None),
+                               SynArgInfo ([], false, None)), None),
                          LongIdent
                            (SynLongIdent ([b], [], [None]), None, None,
                             Pats
@@ -35,11 +34,12 @@ ImplFile
                          NoneAtLet, { LeadingKeyword = Let (3,4--3,7)
                                       InlineKeyword = None
                                       EqualsRange = Some (3,12--3,13) })],
-                     Const (Unit, (4,4--4,6)), (3,4--4,6), { InKeyword = None }),
-                  (2,4--2,5), NoneAtLet, { LeadingKeyword = Let (2,0--2,3)
-                                           InlineKeyword = None
-                                           EqualsRange = Some (2,6--2,7) })],
-              (2,0--4,6))], PreXmlDocEmpty, [], None, (2,0--5,0),
-          { LeadingKeyword = None })], (true, true),
-      { ConditionalDirectives = []
-        CodeComments = [] }, set []))
+                     Const (Unit, (4,4--4,6)), (3,4--4,6),
+                     { LetOrUseKeyword = (3,4--3,7)
+                       InKeyword = None }), (2,4--2,5), NoneAtLet,
+                  { LeadingKeyword = Let (2,0--2,3)
+                    InlineKeyword = None
+                    EqualsRange = Some (2,6--2,7) })], (2,0--4,6))],
+          PreXmlDocEmpty, [], None, (2,0--5,0), { LeadingKeyword = None })],
+      (true, true), { ConditionalDirectives = []
+                      CodeComments = [] }, set []))

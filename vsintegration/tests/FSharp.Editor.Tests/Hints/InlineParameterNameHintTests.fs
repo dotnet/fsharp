@@ -349,7 +349,7 @@ let b = Rectangle (1, 2)
     Assert.Equal(expected, actual)
 
 [<Fact>]
-let ``Hints are not shown for discriminated union case fields with the same names as arguements`` () =
+let ``Hints are not shown for discriminated union case fields with the same names as arguments`` () =
     let code =
         """
 type Shape =

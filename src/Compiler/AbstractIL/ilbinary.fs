@@ -689,7 +689,7 @@ let noArgInstrs =
 
 let isNoArgInstr i =
     match i with
-    | AI_ldc (DT_I4, ILConst.I4 n) when -1 <= n && n <= 8 -> true
+    | AI_ldc(DT_I4, ILConst.I4 n) when -1 <= n && n <= 8 -> true
     | I_stloc n
     | I_ldloc n
     | I_ldarg n when n <= 3us -> true

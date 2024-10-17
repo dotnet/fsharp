@@ -6,7 +6,7 @@
 // Verify static type is of type System.Collections.Generic.IComparer<int>
 
 // See FSHARP1.0:4112 (it is by design that oe3 is IDisposable)
-// See also FSHARP1.0:2954 (correspondinf spec bug)
+// See also FSHARP1.0:2954 (corresponding spec bug)
 
 let oe1 =
     { 

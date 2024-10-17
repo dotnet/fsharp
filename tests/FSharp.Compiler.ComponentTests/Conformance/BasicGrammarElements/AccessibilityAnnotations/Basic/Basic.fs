@@ -188,3 +188,42 @@ module AccessibilityAnnotations_Basic =
         compilation
         |> verifyCompileAndRun
         |> shouldSucceed
+
+    [<Fact>]
+    let ``C# protected property can be assigned in a F# inherit constructor call`` () =
+
+        let csharp =
+            CSharp
+                """
+namespace Consumer
+{
+    public class Foo
+    {
+        protected string Value { get; set; } = "";
+    }
+}
+"""
+            |> withName "CSLib"
+            
+        let fsharp =
+            FSharp
+                """
+module Hello
+open Consumer
+
+type Bar() =
+    inherit Foo(Value = "Works")
+    
+type Bar2() as this =
+    inherit Foo()
+    do this.Value <- "Works"
+
+{ new Foo(Value = "OK") with member x.ToString() = "OK" } |> ignore
+"""
+            |> withLangVersion80
+            |> withName "FSLib"
+            |> withReferences [ csharp ]
+
+        fsharp
+        |> compile
+        |> shouldSucceed

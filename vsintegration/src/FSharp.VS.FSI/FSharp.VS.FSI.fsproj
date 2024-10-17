@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+	<Compile Include="$(FSharpSourcesRoot)\Compiler\Utilities\NullnessShims.fs"/>
     <EmbeddedText Include="VFSIstrings.txt" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="FSharp.VS.FSI.Attributes.fs" />

@@ -10,7 +10,6 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
 open FSharp.Compiler.EditorServices
-open FSharp.Compiler.Text
 open FSharp.Compiler.Symbols
 
 open CancellableTasks
@@ -43,10 +42,7 @@ type internal AddTypeAnnotationToObjectOfIndeterminateTypeFixProvider [<Importin
                 match lexerSymbolOpt with
                 | None -> return ValueNone
                 | Some lexerSymbol ->
-                    let! sourceText = context.GetSourceTextAsync()
-                    let textLine = sourceText.Lines.GetLineFromPosition position
-                    let textLinePos = sourceText.Lines.GetLinePosition position
-                    let fcsTextLineNumber = Line.fromZ textLinePos.Line
+                    let! fcsTextLineNumber, textLine = context.GetLineNumberAndText position
 
                     let! _, checkFileResults =
                         document.GetFSharpParseAndCheckResultsAsync(nameof AddTypeAnnotationToObjectOfIndeterminateTypeFixProvider)
@@ -62,6 +58,7 @@ type internal AddTypeAnnotationToObjectOfIndeterminateTypeFixProvider [<Importin
 
                     match decl with
                     | FindDeclResult.DeclFound declRange when declRange.FileName = document.FilePath ->
+                        let! sourceText = context.GetSourceTextAsync()
                         let declSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, declRange)
                         let declTextLine = sourceText.Lines.GetLineFromPosition declSpan.Start
 

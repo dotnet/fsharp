@@ -30,7 +30,7 @@ let xmlFileContents signature = $"""<?xml version="1.0" encoding="utf-8"?>
 [<InlineData("P:Microsoft.FSharp.Collections.FSharpList`1.Length")>]
 [<InlineData("P:Microsoft.FSharp.Collections.FSharpList`1.Length'")>]
 let ``Can extract XML docs from a file for a signature`` signature =
-    let xmlFileName = tryCreateTemporaryFileName () + ".xml"
+    let xmlFileName = getTemporaryFileName () + ".xml"
 
     try
         File.WriteAllText(xmlFileName, xmlFileContents signature)

@@ -50,6 +50,13 @@ let emitBytesViaBuffer f = use bb = ByteBuffer.Create EmitBytesViaBufferCapacity
 /// Alignment and padding
 let align alignment n = ((n + alignment - 1) / alignment) * alignment
 
+
+/// Maximum number of methods in a dotnet type
+/// This differs from the spec and file formats slightly which suggests 0xfffe is the maximum
+/// this value was identified empirically.
+[<Literal>]
+let maximumMethodsPerDotNetType = 0xfff0
+
 //---------------------------------------------------------------------
 // Concrete token representations etc. used in PE files
 //---------------------------------------------------------------------
@@ -355,7 +362,11 @@ let envForOverrideSpec (ospec: ILOverridesSpec) = { EnclosingTyparCount=ospec.De
 //---------------------------------------------------------------------
 
 [<NoEquality; NoComparison>]
-type MetadataTable<'T> =
+type MetadataTable<'T
+#if !NO_CHECKNULLS
+    when 'T:not null
+#endif
+    > =
     { name: string
       dict: Dictionary<'T, int> // given a row, find its entry number
       mutable rows: ResizeArray<'T> }
@@ -547,6 +558,8 @@ type cenv =
 
       methodDefIdxs: Dictionary<ILMethodDef, int>
 
+      implementsIdxs: Dictionary<int,int list>
+
       propertyDefs: MetadataTable<PropertyTableKey>
 
       eventDefs: MetadataTable<EventTableKey>
@@ -652,7 +665,7 @@ let GetBytesAsBlobIdx cenv (bytes: byte[]) =
     else cenv.blobs.FindOrAddSharedEntry bytes
 
 let GetStringHeapIdx cenv s =
-    if s = "" then 0
+    if String.IsNullOrEmpty(s) then 0
     else cenv.strings.FindOrAddSharedEntry s
 
 let GetGuidIdx cenv info = cenv.guids.FindOrAddSharedEntry info
@@ -672,8 +685,14 @@ let GetTypeNameAsElemPair cenv n =
 //=====================================================================
 
 let rec GenTypeDefPass1 enc cenv (tdef: ILTypeDef) =
-  ignore (cenv.typeDefs.AddUniqueEntry "type index" (fun (TdKey (_, n)) -> n) (TdKey (enc, tdef.Name)))
-  GenTypeDefsPass1 (enc@[tdef.Name]) cenv (tdef.NestedTypes.AsList())
+    ignore (cenv.typeDefs.AddUniqueEntry "type index" (fun (TdKey (_, n)) -> n) (TdKey (enc, tdef.Name)))
+ 
+    // Verify that the typedef contains fewer than maximumMethodsPerDotNetType
+    let count = tdef.Methods.AsArray().Length
+    if count > maximumMethodsPerDotNetType then
+        errorR(Error(FSComp.SR.tooManyMethodsInDotNetTypeWritingAssembly (tdef.Name, count, maximumMethodsPerDotNetType), rangeStartup))
+
+    GenTypeDefsPass1 (enc@[tdef.Name]) cenv (tdef.NestedTypes.AsList())
 
 and GenTypeDefsPass1 enc cenv tdefs = List.iter (GenTypeDefPass1 enc cenv) tdefs
 
@@ -682,7 +701,8 @@ and GenTypeDefsPass1 enc cenv tdefs = List.iter (GenTypeDefPass1 enc cenv) tdefs
 //=====================================================================
 
 let rec GetIdxForTypeDef cenv key =
-    try cenv.typeDefs.GetTableEntry key
+    try
+        cenv.typeDefs.GetTableEntry key
     with
       :? KeyNotFoundException ->
         let (TdKey (enc, n) ) = key
@@ -1151,8 +1171,11 @@ let canGenMethodDef (tdef: ILTypeDef) cenv (mdef: ILMethodDef) =
         match mdef.Access with
         | ILMemberAccess.Public -> true
         // When emitting a reference assembly, do not emit methods that are private/protected/internal unless they are virtual/abstract or provide an explicit interface implementation.
+        // REVIEW: Added(vlza, fixes #14937):
+        //   We also emit methods that are marked as HideBySig and static,
+        //   since they're not virtual or abstract, but we want (?) the same behaviour as normal instance implementations.
         | ILMemberAccess.Private | ILMemberAccess.Family | ILMemberAccess.Assembly | ILMemberAccess.FamilyOrAssembly
-            when mdef.IsVirtual || mdef.IsAbstract || mdef.IsNewSlot || mdef.IsFinal || mdef.IsEntryPoint -> true
+            when (mdef.IsHideBySig && mdef.IsStatic) || mdef.IsVirtual || mdef.IsAbstract || mdef.IsNewSlot || mdef.IsFinal || mdef.IsEntryPoint -> true
         // When emitting a reference assembly, only generate internal methods if the assembly contains a System.Runtime.CompilerServices.InternalsVisibleToAttribute.
         | ILMemberAccess.FamilyOrAssembly | ILMemberAccess.Assembly
             when cenv.hasInternalsVisibleToAttrib -> true
@@ -1189,7 +1212,7 @@ let canGenPropertyDef cenv (prop: ILPropertyDef) =
         // If we have GetMethod or SetMethod set (i.e. not None), try and see if we have MethodDefs for them.
         // NOTE: They can be not-None and missing MethodDefs if we skip generating them for reference assembly in the earlier pass.
         // Only generate property if we have at least getter or setter, otherwise, we skip.
-        [| prop.GetMethod; prop.SetMethod |]      
+        [| prop.GetMethod; prop.SetMethod |]
         |> Array.choose id
         |> Array.exists (MethodDefIdxExists cenv)
 
@@ -1264,7 +1287,7 @@ and GetTypeAsImplementsRow cenv env tidx ty =
            TypeDefOrRefOrSpec (tdorTag, tdorRow) |]
 
 and GenImplementsPass2 cenv env tidx ty =
-    AddUnsharedRow cenv TableNames.InterfaceImpl (GetTypeAsImplementsRow cenv env tidx ty) |> ignore
+    AddUnsharedRow cenv TableNames.InterfaceImpl (GetTypeAsImplementsRow cenv env tidx ty)
 
 and GetKeyForEvent tidx (x: ILEventDef) =
     EventKey (tidx, x.Name)
@@ -1300,14 +1323,15 @@ and GenTypeDefPass2 pidx enc cenv (tdef: ILTypeDef) =
         // Now generate or assign index numbers for tables referenced by the maps.
         // Don't yet generate contents of these tables - leave that to pass3, as
         // code may need to embed these entries.
-        tdef.Implements |> List.iter (GenImplementsPass2 cenv env tidx)        
-        events |> List.iter (GenEventDefPass2 cenv tidx)
+        cenv.implementsIdxs[tidx] <- tdef.Implements.Value |> List.map (fun x -> GenImplementsPass2 cenv env tidx x.Type)            
+
         tdef.Fields.AsList() |> List.iter (GenFieldDefPass2 tdef cenv tidx)
         tdef.Methods |> Seq.iter (GenMethodDefPass2 tdef cenv tidx)
-        // Generation of property definitions for **ref assemblies** is checking existence of generated method definitions.
+        // Generation of property & event definitions for **ref assemblies** is checking existence of generated method definitions.
         // Therefore, due to mutable state within "cenv", order of operations matters.
         // Who could have thought that using shared mutable state can bring unexpected bugs...?
         props |> List.iter (GenPropertyDefPass2 cenv tidx)
+        events |> List.iter (GenEventDefPass2 cenv tidx)
         tdef.NestedTypes.AsList() |> GenTypeDefsPass2 tidx (enc@[tdef.Name]) cenv
    with exn ->
      failwith ("Error in pass2 for type "+tdef.Name+", error: " + exn.Message)
@@ -2489,7 +2513,8 @@ let rec GetGenericParamAsGenericParamRow cenv _env idx owner gp =
            | ContraVariant -> 0x0002) |||
         (if gp.HasReferenceTypeConstraint then 0x0004 else 0x0000) |||
         (if gp.HasNotNullableValueTypeConstraint then 0x0008 else 0x0000) |||
-        (if gp.HasDefaultConstructorConstraint then 0x0010 else 0x0000)
+        (if gp.HasDefaultConstructorConstraint then 0x0010 else 0x0000) |||
+        (if gp.HasAllowsRefStruct then 0x0020 else 0x0000)
    
 
     let mdVersionMajor, _ = metadataSchemaVersionSupportedByCLRVersion cenv.desiredMetadataVersion
@@ -2678,7 +2703,7 @@ let GenMethodImplPass3 cenv env _tgparams tidx mimpl =
     let midx2Tag, midx2Row = GetOverridesSpecAsMethodDefOrRef cenv env mimpl.Overrides
     AddUnsharedRow cenv TableNames.MethodImpl
         (UnsharedRow
-             [| SimpleIndex (TableNames.TypeDef, tidx)
+            [|  SimpleIndex (TableNames.TypeDef, tidx)
                 MethodDefOrRef (midxTag, midxRow)
                 MethodDefOrRef (midx2Tag, midx2Row) |]) |> ignore
 
@@ -2849,6 +2874,11 @@ let rec GenTypeDefPass3 enc cenv (tdef: ILTypeDef) =
    try
         let env = envForTypeDef tdef
         let tidx = GetIdxForTypeDef cenv (TdKey(enc, tdef.Name))
+
+        tdef.Implements.Value
+        |> List.zip cenv.implementsIdxs[tidx]
+        |> List.iter (fun (impIdx, impl) -> GenCustomAttrsPass3Or4 cenv (hca_InterfaceImpl,impIdx) impl.CustomAttrs)
+
         tdef.Properties.AsList() |> List.iter (GenPropertyPass3 cenv env)
         tdef.Events.AsList() |> List.iter (GenEventPass3 cenv env)
         tdef.Fields.AsList() |> List.iter (GenFieldDefPass3 tdef cenv env)
@@ -3113,6 +3143,7 @@ let generateIL (
           methodDefIdxsByKey = MetadataTable<_>.New("method defs", EqualityComparer.Default)
           // This uses reference identity on ILMethodDef objects
           methodDefIdxs = Dictionary<_, _>(100, HashIdentity.Reference)
+          implementsIdxs = Dictionary<_, _>(100, HashIdentity.Structural)
           propertyDefs = MetadataTable<_>.New("property defs", EqualityComparer.Default)
           eventDefs = MetadataTable<_>.New("event defs", EqualityComparer.Default)
           typeDefs = MetadataTable<_>.New("type defs", EqualityComparer.Default)
@@ -3152,7 +3183,7 @@ let generateIL (
           Methods = cenv.pdbinfo.ToArray()
           TableRowCounts = cenv.tables |> Seq.map(fun t -> t.Count) |> Seq.toArray }
 
-    let idxForNextedTypeDef (tdefs: ILTypeDef list, tdef: ILTypeDef) =
+    let idxForNestedTypeDef (tdefs: ILTypeDef list, tdef: ILTypeDef) =
         let enc = tdefs |> List.map (fun tdef -> tdef.Name)
         GetIdxForTypeDef cenv (TdKey(enc, tdef.Name))
 
@@ -3165,18 +3196,18 @@ let generateIL (
     // turn idx tbls into token maps
     let mappings =
      { TypeDefTokenMap = (fun t ->
-        getUncodedToken TableNames.TypeDef (idxForNextedTypeDef t))
+        getUncodedToken TableNames.TypeDef (idxForNestedTypeDef t))
        FieldDefTokenMap = (fun t fd ->
-        let tidx = idxForNextedTypeDef t
+        let tidx = idxForNestedTypeDef t
         getUncodedToken TableNames.Field (GetFieldDefAsFieldDefIdx cenv tidx fd))
        MethodDefTokenMap = (fun t mdef ->
-        let tidx = idxForNextedTypeDef t
+        let tidx = idxForNestedTypeDef t
         getUncodedToken TableNames.Method (FindMethodDefIdx cenv (GetKeyForMethodDef cenv tidx mdef)))
        PropertyTokenMap = (fun t pdef ->
-        let tidx = idxForNextedTypeDef t
+        let tidx = idxForNestedTypeDef t
         getUncodedToken TableNames.Property (cenv.propertyDefs.GetTableEntry (GetKeyForPropertyDef tidx pdef)))
        EventTokenMap = (fun t edef ->
-        let tidx = idxForNextedTypeDef t
+        let tidx = idxForNestedTypeDef t
         getUncodedToken TableNames.Event (cenv.eventDefs.GetTableEntry (EventKey (tidx, edef.Name)))) }
     reportTime "Finalize Module Generation Results"
     // New return the results

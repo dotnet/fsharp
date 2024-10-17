@@ -30,7 +30,7 @@ let check s x1 x2 =
     else 
         report_failure(s)
 
-(* What kinds of top-leval let patterns are possible? *)
+(* What kinds of top-level let patterns are possible? *)
 
 type r2 = {f1:int;f2:int}
 type ('a,'b) either = This of 'a | That of 'b
@@ -79,7 +79,7 @@ let (This fB | That fB) = that_f2
 
 (* If there are several polymorphic values matched,
    they get put into a tuple which has first class polymorphic field types...
-   Users can not (directly!) create such tuples in source... need to check they are ok.
+   Users cannot (directly!) create such tuples in source... need to check they are ok.
 *)
 let (Some xxxx),polyF1,polyF2,n =
   Some 1,
@@ -615,7 +615,7 @@ end
 
 module PartialPattern_Examples = begin
 
-     // Partial patterns are signfied by |_| and return 'option'.
+     // Partial patterns are signified by |_| and return 'option'.
      // They are most useful when dealing with repeatedly recurring queries
      // on very "heterogeneous" data sets, i.e. data sets able to represent 
      // a large range of possible entities, but where you're often interested in
@@ -910,7 +910,7 @@ module AndrewKennedyFunkyActivePatternsBugRelatedToArityInference =
 
     let (Fun(f)) = (fun x -> x)
 
-module AndrewKennedyRatherEmarrassingSimpleBug1133 = 
+module AndrewKennedyRatherEmbarrassingSimpleBug1133 = 
 
     type a = A | B
     let f = fun A -> 1
@@ -936,7 +936,7 @@ module NameResolutionBug1134 =
     let f x = match x with | A -> 4 | B -> 5 // the 'A' should resolve to the pattern identifier
     let g x = match x with | A2 _ -> 4 | B -> 5 // the 'A' should resolve to the pattern identifier
 
-module CheckNameResoutionRules = 
+module CheckNameResolutionRules = 
 
     module M1a = 
         type t = C of int
@@ -1122,7 +1122,7 @@ module StructUnionMultiCaseLibDefns =
         | Some : Value:'T -> StructOption<'T>
 
     /// <summary>Helper types for active patterns with 2 choices.</summary>
-    //[<UnqualfiedLabels(false)>]
+    //[<UnqualifiedLabels(false)>]
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpStructChoice`2")>]
     [<RequireQualifiedAccess>]
@@ -1735,7 +1735,7 @@ let aa =
   match !failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
+      printf "TEST PASSED OK" ;
       exit 0
   | _ -> 
       stdout.WriteLine "Test Failed"

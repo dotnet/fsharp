@@ -148,10 +148,11 @@ module Option =
     [<CompiledName("OfNullable")>]
     let inline ofNullable (value: System.Nullable<'T>) =
         if value.HasValue then
-            Some value.Value
+            Some (value.GetValueOrDefault())
         else
             None
 
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
     [<CompiledName("OfObj")>]
     let inline ofObj value =
         match value with
@@ -163,6 +164,31 @@ module Option =
         match value with
         | None -> null
         | Some x -> x
+#else
+    [<CompiledName("OfObj")>]  
+    let inline ofObj (value: 'T | null) : 'T option when 'T: not struct and 'T : not null = 
+        match value with
+        | null -> None
+        | _ -> Some value
+
+    [<CompiledName("ToObj")>]
+    let inline toObj (value: 'T option) : 'T | null when 'T: not struct (* and 'T : not null *)  =
+        match value with
+        | None -> null
+        | Some x -> x
+#endif
+
+    [<CompiledName("OfValueOption")>]
+    let inline ofValueOption (voption: 'T voption) =
+        match voption with
+        | ValueNone -> None
+        | ValueSome x -> Some x
+
+    [<CompiledName("ToValueOption")>]
+    let inline toValueOption (option: 'T option) =
+        match option with
+        | None -> ValueNone
+        | Some x -> ValueSome x
 
 module ValueOption =
 
@@ -312,10 +338,11 @@ module ValueOption =
     [<CompiledName("OfNullable")>]
     let inline ofNullable (value: System.Nullable<'T>) =
         if value.HasValue then
-            ValueSome value.Value
+            ValueSome (value.GetValueOrDefault())
         else
             ValueNone
 
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
     [<CompiledName("OfObj")>]
     let inline ofObj value =
         match value with
@@ -327,3 +354,28 @@ module ValueOption =
         match value with
         | ValueNone -> null
         | ValueSome x -> x
+#else
+    [<CompiledName("OfObj")>]  
+    let inline ofObj (value: 'T | null) : 'T voption when 'T: not struct and 'T : not null  = 
+        match value with
+        | null -> ValueNone
+        | _ -> ValueSome value
+
+    [<CompiledName("ToObj")>]
+    let inline toObj (value : 'T voption) : 'T | null when 'T: not struct (* and 'T : not null *) = 
+        match value with
+        | ValueNone -> null
+        | ValueSome x -> x
+#endif
+
+    [<CompiledName("OfOption")>]
+    let inline ofOption (option: 'T option) =
+        match option with
+        | None -> ValueNone
+        | Some x -> ValueSome x
+
+    [<CompiledName("ToOption")>]
+    let inline toOption (voption: 'T voption) =
+        match voption with
+        | ValueNone -> None
+        | ValueSome x -> Some x

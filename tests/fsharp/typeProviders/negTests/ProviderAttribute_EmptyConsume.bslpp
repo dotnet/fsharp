@@ -1,4 +1,4 @@
 
-ProviderAttribute_EmptyConsume.fsx(1,1,1,49): parse error FS3065: Assembly '<ASSEMBLY>' hase TypeProviderAssembly attribute with invalid value ''. The value should be a valid assembly name
+ProviderAttribute_EmptyConsume.fsx(1,1,1,49): parse error FS3065: Assembly '<ASSEMBLY>' has TypeProviderAssembly attribute with invalid value ''. The value should be a valid assembly name
 
 ProviderAttribute_EmptyConsume.fsx(1,1,1,49): parse error FS3005: Referenced assembly '<ASSEMBLY>' has assembly level attribute 'Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute' but no public type provider classes were found

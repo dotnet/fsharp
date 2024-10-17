@@ -15,7 +15,8 @@ open Microsoft.FSharp.Collections
 /// All members of this class are thread-safe and may be used concurrently from multiple threads.</remarks>
 [<CompiledName("FSharpMap`2")>]
 [<Sealed>]
-type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonConditionalOn>] 'Value when 'Key: comparison> =
+type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonConditionalOn>] 'Value when 'Key: comparison>
+    =
     /// <summary>Returns a new map with the binding added to the given map.
     /// If a binding with the given key already exists in the input map, the existing binding is replaced by the new binding in the result map.</summary>
     /// <param name="key">The key to add.</param>
@@ -214,7 +215,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     interface System.Collections.IEnumerable
     interface IReadOnlyCollection<KeyValuePair<'Key, 'Value>>
     interface IReadOnlyDictionary<'Key, 'Value>
-    override Equals: obj -> bool
+    override Equals: objnull -> bool
 
 /// <summary>Contains operations for working with values of type <see cref="T:Microsoft.FSharp.Collections.FSharpMap`2"/>.</summary>
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -293,7 +294,7 @@ module Map =
     /// </code>
     /// </example>
     [<CompiledName("OfArray")>]
-    val ofArray: elements: ('Key * 'T)[] -> Map<'Key, 'T>
+    val ofArray: elements: ('Key * 'T) array -> Map<'Key, 'T>
 
     /// <summary>Returns a new map made from the given bindings.</summary>
     ///
@@ -360,7 +361,7 @@ module Map =
     /// </code>
     /// </example>
     [<CompiledName("ToArray")>]
-    val toArray: table: Map<'Key, 'T> -> ('Key * 'T)[]
+    val toArray: table: Map<'Key, 'T> -> ('Key * 'T) array
 
     /// <summary>Is the map empty?</summary>
     ///

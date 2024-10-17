@@ -57,21 +57,19 @@ neg61.fs(79,13,79,16): typecheck error FS3146: 'try/with' expressions may not be
 
 neg61.fs(86,13,86,16): typecheck error FS3141: 'try/finally' expressions may not be used in queries
 
-neg61.fs(92,13,92,70): typecheck error FS3142: 'use' expressions may not be used in queries
+neg61.fs(92,13,92,16): typecheck error FS3142: 'use' expressions may not be used in queries
 
-neg61.fs(97,13,97,33): typecheck error FS3143: 'let!', 'use!' and 'do!' expressions may not be used in queries
+neg61.fs(97,13,97,17): typecheck error FS3143: 'let!', 'use!' and 'do!' expressions may not be used in queries
 
-neg61.fs(102,13,102,28): typecheck error FS3145: This is not a known query operator. Query operators are identifiers such as 'select', 'where', 'sortBy', 'thenBy', 'groupBy', 'groupValBy', 'join', 'groupJoin', 'sumBy' and 'averageBy', defined using corresponding methods on the 'QueryBuilder' type.
+neg61.fs(102,13,102,16): typecheck error FS3143: 'let!', 'use!' and 'do!' expressions may not be used in queries
 
-neg61.fs(102,13,102,28): typecheck error FS3143: 'let!', 'use!' and 'do!' expressions may not be used in queries
+neg61.fs(107,13,107,19): typecheck error FS3144: 'return' and 'return!' may not be used in queries
 
-neg61.fs(107,13,107,21): typecheck error FS3144: 'return' and 'return!' may not be used in queries
-
-neg61.fs(111,13,111,24): typecheck error FS3144: 'return' and 'return!' may not be used in queries
+neg61.fs(111,13,111,20): typecheck error FS3144: 'return' and 'return!' may not be used in queries
 
 neg61.fs(114,13,114,21): typecheck error FS3145: This is not a known query operator. Query operators are identifiers such as 'select', 'where', 'sortBy', 'thenBy', 'groupBy', 'groupValBy', 'join', 'groupJoin', 'sumBy' and 'averageBy', defined using corresponding methods on the 'QueryBuilder' type.
 
-neg61.fs(114,22,114,23): typecheck error FS0001: The type 'int' does not support the operator 'Truncate'
+neg61.fs(114,22,114,23): typecheck error FS0001: The type 'int' does not support the operator 'truncate'
 
 neg61.fs(133,17,133,20): typecheck error FS3147: This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.
 

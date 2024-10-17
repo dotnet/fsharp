@@ -83,23 +83,35 @@ type internal FSharpTaskListService [<ImportingConstructor>] () as this =
                 )
                 |> extractContractedComments
 
-            for ct in contractedTokens do
+            if contractedTokens |> List.isEmpty then
+                ()
+            else
                 let lineTxt = line.ToString()
-                let tokenSize = 1 + (ct.Right - ct.Left)
 
-                for (dText, d) in descriptors do
-                    let idx =
-                        lineTxt.IndexOf(dText, ct.Left, tokenSize, StringComparison.OrdinalIgnoreCase)
+                for ct in contractedTokens do
 
-                    if idx > -1 then
-                        let taskLength = 1 + ct.Right - idx
-                        let idxAfterDesc = idx + dText.Length
-                        // A descriptor followed by another letter is not a todocomment, like todoabc. But TODO, TODO2 or TODO: should be.
-                        if idxAfterDesc >= lineTxt.Length || not (Char.IsLetter(lineTxt.[idxAfterDesc])) then
-                            let taskText = lineTxt.Substring(idx, taskLength).TrimEnd([| '*'; ')' |])
-                            let taskSpan = new TextSpan(line.Span.Start + idx, taskText.Length)
+                    let tokenSize = 1 + (ct.Right - ct.Left)
 
-                            foundTaskItems.Add(new FSharpTaskListItem(d, taskText, doc, taskSpan))
+                    for (dText, d) in descriptors do
+                        if
+                            tokenSize < 0
+                            || ct.Left >= lineTxt.Length
+                            || tokenSize > (lineTxt.Length - ct.Left)
+                        then
+                            ()
+                        else
+                            let idx =
+                                lineTxt.IndexOf(dText, ct.Left, tokenSize, StringComparison.OrdinalIgnoreCase)
+
+                            if idx > -1 then
+                                let taskLength = 1 + ct.Right - idx
+                                let idxAfterDesc = idx + dText.Length
+                                // A descriptor followed by another letter is not a todocomment, like todoabc. But TODO, TODO2 or TODO: should be.
+                                if idxAfterDesc >= lineTxt.Length || not (Char.IsLetter(lineTxt.[idxAfterDesc])) then
+                                    let taskText = lineTxt.Substring(idx, taskLength).TrimEnd([| '*'; ')' |])
+                                    let taskSpan = new TextSpan(line.Span.Start + idx, taskText.Length)
+
+                                    foundTaskItems.Add(new FSharpTaskListItem(d, taskText, doc, taskSpan))
 
         foundTaskItems.ToImmutable()
 

@@ -8,7 +8,7 @@ open FSharp.Test.Compiler
 
 module TypeConstraint =
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/TypeConstraint)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_typecontraint01.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_typeconstraint01.fs"|])>]
     let ``TypeConstraint - E_typecontraint01_fs - --test:ErrorRanges`` compilation =
         compilation
         |> asFs

@@ -70,7 +70,7 @@ type C() =
 let _ = C().M(qez=3)
 
 module ListPositive2 = 
-    // In this example, implicit yield is enabled becaue there is no explicit 'yield'
+    // In this example, implicit yield is enabled because there is no explicit 'yield'
     let v3 =
         [ if true then 1 else 2 ]  
 

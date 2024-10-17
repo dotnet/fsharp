@@ -76,7 +76,7 @@ module LetBindings_Basic =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 58, Line 10, Col 1, Line 10, Col 5, "Possible incorrect indentation: this token is offside of context started at position (8:1). Try indenting this token further or using standard formatting conventions.")
+            (Error 58, Line 10, Col 1, Line 10, Col 5, "Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (8:1). Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.")
             (Error 10, Line 10, Col 6, Line 10, Col 7, "Unexpected start of structured construct in expression")
             (Error 583, Line 9, Col 5, Line 9, Col 6, "Unmatched '('")
             (Error 10, Line 10, Col 16, Line 10, Col 17, "Unexpected symbol ')' in implementation file")
@@ -144,13 +144,12 @@ module LetBindings_Basic =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 267, Line 11, Col 18, Line 11, Col 19, "This is not a valid constant expression or custom attribute value")
-            (Error 837, Line 11, Col 13, Line 11, Col 31, "This is not a valid constant expression")
-            (Error 267, Line 14, Col 13, Line 14, Col 17, "This is not a valid constant expression or custom attribute value")
-            (Error 267, Line 17, Col 13, Line 17, Col 15, "This is not a valid constant expression or custom attribute value")
-            (Error 267, Line 20, Col 13, Line 20, Col 17, "This is not a valid constant expression or custom attribute value")
-            (Error 267, Line 23, Col 13, Line 23, Col 18, "This is not a valid constant expression or custom attribute value")
-            (Warning 3178, Line 26, Col 13, Line 26, Col 26, "This is not valid literal expression. The [<Literal>] attribute will be ignored.")
+            (Error 267, Line 10, Col 18, Line 10, Col 19, "This is not a valid constant expression or custom attribute value")
+            (Error 837, Line 10, Col 13, Line 10, Col 31, "This is not a valid constant expression")
+            (Error 267, Line 16, Col 13, Line 16, Col 15, "This is not a valid constant expression or custom attribute value")
+            (Error 267, Line 19, Col 13, Line 19, Col 17, "This is not a valid constant expression or custom attribute value")
+            (Error 267, Line 22, Col 13, Line 22, Col 18, "This is not a valid constant expression or custom attribute value")
+            (Warning 3178, Line 25, Col 13, Line 25, Col 26, "This is not valid literal expression. The [<Literal>] attribute will be ignored.")
         ]
 
     // SOURCE=E_Pathological01.fs SCFLAGS=--test:ErrorRanges                   # E_Pathological01.fs
@@ -271,3 +270,36 @@ module LetBindings_Basic =
         compilation
         |> verifyCompileAndRun
         |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/15559
+    let private sourceWarnIfFunctionShadowsUnionCase =
+        """
+type T = Case1 of int
+let t = Case1 42
+let Case1 x = t            // first warning
+let Some x = 42            // second warning
+[<RequireQualifiedAccess>] type U = U1 of int
+let u = U.U1 42
+let U1 x = t               // no warning
+type C() =
+    member _.Some x = 1    // no warning
+"""
+
+    [<Fact>]
+    let ``No default warning if function shadows union case`` () =
+        sourceWarnIfFunctionShadowsUnionCase
+        |> FSharp
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Info if function shadows union case`` () =
+        sourceWarnIfFunctionShadowsUnionCase
+        |> FSharp
+        |> withOptions ["--warnon:FS3582"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 3582, Line 4, Col 5, Line 4, Col 12, "This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.")
+            (Warning 3582, Line 5, Col 5, Line 5, Col 11, "This is a function definition that shadows a union case. If this is what you want, ignore or suppress this warning. If you want it to be a union case deconstruction, add parentheses.")
+        ]

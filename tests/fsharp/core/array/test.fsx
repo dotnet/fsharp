@@ -1092,7 +1092,7 @@ module manyIndexes =
     let CompileIndexerTest = 
         let test = Test ()
     
-        // No problems with method having vaiable number of parameters
+        // No problems with method having variable number of parameters
         let u1 = test.Foo(null, null, null, null)
         let u2 = test.Foo(null, null, null, null, null)
         let u3 = test.Foo(null, null, null, null, null, null, null, null, null)
@@ -1142,7 +1142,7 @@ let aa =
   match failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
+      printf "TEST PASSED OK" ;
       exit 0
   | _ -> 
       stdout.WriteLine "Test Failed"

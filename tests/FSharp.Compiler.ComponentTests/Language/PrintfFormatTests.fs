@@ -20,7 +20,7 @@ module PrintfFormatTests
 
 let printLibraryVersion () = printfn Library.Version
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> withReferences [csLib]
     |> compile
     |> shouldSucceed
@@ -36,7 +36,7 @@ let Format = "%d"
 if sprintf Format (Format.Length) <> "2" then
     failwith "failed"
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> asExe
     |> compileAndRun
     |> shouldSucceed
@@ -51,7 +51,7 @@ let Format = "%s"
 
 let test = sprintf Format 42
     """
-    |> withLangVersionPreview
+    |> withLangVersion80
     |> typecheck
     |> shouldFail
     |> withResult {
@@ -90,6 +90,6 @@ let bad2 = sprintf Library.Version
     |> compile
     |> shouldFail
     |> withDiagnostics [
-        (Error 3350, Line 7, Col 20, Line 7, Col 26, "Feature 'String values marked as literals and IL constants as printf format' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.")
-        (Error 3350, Line 9, Col 20, Line 9, Col 35, "Feature 'String values marked as literals and IL constants as printf format' is not available in F# 7.0. Please use language version 'PREVIEW' or greater.")
+        (Error 3350, Line 7, Col 20, Line 7, Col 26, "Feature 'String values marked as literals and IL constants as printf format' is not available in F# 7.0. Please use language version 8.0 or greater.")
+        (Error 3350, Line 9, Col 20, Line 9, Col 35, "Feature 'String values marked as literals and IL constants as printf format' is not available in F# 7.0. Please use language version 8.0 or greater.")
     ]

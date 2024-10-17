@@ -19,14 +19,12 @@ neg104.fs(35,19,35,20): parse error FS0010: Unexpected symbol '}' in definition.
 
 neg104.fs(36,1,36,1): parse error FS0010: Incomplete structured construct at or before this point in implementation file
 
-neg104.fs(8,9,8,30): typecheck error FS0750: This construct may only be used within computation expressions
+neg104.fs(8,9,8,15): typecheck error FS0750: This construct may only be used within computation expressions
 
-neg104.fs(10,9,10,30): typecheck error FS0750: This construct may only be used within computation expressions
+neg104.fs(10,9,10,15): typecheck error FS0750: This construct may only be used within computation expressions
 
 neg104.fs(20,9,20,15): typecheck error FS0025: Incomplete pattern matches on this expression.
 
 neg104.fs(23,9,23,15): typecheck error FS0025: Incomplete pattern matches on this expression.
 
-neg104.fs(32,21,32,26): typecheck error FS0003: This value is not a function and cannot be applied.
-
-neg104.fs(35,9,35,18): typecheck error FS0748: This construct may only be used within computation expressions. To return a value from an ordinary function simply write the expression without 'return'.
+neg104.fs(35,9,35,15): typecheck error FS0748: This construct may only be used within computation expressions. To return a value from an ordinary function simply write the expression without 'return'.

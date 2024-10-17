@@ -10,13 +10,14 @@
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
-    <Configurations>Debug;Release;ReleaseCompressed</Configurations>
+    <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
 
   <!--  The FSharp.DependencyManager.Nuget dll does not provide a referencable public interface although it's used for testing -->
-  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+  <PropertyGroup>
     <NoOptimizationData>true</NoOptimizationData>
-    <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
+    <NoInterfaceData>false</NoInterfaceData>
+    <CompressMetadata>true</CompressMetadata>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
@@ -31,6 +32,7 @@
   </Target>
 
   <ItemGroup>
+    <Compile Include="$(FSharpSourcesRoot)\Compiler\Utilities\NullnessShims.fs" />
     <EmbeddedText Include="FSDependencyManager.txt" />
     <EmbeddedText Include="$(FSharpSourcesRoot)\Compiler\Facilities\UtilsStrings.txt" />
     <Compile Include="$(FSharpSourcesRoot)\Compiler\Facilities\CompilerLocation.fsi" />

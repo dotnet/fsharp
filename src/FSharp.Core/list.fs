@@ -2,6 +2,7 @@
 
 namespace Microsoft.FSharp.Collections
 
+open System
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Core.LanguagePrimitives
@@ -78,7 +79,7 @@ module List =
     let countByRefType (projection: 'T -> 'Key) (list: 'T list) =
         countByImpl
             RuntimeHelpers.StructBox<'Key>.Comparer
-            (fun t -> RuntimeHelpers.StructBox(projection t))
+            (projection >> RuntimeHelpers.StructBox)
             (fun sb -> sb.Value)
             list
 
@@ -114,7 +115,7 @@ module List =
         | [] -> [], state
         | [ h ] -> let h', s' = mapping h state in [ h' ], s'
         | _ ->
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (mapping)
+            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(mapping)
 
             let rec loop res list =
                 match list, res with
@@ -243,7 +244,7 @@ module List =
 
     [<CompiledName("Iterate2")>]
     let iter2 action list1 list2 =
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (action)
+        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(action)
 
         let rec loop list1 list2 =
             match list1, list2 with
@@ -258,7 +259,7 @@ module List =
 
     [<CompiledName("IterateIndexed2")>]
     let iteri2 action list1 list2 =
-        let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt (action)
+        let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(action)
 
         let rec loop n list1 list2 =
             match list1, list2 with
@@ -288,7 +289,7 @@ module List =
         match list with
         | [] -> state
         | _ ->
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (folder)
+            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(folder)
             let mutable acc = state
 
             for x in list do
@@ -316,7 +317,7 @@ module List =
 
     [<CompiledName("Fold2")>]
     let fold2<'T1, 'T2, 'State> folder (state: 'State) (list1: 'T1 list) (list2: 'T2 list) =
-        let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt (folder)
+        let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(folder)
 
         let rec loop acc list1 list2 =
             match list1, list2 with
@@ -327,7 +328,7 @@ module List =
 
         loop state list1 list2
 
-    let foldArraySubRight (f: OptimizedClosures.FSharpFunc<'T, _, _>) (arr: 'T[]) start fin acc =
+    let foldArraySubRight (f: OptimizedClosures.FSharpFunc<'T, _, _>) (arr: 'T array) start fin acc =
         let mutable state = acc
 
         for i = fin downto start do
@@ -338,7 +339,7 @@ module List =
     // this version doesn't causes stack overflow - it uses a private stack
     [<CompiledName("FoldBack")>]
     let foldBack<'T, 'State> folder (list: 'T list) (state: 'State) =
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (folder)
+        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(folder)
 
         match list with
         | [] -> state
@@ -358,14 +359,14 @@ module List =
         match list with
         | [] -> invalidArg "list" (SR.GetString(SR.inputListWasEmpty))
         | _ ->
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (reduction)
+            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(reduction)
             let arr = toArray list
             let arrn = arr.Length
             foldArraySubRight f arr 0 (arrn - 2) arr.[arrn - 1]
 
     let scanArraySubRight<'T, 'State>
         (f: OptimizedClosures.FSharpFunc<'T, 'State, 'State>)
-        (arr: _[])
+        (arr: _ array)
         start
         fin
         initState
@@ -385,7 +386,7 @@ module List =
         | [] -> [ state ]
         | [ h ] -> [ folder h state; state ]
         | _ ->
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (folder)
+            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(folder)
             // It is faster to allocate and iterate an array than to create all those
             // highly nested stacks.  It also means we won't get stack overflows here.
             let arr = toArray list
@@ -416,7 +417,7 @@ module List =
         match list1, list2 with
         | [], [] -> state
         | h1 :: rest1, k1 :: rest2 ->
-            let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt (folder)
+            let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(folder)
 
             match rest1, rest2 with
             | [], [] -> f.Invoke(h1, k1, state)
@@ -440,7 +441,7 @@ module List =
         match list1, list2 with
         | [], [] -> true
         | _ ->
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (predicate)
+            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(predicate)
             forall2aux f list1 list2
 
     [<CompiledName("ForAll")>]
@@ -474,7 +475,7 @@ module List =
         match list1, list2 with
         | [], [] -> false
         | _ ->
-            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt (predicate)
+            let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(predicate)
             exists2aux f list1 list2
 
     [<CompiledName("Find")>]
@@ -557,11 +558,7 @@ module List =
 
     // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
     let groupByRefType (keyf: 'T -> 'Key) (list: 'T list) =
-        groupByImpl
-            RuntimeHelpers.StructBox<'Key>.Comparer
-            (fun t -> RuntimeHelpers.StructBox(keyf t))
-            (fun sb -> sb.Value)
-            list
+        groupByImpl RuntimeHelpers.StructBox<'Key>.Comparer (keyf >> RuntimeHelpers.StructBox) (fun sb -> sb.Value) list
 
     [<CompiledName("GroupBy")>]
     let groupBy (projection: 'T -> 'Key) (list: 'T list) =
@@ -991,3 +988,173 @@ module List =
 
         coll.AddMany(values) // insert values BEFORE the item at the index
         coll.AddManyAndClose(curr)
+
+    [<CompiledName("RandomShuffleWith")>]
+    let randomShuffleWith (random: Random) (source: 'T list) : 'T list =
+        checkNonNull "random" random
+
+        let tempArray = toArray source
+        Microsoft.FSharp.Primitives.Basics.Random.shuffleArrayInPlaceWith random tempArray
+        ofArray tempArray
+
+    [<CompiledName("RandomShuffleBy")>]
+    let randomShuffleBy (randomizer: unit -> float) (source: 'T list) : 'T list =
+        let tempArray = toArray source
+        Microsoft.FSharp.Primitives.Basics.Random.shuffleArrayInPlaceBy randomizer tempArray
+        ofArray tempArray
+
+    [<CompiledName("RandomShuffle")>]
+    let randomShuffle (source: 'T list) : 'T list =
+        randomShuffleWith ThreadSafeRandom.Shared source
+
+    [<CompiledName("RandomChoiceWith")>]
+    let randomChoiceWith (random: Random) (source: 'T list) : 'T =
+        checkNonNull "random" random
+
+        let inputLength = source.Length
+
+        if inputLength = 0 then
+            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+
+        let i = random.Next(0, inputLength)
+        source[i]
+
+    [<CompiledName("RandomChoiceBy")>]
+    let randomChoiceBy (randomizer: unit -> float) (source: 'T list) : 'T =
+        let inputLength = source.Length
+
+        if inputLength = 0 then
+            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+
+        let i = Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 inputLength
+        source[i]
+
+    [<CompiledName("RandomChoice")>]
+    let randomChoice (source: 'T list) : 'T =
+        randomChoiceWith ThreadSafeRandom.Shared source
+
+    [<CompiledName("RandomChoicesWith")>]
+    let randomChoicesWith (random: Random) (count: int) (source: 'T list) : 'T list =
+        checkNonNull "random" random
+
+        if count < 0 then
+            invalidArgInputMustBeNonNegative "count" count
+
+        let inputLength = source.Length
+
+        if inputLength = 0 then
+            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+
+        [
+            for _ = 0 to count - 1 do
+                let j = random.Next(0, inputLength)
+                source[j]
+        ]
+
+    [<CompiledName("RandomChoicesBy")>]
+    let randomChoicesBy (randomizer: unit -> float) (count: int) (source: 'T list) : 'T list =
+        if count < 0 then
+            invalidArgInputMustBeNonNegative "count" count
+
+        let inputLength = source.Length
+
+        if inputLength = 0 then
+            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+
+        [
+            for _ = 0 to count - 1 do
+                let j = Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 inputLength
+                source[j]
+        ]
+
+    [<CompiledName("RandomChoices")>]
+    let randomChoices (count: int) (source: 'T list) : 'T list =
+        randomChoicesWith ThreadSafeRandom.Shared count source
+
+    [<CompiledName("RandomSampleWith")>]
+    let randomSampleWith (random: Random) (count: int) (source: 'T list) : 'T list =
+        checkNonNull "random" random
+
+        if count < 0 then
+            invalidArgInputMustBeNonNegative "count" count
+
+        let inputLength = source.Length
+
+        if inputLength = 0 then
+            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+
+        if count > inputLength then
+            invalidArg "count" (SR.GetString(SR.notEnoughElements))
+
+        // algorithm taken from https://github.com/python/cpython/blob/69b3e8ea569faabccd74036e3d0e5ec7c0c62a20/Lib/random.py#L363-L456
+        let setSize =
+            Microsoft.FSharp.Primitives.Basics.Random.getMaxSetSizeForSampling count
+
+        if inputLength <= setSize then
+            let pool = source |> toArray
+
+            [
+                for i = 0 to count - 1 do
+                    let j = random.Next(0, inputLength - i)
+                    let item = pool[j]
+                    pool[j] <- pool[inputLength - i - 1]
+                    item
+            ]
+        else
+            let selected = HashSet()
+
+            [
+                for _ = 0 to count - 1 do
+                    let mutable j = random.Next(0, inputLength)
+
+                    while not (selected.Add j) do
+                        j <- random.Next(0, inputLength)
+
+                    source[j]
+            ]
+
+    [<CompiledName("RandomSampleBy")>]
+    let randomSampleBy (randomizer: unit -> float) (count: int) (source: 'T list) : 'T list =
+        if count < 0 then
+            invalidArgInputMustBeNonNegative "count" count
+
+        let inputLength = source.Length
+
+        if inputLength = 0 then
+            invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+
+        if count > inputLength then
+            invalidArg "count" (SR.GetString(SR.notEnoughElements))
+
+        let setSize =
+            Microsoft.FSharp.Primitives.Basics.Random.getMaxSetSizeForSampling count
+
+        if inputLength <= setSize then
+            let pool = source |> toArray
+
+            [
+                for i = 0 to count - 1 do
+                    let j =
+                        Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 (inputLength - i)
+
+                    let item = pool[j]
+                    pool[j] <- pool[inputLength - i - 1]
+                    item
+            ]
+        else
+            let selected = HashSet()
+
+            [
+                for _ = 0 to count - 1 do
+                    let mutable j =
+                        Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 inputLength
+
+                    while not (selected.Add j) do
+                        j <- Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 inputLength
+
+                    source[j]
+            ]
+
+    [<CompiledName("RandomSample")>]
+    let randomSample (count: int) (source: 'T list) : 'T list =
+        randomSampleWith ThreadSafeRandom.Shared count source

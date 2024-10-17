@@ -12,8 +12,8 @@ open FSharp.Compiler.EditorServices
 type internal AssemblyContentProvider() =
     let entityCache = EntityCache()
 
-    member x.GetAllEntitiesInProjectAndReferencedAssemblies(fileCheckResults: FSharpCheckFileResults) =
-        [
+    member _.GetAllEntitiesInProjectAndReferencedAssemblies(fileCheckResults: FSharpCheckFileResults) =
+        [|
             yield! AssemblyContent.GetAssemblySignatureContent AssemblyContentType.Full fileCheckResults.PartialAssemblySignature
             // FCS sometimes returns several FSharpAssembly for single referenced assembly.
             // For example, it returns two different ones for Swensen.Unquote; the first one
@@ -24,11 +24,9 @@ type internal AssemblyContentProvider() =
                 fileCheckResults.ProjectContext.GetReferencedAssemblies()
                 |> Seq.groupBy (fun asm -> asm.FileName)
                 |> Seq.map (fun (fileName, asms) -> fileName, List.ofSeq asms)
-                |> Seq.toList
-                |> List.rev // if mscorlib.dll is the first then FSC raises exception when we try to
-            // get Content.Entities from it.
+                |> Seq.rev // if mscorlib.dll is the first then FSC raises exception when we try to get Content.Entities from it.
 
             for fileName, signatures in assembliesByFileName do
                 let contentType = AssemblyContentType.Public // it's always Public for now since we don't support InternalsVisibleTo attribute yet
                 yield! AssemblyContent.GetAssemblyContent entityCache.Locking contentType fileName signatures
-        ]
+        |]

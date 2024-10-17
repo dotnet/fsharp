@@ -37,7 +37,7 @@ let div3:float<'u> -> float<'v> -> float<'w> = fun x y -> x/y
 
 let hodiv:(float<'u 'v> -> float<'u 'v>) -> float<'u> -> float<'v> = fun f -> fun x -> 0.0<_>
 
-/// A Gaussian distribution based on float numbers (struct type for memory efficency) 
+/// A Gaussian distribution based on float numbers (struct type for memory efficiency) 
 /// in exponential parameterisation. 
 type Gaussian<[<Measure>] 'a> = 
         struct

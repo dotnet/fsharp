@@ -3,7 +3,7 @@
 // We used to, but now we do not anymore.
 // 
 
-//<Expects id="FS0039" span="(20,15)" status="error">'IStructuralHash'</Expects>
+
 
 
 type r = { A : int; B : bool }

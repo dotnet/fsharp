@@ -3,5 +3,5 @@ module Foo
 open System
 open System.Threading.Tasks
 
-let mapWithAdditionalDependenies
+let mapWithAdditionalDependencies
     (mapping: 'a -> 'b * #seq<#IDisposable>) = 0

@@ -38,8 +38,10 @@ module internal Adapters =
 
     let memoize f =
         let d = new ConcurrentDictionary<Type, 'b>(HashIdentity.Structural)
+        // Cache this as a delegate.
+        let valueFactory = Func<Type, 'b> f
 
-        fun x -> d.GetOrAdd(x, (fun r -> f r))
+        fun x -> d.GetOrAdd(x, valueFactory)
 
     let isPartiallyImmutableRecord: Type -> bool =
         memoize (fun t ->
@@ -47,12 +49,12 @@ module internal Adapters =
             && not (FSharpType.GetRecordFields t |> Array.forall (fun f -> f.CanWrite)))
 
     let MemberInitializationHelperMeth =
-        methodhandleof (fun x -> LeafExpressionConverter.MemberInitializationHelper x)
+        methodhandleof (LeafExpressionConverter.MemberInitializationHelper)
         |> MethodInfo.GetMethodFromHandle
         :?> MethodInfo
 
     let NewAnonymousObjectHelperMeth =
-        methodhandleof (fun x -> LeafExpressionConverter.NewAnonymousObjectHelper x)
+        methodhandleof (LeafExpressionConverter.NewAnonymousObjectHelper)
         |> MethodInfo.GetMethodFromHandle
         :?> MethodInfo
 
@@ -63,7 +65,7 @@ module internal Adapters =
     let (|LeftSequentialSeries|) e =
         let rec leftSequentialSeries acc e =
             match e with
-            | Patterns.Sequential (e1, e2) -> leftSequentialSeries (e2 :: acc) e1
+            | Patterns.Sequential(e1, e2) -> leftSequentialSeries (e2 :: acc) e1
             | _ -> e :: acc
 
         leftSequentialSeries [] e
@@ -75,10 +77,10 @@ module internal Adapters =
         let rec propSetList acc x =
             match x with
             // detect " v.X <- y"
-            | ((Patterns.PropertySet (Some (Patterns.Var var), _, _, _)) as p) :: xs when var = varArg ->
+            | ((Patterns.PropertySet(Some(Patterns.Var var), _, _, _)) as p) :: xs when var = varArg ->
                 propSetList (p :: acc) xs
             // skip unit values
-            | (Patterns.Value (v, _)) :: xs when v = null -> propSetList acc xs
+            | (Patterns.Value(v, _)) :: xs when isNull v -> propSetList acc xs
             // detect "v"
             | [ Patterns.Var var ] when var = varArg -> Some acc
             | _ -> None
@@ -88,7 +90,7 @@ module internal Adapters =
     /// Recognize object construction written using 'new O(Prop1 = <e>, Prop2 = <e>, ...)'
     let (|ObjectConstruction|_|) e =
         match e with
-        | Patterns.Let (var, (Patterns.NewObject (_, []) as init), LeftSequentialSeries propSets) ->
+        | Patterns.Let(var, (Patterns.NewObject(_, []) as init), LeftSequentialSeries propSets) ->
             match propSets with
             | PropSetList var propSets -> Some(var, init, propSets)
             | _ -> None
@@ -128,7 +130,7 @@ module internal Adapters =
     /// Recognize anonymous type construction written using 'new AnonymousObject(<e1>, <e2>, ...)'
     let (|NewAnonymousObject|_|) e =
         match e with
-        | Patterns.NewObject (ctor, args) when
+        | Patterns.NewObject(ctor, args) when
             let dty = ctor.DeclaringType
 
             dty.IsGenericType
@@ -189,7 +191,7 @@ module internal Adapters =
 
     let (|RecordFieldGetSimplification|_|) (expr: Expr) =
         match expr with
-        | Patterns.PropertyGet (Some (Patterns.NewRecord (typ, els)), propInfo, []) ->
+        | Patterns.PropertyGet(Some(Patterns.NewRecord(typ, els)), propInfo, []) ->
             let fields =
                 Microsoft.FSharp.Reflection.FSharpType.GetRecordFields(
                     typ,
@@ -228,11 +230,11 @@ module internal Adapters =
                 let els = [ x1; x2; x3; x4; x5; x6; x7; TupleConv(x8 :: tail) ]
                 RewriteTupleType ty (List.map2 ConvImmutableTypeToMutableType els)
             | _ -> RewriteTupleType ty (List.map2 ConvImmutableTypeToMutableType convs)
-        | RecordConv (_, convs) ->
+        | RecordConv(_, convs) ->
             assert (isPartiallyImmutableRecord ty)
             let types = [| for f in FSharpType.GetRecordFields ty -> f.PropertyType |]
             ConvImmutableTypeToMutableType (TupleConv convs) (FSharpType.MakeTupleType types)
-        | GroupingConv (_keyTy, _elemTy, conv) ->
+        | GroupingConv(_keyTy, _elemTy, conv) ->
             assert ty.IsGenericType
             assert (ty.GetGenericTypeDefinition() = typedefof<IGrouping<_, _>>)
             let keyt1 = ty.GetGenericArguments().[0]
@@ -256,8 +258,7 @@ module internal Adapters =
         | NoConv -> ty
 
     let IsNewAnonymousObjectHelperQ =
-        let mhandle =
-            (methodhandleof (fun x -> LeafExpressionConverter.NewAnonymousObjectHelper x))
+        let mhandle = (methodhandleof (LeafExpressionConverter.NewAnonymousObjectHelper))
 
         let minfo = (MethodInfo.GetMethodFromHandle mhandle) :?> MethodInfo
 
@@ -265,7 +266,7 @@ module internal Adapters =
 
         (fun tm ->
             match tm with
-            | Patterns.Call (_obj, minfo2, _args) ->
+            | Patterns.Call(_obj, minfo2, _args) ->
                 minfo2.IsGenericMethod && (gmd = minfo2.GetGenericMethodDefinition())
             | _ -> false)
 
@@ -278,25 +279,25 @@ module internal Adapters =
             // rewrite bottom-up
             let expr =
                 match expr with
-                | ExprShape.ShapeCombination (comb, args) ->
+                | ExprShape.ShapeCombination(comb, args) ->
                     match args with
                     | [] -> expr
                     | _ -> ExprShape.RebuildShapeCombination(comb, List.map CleanupLeaf args)
-                | ExprShape.ShapeLambda (v, body) -> Expr.Lambda(v, CleanupLeaf body)
+                | ExprShape.ShapeLambda(v, body) -> Expr.Lambda(v, CleanupLeaf body)
                 | ExprShape.ShapeVar _ -> expr
 
             match expr with
 
             // Detect all object construction expressions - wrap them in 'MemberInitializationHelper'
             // so that it can be translated to Expression.MemberInit
-            | ObjectConstruction (var, init, propSets) ->
+            | ObjectConstruction(var, init, propSets) ->
                 // Wrap object initialization into a value (
                 let methInfo = MemberInitializationHelperMeth.MakeGenericMethod [| var.Type |]
                 Expr.Call(methInfo, [ List.reduceBack (fun a b -> Expr.Sequential(a, b)) (propSets @ [ init ]) ])
 
             // Detect all anonymous type constructions - wrap them in 'NewAnonymousObjectHelper'
             // so that it can be translated to Expression.New with member arguments.
-            | NewAnonymousObject (ctor, args) ->
+            | NewAnonymousObject(ctor, args) ->
                 let methInfo =
                     NewAnonymousObjectHelperMeth.MakeGenericMethod [| ctor.DeclaringType |]
 
@@ -308,13 +309,13 @@ module internal Adapters =
         // rewrite bottom-up
         let e =
             match e with
-            | ExprShape.ShapeCombination (comb, args) ->
+            | ExprShape.ShapeCombination(comb, args) ->
                 ExprShape.RebuildShapeCombination(comb, List.map SimplifyConsumingExpr args)
-            | ExprShape.ShapeLambda (v, body) -> Expr.Lambda(v, SimplifyConsumingExpr body)
+            | ExprShape.ShapeLambda(v, body) -> Expr.Lambda(v, SimplifyConsumingExpr body)
             | ExprShape.ShapeVar _ -> e
 
         match e with
-        | Patterns.TupleGet (Patterns.NewTuple els, i) -> els.[i]
+        | Patterns.TupleGet(Patterns.NewTuple els, i) -> els.[i]
         | RecordFieldGetSimplification newExpr -> newExpr
         | _ -> e
 
@@ -332,7 +333,7 @@ module internal Adapters =
             NewAnonymousObject argExprsNow, TupleConv argScripts
 
         // Replace immutable records by anonymous objects
-        | Patterns.NewRecord (typ, args) when isPartiallyImmutableRecord typ ->
+        | Patterns.NewRecord(typ, args) when isPartiallyImmutableRecord typ ->
             let argExprsNow, argScripts =
                 args |> List.map (ProduceMoreMutables tipf) |> List.unzip
 

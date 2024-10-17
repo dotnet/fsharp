@@ -7,12 +7,14 @@
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AssemblyName>FSharp.Compiler.Interactive.Settings</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <Configurations>Debug;Release;ReleaseCompressed</Configurations>
+    <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
 
   <!--  The FSharp.Compiler.Interactive.Settings dll provides a referencable public interface to tool builders  -->
-  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
-      <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
+  <PropertyGroup>
+    <NoOptimizationData>true</NoOptimizationData>
+    <NoInterfaceData>false</NoInterfaceData>
+    <CompressMetadata>true</CompressMetadata>
   </PropertyGroup>
 
   <!-- If building FCS solution directly, set paths explicitly -->

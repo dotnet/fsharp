@@ -2,14 +2,14 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 open FSharp.Compiler.Diagnostics
 
-[<TestFixture>]
+
 module ``Warnings assigning to mutable and immutable objects`` =
 
-    [<Test>]
+    [<Fact>]
     let ``Unused compare with immutable when assignment might be intended``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -25,7 +25,7 @@ let changeX() =
             (6, 5, 6, 11)
             "The result of this equality expression has type 'bool' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '<-' operator e.g. 'x <- expression'."
 
-    [<Test>]
+    [<Fact>]
     let ``Unused compare with mutable when assignment might be intended``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -41,7 +41,7 @@ let changeX() =
             (6, 5, 6, 11)
             "The result of this equality expression has type 'bool' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '<-' operator e.g. 'x <- expression'."
 
-    [<Test>]
+    [<Fact>]
     let ``Unused comparison of property in dotnet object when assignment might be intended``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -59,7 +59,7 @@ let changeProperty() =
             (8, 5, 8, 21)
             "The result of this equality expression has type 'bool' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '<-' operator e.g. 'z.Enabled <- expression'."
 
-    [<Test>]
+    [<Fact>]
     let ``Unused comparison of property when assignment might be intended ``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -79,7 +79,7 @@ let changeProperty() =
             (10, 5, 10, 23)
             "The result of this equality expression has type 'bool' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '<-' operator e.g. 'x.Property2 <- expression'."
 
-    [<Test>]
+    [<Fact>]
     let ``Don't warn if assignment to property without setter ``() =
         CompilerAssert.TypeCheckSingleError
             """

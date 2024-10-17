@@ -41,8 +41,7 @@ module ``Auto-generated accessors have CompilerGenerated attribute`` =
         |> compile
         |> verifyIL [
             """
-            .method public hidebysig specialname
-                        instance int32  get_Age() cil managed
+            .method public hidebysig specialname instance int32  get_Age() cil managed
                 {
                   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
                   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
@@ -53,8 +52,7 @@ module ``Auto-generated accessors have CompilerGenerated attribute`` =
                   IL_0006:  ret
                 }
 
-                .method public hidebysig specialname
-                        instance void  set_Age(int32 v) cil managed
+                .method public hidebysig specialname instance void  set_Age(int32 v) cil managed
                 {
                   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
                   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
@@ -84,8 +82,7 @@ module ``Auto-generated accessors have CompilerGenerated attribute`` =
         |> compile
         |> verifyIL [
             """
-             .method public specialname static int32
-                        get_Age() cil managed
+             .method public specialname static int32 get_Age() cil managed
                 {
                   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
                   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
@@ -103,8 +100,7 @@ module ``Auto-generated accessors have CompilerGenerated attribute`` =
                   IL_0016:  ret
                 }
 
-                .method public specialname static void
-                        set_Age(int32 v) cil managed
+                .method public specialname static void set_Age(int32 v) cil managed
                 {
                   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
                   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
@@ -187,10 +183,16 @@ module ``Auto-generated accessors have CompilerGenerated attribute`` =
         |> should haveAttribute "DebuggerNonUserCodeAttribute"
 
 // Regression: https://github.com/dotnet/fsharp/issues/14652
-module ``Let bindings in classes shoulnd't have DebuggerNonUserCodeAttribute`` =
+module ``Let bindings in classes shouldn't have DebuggerNonUserCodeAttribute`` =
 
-    [<Fact>]
-    let ``let binding doesn't have DebuggerNonUserCodeAttribute`` () =
+    let withRealInternalSignature realSig compilation =
+        compilation
+        |> withOptions [if realSig then "--realsig+" else "--realsig-" ]
+
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let ``let binding doesn't have DebuggerNonUserCodeAttribute`` (realSig) =
         FSharp
             """
             module Test
@@ -200,7 +202,8 @@ module ``Let bindings in classes shoulnd't have DebuggerNonUserCodeAttribute`` =
                 member this.Age
                     with get() = moo 9000
             """
+        |> withRealInternalSignature realSig
         |> compileAssembly
         |> getType "Test+User"
-        |> getPrivateMethod "moo"
+        |> getPrivateInstanceMethod "moo"
         |> shouldn't haveAttribute "DebuggerNonUserCodeAttribute"

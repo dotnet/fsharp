@@ -129,6 +129,8 @@ type SynExprDotLambdaTrivia =
 [<NoEquality; NoComparison>]
 type SynExprLetOrUseTrivia =
     {
+        /// The syntax range of the `let` or `use` keyword.
+        LetOrUseKeyword: range
         /// The syntax range of the `in` keyword.
         InKeyword: range option
     }
@@ -139,6 +141,8 @@ type SynExprLetOrUseTrivia =
 [<NoEquality; NoComparison>]
 type SynExprLetOrUseBangTrivia =
     {
+        /// The syntax range of the `let!` or `use!` keyword.
+        LetOrUseBangKeyword: range
         /// The syntax range of the `=` token.
         EqualsRange: range option
     }
@@ -167,6 +171,32 @@ type SynExprMatchBangTrivia =
         WithKeyword: range
     }
 
+/// Represents additional information for SynExpr.DoBang
+[<NoEquality; NoComparison>]
+type SynExprDoBangTrivia =
+    {
+        /// The syntax range of the `do!` keyword
+        DoBangKeyword: range
+    }
+
+/// Represents additional information for SynExpr.YieldOrReturn
+[<NoEquality; NoComparison>]
+type SynExprYieldOrReturnTrivia =
+    {
+        /// The syntax range of the `yield` or `return` keyword.
+        YieldOrReturnKeyword: range
+    }
+
+    static member Zero: SynExprYieldOrReturnTrivia
+
+/// Represents additional information for SynExpr.YieldOrReturnFrom
+[<NoEquality; NoComparison>]
+type SynExprYieldOrReturnFromTrivia =
+    {
+        /// The syntax range of the `yield!` or `return!` keyword.
+        YieldOrReturnFromKeyword: range
+    }
+
 /// Represents additional information for SynExpr.AnonRecd
 [<NoEquality; NoComparison>]
 type SynExprAnonRecdTrivia =
@@ -174,6 +204,17 @@ type SynExprAnonRecdTrivia =
         /// The syntax range of the `{|` token.
         OpeningBraceRange: range
     }
+
+/// Represents additional information for SynExpr.Sequential
+[<NoEquality; NoComparison>]
+type SynExprSequentialTrivia =
+    {
+        /// The syntax range of the `;` token.
+        /// Could also be the `then` keyword.
+        SeparatorRange: range option
+    }
+
+    static member Zero: SynExprSequentialTrivia
 
 /// Represents additional information for SynMatchClause
 [<NoEquality; NoComparison>]
@@ -323,9 +364,10 @@ type SynBindingTrivia =
 [<NoEquality; NoComparison>]
 type SynExprAndBangTrivia =
     {
+        /// The syntax range of the `and!` keyword
+        AndBangKeyword: range
         /// The syntax range of the `=` token.
         EqualsRange: range
-
         /// The syntax range of the `in` keyword.
         InKeyword: range option
     }
@@ -480,12 +522,18 @@ type SynMemberDefnAbstractSlotTrivia =
 
     static member Zero: SynMemberDefnAbstractSlotTrivia
 
+/// Represents additional information for SynMemberDefn.Inherit
+[<NoEquality; NoComparison>]
+type SynMemberDefnInheritTrivia = { InheritKeyword: range }
+
 /// Represents additional information for SynField
 [<NoEquality; NoComparison>]
 type SynFieldTrivia =
     {
         /// Used leading keyword of SynField
         LeadingKeyword: SynLeadingKeyword option
+        /// The syntax range of the `mutable` keyword
+        MutableKeyword: range option
     }
 
     static member Zero: SynFieldTrivia
@@ -496,6 +544,14 @@ type SynTypeOrTrivia =
     {
         /// The syntax range of the `or` keyword
         OrKeyword: range
+    }
+
+/// Represents additional information for SynType.WithNull
+[<NoEquality; NoComparison>]
+type SynTypeWithNullTrivia =
+    {
+        /// The syntax range of the `|` token
+        BarRange: range
     }
 
 /// Represents additional information for SynBindingReturnInfo
@@ -531,3 +587,14 @@ type SynTyparDeclTrivia =
 type SynMeasureConstantTrivia =
     { LessRange: range
       GreaterRange: range }
+
+/// Represents additional information for SynTypeConstraint.WhereTyparNotSupportsNull
+[<NoEquality; NoComparison>]
+type SynTypeConstraintWhereTyparNotSupportsNullTrivia =
+    {
+        /// The syntax range of `:`
+        ColonRange: range
+
+        /// The syntax range of `not`
+        NotRange: range
+    }

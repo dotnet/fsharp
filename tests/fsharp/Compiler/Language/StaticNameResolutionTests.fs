@@ -3,15 +3,15 @@
 namespace FSharp.Compiler.UnitTests
 
 open System.Collections.Immutable
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 open FSharp.Test.Utilities
 open Microsoft.CodeAnalysis
 
-[<TestFixture>]
+
 module StaticNameResolutionTests =
 
-    [<Test>]
+    [<Fact>]
     let ``C# nested type is accessible even when extension method is present with same name``() =
         let csSrc =
             """

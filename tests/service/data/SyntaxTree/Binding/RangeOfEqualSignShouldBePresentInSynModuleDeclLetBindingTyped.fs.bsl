@@ -13,8 +13,8 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
-                     None), Named (SynIdent (v, None), false, None, (2,4--2,5)),
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
+                  Named (SynIdent (v, None), false, None, (2,4--2,5)),
                   Some
                     (SynBindingReturnInfo
                        (LongIdent (SynLongIdent ([int], [], [None])),

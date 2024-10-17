@@ -973,7 +973,7 @@ type DontPressThisButtonAttribute =
   end
 
 // BUG:
-type [<DontPressThisButton("Please don't press this again")>] button = Buttpon
+type [<DontPressThisButton("Please don't press this again")>] button = Button
 let [<DontPressThisButton("Please don't press this again")>] button () = 1
 
 
@@ -1844,7 +1844,7 @@ module TestConstrainedItemProperty = begin
 end
 
 
-module ExplicitSyntacCtor = begin
+module ExplicitSyntaxCtor = begin
 
     type C =
        class
@@ -2253,7 +2253,7 @@ module StillMoreRandomTests =
     let Forall(v,p) = Not(Exists(v,Not(p)))
     let Or (p1,p2) = Not(And(Not(p1),Not(p2)))
 
-    // nice infix notation, also deerived equality and implication
+    // nice infix notation, also derived equality and implication
     let (&&&) p1 p2 = And(p1,p2)
     let (|||) p1 p2 = Or(p1,p2)
     let (===) p1 p2 = (p1 &&& p2) ||| (Not(p1) &&& Not(p2))
@@ -2299,7 +2299,7 @@ module StillMoreRandomTests =
     let forall3 g = forall1 (fun v1 -> forall1 (fun v2 -> forall1 (fun v3 -> g v1 v2 v3)))
 
     // This is the circuit: it chooses the output based on the input
-    // The circuit looks at input 0, and chooses the ouput to be input 1 or input 2
+    // The circuit looks at input 0, and chooses the output to be input 1 or input 2
     let circuit (inp : Circuit[]) out = 
         Cond inp.[0] (out === inp.[1]) (out === inp.[2])
 
@@ -3250,7 +3250,7 @@ module GenericFunctions =
     printfn "c.Result = %d" c.Result
     test "vrewiorvw09d" (c.Result = 14)
 
-#if MONO // bug repro1 (uncomfirmed)
+#if MONO // bug repro1 (unconfirmed)
 #else
 module GenericFunctionInGenericClass =
     type C<'a>() = 
@@ -5356,8 +5356,8 @@ module CheckGeneralizationOfMembersInRecursiveGroupsWhichIncludeImplicitConstruc
                  this.Meth1() |> ignore
                  C<'T>.Meth2(this))
         and C2<'T> =
-            | Parition2 of C<'T> 
-            member this.Value =  match this with Parition2 x -> x
+            | Partition2 of C<'T> 
+            member this.Value =  match this with Partition2 x -> x
             member this.Meth1() = 
                  this.Prop1() |> ignore
                  this.Meth1() |> ignore
@@ -5387,8 +5387,8 @@ module CheckGeneralizationOfMembersInRecursiveGroupsWhichIncludeImplicitConstruc
                  this.Meth1() |> ignore
                  C<'T>.Meth2(this))
         and C2<'T> =
-            | Parition2 of C<'T> 
-            member this.Value =  match this with Parition2 x -> x
+            | Partition2 of C<'T> 
+            member this.Value =  match this with Partition2 x -> x
             member this.Meth1() = 
                  this.Prop1() |> ignore
                  this.Meth1() |> ignore
@@ -5663,7 +5663,7 @@ let aa =
   match !failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
+      printf "TEST PASSED OK" ;
       exit 0
   | _ -> 
       stdout.WriteLine "Test Failed"

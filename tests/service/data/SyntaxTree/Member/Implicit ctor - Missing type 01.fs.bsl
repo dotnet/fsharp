@@ -14,20 +14,22 @@ ImplFile
                     (Class,
                      [ImplicitCtor
                         (None, [],
-                         SimplePats
-                           ([Typed
-                               (Id (i, None, false, false, false, (3,7--3,8)),
-                                FromParseError (3,9--3,9), (3,7--3,9))], [],
+                         Paren
+                           (Typed
+                              (Named
+                                 (SynIdent (i, None), false, None, (3,7--3,8)),
+                               FromParseError (3,9--3,9), (3,7--3,9)),
                             (3,6--3,10)), None,
                          PreXmlDoc ((3,6), FSharp.Compiler.Xml.XmlDocCollector),
                          (3,5--3,6), { AsKeyword = None })], (3,13--3,22)), [],
                   Some
                     (ImplicitCtor
                        (None, [],
-                        SimplePats
-                          ([Typed
-                              (Id (i, None, false, false, false, (3,7--3,8)),
-                               FromParseError (3,9--3,9), (3,7--3,9))], [],
+                        Paren
+                          (Typed
+                             (Named
+                                (SynIdent (i, None), false, None, (3,7--3,8)),
+                              FromParseError (3,9--3,9), (3,7--3,9)),
                            (3,6--3,10)), None,
                         PreXmlDoc ((3,6), FSharp.Compiler.Xml.XmlDocCollector),
                         (3,5--3,6), { AsKeyword = None })), (3,5--3,22),
@@ -39,4 +41,4 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(3,9)-(3,10) parse error Unexpected symbol ')' in type definition
+(3,9)-(3,10) parse error Unexpected symbol ')' in pattern

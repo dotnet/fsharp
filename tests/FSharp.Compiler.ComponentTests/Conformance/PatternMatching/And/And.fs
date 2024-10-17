@@ -34,6 +34,13 @@ module And =
         |> typecheck
         |> shouldSucceed
         
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"andPattern04.fs"|])>]
+    let ``And - andPattern04_fs`` compilation =
+        compilation
+        |> asFs
+        |> typecheck
+        |> shouldSucceed
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/And)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_IdentBoundTwice.fs"|])>]
     let ``And - E_IdentBoundTwice_fs - --test:ErrorRanges`` compilation =

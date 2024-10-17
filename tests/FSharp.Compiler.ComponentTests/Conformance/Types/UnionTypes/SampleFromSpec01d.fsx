@@ -12,7 +12,7 @@
                   | Request of int * string
                    member x.Name = match x with Result(nm) -> nm | Request(_,nm) -> nm
 
-type MessagX = 
+type MessageX = 
 | Result of string
 | Request of int * string
  member x.Name = match x with Result(nm) -> nm | Request(_,nm) -> nm

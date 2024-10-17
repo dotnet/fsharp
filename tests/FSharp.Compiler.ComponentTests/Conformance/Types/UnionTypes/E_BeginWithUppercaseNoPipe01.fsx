@@ -1,7 +1,7 @@
 // #Regression #Conformance #TypesAndModules #Unions 
 // Regression test for FSHARP1.0:3741
-//<Expects id="FS0053" span="(11,18-11,19)" status="error">Discriminated union cases and exception labels must be uppercase identifiers</Expects>
-//<Expects id="FS0053" span="(12,18-12,19)" status="error">Discriminated union cases and exception labels must be uppercase identifiers</Expects>
+
+
 #light
 
 module ``*`` = 

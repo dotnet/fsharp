@@ -25,11 +25,15 @@ ImplFile
                            App
                              (NonAtomic, false, Ident getFoo,
                               Const (Unit, (5,22--5,24)), (5,15--5,24)),
-                           (5,4--5,24), { EqualsRange = (5,13--5,14)
+                           (5,4--5,24), { AndBangKeyword = (5,4--5,8)
+                                          EqualsRange = (5,13--5,14)
                                           InKeyword = None })],
-                       YieldOrReturn ((false, true), Ident bar, (7,4--7,14)),
-                       (3,4--7,14), { EqualsRange = Some (3,13--3,14) }),
-                    (2,6--8,1)), (2,0--8,1)), (2,0--8,1))], PreXmlDocEmpty, [],
-          None, (2,0--8,1), { LeadingKeyword = None })], (true, true),
+                       YieldOrReturn
+                         ((false, true), Ident bar, (7,4--7,14),
+                          { YieldOrReturnKeyword = (7,4--7,10) }), (3,4--7,14),
+                       { LetOrUseBangKeyword = (3,4--3,8)
+                         EqualsRange = Some (3,13--3,14) }), (2,6--8,1)),
+                 (2,0--8,1)), (2,0--8,1))], PreXmlDocEmpty, [], None, (2,0--8,1),
+          { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))

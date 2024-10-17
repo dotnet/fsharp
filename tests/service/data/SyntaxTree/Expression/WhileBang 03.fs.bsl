@@ -10,8 +10,8 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
-                     None), Wild (3,4--3,5), None,
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
+                  Wild (3,4--3,5), None,
                   WhileBang
                     (Yes (4,4--4,32),
                      App
@@ -20,7 +20,9 @@ ImplFile
                           (false,
                            YieldOrReturn
                              ((false, true), Const (Bool true, (4,26--4,30)),
-                              (4,19--4,30)), (4,17--4,32)), (4,11--4,32)),
+                              (4,19--4,30),
+                              { YieldOrReturnKeyword = (4,19--4,25) }),
+                           (4,17--4,32)), (4,11--4,32)),
                      ArbitraryAfterError ("whileBody1", (6,0--6,1)), (4,4--4,35)),
                   (3,4--3,5), Yes (3,0--4,35), { LeadingKeyword = Let (3,0--3,3)
                                                  InlineKeyword = None
@@ -31,5 +33,6 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(6,0)-(6,1) parse error Possible incorrect indentation: this token is offside of context started at position (4:5). Try indenting this token further or using standard formatting conventions.
+(6,0)-(6,1) parse error Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (4:5). Try indenting this further.
+To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
 (6,0)-(6,1) parse error Incomplete structured construct at or before this point in expression

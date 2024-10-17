@@ -154,7 +154,7 @@ if [ ! -e $__INIT_TOOLS_DONE_MARKER ]; then
         echo "Running: $__BUILD_TOOLS_PATH/init-tools.sh $__scriptpath $__DOTNET_CMD $__TOOLRUNTIME_DIR" >> $__init_tools_log
         $__BUILD_TOOLS_PATH/init-tools.sh $__scriptpath $__DOTNET_CMD $__TOOLRUNTIME_DIR >> $__init_tools_log
         if [ "$?" != "0" ]; then
-            echo "ERROR: An error occured when trying to initialize the tools. Please check '$__init_tools_log' for more details."1>&2
+            echo "ERROR: An error occurred when trying to initialize the tools. Please check '$__init_tools_log' for more details."1>&2
             exit 1
         fi
     fi
@@ -163,7 +163,7 @@ if [ ! -e $__INIT_TOOLS_DONE_MARKER ]; then
         echo "Updating CLI NuGet Frameworks map..."
         cp $__TOOLRUNTIME_DIR/NuGet.Frameworks.dll $__TOOLRUNTIME_DIR/dotnetcli/sdk/$__DOTNET_VERSION >> $__init_tools_log
         if [ "$?" != "0" ]; then
-            echo "ERROR: An error occured when updating Nuget for CLI . Please check '$__init_tools_log' for more details."1>&2
+            echo "ERROR: An error occurred when updating Nuget for CLI . Please check '$__init_tools_log' for more details."1>&2
             exit 1
         fi
     fi

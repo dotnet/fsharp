@@ -1,6 +1,6 @@
 ﻿module TypeChecks.FileContentMappingTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Compiler.GraphChecking
 open TestUtils
 
@@ -35,7 +35,7 @@ let private (|NestedModule|_|) value e =
     | FileContentEntry.NestedModule(name, nestedContent) -> if name = value then Some(nestedContent) else None
     | _ -> None
 
-[<Test>]
+[<Fact>]
 let ``Top level module only exposes namespace`` () =
     let content =
         getContent
@@ -45,10 +45,10 @@ module X.Y.Z
 """
 
     match content with
-    | [ TopLevelNamespace "X.Y" [] ] -> Assert.Pass()
+    | [ TopLevelNamespace "X.Y" [] ] -> ()
     | content -> Assert.Fail($"Unexpected content: {content}")
 
-[<Test>]
+[<Fact>]
 let ``Top level namespace`` () =
     let content =
         getContent
@@ -58,10 +58,10 @@ namespace X.Y
 """
 
     match content with
-    | [ TopLevelNamespace "X.Y" [] ] -> Assert.Pass()
+    | [ TopLevelNamespace "X.Y" [] ] -> ()
     | content -> Assert.Fail($"Unexpected content: {content}")
 
-[<Test>]
+[<Fact>]
 let ``Open statement in top level module`` () =
     let content =
         getContent
@@ -73,10 +73,10 @@ open A.B.C
 """
 
     match content with
-    | [ TopLevelNamespace "X.Y" [ OpenStatement "A.B.C" ] ] -> Assert.Pass()
+    | [ TopLevelNamespace "X.Y" [ OpenStatement "A.B.C" ] ] -> ()
     | content -> Assert.Fail($"Unexpected content: {content}")
 
-[<Test>]
+[<Fact>]
 let ``PrefixedIdentifier in type annotation`` () =
     let content =
         getContent
@@ -88,10 +88,10 @@ let fn (a: A.B.CType) = ()
 """
 
     match content with
-    | [ TopLevelNamespace "X.Y" [ PrefixedIdentifier "A.B" ] ] -> Assert.Pass()
+    | [ TopLevelNamespace "X.Y" [ PrefixedIdentifier "A.B" ] ] -> ()
     | content -> Assert.Fail($"Unexpected content: {content}")
 
-[<Test>]
+[<Fact>]
 let ``Nested module`` () =
     let content =
         getContent
@@ -104,10 +104,10 @@ module Z =
 """
 
     match content with
-    | [ TopLevelNamespace "X" [ NestedModule "Z" [] ] ] -> Assert.Pass()
+    | [ TopLevelNamespace "X" [ NestedModule "Z" [] ] ] -> ()
     | content -> Assert.Fail($"Unexpected content: {content}")
 
-[<Test>]
+[<Fact>]
 let ``Single ident module abbreviation`` () =
     let content =
         getContent
@@ -119,5 +119,39 @@ module B = C
 """
 
     match content with
-    | [ TopLevelNamespace "" [ PrefixedIdentifier "C" ] ] -> Assert.Pass()
+    | [ TopLevelNamespace "" [ PrefixedIdentifier "C" ] ] -> ()
     | content -> Assert.Fail($"Unexpected content: {content}")
+
+
+module InvalidSyntax =
+
+    [<Fact>]
+    let ``Nested module`` () =
+        let content =
+            getContent
+                false
+                """
+    module A
+
+    module B.C
+    """
+
+        match content with
+        | [ TopLevelNamespace "" [] ] -> ()
+        | content -> Assert.Fail($"Unexpected content: {content}")
+
+
+    [<Fact>]
+    let ``Module above namespace`` () =
+        let content =
+            getContent
+                false
+                """
+    module
+
+    namespace A.B.C
+    """
+
+        match content with
+        | [ TopLevelNamespace "" [] ] -> ()
+        | content -> Assert.Fail($"Unexpected content: {content}")

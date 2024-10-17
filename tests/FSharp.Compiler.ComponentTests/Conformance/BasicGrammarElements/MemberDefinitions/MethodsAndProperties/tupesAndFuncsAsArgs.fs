@@ -5,7 +5,7 @@ type Foo() =
     static member ExecuteFunction (func : (int * string) -> bool) (args : (int * string)) =
             func args
     
-    // Type infered tuples
+    // Type inferred tuples
     member this.AddTupes (a : (int*int*int)) (b : (int*int*int*int)) c =
         let a1, a2, a3 = a
         let b1, b2, b3, b4 = b

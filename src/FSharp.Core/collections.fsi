@@ -70,7 +70,7 @@ module HashIdentity =
     /// <code>
     /// open System.Collections.Generic
     ///
-    /// let dict = new Dictionary&lt;int[],int&gt;(HashIdentity.Structural)
+    /// let dict = new Dictionary&lt;int array,int&gt;(HashIdentity.Structural)
     ///
     /// let arr1 = [| 1;2;3 |]
     /// let arr2 = [| 1;2;3 |]
@@ -101,7 +101,7 @@ module HashIdentity =
     val inline NonStructural<'T> :
         IEqualityComparer< ^T > when ^T: equality and ^T: (static member (=): ^T * ^T -> bool)
 
-    /// <summary>Get an implementation of equality semantics semantics using limited structural equality and structural hashing.</summary>
+    /// <summary>Get an implementation of equality semantics using limited structural equality and structural hashing.</summary>
     ///
     /// <param name="limit">The limit on the number of hashing operations used.</param>
     ///
@@ -134,7 +134,7 @@ module HashIdentity =
     /// <code>
     /// open System.Collections.Generic
     ///
-    /// let dict = new Dictionary&lt;int[],int&gt;(HashIdentity.Structural)
+    /// let dict = new Dictionary&lt;int array,int&gt;(HashIdentity.Structural)
     ///
     /// let arr1 = [| 1;2;3 |]
     /// let arr2 = [| 1;2;3 |]

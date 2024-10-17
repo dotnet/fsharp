@@ -12,6 +12,11 @@
         <target state="translated">32 Biti &amp;Tercih Et</target>
         <note />
       </trans-unit>
+      <trans-unit id="lblSuppressWarnings.Text">
+        <source>&amp;Suppress warnings:</source>
+        <target state="new">&amp;Suppress warnings:</target>
+        <note />
+      </trans-unit>
       <trans-unit id="outputLabel.Text">
         <source>Output</source>
         <target state="translated">Çıkış</target>
@@ -60,11 +65,6 @@
       <trans-unit id="rbWarningNone.Text">
         <source>&amp;None</source>
         <target state="translated">&amp;Hiçbiri</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="lblSupressWarnings.Text">
-        <source>&amp;Suppress warnings:</source>
-        <target state="translated">&amp;Uyarıları kapat:</target>
         <note />
       </trans-unit>
       <trans-unit id="cboWarningLevel.Items">

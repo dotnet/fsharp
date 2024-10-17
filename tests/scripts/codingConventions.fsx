@@ -32,11 +32,11 @@ for (file, (line, text)) in snd buckets.[0] do
 
 let numLong = lines |> Array.filter (fun (_, (line, lineText)) -> lineText.Length > 120) |> Array.length
 let numHuge = lines |> Array.filter (fun (_, (line, lineText)) -> lineText.Length > 160) |> Array.length
-let numHumungous = lines |> Array.filter (fun (_, (line, lineText)) -> lineText.Length > 200) |> Array.length
+let numHumongous = lines |> Array.filter (fun (_, (line, lineText)) -> lineText.Length > 200) |> Array.length
 
 printfn "%d long lines = %2.2f%%" numLong (double numLong / double totalLines)
 printfn "%d huge lines = %2.2f%%" numHuge (double numHuge / double totalLines)
-printfn "%d humungous lines = %2.2f%%" numHumungous (double numHumungous / double totalLines)
+printfn "%d humongous lines = %2.2f%%" numHumongous (double numHumongous / double totalLines)
 
 printfn "------ SPACE AFTER COMMA ANALYSIS ----------"
 
@@ -53,7 +53,7 @@ let commas =
 printfn "Top files that have commas without spaces: %A" (Array.truncate 10 commas)
 
 
-printfn "------DANGLINE SEMICOLONS----------"
+printfn "------DANGLING SEMICOLONS----------"
 
 let semis =
     lines
@@ -145,5 +145,5 @@ let parens_id =
         |> Array.length)
     |> Array.sortByDescending snd
 
-printfn "Top files that have parenthesized atomic expressionsg:\n%A" (Array.truncate 10 parens_id)
+printfn "Top files that have parenthesized atomic expressions:\n%A" (Array.truncate 10 parens_id)
 

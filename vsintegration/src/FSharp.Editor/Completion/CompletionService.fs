@@ -14,23 +14,17 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Completion
 open Microsoft.VisualStudio.Shell
 
 type internal FSharpCompletionService
-    (
-        workspace: Workspace,
-        serviceProvider: SVsServiceProvider,
-        assemblyContentProvider: AssemblyContentProvider,
-        settings: EditorOptions
-    ) =
+    (workspace: Workspace, serviceProvider: SVsServiceProvider, assemblyContentProvider: AssemblyContentProvider, settings: EditorOptions) =
     inherit FSharpCompletionServiceWithProviders(workspace)
 
     let projectInfoManager =
-        workspace
-            .Services
+        workspace.Services
             .GetRequiredService<IFSharpWorkspaceService>()
             .FSharpProjectOptionsManager
 
     let builtInProviders =
         ImmutableArray.Create<CompletionProvider>(
-            FSharpCompletionProvider(workspace, serviceProvider, assemblyContentProvider),
+            FSharpCompletionProvider(workspace, serviceProvider, assemblyContentProvider, settings),
             FSharpCommonCompletionProvider.Create(HashDirectiveCompletionProvider.Create(workspace, projectInfoManager))
         )
 
@@ -44,8 +38,7 @@ type internal FSharpCompletionService
             | NewlineOnCompleteWord -> EnterKeyRule.AfterFullyTypedWord
             | AlwaysNewline -> EnterKeyRule.Always
 
-        CompletionRules
-            .Default
+        CompletionRules.Default
             .WithDismissIfEmpty(true)
             .WithDismissIfLastCharacterDeleted(true)
             .WithDefaultEnterKeyRule(enterKeyRule)
@@ -71,12 +64,9 @@ type internal FSharpCompletionService
 
 [<Shared>]
 [<ExportLanguageServiceFactory(typeof<CompletionService>, FSharpConstants.FSharpLanguageName)>]
-type internal FSharpCompletionServiceFactory [<ImportingConstructor>]
-    (
-        serviceProvider: SVsServiceProvider,
-        assemblyContentProvider: AssemblyContentProvider,
-        settings: EditorOptions
-    ) =
+type internal FSharpCompletionServiceFactory
+    [<ImportingConstructor>]
+    (serviceProvider: SVsServiceProvider, assemblyContentProvider: AssemblyContentProvider, settings: EditorOptions) =
     interface ILanguageServiceFactory with
         member _.CreateLanguageService(hostLanguageServices: HostLanguageServices) : ILanguageService =
             upcast

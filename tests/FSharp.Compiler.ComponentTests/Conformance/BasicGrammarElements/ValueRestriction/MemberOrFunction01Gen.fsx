@@ -2,7 +2,7 @@
 
 //<Expects status="success"></Expects>
 
-// We expect no value restriciton here. The inferred signature is:
+// We expect no value restriction here. The inferred signature is:
 //     type C1<'T> = 
 //        new : unit -> C1<'T>
 //        member ToList : unit -> ?1

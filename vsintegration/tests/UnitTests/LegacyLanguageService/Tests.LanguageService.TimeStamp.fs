@@ -4,15 +4,13 @@ namespace Tests.LanguageService.TimeStamp
 
 open System
 open System.IO
-open NUnit.Framework
+open Xunit
 open Salsa.Salsa
 open Salsa.VsOpsUtils
 open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 
-[<TestFixture>]
-[<Category "LanguageService">] 
 type UsingMSBuild()  = 
     inherit LanguageServiceBaseTests()
 
@@ -46,7 +44,7 @@ type UsingMSBuild()  =
     // In this bug, if you clean the dependent project, the dependee started getting errors again about the unresolved assembly.
     // The desired behavior is like C#, which is if the assembly disappears from disk, we use cached results of last time it was there.
     // Disabled due to issue #11752   ---  https://github.com/dotnet/fsharp/issues/11752
-    //[<Test>]
+    //[<Fact>]
     member public this.``Regression.NoError.Timestamps.Bug3368b``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -87,9 +85,8 @@ type UsingMSBuild()  =
         AssertNoErrorsOrWarnings(project1)
         AssertNoErrorsOrWarnings(project2)  // this is key, project2 remembers what used to be on disk, does not fail due to missing assembly
 
-    // In this bug, the referenced project output didn't exist yet. Building dependee should cause update in dependant
-    [<Test>]
-    [<Ignore("Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
+    // In this bug, the referenced project output didn't exist yet. Building dependee should cause update in dependent
+    [<Fact(Skip = "Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
     member public this.``Regression.NoContainedString.Timestamps.Bug3368a``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -121,7 +118,7 @@ type UsingMSBuild()  =
         AssertNoErrorSeenContaining(project2, "project1")
 
    // FEATURE: OnIdle() will reprocess open dirty files, even if those file do not currently have editor focus
-    // [<Test>] TODO This test does not work because the unit tests do not cover product code that implements this feature
+    // [<Fact>] TODO This test does not work because the unit tests do not cover product code that implements this feature
     member public this.``Timestamps.Bug3368c``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -147,7 +144,7 @@ type UsingMSBuild()  =
         TakeCoffeeBreak(this.VS)
         
         let errs = GetErrors(project2)
-        Assert.IsTrue(List.length errs > 0, "There should be errors (unresolved reference)")
+        Assert.True(List.length errs > 0, "There should be errors (unresolved reference)")
 
         // switch focus to a different file (to turn off 'focus' idle processing for file2)
         let file1 = OpenFile(project1,"File1.fs")
@@ -156,7 +153,7 @@ type UsingMSBuild()  =
         printfn "building dependent project..."
         Build project1 |> ignore
         let errs = GetErrors(project2)
-        Assert.IsTrue(List.length errs > 0, "There should be errors (unresolved reference)")
+        Assert.True(List.length errs > 0, "There should be errors (unresolved reference)")
         
         TakeCoffeeBreak(this.VS) // the code that should clear out the errors is in LanguageService.cs:LanguageService.OnIdle(), 
                           // but unit tests do not call this FSharp.LanguageService.Base code; TakeCoffeeBreak(this.VS) just simulates
@@ -165,8 +162,7 @@ type UsingMSBuild()  =
         AssertNoErrorsOrWarnings(project2)
 
    // FEATURE: When a referenced assembly's timestamp changes the reference is reread.
-    [<Test; Category("Expensive")>]
-    [<Ignore("Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
+    [<Fact(Skip = "Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
     member public this.``Timestamps.ReferenceAssemblyChangeAbsolute``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -194,7 +190,7 @@ type UsingMSBuild()  =
         SwitchToFile this.VS file2
         MoveCursorToEndOfMarker(file2,"File1.File1.")
         let completions = AutoCompleteAtCursor(file2)
-        Assert.AreEqual(0, completions.Length)
+        Assert.Equal(0, completions.Length)
         
         // Now modify project1's file and rebuild.
         ReplaceFileInMemory file1 
@@ -208,12 +204,11 @@ type UsingMSBuild()  =
         MoveCursorToEndOfMarker(file2,"File1.File1.")
         TakeCoffeeBreak(this.VS) // Give enough time to catch up
         let completions = AutoCompleteAtCursor(file2)
-        Assert.AreNotEqual(0, completions.Length)
+        Assert.NotEqual(0, completions.Length)
         printfn "Completions=%A\n" completions
 
     // In this bug, relative paths to referenced assemblies weren't seen.
-    [<Test; Category("Expensive")>]
-    [<Ignore("Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
+    [<Fact(Skip = "Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
     member public this.``Timestamps.ReferenceAssemblyChangeRelative``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -249,7 +244,7 @@ type UsingMSBuild()  =
         SwitchToFile this.VS file2
         MoveCursorToEndOfMarker(file2,"File1.File1.")
         let completions = AutoCompleteAtCursor(file2)
-        Assert.AreEqual(0, completions.Length)
+        Assert.Equal(0, completions.Length)
 
         // Now modify project1's file and rebuild.
         ReplaceFileInMemory file1 
@@ -263,12 +258,11 @@ type UsingMSBuild()  =
         MoveCursorToEndOfMarker(file2,"File1.File1.")
         TakeCoffeeBreak(this.VS) // Give enough time to catch up
         let completions = AutoCompleteAtCursor(file2)
-        Assert.AreNotEqual(0, completions.Length)
+        Assert.NotEqual(0, completions.Length)
         printfn "Completions=%A\n" completions
 
     // FEATURE: When a referenced project's assembly timestamp changes the reference is reread.
-    [<Test; Category("Expensive")>]
-    [<Ignore("Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
+    [<Fact(Skip = "Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
     member public this.``Timestamps.ProjectReferenceAssemblyChange``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -302,7 +296,7 @@ type UsingMSBuild()  =
         SwitchToFile this.VS file2
         MoveCursorToEndOfMarker(file2,"File1.File1.")
         let completions = AutoCompleteAtCursor(file2)
-        Assert.AreEqual(0, completions.Length)
+        Assert.Equal(0, completions.Length)
         
         // Now modify project1's file and rebuild.
         ReplaceFileInMemory file1 
@@ -316,7 +310,7 @@ type UsingMSBuild()  =
         MoveCursorToEndOfMarker(file2,"File1.File1.")
         TakeCoffeeBreak(this.VS) // Give enough time to catch up             
         let completions = AutoCompleteAtCursor(file2)
-        Assert.AreNotEqual(0, completions.Length)
+        Assert.NotEqual(0, completions.Length)
         printfn "Completions=%A\n" completions            
 
 
@@ -325,10 +319,9 @@ namespace Tests.LanguageService.TimeStamp
 open Tests.LanguageService
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
-open NUnit.Framework
+open Xunit
 open Salsa.Salsa
 
 // Context project system
-[<TestFixture>] 
 type UsingProjectSystem() = 
     inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)

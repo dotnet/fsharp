@@ -41,7 +41,7 @@ if test.ILO  <> None        then failwith "Failed: 4"
 let x = 42
 test.MegaOptParams(x = x)
 
-// Verify default values were obtained, and modifed
+// Verify default values were obtained, and modified
 if test.Prim <> 100.0           then failwith "Failed: 1"
 if test.DU   <> Jane(Joe(0))    then failwith "Failed: 2"
 if test.Obj  <> ""              then failwith "Failed: 3"

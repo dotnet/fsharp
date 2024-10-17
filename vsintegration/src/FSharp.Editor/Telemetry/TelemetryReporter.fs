@@ -31,10 +31,10 @@ module TelemetryEvents =
     let GetSymbolUsesInProjectsFinished = "getsymbolusesinprojectsfinished"
 
     [<Literal>]
-    let AddSyntacticCalssifications = "addsyntacticclassifications"
+    let AddSyntacticClassifications = "addsyntacticclassifications"
 
     [<Literal>]
-    let AddSemanticCalssifications = "addsemanticclassifications"
+    let AddSemanticClassifications = "addsemanticclassifications"
 
     [<Literal>]
     let GetDiagnosticsForDocument = "getdiagnosticsfordocument"
@@ -47,6 +47,9 @@ module TelemetryEvents =
 
     [<Literal>]
     let GoToDefinitionGetSymbol = "gotodefinition/getsymbol"
+
+    [<Literal>]
+    let AnalysisSaveFileHandler = "analysis/savefilehandler"
 
 // TODO: needs to be something more sophisticated in future
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
@@ -84,7 +87,7 @@ module TelemetryReporter =
         // We need to utilize TelemetryEvent's Correlation id, so we can track (for example) events on one document in the project.
 
         // TODO: need to carefully review the code, since it will be a hot path when we are sending telemetry
-        // This particular approach is here to avoid alocations for properties, which is likely the case if we destructing them.
+        // This particular approach is here to avoid allocations for properties, which is likely the case if we destructing them.
         for prop in props do
             event.Properties.Add(propPrefix + prop.Item1, prop.Item2)
 
@@ -102,13 +105,15 @@ type TelemetryReporter private (name: string, props: (string * obj) array, stopw
                  TelemetryService.DefaultSession.IsUserMicrosoftInternal
              else
                  let workspace = componentModel.GetService<VisualStudioWorkspace>()
+                 let options = workspace.Services.GetService<EditorOptions>()
 
                  TelemetryService.DefaultSession.IsUserMicrosoftInternal
-                 || workspace.Services.GetService<EditorOptions>().Advanced.SendAdditionalTelemetry)
+                 || options.Advanced.SendAdditionalTelemetry
+                 || options.Advanced.UseTransparentCompiler)
 
     static member ReportFault(name, ?severity: FaultSeverity, ?e: exn) =
         if TelemetryReporter.SendAdditionalTelemetry.Value then
-            let faultName = String.Concat(name, "/fault")
+            let faultName = String.Concat(TelemetryReporter.eventPrefix, name, "/fault")
 
             match severity, e with
             | Some s, Some e -> TelemetryService.DefaultSession.PostFault(faultName, name, s, e)
@@ -120,7 +125,7 @@ type TelemetryReporter private (name: string, props: (string * obj) array, stopw
     static member ReportCustomFailure(name, ?props) =
         if TelemetryReporter.SendAdditionalTelemetry.Value then
             let props = defaultArg props [||]
-            let name = String.Concat(name, "/failure")
+            let name = String.Concat(TelemetryReporter.eventPrefix, name, "/failure")
             let event = TelemetryReporter.createEvent name props
             TelemetryService.DefaultSession.PostEvent event
 

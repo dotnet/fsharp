@@ -74,9 +74,7 @@ module Baz =
                 Line 16, Col 20, Line 16, Col 22
                 Line 21, Col 20, Line 21, Col 22
             ]
-            VerifyDocuments [
-                Path.Combine(Environment.CurrentDirectory, "test.fs")
-            ]
+            VerifyDocuments [ "test.fs" ]
         ]
 
     [<Fact>]
@@ -100,9 +98,4 @@ module M =
         |> withPortablePdb
         |> compile
         |> shouldSucceed
-        |> verifyPdb [
-            VerifyDocuments [
-                Path.Combine(Environment.CurrentDirectory, "test.fsi")
-                Path.Combine(Environment.CurrentDirectory, "test.fs")
-            ]
-        ]
+        |> verifyPdb [ VerifyDocuments [ "test.fsi"; "test.fs" ] ]

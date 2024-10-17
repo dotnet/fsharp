@@ -145,4 +145,4 @@ type internal FSharpIndentationService [<ImportingConstructor>] () =
 
             match indent with
             | None -> Nullable()
-            | Some (indentation) -> Nullable<FSharpIndentationResult>(FSharpIndentationResult(text.Lines.[lineNumber].Start, indentation))
+            | Some(indentation) -> Nullable<FSharpIndentationResult>(FSharpIndentationResult(text.Lines.[lineNumber].Start, indentation))

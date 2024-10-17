@@ -52,7 +52,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                         ClassificationTypeNames.Text
 
                 match RoslynHelpers.TryFSharpRangeToTextSpan(text, tok.Range) with
-                | Some span -> result.Add(ClassifiedSpan(TextSpan(textSpan.Start + span.Start, span.Length), spanKind))
+                | ValueSome span -> result.Add(ClassifiedSpan(TextSpan(textSpan.Start + span.Start, span.Length), spanKind))
                 | _ -> ()
 
         let flags =
@@ -79,8 +79,8 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
         =
         for item in items do
             match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range) with
-            | None -> ()
-            | Some span ->
+            | ValueNone -> ()
+            | ValueSome span ->
                 let span =
                     match item.Type with
                     | SemanticClassificationType.Printf -> span
@@ -111,7 +111,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                 | true, items -> items
                 | _ ->
                     let items = ResizeArray()
-                    lookup.[dataItem.Range.StartLine] <- items
+                    lookup[dataItem.Range.StartLine] <- items
                     items
 
             items.Add dataItem
@@ -120,8 +120,29 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
         lookup :> IReadOnlyDictionary<_, _>
 
-    let semanticClassificationCache =
-        new DocumentCache<SemanticClassificationLookup>("fsharp-semantic-classification-cache")
+    static let itemToSemanticClassificationLookup (d: SemanticClassificationItem array) =
+        let lookup = Dictionary<int, ResizeArray<SemanticClassificationItem>>()
+
+        for item in d do
+            let items =
+                let startLine = item.Range.StartLine
+
+                match lookup.TryGetValue startLine with
+                | true, items -> items
+                | _ ->
+                    let items = ResizeArray()
+                    lookup[startLine] <- items
+                    items
+
+            items.Add item
+
+        lookup :> IReadOnlyDictionary<_, _>
+
+    static let unopenedDocumentsSemanticClassificationCache =
+        new DocumentCache<SemanticClassificationLookup>("fsharp-unopened-documents-semantic-classification-cache", 5.)
+
+    static let openedDocumentsSemanticClassificationCache =
+        new DocumentCache<SemanticClassificationLookup>("fsharp-opened-documents-semantic-classification-cache", 2.)
 
     interface IFSharpClassificationService with
         // Do not perform classification if we don't have project options (#defines matter)
@@ -157,7 +178,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                     |]
 
                 use _eventDuration =
-                    TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSyntacticCalssifications, eventProps)
+                    TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSyntacticClassifications, eventProps)
 
                 if not isOpenDocument then
                     let classifiedSpans =
@@ -193,11 +214,11 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
                 // If we are trying to get semantic classification for a document that is not open, get the results from the background and cache it.
                 // We do this for find all references when it is populating results.
-                // We cache it temporarily so we do not have to continously call into the checker and perform a background operation.
+                // We cache it temporarily so we do not have to continuously call into the checker and perform a background operation.
                 let isOpenDocument = document.Project.Solution.Workspace.IsDocumentOpen document.Id
 
                 if not isOpenDocument then
-                    match! semanticClassificationCache.TryGetValueAsync document with
+                    match! unopenedDocumentsSemanticClassificationCache.TryGetValueAsync document with
                     | ValueSome classificationDataLookup ->
                         let eventProps: (string * obj) array =
                             [|
@@ -209,10 +230,10 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                             |]
 
                         use _eventDuration =
-                            TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSemanticCalssifications, eventProps)
+                            TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSemanticClassifications, eventProps)
 
                         addSemanticClassificationByLookup sourceText textSpan classificationDataLookup result
-                    | _ ->
+                    | ValueNone ->
                         let eventProps: (string * obj) array =
                             [|
                                 "context.document.project.id", document.Project.Id.Id.ToString()
@@ -223,32 +244,56 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                             |]
 
                         use _eventDuration =
-                            TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSemanticCalssifications, eventProps)
+                            TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSemanticClassifications, eventProps)
 
                         let! classificationData = document.GetFSharpSemanticClassificationAsync(nameof (FSharpClassificationService))
+
                         let classificationDataLookup = toSemanticClassificationLookup classificationData
-                        do! semanticClassificationCache.SetAsync(document, classificationDataLookup)
+                        do! unopenedDocumentsSemanticClassificationCache.SetAsync(document, classificationDataLookup)
                         addSemanticClassificationByLookup sourceText textSpan classificationDataLookup result
                 else
-                    let eventProps: (string * obj) array =
-                        [|
-                            "context.document.project.id", document.Project.Id.Id.ToString()
-                            "context.document.id", document.Id.Id.ToString()
-                            "isOpenDocument", isOpenDocument
-                            "textSpanLength", textSpan.Length
-                            "cacheHit", false
-                        |]
 
-                    use _eventDuration =
-                        TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSemanticCalssifications, eventProps)
+                    match! openedDocumentsSemanticClassificationCache.TryGetValueAsync document with
+                    | ValueSome classificationDataLookup ->
+                        let eventProps: (string * obj) array =
+                            [|
+                                "context.document.project.id", document.Project.Id.Id.ToString()
+                                "context.document.id", document.Id.Id.ToString()
+                                "isOpenDocument", isOpenDocument
+                                "textSpanLength", textSpan.Length
+                                "cacheHit", true
+                            |]
 
-                    let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof (IFSharpClassificationService))
+                        use _eventDuration =
+                            TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSemanticClassifications, eventProps)
 
-                    let targetRange =
-                        RoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
+                        addSemanticClassificationByLookup sourceText textSpan classificationDataLookup result
+                    | ValueNone ->
 
-                    let classificationData = checkResults.GetSemanticClassification(Some targetRange)
-                    addSemanticClassification sourceText textSpan classificationData result
+                        let eventProps: (string * obj) array =
+                            [|
+                                "context.document.project.id", document.Project.Id.Id.ToString()
+                                "context.document.id", document.Id.Id.ToString()
+                                "isOpenDocument", isOpenDocument
+                                "textSpanLength", textSpan.Length
+                                "cacheHit", false
+                            |]
+
+                        use _eventDuration =
+                            TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSemanticClassifications, eventProps)
+
+                        let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof (IFSharpClassificationService))
+
+                        let targetRange =
+                            RoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
+
+                        let classificationData = checkResults.GetSemanticClassification(Some targetRange)
+
+                        if classificationData.Length > 0 then
+                            let classificationDataLookup = itemToSemanticClassificationLookup classificationData
+                            do! unopenedDocumentsSemanticClassificationCache.SetAsync(document, classificationDataLookup)
+
+                            addSemanticClassification sourceText textSpan classificationData result
             }
             |> CancellableTask.startAsTask cancellationToken
 

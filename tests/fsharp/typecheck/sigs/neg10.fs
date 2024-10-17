@@ -55,7 +55,7 @@ module CheckNoImplementationsInAugmentations = begin
     end    
 end
     
-module CheckNoIntrfacesInAugmentations = begin
+module CheckNoInterfacesInAugmentations = begin
     type IX = interface
         abstract M : int
     end

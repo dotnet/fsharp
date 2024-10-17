@@ -136,7 +136,7 @@ let getObjectHashCode (x:'a) = (box x).GetHashCode()
 let (===) (x:'a) (y:'a) = (box x).Equals(box y)
 
 let _ = stdout.WriteLine "90erw9"
-let _ = if true && true then stdout.WriteLine "YES" else  reportFailure "intial test"
+let _ = if true && true then stdout.WriteLine "YES" else  reportFailure "initial test"
 let _ = if true && false then reportFailure "basic test 1" else  stdout.WriteLine "YES"
 let _ = if false && true then reportFailure "basic test 2" else  stdout.WriteLine "YES"
 let _ = if false && false then reportFailure "basic test 3" else  stdout.WriteLine "YES"
@@ -559,9 +559,9 @@ do test "cwewvewho0" (match box(Some 3)    with :? option<string> -> false | _ -
 do test "cwewvewho-" (match box([3])    with :? list<int> as v -> (v = [3]) | _ -> false)
 do test "cwewvewhoa" (match box([3])    with :? list<string> as v -> false | _ -> true)
 
-do test "cwewvewhos" (match (null:obj)    with :? list<int> as v -> false | _ -> true)
+do test "cwewvewhos" (match (null:obj)   with :? list<int> as v -> false | _ -> true)
 
-let pattest<'a> (obj:obj) fail (succeed : 'a -> bool) = match obj  with :? 'a as x -> succeed x | _ -> fail()
+let pattest<'a> (obj:objnull) fail (succeed : 'a -> bool) = match obj  with :? 'a as x -> succeed x | _ -> fail()
 
 do test "cwewvewhoq" (pattest<int>   (box(1))                       (fun () -> false) (fun v -> v = 1))
 do test "cwewvewhow" (pattest<int>   (null)                         (fun () -> true ) (fun _ -> false))
@@ -1202,10 +1202,10 @@ let _ = printString "tuple object equality null test (b25): "; if (1,2,3,4,5,C) 
 let _ = printString "ref equality test (b25): "; if ref 1 = ref 1 then stdout.WriteLine "YES" else  reportFailure "basic test Q"
 let _ = printString "ref equality test (b25): "; if ref 1 <> ref 2 then stdout.WriteLine "YES" else  reportFailure "basic test Q"
 
-let _ = printString "compaure nativeint test (b25): "; if compare [0n] [1n] = -(compare [1n] [0n]) then stdout.WriteLine "YES" else  reportFailure "basic test Q"
-let _ = printString "compaure nativeint test (b25): "; if compare [0un] [1un] = -(compare [1un] [0un]) then stdout.WriteLine "YES" else  reportFailure "basic test Q"
-let _ = printString "compaure nativeint test (b25): "; if compare [0un] [0un] = 0 then stdout.WriteLine "YES" else  reportFailure "basic test Q"
-let _ = printString "compaure nativeint test (b25): "; if compare [0n] [0n] = 0 then stdout.WriteLine "YES" else  reportFailure "basic test Q"
+let _ = printString "compare nativeint test (b25): "; if compare [0n] [1n] = -(compare [1n] [0n]) then stdout.WriteLine "YES" else  reportFailure "basic test Q"
+let _ = printString "compare nativeint test (b25): "; if compare [0un] [1un] = -(compare [1un] [0un]) then stdout.WriteLine "YES" else  reportFailure "basic test Q"
+let _ = printString "compare nativeint test (b25): "; if compare [0un] [0un] = 0 then stdout.WriteLine "YES" else  reportFailure "basic test Q"
+let _ = printString "compare nativeint test (b25): "; if compare [0n] [0n] = 0 then stdout.WriteLine "YES" else  reportFailure "basic test Q"
 
 
 (*---------------------------------------------------------------------------
@@ -1486,7 +1486,7 @@ module Pow =
                    test "cnod90kmhvreE" (try pown 0M exp; false with :? System.DivideByZeroException -> true);
                );
                
-               // check powerrs of -1
+               // check powers of -1
                test "cnod90kmr" (pown -1.0f exp = (if exp % 2 = 0 then 1.0f else -1.0f));
                test "cnod90kms" (pown -1.0 exp = (if exp % 2 = 0 then 1.0 else -1.0));
                test "cnod90kmt" (pown -1.0M exp = (if exp % 2 = 0 then 1.0M else -1.0M));
@@ -2506,221 +2506,221 @@ module SeqTestsOnEnumerableEnforcingDisposalAtEnd = begin
 
    // This one gave a stack overflow when we weren't tail-calling on 64-bit
    do check "Seq.filter-length" ({ 1 .. 1000000 } |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.filter (fun n -> n <> 1) |> Seq.length) 999999
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "Seq.filter-length" ({ 1 .. 1000000 } |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.filter (fun n -> n = 1) |> Seq.length) 1
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "Seq.filter-length" ({ 1 .. 1000000 } |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.filter (fun n -> n % 2 = 0) |> Seq.length) 500000
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
     
    do check "IEnumerableTest.empty-length" (Seq.length (countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd Seq.empty)) 0
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.length-of-array" (Seq.length (countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd [| 1;2;3 |])) 3
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.head-of-array" (Seq.head (countEnumeratorsAndCheckedDisposedAtMostOnce [| 1;2;3 |])) 1
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.take-0-of-array" (Seq.take 0 (countEnumeratorsAndCheckedDisposedAtMostOnce [| 1;2;3 |]) |> Seq.toList) []
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.take-1-of-array" (Seq.take 1 (countEnumeratorsAndCheckedDisposedAtMostOnce [| 1;2;3 |]) |> Seq.toList) [1]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.take-3-of-array" (Seq.take 3 (countEnumeratorsAndCheckedDisposedAtMostOnce [| 1;2;3 |]) |> Seq.toList) [1;2;3]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.nonempty-true" (Seq.isEmpty (countEnumeratorsAndCheckedDisposedAtMostOnce [| 1;2;3 |])) false
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.nonempty-false" (Seq.isEmpty (countEnumeratorsAndCheckedDisposedAtMostOnce [| |])) true
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.fold" (Seq.fold (+) 0 (countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd [| 1;2;3 |])   ) 6
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.unfold" (Seq.unfold (fun _ -> None) 1 |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toArray) [| |]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.unfold" (Seq.unfold (fun x -> if x = 1 then Some("a",2) else  None) 1 |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toArray) [| "a" |]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.exists" (Seq.exists ((=) "a") (countEnumeratorsAndCheckedDisposedAtMostOnce [| |])) false
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.exists" (Seq.exists ((=) "a") (countEnumeratorsAndCheckedDisposedAtMostOnce [| "a" |])) true
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.exists" (Seq.exists ((=) "a") (countEnumeratorsAndCheckedDisposedAtMostOnce [| "1"; "a" |])) true
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
 
 
    do check "IEnumerableTest.exists" (Seq.forall ((=) "a") (countEnumeratorsAndCheckedDisposedAtMostOnce [| |])) true
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.exists" (Seq.forall ((=) "a") (countEnumeratorsAndCheckedDisposedAtMostOnce [| "a" |])) true
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.exists" (Seq.forall ((=) "a") (countEnumeratorsAndCheckedDisposedAtMostOnce [| "1"; "a" |])) false
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
 
    do check "IEnumerableTest.map on finite" ([| "a" |] |> Seq.map (fun x -> x.Length) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toArray) [| 1 |]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.filter on finite" ([| "a";"ab";"a" |] |> Seq.filter (fun x -> x.Length = 1) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toArray) [| "a";"a" |]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.choose on finite" ([| "a";"ab";"a" |] |> Seq.choose (fun x -> if x.Length = 1 then Some(x^"a") else None) |> Seq.toArray) [| "aa";"aa" |]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "Seq.pick on finite (succeeding)" ([| "a";"ab";"a" |] |> countEnumeratorsAndCheckedDisposedAtMostOnce |> Seq.pick (fun x -> if x.Length = 1 then Some(x^"a") else None)) "aa"
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "Seq.tryPick on finite (succeeding)" ([| "a";"ab";"a" |] |> countEnumeratorsAndCheckedDisposedAtMostOnce |> Seq.tryPick (fun x -> if x.Length = 1 then Some(x^"a") else None)) (Some "aa")
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "Seq.tryPick on finite (failing)" ([| "a";"ab";"a" |] |> countEnumeratorsAndCheckedDisposedAtMostOnce |> Seq.tryPick (fun x -> if x.Length = 6 then Some(x^"a") else None)) None
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.find on finite (succeeding)" ([| "a";"ab";"a" |] |> countEnumeratorsAndCheckedDisposedAtMostOnce |> Seq.find (fun x -> x.Length = 1)) "a"
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.find on finite (failing)" (try Some ([| "a";"ab";"a" |] |> countEnumeratorsAndCheckedDisposedAtMostOnce |> Seq.find (fun x -> x.Length = 6)) with :? System.Collections.Generic.KeyNotFoundException -> None) None
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.map_with_type (string up to obj,finite)" ([| "a" |] |> Seq.cast |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toArray) [| ("a" :> obj) |]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.map_with_type (obj down to string, finite)" ([| ("a" :> obj) |] |> Seq.cast |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toArray) [| "a" |]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.append, finite, finite" (Seq.append [| "a" |] [| "b" |]  |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toArray) [| "a"; "b" |]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
 
 
 
    do check "IEnumerableTest.concat, finite" (Seq.concat [| [| "a" |]; [| |]; [| "b";"c" |] |]  |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toList) [ "a";"b";"c" ]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.init_infinite, then take" (Seq.take 2 (countEnumeratorsAndCheckedDisposedAtMostOnce (Seq.initInfinite (fun i -> i+1))) |> Seq.toList) [ 1;2 ]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.to_array, empty" (Seq.init 0 (fun i -> i+1) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toArray) [|  |]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.to_array, small" (Seq.init 1 (fun i -> i+1) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toArray) [| 1 |]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.to_array, large" (Seq.init 100000 (fun i -> i+1) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toArray |> Array.length) 100000
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.to_array, very large" (Seq.init 1000000 (fun i -> i+1) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toArray |> Array.length) 1000000
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.to_list, empty" (Seq.init 0 (fun i -> i+1) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toList) [  ]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.to_list, small" (Seq.init 1 (fun i -> i+1) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toList) [ 1 ]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.to_list, large" (Seq.init 100000 (fun i -> i+1) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toList |> List.length) 100000
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.to_list, large" (Seq.init 1000000 (fun i -> i+1) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toList |> List.length) 1000000
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "IEnumerableTest.to_list, large" (Seq.init 1000000 (fun i -> i+1) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> List.ofSeq |> List.length) 1000000
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "List.unzip, large" (Seq.init 1000000 (fun i -> (i,i+1)) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> List.ofSeq |> List.unzip |> fst |> List.length) 1000000
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    let dup x = x,x
    let uncurry f (x,y) = f x y
     
    do check "List.zip, large" (Seq.init 1000000 (fun i -> (i,i+1)) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> List.ofSeq |> dup |> uncurry List.zip |> List.length) 1000000
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
     
 (*
     // Currently disabled, since IStructuralEquatable.Equals will cause this to stack overflow around 140000 elements
     do check "List.sort, large" ((Seq.init 140000 (fun i -> 139999 - i) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> List.ofSeq |> List.sort) = 
                                  (Seq.init 140000 (fun i -> i) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> List.ofSeq |> List.sort))   true
-    do check "<dispoal>" numActiveEnumerators 0
+    do check "<disposal>" numActiveEnumerators 0
 *)
     
    do check "Seq.singleton" (Seq.singleton 42 |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.length) 1
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "Seq.singleton" (Seq.singleton 42 |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toList) [42]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
 
    do check "Seq.truncate" (Seq.truncate 20 (countEnumeratorsAndCheckedDisposedAtMostOnce [1..100]) |> Seq.toList) [1..20]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "Seq.truncate" (Seq.truncate 1 (countEnumeratorsAndCheckedDisposedAtMostOnce [1..100]) |> Seq.toList) [1]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "Seq.truncate" (Seq.truncate 0 (countEnumeratorsAndCheckedDisposedAtMostOnce [1..100]) |> Seq.toList) []
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
 
    do check "Seq.scan" (Seq.scan (+) 0 (countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd [|1..5|]) |> Seq.toArray) [|0; 1; 3; 6; 10; 15|]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    //do check "Seq.scan1" (Seq.scan1 (+) (countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd [|1..5|]) |> Seq.toArray) [|3; 6; 10; 15|]
-   //do check "<dispoal>" numActiveEnumerators 0
+   //do check "<disposal>" numActiveEnumerators 0
 
    do check "Seq.exists2" (Seq.exists2 (=) (countEnumeratorsAndCheckedDisposedAtMostOnce [|1; 2; 3; 4; 5; 6|]) (countEnumeratorsAndCheckedDisposedAtMostOnce [|2; 3; 4; 5; 6; 6|])) true
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "Seq.exists2" (Seq.exists2 (=) (countEnumeratorsAndCheckedDisposedAtMostOnce [|1; 2; 3; 4; 5; 6|]) (countEnumeratorsAndCheckedDisposedAtMostOnce [|2; 3; 4; 5; 6; 7|])) false
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
 
    do check "Seq.forall2" (Seq.forall2 (=) (countEnumeratorsAndCheckedDisposedAtMostOnce [|1..10|]) (countEnumeratorsAndCheckedDisposedAtMostOnce [|1..10|])) true
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "Seq.forall2" (Seq.forall2 (=) (countEnumeratorsAndCheckedDisposedAtMostOnce [|1;2;3;4;5|]) (countEnumeratorsAndCheckedDisposedAtMostOnce [|1;2;3;0;5|])) false
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
 
 
 
    do check "Seq.tryFind" ([|1..100|] |> countEnumeratorsAndCheckedDisposedAtMostOnce |> Seq.tryFind (fun x -> x > 50)) (Some 51)
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "Seq.tryFind" ([|1..100|] |> countEnumeratorsAndCheckedDisposedAtMostOnce |> Seq.tryFind (fun x -> x > 180)) None
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
 
 
    do check "Seq.compareWith" (Seq.compareWith compare (countEnumeratorsAndCheckedDisposedAtMostOnce [1;2]) (countEnumeratorsAndCheckedDisposedAtMostOnce [2;1])) -1
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "Seq.compareWith" (Seq.compareWith compare (countEnumeratorsAndCheckedDisposedAtMostOnce [2;1]) (countEnumeratorsAndCheckedDisposedAtMostOnce [1;2]))  1
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "Seq.compareWith" (Seq.compareWith compare (countEnumeratorsAndCheckedDisposedAtMostOnce [1;2]) (countEnumeratorsAndCheckedDisposedAtMostOnce [1;2]))  0
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "Seq.compareWith" (Seq.compareWith compare (countEnumeratorsAndCheckedDisposedAtMostOnce []) (countEnumeratorsAndCheckedDisposedAtMostOnce    [1;2])) -1
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
 
    do check "Seq.collect" (Seq.collect (fun i -> [i*10 .. i*10+9]) (countEnumeratorsAndCheckedDisposedAtMostOnce [0..9]) |> Seq.toList) [0..99]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
 
    let c = ref -1
    do Seq.iter2 (fun x y -> incr c; test "Seq.iter2" (!c = x && !c = y)) (countEnumeratorsAndCheckedDisposedAtMostOnce [0..10]) (countEnumeratorsAndCheckedDisposedAtMostOnce [0..10])
    do check "Seq.iter2" !c 10
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
 
    do check "Seq.zip"
          (Seq.zip [1..10] (countEnumeratorsAndCheckedDisposedAtMostOnce [2..11]) |> Seq.toList) [for i in 1..10 -> i, i+1]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
 
 
    do check "Seq.zip3"
          (Seq.zip3 (countEnumeratorsAndCheckedDisposedAtMostOnce [1..10]) (countEnumeratorsAndCheckedDisposedAtMostOnce [2..11]) (countEnumeratorsAndCheckedDisposedAtMostOnce [3..12]) |> Seq.toList) [for i in 1..10 -> i, i+1, i+2]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
 
    do c := -1
    do Seq.iteri (fun n x -> incr c; test "Seq.iter2" (!c = n && !c+1 = x)) (countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd [1..11])
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "Seq.iter2" !c 10
 
    do check "Seq.pairwise" (Seq.pairwise (countEnumeratorsAndCheckedDisposedAtMostOnce [1..20]) |> Seq.toList) [for i in 1 .. 19 -> i, i+1]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
 
    do check "Seq.windowed 1" (Seq.windowed 1 (countEnumeratorsAndCheckedDisposedAtMostOnce [1..20]) |> Seq.toList) [for i in 1 .. 20 -> [|i|]]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "Seq.windowed 2" (Seq.windowed 2 (countEnumeratorsAndCheckedDisposedAtMostOnce [1..20]) |> Seq.toList) [for i in 1 .. 19 -> [|i; i+1|]]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "Seq.windowed 3" (Seq.windowed 3 (countEnumeratorsAndCheckedDisposedAtMostOnce [1..20]) |> Seq.toList) [for i in 1 .. 18 -> [|i; i+1; i+2|]]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "Seq.windowed 4" (Seq.windowed 4 (countEnumeratorsAndCheckedDisposedAtMostOnce [1..20]) |> Seq.toList) [for i in 1 .. 17 -> [|i; i+1; i+2; i+3|]]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
 
    let group = Seq.groupBy (fun x -> x % 5) (countEnumeratorsAndCheckedDisposedAtMostOnce [1..100])
    do for n, s in group do
         check "Seq.groupBy" (Seq.forall (fun x -> x % 5 = n) s) true;
-        check "<dispoal>" numActiveEnumerators 0
+        check "<disposal>" numActiveEnumerators 0
       done
 
    let sorted = Seq.sortBy abs (countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd [2; 4; 3; -5; 2; -4; -8; 0; 5; 2])
    do check "Seq.sortBy" (Seq.pairwise sorted |> Seq.forall (fun (x, y) -> abs x <= abs y)) true
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    let counts = Seq.countBy id (countEnumeratorsAndCheckedDisposedAtMostOnce [for i in 1..10 do yield! [10..-1..i] done ])
    do check "Seq.countBy" (counts |> Seq.toList) [for i in 10..-1..1 -> i, i]
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
 
    do check "Seq.sum" (Seq.sum (countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd [1..100])) (100*101/2)
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "Seq.sumBy" (Seq.sumBy float [1..100]) (100.*101./2.)
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
 
    do check "Seq.average" (Seq.average (countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd [1.; 2.; 3.])) 2.
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "Seq.averageBy" (Seq.averageBy float (countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd [0..100])) 50.
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "Seq.min" (Seq.min (countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd [1; 4; 2; 5; 8; 4; 0; 3])) 0
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "Seq.max" (Seq.max (countEnumeratorsAndCheckedDisposedAtMostOnce [1; 4; 2; 5; 8; 4; 0; 3])) 8
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
 #if !NETCOREAPP
 // strings don't have enumerators in portable
    do check "Seq.minBy" (Seq.minBy int (countEnumeratorsAndCheckedDisposedAtMostOnce "this is a test")) ' '
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
    do check "Seq.maxBy" (Seq.maxBy int (countEnumeratorsAndCheckedDisposedAtMostOnce "this is a test")) 't'
-   do check "<dispoal>" numActiveEnumerators 0
+   do check "<disposal>" numActiveEnumerators 0
 #endif
 
 end
@@ -3577,7 +3577,7 @@ end
 !* check optimizations 
  *--------------------------------------------------------------------------- *)
 
-module Optimiations = begin
+module Optimizations = begin
 
     let _ = check "opt.oi20c77u" (1 + 1) (2)
     let _ = check "opt.oi20c77i" (-1 + 1) (0)
@@ -5168,7 +5168,7 @@ end
 !* BUG 1561: (-star-star-) opens a comment but does not close it and other XML Doc issues.
  *--------------------------------------------------------------------------- *)
 
-(* QA note: how to test for XML doc? Programatically? *)
+(* QA note: how to test for XML doc? Programmatically? *)
 module Check1561 = begin
  (** Should be XML Doc *)
  let itemA = () 
@@ -5215,12 +5215,12 @@ module Repro2247 = begin
     let r = MyLazy<_>() in    (* Keep this binding, required for repro *)
     r                         (* Warning: Fragile repro *)
 
-  (* With optimisations off, code failed to verify *)
+  (* With optimizations off, code failed to verify *)
 end
 
 
 (*---------------------------------------------------------------------------
-!* BUG 1190, 3569: record and list patterns do not permit trailing seperator
+!* BUG 1190, 3569: record and list patterns do not permit trailing separator
  *--------------------------------------------------------------------------- *)
 
 module Repro_1190 = begin
@@ -5554,7 +5554,7 @@ module TripleQuoteStrings =
 ""world""" "Hello \r\n\"\"world"
 #endif
 #endif
-    // cehcek there is no escaping...
+    // check there is no escaping...
     check "ckjenew-0ecwe5" """Hello \"world""" "Hello \\\"world"
     check "ckjenew-0ecwe6" """Hello \\"world""" "Hello \\\\\"world"
     check "ckjenew-0ecwe7" """Hello \nworld""" "Hello \\nworld"
@@ -5646,7 +5646,7 @@ let aa =
   match !failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
+      printf "TEST PASSED OK" ;
       exit 0
   | _ -> 
       stdout.WriteLine "Test Failed"

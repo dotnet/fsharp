@@ -208,7 +208,7 @@ module Bug1126BenjaminTeuber = begin
                 printf "%i" value  
             done 
         let CallPrintAll (values : int seq) =        
-            printfn "Caling Sum" ;
+            printfn "Calling Sum" ;
             values |> PrintAll in           
             printfn "Done" ;
         let MyFun () =                    
@@ -467,7 +467,7 @@ module Bug11620B =
 
     let main _ =
         let dummyThing : Thing<int> = { Thing.Metadata = 42 }
-        // crash occured on the following line
+        // crash occurred on the following line
         let callback = getCreateServiceCallback<int> dummyThing
         let resolvedService = callback ()
         printfn "Resolved service: %A" resolvedService
@@ -483,7 +483,7 @@ let aa =
   match !failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
+      printf "TEST PASSED OK" ;
       exit 0
   | _ -> 
       stdout.WriteLine "Test Failed"

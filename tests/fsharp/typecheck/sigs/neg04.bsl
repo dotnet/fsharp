@@ -30,9 +30,15 @@ neg04.fs(47,30,47,51): typecheck error FS0001: Type mismatch. Expecting a
     ''a seq -> 'n'    
 but given a
     ''o list -> 'p'    
-The type ''a seq' does not match the type ''n list'
+The type ''a list' does not match the type ''b seq'
 
 neg04.fs(47,49,47,51): typecheck error FS0784: This numeric literal requires that a module 'NumericLiteralN' defining functions FromZero, FromOne, FromInt32, FromInt64 and FromString be in scope
+
+neg04.fs(47,30,47,51): typecheck error FS0001: Type mismatch. Expecting a
+    ''a seq -> 'n'    
+but given a
+    ''o list -> 'p'    
+The type ''a list' does not match the type ''c seq'
 
 neg04.fs(61,25,61,40): typecheck error FS0001: This expression was expected to have type
     'ClassType1'    
@@ -45,15 +51,11 @@ neg04.fs(70,21,70,36): typecheck error FS0064: This construct causes code to be 
 
 neg04.fs(70,12,70,14): typecheck error FS0663: This type parameter has been used in a way that constrains it to always be 'c<string>'
 
-neg04.fs(70,12,70,14): typecheck error FS0660: This code is less generic than required by its annotations because the explicit type variable 'a' could not be generalized. It was constrained to be 'c<string>'.
-
 neg04.fs(76,19,76,26): typecheck error FS0698: Invalid constraint: the type used for the constraint is sealed, which means the constraint could only be satisfied by at most one solution
 
 neg04.fs(76,19,76,26): typecheck error FS0064: This construct causes code to be less generic than indicated by the type annotations. The type variable 'a has been constrained to be type 'd'.
 
 neg04.fs(76,10,76,12): typecheck error FS0663: This type parameter has been used in a way that constrains it to always be 'd'
-
-neg04.fs(76,10,76,12): typecheck error FS0660: This code is less generic than required by its annotations because the explicit type variable 'a' could not be generalized. It was constrained to be 'd'.
 
 neg04.fs(81,58,81,61): typecheck error FS0001: This expression was expected to have type
     'int'    

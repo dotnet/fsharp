@@ -28,8 +28,8 @@ type internal FSharpBraceMatchingService [<ImportingConstructor>] () =
 
             let isPositionInRange range =
                 match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
-                | None -> false
-                | Some span ->
+                | ValueNone -> false
+                | ValueSome span ->
                     if forFormatting then
                         let length = position - span.Start
                         length >= 0 && length <= span.Length

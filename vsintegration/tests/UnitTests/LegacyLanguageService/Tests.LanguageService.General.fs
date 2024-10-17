@@ -2,7 +2,7 @@
 
 namespace Tests.LanguageService.General
 
-open NUnit.Framework
+open Xunit
 open System
 open System.IO
 open System.Reflection
@@ -21,10 +21,9 @@ open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 
-[<TestFixture>][<Category "LanguageService">] 
 module IFSharpSource_DEPRECATED = 
 
-    [<Test>]
+    [<Fact>]
     let MultipleSourceIsDirtyCallsChangeTimestamps() = 
         let recolorizeWholeFile() = ()
         let recolorizeLine (_line:int) = ()
@@ -42,8 +41,8 @@ module IFSharpSource_DEPRECATED =
         let secondDirtyTime = source.DirtyTime
         let lastTickCount =  System.Environment.TickCount
             
-        Assert.AreEqual(originalChangeCount + 1, secondChangeCount)
-        Assert.AreNotEqual(secondDirtyTime, originalDirtyTime)
+        Assert.Equal(originalChangeCount + 1, secondChangeCount)
+        Assert.NotEqual(secondDirtyTime, originalDirtyTime)
             
         // Here's the test. NeedsVisualRefresh is true now, we call RecordChangeToView() and it should cause a new changeCount and dirty time.
         while System.Environment.TickCount = lastTickCount do 
@@ -52,13 +51,12 @@ module IFSharpSource_DEPRECATED =
         let thirdChangeCount = source.ChangeCount
         let thirdDirtyTime = source.DirtyTime
             
-        Assert.AreEqual(secondChangeCount + 1, thirdChangeCount)
-        Assert.AreNotEqual(thirdDirtyTime, secondDirtyTime)            
+        Assert.Equal(secondChangeCount + 1, thirdChangeCount)
+        Assert.NotEqual(thirdDirtyTime, secondDirtyTime)            
 
 
 
 
-[<TestFixture>][<Category "LanguageService">]  
 type UsingMSBuild() =
     inherit LanguageServiceBaseTests()
 
@@ -104,7 +102,7 @@ type UsingMSBuild() =
                             n
                    ) 0
 
-    [<Test>]
+    [<Fact>]
     member public this.``ReconcileErrors.Test1``() = 
         let (_solution, project, file) = this.CreateSingleFileProject(["erroneous"])
         Build project |> ignore
@@ -112,7 +110,7 @@ type UsingMSBuild() =
         ()
  
     /// FEATURE: (Project System only) Adding a file outside the project directory creates a link
-    [<Test>]
+    [<Fact>]
     member public this.``ProjectSystem.FilesOutsideProjectDirectoryBecomeLinkedFiles``() =
         use _guard = this.UsingNewVS()
         if OutOfConeFilesAreAddedAsLinks(this.VS) then
@@ -127,7 +125,7 @@ type UsingMSBuild() =
             let projFileText = System.IO.File.ReadAllText(ProjectFile(project))
             AssertMatchesRegex '<' @"<ItemGroup>\s*<Compile Include=""..\\link.fs"">\s*<Link>link.fs</Link>" projFileText
                                   
-    [<Test>]
+    [<Fact>]
     member public this.``Lexer.CommentsLexing.Bug1548``() =
         let scan = new FSharpScanner_DEPRECATED(fun source -> 
                         let fileName = "test.fs"
@@ -195,7 +193,7 @@ type UsingMSBuild() =
            
         
     // This was a bug in ReplaceAllText (subsequent calls to SetMarker would fail)
-    [<Test>]
+    [<Fact>]
     member public this.``Salsa.ReplaceAllText``() =
         let code = 
                 ["#light"; 
@@ -216,7 +214,7 @@ type UsingMSBuild() =
         
         // Verify able to move cursor and get correct results
         MoveCursorToEndOfMarker(file, "comment")
-        AssertEqual(TokenType.Comment, GetTokenTypeAtCursor(file))   // Not a string, as was origionally
+        AssertEqual(TokenType.Comment, GetTokenTypeAtCursor(file))   // Not a string, as was originally
         MoveCursorToEndOfMarker(file, "let y = ")
         AssertEqual(TokenType.String, GetTokenTypeAtCursor(file))   // Able to find new marker
         MoveCursorToStartOfMarker(file, "let y = ")
@@ -225,7 +223,7 @@ type UsingMSBuild() =
     
 
     // Make sure that possible overloads (and other related errors) are shown in the error list
-    [<Test>]
+    [<Fact>]
     member public this.``ErrorLogging.Bug5144``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -242,13 +240,13 @@ type UsingMSBuild() =
                                        "p.Plot(sin, 0., 0.)"])
         let build = time1 Build project "Time to build project"
         
-        Assert.IsTrue(not build.BuildSucceeded, "Expected build to fail")              
+        Assert.True(not build.BuildSucceeded, "Expected build to fail")              
         
         if SupportsOutputWindowPane(this.VS) then 
             Helper.AssertListContainsInOrder(GetOutputWindowPaneLines(this.VS), 
                                       ["error FS0041: A unique overload for method 'Plot' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: member N.M.LineChart.Plot : f:(float -> float) * xmin:float * xmax:float -> unit, member N.M.LineChart.Plot : f:System.Func<double,double> * xmin:float * xmax:float -> unit"])
 
-    [<Test; Category("Expensive")>]
+    [<Fact>]
     member public this.``ExhaustivelyScrutinize.ThisOnceAsserted``() =     
         Helper.ExhaustivelyScrutinize(
           this.TestRunner,
@@ -258,7 +256,7 @@ type UsingMSBuild() =
             """    else [],""            """ ]
             )
 
-    [<Test; Category("Expensive")>]
+    [<Fact>]
     member public this.``ExhaustivelyScrutinize.ThisOnceAssertedToo``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner,
@@ -268,7 +266,7 @@ type UsingMSBuild() =
               "        member _.CompareTo(v:obj) = 1" ]
             )
 
-    [<Test; Category("Expensive")>]
+    [<Fact>]
     member public this.``ExhaustivelyScrutinize.ThisOnceAssertedThree``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner,
@@ -278,7 +276,7 @@ type UsingMSBuild() =
               "        with get() = x.Data"
               "        and set(v) = x.Data <- v" ]
               )
-    [<Test>]
+    [<Fact>]
     member public this.``ExhaustivelyScrutinize.ThisOnceAssertedFour``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner,
@@ -286,12 +284,11 @@ type UsingMSBuild() =
               "let z=4" ]
               )
 
-    [<Test>]
+    [<Fact>]
     member public this.``ExhaustivelyScrutinize.ThisOnceAssertedFive``() =     
         Helper.ExhaustivelyScrutinize(this.TestRunner, [ """CSV.File<@"File1.txt">.[0].""" ])  // <@ is one token, wanted < @"...
 
-    [<Category("Expensive")>]
-    [<Test>]
+    [<Fact>]
     member public this.``ExhaustivelyScrutinize.Bug2277``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner,
@@ -305,8 +302,7 @@ type UsingMSBuild() =
                "let pp= plot(Area(xs,ys))" ]
                 )
                                      
-    [<Category("Expensive")>]
-    [<Test>]
+    [<Fact>]
     member public this.``ExhaustivelyScrutinize.Bug2283``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner,
@@ -322,7 +318,7 @@ type UsingMSBuild() =
 
    /// Verifies that token info returns correct trigger classes 
     /// - this is used in MPF for triggering various intellisense features
-    [<Test>]
+    [<Fact>]
     member public this.``TokenInfo.TriggerClasses``() =      
       let important = 
         [ // Member select for dot completions
@@ -340,7 +336,7 @@ type UsingMSBuild() =
         let info = TestExpose.TokenInfo tok
         AssertEqual(expected, info)
 
-    [<Test>]
+    [<Fact>]
     member public this.``MatchingBraces.VerifyMatches``() = 
         let content = 
             [|
@@ -383,15 +379,15 @@ type UsingMSBuild() =
             let (endRow, endCol) = getPos endMarker
 
             let checkTextSpan (actual : TextSpan) expectedRow expectedCol = 
-                Assert.IsTrue(actual.iStartLine = actual.iEndLine, "Start and end of the span should be on the same line")
-                Assert.AreEqual(expectedRow, actual.iStartLine, "Unexpected row")
-                Assert.AreEqual(expectedCol, actual.iStartIndex, "Unexpected column")
-                Assert.IsTrue(actual.iEndIndex = (actual.iStartIndex + expectedSpanLen), sprintf "Span should have length == %d" expectedSpanLen)
+                Assert.True(actual.iStartLine = actual.iEndLine, "Start and end of the span should be on the same line")
+                Assert.Equal(expectedRow, actual.iStartLine)
+                Assert.Equal(expectedCol, actual.iStartIndex)
+                Assert.True(actual.iEndIndex = (actual.iStartIndex + expectedSpanLen), sprintf "Span should have length == %d" expectedSpanLen)
 
             let checkBracesForPosition row col = 
                 setPos row col
                 let braces = GetMatchingBracesForPositionAtCursor(file)
-                Assert.AreEqual(1, braces.Length, "One result expected")
+                Assert.Equal(1, braces.Length)
 
                 let (lbrace, rbrace) = braces.[0]
                 checkTextSpan lbrace startRow startCol
@@ -412,7 +408,6 @@ type UsingMSBuild() =
 
 
 // Context project system
-[<TestFixture>]
 type UsingProjectSystem() = 
     inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)
 

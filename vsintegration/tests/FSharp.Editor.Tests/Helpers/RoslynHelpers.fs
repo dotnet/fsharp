@@ -175,15 +175,6 @@ type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace)
     let langServices =
         TestHostLanguageServices(this, LanguageNames.FSharp, exportProvider)
 
-    member this.SetEditorEptions(value) =
-        exportProvider
-            .GetExportedValue<SettingsStore.ISettingsStore>()
-            .SaveSettings(value)
-
-    member this.WithEditorOptions(value) =
-        this.SetEditorEptions(value)
-        this
-
     override _.Workspace = workspace
 
     override this.GetService<'T when 'T :> IWorkspaceService>() : 'T =
@@ -197,7 +188,7 @@ type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace)
             with _ ->
                 Unchecked.defaultof<'T>
 
-    override _.FindLanguageServices(filter) = Seq.empty
+    override _.FindLanguageServices(_filter) = Seq.empty
 
     override _.GetLanguageServices(languageName) =
         match languageName with
@@ -270,18 +261,18 @@ type RoslynTestHelpers private () =
         )
 
     static member SetProjectOptions projId (solution: Solution) (options: FSharpProjectOptions) =
-        solution
-            .Workspace
-            .Services
+        solution.Workspace.Services
             .GetService<IFSharpWorkspaceService>()
-            .FSharpProjectOptionsManager
-            .SetCommandLineOptions(
+            .FSharpProjectOptionsManager.SetCommandLineOptions(
                 projId,
                 options.SourceFiles,
                 options.OtherOptions |> ImmutableArray.CreateRange
             )
 
-    static member CreateSolution(source, ?options: FSharpProjectOptions) =
+    static member SetEditorOptions (solution: Solution) options =
+        solution.Workspace.Services.GetService<EditorOptions>().With(options)
+
+    static member CreateSolution(source, ?options: FSharpProjectOptions, ?extraFSharpProjectOtherOptions: string array, ?editorOptions) =
         let projId = ProjectId.CreateNewId()
 
         let docInfo = RoslynTestHelpers.CreateDocumentInfo projId "C:\\test.fs" source
@@ -290,15 +281,32 @@ type RoslynTestHelpers private () =
         let projInfo = RoslynTestHelpers.CreateProjectInfo projId projFilePath [ docInfo ]
         let solution = RoslynTestHelpers.CreateSolution [ projInfo ]
 
-        options
-        |> Option.defaultValue RoslynTestHelpers.DefaultProjectOptions
-        |> RoslynTestHelpers.SetProjectOptions projId solution
+        let options =
+            let options = options |> Option.defaultValue RoslynTestHelpers.DefaultProjectOptions
+
+            match extraFSharpProjectOtherOptions with
+            | None
+            | Some [||] -> options
+            | Some otherOptions ->
+                { options with
+                    OtherOptions = Array.concat [| options.OtherOptions; otherOptions |]
+                }
+
+        options |> RoslynTestHelpers.SetProjectOptions projId solution
+
+        if editorOptions.IsSome then
+            RoslynTestHelpers.SetEditorOptions solution editorOptions.Value
 
         solution
 
     static member GetSingleDocument(solution: Solution) =
         let project = solution.Projects |> Seq.exactlyOne
         let document = project.Documents |> Seq.exactlyOne
+        document
+
+    static member GetLastDocument(solution: Solution) =
+        let project = solution.Projects |> Seq.exactlyOne
+        let document = project.Documents |> Seq.last
         document
 
     static member CreateSolution(syntheticProject: SyntheticProject) =
@@ -338,7 +346,7 @@ type RoslynTestHelpers private () =
 
         solution, checker
 
-    static member GetFsDocument(code, ?customProjectOption: string) =
+    static member GetFsDocument(code, ?customProjectOption: string, ?customEditorOptions) =
         let customProjectOptions =
             customProjectOption
             |> Option.map (fun o -> [| o |])
@@ -354,8 +362,10 @@ type RoslynTestHelpers private () =
                     |> Array.append customProjectOptions
             }
 
-        RoslynTestHelpers.CreateSolution(code, options = options)
-        |> RoslynTestHelpers.GetSingleDocument
+        let solution =
+            RoslynTestHelpers.CreateSolution(code, options, ?editorOptions = customEditorOptions)
+
+        solution |> RoslynTestHelpers.GetSingleDocument
 
     static member GetFsiAndFsDocuments (fsiCode: string) (fsCode: string) =
         let projInfo =

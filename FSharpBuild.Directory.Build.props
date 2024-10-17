@@ -70,12 +70,11 @@
 
   <!-- localization -->
   <PropertyGroup>
-    <EnableXlfLocalization Condition="'$(EnableXlfLocalization)' == '' AND ('$(Configuration)' == 'Proto' OR '$(MonoPackaging)' == 'true')">false</EnableXlfLocalization>
-    <UpdateXlfOnBuild Condition="'$(CI)' != '1'">true</UpdateXlfOnBuild>
+    <EnableXlfLocalization Condition="'$(EnableXlfLocalization)' == '' AND ('$(Configuration)' == 'Proto' OR '$(MonoPackaging)' == 'true')">false</EnableXlfLocalization>    
   </PropertyGroup>
 
-  <!-- source build -->
-  <PropertyGroup Condition="'$(DotNetBuildFromSource)' == 'true' OR '$(ArcadeBuildFromSource)' == 'true'">
+  <!-- Do not publish in source-only modes. This switch is present in both inner and outer builds. -->
+  <PropertyGroup Condition="'$(DotNetBuildSourceOnly)' == 'true'">
     <PublishWindowsPdb>false</PublishWindowsPdb>
   </PropertyGroup>
 
@@ -114,7 +113,7 @@
   <!-- use this to enable good debugging in the Proto bootstrap compiler -->
   <!-- You'll have to remove it to get the actual compiler bo build because optimization is needed for some large methods -->
   <!--
-  <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
+    <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
     <DebugSymbols>true</DebugSymbols>
     <Optimize>false</Optimize>
     <Tailcalls>true</Tailcalls>

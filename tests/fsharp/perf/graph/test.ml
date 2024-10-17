@@ -299,7 +299,7 @@ end
    findSCCs is based upon Tarjan's algorithm, 
    as explained in Aho, Hopcroft and Ullman. 
    It finds all the strongly connected components of a graph.
-   It requres the call-stack to traverse the graph.
+   It requires the call-stack to traverse the graph.
    ------------------------------------------------------------------------*)
 
   let findSCCsBase dfs t =
@@ -412,7 +412,7 @@ end
     | Found -> true
 
 
-(* Check whether there is a an edge from node to itself *)
+(* Check whether there is an edge from node to itself *)
   let selfLoop t node = 
     let nodeI = nodeInfo t node in
     NodeSet.contains node nodeI.succ
@@ -538,5 +538,5 @@ end
   let _ = test()
 
 do   (System.Console.WriteLine "Test Passed"; 
-       System.IO.File.WriteAllText ("test.ok", "ok");
+       printf "TEST PASSED OK";
        exit 0)

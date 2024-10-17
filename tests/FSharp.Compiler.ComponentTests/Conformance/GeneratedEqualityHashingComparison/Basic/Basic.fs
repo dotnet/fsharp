@@ -62,15 +62,12 @@ module Basic =
             (Error 344, Line 13, Col 6, Line 13, Col 7, "The struct, record or union type 'R' has an explicit implementation of 'Object.GetHashCode' or 'Object.Equals'. You must apply the 'CustomEquality' attribute to the type")
             (Warning 345, Line 13, Col 6, Line 13, Col 7, "The struct, record or union type 'R' has an explicit implementation of 'Object.GetHashCode'. Consider implementing a matching override for 'Object.Equals(obj)'")
             (Error 359, Line 13, Col 6, Line 13, Col 7, "More than one override implements 'GetHashCode: unit -> int'")
-            (Error 54, Line 13, Col 6, Line 13, Col 7, "This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[<AbstractClass>]' attribute to your type.")
             (Error 344, Line 17, Col 6, Line 17, Col 7, "The struct, record or union type 'U' has an explicit implementation of 'Object.GetHashCode' or 'Object.Equals'. You must apply the 'CustomEquality' attribute to the type")
             (Warning 345, Line 17, Col 6, Line 17, Col 7, "The struct, record or union type 'U' has an explicit implementation of 'Object.GetHashCode'. Consider implementing a matching override for 'Object.Equals(obj)'")
             (Error 359, Line 17, Col 6, Line 17, Col 7, "More than one override implements 'GetHashCode: unit -> int'")
-            (Error 54, Line 17, Col 6, Line 17, Col 7, "This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[<AbstractClass>]' attribute to your type.")
             (Error 344, Line 21, Col 6, Line 21, Col 7, "The struct, record or union type 'S' has an explicit implementation of 'Object.GetHashCode' or 'Object.Equals'. You must apply the 'CustomEquality' attribute to the type")
             (Warning 345, Line 21, Col 6, Line 21, Col 7, "The struct, record or union type 'S' has an explicit implementation of 'Object.GetHashCode'. Consider implementing a matching override for 'Object.Equals(obj)'")
             (Error 359, Line 21, Col 6, Line 21, Col 7, "More than one override implements 'GetHashCode: unit -> int'")
-            (Error 54, Line 21, Col 6, Line 21, Col 7, "This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[<AbstractClass>]' attribute to your type.")
            ]
 
     // SOURCE=E_ExceptionsNoComparison.fs SCFLAGS="--test:ErrorRanges"          # E_ExceptionsNoComparison.fs

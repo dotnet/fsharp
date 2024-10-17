@@ -3,8 +3,8 @@
   <file datatype="xml" source-language="en" target-language="ko" original="../FSDependencyManager.resx">
     <body>
       <trans-unit id="cantReferenceSystemPackage">
-        <source>PackageManager can not reference the System Package '{0}'</source>
-        <target state="translated">PackageManager에서 시스템 패키지 '{0}'을(를) 참조할 수 없습니다.</target>
+        <source>PackageManager cannot reference the System Package '{0}'</source>
+        <target state="new">PackageManager cannot reference the System Package '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="highestVersion">

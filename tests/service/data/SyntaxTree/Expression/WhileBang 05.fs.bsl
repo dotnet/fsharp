@@ -10,8 +10,8 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
-                     None), Wild (3,4--3,5), None,
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
+                  Wild (3,4--3,5), None,
                   WhileBang
                     (Yes (4,4--4,32),
                      App
@@ -20,7 +20,9 @@ ImplFile
                           (false,
                            YieldOrReturn
                              ((false, true), Const (Bool true, (4,26--4,30)),
-                              (4,19--4,30)), (4,17--4,32)), (4,11--4,32)),
+                              (4,19--4,30),
+                              { YieldOrReturnKeyword = (4,19--4,25) }),
+                           (4,17--4,32)), (4,11--4,32)),
                      Const (Int32 2, (5,8--5,9)), (4,4--5,9)), (3,4--3,5),
                   Yes (3,0--5,9), { LeadingKeyword = Let (3,0--3,3)
                                     InlineKeyword = None

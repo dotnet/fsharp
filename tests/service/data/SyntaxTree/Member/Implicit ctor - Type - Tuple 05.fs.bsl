@@ -14,30 +14,10 @@ ImplFile
                     (Class,
                      [ImplicitCtor
                         (None, [],
-                         SimplePats
-                           ([Typed
-                               (Id (i, None, false, false, false, (3,7--3,8)),
-                                Tuple
-                                  (false,
-                                   [Type
-                                      (LongIdent
-                                         (SynLongIdent ([a], [], [None])));
-                                    Star (3,12--3,13);
-                                    Type (FromParseError (3,15--3,15));
-                                    Star (3,14--3,15);
-                                    Type
-                                      (LongIdent
-                                         (SynLongIdent ([c], [], [None])))],
-                                   (3,10--3,17)), (3,7--3,17))], [], (3,6--3,19)),
-                         None,
-                         PreXmlDoc ((3,6), FSharp.Compiler.Xml.XmlDocCollector),
-                         (3,5--3,6), { AsKeyword = None })], (3,22--3,31)), [],
-                  Some
-                    (ImplicitCtor
-                       (None, [],
-                        SimplePats
-                          ([Typed
-                              (Id (i, None, false, false, false, (3,7--3,8)),
+                         Paren
+                           (Typed
+                              (Named
+                                 (SynIdent (i, None), false, None, (3,7--3,8)),
                                Tuple
                                  (false,
                                   [Type
@@ -47,8 +27,27 @@ ImplFile
                                    Star (3,14--3,15);
                                    Type
                                      (LongIdent (SynLongIdent ([c], [], [None])))],
-                                  (3,10--3,17)), (3,7--3,17))], [], (3,6--3,19)),
-                        None,
+                                  (3,10--3,17)), (3,7--3,17)), (3,6--3,19)),
+                         None,
+                         PreXmlDoc ((3,6), FSharp.Compiler.Xml.XmlDocCollector),
+                         (3,5--3,6), { AsKeyword = None })], (3,22--3,31)), [],
+                  Some
+                    (ImplicitCtor
+                       (None, [],
+                        Paren
+                          (Typed
+                             (Named
+                                (SynIdent (i, None), false, None, (3,7--3,8)),
+                              Tuple
+                                (false,
+                                 [Type
+                                    (LongIdent (SynLongIdent ([a], [], [None])));
+                                  Star (3,12--3,13);
+                                  Type (FromParseError (3,15--3,15));
+                                  Star (3,14--3,15);
+                                  Type
+                                    (LongIdent (SynLongIdent ([c], [], [None])))],
+                                 (3,10--3,17)), (3,7--3,17)), (3,6--3,19)), None,
                         PreXmlDoc ((3,6), FSharp.Compiler.Xml.XmlDocCollector),
                         (3,5--3,6), { AsKeyword = None })), (3,5--3,31),
                   { LeadingKeyword = Type (3,0--3,4)

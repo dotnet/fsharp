@@ -18,13 +18,12 @@ open Microsoft.VisualStudio.FSharp.ProjectSystem
 open Microsoft.VisualStudio.FSharp.Editor
 
 // Internal unittest namespaces
-open NUnit.Framework
+open Xunit
 open Salsa
 open UnitTests.TestLib.Utils.Asserts
 open UnitTests.TestLib.Utils.FilesystemHelpers
 open UnitTests.TestLib.ProjectSystem
 
-[<TestFixture>][<Category "ProjectSystem">]
 type Miscellaneous() = 
     inherit TheTests()
 
@@ -34,7 +33,7 @@ type Miscellaneous() =
     static let SaveProject(project : UnitTestingFSharpProjectNode) =
         project.Save(null, 1, 0u) |> ignore
 
-    //[<Test>]   // keep disabled unless trying to prove that UnhandledExceptionHandler is working 
+    //[<Fact>]   // keep disabled unless trying to prove that UnhandledExceptionHandler is working 
     member public this.EnsureThatUnhandledExceptionsCauseAnAssert() =
         this.MakeProjectAndDo([], ["System"], "", (fun proj ->
             let t = new System.Threading.Thread(new System.Threading.ThreadStart(fun () -> failwith "foo"))
@@ -42,16 +41,16 @@ type Miscellaneous() =
             System.Threading.Thread.Sleep(1000)
         ))
 
-    [<Test>]
+    [<Fact>]
     member public this.``Miscellaneous.CreatePropertiesObject`` () =
         DoWithTempFile "Test.fsproj" (fun projFile ->
             File.AppendAllText(projFile, TheTests.SimpleFsprojText([], [], ""))
             use project = TheTests.CreateProject(projFile) 
             let prop = project.CreatePropertiesObject()
-            Assert.AreEqual(typeof<FSharpProjectNodeProperties>, prop.GetType())
+            Assert.Equal(typeof<FSharpProjectNodeProperties>, prop.GetType())
             )
             
-    [<Test>]
+    [<Fact>]
     member public this.``Miscellaneous.TestProperties`` () =
         DoWithTempFile "Test.fsproj" (fun projFile ->
             File.AppendAllText(projFile, TheTests.SimpleFsprojText([], [], ""))
@@ -59,63 +58,63 @@ type Miscellaneous() =
             let prop = new FSharpProjectNodeProperties(project)
             
             prop.AssemblyName <- "a"
-            Assert.AreEqual("a", prop.AssemblyName)            
+            Assert.Equal("a", prop.AssemblyName)            
             
             // Output type and output file name
             prop.OutputType <- OutputType.Exe
-            Assert.AreEqual(OutputType.Exe, prop.OutputType)
-            Assert.AreEqual("a.exe", prop.OutputFileName)
+            Assert.Equal(OutputType.Exe, prop.OutputType)
+            Assert.Equal("a.exe", prop.OutputFileName)
             
             prop.OutputType <- OutputType.Library
-            Assert.AreEqual(OutputType.Library, prop.OutputType)
-            Assert.AreEqual("a.dll", prop.OutputFileName)
+            Assert.Equal(OutputType.Library, prop.OutputType)
+            Assert.Equal("a.dll", prop.OutputFileName)
             
             prop.OutputType <- OutputType.WinExe
-            Assert.AreEqual(OutputType.WinExe, prop.OutputType)
-            Assert.AreEqual("a.exe", prop.OutputFileName)
+            Assert.Equal(OutputType.WinExe, prop.OutputType)
+            Assert.Equal("a.exe", prop.OutputFileName)
             )            
             
-    [<Test>]
+    [<Fact>]
     member public this.``Miscellaneous.CreateServices`` () =
         DoWithTempFile "Test.fsproj" (fun projFile ->
             File.AppendAllText(projFile, TheTests.SimpleFsprojText([], [], ""))
             use project = TheTests.CreateProject(projFile) 
             let proj = project.CreateServices(typeof<VSLangProj.VSProject>)
-            Assert.AreEqual(typeof<Microsoft.VisualStudio.FSharp.ProjectSystem.Automation.OAVSProject>, proj.GetType())
+            Assert.Equal(typeof<Microsoft.VisualStudio.FSharp.ProjectSystem.Automation.OAVSProject>, proj.GetType())
             let eproj = project.CreateServices(typeof<EnvDTE.Project>)
-            Assert.AreEqual(typeof<Microsoft.VisualStudio.FSharp.ProjectSystem.Automation.OAProject>, eproj.GetType())
+            Assert.Equal(typeof<Microsoft.VisualStudio.FSharp.ProjectSystem.Automation.OAProject>, eproj.GetType())
             let badservice = project.CreateServices(typeof<string>)
-            Assert.IsNull(badservice)
+            Assert.Null(badservice)
             )
             
-    [<Test>]
+    [<Fact>]
     member public this.``Miscellaneous.FSharpFileNode.RelativeFilePath`` () =
         this.MakeProjectAndDo(["orig1.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "orig1.fs")
             let files = new List<FSharpFileNode>()
             project.FindNodesOfType(files)
-            Assert.AreEqual(1, files.Count)
+            Assert.Equal(1, files.Count)
             let file = files.[0]
             let path = file.RelativeFilePath
-            Assert.AreEqual("orig1.fs", path)
+            Assert.Equal("orig1.fs", path)
             ))
            
-    [<Test>]
+    [<Fact>]
     member public this.``Miscellaneous.FSharpFileNode.CreateServices`` () =
         this.MakeProjectAndDo(["orig1.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "orig1.fs")
             let files = new List<FSharpFileNode>()
             project.FindNodesOfType(files)
-            Assert.AreEqual(1, files.Count)
+            Assert.Equal(1, files.Count)
             let file = files.[0]
             let badservice = file.CreateServices(typeof<string>)
-            Assert.IsNull(badservice)
+            Assert.Null(badservice)
             let eproj = file.CreateServices(typeof<EnvDTE.ProjectItem>)
-            Assert.AreEqual(typeof<Microsoft.VisualStudio.FSharp.ProjectSystem.Automation.OAFileItem>, eproj.GetType())
+            Assert.Equal(typeof<Microsoft.VisualStudio.FSharp.ProjectSystem.Automation.OAFileItem>, eproj.GetType())
             ))
 
     
-    //[<Test>]    
+    //[<Fact>]    
     member public this.AttemptDragAndDrop() =
         printfn "starting..."
         let fsproj = "D:\Depot\staging\Test.fsproj"
@@ -159,14 +158,14 @@ type Miscellaneous() =
                 node <- node.NextSibling 
                 if node = null then
                     finished <- true
-        Assert.AreNotEqual(node, null)
+        Assert.NotEqual(node, null)
         let itemId = node.ID
         
         project.DragEnter(iOleDataObject, keyboardState, itemId, &dwEffect) |> ignore
         ()
 
     
-    [<Test>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Automation.OutputGroup.OUTPUTLOC``() =
         this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
             this.MSBuildProjectMultiPlatform(["x86",""],"x86"),
@@ -183,7 +182,7 @@ type Miscellaneous() =
             )
          )
 
-    [<Test>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Automation.OutputGroups``() =
         DoWithTempFile "Test.fsproj" (fun file ->
             let text = TheTests.FsprojTextWithProjectReferences([],[],[],@"
@@ -245,7 +244,7 @@ type Miscellaneous() =
             AssertEqual expected ogInfos
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.``LoadProject.x86`` () =
         this.MakeProjectAndDoWithProjectFile(["foo.fs"], ["System"],
             this.MSBuildProjectMultiPlatform(["x86",""],"x86"),
@@ -260,7 +259,7 @@ type Miscellaneous() =
                 AssertEqual 1 l.Count
         ))
 
-    [<Test>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``BuildAndClean``() =
         this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(["foo.fs"], [], 
              this.MSBuildProjectBoilerplate "Library", 
@@ -288,7 +287,7 @@ type Miscellaneous() =
                                 success <- fSuccess <> 0
                                 printfn "Build %s, code %i, phase: %s." (if success then "succeeded" else "failed") fSuccess (if isCleaning then "Cleaning" else "Build")
 
-                                event.Set() |> Assert.IsTrue
+                                event.Set() |> Assert.True
                                 VSConstants.S_OK
                             member this.Tick pfContinue = pfContinue <- 1; VSConstants.S_OK
                         }
@@ -298,10 +297,10 @@ type Miscellaneous() =
                     let output = VsMocks.vsOutputWindowPane(ref [])
                     let doBuild target =
                         success <- false
-                        event.Reset() |> Assert.IsTrue
+                        event.Reset() |> Assert.True
                         buildMgrAccessor.BeginDesignTimeBuild() |> ValidateOK // this is not a design-time build, but our mock does all the right initialization of the build manager for us, similar to what the system would do in VS for real
                         buildableCfg.Build(0u, output, target)
-                        event.WaitOne() |> Assert.IsTrue
+                        event.WaitOne() |> Assert.True
                         buildMgrAccessor.EndDesignTimeBuild() |> ValidateOK // this is not a design-time build, but our mock does all the right initialization of the build manager for us, similar to what the system would do in VS for real
                         AssertEqual true success
 
@@ -321,7 +320,7 @@ type Miscellaneous() =
         ))
         
         
-    //KnownFail: [<Test>]
+    //KnownFail: [<Fact>]
     member public this.``ErrorReporting.EmptyModuleReportedAtTheLastLine``() =
         let (outputWindowPaneErrors : string list ref) = ref [] // output window pane errors
         let vso = VsMocks.vsOutputWindowPane(outputWindowPaneErrors)
@@ -354,16 +353,11 @@ type Miscellaneous() =
                    ()
                ))
 
-#if NUNIT_V2
-    [<Test>][<ExpectedException (typeof<ClassLibraryCannotBeStartedDirectlyException>)>]
-    member public this.``DebuggingDLLFails``() = this.``DebuggingDLLFailsFunc``()
-#else
-    [<Test>]
+    [<Fact>]
     member public this.``DebuggingDLLFails``() =
-        Assert.That((fun () -> this.``DebuggingDLLFailsFunc``()), NUnit.Framework.Throws.TypeOf(typeof<ClassLibraryCannotBeStartedDirectlyException>))
-#endif
+        Assert.Throws<ClassLibraryCannotBeStartedDirectlyException>((fun () -> this.``DebuggingDLLFailsFunc``()))
 
-    [<Test>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``DebuggingEXESucceeds``() =
         this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(["foo.fs"], [], 
             this.MSBuildProjectBoilerplate "Exe",  
@@ -372,7 +366,7 @@ type Miscellaneous() =
                 let fooPath = Path.Combine(project.ProjectFolder, "foo.fs")
                 File.AppendAllText(fooPath, "#light")                
                 let buildResult = project.Build("Build")
-                Assert.IsTrue buildResult.IsSuccessful
+                Assert.True buildResult.IsSuccessful
                 AssertEqual true (File.Exists (Path.Combine(project.ProjectFolder, "bin\\Debug\\Blah.exe")))
 
                 let mutable configurationInterface : IVsCfg = null
@@ -383,11 +377,11 @@ type Miscellaneous() =
                     config.DebugLaunch(0ul) |> ignore
                 with
                 | :? ClassLibraryCannotBeStartedDirectlyException -> Assert.Fail("Exe should be debuggable")
-                | _ -> Assert.Fail() // DmiLom: Currently DebugLaunch() swallows most exceptions, in future if we improve DebugLaunch() we will expect it to throw a particular exception here
+                | _ -> failwith "" // DmiLom: Currently DebugLaunch() swallows most exceptions, in future if we improve DebugLaunch() we will expect it to throw a particular exception here
                 ()
         ))
         
-    [<Test>]
+    [<Fact>]
     member public this.``IsDocumentInProject`` () =
         DoWithTempFile "Test.fsproj" (fun file ->
             let fakeCsLibProjectFile = @"..\CsLib\CsLib.csproj"            
@@ -410,7 +404,7 @@ type Miscellaneous() =
             checkInProject false "System.dll"
         )
 
-    //Known Fail:  [<Test>]
+    //Known Fail:  [<Fact>]
     member public this.``PreBuildEvent`` () =
         this.MakeProjectAndDoWithProjectFile(["foo.fs"], ["System"], "",
             (fun project projFileName ->
@@ -430,10 +424,10 @@ type Miscellaneous() =
                 printfn "Build output:"
                 !outputWindowPaneErrors |> Seq.iter (printfn "%s")
                 let expectedRegex = new Regex("\\s*ProjectExt\\[.fsproj\\]")                
-                Assert.IsTrue(!outputWindowPaneErrors |> List.exists (fun s -> expectedRegex.IsMatch(s)), "did not see expected value in build output")
+                Assert.True(!outputWindowPaneErrors |> List.exists (fun s -> expectedRegex.IsMatch(s)), "did not see expected value in build output")
             ))
         
-    [<Test>]
+    [<Fact>]
     member public this.``BuildMacroValues`` () = 
         let logger (message:string) = System.IO.File.AppendAllText(@"c:\temp\logfile.txt", (message + Environment.NewLine))
 
@@ -451,23 +445,23 @@ type Miscellaneous() =
 
             // Verify Solution values
             let solutionDir = project.GetBuildMacroValue("SolutionDir")
-            Assert.IsNotNull (solutionDir, "SolutionDir is NULL")
-            Assert.IsFalse ( (solutionDir = "*Undefined*"), "SolutionDir not defined")
+            Assert.NotNull(solutionDir)
+            Assert.False ( (solutionDir = "*Undefined*"), "SolutionDir not defined")
 
             let solutionFileName = project.GetBuildMacroValue("SolutionFileName")
-            Assert.IsNotNull (solutionFileName, "SolutionFileName is null")
-            Assert.IsFalse ( (solutionFileName = "*Undefined*"), "SolutionFileName not defined")
+            Assert.NotNull(solutionFileName)
+            Assert.False ( (solutionFileName = "*Undefined*"), "SolutionFileName not defined")
 
             let solutionName = project.GetBuildMacroValue("SolutionName")
-            Assert.IsNotNull (solutionName, "SolutionName is null")
-            Assert.IsFalse ( (solutionName = "*Undefined*"), "SolutionName not defined")
+            Assert.NotNull(solutionName)
+            Assert.False ( (solutionName = "*Undefined*"), "SolutionName not defined")
 
             let solutionExt = project.GetBuildMacroValue("SolutionExt")
-            Assert.IsNotNull (solutionExt, "SolutionExt is null")
-            Assert.IsFalse ( (solutionExt = "*Undefined*"), "SolutionExt not defined")
+            Assert.NotNull(solutionExt)
+            Assert.False ( (solutionExt = "*Undefined*"), "SolutionExt not defined")
         )
      
-    [<Test>]
+    [<Fact>]
     member public this.CreateFSharpManifestResourceName () =
         DoWithTempFile "Test.fsproj" (fun file ->
             let text = TheTests.FsprojTextWithProjectReferences(["foo.fs";"Bar.resx"; "Bar.de.resx"; "Xyz\Baz.ru.resx"; "Abc.resources"],[],[],"")
@@ -487,14 +481,14 @@ type Miscellaneous() =
         let buildMgr = project.Site.GetService(typeof<SVsSolutionBuildManager>) :?> IVsSolutionBuildManager
         let cfgs = Array.create 1 (null : IVsProjectCfg)
         let hr = buildMgr.FindActiveProjectCfg(System.IntPtr.Zero, System.IntPtr.Zero, project, cfgs)
-        Assert.AreEqual(VSConstants.S_OK, hr)
-        Assert.IsNotNull(cfgs.[0])
+        Assert.Equal(VSConstants.S_OK, hr)
+        Assert.NotNull(cfgs.[0])
         let mutable cfgName = ""
         let hr = cfgs.[0].get_CanonicalName(&cfgName)
-        Assert.AreEqual(VSConstants.S_OK, hr)
+        Assert.Equal(VSConstants.S_OK, hr)
         cfgName
 
-    [<Test>]
+    [<Fact>]
     member this.``MSBuildExtensibility.BrokenCompileDependsOn.WithRecovery`` () =
         this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(
             ["foo.fs";"bar.fs"],
@@ -525,7 +519,7 @@ type Miscellaneous() =
                 project.Reload()
                 // Ensure we are not in 'Foo' config, and thus expect failure
                 let curCfgCanonicalName = this.GetCurrentConfigCanonicalName(project)
-                Assert.IsFalse(curCfgCanonicalName.StartsWith("Foo"), sprintf "default config should not be 'Foo'! in fact it had canonical name '%s'" curCfgCanonicalName)
+                Assert.False(curCfgCanonicalName.StartsWith("Foo"), sprintf "default config should not be 'Foo'! in fact it had canonical name '%s'" curCfgCanonicalName)
                 // Now the project system is in a state where ComputeSourcesAndFlags will fail.
                 // Our goal is to at least be able to open individual source files and treat them like 'files outside a project' with regards to intellisense, etc.
                 // Also, if the user does 'Build', he will get an error which will help diagnose the problem.
@@ -533,10 +527,10 @@ type Miscellaneous() =
                 let ips = ipps.GetProjectSite()
                 let expected = [| |] // Ideal behavior is [|"foo.fs";"bar.fs"|], and we could choose to improve this in the future.  For now we are just happy to now throw/crash.
                 let actual = ips.CompilationSourceFiles
-                Assert.AreEqual(expected, actual, "project site did not report expected set of source files")
+                Assert.Equal<string array>(expected, actual)
             )
 
-    [<Test>]
+    [<Fact>]
     member public this.TestBuildActions () =
         DoWithTempFile "Test.fsproj" (fun file ->
             let text = TheTests.FsprojTextWithProjectReferences(["foo.fs";"Bar.resx"; "Bar.de.resx"; "Xyz\Baz.ru.resx"; "Abc.resources"],[],[],"<Import Project=\"My.targets\" />")
@@ -567,7 +561,7 @@ type Miscellaneous() =
             ()
         )
 
-    [<Test>]
+    [<Fact>]
     member public this.TestBuildActionConversions () =
 
         let replace (pattern:string) (replacement:string) (input:string) = Regex.Replace(input, pattern, replacement)
@@ -578,14 +572,14 @@ type Miscellaneous() =
             props :?> BuildableNodeProperties
 
         let checkNotStandardBuildAction buildAction = 
-            Assert.IsFalse(VSLangProj.prjBuildAction.prjBuildActionNone = buildAction, "Unexpected None match")
-            Assert.IsFalse(VSLangProj.prjBuildAction.prjBuildActionCompile = buildAction, "Unexpected Compile match")
-            Assert.IsFalse(VSLangProj.prjBuildAction.prjBuildActionContent = buildAction, "Unexpected Content match")
-            Assert.IsFalse(VSLangProj.prjBuildAction.prjBuildActionEmbeddedResource = buildAction, "Unexpected EmbeddedResource match")
+            Assert.False(VSLangProj.prjBuildAction.prjBuildActionNone = buildAction, "Unexpected None match")
+            Assert.False(VSLangProj.prjBuildAction.prjBuildActionCompile = buildAction, "Unexpected Compile match")
+            Assert.False(VSLangProj.prjBuildAction.prjBuildActionContent = buildAction, "Unexpected Content match")
+            Assert.False(VSLangProj.prjBuildAction.prjBuildActionEmbeddedResource = buildAction, "Unexpected EmbeddedResource match")
 
         DoWithTempFile "Test.fsproj" (fun file ->
             let text =
-                TheTests.FsprojTextWithProjectReferences(["Compile.fs"; "None.fs"; "Resource.fs"; "SplashSceen.fs"; "Dude.fs"],[],[],"")
+                TheTests.FsprojTextWithProjectReferences(["Compile.fs"; "None.fs"; "Resource.fs"; "SplashScreen.fs"; "Dude.fs"],[],[],"")
                 |> replace "Compile\s+Include='([a-zA-Z]+)\.fs'" "$1 Include='$1.fs'"            
             File.AppendAllText(file, text)
             let sp, cnn = VsMocks.MakeMockServiceProviderAndConfigChangeNotifier()
@@ -594,32 +588,32 @@ type Miscellaneous() =
 
             // test proper behavior from project file
             let node = getBuildableNodeProps project "Compile.fs"
-            Assert.IsTrue(node.BuildAction = VSLangProj.prjBuildAction.prjBuildActionCompile, "Compile build action failed")
-            Assert.IsTrue(node.ItemType = "Compile", "Compile item type failed")
+            Assert.True(node.BuildAction = VSLangProj.prjBuildAction.prjBuildActionCompile, "Compile build action failed")
+            Assert.True(node.ItemType = "Compile", "Compile item type failed")
 
             let node = getBuildableNodeProps project "None.fs"
-            Assert.IsTrue(node.BuildAction = VSLangProj.prjBuildAction.prjBuildActionNone, "None build action failed")
-            Assert.IsTrue(node.ItemType = "None", "None item type failed")
+            Assert.True(node.BuildAction = VSLangProj.prjBuildAction.prjBuildActionNone, "None build action failed")
+            Assert.True(node.ItemType = "None", "None item type failed")
 
             let node = getBuildableNodeProps project "Resource.fs"
             checkNotStandardBuildAction node.BuildAction
-            Assert.IsTrue(node.ItemType = "Resource", "Resource item type failed")
+            Assert.True(node.ItemType = "Resource", "Resource item type failed")
 
             let node = getBuildableNodeProps project "Dude.fs"
             checkNotStandardBuildAction node.BuildAction
-            Assert.IsTrue(node.ItemType = "Dude", "Dude item type failed")
+            Assert.True(node.ItemType = "Dude", "Dude item type failed")
 
             // test handling of bogus values
             node.BuildAction <- enum 100
-            Assert.IsTrue(node.BuildAction = VSLangProj.prjBuildAction.prjBuildActionNone, "Bogus build action not mapped to None")
+            Assert.True(node.BuildAction = VSLangProj.prjBuildAction.prjBuildActionNone, "Bogus build action not mapped to None")
 
             node.ItemType <- "Wibble"
-            Assert.IsTrue(node.ItemType = "None", "Bogus item type not mapped to None")
+            Assert.True(node.ItemType = "None", "Bogus item type not mapped to None")
 
             ()
         )
 
-    [<Test>]
+    [<Fact>]
     member this.``WildcardsInProjectFile.ThrowingCase`` () =
         DoWithTempFile "Test.fsproj"(fun file ->
             let text = TheTests.FsprojTextWithProjectReferences(["*.fs"],[],[],"")
@@ -635,10 +629,10 @@ type Miscellaneous() =
                     exceptionThrown <- true
                     AssertEqual "*.fs" e.ItemSpecification
                     AssertEqual "Compile" e.ItemType
-            Assert.IsTrue(exceptionThrown)
+            Assert.True(exceptionThrown)
         )
         
-    [<Test>]
+    [<Fact>]
     member this.``WildcardsInProjectFile.OkCase`` () =
         DoWithTempFile "Test.fsproj"(fun file ->
             let text = TheTests.FsprojTextWithProjectReferences(["*.fs"],[],[],"")
@@ -655,13 +649,12 @@ type Miscellaneous() =
                 | [ _; fn ] -> // first file is AssemblyAttributes.fs
                     AssertEqual fileName fn
                 | _ ->
-                    sprintf "wring set of compile items %A" items |> Assert.Fail
+                    failwithf "wring set of compile items %A" items
                 ()
             finally
                 project.Close() |> ignore
         )
 
-[<TestFixture>]
 type Utilities() = 
     (*
         Simulation of the code found in Xaml editor that we were crashing. The relevent code is pasted below.
@@ -729,24 +722,24 @@ type Utilities() =
 
     let CheckPublicKeyToString(bytes,expect) =
         let actual = KeyToken.ToHexString(bytes)
-        Assert.AreEqual(expect, actual)
+        Assert.Equal(expect, actual)
         SimulateXamlEditorReceivingThroughDTE(actual)
 
-    [<Test>]
+    [<Fact>]
     member public this.``PublicKeyToken.0000000000000000``() = CheckPublicKeyToString([|0uy;0uy;0uy;0uy;0uy;0uy;0uy;0uy|], "0000000000000000")
         
-    [<Test>]
+    [<Fact>]
     member public this.``PublicKeyToken.0000000000000001``() = CheckPublicKeyToString([|0uy;0uy;0uy;0uy;0uy;0uy;0uy;1uy|], "0000000000000001")
 
-    [<Test>]
+    [<Fact>]
     member public this.``PublicKeyToken.0a00000000000001``() = CheckPublicKeyToString([|0xauy;0uy;0uy;0uy;0uy;0uy;0uy;1uy|], "0a00000000000001")
 
-    [<Test>]
+    [<Fact>]
     member public this.``Parse MSBuild property of type Int64`` () = 
-        Assert.AreEqual(123L, ProjectNode.ParsePropertyValueToInt64("123"))
-        Assert.AreEqual(255L, ProjectNode.ParsePropertyValueToInt64("0xFF"))
-        Assert.AreEqual(null, ProjectNode.ParsePropertyValueToInt64(""))
-        Assert.AreEqual(null, ProjectNode.ParsePropertyValueToInt64(null))
+        Assert.Equal(123L, ProjectNode.ParsePropertyValueToInt64("123").Value)
+        Assert.Equal(255L, ProjectNode.ParsePropertyValueToInt64("0xFF").Value)
+        Assert.Null(ProjectNode.ParsePropertyValueToInt64(""))
+        Assert.Null(ProjectNode.ParsePropertyValueToInt64(null))
         Throws<Exception>(fun () -> ignore (ProjectNode.ParsePropertyValueToInt64("abc")))
         Throws<Exception>(fun () -> ignore (ProjectNode.ParsePropertyValueToInt64("12333333333333333333333333")))
 

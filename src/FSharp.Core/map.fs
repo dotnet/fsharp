@@ -23,13 +23,7 @@ type internal MapTree<'Key, 'Value>(k: 'Key, v: 'Value, h: int) =
 [<Sealed>]
 [<AllowNullLiteral>]
 type internal MapTreeNode<'Key, 'Value>
-    (
-        k: 'Key,
-        v: 'Value,
-        left: MapTree<'Key, 'Value>,
-        right: MapTree<'Key, 'Value>,
-        h: int
-    ) =
+    (k: 'Key, v: 'Value, left: MapTree<'Key, 'Value>, right: MapTree<'Key, 'Value>, h: int) =
     inherit MapTree<'Key, 'Value>(k, v, h)
     member _.Left = left
     member _.Right = right
@@ -552,13 +546,13 @@ module MapTree =
 
     let ofSeq comparer (c: seq<'Key * 'T>) =
         match c with
-        | :? (('Key * 'T)[]) as xs -> ofArray comparer xs
+        | :? (('Key * 'T) array) as xs -> ofArray comparer xs
         | :? (('Key * 'T) list) as xs -> ofList comparer xs
         | _ ->
             use ie = c.GetEnumerator()
             mkFromEnumerator comparer empty ie
 
-    let copyToArray m (arr: _[]) i =
+    let copyToArray m (arr: _ array) i =
         let mutable j = i
 
         m
@@ -685,10 +679,7 @@ module MapTree =
 [<Sealed>]
 [<CompiledName("FSharpMap`2")>]
 type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonConditionalOn>] 'Value when 'Key: comparison>
-    (
-        comparer: IComparer<'Key>,
-        tree: MapTree<'Key, 'Value>
-    ) =
+    (comparer: IComparer<'Key>, tree: MapTree<'Key, 'Value>) =
 
     [<System.NonSerialized>]
     // This type is logically immutable. This field is only mutated during deserialization.
@@ -854,7 +845,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
 
         let mutable res = 0
 
-        for (KeyValue (x, y)) in this do
+        for (KeyValue(x, y)) in this do
             res <- combineHash res (hash x)
             res <- combineHash res (Unchecked.hash y)
 
@@ -911,7 +902,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
 
             let mutable res = 0
 
-            for (KeyValue (x, y)) in this do
+            for (KeyValue(x, y)) in this do
                 res <- combineHash res (comparer.GetHashCode x)
                 res <- combineHash res (comparer.GetHashCode y)
 
@@ -967,7 +958,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
         member m.Count = m.Count
 
     interface System.IComparable with
-        member m.CompareTo(obj: obj) =
+        member m.CompareTo(obj: objnull) =
             match obj with
             | :? Map<'Key, 'Value> as m2 ->
                 Seq.compareWith
@@ -1053,9 +1044,7 @@ and [<Sealed>] MapDebugView<'Key, 'Value when 'Key: comparison>(v: Map<'Key, 'Va
         v |> Seq.truncate 10000 |> Seq.map KeyValuePairDebugFriendly |> Seq.toArray
 
 and [<DebuggerDisplay("{keyValue.Value}", Name = "[{keyValue.Key}]", Type = "")>] KeyValuePairDebugFriendly<'Key, 'Value>
-    (
-        keyValue: KeyValuePair<'Key, 'Value>
-    ) =
+    (keyValue: KeyValuePair<'Key, 'Value>) =
 
     [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
     member x.KeyValue = keyValue

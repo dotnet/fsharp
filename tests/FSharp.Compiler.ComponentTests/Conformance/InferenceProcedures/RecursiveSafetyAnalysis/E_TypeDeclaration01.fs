@@ -1,6 +1,6 @@
 // #Regression #Conformance #TypeInference #Recursion 
 // Regression test for FSharp1.0:3187
-// Title: better inference for mutually recursrive generic classes
+// Title: better inference for mutually recursive generic classes
 // Descr: Verify types are inferred correctly for generic classes
 
 //<Expects status="error" id="FS0001" span="(15,14-15,20)">This expression was expected to have type</Expects>

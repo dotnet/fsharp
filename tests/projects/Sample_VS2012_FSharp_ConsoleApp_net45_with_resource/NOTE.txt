@@ -1,8 +1,0 @@
-
-Tests a project file with a resource.
-
-You should see 
-    --resource:obj/Debug/Sample_VS2012_FSharp_ConsoleApp_net45.resource.txt  
-
-on the command line when you run xbuild on the .fsproj file
-

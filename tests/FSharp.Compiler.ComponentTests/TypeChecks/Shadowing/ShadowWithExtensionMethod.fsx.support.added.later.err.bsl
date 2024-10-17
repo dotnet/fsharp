@@ -1,0 +1,2 @@
+ShadowWithExtensionMethod.fsx (13,1)-(13,4) typecheck error This value is not a function and cannot be applied.
+ShadowWithExtensionMethod.fsx (17,1)-(17,4) typecheck error This value is not a function and cannot be applied.

@@ -6,8 +6,9 @@
 namespace FSharp.Core.UnitTests.Control
 
 open System
-open Xunit
 open System.Threading
+open System.Threading.Tasks
+open Xunit
 
 type Message = 
     | Increment of int 
@@ -124,7 +125,7 @@ type MailboxProcessorType() =
         use mre2 = new ManualResetEventSlim(false)
     
         // https://github.com/dotnet/fsharp/issues/3337
-        let cts = new CancellationTokenSource ()
+        use cts = new CancellationTokenSource ()
     
         let addMsg msg =
             match result with
@@ -203,25 +204,24 @@ type MailboxProcessorType() =
 
     [<Fact>]
     member this.``Receive Races with Post``() =
-        let receiveEv = new ManualResetEvent(false)
-        let postEv = new ManualResetEvent(false)
-        let finishedEv = new ManualResetEvent(false)
+        let receiveEv = new AutoResetEvent(false)
+        let postEv = new AutoResetEvent(false)
+        let finishedEv = new AutoResetEvent(false)
+        use cts = new CancellationTokenSource()
         let mb =
             MailboxProcessor.Start (
                 fun inbox -> async {
                     while true do
-                        let w = receiveEv.WaitOne()
-                        receiveEv.Reset() |> ignore
+                        receiveEv.WaitOne() |> ignore
                         let! (msg) = inbox.Receive ()
                         finishedEv.Set() |> ignore
                 })
         let post =
             async {
-                while true do
-                    let r = postEv.WaitOne()
-                    postEv.Reset() |> ignore
+                while not cts.IsCancellationRequested do
+                    postEv.WaitOne() |> ignore
                     mb.Post(fun () -> ())
-            } |> Async.Start
+            } |> Async.StartAsTask
         for i in 0 .. 100000 do
             if i % 2 = 0 then
                 receiveEv.Set() |> ignore
@@ -231,19 +231,23 @@ type MailboxProcessorType() =
                 receiveEv.Set() |> ignore
 
             finishedEv.WaitOne() |> ignore
-            finishedEv.Reset() |> ignore
+
+        cts.Cancel()
+        // Let the post task finish.
+        postEv.Set() |> ignore
+        post.Wait()
 
     [<Fact>]
     member this.``Receive Races with Post on timeout``() =
-        let receiveEv = new ManualResetEvent(false)
-        let postEv = new ManualResetEvent(false)
-        let finishedEv = new ManualResetEvent(false)
+        let receiveEv = new AutoResetEvent(false)
+        let postEv = new AutoResetEvent(false)
+        let finishedEv = new AutoResetEvent(false)
+        use cts = new CancellationTokenSource()
         let mb =
             MailboxProcessor.Start (
                 fun inbox -> async {
                     while true do
-                        let w = receiveEv.WaitOne()
-                        receiveEv.Reset() |> ignore
+                        receiveEv.WaitOne() |> ignore
                         let! (msg) = inbox.Receive (5000)
                         finishedEv.Set() |> ignore
                 })
@@ -251,12 +255,11 @@ type MailboxProcessorType() =
         let isErrored = mb.Error |> Async.AwaitEvent |> Async.StartAsTask
 
         let post =
-            async {
-                while true do
-                    let r = postEv.WaitOne()
-                    postEv.Reset() |> ignore
+            backgroundTask {
+                while not cts.IsCancellationRequested do
+                    postEv.WaitOne() |> ignore
                     mb.Post(fun () -> ())
-            } |> Async.Start
+            }
 
         for i in 0 .. 10000 do
             if i % 2 = 0 then
@@ -270,32 +273,35 @@ type MailboxProcessorType() =
                 if isErrored.IsCompleted then
                     raise <| Exception("Mailbox should not fail!", isErrored.Result)
 
-            finishedEv.Reset() |> ignore
+        cts.Cancel()
+        // Let the post task finish.
+        postEv.Set() |> ignore
+        post.Wait()
 
     [<Fact>]
     member this.``TryReceive Races with Post on timeout``() =
-        let receiveEv = new ManualResetEvent(false)
-        let postEv = new ManualResetEvent(false)
-        let finishedEv = new ManualResetEvent(false)
+        let receiveEv = new AutoResetEvent(false)
+        let postEv = new AutoResetEvent(false)
+        let finishedEv = new AutoResetEvent(false)
+        use cts = new CancellationTokenSource()
         let mb =
             MailboxProcessor.Start (
                 fun inbox -> async {
                     while true do
-                        let w = receiveEv.WaitOne()
-                        receiveEv.Reset() |> ignore
+                        receiveEv.WaitOne() |> ignore
                         let! (msg) = inbox.TryReceive (5000)
                         finishedEv.Set() |> ignore
-                })
+                }
+            )
 
         let isErrored = mb.Error |> Async.AwaitEvent |> Async.StartAsTask
 
         let post =
-            async {
-                while true do
-                    let r = postEv.WaitOne()
-                    postEv.Reset() |> ignore
+            backgroundTask {
+                while not cts.IsCancellationRequested do
+                    postEv.WaitOne() |> ignore
                     mb.Post(fun () -> ())
-            } |> Async.Start
+            }
 
         for i in 0 .. 10000 do
             if i % 2 = 0 then
@@ -309,7 +315,97 @@ type MailboxProcessorType() =
                 if isErrored.IsCompleted then
                     raise <| Exception("Mailbox should not fail!", isErrored.Result)
 
-            finishedEv.Reset() |> ignore
+        cts.Cancel()
+        postEv.Set() |> ignore
+        post.Wait()
+
+    [<Fact>]
+    member this.``After dispose is called, mailbox should stop receiving and processing messages``() = task {
+        let mutable isSkip = false
+        let mutable actualSkipMessagesCount = 0
+        let mutable actualMessagesCount = 0
+        let sleepDueTime = 100
+        let expectedMessagesCount = 2
+        use mre = new ManualResetEventSlim(false)
+        let mb =
+            MailboxProcessor.Start(fun b ->
+                let rec loop() =
+                     async {
+                        match! b.Receive() with
+                        | Increment _ ->
+                            if isSkip then
+                                actualSkipMessagesCount <- actualSkipMessagesCount + 1
+                                return! loop()
+                            else
+                                do! Async.Sleep sleepDueTime
+                                if not isSkip then
+                                    actualMessagesCount <- actualMessagesCount + 1
+                                    if actualMessagesCount = expectedMessagesCount then mre.Set()
+                                    do! Async.Sleep sleepDueTime
+                                return! loop()
+                        | _ -> ()
+                    }
+                loop()
+            )
+        let post() = Increment 1 |> mb.Post
+
+        [1..4] |> Seq.iter (fun x -> post())
+        do! task {
+            mre.Wait()
+            isSkip <- true
+            (mb :> IDisposable).Dispose()
+            post()
+        }
+
+        Assert.Equal(expectedMessagesCount, actualMessagesCount)
+        Assert.Equal(0, actualSkipMessagesCount)
+        Assert.Equal(0, mb.CurrentQueueLength)
+    }
+
+    [<Fact>]
+    member this.``After dispose is called, mailbox should stop receiving and processing messages with exception``() = task {
+        let mutable isSkip = false
+        let mutable actualSkipMessagesCount = 0
+        let mutable actualMessagesCount = 0
+        let sleepDueTime = 100
+        let expectedMessagesCount = 2
+        use mre = new ManualResetEventSlim(false)
+        let mb =
+            MailboxProcessor.Start((fun b ->
+                let rec loop() =
+                     async {
+                        match! b.Receive() with
+                        | Increment _ ->
+                            if isSkip then
+                                actualSkipMessagesCount <- actualSkipMessagesCount + 1
+                                return! loop()
+                            else
+                                do! Async.Sleep sleepDueTime
+                                if not isSkip then
+                                    actualMessagesCount <- actualMessagesCount + 1
+                                    if actualMessagesCount = expectedMessagesCount then mre.Set()
+                                    do! Async.Sleep sleepDueTime
+                                return! loop()
+                        | _ -> ()
+                    }
+                loop()),
+                true
+            )
+        let post() = Increment 1 |> mb.Post
+
+        [1..4] |> Seq.iter (fun x -> post())
+        do! task {
+            mre.Wait()
+            isSkip <- true
+            (mb :> IDisposable).Dispose()
+            Assert.Throws<ObjectDisposedException>(fun _ -> post()) |> ignore
+        }
+
+        Assert.Equal(expectedMessagesCount, actualMessagesCount)
+        Assert.Equal(0, actualSkipMessagesCount)
+        Assert.Equal(0, mb.CurrentQueueLength)
+
+    }
 
     [<Fact>]
     member this.Dispose() =
@@ -364,7 +460,7 @@ type MailboxProcessorType() =
         |> fun x -> Async.Start(x, cancel.Token)
         System.Threading.Thread.Sleep(5000) // cancellation after 500 pause for 5 seconds 
         if not gotGood || not gotBad then 
-            failwith <| sprintf "Exected both good and bad async's to be cancelled afteMailbox should not fail!  gotGood: %A, gotBad: %A" gotGood gotBad
+            failwith <| sprintf "Expected both good and bad async's to be cancelled afterMailbox should not fail!  gotGood: %A, gotBad: %A" gotGood gotBad
 
     [<Fact>]
     member this.StartImmediateStartsOnCurrentThread() =
@@ -408,3 +504,56 @@ type MailboxProcessorType() =
         // If StartImmediate worked correctly, the information should be identical since
         // the threads should be the same.
         Assert.Equal(callingThreadInfo, mailboxThreadInfo)
+
+module MailboxProcessorType =
+
+    [<Fact>]
+    let TryScan () =
+        let tcs = TaskCompletionSource<_>()
+        use mailbox =
+            new MailboxProcessor<Message>(fun inbox -> async {
+                do! 
+                    inbox.TryScan( function
+                        | Reset -> async { tcs.SetResult "Reset processed" } |> Some
+                        | _ -> None)
+                    |> Async.Ignore
+            })
+        mailbox.Start()
+
+        for i in 1 .. 100 do
+            mailbox.Post(Increment i)
+        mailbox.Post Reset
+
+        Assert.Equal("Reset processed", tcs.Task.Result)
+        Assert.Equal(100, mailbox.CurrentQueueLength)
+
+    [<Fact>]
+    let ``TryScan with timeout`` () =
+        let tcs = TaskCompletionSource<_>()
+        use mailbox =
+            new MailboxProcessor<Message>(fun inbox ->
+                let rec loop i = async {
+                    match!                     
+                        inbox.TryScan( function
+                            | Reset -> async { tcs.SetResult i } |> Some
+                            | _ -> None)
+                    with
+                    | None -> do! loop (i + 1)
+                    | _ -> ()
+                }
+                loop 1
+            )
+        mailbox.DefaultTimeout <- 10
+        mailbox.Start()
+
+        let iteration = 
+            task { 
+                for i in 1 .. 100 do
+                    mailbox.Post(Increment 1)
+                    do! Task.Delay 10
+                mailbox.Post Reset
+
+                return! tcs.Task
+            }
+
+        Assert.True(iteration.Result > 1, "TryScan did not timeout")

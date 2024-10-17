@@ -230,6 +230,7 @@ type DefaultFileSystem =
 
     abstract OpenFileForWriteShim:
         filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
+
     override OpenFileForWriteShim:
         filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
 
@@ -351,12 +352,6 @@ type internal ByteStream =
     member Position: int
 
     static member FromBytes: ReadOnlyByteMemory * start: int * length: int -> ByteStream
-
-#if LAZY_UNPICKLE
-    member CloneAndSeek: int -> ByteStream
-
-    member Skip: int -> unit
-#endif
 
 /// Imperative buffers and streams of byte[]
 /// Not thread safe.

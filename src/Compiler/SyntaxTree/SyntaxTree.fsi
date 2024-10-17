@@ -16,7 +16,10 @@ type Ident =
     member idRange: range
 
 /// Represents an identifier with potentially additional trivia information.
-type SynIdent = SynIdent of ident: Ident * trivia: IdentTrivia option
+type SynIdent =
+    | SynIdent of ident: Ident * trivia: IdentTrivia option
+
+    member Range: range
 
 /// Represents a long identifier e.g. 'A.B.C'
 type LongIdent = Ident list
@@ -216,9 +219,17 @@ type SynRationalConst =
 
     | Integer of value: int32 * range: range
 
-    | Rational of numerator: int32 * numeratorRange: range * denominator: int32 * denominatorRange: range * range: range
+    | Rational of
+        numerator: int32 *
+        numeratorRange: range *
+        divRange: range *
+        denominator: int32 *
+        denominatorRange: range *
+        range: range
 
     | Negate of rationalConst: SynRationalConst * range: range
+
+    | Paren of rationalConst: SynRationalConst * range: range
 
 /// Represents an accessibility modifier in F# syntax
 [<RequireQualifiedAccess>]
@@ -397,6 +408,12 @@ type SynTypeConstraint =
     /// F# syntax is 'typar: null
     | WhereTyparSupportsNull of typar: SynTypar * range: range
 
+    /// F# syntax is 'typar : null
+    | WhereTyparNotSupportsNull of
+        genericName: SynTypar *
+        range: range *
+        trivia: SynTypeConstraintWhereTyparNotSupportsNullTrivia
+
     /// F# syntax is 'typar: comparison
     | WhereTyparIsComparable of typar: SynTypar * range: range
 
@@ -504,11 +521,16 @@ type SynType =
     /// For the dimensionless units i.e. 1, and static parameters to provided types
     | StaticConstant of constant: SynConst * range: range
 
+    /// F# syntax: null, used in parameters to type providers
+    | StaticConstantNull of range: range
+
     /// F# syntax: const expr, used in static parameters to type providers
     | StaticConstantExpr of expr: SynExpr * range: range
 
     /// F# syntax: ident=1 etc., used in static parameters to type providers
     | StaticConstantNamed of ident: SynType * value: SynType * range: range
+
+    | WithNull of innerType: SynType * ambivalent: bool * range: range * trivia: SynTypeWithNullTrivia
 
     | Paren of innerType: SynType * range: range
 
@@ -743,7 +765,8 @@ type SynExpr =
         isTrueSeq: bool *
         expr1: SynExpr *
         expr2: SynExpr *
-        range: range
+        range: range *
+        trivia: SynExprSequentialTrivia
 
     /// F# syntax: if expr then expr
     /// F# syntax: if expr then expr else expr
@@ -854,12 +877,12 @@ type SynExpr =
     /// F# syntax: yield expr
     /// F# syntax: return expr
     /// Computation expressions only
-    | YieldOrReturn of flags: (bool * bool) * expr: SynExpr * range: range
+    | YieldOrReturn of flags: (bool * bool) * expr: SynExpr * range: range * trivia: SynExprYieldOrReturnTrivia
 
     /// F# syntax: yield! expr
     /// F# syntax: return! expr
     /// Computation expressions only
-    | YieldOrReturnFrom of flags: (bool * bool) * expr: SynExpr * range: range
+    | YieldOrReturnFrom of flags: (bool * bool) * expr: SynExpr * range: range * trivia: SynExprYieldOrReturnFromTrivia
 
     /// F# syntax: let! pat = expr in expr
     /// F# syntax: use! pat = expr in expr
@@ -886,7 +909,7 @@ type SynExpr =
 
     /// F# syntax: do! expr
     /// Computation expressions only
-    | DoBang of expr: SynExpr * range: range
+    | DoBang of expr: SynExpr * range: range * trivia: SynExprDoBangTrivia
 
     /// F# syntax: 'while! ... do ...'
     | WhileBang of whileDebugPoint: DebugPointAtWhile * whileExpr: SynExpr * doExpr: SynExpr * range: range
@@ -961,6 +984,12 @@ type SynExprAndBang =
         body: SynExpr *
         range: range *
         trivia: SynExprAndBangTrivia
+
+    /// Gets the syntax range of this construct
+    member Range: range
+
+    /// Gets the trivia associated with this construct
+    member Trivia: SynExprAndBangTrivia
 
 [<NoEquality; NoComparison>]
 type SynExprRecordField =
@@ -1096,7 +1125,7 @@ type SynPat =
     | ArrayOrList of isArray: bool * elementPats: SynPat list * range: range
 
     /// A record pattern
-    | Record of fieldPats: ((LongIdent * Ident) * range * SynPat) list * range: range
+    | Record of fieldPats: ((LongIdent * Ident) * range option * SynPat) list * range: range
 
     /// The 'null' pattern
     | Null of range: range
@@ -1109,9 +1138,6 @@ type SynPat =
 
     /// &lt;@ expr @&gt;, used for active pattern arguments
     | QuoteExpr of expr: SynExpr * range: range
-
-    /// Deprecated character range: ranges
-    | DeprecatedCharRange of startChar: char * endChar: char * range: range
 
     /// Used internally in the type checker
     | InstanceMember of
@@ -1190,13 +1216,7 @@ type SynAttributes = SynAttributeList list
 /// Represents extra information about the declaration of a value
 [<NoEquality; NoComparison>]
 type SynValData =
-    | SynValData of
-        memberFlags: SynMemberFlags option *
-        valInfo: SynValInfo *
-        thisIdOpt: Ident option *
-        /// Is only populated during type-checking when an property has both a getter and setter.
-        /// It is used to track the fact that the getter and setter are part of the same property when they are desugared.
-        transformedFromProperty: Ident option
+    | SynValData of memberFlags: SynMemberFlags option * valInfo: SynValInfo * thisIdOpt: Ident option
 
     member SynValInfo: SynValInfo
 
@@ -1344,7 +1364,7 @@ type SynTypeDefnSimpleRepr =
         fields: SynField list *
         isConcrete: bool *
         isIncrClass: bool *
-        implicitCtorSynPats: SynSimplePats option *
+        implicitCtorSynPats: SynPat option *
         range: range
 
     /// A type defined by using an IL assembly representation. Only used in FSharp.Core.
@@ -1454,6 +1474,9 @@ type SynField =
         range: range *
         trivia: SynFieldTrivia
 
+    /// Gets the syntax range of this construct
+    member Range: range
+
 /// Represents the syntax tree associated with the name of a type definition or module
 /// in signature or implementation.
 ///
@@ -1475,6 +1498,18 @@ type SynComponentInfo =
     /// Gets the syntax range of this construct
     member Range: range
 
+/// Represents one or two access modifier(s) in a property signature
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynValSigAccess =
+    | Single of accessibility: SynAccess option
+    | GetSet of
+        accessibility: SynAccess option *
+        getterAccessibility: SynAccess option *
+        setterAccessibility: SynAccess option
+
+    member SingleAccess: unit -> SynAccess option
+    member GetSetAccessNoCheck: unit -> SynAccess option * SynAccess option
+
 /// Represents the syntax tree for a 'val' definition in an abstract slot or a signature file
 [<NoEquality; NoComparison>]
 type SynValSig =
@@ -1487,7 +1522,7 @@ type SynValSig =
         isInline: bool *
         isMutable: bool *
         xmlDoc: PreXmlDoc *
-        accessibility: SynAccess option *
+        accessibility: SynValSigAccess *
         synExpr: SynExpr option *
         range: range *
         trivia: SynValSigTrivia
@@ -1612,7 +1647,7 @@ type SynMemberDefn =
     | ImplicitCtor of
         accessibility: SynAccess option *
         attributes: SynAttributes *
-        ctorArgs: SynSimplePats *
+        ctorArgs: SynPat *
         selfIdentifier: Ident option *
         xmlDoc: PreXmlDoc *
         range: range *
@@ -1635,7 +1670,7 @@ type SynMemberDefn =
     | Interface of interfaceType: SynType * withKeyword: range option * members: SynMemberDefns option * range: range
 
     /// An 'inherit' definition within a class
-    | Inherit of baseType: SynType * asIdent: Ident option * range: range
+    | Inherit of baseType: SynType * asIdent: Ident option * range: range * trivia: SynMemberDefnInheritTrivia
 
     /// A 'val' definition within a class
     | ValField of fieldInfo: SynField * range: range
@@ -1653,7 +1688,7 @@ type SynMemberDefn =
         memberFlags: SynMemberFlags *
         memberFlagsForSet: SynMemberFlags *
         xmlDoc: PreXmlDoc *
-        accessibility: SynAccess option *
+        accessibility: SynValSigAccess *
         synExpr: SynExpr *
         range: range *
         trivia: SynMemberDefnAutoPropertyTrivia
@@ -1820,6 +1855,9 @@ type SynModuleOrNamespaceSig =
 /// Represents a parsed hash directive argument
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedHashDirectiveArgument =
+    | Ident of value: Ident * range: range
+    | Int32 of value: Int32 * range: range
+    | LongIdent of value: SynLongIdent * range: range
     | String of value: string * stringKind: SynStringKind * range: range
     | SourceIdentifier of constant: string * value: string * range: range
 

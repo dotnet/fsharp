@@ -80,7 +80,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
                     '  so we delay the main Dispose() until after the apply is finished.
                     'We do go ahead and get rid of COM references and do general clean-up, though.  This includes removing our 
                     '  listening to events from the environment, etc.
-                    'We do *not* call in to the base's Dispose(), because that will get rid of the controls, and that's what we're
+                    'We do *not* call into the base's Dispose(), because that will get rid of the controls, and that's what we're
                     '  trying to avoid right now.
 
                     Trace.WriteLine("***** PropPageUserControlBase.Dispose(): Being forcibly deactivated during an checkout.  Disposal of controls will be delayed until after the current callstack is finished.")
@@ -180,7 +180,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         'Backs the CanApplyNow property
         Private m_CanApplyNow As Boolean = True
 
-        'The site passed in to SetPageSite.  May be Nothing if not currently sited.
+        'The site passed into SetPageSite.  May be Nothing if not currently sited.
         Private m_Site As IPropertyPageSiteInternal
 
         'May be used by derived property pages to cache their PropertyControlData in their ControlData property override.
@@ -550,7 +550,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
 
         ''' <summary>
         ''' Causes listening to property changes to be resumed after an equal number of
-        '''   SuspendPropertyChangeListening/ResumeropertyChangeListening pairs have been made
+        '''   SuspendPropertyChangeListening/ResumePropertyChangeListening pairs have been made
         ''' </summary>
         ''' <remarks></remarks>
         Public Sub ResumePropertyChangeListening(ByVal DispId As Integer)
@@ -980,7 +980,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         ''' </summary>
         ''' <param name="HelpDir">Not used.</param>
         ''' <remarks></remarks>
-        Private Sub IProperyPageInternal_Help(ByVal HelpDir As String) Implements IPropertyPageInternal.Help
+        Private Sub IPropertyPageInternal_Help(ByVal HelpDir As String) Implements IPropertyPageInternal.Help
             DesignerFramework.DesignUtil.DisplayTopicFromF1Keyword(ServiceProvider, GetF1HelpKeyword)
         End Sub
 
@@ -1200,7 +1200,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             Dim Successful As Boolean
             Try
                 'NOTE: The code today doesn't really work to allow the parent page do batch saving for child pages
-                ' We do need create a transacation here, if there is no existing one (created by parent page). 
+                ' We do need create a transaction here, if there is no existing one (created by parent page). 
                 ' When something fails, who created the transaction should rollback it, but no other page should do that. 
                 ' However, the child page should never pop error message, but wrap all failure message to an exception.
                 ' The page starting the transaction should merge error messages, and show to the user one time.
@@ -1504,7 +1504,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
 
 
         ''' <summary>
-        ''' Return a control group which contains the control, return -1 when we can not find one
+        ''' Return a control group which contains the control, return -1 when we cannot find one
         ''' </summary>
         ''' <param name="dataControl"></param>
         ''' <returns></returns>
@@ -1944,7 +1944,7 @@ NextControl:
         ''' </summary>
         ''' <remarks>Properties are only flushed if they are marked as dirty.</remarks>
         Protected Overridable Sub ApplyPageChanges()
-            Debug.Assert(Not Me.MultiProjectSelect, "Apply should not be occuring with multiple projects selected")
+            Debug.Assert(Not Me.MultiProjectSelect, "Apply should not be occurring with multiple projects selected")
             Debug.Assert(Not m_ProjectReloadedDuringCheckout)
             Dim control As System.Windows.Forms.Control = Nothing
             Dim Transaction As DesignerTransaction = Nothing
@@ -2059,7 +2059,7 @@ NextControl:
                                 ProjectReloadWasValid = True
                             End If
 
-                            'Check if there any any other pending property changes on this page (this shouldn't
+                            'Check if there are any other pending property changes on this page (this shouldn't
                             '  happen if the advice in VerifyPropertiesWhichMayReloadProjectAreLast is
                             '  followed, unless there's more than one property on a page which can cause a 
                             '  project reload).

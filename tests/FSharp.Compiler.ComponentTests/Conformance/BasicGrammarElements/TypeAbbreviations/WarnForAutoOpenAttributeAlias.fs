@@ -15,7 +15,7 @@ type ByItsOwnNatureUnBottledAttribute = Microsoft.FSharp.Core.AutoOpenAttribute
 module Foo =
     let bar = 0
 """
-        |> withLangVersionPreview
+        |> withLangVersion80
          |> compile
          |> shouldFail
          |> withDiagnostics [

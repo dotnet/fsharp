@@ -12,13 +12,13 @@ ImplFile
                   ObjectModel
                     (Class,
                      [ImplicitCtor
-                        (None, [], SimplePats ([], [], (3,6--3,8)), Some this,
+                        (None, [], Const (Unit, (3,6--3,8)), Some this,
                          PreXmlDoc ((3,6), FSharp.Compiler.Xml.XmlDocCollector),
                          (3,5--3,6), { AsKeyword = Some (3,9--3,11) })],
                      (3,19--3,28)), [],
                   Some
                     (ImplicitCtor
-                       (None, [], SimplePats ([], [], (3,6--3,8)), Some this,
+                       (None, [], Const (Unit, (3,6--3,8)), Some this,
                         PreXmlDoc ((3,6), FSharp.Compiler.Xml.XmlDocCollector),
                         (3,5--3,6), { AsKeyword = Some (3,9--3,11) })),
                   (3,5--3,28), { LeadingKeyword = Type (3,0--3,4)

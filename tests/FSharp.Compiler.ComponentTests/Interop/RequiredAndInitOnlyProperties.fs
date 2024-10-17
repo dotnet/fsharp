@@ -313,7 +313,7 @@ let main _ =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            Error 3545, Line 8, Col 16, Line 8, Col 22, "The following required properties have to be initalized:" + Environment.NewLine + "   property RAIO.GetSet: int with get, set" + Environment.NewLine + "   property RAIO.GetInit: int with get, set"
+            Error 3545, Line 8, Col 16, Line 8, Col 22, "The following required properties have to be initialized:" + Environment.NewLine + "   property RAIO.GetSet: int with get, set" + Environment.NewLine + "   property RAIO.GetInit: int with get, set"
         ]
 
     [<FactForNETCOREAPP>]
@@ -340,7 +340,7 @@ let main _ =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            Error 3545, Line 8, Col 16, Line 8, Col 30, "The following required properties have to be initalized:" + Environment.NewLine + "   property RAIO.GetInit: int with get, set"
+            Error 3545, Line 8, Col 16, Line 8, Col 30, "The following required properties have to be initialized:" + Environment.NewLine + "   property RAIO.GetInit: int with get, set"
         ]
 
     [<FactForNETCOREAPP>]
@@ -427,7 +427,7 @@ let main _ =
         |> withReferences [csharpLib]
         |> compile
         |> shouldFail
-        |> withSingleDiagnostic (Error 3545, Line 7, Col 21, Line 7, Col 30, "The following required properties have to be initalized:" + Environment.NewLine + "   property RAIO.GetSet: int with get, set" + Environment.NewLine + "   property RAIO.GetInit: int with get, set")
+        |> withSingleDiagnostic (Error 3545, Line 7, Col 21, Line 7, Col 30, "The following required properties have to be initialized:" + Environment.NewLine + "   property RAIO.GetSet: int with get, set" + Environment.NewLine + "   property RAIO.GetInit: int with get, set")
 
     [<FactForNETCOREAPP>]
     let ``F# should produce a warning if RequiredMemberAttribute is specified`` () =

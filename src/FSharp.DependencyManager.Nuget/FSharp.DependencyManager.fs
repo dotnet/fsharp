@@ -237,7 +237,7 @@ module FSharpDependencyManager =
                 |> Seq.distinct
                 |> Seq.toArray
                 |> Seq.sort
-                |> Seq.fold (fun acc s -> acc + s) ""
+                |> Seq.fold (+) ""
 
             let value =
                 $"""Tfm={targetFrameworkMoniker}:Rid={runtimeIdentifier}:PackageReferences={packageReferenceText}:Ext={match scriptExt with
@@ -251,16 +251,9 @@ module FSharpDependencyManager =
 
 /// The results of ResolveDependencies
 type ResolveDependenciesResult
-    (
-        success: bool,
-        stdOut: string array,
-        stdError: string array,
-        resolutions: string seq,
-        sourceFiles: string seq,
-        roots: string seq
-    ) =
+    (success: bool, stdOut: string array, stdError: string array, resolutions: string seq, sourceFiles: string seq, roots: string seq) =
 
-    /// Succeded?
+    /// Succeeded?
     member _.Success = success
 
     /// The resolution output log
@@ -313,7 +306,7 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
         //   if the path wasn't supplied or not rooted use the temp directory as the root.
         let specialDir =
             let getProfilePath =
-                // If it has a directory seperator remove it
+                // If it has a directory separator remove it
                 let path = Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile)
 
                 if
@@ -417,7 +410,7 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
 
     let tryGetResultsForResolutionHash hash (projectDirectory: Lazy<string>) : PackageBuildResolutionResult option =
         match hash with
-        | Some hash when useResultsCache = true ->
+        | Some hash when useResultsCache ->
             let resolutionsFile =
                 Path.Combine(cacheDirectory.Value, (hash + ".resolvedReferences.paths"))
 

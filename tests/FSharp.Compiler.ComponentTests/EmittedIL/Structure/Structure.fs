@@ -137,10 +137,18 @@ module Structure =
         compilation
         |> verifyCompilation
 
-    // SOURCE=FloatsAndDoubles.fs  SCFLAGS="-g --out:FloatsAndDoubles.exe" COMPILE_ONLY=1 POSTCMD="comparebsl.cmd  FloatsAndDoubles.exe" # FloatsAndDoubles.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"FloatsAndDoubles.fs"|])>]
-    let ``FloatsAndDoubles_fs`` compilation =
+    // SOURCE=FloatsAndDoubles_1.fs  SCFLAGS="-g --out:FloatsAndDoubles.exe" COMPILE_ONLY=1 POSTCMD="comparebsl.cmd  FloatsAndDoubles.exe" # FloatsAndDoubles.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"FloatsAndDoubles_1.fs"|])>]
+    let ``FloatsAndDoubles_1_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOff
+        |> verifyIl
+
+    // SOURCE=FloatsAndDoubles_2.fs  SCFLAGS="-g --out:FloatsAndDoubles.exe" COMPILE_ONLY=1 POSTCMD="comparebsl.cmd  FloatsAndDoubles.exe" # FloatsAndDoubles.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"FloatsAndDoubles_2.fs"|])>]
+    let ``FloatsAndDoubles_2_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOn
         |> verifyIl
 
     // SOURCE=FunctionArity01.fs     SCFLAGS="-r:CodeGenHelper.dll" # FunctionArity01.fs

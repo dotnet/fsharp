@@ -13,7 +13,7 @@ ImplFile
                     (Unspecified,
                      [Inherit
                         (LongIdent (SynLongIdent ([], [], [])), None,
-                         (4,4--4,11));
+                         (4,4--4,11), { InheritKeyword = (4,4--4,11) });
                       Member
                         (SynBinding
                            (None, Normal, false, false, [],
@@ -27,7 +27,7 @@ ImplFile
                                       MemberKind = Member },
                                SynValInfo
                                  ([[SynArgInfo ([], false, None)]; []],
-                                  SynArgInfo ([], false, None)), None, None),
+                                  SynArgInfo ([], false, None)), None),
                             LongIdent
                               (SynLongIdent
                                  ([this; P], [(6,15--6,16)], [None; None]), None,

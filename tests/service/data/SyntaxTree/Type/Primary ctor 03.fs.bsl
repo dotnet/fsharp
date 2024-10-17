@@ -11,7 +11,7 @@ ImplFile
                      false, None, (3,5--3,6)),
                   Simple (None (3,5--3,6), (3,5--3,6)),
                   [ImplicitCtor
-                     (None, [], SimplePats ([], [], (3,6--3,8)), None,
+                     (None, [], Const (Unit, (3,6--3,8)), None,
                       PreXmlDoc ((3,6), FSharp.Compiler.Xml.XmlDocCollector),
                       (3,5--3,6), { AsKeyword = None })], None, (3,5--3,6),
                   { LeadingKeyword = Type (3,0--3,4)

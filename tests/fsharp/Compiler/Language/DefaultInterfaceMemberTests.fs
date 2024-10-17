@@ -2,20 +2,20 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 open FSharp.Test.Utilities
 open FSharp.Compiler.Diagnostics
 
 #if NETCOREAPP
 
-[<TestFixture>]
+
 module DefaultInterfaceMemberConsumptionTests_LanguageVersion_4_6 =
 
     [<Literal>]
     let targetVersion = "5.0"
 
-    [<Test>]
+    [<Fact>]
     let ``IL - Errors with lang version not supported`` () =
         let ilSource =
             """
@@ -55,7 +55,7 @@ type Test () =
             (FSharpDiagnosticSeverity.Error, 366, (8, 15, 8, 20), "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# with explicit implementation - Runs`` () =
         let csharpSource =
             """
@@ -134,7 +134,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "FSharp-Method1-FSharp-Method2-FSharp-Method3-FSharp-Method4")
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple - Errors with lang version not supported`` () =
         let csharpSource =
             """
@@ -180,7 +180,7 @@ type Test () =
 Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple - Errors with lang version not supported - 2`` () =
         let csharpSource =
             """
@@ -225,7 +225,7 @@ type Test () =
             (FSharpDiagnosticSeverity.Error, 366, (8, 15, 8, 20), "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple - Errors with lang version not supported - 3`` () =
         let csharpSource =
             """
@@ -270,7 +270,7 @@ type Test () =
 Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple with internal DIM - Errors with lang version not supported`` () =
         let csharpSource =
             """
@@ -316,7 +316,7 @@ type Test () =
             (FSharpDiagnosticSeverity.Error, 366, (9, 15, 9, 20), "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple with internal DIM - Errors with not accessible`` () =
         let csharpSource =
             """
@@ -363,7 +363,7 @@ type Test () =
             (FSharpDiagnosticSeverity.Error, 855, (11, 19, 11, 32), "No abstract or interface member was found that corresponds to this override")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple with static operator method - Errors with lang version not supported`` () =
         let csharpSource =
             """
@@ -414,7 +414,7 @@ let f () =
             (FSharpDiagnosticSeverity.Error, 3350, (14, 9, 14, 10), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple with static method - Errors with lang version not supported`` () =
         let csharpSource =
             """
@@ -464,7 +464,7 @@ let f () =
             (FSharpDiagnosticSeverity.Error, 3350, (14, 5, 14, 27), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple with static property - Errors with lang version not supported`` () =
         let csharpSource =
             """
@@ -501,7 +501,7 @@ let f () =
             (FSharpDiagnosticSeverity.Error, 3350, (8, 5, 8, 22), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple with static field - Errors with lang version not supported`` () =
         let csharpSource =
             """
@@ -538,7 +538,7 @@ let f () =
             (FSharpDiagnosticSeverity.Error, 3350, (8, 5, 8, 19), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple with static method using SRTP - Errors with lang version not supported`` () =
         let csharpSource =
             """
@@ -579,7 +579,7 @@ let f1 () =
             (FSharpDiagnosticSeverity.Error, 3350, (9, 5, 9, 15), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple diamond inheritance - Errors with lang version not supported and should not see the error for specific implementation`` () =
         let csharpSource =
             """
@@ -633,7 +633,7 @@ type Test () =
             (FSharpDiagnosticSeverity.Error, 366, (8, 15, 8, 17), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple diamond inheritance - Errors with lang version not supported and should not see the error for specific implementation - 2`` () =
         let csharpSource =
             """
@@ -685,7 +685,7 @@ type Test () =
             (FSharpDiagnosticSeverity.Error, 366, (10, 15, 10, 17), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple with protected DIM - Runs`` () =
         let csharpSource =
             """
@@ -763,7 +763,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "Explicit-Explicit")
 
-    [<Test>]
+    [<Fact>]
     let ``C# with overloading and generics - Runs`` () =
         let csharpSource =
             """
@@ -863,7 +863,7 @@ let main _ =
         CompilerAssert.ExecutionHasOutput(fsCmpl, "InTestInTest2123456789111STRING-STRINGABC222FSharpABC333CSharp")
 
 
-    [<Test>]
+    [<Fact>]
     let ``C# with overloading and generics - Errors with lang version`` () =
         let csharpSource =
             """
@@ -938,18 +938,18 @@ type Test2 () =
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
             (FSharpDiagnosticSeverity.Error, 3350, (10, 15, 10, 22), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
-            (FSharpDiagnosticSeverity.Error, 358, (10, 15, 10, 22), "The override for 'M<'U> : 'U * int -> unit' was ambiguous")
+            (FSharpDiagnosticSeverity.Error, 358, (14, 19, 14, 20), "The override for 'M<'U> : 'U * int -> unit' was ambiguous")
         |])
 
 #else
 
-[<TestFixture>]
+
 module DefaultInterfaceMemberConsumptionTests_LanguageVersion_4_6_net472 =
 
     [<Literal>]
     let targetVersion = "5.0"
 
-    [<Test>]
+    [<Fact>]
     let ``IL - Errors with lang version and target runtime not supported`` () =
         let ilSource =
             """
@@ -990,7 +990,7 @@ type Test () =
             (FSharpDiagnosticSeverity.Error, 366, (8, 15, 8, 20), "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``IL - Errors with target runtime not supported when implemented`` () =
         let ilSource =
             """
@@ -1031,7 +1031,7 @@ type Test () =
             (FSharpDiagnosticSeverity.Error, 3351, (8, 15, 8, 20), "Feature 'default interface member consumption' is not supported by target runtime.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple with static method - Errors with lang version and target runtime not supported`` () =
         let csharpSource =
             """
@@ -1086,10 +1086,10 @@ let f () =
 
 #if NETCOREAPP
 
-[<TestFixture>]
+
 module DefaultInterfaceMemberConsumptionTests =
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple - Errors with un-implemented non-DIM`` () =
         let csharpSource =
             """
@@ -1131,7 +1131,7 @@ type Test () =
             (FSharpDiagnosticSeverity.Error, 366, (8, 15, 8, 20), "No implementation was given for 'ITest.NonDefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple with static operator method - Runs`` () =
         let csharpSource =
             """
@@ -1180,7 +1180,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "I1.+1")
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple - Runs`` () =
         let csharpSource =
             """
@@ -1230,7 +1230,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "DefaultMethod-NonDefaultMethod")
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple with protected DIM - Runs`` () =
         let csharpSource =
             """
@@ -1304,7 +1304,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "ProtectedProtected-ProtectedOverrideProtectedOverride")
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple with protected DIM using object expression - Runs`` () =
         let csharpSource =
             """
@@ -1367,7 +1367,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "ObjExprProtectedObjExprProtected-ObjExprProtected2ObjExprProtected2")
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple with protected DIM - Errors due to protected level`` () =
         let csharpSource =
             """
@@ -1445,7 +1445,7 @@ let f () =
             (FSharpDiagnosticSeverity.Error, 491, (31, 5, 31, 16), "The member or object constructor 'M1' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple with protected DIM - Errors due to protected level - 2`` () =
         let csharpSource =
             """
@@ -1527,7 +1527,7 @@ type Test2 () =
             (FSharpDiagnosticSeverity.Error, 629, (30, 13, 30, 31), "Method 'M1' is not accessible from this code location")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple with internal DIM - Runs`` () =
         let csharpSource =
             """
@@ -1575,7 +1575,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "NonDefaultMethod")
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple with internal DIM - Errors with missing method`` () =
         let csharpSource =
             """
@@ -1627,7 +1627,7 @@ let f () =
    NonDefaultMethod")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple with internal DIM - Errors with not accessible`` () =
         let csharpSource =
             """
@@ -1676,7 +1676,7 @@ type Test () =
             (FSharpDiagnosticSeverity.Error, 855, (11, 19, 11, 32), "No abstract or interface member was found that corresponds to this override")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple with internal DIM but with IVT - Runs`` () =
         let csharpSource =
             """
@@ -1731,7 +1731,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "IVT-NonDefaultMethod")
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple with one DIM for F# object expression - Runs`` () =
         let csharpSource =
             """
@@ -1770,7 +1770,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "DefaultMethod")
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple with one DIM and one non-DIM for F# object expression - Runs`` () =
         let csharpSource =
             """
@@ -1813,7 +1813,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "DefaultMethod-ObjExpr")
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple with one DIM and one non-DIM for F# object expression - Errors with lack of implementation`` () =
         let csharpSource =
             """
@@ -1854,7 +1854,7 @@ let test = { new ITest }
             (FSharpDiagnosticSeverity.Error, 366, (7, 12, 7, 25), "No implementation was given for 'ITest.NonDefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple with override - Runs`` () =
         let csharpSource =
             """
@@ -1907,7 +1907,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "OverrideDefaultMethod-NonDefaultMethod")
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple with override for object expression - Runs`` () =
         let csharpSource =
             """
@@ -1955,7 +1955,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "ObjExprOverrideDefaultMethod-ObjExprNonDefaultMethod")
 
-    [<Test>]
+    [<Fact>]
     let ``C# from hierarchical interfaces - Runs`` () =
         let csharpSource =
             """
@@ -2015,7 +2015,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "FromITest2-Method1-FromITest2-Method2")
 
-    [<Test>]
+    [<Fact>]
     let ``C# diamond hierarchical interfaces - Errors with lack of explicit shared interface type`` () =
         let csharpSource =
             """
@@ -2097,7 +2097,7 @@ Note that all interface members must be implemented and listed under an appropri
 Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# diamond hierarchical interfaces - Errors with no most specific implementation`` () =
         let csharpSource =
             """
@@ -2173,7 +2173,7 @@ type Test () =
 Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# diamond hierarchical interfaces but combined in one C# interface - Errors with no most specific implementation`` () =
         let csharpSource =
             """
@@ -2251,7 +2251,7 @@ type Test () =
 Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# diamond hierarchical interfaces but combined in one F# interface - Errors with no most specific implementation`` () =
         let csharpSource =
             """
@@ -2329,7 +2329,7 @@ type Test () =
 Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# diamond hierarchical interfaces but re-abstracted in one and then combined in one F# interface - Errors with no most specific implementation`` () =
         let csharpSource =
             """
@@ -2401,7 +2401,7 @@ type Test () =
 Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# diamond hierarchical interfaces but all re-abstracted and then combined in one F# interface - Errors with need to implement members`` () =
         let csharpSource =
             """
@@ -2467,7 +2467,7 @@ type Test () =
 Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# diamond hierarchical interfaces then combined in one F# interface and then implemented - Runs`` () =
         let csharpSource =
             """
@@ -2549,7 +2549,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "FSharpICombinedTest-Method1-FSharpICombinedTest-Method2")
 
-    [<Test>]
+    [<Fact>]
     let ``C# diamond hierarchical interfaces but all re-abstracted and then combined in one F# interface and then implemented - Runs`` () =
         let csharpSource =
             """
@@ -2619,7 +2619,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "FSharpICombinedTest-Method1-FSharpICombinedTest-Method2")
 
-    [<Test>]
+    [<Fact>]
     let ``C# diamond hierarchical interfaces then using explicit interfaces and then implemented - Runs`` () =
         let csharpSource =
             """
@@ -2698,7 +2698,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "FSharpExplicitTest-Method1-FSharpExplicitTest-Method2")
 
-    [<Test>]
+    [<Fact>]
     let ``C# diamond hierarchical interfaces but all re-abstracted and then combined in one F# interface and then implemented one method - Errors with no most specific implementation`` () =
         let csharpSource =
             """
@@ -2763,7 +2763,7 @@ type Test () =
             (FSharpDiagnosticSeverity.Error, 366, (14, 15, 14, 28), "No implementation was given for 'ITest1.Method1() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# diamond hierarchical interfaces then combined in one C# interface and then implemented - Runs`` () =
         let csharpSource =
             """
@@ -2849,7 +2849,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "CSharpICombinedTest-Method1-CSharpICombinedTest-Method2")
 
-    [<Test>]
+    [<Fact>]
     let ``C# diamond complex hierarchical interfaces then combined in one C# interface and then implemented - Runs`` () =
         let csharpSource =
             """
@@ -2974,7 +2974,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "CSharpIFinalCombinedTest-Method1-CSharpIFinalCombinedTest-Method2")
 
-    [<Test>]
+    [<Fact>]
     let ``C# diamond complex hierarchical interfaces then combined in one C# interface and then implemented - Runs - 2`` () =
         let csharpSource =
             """
@@ -3085,7 +3085,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "CSharpIFinalCombinedTest-Method1-")
 
-    [<Test>]
+    [<Fact>]
     let ``C# diamond complex hierarchical interfaces then combined in one C# interface and then implemented - Runs - 3`` () =
         let csharpSource =
             """
@@ -3197,7 +3197,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "CSharpIFinalCombinedTest-Method1-CSharpIFinalCombinedTest-Method2")
 
-    [<Test>]
+    [<Fact>]
     let ``C# multi-diamond complex hierarchical interfaces with hiding methods then explicitly implemented - Runs`` () =
         let csharpSource =
             """
@@ -3313,7 +3313,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "IBase-IB1-IA1-IC1-")
 
-    [<Test>]
+    [<Fact>]
     let ``C# multi-diamond complex hierarchical interfaces then explicitly implemented - Runs`` () =
         let csharpSource =
             """
@@ -3419,7 +3419,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "123XYZ")
 
-    [<Test>]
+    [<Fact>]
     let ``C# diamond complex hierarchical interfaces then explicitly implemented - Runs`` () =
         let csharpSource =
             """
@@ -3522,7 +3522,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "-")
 
-    [<Test>]
+    [<Fact>]
     let ``C# diamond complex hierarchical interfaces then combined in one C# interface and then implemented - Errors with no impl`` () =
         let csharpSource =
             """
@@ -3623,7 +3623,7 @@ type Test2 () =
             (FSharpDiagnosticSeverity.Error, 366, (10, 15, 10, 32), "No implementation was given for 'ITest1.Method2() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple with property - Runs`` () =
         let csharpSource =
             """
@@ -3668,7 +3668,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "A-NonDefaultMethod")
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple with property and override - Runs`` () =
         let csharpSource =
             """
@@ -3715,7 +3715,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "OverrideA-NonDefaultMethod")
 
-    [<Test>]
+    [<Fact>]
     let ``C# with same methods names that hide with overloading - Runs`` () =
         let csharpSource =
             """
@@ -3778,8 +3778,8 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "")
 
-    [<Test>]
-    let ``C# with mutliple separate interfaces - Runs`` () =
+    [<Fact>]
+    let ``C# with multiple separate interfaces - Runs`` () =
         let csharpSource =
             """
 using System;
@@ -3845,7 +3845,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "IA.MA-IB1.IB.MB-IB1.IB.MB")
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple diamond inheritance - Errors with no specific implementation`` () =
         let csharpSource =
             """
@@ -3899,7 +3899,7 @@ type Test () =
             (FSharpDiagnosticSeverity.Error, 366, (8, 15, 8, 17), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple diamond inheritance - Errors with no specific implementation - 2`` () =
         let csharpSource =
             """
@@ -3951,7 +3951,7 @@ type Test () =
             (FSharpDiagnosticSeverity.Error, 366, (10, 15, 10, 17), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple diamond inheritance - Runs`` () =
         let csharpSource =
             """
@@ -4013,7 +4013,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "MMM")
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple diamond inheritance with overloading - Runs`` () =
         let csharpSource =
             """
@@ -4103,7 +4103,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "M123456floatfs_single")
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple diamond inheritance with overloading - Errors with missing overload method`` () =
         let csharpSource =
             """
@@ -4183,7 +4183,7 @@ type Test () =
             (FSharpDiagnosticSeverity.Error, 366, (12, 15, 12, 17), "No implementation was given for 'IA.M(x: float32) : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# with overloading and generics - Runs`` () =
         let csharpSource =
             """
@@ -4278,7 +4278,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "InTestInTest123456789111STRING-STRINGABC222FSharpABC333CSharpM<U>(U, T)M<U>(U, T)")
 
-    [<Test>]
+    [<Fact>]
     let ``C# diamond inheritance with overloading and generics and properties - Runs`` () =
         let csharpSource =
             """
@@ -4373,7 +4373,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "Test.String-Test.Prop2")
 
-    [<Test>]
+    [<Fact>]
     let ``C# diamond inheritance with overloading and generics and properties - Errors with no specific implementation`` () =
         let csharpSource =
             """
@@ -4463,7 +4463,7 @@ type Test () =
             (FSharpDiagnosticSeverity.Error, 366, (12, 15, 12, 25), "No implementation was given for 'IA.set_Prop2(value: string) : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple diamond inheritance using object expression - Errors with no specific implementation`` () =
         let csharpSource =
             """
@@ -4516,7 +4516,7 @@ let test =
             (FSharpDiagnosticSeverity.Error, 366, (8, 7, 8, 21), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# diamond inheritance with no most specific problem - Runs`` () =
         let csharpSource =
             """
@@ -4573,7 +4573,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "IB.IA.M")
 
-    [<Test>]
+    [<Fact>]
     let ``C# diamond inheritance with no most specific problem - Runs - 2`` () =
         let csharpSource =
             """
@@ -4629,7 +4629,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "IB.IA.M")
 
-    [<Test>]
+    [<Fact>]
     let ``C# with interface statics - Runs`` () =
         let csharpSource =
             """
@@ -4693,7 +4693,7 @@ f ()
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "1011")
 
-    [<Test>]
+    [<Fact>]
     let ``C# interface statics and F# SRTP (statically resolved type parameters) - Runs`` () =
         let csharpSource =
             """
@@ -4753,7 +4753,7 @@ f3 ()
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "359")
 
-    [<Test>]
+    [<Fact>]
     let ``C# interface statics - Errors with method not defined on C# class`` () =
         let csharpSource =
             """
@@ -4800,7 +4800,7 @@ let f () =
             (FSharpDiagnosticSeverity.Error, 39, (6, 17, 6, 29), "The type 'CSharpClass' does not define the field, constructor or member 'StaticMethod'.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# interface statics - Errors with method not defined on F# class`` () =
         let csharpSource =
             """
@@ -4850,7 +4850,7 @@ let f () =
             (FSharpDiagnosticSeverity.Error, 39, (11, 17, 11, 29), "The type 'FSharpClass' does not define the field, constructor or member 'StaticMethod'.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# interface statics - Errors with method not defined on C# class using SRTP`` () =
         let csharpSource =
             """
@@ -4900,7 +4900,7 @@ let f () =
             (FSharpDiagnosticSeverity.Error, 1, (9, 5, 9, 15), "The type 'CSharpClass' does not support the operator 'StaticMethod'")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# interface statics - Errors with method not defined on F# class using SRTP`` () =
         let csharpSource =
             """
@@ -4955,13 +4955,13 @@ let f () =
 
 #else
 
-[<TestFixture>]
+
 module DefaultInterfaceMemberConsumptionTests_net472 =
 
     [<Literal>]
     let targetVersion = "5.0"
 
-    [<Test>]
+    [<Fact>]
     let ``IL - Errors with target runtime not supported`` () =
         let ilSource =
             """
@@ -5002,7 +5002,7 @@ type Test () =
             (FSharpDiagnosticSeverity.Error, 366, (8, 15, 8, 20), "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
-    [<Test>]
+    [<Fact>]
     let ``C# simple with static method - Errors with target runtime not supported`` () =
         let csharpSource =
             """

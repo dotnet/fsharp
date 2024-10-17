@@ -97,9 +97,11 @@ val stringBufferAsString: ByteBuffer -> string
 
 val stringBufferAsBytes: ByteBuffer -> byte[]
 
-val stringBufferIsBytes: ByteBuffer -> bool
+type LargerThanOneByte = int
+type LargerThan127ButInsideByte = int
+val errorsInByteStringBuffer: ByteBuffer -> Option<LargerThanOneByte * LargerThan127ButInsideByte>
 
-val newline: Lexing.LexBuffer<'a> -> unit
+val incrLine: Lexing.LexBuffer<'a> -> unit
 
 val advanceColumnBy: Lexing.LexBuffer<'a> -> n: int -> unit
 

@@ -182,7 +182,7 @@ type RunConfig =
         BaseDir : string
         /// How many revisions should be checked out and built in parallel
         Parallelism : int
-        /// Name to suffx the benchmark result files with
+        /// Name to suffix the benchmark result files with
         ResultsSuffix : string
         /// Whether to build local codebases before benchmarking
         BuildLocalCodebases : bool

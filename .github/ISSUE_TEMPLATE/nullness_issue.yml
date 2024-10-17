@@ -1,0 +1,76 @@
+name: Nullness-related report
+title: 'Nullness issue - ....'
+description: Create a report related to nullable reference types handling
+labels:  [Bug, Needs-Triage,Area-Nullness]
+assignees: 'T-Gro'
+body:
+  - type: textarea
+    attributes:
+        label: Issue description
+        description: A concise description of what you're experiencing.
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        Please check at [Nullable Reference Types RFC](https://github.com/fsharp/fslang-design/blob/main/RFCs/FS-1060-nullable-reference-types.md) if this issue isn't a known limitation, such as missing flow-control analysis after branching constructs like `if` or `while`. Also check at [existing nullness issues](https://github.com/dotnet/fsharp/issues?q=is%3Aissue+label%3AArea-Nullness+) if it hasn't been reported already.
+        Please provide a succinct description of the issue and choose 1 or more from the following categories of impact
+  - type: checkboxes
+    id: categories
+    attributes:
+      label: Choose one or more from the following categories of impact
+      options:
+        - label: Unexpected nullness warning (false positive in nullness checking, code uses --checknulls and langversion:preview).
+        - label: Missing nullness warning in a case which can produce nulls (false negative, code uses --checknulls and langversion:preview).
+        - label: Breaking change related to older `null` constructs in code not using the checknulls switch.
+        - label: Breaking change related to generic code and explicit type constraints (`null`, `not null`).
+        - label: Type inference issue (i.e. code worked without type annotations before, and applying the --checknulls enforces type annotations).
+        - label: C#/F# interop issue related to nullness metadata.
+        - label: Other (none of the categories above apply).
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      description: What operating system are you running?
+      options:
+        - Windows (Default)
+        - Linux
+        - macOS
+      default: 0
+    validations:
+      required: true
+  - type: dropdown
+    id: dotnet-kind
+    attributes:
+      label: What .NET runtime/SDK kind are you seeing the issue on
+      multiple: false
+      options:
+        - .NET SDK (.NET Core, .NET 5+)
+        - .NET Framework
+      default: 0
+    validations:
+      required: true
+  - type: input
+    id: dotnet-version
+    attributes:
+      label: .NET Runtime/SDK version
+      placeholder: e.g. .NET 9 or .NET SDK 9.0.100
+  - type: textarea
+    attributes:
+      label: Reproducible code snippet and actual behavior
+      description: |
+        Provide a small code snippet demonstrating the issue. |
+        If referenced code is needed for the repro and cannot be shared (e.g. a private C# nuget package), try to share at least the metadata annotations from the called type+member as seen in `ilspy.exe`. C# compiler produces attributes like `[Nullable]` and `[NullableContext]`, which is what F# compiler tries to load and interpret in C#/F# interop scenarios.
+      placeholder: Code snippet
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Possible workarounds
+      description: |
+        Are there any language constructs (typically pattern matching, library constructs, Null/NonNull active patterns, explicit type annotations) allowing the same logic be expressed differently in order to mitigate the experienced nullness issue?
+      placeholder: Possible workaround
+    validations:
+      required: false

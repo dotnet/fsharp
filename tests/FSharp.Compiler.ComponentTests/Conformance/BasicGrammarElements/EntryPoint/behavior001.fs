@@ -1,6 +1,6 @@
 // #Regression #NoMT #EntryPoint 
 // Regression test for FSHARP1.0:1304
-// Explicit program entry point: [<ExtryPoint>]
+// Explicit program entry point: [<EntryPoint>]
 // Verify that static initializers are invoked before entering the 'main' function
 //<Expects status="success"></Expects>
 

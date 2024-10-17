@@ -2,7 +2,7 @@
 // Regression test for FSHARP1.0:4621
 // Multi case partial active patterns are not allowed
 
-//<Expects id="FS0827" span="(8,5-8,64)" status="error">This is not a valid name for an active pattern</Expects>
+
 //<Expects span="(20,7-20,15)" status="error" id="FS0039">The pattern discriminator 'Sentence' is not defined</Expects>
 
 let (|Sentence|Word|Punctuation|WhiteSpace|_|) (input : string) = 

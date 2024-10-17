@@ -126,7 +126,7 @@
   </data>
   <data name="String1">
     <value xml:space="preserve">Hello</value>
-    <comment xml:space="preserve">Commen</comment>
+    <comment xml:space="preserve">Comment</comment>
   </data>
   <data name="TextFile1" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>TextFile1.txt;System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;iso-8859-1</value>

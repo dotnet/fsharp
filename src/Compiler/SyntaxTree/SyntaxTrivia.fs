@@ -85,18 +85,28 @@ type SynExprDotLambdaTrivia =
 [<NoEquality; NoComparison>]
 type SynExprLetOrUseTrivia =
     {
+        LetOrUseKeyword: range
         InKeyword: range option
     }
 
-    static member Zero: SynExprLetOrUseTrivia = { InKeyword = None }
+    static member Zero: SynExprLetOrUseTrivia =
+        {
+            InKeyword = None
+            LetOrUseKeyword = Range.Zero
+        }
 
 [<NoEquality; NoComparison>]
 type SynExprLetOrUseBangTrivia =
     {
+        LetOrUseBangKeyword: range
         EqualsRange: range option
     }
 
-    static member Zero: SynExprLetOrUseBangTrivia = { EqualsRange = None }
+    static member Zero: SynExprLetOrUseBangTrivia =
+        {
+            LetOrUseBangKeyword = Range.Zero
+            EqualsRange = None
+        }
 
 [<NoEquality; NoComparison>]
 type SynExprMatchTrivia =
@@ -113,7 +123,37 @@ type SynExprMatchBangTrivia =
     }
 
 [<NoEquality; NoComparison>]
+type SynExprYieldOrReturnTrivia =
+    {
+        YieldOrReturnKeyword: range
+    }
+
+    static member Zero: SynExprYieldOrReturnTrivia = { YieldOrReturnKeyword = Range.Zero }
+
+[<NoEquality; NoComparison>]
+type SynExprYieldOrReturnFromTrivia =
+    {
+        YieldOrReturnFromKeyword: range
+    }
+
+    static member Zero: SynExprYieldOrReturnFromTrivia =
+        {
+            YieldOrReturnFromKeyword = Range.Zero
+        }
+
+[<NoEquality; NoComparison>]
+type SynExprDoBangTrivia = { DoBangKeyword: range }
+
+[<NoEquality; NoComparison>]
 type SynExprAnonRecdTrivia = { OpeningBraceRange: range }
+
+[<NoEquality; NoComparison>]
+type SynExprSequentialTrivia =
+    {
+        SeparatorRange: range option
+    }
+
+    static member val Zero = { SeparatorRange = None }
 
 [<NoEquality; NoComparison>]
 type SynMatchClauseTrivia =
@@ -151,7 +191,7 @@ type SynTypeDefnLeadingKeyword =
         match this with
         | SynTypeDefnLeadingKeyword.Type range
         | SynTypeDefnLeadingKeyword.And range -> range
-        | SynTypeDefnLeadingKeyword.StaticType (staticRange, typeRange) -> Range.unionRanges staticRange typeRange
+        | SynTypeDefnLeadingKeyword.StaticType(staticRange, typeRange) -> Range.unionRanges staticRange typeRange
         | SynTypeDefnLeadingKeyword.Synthetic -> failwith "Getting range from synthetic keyword"
 
 [<NoEquality; NoComparison>]
@@ -228,20 +268,20 @@ type SynLeadingKeyword =
         | New m
         | Do m
         | Static m -> m
-        | LetRec (m1, m2)
-        | UseRec (m1, m2)
-        | AbstractMember (m1, m2)
-        | StaticMember (m1, m2)
-        | StaticAbstract (m1, m2)
-        | StaticAbstractMember (m1, _, m2)
-        | StaticVal (m1, m2)
-        | StaticLet (m1, m2)
-        | StaticLetRec (m1, _, m2)
-        | StaticDo (m1, m2)
-        | DefaultVal (m1, m2)
-        | MemberVal (m1, m2)
-        | OverrideVal (m1, m2)
-        | StaticMemberVal (m1, _, m2) -> Range.unionRanges m1 m2
+        | LetRec(m1, m2)
+        | UseRec(m1, m2)
+        | AbstractMember(m1, m2)
+        | StaticMember(m1, m2)
+        | StaticAbstract(m1, m2)
+        | StaticAbstractMember(m1, _, m2)
+        | StaticVal(m1, m2)
+        | StaticLet(m1, m2)
+        | StaticLetRec(m1, _, m2)
+        | StaticDo(m1, m2)
+        | DefaultVal(m1, m2)
+        | MemberVal(m1, m2)
+        | OverrideVal(m1, m2)
+        | StaticMemberVal(m1, _, m2) -> Range.unionRanges m1 m2
         | Synthetic -> Range.Zero
 
 [<NoEquality; NoComparison>]
@@ -262,6 +302,7 @@ type SynBindingTrivia =
 [<NoEquality; NoComparison>]
 type SynExprAndBangTrivia =
     {
+        AndBangKeyword: range
         EqualsRange: range
         InKeyword: range option
     }
@@ -356,7 +397,7 @@ type GetSetKeywords =
         match x with
         | Get m
         | Set m -> m
-        | GetSet (mG, mS) ->
+        | GetSet(mG, mS) ->
             if Range.rangeBeforePos mG mS.Start then
                 Range.unionRanges mG mS
             else
@@ -380,15 +421,26 @@ type SynMemberDefnAbstractSlotTrivia =
     static member Zero = { GetSetKeywords = None }
 
 [<NoEquality; NoComparison>]
+type SynMemberDefnInheritTrivia = { InheritKeyword: range }
+
+[<NoEquality; NoComparison>]
 type SynFieldTrivia =
     {
         LeadingKeyword: SynLeadingKeyword option
+        MutableKeyword: range option
     }
 
-    static member Zero: SynFieldTrivia = { LeadingKeyword = None }
+    static member Zero: SynFieldTrivia =
+        {
+            LeadingKeyword = None
+            MutableKeyword = None
+        }
 
 [<NoEquality; NoComparison>]
 type SynTypeOrTrivia = { OrKeyword: range }
+
+[<NoEquality; NoComparison>]
+type SynTypeWithNullTrivia = { BarRange: range }
 
 [<NoEquality; NoComparison>]
 type SynBindingReturnInfoTrivia = { ColonRange: range option }
@@ -415,3 +467,6 @@ type SynMeasureConstantTrivia =
         LessRange: range
         GreaterRange: range
     }
+
+[<NoEquality; NoComparison>]
+type SynTypeConstraintWhereTyparNotSupportsNullTrivia = { ColonRange: range; NotRange: range }

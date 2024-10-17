@@ -1,6 +1,6 @@
 // Knownfail.lst rewriter.
 // Takes a Knownfail.txt file and rewrites it according to the current configuration
-// Exercise caution when making changes here because you may end up escluding tests without noticing
+// Exercise caution when making changes here because you may end up excluding tests without noticing
 
 // NOTE: Execute as a 32bit process
 
@@ -256,6 +256,6 @@ let f(x : Tags[], y : Tags[], z : string) =
 #if INTERACTIVE    
 File2List fsi.CommandLineArgs.[1]       // typically "Knownfail.txt"
 #else
-File2List "Knowfail.lst"                // for testing purposes
+File2List "Knownfail.lst"                // for testing purposes
 #endif
 |> Seq.iter f

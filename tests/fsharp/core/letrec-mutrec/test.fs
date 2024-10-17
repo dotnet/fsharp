@@ -40,7 +40,7 @@ do if nestedInnerRec2() <> 102 then report_failure "ewiew8w"
 
 
 (* --------------------------------------------------------------------
- * Recursion through constuctors
+ * Recursion through constructors
  * -------------------------------------------------------------------- *)
 
 
@@ -70,7 +70,7 @@ do if z2.g2.contents.g1 <> 3 then report_failure "ceewieds32w8w"
 
 
 (* --------------------------------------------------------------------
- * Recursion through constuctors
+ * Recursion through constructors
  * -------------------------------------------------------------------- *)
 
 (* --------------------------------------------------------------------
@@ -78,7 +78,7 @@ do if z2.g2.contents.g1 <> 3 then report_failure "ceewieds32w8w"
  * -------------------------------------------------------------------- *)
 
 (* TLR letrec, with only some functions going TLR.
-   Required optimisations off to hit bug.
+   Required optimizations off to hit bug.
    Fix: use SELF-CARRYING env values.
 *)
 
@@ -203,6 +203,6 @@ do
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
 
 do (stdout.WriteLine "Test Passed"; 
-    System.IO.File.WriteAllText("test.ok","ok"); 
+    printf "TEST PASSED OK"; 
     exit 0)
 #endif

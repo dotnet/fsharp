@@ -42,7 +42,7 @@ let v4 = t[1, 0]
 printfn $"v4 = {v4}"
 if v4 <> "set([|1; 0|], 7); get([|1; 0|])" then failwith "not right value D"
 
-// Inference defaults to the array in absense of other information 
+// Inference defaults to the array in absence of other information 
 let f idxs =
     t[ idxs ] <- "7" 
 
@@ -104,7 +104,7 @@ let v4 = t[2, 1, 0]
 printfn $"v4 = {v4}"
 if v4 <> "set(2, [|1; 0|], 7); get(2, [|1; 0|])" then failwith "not right value D"
 
-// Inference defaults to the array in absense of other information 
+// Inference defaults to the array in absence of other information 
 let f idxs =
     t[ 1, idxs ] <- "7" 
 
@@ -155,7 +155,7 @@ let v4 = t[1, 0]
 printfn $"v4 = {v4}"
 if v4 <> "set([|1; 0|], 7); get([|1; 0|])" then failwith "not right value D"
 
-// Inference defaults to the array in absense of other information 
+// Inference defaults to the array in absence of other information 
 let f idxs =
     t[ idxs ] <- "7" 
 

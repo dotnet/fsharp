@@ -21,7 +21,7 @@ type MyCustomType<'T> with
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 69, Line 8, Col 15, Line 8, Col 33,
-                                 """Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.""")
+                                 """Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using '#nowarn "69"' if you have checked this is not the case.""")
 
     [<Fact>]
     let ``Exception type in non-recursive namespace gives a warning when augmented externally``() =
@@ -37,7 +37,7 @@ type MyCustomExcType<'T> with
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 69, Line 8, Col 15, Line 8, Col 33,
-                                 """Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.""")
+                                 """Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using '#nowarn "69"' if you have checked this is not the case.""")
 
 
     [<Fact>]
@@ -105,8 +105,8 @@ module InnerNonRecursiveModule =
     [<Fact>]
     let ``Type in non-recursive namespace nested in a bigger recursive namespace shows warning``() =
         FSharp """
-namespace rec OuuterRec
-namespace OuuterRec.InnerNonRec
+namespace rec OuterRec
+namespace OuterRec.InnerNonRec
     type MyCustomType<'T> = 
         | Data of string
         interface System.IDisposable
@@ -117,14 +117,14 @@ namespace OuuterRec.InnerNonRec
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 69, Line 9, Col 19, Line 9, Col 37,
-                                 """Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.""")
+                                 """Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using '#nowarn "69"' if you have checked this is not the case.""")
 
  
    
     [<Fact>]
-    let ``Type in non-rec ns show give a warning when augmented externally even when the same file has a recursive (but different) ns``() =
+    let ``Type in non-rec ns should give a warning when augmented externally even when the same file has a recursive (but different) ns``() =
         FSharp """
-namespace rec OuuterRec
+namespace rec OuterRec
     module Stuff = 
         let x = 5
 namespace TotallyDifferentNs.InnerNonRec
@@ -138,7 +138,7 @@ namespace TotallyDifferentNs.InnerNonRec
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 69, Line 11, Col 19, Line 11, Col 37,
-                                 """Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.""")
+                                 """Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using '#nowarn "69"' if you have checked this is not the case.""")
 
     [<Fact>]
     let ``Adding an interface to a previously defined type should still be just an 909 error and nothing else``() =

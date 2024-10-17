@@ -13,7 +13,7 @@ let _ = factorial 2 * factorial 2
 let (f1,f2,f3,f4) = factorial 1, factorial 2, factorial 3, factorial 4
 if f4 <> 4 * 3 * 2 then failwith "Failed: 1"
 
-do factorial 10 |> ignore; printfn "Do statements"; printfn "Seperated by semicolons"
+do factorial 10 |> ignore; printfn "Do statements"; printfn "Separated by semicolons"
 
 let mutable x = 10
 x <- f x x
@@ -21,7 +21,7 @@ if x <> 100 then failwith "Failed: 2"
 
 // function which takes one arg of unit
 // returning a function taking and returning an int
-let somefuntion (arg : unit) : int -> int =
+let somefunction_ (arg : unit) : int -> int =
     let nestedfunction1 x y z =
         let nestedfunction2 x y =
             let nestedfunction3 x y z =
@@ -32,5 +32,5 @@ let somefuntion (arg : unit) : int -> int =
     let curriedNF3_2 = curriedNF3 20
     curriedNF3_2
 
-if (somefuntion ()) 30 <> 60 then failwith "Failed: 3"
+if (somefunction_ ()) 30 <> 60 then failwith "Failed: 3"
 

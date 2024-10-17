@@ -9,8 +9,8 @@ ImplFile
                  (None, Normal, false, false, [],
                   PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
-                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None,
-                     None), Wild (3,4--3,5), None,
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
+                  Wild (3,4--3,5), None,
                   ArbitraryAfterError ("localBinding2", (3,5--3,5)), (3,4--3,5),
                   Yes (3,0--3,5), { LeadingKeyword = Let (3,0--3,3)
                                     InlineKeyword = None

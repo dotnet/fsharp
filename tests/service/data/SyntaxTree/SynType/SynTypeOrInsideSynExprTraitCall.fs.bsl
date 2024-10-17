@@ -13,7 +13,7 @@ ImplFile
                     (None,
                      SynValInfo
                        ([[SynArgInfo ([], false, Some x)]],
-                        SynArgInfo ([], false, None)), None, None),
+                        SynArgInfo ([], false, None)), None),
                   LongIdent
                     (SynLongIdent
                        ([op_BangBang], [],
@@ -58,7 +58,7 @@ ImplFile
                                    ([[SynArgInfo ([], false, None)]],
                                     SynArgInfo ([], false, None)), false, false,
                                  PreXmlDoc ((2,45), FSharp.Compiler.Xml.XmlDocCollector),
-                                 None, None, (2,45--2,80),
+                                 Single None, None, (2,45--2,80),
                                  { LeadingKeyword =
                                     StaticMember ((2,45--2,51), (2,52--2,58))
                                    InlineKeyword = None

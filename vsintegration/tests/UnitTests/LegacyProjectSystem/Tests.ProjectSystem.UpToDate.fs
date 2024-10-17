@@ -18,20 +18,16 @@ open Microsoft.VisualStudio.FSharp
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 
 // Internal unittest namespaces
-open NUnit.Framework
+open Xunit
 open Salsa
 open UnitTests.TestLib.Utils.Asserts
 open UnitTests.TestLib.Utils.FilesystemHelpers
 open UnitTests.TestLib.ProjectSystem
 
-[<TestFixture>][<Category "ProjectSystem">]
 type UpToDate() = 
     inherit TheTests()
 
-    [<OneTimeSetUp>]
-    member public _.Init () = AssemblyResolver.addResolver ()
-
-    [<Test>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.ItemInputs () =
         this.MakeProjectAndDo(["file1.fs"], [], @"
                 <ItemGroup>
@@ -63,35 +59,35 @@ type UpToDate() =
             File.AppendAllText(nonePath, "none")
             File.AppendAllText(embedPath, "some embedded resource")
 
-            Assert.IsFalse(config.IsUpToDate(logger, true))
+            Assert.False(config.IsUpToDate(logger, true))
             project.Build(configNameDebug, output, "Build", null) |> AssertBuildSuccessful
-            Assert.IsTrue(config.IsUpToDate(logger, true))
+            Assert.True(config.IsUpToDate(logger, true))
 
             // None items should not affect up-to-date (unless captured by well-known items, e.g. App.config)
             File.SetLastWriteTime(nonePath, DateTime.UtcNow.AddMinutes(5.))
-            Assert.IsTrue(config.IsUpToDate(logger, true))
+            Assert.True(config.IsUpToDate(logger, true))
 
             for path in [sourcePath; contentPath; resourcePath; embedPath; configPath] do
                 printfn "Testing path %s" path
 
                 // touch file
                 File.SetLastWriteTime(path, DateTime.UtcNow.AddMinutes(5.))
-                Assert.IsFalse(config.IsUpToDate(logger, true))
+                Assert.False(config.IsUpToDate(logger, true))
 
                 File.SetLastWriteTime(path, startTime)
-                Assert.IsTrue(config.IsUpToDate(logger, true))
+                Assert.True(config.IsUpToDate(logger, true))
 
                 // delete file
                 let originalContent = File.ReadAllText(path)
                 File.Delete(path)
-                Assert.IsFalse(config.IsUpToDate(logger, true))
+                Assert.False(config.IsUpToDate(logger, true))
 
                 File.AppendAllText(path, originalContent)
                 File.SetLastWriteTime(path, startTime)
-                Assert.IsTrue(config.IsUpToDate(logger, true))
+                Assert.True(config.IsUpToDate(logger, true))
             ))
 
-    [<Test>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.PropertyInputs () =
         this.MakeProjectAndDo(["file1.fs"], [], @"
                 <PropertyGroup>
@@ -115,31 +111,31 @@ type UpToDate() =
             File.AppendAllText(keyPath, "a key")
 
             project.SetConfiguration(config.ConfigCanonicalName);
-            Assert.IsFalse(config.IsUpToDate(logger, true))
+            Assert.False(config.IsUpToDate(logger, true))
             project.Build(configNameDebug, output, "Build", null) |> AssertBuildSuccessful
-            Assert.IsTrue(config.IsUpToDate(logger, true))
+            Assert.True(config.IsUpToDate(logger, true))
 
             for path in [verPath; keyPath] do
                 printfn "Testing path %s" path
 
                 // touch file
                 File.SetLastWriteTime(path, DateTime.UtcNow.AddMinutes(5.))
-                Assert.IsFalse(config.IsUpToDate(logger, true))
+                Assert.False(config.IsUpToDate(logger, true))
 
                 File.SetLastWriteTime(path, startTime)
-                Assert.IsTrue(config.IsUpToDate(logger, true))
+                Assert.True(config.IsUpToDate(logger, true))
 
                 // delete file
                 let originalContent = File.ReadAllText(path)
                 File.Delete(path)
-                Assert.IsFalse(config.IsUpToDate(logger, true))
+                Assert.False(config.IsUpToDate(logger, true))
 
                 File.AppendAllText(path, originalContent)
                 File.SetLastWriteTime(path, startTime)
-                Assert.IsTrue(config.IsUpToDate(logger, true))
+                Assert.True(config.IsUpToDate(logger, true))
             ))
 
-    [<Test>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.ProjectFile () =
         this.MakeProjectAndDoWithProjectFile(["file1.fs"], [], "", (fun project projFileName ->
             let configNameDebug = ConfigCanonicalName("Debug", "x86")
@@ -150,19 +146,19 @@ type UpToDate() =
             let startTime = DateTime.UtcNow
             File.AppendAllText(absFilePath, "printfn \"hello\"")
 
-            Assert.IsFalse(config.IsUpToDate(logger, true))
+            Assert.False(config.IsUpToDate(logger, true))
             project.Build(configNameDebug, output, "Build", null) |> AssertBuildSuccessful
-            Assert.IsTrue(config.IsUpToDate(logger, true))
+            Assert.True(config.IsUpToDate(logger, true))
 
             // touch proj file
             File.SetLastWriteTime(projFileName, DateTime.UtcNow.AddMinutes(5.))
-            Assert.IsFalse(config.IsUpToDate(logger, true))
+            Assert.False(config.IsUpToDate(logger, true))
 
             File.SetLastWriteTime(projFileName, startTime)
-            Assert.IsTrue(config.IsUpToDate(logger, true))
+            Assert.True(config.IsUpToDate(logger, true))
             ))
 
-    [<Test>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.References () =
         let configNameDebug = ConfigCanonicalName("Debug", "x86")
         let output = VsMocks.vsOutputWindowPane(ref [])
@@ -181,9 +177,9 @@ type UpToDate() =
 
             let config1 = project1.ConfigProvider.GetProjectConfiguration(configNameDebug)
 
-            Assert.IsFalse(config1.IsUpToDate(logger, true))
+            Assert.False(config1.IsUpToDate(logger, true))
             project1.Build(configNameDebug, output, "Build", null) |> AssertBuildSuccessful
-            Assert.IsTrue(config1.IsUpToDate(logger, true))
+            Assert.True(config1.IsUpToDate(logger, true))
 
             let output1 = Path.Combine(project1.ProjectFolder, "bin\\debug", project1.OutputFileName)
 
@@ -200,23 +196,23 @@ type UpToDate() =
                 let config2 = project2.ConfigProvider.GetProjectConfiguration(configNameDebug)
                 let startTime = DateTime.UtcNow
 
-                Assert.IsFalse(config2.IsUpToDate(logger, true))
+                Assert.False(config2.IsUpToDate(logger, true))
                 project2.Build(configNameDebug, output, "Build", null) |> AssertBuildSuccessful
-                Assert.IsTrue(config2.IsUpToDate(logger, true))
+                Assert.True(config2.IsUpToDate(logger, true))
 
                 // reference is updated
                 File.SetLastWriteTime(output1, DateTime.UtcNow.AddMinutes(5.))
-                Assert.IsFalse(config2.IsUpToDate(logger, true))
+                Assert.False(config2.IsUpToDate(logger, true))
                 File.SetLastWriteTime(output1, startTime)
-                Assert.IsTrue(config2.IsUpToDate(logger, true))
+                Assert.True(config2.IsUpToDate(logger, true))
 
                 // reference is missing
                 File.Delete(output1)
-                Assert.IsFalse(config2.IsUpToDate(logger, true))
+                Assert.False(config2.IsUpToDate(logger, true))
             )
        )
 
-    [<Test>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.OutputFiles () =
         this.MakeProjectAndDo(["file1.fs"], [], @"
                <ItemGroup>
@@ -244,9 +240,9 @@ type UpToDate() =
             File.AppendAllText(sourcePath, "printfn \"hello\"")
             File.AppendAllText(appConfigPath, """<?xml version="1.0" encoding="utf-8" ?><configuration></configuration>""")
 
-            Assert.IsFalse(config.IsUpToDate(logger, true))
+            Assert.False(config.IsUpToDate(logger, true))
             project.Build(configNameDebug, output, "Build", null) |> AssertBuildSuccessful
-            Assert.IsTrue(config.IsUpToDate(logger, true))
+            Assert.True(config.IsUpToDate(logger, true))
 
             let startTime = DateTime.UtcNow
 
@@ -255,22 +251,22 @@ type UpToDate() =
 
                 // touch file
                 File.SetLastWriteTime(path, DateTime.UtcNow.AddMinutes(-5.))
-                Assert.IsFalse(config.IsUpToDate(logger, true))
+                Assert.False(config.IsUpToDate(logger, true))
 
                 File.SetLastWriteTime(path, startTime)
-                Assert.IsTrue(config.IsUpToDate(logger, true))
+                Assert.True(config.IsUpToDate(logger, true))
 
                 // delete file
                 let originalContent = File.ReadAllBytes(path)
                 File.Delete(path)
-                Assert.IsFalse(config.IsUpToDate(logger, true))
+                Assert.False(config.IsUpToDate(logger, true))
 
                 File.WriteAllBytes(path, originalContent)
                 File.SetLastWriteTime(path, startTime)
-                Assert.IsTrue(config.IsUpToDate(logger, true))
+                Assert.True(config.IsUpToDate(logger, true))
             ))
 
-    [<Test>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.ConfigChanges () =
         this.MakeProjectAndDo(["file1.fs"], [], "", (fun project ->
             let configNameDebugx86 = ConfigCanonicalName("Debug", "x86")
@@ -289,37 +285,37 @@ type UpToDate() =
             let sourcePath = Path.Combine(project.ProjectFolder, "file1.fs")
             File.AppendAllText(sourcePath, "printfn \"hello\"")
 
-            Assert.IsFalse(debugConfigx86.IsUpToDate(logger, true))
-            Assert.IsFalse(releaseConfigx86.IsUpToDate(logger, true))
-            Assert.IsFalse(debugConfigAnyCPU.IsUpToDate(logger, true))
-            Assert.IsFalse(releaseConfigAnyCPU.IsUpToDate(logger, true))
+            Assert.False(debugConfigx86.IsUpToDate(logger, true))
+            Assert.False(releaseConfigx86.IsUpToDate(logger, true))
+            Assert.False(debugConfigAnyCPU.IsUpToDate(logger, true))
+            Assert.False(releaseConfigAnyCPU.IsUpToDate(logger, true))
 
             project.Build(configNameDebugx86, output, "Build", null) |> AssertBuildSuccessful
-            Assert.IsTrue(debugConfigx86.IsUpToDate(logger, true))
-            Assert.IsFalse(releaseConfigx86.IsUpToDate(logger, true))
-            Assert.IsFalse(debugConfigAnyCPU.IsUpToDate(logger, true))
-            Assert.IsFalse(releaseConfigAnyCPU.IsUpToDate(logger, true))
+            Assert.True(debugConfigx86.IsUpToDate(logger, true))
+            Assert.False(releaseConfigx86.IsUpToDate(logger, true))
+            Assert.False(debugConfigAnyCPU.IsUpToDate(logger, true))
+            Assert.False(releaseConfigAnyCPU.IsUpToDate(logger, true))
 
             project.Build(configNameReleasex86, output, "Build", null) |> AssertBuildSuccessful
-            Assert.IsTrue(debugConfigx86.IsUpToDate(logger, true))
-            Assert.IsTrue(releaseConfigx86.IsUpToDate(logger, true))
-            Assert.IsFalse(debugConfigAnyCPU.IsUpToDate(logger, true))
-            Assert.IsFalse(releaseConfigAnyCPU.IsUpToDate(logger, true))
+            Assert.True(debugConfigx86.IsUpToDate(logger, true))
+            Assert.True(releaseConfigx86.IsUpToDate(logger, true))
+            Assert.False(debugConfigAnyCPU.IsUpToDate(logger, true))
+            Assert.False(releaseConfigAnyCPU.IsUpToDate(logger, true))
 
             project.Build(configNameDebugAnyCPU, output, "Build", null) |> AssertBuildSuccessful
-            Assert.IsTrue(debugConfigx86.IsUpToDate(logger, true))
-            Assert.IsTrue(releaseConfigx86.IsUpToDate(logger, true))
-            Assert.IsTrue(debugConfigAnyCPU.IsUpToDate(logger, true))
-            Assert.IsFalse(releaseConfigAnyCPU.IsUpToDate(logger, true))
+            Assert.True(debugConfigx86.IsUpToDate(logger, true))
+            Assert.True(releaseConfigx86.IsUpToDate(logger, true))
+            Assert.True(debugConfigAnyCPU.IsUpToDate(logger, true))
+            Assert.False(releaseConfigAnyCPU.IsUpToDate(logger, true))
 
             project.Build(configNameReleaseAnyCPU, output, "Build", null) |> AssertBuildSuccessful
-            Assert.IsTrue(debugConfigx86.IsUpToDate(logger, true))
-            Assert.IsTrue(releaseConfigx86.IsUpToDate(logger, true))
-            Assert.IsTrue(debugConfigAnyCPU.IsUpToDate(logger, true))
-            Assert.IsTrue(releaseConfigAnyCPU.IsUpToDate(logger, true))
+            Assert.True(debugConfigx86.IsUpToDate(logger, true))
+            Assert.True(releaseConfigx86.IsUpToDate(logger, true))
+            Assert.True(debugConfigAnyCPU.IsUpToDate(logger, true))
+            Assert.True(releaseConfigAnyCPU.IsUpToDate(logger, true))
             ))
 
-    [<Test>]
+    [<Fact>]
     member public this.UTDCheckEnabled () =
         this.MakeProjectAndDo(["file1.fs"], [], @"
                 <PropertyGroup>
@@ -329,10 +325,10 @@ type UpToDate() =
             let configNameDebug = ConfigCanonicalName("Debug", "x86")
             let config = project.ConfigProvider.GetProjectConfiguration(configNameDebug)
 
-            Assert.IsFalse(config.IsFastUpToDateCheckEnabled())
+            Assert.False(config.IsFastUpToDateCheckEnabled())
             ))
 
-    [<Test>]
+    [<Fact>]
     member public this.UTDOptionsFlags () =
         this.MakeProjectAndDo(["file1.fs"], [], "", (fun project ->
             let configNameDebugx86 = ConfigCanonicalName("Debug", "x86")
@@ -346,8 +342,8 @@ type UpToDate() =
                 let supported = Array.zeroCreate<int> 1
                 let ready = Array.zeroCreate<int> 1
                 buildableConfig.QueryStartUpToDateCheck(flag, supported, ready) |> ignore
-                Assert.IsTrue(supported.[0] = expected)
-                Assert.IsTrue(ready.[0] = expected)
+                Assert.True(supported.[0] = expected)
+                Assert.True(ready.[0] = expected)
 
             [ VSConstants.VSUTDCF_DTEEONLY, 1
               VSConstants.VSUTDCF_PACKAGE, 0
@@ -356,7 +352,7 @@ type UpToDate() =
             |> List.iter (fun (flag, expected) -> testFlag flag expected)
           ))
 
-    [<Test>]
+    [<Fact>]
     member public this.UTDOptionsFlagsUTDDisabled () =
         this.MakeProjectAndDo(["file1.fs"], [],  @"
                 <PropertyGroup>
@@ -374,8 +370,8 @@ type UpToDate() =
                 let supported = Array.zeroCreate<int> 1
                 let ready = Array.zeroCreate<int> 1
                 buildableConfig.QueryStartUpToDateCheck(flag, supported, ready) |> ignore
-                Assert.AreEqual(supported.[0], expected)
-                Assert.AreEqual(ready.[0], expected)
+                Assert.Equal(supported.[0], expected)
+                Assert.Equal(ready.[0], expected)
 
             [ VSConstants.VSUTDCF_DTEEONLY, 1
               VSConstants.VSUTDCF_PACKAGE, 0
@@ -384,10 +380,9 @@ type UpToDate() =
             |> List.iter (fun (flag, expected) -> testFlag flag expected)
           ))
 
-[<TestFixture>]
 type ``UpToDate PreserveNewest`` () = 
 
-    [<Test>]
+    [<Fact>]
     member public this.IsUpToDatePreserveNewest () =
 
         let test (input, inputTimestamp) (output, outputTimestamp) =
@@ -410,28 +405,28 @@ type ``UpToDate PreserveNewest`` () =
 
         let ``no input -> not up-to-date and log`` =
             let u, logs = test ("readme.md", None) ("leggimi.md", None)
-            Assert.IsFalse(u)
+            Assert.False(u)
             logs
             |> List.exists (fun s -> s.Contains("readme.md") && s.Contains("can't find expected input"))
-            |> Assert.IsTrue
+            |> Assert.True
 
         let ``no output -> not up-to-date and log`` =
             let u, logs = test ("from.txt", Some now) ("to.txt", None)
-            Assert.IsFalse(u)
+            Assert.False(u)
             logs
             |> List.exists (fun s -> s.Contains("to.txt") && s.Contains("can't find expected output"))
-            |> Assert.IsTrue
+            |> Assert.True
 
         let ``a newer version of output file is ok`` =
             let u, logs = test ("before.doc", Some before) ("after.doc", Some now)
-            Assert.IsTrue(u)
+            Assert.True(u)
             logs |> AssertEqual []
 
         let ``stale output file -> not up-to-date and log`` =
             let u, logs = test ("logo.png", Some now) ("animatedlogo.gif", Some before)
-            Assert.IsFalse(u)
+            Assert.False(u)
             logs
             |> List.exists (fun s -> s.Contains("animatedlogo.gif") && s.Contains("stale"))
-            |> Assert.IsTrue
+            |> Assert.True
             
         ()        

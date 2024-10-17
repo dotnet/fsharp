@@ -18,8 +18,6 @@ let test t s1 s2 =
     stdout.WriteLine ("test "+t+" succeeded")   
 
 
-
-
 (* --------------------------------------------------------------------
  * Nested letrecs
  * -------------------------------------------------------------------- *)
@@ -50,7 +48,7 @@ do if nestedInnerRec2() <> 102 then report_failure "ewiew8w"
 
 
 (* --------------------------------------------------------------------
- * Recursion through constuctors
+ * Recursion through constructors
  * -------------------------------------------------------------------- *)
 
 
@@ -80,7 +78,7 @@ do if z2.g2.contents.g1 <> 3 then report_failure "ceewieds32w8w"
 
 
 (* --------------------------------------------------------------------
- * Recursion through constuctors
+ * Recursion through constructors
  * -------------------------------------------------------------------- *)
 
 (* TYPEERROR: let rec a = a *)
@@ -136,7 +134,7 @@ let rec mnuiSayHello : MenuItem =
                new EventHandler(fun sender e -> Printf.printf "Hello! Text = %s\n" mnuiSayHello.Text), 
                Shortcut.CtrlH)
 
-(* Check that type annotations are proagated outer-to-inner *)
+(* Check that type annotations are propagated outer-to-inner *)
 let testTypeAnnotationForRecursiveBinding () = 
    let rec x = 1
    and _a = form.Menu <- new MainMenu();
@@ -150,7 +148,7 @@ let testTypeAnnotationForRecursiveBinding () =
  * -------------------------------------------------------------------- *)
 
 (* TLR letrec, with only some functions going TLR.
-   Required optimisations off to hit bug.
+   Required optimizations off to hit bug.
    Fix: use SELF-CARRYING env values.
 *)
 
@@ -199,7 +197,7 @@ end
 (*
 module RandomStrangeCodeFromLewis = begin
 
-  // This code is erroneuos since it compares function values.
+  // This code is erroneous since it compares function values.
   let fix_memo f n =
     let memo = Hashtbl.create 100 in
     let rec fix_memo0 f n = f_memo (fix_memo0 f_memo) n and
@@ -814,7 +812,7 @@ let aa =
   match !failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
+      printf "TEST PASSED OK" ;
       exit 0
   | _ -> 
       stdout.WriteLine "Test Failed"

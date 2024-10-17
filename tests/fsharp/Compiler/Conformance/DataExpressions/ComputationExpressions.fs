@@ -2,12 +2,11 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 open FSharp.Compiler.Diagnostics
 
-[<TestFixture>]
 module ``ComputationExpressions`` =
     let tmp = 1
 
@@ -183,13 +182,13 @@ let check msg actual expected = if actual <> expected then failwithf "FAILED %s,
     let includeMinimal = { includeMergeSourcesOverloads = false; includeBindReturnExtras=false }
 
     let ApplicativeLibTest opts source =
-        CompilerAssert.CompileExeAndRunWithOptions([| "/langversion:preview" |], (Source (applicativeLib opts + source)))
+        CompilerAssert.CompileExeAndRunWithOptions([| |], (Source (applicativeLib opts + source)))
 
     let ApplicativeLibErrorTest opts source errors =
         let lib = applicativeLib opts
         // Adjust the expected errors for the number of lines in the library
         let libLineAdjust = lib |> Seq.filter (fun c -> c = '\n') |> Seq.length
-        CompilerAssert.TypeCheckWithErrorsAndOptionsAndAdjust [| "/langversion:preview" |] libLineAdjust (lib + source) errors
+        CompilerAssert.TypeCheckWithErrorsAndOptionsAndAdjust [| |] libLineAdjust (lib + source) errors
 
     let ApplicativeLibErrorTestFeatureDisabled opts source errors =
         let lib = applicativeLib opts
@@ -197,7 +196,7 @@ let check msg actual expected = if actual <> expected then failwithf "FAILED %s,
         let libLineAdjust = lib |> Seq.filter (fun c -> c = '\n') |> Seq.length
         CompilerAssert.TypeCheckWithErrorsAndOptionsAndAdjust [| "/langversion:4.7" |] libLineAdjust (lib + source) errors
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang TraceApplicative`` () =
         ApplicativeLibTest includeAll """
 
@@ -214,7 +213,7 @@ check "fewljvwerjl1" ceResult.Value 3
 check "fewljvwerj12" (tracer.GetTrace ()) [|TraceOp.ApplicativeBind2Return|]
             """
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang TraceApplicativeCustomOp`` () =
         ApplicativeLibTest includeAll """
 
@@ -232,7 +231,7 @@ check "fewljvwerjlvwe1" ceResult.Value 3
 check "fewljvwerjvwe12" (tracer.GetTrace ()) [|TraceOp.ApplicativeBind2Return; TraceOp.Log "hello!";TraceOp.ApplicativeBindReturn|]
             """
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang TraceApplicativeCustomOp Minimal`` () =
         ApplicativeLibTest includeMinimal """
 
@@ -250,7 +249,7 @@ check "fewljvwerjlvwe1" ceResult.Value 3
 check "fewljvwerjvwe12" (tracer.GetTrace ()) [|TraceOp.MergeSources; TraceOp.ApplicativeBindReturn; TraceOp.Log "hello!";TraceOp.ApplicativeBindReturn|]
             """
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang TraceApplicativeCustomOpTwice`` () =
         ApplicativeLibTest includeAll """
 
@@ -269,7 +268,7 @@ check "fewljvwerjlvwe1" ceResult.Value 3
 check "fewljvwerjvwe12" (tracer.GetTrace ()) [|TraceOp.ApplicativeBind2Return; TraceOp.Log "hello!";TraceOp.Log "goodbye!";TraceOp.ApplicativeBindReturn|]
             """
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang TraceApplicative Disable`` () =
         ApplicativeLibErrorTestFeatureDisabled includeAll 
             """
@@ -282,9 +281,9 @@ let ceResult : Trace<int> =
         return if y then x else -1
     }
             """
-            [| FSharpDiagnosticSeverity.Error, 3344, (6, 9, 8, 35), "This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature." |]
+            [| FSharpDiagnosticSeverity.Error, 3344, (7, 9, 7, 13), "This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature." |]
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang TraceMultiBindingMonoid`` () =
         ApplicativeLibTest includeAll """
 
@@ -302,7 +301,7 @@ check "fewljvwerjl5" ceResult.Value [3; 5]
 check "fewljvwerj16" (tracer.GetTrace ()) [|TraceOp.Delay; TraceOp.MonadicBind2; TraceOp.ApplicativeYield; TraceOp.Delay; TraceOp.ApplicativeYield; TraceOp.ApplicativeCombine|]
             """
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang TraceMultiBindingMonadic`` () =
         ApplicativeLibTest includeAll """
 
@@ -325,7 +324,7 @@ check "gwrhjkrwpoiwer1" ceResult.Value 3
 check "gwrhjkrwpoiwer2" (tracer.GetTrace ())  [|TraceOp.MonadicBind; TraceOp.MonadicBind2; TraceOp.MonadicReturn|]
             """
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang TraceMultiBindingMonadicCustomOp A`` () =
         ApplicativeLibTest includeAll """
 
@@ -340,7 +339,7 @@ let ceResult : Trace<int> =
 check "gwrhjkrwpoiwer1t4" ceResult.Value 3
             """
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang TraceMultiBindingMonadicCustomOp B`` () =
         ApplicativeLibTest includeAll """
 let tracer = TraceMultiBindingMonadicCustomOp()
@@ -356,7 +355,7 @@ check "gwrhjkrwpoiwer1t45" ceResult.Value 3
 check "gwrhjkrwpoiwer2t36" (tracer.GetTrace ())  [|TraceOp.MonadicBind2; TraceOp.MonadicReturn; TraceOp.Log "(3, true)"; TraceOp.MonadicBind; TraceOp.MonadicReturn |]
             """
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang TraceMultiBindingMonadic TwoBind`` () =
         ApplicativeLibTest includeAll """
 
@@ -381,7 +380,7 @@ check "gwrhjkrwpoiwer38" ceResult.Value 3
 check "gwrhjkrwpoiwer39" (tracer.GetTrace ())  [|TraceOp.MonadicBind; TraceOp.MonadicBind2; TraceOp.MonadicBind2; TraceOp.MonadicReturn|]
             """
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang TraceApplicativeWithDelayAndRun`` () =
         ApplicativeLibTest includeAll """
 
@@ -398,7 +397,7 @@ check "vlkjrrlwevlk23" ceResult.Value 3
 check "vlkjrrlwevlk24" (tracer.GetTrace ())  [|TraceOp.Delay; TraceOp.ApplicativeBind2Return; TraceOp.Run|]
         """
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang TraceApplicativeWithDelay`` () =
         ApplicativeLibTest includeAll """
 
@@ -415,7 +414,7 @@ check "vlkjrrlwevlk23" ceResult.Value 3
 check "vlkjrrlwevlk24" (tracer.GetTrace ())  [|TraceOp.Delay; TraceOp.ApplicativeBind2Return|]
         """
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang TraceApplicativeWithDelay Minimal`` () =
         ApplicativeLibTest includeMinimal """
 
@@ -432,7 +431,7 @@ check "vlkjrrlwevlk23" ceResult.Value 3
 check "vlkjrrlwevlk24" (tracer.GetTrace ())  [|TraceOp.Delay; TraceOp.MergeSources; TraceOp.ApplicativeBindReturn|]
         """
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang TraceApplicativeWithRun`` () =
         ApplicativeLibTest includeAll """
 
@@ -450,7 +449,7 @@ check "vwerweberlk4" (tracer.GetTrace ())  [|TraceOp.ApplicativeBind2Return; Tra
         """
 
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang TraceApplicative Size 3`` () =
         ApplicativeLibTest includeAll """
 
@@ -468,7 +467,7 @@ check "fewljvwerjl7" ceResult.Value 3
 check "fewljvwerj18" (tracer.GetTrace ()) [|TraceOp.MergeSources3; TraceOp.ApplicativeBindReturn|]
         """
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang TraceApplicative Size 3 minimal`` () =
         ApplicativeLibTest includeMinimal """
 
@@ -485,7 +484,7 @@ let ceResult =
 check "fewljvwerjl7" ceResult.Value 3
 check "fewljvwerj18" (tracer.GetTrace ()) [|TraceOp.MergeSources; TraceOp.MergeSources; TraceOp.ApplicativeBindReturn|]
         """
-    [<Test>]
+    [<Fact>]
     let ``AndBang TraceApplicative Size 4`` () =
         ApplicativeLibTest includeAll """
 
@@ -504,7 +503,7 @@ check "fewljvwerjl191" ceResult.Value 3
 check "fewljvwerj1192" (tracer.GetTrace ()) [|TraceOp.MergeSources4; TraceOp.ApplicativeBindReturn|]
         """
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang TraceApplicative Size 5`` () =
         ApplicativeLibTest includeAll """
 
@@ -524,7 +523,7 @@ check "fewljvwerjl193" ceResult.Value 16
 check "fewljvwerj1194" (tracer.GetTrace ()) [|TraceOp.MergeSources; TraceOp.MergeSources4; TraceOp.ApplicativeBindReturn|]
         """
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang TraceApplicative Size 6`` () =
         ApplicativeLibTest includeAll """
 
@@ -545,7 +544,7 @@ check "fewljvwerjl195" ceResult.Value 25
 check "fewljvwerj1196" (tracer.GetTrace ()) [|TraceOp.MergeSources3; TraceOp.MergeSources4; TraceOp.ApplicativeBindReturn|]
         """
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang TraceApplicative Size 10`` () =
         ApplicativeLibTest includeAll """
 
@@ -571,7 +570,7 @@ check "fewljvwerj1198" (tracer.GetTrace ()) [|TraceOp.MergeSources4; TraceOp.Mer
     """
 
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang Negative TraceApplicative missing MergeSources`` () =
         ApplicativeLibErrorTest includeAll """
 let tracer = TraceApplicativeNoMergeSources()
@@ -583,9 +582,9 @@ let _ =
         return x + y
     }
     """
-            [|(FSharpDiagnosticSeverity.Error, 3343, (6, 9, 6, 25), "The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a 'Bind2' method or appropriate 'MergeSources' and 'Bind' methods")|]
+            [|(FSharpDiagnosticSeverity.Error, 3343, (6, 9, 6, 13), "The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a 'Bind2' method or appropriate 'MergeSources' and 'Bind' methods")|]
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang Negative TraceApplicative missing Bind and BindReturn`` () =
         ApplicativeLibErrorTest includeAll """
 let tracer = TraceApplicativeNoBindReturn()
@@ -597,10 +596,10 @@ let _ =
         return x + y
     }
     """
-            [|(FSharpDiagnosticSeverity.Error, 708, (6, 9, 6, 25), "This control construct may only be used if the computation expression builder defines a 'Bind' method")|]
+            [|(FSharpDiagnosticSeverity.Error, 708, (6, 9, 6, 13), "This control construct may only be used if the computation expression builder defines a 'Bind' method")|]
 
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang Negative TraceApplicative with bad construct`` () =
         ApplicativeLibErrorTest includeAll """
 
@@ -613,9 +612,9 @@ let _ =
         return x + y
     }
     """
-            [| FSharpDiagnosticSeverity.Error, 708, (7, 9, 7, 25), "This control construct may only be used if the computation expression builder defines a 'Bind' method" |]
+            [| FSharpDiagnosticSeverity.Error, 708, (7, 9, 7, 13), "This control construct may only be used if the computation expression builder defines a 'Bind' method" |]
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang TraceApplicative with do-bang`` () =
         ApplicativeLibErrorTest includeAll """
 let tracer = TraceApplicative()
@@ -632,8 +631,8 @@ let _ =
               (FSharpDiagnosticSeverity.Error, 604, (5, 12, 5, 13), "Unmatched '{'");
               (FSharpDiagnosticSeverity.Error, 10, (8, 9, 8, 13), "Unexpected keyword 'and!' in implementation file")|]
 
-    [<Test>]
-    let ``AndBang Negative TraceApplicative let betweeen let! and and!`` () =
+    [<Fact>]
+    let ``AndBang Negative TraceApplicative let between let! and and!`` () =
         ApplicativeLibErrorTest includeAll """
 let tracer = TraceApplicative()
 
@@ -648,7 +647,7 @@ let _ =
             [| (FSharpDiagnosticSeverity.Error, 10, (8, 9, 8, 13), "Unexpected keyword 'and!' in expression") |]
 
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang Negative TraceApplicative no return`` () =
         ApplicativeLibErrorTest includeAll """
 let tracer = TraceApplicative()
@@ -661,7 +660,7 @@ let _ =
     """
             [|(FSharpDiagnosticSeverity.Error, 10, (8, 5, 8, 6), "Unexpected symbol '}' in expression")|]
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang TraceApplicative conditional return`` () =
         ApplicativeLibTest includeAll """
 let tracer = TraceApplicative()
@@ -678,7 +677,7 @@ let ceResult =
 check "grwerjkrwejgk" ceResult.Value 2
     """
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang TraceApplicative match return`` () =
         ApplicativeLibTest includeAll """
 let tracer = TraceApplicative()
@@ -694,7 +693,7 @@ let ceResult =
 check "grwerjkrwejgk42" ceResult.Value 2
     """
 
-    [<Test>]
+    [<Fact>]
     let ``AndBang TraceApplicative incomplete match return`` () =
         ApplicativeLibTest includeAll """
 #nowarn "25"
@@ -785,9 +784,9 @@ let check msg actual expected = if actual <> expected then failwithf "FAILED %s,
         """
 
     let OverloadLibTest inclInternalExt inclExternalExt source =
-        CompilerAssert.CompileExeAndRunWithOptions([| "/langversion:preview" |], (Source (overloadLib inclInternalExt inclExternalExt + source)))
+        CompilerAssert.CompileExeAndRunWithOptions([|  |], (Source (overloadLib inclInternalExt inclExternalExt + source)))
 
-    [<Test>]
+    [<Fact>]
     let ``OverloadLib accepts overloaded methods`` () =
         OverloadLibTest false false """
 let mem = new System.IO.MemoryStream("Stream"B)
@@ -804,7 +803,7 @@ let ceResult =
 check "TmFtZVxyXG5FbWF1" ceResult "Name\r\nEmail\r\nsswo\r\nBYTES\r\nStream\r\nDescription\r\nof\r\ncontent\r\n"B
     """
 
-    [<Test>]
+    [<Fact>]
     let ``OverloadLib accepts overloaded internal extension methods`` () =
         OverloadLibTest true false """
 let mem = new System.IO.MemoryStream("Stream"B)
@@ -821,7 +820,7 @@ let ceResult =
 check "TmFtZVxyXG5FbWF2" ceResult "Name\r\nEmail\r\nsswo\r\nBYTES\r\nStream\r\nDescription\r\nof\r\ncontent\r\n"B
     """
 
-    [<Test>]
+    [<Fact>]
     let ``OverloadLib accepts overloaded internal and external extensions`` () =
         OverloadLibTest true true """
 let mem = new System.IO.MemoryStream("Stream"B)

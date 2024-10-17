@@ -680,7 +680,7 @@ Error:</value>
   <data name="PropPage_RemoteMachineBlankError" xml:space="preserve">
     <value>The remote machine name cannot be blank.  Please specify the name of the machine to debug remotely.</value>
   </data>
-  <data name="PropPage_ProgramNotExist" xml:space="preserve">
+  <data name="PropPage_ProgramNonexistent" xml:space="preserve">
     <value>The external program cannot be found. Please enter a valid executable file.</value>
   </data>
   <data name="PropPage_NeedExternalProgram" xml:space="preserve">
@@ -725,7 +725,7 @@ Error:</value>
   <data name="PropPage_NeedResFile" xml:space="preserve">
     <value>"Resource files must have a .res file extension. Please enter a valid resource file name."</value>
   </data>
-  <data name="PropPage_ResourceFileNotExist" xml:space="preserve">
+  <data name="PropPage_ResourceFileNonexistent" xml:space="preserve">
     <value>"The resource file entered does not exist."</value>
   </data>
   <data name="APPDES_Title" xml:space="preserve">
@@ -1223,7 +1223,7 @@ Do you really want to edit this file?</value>
     <value>The resource item uses the type '{0}', which is not supported in this project.</value>
     <comment>{0} - name of the type</comment>
   </data>
-  <data name="RSE_Err_CantSaveResouce_1Arg" xml:space="preserve">
+  <data name="RSE_Err_CantSaveResourceDiscard_1Arg" xml:space="preserve">
     <value>The resource item(s) {0} cannot be saved correctly.  The item(s) will be discarded.</value>
     <comment>{0} - name list of the resource</comment>
   </data>
@@ -1413,7 +1413,7 @@ CONSIDER: get this from CodeDom</comment>
     <value>Linked at compile time</value>
     <comment>File Persistence Mode</comment>
   </data>
-  <data name="RES_PersistenceMode_Embeded" xml:space="preserve">
+  <data name="RES_PersistenceMode_Embedded" xml:space="preserve">
     <value>Embedded in .resx</value>
     <comment>File Persistence Mode</comment>
   </data>
@@ -1616,7 +1616,7 @@ CONSIDER: get this from CodeDom</comment>
     <value />
     <comment>Whether or not to bold the font on category buttons (e.g. "Strings", "Images") when they contain one or more resources.  If this resource string is set to anything other than an empty string, this bolding behavior will be turned off</comment>
   </data>
-  <data name="RSE_CategiesLabel" xml:space="preserve">
+  <data name="RSE_CategoriesLabel" xml:space="preserve">
     <value>&amp;Categories:</value>
     <comment>The label in the menu strip for the combobox that holds the categories of resources to display</comment>
   </data>

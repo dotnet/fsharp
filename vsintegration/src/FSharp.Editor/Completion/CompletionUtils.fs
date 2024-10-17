@@ -131,6 +131,7 @@ module internal CompletionUtils =
                     | ClassificationTypeNames.NumericLiteral -> false
                     | _ -> true) // anything else is a valid classification type
             ) in
+
         result
 
     let inline getKindPriority kind =

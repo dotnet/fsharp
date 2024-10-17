@@ -1,8 +1,8 @@
 // #Regression #NoMT #EntryPoint 
 // Regression test for FSHARP1.0:1304 - FSHARP1.0:3783
-// Explicit program entry point: [<ExtryPoint>]
+// Explicit program entry point: [<EntryPoint>]
 // attribute on invalid language element (error)
-//<Expects id="FS0842" span="(9,3-9,13)" status="error">This attribute is not valid for use on this language element</Expects>
+
 
 #light
 

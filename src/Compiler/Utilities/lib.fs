@@ -20,7 +20,7 @@ let mutable progress = false
 let mutable tracking = false
 
 let isEnvVarSet s =
-    try (Environment.GetEnvironmentVariable(s) <> null) with _ -> false
+    try not(isNull(Environment.GetEnvironmentVariable s)) with _ -> false
 
 let GetEnvInteger e dflt = match Environment.GetEnvironmentVariable(e) with null -> dflt | t -> try int t with _ -> dflt
 
@@ -330,15 +330,15 @@ type Graph<'Data, 'Id when 'Id : comparison and 'Id : equality>
 // with care.
 //----------------------------------------------------------------------------
 
-type NonNullSlot<'T> = 'T
-let nullableSlotEmpty() = Unchecked.defaultof<'T>
-let nullableSlotFull x = x
+type NonNullSlot<'T when 'T : not struct> = 'T
+let nullableSlotEmpty() : NonNullSlot<'T> = Unchecked.defaultof<_>
+let nullableSlotFull (x: 'T) : NonNullSlot<'T> = x
 
 //---------------------------------------------------------------------------
 // Caches, mainly for free variables
 //---------------------------------------------------------------------------
 
-type cache<'T> = { mutable cacheVal: 'T NonNullSlot }
+type cache<'T when 'T : not struct> = { mutable cacheVal: NonNullSlot<'T> }
 let newCache() = { cacheVal = nullableSlotEmpty() }
 
 let inline cached cache ([<InlineIfLambda>] resF) =
@@ -383,7 +383,7 @@ type Dumper(x:obj) =
 [<RequireQualifiedAccess>]
 type MaybeLazy<'T> =
     | Strict of 'T
-    | Lazy of Lazy<'T>
+    | Lazy of InterruptibleLazy<'T>
 
     member this.Value: 'T =
         match this with

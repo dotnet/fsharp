@@ -56,17 +56,17 @@ let foo =
 // This was causing bad codegen in debug code
 module InnerFunctionGenericOnlyByMeasure =
     let nullReferenceError weightedList =
-        let rec loop accumululatedWeight (remaining : float<'u> list) =
+        let rec loop accumulatedWeight (remaining : float<'u> list) =
             match remaining with
-            | [] -> accumululatedWeight
+            | [] -> accumulatedWeight
             | weight :: tail ->
-                loop (accumululatedWeight + weight) tail
+                loop (accumulatedWeight + weight) tail
 
         loop 0.0<_> weightedList
 
     let ``is this null?`` = nullReferenceError [ 0.3; 0.3; 0.4 ]
 
-// Another variation on the above test case, where the recursive thing is a type function generic unly by a unit of measure
+// Another variation on the above test case, where the recursive thing is a type function generic only by a unit of measure
 module TopLevelTypeFunctionGenericOnlyByMeasure =
     type C< [<Measure>] 'u> =
        abstract Invoke: float<'u> list -> int
@@ -129,7 +129,7 @@ module TestLibrary =
         int output 
 
 
-    //two work arounds to the problem
+    //two workarounds to the problem
     let test7 num =  
         let convert (i : int) =  //with the type specified here, this doesn't crash
             unit.convert(i)
@@ -201,7 +201,7 @@ let main argv =
     // test2
     for _ in CreateBadImageFormatException () do ()
 
-    System.IO.File.WriteAllText("test.ok","ok"); 
+    printf "TEST PASSED OK"; 
 
     match failures with 
     | [] -> 

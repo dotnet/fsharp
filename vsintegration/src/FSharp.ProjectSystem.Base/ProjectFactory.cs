@@ -79,7 +79,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         protected abstract ProjectNode CreateProject();
 
         /// <summary>
-        /// Rather than directly creating the project, ask VS to initate the process of
+        /// Rather than directly creating the project, ask VS to initiate the process of
         /// creating an aggregated project in case we are flavored. We will be called
         /// on the IVsAggregatableProjectFactory to do the real project creation.
         /// </summary>
@@ -248,7 +248,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Retrives the list of project guids from the project file.
+        /// Retrieves the list of project guids from the project file.
         /// If you don't want your project to be flavorable, override
         /// to only return your project factory Guid:
         ///      return this.GetType().GUID.ToString("B");
