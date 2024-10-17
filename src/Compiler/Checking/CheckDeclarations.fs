@@ -3347,9 +3347,11 @@ module EstablishTypeDefinitionCores =
                           else                  
                               Some ty 
                       | _ ->
-                          inherits
-                          |> List.skip 1
-                          |> List.iter (fun (synType, _, _) -> errorR(Error(FSComp.SR.tcTypesCannotInheritFromMultipleConcreteTypes(), synType.Range)))
+                          match inherits with
+                          | [] -> ()
+                          | _ :: inherits -> 
+                            for synType, _, _ in inherits do
+                                errorR(Error(FSComp.SR.tcTypesCannotInheritFromMultipleConcreteTypes(), synType.Range))
                           None
 
                   | SynTypeDefnSimpleRepr.Enum _ -> 
