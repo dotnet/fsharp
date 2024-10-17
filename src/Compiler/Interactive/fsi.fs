@@ -3849,7 +3849,9 @@ type FsiInteractionProcessor
             istate, Completed None
 
         | ParsedHashDirective("nowarn", nowarnArguments, m) ->
-            let numbers = (parsedHashDirectiveArguments nowarnArguments tcConfigB.langVersion)
+            let numbers =
+                (parsedHashDirectiveArgumentsNoCheck nowarnArguments tcConfigB.langVersion)
+
             List.iter (fun (d: string) -> tcConfigB.TurnWarningOff(m, d)) numbers
             istate, Completed None
 
