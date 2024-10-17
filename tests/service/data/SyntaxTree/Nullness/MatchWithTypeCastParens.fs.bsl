@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/MatchWithTypeCastParens.fs", false,
-      QualifiedNameOfFile MatchWithTypeCastParens, [], [],
+      QualifiedNameOfFile MatchWithTypeCastParens, [],
       [SynModuleOrNamespace
          ([MatchWithTypeCastParens], false, AnonModule,
           [Expr

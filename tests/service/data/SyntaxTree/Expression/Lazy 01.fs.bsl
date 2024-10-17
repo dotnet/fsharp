@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Expression/Lazy 01.fs", false, QualifiedNameOfFile Module, [], [],
+     ("/root/Expression/Lazy 01.fs", false, QualifiedNameOfFile Module, [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Let

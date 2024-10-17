@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Type/With 04.fs", false, QualifiedNameOfFile Module, [], [],
+     ("/root/Type/With 04.fs", false, QualifiedNameOfFile Module, [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Types

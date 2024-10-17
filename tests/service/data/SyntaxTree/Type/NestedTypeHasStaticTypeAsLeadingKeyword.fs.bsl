@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Type/NestedTypeHasStaticTypeAsLeadingKeyword.fs", false,
-      QualifiedNameOfFile NestedTypeHasStaticTypeAsLeadingKeyword, [], [],
+      QualifiedNameOfFile NestedTypeHasStaticTypeAsLeadingKeyword, [],
       [SynModuleOrNamespace
          ([NestedTypeHasStaticTypeAsLeadingKeyword], false, AnonModule,
           [Types

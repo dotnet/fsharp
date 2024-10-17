@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/ModuleOrNamespace/NamespaceShouldContainNamespaceKeyword.fs", false,
-      QualifiedNameOfFile NamespaceShouldContainNamespaceKeyword, [], [],
+      QualifiedNameOfFile NamespaceShouldContainNamespaceKeyword, [],
       [SynModuleOrNamespace
          ([Foo], false, DeclaredNamespace,
           [NestedModule

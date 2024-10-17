@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/ModuleMember/Open 08.fs", false, QualifiedNameOfFile Module, [], [],
+     ("/root/ModuleMember/Open 08.fs", false, QualifiedNameOfFile Module, [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Open

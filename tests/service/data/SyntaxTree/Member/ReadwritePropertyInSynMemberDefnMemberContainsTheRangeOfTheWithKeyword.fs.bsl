@@ -4,7 +4,7 @@ ImplFile
       false,
       QualifiedNameOfFile
         ReadwritePropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([ReadwritePropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword],
           false, AnonModule,

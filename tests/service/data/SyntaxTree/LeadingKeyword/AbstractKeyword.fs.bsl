@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/LeadingKeyword/AbstractKeyword.fs", false,
-      QualifiedNameOfFile AbstractKeyword, [], [],
+      QualifiedNameOfFile AbstractKeyword, [],
       [SynModuleOrNamespace
          ([AbstractKeyword], false, AnonModule,
           [Types

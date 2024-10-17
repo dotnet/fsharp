@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Extern/ExternKeywordIsPresentInTrivia.fs", false,
-      QualifiedNameOfFile ExternKeywordIsPresentInTrivia, [], [],
+      QualifiedNameOfFile ExternKeywordIsPresentInTrivia, [],
       [SynModuleOrNamespace
          ([ExternKeywordIsPresentInTrivia], false, AnonModule,
           [Let

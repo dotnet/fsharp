@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/GenericFunctionTyparNotNull.fs", false,
-      QualifiedNameOfFile GenericFunctionTyparNotNull, [], [],
+      QualifiedNameOfFile GenericFunctionTyparNotNull, [],
       [SynModuleOrNamespace
          ([GenericFunctionTyparNotNull], false, AnonModule,
           [Let

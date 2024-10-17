@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Binding/TupleReturnTypeOfBindingShouldContainStars.fs", false,
-      QualifiedNameOfFile TupleReturnTypeOfBindingShouldContainStars, [], [],
+      QualifiedNameOfFile TupleReturnTypeOfBindingShouldContainStars, [],
       [SynModuleOrNamespace
          ([TupleReturnTypeOfBindingShouldContainStars], false, AnonModule,
           [Let

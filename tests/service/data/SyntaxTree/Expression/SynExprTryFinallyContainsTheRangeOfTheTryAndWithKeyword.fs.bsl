@@ -3,7 +3,7 @@ ImplFile
      ("/root/Expression/SynExprTryFinallyContainsTheRangeOfTheTryAndWithKeyword.fs",
       false,
       QualifiedNameOfFile
-        SynExprTryFinallyContainsTheRangeOfTheTryAndWithKeyword, [], [],
+        SynExprTryFinallyContainsTheRangeOfTheTryAndWithKeyword, [],
       [SynModuleOrNamespace
          ([SynExprTryFinallyContainsTheRangeOfTheTryAndWithKeyword], false,
           AnonModule,

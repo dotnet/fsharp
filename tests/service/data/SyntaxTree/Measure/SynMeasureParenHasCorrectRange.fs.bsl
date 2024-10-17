@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Measure/SynMeasureParenHasCorrectRange.fs", false,
-      QualifiedNameOfFile SynMeasureParenHasCorrectRange, [], [],
+      QualifiedNameOfFile SynMeasureParenHasCorrectRange, [],
       [SynModuleOrNamespace
          ([SynMeasureParenHasCorrectRange], false, AnonModule,
           [Expr

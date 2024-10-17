@@ -1,6 +1,6 @@
 SigFile
   (ParsedSigFileInput
-     ("/root/SignatureType/With 01.fsi", QualifiedNameOfFile With 01, [], [],
+     ("/root/SignatureType/With 01.fsi", QualifiedNameOfFile With 01, [],
       [SynModuleOrNamespaceSig
          ([X], false, DeclaredNamespace,
           [Types

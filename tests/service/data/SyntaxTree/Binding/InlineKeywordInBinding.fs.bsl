@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Binding/InlineKeywordInBinding.fs", false,
-      QualifiedNameOfFile InlineKeywordInBinding, [], [],
+      QualifiedNameOfFile InlineKeywordInBinding, [],
       [SynModuleOrNamespace
          ([InlineKeywordInBinding], false, AnonModule,
           [Let

@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/LeadingKeyword/StaticAbstractMemberKeyword.fs", false,
-      QualifiedNameOfFile StaticAbstractMemberKeyword, [], [],
+      QualifiedNameOfFile StaticAbstractMemberKeyword, [],
       [SynModuleOrNamespace
          ([StaticAbstractMemberKeyword], false, AnonModule,
           [Types

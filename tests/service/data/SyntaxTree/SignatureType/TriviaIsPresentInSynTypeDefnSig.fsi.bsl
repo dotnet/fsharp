@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/SignatureType/TriviaIsPresentInSynTypeDefnSig.fsi",
-      QualifiedNameOfFile Meh, [], [],
+      QualifiedNameOfFile Meh, [],
       [SynModuleOrNamespaceSig
          ([Meh], false, NamedModule,
           [Types

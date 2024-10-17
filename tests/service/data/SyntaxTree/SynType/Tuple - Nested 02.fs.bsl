@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/SynType/Tuple - Nested 02.fs", false, QualifiedNameOfFile Module,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Expr

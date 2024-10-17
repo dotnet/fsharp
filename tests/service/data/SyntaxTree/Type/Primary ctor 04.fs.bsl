@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Type/Primary ctor 04.fs", false, QualifiedNameOfFile Module, [], [],
+     ("/root/Type/Primary ctor 04.fs", false, QualifiedNameOfFile Module, [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Types

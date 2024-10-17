@@ -3,7 +3,7 @@ ImplFile
      ("/root/String/SynExprInterpolatedStringWithSynStringKindTripleQuote.fs",
       false,
       QualifiedNameOfFile SynExprInterpolatedStringWithSynStringKindTripleQuote,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([SynExprInterpolatedStringWithSynStringKindTripleQuote], false,
           AnonModule,

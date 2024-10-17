@@ -3,7 +3,7 @@ ImplFile
      ("/root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs",
       false,
       QualifiedNameOfFile
-        SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign, [], [],
+        SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign, [],
       [SynModuleOrNamespace
          ([SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign], false,
           AnonModule,

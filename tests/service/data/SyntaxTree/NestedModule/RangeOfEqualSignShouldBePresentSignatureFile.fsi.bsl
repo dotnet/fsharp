@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/NestedModule/RangeOfEqualSignShouldBePresentSignatureFile.fsi",
-      QualifiedNameOfFile RangeOfEqualSignShouldBePresentSignatureFile, [], [],
+      QualifiedNameOfFile RangeOfEqualSignShouldBePresentSignatureFile, [],
       [SynModuleOrNamespaceSig
          ([Foo], false, DeclaredNamespace,
           [NestedModule

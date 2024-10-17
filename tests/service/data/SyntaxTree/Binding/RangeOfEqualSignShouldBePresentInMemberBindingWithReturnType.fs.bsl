@@ -3,7 +3,7 @@ ImplFile
      ("/root/Binding/RangeOfEqualSignShouldBePresentInMemberBindingWithReturnType.fs",
       false,
       QualifiedNameOfFile
-        RangeOfEqualSignShouldBePresentInMemberBindingWithReturnType, [], [],
+        RangeOfEqualSignShouldBePresentInMemberBindingWithReturnType, [],
       [SynModuleOrNamespace
          ([RangeOfEqualSignShouldBePresentInMemberBindingWithReturnType], false,
           AnonModule,

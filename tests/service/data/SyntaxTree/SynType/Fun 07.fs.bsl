@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/SynType/Fun 07.fs", false, QualifiedNameOfFile Module, [], [],
+     ("/root/SynType/Fun 07.fs", false, QualifiedNameOfFile Module, [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Let

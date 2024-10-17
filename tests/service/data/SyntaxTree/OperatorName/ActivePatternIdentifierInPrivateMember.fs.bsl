@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/OperatorName/ActivePatternIdentifierInPrivateMember.fs", false,
-      QualifiedNameOfFile ActivePatternIdentifierInPrivateMember, [], [],
+      QualifiedNameOfFile ActivePatternIdentifierInPrivateMember, [],
       [SynModuleOrNamespace
          ([ActivePatternIdentifierInPrivateMember], false, AnonModule,
           [Types

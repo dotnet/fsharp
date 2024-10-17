@@ -10,6 +10,7 @@ open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open Internal.Utilities.Rational
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
@@ -4053,7 +4054,6 @@ type NamedDebugPointKey =
 type CheckedImplFile =
     | CheckedImplFile of
         qualifiedNameOfFile: Syntax.QualifiedNameOfFile *
-        pragmas: Syntax.ScopedPragma list *
         signature: ModuleOrNamespaceType *
         contents: ModuleOrNamespaceContents *
         hasExplicitEntryPoint: bool *
@@ -4071,8 +4071,6 @@ type CheckedImplFile =
     member HasExplicitEntryPoint: bool
 
     member IsScript: bool
-
-    member Pragmas: Syntax.ScopedPragma list
 
     member QualifiedNameOfFile: Syntax.QualifiedNameOfFile
 

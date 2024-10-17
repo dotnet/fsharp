@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/OperatorName/DetectDifferenceBetweenCompiledOperators.fs", false,
-      QualifiedNameOfFile DetectDifferenceBetweenCompiledOperators, [], [],
+      QualifiedNameOfFile DetectDifferenceBetweenCompiledOperators, [],
       [SynModuleOrNamespace
          ([DetectDifferenceBetweenCompiledOperators], false, AnonModule,
           [Expr

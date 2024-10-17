@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/NestedModule/RangeOfEqualSignShouldBePresent.fs", false,
-      QualifiedNameOfFile RangeOfEqualSignShouldBePresent, [], [],
+      QualifiedNameOfFile RangeOfEqualSignShouldBePresent, [],
       [SynModuleOrNamespace
          ([RangeOfEqualSignShouldBePresent], false, AnonModule,
           [NestedModule

@@ -2,7 +2,7 @@ SigFile
   (ParsedSigFileInput
      ("/root/SignatureType/SynTypeDefnSigWithEnumContainsTheRangeOfTheEqualsSign.fsi",
       QualifiedNameOfFile SynTypeDefnSigWithEnumContainsTheRangeOfTheEqualsSign,
-      [], [],
+      [],
       [SynModuleOrNamespaceSig
          ([SomeNamespace], false, DeclaredNamespace,
           [Types

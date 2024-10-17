@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/GenericTypeNotNull.fs", false,
-      QualifiedNameOfFile GenericTypeNotNull, [], [],
+      QualifiedNameOfFile GenericTypeNotNull, [],
       [SynModuleOrNamespace
          ([GenericTypeNotNull], false, AnonModule,
           [Types

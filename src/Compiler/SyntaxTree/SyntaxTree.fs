@@ -9,6 +9,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
 open FSharp.Compiler.SyntaxTrivia
+open FSharp.Compiler.Diagnostics
 
 [<Struct; NoEquality; NoComparison; DebuggerDisplay("{idText}")>]
 type Ident(text: string, range: range) =
@@ -1738,9 +1739,6 @@ type ParsedImplFile = ParsedImplFile of hashDirectives: ParsedHashDirective list
 [<NoEquality; NoComparison>]
 type ParsedSigFile = ParsedSigFile of hashDirectives: ParsedHashDirective list * fragments: ParsedSigFileFragment list
 
-[<RequireQualifiedAccess>]
-type ScopedPragma = WarningOff of range: range * warningNumber: int
-
 [<NoEquality; NoComparison>]
 type QualifiedNameOfFile =
     | QualifiedNameOfFile of Ident
@@ -1757,7 +1755,6 @@ type ParsedImplFileInput =
         fileName: string *
         isScript: bool *
         qualifiedNameOfFile: QualifiedNameOfFile *
-        scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
         contents: SynModuleOrNamespace list *
         flags: (bool * bool) *
@@ -1766,9 +1763,6 @@ type ParsedImplFileInput =
 
     member x.QualifiedName =
         (let (ParsedImplFileInput(qualifiedNameOfFile = qualNameOfFile)) = x in qualNameOfFile)
-
-    member x.ScopedPragmas =
-        (let (ParsedImplFileInput(scopedPragmas = scopedPragmas)) = x in scopedPragmas)
 
     member x.HashDirectives =
         (let (ParsedImplFileInput(hashDirectives = hashDirectives)) = x in hashDirectives)
@@ -1791,7 +1785,6 @@ type ParsedSigFileInput =
     | ParsedSigFileInput of
         fileName: string *
         qualifiedNameOfFile: QualifiedNameOfFile *
-        scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
         contents: SynModuleOrNamespaceSig list *
         trivia: ParsedSigFileInputTrivia *
@@ -1799,9 +1792,6 @@ type ParsedSigFileInput =
 
     member x.QualifiedName =
         (let (ParsedSigFileInput(qualifiedNameOfFile = qualNameOfFile)) = x in qualNameOfFile)
-
-    member x.ScopedPragmas =
-        (let (ParsedSigFileInput(scopedPragmas = scopedPragmas)) = x in scopedPragmas)
 
     member x.HashDirectives =
         (let (ParsedSigFileInput(hashDirectives = hashDirectives)) = x in hashDirectives)
@@ -1822,11 +1812,6 @@ type ParsedInput =
         match inp with
         | ParsedInput.ImplFile file -> file.FileName
         | ParsedInput.SigFile file -> file.FileName
-
-    member inp.ScopedPragmas =
-        match inp with
-        | ParsedInput.ImplFile file -> file.ScopedPragmas
-        | ParsedInput.SigFile file -> file.ScopedPragmas
 
     member inp.QualifiedName =
         match inp with

@@ -2,7 +2,7 @@ ImplFile
   (ParsedImplFileInput
      ("/root/ModuleOrNamespace/GlobalNamespaceShouldStartAtNamespaceKeyword.fs",
       false, QualifiedNameOfFile GlobalNamespaceShouldStartAtNamespaceKeyword,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([], false, GlobalNamespace,
           [Types

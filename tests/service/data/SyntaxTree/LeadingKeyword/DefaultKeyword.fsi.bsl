@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/LeadingKeyword/DefaultKeyword.fsi",
-      QualifiedNameOfFile DefaultKeyword, [], [],
+      QualifiedNameOfFile DefaultKeyword, [],
       [SynModuleOrNamespaceSig
          ([X], false, DeclaredNamespace,
           [Types

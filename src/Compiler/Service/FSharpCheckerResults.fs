@@ -3075,7 +3075,7 @@ module internal ParseAndCheckFile =
 
     let ApplyLoadClosure
         (
-            tcConfig,
+            tcConfig: TcConfig,
             parsedMainInput,
             mainInputFileName: string,
             loadClosure: LoadClosure option,
@@ -3165,6 +3165,7 @@ module internal ParseAndCheckFile =
                 | FSharpDiagnosticSeverity.Hidden -> ()
 
         | None ->
+            CheckLegacyWarnDirectivePlacement(tcConfig.langVersion, tcConfig.diagnosticsOptions.WarnScopes, parsedMainInput)
             // For non-scripts, check for disallow #r and #load.
             ApplyMetaCommandsFromInputToTcConfig(
                 tcConfig,
@@ -3217,10 +3218,6 @@ module internal ParseAndCheckFile =
             use _ = UseDiagnosticsLogger errHandler.DiagnosticsLogger
 
             use _unwindBP = UseBuildPhase BuildPhase.TypeCheck
-
-            // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
-            let tcConfig =
-                ApplyNoWarnsToTcConfig(tcConfig, parsedMainInput, !! Path.GetDirectoryName(mainInputFileName))
 
             // update the error handler with the modified tcConfig
             errHandler.DiagnosticOptions <- tcConfig.diagnosticsOptions

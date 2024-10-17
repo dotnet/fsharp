@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/OperatorName/PrefixOperation.fs", false,
-      QualifiedNameOfFile PrefixOperation, [], [],
+      QualifiedNameOfFile PrefixOperation, [],
       [SynModuleOrNamespace
          ([PrefixOperation], false, AnonModule,
           [Expr

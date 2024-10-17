@@ -3,7 +3,7 @@ ImplFile
      ("/root/SynType/SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember.fs",
       false,
       QualifiedNameOfFile
-        SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember, [], [],
+        SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember, [],
       [SynModuleOrNamespace
          ([SynTypeOrInsideSynTypeConstraintWhereTyparSupportsMember], false,
           AnonModule,

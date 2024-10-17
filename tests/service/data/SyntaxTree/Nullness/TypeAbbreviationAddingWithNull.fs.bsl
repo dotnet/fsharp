@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/TypeAbbreviationAddingWithNull.fs", false,
-      QualifiedNameOfFile TypeAbbreviationAddingWithNull, [], [],
+      QualifiedNameOfFile TypeAbbreviationAddingWithNull, [],
       [SynModuleOrNamespace
          ([TypeAbbreviationAddingWithNull], false, AnonModule,
           [Types

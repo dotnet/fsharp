@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/ModuleOrNamespace/Namespace 06.fs", false,
-      QualifiedNameOfFile Namespace 06, [], [],
+      QualifiedNameOfFile Namespace 06, [],
       [SynModuleOrNamespace
          ([], false, DeclaredNamespace,
           [Expr (Const (Unit, (3,0--3,2)), (3,0--3,2))], PreXmlDocEmpty, [],

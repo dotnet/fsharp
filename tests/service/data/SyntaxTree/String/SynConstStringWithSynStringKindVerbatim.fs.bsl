@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/String/SynConstStringWithSynStringKindVerbatim.fs", false,
-      QualifiedNameOfFile SynConstStringWithSynStringKindVerbatim, [], [],
+      QualifiedNameOfFile SynConstStringWithSynStringKindVerbatim, [],
       [SynModuleOrNamespace
          ([SynConstStringWithSynStringKindVerbatim], false, AnonModule,
           [Let

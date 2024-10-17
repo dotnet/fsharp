@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/ModuleOrNamespace/Nested module 16.fs", false,
-      QualifiedNameOfFile Nested module 16, [], [],
+      QualifiedNameOfFile Nested module 16, [],
       [SynModuleOrNamespace
          ([Ns], false, DeclaredNamespace,
           [NestedModule

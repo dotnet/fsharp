@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/CodeComment/BlockCommentInSourceCodeSignatureFile.fsi",
-      QualifiedNameOfFile BlockCommentInSourceCodeSignatureFile, [], [],
+      QualifiedNameOfFile BlockCommentInSourceCodeSignatureFile, [],
       [SynModuleOrNamespaceSig
          ([Meh], false, DeclaredNamespace,
           [Val

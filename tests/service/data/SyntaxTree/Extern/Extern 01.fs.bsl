@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Extern/Extern 01.fs", false, QualifiedNameOfFile Extern 01, [], [],
+     ("/root/Extern/Extern 01.fs", false, QualifiedNameOfFile Extern 01, [],
       [SynModuleOrNamespace
          ([Extern 01], false, AnonModule,
           [Let

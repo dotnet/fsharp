@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Lambda/LambdaWithTwoParametersGivesCorrectBody.fs", false,
-      QualifiedNameOfFile LambdaWithTwoParametersGivesCorrectBody, [], [],
+      QualifiedNameOfFile LambdaWithTwoParametersGivesCorrectBody, [],
       [SynModuleOrNamespace
          ([LambdaWithTwoParametersGivesCorrectBody], false, AnonModule,
           [Expr

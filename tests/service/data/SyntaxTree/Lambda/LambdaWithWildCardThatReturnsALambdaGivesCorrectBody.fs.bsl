@@ -3,7 +3,7 @@ ImplFile
      ("/root/Lambda/LambdaWithWildCardThatReturnsALambdaGivesCorrectBody.fs",
       false,
       QualifiedNameOfFile LambdaWithWildCardThatReturnsALambdaGivesCorrectBody,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([LambdaWithWildCardThatReturnsALambdaGivesCorrectBody], false,
           AnonModule,

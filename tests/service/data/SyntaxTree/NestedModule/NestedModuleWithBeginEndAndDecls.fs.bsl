@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/NestedModule/NestedModuleWithBeginEndAndDecls.fs", false,
-      QualifiedNameOfFile NestedModuleWithBeginEndAndDecls, [], [],
+      QualifiedNameOfFile NestedModuleWithBeginEndAndDecls, [],
       [SynModuleOrNamespace
          ([X], false, DeclaredNamespace,
           [NestedModule

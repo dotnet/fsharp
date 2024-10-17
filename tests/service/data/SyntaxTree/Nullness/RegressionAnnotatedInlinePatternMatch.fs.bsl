@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/RegressionAnnotatedInlinePatternMatch.fs", false,
-      QualifiedNameOfFile RegressionAnnotatedInlinePatternMatch, [], [],
+      QualifiedNameOfFile RegressionAnnotatedInlinePatternMatch, [],
       [SynModuleOrNamespace
          ([RegressionAnnotatedInlinePatternMatch], false, AnonModule,
           [Expr

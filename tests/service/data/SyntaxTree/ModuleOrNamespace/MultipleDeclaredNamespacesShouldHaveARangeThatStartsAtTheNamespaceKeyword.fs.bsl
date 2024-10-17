@@ -4,7 +4,7 @@ ImplFile
       false,
       QualifiedNameOfFile
         MultipleDeclaredNamespacesShouldHaveARangeThatStartsAtTheNamespaceKeyword,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([TypeEquality], false, DeclaredNamespace,
           [Types

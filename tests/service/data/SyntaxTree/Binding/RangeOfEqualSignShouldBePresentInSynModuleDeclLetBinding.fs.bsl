@@ -3,7 +3,7 @@ ImplFile
      ("/root/Binding/RangeOfEqualSignShouldBePresentInSynModuleDeclLetBinding.fs",
       false,
       QualifiedNameOfFile
-        RangeOfEqualSignShouldBePresentInSynModuleDeclLetBinding, [], [],
+        RangeOfEqualSignShouldBePresentInSynModuleDeclLetBinding, [],
       [SynModuleOrNamespace
          ([RangeOfEqualSignShouldBePresentInSynModuleDeclLetBinding], false,
           AnonModule,

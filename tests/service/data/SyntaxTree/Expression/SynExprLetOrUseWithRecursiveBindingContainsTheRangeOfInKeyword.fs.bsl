@@ -3,7 +3,7 @@ ImplFile
      ("/root/Expression/SynExprLetOrUseWithRecursiveBindingContainsTheRangeOfInKeyword.fs",
       false,
       QualifiedNameOfFile
-        SynExprLetOrUseWithRecursiveBindingContainsTheRangeOfInKeyword, [], [],
+        SynExprLetOrUseWithRecursiveBindingContainsTheRangeOfInKeyword, [],
       [SynModuleOrNamespace
          ([SynExprLetOrUseWithRecursiveBindingContainsTheRangeOfInKeyword],
           false, AnonModule,

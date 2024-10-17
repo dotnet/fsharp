@@ -1,7 +1,6 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Member/Auto property 03.fs", false, QualifiedNameOfFile Module, [],
-      [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Types

@@ -3,7 +3,6 @@ ImplFile
      ("/root/Expression/DotLambda_ArgumentExpressionInInnerAppExpression.fs",
       false,
       QualifiedNameOfFile DotLambda_ArgumentExpressionInInnerAppExpression, [],
-      [],
       [SynModuleOrNamespace
          ([DotLambda_ArgumentExpressionInInnerAppExpression], false, AnonModule,
           [Let

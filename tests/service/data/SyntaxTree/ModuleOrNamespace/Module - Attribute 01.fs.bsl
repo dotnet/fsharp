@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/ModuleOrNamespace/Module - Attribute 01.fs", false,
-      QualifiedNameOfFile Bar, [], [],
+      QualifiedNameOfFile Bar, [],
       [SynModuleOrNamespace
          ([Bar], false, NamedModule,
           [Let

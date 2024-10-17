@@ -2,7 +2,7 @@ SigFile
   (ParsedSigFileInput
      ("/root/NestedModule/RangeOfAttributeShouldBeIncludedInSynModuleSigDeclNestedModule.fsi",
       QualifiedNameOfFile
-        RangeOfAttributeShouldBeIncludedInSynModuleSigDeclNestedModule, [], [],
+        RangeOfAttributeShouldBeIncludedInSynModuleSigDeclNestedModule, [],
       [SynModuleOrNamespaceSig
          ([SomeNamespace], false, DeclaredNamespace,
           [NestedModule

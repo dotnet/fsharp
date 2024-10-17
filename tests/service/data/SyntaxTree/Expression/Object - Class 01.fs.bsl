@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/Object - Class 01.fs", false, QualifiedNameOfFile Module,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Expr

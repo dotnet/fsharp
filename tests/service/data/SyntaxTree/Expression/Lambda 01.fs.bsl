@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Expression/Lambda 01.fs", false, QualifiedNameOfFile Module, [], [],
+     ("/root/Expression/Lambda 01.fs", false, QualifiedNameOfFile Module, [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Expr

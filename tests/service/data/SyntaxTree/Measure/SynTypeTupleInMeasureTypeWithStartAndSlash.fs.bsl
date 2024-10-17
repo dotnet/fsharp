@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Measure/SynTypeTupleInMeasureTypeWithStartAndSlash.fs", false,
-      QualifiedNameOfFile SynTypeTupleInMeasureTypeWithStartAndSlash, [], [],
+      QualifiedNameOfFile SynTypeTupleInMeasureTypeWithStartAndSlash, [],
       [SynModuleOrNamespace
          ([SynTypeTupleInMeasureTypeWithStartAndSlash], false, AnonModule,
           [Types

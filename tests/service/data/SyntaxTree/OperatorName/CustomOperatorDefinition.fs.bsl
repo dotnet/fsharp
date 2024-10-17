@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/OperatorName/CustomOperatorDefinition.fs", false,
-      QualifiedNameOfFile CustomOperatorDefinition, [], [],
+      QualifiedNameOfFile CustomOperatorDefinition, [],
       [SynModuleOrNamespace
          ([CustomOperatorDefinition], false, AnonModule,
           [Let

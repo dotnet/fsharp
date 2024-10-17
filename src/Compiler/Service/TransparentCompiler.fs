@@ -1281,7 +1281,6 @@ type internal TransparentCompiler
 
                 let mainInputFileName = file.FileName
                 let sourceText = file.SourceText
-                let parsedMainInput = file.ParsedInput
 
                 // Initialize the error handler
                 let errHandler =
@@ -1294,18 +1293,16 @@ type internal TransparentCompiler
                         tcConfig.flatErrors
                     )
 
-                // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
-                let tcConfig =
-                    ApplyNoWarnsToTcConfig(tcConfig, parsedMainInput, !! Path.GetDirectoryName(mainInputFileName))
-
                 let diagnosticsLogger = errHandler.DiagnosticsLogger
 
                 let diagnosticsLogger =
-                    GetDiagnosticsLoggerFilteringByScopedPragmas(false, input.ScopedPragmas, tcConfig.diagnosticsOptions, diagnosticsLogger)
+                    GetDiagnosticsLoggerFilteringByScopedPragmas(tcConfig.diagnosticsOptions, diagnosticsLogger)
 
                 use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
 
                 //beforeFileChecked.Trigger fileName
+
+                CheckLegacyWarnDirectivePlacement(tcConfig.langVersion, tcConfig.diagnosticsOptions.WarnScopes, input)
 
                 ApplyMetaCommandsFromInputToTcConfig(tcConfig, input, Path.GetDirectoryName fileName |> (!!), tcImports.DependencyProvider)
                 |> ignore
@@ -1564,9 +1561,7 @@ type internal TransparentCompiler
                     let extraLogger = CapturingDiagnosticsLogger("DiagnosticsWhileCreatingDiagnostics")
                     use _ = new CompilationGlobalsScope(extraLogger, BuildPhase.TypeCheck)
 
-                    // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
-                    let tcConfig =
-                        ApplyNoWarnsToTcConfig(bootstrapInfo.TcConfig, parseResults.ParseTree, Path.GetDirectoryName fileName |> (!!))
+                    let tcConfig = bootstrapInfo.TcConfig
 
                     let diagnosticsOptions = tcConfig.diagnosticsOptions
 
@@ -2347,14 +2342,7 @@ type internal TransparentCompiler
                         assumeDotNetFramework
                         otherFlags
 
-                let otherFlags =
-                    [
-                        yield "--noframework"
-                        yield "--warn:3"
-                        yield! otherFlags
-                        for code, _ in loadClosure.NoWarns do
-                            yield "--nowarn:" + code
-                    ]
+                let otherFlags = [ yield "--noframework"; yield "--warn:3"; yield! otherFlags ]
 
                 // Once we do have the script closure, we can populate the cache to re-use can later.
                 let loadClosureKey =

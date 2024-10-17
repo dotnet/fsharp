@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Member/ImplicitCtorWithAsKeyword.fs", false,
-      QualifiedNameOfFile ImplicitCtorWithAsKeyword, [], [],
+      QualifiedNameOfFile ImplicitCtorWithAsKeyword, [],
       [SynModuleOrNamespace
          ([ImplicitCtorWithAsKeyword], false, AnonModule,
           [Types

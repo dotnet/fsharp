@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/NestedModule/RangeOfAttributeShouldBeIncludedInSynModuleDeclNestedModule.fs",
-      false, QualifiedNameOfFile TopLevel, [], [],
+      false, QualifiedNameOfFile TopLevel, [],
       [SynModuleOrNamespace
          ([TopLevel], false, NamedModule,
           [NestedModule

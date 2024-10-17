@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/IfThenElse/Comment after else 01.fs", false,
-      QualifiedNameOfFile Comment after else 01, [], [],
+      QualifiedNameOfFile Comment after else 01, [],
       [SynModuleOrNamespace
          ([Comment after else 01], false, AnonModule,
           [Expr

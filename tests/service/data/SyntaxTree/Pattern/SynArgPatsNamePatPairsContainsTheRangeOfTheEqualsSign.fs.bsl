@@ -3,7 +3,7 @@ ImplFile
      ("/root/Pattern/SynArgPatsNamePatPairsContainsTheRangeOfTheEqualsSign.fs",
       false,
       QualifiedNameOfFile SynArgPatsNamePatPairsContainsTheRangeOfTheEqualsSign,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([SynArgPatsNamePatPairsContainsTheRangeOfTheEqualsSign], false,
           AnonModule,

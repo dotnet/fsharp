@@ -128,7 +128,6 @@ module IncrementalBuildSyntaxTree =
                     sigName,
                     [],
                     [],
-                    [],
                     isLastCompiland,
                     { ConditionalDirectives = []; CodeComments = [] },
                     Set.empty
@@ -259,11 +258,12 @@ type BoundModel private (
 
             IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked fileName)
             let capturingDiagnosticsLogger = CapturingDiagnosticsLogger("TypeCheck")
-            let diagnosticsLogger = GetDiagnosticsLoggerFilteringByScopedPragmas(false, input.ScopedPragmas, tcConfig.diagnosticsOptions, capturingDiagnosticsLogger)
+            let diagnosticsLogger = GetDiagnosticsLoggerFilteringByScopedPragmas(tcConfig.diagnosticsOptions, capturingDiagnosticsLogger)
             use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
 
             beforeFileChecked.Trigger fileName
                     
+            CheckLegacyWarnDirectivePlacement(tcConfig.langVersion, tcConfig.diagnosticsOptions.WarnScopes, input)
             ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, !! Path.GetDirectoryName(fileName), tcImports.DependencyProvider) |> ignore
             let sink = TcResultsSinkImpl(tcGlobals)
             let hadParseErrors = not (Array.isEmpty parseErrors)

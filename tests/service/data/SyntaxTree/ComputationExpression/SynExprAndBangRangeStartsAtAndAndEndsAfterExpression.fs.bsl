@@ -3,7 +3,7 @@ ImplFile
      ("/root/ComputationExpression/SynExprAndBangRangeStartsAtAndAndEndsAfterExpression.fs",
       false,
       QualifiedNameOfFile SynExprAndBangRangeStartsAtAndAndEndsAfterExpression,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([SynExprAndBangRangeStartsAtAndAndEndsAfterExpression], false,
           AnonModule,

@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/OperatorName/OperatorNameInValConstraint.fsi",
-      QualifiedNameOfFile Operators, [], [],
+      QualifiedNameOfFile Operators, [],
       [SynModuleOrNamespaceSig
          ([Operators], false, NamedModule,
           [Val

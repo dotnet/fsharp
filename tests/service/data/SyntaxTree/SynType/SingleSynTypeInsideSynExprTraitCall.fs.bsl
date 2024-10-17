@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/SynType/SingleSynTypeInsideSynExprTraitCall.fs", false,
-      QualifiedNameOfFile SingleSynTypeInsideSynExprTraitCall, [], [],
+      QualifiedNameOfFile SingleSynTypeInsideSynExprTraitCall, [],
       [SynModuleOrNamespace
          ([SingleSynTypeInsideSynExprTraitCall], false, AnonModule,
           [Types

@@ -4,7 +4,6 @@ ImplFile
       false,
       QualifiedNameOfFile
         SynTypeDefnWithObjectModelDelegateContainsTheRangeOfTheEqualsSign, [],
-      [],
       [SynModuleOrNamespace
          ([SynTypeDefnWithObjectModelDelegateContainsTheRangeOfTheEqualsSign],
           false, AnonModule,

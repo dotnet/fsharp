@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/IntListOrNull.fs", false,
-      QualifiedNameOfFile IntListOrNull, [], [],
+      QualifiedNameOfFile IntListOrNull, [],
       [SynModuleOrNamespace
          ([IntListOrNull], false, AnonModule,
           [Let

@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/DotLambda_WithoutDot.fs", false,
-      QualifiedNameOfFile DotLambda_WithoutDot, [], [],
+      QualifiedNameOfFile DotLambda_WithoutDot, [],
       [SynModuleOrNamespace
          ([DotLambda_WithoutDot], false, AnonModule,
           [Expr

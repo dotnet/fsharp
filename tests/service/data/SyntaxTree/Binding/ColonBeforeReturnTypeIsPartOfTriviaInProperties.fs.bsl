@@ -2,7 +2,6 @@ ImplFile
   (ParsedImplFileInput
      ("/root/Binding/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs", false,
       QualifiedNameOfFile ColonBeforeReturnTypeIsPartOfTriviaInProperties, [],
-      [],
       [SynModuleOrNamespace
          ([ColonBeforeReturnTypeIsPartOfTriviaInProperties], false, AnonModule,
           [Types

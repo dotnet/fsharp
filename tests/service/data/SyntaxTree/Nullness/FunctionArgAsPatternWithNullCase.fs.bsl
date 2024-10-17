@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/FunctionArgAsPatternWithNullCase.fs", false,
-      QualifiedNameOfFile FunctionArgAsPatternWithNullCase, [], [],
+      QualifiedNameOfFile FunctionArgAsPatternWithNullCase, [],
       [SynModuleOrNamespace
          ([FunctionArgAsPatternWithNullCase], false, AnonModule,
           [Let

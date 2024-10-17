@@ -500,7 +500,7 @@ type UsingMSBuild() as this =
         AssertNoErrorsOrWarnings(project)  
         
     // #nowarn seen in closed .fsx is global to the closure
-    [<Fact>]
+    [<Fact(Skip="#Nowarn no longer transitive")>]
     member public this.``Fsx.NoError.ScriptClosure.TransitiveLoad16``() =  
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -1440,8 +1440,7 @@ type UsingMSBuild() as this =
                "#r \"\""
                "#reference \"\""
                "#load \"\""
-               "#line 52"
-               "#nowarn 72"]        
+               "#line 52"]        
             )
                                  
     /// There was a problem where an unclosed reference picked up the text of the reference on the next line.

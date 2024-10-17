@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/SignatureType/RangeOfTypeShouldEndAtEndKeyword.fsi",
-      QualifiedNameOfFile RangeOfTypeShouldEndAtEndKeyword, [], [],
+      QualifiedNameOfFile RangeOfTypeShouldEndAtEndKeyword, [],
       [SynModuleOrNamespaceSig
          ([GreatProjectThing], false, DeclaredNamespace,
           [Types

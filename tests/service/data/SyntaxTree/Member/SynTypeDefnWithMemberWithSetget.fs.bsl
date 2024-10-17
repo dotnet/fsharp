@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Member/SynTypeDefnWithMemberWithSetget.fs", false,
-      QualifiedNameOfFile SynTypeDefnWithMemberWithSetget, [], [],
+      QualifiedNameOfFile SynTypeDefnWithMemberWithSetget, [],
       [SynModuleOrNamespace
          ([SynTypeDefnWithMemberWithSetget], false, AnonModule,
           [Types

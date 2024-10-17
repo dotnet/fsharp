@@ -1,6 +1,6 @@
 SigFile
   (ParsedSigFileInput
-     ("/root/Member/SignatureMemberWithGet.fsi", QualifiedNameOfFile Meh, [], [],
+     ("/root/Member/SignatureMemberWithGet.fsi", QualifiedNameOfFile Meh, [],
       [SynModuleOrNamespaceSig
          ([Meh], false, NamedModule,
           [Types

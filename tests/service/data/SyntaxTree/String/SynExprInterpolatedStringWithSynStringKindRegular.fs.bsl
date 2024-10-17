@@ -2,7 +2,6 @@ ImplFile
   (ParsedImplFileInput
      ("/root/String/SynExprInterpolatedStringWithSynStringKindRegular.fs", false,
       QualifiedNameOfFile SynExprInterpolatedStringWithSynStringKindRegular, [],
-      [],
       [SynModuleOrNamespace
          ([SynExprInterpolatedStringWithSynStringKindRegular], false, AnonModule,
           [Let

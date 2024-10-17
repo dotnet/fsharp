@@ -3,7 +3,6 @@ ImplFile
      ("/root/Expression/NestedSynExprLetOrUseContainsTheRangeOfInKeyword.fs",
       false,
       QualifiedNameOfFile NestedSynExprLetOrUseContainsTheRangeOfInKeyword, [],
-      [],
       [SynModuleOrNamespace
          ([NestedSynExprLetOrUseContainsTheRangeOfInKeyword], false, AnonModule,
           [Let

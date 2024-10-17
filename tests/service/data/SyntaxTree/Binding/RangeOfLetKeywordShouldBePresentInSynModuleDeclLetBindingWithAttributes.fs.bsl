@@ -4,7 +4,7 @@ ImplFile
       false,
       QualifiedNameOfFile
         RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes],
           false, AnonModule,

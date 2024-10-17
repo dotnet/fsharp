@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/ConditionalDirective/SingleIfEndifSignatureFile.fsi",
-      QualifiedNameOfFile SingleIfEndifSignatureFile, [], [],
+      QualifiedNameOfFile SingleIfEndifSignatureFile, [],
       [SynModuleOrNamespaceSig
          ([Foobar], false, DeclaredNamespace,
           [Val

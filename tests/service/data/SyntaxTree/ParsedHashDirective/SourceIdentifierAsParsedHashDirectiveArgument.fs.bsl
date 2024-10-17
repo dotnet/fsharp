@@ -2,7 +2,7 @@ ImplFile
   (ParsedImplFileInput
      ("/root/ParsedHashDirective/SourceIdentifierAsParsedHashDirectiveArgument.fs",
       false, QualifiedNameOfFile SourceIdentifierAsParsedHashDirectiveArgument,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([SourceIdentifierAsParsedHashDirectiveArgument], false, AnonModule,
           [HashDirective

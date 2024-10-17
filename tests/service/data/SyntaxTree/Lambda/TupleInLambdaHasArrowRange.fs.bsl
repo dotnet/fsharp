@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Lambda/TupleInLambdaHasArrowRange.fs", false,
-      QualifiedNameOfFile TupleInLambdaHasArrowRange, [], [],
+      QualifiedNameOfFile TupleInLambdaHasArrowRange, [],
       [SynModuleOrNamespace
          ([TupleInLambdaHasArrowRange], false, AnonModule,
           [Expr

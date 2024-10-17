@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Exception/Missing name 02.fs", false, QualifiedNameOfFile Module,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Exception

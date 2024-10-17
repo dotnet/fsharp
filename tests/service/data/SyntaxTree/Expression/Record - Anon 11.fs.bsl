@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/Record - Anon 11.fs", false, QualifiedNameOfFile Module,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Expr

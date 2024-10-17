@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/CodeComment/TripleSlashCommentShouldNotBeCaptured.fs", false,
-      QualifiedNameOfFile TripleSlashCommentShouldNotBeCaptured, [], [],
+      QualifiedNameOfFile TripleSlashCommentShouldNotBeCaptured, [],
       [SynModuleOrNamespace
          ([TripleSlashCommentShouldNotBeCaptured], false, AnonModule,
           [Let

@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/SignatureType/EqualsTokenIsPresentInSynValSigMember.fsi",
-      QualifiedNameOfFile Meh, [], [],
+      QualifiedNameOfFile Meh, [],
       [SynModuleOrNamespaceSig
          ([Meh], false, NamedModule,
           [Types

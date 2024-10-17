@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/ModuleOrNamespace/ModuleShouldContainModuleKeyword.fs", false,
-      QualifiedNameOfFile FsAutoComplete.FCSPatches, [], [],
+      QualifiedNameOfFile FsAutoComplete.FCSPatches, [],
       [SynModuleOrNamespace
          ([FsAutoComplete; FCSPatches], false, NamedModule,
           [Open
