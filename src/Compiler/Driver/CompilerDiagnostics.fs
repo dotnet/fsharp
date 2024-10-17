@@ -412,8 +412,7 @@ type PhasedDiagnostic with
     member x.AdjustedSeverity(options, severity) =
         let n = x.Number
 
-        let warnOff () =
-            List.contains n options.WarnOff
+        let warnOff () = List.contains n options.WarnOff
 
         match severity with
         | FSharpDiagnosticSeverity.Error -> FSharpDiagnosticSeverity.Error
