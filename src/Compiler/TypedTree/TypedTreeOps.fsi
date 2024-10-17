@@ -558,7 +558,8 @@ type ValRemap = ValMap<ValRef>
 /// Represents a combination of substitutions/instantiations where things replace other things during remapping
 [<NoEquality; NoComparison>]
 type Remap =
-    { tpinst: TyparInstantiation
+    { realsig: bool
+      tpinst: TyparInstantiation
       valRemap: ValRemap
       tyconRefRemap: TyconRefRemap
       removeTraitSolutions: bool }
@@ -1184,6 +1185,9 @@ val accFreeInDecisionTree: FreeVarOptions -> DecisionTree -> FreeVars -> FreeVar
 /// Get the free variables in a module definition.
 val freeInModuleOrNamespace: FreeVarOptions -> ModuleOrNamespaceContents -> FreeVars
 
+/// Get the free variables in an expression with accumulator
+val accFreeInExpr: FreeVarOptions -> Expr -> FreeVars -> FreeVars
+
 /// Get the free variables in an expression.
 val freeInExpr: FreeVarOptions -> Expr -> FreeVars
 
@@ -1312,7 +1316,7 @@ val ComputeSignatureHidingInfoAtAssemblyBoundary: ModuleOrNamespaceType -> Signa
 val ComputeImplementationHidingInfoAtAssemblyBoundary:
     ModuleOrNamespaceContents -> SignatureHidingInfo -> SignatureHidingInfo
 
-val mkRepackageRemapping: SignatureRepackageInfo -> Remap
+val mkRepackageRemapping: SignatureRepackageInfo -> bool -> Remap
 
 /// Wrap one module or namespace implementation in a 'namespace N' outer wrapper
 val wrapModuleOrNamespaceContentsInNamespace:
@@ -1341,7 +1345,7 @@ val tryRescopeVal: CcuThunk -> Remap -> Val -> ValRef voption
 /// of an assembly, compute a remapping that converts local references to non-local references.
 /// This remapping must be applied to all pickled expressions and types
 /// exported from the assembly.
-val MakeExportRemapping: CcuThunk -> ModuleOrNamespace -> Remap
+val MakeExportRemapping: CcuThunk -> ModuleOrNamespace -> bool -> Remap
 
 /// Make a remapping table for viewing a module or namespace 'from the outside'
 val ApplyExportRemappingToEntity: TcGlobals -> Remap -> ModuleOrNamespace -> ModuleOrNamespace

@@ -833,7 +833,7 @@ let main3
     =
     // Encode the signature data
     ReportTime tcConfig "Encode Interface Data"
-    let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
+    let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents tcConfig.realsig
 
     let sigDataAttributes, sigDataResources =
         try

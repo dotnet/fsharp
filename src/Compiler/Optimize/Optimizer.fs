@@ -588,7 +588,7 @@ let BindExternalLocalVal cenv (v: Val) vval env =
         if g.compilingFSharpCore then 
             // Passing an empty remap is sufficient for FSharp.Core.dll because it turns out the remapped type signature can
             // still be resolved.
-            match tryRescopeVal g.fslibCcu Remap.Empty v with 
+            match tryRescopeVal g.fslibCcu {Remap.Empty with realsig = g.realsig} v with 
             | ValueSome vref -> BindValueForFslib vref.nlr v vval env 
             | _ -> env
         else env
@@ -1523,8 +1523,8 @@ let RemapOptimizationInfo g tmenv =
     remapLazyModulInfo
 
 /// Hide information when a value is no longer visible
-let AbstractAndRemapModulInfo g (repackage, hidden) info =
-    let mrpi = mkRepackageRemapping repackage
+let AbstractAndRemapModulInfo (g: TcGlobals) (repackage, hidden) info =
+    let mrpi = mkRepackageRemapping repackage g.realsig
     let info = info |> AbstractLazyModulInfoByHiding false hidden
     let info = info |> RemapOptimizationInfo g mrpi
     info

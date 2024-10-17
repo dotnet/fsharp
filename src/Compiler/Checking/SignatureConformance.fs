@@ -15,6 +15,7 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
@@ -48,16 +49,16 @@ exception DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer of
     range: range
 
 // Use a type to capture the constant, common parameters 
-type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) = 
+type Checker(g: TcGlobals, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) = 
 
         // Build a remap that maps tcrefs in the signature to tcrefs in the implementation
         // Used when checking attributes.
         let sigToImplRemap = 
-            let remap = Remap.Empty 
+            let remap = {Remap.Empty with realsig = g.realsig}
             let remap = (remapInfo.RepackagedEntities, remap) ||> List.foldBack (fun (implTcref, signTcref) acc -> addTyconRefRemap signTcref implTcref acc) 
             let remap = (remapInfo.RepackagedVals, remap) ||> List.foldBack (fun (implValRef, signValRef) acc -> addValRemap signValRef.Deref implValRef.Deref acc) 
             remap
-            
+
         // For all attributable elements (types, modules, exceptions, record fields, unions, parameters, generic type parameters)
         //
         // (a)	Start with lists AImpl and ASig containing the attributes in the implementation and signature, in declaration order
