@@ -28,16 +28,6 @@
 </PropertyGroup>
 
   <ItemGroup>
-    <!-- Include must be the fully qualified .NET type name of the Attribute to create. -->
-    <AssemblyAttribute Include="Xunit.AssemblyTraitAttribute">
-      <!-- _Parameter1, _Parameter2, etc. correspond to the
-        matching parameter of a constructor of that .NET attribute type -->
-      <_Parameter1>Project</_Parameter1>
-      <_Parameter2>$(MSBuildProjectName)</_Parameter2>
-    </AssemblyAttribute>
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Include="..\service\FsUnit.fs">
       <Link>FsUnit.fs</Link>
     </Compile>
