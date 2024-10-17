@@ -1025,7 +1025,7 @@ let CheckLegacyWarnDirectivePlacement (langVersion: LanguageVersion, WarnScopeMa
             for line in warnLines do
                 if line > mm.StartLine && line <= mm.EndLine then
                     let m = withStartEnd (mkPos line 0) (mkPos (line + 1) 0) mm
-                    warning(Error(FSComp.SR.buildDirectivesInModulesAreIgnored(), m))
+                    warning (Error(FSComp.SR.buildDirectivesInModulesAreIgnored (), m))
 
 /// Build the initial type checking environment
 let GetInitialTcEnv (assemblyName: string, initm: range, tcConfig: TcConfig, tcImports: TcImports, tcGlobals) =

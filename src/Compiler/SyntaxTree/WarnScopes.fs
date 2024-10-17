@@ -136,6 +136,7 @@ module internal WarnScopes =
             | WarnScope.On m' :: _ ->
                 if langVersion.SupportsFeature LanguageFeature.ScopedNowarn then
                     informationalWarning (Error(FSComp.SR.lexWarnDirectivesMustMatch ("#nowarn", m'.StartLine), m))
+
                 warnScopes
             | scopes -> warnScopes.Add(idx, WarnScope.OpenOff(mkScope m m) :: scopes)
         | WarnDirective.Warnon(n, m) ->

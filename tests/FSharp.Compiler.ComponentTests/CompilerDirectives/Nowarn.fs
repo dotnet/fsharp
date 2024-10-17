@@ -88,6 +88,7 @@ module Nowarn =
         vp, [], [fs [intro; "let x ="; nowarn 20; "    1"; warnon 20; "    2"; "    3"; "4"]], [Warning 20, 6; Warning 20, 8]
         vp, [], [fs [intro; nowarn 20; nowarn 20; warnon 20; make20]], [Information 3875, 3; Warning 20, 5]
         vp, [], [fs [intro; nowarn 20; warnon 20; warnon 20; make20]], [Warning 3875, 4; Warning 20, 5]
+        vp, ["--warnon:3875"], [fs [intro; nowarn 20; nowarn 20; warnon 20; make20]], [Warning 3875, 3; Warning 20, 5]
         vp, [], [fs [intro; "#nowarn \"\"\"20\"\"\" "; make20]], []
         ]
         |> List.mapi (fun i (v, fl, sources, diags) -> [|
@@ -120,7 +121,7 @@ module Nowarn =
             for source in sources do
                 print $"  source code %s{source.GetSourceFileName}:"
                 let text = source.GetSourceText |> Option.defaultValue ""
-                let lines = text.Split(Environment.NewLine) |> Array.toList
+                let lines = text.Split(Environment.NewLine |> Seq.toArray) |> Array.toList
                 for line in lines do print $"    {line}"
             print $"  expected diagnostics:"
             for (error, line) in expected do print $"    {error} in line {line}"
