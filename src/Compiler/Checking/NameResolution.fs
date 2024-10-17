@@ -3389,15 +3389,18 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
             | true, res when not newDef -> ResolveUnqualifiedItem ncenv nenv m res
             | _ ->
                 // Single identifiers in patterns - variable bindings
-                if
-                    not newDef
-                    && warnOnUpper = WarnOnUpperCase
-                    // HACK: This is an historical hack that seems to related the use country and language codes, which are very common in codebases
-                    // Removing this check will cause a lot of new warnings/errors in existing codebases.
-                    // && id.idText.Length >= 3
-                    && System.Char.ToLowerInvariant id.idText[0] <> id.idText[0]
+                let supportsWarnOnUpperIdentifiersInPatterns = ncenv.g.langVersion.SupportsFeature(LanguageFeature.WarnOnUppercaseIdentifiersInPatterns) && warnOnUpper = WarnOnUpperCase
+                if (supportsWarnOnUpperIdentifiersInPatterns && not newDef && System.Char.ToLowerInvariant id.idText[0] <> id.idText[0])
                 then
                     warning(UpperCaseIdentifierInPattern m)
+                else
+                    if not newDef
+                        && warnOnUpper = WarnOnUpperCase
+                        // HACK: This is an historical hack that seems to related the use country and language codes, which are very common in codebases
+                        && id.idText.Length >= 3
+                        && System.Char.ToLowerInvariant id.idText[0] <> id.idText[0]
+                    then
+                         warning(UpperCaseIdentifierInPattern m)
 
                 // If there's an extra dot, we check whether the single identifier is a union, module or namespace and report it to the sink for the sake of tooling
                 match extraDotAtTheEnd with

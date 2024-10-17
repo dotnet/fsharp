@@ -219,7 +219,31 @@ but here has type
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Warning 49, Line 14, Col 7, Line 14, Col 8, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 26, Line 4, Col 7, Line 4, Col 9, "This rule will never be matched")
+            (Warning 26, Line 5, Col 7, Line 5, Col 8, "This rule will never be matched")
+            (Warning 26, Line 10, Col 7, Line 10, Col 9, "This rule will never be matched")
+            (Warning 26, Line 11, Col 7, Line 11, Col 8, "This rule will never be matched")
+        ]
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern12.fs"|])>]
+    let ``Union - E_UnionPattern12_fs preview - --test:ErrorRanges`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 49, Line 3, Col 7, Line 3, Col 9, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 4, Col 7, Line 4, Col 9, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 5, Col 7, Line 5, Col 8, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 26, Line 4, Col 7, Line 4, Col 9, "This rule will never be matched")
+            (Warning 26, Line 5, Col 7, Line 5, Col 8, "This rule will never be matched")
+            (Warning 49, Line 9, Col 7, Line 9, Col 9, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 10, Col 7, Line 10, Col 9, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 11, Col 7, Line 11, Col 8, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 26, Line 10, Col 7, Line 10, Col 9, "This rule will never be matched")
+            (Warning 26, Line 11, Col 7, Line 11, Col 8, "This rule will never be matched")
         ]
         
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern13.fs"|])>]
@@ -229,46 +253,28 @@ but here has type
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 49, Line 14, Col 7, Line 14, Col 10, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
-    
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern14.fs"|])>]
-    let ``Union - E_UnionPattern14_fs - --test:ErrorRanges`` compilation =
-        compilation
-        |> asFs
-        |> withOptions ["--test:ErrorRanges"]
-        |> typecheck
-        |> shouldFail
         |> withDiagnostics [
-            (Warning 49, Line 11, Col 7, Line 11, Col 10, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
-            (Warning 26, Line 11, Col 7, Line 11, Col 10, "This rule will never be matched")
-            (Warning 26, Line 12, Col 7, Line 12, Col 10, "This rule will never be matched")
+            (Warning 49, Line 3, Col 7, Line 3, Col 10, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 4, Col 7, Line 4, Col 10, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 26, Line 4, Col 7, Line 4, Col 10, "This rule will never be matched")
+            (Warning 49, Line 8, Col 7, Line 8, Col 10, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 9, Col 7, Line 9, Col 10, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 26, Line 9, Col 7, Line 9, Col 10, "This rule will never be matched")
         ]
         
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern15.fs"|])>]
-    let ``Union - E_UnionPattern15_fs - --test:ErrorRanges`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern13.fs"|])>]
+    let ``Union - E_UnionPattern13_fs preview- --test:ErrorRanges`` compilation =
         compilation
+        |> withLangVersionPreview
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Warning 49, Line 10, Col 7, Line 10, Col 9, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
-            (Warning 49, Line 11, Col 7, Line 11, Col 9, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
-            (Warning 49, Line 12, Col 7, Line 12, Col 10, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
-            (Warning 26, Line 11, Col 7, Line 11, Col 9, "This rule will never be matched");
-            (Warning 26, Line 12, Col 7, Line 12, Col 10, "This rule will never be matched")
-        ]
-        
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern16.fs"|])>]
-    let ``Union - E_UnionPattern16_fs - --test:ErrorRanges`` compilation =
-        compilation
-        |> asFs
-        |> withOptions ["--test:ErrorRanges"]
-        |> typecheck
-        |> shouldFail
-        |> withDiagnostics [
-            (Warning 49, Line 10, Col 7, Line 10, Col 9, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.");
-            (Warning 49, Line 11, Col 7, Line 11, Col 9, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.");
-            (Warning 26, Line 11, Col 7, Line 11, Col 9, "This rule will never be matched");
-            (Warning 26, Line 12, Col 7, Line 12, Col 10, "This rule will never be matched")
+            (Warning 49, Line 3, Col 7, Line 3, Col 10, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 4, Col 7, Line 4, Col 10, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 26, Line 4, Col 7, Line 4, Col 10, "This rule will never be matched")
+            (Warning 49, Line 8, Col 7, Line 8, Col 10, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 9, Col 7, Line 9, Col 10, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 26, Line 9, Col 7, Line 9, Col 10, "This rule will never be matched")
         ]

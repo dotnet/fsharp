@@ -1,14 +1,9 @@
-module DUs =
-    type Countries = 
-    | CA
-    | US
-    | GB
-let x = DUs.CA
+let x =
+    match 1 with 
+    | USA -> "USA"
+    | CAN -> "CAN"
 
-open DUs
-
-let output = 
-    match x with 
-    | US -> "US"
-    | CA -> "CA"
-    | UUU -> "U"
+let y =
+    match 2 with 
+    | Usa -> "Usa"
+    | Can -> "Can"

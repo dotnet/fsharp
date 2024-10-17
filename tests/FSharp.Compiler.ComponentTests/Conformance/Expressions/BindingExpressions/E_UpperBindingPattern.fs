@@ -1,6 +1,7 @@
-module One =
-    let CallGenericStaticMethod x = failwithf "CallGenericStaticMethod"
+let Aaa = ()
 
-    let MakeGenericStaticMethod x = failwithf "MakeGenericStaticMethod"
+let f Us Uk = ()
 
-    let MakersCallers FSS = CallGenericStaticMethod FSS, MakeGenericStaticMethod FSS
+let f2 US CA = ()
+
+let f3 U A = ()
