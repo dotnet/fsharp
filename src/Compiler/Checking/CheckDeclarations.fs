@@ -3336,7 +3336,7 @@ module EstablishTypeDefinitionCores =
                           let inheritRange =
                               match inherits with
                               | [] -> m
-                              | (synType, _, _) :: _ -> synType.Range       
+                              | (synType, _, _) :: _ -> synType.Range
                           if not firstPass && not (match kind with SynTypeDefnKind.Class -> true | _ -> false) then
                               errorR (Error(FSComp.SR.tcStructsInterfacesEnumsDelegatesMayNotInheritFromOtherTypes(), inheritRange)) 
                           CheckSuperType cenv ty inheritRange 
