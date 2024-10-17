@@ -126,8 +126,8 @@ module TestCaseCustomizations =
         let hashAlgorithm = Security.Cryptography.SHA256.Create()
         let assignNode numberOfBuckets =
             let bytes = hashAlgorithm.ComputeHash(Encoding.UTF8.GetBytes(testCase.UniqueID))
-            let stableHashValue = BitConverter.ToInt32(bytes, 0) |> abs
-            stableHashValue % numberOfBuckets + 1 |> string
+            let stableHashValue = BitConverter.ToUInt32(bytes, 0)
+            stableHashValue % uint numberOfBuckets + 1u |> string
 
         // Add Project trait so a project can be selected or filtered out in a full solution test run. Example: --filter Project=FSharp.Compiler.ComponentTests
         testCase.Traits["Project"] <- ResizeArray [ testCase.TestMethod.TestClass.TestCollection.TestAssembly.Assembly.Name.Split(',')[0] ]
