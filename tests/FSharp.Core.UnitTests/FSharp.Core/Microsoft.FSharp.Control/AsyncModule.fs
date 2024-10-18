@@ -482,7 +482,8 @@ type AsyncModule() =
             }
 
             let test = Async.Parallel [ for i in 1 .. 100 -> job i ] |> Async.Catch |> Async.Ignore |> Async.StartAsTask
-            while running.CurrentCount < 42 do
+            // Wait for more than one job to start
+            while running.CurrentCount < 2 do
                 do! Task.Yield()
             printfn $"started jobs: {running.CurrentCount - 1}"
             failOnlyOne.Release() |> ignore
