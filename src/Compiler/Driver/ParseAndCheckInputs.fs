@@ -1961,7 +1961,7 @@ let CheckMultipleInputsUsingGraphMode
 
         partialResults, tcState)
 
-let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs (exiter: Exiter) =
+let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs =
     let tcDataFileName = FileSystem.GetFullPathShim "FSharpTypecheckingData"
     let nl = Environment.NewLine
 
@@ -1996,7 +1996,7 @@ let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs (exiter: Exiter) =
         let existingTcData = tcDataFile.ReadAllText()
 
         if thisTcData = existingTcData then
-            exiter.Exit 0
+            tcConfig.exiter.Exit 0
         else
             use tcDataFile = FileSystem.OpenFileForWriteShim tcDataFileName
             tcDataFile.WriteAllText thisTcData
@@ -2007,7 +2007,7 @@ let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs (exiter: Exiter) =
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
 
     if tcConfig.reuseTypecheckingResults = ReuseTypecheckingResults.On then
-        TryReuseTypecheckingResults tcConfig inputs QuitProcessExiter
+        TryReuseTypecheckingResults tcConfig inputs
 
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
     let results, tcState =

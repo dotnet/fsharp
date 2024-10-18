@@ -4,6 +4,7 @@ open System.IO
 open BenchmarkDotNet.Attributes
 open FSharp.Test.ProjectGeneration
 open FSharp.Benchmarks.Common.Categories
+open FSharp.Compiler.DiagnosticsLogger
 
 [<MemoryDiagnoser>]
 [<BenchmarkCategory(ShortCategory)>]
@@ -37,7 +38,11 @@ type ReuseTypecheckingResultsBenchmarks () =
 
     [<Benchmark>]
     member this.Compile() = 
-        this.Benchmark { 
-            compileWithFSC 
-            compileWithFSC
-        }
+        try
+            let _ = this.Benchmark {
+                compileWithFSC 
+                compileWithFSC
+            }
+            true
+        with 
+            | :? StopProcessingExn -> false
