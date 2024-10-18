@@ -24,6 +24,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
+open Import
 
 /// Use the given function to select some of the member values from the members of an F# type
 let SelectImmediateMemberVals g optFilter f withExplicitImpl (tcref: TyconRef) = 

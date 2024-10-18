@@ -15,6 +15,7 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.NicePrint
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
+open Internal.Utilities.TypeHashing
 open FSharp.Core.Printf
 open FSharp.Compiler
 open FSharp.Compiler.Syntax
@@ -537,7 +538,7 @@ type internal TypeCheckInfo
                         // check that type of value is the same or subtype of tcref
                         // yes - allow access to protected members
                         // no - strip ability to access protected members
-                        if TypeRelations.TypeFeasiblySubsumesType 0 g amap m thisTy TypeRelations.CanCoerce ty then
+                        if TypeRelations.TypeFeasiblySubsumesType 0 g amap m thisTy Import.CanCoerce ty then
                             ad
                         else
                             AccessibleFrom(paths, None)
@@ -3536,7 +3537,7 @@ type FSharpCheckFileResults
                 |> SourceText.ofString)
 
     member internal _.CalculateSignatureHash() =
-        let visibility = Fsharp.Compiler.SignatureHash.PublicAndInternal
+        let visibility = PublicAndInternal
 
         match details with
         | None -> failwith "Typechecked details not available for CalculateSignatureHash() operation."

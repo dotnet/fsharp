@@ -612,6 +612,11 @@
         <target state="translated">Interoperabilidade entre a restrição genérica não gerenciada de C# e F# (emitir modreq adicional)</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureUseTypeSubsumptionCache">
+        <source>Use type conversion cache during compilation</source>
+        <target state="new">Use type conversion cache during compilation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureWarningIndexedPropertiesGetSetSameType">
         <source>Indexed properties getter and setter must have the same type</source>
         <target state="translated">As propriedades indexadas getter e setter devem ter o mesmo tipo</target>
