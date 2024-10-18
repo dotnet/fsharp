@@ -1961,7 +1961,7 @@ let CheckMultipleInputsUsingGraphMode
 
         partialResults, tcState)
 
-let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs =
+let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs (exiter: Exiter) =
     let tcDataFileName = FileSystem.GetFullPathShim "FSharpTypecheckingData"
     let nl = Environment.NewLine
 
@@ -1976,7 +1976,8 @@ let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs =
             })
 
     let filePairs = FilePairMap sourceFiles
-    let graph = 
+
+    let graph =
         DependencyResolution.mkGraph filePairs sourceFiles
         |> fst
         |> Graph.map (fun idx ->
@@ -1984,6 +1985,7 @@ let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs =
                 sourceFiles[idx]
                     .FileName.Replace(tcConfig.implicitIncludeDir, "")
                     .TrimStart([| '\\'; '/' |])
+
             (idx, friendlyFileName))
         |> Graph.asString
 
@@ -1994,7 +1996,7 @@ let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs =
         let existingTcData = tcDataFile.ReadAllText()
 
         if thisTcData = existingTcData then
-            tcConfig.exiter.Exit 0
+            exiter.Exit 0
         else
             use tcDataFile = FileSystem.OpenFileForWriteShim tcDataFileName
             tcDataFile.WriteAllText thisTcData
@@ -2005,7 +2007,7 @@ let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs =
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
 
     if tcConfig.reuseTypecheckingResults = ReuseTypecheckingResults.On then
-        TryReuseTypecheckingResults tcConfig inputs
+        TryReuseTypecheckingResults tcConfig inputs QuitProcessExiter
 
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
     let results, tcState =

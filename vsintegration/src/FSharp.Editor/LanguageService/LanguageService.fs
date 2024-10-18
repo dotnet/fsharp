@@ -123,7 +123,7 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                             let enableFastFindReferences =
                                 editorOptions.LanguageServicePerformance.EnableFastFindReferencesAndRename
 
-                            let reuseTypecheckingResults = 
+                            let reuseTypecheckingResults =
                                 editorOptions.LanguageServicePerformance.ReuseTypecheckingResults
 
                             let isInlineParameterNameHintsEnabled =

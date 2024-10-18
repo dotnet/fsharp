@@ -242,7 +242,8 @@ type FSharpChecker
             invalidArg "enablePartialTypeChecking" "'keepAssemblyContents' and 'enablePartialTypeChecking' cannot be both enabled."
 
         let parallelReferenceResolution = inferParallelReferenceResolution parallelReferenceResolution
-        let reuseTypecheckingResults = 
+
+        let reuseTypecheckingResults =
             match reuseTypecheckingResults with
             | Some true -> ReuseTypecheckingResults.On
             | _ -> ReuseTypecheckingResults.Off
