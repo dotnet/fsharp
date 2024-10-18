@@ -1961,7 +1961,54 @@ let CheckMultipleInputsUsingGraphMode
 
         partialResults, tcState)
 
+let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs =
+    let tcDataFileName = FileSystem.GetFullPathShim "FSharpTypecheckingData"
+    let nl = Environment.NewLine
+
+    let sourceFiles =
+        inputs
+        |> Seq.toArray
+        |> Array.mapi (fun idx (input: ParsedInput) ->
+            {
+                Idx = idx
+                FileName = input.FileName
+                ParsedInput = input
+            })
+
+    let filePairs = FilePairMap sourceFiles
+
+    let graph =
+        DependencyResolution.mkGraph filePairs sourceFiles
+        |> fst
+        |> Graph.map (fun idx ->
+            let friendlyFileName =
+                sourceFiles[idx]
+                    .FileName.Replace(tcConfig.implicitIncludeDir, "")
+                    .TrimStart([| '\\'; '/' |])
+
+            (idx, friendlyFileName))
+        |> Graph.asString
+
+    let thisTcData = $"{tcConfig.cmdLineArgs}{nl}{nl}{graph}"
+
+    if FileSystem.FileExistsShim tcDataFileName then
+        use tcDataFile = FileSystem.OpenFileForReadShim tcDataFileName
+        let existingTcData = tcDataFile.ReadAllText()
+
+        if thisTcData = existingTcData then
+            tcConfig.exiter.Exit 0
+        else
+            use tcDataFile = FileSystem.OpenFileForWriteShim tcDataFileName
+            tcDataFile.WriteAllText thisTcData
+    else
+        use tcDataFile = FileSystem.OpenFileForWriteShim tcDataFileName
+        tcDataFile.WriteAllText thisTcData
+
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
+
+    if tcConfig.reuseTypecheckingResults = ReuseTypecheckingResults.On then
+        TryReuseTypecheckingResults tcConfig inputs
+
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
     let results, tcState =
         match tcConfig.typeCheckingConfig.Mode with

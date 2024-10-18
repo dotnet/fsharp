@@ -264,6 +264,9 @@
   <data name="Enable_partial_type_checking" xml:space="preserve">
     <value>Enable partial type checking</value>
   </data>
+  <data name="Reuse_typechecking_results" xml:space="preserve">
+    <value>Cache typechecking results (experimental)</value>
+  </data>
   <data name="Formatting" xml:space="preserve">
     <value>Formatting</value>
   </data>

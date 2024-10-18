@@ -13,6 +13,7 @@
     <Compile Include="FileCascadeBenchmarks.fs" />
     <Compile Include="GraphTypeCheckingBenchmarks.fs" />
     <Compile Include="BackgroundCompilerBenchmarks.fs" />
+    <Compile Include="ReuseTypecheckingResultsBenchmarks.fs" />
     <Compile Include="ComputationExpressionBenchmarks.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

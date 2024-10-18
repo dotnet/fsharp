@@ -1404,6 +1404,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             enablePartialTypeChecking,
             dependencyProvider,
             parallelReferenceResolution,
+            reuseTypecheckingResults,
             captureIdentifiersWhenParsing,
             getSource,
             useChangeNotifications
@@ -1490,6 +1491,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     |> Some
 
                 tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
+                tcConfigB.reuseTypecheckingResults <- reuseTypecheckingResults
                 tcConfigB.captureIdentifiersWhenParsing <- captureIdentifiersWhenParsing
 
                 tcConfigB, sourceFilesNew

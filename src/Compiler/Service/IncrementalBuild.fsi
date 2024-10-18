@@ -294,6 +294,7 @@ type internal IncrementalBuilder =
         enablePartialTypeChecking: bool *
         dependencyProvider: DependencyProvider option *
         parallelReferenceResolution: ParallelReferenceResolution *
+        reuseTypecheckingResults: ReuseTypecheckingResults *
         captureIdentifiersWhenParsing: bool *
         getSource: (string -> Async<ISourceText option>) option *
         useChangeNotifications: bool ->

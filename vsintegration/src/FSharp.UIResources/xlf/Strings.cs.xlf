@@ -132,6 +132,11 @@
         <target state="translated">Odebrání nepotřebných závorek (experimentální, může mít vliv na výkon při psaní)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Reuse_typechecking_results">
+        <source>Cache typechecking results (experimental)</source>
+        <target state="new">Cache typechecking results (experimental)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Send_Additional_Telemetry">
         <source>Send additional performance telemetry</source>
         <target state="translated">Odeslat další telemetrii výkonu</target>

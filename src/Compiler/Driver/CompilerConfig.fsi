@@ -207,6 +207,11 @@ type ParallelReferenceResolution =
     | On
     | Off
 
+[<RequireQualifiedAccess>]
+type ReuseTypecheckingResults =
+    | On
+    | Off
+
 /// Determines the algorithm used for type-checking.
 [<RequireQualifiedAccess>]
 type TypeCheckingMode =
@@ -518,6 +523,8 @@ type TcConfigBuilder =
 
         mutable parallelReferenceResolution: ParallelReferenceResolution
 
+        mutable reuseTypecheckingResults: ReuseTypecheckingResults
+
         mutable captureIdentifiersWhenParsing: bool
 
         mutable typeCheckingConfig: TypeCheckingConfig
@@ -525,6 +532,8 @@ type TcConfigBuilder =
         mutable dumpSignatureData: bool
 
         mutable realsig: bool
+
+        mutable cmdLineArgs: string
     }
 
     static member CreateNew:
@@ -896,6 +905,8 @@ type TcConfig =
 
     member parallelReferenceResolution: ParallelReferenceResolution
 
+    member reuseTypecheckingResults: ReuseTypecheckingResults
+
     member captureIdentifiersWhenParsing: bool
 
     member typeCheckingConfig: TypeCheckingConfig
@@ -903,6 +914,8 @@ type TcConfig =
     member dumpSignatureData: bool
 
     member realsig: bool
+
+    member cmdLineArgs: string
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
 /// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.

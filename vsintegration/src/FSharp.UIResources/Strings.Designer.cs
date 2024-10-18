@@ -644,5 +644,14 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
                 return ResourceManager.GetString("Use_Transparent_Compiler", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cache typechecking results (experimental).
+        /// </summary>
+        public static string Reuse_Typechecking_Results {
+            get {
+                return ResourceManager.GetString("Reuse_Typechecking_Results", resourceCulture);
+            }
+        }
     }
 }

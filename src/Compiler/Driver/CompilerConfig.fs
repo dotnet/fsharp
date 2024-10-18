@@ -402,6 +402,11 @@ type ParallelReferenceResolution =
     | Off
 
 [<RequireQualifiedAccess>]
+type ReuseTypecheckingResults =
+    | On
+    | Off
+
+[<RequireQualifiedAccess>]
 type TypeCheckingMode =
     | Sequential
     | Graph
@@ -613,6 +618,8 @@ type TcConfigBuilder =
 
         mutable parallelReferenceResolution: ParallelReferenceResolution
 
+        mutable reuseTypecheckingResults: ReuseTypecheckingResults
+
         mutable captureIdentifiersWhenParsing: bool
 
         mutable typeCheckingConfig: TypeCheckingConfig
@@ -620,6 +627,8 @@ type TcConfigBuilder =
         mutable dumpSignatureData: bool
 
         mutable realsig: bool
+
+        mutable cmdLineArgs: string
     }
 
     // Directories to start probing in
@@ -821,6 +830,7 @@ type TcConfigBuilder =
             xmlDocInfoLoader = None
             exiter = QuitProcessExiter
             parallelReferenceResolution = ParallelReferenceResolution.Off
+            reuseTypecheckingResults = ReuseTypecheckingResults.Off
             captureIdentifiersWhenParsing = false
             typeCheckingConfig =
                 {
@@ -834,6 +844,7 @@ type TcConfigBuilder =
             dumpSignatureData = false
             realsig = false
             strictIndentation = None
+            cmdLineArgs = ""
         }
 
     member tcConfigB.FxResolver =
@@ -1374,10 +1385,12 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.xmlDocInfoLoader = data.xmlDocInfoLoader
     member _.exiter = data.exiter
     member _.parallelReferenceResolution = data.parallelReferenceResolution
+    member _.reuseTypecheckingResults = data.reuseTypecheckingResults
     member _.captureIdentifiersWhenParsing = data.captureIdentifiersWhenParsing
     member _.typeCheckingConfig = data.typeCheckingConfig
     member _.dumpSignatureData = data.dumpSignatureData
     member _.realsig = data.realsig
+    member _.cmdLineArgs = data.cmdLineArgs
 
     static member Create(builder, validate) =
         use _ = UseBuildPhase BuildPhase.Parameter
