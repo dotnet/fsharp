@@ -277,6 +277,9 @@
     <Compile Include="Query.fs">
       <Link>Queries/Query.fs</Link>
     </Compile>
+    <Compile Include="Units.fs">
+      <Link>Units/Units.fs</Link>
+    </Compile>
     <Compile Include="SI.fs">
       <Link>Units/SI.fs</Link>
     </Compile>
