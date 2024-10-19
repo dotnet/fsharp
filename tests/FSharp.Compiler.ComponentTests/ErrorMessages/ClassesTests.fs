@@ -880,8 +880,6 @@ type Class() =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 959, Line 10, Col 5, Line 10, Col 12, "Type definitions may only have one 'inherit' specification and it must be the first declaration")
-            (Error 959, Line 11, Col 5, Line 11, Col 12, "Type definitions may only have one 'inherit' specification and it must be the first declaration")
             (Error 932, Line 10, Col 13, Line 10, Col 19, "Types cannot inherit from multiple concrete types")
             (Error 932, Line 11, Col 13, Line 11, Col 19, "Types cannot inherit from multiple concrete types")
         ]

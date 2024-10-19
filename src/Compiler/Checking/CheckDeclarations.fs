@@ -4305,12 +4305,7 @@ module TcDeclarations =
              | SynMemberDefn.LetBindings (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveLocalBindingsBeforeMembers(), m))
              | SynMemberDefn.Inherit (trivia= { InheritKeyword = m }) :: _ -> errorR(Error(FSComp.SR.tcInheritDeclarationMissingArguments(), m))
              | SynMemberDefn.NestedType (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypesCannotContainNestedTypes(), m))
-             | rest ->
-                 for dfn in rest do
-                     match dfn with
-                     | SynMemberDefn.ImplicitInherit (trivia= { InheritKeyword = m }) ->
-                         errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveOneInherit(), m))
-                     | _ -> ()
+             | _ -> ()
         | ds ->
              // Check for duplicated parameters in abstract methods
              // Check for an interface implementation with auto properties on constructor-less types
