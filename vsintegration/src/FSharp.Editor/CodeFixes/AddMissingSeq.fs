@@ -19,9 +19,7 @@ type internal AddMissingSeqCodeFixProvider() =
     static let fixableDiagnosticIds = ImmutableArray.Create("FS3873", "FS0740")
 
     override _.FixableDiagnosticIds = fixableDiagnosticIds
-
     override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix this
-
     override this.GetFixAllProvider() = this.RegisterFsharpFixAll()
 
     interface IFSharpCodeFixProvider with
