@@ -320,12 +320,12 @@ module DiagnosticHelpers =
     let ReportDiagnostic (options: FSharpDiagnosticOptions, allErrors, mainInputFileName, fileInfo, diagnostic: PhasedDiagnostic, severity, suggestNames, flatErrors, symbolEnv) =
         match diagnostic.AdjustedSeverity(options, severity) with
         | FSharpDiagnosticSeverity.Hidden -> []
-        | sev ->
+        | adjustedSeverity ->
 
             // We use the first line of the file as a fallbackRange for reporting unexpected errors.
             // Not ideal, but it's hard to see what else to do.
             let fallbackRange = rangeN mainInputFileName 1
-            let diagnostic = FSharpDiagnostic.CreateFromExceptionAndAdjustEof (diagnostic, sev, fallbackRange, fileInfo, suggestNames, flatErrors, symbolEnv)
+            let diagnostic = FSharpDiagnostic.CreateFromExceptionAndAdjustEof (diagnostic, adjustedSeverity, fallbackRange, fileInfo, suggestNames, flatErrors, symbolEnv)
             let fileName = diagnostic.Range.FileName
             if allErrors || fileName = mainInputFileName || fileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation then
                 [diagnostic]
