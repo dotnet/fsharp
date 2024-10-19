@@ -27,6 +27,21 @@ let ``FS3873 — Adds missing seq before { start..finish }`` () =
     Assert.Equal(expected, actual)
 
 [<Fact>]
+let ``FS3873 — Adds missing seq before { start..step..finish }`` () =
+    let code = "let xs = { 1..5..10 }"
+
+    let expected =
+        Some
+            {
+                Message = "Add missing 'seq'"
+                FixedCode = "let xs = seq { 1..5..10 }"
+            }
+
+    let actual = codeFix |> tryFix code mode
+
+    Assert.Equal(expected, actual)
+
+[<Fact>]
 let ``FS0740 — Adds missing seq before { x; y }`` () =
     let code = "let xs = { 1; 10 }"
 
@@ -42,6 +57,44 @@ let ``FS0740 — Adds missing seq before { x; y }`` () =
     Assert.Equal(expected, actual)
 
 [<Fact>]
+let ``FS3873 — Adds missing seq before yield { start..finish }`` () =
+    let code = "let xs = [| yield { 1..100 } |]"
+
+    let expected =
+        Some
+            {
+                Message = "Add missing 'seq'"
+                FixedCode = "let xs = [| yield seq { 1..100 } |]"
+            }
+
+    let actual = codeFix |> tryFix code mode
+
+    Assert.Equal(expected, actual)
+
+[<Fact>]
+let ``FS3873 — Adds missing seq before yield { start..finish } multiline`` () =
+    let code =
+        """
+let xs = [| yield seq { 1..100 }
+            yield { 1..100 } |]
+"""
+
+    let expected =
+        Some
+            {
+                Message = "Add missing 'seq'"
+                FixedCode =
+                    """
+let xs = [| yield seq { 1..100 }
+            yield seq { 1..100 } |]
+"""
+            }
+
+    let actual = codeFix |> tryFix code mode
+
+    Assert.Equal(expected, actual)
+
+[<Fact>]
 let ``FS3873 — Adds parens when needed — app`` () =
     let code = "let xs = id { 1..10 }"
 
@@ -50,6 +103,36 @@ let ``FS3873 — Adds parens when needed — app`` () =
             {
                 Message = "Add missing 'seq'"
                 FixedCode = "let xs = id (seq { 1..10 })"
+            }
+
+    let actual = codeFix |> tryFix code mode
+
+    Assert.Equal(expected, actual)
+
+[<Fact>]
+let ``FS3873 — Adds parens when needed — app parens`` () =
+    let code = "let xs = ResizeArray({ 1..10 })"
+
+    let expected =
+        Some
+            {
+                Message = "Add missing 'seq'"
+                FixedCode = "let xs = ResizeArray(seq { 1..10 })"
+            }
+
+    let actual = codeFix |> tryFix code mode
+
+    Assert.Equal(expected, actual)
+
+[<Fact>]
+let ``FS3873 — Adds parens when needed — foreach`` () =
+    let code = "[ for x in { 1..10 } -> x ]"
+
+    let expected =
+        Some
+            {
+                Message = "Add missing 'seq'"
+                FixedCode = "[ for x in seq { 1..10 } -> x ]"
             }
 
     let actual = codeFix |> tryFix code mode
