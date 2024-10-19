@@ -1784,3 +1784,6 @@ featureAllowAccessModifiersToAutoPropertiesGettersAndSetters,"Allow access modif
 3871,tcAccessModifiersNotAllowedInSRTPConstraint,"Access modifiers cannot be applied to an SRTP constraint."
 featureAllowObjectExpressionWithoutOverrides,"Allow object expressions without overrides"
 3872,tcPartialActivePattern,"Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern."
+featureSupportCallerArgumentExpression,"Support `CallerArgumentExpression`"
+3873,tcCallerArgumentExpressionSelfReferential,"This CallerArgumentExpression with argument '%s' will have no effect because it's self-referential."
+3873,tcCallerArgumentExpressionHasInvalidParameterName,"This CallerArgumentExpression with argument '%s' will have no effect because it's applied with an invalid parameter name."
