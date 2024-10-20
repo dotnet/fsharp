@@ -409,7 +409,7 @@ type PhasedDiagnostic with
                 (severity = FSharpDiagnosticSeverity.Info && level > 0)
                 || (severity = FSharpDiagnosticSeverity.Warning && level >= x.WarningLevel)
 
-    member x.AdjustedSeverity(options, severity) =
+    member x.AdjustSeverity(options, severity) =
         let n = x.Number
 
         let warnOff () = List.contains n options.WarnOff
@@ -2311,7 +2311,7 @@ type DiagnosticsLoggerFilteringByScopedPragmas
                 | None -> true
 
             if report then
-                match diagnostic.AdjustedSeverity(diagnosticOptions, severity) with
+                match diagnostic.AdjustSeverity(diagnosticOptions, severity) with
                 | FSharpDiagnosticSeverity.Hidden -> ()
                 | s -> diagnosticsLogger.DiagnosticSink(diagnostic, s)
 

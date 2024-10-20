@@ -304,7 +304,7 @@ type internal CompilationDiagnosticLogger (debugName: string, options: FSharpDia
             | Some f -> f diagnostic
             | None -> diagnostic
 
-        match diagnostic.AdjustedSeverity(options, severity) with
+        match diagnostic.AdjustSeverity(options, severity) with
         | FSharpDiagnosticSeverity.Error ->
             diagnostics.Add(diagnostic, FSharpDiagnosticSeverity.Error)
             errorCount <- errorCount + 1
@@ -318,7 +318,7 @@ type internal CompilationDiagnosticLogger (debugName: string, options: FSharpDia
 module DiagnosticHelpers =                            
 
     let ReportDiagnostic (options: FSharpDiagnosticOptions, allErrors, mainInputFileName, fileInfo, diagnostic: PhasedDiagnostic, severity, suggestNames, flatErrors, symbolEnv) =
-        match diagnostic.AdjustedSeverity(options, severity) with
+        match diagnostic.AdjustSeverity(options, severity) with
         | FSharpDiagnosticSeverity.Hidden -> []
         | adjustedSeverity ->
 
