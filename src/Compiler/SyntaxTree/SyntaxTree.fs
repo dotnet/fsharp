@@ -37,7 +37,7 @@ type SynLongIdent =
 
     member this.Range =
         match this with
-        | SynLongIdent([], _, _) -> failwith "rangeOfLidwd"
+        | SynLongIdent([], _, _) -> Range.Zero
         | SynLongIdent([ id ], [], _) -> id.idRange
         | SynLongIdent([ id ], [ m ], _) -> unionRanges id.idRange m
         | SynLongIdent(h :: t, [], _) -> unionRanges h.idRange (List.last t).idRange
