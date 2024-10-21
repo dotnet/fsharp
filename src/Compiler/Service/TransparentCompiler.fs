@@ -410,7 +410,8 @@ type internal TransparentCompiler
                 assumeDotNetFramework,
                 tryGetMetadataSnapshot,
                 reduceMemoryUsage,
-                dependencyProviderForScripts
+                dependencyProviderForScripts,
+                otherOptions
             )
 
         closure

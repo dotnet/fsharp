@@ -156,7 +156,8 @@ module ScriptPreprocessClosure =
             useSdkRefs,
             sdkDirOverride,
             tryGetMetadataSnapshot,
-            reduceMemoryUsage
+            reduceMemoryUsage,
+            cmdLineArgs
         ) =
 
         let projectDir = !! Path.GetDirectoryName(fileName)
@@ -177,7 +178,7 @@ module ScriptPreprocessClosure =
                 tryGetMetadataSnapshot,
                 sdkDirOverride,
                 rangeForErrors,
-                [] // todo
+                cmdLineArgs
             )
 
         let primaryAssembly =
@@ -648,7 +649,8 @@ module ScriptPreprocessClosure =
             assumeDotNetFramework,
             tryGetMetadataSnapshot,
             reduceMemoryUsage,
-            dependencyProvider
+            dependencyProvider,
+            cmdLineArgs
         ) =
 
         // Resolve the basic references such as FSharp.Core.dll first, before processing any #I directives in the script
@@ -670,7 +672,8 @@ module ScriptPreprocessClosure =
                     useSdkRefs,
                     sdkDirOverride,
                     tryGetMetadataSnapshot,
-                    reduceMemoryUsage
+                    reduceMemoryUsage,
+                    cmdLineArgs
                 )
 
             let resolutions0, _unresolvedReferences =
@@ -698,7 +701,8 @@ module ScriptPreprocessClosure =
                 useSdkRefs,
                 sdkDirOverride,
                 tryGetMetadataSnapshot,
-                reduceMemoryUsage
+                reduceMemoryUsage,
+                cmdLineArgs
             )
 
         let closureSources = [ ClosureSource(fileName, range0, sourceText, true) ]
@@ -753,7 +757,8 @@ type LoadClosure with
             assumeDotNetFramework,
             tryGetMetadataSnapshot,
             reduceMemoryUsage,
-            dependencyProvider
+            dependencyProvider,
+            cmdLineArgs
         ) =
 
         use _ = UseBuildPhase BuildPhase.Parse
@@ -773,7 +778,8 @@ type LoadClosure with
             assumeDotNetFramework,
             tryGetMetadataSnapshot,
             reduceMemoryUsage,
-            dependencyProvider
+            dependencyProvider,
+            cmdLineArgs
         )
 
     /// Analyze a set of script files and find the closure of their references.

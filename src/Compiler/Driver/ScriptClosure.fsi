@@ -90,7 +90,8 @@ type LoadClosure =
         assumeDotNetFramework: bool *
         tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot *
         reduceMemoryUsage: ReduceMemoryFlag *
-        dependencyProvider: DependencyProvider ->
+        dependencyProvider: DependencyProvider *
+        cmdLineArgs: string seq ->
             LoadClosure
 
     /// Analyze a set of script files and find the closure of their references. The resulting references are then added to the given TcConfig.
