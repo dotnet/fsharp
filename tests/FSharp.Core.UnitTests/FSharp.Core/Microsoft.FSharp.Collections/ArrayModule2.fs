@@ -372,7 +372,7 @@ type ArrayModule2() =
     [<Fact>]
     member this.Of_Seq() =
         // integer array  
-        let resultInt = Array.ofSeq {1..10}
+        let resultInt = Array.ofSeq (seq {1..10})
         if resultInt <> [|1..10|] then Assert.Fail()
         
         // string array    
