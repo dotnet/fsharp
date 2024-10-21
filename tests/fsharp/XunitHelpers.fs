@@ -4,9 +4,6 @@ open Xunit
 
 module Assert =
 
-    [<assembly: CollectionBehavior(DisableTestParallelization = true)>]
-    do()
-
     let inline fail message = Assert.Fail message
 
     let inline failf fmt = Printf.kprintf fail fmt

@@ -31,6 +31,8 @@ open FSharp.Compiler.Text
 
 open Xunit
 
+open FSharp.Test.Utilities
+
 open OpenTelemetry
 open OpenTelemetry.Resources
 open OpenTelemetry.Trace
@@ -224,9 +226,7 @@ let sourceFile fileId deps =
       IsPhysicalFile = false }
 
 
-let OptionsCache = ConcurrentDictionary()
-
-
+let OptionsCache = ConcurrentDictionary<_, FSharpProjectOptions>()
 
 
 type SyntheticProject =
@@ -295,7 +295,7 @@ type SyntheticProject =
 
     member this.GetProjectOptions(checker: FSharpChecker) =
 
-        let cacheKey =
+        let key =
             this.GetAllFiles()
             |> List.collect (fun (p, f) ->
                 [ p.Name
@@ -305,53 +305,55 @@ type SyntheticProject =
             this.FrameworkReferences,
             this.NugetReferences
 
-        if not (OptionsCache.ContainsKey cacheKey) then
-            OptionsCache[cacheKey] <-
-                use _ = Activity.start "SyntheticProject.GetProjectOptions" [ "project", this.Name ]
+        let factory _ =
+            use _ = Activity.start "SyntheticProject.GetProjectOptions" [ "project", this.Name ]
 
-                let referenceScript =
-                    seq {
-                        yield! this.FrameworkReferences |> Seq.map getFrameworkReference
+            let referenceScript =
+                seq {
+                    yield! this.FrameworkReferences |> Seq.map getFrameworkReference
+                    if not this.NugetReferences.IsEmpty then
                         this.NugetReferences |> getNugetReferences (Some "https://api.nuget.org/v3/index.json")
-                    }
-                    |> String.concat "\n"
+                }
+                |> String.concat "\n"
 
-                let baseOptions, _ =
-                    checker.GetProjectOptionsFromScript(
-                        "file.fsx",
-                        SourceText.ofString referenceScript,
-                        assumeDotNetFramework = false
-                    )
-                    |> Async.RunSynchronously
+            let baseOptions, _ =
+                checker.GetProjectOptionsFromScript(
+                    "file.fsx",
+                    SourceText.ofString referenceScript,
+                    assumeDotNetFramework = false
+                )
+                |> Async.RunImmediate
 
-                {
-                    ProjectFileName = this.ProjectFileName
-                    ProjectId = None
-                    SourceFiles =
-                        [| for f in this.SourceFiles do
-                               if f.HasSignatureFile then
-                                   this.ProjectDir ++ f.SignatureFileName
+            {
+                ProjectFileName = this.ProjectFileName
+                ProjectId = None
+                SourceFiles =
+                    [| for f in this.SourceFiles do
+                            if f.HasSignatureFile then
+                                this.ProjectDir ++ f.SignatureFileName
 
-                               this.ProjectDir ++ f.FileName |]
-                    OtherOptions =
-                        Set [
-                           yield! baseOptions.OtherOptions
-                           "--optimize+"
-                           for p in this.DependsOn do
-                               $"-r:{p.OutputFilename}"
-                           yield! this.OtherOptions ]
-                           |> Set.toArray
-                    ReferencedProjects =
-                        [| for p in this.DependsOn do
-                               FSharpReferencedProject.FSharpReference(p.OutputFilename, p.GetProjectOptions checker) |]
-                    IsIncompleteTypeCheckEnvironment = false
-                    UseScriptResolutionRules = this.UseScriptResolutionRules
-                    LoadTime = DateTime()
-                    UnresolvedReferences = None
-                    OriginalLoadReferences = []
-                    Stamp = None }
+                            this.ProjectDir ++ f.FileName |]
+                OtherOptions =
+                    Set [
+                        yield! baseOptions.OtherOptions
+                        "--optimize+"
+                        for p in this.DependsOn do
+                            $"-r:{p.OutputFilename}"
+                        yield! this.OtherOptions ]
+                        |> Set.toArray
+                ReferencedProjects =
+                    [| for p in this.DependsOn do
+                            FSharpReferencedProject.FSharpReference(p.OutputFilename, p.GetProjectOptions checker) |]
+                IsIncompleteTypeCheckEnvironment = false
+                UseScriptResolutionRules = this.UseScriptResolutionRules
+                LoadTime = DateTime()
+                UnresolvedReferences = None
+                OriginalLoadReferences = []
+                Stamp = None }
 
-        OptionsCache[cacheKey]
+        
+        OptionsCache.GetOrAdd(key, factory)
+
 
     member this.GetAllProjects() =
         [ this
@@ -951,7 +953,7 @@ type ProjectWorkflowBuilder
         ?enablePartialTypeChecking
     ) =
 
-    let useTransparentCompiler = defaultArg useTransparentCompiler CompilerAssertHelpers.UseTransparentCompiler
+    let useTransparentCompiler = defaultArg useTransparentCompiler TestContext.UseTransparentCompiler
     let useGetSource = not useTransparentCompiler && defaultArg useGetSource false
     let useChangeNotifications = not useTransparentCompiler && defaultArg useChangeNotifications false
     let autoStart = defaultArg autoStart true
@@ -1027,11 +1029,12 @@ type ProjectWorkflowBuilder
 
     member this.Execute(workflow: Async<WorkflowContext>) =
         try
-            Async.RunSynchronously(workflow, timeout = defaultArg runTimeout 600_000)
+            // We don't want the defaultCancellationToken.
+            Async.RunSynchronously(workflow, cancellationToken = Threading.CancellationToken.None, ?timeout = runTimeout)
         finally
             if initialContext.IsNone && not isExistingProject then
                 this.DeleteProjectDir()
-            activity |> Option.iter (fun x -> x.Dispose())
+            activity |> Option.iter (fun x -> if not (isNull x) then x.Dispose())
             tracerProvider |> Option.iter (fun x ->
                 x.ForceFlush() |> ignore
                 x.Dispose())
@@ -1135,13 +1138,9 @@ type ProjectWorkflowBuilder
         async {
             let! ctx = workflow
 
-            use activity =
-                Activity.start "ProjectWorkflowBuilder.CheckFile" [ Activity.Tags.project, initialProject.Name; "fileId", fileId ]
-
             let! results =
+                use _ = Activity.start "ProjectWorkflowBuilder.CheckFile" [ Activity.Tags.project, initialProject.Name; "fileId", fileId ]
                 checkFile fileId ctx.Project checker
-
-            activity.Dispose()
 
             let oldSignature = ctx.Signatures[fileId]
             let newSignature = getSignature results

@@ -21,7 +21,7 @@
         <PackagePath>content\myfiles\</PackagePath>
     </Content>
     <PackageReference Include="BasicProvider" Version="1.0.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
   </ItemGroup>
 
   <Target Name="RemovePackagesFromCache" BeforeTargets="Restore">

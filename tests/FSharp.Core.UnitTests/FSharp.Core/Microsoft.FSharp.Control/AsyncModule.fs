@@ -148,6 +148,7 @@ module LeakUtils =
 
 // ---------------------------------------------------
 
+// [<Collection(nameof FSharp.Test.DoNotRunInParallel)>]
 type AsyncModule() =
     
     /// Simple asynchronous task that delays 200ms and returns a list of the current tick count
@@ -377,25 +378,25 @@ type AsyncModule() =
 
     [<Fact>]
     member _.``AwaitWaitHandle.DisposedWaitHandle2``() = 
-        let wh = new ManualResetEvent(false)
+        let wh = new System.Threading.ManualResetEvent(false)
         let started = new ManualResetEventSlim(false)
-
-        let test = 
-            async {
+        let cts = new CancellationTokenSource()
+        let test =
+            Async.StartAsTask( async {
+                printfn "starting the test"
                 started.Set()
-                let! timeout = Async.AwaitWaitHandle(wh, 5000)
-                Assert.False(timeout, "Timeout expected")
-            }
-            |> Async.StartAsTask
+                let! _ = Async.AwaitWaitHandle(wh)
+                printfn "should never get here"
+            }, cancellationToken = cts.Token)
 
-        task {
-            started.Wait()
-            // Wait a moment then dispose waithandle - nothing should happen
-            do! Task.Delay 500
-            Assert.False(test.IsCompleted, "Test completed too early")
-            dispose wh
-            do! test
-        }
+        // Wait for the test to start then dispose waithandle - nothing should happen.
+        started.Wait()
+        Assert.False(test.Wait 100, "Test completed too early.")
+        printfn "disposing"
+        dispose wh
+        printfn "cancelling in 1 second"
+        cts.CancelAfter 1000
+        Assert.ThrowsAsync<TaskCanceledException>(fun () -> test)
 
     [<Fact>]
     member _.``RunSynchronously.NoThreadJumpsAndTimeout``() = 
@@ -469,21 +470,27 @@ type AsyncModule() =
     member _.``error on one workflow should cancel all others``() =
         task {
             use failOnlyOne = new Semaphore(0, 1)
-            let mutable cancelled = 0
-            let mutable started = 0
+            // Start from 1.
+            let mutable running = new CountdownEvent(1)
 
             let job i = async {
-                Interlocked.Increment &started |> ignore
-                use! holder = Async.OnCancel (fun () -> Interlocked.Increment &cancelled |> ignore)
+                running.AddCount 1
+                use! holder = Async.OnCancel (running.Signal >> ignore)
                 do! failOnlyOne |> Async.AwaitWaitHandle |> Async.Ignore
+                running.Signal() |> ignore
                 failwith "boom" 
             }
 
             let test = Async.Parallel [ for i in 1 .. 100 -> job i ] |> Async.Catch |> Async.Ignore |> Async.StartAsTask
-            do! Task.Delay 100
+            // Wait for more than one job to start
+            while running.CurrentCount < 2 do
+                do! Task.Yield()
+            printfn $"started jobs: {running.CurrentCount - 1}"
             failOnlyOne.Release() |> ignore
             do! test
-            Assert.Equal(started - 1, cancelled)
+            // running.CurrentCount should eventually settle back at 1. Signal it one more time and it should be 0.
+            running.Signal() |> ignore
+            return! Async.AwaitWaitHandle running.WaitHandle
         }
 
     [<Fact>]

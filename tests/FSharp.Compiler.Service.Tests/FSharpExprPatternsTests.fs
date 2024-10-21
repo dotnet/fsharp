@@ -139,7 +139,7 @@ let testPatterns handler source =
         }
 
     let checker =
-        FSharpChecker.Create(documentSource = DocumentSource.Custom documentSource, keepAssemblyContents = true, useTransparentCompiler = CompilerAssertHelpers.UseTransparentCompiler)
+        FSharpChecker.Create(documentSource = DocumentSource.Custom documentSource, keepAssemblyContents = true, useTransparentCompiler = TestContext.UseTransparentCompiler)
 
     let checkResult =
         checker.ParseAndCheckFileInProject("A.fs", 0, Map.find "A.fs" files, projectOptions)

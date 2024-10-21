@@ -362,36 +362,81 @@ function VerifyAssemblyVersionsAndSymbols() {
     }
 }
 
-function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [string]$testadapterpath, [boolean] $asBackgroundJob = $false) {
+function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [string]$testadapterpath, [string] $backgroundJob = "", [string] $settings = "") {
+    $jobId = if ($backgroundJob) { "_$backgroundJob"} else {""}
     $dotnetPath = InitializeDotNetCli
     $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
     $projectName = [System.IO.Path]::GetFileNameWithoutExtension($testProject)
-    $testLogPath = "$ArtifactsDir\TestResults\$configuration\${projectName}_$targetFramework.xml"
-    $testBinLogPath = "$LogDir\${projectName}_$targetFramework.binlog"
-    $args = "test $testProject -c $configuration -f $targetFramework -v n --test-adapter-path $testadapterpath --logger ""xunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
-    $args += " --blame --results-directory $ArtifactsDir\TestResults\$configuration -p:vstestusemsbuildoutput=false"
+    $testLogPath = "$ArtifactsDir\TestResults\$configuration\${projectName}_$targetFramework$jobId.xml"
+    $testBinLogPath = "$LogDir\${projectName}_$targetFramework$jobId.binlog"
+    $arguments = "test $testProject -c $configuration -f $targetFramework -v n --test-adapter-path $testadapterpath --logger ""xunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
+    $arguments += " --blame --blame-hang-timeout 5minutes --results-directory $ArtifactsDir\TestResults\$configuration -p:vstestusemsbuildoutput=true"
 
     if (-not $noVisualStudio -or $norestore) {
-        $args += " --no-restore"
+        $arguments += " --no-restore"
     }
 
     if (-not $noVisualStudio) {
-        $args += " --no-build"
+        $arguments += " --no-build"
     }
 
-    if ($asBackgroundJob) {
-        Write-Host("Starting on the background: $args")
+    $arguments += " $settings"
+
+    if ($backgroundJob) {
+        Write-Host
+        Write-Host("Starting on the background: $arguments")
         Write-Host("------------------------------------")
-        $bgJob = Start-Job -ScriptBlock {
-            & $using:dotnetExe test $using:testProject -c $using:configuration -f $using:targetFramework -v n --test-adapter-path $using:testadapterpath --logger "xunit;LogFilePath=$using:testLogPath" /bl:$using:testBinLogPath  --blame --results-directory $using:ArtifactsDir\TestResults\$using:configuration
+        Start-Job -ScriptBlock {
+            $argArray = $using:arguments -Split " "
+            & $using:dotnetExe $argArray
             if ($LASTEXITCODE -ne 0) {
                 throw "Command failed to execute with exit code $($LASTEXITCODE): $using:dotnetExe $using:args"
             }
         }
-        return $bgJob
-    } else{
-        Write-Host("$args")
-        Exec-Console $dotnetExe $args
+    } else {
+        Write-Host("$arguments")
+        Exec-Console $dotnetExe $arguments
+    }
+}
+
+function TestSolutionUsingMSBuild([string] $testSolution, [string] $targetFramework, [string] $testadapterpath, [string] $backgroundJob = "", [string] $settings = "") {
+    $jobId = if ($backgroundJob) { "_$backgroundJob"} else {""}
+    $dotnetPath = InitializeDotNetCli
+    $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
+    $solutionName = [System.IO.Path]::GetFileNameWithoutExtension($testSolution)
+    $testLogPath = "$ArtifactsDir\TestResults\$configuration\{assembly}.{framework}$jobId.xml"
+    $testBinLogPath = "$LogDir\${solutionName}_$targetFramework$jobId.binlog"
+
+    $arguments = "test"
+
+    $arguments += " $testSolution -c $configuration -f $targetFramework --test-adapter-path $testadapterpath -v n --logger ""xunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
+    $arguments += " --blame-hang-timeout 5minutes --results-directory $ArtifactsDir\TestResults\$configuration /p:VsTestUseMSBuildOutput=true"
+
+    if (-not $noVisualStudio -or $norestore) {
+        $arguments += " --no-restore"
+    }
+
+    if (-not $noVisualStudio) {
+        $arguments += " --no-build"
+    }
+
+    $arguments += " $settings"
+
+    if ($backgroundJob) {
+        Write-Host
+        Write-Host("Starting on the background: $arguments")
+        Write-Host("------------------------------------")
+        Start-Job -ScriptBlock {
+            $argArray = $using:arguments -Split " "
+            $argArray += "--no-build"
+            & $using:dotnetExe $argArray
+            if ($LASTEXITCODE -ne 0) {
+                throw "Command failed to execute with exit code $($LASTEXITCODE): $using:dotnetExe $using:args"
+            }
+        }
+    } else {
+        Write-Host("$arguments")
+        Exec-Console $dotnetExe $arguments
     }
 }
 
@@ -588,22 +633,40 @@ try {
     $script:BuildCategory = "Test"
     $script:BuildMessage = "Failure running tests"
 
-    if ($testCoreClr) {
-        $bgJob = TestUsingMSBuild -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $script:coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\" -asBackgroundJob $true
-
-        TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $script:coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\"
-        TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $script:coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Service.Tests\"
-        TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $script:coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Private.Scripting.UnitTests\"
-        TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $script:coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Build.UnitTests\"
-        TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $script:coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Core.UnitTests\"
-
-        # Collect output from  background jobs
-        Wait-job $bgJob | out-null
-        Receive-Job $bgJob -ErrorAction Stop
+    function Receive($job) {
+        while($job.HasMoreData) {
+            Receive-Job $job | Write-Host
+            Start-Sleep -Seconds 1
+        }
+        Receive-Job $job -Wait -ErrorAction Stop
     }
 
-    if ($testDesktop) {
-        $bgJob = TestUsingMSBuild -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\" -asBackgroundJob $true
+    if ($testCoreClr) {
+        $cpuLimit = if ($ci) { "-m:2 -- xUnit.MaxParallelThreads=0.25x" } else { "" }
+        TestSolutionUsingMSBuild -testSolution "$RepoRoot\FSharp.sln" -targetFramework $script:coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -settings $cpuLimit
+    }
+
+    if ($testDesktop -and -not $ci) { 
+
+        # Split ComponentTests into processes using filter, because it is slow and underutilizes CPU locally.
+        $bgJob1 = TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -backgroundJob 1 -settings "--filter ExecutionNode=1"
+        $bgJob2 = TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -backgroundJob 2 -settings "--filter ExecutionNode=2"
+        $bgJob3 = TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -backgroundJob 3 -settings "--filter ExecutionNode=3"
+        $bgJob4 = TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -backgroundJob 4 -settings "--filter ExecutionNode=4"
+
+        TestSolutionUsingMSBuild -testSolution "$RepoRoot\FSharp.sln" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -settings " --filter ""Project!=FSharpSuite.Tests&Project!=FSharp.Compiler.ComponentTests"" "
+        # FSharpSuite does most of it's work in external processes, saturating the CPU. It makes sense to run it separately.
+        TestUsingMSBuild -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\"
+
+        # Collect output from background jobs
+        Receive -job $bgJob1
+        Receive -job $bgJob2
+        Receive -job $bgJob3
+        Receive -job $bgJob4
+    }
+
+    if ($testDesktop -and $ci) {
+        $bgJob = TestUsingMSBuild -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\" -backgroundJob 1
 
         TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\"
         TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Service.Tests\"
@@ -611,9 +674,7 @@ try {
         TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Build.UnitTests\"
         TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Core.UnitTests\"
 
-        # Collect output from  background jobs
-        Wait-job $bgJob | out-null
-        Receive-Job $bgJob -ErrorAction Stop
+        Receive -job $bgJob
     }
 
     if ($testFSharpQA) {

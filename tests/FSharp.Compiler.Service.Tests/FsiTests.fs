@@ -14,21 +14,15 @@ type Sentinel () =
 module MyModule =
     let test(x: int) = ()
 
-[<CollectionDefinition("FsiTests", DisableParallelization = true)>]
 module FsiTests =
 
     let createFsiSession (useOneDynamicAssembly: bool) =
-        // Initialize output and input streams
-        let inStream = new StringReader("")
-        let outStream = new CompilerOutputStream()
-        let errStream = new CompilerOutputStream()
-
         // Build command line arguments & start FSI session
         let argv = [| "C:\\fsi.exe" |]
         let allArgs = Array.append argv [|"--noninteractive"; if useOneDynamicAssembly then "--multiemit-" else "--multiemit+" |]
 
         let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
-        FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, new StreamWriter(outStream), new StreamWriter(errStream), collectible = true)
+        FsiEvaluationSession.Create(fsiConfig, allArgs, TextReader.Null, TextWriter.Null, TextWriter.Null, collectible = true)
 
     [<Fact>]
     let ``No bound values at the start of FSI session`` () =

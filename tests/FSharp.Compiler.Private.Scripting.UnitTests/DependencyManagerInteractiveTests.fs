@@ -13,6 +13,7 @@ open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
 open FSharp.DependencyManager.Nuget
 open FSharp.Test.ScriptHelpers
+open FSharp.Test
 open FSharp.Test.Utilities
 
 open Internal.Utilities
@@ -25,6 +26,7 @@ module Native =
 
 type scriptHost (?langVersion: LangVersion) = inherit FSharpScript(langVersion=defaultArg langVersion LangVersion.Preview)
 
+[<Collection(nameof DoNotRunInParallel)>]
 type DependencyManagerInteractiveTests() =
 
     let getValue ((value: Result<FsiValue option, exn>), (errors: FSharpDiagnostic[])) =
@@ -148,8 +150,7 @@ type DependencyManagerInteractiveTests() =
         Assert.Equal(0, result.Roots |> Seq.length)
         ()
 
-
-    [<Fact(Skip="failing on main")>]
+    [<Fact>]
     member _.``Multiple Instances of DependencyProvider should be isolated``() =
 
         let assemblyProbingPaths () = Seq.empty<string>

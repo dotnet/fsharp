@@ -33,7 +33,7 @@ let testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource line colAtEn
 
     let checker =
         FSharpChecker.Create(documentSource = DocumentSource.Custom documentSource,
-            useTransparentCompiler = CompilerAssertHelpers.UseTransparentCompiler)
+            useTransparentCompiler = TestContext.UseTransparentCompiler)
 
     let checkResult =
         checker.ParseAndCheckFileInProject("A.fs", 0, Map.find "A.fs" files, projectOptions)
@@ -281,7 +281,7 @@ let testToolTipSquashing source line colAtEndOfNames lineText names tokenTag =
 
     let checker =
         FSharpChecker.Create(documentSource = DocumentSource.Custom documentSource,
-            useTransparentCompiler = CompilerAssertHelpers.UseTransparentCompiler)
+            useTransparentCompiler = TestContext.UseTransparentCompiler)
 
     let checkResult =
         checker.ParseAndCheckFileInProject("A.fs", 0, Map.find "A.fs" files, projectOptions)
