@@ -510,11 +510,11 @@ let main1
             defaultCopyFSharpCore = defaultCopyFSharpCore,
             tryGetMetadataSnapshot = tryGetMetadataSnapshot,
             sdkDirOverride = None,
-            rangeForErrors = range0,
-            cmdLineArgs = argv
+            rangeForErrors = range0
         )
 
     tcConfigB.exiter <- exiter
+    tcConfigB.cmdLineArgs <- argv
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     SetOptimizeSwitch tcConfigB OptionSwitch.On

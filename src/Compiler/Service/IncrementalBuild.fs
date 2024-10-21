@@ -1449,8 +1449,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                          defaultCopyFSharpCore=CopyFSharpCoreFlag.No,
                          tryGetMetadataSnapshot=tryGetMetadataSnapshot,
                          sdkDirOverride=sdkDirOverride,
-                         rangeForErrors=range0,
-                         cmdLineArgs = commandLineArgs)
+                         rangeForErrors=range0)
 
                 tcConfigB.primaryAssembly <-
                     match loadClosureOpt with

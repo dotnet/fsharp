@@ -20,5 +20,4 @@ let internal getArbitraryTcConfigBuilder() =
         CopyFSharpCoreFlag.No,
         (fun _ -> None),
         None,
-        Range.Zero,
-        [])
+        Range.Zero)

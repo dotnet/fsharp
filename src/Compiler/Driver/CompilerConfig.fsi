@@ -533,7 +533,7 @@ type TcConfigBuilder =
 
         mutable realsig: bool
 
-        cmdLineArgs: string seq
+        mutable cmdLineArgs: string seq
     }
 
     static member CreateNew:
@@ -546,8 +546,7 @@ type TcConfigBuilder =
         defaultCopyFSharpCore: CopyFSharpCoreFlag *
         tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot *
         sdkDirOverride: string option *
-        rangeForErrors: range *
-        cmdLineArgs: string seq ->
+        rangeForErrors: range ->
             TcConfigBuilder
 
     member DecideNames: string list -> string * string option * string

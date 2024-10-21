@@ -410,8 +410,7 @@ type internal TransparentCompiler
                 assumeDotNetFramework,
                 tryGetMetadataSnapshot,
                 reduceMemoryUsage,
-                dependencyProviderForScripts,
-                otherOptions
+                dependencyProviderForScripts
             )
 
         closure
@@ -769,8 +768,7 @@ type internal TransparentCompiler
                     defaultCopyFSharpCore = CopyFSharpCoreFlag.No,
                     tryGetMetadataSnapshot = tryGetMetadataSnapshot,
                     sdkDirOverride = sdkDirOverride,
-                    rangeForErrors = range0,
-                    cmdLineArgs = commandLineArgs
+                    rangeForErrors = range0
                 )
 
             tcConfigB.primaryAssembly <-

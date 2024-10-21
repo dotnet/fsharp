@@ -4581,8 +4581,7 @@ type FsiEvaluationSession
             defaultCopyFSharpCore = CopyFSharpCoreFlag.No,
             tryGetMetadataSnapshot = tryGetMetadataSnapshot,
             sdkDirOverride = None,
-            rangeForErrors = range0,
-            cmdLineArgs = argv
+            rangeForErrors = range0
         )
 
     let tcConfigP = TcConfigProvider.BasedOnMutableBuilder(tcConfigB)
