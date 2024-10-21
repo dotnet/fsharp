@@ -220,10 +220,8 @@ let visitSynMemberDefn (md: SynMemberDefn) : FileContentEntry list =
         | SynMemberDefn.Interface(interfaceType, _, members, _) ->
             yield! visitSynType interfaceType
             yield! collectFromOption (List.collect visitSynMemberDefn) members
-        | SynMemberDefn.Inherit(baseType = t) ->
-            match t with
-            | Some baseType -> yield! visitSynType baseType
-            | None -> ()
+        | SynMemberDefn.Inherit(baseType = Some baseType) -> yield! visitSynType baseType
+        | SynMemberDefn.Inherit(baseType = None) -> ()
         | SynMemberDefn.ValField(fieldInfo, _) -> yield! visitSynField fieldInfo
         | SynMemberDefn.NestedType _ -> ()
         | SynMemberDefn.AutoProperty(attributes = attributes; typeOpt = typeOpt; synExpr = synExpr) ->
