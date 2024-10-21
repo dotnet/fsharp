@@ -816,3 +816,37 @@ type A() =
             """
             |> typecheck
             |> shouldSucceed
+            
+    [<Fact>]
+    let ``This 'inherit' declaration specifies the inherited type but no arguments. Consider supplying arguments, e. g. 'inherit BaseType(args)'`` () =
+        Fsx """
+type IA = interface end
+
+type Class() =
+    inherit IA
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 961, Line 5, Col 5, Line 5, Col 12, "This 'inherit' declaration specifies the inherited type but no arguments. Consider supplying arguments, e.g. 'inherit BaseType(args)'.")
+            (Error 946, Line 5, Col 13, Line 5, Col 15, "Cannot inherit from interface type. Use interface ... with instead.")
+        ]
+
+    [<Fact>]
+    let ``The types System.ValueType, System.Enum, System.Delegate, System.MulticastDelegate and System.Array cannot be used as super types in an object expression or class.`` () =
+        Fsx """
+type C1 = class inherit System.ValueType override x.ToString() = ""  end
+type C2 = class inherit System.Array override x.ToString() = ""  end
+type C3 = class inherit System.Enum override x.ToString() = ""  end
+type C4 = class inherit System.Delegate override x.ToString() = ""  end
+type C5 = class inherit System.MulticastDelegate override x.ToString() = ""  end
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 771, Line 2, Col 25, Line 2, Col 41, "The types System.ValueType, System.Enum, System.Delegate, System.MulticastDelegate and System.Array cannot be used as super types in an object expression or class");
+            (Error 771, Line 3, Col 25, Line 3, Col 37, "The types System.ValueType, System.Enum, System.Delegate, System.MulticastDelegate and System.Array cannot be used as super types in an object expression or class");
+            (Error 771, Line 4, Col 25, Line 4, Col 36, "The types System.ValueType, System.Enum, System.Delegate, System.MulticastDelegate and System.Array cannot be used as super types in an object expression or class")
+            (Error 771, Line 5, Col 25, Line 5, Col 40, "The types System.ValueType, System.Enum, System.Delegate, System.MulticastDelegate and System.Array cannot be used as super types in an object expression or class");
+            (Error 771, Line 6, Col 25, Line 6, Col 49, "The types System.ValueType, System.Enum, System.Delegate, System.MulticastDelegate and System.Array cannot be used as super types in an object expression or class")
+        ]

@@ -5891,6 +5891,17 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         TcForEachExpr cenv overallTy env tpenv (seqExprOnly, isFromSource, pat, synEnumExpr, synBodyExpr, m, spFor, spIn, m)
 
     | SynExpr.ComputationExpr (hasSeqBuilder, comp, m) ->
+        let isIndexRange = match comp with | SynExpr.IndexRange _ -> true | _ -> false
+        let deprecatedPlacesWhereSeqCanBeOmitted =
+            cenv.g.langVersion.SupportsFeature LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted
+        if
+            deprecatedPlacesWhereSeqCanBeOmitted
+            && isIndexRange
+            && not hasSeqBuilder
+            && not cenv.g.compilingFSharpCore
+        then
+            warning (Error(FSComp.SR.chkDeprecatePlacesWhereSeqCanBeOmitted (), m))
+
         let env = ExitFamilyRegion env
         cenv.TcSequenceExpressionEntry cenv env overallTy tpenv (hasSeqBuilder, comp) m
 
@@ -7140,7 +7151,7 @@ and CheckSuperType (cenv: cenv) ty m =
        typeEquiv g ty g.system_Array_ty ||
        typeEquiv g ty g.system_MulticastDelegate_ty ||
        typeEquiv g ty g.system_Delegate_ty then
-         error(Error(FSComp.SR.tcPredefinedTypeCannotBeUsedAsSuperType(), m))
+         errorR(Error(FSComp.SR.tcPredefinedTypeCannotBeUsedAsSuperType(), m))
 
     if isErasedType g ty then
         errorR(Error(FSComp.SR.tcCannotInheritFromErasedType(), m))

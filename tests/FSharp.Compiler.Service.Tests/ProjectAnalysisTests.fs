@@ -123,7 +123,14 @@ let ``Test project1 and make sure TcImports gets cleaned up`` () =
     let weakTcImports = test ()
     checker.InvalidateConfiguration Project1.options
     checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-    GC.Collect(2, GCCollectionMode.Forced, blocking = true)
+
+    //collect 2 more times for good measure,
+    // See for example: https://github.com/dotnet/runtime/discussions/108081
+    GC.Collect()
+    GC.WaitForPendingFinalizers()
+    GC.Collect()
+    GC.WaitForPendingFinalizers()
+
     Assert.False weakTcImports.IsAlive
 
 [<Fact>]

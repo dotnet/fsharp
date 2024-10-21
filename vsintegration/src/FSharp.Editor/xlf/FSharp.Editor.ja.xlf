@@ -17,6 +17,11 @@
         <target state="translated">見つからないインスタンス メンバー パラメーターを追加する</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddMissingSeq">
+        <source>Add missing 'seq'</source>
+        <target state="new">Add missing 'seq'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">'new' キーワードを追加する</target>
