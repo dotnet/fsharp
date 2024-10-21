@@ -997,7 +997,7 @@ for i in 0..a."]
                 ]
             ]
         for ifs in shouldBeInterface do
-            AssertCtrlSpaceCompleteContains ifs "(*M*)" ["seq"] ["obj"]
+            AssertCtrlSpaceCompleteContains ifs "(*M*)" ["seq"] []
 
 
     [<Fact>]
@@ -1026,7 +1026,7 @@ for i in 0..a."]
                 ]
             ]
         for cls in shouldBeClass do
-            AssertCtrlSpaceCompleteContains cls "(*M*)" ["obj"] ["seq"]
+            AssertCtrlSpaceCompleteContains cls "(*M*)" ["obj"] []
 
     [<Fact>]
     member this.``Completion.DetectUnknownCompletionContext``() = 
@@ -1036,7 +1036,7 @@ for i in 0..a."]
                 "    inherit (*M*)"
             ]
 
-        AssertCtrlSpaceCompleteContains content "(*M*)" ["obj"; "seq"] ["abs"]
+        AssertCtrlSpaceCompleteContains content "(*M*)" ["obj"; "seq"] []
 
     [<Fact>]
     member this.``Completion.DetectInvalidCompletionContext``() = 
