@@ -913,10 +913,8 @@ module ParsedInput =
                 walkType t
                 |> Option.orElseWith (fun () -> members |> Option.bind (List.tryPick walkMember))
 
-            | SynMemberDefn.Inherit(baseType = t) ->
-                match t with
-                | Some baseType -> walkType baseType
-                | None -> None
+            | SynMemberDefn.Inherit(baseType = Some baseType) -> walkType baseType
+            | SynMemberDefn.Inherit(baseType = None) -> None
             | SynMemberDefn.ValField(fieldInfo = field) -> walkField field
 
             | SynMemberDefn.NestedType(tdef, _, _) -> walkTypeDefn tdef
