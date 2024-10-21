@@ -177,4 +177,5 @@
 --subsystemversion:<string>              Specify subsystem version of this
                                          assembly
 --quotations-debug[+|-]                  Emit debug information in quotations
---reusetypecheckingresults               Reuse previous typechecking results for faster compilation
+--reusetypecheckingresults               Reuse previous typechecking results
+                                         for faster compilation
