@@ -153,7 +153,6 @@ type internal TransparentCompiler =
         enableBackgroundItemKeyStoreAndSemanticClassification: bool *
         enablePartialTypeChecking: bool *
         parallelReferenceResolution: ParallelReferenceResolution *
-        reuseTypecheckingResults: ReuseTypecheckingResults *
         captureIdentifiersWhenParsing: bool *
         getSource: (string -> Async<ISourceText option>) option *
         useChangeNotifications: bool ->

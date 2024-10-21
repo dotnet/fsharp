@@ -132,11 +132,6 @@
         <target state="translated">删除不必要的括号(实验性，可能会影响键入性能)</target>
         <note />
       </trans-unit>
-      <trans-unit id="Reuse_typechecking_results">
-        <source>Cache typechecking results (experimental)</source>
-        <target state="new">Cache typechecking results (experimental)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Send_Additional_Telemetry">
         <source>Send additional performance telemetry</source>
         <target state="translated">发送其他性能遥测</target>

@@ -123,9 +123,6 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                             let enableFastFindReferences =
                                 editorOptions.LanguageServicePerformance.EnableFastFindReferencesAndRename
 
-                            let reuseTypecheckingResults =
-                                editorOptions.LanguageServicePerformance.ReuseTypecheckingResults
-
                             let isInlineParameterNameHintsEnabled =
                                 editorOptions.Advanced.IsInlineParameterNameHintsEnabled
 
@@ -162,7 +159,6 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                         nameof enableParallelReferenceResolution, enableParallelReferenceResolution
                                         nameof enableInMemoryCrossProjectReferences, enableInMemoryCrossProjectReferences
                                         nameof enableFastFindReferences, enableFastFindReferences
-                                        nameof reuseTypecheckingResults, reuseTypecheckingResults
                                         nameof isInlineParameterNameHintsEnabled, isInlineParameterNameHintsEnabled
                                         nameof isInlineTypeHintsEnabled, isInlineTypeHintsEnabled
                                         nameof isInlineReturnTypeHintsEnabled, isInlineReturnTypeHintsEnabled
@@ -189,7 +185,6 @@ type internal FSharpWorkspaceServiceFactory [<Composition.ImportingConstructor>]
                                         enableBackgroundItemKeyStoreAndSemanticClassification,
                                     enablePartialTypeChecking = enablePartialTypeChecking,
                                     parallelReferenceResolution = enableParallelReferenceResolution,
-                                    reuseTypecheckingResults = reuseTypecheckingResults,
                                     captureIdentifiersWhenParsing = enableFastFindReferences,
                                     documentSource =
                                         (if enableLiveBuffers then

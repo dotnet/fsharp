@@ -945,7 +945,6 @@ type ProjectWorkflowBuilder
         ?useGetSource,
         ?useChangeNotifications,
         ?useTransparentCompiler,
-        ?reuseTypecheckingResults,
         ?runTimeout,
         ?autoStart,
         ?isExistingProject,
@@ -973,7 +972,6 @@ type ProjectWorkflowBuilder
                 enablePartialTypeChecking = defaultArg enablePartialTypeChecking true,
                 captureIdentifiersWhenParsing = true,
                 documentSource = (if useGetSource then DocumentSource.Custom getSource else DocumentSource.FileSystem),
-                reuseTypecheckingResults = defaultArg reuseTypecheckingResults false,
                 useTransparentCompiler = useTransparentCompiler
             ))
 

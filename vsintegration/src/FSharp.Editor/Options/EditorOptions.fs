@@ -92,7 +92,6 @@ type LanguageServicePerformanceOptions =
         KeepAllBackgroundResolutions: bool
         KeepAllBackgroundSymbolUses: bool
         EnableBackgroundItemKeyStoreAndSemanticClassification: bool
-        ReuseTypecheckingResults: bool
     }
 
     static member Default =
@@ -107,7 +106,6 @@ type LanguageServicePerformanceOptions =
             KeepAllBackgroundResolutions = false
             KeepAllBackgroundSymbolUses = false
             EnableBackgroundItemKeyStoreAndSemanticClassification = true
-            ReuseTypecheckingResults = false
         }
 
 [<CLIMutable>]

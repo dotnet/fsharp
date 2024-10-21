@@ -264,7 +264,6 @@ type internal BackgroundCompiler
         enableBackgroundItemKeyStoreAndSemanticClassification,
         enablePartialTypeChecking,
         parallelReferenceResolution,
-        reuseTypecheckingResults,
         captureIdentifiersWhenParsing,
         getSource: (string -> Async<ISourceText option>) option,
         useChangeNotifications
@@ -401,7 +400,6 @@ type internal BackgroundCompiler
                     enablePartialTypeChecking,
                     dependencyProvider,
                     parallelReferenceResolution,
-                    reuseTypecheckingResults,
                     captureIdentifiersWhenParsing,
                     getSource,
                     useChangeNotifications

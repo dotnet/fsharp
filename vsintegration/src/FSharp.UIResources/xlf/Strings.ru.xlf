@@ -132,11 +132,6 @@
         <target state="translated">Удалите ненужные круглые скобки (экспериментально, может повлиять на производительность набора текста)</target>
         <note />
       </trans-unit>
-      <trans-unit id="Reuse_typechecking_results">
-        <source>Cache typechecking results (experimental)</source>
-        <target state="new">Cache typechecking results (experimental)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Send_Additional_Telemetry">
         <source>Send additional performance telemetry</source>
         <target state="translated">Отправить дополнительные диагностические данные о производительности</target>
