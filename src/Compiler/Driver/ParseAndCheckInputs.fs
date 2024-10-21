@@ -1989,7 +1989,8 @@ let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs =
             (idx, friendlyFileName))
         |> Graph.asString
 
-    let thisTcData = $"{tcConfig.cmdLineArgs}{nl}{nl}{graph}"
+    let cmdLineArgsString = tcConfig.cmdLineArgs |> String.concat " "
+    let thisTcData = $"{cmdLineArgsString}{nl}{nl}{graph}"
 
     if FileSystem.FileExistsShim tcDataFileName then
         use tcDataFile = FileSystem.OpenFileForReadShim tcDataFileName

@@ -768,7 +768,8 @@ type internal TransparentCompiler
                     defaultCopyFSharpCore = CopyFSharpCoreFlag.No,
                     tryGetMetadataSnapshot = tryGetMetadataSnapshot,
                     sdkDirOverride = sdkDirOverride,
-                    rangeForErrors = range0
+                    rangeForErrors = range0,
+                    cmdLineArgs = commandLineArgs
                 )
 
             tcConfigB.primaryAssembly <-

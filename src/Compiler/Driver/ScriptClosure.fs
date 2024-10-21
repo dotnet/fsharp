@@ -176,7 +176,8 @@ module ScriptPreprocessClosure =
                 CopyFSharpCoreFlag.No,
                 tryGetMetadataSnapshot,
                 sdkDirOverride,
-                rangeForErrors
+                rangeForErrors,
+                [] // todo
             )
 
         let primaryAssembly =

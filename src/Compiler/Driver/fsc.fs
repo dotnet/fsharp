@@ -510,10 +510,10 @@ let main1
             defaultCopyFSharpCore = defaultCopyFSharpCore,
             tryGetMetadataSnapshot = tryGetMetadataSnapshot,
             sdkDirOverride = None,
-            rangeForErrors = range0
+            rangeForErrors = range0,
+            cmdLineArgs = argv
         )
 
-    tcConfigB.cmdLineArgs <- argv |> String.concat " "
     tcConfigB.exiter <- exiter
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)

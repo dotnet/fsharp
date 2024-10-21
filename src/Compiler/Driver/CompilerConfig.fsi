@@ -533,7 +533,7 @@ type TcConfigBuilder =
 
         mutable realsig: bool
 
-        mutable cmdLineArgs: string
+        cmdLineArgs: string seq
     }
 
     static member CreateNew:
@@ -546,7 +546,8 @@ type TcConfigBuilder =
         defaultCopyFSharpCore: CopyFSharpCoreFlag *
         tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot *
         sdkDirOverride: string option *
-        rangeForErrors: range ->
+        rangeForErrors: range *
+        cmdLineArgs: string seq ->
             TcConfigBuilder
 
     member DecideNames: string list -> string * string option * string
@@ -915,7 +916,7 @@ type TcConfig =
 
     member realsig: bool
 
-    member cmdLineArgs: string
+    member cmdLineArgs: string seq
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
 /// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.

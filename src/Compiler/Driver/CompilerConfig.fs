@@ -628,7 +628,7 @@ type TcConfigBuilder =
 
         mutable realsig: bool
 
-        mutable cmdLineArgs: string
+        cmdLineArgs: string seq
     }
 
     // Directories to start probing in
@@ -665,7 +665,8 @@ type TcConfigBuilder =
             defaultCopyFSharpCore,
             tryGetMetadataSnapshot,
             sdkDirOverride,
-            rangeForErrors
+            rangeForErrors,
+            cmdLineArgs
         ) =
 
         let defaultFSharpBinariesDir =
@@ -844,7 +845,7 @@ type TcConfigBuilder =
             dumpSignatureData = false
             realsig = false
             strictIndentation = None
-            cmdLineArgs = ""
+            cmdLineArgs = cmdLineArgs
         }
 
     member tcConfigB.FxResolver =

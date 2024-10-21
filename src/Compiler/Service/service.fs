@@ -623,7 +623,8 @@ type FSharpChecker
                 defaultCopyFSharpCore = CopyFSharpCoreFlag.No,
                 tryGetMetadataSnapshot = tryGetMetadataSnapshot,
                 sdkDirOverride = None,
-                rangeForErrors = range0
+                rangeForErrors = range0,
+                cmdLineArgs = argv
             )
 
         // These defines are implied by the F# compiler
