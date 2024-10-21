@@ -17,6 +17,11 @@
         <target state="translated">Добавить отсутствующий параметр экземплярного элемента</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddMissingSeq">
+        <source>Add missing 'seq'</source>
+        <target state="new">Add missing 'seq'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">Добавить ключевое слово "new"</target>

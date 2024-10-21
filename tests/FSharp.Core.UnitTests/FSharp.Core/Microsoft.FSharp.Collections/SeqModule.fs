@@ -39,8 +39,8 @@ type SeqModule() =
 
         // empty Seq
         VerifySeqsEqual Seq.empty <| Seq.allPairs Seq.empty Seq.empty
-        VerifySeqsEqual Seq.empty <| Seq.allPairs { 1..7 } Seq.empty
-        VerifySeqsEqual Seq.empty <| Seq.allPairs Seq.empty { 1..7 }
+        VerifySeqsEqual Seq.empty <| Seq.allPairs (seq { 1..7 }) Seq.empty
+        VerifySeqsEqual Seq.empty <| Seq.allPairs Seq.empty (seq { 1..7 })
 
         // null Seq
         CheckThrowsArgumentNullException(fun() -> Seq.allPairs null null |> ignore)
@@ -349,9 +349,9 @@ type SeqModule() =
             |> Seq.iter ((<||) VerifySeqsEqual)
 
         // int Seq
-        verify [[1..4];[5..8]] <| Seq.chunkBySize 4 {1..8}
-        verify [[1..4];[5..8];[9..10]] <| Seq.chunkBySize 4 {1..10}
-        verify [[1]; [2]; [3]; [4]] <| Seq.chunkBySize 1 {1..4}
+        verify [[1..4];[5..8]] <| Seq.chunkBySize 4 (seq {1..8})
+        verify [[1..4];[5..8];[9..10]] <| Seq.chunkBySize 4 (seq {1..10})
+        verify [[1]; [2]; [3]; [4]] <| Seq.chunkBySize 1 (seq {1..4})
 
         Seq.chunkBySize 2 (Seq.initInfinite id)
         |> Seq.take 3
@@ -372,8 +372,8 @@ type SeqModule() =
         CheckThrowsArgumentNullException (fun () -> Seq.chunkBySize 3 nullSeq |> ignore)
 
         // invalidArg
-        CheckThrowsArgumentException (fun () -> Seq.chunkBySize 0 {1..10} |> ignore)
-        CheckThrowsArgumentException (fun () -> Seq.chunkBySize -1 {1..10} |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.chunkBySize 0 (seq {1..10}) |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.chunkBySize -1 (seq {1..10}) |> ignore)
 
         ()
 
@@ -385,12 +385,12 @@ type SeqModule() =
             |> Seq.iter ((<||) VerifySeqsEqual)
 
         // int Seq
-        Seq.splitInto 3 {1..10} |> verify (seq [ {1..4}; {5..7}; {8..10} ])
-        Seq.splitInto 3 {1..11} |> verify (seq [ {1..4}; {5..8}; {9..11} ])
-        Seq.splitInto 3 {1..12} |> verify (seq [ {1..4}; {5..8}; {9..12} ])
+        Seq.splitInto 3 (seq {1..10}) |> verify (seq [ seq {1..4}; seq {5..7}; seq {8..10} ])
+        Seq.splitInto 3 (seq {1..11}) |> verify (seq [ seq {1..4}; seq {5..8}; seq {9..11} ])
+        Seq.splitInto 3 (seq {1..12}) |> verify (seq [ seq {1..4}; seq {5..8}; seq {9..12} ])
 
-        Seq.splitInto 4 {1..5} |> verify (seq [ [1..2]; [3]; [4]; [5] ])
-        Seq.splitInto 20 {1..4} |> verify (seq [ [1]; [2]; [3]; [4] ])
+        Seq.splitInto 4 (seq {1..5}) |> verify (seq [ [1..2]; [3]; [4]; [5] ])
+        Seq.splitInto 20 (seq {1..4}) |> verify (seq [ [1]; [2]; [3]; [4] ])
 
         // string Seq
         Seq.splitInto 3 ["a";"b";"c";"d";"e"] |> verify ([ ["a"; "b"]; ["c";"d"]; ["e"] ])
@@ -586,10 +586,10 @@ type SeqModule() =
     [<Fact>]
     member _.Except() =
         // integer Seq
-        let intSeq1 = seq { yield! {1..100}
-                            yield! {1..100} }
-        let intSeq2 = {1..10}
-        let expectedIntSeq = {11..100}
+        let intSeq1 = seq { yield! seq {1..100}
+                            yield! seq {1..100} }
+        let intSeq2 = seq {1..10}
+        let expectedIntSeq = seq {11..100}
 
         VerifySeqsEqual expectedIntSeq <| Seq.except intSeq2 intSeq1
 
@@ -609,7 +609,7 @@ type SeqModule() =
 
         // empty Seq
         let emptyIntSeq = Seq.empty<int>
-        VerifySeqsEqual {1..100} <| Seq.except emptyIntSeq intSeq1
+        VerifySeqsEqual (seq {1..100}) <| Seq.except emptyIntSeq intSeq1
         VerifySeqsEqual emptyIntSeq <| Seq.except intSeq1 emptyIntSeq
         VerifySeqsEqual emptyIntSeq <| Seq.except emptyIntSeq emptyIntSeq
         VerifySeqsEqual emptyIntSeq <| Seq.except intSeq1 intSeq1

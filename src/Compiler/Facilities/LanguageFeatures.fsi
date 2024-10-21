@@ -86,6 +86,7 @@ type LanguageFeature =
     | EmptyBodiedComputationExpressions
     | AllowObjectExpressionWithoutOverrides
     | WarnOnUppercaseIdentifiersInPatterns
+    | DeprecatePlacesWhereSeqCanBeOmitted
 
 /// LanguageVersion management
 type LanguageVersion =
