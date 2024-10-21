@@ -996,7 +996,10 @@ module SyntaxTraversal =
 
                         |> pick x
                 | ok -> ok
-            | SynMemberDefn.Inherit(synType, _identOption, range, _) -> traverseInherit (synType, range)
+            | SynMemberDefn.Inherit(synType, _identOption, range, _) ->
+                match synType with
+                | Some synType -> traverseInherit (synType, range)
+                | None -> None
             | SynMemberDefn.ValField _ -> None
             | SynMemberDefn.NestedType(synTypeDefn, _synAccessOption, _range) -> traverseSynTypeDefn path synTypeDefn
 
