@@ -2240,10 +2240,8 @@ module ParsedInput =
             | SynMemberDefn.Interface(interfaceType = t; members = members) ->
                 walkType t
                 members |> Option.iter (List.iter walkMember)
-            | SynMemberDefn.Inherit(baseType = t) ->
-                match t with
-                | Some baseType -> walkType baseType
-                | None -> ()
+            | SynMemberDefn.Inherit(baseType = Some baseType) -> walkType baseType
+            | SynMemberDefn.Inherit(baseType = None) -> ()
             | SynMemberDefn.ValField(fieldInfo = field) -> walkField field
             | SynMemberDefn.NestedType(tdef, _, _) -> walkTypeDefn tdef
             | SynMemberDefn.AutoProperty(attributes = Attributes attrs; typeOpt = t; synExpr = e) ->
