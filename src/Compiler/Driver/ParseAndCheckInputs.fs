@@ -2015,7 +2015,6 @@ let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs =
         let thisCompilationGraph = getThisCompilationGraph()
         writeThisTcData thisCompilationCmdLine thisCompilationGraph
 
-
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
 
     if tcConfig.reuseTypecheckingResults = ReuseTypecheckingResults.On then
