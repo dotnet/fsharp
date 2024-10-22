@@ -1962,22 +1962,20 @@ let CheckMultipleInputsUsingGraphMode
         partialResults, tcState)
 
 let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs =
-    let tcDataFileName = FileSystem.GetFullPathShim "FSharpTypecheckingData"
-    let nl = Environment.NewLine
+    let getThisCompilationCmdLine() = tcConfig.cmdLineArgs |> String.concat " "
+    let getThisCompilationGraph() = 
+        let sourceFiles =
+            inputs
+            |> Seq.toArray
+            |> Array.mapi (fun idx (input: ParsedInput) ->
+                {
+                    Idx = idx
+                    FileName = input.FileName
+                    ParsedInput = input
+                })
 
-    let sourceFiles =
-        inputs
-        |> Seq.toArray
-        |> Array.mapi (fun idx (input: ParsedInput) ->
-            {
-                Idx = idx
-                FileName = input.FileName
-                ParsedInput = input
-            })
+        let filePairs = FilePairMap sourceFiles
 
-    let filePairs = FilePairMap sourceFiles
-
-    let graphString =
         DependencyResolution.mkGraph filePairs sourceFiles
         |> fst
         |> Graph.map (fun idx ->
@@ -1985,21 +1983,37 @@ let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs =
             idx, lastModified)
         |> Graph.asString
 
-    let cmdLineArgsString = tcConfig.cmdLineArgs |> String.concat " "
-    let thisTcData = $"{cmdLineArgsString}{nl}{nl}{graphString}"
+
+    let tcDataFileName = FileSystem.GetFullPathShim "FSharpTypecheckingData"
+    let nl = Environment.NewLine
 
     if FileSystem.FileExistsShim tcDataFileName then
         use tcDataFile = FileSystem.OpenFileForReadShim tcDataFileName
-        let existingTcData = tcDataFile.ReadAllText()
+        
+        let existingCmdLineArgsString = tcDataFile.ReadLines() |> Seq.head 
+        let thisCompilationCmdLine = getThisCompilationCmdLine()
 
-        if thisTcData = existingTcData then
-            () // do nothing, yet
+        if existingCmdLineArgsString = thisCompilationCmdLine then
+
+            let thisCompilationGraph = getThisCompilationGraph()
+            let existingCompilationGraph = tcDataFile.ReadAllLines() |> Seq.skip 1 |> String.concat ""
+
+            if thisCompilationGraph = existingCompilationGraph then
+                () // do nothing, yet
+            else
+                let thisTcData = $"{thisCompilationCmdLine}{nl}{nl}{thisCompilationGraph}"
+                tcDataFile.WriteAllText thisTcData
         else
-            use tcDataFile = FileSystem.OpenFileForWriteShim tcDataFileName
+            let thisCompilationGraph = getThisCompilationGraph()
+            let thisTcData = $"{thisCompilationCmdLine}{nl}{nl}{thisCompilationGraph}"
             tcDataFile.WriteAllText thisTcData
     else
         use tcDataFile = FileSystem.OpenFileForWriteShim tcDataFileName
+        let thisCompilationCmdLine = getThisCompilationCmdLine()
+        let thisCompilationGraph = getThisCompilationGraph()
+        let thisTcData = $"{thisCompilationCmdLine}{nl}{nl}{thisCompilationGraph}"
         tcDataFile.WriteAllText thisTcData
+
 
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
 
