@@ -1,5 +1,6 @@
 namespace FSharp.Compiler.GraphChecking
 
+open System
 open System.Collections.Generic
 
 /// A Directed Acyclic Graph (DAG) of arbitrary nodes.
@@ -26,4 +27,4 @@ module internal Graph =
     /// Create a simple Mermaid graph and save it under the path specified.
     val writeMermaidToFile: path: string -> graph: Graph<FileIndex * string> -> unit
     /// Serialize the graph to a string
-    val asString: graph: Graph<FileIndex> -> string
+    val asString: graph: Graph<FileIndex * DateTime> -> string

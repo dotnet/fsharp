@@ -1976,9 +1976,15 @@ let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs =
             })
 
     let filePairs = FilePairMap sourceFiles
-    let graph, _ = DependencyResolution.mkGraph filePairs sourceFiles
 
-    let graphString = Graph.asString graph
+    let graphString =
+        DependencyResolution.mkGraph filePairs sourceFiles
+        |> fst
+        |> Graph.map (fun idx ->
+            let lastModified = FileSystem.GetLastWriteTimeShim(sourceFiles[idx].FileName)
+            idx, lastModified)
+        |> Graph.asString
+
     let cmdLineArgsString = tcConfig.cmdLineArgs |> String.concat " "
     let thisTcData = $"{cmdLineArgsString}{nl}{nl}{graphString}"
 

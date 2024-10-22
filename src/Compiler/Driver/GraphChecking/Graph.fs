@@ -1,6 +1,7 @@
 ﻿namespace FSharp.Compiler.GraphChecking
 
 open System.Collections.Generic
+open System
 open System.IO
 open System.Text
 open FSharp.Compiler.IO
@@ -110,15 +111,15 @@ module internal Graph =
 
         graph |> serialiseToMermaid |> out.WriteAllText
 
-    let asString (graph: Graph<FileIndex>) =
+    let asString (graph: Graph<FileIndex * DateTime>) =
         let sb = StringBuilder()
         let appendLine (line: string) = sb.AppendLine(line) |> ignore
 
-        for KeyValue(idx, _) in graph do
-            appendLine $"%i{idx}"
+        for KeyValue((idx, dateTime), _) in graph do
+            appendLine $"    %i{idx}[\"%A{dateTime}\"]"
 
-        for KeyValue(idx, deps) in graph do
-            for depIdx in deps do
-                appendLine $"%i{idx} --> %i{depIdx}"
+        for KeyValue((idx, _), deps) in graph do
+            for depIdx, _ in deps do
+                appendLine $"    %i{idx} --> %i{depIdx}"
 
         sb.ToString()
