@@ -1962,7 +1962,10 @@ let CheckMultipleInputsUsingGraphMode
         partialResults, tcState)
 
 let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs =
+    let tcDataFileName = FileSystem.GetFullPathShim "FSharpTypecheckingData"
+    
     let getThisCompilationCmdLine() = tcConfig.cmdLineArgs |> String.concat " "
+
     let getThisCompilationGraph() = 
         let sourceFiles =
             inputs
@@ -1983,36 +1986,34 @@ let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs =
             idx, lastModified)
         |> Graph.asString
 
+    let writeThisTcData cmdLine graph = 
+        use tcDataFile = FileSystem.OpenFileForWriteShim tcDataFileName
+        let nl = Environment.NewLine
+        let thisTcData = $"{cmdLine}{nl}{nl}{graph}"
+        tcDataFile.WriteAllText thisTcData
 
-    let tcDataFileName = FileSystem.GetFullPathShim "FSharpTypecheckingData"
-    let nl = Environment.NewLine
 
     if FileSystem.FileExistsShim tcDataFileName then
         use tcDataFile = FileSystem.OpenFileForReadShim tcDataFileName
-        
-        let existingCmdLineArgsString = tcDataFile.ReadLines() |> Seq.head 
+        let lazyLines = tcDataFile.ReadLines()
+        let prevCompilationCmdLine = lazyLines |> Seq.tryHead 
         let thisCompilationCmdLine = getThisCompilationCmdLine()
-
-        if existingCmdLineArgsString = thisCompilationCmdLine then
-
+        
+        if prevCompilationCmdLine = Some thisCompilationCmdLine then
             let thisCompilationGraph = getThisCompilationGraph()
-            let existingCompilationGraph = tcDataFile.ReadAllLines() |> Seq.skip 1 |> String.concat ""
-
-            if thisCompilationGraph = existingCompilationGraph then
+            let prevCompilationGraph = lazyLines |> Seq.tail |> String.concat ""
+        
+            if thisCompilationGraph = prevCompilationGraph then
                 () // do nothing, yet
             else
-                let thisTcData = $"{thisCompilationCmdLine}{nl}{nl}{thisCompilationGraph}"
-                tcDataFile.WriteAllText thisTcData
+                writeThisTcData thisCompilationCmdLine thisCompilationGraph
         else
             let thisCompilationGraph = getThisCompilationGraph()
-            let thisTcData = $"{thisCompilationCmdLine}{nl}{nl}{thisCompilationGraph}"
-            tcDataFile.WriteAllText thisTcData
+            writeThisTcData thisCompilationCmdLine thisCompilationGraph
     else
-        use tcDataFile = FileSystem.OpenFileForWriteShim tcDataFileName
         let thisCompilationCmdLine = getThisCompilationCmdLine()
         let thisCompilationGraph = getThisCompilationGraph()
-        let thisTcData = $"{thisCompilationCmdLine}{nl}{nl}{thisCompilationGraph}"
-        tcDataFile.WriteAllText thisTcData
+        writeThisTcData thisCompilationCmdLine thisCompilationGraph
 
 
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
