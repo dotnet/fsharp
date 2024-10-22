@@ -19,7 +19,7 @@
 // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- 
+
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 // Don't warn about the resumable code invocation
@@ -467,8 +467,8 @@ module CancellableTasks =
         // Low priority extensions
         type CancellableTaskBuilderBase with
 
-            [<NoEagerConstraintApplication>]            
-            member inline _.Source(awaiter: CancellableTask<unit array>) = 
+            [<NoEagerConstraintApplication>]
+            member inline _.Source(awaiter: CancellableTask<unit array>) =
                 (fun (token) -> (awaiter token :> Task).GetAwaiter())
 
             /// <summary>
@@ -611,10 +611,10 @@ module CancellableTasks =
                     fun sm ->
                         if __useResumableCode then
                             sm.Data.ThrowIfCancellationRequested()
-                            
+
                             let mutable awaiter = getAwaiter
                             let mutable __stack_fin = true
-                            
+
                             if not (Awaiter.isCompleted awaiter) then
                                 let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
                                 __stack_fin <- __stack_yield_fin
@@ -706,7 +706,7 @@ module CancellableTasks =
                 (task: 'Awaitable)
                 : 'Awaiter =
                     Awaitable.getAwaiter task
-                
+
 
             /// <summary>Allows the computation expression to turn other types into CancellationToken -> 'Awaiter</summary>
             ///
@@ -1118,6 +1118,14 @@ module CancellableTasks =
             }
 
         let inline ignore ([<InlineIfLambda>] ctask: CancellableTask<_>) = toUnit ctask
+
+        let inline ifCanceledReturn value (ctask : CancellableTask<_>) =
+            cancellableTask {
+                try
+                    return! ctask
+                with :? OperationCanceledException ->
+                    return value
+            }
 
     /// <exclude />
     [<AutoOpen>]
