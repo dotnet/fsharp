@@ -14,16 +14,18 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <CheckNulls>true</CheckNulls>
-	<!-- Nullness checking against ns20 base class libraries is very weak, the APIs were not updated with annotations. 
-	     Therefore we want to use the latest BCL APIs from NetCurrent.
-		 We are still not building the actual product in NetCurrent, so for official builds we remain as ns2.0.
-		 For 'BUILDING_USING_DOTNET' builds, we still want latest BCL annotations, so that contributors can get related warnings locally.
 
-     OSX and Linux has problems with Xliff targets for net9, skipping via SKIP_NETCURRENT_FSC_BUILD until resolved ( The target "UpdateXlf" does not exist in the project.)
-	-->
+    <!--
+        Nullness checking against ns20 base class libraries is very weak, the APIs were not updated with annotations. 
+        Therefore we want to use the latest BCL APIs from NetCurrent.
+        We are still not building the actual product in NetCurrent, so for official builds we remain as ns2.0.
+        For 'BUILDING_USING_DOTNET' builds, we still want latest BCL annotations, so that contributors can get related warnings locally.
+
+        OSX and Linux has problems with Xliff targets for net9, skipping via SKIP_NETCURRENT_FSC_BUILD until resolved ( The target "UpdateXlf" does not exist in the project.)
+    -->
     <TargetFrameworks Condition=" '$(OfficialBuildId)' == '' AND '$(FSharpNetCoreProductDefaultTargetFramework)' != '' AND '$(Configuration)' != 'Proto' AND '$(SKIP_NETCURRENT_FSC_BUILD)' != 'true' ">$(FSharpNetCoreProductDefaultTargetFramework);$(TargetFrameworks)</TargetFrameworks>
     <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);FSHARPCORE_USE_PACKAGE</DefineConstants>
-    <OtherFlags>$(OtherFlags) --extraoptimizationloops:1</OtherFlags>
+    <OtherFlags>$(OtherFlags) --extraoptimizationloops:1 --realsig-</OtherFlags>
 
     <!-- TODO: This needs to be re-enabled once we merge/release the new SDK with noward and line fixes. -->
     <!-- 1182: Unused variables -->
@@ -33,9 +35,9 @@
     <OtherFlags>$(OtherFlags) --warnon:3218</OtherFlags>
     <!-- 3390: xmlDocBadlyFormed -->
     <OtherFlags>$(OtherFlags) --warnon:3390</OtherFlags>
-	<!-- generate IL filter blocks in order to prevent StackOverFlowException in TcExpr guarded with |RecoverableException| active pattern-->
+    <!-- generate IL filter blocks in order to prevent StackOverFlowException in TcExpr guarded with |RecoverableException| active pattern-->
     <OtherFlags>$(OtherFlags) --generate-filter-blocks</OtherFlags>
-	<Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
+    <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>
     <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>

@@ -1830,10 +1830,15 @@ let MakeAndPublishSimpleValsForMergedScope (cenv: cenv) env m (names: NameMap<_>
 let FreshenTyconRef (g: TcGlobals) m rigid (tcref: TyconRef) declaredTyconTypars =
     let origTypars = declaredTyconTypars
     let clearStaticReq = g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers
-    let freshTypars = copyTypars clearStaticReq origTypars
-    if rigid <> TyparRigidity.Rigid then
-        for tp in freshTypars do
-            tp.SetRigidity rigid
+    let freshTypars =
+        if not g.realsig then
+            let typars = copyTypars clearStaticReq origTypars
+            if rigid <> TyparRigidity.Rigid then
+                for tp in typars do
+                    tp.SetRigidity rigid
+            typars
+        else
+            origTypars
 
     let renaming, tinst = FixupNewTypars m [] [] origTypars freshTypars
     let origTy = TType_app(tcref, List.map mkTyparTy origTypars, g.knownWithoutNull)

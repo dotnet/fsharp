@@ -633,9 +633,9 @@ module Utilities =
 /// as a cross-assembly reference.  Note the assembly has not been generated on disk, so this is
 /// a virtualized view of the assembly contents as computed by background checking.
 [<Sealed>]
-type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generatedCcu: CcuThunk, outfile, topAttrs, assemblyName, ilAssemRef) =
+type RawFSharpAssemblyDataBackedByLanguageService (tcConfig: TcConfig, tcGlobals, generatedCcu: CcuThunk, outfile, topAttrs, assemblyName, ilAssemRef) =
 
-    let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
+    let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents tcConfig.realsig
 
     let sigData =
         let _sigDataAttributes, sigDataResources = EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, true)
