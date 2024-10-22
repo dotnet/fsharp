@@ -1963,10 +1963,11 @@ let CheckMultipleInputsUsingGraphMode
 
 let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs =
     let tcDataFileName = FileSystem.GetFullPathShim "FSharpTypecheckingData"
-    
-    let getThisCompilationCmdLine() = tcConfig.cmdLineArgs |> String.concat " "
 
-    let getThisCompilationGraph() = 
+    let getThisCompilationCmdLine () =
+        tcConfig.cmdLineArgs |> String.concat " "
+
+    let getThisCompilationGraph () =
         let sourceFiles =
             inputs
             |> Seq.toArray
@@ -1986,33 +1987,33 @@ let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs =
             idx, lastModified)
         |> Graph.asString
 
-    let writeThisTcData cmdLine graph = 
+    let writeThisTcData cmdLine graph =
         use tcDataFile = FileSystem.OpenFileForWriteShim tcDataFileName
-        let nl = Environment.NewLine
-        let thisTcData = $"{cmdLine}{nl}{nl}{graph}"
+        let thisTcData = $"{cmdLine}{Environment.NewLine}{graph}"
         tcDataFile.WriteAllText thisTcData
 
-
     if FileSystem.FileExistsShim tcDataFileName then
-        use tcDataFile = FileSystem.OpenFileForReadShim tcDataFileName
-        let lazyLines = tcDataFile.ReadLines()
-        let prevCompilationCmdLine = lazyLines |> Seq.tryHead 
-        let thisCompilationCmdLine = getThisCompilationCmdLine()
-        
-        if prevCompilationCmdLine = Some thisCompilationCmdLine then
-            let thisCompilationGraph = getThisCompilationGraph()
-            let prevCompilationGraph = lazyLines |> Seq.tail |> String.concat ""
-        
-            if thisCompilationGraph = prevCompilationGraph then
+        use tcDataFileStream = FileSystem.OpenFileForReadShim tcDataFileName
+        let tcDataFileReader = tcDataFileStream.GetReader None
+        let prevCompilationCmdLine = tcDataFileReader.ReadLine()
+        let thisCompilationCmdLine = getThisCompilationCmdLine ()
+
+        if prevCompilationCmdLine = thisCompilationCmdLine then
+            let prevCompilationGraph = tcDataFileReader.ReadToEnd()
+            let thisCompilationGraph = getThisCompilationGraph ()
+
+            // extra new line is needed because WriteAllText adds a new line
+            // when writing the file to the disk
+            if prevCompilationGraph = thisCompilationGraph + Environment.NewLine then
                 () // do nothing, yet
             else
                 writeThisTcData thisCompilationCmdLine thisCompilationGraph
         else
-            let thisCompilationGraph = getThisCompilationGraph()
+            let thisCompilationGraph = getThisCompilationGraph ()
             writeThisTcData thisCompilationCmdLine thisCompilationGraph
     else
-        let thisCompilationCmdLine = getThisCompilationCmdLine()
-        let thisCompilationGraph = getThisCompilationGraph()
+        let thisCompilationCmdLine = getThisCompilationCmdLine ()
+        let thisCompilationGraph = getThisCompilationGraph ()
         writeThisTcData thisCompilationCmdLine thisCompilationGraph
 
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
