@@ -38,11 +38,7 @@ type ReuseTypecheckingResultsBenchmarks () =
 
     [<Benchmark>]
     member this.Compile() = 
-        try
-            let _ = this.Benchmark {
-                compileWithFSC 
-                compileWithFSC
-            }
-            true
-        with 
-            | :? StopProcessingExn -> false
+        this.Benchmark {
+            compileWithFSC 
+            compileWithFSC
+        }
