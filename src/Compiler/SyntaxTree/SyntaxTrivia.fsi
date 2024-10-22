@@ -522,6 +522,10 @@ type SynMemberDefnAbstractSlotTrivia =
 
     static member Zero: SynMemberDefnAbstractSlotTrivia
 
+/// Represents additional information for SynMemberDefn.Inherit
+[<NoEquality; NoComparison>]
+type SynMemberDefnInheritTrivia = { InheritKeyword: range }
+
 /// Represents additional information for SynField
 [<NoEquality; NoComparison>]
 type SynFieldTrivia =
