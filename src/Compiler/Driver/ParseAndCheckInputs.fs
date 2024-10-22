@@ -1987,8 +1987,7 @@ let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs =
         let existingTcData = tcDataFile.ReadAllText()
 
         if thisTcData = existingTcData then
-            // do nothing, yet
-            ()
+            () // do nothing, yet
         else
             use tcDataFile = FileSystem.OpenFileForWriteShim tcDataFileName
             tcDataFile.WriteAllText thisTcData
