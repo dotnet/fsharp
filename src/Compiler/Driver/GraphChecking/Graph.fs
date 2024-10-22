@@ -110,15 +110,15 @@ module internal Graph =
 
         graph |> serialiseToMermaid |> out.WriteAllText
 
-    let asString (graph: Graph<FileIndex * string>) =
+    let asString (graph: Graph<FileIndex>) =
         let sb = StringBuilder()
         let appendLine (line: string) = sb.AppendLine(line) |> ignore
 
-        for KeyValue((idx, fileName), _) in graph do
-            appendLine $"%i{idx}[\"%s{fileName}\"]"
+        for KeyValue(idx, _) in graph do
+            appendLine $"%i{idx}"
 
-        for KeyValue((idx, _), deps) in graph do
-            for depIdx, _depFileName in deps do
+        for KeyValue(idx, deps) in graph do
+            for depIdx in deps do
                 appendLine $"%i{idx} --> %i{depIdx}"
 
         sb.ToString()

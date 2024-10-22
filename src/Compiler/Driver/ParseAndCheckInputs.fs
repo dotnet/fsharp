@@ -1976,21 +1976,11 @@ let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs =
             })
 
     let filePairs = FilePairMap sourceFiles
-
-    let graph =
-        DependencyResolution.mkGraph filePairs sourceFiles
-        |> fst
-        |> Graph.map (fun idx ->
-            let friendlyFileName =
-                sourceFiles[idx]
-                    .FileName.Replace(tcConfig.implicitIncludeDir, "")
-                    .TrimStart([| '\\'; '/' |])
-
-            (idx, friendlyFileName))
-        |> Graph.asString
-
+    let graph, _ = DependencyResolution.mkGraph filePairs sourceFiles
+        
+    let graphString = Graph.asString
     let cmdLineArgsString = tcConfig.cmdLineArgs |> String.concat " "
-    let thisTcData = $"{cmdLineArgsString}{nl}{nl}{graph}"
+    let thisTcData = $"{cmdLineArgsString}{nl}{nl}{graphString}"
 
     if FileSystem.FileExistsShim tcDataFileName then
         use tcDataFile = FileSystem.OpenFileForReadShim tcDataFileName
