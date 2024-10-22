@@ -1119,11 +1119,14 @@ module CancellableTasks =
 
         let inline ignore ([<InlineIfLambda>] ctask: CancellableTask<_>) = toUnit ctask
 
+        /// If this CancellableTask gets canceled for another reason than the token being canceled, return the specified value.
         let inline ifCanceledReturn value (ctask : CancellableTask<_>) =
             cancellableTask {
+                let! ct = getCancellationToken ()
+
                 try
                     return! ctask
-                with :? OperationCanceledException ->
+                with :? OperationCanceledException when ct.IsCancellationRequested = false ->
                     return value
             }
 
