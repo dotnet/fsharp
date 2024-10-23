@@ -141,6 +141,7 @@
     <Compile Include="CodeFixes\RenameParamToMatchSignature.fs" />
     <Compile Include="CodeFixes\UseTripleQuotedInterpolation.fs" />
     <Compile Include="CodeFixes\RemoveUnnecessaryParentheses.fs" />
+    <Compile Include="CodeFixes\AddMissingSeq.fs" />
     <Compile Include="Build\SetGlobalPropertiesForSdkProjects.fs" />
     <Compile Include="AutomaticCompletion\BraceCompletionSessionProvider.fsi" />
     <Compile Include="AutomaticCompletion\BraceCompletionSessionProvider.fs" />
