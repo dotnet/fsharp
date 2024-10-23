@@ -266,8 +266,7 @@ type internal BackgroundCompiler
         parallelReferenceResolution,
         captureIdentifiersWhenParsing,
         getSource: (string -> Async<ISourceText option>) option,
-        useChangeNotifications,
-        useSyntaxTreeCache
+        useChangeNotifications
     ) as self =
 
     let beforeFileChecked = Event<string * FSharpProjectOptions>()
@@ -403,8 +402,7 @@ type internal BackgroundCompiler
                     parallelReferenceResolution,
                     captureIdentifiersWhenParsing,
                     getSource,
-                    useChangeNotifications,
-                    useSyntaxTreeCache
+                    useChangeNotifications
                 )
 
             match builderOpt with

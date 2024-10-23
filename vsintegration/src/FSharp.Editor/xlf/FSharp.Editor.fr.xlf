@@ -17,6 +17,11 @@
         <target state="translated">Ajouter un paramètre de membre d’instance manquant</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddMissingSeq">
+        <source>Add missing 'seq'</source>
+        <target state="new">Add missing 'seq'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">Ajouter le mot clé 'new'</target>
@@ -174,9 +179,8 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (restart required);
-Cache parsing results (experimental)</source>
-        <target state="translated">Options relatives aux performances de la mise en cache et des projets F#; 
+Enable fast find references &amp; rename (restart required)</source>
+        <target state="needs-review-translation">Options relatives aux performances de la mise en cache et des projets F#; 
 Activer les références de projet croisé en mémoire; 
 Enable_partial_type_checking;
 Options relatives aux performances d’IntelliSense; 

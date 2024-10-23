@@ -17,6 +17,11 @@
         <target state="translated">Fehlenden Instanzmemberparameter hinzufügen</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddMissingSeq">
+        <source>Add missing 'seq'</source>
+        <target state="new">Add missing 'seq'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">Schlüsselwort "new" hinzufügen</target>
@@ -174,9 +179,8 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (restart required);
-Cache parsing results (experimental)</source>
-        <target state="translated">Optionen zur F#-Projekt- und Cacheleistung;
+Enable fast find references &amp; rename (restart required)</source>
+        <target state="needs-review-translation">Optionen zur F#-Projekt- und Cacheleistung;
 Proj_ektübergreifende Verweise im Arbeitsspeicher aktivieren;
 Aktivieren der partiellen Typüberprüfung;
 Optionen zur IntelliSense-Leistung;

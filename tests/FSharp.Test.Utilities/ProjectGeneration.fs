@@ -944,7 +944,6 @@ type ProjectWorkflowBuilder
         ?checker: FSharpChecker,
         ?useGetSource,
         ?useChangeNotifications,
-        ?useSyntaxTreeCache,
         ?useTransparentCompiler,
         ?runTimeout,
         ?autoStart,
@@ -973,7 +972,6 @@ type ProjectWorkflowBuilder
                 enablePartialTypeChecking = defaultArg enablePartialTypeChecking true,
                 captureIdentifiersWhenParsing = true,
                 documentSource = (if useGetSource then DocumentSource.Custom getSource else DocumentSource.FileSystem),
-                useSyntaxTreeCache = defaultArg useSyntaxTreeCache false,
                 useTransparentCompiler = useTransparentCompiler
             ))
 
@@ -1362,9 +1360,8 @@ type ProjectWorkflowBuilder
                     yield! projectOptions.OtherOptions
                     yield! projectOptions.SourceFiles
                 |]
-            let! _diagnostics, exitCode = checker.Compile(arguments)
-            if exitCode <> 0 then
-                exn $"Compilation failed with exit code {exitCode}" |> raise
+            let! _diagnostics, ex = checker.Compile(arguments)
+            if ex.IsSome then raise ex.Value
             return ctx
         }
         

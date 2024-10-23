@@ -168,7 +168,7 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
 
         | SynExpr.ImplicitZero m -> Some(mkSeqEmpty cenv env m genOuterTy, tpenv)
 
-        | SynExpr.DoBang(_rhsExpr, m) -> error (Error(FSComp.SR.tcDoBangIllegalInSequenceExpression (), m))
+        | SynExpr.DoBang(trivia = { DoBangKeyword = m }) -> error (Error(FSComp.SR.tcDoBangIllegalInSequenceExpression (), m))
 
         | SynExpr.Sequential(sp, true, innerComp1, innerComp2, m, _) ->
             let env1 =
@@ -232,9 +232,10 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
         // 'use x = expr in expr'
         | SynExpr.LetOrUse(
             isUse = true
-            bindings = [ SynBinding(kind = SynBindingKind.Normal; headPat = pat; expr = rhsExpr; debugPoint = spBind) ]
+            bindings = [ SynBinding(kind = SynBindingKind.Normal; headPat = pat; expr = rhsExpr) ]
             body = innerComp
-            range = wholeExprMark) ->
+            range = wholeExprMark
+            trivia = { LetOrUseKeyword = mBind }) ->
 
             let bindPatTy = NewInferenceType g
             let inputExprTy = NewInferenceType g
@@ -251,11 +252,6 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
             let innerExpr, tpenv =
                 let envinner = { envinner with eIsControlFlow = true }
                 tcSequenceExprBody envinner genOuterTy tpenv innerComp
-
-            let mBind =
-                match spBind with
-                | DebugPointAtBinding.Yes m -> m.NoteSourceConstruct(NotedSourceConstruct.Binding)
-                | _ -> inputExpr.Range
 
             let inputExprMark = inputExpr.Range
 
@@ -353,43 +349,44 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
 
             Some(combinatorExpr, tpenv)
 
-        | SynExpr.YieldOrReturnFrom((isYield, _), synYieldExpr, m) ->
+        | SynExpr.YieldOrReturnFrom(flags = (isYield, _); expr = synYieldExpr; trivia = { YieldOrReturnFromKeyword = m }) ->
             let env = { env with eIsControlFlow = false }
             let resultExpr, genExprTy, tpenv = TcExprOfUnknownType cenv env tpenv synYieldExpr
 
             if not isYield then
                 errorR (Error(FSComp.SR.tcUseYieldBangForMultipleResults (), m))
 
-            AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace genOuterTy genExprTy
+            AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css synYieldExpr.Range NoTrace genOuterTy genExprTy
 
-            let resultExpr = mkCoerceExpr (resultExpr, genOuterTy, m, genExprTy)
+            let resultExpr =
+                mkCoerceExpr (resultExpr, genOuterTy, synYieldExpr.Range, genExprTy)
 
             let resultExpr =
                 if IsControlFlowExpression synYieldExpr then
                     resultExpr
                 else
-                    mkDebugPoint m resultExpr
+                    mkDebugPoint resultExpr.Range resultExpr
 
             Some(resultExpr, tpenv)
 
-        | SynExpr.YieldOrReturn((isYield, _), synYieldExpr, m) ->
+        | SynExpr.YieldOrReturn(flags = (isYield, _); expr = synYieldExpr; trivia = { YieldOrReturnKeyword = m }) ->
             let env = { env with eIsControlFlow = false }
             let genResultTy = NewInferenceType g
 
             if not isYield then
                 errorR (Error(FSComp.SR.tcSeqResultsUseYield (), m))
 
-            UnifyTypes cenv env m genOuterTy (mkSeqTy cenv.g genResultTy)
+            UnifyTypes cenv env synYieldExpr.Range genOuterTy (mkSeqTy cenv.g genResultTy)
 
             let resultExpr, tpenv = TcExprFlex cenv flex true genResultTy env tpenv synYieldExpr
 
-            let resultExpr = mkCallSeqSingleton cenv.g m genResultTy resultExpr
+            let resultExpr = mkCallSeqSingleton cenv.g synYieldExpr.Range genResultTy resultExpr
 
             let resultExpr =
                 if IsControlFlowExpression synYieldExpr then
                     resultExpr
                 else
-                    mkDebugPoint m resultExpr
+                    mkDebugPoint synYieldExpr.Range resultExpr
 
             Some(resultExpr, tpenv)
 

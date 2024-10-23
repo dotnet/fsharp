@@ -123,7 +123,14 @@ let ``Test project1 and make sure TcImports gets cleaned up`` () =
     let weakTcImports = test ()
     checker.InvalidateConfiguration Project1.options
     checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-    GC.Collect(2, GCCollectionMode.Forced, blocking = true)
+
+    //collect 2 more times for good measure,
+    // See for example: https://github.com/dotnet/runtime/discussions/108081
+    GC.Collect()
+    GC.WaitForPendingFinalizers()
+    GC.Collect()
+    GC.WaitForPendingFinalizers()
+
     Assert.False weakTcImports.IsAlive
 
 [<Fact>]
@@ -713,7 +720,7 @@ let ``Test project2 all symbols in signature`` () =
              "field x"; "field y"; "GenericClass`1"; "generic parameter T"; "member .ctor";
              "member GenericMethod"; "generic parameter U"] |> List.sort
 
-    shouldPairwiseEqual e r
+    shouldEqual e r
 
 [<Fact>]
 let ``Test project2 all uses of all signature symbols`` () =
@@ -5813,7 +5820,7 @@ let ``References from #r nuget are included in script project options`` () =
         |> Seq.choose (fun f -> f.FileName |> Option.map Path.GetFileName)
         |> Seq.distinct
     printfn "%s" (assemblyNames |> String.concat "\n")
-    assemblyNames |> should contain "Dapper.dll"
+    Assert.Contains("Dapper.dll", assemblyNames)
 
 module internal EmptyProject =
     let base2 = getTemporaryFileName ()
