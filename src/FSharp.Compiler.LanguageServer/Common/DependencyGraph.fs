@@ -29,6 +29,7 @@ type IDependencyGraph<'Id, 'Val when 'Id: equality> =
     abstract member AddDependency: node: 'Id * dependsOn: 'Id -> unit
     abstract member RemoveDependency: node: 'Id * noLongerDependsOn: 'Id -> unit
     abstract member UpdateNode: id: 'Id * update: ('Val -> 'Val) -> unit
+    abstract member RemoveNode: id: 'Id -> unit
     abstract member Debug_GetNodes: ('Id -> bool) -> DependencyNode<'Id, 'Val> seq
     abstract member Debug_RenderMermaid : unit -> string
 
@@ -97,12 +98,12 @@ module Internal =
 
             graphBuilder (nodes |> Seq.map fst)
 
-        member this.AddOrUpdateNode(id: 'Id, dependsOn: 'Id seq, value: 'Val seq -> 'Val) =
+        member this.AddOrUpdateNode(id: 'Id, dependsOn: 'Id seq, compute: 'Val seq -> 'Val) =
             addNode
                 {
                     Id = id
                     Value = None
-                    Compute = value
+                    Compute = compute
                 }
 
             match dependencies.TryGetValue id with
@@ -166,6 +167,37 @@ module Internal =
             |> update
             |> fun value -> this.AddOrUpdateNode(id, value) |> ignore
 
+        member this.RemoveNode(id: 'Id) =
+
+            match nodes.TryGetValue id with
+            | true, _ ->
+                // Remove the node from the nodes dictionary
+                nodes.Remove id |> ignore
+
+                // Remove the node from dependencies and update dependents
+                match dependencies.TryGetValue id with
+                | true, deps ->
+                    for dep in deps do
+                        match dependents.TryGetValue dep with
+                        | true, set -> set.Remove id |> ignore
+                        | false, _ -> ()
+                    dependencies.Remove id |> ignore
+                | false, _ -> ()
+
+                // Remove the node from dependents and update dependencies
+                match dependents.TryGetValue id with
+                | true, deps ->
+                    for dep in deps do
+                        match dependencies.TryGetValue dep with
+                        | true, set -> set.Remove id |> ignore
+                        | false, _ -> ()
+                    dependents.Remove id |> ignore
+                | false, _ -> ()
+
+                // Invalidate dependents of the removed node
+                invalidateDependents id
+            | false, _ -> ()
+
         member this.Debug_GetNodes(predicate: 'Id -> bool): DependencyNode<'Id,'Val> seq =
             nodes.Values |> Seq.filter (fun node -> predicate node.Id)
 
@@ -208,6 +240,7 @@ module Internal =
                 self.RemoveDependency(node, noLongerDependsOn)
 
             member _.UpdateNode(id, update) = self.UpdateNode(id, update)
+            member _.RemoveNode(id) = self.RemoveNode(id)
 
             member _.Debug_RenderMermaid() = self.Debug_RenderMermaid()
 
@@ -260,6 +293,9 @@ type LockOperatedDependencyGraph<'Id, 'Val when 'Id: equality and 'Id: not null>
         member _.UpdateNode(id, update) =
             lock lockObj (fun () -> graph.UpdateNode(id, update))
 
+        member _.RemoveNode(id) =
+            lock lockObj (fun () -> graph.RemoveNode(id))
+
         member _.RemoveDependency(node, noLongerDependsOn) =
             lock lockObj (fun () -> graph.RemoveDependency(node, noLongerDependsOn))
 
@@ -270,7 +306,6 @@ type LockOperatedDependencyGraph<'Id, 'Val when 'Id: equality and 'Id: not null>
 
         member _.Debug_RenderMermaid() =
             lock lockObj (fun () -> graph.Debug_RenderMermaid())
-
 
 
 [<Extension>]

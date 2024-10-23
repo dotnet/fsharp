@@ -518,12 +518,15 @@ and [<NoComparison; CustomEquality; Experimental("This FCS API is experimental a
 /// An identifier of an F# project. This serves to identify the same project as it changes over time and enables us to clear obsolete data from caches.
 and [<Experimental("This FCS API is experimental and subject to change.")>] FSharpProjectIdentifier =
     | FSharpProjectIdentifier of projectFileName: string * outputFileName: string
+
     member this.OutputFileName =
         match this with
         | FSharpProjectIdentifier(_, outputFileName) -> outputFileName
+
     member this.ProjectFileName =
         match this with
         | FSharpProjectIdentifier(projectFileName, _) -> projectFileName
+
     override this.ToString() =
         $"F#PID {shortPath this.ProjectFileName}"
 

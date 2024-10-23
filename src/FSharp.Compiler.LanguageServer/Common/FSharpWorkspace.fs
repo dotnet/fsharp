@@ -22,6 +22,7 @@ type internal WorkspaceNodeKey =
     | ProjectCore of FSharpProjectIdentifier
     | ProjectBase of FSharpProjectIdentifier
     | ProjectSnapshot of FSharpProjectIdentifier
+
     override this.ToString() =
         match this with
         | SourceFile path -> $"File {shortPath path}"
@@ -64,7 +65,6 @@ module internal WorkspaceNode =
         match value with
         | WorkspaceNodeValue.ReferenceOnDisk r -> Some r
         | _ -> None
-
 
 /// This type holds the current state of an F# workspace (or, solution). It's mutable but thread-safe. It accepts updates to the state and can provide immutable snapshots of contained F# projects. The state can be built up incrementally by adding projects and dependencies between them.
 type FSharpWorkspace() =
@@ -245,8 +245,7 @@ type FSharpWorkspace() =
                 depGraph.RemoveDependency(
                     WorkspaceNodeKey.ProjectCore project,
                     noLongerDependsOn = WorkspaceNodeKey.ReferenceOnDisk reference.OutputFileName
-                ))
-            )
+                )))
 
     member _.GetSnapshotForFile(file: Uri) =
         depGraph.Transact(fun depGraph ->
