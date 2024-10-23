@@ -17,6 +17,11 @@
         <target state="translated">Adicionar parâmetro de membro de instância ausente</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddMissingSeq">
+        <source>Add missing 'seq'</source>
+        <target state="new">Add missing 'seq'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">Adicionar a palavra-chave 'new'</target>

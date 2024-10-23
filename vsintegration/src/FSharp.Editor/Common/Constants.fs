@@ -208,3 +208,6 @@ module internal CodeFix =
 
     [<Literal>]
     let RemoveUnnecessaryParentheses = "RemoveUnnecessaryParentheses"
+
+    [<Literal>]
+    let AddMissingSeq = "AddMissingSeq"
