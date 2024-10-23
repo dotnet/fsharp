@@ -32,6 +32,7 @@ type IDependencyGraph<'Id, 'Val when 'Id: equality> =
     abstract member RemoveNode: id: 'Id -> unit
     abstract member Debug_GetNodes: ('Id -> bool) -> DependencyNode<'Id, 'Val> seq
     abstract member Debug_RenderMermaid : unit -> string
+    abstract member OnWarning: (string -> unit) -> unit
 
 and IThreadSafeDependencyGraph<'Id, 'Val when 'Id: equality> =
     inherit IDependencyGraph<'Id, 'Val>
@@ -50,6 +51,7 @@ module Internal =
         let nodes = Dictionary<'Id, DependencyNode<'Id, 'Val>>()
         let dependencies = Dictionary<'Id, HashSet<'Id>>()
         let dependents = Dictionary<'Id, HashSet<'Id>>()
+        let warningSubscribers = ResizeArray()
 
         let graphBuilder = defaultArg graphBuilder (fun x -> (GraphBuilder(self, x)))
 
@@ -171,6 +173,9 @@ module Internal =
 
             match nodes.TryGetValue id with
             | true, _ ->
+                // Invalidate dependents of the removed node
+                invalidateDependents id
+
                 // Remove the node from the nodes dictionary
                 nodes.Remove id |> ignore
 
@@ -193,9 +198,6 @@ module Internal =
                         | false, _ -> ()
                     dependents.Remove id |> ignore
                 | false, _ -> ()
-
-                // Invalidate dependents of the removed node
-                invalidateDependents id
             | false, _ -> ()
 
         member this.Debug_GetNodes(predicate: 'Id -> bool): DependencyNode<'Id,'Val> seq =
@@ -221,6 +223,9 @@ module Internal =
 
             $"```mermaid\n\ngraph TD\n\n{content}\n\n```"
 
+        member _.OnWarning(f) =
+            warningSubscribers.Add f |> ignore
+
 
         interface IDependencyGraph<'Id, 'Val> with
 
@@ -242,7 +247,10 @@ module Internal =
             member _.UpdateNode(id, update) = self.UpdateNode(id, update)
             member _.RemoveNode(id) = self.RemoveNode(id)
 
+            member _.OnWarning f = self.OnWarning f
+
             member _.Debug_RenderMermaid() = self.Debug_RenderMermaid()
+
 
 
     and GraphBuilder<'Id, 'Val when 'Id: equality> internal (graph: IDependencyGraph<'Id, 'Val>, ids: 'Id seq) =
@@ -300,6 +308,8 @@ type LockOperatedDependencyGraph<'Id, 'Val when 'Id: equality and 'Id: not null>
             lock lockObj (fun () -> graph.RemoveDependency(node, noLongerDependsOn))
 
         member _.Transact(f) = lock lockObj (fun () -> f graph)
+
+        member _.OnWarning(f) = lock lockObj (fun () -> graph.OnWarning f)
 
         member _.Debug_GetNodes(predicate) =
             lock lockObj (fun () -> graph.Debug_GetNodes(predicate))

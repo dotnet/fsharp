@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Packaging;
 using System.IO.Pipelines;
 using System.Linq;
 using System.Threading;
@@ -172,6 +173,30 @@ internal class VsDiagnosticsHandler
 }
 
 
+internal class SubscribeObserver : IObserver<IQueryResults<ISolutionSnapshot>>
+{
+    public void OnCompleted()
+    {
+
+    }
+
+    public void OnError(Exception error)
+    {
+    }
+
+    public void OnNext(IQueryResults<ISolutionSnapshot> value)
+    {
+        var _x = 5;
+
+    }
+
+    public override int GetHashCode()
+    {
+        return 7;
+    }
+}
+
+
 [VisualStudioContribution]
 internal class FSharpLanguageServerProvider : LanguageServerProvider
 {
@@ -214,7 +239,6 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
                 .With(r => r.ReferenceType))
 
             .With(p => new { p.ActiveConfigurations, p.Id, p.Guid }), cancellationToken);
-
 
         var workspace = new FSharpWorkspace();
 
@@ -327,6 +351,22 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
         });
 
         workspace.Debug_DumpMermaid("D:\\code\\fsharp\\dep-graph.md");
+
+
+        var solutions = await ws.QuerySolutionAsync(
+    solution => solution.With(solution => solution.FileName),
+    cancellationToken);
+
+        var singleSolution = solutions.FirstOrDefault();
+
+        if (singleSolution != null)
+        {
+            var unsubscriber = await singleSolution
+                .AsQueryable()
+                .With(p => p.Projects.With(p => p.Files))
+                .SubscribeAsync(new SubscribeObserver(), CancellationToken.None);
+        }
+
 
         return new DuplexPipe(
             PipeReader.Create(clientStream),
