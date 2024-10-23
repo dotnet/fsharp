@@ -65,6 +65,8 @@ module internal WorkspaceNode =
         | WorkspaceNodeValue.ReferenceOnDisk r -> Some r
         | _ -> None
 
+
+/// This type holds the current state of an F# workspace (or, solution). It's mutable but thread-safe. It accepts updates to the state and can provide immutable snapshots of contained F# projects. The state can be built up incrementally by adding projects and dependencies between them.
 type FSharpWorkspace() =
 
     let depGraph = LockOperatedDependencyGraph() :> IThreadSafeDependencyGraph<_, _>
@@ -77,10 +79,9 @@ type FSharpWorkspace() =
                 depGraph.Debug_GetNodes (function
                     | WorkspaceNodeKey.ProjectSnapshot _ -> true
                     | _ -> false)
-
         |}
 
-    member this.Debug_DumpMermaid(path) =
+    member internal this.Debug_DumpMermaid(path) =
         let content = depGraph.Debug_RenderMermaid()
         File.WriteAllText(path, content)
 
@@ -113,6 +114,7 @@ type FSharpWorkspace() =
 
         this
 
+    /// Adds an F# project to the workspace. The project is identified path to the .fsproj file and output path. The compiler arguments are used to build the project's snapshot.
     member _.AddCommandLineArgs(projectPath: string, outputPath: string | null, compilerArgs: string seq) =
 
         let outputPath =
@@ -225,8 +227,11 @@ type FSharpWorkspace() =
                 )
             |> ignore
 
+            // TODO: here we could automatically create references to other projects we know about based on "references on disk"
+
             projectIdentifier)
 
+    /// Use this to manually specify dependencies of a project. Right now it's the only way to get in-memory references.
     member _.AddProjectReferences(project: FSharpProjectIdentifier, references: FSharpProjectIdentifier seq) =
         depGraph.Transact(fun depGraph ->
 
