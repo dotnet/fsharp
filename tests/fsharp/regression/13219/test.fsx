@@ -18,5 +18,5 @@ type System.Object with
 
 // This is a compilation test, not a lot actually happens in the test
 do (System.Console.Out.WriteLine "Test Passed"; 
-    System.IO.File.WriteAllText("test.ok", "ok"); 
+    printf "TEST PASSED OK" ; 
     exit 0)

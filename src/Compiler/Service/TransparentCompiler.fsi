@@ -155,8 +155,7 @@ type internal TransparentCompiler =
         parallelReferenceResolution: ParallelReferenceResolution *
         captureIdentifiersWhenParsing: bool *
         getSource: (string -> Async<ISourceText option>) option *
-        useChangeNotifications: bool *
-        useSyntaxTreeCache: bool ->
+        useChangeNotifications: bool ->
             TransparentCompiler
 
     member FindReferencesInFile:

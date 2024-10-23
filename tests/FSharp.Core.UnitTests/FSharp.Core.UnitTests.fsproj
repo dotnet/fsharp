@@ -25,11 +25,6 @@
     <TailCalls>true</TailCalls>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <DefineConstants Condition="'$(UnitTestType)' == 'xunit'">$(DefineConstants);XUNIT</DefineConstants>
-    <DefineConstants Condition="'$(UnitTestType)' != 'xunit'">$(DefineConstants);NUNIT</DefineConstants>
-  </PropertyGroup>
-
   <ItemGroup>
     <Compile Include="TestFrameworkHelpers.fs" />
     <Compile Include="LibraryTestFx.fs" />

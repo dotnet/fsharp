@@ -108,7 +108,7 @@ module LexbufLocalXmlDocStore =
         |> unbox<XmlDocCollector>
 
     let ClearXmlDoc (lexbuf: Lexbuf) =
-        lexbuf.BufferLocalStore[xmlDocKey] <- box (XmlDocCollector())
+        lexbuf.BufferLocalStore[xmlDocKey] <- box (XmlDocCollector()) |> Unchecked.nonNull
 
     /// Called from the lexer to save a single line of XML doc comment.
     let SaveXmlDocLine (lexbuf: Lexbuf, lineText, range: range) =
@@ -165,9 +165,10 @@ type LexerIfdefStack = LexerIfdefStackEntries
 /// Specifies how the 'endline' function in the lexer should continue after
 /// it reaches end of line or eof. The options are to continue with 'token' function
 /// or to continue with 'skip' function.
+[<RequireQualifiedAccess>]
 type LexerEndlineContinuation =
     | Token
-    | Skip of int * range: range
+    | IfdefSkip of int * range: range
 
 type LexerIfdefExpression =
     | IfdefAnd of LexerIfdefExpression * LexerIfdefExpression
@@ -967,7 +968,7 @@ let checkEndOfFileError t =
 
     | LexCont.MLOnly(_, _, m) -> reportParseErrorAt m (FSComp.SR.parsEofInIfOcaml ())
 
-    | LexCont.EndLine(_, _, LexerEndlineContinuation.Skip(_, m)) -> reportParseErrorAt m (FSComp.SR.parsEofInDirective ())
+    | LexCont.EndLine(_, _, LexerEndlineContinuation.IfdefSkip(_, m)) -> reportParseErrorAt m (FSComp.SR.parsEofInDirective ())
 
     | LexCont.EndLine(endifs, nesting, LexerEndlineContinuation.Token)
     | LexCont.Token(endifs, nesting) ->
@@ -1049,7 +1050,22 @@ let mkLocalBindings (mWhole, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, 
             else
                 Some mIn)
 
-    SynExpr.LetOrUse(isRec, isUse, decls, body, mWhole, { InKeyword = mIn })
+    let mLetOrUse =
+        match decls with
+        | SynBinding(trivia = trivia) :: _ -> trivia.LeadingKeyword.Range
+        | _ -> Range.Zero
+
+    SynExpr.LetOrUse(
+        isRec,
+        isUse,
+        decls,
+        body,
+        mWhole,
+        {
+            LetOrUseKeyword = mLetOrUse
+            InKeyword = mIn
+        }
+    )
 
 let mkDefnBindings (mWhole, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, _bindingSetRange), attrs, vis, attrsm) =
     if isUse then

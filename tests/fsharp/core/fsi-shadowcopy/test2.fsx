@@ -30,8 +30,7 @@ if next = true then
     printfn "Succeeded -- compile worked because file not locked due to --shadowcopyReferences+"
     if verifyGetEntryAssembly then
         printfn "Succeeded -- GetEntryAssembly() returned not null"
-        use os = System.IO.File.CreateText "test2.ok" 
-        os.Close()
+        printf "TEST PASSED OK" ;
     else
         printfn "Failed -- GetEntryAssembly() returned null"
 else

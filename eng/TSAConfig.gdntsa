@@ -1,0 +1,16 @@
+{
+    "codebaseName": "FSharp-GitHub",
+    "notificationAliases": [
+        "fsharp@microsoft.com"
+    ],
+    "codebaseAdmins": [
+        "EUROPE\\vlza",
+        "REDMOND\\kevinransom",
+        "EUROPE\\tomasgrosup"
+    ],
+    "instanceUrl": "https://devdiv.visualstudio.com",
+    "projectName": "DevDiv",
+    "areaPath": "DevDiv\\FSharp",
+    "iterationPath": "DevDiv",
+    "allTools": true
+}
