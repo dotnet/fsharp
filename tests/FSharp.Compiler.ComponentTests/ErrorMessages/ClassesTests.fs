@@ -892,6 +892,52 @@ type Class() =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
+            (Error 959, Line 10, Col 5, Line 10, Col 21, "Type definitions may only have one 'inherit' specification and it must be the first declaration")
             (Error 932, Line 10, Col 13, Line 10, Col 19, "Types cannot inherit from multiple concrete types")
             (Error 932, Line 11, Col 13, Line 11, Col 19, "Types cannot inherit from multiple concrete types")
+        ]
+        
+    [<Fact>]
+    let ``Types cannot inherit from multiple concrete types. Type name cannot be empty.`` () =
+        Fsx """
+type IA = interface end
+
+type I =
+    inherit IA
+    inherit
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3159, Line 6, Col 5, Line 6, Col 12, "Type name cannot be empty.")
+        ]
+
+    [<Fact>]
+    let ``Inheriting multiple base interfaces`` () =
+        Fsx """
+type IA = interface end
+type IB = interface end
+
+type I =
+    inherit IA
+    inherit IB
+        """
+        |> typecheck
+        |> shouldSucceed
+    
+    [<Fact>]
+    let ``Class inheriting multiple base interfaces`` () =
+        Fsx """
+type IA = interface end
+type IB = interface end
+
+type I() =
+    inherit IA
+    inherit IB
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 961, Line 6, Col 5, Line 6, Col 12, "This 'inherit' declaration specifies the inherited type but no arguments. Consider supplying arguments, e.g. 'inherit BaseType(args)'.")
+            (Error 932, Line 7, Col 13, Line 7, Col 15, "Types cannot inherit from multiple concrete types")
         ]

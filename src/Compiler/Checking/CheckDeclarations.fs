@@ -4302,6 +4302,7 @@ module TcDeclarations =
              | SynMemberDefn.Interface (range=m) :: _ -> errorR(InternalError("List.takeUntil is wrong, have interface", m))
              | SynMemberDefn.ImplicitCtor (range=m) :: _ -> errorR(InternalError("implicit class construction with two implicit constructions", m))
              | SynMemberDefn.AutoProperty (range=m) :: _ -> errorR(InternalError("List.takeUntil is wrong, have auto property", m))
+             | SynMemberDefn.ImplicitInherit (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveOneInherit(), m))
              | SynMemberDefn.LetBindings (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveLocalBindingsBeforeMembers(), m))
              | SynMemberDefn.Inherit (trivia= { InheritKeyword = m }) :: _ -> errorR(Error(FSComp.SR.tcInheritDeclarationMissingArguments(), m))
              | SynMemberDefn.NestedType (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypesCannotContainNestedTypes(), m))
@@ -4476,7 +4477,7 @@ module TcDeclarations =
             let inherits =
                 members |> List.choose (function 
                     | SynMemberDefn.Inherit (Some ty, idOpt, m, _) -> Some(ty, m, idOpt)
-                    | SynMemberDefn.ImplicitInherit (ty, _, idOpt, m) -> Some(ty, m, idOpt)
+                    | SynMemberDefn.ImplicitInherit (ty, _, idOpt, m, _) -> Some(ty, m, idOpt)
                     | _ -> None)
 
             //let nestedTycons = cspec |> List.choose (function SynMemberDefn.NestedType (x, _, _) -> Some x | _ -> None)
