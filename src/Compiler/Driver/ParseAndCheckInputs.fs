@@ -1993,6 +1993,8 @@ let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs =
         tcDataFile.WriteAllText thisTcData
 
     if FileSystem.FileExistsShim tcDataFileName then
+        use _ = Activity.start Activity.Events.reuseTcResultsCachePresent []
+
         use tcDataFileStream = FileSystem.OpenFileForReadShim tcDataFileName
         let tcDataFileReader = tcDataFileStream.GetReader None
         let prevCompilationCmdLine = tcDataFileReader.ReadLine()
@@ -2003,13 +2005,21 @@ let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs =
             let thisCompilationGraph = getThisCompilationGraph()
 
             if prevCompilationGraph = thisCompilationGraph then
+                use _ = Activity.start Activity.Events.reuseTcResultsCacheHit []
+
                 () // do nothing, yet
             else
+                use _ = Activity.start Activity.Events.reuseTcResultsCacheMissed []
+
                 writeThisTcData thisCompilationCmdLine thisCompilationGraph
         else
+            use _ = Activity.start Activity.Events.reuseTcResultsCacheMissed []
+
             let thisCompilationGraph = getThisCompilationGraph()
             writeThisTcData thisCompilationCmdLine thisCompilationGraph
     else
+        use _ = Activity.start Activity.Events.reuseTcResultsCacheAbsent []
+
         let thisCompilationCmdLine = getThisCompilationCmdLine()
         let thisCompilationGraph = getThisCompilationGraph()
         writeThisTcData thisCompilationCmdLine thisCompilationGraph
