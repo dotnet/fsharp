@@ -1998,11 +1998,11 @@ let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs =
         use tcDataFileStream = FileSystem.OpenFileForReadShim tcDataFileName
         let tcDataFileReader = tcDataFileStream.GetReader None
         let prevCompilationCmdLine = tcDataFileReader.ReadLine()
-        let thisCompilationCmdLine = getThisCompilationCmdLine()
+        let thisCompilationCmdLine = getThisCompilationCmdLine ()
 
         if prevCompilationCmdLine = thisCompilationCmdLine then
             let prevCompilationGraph = tcDataFileReader.ReadToEnd()
-            let thisCompilationGraph = getThisCompilationGraph()
+            let thisCompilationGraph = getThisCompilationGraph ()
 
             if prevCompilationGraph = thisCompilationGraph then
                 use _ = Activity.start Activity.Events.reuseTcResultsCacheHit []
@@ -2015,13 +2015,13 @@ let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs =
         else
             use _ = Activity.start Activity.Events.reuseTcResultsCacheMissed []
 
-            let thisCompilationGraph = getThisCompilationGraph()
+            let thisCompilationGraph = getThisCompilationGraph ()
             writeThisTcData thisCompilationCmdLine thisCompilationGraph
     else
         use _ = Activity.start Activity.Events.reuseTcResultsCacheAbsent []
 
-        let thisCompilationCmdLine = getThisCompilationCmdLine()
-        let thisCompilationGraph = getThisCompilationGraph()
+        let thisCompilationCmdLine = getThisCompilationCmdLine ()
+        let thisCompilationGraph = getThisCompilationGraph ()
         writeThisTcData thisCompilationCmdLine thisCompilationGraph
 
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
