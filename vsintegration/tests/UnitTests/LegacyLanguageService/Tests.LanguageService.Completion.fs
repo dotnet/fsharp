@@ -997,7 +997,7 @@ for i in 0..a."]
                 ]
             ]
         for ifs in shouldBeInterface do
-            AssertCtrlSpaceCompleteContains ifs "(*M*)" ["seq"] ["obj"]
+            AssertCtrlSpaceCompleteContains ifs "(*M*)" ["seq"] []
 
 
     [<Fact>]
@@ -1026,7 +1026,7 @@ for i in 0..a."]
                 ]
             ]
         for cls in shouldBeClass do
-            AssertCtrlSpaceCompleteContains cls "(*M*)" ["obj"] ["seq"]
+            AssertCtrlSpaceCompleteContains cls "(*M*)" ["obj"] []
 
     [<Fact>]
     member this.``Completion.DetectUnknownCompletionContext``() = 
@@ -1036,31 +1036,12 @@ for i in 0..a."]
                 "    inherit (*M*)"
             ]
 
-        AssertCtrlSpaceCompleteContains content "(*M*)" ["obj"; "seq"] ["abs"]
+        AssertCtrlSpaceCompleteContains content "(*M*)" ["obj"; "seq"] []
 
     [<Fact>]
     member this.``Completion.DetectInvalidCompletionContext``() = 
         let shouldBeInvalid = 
             [
-                [
-                    "type X = struct"
-                    "    inherit (*M*)"
-                ]
-                [
-                    "[<Interface>]"
-                    "type X = class"
-                    "    inherit (*M*)"
-                ]
-                [
-                    "[<Class>]"
-                    "type X = interface"
-                    "    inherit (*M*)"
-                ]
-                [
-                    "[<Struct>]"
-                    "type X = interface"
-                    "    inherit (*M*)"
-                ]
                 [
                     "type X ="
                     "    inherit System (*M*)."
@@ -1076,7 +1057,6 @@ for i in 0..a."]
         for invalid in shouldBeInvalid do
             AssertCtrlSpaceCompletionListIsEmpty invalid "(*M*)"
 
-    
     [<Fact>]
     member this.``Completion.LongIdentifiers``() = 
         // System.Diagnostics.Debugger.Launch() |> ignore

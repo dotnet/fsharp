@@ -2317,7 +2317,7 @@ inheritsDefn:
   | INHERIT atomTypeNonAtomicDeprecated optBaseSpec
      { let mDecl = unionRanges (rhs parseState 1) $2.Range
        let trivia = { InheritKeyword = rhs parseState 1 }
-       SynMemberDefn.Inherit($2, $3, mDecl, trivia) }
+       SynMemberDefn.Inherit(Some $2, $3, mDecl, trivia) }
 
   | INHERIT atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP atomicExprAfterType optBaseSpec
      { let mDecl = unionRanges (rhs parseState 1) $4.Range
@@ -2327,7 +2327,7 @@ inheritsDefn:
      { let mDecl = (rhs parseState 1)
        let trivia = { InheritKeyword = (rhs parseState 1) }
        if not $2 then errorR (Error(FSComp.SR.parsTypeNameCannotBeEmpty (), mDecl))
-       SynMemberDefn.Inherit(SynType.LongIdent(SynLongIdent([], [], [])), None, mDecl, trivia) }
+       SynMemberDefn.Inherit(None, None, mDecl, trivia) }
 
 optAsSpec:
   | asSpec
