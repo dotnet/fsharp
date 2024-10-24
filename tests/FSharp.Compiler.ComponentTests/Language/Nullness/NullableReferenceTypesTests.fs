@@ -19,7 +19,7 @@ let typeCheckWithStrictNullness cu =
 
 
 
-[<Fact>]
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
 let ``Does report when null goes to DateTime Parse`` () =
 
     FSharp """module TestLib
