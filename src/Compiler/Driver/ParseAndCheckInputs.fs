@@ -1961,7 +1961,74 @@ let CheckMultipleInputsUsingGraphMode
 
         partialResults, tcState)
 
+let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs =
+    let tcDataFileName = FileSystem.GetFullPathShim "FSharpTypecheckingData"
+
+    let getThisCompilationCmdLine () =
+        tcConfig.cmdLineArgs |> String.concat " "
+
+    let getThisCompilationGraph () =
+        let sourceFiles =
+            inputs
+            |> Seq.toArray
+            |> Array.mapi (fun idx (input: ParsedInput) ->
+                {
+                    Idx = idx
+                    FileName = input.FileName
+                    ParsedInput = input
+                })
+
+        let filePairs = FilePairMap sourceFiles
+
+        DependencyResolution.mkGraph filePairs sourceFiles
+        |> fst
+        |> Graph.map (fun idx ->
+            let lastModified = FileSystem.GetLastWriteTimeShim(sourceFiles[idx].FileName)
+            idx, lastModified)
+        |> Graph.asString
+
+    let writeThisTcData (cmdLine: string) (graph: string) =
+        use tcDataFile = FileSystem.OpenFileForWriteShim tcDataFileName
+        let thisTcData = $"{cmdLine}{Environment.NewLine}{graph}"
+        tcDataFile.WriteAllText thisTcData
+
+    if FileSystem.FileExistsShim tcDataFileName then
+        use _ = Activity.start Activity.Events.reuseTcResultsCachePresent []
+
+        use tcDataFileStream = FileSystem.OpenFileForReadShim tcDataFileName
+        let tcDataFileReader = tcDataFileStream.GetReader None
+        let prevCompilationCmdLine = tcDataFileReader.ReadLine()
+        let thisCompilationCmdLine = getThisCompilationCmdLine ()
+
+        if prevCompilationCmdLine = thisCompilationCmdLine then
+            let prevCompilationGraph = tcDataFileReader.ReadToEnd()
+            let thisCompilationGraph = getThisCompilationGraph ()
+
+            if prevCompilationGraph = thisCompilationGraph then
+                use _ = Activity.start Activity.Events.reuseTcResultsCacheHit []
+
+                () // do nothing, yet
+            else
+                use _ = Activity.start Activity.Events.reuseTcResultsCacheMissed []
+
+                writeThisTcData thisCompilationCmdLine thisCompilationGraph
+        else
+            use _ = Activity.start Activity.Events.reuseTcResultsCacheMissed []
+
+            let thisCompilationGraph = getThisCompilationGraph ()
+            writeThisTcData thisCompilationCmdLine thisCompilationGraph
+    else
+        use _ = Activity.start Activity.Events.reuseTcResultsCacheAbsent []
+
+        let thisCompilationCmdLine = getThisCompilationCmdLine ()
+        let thisCompilationGraph = getThisCompilationGraph ()
+        writeThisTcData thisCompilationCmdLine thisCompilationGraph
+
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
+
+    if tcConfig.reuseTypecheckingResults = ReuseTypecheckingResults.On then
+        TryReuseTypecheckingResults tcConfig inputs
+
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
     let results, tcState =
         match tcConfig.typeCheckingConfig.Mode with

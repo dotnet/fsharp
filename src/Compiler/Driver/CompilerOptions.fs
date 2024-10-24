@@ -1326,6 +1326,14 @@ let advancedFlagsFsc tcConfigB =
             None,
             Some(FSComp.SR.optsEmitDebugInfoInQuotations ())
         )
+
+        CompilerOption(
+            "reusetypecheckingresults",
+            tagNone,
+            OptionUnit(fun () -> tcConfigB.reuseTypecheckingResults <- ReuseTypecheckingResults.On),
+            None,
+            Some(FSComp.SR.optsReuseTypecheckingResults ())
+        )
     ]
 
 // OptionBlock: Internal options (test use only)

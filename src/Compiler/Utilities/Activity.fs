@@ -69,6 +69,11 @@ module internal Activity =
     module Events =
         let cacheHit = "cacheHit"
 
+        let reuseTcResultsCachePresent = "reuseTcResultsCachePresent"
+        let reuseTcResultsCacheAbsent = "reuseTcResultsCacheAbsent"
+        let reuseTcResultsCacheHit = "reuseTcResultsCacheHit"
+        let reuseTcResultsCacheMissed = "reuseTcResultsCacheMissed"
+
     type Diagnostics.Activity with
 
         member this.RootId =
