@@ -265,11 +265,11 @@ type CancellationType() =
 
         let cts = new CancellationTokenSource()
         let tcs = System.Threading.Tasks.TaskCompletionSource<_>()
-        let test() =
+        let t =
             async {
                 do! tcs.Task |> Async.AwaitTask
             }
-            |> StartAsTaskProperCancel None (Some cts.Token) :> Task
+            |> StartAsTaskProperCancel None (Some cts.Token)
 
         // First cancel the token, then set the task as cancelled.
         async {
@@ -277,14 +277,15 @@ type CancellationType() =
             cts.Cancel()
             do! Async.Sleep 100
             tcs.TrySetException (TimeoutException "Task timed out after token.")
-            |> ignore
+                |> ignore
         } |> Async.Start
 
-        task {
-            let! agg = Assert.ThrowsAsync<AggregateException>(test)
-            let inner = agg.InnerException
-            Assert.True(inner :? TimeoutException, $"Excepted TimeoutException wrapped in an AggregateException, but got %A{inner}")
-        }
+        try
+            let res = t.Wait(2000)
+            let msg = sprintf "Excepted TimeoutException wrapped in an AggregateException, but got %A" res
+            printfn "failure msg: %s" msg
+            Assert.Fail (msg)
+        with :? AggregateException as agg -> ()
 
     // Simpler regression test for https://github.com/dotnet/fsharp/issues/3254
     [<Fact>]
