@@ -144,4 +144,126 @@ module BindingExpressions =
         |> withDiagnostics [
             (Warning 64, Line 10, Col 32, Line 10, Col 33, "This construct causes code to be less generic than indicated by the type annotations. The type variable 'b has been constrained to be type ''a'.")
         ]
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UpperBindingPattern.fs"|])>]
+    let ``E_UpperBindingPattern_fs`` compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UpperBindingPattern.fs"|])>]
+    let ``E_UpperBindingPattern_fs preview`` compilation =
+        compilation
+        |> asExe
+        |> withLangVersionPreview
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 49, Line 3, Col 7, Line 3, Col 9, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.");
+            (Warning 49, Line 3, Col 10, Line 3, Col 12, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.");
+            (Warning 49, Line 5, Col 8, Line 5, Col 10, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.");
+            (Warning 49, Line 5, Col 11, Line 5, Col 13, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.");
+            (Warning 49, Line 7, Col 8, Line 7, Col 9, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.");
+            (Warning 49, Line 7, Col 10, Line 7, Col 11, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+        ]
 
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UpperBindingPattern02.fs"|])>]
+    let ``E_UpperBindingPattern02_fs`` compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 49, Line 3, Col 7, Line 3, Col 10, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 3, Col 11, Line 3, Col 14, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 5, Col 8, Line 5, Col 11, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 5, Col 12, Line 5, Col 15, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+        ]
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UpperBindingPattern02.fs"|])>]
+    let ``E_UpperBindingPattern02_fs preview`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> asExe
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 49, Line 3, Col 7, Line 3, Col 10, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 3, Col 11, Line 3, Col 14, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 5, Col 8, Line 5, Col 11, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 5, Col 12, Line 5, Col 15, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+        ]
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UpperBindingPattern03.fs"|])>]
+    let ``E_UpperBindingPattern03_fs`` compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UpperBindingPattern03.fs"|])>]
+    let ``E_UpperBindingPattern03_fs preview`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> asExe
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 49, Line 2, Col 21, Line 2, Col 23, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 2, Col 25, Line 2, Col 27, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 4, Col 22, Line 4, Col 24, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 4, Col 25, Line 4, Col 27, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 6, Col 22, Line 6, Col 23, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 6, Col 24, Line 6, Col 25, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 9, Col 19, Line 9, Col 21, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 9, Col 23, Line 9, Col 25, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 11, Col 20, Line 11, Col 22, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 11, Col 23, Line 11, Col 25, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 13, Col 20, Line 13, Col 21, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 13, Col 22, Line 13, Col 23, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+        ]
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UpperBindingPattern04.fs"|])>]
+    let ``E_UpperBindingPattern04_fs`` compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 49, Line 2, Col 21, Line 2, Col 24, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 2, Col 26, Line 2, Col 29, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 4, Col 22, Line 4, Col 25, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 4, Col 26, Line 4, Col 29, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 7, Col 19, Line 7, Col 22, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 7, Col 24, Line 7, Col 27, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 9, Col 20, Line 9, Col 23, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 9, Col 24, Line 9, Col 27, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")            
+        ]
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UpperBindingPattern04.fs"|])>]
+    let ``E_UpperBindingPattern04_fs preview`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> asExe
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 49, Line 2, Col 21, Line 2, Col 24, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 2, Col 26, Line 2, Col 29, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 4, Col 22, Line 4, Col 25, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 4, Col 26, Line 4, Col 29, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 7, Col 19, Line 7, Col 22, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 7, Col 24, Line 7, Col 27, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 9, Col 20, Line 9, Col 23, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 9, Col 24, Line 9, Col 27, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+        ]
