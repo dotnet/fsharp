@@ -100,14 +100,6 @@ module CompileHelpers =
 
         diagnostics.ToArray(), result
 
-    let setOutputStreams execute =
-        // Set the output streams, if requested
-        match execute with
-        | Some(writer, error) ->
-            Console.SetOut writer
-            Console.SetError error
-        | None -> ()
-
 [<Sealed; AutoSerializable(false)>]
 // There is typically only one instance of this type in an IDE process.
 type FSharpChecker
