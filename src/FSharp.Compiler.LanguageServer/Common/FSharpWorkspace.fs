@@ -159,7 +159,9 @@ type FSharpWorkspace() =
 
         this.OpenFile(file, content)
 
-    /// Adds an F# project to the workspace. The project is identified path to the .fsproj file and output path. The compiler arguments are used to build the project's snapshot.
+    /// Adds an F# project to the workspace. The project is identified path to the .fsproj file and output path.
+    /// The compiler arguments are used to build the project's snapshot.
+    /// References are created automatically between known projects based on the compiler arguments and output paths.
     member _.AddCommandLineArgs(projectPath, outputPath, compilerArgs) =
 
         let outputPath =
