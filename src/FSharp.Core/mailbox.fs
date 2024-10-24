@@ -340,10 +340,11 @@ type Mailbox<'Msg>(cancellationSupported: bool, isThrowExceptionAfterDisposed: b
                     inboxStore.Clear()
 
                 arrivals.Clear()
-                isDisposed <- true)
+                isDisposed <- true
 
-            if isNotNull pulse then
-                (pulse :> IDisposable).Dispose()
+                if isNotNull pulse then
+                    (pulse :> IDisposable).Dispose()
+                    pulse <- null)
 
 #if DEBUG
     member x.UnsafeContents = (x.inbox, arrivals, pulse, savedCont) |> box
