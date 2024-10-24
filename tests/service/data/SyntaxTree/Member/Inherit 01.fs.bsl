@@ -12,8 +12,9 @@ ImplFile
                   ObjectModel
                     (Unspecified,
                      [Inherit
-                        (LongIdent (SynLongIdent ([I], [], [None])), None,
-                         (4,4--4,13))], (4,4--4,13)), [], None, (3,5--4,13),
+                        (Some (LongIdent (SynLongIdent ([I], [], [None]))), None,
+                         (4,4--4,13), { InheritKeyword = (4,4--4,11) })],
+                     (4,4--4,13)), [], None, (3,5--4,13),
                   { LeadingKeyword = Type (3,0--3,4)
                     EqualsRange = Some (3,7--3,8)
                     WithKeyword = None })], (3,0--4,13))],

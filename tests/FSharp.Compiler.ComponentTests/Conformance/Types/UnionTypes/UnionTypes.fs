@@ -195,8 +195,8 @@ module UnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 961, Line 10, Col 5, Line 10, Col 22, "This 'inherit' declaration specifies the inherited type but no arguments. Consider supplying arguments, e.g. 'inherit BaseType(args)'.")
-            (Error 945, Line 10, Col 5, Line 10, Col 22, "Cannot inherit a sealed type")
+            (Error 961, Line 10, Col 5, Line 10, Col 12, "This 'inherit' declaration specifies the inherited type but no arguments. Consider supplying arguments, e.g. 'inherit BaseType(args)'.")
+            (Error 945, Line 10, Col 13, Line 10, Col 22, "Cannot inherit a sealed type")
         ]
 
     //SOURCE=E_LowercaseDT.fs                                                                     # E_LowercaseDT.fs

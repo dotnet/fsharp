@@ -156,6 +156,8 @@ open CancellableTasks
 [<Export(typeof<IFSharpBlockStructureService>)>]
 type internal FSharpBlockStructureService [<ImportingConstructor>] () =
 
+    let emptyValue = FSharpBlockStructure ImmutableArray.empty
+
     interface IFSharpBlockStructureService with
 
         member _.GetBlockStructureAsync(document, cancellationToken) : Task<FSharpBlockStructure> =
@@ -171,4 +173,5 @@ type internal FSharpBlockStructureService [<ImportingConstructor>] () =
                     |> Seq.toImmutableArray
                     |> FSharpBlockStructure
             }
+            |> CancellableTask.ifCanceledReturn emptyValue
             |> CancellableTask.start cancellationToken

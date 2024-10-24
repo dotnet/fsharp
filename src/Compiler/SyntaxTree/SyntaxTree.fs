@@ -37,7 +37,7 @@ type SynLongIdent =
 
     member this.Range =
         match this with
-        | SynLongIdent([], _, _) -> failwith "rangeOfLidwd"
+        | SynLongIdent([], _, _) -> failwith "rangeOfLid"
         | SynLongIdent([ id ], [], _) -> id.idRange
         | SynLongIdent([ id ], [ m ], _) -> unionRanges id.idRange m
         | SynLongIdent(h :: t, [], _) -> unionRanges h.idRange (List.last t).idRange
@@ -1496,7 +1496,7 @@ type SynMemberDefn =
 
     | Interface of interfaceType: SynType * withKeyword: range option * members: SynMemberDefns option * range: range
 
-    | Inherit of baseType: SynType * asIdent: Ident option * range: range
+    | Inherit of baseType: SynType option * asIdent: Ident option * range: range * trivia: SynMemberDefnInheritTrivia
 
     | ValField of fieldInfo: SynField * range: range
 
