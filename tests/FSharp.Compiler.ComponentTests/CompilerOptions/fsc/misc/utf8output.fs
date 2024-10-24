@@ -15,7 +15,8 @@ module utf8output =
         let currentEncoding = Console.OutputEncoding
         use restoreCurrentEncodingAfterTest = { new IDisposable with member _.Dispose() = Console.OutputEncoding <- currentEncoding }
 
-        let encoding = Text.Encoding.GetEncoding("iso-8859-1")
+        // UTF16
+        let encoding = Text.Encoding.Unicode
 
         Console.OutputEncoding <- encoding
 
@@ -33,7 +34,8 @@ module utf8output =
         let currentEncoding = Console.OutputEncoding
         use restoreCurrentEncodingAfterTest = { new IDisposable with member _.Dispose() = Console.OutputEncoding <- currentEncoding }
 
-        let encoding = Text.Encoding.GetEncoding("iso-8859-1")
+        // UTF16
+        let encoding = Text.Encoding.Unicode
 
         Console.OutputEncoding <- encoding
 
