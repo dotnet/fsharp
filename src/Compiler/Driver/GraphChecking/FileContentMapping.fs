@@ -212,7 +212,7 @@ let visitSynMemberDefn (md: SynMemberDefn) : FileContentEntry list =
             yield! collectFromOption visitBinding memberDefnForGet
             yield! collectFromOption visitBinding memberDefnForSet
         | SynMemberDefn.ImplicitCtor(ctorArgs = pat) -> yield! visitPat pat
-        | SynMemberDefn.ImplicitInherit(inheritType, inheritArgs, _, _) ->
+        | SynMemberDefn.ImplicitInherit(inheritType, inheritArgs, _, _, _) ->
             yield! visitSynType inheritType
             yield! visitSynExpr inheritArgs
         | SynMemberDefn.LetBindings(bindings = bindings) -> yield! List.collect visitBinding bindings
