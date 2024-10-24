@@ -72,6 +72,13 @@ type FSharpFileSnapshot(FileName: string, Version: string, GetSource: unit -> Ta
     static member Create(fileName: string, version: string, getSource: unit -> Task<ISourceTextNew>) =
         FSharpFileSnapshot(fileName, version, getSource)
 
+    static member CreateFromString(filename: string, content: string) =
+        FSharpFileSnapshot(
+            filename,
+            Md5Hasher.hashString content |> Md5Hasher.toString,
+            fun () -> Task.FromResult(SourceTextNew.ofString content)
+        )
+
     static member CreateFromFileSystem(fileName: string) =
         FSharpFileSnapshot(
             fileName,

@@ -6,6 +6,7 @@ open DependencyGraph
 open System.IO
 open System.Runtime.CompilerServices
 open System.Threading
+open System.Collections.Concurrent
 
 #nowarn "57"
 
@@ -19,8 +20,11 @@ type internal WorkspaceNodeKey =
     // TODO: maybe this should be URI
     | SourceFile of filePath: string
     | ReferenceOnDisk of filePath: string
+    /// All project information except source files and (in-memory) project references
     | ProjectCore of FSharpProjectIdentifier
+    /// All project information except source files
     | ProjectBase of FSharpProjectIdentifier
+    /// Complete project information
     | ProjectSnapshot of FSharpProjectIdentifier
 
     override this.ToString() =
@@ -35,8 +39,11 @@ type internal WorkspaceNodeKey =
 type internal WorkspaceNodeValue =
     | SourceFile of FSharpFileSnapshot
     | ReferenceOnDisk of ReferenceOnDisk
+    /// All project information except source files and (in-memory) project references
     | ProjectCore of ProjectCore
+    /// All project information except source files
     | ProjectBase of ProjectCore * FSharpReferencedProjectSnapshot list
+    /// Complete project information
     | ProjectSnapshot of FSharpProjectSnapshot
 
 module internal WorkspaceNode =
@@ -66,10 +73,44 @@ module internal WorkspaceNode =
         | WorkspaceNodeValue.ReferenceOnDisk r -> Some r
         | _ -> None
 
+    let projectCoreKey value =
+        match value with
+        | WorkspaceNodeKey.ProjectCore p -> Some p
+        | _ -> None
+
+    let projectSnapshotKey value =
+        match value with
+        | WorkspaceNodeKey.ProjectSnapshot p -> Some p
+        | _ -> None
+
+    let projectBaseKey value =
+        match value with
+        | WorkspaceNodeKey.ProjectBase x -> Some x
+        | _ -> None
+
+    let sourceFileKey value =
+        match value with
+        | WorkspaceNodeKey.SourceFile f -> Some f
+        | _ -> None
+
+    let referenceOnDiskKey value =
+        match value with
+        | WorkspaceNodeKey.ReferenceOnDisk r -> Some r
+        | _ -> None
+
 /// This type holds the current state of an F# workspace (or, solution). It's mutable but thread-safe. It accepts updates to the state and can provide immutable snapshots of contained F# projects. The state can be built up incrementally by adding projects and dependencies between them.
 type FSharpWorkspace() =
 
     let depGraph = LockOperatedDependencyGraph() :> IThreadSafeDependencyGraph<_, _>
+
+    /// A map from project output path to project identifier.
+    let outputPathMap = ConcurrentDictionary<string, FSharpProjectIdentifier>()
+
+    /// A map from reference on disk path to which projects depend on it. It can be used to create in-memory project references based on output paths.
+    let referenceMap = ConcurrentDictionary<string, Set<FSharpProjectIdentifier>>()
+
+    /// Open files in the editor.
+    let openFiles = ConcurrentDictionary<string, string>()
 
     let mutable resultIdCounter = 0
 
@@ -90,32 +131,36 @@ type FSharpWorkspace() =
     // in order to be able to clear previous diagnostics
     member this.GetDiagnosticResultId() = Interlocked.Increment(&resultIdCounter)
 
-    member this.OpenFile(file: Uri, content: string) =
+    member this.OpenFile(file: Uri, content) =
+        openFiles.AddOrUpdate(file.LocalPath, content, (fun _ _ -> content)) |> ignore
+
         // No changes in the dep graph. If we already read the contents from disk we don't want to invalidate it.
         this
 
     member this.CloseFile(file: Uri) =
-        // No changes in the dep graph. Next change will come if we get notified by file watcher.
-        this
+        openFiles.TryRemove(file.LocalPath) |> ignore
 
-    member this.ChangeFile(file: Uri, content: string) =
-
+        // The file may have had changes that weren't saved to disk and are therefore undone by closing it.
         depGraph.AddOrUpdateNode(
             WorkspaceNodeKey.SourceFile file.LocalPath,
-            WorkspaceNodeValue.SourceFile(
-                FSharpFileSnapshot.Create(
-                    file.LocalPath,
-                    content.GetHashCode().ToString(),
-                    fun () -> content |> SourceTextNew.ofString |> Task.FromResult
-                )
-            )
+            WorkspaceNodeValue.SourceFile(FSharpFileSnapshot.CreateFromFileSystem(file.LocalPath))
         )
         |> ignore
 
         this
 
+    member this.ChangeFile(file: Uri, content) =
+
+        depGraph.AddOrUpdateNode(
+            WorkspaceNodeKey.SourceFile file.LocalPath,
+            WorkspaceNodeValue.SourceFile(FSharpFileSnapshot.CreateFromString(file.LocalPath, content))
+        )
+        |> ignore
+
+        this.OpenFile(file, content)
+
     /// Adds an F# project to the workspace. The project is identified path to the .fsproj file and output path. The compiler arguments are used to build the project's snapshot.
-    member _.AddCommandLineArgs(projectPath: string, outputPath: string | null, compilerArgs: string seq) =
+    member _.AddCommandLineArgs(projectPath, outputPath, compilerArgs) =
 
         let outputPath =
             outputPath
@@ -124,6 +169,10 @@ type FSharpWorkspace() =
             |> Option.defaultWith (fun () -> failwith "Output path can't be null for an F# project")
 
         let projectIdentifier = FSharpProjectIdentifier(projectPath, outputPath)
+
+        // Add the project identifier to the map
+        outputPathMap.AddOrUpdate(outputPath, (fun _ -> projectIdentifier), (fun _ _ -> projectIdentifier))
+        |> ignore
 
         let directoryPath = Path.GetDirectoryName(projectPath)
 
@@ -139,10 +188,27 @@ type FSharpWorkspace() =
             |> Seq.filter isReference
             |> Seq.map _.Substring(3)
             |> Seq.map (fun path ->
+
+                referenceMap.AddOrUpdate(
+                    path,
+                    (fun _ -> Set.singleton projectIdentifier),
+                    (fun _ existing -> Set.add projectIdentifier existing)
+                )
+                |> ignore
+
                 {
                     Path = path
                     LastModified = File.GetLastWriteTimeUtc path
                 })
+            |> Seq.toList
+
+        let projectReferences =
+            referencesOnDisk
+            |> Seq.choose (fun ref ->
+                match outputPathMap.TryGetValue ref.Path with
+                | true, projectIdentifier -> Some projectIdentifier
+                | _ -> None)
+            |> Set
 
         let otherOptions =
             compilerArgs
@@ -161,7 +227,12 @@ type FSharpWorkspace() =
                         let fullPath = Path.Combine(directoryPath, line)
                         if not (File.Exists fullPath) then None else Some fullPath)
                 |> Seq.map (fun path ->
-                    WorkspaceNodeKey.SourceFile path, WorkspaceNodeValue.SourceFile(FSharpFileSnapshot.CreateFromFileSystem path))
+                    WorkspaceNodeKey.SourceFile path,
+                    WorkspaceNodeValue.SourceFile(
+                        match openFiles.TryGetValue(path) with
+                        | true, content -> FSharpFileSnapshot.CreateFromString(path, content)
+                        | false, _ -> FSharpFileSnapshot.CreateFromFileSystem path
+                    ))
                 |> depGraph.AddList
 
             let referencesOnDiskNodes =
@@ -212,6 +283,29 @@ type FSharpWorkspace() =
                         WorkspaceNodeValue.ProjectBase(projectCore, referencedProjects))
                 )
 
+            // In case this is an update, we should check for any existing project references that are not contained in the incoming compiler args and remove them
+            let existingReferences =
+                depGraph.GetDependenciesOf(WorkspaceNodeKey.ProjectBase projectIdentifier)
+                |> Seq.choose (function
+                    | WorkspaceNodeKey.ProjectSnapshot projectId -> Some projectId
+                    | _ -> None)
+                |> Set
+
+            let referencesToRemove = existingReferences - projectReferences
+            let referencesToAdd = projectReferences - existingReferences
+
+            for projectId in referencesToRemove do
+                depGraph.RemoveDependency(
+                    WorkspaceNodeKey.ProjectBase projectIdentifier,
+                    noLongerDependsOn = WorkspaceNodeKey.ProjectSnapshot projectId
+                )
+
+            for projectId in referencesToAdd do
+                depGraph.AddDependency(
+                    WorkspaceNodeKey.ProjectBase projectIdentifier,
+                    dependsOn = WorkspaceNodeKey.ProjectSnapshot projectId
+                )
+
             projectBase
                 .And(fsharpFiles)
                 .AddDependentNode(
@@ -227,25 +321,19 @@ type FSharpWorkspace() =
                 )
             |> ignore
 
-            // TODO: here we could automatically create references to other projects we know about based on "references on disk"
+            // Check if any projects we know about depend on this project and add the references if they don't already exist
+            let dependentProjectIds =
+                depGraph
+                    .GetDependentsOf(WorkspaceNodeKey.ReferenceOnDisk outputPath)
+                    .UnpackMany(WorkspaceNode.projectCoreKey)
+
+            for dependentProjectId in dependentProjectIds do
+                depGraph.AddDependency(
+                    WorkspaceNodeKey.ProjectBase dependentProjectId,
+                    dependsOn = WorkspaceNodeKey.ProjectSnapshot projectIdentifier
+                )
 
             projectIdentifier)
-
-    /// Use this to manually specify dependencies of a project. Right now it's the only way to get in-memory references.
-    member _.AddProjectReferences(project: FSharpProjectIdentifier, references: FSharpProjectIdentifier seq) =
-        depGraph.Transact(fun depGraph ->
-
-            references
-            |> Seq.iter (fun reference ->
-
-                depGraph.AddDependency(WorkspaceNodeKey.ProjectBase project, dependsOn = WorkspaceNodeKey.ProjectSnapshot reference)
-
-                // TODO: Review:
-                // Remove the on-disk reference to the same project. We don't need to invalidate results if it changes since we have it in memory anyway.
-                depGraph.RemoveDependency(
-                    WorkspaceNodeKey.ProjectCore project,
-                    noLongerDependsOn = WorkspaceNodeKey.ReferenceOnDisk reference.OutputFileName
-                )))
 
     member _.GetSnapshotForFile(file: Uri) =
         depGraph.Transact(fun depGraph ->

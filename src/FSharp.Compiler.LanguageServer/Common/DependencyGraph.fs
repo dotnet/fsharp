@@ -25,6 +25,7 @@ type IDependencyGraph<'Id, 'Val when 'Id: equality> =
     abstract member AddList: nodes: ('Id * 'Val) seq -> IGraphBuilder<'Id, 'Val>
     abstract member AddOrUpdateNode: id: 'Id * dependsOn: 'Id seq * compute: ('Val seq -> 'Val) -> IGraphBuilder<'Id, 'Val>
     abstract member GetValue: id: 'Id -> 'Val
+    abstract member GetDependenciesOf: id: 'Id -> 'Id seq
     abstract member GetDependentsOf: id: 'Id -> 'Id seq
     abstract member AddDependency: node: 'Id * dependsOn: 'Id -> unit
     abstract member RemoveDependency: node: 'Id * noLongerDependsOn: 'Id -> unit
@@ -137,6 +138,11 @@ module Internal =
                 nodes.[id] <- { node with Value = Some value }
                 value
 
+        member this.GetDependenciesOf(identifier: 'Id) =
+            match dependencies.TryGetValue identifier with
+            | true, set -> set |> Seq.map id
+            | false, _ -> Seq.empty
+
         member this.GetDependentsOf(identifier: 'Id) =
             match dependents.TryGetValue identifier with
             | true, set -> set |> Seq.map id
@@ -226,7 +232,6 @@ module Internal =
         member _.OnWarning(f) =
             warningSubscribers.Add f |> ignore
 
-
         interface IDependencyGraph<'Id, 'Val> with
 
             member this.Debug_GetNodes(predicate)= self.Debug_GetNodes(predicate)
@@ -238,6 +243,7 @@ module Internal =
                 self.AddOrUpdateNode(id, dependsOn, compute)
 
             member _.GetValue(id) = self.GetValue(id)
+            member _.GetDependenciesOf(id) = self.GetDependenciesOf(id)
             member _.GetDependentsOf(id) = self.GetDependentsOf(id)
             member _.AddDependency(node, dependsOn) = self.AddDependency(node, dependsOn)
 
@@ -250,7 +256,6 @@ module Internal =
             member _.OnWarning f = self.OnWarning f
 
             member _.Debug_RenderMermaid() = self.Debug_RenderMermaid()
-
 
 
     and GraphBuilder<'Id, 'Val when 'Id: equality> internal (graph: IDependencyGraph<'Id, 'Val>, ids: 'Id seq) =
@@ -291,6 +296,9 @@ type LockOperatedDependencyGraph<'Id, 'Val when 'Id: equality and 'Id: not null>
 
         member _.AddOrUpdateNode(id, dependsOn, compute)=
             lock lockObj (fun () -> graph.AddOrUpdateNode(id, dependsOn, compute))
+
+        member _.GetDependenciesOf(id) =
+            lock lockObj (fun () -> graph.GetDependenciesOf(id))
 
         member _.GetDependentsOf(id) =
             lock lockObj (fun () -> graph.GetDependentsOf(id))
@@ -365,4 +373,3 @@ type GraphExtensions =
                 failwith $"Found extra dependencies: %A{extras.ToArray()}"
 
             head, seq manyResult
-
