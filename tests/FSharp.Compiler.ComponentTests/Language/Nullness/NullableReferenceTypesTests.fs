@@ -19,6 +19,23 @@ let typeCheckWithStrictNullness cu =
 
 
 
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``Does report when null goes to DateTime Parse`` () =
+
+    FSharp """module TestLib
+open System
+let parsedDate = DateTime.Parse(null:(string|null))
+let parseDate2(s:string|null) = DateTime.Parse(s)
+let parsedDate3 = DateTime.Parse(null)
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics     
+                [Error 3261, Line 3, Col 18, Line 3, Col 52, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
+                 Error 3261, Line 4, Col 33, Line 4, Col 50, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
+                 Error 3261, Line 5, Col 19, Line 5, Col 39, "Nullness warning: The type 'string' does not support 'null'."]
+
 [<Fact>]
 let ``Can convert generic value to objnull arg`` () =
     FSharp """module TestLib
