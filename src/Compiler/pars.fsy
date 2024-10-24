@@ -988,7 +988,7 @@ classMemberSpfn:
         
        let flags, leadingKeyword = $3
        if leadingKeywordIsAbstract leadingKeyword then 
-        [ $5; getterAccess; setterAccess ]
+        [ $2; $5; getterAccess; setterAccess ]
         |> List.iter (function None -> () | Some access -> errorR(Error(FSComp.SR.parsAccessibilityModsIllegalForAbstract(), access.Range)))
 
        let flags = flags (getSetAdjuster arity)
@@ -2063,7 +2063,7 @@ classDefnMember:
            | Some gs -> unionRanges m gs.Range
            |> unionRangeWithXmlDoc doc
 
-       [ $4; getterAccess; setterAccess ]
+       [ $2; $4; getterAccess; setterAccess ]
        |> List.iter (function None -> () | Some access -> errorR(Error(FSComp.SR.parsAccessibilityModsIllegalForAbstract(), access.Range)))
 
        let mkFlags, leadingKeyword = $3

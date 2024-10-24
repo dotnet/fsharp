@@ -28,8 +28,11 @@ module AccessibilityAnnotations_PermittedLocations =
         |> shouldFail
         |> withDiagnostics [
             (Error 531, Line 18, Col 5, Line 18, Col 11, "Accessibility modifiers should come immediately prior to the identifier naming a construct")
+            (Error 561, Line 18, Col 5, Line 18, Col 11, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
             (Error 531, Line 19, Col 5, Line 19, Col 12, "Accessibility modifiers should come immediately prior to the identifier naming a construct")
+            (Error 561, Line 19, Col 5, Line 19, Col 12, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
             (Error 531, Line 20, Col 5, Line 20, Col 13, "Accessibility modifiers should come immediately prior to the identifier naming a construct")
+            (Error 561, Line 20, Col 5, Line 20, Col 13, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
             (Error 561, Line 21, Col 14, Line 21, Col 20, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
             (Error 561, Line 22, Col 14, Line 22, Col 21, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
             (Error 561, Line 23, Col 14, Line 23, Col 22, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
@@ -43,6 +46,7 @@ module AccessibilityAnnotations_PermittedLocations =
         |> shouldFail
         |> withDiagnostics [
             (Error 531, Line 13, Col 5, Line 13, Col 11, "Accessibility modifiers should come immediately prior to the identifier naming a construct")
+            (Error 561, Line 13, Col 5, Line 13, Col 11, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
         ]
 
     // SOURCE=E_accessibilityOnInterface02.fs              SCFLAGS="--test:ErrorRanges"         # E_accessibilityOnInterface02.fs
@@ -53,6 +57,7 @@ module AccessibilityAnnotations_PermittedLocations =
         |> shouldFail
         |> withDiagnostics [
             (Error 531, Line 15, Col 5, Line 15, Col 12, "Accessibility modifiers should come immediately prior to the identifier naming a construct")
+            (Error 561, Line 15, Col 5, Line 15, Col 12, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
         ]
 
     // SOURCE=E_accessibilityOnInterface03.fs              SCFLAGS="--test:ErrorRanges"         # E_accessibilityOnInterface03.fs
@@ -63,6 +68,7 @@ module AccessibilityAnnotations_PermittedLocations =
         |> shouldFail
         |> withDiagnostics [
             (Error 531, Line 15, Col 5, Line 15, Col 13, "Accessibility modifiers should come immediately prior to the identifier naming a construct")
+            (Error 561, Line 15, Col 5, Line 15, Col 13, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
         ]
 
     // SOURCE=E_accessibilityOnInterface04.fs              SCFLAGS="--test:ErrorRanges"         # E_accessibilityOnInterface04.fs
