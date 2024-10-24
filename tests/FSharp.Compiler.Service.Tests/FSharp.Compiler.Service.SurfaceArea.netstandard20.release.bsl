@@ -8070,8 +8070,8 @@ FSharp.Compiler.Syntax.SynMemberDefn+ImplicitInherit: FSharp.Compiler.Text.Range
 FSharp.Compiler.Syntax.SynMemberDefn+ImplicitInherit: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynMemberDefn+ImplicitInherit: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident] get_inheritAlias()
 FSharp.Compiler.Syntax.SynMemberDefn+ImplicitInherit: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident] inheritAlias
-FSharp.Compiler.Syntax.SynMemberDefn+Inherit: FSharp.Compiler.Syntax.SynType baseType
-FSharp.Compiler.Syntax.SynMemberDefn+Inherit: FSharp.Compiler.Syntax.SynType get_baseType()
+FSharp.Compiler.Syntax.SynMemberDefn+Inherit: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynType] baseType
+FSharp.Compiler.Syntax.SynMemberDefn+Inherit: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynType] get_baseType()
 FSharp.Compiler.Syntax.SynMemberDefn+Inherit: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynMemberDefn+Inherit: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynMemberDefn+Inherit: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident] asIdent
@@ -8155,7 +8155,7 @@ FSharp.Compiler.Syntax.SynMemberDefn+ImplicitInherit: FSharp.Compiler.SyntaxTriv
 FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn NewImplicitInherit(FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Syntax.SynExpr, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident], FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynMemberDefnInheritTrivia)
 FSharp.Compiler.Syntax.SynMemberDefn+Inherit: FSharp.Compiler.SyntaxTrivia.SynMemberDefnInheritTrivia get_trivia()
 FSharp.Compiler.Syntax.SynMemberDefn+Inherit: FSharp.Compiler.SyntaxTrivia.SynMemberDefnInheritTrivia trivia
-FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn NewInherit(FSharp.Compiler.Syntax.SynType, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident], FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynMemberDefnInheritTrivia)
+FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn NewInherit(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynType], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident], FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynMemberDefnInheritTrivia)
 FSharp.Compiler.SyntaxTrivia.SynMemberDefnInheritTrivia: FSharp.Compiler.Text.Range InheritKeyword
 FSharp.Compiler.SyntaxTrivia.SynMemberDefnInheritTrivia: FSharp.Compiler.Text.Range get_InheritKeyword()
 FSharp.Compiler.SyntaxTrivia.SynMemberDefnInheritTrivia: System.String ToString()

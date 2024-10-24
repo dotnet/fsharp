@@ -4475,8 +4475,8 @@ module TcDeclarations =
             let implements2 = members |> List.choose (function SynMemberDefn.Interface (interfaceType=ty) -> Some(ty, ty.Range) | _ -> None)
             let inherits =
                 members |> List.choose (function 
-                    | SynMemberDefn.Inherit (ty, idOpt, m, _) -> Some(ty, m, idOpt)
-                    | SynMemberDefn.ImplicitInherit (ty, _, idOpt, m, _) -> Some(ty, m, idOpt)
+                    | SynMemberDefn.Inherit (Some ty, idOpt, m, _) -> Some(ty, m, idOpt)
+                    | SynMemberDefn.ImplicitInherit (ty, _, idOpt, m) -> Some(ty, m, idOpt)
                     | _ -> None)
 
             //let nestedTycons = cspec |> List.choose (function SynMemberDefn.NestedType (x, _, _) -> Some x | _ -> None)
