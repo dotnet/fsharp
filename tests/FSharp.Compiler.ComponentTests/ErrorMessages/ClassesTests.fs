@@ -831,6 +831,18 @@ type Class() =
             (Error 961, Line 5, Col 5, Line 5, Col 12, "This 'inherit' declaration specifies the inherited type but no arguments. Consider supplying arguments, e.g. 'inherit BaseType(args)'.")
             (Error 946, Line 5, Col 13, Line 5, Col 15, "Cannot inherit from interface type. Use interface ... with instead.")
         ]
+        
+    [<Fact>]
+    let ``This 'inherit' declaration specifies the inherited type but no arguments. Type name cannot be empty.`` () =
+        Fsx """
+type Class() =
+    inherit
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3159, Line 3, Col 5, Line 3, Col 12, "Type name cannot be empty.")
+        ]
 
     [<Fact>]
     let ``The types System.ValueType, System.Enum, System.Delegate, System.MulticastDelegate and System.Array cannot be used as super types in an object expression or class.`` () =
