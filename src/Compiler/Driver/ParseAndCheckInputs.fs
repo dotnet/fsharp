@@ -1987,7 +1987,7 @@ let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs =
             idx, lastModified)
         |> Graph.asString
 
-    let writeThisTcData cmdLine graph =
+    let writeThisTcData (cmdLine: string) (graph: string) =
         use tcDataFile = FileSystem.OpenFileForWriteShim tcDataFileName
         let thisTcData = $"{cmdLine}{Environment.NewLine}{graph}"
         tcDataFile.WriteAllText thisTcData
@@ -1996,24 +1996,22 @@ let TryReuseTypecheckingResults (tcConfig: TcConfig) inputs =
         use tcDataFileStream = FileSystem.OpenFileForReadShim tcDataFileName
         let tcDataFileReader = tcDataFileStream.GetReader None
         let prevCompilationCmdLine = tcDataFileReader.ReadLine()
-        let thisCompilationCmdLine = getThisCompilationCmdLine ()
+        let thisCompilationCmdLine = getThisCompilationCmdLine()
 
         if prevCompilationCmdLine = thisCompilationCmdLine then
             let prevCompilationGraph = tcDataFileReader.ReadToEnd()
-            let thisCompilationGraph = getThisCompilationGraph ()
+            let thisCompilationGraph = getThisCompilationGraph()
 
-            // extra new line is needed because WriteAllText adds a new line
-            // when writing the file to the disk
-            if prevCompilationGraph = thisCompilationGraph + Environment.NewLine then
+            if prevCompilationGraph = thisCompilationGraph then
                 () // do nothing, yet
             else
                 writeThisTcData thisCompilationCmdLine thisCompilationGraph
         else
-            let thisCompilationGraph = getThisCompilationGraph ()
+            let thisCompilationGraph = getThisCompilationGraph()
             writeThisTcData thisCompilationCmdLine thisCompilationGraph
     else
-        let thisCompilationCmdLine = getThisCompilationCmdLine ()
-        let thisCompilationGraph = getThisCompilationGraph ()
+        let thisCompilationCmdLine = getThisCompilationCmdLine()
+        let thisCompilationGraph = getThisCompilationGraph()
         writeThisTcData thisCompilationCmdLine thisCompilationGraph
 
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
