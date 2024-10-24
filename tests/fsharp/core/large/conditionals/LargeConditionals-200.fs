@@ -207,4 +207,4 @@ let expectedValues() =
     if rnd.Next(3) = 1 then 1 else 
     4
 printfn "expectedValues() = %A" (expectedValues())
-System.IO.File.WriteAllLines("test.ok", ["ok"])
+printf "TEST PASSED OK" ;
