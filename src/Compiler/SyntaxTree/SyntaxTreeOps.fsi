@@ -322,6 +322,8 @@ val synExprContainsError: inpExpr: SynExpr -> bool
 
 val parsedHashDirectiveArguments: ParsedHashDirectiveArgument list -> LanguageVersion -> string list
 
+val parsedHashDirectiveArgumentsNoCheck: ParsedHashDirectiveArgument list -> LanguageVersion -> string list
+
 val parsedHashDirectiveStringArguments: ParsedHashDirectiveArgument list -> LanguageVersion -> string list
 
 /// 'e1 && e2'

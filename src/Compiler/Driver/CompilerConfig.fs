@@ -27,6 +27,7 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.BuildGraph
+open System.Text.RegularExpressions
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Core.CompilerServices
@@ -91,24 +92,37 @@ let ResolveFileUsingPaths (paths, m, fileName) =
         let searchMessage = String.concat "\n " paths
         raise (FileNameNotResolved(fileName, searchMessage, m))
 
-let GetWarningNumber (m, warningNumber: string, prefixSupported) =
-    try
-        let warningNumber =
-            if warningNumber.StartsWithOrdinal "FS" then
-                if prefixSupported then
-                    warningNumber.Substring 2
-                else
-                    raise (new ArgumentException())
-            else
-                warningNumber
+let GetWarningNumber (m, numStr: string, langVersion: LanguageVersion, isCompilerOption: bool) =
+    let argFeature = LanguageFeature.ParsedHashDirectiveArgumentNonQuotes
+    let errorInvalid = Error(FSComp.SR.buildInvalidWarningNumber numStr, m)
+    let rxOptions = RegexOptions.CultureInvariant
 
-        if Char.IsDigit(warningNumber[0]) then
-            Some(int32 warningNumber)
+    let getNumber regexString failAction =
+        let mtch = Regex(regexString, rxOptions).Match(numStr)
+
+        if mtch.Success then
+            Some(int mtch.Groups[2].Captures[0].Value)
         else
+            failAction ()
             None
-    with _ ->
-        warning (Error(FSComp.SR.buildInvalidWarningNumber warningNumber, m))
+
+    let matches regexString =
+        Regex(regexString, rxOptions).Match(numStr).Success
+
+    if isCompilerOption then
+        getNumber """^(FS)?(\d+)$""" (fun () ->
+            if not (matches """^([A-Z]+)(\d+)$""") then
+                warning errorInvalid)
+    elif langVersion.SupportsFeature(argFeature) then
+        getNumber """^("?)(?:(?:FS)?(\d+))\1$""" (fun () -> warning errorInvalid)
+    elif matches """^[^"].+$""" then
+        errorR (languageFeatureError langVersion argFeature m)
         None
+    elif matches """^"FS.*"$""" then
+        warning errorInvalid
+        None
+    else
+        getNumber """^(")(\d+)"$""" (fun () -> ())
 
 let ComputeMakePathAbsolute implicitIncludeDir (path: string) =
     try
@@ -931,7 +945,7 @@ type TcConfigBuilder =
     member tcConfigB.TurnWarningOff(m, s: string) =
         use _ = UseBuildPhase BuildPhase.Parameter
 
-        match GetWarningNumber(m, s, tcConfigB.langVersion.SupportsFeature(LanguageFeature.ParsedHashDirectiveArgumentNonQuotes)) with
+        match GetWarningNumber(m, s, tcConfigB.langVersion, true) with
         | None -> ()
         | Some n ->
             // nowarn:62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
@@ -946,7 +960,7 @@ type TcConfigBuilder =
     member tcConfigB.TurnWarningOn(m, s: string) =
         use _ = UseBuildPhase BuildPhase.Parameter
 
-        match GetWarningNumber(m, s, tcConfigB.langVersion.SupportsFeature(LanguageFeature.ParsedHashDirectiveArgumentNonQuotes)) with
+        match GetWarningNumber(m, s, tcConfigB.langVersion, true) with
         | None -> ()
         | Some n ->
             // warnon 62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
