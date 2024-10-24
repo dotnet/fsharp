@@ -114,7 +114,7 @@ module UnionTypes =
         |> shouldFail
         |> withDiagnostics [
             (Warning 1125, Line 11, Col 29, Line 11, Col 41, "The instantiation of the generic type 'list1' is missing and can't be inferred from the arguments or return type of this member. Consider providing a type instantiation when accessing this type, e.g. 'list1<_>'.")
-            (Error 3068, Line 15, Col 10, Line 15, Col 25, "The function or member 'toList' is used in a way that requires further type annotations at its definition to ensure consistency of inferred types. The inferred signature is 'static member private list1.toList: ('a list1 -> 'a list)'.")
+            (Error 3068, Line 15, Col 19, Line 15, Col 25, "The function or member 'toList' is used in a way that requires further type annotations at its definition to ensure consistency of inferred types. The inferred signature is 'static member private list1.toList: ('a list1 -> 'a list)'.")
         ]
 
     //SOURCE=E_Interface_IComparable.fsx SCFLAGS="--test:ErrorRanges"                             # E_Interface_IComparable.fsx
@@ -158,9 +158,9 @@ module UnionTypes =
         |> shouldFail
         |> withDiagnostics [
             (Error 39, Line 17, Col 15, Line 17, Col 30, "The type 'IStructuralHash' is not defined.")
-            (Error 72, Line 18, Col 1, Line 18, Col 25, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
+            (Error 72, Line 18, Col 4, Line 18, Col 25, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
             (Error 39, Line 21, Col 15, Line 21, Col 30, "The type 'IStructuralHash' is not defined.")
-            (Error 72, Line 22, Col 1, Line 22, Col 25, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
+            (Error 72, Line 22, Col 4, Line 22, Col 25, "Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.")
         ]
 
     //SOURCE=E_FieldNameUsedMulti.fs SCFLAGS="--test:ErrorRanges"                                 # E_FieldNameUsedMulti.fs

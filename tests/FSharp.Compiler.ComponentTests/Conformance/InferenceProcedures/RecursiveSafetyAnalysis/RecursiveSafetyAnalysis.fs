@@ -25,7 +25,7 @@ module RecursiveSafetyAnalysis =
         |> shouldFail
         |> withDiagnostics [
             (Error 953, Line 6, Col 6, Line 6, Col 15, "This type definition involves an immediate cyclic reference through an abbreviation")
-            (Error 1, Line 8, Col 25, Line 8, Col 34, "This expression was expected to have type    'bogusType'    but here has type    'Map<'a,'b>'")
+            (Error 1, Line 8, Col 29, Line 8, Col 34, "This expression was expected to have type    'bogusType'    but here has type    'Map<'a,'b>'")
         ]
 
     // SOURCE=E_DuplicateRecursiveRecords.fs SCFLAGS="--test:ErrorRanges"          # E_DuplicateRecursiveRecords.fs
@@ -60,7 +60,7 @@ module RecursiveSafetyAnalysis =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 193, Line 15, Col 14, Line 15, Col 20, "Type constraint mismatch. The type \n    'int * 'a'    \nis not compatible with type\n    'string'    \n")
+            (Error 193, Line 15, Col 16, Line 15, Col 20, "Type constraint mismatch. The type \n    'int * 'a'    \nis not compatible with type\n    'string'    \n")
         ]
 
     //<Expects status="error" id="FS0193" span="(21,27-21,28)">Type constraint mismatch</Expects>

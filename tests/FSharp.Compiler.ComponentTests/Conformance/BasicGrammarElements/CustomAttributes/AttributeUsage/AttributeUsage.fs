@@ -269,9 +269,9 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 685, Line 14, Col 1, Line 14, Col 6, "The generic function 'Foo' must be given explicit type argument(s)")
-            (Error 685, Line 26, Col 1, Line 26, Col 6, "The generic function 'Foo' must be given explicit type argument(s)")
-            (Error 685, Line 28, Col 1, Line 28, Col 6, "The generic function 'Foo' must be given explicit type argument(s)")
+            (Error 685, Line 14, Col 3, Line 14, Col 6, "The generic function 'Foo' must be given explicit type argument(s)")
+            (Error 685, Line 26, Col 3, Line 26, Col 6, "The generic function 'Foo' must be given explicit type argument(s)")
+            (Error 685, Line 28, Col 3, Line 28, Col 6, "The generic function 'Foo' must be given explicit type argument(s)")
         ]
 
     // SOURCE=E_RequiresExplicitTypeArguments02.fs SCFLAGS="--test:ErrorRanges"	# E_RequiresExplicitTypeArguments02.fs
@@ -281,7 +281,7 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 685, Line 20, Col 5, Line 20, Col 10, "The generic function 'Foo' must be given explicit type argument(s)")
+            (Error 685, Line 20, Col 7, Line 20, Col 10, "The generic function 'Foo' must be given explicit type argument(s)")
         ]
 
     // SOURCE=E_WithBitwiseOr01.fsx  SCFLAGS="--test:ErrorRanges -a"	# E_WithBitwiseOr01.fsx

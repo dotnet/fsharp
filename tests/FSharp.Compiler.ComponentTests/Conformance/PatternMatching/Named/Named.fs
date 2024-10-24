@@ -484,7 +484,7 @@ but here has type
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3872, Line 8, Col 6, Line 8, Col 46, "Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.")
+            (Error 3872, Line 8, Col 6, Line 8, Col 46, "Multi-case partial active patterns are not supported. Consider using a single-case partial active pattern or a full active pattern.");
             (Error 3868, Line 22, Col 7, Line 22, Col 17, "This active pattern expects exactly one pattern argument, e.g., 'WhiteSpace pat'.");
             (Error 1107, Line 20, Col 7, Line 20, Col 21, "Partial active patterns may only generate one result")
         ]

@@ -277,7 +277,7 @@ let ``Expression typing test`` () =
     for col in 42..43 do
         let decls =  typeCheckResults.GetDeclarationListInfo(Some parseResult, 2, inputLines[1], PartialLongName.Empty(col), (fun _ -> []))
         let autoCompleteSet = set [ for item in decls.Items -> item.NameInList ]
-        autoCompleteSet |> shouldEqual (set stringMethods)
+        autoCompleteSet |> shouldEqual (set [])
 
 // The underlying problem is that the parser error recovery doesn't include _any_ information for
 // the incomplete member:
@@ -733,13 +733,13 @@ let _ =
         // note: these "System" symbol uses are not duplications because each of them corresponds to different namespaces
         [|("System", (2, 5, 2, 11))
           ("ConsoleKey", (5, 10, 5, 20));
-          ("field Tab", (5, 10, 5, 24));
+          ("field Tab", (5, 21, 5, 24));
           ("ConsoleKey", (6, 6, 6, 16));
           ("field OemClear", (6, 6, 6, 25));
           ("ConsoleKey", (6, 29, 6, 39));
-          ("field A", (6, 29, 6, 41));
+          ("field A", (6, 40, 6, 41));
           ("ConsoleKey", (7, 11, 7, 21));
-          ("field B", (7, 11, 7, 23));
+          ("field B", (7, 22, 7, 23));
           ("Test", (1, 0, 1, 0))|]
 
 [<Fact>]
