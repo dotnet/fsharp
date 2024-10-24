@@ -15,6 +15,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Compile Include="DependencyGraphTests.fs" />
 		<Compile Include="LanguageServerTests.fs" />
 		<Compile Include="Program.fs" />
 	</ItemGroup>

@@ -27,7 +27,7 @@ type FSharpLspServices(serviceCollection: IServiceCollection) as this =
     let serviceProvider = serviceCollection.BuildServiceProvider()
 
     interface ILspServices with
-        member this.GetRequiredService<'T>() : 'T =
+        member this.GetRequiredService<'T when 'T: not null>() : 'T =
             serviceProvider.GetRequiredService<'T>()
 
         member this.TryGetService(t) = serviceProvider.GetService(t)
