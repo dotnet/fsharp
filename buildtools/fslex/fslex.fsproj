@@ -5,6 +5,7 @@
     <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <RollForward Condition="'$(BUILDING_USING_DOTNET)' == 'true'">LatestMajor</RollForward>
+    <NoWarn>$(NoWarn);64;1182;1204</NoWarn>         <!--Temporary fix for sourcebuild -->
   </PropertyGroup>
 
   <PropertyGroup>
