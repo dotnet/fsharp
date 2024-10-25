@@ -4281,7 +4281,7 @@ module TcDeclarations =
     //   multiple (binding or slotsig or field or interface or inherit).
     //   i.e. not local-bindings, implicit ctor or implicit inherit (or tycon?).
     //   atMostOne inherit.
-    let private CheckMembersForm ds = 
+    let private CheckMembersForm ds m = 
         match ds with
         | d :: ds when isImplicitCtor d ->
             // Implicit construction 
@@ -4302,7 +4302,7 @@ module TcDeclarations =
              | SynMemberDefn.Interface (range=m) :: _ -> errorR(InternalError("List.takeUntil is wrong, have interface", m))
              | SynMemberDefn.ImplicitCtor (range=m) :: _ -> errorR(InternalError("implicit class construction with two implicit constructions", m))
              | SynMemberDefn.AutoProperty (range=m) :: _ -> errorR(InternalError("List.takeUntil is wrong, have auto property", m))
-             | SynMemberDefn.ImplicitInherit (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveOneInherit(), m))
+             | SynMemberDefn.ImplicitInherit _ :: _ -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveOneInherit(), m))
              | SynMemberDefn.LetBindings (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveLocalBindingsBeforeMembers(), m))
              | SynMemberDefn.Inherit (trivia= { InheritKeyword = m }) :: _ -> errorR(Error(FSComp.SR.tcInheritDeclarationMissingArguments(), m))
              | SynMemberDefn.NestedType (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypesCannotContainNestedTypes(), m))
@@ -4470,7 +4470,7 @@ module TcDeclarations =
         | SynTypeDefnRepr.ObjectModel(kind, members, m) ->
             let members = desugarGetSetMembers members
 
-            CheckMembersForm members
+            CheckMembersForm members synTyconInfo.Range
 
             let fields = members |> List.choose (function SynMemberDefn.ValField (fieldInfo = f) -> Some f | _ -> None)
             let implements2 = members |> List.choose (function SynMemberDefn.Interface (interfaceType=ty) -> Some(ty, ty.Range) | _ -> None)
