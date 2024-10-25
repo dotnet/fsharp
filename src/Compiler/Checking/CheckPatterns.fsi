@@ -39,4 +39,5 @@ val TcSimplePats:
     env: TcEnv ->
     patEnv: TcPatLinearEnv ->
     synSimplePats: SynSimplePats ->
+    isConstructor: bool ->
         string list * TcPatLinearEnv

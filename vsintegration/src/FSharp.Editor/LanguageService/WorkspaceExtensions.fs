@@ -141,7 +141,7 @@ module private CheckerExtensions =
                     return sourceText.ToFSharpSourceText()
                 }
 
-            return FSharpFileSnapshot(FileName = document.FilePath, Version = version.ToString(), GetSource = getSource)
+            return FSharpFileSnapshot(fileName = document.FilePath, version = version.ToString(), getSource = getSource)
         }
 
     let getReferencedProjectVersions (project: Project) =
@@ -286,7 +286,7 @@ module private CheckerExtensions =
 
                                         async.Return(version.ToString(), getSource)
 
-                                return FSharpFileSnapshot(FileName = path, Version = version, GetSource = getSource)
+                                return FSharpFileSnapshot(fileName = path, version = version, getSource = getSource)
                             }
 
                         let! snapshot =

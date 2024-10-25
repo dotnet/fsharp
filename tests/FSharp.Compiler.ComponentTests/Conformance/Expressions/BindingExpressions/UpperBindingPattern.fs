@@ -59,3 +59,9 @@ for II in [1..10] do
 
 try ()
 with Ex -> ()
+
+type AnonymousObject<'T1, 'T2> =
+    val private item1: 'T1
+    member x.Item1 = x.item1
+
+    new(Item1) = { item1 = Item1 }

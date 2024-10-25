@@ -6426,12 +6426,15 @@ and TcExprILAssembly (cenv: cenv) overallTy env tpenv (ilInstrs, synTyArgs, synA
 and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpenv e =
     let g = cenv.g
     match e with
-    | SynExpr.Lambda (isMember, isSubsequent, synSimplePats, bodyExpr, _, m, _) when isMember || isFirst || isSubsequent ->
-
+    | SynExpr.Lambda (isMember, isSubsequent, synSimplePats, bodyExpr, _parsedData, m, _trivia) when isMember || isFirst || isSubsequent ->
         let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m overallTy.Commit
+        let isConstructor =
+            env.eCtorInfo 
+            |> Option.map (fun ctorInfo -> ctorInfo.ctorIsImplicit)
+            |> Option.defaultValue false
 
         let vs, (TcPatLinearEnv (tpenv, names, takenNames)) =
-            cenv.TcSimplePats cenv isMember CheckCxs domainTy env (TcPatLinearEnv (tpenv, Map.empty, takenNames)) synSimplePats
+            cenv.TcSimplePats cenv isMember CheckCxs domainTy env (TcPatLinearEnv (tpenv, Map.empty, takenNames)) synSimplePats isConstructor
 
         let envinner, _, vspecMap = MakeAndPublishSimpleValsForMergedScope cenv env m names
         let byrefs = vspecMap |> Map.map (fun _ v -> isByrefTy g v.Type, v)
@@ -10608,7 +10611,15 @@ and TcAndPatternCompileMatchClauses mExpr mMatch actionOnFailure cenv inputExprO
 and TcMatchPattern (cenv: cenv) inputTy env tpenv (synPat: SynPat) (synWhenExprOpt: SynExpr option) (isTrueMatchClause: bool) =
     let g = cenv.g
     let m = synPat.Range
-    let warnOnUpperFlag = if isTrueMatchClause then WarnOnUpperUnionCaseLabel else WarnOnUpperVariablePatterns
+    let hasConstructorShape = AreWithinCtorShape env
+    let warnOnUpperFlag =
+        if isTrueMatchClause && not hasConstructorShape then
+            WarnOnUpperUnionCaseLabel
+        elif hasConstructorShape then
+            AllIdsOK
+        else
+            WarnOnUpperVariablePatterns
+
     let patf', (TcPatLinearEnv (tpenv, names, _)) = cenv.TcPat warnOnUpperFlag cenv env None (TcPatValFlags (ValInline.Optional, permitInferTypars, noArgOrRetAttribs, false, None, false)) (TcPatLinearEnv (tpenv, Map.empty, Set.empty)) inputTy synPat
     let envinner, values, vspecMap = MakeAndPublishSimpleValsForMergedScope cenv env m names
 
@@ -11629,7 +11640,8 @@ and ApplyTypesFromArgumentPatterns (cenv: cenv, env, optionalArgsOK, ty, m, tpen
         let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m ty
         // We apply the type information from the patterns by type checking the
         // "simple" patterns against 'domainTyR'. They get re-typechecked later.
-        ignore (cenv.TcSimplePats cenv optionalArgsOK CheckCxs domainTy env (TcPatLinearEnv (tpenv, Map.empty, Set.empty)) pushedPat)
+        let isConstructor = memberFlagsOpt |> Option.map (fun flags -> flags.MemberKind = SynMemberKind.Constructor) |> Option.defaultValue false
+        ignore (cenv.TcSimplePats cenv optionalArgsOK CheckCxs domainTy env (TcPatLinearEnv (tpenv, Map.empty, Set.empty)) pushedPat isConstructor)
         ApplyTypesFromArgumentPatterns (cenv, env, optionalArgsOK, resultTy, m, tpenv, NormalizedBindingRhs (morePushedPats, retInfoOpt, e), memberFlagsOpt)
 
 /// Check if the type annotations and inferred type information in a value give a

@@ -216,4 +216,5 @@ module BindingExpressions =
             (Warning 3874, Line 53, Col 18, Line 53, Col 21, "Variable patterns should be lowercase.")
             (Warning 3874, Line 57, Col 18, Line 57, Col 20, "Variable patterns should be lowercase.")
             (Warning 3874, Line 61, Col 6, Line 61, Col 8, "Variable patterns should be lowercase.")
+            (Warning 3874, Line 67, Col 9, Line 67, Col 14, "Variable patterns should be lowercase.")
         ]

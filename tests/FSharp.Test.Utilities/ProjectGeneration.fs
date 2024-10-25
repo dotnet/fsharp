@@ -642,9 +642,9 @@ module ProjectOperations =
             let hash = md5.ComputeHash(inputBytes) |> Array.map (fun b -> b.ToString("X2")) |> String.concat ""
 
             return FSharpFileSnapshot(
-                FileName = filePath,
-                Version = hash,
-                GetSource = fun () -> source |> Task.FromResult
+                fileName = filePath,
+                version = hash,
+                getSource = fun () -> source |> Task.FromResult
             )
         }
 
@@ -858,9 +858,9 @@ module Helpers =
 
         let getSource _ fileName =
             FSharpFileSnapshot(
-              FileName = fileName,
-              Version = "1",
-              GetSource = fun () -> source |> SourceTextNew.ofString |> Task.FromResult )
+              fileName = fileName,
+              version = "1",
+              getSource = fun () -> source |> SourceTextNew.ofString |> Task.FromResult )
             |> async.Return
 
         let checker = FSharpChecker.Create(
