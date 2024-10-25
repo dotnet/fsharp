@@ -20,7 +20,9 @@ ImplFile
                           (false,
                            YieldOrReturn
                              ((false, true), Const (Bool true, (4,26--4,30)),
-                              (4,19--4,30)), (4,17--4,32)), (4,11--4,32)),
+                              (4,19--4,30),
+                              { YieldOrReturnKeyword = (4,19--4,25) }),
+                           (4,17--4,32)), (4,11--4,32)),
                      ArbitraryAfterError ("whileBody1", (6,0--6,1)), (4,4--4,35)),
                   (3,4--3,5), Yes (3,0--4,35), { LeadingKeyword = Let (3,0--3,3)
                                                  InlineKeyword = None

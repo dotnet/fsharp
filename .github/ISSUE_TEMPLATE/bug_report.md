@@ -4,7 +4,7 @@ about: Create a report to help us improve F#
 title: ''
 labels:  [Bug, Needs-Triage]
 assignees: ''
-
+type: 'Bug'
 ---
 
 Please provide a succinct description of the issue.

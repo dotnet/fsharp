@@ -744,7 +744,7 @@
       </trans-unit>
       <trans-unit id="ArrayAssignment-Line1">
         <source>You can modify the contents of an array element by using the left arrow assignment operator.</source>
-        <target state="needs-review-translation">Vous pouvez modifier le contenu d'un élément de tableau à l'aide de l'opérateur d'assignation flèche gauche.</target>
+        <target state="new">You can modify the contents of an array element by using the left arrow assignment operator.</target>
         <note />
       </trans-unit>
       <trans-unit id="ArrayAssignment-Line2">
@@ -1009,7 +1009,7 @@
       </trans-unit>
       <trans-unit id="CardRank">
         <source>A Discriminated Union can also be used to represent the rank of a playing card.</source>
-        <target state="needs-review-translation">Une union discriminée peut également servir à représenter le rang d'une carte à jouer.</target>
+        <target state="new">A Discriminated Union can also be used to represent the rank of a playing card.</target>
         <note />
       </trans-unit>
       <trans-unit id="CardRankValue">
@@ -1029,7 +1029,7 @@
       </trans-unit>
       <trans-unit id="CardType-Line2">
         <source>It's common to use both Records and Discriminated Unions when representing data.</source>
-        <target state="needs-review-translation">Il est fréquent d'utiliser à la fois des enregistrements et des unions discriminées pour représenter des données.</target>
+        <target state="new">It's common to use both Records and Discriminated Unions when representing data.</target>
         <note />
       </trans-unit>
       <trans-unit id="ComputeFullDeck">
@@ -1089,7 +1089,7 @@
       </trans-unit>
       <trans-unit id="DuRecursiveDef-Line1">
         <source>Discriminated Unions also support recursive definitions.</source>
-        <target state="needs-review-translation">Les unions discriminées prennent également en charge les définitions récursives.</target>
+        <target state="new">Discriminated Unions also support recursive definitions.</target>
         <note />
       </trans-unit>
       <trans-unit id="DuRecursiveDef-Line2">

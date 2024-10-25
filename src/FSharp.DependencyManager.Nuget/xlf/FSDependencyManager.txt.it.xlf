@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="cantReferenceSystemPackage">
         <source>PackageManager cannot reference the System Package '{0}'</source>
-        <target state="translated">PackageManager non può fare riferimento al pacchetto di sistema '{0}'</target>
+        <target state="new">PackageManager cannot reference the System Package '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="highestVersion">

@@ -1958,7 +1958,8 @@ and CheckAttribArgExpr cenv env expr =
         | Const.Single _
         | Const.Char _
         | Const.Zero
-        | Const.String _  -> ()
+        | Const.String _  
+        | Const.Decimal _ -> ()
         | _ ->
             if cenv.reportErrors then
                 errorR (Error (FSComp.SR.tastNotAConstantExpression(), m))

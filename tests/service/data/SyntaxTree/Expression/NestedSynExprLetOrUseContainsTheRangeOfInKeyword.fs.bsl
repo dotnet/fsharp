@@ -55,8 +55,10 @@ ImplFile
                                     [Some (OriginalNotation "+")]), None,
                                  (5,6--5,7)), Ident x, (5,4--5,7)), Ident y,
                            (5,4--5,9)), (4,4--5,9),
-                        { InKeyword = Some (4,14--4,16) }), (3,4--5,9),
-                     { InKeyword = Some (3,14--3,16) }), (2,4--2,8), NoneAtLet,
+                        { LetOrUseKeyword = (4,4--4,7)
+                          InKeyword = Some (4,14--4,16) }), (3,4--5,9),
+                     { LetOrUseKeyword = (3,4--3,7)
+                       InKeyword = Some (3,14--3,16) }), (2,4--2,8), NoneAtLet,
                   { LeadingKeyword = Let (2,0--2,3)
                     InlineKeyword = None
                     EqualsRange = Some (2,9--2,10) })], (2,0--5,9))],

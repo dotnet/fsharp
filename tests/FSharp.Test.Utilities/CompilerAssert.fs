@@ -322,7 +322,7 @@ module rec CompilerAssertHelpers =
             else
                 entryPoint
         let args = mkDefaultArgs entryPoint
-        captureConsoleOutputs (fun () -> entryPoint.Invoke(Unchecked.defaultof<obj>, args) |> ignore)
+        captureConsoleOutputs (fun () -> entryPoint.Invoke(Unchecked.defaultof<obj>, args))
 
 #if NETCOREAPP
     let executeBuiltApp assembly deps isFsx =
@@ -409,8 +409,8 @@ module rec CompilerAssertHelpers =
 
         // Generate a response file, purely for diagnostic reasons.
         File.WriteAllLines(Path.ChangeExtension(outputFilePath, ".rsp"), args)
-        let errors, rc = checker.Compile args |> Async.RunImmediate
-        errors, rc, outputFilePath
+        let errors, ex = checker.Compile args |> Async.RunImmediate
+        errors, ex, outputFilePath
 
     let compileDisposable (outputDirectory:DirectoryInfo) isExe options targetFramework nameOpt (sources:SourceCodeFileKind list) =
         let disposeFile path =
@@ -537,7 +537,7 @@ module rec CompilerAssertHelpers =
                             let tmp = Path.Combine(outputPath.FullName, Path.ChangeExtension(fileName, ".dll"))
                             disposals.Add({ new IDisposable with member _.Dispose() = File.Delete tmp })
                             cmpl.EmitAsFile tmp
-                            (([||], 0, tmp), []), false)
+                            (([||], None, tmp), []), false)
 
             let compilationRefs =
                 compiledRefs
@@ -559,7 +559,7 @@ module rec CompilerAssertHelpers =
 
             compilationRefs, deps
 
-    let compileCompilationAux outputDirectory (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * int * string) * string list =
+    let compileCompilationAux outputDirectory (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * exn option * string) * string list =
 
         let compilationRefs, deps = evaluateReferences outputDirectory disposals ignoreWarnings cmpl
         let isExe, sources, options, targetFramework, name =
@@ -604,7 +604,7 @@ module rec CompilerAssertHelpers =
         outputDirectory.Create()
         compileCompilationAux outputDirectory (ResizeArray()) ignoreWarnings cmpl
 
-    let captureConsoleOutputs (func: unit -> unit) =
+    let captureConsoleOutputs (func: unit -> obj) =
         let out = Console.Out
         let err = Console.Error
 
@@ -614,29 +614,30 @@ module rec CompilerAssertHelpers =
         use outWriter = new StringWriter (stdout)
         use errWriter = new StringWriter (stderr)
 
-        let succeeded, exn =
+        let rc, exn =
             try
                 try
                     Console.SetOut outWriter
                     Console.SetError errWriter
-                    func ()
-                    true, None
+                    let rc = func()
+                    match rc with
+                    | :? int as rc -> Some rc, None
+                    | _ -> None, None
                 with e ->
                     let errorMessage = if e.InnerException <> null then e.InnerException.ToString() else e.ToString()
                     stderr.Append errorMessage |> ignore
-                    false, Some e
+                    None, Some e
             finally
                 Console.SetOut out
                 Console.SetError err
                 outWriter.Close()
                 errWriter.Close()
 
-        succeeded, stdout.ToString(), stderr.ToString(), exn
+        rc, stdout.ToString(), stderr.ToString(), exn
 
-    let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) isFsx : (int * string * string) =
-        let succeeded, stdout, stderr, _ = executeBuiltApp outputFilePath deps isFsx
-        let exitCode = if succeeded then 0 else -1
-        exitCode, stdout, stderr
+    let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) isFsx : (int option * string * string * exn option) =
+        let rc, stdout, stderr, exn = executeBuiltApp outputFilePath deps isFsx
+        rc, stdout, stderr, exn
 
     let executeBuiltAppNewProcessAndReturnResult (outputFilePath: string) : (int * string * string) =
 #if !NETCOREAPP
@@ -663,7 +664,7 @@ module rec CompilerAssertHelpers =
               member _.Dispose() = try File.Delete runtimeconfigPath with | _ -> () }
 #endif
         let timeout = 30000
-        let exitCode, output, errors = Commands.executeProcess (Some fileName) arguments (Path.GetDirectoryName(outputFilePath)) timeout
+        let exitCode, output, errors = Commands.executeProcess fileName arguments (Path.GetDirectoryName(outputFilePath)) timeout
         (exitCode, output |> String.concat "\n", errors |> String.concat "\n")
 
 open CompilerAssertHelpers
@@ -677,7 +678,7 @@ type CompilerAssert private () =
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
 
-            executeBuiltApp outputExe [] false |> ignore<bool * string * string * exn option>
+            executeBuiltApp outputExe [] false |> ignore<int option * string * string * exn option>
         )
 
     static let compileLibraryAndVerifyILWithOptions options (source: SourceCodeFileKind) (f: ILVerifier -> unit) =
@@ -739,11 +740,13 @@ Updated automatically, please check diffs in your pull request, changes must be 
         returnCompilation cmpl (defaultArg ignoreWarnings false)
 
     static member ExecuteAndReturnResult (outputFilePath: string, isFsx: bool, deps: string list, newProcess: bool) =
-        // If we execute in-process (true by default), then the only way of getting STDOUT is to redirect it to SB, and STDERR is from catching an exception.
        if not newProcess then
-           executeBuiltAppAndReturnResult outputFilePath deps isFsx
+           let entryPointReturnCode, deps, isFsx, exn = executeBuiltAppAndReturnResult outputFilePath deps isFsx
+           entryPointReturnCode, deps, isFsx, exn
        else
-           executeBuiltAppNewProcessAndReturnResult outputFilePath
+           let processExitCode, deps, isFsx = executeBuiltAppNewProcessAndReturnResult outputFilePath
+           Some processExitCode, deps, isFsx, None
+        
 
     static member Execute(cmpl: Compilation, ?ignoreWarnings, ?beforeExecute, ?newProcess, ?onOutput) =
 
@@ -767,7 +770,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
                     Assert.Fail errors
                 onOutput output
             else
-                let _succeeded, _stdout, _stderr, exn = executeBuiltApp outputFilePath deps false 
+                let _rc, _stdout, _stderr, exn = executeBuiltApp outputFilePath deps false 
                 exn |> Option.iter raise)
 
     static member ExecutionHasOutput(cmpl: Compilation, expectedOutput: string) =

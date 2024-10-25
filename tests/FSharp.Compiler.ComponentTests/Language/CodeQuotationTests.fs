@@ -39,3 +39,22 @@ let z : unit =
         |> withLangVersion50
         |> compileAndRun
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Quotation on decimal literal compiles and runs`` () =
+        FSharp """
+open Microsoft.FSharp.Quotations.DerivedPatterns
+
+[<Literal>]
+let x = 7m
+
+let expr = <@ x @>
+
+match expr with
+| Decimal n -> printfn "%M" n
+| _ -> failwith (string expr)
+        """
+        |> asExe
+        |> withLangVersion80
+        |> compileAndRun
+        |> shouldSucceed

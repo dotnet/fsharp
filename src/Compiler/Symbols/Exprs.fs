@@ -121,7 +121,7 @@ type E =
     | ValueSet of FSharpMemberOrFunctionOrValue * FSharpExpr  
     | Unused
     | DefaultValue of FSharpType  
-    | Const of obj * FSharpType
+    | Const of objnull * FSharpType
     | AddressOf of FSharpExpr 
     | Sequential of FSharpExpr * FSharpExpr
     | IntegerForLoop of FSharpExpr * FSharpExpr * FSharpExpr * bool * DebugPointAtFor * DebugPointAtInOrTo

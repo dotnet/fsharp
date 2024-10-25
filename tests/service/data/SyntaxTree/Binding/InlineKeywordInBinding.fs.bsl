@@ -44,11 +44,12 @@ ImplFile
                          { LeadingKeyword = Let (3,4--3,7)
                            InlineKeyword = Some (3,8--3,14)
                            EqualsRange = Some (3,21--3,22) })],
-                     Const (Unit, (4,4--4,6)), (3,4--4,6), { InKeyword = None }),
-                  (2,11--2,16), NoneAtLet, { LeadingKeyword = Let (2,0--2,3)
-                                             InlineKeyword = Some (2,4--2,10)
-                                             EqualsRange = Some (2,17--2,18) })],
-              (2,0--4,6))], PreXmlDocEmpty, [], None, (2,0--5,0),
-          { LeadingKeyword = None })], (true, true),
-      { ConditionalDirectives = []
-        CodeComments = [] }, set []))
+                     Const (Unit, (4,4--4,6)), (3,4--4,6),
+                     { LetOrUseKeyword = (3,4--3,7)
+                       InKeyword = None }), (2,11--2,16), NoneAtLet,
+                  { LeadingKeyword = Let (2,0--2,3)
+                    InlineKeyword = Some (2,4--2,10)
+                    EqualsRange = Some (2,17--2,18) })], (2,0--4,6))],
+          PreXmlDocEmpty, [], None, (2,0--5,0), { LeadingKeyword = None })],
+      (true, true), { ConditionalDirectives = []
+                      CodeComments = [] }, set []))

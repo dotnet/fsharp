@@ -45,7 +45,6 @@ else ()
         |> compile
         |> run
         |> shouldSucceed
-        |> withExitCode 0
 
     [<Fact>]
     let ``Respect nowarn 957 for extension method`` () =

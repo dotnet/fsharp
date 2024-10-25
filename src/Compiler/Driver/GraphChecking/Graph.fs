@@ -83,7 +83,7 @@ module internal Graph =
         graph
         |> Seq.iter (fun (KeyValue(file, deps)) -> printfn $"{file} -> {deps |> Array.map nodePrinter |> join}")
 
-    let print (graph: Graph<'Node>) : unit =
+    let print (graph: Graph<'Node> when 'Node: not null) : unit =
         printCustom graph (fun node -> node.ToString() |> string)
 
     let serialiseToMermaid (graph: Graph<FileIndex * string>) =

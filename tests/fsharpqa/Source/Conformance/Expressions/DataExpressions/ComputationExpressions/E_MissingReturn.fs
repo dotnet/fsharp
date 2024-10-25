@@ -1,6 +1,6 @@
 // #Regression #Conformance #DataExpressions #ComputationExpressions 
 // Regression test for FSHARP1.0:6149
-//<Expects status="error" span="(16,3-16,16)" id="FS0708">This control construct may only be used if the computation expression builder defines a 'Return' method$</Expects>
+//<Expects status="error" span="(16,3-16,9)" id="FS0708">This control construct may only be used if the computation expression builder defines a 'Return' method$</Expects>
 
 type R = S of string 
  

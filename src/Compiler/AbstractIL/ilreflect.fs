@@ -277,7 +277,7 @@ type TypeBuilder with
 
         match m with
         | null -> raise (MissingMethodException nm)
-        | m -> m.Invoke(null, args)
+        | m -> m.Invoke(null, (args: obj array))
 
     member typB.SetCustomAttributeAndLog(cinfo, bytes) =
         if logRefEmitCalls then

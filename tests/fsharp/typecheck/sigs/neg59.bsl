@@ -33,14 +33,14 @@ neg59.fs(89,15,89,18): typecheck error FS3141: 'try/finally' expressions may not
 
 neg59.fs(95,15,95,18): typecheck error FS3141: 'try/finally' expressions may not be used in queries
 
-neg59.fs(102,15,102,64): typecheck error FS3142: 'use' expressions may not be used in queries
+neg59.fs(102,15,102,18): typecheck error FS3142: 'use' expressions may not be used in queries
 
-neg59.fs(108,15,108,64): typecheck error FS3142: 'use' expressions may not be used in queries
+neg59.fs(108,15,108,18): typecheck error FS3142: 'use' expressions may not be used in queries
 
 neg59.fs(113,15,113,25): typecheck error FS3140: 'while' expressions may not be used in queries
 
 neg59.fs(118,15,118,25): typecheck error FS3140: 'while' expressions may not be used in queries
 
-neg59.fs(124,17,124,25): typecheck error FS3144: 'return' and 'return!' may not be used in queries
+neg59.fs(124,17,124,23): typecheck error FS3144: 'return' and 'return!' may not be used in queries
 
-neg59.fs(128,17,128,26): typecheck error FS3144: 'return' and 'return!' may not be used in queries
+neg59.fs(128,17,128,24): typecheck error FS3144: 'return' and 'return!' may not be used in queries

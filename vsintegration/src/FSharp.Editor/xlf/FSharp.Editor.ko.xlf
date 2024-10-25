@@ -17,6 +17,11 @@
         <target state="translated">누락된 인스턴스 멤버 매개 변수 추가</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddMissingSeq">
+        <source>Add missing 'seq'</source>
+        <target state="new">Add missing 'seq'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">'new' 키워드 추가</target>

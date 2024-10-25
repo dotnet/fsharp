@@ -38,12 +38,12 @@ module CompilationFromCmdlineArgsTests =
                     yield! methodOptions method
                 |]
 
-            let diagnostics, exitCode = checker.Compile(args) |> Async.RunSynchronously
+            let diagnostics, exn = checker.Compile(args) |> Async.RunSynchronously
 
             for diag in diagnostics do
                 printfn "%A" diag
 
-            Assert.Equal(exitCode, 0)
+            Assert.Equal(exn, None)
         finally
             Environment.CurrentDirectory <- oldWorkDir
 

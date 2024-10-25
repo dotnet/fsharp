@@ -455,7 +455,7 @@ let r as _ = 10
 let s as Id0 = 11
 let t as (u) = 12
 let v as struct(w, x) = 13, 14
-let y as z : int = 15{set { 'a'..'x' } - set [ 'p'; 'v' ] |> Set.map (sprintf " + %c") |> System.String.Concat}
+let y as z : int = 15{set (seq { 'a'..'x' }) - set [ 'p'; 'v' ] |> Set.map (sprintf " + %c") |> System.String.Concat}
 Some p |> eq<AAA>
 Some v |> eq<struct(int * int)>
 ()
@@ -590,7 +590,7 @@ let _ as r = 10
 let Id0 as s = 11
 let (t) as u = 12
 let struct(w, v) as x = 13, 14
-let (y : int) as z = 15{set { 'a'..'v' } - set [ 'h'; 'q' ] |> Set.map (sprintf " + %c") |> System.String.Concat}
+let (y : int) as z = 15{set (seq { 'a'..'v' }) - set [ 'h'; 'q' ] |> Set.map (sprintf " + %c") |> System.String.Concat}
 Some h |> eq<int * int>
 Some q |> eq<AAA>
 Some x |> eq<struct(int * int)>
@@ -917,7 +917,7 @@ let :? z as
 
 [<FactForNETCOREAPP>]
 let ``As 16 - syntactical precedence matrix testing left with type tests - total patterns`` () =
-    let validSet = set { 'a'..'x' } - set [ 'p'; 'q' ] |> Set.map string
+    let validSet = set (seq { 'a'..'x' }) - set [ 'p'; 'q' ] |> Set.map string
     let _, checkResults = getParseAndCheckResults70 $"""
 let eq<'T> (x:'T option) = () // FS-1093-safe type assert function
 let (|Id0|) = ignore

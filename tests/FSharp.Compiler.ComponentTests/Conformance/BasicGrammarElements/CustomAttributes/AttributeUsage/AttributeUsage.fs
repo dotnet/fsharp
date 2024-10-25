@@ -933,3 +933,36 @@ and [<ApplicationTenantJsonDerivedType>]
         |> verifyCompile
         |> shouldSucceed
 #endif
+
+    [<Fact>] // Regression for https://github.com/dotnet/fsharp/issues/14304
+    let ``Construct an object with default and params parameters using parameterless constructor`` () =
+        Fsx """
+open System
+open System.Runtime.InteropServices
+
+type DefaultAndParams([<Optional; DefaultParameterValue(1)>]x: int, [<ParamArray>] value: string[]) =
+    inherit Attribute()
+
+type ParamsOnly([<ParamArray>] value: string[]) =
+    inherit Attribute()
+
+type DefaultOnly([<Optional; DefaultParameterValue(1)>]x: int) =
+    inherit Attribute()
+
+[<DefaultAndParams>]
+type Q1 = struct end
+
+[<DefaultAndParams(x = 1)>] // ok
+type Q11 = struct end
+
+[<DefaultAndParams(value = [||])>] // ok
+type Q12 = struct end
+
+[<ParamsOnly>]
+type Q2 = struct end
+
+[<DefaultOnly>]
+type Q3 = struct end
+        """
+        |> typecheck
+        |> shouldSucceed

@@ -157,7 +157,7 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
 type SafeUnmanagedMemoryStream =
     inherit UnmanagedMemoryStream
 
-    val mutable private holder: obj
+    val mutable private holder: objnull
     val mutable private isDisposed: bool
 
     new(addr, length, holder) =

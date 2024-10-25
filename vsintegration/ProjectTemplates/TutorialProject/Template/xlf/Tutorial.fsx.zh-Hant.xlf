@@ -744,7 +744,7 @@
       </trans-unit>
       <trans-unit id="ArrayAssignment-Line1">
         <source>You can modify the contents of an array element by using the left arrow assignment operator.</source>
-        <target state="needs-review-translation">您可以使用向左鍵指派運算子來修改陣列元素的內容。</target>
+        <target state="new">You can modify the contents of an array element by using the left arrow assignment operator.</target>
         <note />
       </trans-unit>
       <trans-unit id="ArrayAssignment-Line2">
@@ -1009,7 +1009,7 @@
       </trans-unit>
       <trans-unit id="CardRank">
         <source>A Discriminated Union can also be used to represent the rank of a playing card.</source>
-        <target state="needs-review-translation">差異聯集也可用以代表一張撲克牌的順位。</target>
+        <target state="new">A Discriminated Union can also be used to represent the rank of a playing card.</target>
         <note />
       </trans-unit>
       <trans-unit id="CardRankValue">
@@ -1029,7 +1029,7 @@
       </trans-unit>
       <trans-unit id="CardType-Line2">
         <source>It's common to use both Records and Discriminated Unions when representing data.</source>
-        <target state="needs-review-translation">代表資料時，通常會使用記錄與差異聯集。</target>
+        <target state="new">It's common to use both Records and Discriminated Unions when representing data.</target>
         <note />
       </trans-unit>
       <trans-unit id="ComputeFullDeck">
@@ -1089,7 +1089,7 @@
       </trans-unit>
       <trans-unit id="DuRecursiveDef-Line1">
         <source>Discriminated Unions also support recursive definitions.</source>
-        <target state="needs-review-translation">差異聯集也支援遞迴定義。</target>
+        <target state="new">Discriminated Unions also support recursive definitions.</target>
         <note />
       </trans-unit>
       <trans-unit id="DuRecursiveDef-Line2">

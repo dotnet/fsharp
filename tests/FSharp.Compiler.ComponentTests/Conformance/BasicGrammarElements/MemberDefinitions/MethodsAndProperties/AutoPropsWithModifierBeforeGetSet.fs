@@ -110,11 +110,12 @@ let ``Abstract Properties Test: access modifiers are not allowed`` () =
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Error 0561, Line 6, Col 5, Line 6, Col 51, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
-        (Error 0561, Line 8, Col 5, Line 8, Col 51, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
-        (Error 0561, Line 10, Col 5, Line 10, Col 60, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
-        (Error 0561, Line 12, Col 5, Line 12, Col 46, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
-        (Error 0561, Line 14, Col 5, Line 14, Col 46, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+        (Error 0561, Line 6, Col 34, Line 6, Col 42, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+        (Error 0561, Line 8, Col 39, Line 8, Col 47, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+        (Error 0561, Line 10, Col 34, Line 10, Col 42, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+        (Error 0561, Line 10, Col 48, Line 10, Col 56, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+        (Error 0561, Line 12, Col 34, Line 12, Col 42, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+        (Error 0561, Line 14, Col 34, Line 14, Col 42, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
     ]
 
 [<Fact>]
@@ -132,7 +133,7 @@ type A =
     |> verifyCompile
     |> shouldFail
     |> withDiagnostics [
-        (Error 240, Line 1, Col 1, Line 9, Col 42, "The signature file 'Program' does not have a corresponding implementation file. If an implementation file exists then check the 'module' and 'namespace' declarations in the signature and implementation files match.")
+        (Error 0561, Line 9, Col 31, Line 9, Col 38, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
     ]
 
 [<Fact>]

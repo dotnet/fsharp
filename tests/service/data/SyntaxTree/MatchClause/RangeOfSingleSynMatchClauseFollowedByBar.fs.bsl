@@ -25,7 +25,8 @@ ImplFile
                           EqualsRange = Some (3,16--3,17) })],
                     App
                       (NonAtomic, false, Ident Some, Ident content, (4,4--4,16)),
-                    (3,4--4,16), { InKeyword = None }),
+                    (3,4--4,16), { LetOrUseKeyword = (3,4--3,7)
+                                   InKeyword = None }),
                  [SynMatchClause
                     (Named (SynIdent (ex, None), false, None, (6,2--6,4)), None,
                      Const (Unit, (7,4--7,6)), (6,2--7,6), Yes,

@@ -120,9 +120,9 @@ System.Console.WriteLine("a")
 System.Console.WriteLine("a", (null: obj[])) // Expected to give a Nullness warning
 
 KonsoleWithNulls.WriteLine("Hello world")
-KonsoleWithNulls.WriteLine(null) // WRONG: gives an incorrect Nullness warning for String | null and String | null
+KonsoleWithNulls.WriteLine(null)
 KonsoleWithNulls.WriteLine("Hello","world")
-KonsoleWithNulls.WriteLine("Hello","world","there") // // WRONG: gives an incorrect Nullness warning for String | null and String | null
+KonsoleWithNulls.WriteLine("Hello","world","there")
 
 KonsoleNoNulls.WriteLine("Hello world")
 try 
@@ -169,7 +169,7 @@ with :? System.ArgumentNullException -> ()
 // Param array cases
 
 KonsoleNoNulls.WriteLine("Hello","world","there")
-KonsoleWithNulls.WriteLine("Hello","world",null)  // Expected to give a Nullness warning 
+KonsoleWithNulls.WriteLine("Hello","world",null)  // Expected to give no Nullness warning 
 KonsoleNoNulls.WriteLine("Hello","world",null)  // Expected to give a Nullness warning
 System.Console.WriteLine("a", (null: obj[] | null)) 
 System.Console.WriteLine("a", (null: (obj | null)[] | null))

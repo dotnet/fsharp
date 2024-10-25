@@ -359,6 +359,9 @@ Use live (unsaved) buffers for analysis</value>
   <data name="RemoveUnnecessaryParentheses" xml:space="preserve">
     <value>Remove unnecessary parentheses</value>
   </data>
+  <data name="AddMissingSeq" xml:space="preserve">
+    <value>Add missing 'seq'</value>
+  </data>
   <data name="RemarksHeader" xml:space="preserve">
     <value>Remarks:</value>
   </data>

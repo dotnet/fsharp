@@ -27,7 +27,7 @@ module internal DiagnosticMessage =
 
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 
-    let mkFunctionValue (tys: System.Type[]) (impl: obj -> obj) =
+    let mkFunctionValue (tys: System.Type[]) (impl: objnull -> objnull) =
         FSharpValue.MakeFunction(FSharpType.MakeFunctionType(tys[0], tys[1]), impl)
 
     let funTyC = typeof<obj -> obj>.GetGenericTypeDefinition()

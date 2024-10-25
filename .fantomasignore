@@ -117,6 +117,9 @@ src/Compiler/Facilities/AsyncMemoize.fsi
 src/Compiler/Facilities/AsyncMemoize.fs
 src/Compiler/AbstractIL/il.fs
 
+src/Compiler/Driver/GraphChecking/Graph.fsi
+src/Compiler/Driver/GraphChecking/Graph.fs
+
 # Fantomas limitations on implementation files  (to investigate)
 
 src/Compiler/AbstractIL/ilwrite.fs

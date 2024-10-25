@@ -26,7 +26,7 @@ type internal FSharpSource =
     abstract TimeStamp: DateTime
 
     /// Gets the internal text container. Text may be on-disk, in a stream, or a source text.
-    abstract internal GetTextContainer: unit -> Async<TextContainer>
+    abstract GetTextContainer: unit -> Async<TextContainer>
 
     /// Creates a FSharpSource from disk. Only used internally.
     static member internal CreateFromFile: filePath: string -> FSharpSource

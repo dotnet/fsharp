@@ -17,6 +17,11 @@
         <target state="translated">Dodaj brakujący parametr składowej wystąpienia</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddMissingSeq">
+        <source>Add missing 'seq'</source>
+        <target state="new">Add missing 'seq'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">Dodaj słowo kluczowe „new”</target>
