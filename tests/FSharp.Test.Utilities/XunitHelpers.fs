@@ -1,4 +1,7 @@
+#if XUNIT_CUSTOMIZATIONS
 #nowarn "0044"
+#endif
+
 namespace FSharp.Test
 
 open System
@@ -11,40 +14,36 @@ open Xunit.Abstractions
 
 module internal TestConsole =
     /// Redirects reads performed on different async execution contexts to the relevant TextReader held by AsyncLocal.
-    type RedirectingTextReader(initial: TextReader) =
+    type RedirectingTextReader() =
         inherit TextReader()
         let holder = AsyncLocal<_>()
-        do holder.Value <- initial
+        do holder.Value <- TextReader.Null
 
         override _.Peek() = holder.Value.Peek()
         override _.Read() = holder.Value.Read()
         member _.Set (reader: TextReader) = holder.Value <- reader
 
     /// Redirects writes performed on different async execution contexts to the relevant TextWriter held by AsyncLocal.
-    type RedirectingTextWriter(initial: TextWriter) =
+    type RedirectingTextWriter() =
         inherit TextWriter()
-        let holder = AsyncLocal<_>()
-        do holder.Value <- initial
+        let holder = AsyncLocal<TextWriter>()
+        let getValue() = holder.Value |> Option.ofObj |> Option.defaultWith (fun () -> holder.Value <- new StringWriter(); holder.Value)
 
         override _.Encoding = Encoding.UTF8
-        override _.Write(value: char) = holder.Value.Write(value)
-        override _.Write(value: string) = holder.Value.Write(value)
-        override _.WriteLine(value: string) = holder.Value.WriteLine(value)
-        member _.Value = holder.Value
+        override _.Write(value: char) = getValue().Write(value)
+        override _.Write(value: string) = getValue().Write(value)
+        override _.WriteLine(value: string) = getValue().WriteLine(value)
+        member _.Value = getValue()
         member _.Set (writer: TextWriter) = holder.Value <- writer
 
-    let localIn = new RedirectingTextReader(TextReader.Null)
-    let localOut = new RedirectingTextWriter(TextWriter.Null)
-    let localError = new RedirectingTextWriter(TextWriter.Null)
+    let localIn = new RedirectingTextReader()
+    let localOut = new RedirectingTextWriter()
+    let localError = new RedirectingTextWriter()
 
     let initStreamsCapture () = 
         Console.SetIn localIn
         Console.SetOut localOut
         Console.SetError localError
-
-    let resetWriters() =
-        new StringWriter() |> localOut.Set
-        new StringWriter() |> localError.Set
 
 type TestConsole =
     static member OutText =
@@ -55,6 +54,13 @@ type TestConsole =
         Console.Error.Flush()
         string TestConsole.localError.Value
 
+
+/// Disables custom internal parallelization.
+/// Execute test cases in a class or a module one by one instead of all at once. Allow other collections to run simultaneously.
+[<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Method, AllowMultiple = false)>]
+type RunInSequenceAttribute() = inherit Attribute()
+
+#if XUNIT_CUSTOMIZATIONS
 
 // To use xUnit means to customize it. The following abomination adds 3 features:
 // - Capturing console output individually and in parallel for each test
@@ -68,7 +74,6 @@ type ConsoleCapturingTestRunner(test, messageBus, testClass, constructorArgument
     member _.BaseInvokeTestMethodAsync aggregator = base.InvokeTestMethodAsync aggregator
     override this.InvokeTestAsync (aggregator: ExceptionAggregator): Tasks.Task<decimal * string> =
         task {
-            TestConsole.resetWriters()
             let! executionTime = this.BaseInvokeTestMethodAsync aggregator
             let output =
                 seq {
@@ -81,11 +86,6 @@ type ConsoleCapturingTestRunner(test, messageBus, testClass, constructorArgument
                 } |> String.concat Environment.NewLine
             return executionTime, output
         }
-
-/// Disables custom internal parallelization.
-/// Execute test cases in a class or a module one by one instead of all at once. Allow other collections to run simultaneously.
-[<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Method, AllowMultiple = false)>]
-type RunInSequenceAttribute() = inherit Attribute()
 
 module TestCaseCustomizations =
     // Internally parallelize test classes and theories.
@@ -120,23 +120,6 @@ module TestCaseCustomizations =
         else
             testCase.TestMethod
 
-    let addTraits (testCase: ITestCase) =
-        // Proof of concept.
-        // Distribute test cases reasonably evenly among number of execution nodes.
-        // This might be helpful when running tests with parallel multi-agent strategy in CI.
-        // SHA256 is probably overkill, but the assignment must be stable between test discoveries.
-        let hashAlgorithm = Security.Cryptography.SHA256.Create()
-        let assignNode numberOfBuckets =
-            let bytes = hashAlgorithm.ComputeHash(Encoding.UTF8.GetBytes(testCase.UniqueID))
-            let stableHashValue = BitConverter.ToUInt32(bytes, 0)
-            stableHashValue % uint numberOfBuckets + 1u |> string
-
-        // Add `Project` trait so a project can be selected or filtered out during a full solution test run. Example: --filter Project=FSharp.Compiler.ComponentTests
-        testCase.Traits["Project"] <- ResizeArray [ testCase.TestMethod.TestClass.TestCollection.TestAssembly.Assembly.Name.Split(',')[0] ]
-        // Assign test case to one of buckets numbered 1 .. 4 to easily distribute execution among many agents in CI. Example: --filter ExecutionNode=4
-        // Number of nodes hardcoded as 4 here could eventually come from an env variable set by the CI.
-        testCase.Traits["ExecutionNode"] <- ResizeArray [ assignNode 4 ]
-
 type CustomTestCase =
     inherit XunitTestCase
     // xUinit demands this constructor for deserialization.
@@ -156,7 +139,6 @@ type CustomTestCase =
     override testCase.Initialize () =
         base.Initialize()
         testCase.TestMethod <- TestCaseCustomizations.rewriteTestMethod testCase
-        TestCaseCustomizations.addTraits testCase
 
 type CustomTheoryTestCase =
     inherit XunitTheoryTestCase
@@ -175,15 +157,20 @@ type CustomTheoryTestCase =
     override testCase.Initialize () =
         base.Initialize()
         testCase.TestMethod <- TestCaseCustomizations.rewriteTestMethod testCase
-        TestCaseCustomizations.addTraits testCase
+
+#endif
 
 /// Customized test framework providing console support and better parallelization for F# tests.
 type TestRun(sink: IMessageSink) =
     inherit XunitTestFramework(sink)
     do
-        // Init statics
+        // Because xUnit v2 lacks assembly fixture, the next best place to ensure things get called
+        // right at the start of the test run is here in the constructor.
+        // This gets executed once per test assembly.
         MessageSink.sinkWriter |> ignore
-        TestConsole.initStreamsCapture()
+        TestConsole.initStreamsCapture() 
+
+#if XUNIT_CUSTOMIZATIONS
 
     override this.CreateDiscoverer (assemblyInfo) =
         { new XunitTestFrameworkDiscoverer(assemblyInfo, this.SourceInformationProvider, this.DiagnosticMessageSink) with
@@ -220,3 +207,5 @@ type TestRun(sink: IMessageSink) =
                         member _.Dispose () = messageBus.Dispose() }
                 base.FindTestsForType(testClass, includeSourceInformation, customizingBus, options)
         }
+
+#endif

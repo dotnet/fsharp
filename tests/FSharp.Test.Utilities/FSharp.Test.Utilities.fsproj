@@ -13,6 +13,7 @@
     <IsTestProject>false</IsTestProject>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <!--<DefineConstants>XUNIT_CUSTOMIZATIONS</DefineConstants>-->
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
