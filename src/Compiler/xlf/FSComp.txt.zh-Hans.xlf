@@ -147,6 +147,11 @@
         <target state="translated">TailCall 属性应仅应用于递归函数。</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkVariablePatternUppercase">
+        <source>Variable patterns should be lowercase.</source>
+        <target state="new">Variable patterns should be lowercase.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="containerDeprecated">
         <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
         <target state="translated">"AssemblyKeyNameAttribute" 已被弃用。请改为使用 "AssemblyKeyFileAttribute"。</target>

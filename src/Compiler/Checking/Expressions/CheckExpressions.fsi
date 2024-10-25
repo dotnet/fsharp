@@ -703,6 +703,7 @@ val TcMatchPattern:
     tpenv: UnscopedTyparEnv ->
     synPat: SynPat ->
     synWhenExprOpt: SynExpr option ->
+    isTrueMatchClause: bool ->
         Pattern * Expr option * Val list * TcEnv * UnscopedTyparEnv
 
 [<return: Struct>]

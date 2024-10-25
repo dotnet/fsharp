@@ -59,7 +59,7 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
                 ConvertArbitraryExprToEnumerable cenv arbitraryTy env pseudoEnumExpr
 
             let patR, _, vspecs, envinner, tpenv =
-                TcMatchPattern cenv enumElemTy env tpenv pat None
+                TcMatchPattern cenv enumElemTy env tpenv pat None false
 
             let innerExpr, tpenv =
                 let envinner = { envinner with eIsControlFlow = true }
@@ -241,7 +241,7 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
             let inputExprTy = NewInferenceType g
 
             let pat', _, vspecs, envinner, tpenv =
-                TcMatchPattern cenv bindPatTy env tpenv pat None
+                TcMatchPattern cenv bindPatTy env tpenv pat None false
 
             UnifyTypes cenv env m inputExprTy bindPatTy
 
@@ -270,9 +270,11 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
 
             let tclauses, tpenv =
                 (tpenv, clauses)
-                ||> List.mapFold (fun tpenv (SynMatchClause(pat, cond, innerComp, _, sp, _)) ->
+                ||> List.mapFold (fun tpenv (SynMatchClause(pat, cond, innerComp, _, sp, trivia)) ->
+                    let isTrueMatchClause = trivia.BarRange.IsSome && trivia.ArrowRange.IsSome
+
                     let patR, condR, vspecs, envinner, tpenv =
-                        TcMatchPattern cenv inputTy env tpenv pat cond
+                        TcMatchPattern cenv inputTy env tpenv pat cond isTrueMatchClause
 
                     let envinner =
                         match sp with
@@ -313,9 +315,11 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
             // Compile the pattern twice, once as a filter with all succeeding targets returning "1", and once as a proper catch block.
             let clauses, tpenv =
                 (tpenv, withList)
-                ||> List.mapFold (fun tpenv (SynMatchClause(pat, cond, innerComp, m, sp, _)) ->
+                ||> List.mapFold (fun tpenv (SynMatchClause(pat, cond, innerComp, m, sp, trivia)) ->
+                    let isTrueMatchClause = trivia.BarRange.IsSome && trivia.ArrowRange.IsSome
+
                     let patR, condR, vspecs, envinner, tpenv =
-                        TcMatchPattern cenv g.exn_ty env tpenv pat cond
+                        TcMatchPattern cenv g.exn_ty env tpenv pat cond isTrueMatchClause
 
                     let envinner =
                         match sp with

@@ -58,10 +58,12 @@ let UnifyRefTupleType contextInfo (cenv: cenv) denv m ty ps =
     AddCxTypeEqualsType contextInfo denv cenv.css m ty (TType_tuple (tupInfoRef, ptys))
     ptys
 
-let rec TryAdjustHiddenVarNameToCompGenName cenv env (id: Ident) altNameRefCellOpt =
+let rec TryAdjustHiddenVarNameToCompGenName (cenv: cenv) env (id: Ident) altNameRefCellOpt =
     match altNameRefCellOpt with
     | Some ({contents = SynSimplePatAlternativeIdInfo.Undecided altId } as altNameRefCell) ->
-        match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver AllIdsOK false id.idRange env.eAccessRights env.eNameResEnv TypeNameResolutionInfo.Default [id] ExtraDotAfterIdentifier.No with
+        let supportsWarnOnUpperIdentifiersInPatterns = cenv.g.langVersion.SupportsFeature(LanguageFeature.WarnOnUppercaseIdentifiersInPatterns)
+        let warnOnUpperFlag = if supportsWarnOnUpperIdentifiersInPatterns then WarnOnUpperVariablePatterns else AllIdsOK
+        match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver warnOnUpperFlag false id.idRange env.eAccessRights env.eNameResEnv TypeNameResolutionInfo.Default [id] ExtraDotAfterIdentifier.No with
         | Item.NewDef _ ->
             // The name is not in scope as a pattern identifier (e.g. union case), so do not use the alternate ID
             None
@@ -81,7 +83,7 @@ and TcSimplePat optionalArgsOK checkConstraints (cenv: cenv) ty env patEnv p =
     | SynSimplePat.Id (id, altNameRefCellOpt, isCompGen, isMemberThis, isOpt, m) ->
 
         // Check to see if pattern translation decides to use an alternative identifier.
-        match TryAdjustHiddenVarNameToCompGenName cenv env id altNameRefCellOpt with
+        match TryAdjustHiddenVarNameToCompGenName (cenv: cenv) env id altNameRefCellOpt with
         | Some altId ->
             TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnv (SynSimplePat.Id (altId, None, isCompGen, isMemberThis, isOpt, m) )
         | None ->

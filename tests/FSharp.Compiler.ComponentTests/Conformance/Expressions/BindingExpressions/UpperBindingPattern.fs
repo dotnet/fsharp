@@ -56,3 +56,6 @@ for II in [1..10] do
 [ 1; 3; 5 ]
 |> List.map (fun DD ->  DD + 1)
 |> ignore
+
+try ()
+with Ex -> ()

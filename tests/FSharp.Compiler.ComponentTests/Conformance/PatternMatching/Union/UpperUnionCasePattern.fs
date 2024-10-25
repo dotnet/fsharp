@@ -18,3 +18,11 @@ let c =
 let d =
     match 2 with 
     | Usa -> "Usa"
+
+try ()
+with
+| Exn -> ()
+
+try ()
+with
+| Ex -> ()
