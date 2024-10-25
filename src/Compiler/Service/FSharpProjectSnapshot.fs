@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 
@@ -535,7 +535,7 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
         | FSharpProjectIdentifier(projectFileName, _) -> projectFileName
 
     override this.ToString() =
-        $"F#PID {shortPath this.ProjectFileName}"
+        $"{shortPath this.ProjectFileName} 🡒 {shortPath this.OutputFileName}"
 
 /// A snapshot of an F# project. This type contains all the necessary information for type checking a project.
 and [<Experimental("This FCS API is experimental and subject to change.")>] FSharpProjectSnapshot internal (projectSnapshot) =

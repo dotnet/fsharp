@@ -30,7 +30,7 @@ type internal WorkspaceNodeKey =
     override this.ToString() =
         match this with
         | SourceFile path -> $"File {shortPath path}"
-        | ReferenceOnDisk path -> $"Reference {shortPath path}"
+        | ReferenceOnDisk path -> $"Reference on disk {shortPath path}"
         | ProjectCore id -> $"ProjectCore {id}"
         | ProjectBase id -> $"ProjectBase {id}"
         | ProjectSnapshot id -> $"ProjectSnapshot {id}"
@@ -123,8 +123,11 @@ type FSharpWorkspace() =
         |}
 
     member internal this.Debug_DumpMermaid(path) =
-        let content = depGraph.Debug_RenderMermaid()
-        File.WriteAllText(path, content)
+        let content =
+            depGraph.Debug_RenderMermaid(function
+                | WorkspaceNodeKey.ReferenceOnDisk _ -> WorkspaceNodeKey.ReferenceOnDisk "..."
+                | x -> x)
+        File.WriteAllText(__SOURCE_DIRECTORY__ + path, content)
 
     // TODO: we might need something more sophisticated eventually
     // for now it's important that the result id is unique every time

@@ -251,6 +251,9 @@ internal class ProjectObserver(FSharpWorkspace workspace) : IObserver<IQueryResu
                 workspace.AddCommandLineArgs(projectPath, projectInfo.Item1, projectInfo.Item2.Split(';'));
             }
 
+            workspace.Debug_DumpMermaid("../../../../dep-graph.md");
+
+
         }
     }
 
@@ -333,9 +336,6 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
             serviceCollection.AddSingleton<IMethodHandler, VsDiagnosticsHandler>();
             serviceCollection.AddSingleton<IMethodHandler, SemanticTokensHandler>();
         });
-
-        workspace.Debug_DumpMermaid("D:\\code\\fsharp\\dep-graph.md");
-
 
         var solutions = await ws.QuerySolutionAsync(
     solution => solution.With(solution => solution.FileName),

@@ -32,7 +32,7 @@ type IDependencyGraph<'Id, 'Val when 'Id: equality> =
     abstract member UpdateNode: id: 'Id * update: ('Val -> 'Val) -> unit
     abstract member RemoveNode: id: 'Id -> unit
     abstract member Debug_GetNodes: ('Id -> bool) -> DependencyNode<'Id, 'Val> seq
-    abstract member Debug_RenderMermaid : unit -> string
+    abstract member Debug_RenderMermaid : ?mapping: ('Id -> 'Id) -> string
     abstract member OnWarning: (string -> unit) -> unit
 
 and IThreadSafeDependencyGraph<'Id, 'Val when 'Id: equality> =
@@ -209,25 +209,28 @@ module Internal =
         member this.Debug_GetNodes(predicate: 'Id -> bool): DependencyNode<'Id,'Val> seq =
             nodes.Values |> Seq.filter (fun node -> predicate node.Id)
 
-        member _.Debug_RenderMermaid() =
+        member _.Debug_RenderMermaid(?mapping) =
+
+            let mapping = defaultArg mapping id
+
             // We need to give each node a number so the graph is easy to render
             let nodeNumbersById = Dictionary()
-            nodes.Keys |> Seq.indexed |> Seq.iter (fun (x, y) -> nodeNumbersById.Add(y, x))
+            nodes.Keys |> Seq.map mapping |> Seq.distinct |> Seq.indexed |> Seq.iter (fun (x, y) -> nodeNumbersById.Add(y, x))
 
             let content =
                 dependencies
                 |> Seq.collect (fun kv ->
                     let node = kv.Key
-                    let nodeNumber = nodeNumbersById[node]
+                    let nodeNumber = nodeNumbersById[mapping node]
 
-                    let deps = kv.Value |> Seq.map (fun dep -> nodeNumbersById[dep], dep)
-                    deps |> Seq.map (fun (depNumber, dep) ->
-                        $"{nodeNumber}[{node}] --> {depNumber}[{dep}]"
-                    )
+                    kv.Value
+                    |> Seq.map (fun dep -> nodeNumbersById[mapping dep], mapping dep)
+                    |> Seq.map (fun (depNumber, dep) -> $"{nodeNumber}[{node}] --> {depNumber}[{dep}]" )
+                    |> Seq.distinct
                 )
                 |> String.concat "\n"
 
-            $"```mermaid\n\ngraph TD\n\n{content}\n\n```"
+            $"```mermaid\n\ngraph LR\n\n{content}\n\n```"
 
         member _.OnWarning(f) =
             warningSubscribers.Add f |> ignore
@@ -255,7 +258,7 @@ module Internal =
 
             member _.OnWarning f = self.OnWarning f
 
-            member _.Debug_RenderMermaid() = self.Debug_RenderMermaid()
+            member _.Debug_RenderMermaid(x) = self.Debug_RenderMermaid(?mapping=x)
 
 
     and GraphBuilder<'Id, 'Val when 'Id: equality> internal (graph: IDependencyGraph<'Id, 'Val>, ids: 'Id seq) =
@@ -322,8 +325,8 @@ type LockOperatedDependencyGraph<'Id, 'Val when 'Id: equality and 'Id: not null>
         member _.Debug_GetNodes(predicate) =
             lock lockObj (fun () -> graph.Debug_GetNodes(predicate))
 
-        member _.Debug_RenderMermaid() =
-            lock lockObj (fun () -> graph.Debug_RenderMermaid())
+        member _.Debug_RenderMermaid(m) =
+            lock lockObj (fun () -> graph.Debug_RenderMermaid(?mapping=m))
 
 
 [<Extension>]
