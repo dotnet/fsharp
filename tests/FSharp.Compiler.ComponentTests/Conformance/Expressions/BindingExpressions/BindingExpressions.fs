@@ -165,6 +165,9 @@ module BindingExpressions =
             (Warning 49, Line 32, Col 25, Line 32, Col 28, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
             (Warning 49, Line 34, Col 21, Line 34, Col 24, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
             (Warning 49, Line 34, Col 25, Line 34, Col 28, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 42, Col 31, Line 42, Col 34, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 46, Col 5, Line 46, Col 8, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 53, Col 18, Line 53, Col 21, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.");
         ]
         
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UpperBindingPattern.fs"|])>]
@@ -206,4 +209,10 @@ module BindingExpressions =
             (Warning 49, Line 32, Col 25, Line 32, Col 28, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
             (Warning 49, Line 34, Col 21, Line 34, Col 24, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
             (Warning 49, Line 34, Col 25, Line 34, Col 28, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 42, Col 31, Line 42, Col 34, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 44, Col 32, Line 44, Col 34, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 46, Col 5, Line 46, Col 8, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 49, Col 5, Line 49, Col 7, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 53, Col 18, Line 53, Col 21, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 57, Col 18, Line 57, Col 20, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
         ]

@@ -32,3 +32,27 @@ type Class() =
     member this.f9(USA, CAN) = ()
 
     member this.f10 Usa Can = ()
+
+type CustomerId = CustomerId of string
+
+let customerId = CustomerId("123")
+
+let (CustomerId BBB) = customerId
+
+let getCustomerId (CustomerId CCC) = id
+
+let getCustomerId2 (CustomerId CC) = id
+
+for III in [1..10] do
+    ()
+
+for II in [1..10] do
+    ()
+
+[ 1; 3; 5 ]
+|> List.map (fun DDD ->  DDD + 1)
+|> ignore
+
+[ 1; 3; 5 ]
+|> List.map (fun DD ->  DD + 1)
+|> ignore
