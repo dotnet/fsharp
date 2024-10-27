@@ -247,4 +247,7 @@ but here has type
             (Warning 49, Line 24, Col 3, Line 24, Col 6, "Match cases labels must be lowercase identifiers")
             (Warning 49, Line 28, Col 3, Line 28, Col 5, "Match cases labels must be lowercase identifiers")
             (Warning 49, Line 35, Col 14, Line 35, Col 17, "Match cases labels must be lowercase identifiers")
+            (Warning 49, Line 40, Col 12, Line 40, Col 14, "Match cases labels must be lowercase identifiers")
+            (Warning 49, Line 41, Col 12, Line 41, Col 14, "Match cases labels must be lowercase identifiers")
+            (Warning 49, Line 42, Col 12, Line 42, Col 14, "Match cases labels must be lowercase identifiers")
         ]

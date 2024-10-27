@@ -33,3 +33,10 @@ let customerId = CustomerId("123")
 
 match customerId with
 | CustomerId BBB -> ()
+
+type Record = { Name: string; Age: int }
+
+match { Name = "Alice"; Age = 30 } with
+| { Name = Al } -> printfn "Alice"
+| { Name = Bo } -> printfn "Bob"
+| { Name = Pe } -> printfn "Pepe"
