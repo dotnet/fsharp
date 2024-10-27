@@ -65,3 +65,5 @@ type AnonymousObject<'T1, 'T2> =
     member x.Item1 = x.item1
 
     new(Item1) = { item1 = Item1 }
+
+type FSharpSource(Item1: string, SourceHash: string) = class end

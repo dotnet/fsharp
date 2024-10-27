@@ -26,3 +26,10 @@ with
 try ()
 with
 | Ex -> ()
+
+type CustomerId = CustomerId of string
+
+let customerId = CustomerId("123")
+
+match customerId with
+| CustomerId BBB -> ()
