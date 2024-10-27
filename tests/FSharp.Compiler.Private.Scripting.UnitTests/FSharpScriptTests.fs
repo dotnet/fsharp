@@ -3,6 +3,7 @@
 namespace FSharp.Compiler.Scripting.UnitTests
 
 open System
+open System.Text
 open System.Diagnostics
 open System.IO
 open System.Reflection
@@ -11,6 +12,7 @@ open System.Threading
 open System.Threading.Tasks
 open FSharp.Compiler.Interactive
 open FSharp.Compiler.Interactive.Shell
+open FSharp.Test
 open FSharp.Test.ScriptHelpers
 
 open Xunit
@@ -84,25 +86,6 @@ x
                 | _ -> Assert.True(false, "threw incorrect exception expects: 'The thread is already executing the ControlledExecution.Run method.'")
         )
 #endif
-
-    [<Fact(Skip="TBD")>]
-    member _.``Capture console input``() =
-        use script = new FSharpScript(input = "stdin:1234\r\n")
-        let opt = script.Eval("System.Console.ReadLine()") |> getValue
-        let value = opt.Value
-        Assert.Equal(typeof<string>, value.ReflectionType)
-        Assert.Equal("stdin:1234", downcast value.ReflectionValue)
-
-    [<Fact(Skip="TBD")>]
-    member _.``Capture console output/error``() =
-        use script = new FSharpScript()
-        use sawOutputSentinel = new ManualResetEvent(false)
-        use sawErrorSentinel = new ManualResetEvent(false)
-        script.OutputProduced.Add (fun line -> if line = "stdout:1234" then sawOutputSentinel.Set() |> ignore)
-        script.ErrorProduced.Add (fun line -> if line = "stderr:5678" then sawErrorSentinel.Set() |> ignore)
-        script.Eval("printfn \"stdout:1234\"; eprintfn \"stderr:5678\"") |> ignoreValue
-        Assert.True(sawOutputSentinel.WaitOne(TimeSpan.FromSeconds(5.0)), "Expected to see output sentinel value written")
-        Assert.True(sawErrorSentinel.WaitOne(TimeSpan.FromSeconds(5.0)), "Expected to see error sentinel value written")
 
     [<Fact>]
     member _.``Maintain state between submissions``() =
@@ -306,30 +289,26 @@ printfn "{@"%A"}" result
 
     [<Fact>]
     member _.``Eval script with invalid PackageName should fail immediately``() =
+        use capture = new TestConsole.ExecutionCapture()
         use script = new FSharpScript(additionalArgs=[| |])
-        let mutable found = 0
-        let outp = System.Collections.Generic.List<string>()
-        script.OutputProduced.Add(
-            fun line ->
-                if line.Contains("error NU1101:") && line.Contains("FSharp.Really.Not.A.Package") then
-                    found <- found + 1
-                outp.Add(line))
         let result, errors = script.Eval("""#r "nuget:FSharp.Really.Not.A.Package" """)
-        Assert.True( (found = 0), "Did not expect to see output contains 'error NU1101:' and 'FSharp.Really.Not.A.Package'")
+
+        let lines = capture.OutText.Split([| Environment.NewLine |], StringSplitOptions.None)
+        let found = lines |> Seq.exists (fun line -> line.Contains("error NU1101:") && line.Contains("FSharp.Really.Not.A.Package"))
+        Assert.False(found, "Did not expect to see output contains 'error NU1101:' and 'FSharp.Really.Not.A.Package'")
         Assert.True( errors |> Seq.exists (fun error -> error.Message.Contains("error NU1101:")), "Expect to error containing 'error NU1101:'")
         Assert.True( errors |> Seq.exists (fun error -> error.Message.Contains("FSharp.Really.Not.A.Package")), "Expect to error containing 'FSharp.Really.Not.A.Package'")
 
     [<Fact>]
     member _.``Eval script with invalid PackageName should fail immediately and resolve one time only``() =
+        use capture = new TestConsole.ExecutionCapture()
         use script = new FSharpScript(additionalArgs=[| |])
-        let mutable foundResolve = 0
-        script.OutputProduced.Add (fun line -> if line.Contains("error NU1101:") then foundResolve <- foundResolve + 1)
         let result, errors =
             script.Eval("""
 #r "nuget:FSharp.Really.Not.A.Package"
 #r "nuget:FSharp.Really.Not.Another.Package"
                 """)
-        Assert.True( (foundResolve = 0), (sprintf "Did not expected to see 'error NU1101:' in output" ))
+        Assert.DoesNotContain("error NU1101:", capture.OutText)
         Assert.Equal(2, (errors |> Seq.filter (fun error -> error.Message.Contains("error NU1101:")) |> Seq.length))
         Assert.Equal(1, (errors |> Seq.filter (fun error -> error.Message.Contains("FSharp.Really.Not.A.Package")) |> Seq.length))
         Assert.Equal(1, (errors |> Seq.filter (fun error -> error.Message.Contains("FSharp.Really.Not.Another.Package")) |> Seq.length))

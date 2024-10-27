@@ -335,6 +335,8 @@ module CompilerAssertHelpers =
             else
                 entryPoint
         let args = mkDefaultArgs entryPoint
+
+        use capture = new TestConsole.ExecutionCapture()
         let outcome =
             try 
                 match entryPoint.Invoke(Unchecked.defaultof<obj>, args) with 
@@ -342,7 +344,7 @@ module CompilerAssertHelpers =
                 | _ -> NoExitCode
             with
             | exn -> Failure exn
-        outcome, TestConsole.OutText, TestConsole.ErrorText
+        outcome, capture.OutText, capture.ErrorText
 
 #if NETCOREAPP
     let executeBuiltApp assemblyPath deps isFsx =
@@ -363,7 +365,7 @@ module CompilerAssertHelpers =
 
         member x.ExecuteTestCase assemblyPath isFsx =
             // Set console streams for the AppDomain.
-            TestConsole.initStreamsCapture()
+            TestConsole.install()
             let assembly = Assembly.LoadFrom assemblyPath
             executeAssemblyEntryPoint assembly isFsx
 
@@ -626,9 +628,9 @@ module CompilerAssertHelpers =
         File.WriteAllText(runtimeconfigPath, runtimeconfig)
 #endif
         let rc, output, errors = Commands.executeProcess fileName arguments (Path.GetDirectoryName(outputFilePath))
-        String.Join(Environment.NewLine, output) |> printf "%s"
-        String.Join(Environment.NewLine, errors) |> eprintf "%s"
-        ExitCode rc, TestConsole.OutText, TestConsole.ErrorText
+        let output = String.Join(Environment.NewLine, output)
+        let errors = String.Join(Environment.NewLine, errors)
+        ExitCode rc, output, errors
 
 open CompilerAssertHelpers
 
@@ -707,7 +709,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
                 executeBuiltAppNewProcess outputFilePath
         { Outcome = outcome; StdOut = output; StdErr = errors}
 
-    static member Execute(cmpl: Compilation, ?ignoreWarnings, ?beforeExecute, ?newProcess) =
+    static member ExecuteAux(cmpl: Compilation, ?ignoreWarnings, ?beforeExecute, ?newProcess) =
 
         let copyDependenciesToOutputDir (outputFilePath:string) (deps: string list) =
             let outputDirectory = Path.GetDirectoryName(outputFilePath)
@@ -722,21 +724,23 @@ Updated automatically, please check diffs in your pull request, changes must be 
         compileCompilation ignoreWarnings cmpl (fun ((errors, _, outputFilePath), deps) ->
             assertErrors 0 ignoreWarnings errors [||]
             beforeExecute outputFilePath deps
-            let outcome, _, _ =
-                if newProcess then 
-                    executeBuiltAppNewProcess outputFilePath
-                else
-                    executeBuiltApp outputFilePath deps false
-
-            match outcome with
-            | ExitCode n when n <> 0 -> failwith $"Process exited with code {n}."
-            | Failure exn -> raise exn
-            | _ -> ()
+            if newProcess then 
+                executeBuiltAppNewProcess outputFilePath
+            else
+                executeBuiltApp outputFilePath deps false
         )
 
+    static member Execute(cmpl: Compilation, ?ignoreWarnings, ?beforeExecute, ?newProcess) =
+        let outcome, _, _ = CompilerAssert.ExecuteAux(cmpl, ?ignoreWarnings = ignoreWarnings, ?beforeExecute = beforeExecute, ?newProcess = newProcess)
+        match outcome with
+        | ExitCode n when n <> 0 -> failwith $"Process exited with code {n}."
+        | Failure exn -> raise exn
+        | _ -> ()
+
+
     static member ExecutionHasOutput(cmpl: Compilation, expectedOutput: string) =
-        CompilerAssert.Execute(cmpl, newProcess = true)
-        Assert.Equal(expectedOutput, TestConsole.OutText)  
+        let _, output, _ = CompilerAssert.ExecuteAux(cmpl, newProcess = true)
+        Assert.Equal(expectedOutput, output)  
 
     static member Pass (source: string) =
         let parseResults, fileAnswer = TestContext.Checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions TargetFramework.Current) |> Async.RunImmediate

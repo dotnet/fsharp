@@ -8,5 +8,5 @@ type DoNotRunInParallel = class end
 
 module XUnitSetup =
 
-    [<assembly: TestFramework("FSharp.Test.TestRun", "FSharp.Test.Utilities")>]
+    [<assembly: TestFramework("FSharp.Test.FSharpXunitFramework", "FSharp.Test.Utilities")>]
     do ()

@@ -13,7 +13,8 @@
     <IsTestProject>false</IsTestProject>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <!--<DefineConstants>XUNIT_CUSTOMIZATIONS</DefineConstants>-->
+    <!--Extra xUnit customizations, not required for the test suite to work, but can speed up local test runs and help with debugging.-->
+    <!--<DefineConstants>XUNIT_EXTRAS</DefineConstants>-->
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
@@ -30,6 +31,7 @@
       <Link>scriptlib.fsx</Link>
     </Compile>
     <None Include="ScriptingShims.fsx" />
+    <Compile Include="TestConsole.fs" />
     <Compile Include="XunitHelpers.fs" />
     <Compile Include="TestFramework.fs" />
     <Compile Include="ILChecker.fs" />

@@ -701,6 +701,8 @@ module rec Compiler =
 
     let private compileFSharpCompilation compilation ignoreWarnings (cUnit: CompilationUnit) : CompilationResult =
 
+        use capture = new TestConsole.ExecutionCapture()
+
         let ((err: FSharpDiagnostic[], exn, outputFilePath: string), deps) =
             CompilerAssert.CompileRaw(compilation, ignoreWarnings)
 
@@ -715,7 +717,7 @@ module rec Compiler =
             Adjust        = 0
             PerFileErrors = diagnostics
             Diagnostics   = diagnostics |> List.map snd
-            Output        = Some (RunOutput.ExecutionOutput { Outcome = outcome; StdOut = TestConsole.OutText; StdErr = TestConsole.ErrorText })
+            Output        = Some (RunOutput.ExecutionOutput { Outcome = outcome; StdOut = capture.OutText; StdErr = capture.ErrorText })
             Compilation   = cUnit
         }
 
@@ -1012,8 +1014,9 @@ module rec Compiler =
 
     let private evalFSharp (fs: FSharpCompilationSource) (script:FSharpScript) : CompilationResult =
         let source = fs.Source.GetSourceText |> Option.defaultValue ""
+        use capture = new TestConsole.ExecutionCapture()
         let result = script.Eval(source)
-        let outputWritten, errorsWritten = TestConsole.OutText, TestConsole.ErrorText
+        let outputWritten, errorsWritten = capture.OutText, capture.ErrorText
         processScriptResults fs result outputWritten errorsWritten
 
     let scriptingShim = Path.Combine(__SOURCE_DIRECTORY__,"ScriptingShims.fsx")
@@ -1026,8 +1029,9 @@ module rec Compiler =
             |> List.map (sprintf " @\"%s\"")
             |> String.Concat
 
+        use capture = new TestConsole.ExecutionCapture()
         let result = script.Eval("#load " + fileNames)
-        let outputWritten, errorsWritten = TestConsole.OutText, TestConsole.ErrorText
+        let outputWritten, errorsWritten = capture.OutText, capture.ErrorText
         processScriptResults fs result outputWritten errorsWritten
 
     let eval (cUnit: CompilationUnit) : CompilationResult =

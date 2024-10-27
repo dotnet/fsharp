@@ -24,27 +24,6 @@ type LangVersion =
     | Latest
     | SupportsMl
 
-type private EventedTextWriter() =
-    inherit TextWriter()
-    let sb = StringBuilder()
-    let sw = new StringWriter()
-    let lineWritten = Event<string>()
-    member _.LineWritten = lineWritten.Publish
-    override _.Encoding = Encoding.UTF8
-    override _.Write(c: char) =
-        if c = '\n' then
-            let line =
-                let v = sb.ToString()
-                if v.EndsWith("\r") then v.Substring(0, v.Length - 1)
-                else v
-            sb.Clear() |> ignore
-            sw.WriteLine line
-            lineWritten.Trigger(line)
-        else sb.Append(c) |> ignore
-    override _.ToString() =
-        sw.Flush()
-        sw.ToString()
-
 type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVersion, ?input: string) =
 
     do ignore input
@@ -75,23 +54,12 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
         |]
 
     let argv = Array.append baseArgs additionalArgs
-  
-    let outWriter = new EventedTextWriter()
-    let errorWriter = new EventedTextWriter()
 
-    let fsi = FsiEvaluationSession.Create (config, argv, stdin, TextWriter.Synchronized outWriter, TextWriter.Synchronized errorWriter)
+    let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr)
 
     member _.ValueBound = fsi.ValueBound
 
     member _.Fsi = fsi
-
-    member _.OutputProduced = outWriter.LineWritten
-
-    member _.ErrorProduced = errorWriter.LineWritten
-
-    member _.GetOutput() = string outWriter
-
-    member _.GetErrorOutput() = string errorWriter
 
     member this.Eval(code: string, ?cancellationToken: CancellationToken, ?desiredCulture: Globalization.CultureInfo) =
         let originalCulture = Thread.CurrentThread.CurrentCulture
@@ -99,9 +67,6 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
 
         let cancellationToken = defaultArg cancellationToken CancellationToken.None
         let ch, errors = fsi.EvalInteractionNonThrowing(code, cancellationToken)
-        // Replay output to test console.
-        printf $"{this.GetOutput()}"
-        eprintf $"{this.GetErrorOutput()}"
 
         Thread.CurrentThread.CurrentCulture <- originalCulture
 

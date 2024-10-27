@@ -31,12 +31,13 @@ module ScriptRunner =
         let cu  = cu |> withDefines defaultDefines
         match cu with 
         | FS fsSource ->
+            use capture = new TestConsole.ExecutionCapture()
             let engine = createEngine (fsSource.Options |> Array.ofList,version)
             let res = evalScriptFromDiskInSharedSession engine cu
             match res with
             | CompilationResult.Failure _ -> res
             | CompilationResult.Success _ ->               
-                if TestConsole.OutText |> TestFramework.outputPassed then
+                if capture.OutText |> TestFramework.outputPassed then
                     res
                 else
                     failwith $"Results looked correct, but 'TEST PASSED OK' was not printed."       
