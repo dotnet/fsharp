@@ -169,6 +169,9 @@ module BindingExpressions =
             (Warning 3874, Line 46, Col 5, Line 46, Col 8, "Variable patterns should be lowercase.")
             (Warning 3874, Line 53, Col 18, Line 53, Col 21, "Variable patterns should be lowercase.")
             (Warning 3874, Line 67, Col 9, Line 67, Col 14, "Variable patterns should be lowercase.")
+            (Warning 3874, Line 73, Col 9, Line 73, Col 18, "Variable patterns should be lowercase.")
+            (Warning 3874, Line 80, Col 9, Line 80, Col 18, "Variable patterns should be lowercase.")
+            (Warning 3874, Line 87, Col 9, Line 87, Col 18, "Variable patterns should be lowercase.")
         ]
         
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UpperBindingPattern.fs"|])>]
@@ -218,6 +221,12 @@ module BindingExpressions =
             (Warning 3874, Line 57, Col 18, Line 57, Col 20, "Variable patterns should be lowercase.")
             (Warning 3874, Line 61, Col 6, Line 61, Col 8, "Variable patterns should be lowercase.")
             (Warning 3874, Line 67, Col 9, Line 67, Col 14, "Variable patterns should be lowercase.")
-            (Warning 3874, Line 69, Col 19, Line 69, Col 24, "Variable patterns should be lowercase.");
+            (Warning 3874, Line 69, Col 19, Line 69, Col 24, "Variable patterns should be lowercase.")
             (Warning 3874, Line 69, Col 34, Line 69, Col 44, "Variable patterns should be lowercase.")
+            (Warning 3874, Line 73, Col 9, Line 73, Col 18, "Variable patterns should be lowercase.")
+            (Warning 3874, Line 80, Col 9, Line 80, Col 18, "Variable patterns should be lowercase.")
+            (Warning 3874, Line 87, Col 9, Line 87, Col 18, "Variable patterns should be lowercase.")
+            (Warning 3874, Line 95, Col 9, Line 95, Col 11, "Variable patterns should be lowercase.")
+            (Warning 3874, Line 102, Col 9, Line 102, Col 11, "Variable patterns should be lowercase.")
+            (Warning 3874, Line 109, Col 9, Line 109, Col 11, "Variable patterns should be lowercase.")
         ]

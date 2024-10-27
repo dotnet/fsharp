@@ -67,3 +67,47 @@ type AnonymousObject<'T1, 'T2> =
     new(Item1) = { item1 = Item1 }
 
 type FSharpSource(Item1: string, SourceHash: string) = class end
+
+let _ =
+   query {
+    for UpperCase in [1..10] do
+       join b in [1..2] on (UpperCase = b)
+       select b
+}
+
+let _ =
+   query {
+    for UpperCase in [1..10] do
+    groupBy UpperCase into g
+    select g.Key
+}
+
+let _ =
+   query {
+    for UpperCase in [1..10] do
+    groupJoin UpperCase2 in [|1..2|] on (UpperCase = UpperCase2) into g
+    for k in g do
+    select (k + 1)
+}
+
+let _ =
+   query {
+    for Up in [1..10] do
+       join b in [1..2] on (Up = b)
+       select b
+}
+
+let _ =
+   query {
+    for Up in [1..10] do
+    groupBy Up into g
+    select g.Key
+}
+
+let _ =
+   query {
+    for Up in [1..10] do
+    groupJoin U2 in [|1..2|] on (Up = U2) into g
+    for k in g do
+    select (k + 1)
+}
