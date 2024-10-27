@@ -1,21 +1,21 @@
 
-neg07.fs(7,10,7,29): typecheck error FS0049: Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.
+neg07.fs(7,10,7,29): typecheck error FS3874: typecheck error FS3874: Variable patterns should be lowercase.
 
 neg07.fs(24,13,24,23): typecheck error FS0039: The value or constructor 'UnionCase1' is not defined. Maybe you want one of the following:
    X.UnionCase1
 
-neg07.fs(27,11,27,21): typecheck error FS0049: Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.
+neg07.fs(27,11,27,21): typecheck error FS0049: Match cases labels must be lowercase identifiers
 
-neg07.fs(28,11,28,21): typecheck error FS0049: Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.
+neg07.fs(28,11,28,21): typecheck error FS0049: Match cases labels must be lowercase identifiers
 
 neg07.fs(28,11,28,21): typecheck error FS0026: This rule will never be matched
 
 neg07.fs(31,18,31,28): typecheck error FS0039: The value or constructor 'UnionCase1' is not defined. Maybe you want one of the following:
    X.UnionCase1
 
-neg07.fs(35,11,35,21): typecheck error FS0049: Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.
+neg07.fs(35,11,35,21): typecheck error FS0049: Match cases labels must be lowercase identifiers
 
-neg07.fs(36,11,36,21): typecheck error FS0049: Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.
+neg07.fs(36,11,36,21): typecheck error FS0049: Match cases labels must be lowercase identifiers
 
 neg07.fs(36,11,36,21): typecheck error FS0026: This rule will never be matched
 
