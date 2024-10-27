@@ -718,10 +718,15 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
             for remainingArg in remaining do
                 errorR (UnionCaseWrongArguments (env.DisplayEnv, numArgTys, numArgs, remainingArg.Range))
             args, extraPatterns @ remaining
+            
+    let warnOnUpperForId =
+        if g.langVersion.SupportsFeature(LanguageFeature.WarnOnUppercaseIdentifiersInPatterns) then
+            WarnOnUpperVariablePatterns
+        else warnOnUpper
 
     let extraPatterns = extraPatterns @ extraPatternsFromNames
-    let argsR, acc = TcPatterns warnOnUpper cenv env vFlags patEnv argTys args
-    let _, acc = TcPatterns warnOnUpper cenv env vFlags acc (NewInferenceTypes g extraPatterns) extraPatterns
+    let argsR, acc = TcPatterns warnOnUpperForId cenv env vFlags patEnv argTys args
+    let _, acc = TcPatterns warnOnUpperForId cenv env vFlags acc (NewInferenceTypes g extraPatterns) extraPatterns
     (fun values -> mkf m (List.map (fun f -> f values) argsR)), acc
 
 /// Check a long identifier that has been resolved to an IL field - valid if a literal

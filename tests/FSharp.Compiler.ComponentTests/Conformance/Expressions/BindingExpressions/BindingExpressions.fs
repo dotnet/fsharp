@@ -172,6 +172,7 @@ module BindingExpressions =
             (Warning 3874, Line 73, Col 9, Line 73, Col 18, "Variable patterns should be lowercase.")
             (Warning 3874, Line 80, Col 9, Line 80, Col 18, "Variable patterns should be lowercase.")
             (Warning 3874, Line 87, Col 9, Line 87, Col 18, "Variable patterns should be lowercase.")
+            (Warning 3874, Line 117, Col 37, Line 117, Col 40, "Variable patterns should be lowercase.")
         ]
         
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UpperBindingPattern.fs"|])>]
@@ -213,6 +214,7 @@ module BindingExpressions =
             (Warning 3874, Line 32, Col 25, Line 32, Col 28, "Variable patterns should be lowercase.")
             (Warning 3874, Line 34, Col 21, Line 34, Col 24, "Variable patterns should be lowercase.")
             (Warning 3874, Line 34, Col 25, Line 34, Col 28, "Variable patterns should be lowercase.")
+            (Warning 3874, Line 40, Col 17, Line 40, Col 20, "Variable patterns should be lowercase.")
             (Warning 3874, Line 42, Col 31, Line 42, Col 34, "Variable patterns should be lowercase.")
             (Warning 3874, Line 44, Col 32, Line 44, Col 34, "Variable patterns should be lowercase.")
             (Warning 3874, Line 46, Col 5, Line 46, Col 8, "Variable patterns should be lowercase.")
@@ -229,4 +231,8 @@ module BindingExpressions =
             (Warning 3874, Line 95, Col 9, Line 95, Col 11, "Variable patterns should be lowercase.")
             (Warning 3874, Line 102, Col 9, Line 102, Col 11, "Variable patterns should be lowercase.")
             (Warning 3874, Line 109, Col 9, Line 109, Col 11, "Variable patterns should be lowercase.")
+            (Warning 3874, Line 117, Col 33, Line 117, Col 35, "Variable patterns should be lowercase.")
+            (Warning 3874, Line 117, Col 37, Line 117, Col 40, "Variable patterns should be lowercase.")
+            (Warning 3874, Line 119, Col 18, Line 119, Col 20, "Variable patterns should be lowercase.")
+            (Warning 3874, Line 119, Col 22, Line 119, Col 24, "Variable patterns should be lowercase.")
         ]

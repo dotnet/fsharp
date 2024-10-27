@@ -111,3 +111,9 @@ let _ =
     for k in g do
     select (k + 1)
 }
+
+type CustomerId2 = CustomerId2 of string * string
+
+let getCustomerId3 (CustomerId2(AA, BBB)) = id
+
+let (CustomerId2(AA, Bb)) = CustomerId2("AA", "BB")
