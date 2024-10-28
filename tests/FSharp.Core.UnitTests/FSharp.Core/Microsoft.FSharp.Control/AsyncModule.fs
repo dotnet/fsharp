@@ -473,8 +473,8 @@ type AsyncModule() =
             let mutable running = new CountdownEvent(1)
 
             let job i = async {
-                running.AddCount 1
                 use! holder = Async.OnCancel (running.Signal >> ignore)
+                running.AddCount 1
                 do! failOnlyOne |> Async.AwaitWaitHandle |> Async.Ignore
                 running.Signal() |> ignore
                 failwith "boom" 
