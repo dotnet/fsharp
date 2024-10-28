@@ -448,7 +448,8 @@ let z = Project1.x
 [<InlineData(false)>]
 let ``Test multi project symbols should pick up changes in dependent projects`` useTransparentCompiler =
 
-    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
+    // A private checker because we subscribe to FileChecked.
+    let checker = FSharpChecker.Create(useTransparentCompiler = useTransparentCompiler)
 
     //  register to count the file checks
     let count = ref 0

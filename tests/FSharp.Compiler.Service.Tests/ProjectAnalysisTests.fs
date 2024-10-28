@@ -1,6 +1,7 @@
 ﻿module FSharp.Compiler.Service.Tests.ProjectAnalysisTests
 
 #nowarn "57" // Experimental stuff
+open FSharp.Compiler.CodeAnalysis
 
 let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e ->  false
 
@@ -19,8 +20,6 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Symbols.FSharpExprPatterns
 open TestFramework
 
-// Exculde because of some GC tests
-[<Collection(nameof DoNotRunInParallel)>]
 module internal Project1 =
 
     let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
@@ -109,6 +108,9 @@ let ``Test project1 whole project errors`` () =
 
 [<Fact>]
 let ``Test project1 and make sure TcImports gets cleaned up`` () =
+
+    // A private checker for this test.
+    let checker = FSharpChecker.Create(useTransparentCompiler = FSharp.Test.TestContext.UseTransparentCompiler)    
 
     let test () =
         let _, checkFileAnswer = checker.ParseAndCheckFileInProject(Project1.fileName1, 0, Project1.fileSource1, Project1.options) |> Async.RunImmediate
