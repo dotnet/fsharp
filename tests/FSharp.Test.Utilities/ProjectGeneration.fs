@@ -226,7 +226,7 @@ let sourceFile fileId deps =
       IsPhysicalFile = false }
 
 
-let OptionsCache = ConcurrentDictionary<_, FSharpProjectOptions>()
+let OptionsCache = ConcurrentDictionary<_, Lazy<_>>()
 
 
 type SyntheticProject =
@@ -306,6 +306,7 @@ type SyntheticProject =
             this.NugetReferences
 
         let factory _ =
+            lazy
             use _ = Activity.start "SyntheticProject.GetProjectOptions" [ "project", this.Name ]
 
             let referenceScript =
@@ -352,7 +353,7 @@ type SyntheticProject =
                 Stamp = None }
 
         
-        OptionsCache.GetOrAdd(key, factory)
+        OptionsCache.GetOrAdd(key, factory).Value
 
 
     member this.GetAllProjects() =
