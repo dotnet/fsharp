@@ -14,7 +14,7 @@
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <!--Extra xUnit customizations, not required for the test suite to work, but can speed up local test runs and help with debugging.-->
-    <!--<DefineConstants>XUNIT_EXTRAS</DefineConstants>-->
+    <DefineConstants>XUNIT_EXTRAS</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
