@@ -24,9 +24,7 @@ type LangVersion =
     | Latest
     | SupportsMl
 
-type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVersion, ?input: string) =
-
-    do ignore input
+type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVersion) =
 
     let additionalArgs = defaultArg additionalArgs [||]
     let quiet = defaultArg quiet true

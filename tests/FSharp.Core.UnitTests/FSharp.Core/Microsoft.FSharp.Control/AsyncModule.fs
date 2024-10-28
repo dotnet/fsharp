@@ -378,7 +378,7 @@ type AsyncModule() =
 
     [<Fact>]
     member _.``AwaitWaitHandle.DisposedWaitHandle2``() = 
-        let wh = new System.Threading.ManualResetEvent(false)
+        let wh = new ManualResetEvent(false)
         let started = new ManualResetEventSlim(false)
         let cts = new CancellationTokenSource()
         let test =
