@@ -452,8 +452,9 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
     let checker = FSharpChecker.Create(useTransparentCompiler = useTransparentCompiler)
 
     //  register to count the file checks
-    let count = ref 0
-    checker.FileChecked.Add (fun _ -> incr count)
+    let mutable count = 0
+    let waitForCount n = System.Threading.SpinWait.SpinUntil(fun () -> count = n)
+    checker.FileChecked.Add (fun _ -> System.Threading.Interlocked.Increment &count |> ignore)
 
     //---------------- Write the first version of the file in project 1 and check the project --------------------
 
@@ -461,13 +462,13 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
     let wholeProjectResults1 = checker.ParseAndCheckProject(proj1options) |> Async.RunImmediate
 
-    count.Value |> shouldEqual 1
+    count |> shouldEqual 1
 
     let backgroundParseResults1, backgroundTypedParse1 =
         checker.GetBackgroundCheckResultsForFileInProject(MultiProjectDirty1.fileName1, proj1options)
         |> Async.RunImmediate
 
-    count.Value |> shouldEqual 1
+    count |> shouldEqual 1
 
     //---------------- Get a symbol from project 1 and look up its uses in both projects --------------------
 
@@ -481,11 +482,11 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
     let wholeProjectResults2 = checker.ParseAndCheckProject(proj2options) |> Async.RunImmediate
 
-    count.Value |> shouldEqual 2
+    count |> shouldEqual 2
 
     let _ = checker.ParseAndCheckProject(proj2options) |> Async.RunImmediate
 
-    count.Value |> shouldEqual 2 // cached
+    count |> shouldEqual 2 // cached
 
     let usesOfXSymbolInProject1 =
         wholeProjectResults1.GetUsesOfSymbol(xSymbol)
@@ -519,7 +520,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
     printfn "New write time: '%A', ticks = %d"  wt2 wt2.Ticks
 
     let wholeProjectResults1AfterChange1 = checker.ParseAndCheckProject(proj1options) |> Async.RunImmediate
-    count.Value |> shouldEqual 3
+    count |> shouldEqual 3
 
     let backgroundParseResults1AfterChange1, backgroundTypedParse1AfterChange1 =
         checker.GetBackgroundCheckResultsForFileInProject(MultiProjectDirty1.fileName1, proj1options)
@@ -534,7 +535,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
     let wholeProjectResults2AfterChange1 = checker.ParseAndCheckProject(proj2options) |> Async.RunImmediate
 
-    count.Value |> shouldEqual 4
+    count |> shouldEqual 4
 
     let usesOfXSymbolInProject1AfterChange1 =
         wholeProjectResults1AfterChange1.GetUsesOfSymbol(xSymbolAfterChange1)
@@ -566,16 +567,17 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
     printfn "Old write time: '%A', ticks = %d"  wt1b wt1b.Ticks
     printfn "New write time: '%A', ticks = %d"  wt2b wt2b.Ticks
 
-    count.Value |> shouldEqual 4
+    count |> shouldEqual 4
     let wholeProjectResults2AfterChange2 = checker.ParseAndCheckProject(proj2options) |> Async.RunImmediate
 
     System.Threading.Thread.Sleep(1000)
-    count.Value |> shouldEqual 6 // note, causes two files to be type checked, one from each project
+    waitForCount 6
+    count |> shouldEqual 6 // note, causes two files to be type checked, one from each project
 
 
     let wholeProjectResults1AfterChange2 = checker.ParseAndCheckProject(proj1options) |> Async.RunImmediate
 
-    count.Value |> shouldEqual 6 // the project is already checked
+    count |> shouldEqual 6 // the project is already checked
 
     let backgroundParseResults1AfterChange2, backgroundTypedParse1AfterChange2 =
         checker.GetBackgroundCheckResultsForFileInProject(MultiProjectDirty1.fileName1, proj1options)
@@ -830,7 +832,7 @@ let ``Test active patterns' XmlDocSig declared in referenced projects`` useTrans
 
 //------------------------------------------------------------------------------------
 
-
+[<FSharp.Test.RunInSequence>]
 [<Theory>]
 [<InlineData(true)>]
 [<InlineData(false)>]
