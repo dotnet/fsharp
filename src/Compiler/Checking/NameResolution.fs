@@ -3397,7 +3397,7 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
                 then
                     match warnOnUpper with
                     | WarnOnUpperUnionCaseLabel -> warning(UpperCaseIdentifierInPattern m)
-                    | WarnOnUpperVariablePatterns -> warning(Error(FSComp.SR.chkVariablePatternUppercase(), m))
+                    | WarnOnUpperVariablePatterns
                     | AllIdsOK -> ()
                 else
                     if not newDef
