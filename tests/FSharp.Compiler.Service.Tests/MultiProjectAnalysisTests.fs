@@ -141,6 +141,7 @@ let ``Test multi project 1 basic`` useTransparentCompiler =
     [ for x in wholeProjectResults.AssemblySignature.Entities[0].MembersFunctionsAndValues -> x.DisplayName ]
         |> shouldEqual ["p"; "c"; "u"]
 
+[<FSharp.Test.RunInSequence>]
 [<Theory>]
 [<InlineData(true)>]
 [<InlineData(false)>]
@@ -361,6 +362,7 @@ let ``Test ManyProjectsStressTest cache too small`` useTransparentCompiler =
     [ for x in wholeProjectResults.AssemblySignature.Entities[0].MembersFunctionsAndValues -> x.DisplayName ]
         |> shouldEqual ["p"]
 
+[<FSharp.Test.RunInSequence>]
 [<Theory>]
 [<InlineData(true)>]
 [<InlineData(false)>]
@@ -518,6 +520,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
     FileSystem.OpenFileForWriteShim(MultiProjectDirty1.fileName1).Write(System.Environment.NewLine + MultiProjectDirty1.content)
     printfn "Wrote new content to file '%s'"  MultiProjectDirty1.fileName1
     let wt2 = FileSystem.GetLastWriteTimeShim MultiProjectDirty1.fileName1
+    Assert.NotEqual(wt1, wt2)
     printfn "Current time: '%A', ticks = %d"  wt0 wt0.Ticks
     printfn "Old write time: '%A', ticks = %d"  wt1 wt1.Ticks
     printfn "New write time: '%A', ticks = %d"  wt2 wt2.Ticks
@@ -566,6 +569,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
     FileSystem.OpenFileForWriteShim(MultiProjectDirty1.fileName1).Write(MultiProjectDirty1.content)
     printfn "Wrote old content to file '%s'"  MultiProjectDirty1.fileName1
     let wt2b = FileSystem.GetLastWriteTimeShim MultiProjectDirty1.fileName1
+    Assert.NotEqual(wt1b, wt2b)
     printfn "Current time: '%A', ticks = %d"  wt0b wt0b.Ticks
     printfn "Old write time: '%A', ticks = %d"  wt1b wt1b.Ticks
     printfn "New write time: '%A', ticks = %d"  wt2b wt2b.Ticks
