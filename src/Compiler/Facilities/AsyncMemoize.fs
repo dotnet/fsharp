@@ -564,7 +564,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
     member this.OnEvent = this.Event.Add
 
-    member this.Count = cache.Count
+    member this.Count = lock.Do(fun () -> Task.FromResult cache.Count).Result
 
     member _.Locked = lock.Semaphore.CurrentCount < 1
 

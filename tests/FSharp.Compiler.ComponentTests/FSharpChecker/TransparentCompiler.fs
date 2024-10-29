@@ -1012,13 +1012,12 @@ printfn "Hello from F#"
 
 [<Fact>]
 let ``Transparent Compiler ScriptClosure cache is populated after GetProjectOptionsFromScript`` () =
-    async {
+    task {
         let transparentChecker = FSharpChecker.Create(useTransparentCompiler = true)
         let scriptName = Path.Combine(__SOURCE_DIRECTORY__, "script.fsx")
         let content = SourceTextNew.ofString ""
         let! _ = transparentChecker.GetProjectOptionsFromScript(scriptName, content)
         Assert.Equal(1, transparentChecker.Caches.ScriptClosure.Count)
-
     }
 
 type private LoadClosureTestShim(currentFileSystem: IFileSystem) =
