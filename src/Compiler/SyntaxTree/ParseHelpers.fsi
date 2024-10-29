@@ -302,3 +302,5 @@ val mkSynField:
     rangeStart: range ->
     leadingKeyword: SynLeadingKeyword option ->
         SynField
+
+val leadingKeywordIsAbstract: SynLeadingKeyword -> bool
