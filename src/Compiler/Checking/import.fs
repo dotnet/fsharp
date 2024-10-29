@@ -68,10 +68,11 @@ type [<Struct; NoComparison; CustomEquality>] TTypeCacheKey =
         member this.Equals other =
             if this.canCoerce <> other.canCoerce then
                 false
-            elif this.ty1 === other.ty1 && this.ty2 === other.ty2  then
-                true 
-            else 
-                stampEquals this.tcGlobals this.ty1 other.ty1 && stampEquals this.tcGlobals this.ty2 other.ty2                
+            elif this.ty1 === other.ty1 && this.ty2 === other.ty2 then
+                true
+            else
+                stampEquals this.tcGlobals this.ty1 other.ty1
+                && stampEquals this.tcGlobals this.ty2 other.ty2
 
     override this.Equals other =
         match other with
