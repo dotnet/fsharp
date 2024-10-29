@@ -1,7 +1,7 @@
 ﻿module FSharp.Compiler.Service.Tests.ExprTests
 
 open Xunit
-open FsUnit
+open FSharp.Test.Assert
 open System
 open System.Text
 open System.Collections.Generic

@@ -1,7 +1,7 @@
 ﻿module FSharp.Compiler.Service.Tests.MultiProjectAnalysisTests
 
 open Xunit
-open FsUnit
+open FSharp.Test.Assert
 open System.IO
 open System.Collections.Generic
 open FSharp.Compiler.CodeAnalysis

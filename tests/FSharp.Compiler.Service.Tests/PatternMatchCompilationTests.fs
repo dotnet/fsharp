@@ -3,7 +3,7 @@ module FSharp.Compiler.Service.Tests.PatternMatchCompilationTests
 // Most tests here weren't running on desktop and fails
 
 open FSharp.Compiler.Service.Tests.Common
-open FsUnit
+open FSharp.Test.Assert
 open Xunit
 open FSharp.Test
 
