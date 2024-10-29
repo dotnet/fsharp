@@ -1,4 +1,6 @@
-﻿module FSharp.Compiler.Service.Tests.PerfTests
+﻿// Because of global static FSharpChecker.ActualCheckFileCount
+[<Xunit.Collection(nameof FSharp.Test.DoNotRunInParallel)>]
+module FSharp.Compiler.Service.Tests.PerfTests
 
 open Xunit
 open FsUnit
