@@ -19,7 +19,6 @@
     <Content Include="expected-help-output.bsl">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="SurfaceArea.fs" Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp'" />
     <Compile Include="..\service\FsUnit.fs">
       <Link>FsUnit.fs</Link>

@@ -14,14 +14,14 @@ open Xunit.Abstractions
 type RunInSequenceAttribute() = inherit Attribute()
 
 #if !XUNIT_EXTRAS
-/// Installs console support for parallel test runs and conditionally enables optional xUnit customizations.
+/// Installs console support for parallel test runs.
 type FSharpXunitFramework(sink: IMessageSink) =
     inherit XunitTestFramework(sink)
     do
         // Because xUnit v2 lacks assembly fixture, the next best place to ensure things get called
         // right at the start of the test run is here in the constructor.
         // This gets executed once per test assembly.
-        MessageSink.sinkWriter |> ignore
+        log "FSharpXunitFramework installing TestConsole redirection"
         TestConsole.install()
 
 #else
@@ -129,7 +129,7 @@ type FSharpXunitFramework(sink: IMessageSink) =
         // Because xUnit v2 lacks assembly fixture, the next best place to ensure things get called
         // right at the start of the test run is here in the constructor.
         // This gets executed once per test assembly.
-        MessageSink.sinkWriter |> ignore
+        log "FSharpXunitFramework with XUNIT_EXTRAS installing TestConsole redirection"
         TestConsole.install() 
 
     override this.CreateDiscoverer (assemblyInfo) =
