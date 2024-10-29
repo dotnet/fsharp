@@ -86,6 +86,7 @@ type LanguageFeature =
     | EmptyBodiedComputationExpressions
     | AllowObjectExpressionWithoutOverrides
     | UseTypeSubsumptionCache
+    | DeprecatePlacesWhereSeqCanBeOmitted
 
 /// LanguageVersion management
 type LanguageVersion =

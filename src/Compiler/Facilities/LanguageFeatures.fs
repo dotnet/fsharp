@@ -95,6 +95,7 @@ type LanguageFeature =
     | EmptyBodiedComputationExpressions
     | AllowObjectExpressionWithoutOverrides
     | UseTypeSubsumptionCache
+    | DeprecatePlacesWhereSeqCanBeOmitted
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -221,6 +222,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
                 LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, previewVersion
                 LanguageFeature.AllowObjectExpressionWithoutOverrides, previewVersion
+                LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -378,6 +380,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.EmptyBodiedComputationExpressions -> FSComp.SR.featureEmptyBodiedComputationExpressions ()
         | LanguageFeature.AllowObjectExpressionWithoutOverrides -> FSComp.SR.featureAllowObjectExpressionWithoutOverrides ()
         | LanguageFeature.UseTypeSubsumptionCache -> FSComp.SR.featureUseTypeSubsumptionCache ()
+        | LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted -> FSComp.SR.featureDeprecatePlacesWhereSeqCanBeOmitted ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

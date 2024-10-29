@@ -821,7 +821,7 @@ module internal RangeTestsHelpers =
         enumerator.Current |> ignore
 
     let inline exceptions zero one two =
-        Assert.Throws (typeof<System.ArgumentException>, (fun () -> {one .. zero .. two} |> Seq.length |> ignore)) |> ignore
+        Assert.Throws (typeof<System.ArgumentException>, (fun () -> seq {one .. zero .. two} |> Seq.length |> ignore)) |> ignore
         Assert.Throws (typeof<System.ArgumentException>, (fun () -> [one .. zero .. two] |> List.length |> ignore)) |> ignore
         Assert.Throws (typeof<System.ArgumentException>, (fun () -> [|one .. zero .. two|] |> Array.length |> ignore)) |> ignore
 
@@ -831,10 +831,10 @@ module internal RangeTestsHelpers =
         Assert.Throws (typeof<System.InvalidOperationException>, (fun () -> regressionExceptionAfterEndVariableStepIntegralRange zero two))    |> ignore
 
     let inline common (min0, min1, min2, min3) (max0, max1, max2, max3) (zero, one, two, three) =
-        Assert.AreEqual (seq {yield min0; yield min1; yield min2; yield min3}, {min0 ..          min3})
-        Assert.AreEqual (seq {min0; min1; min2; min3}, {min0 .. one   .. min3})
-        Assert.AreEqual (seq {min0; min2}, {min0 .. two   .. min3})
-        Assert.AreEqual (seq {min0; min3}, {min0 .. three .. min3})
+        Assert.AreEqual (seq {yield min0; yield min1; yield min2; yield min3}, seq {min0 ..          min3})
+        Assert.AreEqual (seq {min0; min1; min2; min3}, seq {min0 .. one   .. min3})
+        Assert.AreEqual (seq {min0; min2}, seq {min0 .. two   .. min3})
+        Assert.AreEqual (seq {min0; min3}, seq {min0 .. three .. min3})
 
         Assert.AreEqual ([min0; min1; min2; min3], [min0 ..          min3])
         Assert.AreEqual ([min0; min1; min2; min3], [min0 .. one   .. min3])
@@ -846,10 +846,10 @@ module internal RangeTestsHelpers =
         Assert.AreEqual ([|min0; min2|], [|min0 .. two   .. min3|])
         Assert.AreEqual ([|min0; min3|], [|min0 .. three .. min3|])
 
-        Assert.AreEqual (seq {yield max3; yield max2; yield max1; yield max0}, {max3 ..          max0})
-        Assert.AreEqual (seq {max3; max2; max1; max0}, {max3 .. one   .. max0})
-        Assert.AreEqual (seq {max3; max1}, {max3 .. two   .. max0})
-        Assert.AreEqual (seq {max3; max0}, {max3 .. three .. max0})
+        Assert.AreEqual (seq {yield max3; yield max2; yield max1; yield max0}, seq {max3 ..          max0})
+        Assert.AreEqual (seq {max3; max2; max1; max0}, seq {max3 .. one   .. max0})
+        Assert.AreEqual (seq {max3; max1}, seq {max3 .. two   .. max0})
+        Assert.AreEqual (seq {max3; max0}, seq {max3 .. three .. max0})
 
         Assert.AreEqual ([max3; max2; max1; max0], [max3 ..          max0])
         Assert.AreEqual ([max3; max2; max1; max0], [max3 .. one   .. max0])
@@ -861,10 +861,10 @@ module internal RangeTestsHelpers =
         Assert.AreEqual ([|max3; max1|], [|max3 .. two   .. max0|])
         Assert.AreEqual ([|max3; max0|], [|max3 .. three .. max0|])
 
-        Assert.AreEqual (Seq.empty, {max0 ..          min0})
-        Assert.AreEqual (Seq.empty, {max0 .. one   .. min0})
-        Assert.AreEqual (Seq.empty, {max0 .. two   .. min0})
-        Assert.AreEqual (Seq.empty, {max0 .. three .. min0})
+        Assert.AreEqual (Seq.empty, seq {max0 ..          min0})
+        Assert.AreEqual (Seq.empty, seq {max0 .. one   .. min0})
+        Assert.AreEqual (Seq.empty, seq {max0 .. two   .. min0})
+        Assert.AreEqual (Seq.empty, seq {max0 .. three .. min0})
 
         Assert.AreEqual ([], [max0 ..          min0])
         Assert.AreEqual ([], [max0 .. one   .. min0])
@@ -880,8 +880,8 @@ module internal RangeTestsHelpers =
 
         // tests for singleStepRangeEnumerator, as it only is used if start and/or end are not the
         // minimum or maximum of the number range and it is counting by 1s
-        Assert.AreEqual (seq {min1; min2; min3}, {min1 .. min3})
-        Assert.AreEqual (seq {max3; max2; max1}, {max3 .. max1})
+        Assert.AreEqual (seq {min1; min2; min3}, seq {min1 .. min3})
+        Assert.AreEqual (seq {max3; max2; max1}, seq {max3 .. max1})
 
         Assert.AreEqual ([min1; min2; min3], [min1 .. min3])
         Assert.AreEqual ([max3; max2; max1], [max3 .. max1])
@@ -903,10 +903,10 @@ module internal RangeTestsHelpers =
 
         common (min0, min1, min2, min3) (max0, max1, max2, max3) (zero, one, two, three)
 
-        Assert.AreEqual (seq { min0; min0 + max0; min0 + max0 + max0 }, {min0 .. max0 .. max0})
-        Assert.AreEqual (seq { min0; min0 + max1; min0 + max1 + max1 }, {min0 .. max1 .. max0})
-        Assert.AreEqual (seq { min0; min0 + max2; min0 + max2 + max2 }, {min0 .. max2 .. max0})
-        Assert.AreEqual (seq { min0; min0 + max3; min0 + max3 + max3 }, {min0 .. max3 .. max0})
+        Assert.AreEqual (seq { min0; min0 + max0; min0 + max0 + max0 }, seq {min0 .. max0 .. max0})
+        Assert.AreEqual (seq { min0; min0 + max1; min0 + max1 + max1 }, seq {min0 .. max1 .. max0})
+        Assert.AreEqual (seq { min0; min0 + max2; min0 + max2 + max2 }, seq {min0 .. max2 .. max0})
+        Assert.AreEqual (seq { min0; min0 + max3; min0 + max3 + max3 }, seq {min0 .. max3 .. max0})
 
         Assert.AreEqual ([ min0; min0 + max0; min0 + max0 + max0 ], [min0 .. max0 .. max0])
         Assert.AreEqual ([ min0; min0 + max1; min0 + max1 + max1 ], [min0 .. max1 .. max0])
@@ -918,9 +918,9 @@ module internal RangeTestsHelpers =
         Assert.AreEqual ([| min0; min0 + max2; min0 + max2 + max2 |], [|min0 .. max2 .. max0|])
         Assert.AreEqual ([| min0; min0 + max3; min0 + max3 + max3 |], [|min0 .. max3 .. max0|])
 
-        Assert.AreEqual (seq {min3; min2; min1; min0}, {min3 .. -one   .. min0})
-        Assert.AreEqual (seq {min3; min1}, {min3 .. -two   .. min0})
-        Assert.AreEqual (seq {min3; min0}, {min3 .. -three .. min0})
+        Assert.AreEqual (seq {min3; min2; min1; min0}, seq {min3 .. -one   .. min0})
+        Assert.AreEqual (seq {min3; min1}, seq {min3 .. -two   .. min0})
+        Assert.AreEqual (seq {min3; min0}, seq {min3 .. -three .. min0})
 
         Assert.AreEqual ([min3; min2; min1; min0], [min3 .. -one   .. min0])
         Assert.AreEqual ([min3; min1], [min3 .. -two   .. min0])
@@ -930,9 +930,9 @@ module internal RangeTestsHelpers =
         Assert.AreEqual ([|min3; min1|], [|min3 .. -two   .. min0|])
         Assert.AreEqual ([|min3; min0|], [|min3 .. -three .. min0|])
 
-        Assert.AreEqual (seq {max0; max1; max2; max3}, {max0 .. -one   .. max3})
-        Assert.AreEqual (seq {max0; max2}, {max0 .. -two   .. max3})
-        Assert.AreEqual (seq {max0; max3}, {max0 .. -three .. max3})
+        Assert.AreEqual (seq {max0; max1; max2; max3}, seq {max0 .. -one   .. max3})
+        Assert.AreEqual (seq {max0; max2}, seq {max0 .. -two   .. max3})
+        Assert.AreEqual (seq {max0; max3}, seq {max0 .. -three .. max3})
 
         Assert.AreEqual ([max0; max1; max2; max3], [max0 .. -one   .. max3])
         Assert.AreEqual ([max0; max2], [max0 .. -two   .. max3])
@@ -942,9 +942,9 @@ module internal RangeTestsHelpers =
         Assert.AreEqual ([|max0; max2|], [|max0 .. -two   .. max3|])
         Assert.AreEqual ([|max0; max3|], [|max0 .. -three .. max3|])
 
-        Assert.AreEqual (Seq.empty, {min0 .. -one   .. max0})
-        Assert.AreEqual (Seq.empty, {min0 .. -two   .. max0})
-        Assert.AreEqual (Seq.empty, {min0 .. -three .. max0})
+        Assert.AreEqual (Seq.empty, seq {min0 .. -one   .. max0})
+        Assert.AreEqual (Seq.empty, seq {min0 .. -two   .. max0})
+        Assert.AreEqual (Seq.empty, seq {min0 .. -three .. max0})
 
         Assert.AreEqual ([], [min0 .. -one   .. max0])
         Assert.AreEqual ([], [min0 .. -two   .. max0])
@@ -954,10 +954,10 @@ module internal RangeTestsHelpers =
         Assert.AreEqual ([||], [|min0 .. -two   .. max0|])
         Assert.AreEqual ([||], [|min0 .. -three .. max0|])
 
-        Assert.AreEqual (seq {max0; max0 + min0}, {max0 .. min0 .. min0})
-        Assert.AreEqual (seq {max0; max0 + min1; max0 + min1 + min1 }, {max0 .. min1 .. min0})
-        Assert.AreEqual (seq {max0; max0 + min2; max0 + min2 + min2 }, {max0 .. min2 .. min0})
-        Assert.AreEqual (seq {max0; max0 + min3; max0 + min3 + min3 }, {max0 .. min3 .. min0})
+        Assert.AreEqual (seq {max0; max0 + min0}, seq {max0 .. min0 .. min0})
+        Assert.AreEqual (seq {max0; max0 + min1; max0 + min1 + min1 }, seq {max0 .. min1 .. min0})
+        Assert.AreEqual (seq {max0; max0 + min2; max0 + min2 + min2 }, seq {max0 .. min2 .. min0})
+        Assert.AreEqual (seq {max0; max0 + min3; max0 + min3 + min3 }, seq {max0 .. min3 .. min0})
 
         Assert.AreEqual ([max0; max0 + min0], [max0 .. min0 .. min0])
         Assert.AreEqual ([max0; max0 + min1; max0 + min1 + min1 ], [max0 .. min1 .. min0])
@@ -983,10 +983,10 @@ module internal RangeTestsHelpers =
 
         common (min0, min1, min2, min3) (max0, max1, max2, max3) (zero, one, two, three)
 
-        Assert.AreEqual (seq {yield min0; yield min0 + max0}, {min0 .. max0 .. max0})
-        Assert.AreEqual (seq {min0; min0 + max1}, {min0 .. max1 .. max0})
-        Assert.AreEqual (seq {min0; min0 + max2}, {min0 .. max2 .. max0})
-        Assert.AreEqual (seq {min0; min0 + max3}, {min0 .. max3 .. max0})
+        Assert.AreEqual (seq {yield min0; yield min0 + max0}, seq {min0 .. max0 .. max0})
+        Assert.AreEqual (seq {min0; min0 + max1}, seq {min0 .. max1 .. max0})
+        Assert.AreEqual (seq {min0; min0 + max2}, seq {min0 .. max2 .. max0})
+        Assert.AreEqual (seq {min0; min0 + max3}, seq {min0 .. max3 .. max0})
 
         Assert.AreEqual ([min0; min0 + max0], [min0 .. max0 .. max0])
         Assert.AreEqual ([min0; min0 + max1], [min0 .. max1 .. max0])
@@ -1064,15 +1064,15 @@ module RangeTests =
             Assert.AreEqual(256, let mutable c = 0 in for _ in System.SByte.MinValue..1y..System.SByte.MaxValue do c <- c + 1 done; c)
             Assert.AreEqual(256, let mutable c = 0 in for _ in System.SByte.MaxValue .. -1y .. System.SByte.MinValue do c <- c + 1 done; c)
 
-            Assert.AreEqual(allSBytesSeq, {System.SByte.MinValue..System.SByte.MaxValue})
+            Assert.AreEqual(allSBytesSeq, seq {System.SByte.MinValue..System.SByte.MaxValue})
             Assert.AreEqual(allSBytesList, [System.SByte.MinValue..System.SByte.MaxValue])
             Assert.AreEqual(allSBytesArray, [|System.SByte.MinValue..System.SByte.MaxValue|])
 
-            Assert.AreEqual(allSBytesSeq, {System.SByte.MinValue..1y..System.SByte.MaxValue})
+            Assert.AreEqual(allSBytesSeq, seq {System.SByte.MinValue..1y..System.SByte.MaxValue})
             Assert.AreEqual(allSBytesList, [System.SByte.MinValue..1y..System.SByte.MaxValue])
             Assert.AreEqual(allSBytesArray, [|System.SByte.MinValue..1y..System.SByte.MaxValue|])
 
-            Assert.AreEqual(Seq.rev allSBytesSeq, {System.SByte.MaxValue .. -1y .. System.SByte.MinValue})
+            Assert.AreEqual(Seq.rev allSBytesSeq, seq {System.SByte.MaxValue .. -1y .. System.SByte.MinValue})
             Assert.AreEqual(List.rev allSBytesList, [System.SByte.MaxValue .. -1y .. System.SByte.MinValue])
             Assert.AreEqual(Array.rev allSBytesArray, [|System.SByte.MaxValue .. -1y .. System.SByte.MinValue|])
 
@@ -1083,11 +1083,11 @@ module RangeTests =
             Assert.AreEqual(256, let mutable c = 0 in for _ in System.Byte.MinValue..System.Byte.MaxValue do c <- c + 1 done; c)
             Assert.AreEqual(256, let mutable c = 0 in for _ in System.Byte.MinValue..1uy..System.Byte.MaxValue do c <- c + 1 done; c)
 
-            Assert.AreEqual(allBytesSeq, {System.Byte.MinValue..System.Byte.MaxValue})
+            Assert.AreEqual(allBytesSeq, seq {System.Byte.MinValue..System.Byte.MaxValue})
             Assert.AreEqual(allBytesList, [System.Byte.MinValue..System.Byte.MaxValue])
             Assert.AreEqual(allBytesArray, [|System.Byte.MinValue..System.Byte.MaxValue|])
 
-            Assert.AreEqual(allBytesSeq, {System.Byte.MinValue..1uy..System.Byte.MaxValue})
+            Assert.AreEqual(allBytesSeq, seq {System.Byte.MinValue..1uy..System.Byte.MaxValue})
             Assert.AreEqual(allBytesList, [System.Byte.MinValue..1uy..System.Byte.MaxValue])
             Assert.AreEqual(allBytesArray, [|System.Byte.MinValue..1uy..System.Byte.MaxValue|])
 
@@ -1141,15 +1141,15 @@ module RangeTests =
             Assert.AreEqual(256, let mutable c = 0 in for _ in min0..one..max0 do c <- c + 1 done; c)
             Assert.AreEqual(256, let mutable c = 0 in for _ in max0 .. -one .. min0 do c <- c + 1 done; c)
 
-            Assert.AreEqual(allSBytesSeq, {min0..max0})
+            Assert.AreEqual(allSBytesSeq, seq {min0..max0})
             Assert.AreEqual(allSBytesList, [min0..max0])
             Assert.AreEqual(allSBytesArray, [|min0..max0|])
 
-            Assert.AreEqual(allSBytesSeq, {min0..one..max0})
+            Assert.AreEqual(allSBytesSeq, seq {min0..one..max0})
             Assert.AreEqual(allSBytesList, [min0..one..max0])
             Assert.AreEqual(allSBytesArray, [|min0..one..max0|])
 
-            Assert.AreEqual(Seq.rev allSBytesSeq, {max0 .. -one .. min0})
+            Assert.AreEqual(Seq.rev allSBytesSeq, seq {max0 .. -one .. min0})
             Assert.AreEqual(List.rev allSBytesList, [max0 .. -one .. min0])
             Assert.AreEqual(Array.rev allSBytesArray, [|max0 .. -one .. min0|])
 
@@ -1160,11 +1160,11 @@ module RangeTests =
             Assert.AreEqual(256, let mutable c = 0 in for _ in min0..max0 do c <- c + 1 done; c)
             Assert.AreEqual(256, let mutable c = 0 in for _ in min0..one..max0 do c <- c + 1 done; c)
 
-            Assert.AreEqual(allBytesSeq, {min0..max0})
+            Assert.AreEqual(allBytesSeq, seq {min0..max0})
             Assert.AreEqual(allBytesList, [min0..max0])
             Assert.AreEqual(allBytesArray, [|min0..max0|])
 
-            Assert.AreEqual(allBytesSeq, {min0..one..max0})
+            Assert.AreEqual(allBytesSeq, seq {min0..one..max0})
             Assert.AreEqual(allBytesList, [min0..one..max0])
             Assert.AreEqual(allBytesArray, [|min0..one..max0|])
 

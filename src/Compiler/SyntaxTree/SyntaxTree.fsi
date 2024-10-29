@@ -1654,7 +1654,12 @@ type SynMemberDefn =
         trivia: SynMemberDefnImplicitCtorTrivia
 
     /// An implicit inherit definition, 'inherit <typ>(args...) as base'
-    | ImplicitInherit of inheritType: SynType * inheritArgs: SynExpr * inheritAlias: Ident option * range: range
+    | ImplicitInherit of
+        inheritType: SynType *
+        inheritArgs: SynExpr *
+        inheritAlias: Ident option *
+        range: range *
+        trivia: SynMemberDefnInheritTrivia
 
     /// A 'let' definition within a class
     | LetBindings of bindings: SynBinding list * isStatic: bool * isRecursive: bool * range: range
@@ -1670,7 +1675,7 @@ type SynMemberDefn =
     | Interface of interfaceType: SynType * withKeyword: range option * members: SynMemberDefns option * range: range
 
     /// An 'inherit' definition within a class
-    | Inherit of baseType: SynType * asIdent: Ident option * range: range
+    | Inherit of baseType: SynType option * asIdent: Ident option * range: range * trivia: SynMemberDefnInheritTrivia
 
     /// A 'val' definition within a class
     | ValField of fieldInfo: SynField * range: range

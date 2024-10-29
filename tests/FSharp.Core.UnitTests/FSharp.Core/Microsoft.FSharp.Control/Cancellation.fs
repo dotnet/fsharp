@@ -5,7 +5,9 @@ namespace FSharp.Core.UnitTests.Control
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
 open Xunit
+open FSharp.Test
 open System.Threading
+open System.Threading.Tasks
 
 
 type CancellationType() =
@@ -229,6 +231,7 @@ type CancellationType() =
             }               
         asyncs |> Async.Parallel |> Async.RunSynchronously |> ignore
 
+    // See https://github.com/dotnet/fsharp/issues/3254
     [<Fact>]
     member this.AwaitTaskCancellationAfterAsyncTokenCancellation() =
         let StartCatchCancellation cancellationToken (work) =
@@ -283,6 +286,23 @@ type CancellationType() =
             printfn "failure msg: %s" msg
             Assert.Fail (msg)
         with :? AggregateException as agg -> ()
+
+    // Simpler regression test for https://github.com/dotnet/fsharp/issues/3254
+    [<Fact>]
+    member this.AwaitTaskCancellationAfterAsyncTokenCancellation2() =
+        let tcs = new TaskCompletionSource<int>()
+        let cts = new CancellationTokenSource()
+        let _ = cts.Token.Register(fun () -> tcs.SetResult 42)
+        Assert.ThrowsAsync<TaskCanceledException>( fun () ->
+            Async.StartAsTask(
+                async {
+                    cts.CancelAfter 100
+                    let! result = tcs.Task |> Async.AwaitTask
+                    return result
+                },
+                cancellationToken = cts.Token
+            )
+        )
 
     [<Fact>]
     member this.Equality() =

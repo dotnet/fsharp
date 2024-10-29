@@ -157,7 +157,7 @@ module TypeAbbreviations =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 945, Line 9, Col 9, Line 9, Col 22, "Cannot inherit a sealed type")
+            (Error 945, Line 9, Col 17, Line 9, Col 22, "Cannot inherit a sealed type")
         ]
 
     //SOURCE=E_PrivateTypeAbbreviation02.fs SCFLAGS="--test:ErrorRanges"                                        # E_PrivateTypeAbbreviation02.fs
