@@ -72,10 +72,10 @@ module CompileHelpers =
 
         try
             f exiter
-            0
+            None
         with e ->
             stopProcessingRecovery e range0
-            1
+            Some e
 
     /// Compile using the given flags.  Source files names are resolved via the FileSystem API. The output file must be given by a -o flag.
     let compileFromArgs (ctok, argv: string[], legacyReferenceResolver, tcImportsCapture, dynamicAssemblyCreator) =
@@ -99,14 +99,6 @@ module CompileHelpers =
                 ))
 
         diagnostics.ToArray(), result
-
-    let setOutputStreams execute =
-        // Set the output streams, if requested
-        match execute with
-        | Some(writer, error) ->
-            Console.SetOut writer
-            Console.SetError error
-        | None -> ()
 
 [<Sealed; AutoSerializable(false)>]
 // There is typically only one instance of this type in an IDE process.

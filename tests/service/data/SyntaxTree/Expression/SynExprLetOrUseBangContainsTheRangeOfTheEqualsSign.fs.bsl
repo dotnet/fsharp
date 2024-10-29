@@ -26,10 +26,11 @@ ImplFile
                                           EqualsRange = (4,11--4,12)
                                           InKeyword = None })],
                        YieldOrReturn
-                         ((false, true), Const (Unit, (5,11--5,13)), (5,4--5,13)),
-                       (3,4--5,13), { LetOrUseBangKeyword = (3,4--3,8)
-                                      EqualsRange = Some (3,11--3,12) }),
-                    (2,5--6,1)), (2,0--6,1)), (2,0--6,1))], PreXmlDocEmpty, [],
-          None, (2,0--6,1), { LeadingKeyword = None })], (true, true),
+                         ((false, true), Const (Unit, (5,11--5,13)), (5,4--5,13),
+                          { YieldOrReturnKeyword = (5,4--5,10) }), (3,4--5,13),
+                       { LetOrUseBangKeyword = (3,4--3,8)
+                         EqualsRange = Some (3,11--3,12) }), (2,5--6,1)),
+                 (2,0--6,1)), (2,0--6,1))], PreXmlDocEmpty, [], None, (2,0--6,1),
+          { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
