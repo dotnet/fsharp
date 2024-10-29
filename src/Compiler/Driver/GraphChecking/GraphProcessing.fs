@@ -221,10 +221,13 @@ let processGraphAsync<'Item, 'Result when 'Item: equality and 'Item: comparison>
 
         let rec queueNode node =
             async {
-                try 
+                try
                     do! processNode node
-                with
-                | ex -> return raise (GraphProcessingException($"[*] Encountered exception when processing item '{node.Info.Item}': {ex.Message}", ex))
+                with ex ->
+                    return
+                        raise (
+                            GraphProcessingException($"[*] Encountered exception when processing item '{node.Info.Item}': {ex.Message}", ex)
+                        )
             }
 
         and processNode (node: GraphNode<'Item, 'Result>) =
@@ -244,7 +247,6 @@ let processGraphAsync<'Item, 'Result when 'Item: equality and 'Item: comparison>
                         // Note: We cannot read 'dependent.ProcessedDepsCount' again to avoid returning the same item multiple times.
                         pdc = dependent.Info.Deps.Length)
 
-                
                 do! unblockedDependents |> Array.map queueNode |> Async.Parallel |> Async.Ignore
             }
 
