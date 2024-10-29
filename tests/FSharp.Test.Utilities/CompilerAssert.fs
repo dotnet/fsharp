@@ -945,9 +945,9 @@ Updated automatically, please check diffs in your pull request, changes must be 
             let getFileSnapshot _ fileName =
                 async.Return
                     (FSharpFileSnapshot(
-                        fileName = fileName,
-                        version = "1",
-                        getSource = fun () -> task {
+                        FileName = fileName,
+                        Version = "1",
+                        GetSource = fun () -> task {
                             match! getSourceText fileName with
                             | Some source -> return SourceTextNew.ofISourceText source
                             | None -> return failwith $"couldn't get source for {fileName}"
