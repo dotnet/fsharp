@@ -1039,11 +1039,11 @@ type internal TransparentCompiler
 
             return
                 FSharpFileSnapshotWithSource(
-                    fileName = file.FileName,
-                    source = source,
-                    sourceHash = source.GetChecksum(),
-                    isLastCompiland = isLastCompiland,
-                    isExe = isExe
+                    FileName = file.FileName,
+                    Source = source,
+                    SourceHash = source.GetChecksum(),
+                    IsLastCompiland = isLastCompiland,
+                    IsExe = isExe
                 )
         }
 

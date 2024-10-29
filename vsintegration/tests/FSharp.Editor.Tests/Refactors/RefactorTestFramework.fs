@@ -15,8 +15,8 @@ open System.Threading
 
 let GetTaskResult (task: Tasks.Task<'T>) = task.GetAwaiter().GetResult()
 
-type TestContext(solution: Solution) =
-    let mutable _solution = solution
+type TestContext(Solution: Solution) =
+    let mutable _solution = Solution
     member _.CancellationToken = CancellationToken.None
 
     member _.Solution
@@ -24,7 +24,7 @@ type TestContext(solution: Solution) =
         and get () = _solution
 
     interface IDisposable with
-        member _.Dispose() = solution.Workspace.Dispose()
+        member _.Dispose() = Solution.Workspace.Dispose()
 
     static member CreateWithCode(code: string) =
         let solution = RoslynTestHelpers.CreateSolution(code)

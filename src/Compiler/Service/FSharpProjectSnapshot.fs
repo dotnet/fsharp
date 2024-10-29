@@ -67,7 +67,7 @@ module internal Helpers =
 
 /// A snapshot of an F# source file.
 [<Experimental("This FCS API is experimental and subject to change.")>]
-type FSharpFileSnapshot(fileName: string, version: string, getSource: unit -> Task<ISourceTextNew>) =
+type FSharpFileSnapshot(FileName: string, Version: string, GetSource: unit -> Task<ISourceTextNew>) =
 
     static member Create(fileName: string, version: string, getSource: unit -> Task<ISourceTextNew>) =
         FSharpFileSnapshot(fileName, version, getSource)
@@ -101,13 +101,13 @@ type FSharpFileSnapshot(fileName: string, version: string, getSource: unit -> Ta
 
         | DocumentSource.FileSystem -> FSharpFileSnapshot.CreateFromFileSystem fileName
 
-    member public _.FileName = fileName
-    member _.Version = version
-    member _.GetSource() = getSource ()
+    member public _.FileName = FileName
+    member _.Version = Version
+    member _.GetSource() = GetSource()
 
-    member val IsSignatureFile = fileName |> isSignatureFile
+    member val IsSignatureFile = FileName |> isSignatureFile
 
-    member _.GetFileName() = fileName
+    member _.GetFileName() = FileName
 
     override this.Equals(o) =
         match o with
@@ -124,19 +124,19 @@ type FSharpFileSnapshot(fileName: string, version: string, getSource: unit -> Ta
 
 /// A source file snapshot with loaded source text.
 type internal FSharpFileSnapshotWithSource
-    (fileName: string, sourceHash: ImmutableArray<byte>, source: ISourceTextNew, isLastCompiland: bool, isExe: bool) =
+    (FileName: string, SourceHash: ImmutableArray<byte>, Source: ISourceTextNew, IsLastCompiland: bool, IsExe: bool) =
 
-    let version = lazy (sourceHash.ToBuilder().ToArray())
+    let version = lazy (SourceHash.ToBuilder().ToArray())
     let stringVersion = lazy (version.Value |> BitConverter.ToString)
 
     member val Version = version.Value
     member val StringVersion = stringVersion.Value
-    member val IsSignatureFile = fileName |> isSignatureFile
+    member val IsSignatureFile = FileName |> isSignatureFile
 
-    member _.FileName = fileName
-    member _.Source = source
-    member _.IsLastCompiland = isLastCompiland
-    member _.IsExe = isExe
+    member _.FileName = FileName
+    member _.Source = Source
+    member _.IsLastCompiland = IsLastCompiland
+    member _.IsExe = IsExe
 
     interface IFileSnapshot with
         member this.FileName = this.FileName
@@ -146,23 +146,23 @@ type internal FSharpFileSnapshotWithSource
 /// A source file snapshot with parsed syntax tree
 type internal FSharpParsedFile
     (
-        fileName: string,
-        syntaxTreeHash: byte array,
-        sourceText: ISourceText,
-        parsedInput: ParsedInput,
-        parseDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
+        FileName: string,
+        SyntaxTreeHash: byte array,
+        SourceText: ISourceText,
+        ParsedInput: ParsedInput,
+        ParseDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
     ) =
 
-    member _.FileName = fileName
-    member _.SourceText = sourceText
-    member _.ParsedInput = parsedInput
-    member _.ParseDiagnostics = parseDiagnostics
+    member _.FileName = FileName
+    member _.SourceText = SourceText
+    member _.ParsedInput = ParsedInput
+    member _.ParseDiagnostics = ParseDiagnostics
 
-    member val IsSignatureFile = fileName |> isSignatureFile
+    member val IsSignatureFile = FileName |> isSignatureFile
 
     interface IFileSnapshot with
         member this.FileName = this.FileName
-        member this.Version = syntaxTreeHash
+        member this.Version = SyntaxTreeHash
         member this.IsSignatureFile = this.IsSignatureFile
 
 /// An on-disk reference needed for project compilation.
@@ -362,34 +362,34 @@ and internal ProjectSnapshotWithSources = ProjectSnapshotBase<FSharpFileSnapshot
 /// for different stages of a project snapshot and also between changes to the source files.
 and internal ProjectCore
     (
-        projectFileName: string,
-        projectId: string option,
-        referencesOnDisk: ReferenceOnDisk list,
-        otherOptions: string list,
-        referencedProjects: FSharpReferencedProjectSnapshot list,
-        isIncompleteTypeCheckEnvironment: bool,
-        useScriptResolutionRules: bool,
-        loadTime: DateTime,
-        unresolvedReferences: FSharpUnresolvedReferencesSet option,
-        originalLoadReferences: (range * string * string) list,
-        stamp: int64 option
+        ProjectFileName: string,
+        ProjectId: string option,
+        ReferencesOnDisk: ReferenceOnDisk list,
+        OtherOptions: string list,
+        ReferencedProjects: FSharpReferencedProjectSnapshot list,
+        IsIncompleteTypeCheckEnvironment: bool,
+        UseScriptResolutionRules: bool,
+        LoadTime: DateTime,
+        UnresolvedReferences: FSharpUnresolvedReferencesSet option,
+        OriginalLoadReferences: (range * string * string) list,
+        Stamp: int64 option
     ) as self =
 
     let hashForParsing =
         lazy
             (Md5Hasher.empty
-             |> Md5Hasher.addString projectFileName
-             |> Md5Hasher.addStrings otherOptions
-             |> Md5Hasher.addBool isIncompleteTypeCheckEnvironment
-             |> Md5Hasher.addBool useScriptResolutionRules)
+             |> Md5Hasher.addString ProjectFileName
+             |> Md5Hasher.addStrings OtherOptions
+             |> Md5Hasher.addBool IsIncompleteTypeCheckEnvironment
+             |> Md5Hasher.addBool UseScriptResolutionRules)
 
     let fullHash =
         lazy
             (hashForParsing.Value
-             |> Md5Hasher.addStrings (referencesOnDisk |> Seq.map (fun r -> r.Path))
-             |> Md5Hasher.addDateTimes (referencesOnDisk |> Seq.map (fun r -> r.LastModified))
+             |> Md5Hasher.addStrings (ReferencesOnDisk |> Seq.map (fun r -> r.Path))
+             |> Md5Hasher.addDateTimes (ReferencesOnDisk |> Seq.map (fun r -> r.LastModified))
              |> Md5Hasher.addBytes' (
-                 referencedProjects
+                 ReferencedProjects
                  |> Seq.map (function
                      | FSharpReference(_name, p) -> p.ProjectSnapshot.SignatureVersion
                      | PEReference(getStamp, _) -> Md5Hasher.empty |> Md5Hasher.addDateTime (getStamp ())
@@ -401,16 +401,16 @@ and internal ProjectCore
     let commandLineOptions =
         lazy
             (seq {
-                yield! otherOptions
+                yield! OtherOptions
 
-                for r in referencesOnDisk do
+                for r in ReferencesOnDisk do
                     $"-r:{r.Path}"
              }
              |> Seq.toList)
 
-    let outputFileName = lazy (otherOptions |> findOutputFileName)
+    let outputFileName = lazy (OtherOptions |> findOutputFileName)
 
-    let key = lazy (projectFileName, outputFileName.Value |> Option.defaultValue "")
+    let key = lazy (ProjectFileName, outputFileName.Value |> Option.defaultValue "")
 
     let cacheKey =
         lazy
@@ -420,26 +420,26 @@ and internal ProjectCore
                  member _.GetVersion() = fullHashString.Value
              })
 
-    member val ProjectDirectory = !! Path.GetDirectoryName(projectFileName)
+    member val ProjectDirectory = !! Path.GetDirectoryName(ProjectFileName)
     member _.OutputFileName = outputFileName.Value
     member _.Identifier: ProjectIdentifier = key.Value
     member _.Version = fullHash.Value
-    member _.Label = projectFileName |> shortPath
+    member _.Label = ProjectFileName |> shortPath
     member _.VersionForParsing = hashForParsing.Value
 
     member _.CommandLineOptions = commandLineOptions.Value
 
-    member _.ProjectFileName = projectFileName
-    member _.ProjectId = projectId
-    member _.ReferencesOnDisk = referencesOnDisk
-    member _.OtherOptions = otherOptions
-    member _.ReferencedProjects = referencedProjects
-    member _.IsIncompleteTypeCheckEnvironment = isIncompleteTypeCheckEnvironment
-    member _.UseScriptResolutionRules = useScriptResolutionRules
-    member _.LoadTime = loadTime
-    member _.UnresolvedReferences = unresolvedReferences
-    member _.OriginalLoadReferences = originalLoadReferences
-    member _.Stamp = stamp
+    member _.ProjectFileName = ProjectFileName
+    member _.ProjectId = ProjectId
+    member _.ReferencesOnDisk = ReferencesOnDisk
+    member _.OtherOptions = OtherOptions
+    member _.ReferencedProjects = ReferencedProjects
+    member _.IsIncompleteTypeCheckEnvironment = IsIncompleteTypeCheckEnvironment
+    member _.UseScriptResolutionRules = UseScriptResolutionRules
+    member _.LoadTime = LoadTime
+    member _.UnresolvedReferences = UnresolvedReferences
+    member _.OriginalLoadReferences = OriginalLoadReferences
+    member _.Stamp = Stamp
 
     member _.CacheKeyWith(label, version) =
         { new ICacheKey<_, _> with
