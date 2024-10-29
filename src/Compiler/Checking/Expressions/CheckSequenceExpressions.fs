@@ -59,7 +59,7 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
                 ConvertArbitraryExprToEnumerable cenv arbitraryTy env pseudoEnumExpr
 
             let patR, _, vspecs, envinner, tpenv =
-                TcMatchPattern cenv enumElemTy env tpenv pat None false
+                TcMatchPattern cenv enumElemTy env tpenv pat None TcTrueMatchClause.No
 
             let innerExpr, tpenv =
                 let envinner = { envinner with eIsControlFlow = true }
@@ -241,7 +241,7 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
             let inputExprTy = NewInferenceType g
 
             let pat', _, vspecs, envinner, tpenv =
-                TcMatchPattern cenv bindPatTy env tpenv pat None false
+                TcMatchPattern cenv bindPatTy env tpenv pat None TcTrueMatchClause.No
 
             UnifyTypes cenv env m inputExprTy bindPatTy
 
@@ -271,7 +271,11 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
             let tclauses, tpenv =
                 (tpenv, clauses)
                 ||> List.mapFold (fun tpenv (SynMatchClause(pat, cond, innerComp, _, sp, trivia)) ->
-                    let isTrueMatchClause = trivia.BarRange.IsSome && trivia.ArrowRange.IsSome
+                    let isTrueMatchClause =
+                        if trivia.BarRange.IsSome && trivia.ArrowRange.IsSome then
+                            TcTrueMatchClause.Yes
+                        else
+                            TcTrueMatchClause.No
 
                     let patR, condR, vspecs, envinner, tpenv =
                         TcMatchPattern cenv inputTy env tpenv pat cond isTrueMatchClause
@@ -316,7 +320,11 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
             let clauses, tpenv =
                 (tpenv, withList)
                 ||> List.mapFold (fun tpenv (SynMatchClause(pat, cond, innerComp, m, sp, trivia)) ->
-                    let isTrueMatchClause = trivia.BarRange.IsSome && trivia.ArrowRange.IsSome
+                    let isTrueMatchClause =
+                        if trivia.BarRange.IsSome && trivia.ArrowRange.IsSome then
+                            TcTrueMatchClause.Yes
+                        else
+                            TcTrueMatchClause.No
 
                     let patR, condR, vspecs, envinner, tpenv =
                         TcMatchPattern cenv g.exn_ty env tpenv pat cond isTrueMatchClause
