@@ -1,4 +1,7 @@
-﻿module FSharp.Compiler.Service.Tests.MultiProjectAnalysisTests
+﻿// Because of shared physical files
+// TODO: make the test cases independent
+[<FSharp.Test.RunInSequence>]
+module FSharp.Compiler.Service.Tests.MultiProjectAnalysisTests
 
 open Xunit
 open FsUnit
@@ -453,7 +456,11 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
     //  register to count the file checks
     let mutable count = 0
-    let waitForCount n = System.Threading.SpinWait.SpinUntil(fun () -> count = n)
+
+    let waitForCount n =
+        if count > n then failwith $"checks count {count}, expected {n}"
+        System.Threading.SpinWait.SpinUntil(fun () -> count = n)
+
     checker.FileChecked.Add (fun _ -> System.Threading.Interlocked.Increment &count |> ignore)
 
     //---------------- Write the first version of the file in project 1 and check the project --------------------
