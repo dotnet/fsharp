@@ -84,7 +84,7 @@ type [<Struct; NoComparison; CustomEquality>] TTypeCacheKey =
         let g = this.tcGlobals
 
         let ty1Hash = combineHash (hashStamp g this.ty1) (hashTType g this.ty1)
-        let ty2Hash = combineHash (hashStamp g this.ty1) (hashTType g this.ty2)
+        let ty2Hash = combineHash (hashStamp g this.ty2) (hashTType g this.ty2)
 
         let combined = combineHash (combineHash ty1Hash ty2Hash) (hash this.canCoerce)
 
