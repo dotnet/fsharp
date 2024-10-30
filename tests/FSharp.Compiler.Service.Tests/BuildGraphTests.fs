@@ -183,7 +183,7 @@ module BuildGraphTests =
         Assert.shouldBeTrue(ex <> null)
         try task.Wait(1000) |> ignore with | :? TimeoutException -> reraise() | _ -> ()
 
-    [<Fact(Skip="takes too long")>]
+    [<Fact>]
     let ``Many requests to get a value asynchronously might evaluate the computation more than once even when some requests get canceled``() =
         let requests = 10000
         let resetEvent = new ManualResetEvent(false)
