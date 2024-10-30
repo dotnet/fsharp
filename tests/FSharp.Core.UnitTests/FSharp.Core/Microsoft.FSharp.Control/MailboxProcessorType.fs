@@ -558,3 +558,42 @@ module MailboxProcessorType =
             }
 
         Assert.True(iteration.Result > 1, "TryScan did not timeout")
+
+    let ordered() =
+        let mutable current = 1
+        fun n ->
+            if n < current then failwith $"step {n} already happened"
+            SpinWait.SpinUntil(fun () -> n = current)
+            current <- n + 1
+
+    // See https://github.com/dotnet/fsharp/issues/17849
+    [<Fact>]
+    let ``Disposed MailboxProcessor does not throw on Post`` () =
+        task {
+            let step = ordered()
+      
+            let cts = new CancellationTokenSource()
+            let mb =
+                MailboxProcessor.Start( (fun inbox ->
+                    async {
+                        step 1
+                        do! inbox.Receive()
+                        do! inbox.Receive()
+                        return ()
+                    }),
+                    cancellationToken = cts.Token
+                )
+
+            step 2
+            // ensure pulse gets created
+            do! Task.Delay 100
+            mb.Post()
+
+            mb.Dispose()
+
+            do! Task.Delay 100
+
+            mb.Post()
+
+            cts.Cancel()
+        }
