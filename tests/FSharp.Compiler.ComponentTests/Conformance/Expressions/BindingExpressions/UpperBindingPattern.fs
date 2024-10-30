@@ -117,3 +117,12 @@ type CustomerId2 = CustomerId2 of string * string
 let getCustomerId3 (CustomerId2(AA, BBB)) = id
 
 let (CustomerId2(AA, Bb)) = CustomerId2("AA", "BB")
+
+try ()
+with Ex as Foo -> ()
+
+try ()
+with Ex as Fo -> ()
+
+try ()
+with Ex as F -> ()

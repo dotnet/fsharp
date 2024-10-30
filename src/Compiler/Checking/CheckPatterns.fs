@@ -358,6 +358,12 @@ and TcPatNamedAs warnOnUpper cenv env valReprInfo vFlags patEnv ty synInnerPat i
 
 and TcPatUnnamedAs warnOnUpper cenv env vFlags patEnv ty pat1 pat2 m =
     let pats = [pat1; pat2]
+    let warnOnUpper =
+        if cenv.g.langVersion.SupportsFeature(LanguageFeature.WarnOnUppercaseIdentifiersInPatterns) then
+            AllIdsOK
+        else
+            warnOnUpper
+
     let patsR, patEnvR = TcPatterns warnOnUpper cenv env vFlags patEnv (List.map (fun _ -> ty) pats) pats
     let phase2 values = TPat_conjs(List.map (fun f -> f values) patsR, m)
     phase2, patEnvR
@@ -443,7 +449,7 @@ and TcPatArrayOrList warnOnUpper cenv env vFlags patEnv ty isArray args m =
         else List.foldBack (mkConsListPat g argTy) argsR (mkNilListPat g m argTy)
     phase2, acc
 
-and TcRecordPat warnOnUpper cenv env vFlags patEnv ty fieldPats m =
+and TcRecordPat warnOnUpper (cenv: cenv) env vFlags patEnv ty fieldPats m =
     let fieldPats = fieldPats |> List.map (fun (fieldId, _, fieldPat) -> fieldId, fieldPat)
     match BuildFieldMap cenv env false ty fieldPats m with
     | None -> (fun _ -> TPat_error m), patEnv
@@ -460,7 +466,13 @@ and TcRecordPat warnOnUpper cenv env vFlags patEnv ty fieldPats m =
     let fieldPats, patEnvR =
         (patEnv, ftys) ||> List.mapFold (fun s (ty, fsp) ->
             match fldsmap.TryGetValue fsp.rfield_id.idText with
-            | true, v -> TcPat warnOnUpper cenv env None vFlags s ty v
+            | true, v ->
+                let warnOnUpper =
+                    if cenv.g.langVersion.SupportsFeature(LanguageFeature.WarnOnUppercaseIdentifiersInPatterns) then
+                        AllIdsOK
+                    else
+                        warnOnUpper
+                TcPat warnOnUpper cenv env None vFlags s ty v
             | _ -> (fun _ -> TPat_wild m), s)
 
     let phase2 values =

@@ -173,6 +173,7 @@ module BindingExpressions =
             (Warning 3874, Line 80, Col 9, Line 80, Col 18, "Variable patterns should be lowercase.")
             (Warning 3874, Line 87, Col 9, Line 87, Col 18, "Variable patterns should be lowercase.")
             (Warning 3874, Line 117, Col 37, Line 117, Col 40, "Variable patterns should be lowercase.")
+            (Warning 3874, Line 122, Col 12, Line 122, Col 15, "Variable patterns should be lowercase.")
         ]
         
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UpperBindingPattern.fs"|])>]

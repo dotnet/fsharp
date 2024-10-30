@@ -38,5 +38,15 @@ type Record = { Name: string; Age: int }
 
 match { Name = "Alice"; Age = 30 } with
 | { Name = Al } -> printfn "Alice"
-| { Name = Bo } -> printfn "Bob"
-| { Name = Pe } -> printfn "Pepe"
+| { Name = Bob } -> printfn "Bob"
+| { Name = P } -> printfn "Pepe"
+
+match { Name = "Alice"; Age = 30 } with
+| { Name = Al } as Foo -> printfn "Alice"
+| { Name = Al } as Fo -> printfn "Alice"
+| { Name = Al } as F -> printfn "Alice"
+
+match customerId with
+| CustomerId BBB as Foo -> ()
+| CustomerId Aaa as Fo -> ()
+| CustomerId CCC as F -> ()

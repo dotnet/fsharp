@@ -224,6 +224,12 @@ but here has type
             (Warning 49, Line 20, Col 7, Line 20, Col 10, "Match cases labels must be lowercase identifiers")
             (Warning 49, Line 24, Col 3, Line 24, Col 6, "Match cases labels must be lowercase identifiers")
             (Warning 49, Line 35, Col 14, Line 35, Col 17, "Match cases labels must be lowercase identifiers")
+            (Warning 49, Line 41, Col 12, Line 41, Col 15, "Match cases labels must be lowercase identifiers")
+            (Warning 49, Line 45, Col 20, Line 45, Col 23, "Match cases labels must be lowercase identifiers")
+            (Warning 49, Line 50, Col 14, Line 50, Col 17, "Match cases labels must be lowercase identifiers")
+            (Warning 49, Line 50, Col 21, Line 50, Col 24, "Match cases labels must be lowercase identifiers")
+            (Warning 49, Line 51, Col 14, Line 51, Col 17, "Match cases labels must be lowercase identifiers")
+            (Warning 49, Line 52, Col 14, Line 52, Col 17, "Match cases labels must be lowercase identifiers")
         ]
         
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"UpperUnionCasePattern.fs"|])>]
@@ -247,7 +253,4 @@ but here has type
             (Warning 49, Line 24, Col 3, Line 24, Col 6, "Match cases labels must be lowercase identifiers")
             (Warning 49, Line 28, Col 3, Line 28, Col 5, "Match cases labels must be lowercase identifiers")
             (Warning 49, Line 35, Col 14, Line 35, Col 17, "Match cases labels must be lowercase identifiers")
-            (Warning 49, Line 40, Col 12, Line 40, Col 14, "Match cases labels must be lowercase identifiers")
-            (Warning 49, Line 41, Col 12, Line 41, Col 14, "Match cases labels must be lowercase identifiers")
-            (Warning 49, Line 42, Col 12, Line 42, Col 14, "Match cases labels must be lowercase identifiers")
         ]
