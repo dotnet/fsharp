@@ -431,27 +431,19 @@ let ``Changing impl file doesn't invalidate an in-memory referenced project`` ()
         SyntheticProject.Create("project", sourceFile "B" ["A"] )
         with DependsOn = [library] }
 
-    let cacheEvents = ConcurrentQueue()
+    let mutable count = 0
 
     ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
         checkFile "B" expectOk
         withChecker (fun checker ->
             async {
-                do! Async.Sleep 50 // wait for events from initial project check
-                checker.Caches.TcIntermediate.OnEvent cacheEvents.Enqueue
+                checker.Caches.TcIntermediate.OnEvent (fun _ -> Interlocked.Increment &count |> ignore)
             })
         updateFile "A" updateInternal
         checkFile "B" expectOk
     } |> ignore
 
-    let intermediateTypeChecks =
-        cacheEvents
-        |> Seq.groupBy (fun (_e, (l, _k, _)) -> l)
-        |> Seq.map (fun (k, g) -> k, g |> Seq.map fst |> Seq.toList)
-        |> Seq.toList
-
-    Assert.Equal<string * JobEvent list>([], intermediateTypeChecks)
-
+    Assert.Equal(0, count)
 
 [<Theory>]
 [<InlineData true>]
@@ -866,13 +858,15 @@ let ``LoadClosure for script is computed once`` () =
 
         let published, trigger = JobEvents.pipe()
 
-        JobEvents.checkAllEvents published [Requested; Started; Finished; Requested; Started; Finished] |> ignore
+        let check = JobEvents.checkAllEvents published [Requested; Started; Finished; Requested; Started; Finished]
     
         ProjectWorkflowBuilder(project,
             useTransparentCompiler = true,
             withChecker = (fun checker -> checker.Caches.ScriptClosure.OnEvent trigger) ) {
-                checkFile "First" expectOk
-            }
+            checkFile "First" expectOk
+        }
+        |> ignore
+        check
 
 [<Fact>]
 let ``LoadClosure for script is recomputed after changes`` () =
@@ -882,7 +876,7 @@ let ``LoadClosure for script is recomputed after changes`` () =
 
     let published, trigger = JobEvents.pipe()
 
-    let success =
+    let check =
         JobEvents.wait published "First"
             [Requested; Started; Finished; Weakened; Requested; Started; Finished; Weakened; Requested; Started; Finished]
   
@@ -896,7 +890,7 @@ let ``LoadClosure for script is recomputed after changes`` () =
         checkFile "First" expectOk
     } |> ignore
 
-    withTimeout success
+    check
     
 [<Fact>]
 let ``TryGetRecentCheckResultsForFile returns None before first call to ParseAndCheckFileInProject`` () =
