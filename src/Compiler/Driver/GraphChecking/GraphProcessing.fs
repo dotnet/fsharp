@@ -176,6 +176,15 @@ let processGraphAsync<'Item, 'Result when 'Item: equality and 'Item: comparison>
     async {
         let transitiveDeps = graph |> Graph.transitive
         let dependents = graph |> Graph.reverse
+        // Cancellation source used to signal either an exception in one of the items or end of processing.
+        let! parentCt = Async.CancellationToken
+        use localCts = new CancellationTokenSource()
+
+        let completionSignal = TaskCompletionSource()
+
+        use _ = parentCt.Register(fun () -> completionSignal.TrySetCanceled() |> ignore)
+
+        use cts = CancellationTokenSource.CreateLinkedTokenSource(parentCt, localCts.Token)
 
         let makeNode (item: 'Item) : GraphNode<'Item, 'Result> =
             let info =
@@ -219,19 +228,42 @@ let processGraphAsync<'Item, 'Result when 'Item: equality and 'Item: comparison>
                     |> Option.defaultWith (fun () -> failwith $"Results for item '{node.Info.Item}' are not yet available")
             }
 
-        let rec queueNode node =
-            async {
-                try
-                    do! processNode node
-                with ex ->
-                    return
-                        raise (
-                            GraphProcessingException($"[*] Encountered exception when processing item '{node.Info.Item}': {ex.Message}", ex)
-                        )
-            }
+        let processedCount = IncrementableInt(0)
 
-        and processNode (node: GraphNode<'Item, 'Result>) =
+        let handleExn (item, ex: exn) =
+            try
+                localCts.Cancel()
+            with :? ObjectDisposedException ->
+                // If it's disposed already, it means that the processing has already finished, most likely due to cancellation or failure in another node.
+                ()
+
+            match ex with
+            | :? OperationCanceledException -> completionSignal.TrySetCanceled()
+            | _ ->
+                completionSignal.TrySetException(
+                    GraphProcessingException($"[*] Encountered exception when processing item '{item}': {ex.Message}", ex)
+                )
+            |> ignore
+
+        let incrementProcessedNodesCount () =
+            if processedCount.Increment() = nodes.Count then
+                completionSignal.TrySetResult() |> ignore
+
+        let rec queueNode node =
+            Async.Start(
+                async {
+                    let! res = processNode node |> Async.Catch
+
+                    match res with
+                    | Choice1Of2() -> ()
+                    | Choice2Of2 ex -> handleExn (node.Info.Item, ex)
+                },
+                cts.Token
+            )
+
+        and processNode (node: GraphNode<'Item, 'Result>) : Async<unit> =
             async {
+
                 let info = node.Info
 
                 let! singleRes = work getItemPublicNode info
@@ -247,10 +279,14 @@ let processGraphAsync<'Item, 'Result when 'Item: equality and 'Item: comparison>
                         // Note: We cannot read 'dependent.ProcessedDepsCount' again to avoid returning the same item multiple times.
                         pdc = dependent.Info.Deps.Length)
 
-                do! unblockedDependents |> Array.map queueNode |> Async.Parallel |> Async.Ignore
+                unblockedDependents |> Array.iter queueNode
+                incrementProcessedNodesCount ()
             }
 
-        do! leaves |> Array.map queueNode |> Async.Parallel |> Async.Ignore
+        leaves |> Array.iter queueNode
+
+        // Wait for end of processing, an exception, or an external cancellation request.
+        do! completionSignal.Task |> Async.AwaitTask
 
         // All calculations succeeded - extract the results and sort in input order.
         return
