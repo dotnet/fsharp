@@ -27,6 +27,50 @@ open OpenTelemetry
 open OpenTelemetry.Resources
 open OpenTelemetry.Trace
 
+module internal JobEvents =
+    let fileName fileId = $"File%s{fileId}.fs"
+
+    let tap f x = f x; x
+    let print fileId x = printfn $"{fileId}: %A{x}"
+    let tapPrint fileId = Event.map (tap (print fileId))
+
+    let pipe () =
+        let cacheEvent = Event<_>()
+        cacheEvent.Publish, cacheEvent.Trigger
+
+    let filterName fileId published =
+        published
+        |> Event.map (fun (e, (_l, (f: string, _p), _)) -> (Path.GetFileName f), e)
+        |> Event.filter (fun (f, _) -> f = fileName fileId)
+        |> Event.map snd 
+        |> tapPrint fileId
+
+    let collect jobEvents =
+        let collector es  e = e :: es
+
+        jobEvents
+        |> Event.scan collector []
+        |> Event.map List.rev
+
+    let collectCount n published = published |> collect |> Event.filter (fun actual -> List.length actual >= n)
+
+    let check (expected: _ list) (actual: _ list) = Assert.Equal<JobEvent>(expected, actual)
+
+    let checkAllEvents published expected =
+        task {
+            let received = published |> Event.map fst |> tapPrint "all" |> collectCount (List.length expected) 
+            use _ = received |> tapPrint "actual" |> Observable.subscribe (check expected)
+            return! received |> Async.AwaitEvent |> Async.Ignore
+        }
+
+    let wait published fileId expected =
+        task {
+            let received = published |> filterName fileId |> collectCount (List.length expected)
+            use _ = received |> tapPrint fileId |> Observable.subscribe (check expected)
+            return! received |> Async.AwaitEvent |> Async.Ignore
+        }
+
+let withTimeout (checkTask: Task<_>) = Assert.True(checkTask.Wait(TimeSpan.FromSeconds 1.))
 
 #nowarn "57"
 
@@ -112,6 +156,9 @@ let makeTestProject () =
 
 let testWorkflow () =
     ProjectWorkflowBuilder(makeTestProject(), useTransparentCompiler = true)
+    
+let testWorkflowWithChecker(withChecker) =
+    ProjectWorkflowBuilder(makeTestProject(), useTransparentCompiler = true, withChecker = withChecker)
 
 [<Fact>]
 let ``Edit file, check it, then check dependent file`` () =
@@ -222,50 +269,33 @@ let ``Changes in a referenced project`` () =
 [<Fact>]
 let ``File is not checked twice`` () =
 
-    let cacheEvents = ConcurrentQueue()
+    let published, trigger = JobEvents.pipe()
 
-    testWorkflow() {
-        withChecker (fun checker ->
-            async {
-                do! Async.Sleep 50 // wait for events from initial project check
-                checker.Caches.TcIntermediate.OnEvent cacheEvents.Enqueue
-            })
+    let firstOK = JobEvents.wait published "First" [Requested; Started; Finished; Requested; Requested; Requested; Requested; Weakened; Requested; Started; Finished]
+    let thirdOK = JobEvents.wait published "Third" [Requested; Started; Finished; Requested; Requested; Weakened; Requested; Started; Finished]
+
+    testWorkflowWithChecker(fun checker -> checker.Caches.TcIntermediate.OnEvent trigger) {
         updateFile "First" updatePublicSurface
         checkFile "Third" expectOk
     } |> ignore
 
-    let intermediateTypeChecks =
-        cacheEvents
-        |> Seq.groupBy (fun (_e, (_l, (f, _p), _)) -> f |> Path.GetFileName)
-        |> Seq.map (fun (k, g) -> k, g |> Seq.map fst |> Seq.toList)
-        |> Map
+    Task.WhenAll(firstOK, thirdOK)
 
-    Assert.Equal<JobEvent list>([Weakened; Requested; Started; Finished], intermediateTypeChecks["FileFirst.fs"])
-    Assert.Equal<JobEvent list>([Weakened; Requested; Started; Finished], intermediateTypeChecks["FileThird.fs"])
 
 [<Fact>]
 let ``If a file is checked as a dependency it's not re-checked later`` () =
-    let cacheEvents = ConcurrentQueue()
+    let published, trigger = JobEvents.pipe()
 
-    testWorkflow() {
-        withChecker (fun checker ->
-            async {
-                do! Async.Sleep 50 // wait for events from initial project check
-                checker.Caches.TcIntermediate.OnEvent cacheEvents.Enqueue
-            })
+    let intermediateTypeChecks = JobEvents.wait published "Third" [Requested; Started; Finished; Requested; Requested; Weakened; Requested;
+    Started; Finished; Requested]
+
+    testWorkflowWithChecker (fun checker -> checker.Caches.TcIntermediate.OnEvent trigger) {      
         updateFile "First" updatePublicSurface
         checkFile "Last" expectOk
         checkFile "Third" expectOk
     } |> ignore
 
-    let intermediateTypeChecks =
-        cacheEvents
-        |> Seq.groupBy (fun (_e, (_l, (f, _p), _)) -> f |> Path.GetFileName)
-        |> Seq.map (fun (k, g) -> k, g |> Seq.map fst |> Seq.toList)
-        |> Map
-
-    Assert.Equal<JobEvent list>([Weakened; Requested; Started; Finished; Requested], intermediateTypeChecks["FileThird.fs"])
-
+    intermediateTypeChecks
 
 // [<Fact>] TODO: differentiate complete and minimal checking requests
 let ``We don't check files that are not depended on`` () =
@@ -277,12 +307,9 @@ let ``We don't check files that are not depended on`` () =
 
     let cacheEvents = ConcurrentQueue()
 
-    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
-        withChecker (fun checker ->
-            async {
-                do! Async.Sleep 50 // wait for events from initial project check
-                checker.Caches.TcIntermediate.OnEvent cacheEvents.Enqueue
-            })
+    ProjectWorkflowBuilder(project,
+        useTransparentCompiler = true,
+        withChecker = (fun checker -> checker.Caches.TcIntermediate.OnEvent cacheEvents.Enqueue)) {       
         updateFile "First" updatePublicSurface
         checkFile "Last" expectOk
     } |> ignore
@@ -385,27 +412,16 @@ let ``Changing impl files doesn't invalidate cache when they have signatures`` (
         { sourceFile "B" ["A"] with SignatureFile = AutoGenerated },
         { sourceFile "C" ["B"] with SignatureFile = AutoGenerated })
 
-    let cacheEvents = ConcurrentQueue()
+    let published, trigger = JobEvents.pipe()
+    JobEvents.checkAllEvents published [] |> ignore
 
     ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
         updateFile "A" updatePublicSurface
         checkFile "C" expectOk
-        withChecker (fun checker ->
-            async {
-                do! Async.Sleep 50 // wait for events from initial project check
-                checker.Caches.TcIntermediate.OnEvent cacheEvents.Enqueue
-            })
+        withChecker (fun checker -> checker.Caches.TcIntermediate.OnEvent trigger)
         updateFile "A" updateInternal
         checkFile "C" expectOk
-    } |> ignore
-
-    let intermediateTypeChecks =
-        cacheEvents
-        |> Seq.groupBy (fun (_e, (l, _k, _)) -> l)
-        |> Seq.map (fun (k, g) -> k, g |> Seq.map fst |> Seq.toList)
-        |> Seq.toList
-
-    Assert.Equal<string * JobEvent list>([], intermediateTypeChecks)
+    }
 
 [<Fact>]
 let ``Changing impl file doesn't invalidate an in-memory referenced project`` () =
@@ -845,57 +861,42 @@ let ``TypeCheck last file in project with transparent compiler`` useTransparentC
 
 [<Fact>]
 let ``LoadClosure for script is computed once`` () =
-    let project = SyntheticProject.CreateForScript(
-        sourceFile "First" [])
+        let project = SyntheticProject.CreateForScript(
+            sourceFile "First" [])
 
-    let cacheEvents = ConcurrentQueue()
-    
-    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
-        withChecker (fun checker ->
-            async {
-                do! Async.Sleep 50  // wait for events from initial project check
-                checker.Caches.ScriptClosure.OnEvent cacheEvents.Enqueue
-            })
-        
-        checkFile "First" expectOk
-    } |> ignore
-    
-    let closureComputations =
-        cacheEvents
-        |> Seq.groupBy (fun (_e, (_l, (f, _p), _)) -> Path.GetFileName f)
-        |> Seq.map (fun (k, g) -> k, g |> Seq.map fst |> Seq.toList)
-        |> Map
+        let published, trigger = JobEvents.pipe()
 
-    Assert.Empty(closureComputations)
+        JobEvents.checkAllEvents published [Requested; Started; Finished; Requested; Started; Finished] |> ignore
+    
+        ProjectWorkflowBuilder(project,
+            useTransparentCompiler = true,
+            withChecker = (fun checker -> checker.Caches.ScriptClosure.OnEvent trigger) ) {
+                checkFile "First" expectOk
+            }
 
 [<Fact>]
 let ``LoadClosure for script is recomputed after changes`` () =
+
     let project = SyntheticProject.CreateForScript(
         sourceFile "First" [])
 
-    let cacheEvents = ConcurrentQueue()
-    
-    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
-        withChecker (fun checker ->
-            async {
-                do! Async.Sleep 50  // wait for events from initial project check
-                checker.Caches.ScriptClosure.OnEvent cacheEvents.Enqueue
-            })
-        
+    let published, trigger = JobEvents.pipe()
+
+    let success =
+        JobEvents.wait published "First"
+            [Requested; Started; Finished; Weakened; Requested; Started; Finished; Weakened; Requested; Started; Finished]
+  
+    ProjectWorkflowBuilder(project,
+        useTransparentCompiler = true,
+        withChecker = (fun checker -> checker.Caches.ScriptClosure.OnEvent trigger)) {
         checkFile "First" expectOk
         updateFile "First" updateInternal
         checkFile "First" expectOk
         updateFile "First" updatePublicSurface
         checkFile "First" expectOk
     } |> ignore
-    
-    let closureComputations =
-        cacheEvents
-        |> Seq.groupBy (fun (_e, (_l, (f, _p), _)) -> Path.GetFileName f)
-        |> Seq.map (fun (k, g) -> k, g |> Seq.map fst |> Seq.toList)
-        |> Map
 
-    Assert.Equal<JobEvent list>([Weakened; Requested; Started; Finished; Weakened; Requested; Started; Finished], closureComputations["FileFirst.fs"])
+    withTimeout success
     
 [<Fact>]
 let ``TryGetRecentCheckResultsForFile returns None before first call to ParseAndCheckFileInProject`` () =
