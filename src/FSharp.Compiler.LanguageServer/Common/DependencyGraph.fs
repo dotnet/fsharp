@@ -21,9 +21,9 @@ let insert key value (dict: Dictionary<_, _>) =
 
 type IDependencyGraph<'Id, 'Val when 'Id: equality> =
 
-    abstract member AddOrUpdateNode: id: 'Id * value: 'Val -> IGraphBuilder<'Id, 'Val>
-    abstract member AddList: nodes: ('Id * 'Val) seq -> IGraphBuilder<'Id, 'Val>
-    abstract member AddOrUpdateNode: id: 'Id * dependsOn: 'Id seq * compute: ('Val seq -> 'Val) -> IGraphBuilder<'Id, 'Val>
+    abstract member AddOrUpdateNode: id: 'Id * value: 'Val -> unit
+    abstract member AddList: nodes: ('Id * 'Val) seq -> 'Id seq
+    abstract member AddOrUpdateNode: id: 'Id * dependsOn: 'Id seq * compute: ('Val seq -> 'Val) -> unit
     abstract member GetValue: id: 'Id -> 'Val
     abstract member GetDependenciesOf: id: 'Id -> 'Id seq
     abstract member GetDependentsOf: id: 'Id -> 'Id seq
@@ -40,21 +40,14 @@ and IThreadSafeDependencyGraph<'Id, 'Val when 'Id: equality> =
 
     abstract member Transact<'a>: (IDependencyGraph<'Id, 'Val> -> 'a) -> 'a
 
-and IGraphBuilder<'Id, 'Val when 'Id: equality> =
-
-    abstract member Ids: 'Id seq
-    abstract member AddDependentNode: 'Id * ('Val seq -> 'Val) -> IGraphBuilder<'Id, 'Val>
-    abstract member And: IGraphBuilder<'Id, 'Val> -> IGraphBuilder<'Id, 'Val>
 
 module Internal =
 
-    type DependencyGraph<'Id, 'Val when 'Id: equality and 'Id: not null>(?graphBuilder: 'Id seq -> IGraphBuilder<_, _>) as self =
+    type DependencyGraph<'Id, 'Val when 'Id: equality and 'Id: not null>() as self =
         let nodes = Dictionary<'Id, DependencyNode<'Id, 'Val>>()
         let dependencies = Dictionary<'Id, HashSet<'Id>>()
         let dependents = Dictionary<'Id, HashSet<'Id>>()
         let warningSubscribers = ResizeArray()
-
-        let graphBuilder = defaultArg graphBuilder (fun x -> (GraphBuilder(self, x)))
 
         let rec invalidateDependents (id: 'Id) =
             match dependents.TryGetValue id with
@@ -87,19 +80,18 @@ module Internal =
                     Compute = (fun _ -> value)
                 }
 
-            graphBuilder [ id ]
-
         member this.AddList(nodes: ('Id * 'Val) seq) =
             nodes
-            |> Seq.iter (fun (id, value) ->
+            |> Seq.map (fun (id, value) ->
                 addNode
                     {
                         Id = id
                         Value = Some value
                         Compute = (fun _ -> value)
-                    })
+                    }
+                id)
+            |> Seq.toList
 
-            graphBuilder (nodes |> Seq.map fst)
 
         member this.AddOrUpdateNode(id: 'Id, dependsOn: 'Id seq, compute: 'Val seq -> 'Val) =
             addNode
@@ -123,8 +115,6 @@ module Internal =
                 match dependents.TryGetValue dep with
                 | true, set -> set.Add id |> ignore
                 | false, _ -> dependents.Add(dep, HashSet([| id |]))
-
-            graphBuilder [ id ]
 
         member this.GetValue(id: 'Id) =
             let node = nodes[id]
@@ -261,30 +251,33 @@ module Internal =
             member _.Debug_RenderMermaid(x) = self.Debug_RenderMermaid(?mapping=x)
 
 
-    and GraphBuilder<'Id, 'Val when 'Id: equality> internal (graph: IDependencyGraph<'Id, 'Val>, ids: 'Id seq) =
+/// This type can be used to chain together a series of dependent nodes when there is some kind of type hierarchy in the graph.
+/// That is when 'T represents some subset of 'Val (e.g. a sub type or a case in DU).
+/// It can also carry some state that is passed along the chain.
+type GraphBuilder<'Id, 'Val, 'T, 'State when 'Id: equality>(graph: IDependencyGraph<'Id, 'Val>, ids: 'Id seq, unwrap: 'Val seq -> 'T, state: 'State) =
 
-        interface IGraphBuilder<'Id, 'Val> with
+    member _.Ids = ids
 
-            member _.Ids = ids
+    member _.State = state
 
-            member _.AddDependentNode(id, compute) = graph.AddOrUpdateNode(id, ids, compute)
+    member _.Graph = graph
 
-            member _.And(graphBuilder: IGraphBuilder<'Id, 'Val>) =
-                GraphBuilder(
-                    graph,
-                    seq {
-                        yield! ids
-                        yield! graphBuilder.Ids
-                    }
-                )
+    member _.AddDependentNode(id, compute, unwrapNext) =
+        graph.AddOrUpdateNode(id, ids, unwrap >> compute)
+        GraphBuilder(graph, ids, unwrapNext, state)
+
+    member _.AddDependentNode(id, compute, unwrapNext, nextState) =
+        graph.AddOrUpdateNode(id, ids, unwrap >> compute)
+        GraphBuilder(graph, ids, unwrapNext, nextState)
+
 
 open Internal
 open System.Runtime.CompilerServices
 
-type LockOperatedDependencyGraph<'Id, 'Val when 'Id: equality and 'Id: not null>() as self =
+type LockOperatedDependencyGraph<'Id, 'Val when 'Id: equality and 'Id: not null>() =
 
     let lockObj = System.Object()
-    let graph = DependencyGraph<_, _>(fun x -> GraphBuilder(self, x))
+    let graph = DependencyGraph<_, _>()
 
     interface IThreadSafeDependencyGraph<'Id, 'Val> with
 
