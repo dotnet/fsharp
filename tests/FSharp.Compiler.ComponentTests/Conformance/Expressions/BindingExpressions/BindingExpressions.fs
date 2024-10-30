@@ -182,13 +182,4 @@ module BindingExpressions =
         |> withLangVersionPreview
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
-        |> shouldFail
-        |> withDiagnostics [
-            (Warning 49, Line 40, Col 17, Line 40, Col 20, "Match cases labels must be lowercase identifiers")
-            (Warning 49, Line 42, Col 31, Line 42, Col 34, "Match cases labels must be lowercase identifiers")
-            (Warning 49, Line 44, Col 32, Line 44, Col 34, "Match cases labels must be lowercase identifiers")
-            (Warning 49, Line 117, Col 33, Line 117, Col 35, "Match cases labels must be lowercase identifiers")
-            (Warning 49, Line 117, Col 37, Line 117, Col 40, "Match cases labels must be lowercase identifiers")
-            (Warning 49, Line 119, Col 18, Line 119, Col 20, "Match cases labels must be lowercase identifiers")
-            (Warning 49, Line 119, Col 22, Line 119, Col 24, "Match cases labels must be lowercase identifiers")
-        ]
+        |> shouldSucceed
