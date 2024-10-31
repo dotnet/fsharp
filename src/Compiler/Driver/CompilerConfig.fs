@@ -634,6 +634,8 @@ type TcConfigBuilder =
         mutable dumpSignatureData: bool
 
         mutable realsig: bool
+
+        mutable compilationMode: TcGlobals.CompilationMode
     }
 
     // Directories to start probing in
@@ -848,6 +850,7 @@ type TcConfigBuilder =
             dumpSignatureData = false
             realsig = false
             strictIndentation = None
+            compilationMode = TcGlobals.CompilationMode.Unset
         }
 
     member tcConfigB.FxResolver =
@@ -1392,6 +1395,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.typeCheckingConfig = data.typeCheckingConfig
     member _.dumpSignatureData = data.dumpSignatureData
     member _.realsig = data.realsig
+    member _.compilationMode = data.compilationMode
 
     static member Create(builder, validate) =
         use _ = UseBuildPhase BuildPhase.Parameter
