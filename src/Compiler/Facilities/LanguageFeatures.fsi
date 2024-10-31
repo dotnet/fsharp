@@ -85,6 +85,7 @@ type LanguageFeature =
     | ParsedHashDirectiveArgumentNonQuotes
     | EmptyBodiedComputationExpressions
     | AllowObjectExpressionWithoutOverrides
+    | UseTypeSubsumptionCache
     | DeprecatePlacesWhereSeqCanBeOmitted
 
 /// LanguageVersion management
