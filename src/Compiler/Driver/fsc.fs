@@ -21,6 +21,7 @@ open System.Text
 open System.Threading
 
 open Internal.Utilities
+open Internal.Utilities.TypeHashing
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 
@@ -507,7 +508,8 @@ let main1
             defaultCopyFSharpCore = defaultCopyFSharpCore,
             tryGetMetadataSnapshot = tryGetMetadataSnapshot,
             sdkDirOverride = None,
-            rangeForErrors = range0
+            rangeForErrors = range0,
+            compilationMode = CompilationMode.OneOff
         )
 
     tcConfigB.exiter <- exiter
@@ -903,11 +905,7 @@ let main3
                 TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_InternalsVisibleToAttribute topAttrs.assemblyAttrs
                 |> Option.isSome
 
-            let observer =
-                if hasIvt then
-                    Fsharp.Compiler.SignatureHash.PublicAndInternal
-                else
-                    Fsharp.Compiler.SignatureHash.PublicOnly
+            let observer = if hasIvt then PublicAndInternal else PublicOnly
 
             let optDataHash =
                 optDataResources

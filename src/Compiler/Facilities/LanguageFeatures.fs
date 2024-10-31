@@ -95,6 +95,7 @@ type LanguageFeature =
     | EmptyBodiedComputationExpressions
     | AllowObjectExpressionWithoutOverrides
     | DontWarnOnUppercaseIdentifiersInBindingPatterns
+    | UseTypeSubsumptionCache
     | DeprecatePlacesWhereSeqCanBeOmitted
 
 /// LanguageVersion management
@@ -217,6 +218,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.EnforceAttributeTargets, languageVersion90
 
                 // F# preview
+                LanguageFeature.UseTypeSubsumptionCache, previewVersion
                 LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion // not enabled because: https://github.com/dotnet/fsharp/issues/17509
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
                 LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, previewVersion
@@ -381,6 +383,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.AllowObjectExpressionWithoutOverrides -> FSComp.SR.featureAllowObjectExpressionWithoutOverrides ()
         | LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns ->
             FSComp.SR.featureDontWarnOnUppercaseIdentifiersInBindingPatterns ()
+        | LanguageFeature.UseTypeSubsumptionCache -> FSComp.SR.featureUseTypeSubsumptionCache ()
         | LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted -> FSComp.SR.featureDeprecatePlacesWhereSeqCanBeOmitted ()
 
     /// Get a version string associated with the given feature.

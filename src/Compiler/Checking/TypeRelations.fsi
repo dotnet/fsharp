@@ -9,10 +9,6 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
-type CanCoerce =
-    | CanCoerce
-    | NoCoerce
-
 /// Implements a :> b without coercion based on finalized (no type variable) types
 val TypeDefinitelySubsumesTypeNoCoercion:
     ndeep: int -> g: TcGlobals -> amap: ImportMap -> m: range -> ty1: TType -> ty2: TType -> bool
