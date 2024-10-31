@@ -13,7 +13,7 @@ Caching and reusing compilation results between compiler runs will be an optimiz
 
 - **Performance**. Things like recomputing type information for large projects are time-consuming. By caching the results, subsequent compilation can skip some steps, leading to faster builds.
 
-- **Better IDE cold start**. IDEs can provide faster IntelliSense, code navigation, and other features if they can quickly access cached compilation information.
+- **Better IDE cold start**. IDEs can provide faster IntelliSense, code navigation, and other features if they can quickly access cached compilation information. The bigger and the less coupled the project is, the greater will be the gains.
 
 ### Example real-world scenarios
 
