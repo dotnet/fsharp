@@ -108,6 +108,9 @@ let ``Test project1 whole project errors`` () =
 [<Fact>]
 let ``Test project1 and make sure TcImports gets cleaned up`` () =
 
+    // A private checker for this test.
+    let checker = FSharpChecker.Create()
+    
     let test () =
         let _, checkFileAnswer = checker.ParseAndCheckFileInProject(Project1.fileName1, 0, Project1.fileSource1, Project1.options) |> Async.RunImmediate
         match checkFileAnswer with
@@ -123,15 +126,7 @@ let ``Test project1 and make sure TcImports gets cleaned up`` () =
     let weakTcImports = test ()
     checker.InvalidateConfiguration Project1.options
     checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-
-    //collect 2 more times for good measure,
-    // See for example: https://github.com/dotnet/runtime/discussions/108081
-    GC.Collect()
-    GC.WaitForPendingFinalizers()
-    GC.Collect()
-    GC.WaitForPendingFinalizers()
-
-    Assert.False weakTcImports.IsAlive
+    System.Threading.SpinWait.SpinUntil(fun () -> not weakTcImports.IsAlive)
 
 [<Fact>]
 let ``Test Project1 should have protected FullName and TryFullName return same results`` () =

@@ -1028,8 +1028,7 @@ type ProjectWorkflowBuilder
 
     member this.Execute(workflow: Async<WorkflowContext>) =
         try
-            // We don't want the defaultCancellationToken.
-            Async.RunSynchronously(workflow, cancellationToken = Threading.CancellationToken.None, ?timeout = runTimeout)
+            Async.RunSynchronously(workflow, ?timeout = runTimeout)
         finally
             if initialContext.IsNone && not isExistingProject then
                 this.DeleteProjectDir()
