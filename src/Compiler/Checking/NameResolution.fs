@@ -3392,7 +3392,7 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
             | true, res when not newDef -> ResolveUnqualifiedItem ncenv nenv m res
             | _ ->
                 // Single identifiers in patterns - variable bindings
-                let supportsWarnOnUpperIdentifiersInPatterns = ncenv.g.langVersion.SupportsFeature(LanguageFeature.WarnOnUppercaseIdentifiersInPatterns)
+                let supportsWarnOnUpperIdentifiersInPatterns = ncenv.g.langVersion.SupportsFeature(LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns)
                 if (supportsWarnOnUpperIdentifiersInPatterns && not newDef && System.Char.ToLowerInvariant id.idText[0] <> id.idText[0])
                 then
                     match warnOnUpper with

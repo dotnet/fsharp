@@ -85,7 +85,7 @@ type LanguageFeature =
     | ParsedHashDirectiveArgumentNonQuotes
     | EmptyBodiedComputationExpressions
     | AllowObjectExpressionWithoutOverrides
-    | WarnOnUppercaseIdentifiersInPatterns
+    | DontWarnOnUppercaseIdentifiersInBindingPatterns
     | DeprecatePlacesWhereSeqCanBeOmitted
 
 /// LanguageVersion management

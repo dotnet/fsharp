@@ -94,7 +94,7 @@ type LanguageFeature =
     | ParsedHashDirectiveArgumentNonQuotes
     | EmptyBodiedComputationExpressions
     | AllowObjectExpressionWithoutOverrides
-    | WarnOnUppercaseIdentifiersInPatterns
+    | DontWarnOnUppercaseIdentifiersInBindingPatterns
     | DeprecatePlacesWhereSeqCanBeOmitted
 
 /// LanguageVersion management
@@ -221,7 +221,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
                 LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, previewVersion
                 LanguageFeature.AllowObjectExpressionWithoutOverrides, previewVersion
-                LanguageFeature.WarnOnUppercaseIdentifiersInPatterns, previewVersion
+                LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns, previewVersion
                 LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted, previewVersion
             ]
 
@@ -379,7 +379,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.ParsedHashDirectiveArgumentNonQuotes -> FSComp.SR.featureParsedHashDirectiveArgumentNonString ()
         | LanguageFeature.EmptyBodiedComputationExpressions -> FSComp.SR.featureEmptyBodiedComputationExpressions ()
         | LanguageFeature.AllowObjectExpressionWithoutOverrides -> FSComp.SR.featureAllowObjectExpressionWithoutOverrides ()
-        | LanguageFeature.WarnOnUppercaseIdentifiersInPatterns -> FSComp.SR.featureWarnOnUppercaseIdentifiersInPatterns ()
+        | LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns -> FSComp.SR.featureDontWarnOnUppercaseIdentifiersInBindingPatterns ()
         | LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted -> FSComp.SR.featureDeprecatePlacesWhereSeqCanBeOmitted ()
 
     /// Get a version string associated with the given feature.

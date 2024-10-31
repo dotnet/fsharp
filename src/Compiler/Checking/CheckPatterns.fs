@@ -61,7 +61,7 @@ let UnifyRefTupleType contextInfo (cenv: cenv) denv m ty ps =
 let rec TryAdjustHiddenVarNameToCompGenName (cenv: cenv) env (id: Ident) altNameRefCellOpt =
     match altNameRefCellOpt with
     | Some ({contents = SynSimplePatAlternativeIdInfo.Undecided altId } as altNameRefCell) ->
-        let supportsWarnOnUpperIdentifiersInPatterns = cenv.g.langVersion.SupportsFeature(LanguageFeature.WarnOnUppercaseIdentifiersInPatterns)
+        let supportsWarnOnUpperIdentifiersInPatterns = cenv.g.langVersion.SupportsFeature(LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns)
         let warnOnUpperFlag = if supportsWarnOnUpperIdentifiersInPatterns then WarnOnUpperVariablePatterns else AllIdsOK
         match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver warnOnUpperFlag false id.idRange env.eAccessRights env.eNameResEnv TypeNameResolutionInfo.Default [id] ExtraDotAfterIdentifier.No with
         | Item.NewDef _ ->
@@ -359,7 +359,7 @@ and TcPatNamedAs warnOnUpper cenv env valReprInfo vFlags patEnv ty synInnerPat i
 and TcPatUnnamedAs warnOnUpper cenv env vFlags patEnv ty pat1 pat2 m =
     let pats = [pat1; pat2]
     let warnOnUpper =
-        if cenv.g.langVersion.SupportsFeature(LanguageFeature.WarnOnUppercaseIdentifiersInPatterns) then
+        if cenv.g.langVersion.SupportsFeature(LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns) then
             AllIdsOK
         else
             warnOnUpper
@@ -468,7 +468,7 @@ and TcRecordPat warnOnUpper (cenv: cenv) env vFlags patEnv ty fieldPats m =
             match fldsmap.TryGetValue fsp.rfield_id.idText with
             | true, v ->
                 let warnOnUpper =
-                    if cenv.g.langVersion.SupportsFeature(LanguageFeature.WarnOnUppercaseIdentifiersInPatterns) then
+                    if cenv.g.langVersion.SupportsFeature(LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns) then
                         AllIdsOK
                     else
                         warnOnUpper

@@ -337,6 +337,11 @@
         <target state="translated">descartar enlace de patrón en uso</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureDontWarnOnUppercaseIdentifiersInBindingPatterns">
+        <source>Don't warn on uppercase identifiers in binding patterns</source>
+        <target state="new">Don't warn on uppercase identifiers in binding patterns</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDotlessFloat32Literal">
         <source>dotless float32 literal</source>
         <target state="translated">literal float32 sin punto</target>
@@ -620,11 +625,6 @@
       <trans-unit id="featureUnmanagedConstraintCsharpInterop">
         <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
         <target state="translated">Interoperabilidad entre la restricción genérica no administrada de C# y F# (emitir modreq adicional)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureWarnOnUppercaseIdentifiersInPatterns">
-        <source>Warn on uppercase identifiers in patterns</source>
-        <target state="new">Warn on uppercase identifiers in patterns</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningIndexedPropertiesGetSetSameType">
