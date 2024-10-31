@@ -136,7 +136,7 @@ The conclusion from the above is that there is a lot of potential in caching - a
 
 We already create the TC graph in `main1` and we are able to dump it (in Mermaid) via the compiler flags.
 
-That means we can force-gen and save the graph which will allow us to skip retypechecking if we detect that the graph is not changed. We should also track all the compilation information (the argument string).
+That means we can force-gen and save the graph which will allow us to skip retypechecking if we detect that the graph is not changed. We should also track all the compilation information (the argument string) and the last update times of the files.
 
 This step won't bring big observable benefits, yet it will create necessary MSBuild hooks to communicate the intermediate files folder towards the compiler, add time-based and hash-based cache invalidation logic, and create testing rails which will include the `clean` and `rebuild` tests to make sure the cache is easily invalidated on demand.
 
