@@ -45,8 +45,8 @@ module Simple =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 49, Line 9, Col 16, Line 9, Col 19, "Match cases labels must be lowercase identifiers")
-            (Warning 49, Line 10, Col 16, Line 10, Col 19, "Match cases labels must be lowercase identifiers")
+            (Warning 49, Line 9, Col 16, Line 9, Col 19, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 10, Col 16, Line 10, Col 19, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
         ]
 
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_BindCapitalIdent.fs"|])>]
@@ -58,8 +58,8 @@ module Simple =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 49, Line 9, Col 16, Line 9, Col 19, "Match cases labels must be lowercase identifiers")
-            (Warning 49, Line 10, Col 16, Line 10, Col 19, "Match cases labels must be lowercase identifiers")
+            (Warning 49, Line 9, Col 16, Line 9, Col 19, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 10, Col 16, Line 10, Col 19, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
         ]
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)

@@ -3406,8 +3406,8 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
                         && System.Char.ToLowerInvariant id.idText[0] <> id.idText[0]
                     then
                         match warnOnUpper with
-                        | WarnOnUpperUnionCaseLabel -> warning(UpperCaseIdentifierInPattern m)
-                        | WarnOnUpperVariablePatterns -> warning(Error(FSComp.SR.chkVariablePatternUppercase(), m))
+                        | WarnOnUpperUnionCaseLabel
+                        | WarnOnUpperVariablePatterns ->  warning(UpperCaseIdentifierInPattern m)
                         | AllIdsOK -> ()
 
                 // If there's an extra dot, we check whether the single identifier is a union, module or namespace and report it to the sink for the sake of tooling
