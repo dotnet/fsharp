@@ -79,3 +79,53 @@ let ``Can remove a node and update dependents`` () =
     Assert.Equal(1, graph.GetValue(2))
     Assert.Equal(2, graph.GetValue(3))
     Assert.Equal(3, graph.GetValue(4))
+
+type MyDiscriminatedUnion =
+    | CaseA of int
+    | CaseB of string
+
+[<Fact>]
+let ``GraphBuilder with discriminated union`` () =
+    let graph = DependencyGraph<int, MyDiscriminatedUnion>()
+    let builder = GraphBuilder(graph, [1], (fun values -> values |> Seq.head), ())
+    builder.Graph.AddOrUpdateNode(1, CaseA 1)
+    builder.AddDependentNode(2, (fun (CaseA x) -> CaseB (string x)), (fun values -> values |> Seq.head)) |> ignore
+    Assert.Equal(CaseB "1", graph.GetValue(2))
+
+type MyBaseClass() =
+    class end
+
+type MyDerivedClassA() =
+    inherit MyBaseClass()
+
+type MyDerivedClassB() =
+    inherit MyBaseClass()
+
+[<Fact>]
+let ``GraphBuilder with class hierarchy`` () =
+    let graph = DependencyGraph<int, MyBaseClass>()
+    let builder = GraphBuilder(graph, [1], (fun values -> values |> Seq.head), ())
+    builder.Graph.AddOrUpdateNode(1, MyDerivedClassA())
+    builder.AddDependentNode(2, (fun (_: MyDerivedClassA) -> MyDerivedClassB()), (fun values -> values |> Seq.head)) |> ignore
+    Assert.IsType<MyDerivedClassB>(graph.GetValue(2))
+
+[<Fact>]
+let ``GraphBuilder with chained AddDependentNode calls`` () =
+    let graph = DependencyGraph<int, MyDiscriminatedUnion>()
+    let builder = GraphBuilder(graph, [1], (fun values -> values |> Seq.head), ())
+    builder.Graph.AddOrUpdateNode(1, CaseA 1)
+    let builder2 = builder.AddDependentNode(2, (fun (CaseA x) -> CaseB (string x)), (fun values -> values |> Seq.head))
+    builder2.AddDependentNode(3, (fun (CaseB x) -> CaseA (int x * 2)), (fun values -> values |> Seq.head)) |> ignore
+    Assert.Equal(CaseB "1", graph.GetValue(2))
+    Assert.Equal(CaseA 2, graph.GetValue(3))
+
+    // Update the value of node 1
+    builder.Graph.AddOrUpdateNode(1, CaseA 2) |> ignore
+
+    // Values were invalidated
+    Assert.Equal(None, graph.Debug.Nodes[2].Value)
+    Assert.Equal(None, graph.Debug.Nodes[3].Value)
+
+    // Check new values
+    Assert.Equal(CaseB "2", graph.GetValue(2))
+    Assert.Equal(CaseA 4, graph.GetValue(3))
