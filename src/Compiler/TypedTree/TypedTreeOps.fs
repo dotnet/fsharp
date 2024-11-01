@@ -9252,6 +9252,10 @@ let TypeNullNotLiked g m ty =
     && not (TypeNullIsTrueValue g ty) 
     && not (TypeNullNever g ty) 
 
+/// a set of residual types that must also satisfy the constraint
+
+let (|NullTrueValue|HasAllowsNullAttr|WithoutNullValueType|GenericTyparUnconstrained|GenericTyparConstrained|WithoutNullRefType|WithNullRefType|) g ty = failwith ""
+
 let rec TypeHasDefaultValueAux isNew g m ty = 
     let ty = stripTyEqnsAndMeasureEqns g ty
     (if isNew then TypeNullIsExtraValueNew g m ty else TypeNullIsExtraValue g m ty)
