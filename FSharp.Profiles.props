@@ -19,7 +19,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' != 'Proto' and '$(BUILDING_USING_DOTNET)' != 'true'"> 
-    <OtherFlags>$(OtherFlags) /langversion:preview</OtherFlags>
+    <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'"> 

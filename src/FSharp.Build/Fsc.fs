@@ -49,6 +49,7 @@ type public Fsc() as this =
     let mutable otherFlags: string MaybeNull = null
     let mutable outputAssembly: string MaybeNull = null
     let mutable outputRefAssembly: string MaybeNull = null
+    let mutable parallelCompilation : bool option = None
     let mutable pathMap: string MaybeNull = null
     let mutable pdbFile: string MaybeNull = null
     let mutable platform: string MaybeNull = null
@@ -202,6 +203,7 @@ type public Fsc() as this =
         if not tailcalls then
             builder.AppendSwitch("--tailcalls-")
 
+        // Nullables
         match nullable with
         | Some true ->
             builder.AppendSwitch("--checknulls+")
@@ -344,6 +346,8 @@ type public Fsc() as this =
 
         if deterministic then
             builder.AppendSwitch("--deterministic+")
+
+        builder.AppendOptionalSwitch("--parallelcompilation", parallelCompilation)
 
         // OtherFlags - must be second-to-last
         builder.AppendSwitchUnquotedIfNotNull("", otherFlags)
@@ -503,6 +507,10 @@ type public Fsc() as this =
     member _.OutputRefAssembly
         with get () = outputRefAssembly
         and set (s) = outputRefAssembly <- s
+
+    member _.ParallelCompilation
+        with get () = parallelCompilation |> Option.defaultValue false
+        and set (p) = parallelCompilation <- Some p
 
     // --pathmap <string>: Paths to rewrite when producing deterministic builds
     member _.PathMap
