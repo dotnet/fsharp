@@ -1385,7 +1385,7 @@ let testFlag tcConfigB =
             | "DumpDebugInfo" -> tcConfigB.dumpDebugInfo <- true
             | "ShowLoadedAssemblies" -> tcConfigB.showLoadedAssemblies <- true
             | "ContinueAfterParseFailure" -> tcConfigB.continueAfterParseFailure <- true
-            | "ParallelOff" -> tcConfigB.concurrentBuild <- false
+            | "ParallelOff" -> tcConfigB.parallelParsing <- false
             | "ParallelIlxGen" -> tcConfigB.parallelIlxGen <- true // Kept as --test:.. flag for temporary backwards compatibility during .NET10 period.
             | "GraphBasedChecking" -> // Kept as --test:.. flag for temporary backwards compatibility during .NET10 period.
                 tcConfigB.typeCheckingConfig <-

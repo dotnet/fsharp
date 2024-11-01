@@ -434,7 +434,7 @@ type TcConfigBuilder =
 
         mutable deterministic: bool
 
-        mutable concurrentBuild: bool
+        mutable parallelParsing: bool
 
         mutable parallelIlxGen: bool
 
@@ -770,7 +770,7 @@ type TcConfig =
 
     member deterministic: bool
 
-    member concurrentBuild: bool
+    member parallelParsing: bool
 
     member parallelIlxGen: bool
 
