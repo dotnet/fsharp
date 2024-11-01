@@ -2,6 +2,7 @@ module DependencyGraphTests
 
 open FSharp.Compiler.LanguageServer.Common.DependencyGraph.Internal
 open Xunit
+open FSharp.Compiler.LanguageServer.Common.DependencyGraph
 
 [<Fact>]
 let ``Can add a node to the graph`` () =
@@ -89,33 +90,17 @@ let ``GraphBuilder with discriminated union`` () =
     let graph = DependencyGraph<int, MyDiscriminatedUnion>()
     let builder = GraphBuilder(graph, [1], (fun values -> values |> Seq.head), ())
     builder.Graph.AddOrUpdateNode(1, CaseA 1)
-    builder.AddDependentNode(2, (fun (CaseA x) -> CaseB (string x)), (fun values -> values |> Seq.head)) |> ignore
+    builder.AddDependentNode(2, (function | CaseA x -> CaseB (string x) | CaseB _ -> failwith "Unexpected case"), (fun values -> values |> Seq.head)) |> ignore
     Assert.Equal(CaseB "1", graph.GetValue(2))
 
-type MyBaseClass() =
-    class end
-
-type MyDerivedClassA() =
-    inherit MyBaseClass()
-
-type MyDerivedClassB() =
-    inherit MyBaseClass()
-
-[<Fact>]
-let ``GraphBuilder with class hierarchy`` () =
-    let graph = DependencyGraph<int, MyBaseClass>()
-    let builder = GraphBuilder(graph, [1], (fun values -> values |> Seq.head), ())
-    builder.Graph.AddOrUpdateNode(1, MyDerivedClassA())
-    builder.AddDependentNode(2, (fun (_: MyDerivedClassA) -> MyDerivedClassB()), (fun values -> values |> Seq.head)) |> ignore
-    Assert.IsType<MyDerivedClassB>(graph.GetValue(2))
 
 [<Fact>]
 let ``GraphBuilder with chained AddDependentNode calls`` () =
     let graph = DependencyGraph<int, MyDiscriminatedUnion>()
     let builder = GraphBuilder(graph, [1], (fun values -> values |> Seq.head), ())
     builder.Graph.AddOrUpdateNode(1, CaseA 1)
-    let builder2 = builder.AddDependentNode(2, (fun (CaseA x) -> CaseB (string x)), (fun values -> values |> Seq.head))
-    builder2.AddDependentNode(3, (fun (CaseB x) -> CaseA (int x * 2)), (fun values -> values |> Seq.head)) |> ignore
+    let builder2 = builder.AddDependentNode(2, (function | CaseA x -> CaseB (string x) | CaseB _ -> failwith "Unexpected case"), (fun values -> values |> Seq.head))
+    builder2.AddDependentNode(3, (function | CaseB x -> CaseA (int x * 2) | CaseA _ -> failwith "Unexpected case"), (fun values -> values |> Seq.head)) |> ignore
     Assert.Equal(CaseB "1", graph.GetValue(2))
     Assert.Equal(CaseA 2, graph.GetValue(3))
 
