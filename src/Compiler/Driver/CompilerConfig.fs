@@ -92,10 +92,17 @@ let ResolveFileUsingPaths (paths, m, fileName) =
         let searchMessage = String.concat "\n " paths
         raise (FileNameNotResolved(fileName, searchMessage, m))
 
-let GetWarningNumber (m, numStr: string, langVersion: LanguageVersion, isCompilerOption: bool) =
+[<RequireQualifiedAccess>]
+type WarningNumberSource =
+    | CommandLineOption
+    | CompilerDirective
+
+let GetWarningNumber (m, numStr: string, langVersion: LanguageVersion, source: WarningNumberSource) =
     let argFeature = LanguageFeature.ParsedHashDirectiveArgumentNonQuotes
-    let errorInvalid = Error(FSComp.SR.buildInvalidWarningNumber numStr, m)
     let rxOptions = RegexOptions.CultureInvariant
+
+    let warnInvalid () =
+        warning (Error(FSComp.SR.buildInvalidWarningNumber numStr, m))
 
     let getNumber regexString failAction =
         let mtch = Regex(regexString, rxOptions).Match(numStr)
@@ -109,17 +116,17 @@ let GetWarningNumber (m, numStr: string, langVersion: LanguageVersion, isCompile
     let matches regexString =
         Regex(regexString, rxOptions).Match(numStr).Success
 
-    if isCompilerOption then
+    if source = WarningNumberSource.CommandLineOption then
         getNumber """^(FS)?(\d+)$""" (fun () ->
             if not (matches """^([A-Z]+)(\d+)$""") then
-                warning errorInvalid)
+                warnInvalid ())
     elif langVersion.SupportsFeature(argFeature) then
-        getNumber """^("?)(?:(?:FS)?(\d+))\1$""" (fun () -> warning errorInvalid)
+        getNumber """^("?)(?:(?:FS)?(\d+))\1$""" warnInvalid
     elif matches """^[^"].+$""" then
         errorR (languageFeatureError langVersion argFeature m)
         None
     elif matches """^"FS.*"$""" then
-        warning errorInvalid
+        warnInvalid ()
         None
     else
         getNumber """^(")(\d+)"$""" (fun () -> ())
@@ -948,7 +955,7 @@ type TcConfigBuilder =
     member tcConfigB.TurnWarningOff(m, s: string) =
         use _ = UseBuildPhase BuildPhase.Parameter
 
-        match GetWarningNumber(m, s, tcConfigB.langVersion, true) with
+        match GetWarningNumber(m, s, tcConfigB.langVersion, WarningNumberSource.CommandLineOption) with
         | None -> ()
         | Some n ->
             // nowarn:62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
@@ -963,7 +970,7 @@ type TcConfigBuilder =
     member tcConfigB.TurnWarningOn(m, s: string) =
         use _ = UseBuildPhase BuildPhase.Parameter
 
-        match GetWarningNumber(m, s, tcConfigB.langVersion, true) with
+        match GetWarningNumber(m, s, tcConfigB.langVersion, WarningNumberSource.CommandLineOption) with
         | None -> ()
         | Some n ->
             // warnon 62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus

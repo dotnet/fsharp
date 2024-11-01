@@ -223,9 +223,12 @@ let GetScopedPragmasForHashDirective hd (langVersion: LanguageVersion) =
             for s in args do
                 let warningNumber =
                     match s with
-                    | ParsedHashDirectiveArgument.Int32(n, m) -> GetWarningNumber(m, string n, langVersion, false)
-                    | ParsedHashDirectiveArgument.Ident(s, m) -> GetWarningNumber(m, s.idText, langVersion, false)
-                    | ParsedHashDirectiveArgument.String(s, _, m) -> GetWarningNumber(m, $"\"{s}\"", langVersion, false)
+                    | ParsedHashDirectiveArgument.Int32(n, m) ->
+                        GetWarningNumber(m, string n, langVersion, WarningNumberSource.CompilerDirective)
+                    | ParsedHashDirectiveArgument.Ident(s, m) ->
+                        GetWarningNumber(m, s.idText, langVersion, WarningNumberSource.CompilerDirective)
+                    | ParsedHashDirectiveArgument.String(s, _, m) ->
+                        GetWarningNumber(m, $"\"{s}\"", langVersion, WarningNumberSource.CompilerDirective)
                     | _ -> None
 
                 match warningNumber with
@@ -907,8 +910,7 @@ let ProcessMetaCommandsFromInput
                 state
 
             | ParsedHashDirective("nowarn", hashArguments, m) ->
-                let arguments =
-                    parsedHashDirectiveArgumentsNoCheck hashArguments tcConfig.langVersion
+                let arguments = parsedHashDirectiveArgumentsNoCheck hashArguments
 
                 List.fold (fun state d -> nowarnF state (m, d)) state arguments
 
