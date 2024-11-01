@@ -2045,7 +2045,7 @@ module TastDefinitionPrinting =
                 (not vref.IsCompilerGenerated) &&
                 (denv.showObsoleteMembers || not (CheckFSharpAttributesForObsolete denv.g vref.Attribs)) &&
                 (denv.showHiddenMembers || not (CheckFSharpAttributesForHidden denv.g vref.Attribs))
-                
+
         let ctors =
             GetIntrinsicConstructorInfosOfType infoReader m ty
             |> List.filter (fun minfo -> IsMethInfoAccessible amap m ad minfo && not minfo.IsClassConstructor && shouldShow minfo.ArbitraryValRef)
@@ -2057,7 +2057,7 @@ module TastDefinitionPrinting =
                 tycon.ImmediateInterfacesOfFSharpTycon
                 |> List.filter (fun (_, compgen, _) -> not compgen)
                 |> List.map p13
-            else 
+            else
                 GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty
 
         let iimplsLs =
