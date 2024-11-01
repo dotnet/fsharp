@@ -239,6 +239,7 @@ type FSharpWorkspace() =
     member internal this.Debug_DumpMermaid(path) =
         let content =
             depGraph.Debug_RenderMermaid (function
+                // Collapse all reference on disk nodes into one. Otherwise the graph is too big to render.
                 | WorkspaceGraphTypes.WorkspaceNodeKey.ReferenceOnDisk _ -> WorkspaceGraphTypes.WorkspaceNodeKey.ReferenceOnDisk "..."
                 | x -> x)
 
@@ -252,16 +253,13 @@ type FSharpWorkspace() =
     member this.OpenFile(file: Uri, content) =
         openFiles.AddOrUpdate(file.LocalPath, content, (fun _ _ -> content)) |> ignore
 
-        // No changes in the dep graph. If we already read the contents from disk we don't want to invalidate it.
-        this
+    // No changes in the dep graph. If we already read the contents from disk we don't want to invalidate it.
 
     member this.CloseFile(file: Uri) =
         openFiles.TryRemove(file.LocalPath) |> ignore
 
         // The file may have had changes that weren't saved to disk and are therefore undone by closing it.
         depGraph.AddOrUpdateFile(file.LocalPath, FSharpFileSnapshot.CreateFromFileSystem(file.LocalPath))
-
-        this
 
     member this.ChangeFile(file: Uri, content) =
 
@@ -298,8 +296,7 @@ type FSharpWorkspace() =
                 if not (isFSharpFile line) then
                     None
                 else
-                    let fullPath = Path.Combine(directoryPath, line)
-                    if not (File.Exists fullPath) then None else Some fullPath)
+                    Some(Path.Combine(directoryPath, line)))
 
         this.AddProject(projectPath, outputPath, sourceFiles, referencesOnDisk, otherOptions)
 

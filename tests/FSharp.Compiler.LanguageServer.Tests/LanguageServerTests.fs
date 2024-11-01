@@ -11,50 +11,47 @@ open System.Diagnostics
 open Microsoft.VisualStudio.LanguageServer.Protocol
 open Nerdbank.Streams
 
-
 [<Fact>]
 let ``The server can process the initialization message`` () =
 
-     // Create a StringWriter to capture the output
+    // Create a StringWriter to capture the output
     let rpcTrace = new StringWriter()
 
     try
 
-    let struct (clientStream, _serverStream) = FullDuplexStream.CreatePair()
+        let struct (clientStream, _serverStream) = FullDuplexStream.CreatePair()
 
-    use formatter = new JsonMessageFormatter()
+        use formatter = new JsonMessageFormatter()
 
-    use messageHandler = new HeaderDelimitedMessageHandler(clientStream, clientStream, formatter)
+        use messageHandler =
+            new HeaderDelimitedMessageHandler(clientStream, clientStream, formatter)
 
-    use jsonRpc = new JsonRpc(messageHandler)
+        use jsonRpc = new JsonRpc(messageHandler)
 
-    // Create a new TraceListener with the StringWriter
-    let listener = new TextWriterTraceListener(rpcTrace)
+        // Create a new TraceListener with the StringWriter
+        let listener = new TextWriterTraceListener(rpcTrace)
 
-    // Add the listener to the JsonRpc TraceSource
-    jsonRpc.TraceSource.Listeners.Add(listener) |> ignore
+        // Add the listener to the JsonRpc TraceSource
+        jsonRpc.TraceSource.Listeners.Add(listener) |> ignore
 
-    // Set the TraceLevel to Information to get all informational, warning and error messages
-    jsonRpc.TraceSource.Switch.Level <- SourceLevels.Information
+        // Set the TraceLevel to Information to get all informational, warning and error messages
+        jsonRpc.TraceSource.Switch.Level <- SourceLevels.Information
 
-    //jsonRpc.inv
+        //jsonRpc.inv
 
-    // Now all JsonRpc debug information will be written to the StringWriter
+        // Now all JsonRpc debug information will be written to the StringWriter
 
-    let log = ResizeArray()
+        let log = ResizeArray()
 
-    let _s = new FSharpLanguageServer(jsonRpc, (LspLogger log.Add))
+        let _s = new FSharpLanguageServer(jsonRpc, (LspLogger log.Add))
 
-    jsonRpc.StartListening()
+        jsonRpc.StartListening()
 
     //let initializeParams = InitializeParams(
     //    ProcessId = System.Diagnostics.Process.GetCurrentProcess().Id,
     //    RootUri = Uri("file:///c:/temp"),
     //    InitializationOptions = None,
     //    RootPath = "file:///c:/temp")
-
-
-
 
     finally
 

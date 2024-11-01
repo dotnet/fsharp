@@ -208,8 +208,7 @@ type ContextHolder(workspace, lspServices: ILspServices) =
 
     member _.GetContext() = context
 
-    member _.UpdateWorkspace(f) =
-        context <- FSharpRequestContext(lspServices, logger, f context.Workspace, checker)
+    member _.UpdateWorkspace(f) = f context.Workspace
 
 type FShapRequestContextFactory(lspServices: ILspServices) =
 
