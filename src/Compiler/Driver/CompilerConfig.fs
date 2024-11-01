@@ -22,12 +22,12 @@ open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.BuildGraph
-open System.Text.RegularExpressions
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Core.CompilerServices
@@ -97,44 +97,56 @@ type WarningNumberSource =
     | CommandLineOption
     | CompilerDirective
 
-let GetWarningNumber (m, numStr: string, langVersion: LanguageVersion, source: WarningNumberSource) =
+[<RequireQualifiedAccess>]
+type WarningDescription =
+    | Int32 of int
+    | String of string
+    | Ident of Ident
+
+let GetWarningNumber (m, description: WarningDescription, langVersion: LanguageVersion, source: WarningNumberSource) =
     let argFeature = LanguageFeature.ParsedHashDirectiveArgumentNonQuotes
 
-    let warnInvalid () =
-        warning (Error(FSComp.SR.buildInvalidWarningNumber numStr, m))
+    let parse (numStr: string) =
+        let trimPrefix (s: string) =
+            if s.StartsWithOrdinal "FS" then s[2..] else s
 
-    let tryParseIntWithFailAction (s: string) (failAction: unit -> unit) =
-        match Int32.TryParse s with
-        | true, n -> Some n
-        | false, _ ->
-            failAction ()
+        let tryParseIntWithFailAction (s: string) (failAction: unit -> unit) =
+            match Int32.TryParse s with
+            | true, n -> Some n
+            | false, _ ->
+                failAction ()
+                None
+
+        let warnInvalid () =
+            warning (Error(FSComp.SR.buildInvalidWarningNumber numStr, m))
+
+        if source = WarningNumberSource.CommandLineOption then
+            tryParseIntWithFailAction (trimPrefix numStr) id
+        elif langVersion.SupportsFeature(argFeature) then
+            tryParseIntWithFailAction (trimPrefix numStr) warnInvalid
+        else
+            tryParseIntWithFailAction numStr id
+
+    match description with
+    | WarningDescription.Int32 n ->
+        if tryCheckLanguageFeatureAndRecover langVersion argFeature m then
+            Some n
+        else
             None
+    | WarningDescription.String s ->
+        if
+            source = WarningNumberSource.CompilerDirective
+            && not (langVersion.SupportsFeature argFeature)
+            && s.StartsWithOrdinal "FS"
+        then
+            warning (Error(FSComp.SR.buildInvalidWarningNumber s, m))
 
-    if source = WarningNumberSource.CommandLineOption then
-        let s =
-            if numStr.StartsWithOrdinal "FS" then
-                numStr[2..]
-            else
-                numStr
-
-        tryParseIntWithFailAction s id
-    elif langVersion.SupportsFeature(argFeature) then
-        let s =
-            if numStr[0] = '"' && numStr[numStr.Length - 1] = '"' then
-                numStr[1 .. numStr.Length - 2]
-            else
-                numStr
-
-        let s = if s.StartsWithOrdinal "FS" then s[2..] else s
-        tryParseIntWithFailAction s warnInvalid
-    elif numStr[0] <> '"' || numStr[numStr.Length - 1] <> '"' then
-        errorR (languageFeatureError langVersion argFeature m)
-        None
-    elif numStr.StartsWith "\"FS" && numStr[numStr.Length - 1] = '"' then
-        warnInvalid ()
-        None
-    else
-        tryParseIntWithFailAction numStr id
+        parse s
+    | WarningDescription.Ident ident ->
+        if tryCheckLanguageFeatureAndRecover langVersion argFeature m then
+            parse ident.idText
+        else
+            None
 
 let ComputeMakePathAbsolute implicitIncludeDir (path: string) =
     try
@@ -960,7 +972,7 @@ type TcConfigBuilder =
     member tcConfigB.TurnWarningOff(m, s: string) =
         use _ = UseBuildPhase BuildPhase.Parameter
 
-        match GetWarningNumber(m, s, tcConfigB.langVersion, WarningNumberSource.CommandLineOption) with
+        match GetWarningNumber(m, WarningDescription.String s, tcConfigB.langVersion, WarningNumberSource.CommandLineOption) with
         | None -> ()
         | Some n ->
             // nowarn:62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
@@ -975,7 +987,7 @@ type TcConfigBuilder =
     member tcConfigB.TurnWarningOn(m, s: string) =
         use _ = UseBuildPhase BuildPhase.Parameter
 
-        match GetWarningNumber(m, s, tcConfigB.langVersion, WarningNumberSource.CommandLineOption) with
+        match GetWarningNumber(m, WarningDescription.String s, tcConfigB.langVersion, WarningNumberSource.CommandLineOption) with
         | None -> ()
         | Some n ->
             // warnon 62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus

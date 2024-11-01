@@ -219,21 +219,21 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, fileName, intf) 
 let GetScopedPragmasForHashDirective hd (langVersion: LanguageVersion) =
     [
         match hd with
-        | ParsedHashDirective("nowarn", args, m) ->
+        | ParsedHashDirective("nowarn", args, _) ->
             for s in args do
-                let warningNumber =
+                let rd =
                     match s with
-                    | ParsedHashDirectiveArgument.Int32(n, m) ->
-                        GetWarningNumber(m, string n, langVersion, WarningNumberSource.CompilerDirective)
-                    | ParsedHashDirectiveArgument.Ident(s, m) ->
-                        GetWarningNumber(m, s.idText, langVersion, WarningNumberSource.CompilerDirective)
-                    | ParsedHashDirectiveArgument.String(s, _, m) ->
-                        GetWarningNumber(m, $"\"{s}\"", langVersion, WarningNumberSource.CompilerDirective)
+                    | ParsedHashDirectiveArgument.Int32(n, m) -> Some(m, WarningDescription.Int32 n)
+                    | ParsedHashDirectiveArgument.Ident(ident, m) -> Some(m, WarningDescription.Ident ident)
+                    | ParsedHashDirectiveArgument.String(s, _, m) -> Some(m, WarningDescription.String s)
                     | _ -> None
 
-                match warningNumber with
+                match rd with
                 | None -> ()
-                | Some n -> ScopedPragma.WarningOff(m, n)
+                | Some(m, description) ->
+                    match GetWarningNumber(m, description, langVersion, WarningNumberSource.CompilerDirective) with
+                    | None -> ()
+                    | Some n -> ScopedPragma.WarningOff(m, n)
         | _ -> ()
     ]
 
