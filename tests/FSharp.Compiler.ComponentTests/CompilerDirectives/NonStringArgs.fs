@@ -167,8 +167,6 @@ match None with None -> ()      // creates FS0025 - ignored due to flag
         |> compile
         |> shouldFail
         |> withDiagnostics [
-                (Warning 203, Line 0, Col 1, Line 0, Col 1, "Invalid warning number 'FS'")
-                (Warning 203, Line 0, Col 1, Line 0, Col 1, "Invalid warning number 'FSBLAH'")
                 (Warning 988, Line 3, Col 3, Line 3, Col 3, "Main module of program is empty: nothing will happen when it is run")
             ]
 

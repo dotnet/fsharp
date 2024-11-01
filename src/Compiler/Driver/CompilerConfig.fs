@@ -99,37 +99,42 @@ type WarningNumberSource =
 
 let GetWarningNumber (m, numStr: string, langVersion: LanguageVersion, source: WarningNumberSource) =
     let argFeature = LanguageFeature.ParsedHashDirectiveArgumentNonQuotes
-    let rxOptions = RegexOptions.CultureInvariant
 
     let warnInvalid () =
         warning (Error(FSComp.SR.buildInvalidWarningNumber numStr, m))
 
-    let getNumber regexString failAction =
-        let mtch = Regex(regexString, rxOptions).Match(numStr)
-
-        if mtch.Success then
-            Some(int mtch.Groups[2].Captures[0].Value)
-        else
+    let tryParseIntWithFailAction (s: string) (failAction: unit -> unit) =
+        match Int32.TryParse s with
+        | true, n -> Some n
+        | false, _ ->
             failAction ()
             None
 
-    let matches regexString =
-        Regex(regexString, rxOptions).Match(numStr).Success
-
     if source = WarningNumberSource.CommandLineOption then
-        getNumber """^(FS)?(\d+)$""" (fun () ->
-            if not (matches """^([A-Z]+)(\d+)$""") then
-                warnInvalid ())
+        let s =
+            if numStr.StartsWithOrdinal "FS" then
+                numStr[2..]
+            else
+                numStr
+
+        tryParseIntWithFailAction s id
     elif langVersion.SupportsFeature(argFeature) then
-        getNumber """^("?)(?:(?:FS)?(\d+))\1$""" warnInvalid
-    elif matches """^[^"].+$""" then
+        let s =
+            if numStr[0] = '"' && numStr[numStr.Length - 1] = '"' then
+                numStr[1 .. numStr.Length - 2]
+            else
+                numStr
+
+        let s = if s.StartsWithOrdinal "FS" then s[2..] else s
+        tryParseIntWithFailAction s warnInvalid
+    elif numStr[0] <> '"' || numStr[numStr.Length - 1] <> '"' then
         errorR (languageFeatureError langVersion argFeature m)
         None
-    elif matches """^"FS.*"$""" then
+    elif numStr.StartsWith "\"FS" && numStr[numStr.Length - 1] = '"' then
         warnInvalid ()
         None
     else
-        getNumber """^(")(\d+)"$""" (fun () -> ())
+        tryParseIntWithFailAction numStr id
 
 let ComputeMakePathAbsolute implicitIncludeDir (path: string) =
     try
