@@ -179,7 +179,7 @@ type ReferenceOnDisk =
 
 /// A snapshot of an F# project. The source file type can differ based on which stage of compilation the snapshot is used for.
 type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
-    (projectCore: ProjectCore, referencedProjects: FSharpReferencedProjectSnapshot list, sourceFiles: 'T list) =
+    (projectCore: ProjectConfig, referencedProjects: FSharpReferencedProjectSnapshot list, sourceFiles: 'T list) =
 
     // Version of project without source files
     let baseVersion =
@@ -386,73 +386,97 @@ and internal ProjectSnapshotWithSources = ProjectSnapshotBase<FSharpFileSnapshot
 
 /// All required information for compiling a project except the source files and referenced projects. It's kept separate so it can be reused
 /// for different stages of a project snapshot and also between changes to the source files.
-and internal ProjectCore
+and ProjectConfig
+    internal
     (
-        ProjectFileName: string,
-        OutputFileName: string option,
-        ProjectId: string option,
-        ReferencesOnDisk: ReferenceOnDisk list,
-        OtherOptions: string list,
-        IsIncompleteTypeCheckEnvironment: bool,
-        UseScriptResolutionRules: bool,
-        LoadTime: DateTime,
-        UnresolvedReferences: FSharpUnresolvedReferencesSet option,
-        OriginalLoadReferences: (range * string * string) list,
-        Stamp: int64 option
+        projectFileName: string,
+        outputFileName: string option,
+        referencesOnDisk: ReferenceOnDisk list,
+        otherOptions: string list,
+        isIncompleteTypeCheckEnvironment: bool,
+        useScriptResolutionRules: bool,
+        unresolvedReferences,
+        originalLoadReferences: (range * string * string) list,
+        loadTime: DateTime,
+        stamp: int64 option,
+        projectId: string option
     ) =
 
     let hashForParsing =
         lazy
             (Md5Hasher.empty
-             |> Md5Hasher.addString ProjectFileName
-             |> Md5Hasher.addStrings OtherOptions
-             |> Md5Hasher.addBool IsIncompleteTypeCheckEnvironment
-             |> Md5Hasher.addBool UseScriptResolutionRules)
+             |> Md5Hasher.addString projectFileName
+             |> Md5Hasher.addStrings otherOptions
+             |> Md5Hasher.addBool isIncompleteTypeCheckEnvironment
+             |> Md5Hasher.addBool useScriptResolutionRules)
 
     let fullHash =
         lazy
             (hashForParsing.Value
-             |> Md5Hasher.addStrings (ReferencesOnDisk |> Seq.map (fun r -> r.Path))
-             |> Md5Hasher.addDateTimes (ReferencesOnDisk |> Seq.map (fun r -> r.LastModified)))
+             |> Md5Hasher.addStrings (referencesOnDisk |> Seq.map (fun r -> r.Path))
+             |> Md5Hasher.addDateTimes (referencesOnDisk |> Seq.map (fun r -> r.LastModified)))
 
     let commandLineOptions =
         lazy
             (seq {
-                yield! OtherOptions
+                yield! otherOptions
 
-                for r in ReferencesOnDisk do
+                for r in referencesOnDisk do
                     $"-r:{r.Path}"
              }
              |> Seq.toList)
 
     let outputFileName =
         lazy
-            (OutputFileName
-             |> Option.orElseWith (fun () -> OtherOptions |> findOutputFileName))
+            (outputFileName
+             |> Option.orElseWith (fun () -> otherOptions |> findOutputFileName))
 
     let identifier =
-        lazy (ProjectFileName, outputFileName.Value |> Option.defaultValue "")
+        lazy (projectFileName, outputFileName.Value |> Option.defaultValue "")
 
-    member val ProjectDirectory = !! Path.GetDirectoryName(ProjectFileName)
+    new(projectFileName: string,
+        outputFileName: string option,
+        referencesOnDisk: ReferenceOnDisk list,
+        otherOptions: string list,
+        ?isIncompleteTypeCheckEnvironment: bool,
+        ?useScriptResolutionRules: bool,
+        ?loadTime: DateTime,
+        ?stamp: int64,
+        ?projectId: string) =
+        ProjectConfig(
+            projectFileName,
+            outputFileName,
+            referencesOnDisk,
+            otherOptions,
+            isIncompleteTypeCheckEnvironment = defaultArg isIncompleteTypeCheckEnvironment false,
+            useScriptResolutionRules = defaultArg useScriptResolutionRules false,
+            unresolvedReferences = None,
+            originalLoadReferences = [],
+            loadTime = defaultArg loadTime DateTime.Now,
+            stamp = stamp,
+            projectId = projectId
+        )
+
+    member val ProjectDirectory = !! Path.GetDirectoryName(projectFileName)
     member _.OutputFileName = outputFileName.Value
     member _.Identifier: ProjectIdentifier = identifier.Value
     member _.Version = fullHash.Value
-    member _.Label = ProjectFileName |> shortPath
+    member _.Label = projectFileName |> shortPath
     member _.VersionForParsing = hashForParsing.Value
 
     member _.CommandLineOptions = commandLineOptions.Value
 
-    member _.ProjectFileName = ProjectFileName
-    member _.ProjectId = ProjectId
-    member _.ReferencesOnDisk = ReferencesOnDisk
-    member _.OtherOptions = OtherOptions
+    member _.ProjectFileName = projectFileName
+    member _.ProjectId = projectId
+    member _.ReferencesOnDisk = referencesOnDisk
+    member _.OtherOptions = otherOptions
 
-    member _.IsIncompleteTypeCheckEnvironment = IsIncompleteTypeCheckEnvironment
-    member _.UseScriptResolutionRules = UseScriptResolutionRules
-    member _.LoadTime = LoadTime
-    member _.UnresolvedReferences = UnresolvedReferences
-    member _.OriginalLoadReferences = OriginalLoadReferences
-    member _.Stamp = Stamp
+    member _.IsIncompleteTypeCheckEnvironment = isIncompleteTypeCheckEnvironment
+    member _.UseScriptResolutionRules = useScriptResolutionRules
+    member _.LoadTime = loadTime
+    member _.Stamp = stamp
+    member _.UnresolvedReferences = unresolvedReferences
+    member _.OriginalLoadReferences = originalLoadReferences
 
 and [<NoComparison; CustomEquality; Experimental("This FCS API is experimental and subject to change.")>] FSharpReferencedProjectSnapshot =
     /// <summary>
@@ -583,18 +607,16 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
         ) =
 
         let projectCore =
-            ProjectCore(
-                projectFileName,
-                outputFileName,
-                projectId,
-                referencesOnDisk,
-                otherOptions,
-                isIncompleteTypeCheckEnvironment,
-                useScriptResolutionRules,
-                loadTime,
-                unresolvedReferences,
-                originalLoadReferences,
-                stamp
+            ProjectConfig(
+                projectFileName = projectFileName,
+                outputFileName = outputFileName,
+                ?projectId = projectId,
+                referencesOnDisk = referencesOnDisk,
+                otherOptions = otherOptions,
+                isIncompleteTypeCheckEnvironment = isIncompleteTypeCheckEnvironment,
+                useScriptResolutionRules = useScriptResolutionRules,
+                loadTime = loadTime,
+                ?stamp = stamp
             )
 
         ProjectSnapshotBase(projectCore, referencedProjects, sourceFiles)

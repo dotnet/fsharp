@@ -32,14 +32,13 @@ type IDependencyGraph<'Id, 'Val when 'Id: equality> =
     abstract member UpdateNode: id: 'Id * update: ('Val -> 'Val) -> unit
     abstract member RemoveNode: id: 'Id -> unit
     abstract member Debug_GetNodes: ('Id -> bool) -> DependencyNode<'Id, 'Val> seq
-    abstract member Debug_RenderMermaid : ?mapping: ('Id -> 'Id) -> string
+    abstract member Debug_RenderMermaid: ?mapping: ('Id -> 'Id) -> string
     abstract member OnWarning: (string -> unit) -> unit
 
 and IThreadSafeDependencyGraph<'Id, 'Val when 'Id: equality> =
     inherit IDependencyGraph<'Id, 'Val>
 
-    abstract member Transact<'a>: (IDependencyGraph<'Id, 'Val> -> 'a) -> 'a
-
+    abstract member Transact<'a> : (IDependencyGraph<'Id, 'Val> -> 'a) -> 'a
 
 module Internal =
 
@@ -72,7 +71,7 @@ module Internal =
                 Dependents = dependents
             |}
 
-        member this.AddOrUpdateNode(id: 'Id, value: 'Val) =
+        member _.AddOrUpdateNode(id: 'Id, value: 'Val) =
             addNode
                 {
                     Id = id
@@ -80,7 +79,7 @@ module Internal =
                     Compute = (fun _ -> value)
                 }
 
-        member this.AddList(nodes: ('Id * 'Val) seq) =
+        member _.AddList(nodes: ('Id * 'Val) seq) =
             nodes
             |> Seq.map (fun (id, value) ->
                 addNode
@@ -89,11 +88,11 @@ module Internal =
                         Value = Some value
                         Compute = (fun _ -> value)
                     }
+
                 id)
             |> Seq.toList
 
-
-        member this.AddOrUpdateNode(id: 'Id, dependsOn: 'Id seq, compute: 'Val seq -> 'Val) =
+        member _.AddOrUpdateNode(id: 'Id, dependsOn: 'Id seq, compute: 'Val seq -> 'Val) =
             addNode
                 {
                     Id = id
@@ -182,6 +181,7 @@ module Internal =
                         match dependents.TryGetValue dep with
                         | true, set -> set.Remove id |> ignore
                         | false, _ -> ()
+
                     dependencies.Remove id |> ignore
                 | false, _ -> ()
 
@@ -192,11 +192,12 @@ module Internal =
                         match dependencies.TryGetValue dep with
                         | true, set -> set.Remove id |> ignore
                         | false, _ -> ()
+
                     dependents.Remove id |> ignore
                 | false, _ -> ()
             | false, _ -> ()
 
-        member this.Debug_GetNodes(predicate: 'Id -> bool): DependencyNode<'Id,'Val> seq =
+        member this.Debug_GetNodes(predicate: 'Id -> bool) : DependencyNode<'Id, 'Val> seq =
             nodes.Values |> Seq.filter (fun node -> predicate node.Id)
 
         member _.Debug_RenderMermaid(?mapping) =
@@ -205,7 +206,12 @@ module Internal =
 
             // We need to give each node a number so the graph is easy to render
             let nodeNumbersById = Dictionary()
-            nodes.Keys |> Seq.map mapping |> Seq.distinct |> Seq.indexed |> Seq.iter (fun (x, y) -> nodeNumbersById.Add(y, x))
+
+            nodes.Keys
+            |> Seq.map mapping
+            |> Seq.distinct
+            |> Seq.indexed
+            |> Seq.iter (fun (x, y) -> nodeNumbersById.Add(y, x))
 
             let content =
                 dependencies
@@ -215,19 +221,17 @@ module Internal =
 
                     kv.Value
                     |> Seq.map (fun dep -> nodeNumbersById[mapping dep], mapping dep)
-                    |> Seq.map (fun (depNumber, dep) -> $"{nodeNumber}[{node}] --> {depNumber}[{dep}]" )
-                    |> Seq.distinct
-                )
+                    |> Seq.map (fun (depNumber, dep) -> $"{nodeNumber}[{node}] --> {depNumber}[{dep}]")
+                    |> Seq.distinct)
                 |> String.concat "\n"
 
             $"```mermaid\n\ngraph LR\n\n{content}\n\n```"
 
-        member _.OnWarning(f) =
-            warningSubscribers.Add f |> ignore
+        member _.OnWarning(f) = warningSubscribers.Add f |> ignore
 
         interface IDependencyGraph<'Id, 'Val> with
 
-            member this.Debug_GetNodes(predicate)= self.Debug_GetNodes(predicate)
+            member this.Debug_GetNodes(predicate) = self.Debug_GetNodes(predicate)
 
             member _.AddOrUpdateNode(id, value) = self.AddOrUpdateNode(id, value)
             member _.AddList(nodes) = self.AddList(nodes)
@@ -248,13 +252,13 @@ module Internal =
 
             member _.OnWarning f = self.OnWarning f
 
-            member _.Debug_RenderMermaid(x) = self.Debug_RenderMermaid(?mapping=x)
-
+            member _.Debug_RenderMermaid(x) = self.Debug_RenderMermaid(?mapping = x)
 
 /// This type can be used to chain together a series of dependent nodes when there is some kind of type hierarchy in the graph.
 /// That is when 'T represents some subset of 'Val (e.g. a sub type or a case in DU).
 /// It can also carry some state that is passed along the chain.
-type GraphBuilder<'Id, 'Val, 'T, 'State when 'Id: equality>(graph: IDependencyGraph<'Id, 'Val>, ids: 'Id seq, unwrap: 'Val seq -> 'T, state: 'State) =
+type GraphBuilder<'Id, 'Val, 'T, 'State when 'Id: equality>
+    (graph: IDependencyGraph<'Id, 'Val>, ids: 'Id seq, unwrap: 'Val seq -> 'T, state: 'State) =
 
     member _.Ids = ids
 
@@ -264,12 +268,11 @@ type GraphBuilder<'Id, 'Val, 'T, 'State when 'Id: equality>(graph: IDependencyGr
 
     member _.AddDependentNode(id, compute, unwrapNext) =
         graph.AddOrUpdateNode(id, ids, unwrap >> compute)
-        GraphBuilder(graph, ids, unwrapNext, state)
+        GraphBuilder(graph, Seq.singleton id, unwrapNext, state)
 
     member _.AddDependentNode(id, compute, unwrapNext, nextState) =
         graph.AddOrUpdateNode(id, ids, unwrap >> compute)
-        GraphBuilder(graph, ids, unwrapNext, nextState)
-
+        GraphBuilder(graph, Seq.singleton id, unwrapNext, nextState)
 
 open Internal
 open System.Runtime.CompilerServices
@@ -284,13 +287,13 @@ type LockOperatedDependencyGraph<'Id, 'Val when 'Id: equality and 'Id: not null>
         member _.AddDependency(node, dependsOn) =
             lock lockObj (fun () -> graph.AddDependency(node, dependsOn))
 
-        member _.AddList(nodes)=
+        member _.AddList(nodes) =
             lock lockObj (fun () -> graph.AddList(nodes))
 
-        member _.AddOrUpdateNode(id, value)=
+        member _.AddOrUpdateNode(id, value) =
             lock lockObj (fun () -> graph.AddOrUpdateNode(id, value))
 
-        member _.AddOrUpdateNode(id, dependsOn, compute)=
+        member _.AddOrUpdateNode(id, dependsOn, compute) =
             lock lockObj (fun () -> graph.AddOrUpdateNode(id, dependsOn, compute))
 
         member _.GetDependenciesOf(id) =
@@ -313,14 +316,14 @@ type LockOperatedDependencyGraph<'Id, 'Val when 'Id: equality and 'Id: not null>
 
         member _.Transact(f) = lock lockObj (fun () -> f graph)
 
-        member _.OnWarning(f) = lock lockObj (fun () -> graph.OnWarning f)
+        member _.OnWarning(f) =
+            lock lockObj (fun () -> graph.OnWarning f)
 
         member _.Debug_GetNodes(predicate) =
             lock lockObj (fun () -> graph.Debug_GetNodes(predicate))
 
         member _.Debug_RenderMermaid(m) =
-            lock lockObj (fun () -> graph.Debug_RenderMermaid(?mapping=m))
-
+            lock lockObj (fun () -> graph.Debug_RenderMermaid(?mapping = m))
 
 [<Extension>]
 type GraphExtensions =
@@ -341,9 +344,7 @@ type GraphExtensions =
 
     [<Extension>]
     static member UnpackMany(dependencies: 'NodeValue seq, unpacker) =
-        let results =
-            dependencies
-            |> Seq.choose unpacker
+        let results = dependencies |> Seq.choose unpacker
 
         if dependencies |> Seq.length <> (results |> Seq.length) then
             failwith $"Expected all dependencies to match {unpacker} but got: %A{dependencies |> Seq.toArray}"

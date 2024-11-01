@@ -95,7 +95,7 @@ type FSharpRequestContext(lspServices: ILspServices, logger: ILspLogger, workspa
         async {
 
             let! diagnostics =
-                workspace.GetSnapshotForFile file
+                workspace.GetProjectSnapshotForFile file
                 |> Option.map (fun snapshot ->
                     async {
                         let! parseResult, checkFileAnswer =
@@ -113,7 +113,7 @@ type FSharpRequestContext(lspServices: ILspServices, logger: ILspLogger, workspa
 
     member _.GetSemanticTokensForFile(file: Uri) =
 
-        workspace.GetSnapshotForFile file
+        workspace.GetProjectSnapshotForFile file
         |> Option.map (fun snapshot ->
             async {
                 let! _, checkFileAnswer = checker.ParseAndCheckFileInProject(file.LocalPath, snapshot, "LSP Get semantic classification")

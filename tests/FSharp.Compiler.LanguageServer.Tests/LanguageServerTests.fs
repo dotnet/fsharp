@@ -27,7 +27,6 @@ let ``The server can process the initialization message`` () =
     use messageHandler = new HeaderDelimitedMessageHandler(clientStream, clientStream, formatter)
 
     use jsonRpc = new JsonRpc(messageHandler)
-    
 
     // Create a new TraceListener with the StringWriter
     let listener = new TextWriterTraceListener(rpcTrace)
@@ -54,8 +53,8 @@ let ``The server can process the initialization message`` () =
     //    InitializationOptions = None,
     //    RootPath = "file:///c:/temp")
 
-    
-    
+
+
 
     finally
 

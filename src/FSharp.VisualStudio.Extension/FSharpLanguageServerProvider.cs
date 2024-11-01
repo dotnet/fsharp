@@ -199,7 +199,7 @@ internal class ProjectObserver(FSharpWorkspace workspace) : IObserver<IQueryResu
     {
         project.Id.TryGetValue("ProjectPath", out var projectPath);
 
-        List<(string?, string)> projectInfos = [];
+        List<(string, string)> projectInfos = [];
 
         if (projectPath != null && projectPath.ToLower().EndsWith(".fsproj"))
         {
@@ -234,13 +234,13 @@ internal class ProjectObserver(FSharpWorkspace workspace) : IObserver<IQueryResu
 
                     foreach (var ruleResults in config.RuleResults)
                     {
-                        // XXX Idk why `.Where` does not work with these IAsyncQuerable type
+                        // XXX Idk why `.Where` does not work with these IAsyncQueryable type
                         if (ruleResults?.RuleName == "CompilerCommandLineArgs")
                         {
                             // XXX Not sure why there would be more than one item for this rule result
                             // Taking first one, ignoring the rest
                             var args = ruleResults?.Items?.FirstOrDefault()?.Name;
-                            if (args != null) projectInfos.Add((outputPath, args));
+                            if (args != null && outputPath != null) projectInfos.Add((outputPath, args));
                         }
                     }
                 }
@@ -248,7 +248,7 @@ internal class ProjectObserver(FSharpWorkspace workspace) : IObserver<IQueryResu
 
             foreach (var projectInfo in projectInfos)
             {
-                workspace.AddCommandLineArgs(projectPath, projectInfo.Item1, projectInfo.Item2.Split(';'));
+                workspace.AddProject(projectPath, projectInfo.Item1, projectInfo.Item2.Split(';'));
             }
 
             workspace.Debug_DumpMermaid("../../../../dep-graph.md");
