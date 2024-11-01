@@ -25,9 +25,24 @@ let ``Open file in workspace`` () =
     let workspace = FSharpWorkspace()
     let fileUri = Uri("file:///test.fs")
     let content = "let x = 1"
+
+    let projectPath = "test.fsproj"
+    let outputPath = "test.dll"
+    let compilerArgs = [| fileUri.LocalPath |]
+    let _projectIdentifier = workspace.AddProject(projectPath, outputPath, compilerArgs)
+
     workspace.OpenFile(fileUri, content)
     let projectSnapshot = workspace.GetProjectSnapshotForFile(fileUri)
-    Assert.NotNull(projectSnapshot)
+
+    // Retrieve the file snapshot from the project snapshot
+    let fileSnapshot =
+        projectSnapshot
+        |> Option.defaultWith (fun () -> failwith "Project snapshot not found")
+        |> _.SourceFiles
+        |> Seq.find (fun f -> f.FileName = fileUri.LocalPath)
+
+    // Assert that the content of the file in the snapshot is correct
+    Assert.Equal(content, fileSnapshot.GetSource().Result.ToString())
 
     let fileSnapshot =
         projectSnapshot
