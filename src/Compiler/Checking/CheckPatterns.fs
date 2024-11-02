@@ -542,7 +542,7 @@ and TcPatLongIdent warnOnUpper cenv env ad valReprInfo vFlags (patEnv: TcPatLine
 
         TcPatLongIdentActivePatternCase warnOnUpper cenv env vFlags patEnv ty (mLongId, item, apref, args, m)
 
-    | Item.UnionCase _ | Item.ExnCase _ as item ->    
+    | Item.UnionCase _ | Item.ExnCase _ as item ->
         TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (mLongId, item, args, m)
 
     | Item.ILField finfo ->
