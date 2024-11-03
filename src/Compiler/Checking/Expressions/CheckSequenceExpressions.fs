@@ -270,9 +270,9 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
 
             let tclauses, tpenv =
                 (tpenv, clauses)
-                ||> List.mapFold (fun tpenv (SynMatchClause(pat, cond, innerComp, _, sp, trivia)) ->
+                ||> List.mapFold (fun tpenv (SynMatchClause(pat, cond, innerComp, _, sp, trivia) as clause) ->
                     let isTrueMatchClause =
-                        if trivia.BarRange.IsSome && trivia.ArrowRange.IsSome then
+                        if clause.IsTrueMatchClause then
                             TcTrueMatchClause.Yes
                         else
                             TcTrueMatchClause.No
@@ -319,9 +319,9 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
             // Compile the pattern twice, once as a filter with all succeeding targets returning "1", and once as a proper catch block.
             let clauses, tpenv =
                 (tpenv, withList)
-                ||> List.mapFold (fun tpenv (SynMatchClause(pat, cond, innerComp, m, sp, trivia)) ->
+                ||> List.mapFold (fun tpenv (SynMatchClause(pat, cond, innerComp, m, sp, trivia) as clause) ->
                     let isTrueMatchClause =
-                        if trivia.BarRange.IsSome && trivia.ArrowRange.IsSome then
+                        if clause.IsTrueMatchClause then
                             TcTrueMatchClause.Yes
                         else
                             TcTrueMatchClause.No

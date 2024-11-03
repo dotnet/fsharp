@@ -1177,6 +1177,8 @@ type SynMatchClause =
     /// Gets the syntax range of part of this construct
     member RangeOfGuardAndRhs: range
 
+    member IsTrueMatchClause: bool
+
     /// Gets the syntax range of this construct
     member Range: range
 

@@ -3392,19 +3392,17 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
             | true, res when not newDef -> ResolveUnqualifiedItem ncenv nenv m res
             | _ ->
                 // Single identifiers in patterns - variable bindings
-                let supportsWarnOnUpperIdentifiersInPatterns = ncenv.g.langVersion.SupportsFeature(LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns)
-                if (supportsWarnOnUpperIdentifiersInPatterns && not newDef && System.Char.ToLowerInvariant id.idText[0] <> id.idText[0])
+                let supportsDontWarnOnUppercaseIdentifiers = ncenv.g.langVersion.SupportsFeature(LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns)
+                let isUpperCaseIdentifier = (not newDef && System.Char.ToLowerInvariant id.idText[0] <> id.idText[0])
+                if (supportsDontWarnOnUppercaseIdentifiers && isUpperCaseIdentifier)
                 then
                     match warnOnUpper with
                     | WarnOnUpperUnionCaseLabel -> warning(UpperCaseIdentifierInPattern m)
                     | WarnOnUpperVariablePatterns
                     | AllIdsOK -> ()
                 else
-                    if not newDef
-                        // HACK: This is an historical hack that seems to related the use country and language codes, which are very common in codebases
-                        && id.idText.Length >= 3
-                        && System.Char.ToLowerInvariant id.idText[0] <> id.idText[0]
-                    then
+                    // HACK: This is an historical hack that seems to related the use country and language codes, which are very common in codebases
+                    if isUpperCaseIdentifier && id.idText.Length >= 3 then
                         match warnOnUpper with
                         | WarnOnUpperUnionCaseLabel
                         | WarnOnUpperVariablePatterns ->  warning(UpperCaseIdentifierInPattern m)

@@ -10642,7 +10642,7 @@ and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchC
     let (SynMatchClause(synPat, synWhenExprOpt, synResultExpr, patm, spTgt, trivia)) = synMatchClause
 
     let isTrueMatchClause =
-        if trivia.BarRange.IsSome && trivia.ArrowRange.IsSome then
+        if synMatchClause.IsTrueMatchClause then
             TcTrueMatchClause.Yes
         else
             TcTrueMatchClause.No
