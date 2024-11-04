@@ -21,7 +21,7 @@ open System.Runtime.Loader
 open FSharp.Test.Utilities
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
-open NUnit.Framework
+open Xunit
 open TestFramework
 open System.Collections.Immutable
 
@@ -149,12 +149,12 @@ type TestCompilation =
                 let diagnostics = c.GetDiagnostics ()
 
                 if not diagnostics.IsEmpty then
-                    NUnit.Framework.Assert.Fail ("CSharp source diagnostics:\n" + (diagnostics |> Seq.map (fun x -> x.GetMessage () + "\n") |> Seq.reduce (+)))
+                    Assert.Fail ("CSharp source diagnostics:\n" + (diagnostics |> Seq.map (fun x -> x.GetMessage () + "\n") |> Seq.reduce (+)))
 
             | TestCompilation.IL (_, result) ->
                 let errors, _ = result.Value
                 if errors.Length > 0 then
-                    NUnit.Framework.Assert.Fail ("IL source errors: " + errors)
+                    Assert.Fail ("IL source errors: " + errors)
 
     member this.EmitAsFile (outputPath: string) =
         match this with
@@ -322,7 +322,7 @@ module rec CompilerAssertHelpers =
             else
                 entryPoint
         let args = mkDefaultArgs entryPoint
-        captureConsoleOutputs (fun () -> entryPoint.Invoke(Unchecked.defaultof<obj>, args) |> ignore)
+        captureConsoleOutputs (fun () -> entryPoint.Invoke(Unchecked.defaultof<obj>, args))
 
 #if NETCOREAPP
     let executeBuiltApp assembly deps isFsx =
@@ -409,8 +409,8 @@ module rec CompilerAssertHelpers =
 
         // Generate a response file, purely for diagnostic reasons.
         File.WriteAllLines(Path.ChangeExtension(outputFilePath, ".rsp"), args)
-        let errors, rc = checker.Compile args |> Async.RunImmediate
-        errors, rc, outputFilePath
+        let errors, ex = checker.Compile args |> Async.RunImmediate
+        errors, ex, outputFilePath
 
     let compileDisposable (outputDirectory:DirectoryInfo) isExe options targetFramework nameOpt (sources:SourceCodeFileKind list) =
         let disposeFile path =
@@ -484,7 +484,7 @@ module rec CompilerAssertHelpers =
         
         let checkEqual k a b =
            if a <> b then
-               Assert.AreEqual(a, b, sprintf $"Mismatch in %s{k}, expected '%A{a}', got '%A{b}'.\nAll errors:\n%s{errorsAsStr}")
+               failwithf $"Mismatch in %s{k}, expected '%A{a}', got '%A{b}'.\nAll errors:\n%s{errorsAsStr}"
 
         checkEqual "Errors"  (Array.length expectedErrors) errors.Length
 
@@ -537,7 +537,7 @@ module rec CompilerAssertHelpers =
                             let tmp = Path.Combine(outputPath.FullName, Path.ChangeExtension(fileName, ".dll"))
                             disposals.Add({ new IDisposable with member _.Dispose() = File.Delete tmp })
                             cmpl.EmitAsFile tmp
-                            (([||], 0, tmp), []), false)
+                            (([||], None, tmp), []), false)
 
             let compilationRefs =
                 compiledRefs
@@ -559,7 +559,7 @@ module rec CompilerAssertHelpers =
 
             compilationRefs, deps
 
-    let compileCompilationAux outputDirectory (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * int * string) * string list =
+    let compileCompilationAux outputDirectory (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * exn option * string) * string list =
 
         let compilationRefs, deps = evaluateReferences outputDirectory disposals ignoreWarnings cmpl
         let isExe, sources, options, targetFramework, name =
@@ -604,7 +604,7 @@ module rec CompilerAssertHelpers =
         outputDirectory.Create()
         compileCompilationAux outputDirectory (ResizeArray()) ignoreWarnings cmpl
 
-    let captureConsoleOutputs (func: unit -> unit) =
+    let captureConsoleOutputs (func: unit -> obj) =
         let out = Console.Out
         let err = Console.Error
 
@@ -614,29 +614,30 @@ module rec CompilerAssertHelpers =
         use outWriter = new StringWriter (stdout)
         use errWriter = new StringWriter (stderr)
 
-        let succeeded, exn =
+        let rc, exn =
             try
                 try
                     Console.SetOut outWriter
                     Console.SetError errWriter
-                    func ()
-                    true, None
+                    let rc = func()
+                    match rc with
+                    | :? int as rc -> Some rc, None
+                    | _ -> None, None
                 with e ->
                     let errorMessage = if e.InnerException <> null then e.InnerException.ToString() else e.ToString()
                     stderr.Append errorMessage |> ignore
-                    false, Some e
+                    None, Some e
             finally
                 Console.SetOut out
                 Console.SetError err
                 outWriter.Close()
                 errWriter.Close()
 
-        succeeded, stdout.ToString(), stderr.ToString(), exn
+        rc, stdout.ToString(), stderr.ToString(), exn
 
-    let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) isFsx : (int * string * string) =
-        let succeeded, stdout, stderr, _ = executeBuiltApp outputFilePath deps isFsx
-        let exitCode = if succeeded then 0 else -1
-        exitCode, stdout, stderr
+    let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) isFsx : (int option * string * string * exn option) =
+        let rc, stdout, stderr, exn = executeBuiltApp outputFilePath deps isFsx
+        rc, stdout, stderr, exn
 
     let executeBuiltAppNewProcessAndReturnResult (outputFilePath: string) : (int * string * string) =
 #if !NETCOREAPP
@@ -663,7 +664,7 @@ module rec CompilerAssertHelpers =
               member _.Dispose() = try File.Delete runtimeconfigPath with | _ -> () }
 #endif
         let timeout = 30000
-        let exitCode, output, errors = Commands.executeProcess (Some fileName) arguments (Path.GetDirectoryName(outputFilePath)) timeout
+        let exitCode, output, errors = Commands.executeProcess fileName arguments (Path.GetDirectoryName(outputFilePath)) timeout
         (exitCode, output |> String.concat "\n", errors |> String.concat "\n")
 
 open CompilerAssertHelpers
@@ -677,7 +678,7 @@ type CompilerAssert private () =
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
 
-            executeBuiltApp outputExe [] false |> ignore<bool * string * string * exn option>
+            executeBuiltApp outputExe [] false |> ignore<int option * string * string * exn option>
         )
 
     static let compileLibraryAndVerifyILWithOptions options (source: SourceCodeFileKind) (f: ILVerifier -> unit) =
@@ -739,11 +740,13 @@ Updated automatically, please check diffs in your pull request, changes must be 
         returnCompilation cmpl (defaultArg ignoreWarnings false)
 
     static member ExecuteAndReturnResult (outputFilePath: string, isFsx: bool, deps: string list, newProcess: bool) =
-        // If we execute in-process (true by default), then the only way of getting STDOUT is to redirect it to SB, and STDERR is from catching an exception.
        if not newProcess then
-           executeBuiltAppAndReturnResult outputFilePath deps isFsx
+           let entryPointReturnCode, deps, isFsx, exn = executeBuiltAppAndReturnResult outputFilePath deps isFsx
+           entryPointReturnCode, deps, isFsx, exn
        else
-           executeBuiltAppNewProcessAndReturnResult outputFilePath
+           let processExitCode, deps, isFsx = executeBuiltAppNewProcessAndReturnResult outputFilePath
+           Some processExitCode, deps, isFsx, None
+        
 
     static member Execute(cmpl: Compilation, ?ignoreWarnings, ?beforeExecute, ?newProcess, ?onOutput) =
 
@@ -767,22 +770,22 @@ Updated automatically, please check diffs in your pull request, changes must be 
                     Assert.Fail errors
                 onOutput output
             else
-                let _succeeded, _stdout, _stderr, exn = executeBuiltApp outputFilePath deps false 
+                let _rc, _stdout, _stderr, exn = executeBuiltApp outputFilePath deps false 
                 exn |> Option.iter raise)
 
     static member ExecutionHasOutput(cmpl: Compilation, expectedOutput: string) =
-        CompilerAssert.Execute(cmpl, newProcess = true, onOutput = (fun output -> Assert.AreEqual(expectedOutput, output, sprintf "'%s' = '%s'" expectedOutput output)))  
+        CompilerAssert.Execute(cmpl, newProcess = true, onOutput = (fun output -> Assert.Equal(expectedOutput, output)))  
 
     static member Pass (source: string) =
         let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions TargetFramework.Current) |> Async.RunImmediate
 
-        Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
+        Assert.Empty(parseResults.Diagnostics)
 
         match fileAnswer with
         | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted")
         | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
 
-        Assert.IsEmpty(typeCheckResults.Diagnostics, sprintf "Type Check errors: %A" typeCheckResults.Diagnostics)
+        Assert.Empty(typeCheckResults.Diagnostics)
 
     static member PassWithOptions options (source: string) =
         let defaultOptions = defaultProjectOptions TargetFramework.Current
@@ -790,13 +793,13 @@ Updated automatically, please check diffs in your pull request, changes must be 
 
         let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, options) |> Async.RunImmediate
 
-        Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
+        Assert.Empty(parseResults.Diagnostics)
 
         match fileAnswer with
         | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted")
         | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
 
-        Assert.IsEmpty(typeCheckResults.Diagnostics, sprintf "Type Check errors: %A" typeCheckResults.Diagnostics)
+        Assert.Empty(typeCheckResults.Diagnostics)
 
     static member TypeCheckWithErrorsAndOptionsAgainstBaseLine options (sourceDirectory:string) (sourceFile: string) =
         let absoluteSourceFile = System.IO.Path.Combine(sourceDirectory, sourceFile)
@@ -809,7 +812,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
                 { defaultOptions with OtherOptions = Array.append options defaultOptions.OtherOptions; SourceFiles = [|sourceFile|] })
             |> Async.RunImmediate
 
-        Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
+        Assert.Empty(parseResults.Diagnostics)
 
         match fileAnswer with
         | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted")
@@ -827,7 +830,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
             |> String.concat "\n"
         File.WriteAllText(Path.ChangeExtension(absoluteSourceFile,"err"), errorsActual)
 
-        Assert.AreEqual(errorsExpectedBaseLine.Replace("\r\n","\n"), errorsActual.Replace("\r\n","\n"))
+        Assert.Equal(errorsExpectedBaseLine.Replace("\r\n","\n"), errorsActual.Replace("\r\n","\n"))
 
     static member TypeCheckWithOptionsAndName options name (source: string) =
         let errors =
@@ -895,7 +898,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
     static member TypeCheck(options, name, source: string) =
         let parseResults, checkResults = CompilerAssert.ParseAndTypeCheck(options, name, source)
 
-        Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
+        Assert.Empty(parseResults.Diagnostics)
 
         checkResults
 
@@ -1044,7 +1047,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         else
             (expectedErrorMessages, errorMessages)
             ||> Seq.iter2 (fun expectedErrorMessage errorMessage ->
-                Assert.AreEqual(expectedErrorMessage, errorMessage)
+                Assert.Equal(expectedErrorMessage, errorMessage)
         )
 
     static member RunScript source expectedErrorMessages =
@@ -1069,13 +1072,13 @@ Updated automatically, please check diffs in your pull request, changes must be 
             |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLine, e.StartColumn, e.EndLine, e.EndColumn, e.Message)
 
         printfn $"diagnostics: %A{[| for e in errors -> e.Severity, e.ErrorNumber, e.StartLine, e.StartColumn, e.EndLine, e.EndColumn, e.Message |]}"
-        Assert.AreEqual(Array.length expectedParseErrors, errors.Length, sprintf "Parse errors: %A" parseResults.Diagnostics)
+        Assert.True((Array.length expectedParseErrors = errors.Length), sprintf "Parse errors: %A" parseResults.Diagnostics)
 
         Array.zip errors expectedParseErrors
         |> Array.iter (fun (info, expectedError) ->
             let (expectedSeverity: FSharpDiagnosticSeverity, expectedErrorNumber: int, expectedErrorRange: int * int * int * int, expectedErrorMsg: string) = expectedError
-            Assert.AreEqual(expectedSeverity, info.Severity)
-            Assert.AreEqual(expectedErrorNumber, info.ErrorNumber, "expectedErrorNumber")
-            Assert.AreEqual(expectedErrorRange, (info.StartLine, info.StartColumn + 1, info.EndLine, info.EndColumn + 1), "expectedErrorRange")
-            Assert.AreEqual(expectedErrorMsg, info.Message, "expectedErrorMsg")
+            Assert.Equal(expectedSeverity, info.Severity)
+            Assert.Equal(expectedErrorNumber, info.ErrorNumber)
+            Assert.Equal(expectedErrorRange, (info.StartLine, info.StartColumn + 1, info.EndLine, info.EndColumn + 1))
+            Assert.Equal(expectedErrorMsg, info.Message)
         )

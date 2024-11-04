@@ -27,8 +27,8 @@ async {
         printfn "Test Failed"
         app.Shutdown(128)
     else
-        printfn "Test Passed"
-        System.IO.File.WriteAllText("test.ok","ok")
+        printf "TEST PASSED OK" 
+        printf "TEST PASSED OK" ;
         app.Shutdown(0)
 } |> Async.StartImmediate
 

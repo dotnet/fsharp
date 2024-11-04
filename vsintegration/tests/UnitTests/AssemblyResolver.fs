@@ -1,6 +1,5 @@
 namespace Microsoft.VisualStudio.FSharp
 
-open NUnit.Framework
 open System
 open System.IO
 open System.Reflection
@@ -46,9 +45,3 @@ module AssemblyResolver =
             match found() with
             | None -> Unchecked.defaultof<Assembly>
             | Some name -> Assembly.Load(name) )
-
-[<SetUpFixture>]
-type public AssemblyResolverTestFixture () =
-
-    [<OneTimeSetUp>]
-    member public _.Init () = AssemblyResolver.addResolver ()

@@ -281,7 +281,7 @@ let ceResult : Trace<int> =
         return if y then x else -1
     }
             """
-            [| FSharpDiagnosticSeverity.Error, 3344, (6, 9, 8, 35), "This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature." |]
+            [| FSharpDiagnosticSeverity.Error, 3344, (7, 9, 7, 13), "This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature." |]
 
     [<Fact>]
     let ``AndBang TraceMultiBindingMonoid`` () =
@@ -582,7 +582,7 @@ let _ =
         return x + y
     }
     """
-            [|(FSharpDiagnosticSeverity.Error, 3343, (6, 9, 6, 25), "The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a 'Bind2' method or appropriate 'MergeSources' and 'Bind' methods")|]
+            [|(FSharpDiagnosticSeverity.Error, 3343, (6, 9, 6, 13), "The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a 'Bind2' method or appropriate 'MergeSources' and 'Bind' methods")|]
 
     [<Fact>]
     let ``AndBang Negative TraceApplicative missing Bind and BindReturn`` () =
@@ -596,7 +596,7 @@ let _ =
         return x + y
     }
     """
-            [|(FSharpDiagnosticSeverity.Error, 708, (6, 9, 6, 25), "This control construct may only be used if the computation expression builder defines a 'Bind' method")|]
+            [|(FSharpDiagnosticSeverity.Error, 708, (6, 9, 6, 13), "This control construct may only be used if the computation expression builder defines a 'Bind' method")|]
 
 
     [<Fact>]
@@ -612,7 +612,7 @@ let _ =
         return x + y
     }
     """
-            [| FSharpDiagnosticSeverity.Error, 708, (7, 9, 7, 25), "This control construct may only be used if the computation expression builder defines a 'Bind' method" |]
+            [| FSharpDiagnosticSeverity.Error, 708, (7, 9, 7, 13), "This control construct may only be used if the computation expression builder defines a 'Bind' method" |]
 
     [<Fact>]
     let ``AndBang TraceApplicative with do-bang`` () =

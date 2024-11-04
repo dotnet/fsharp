@@ -825,7 +825,7 @@ module InterfaceStubGenerator =
                 | SynMemberDefn.Open _
                 | SynMemberDefn.ImplicitCtor _
                 | SynMemberDefn.Inherit _ -> None
-                | SynMemberDefn.ImplicitInherit(_, expr, _, _) -> walkExpr expr
+                | SynMemberDefn.ImplicitInherit(_, expr, _, _, _) -> walkExpr expr
 
         and walkBinding (SynBinding(expr = expr)) = walkExpr expr
 
@@ -952,9 +952,9 @@ module InterfaceStubGenerator =
                 | SynExpr.Null _range
                 | SynExpr.ImplicitZero _range -> None
 
-                | SynExpr.YieldOrReturn(_, synExpr, _range)
-                | SynExpr.YieldOrReturnFrom(_, synExpr, _range)
-                | SynExpr.DoBang(synExpr, _range) -> walkExpr synExpr
+                | SynExpr.YieldOrReturn(expr = synExpr)
+                | SynExpr.YieldOrReturnFrom(expr = synExpr)
+                | SynExpr.DoBang(expr = synExpr) -> walkExpr synExpr
 
                 | SynExpr.LetOrUseBang(rhs = synExpr1; andBangs = synExprAndBangs; body = synExpr2) ->
                     [

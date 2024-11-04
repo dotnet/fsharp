@@ -43,6 +43,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
+open Import
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
@@ -1009,6 +1010,13 @@ let TranslatePartialValReprInfo tps (PrelimValReprInfo (argsData, retData)) =
 //-------------------------------------------------------------------------
 // Members
 //-------------------------------------------------------------------------
+
+
+[<RequireQualifiedAccess>]
+type TcCanFail =
+    | IgnoreMemberResoutionError
+    | IgnoreAllErrors
+    | ReportAllErrors
 
 let TcAddNullnessToType (warn: bool) (cenv: cenv) (env: TcEnv) nullness innerTyC m =
     let g = cenv.g
@@ -3276,7 +3284,7 @@ let AnalyzeArbitraryExprAsEnumerable (cenv: cenv) (env: TcEnv) localAlloc m expr
 
         let enumElemTy =
 
-            if isObjTy g enumElemTy then
+            if isObjTyAnyNullness g enumElemTy then
                 // Look for an 'Item' property, or a set of these with consistent return types
                 let allEquivReturnTypes (minfo: MethInfo) (others: MethInfo list) =
                     let returnTy = minfo.GetFSharpReturnType(cenv.amap, m, [])
@@ -4028,7 +4036,7 @@ let rec TcTyparConstraint ridx (cenv: cenv) newOk checkConstraints occ (env: TcE
     | SynTypeConstraint.WhereTyparSupportsNull(tp, m) ->
         TcSimpleTyparConstraint cenv env newOk tpenv tp m AddCxTypeUseSupportsNull
 
-    | SynTypeConstraint.WhereTyparNotSupportsNull(tp, m) ->
+    | SynTypeConstraint.WhereTyparNotSupportsNull(tp, m, _) ->
         if g.langFeatureNullness then
             TcSimpleTyparConstraint cenv env newOk tpenv tp m AddCxTypeDefnNotSupportsNull
         else
@@ -4472,7 +4480,7 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
         errorR(Error(FSComp.SR.parsInvalidLiteralInType(), m))
         NewErrorType (), tpenv
 
-    | SynType.WithNull(innerTy, ambivalent, m) ->
+    | SynType.WithNull(innerTy, ambivalent, m, _) ->
         let innerTyC, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.Yes env tpenv innerTy
         let nullness = if ambivalent then KnownAmbivalentToNull else KnownWithNull
         let tyWithNull = TcAddNullnessToType false cenv env nullness innerTyC m
@@ -5156,6 +5164,7 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
                         | TyparConstraint.SupportsComparison _
                         | TyparConstraint.SupportsEquality _
                         | TyparConstraint.DefaultsTo (ty = Unit)
+                        | TyparConstraint.AllowsRefStruct _
                         | TyparConstraint.MayResolveMember _ -> true
 
                         // Any other kind of constraint is incompatible with unit.
@@ -5883,6 +5892,17 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         TcForEachExpr cenv overallTy env tpenv (seqExprOnly, isFromSource, pat, synEnumExpr, synBodyExpr, m, spFor, spIn, m)
 
     | SynExpr.ComputationExpr (hasSeqBuilder, comp, m) ->
+        let isIndexRange = match comp with | SynExpr.IndexRange _ -> true | _ -> false
+        let deprecatedPlacesWhereSeqCanBeOmitted =
+            cenv.g.langVersion.SupportsFeature LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted
+        if
+            deprecatedPlacesWhereSeqCanBeOmitted
+            && isIndexRange
+            && not hasSeqBuilder
+            && not cenv.g.compilingFSharpCore
+        then
+            warning (Error(FSComp.SR.chkDeprecatePlacesWhereSeqCanBeOmitted (), m))
+
         let env = ExitFamilyRegion env
         cenv.TcSequenceExpressionEntry cenv env overallTy tpenv (hasSeqBuilder, comp) m
 
@@ -5983,23 +6003,23 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
         TcQuotationExpr cenv overallTy env tpenv (oper, raw, ast, isFromQueryExpression, m)
 
-    | SynExpr.YieldOrReturn ((isTrueYield, _), _, m)
-    | SynExpr.YieldOrReturnFrom ((isTrueYield, _), _, m) when isTrueYield ->
+    | SynExpr.YieldOrReturn ((isTrueYield, _), _, _m, { YieldOrReturnKeyword = m })
+    | SynExpr.YieldOrReturnFrom ((isTrueYield, _), _, _m, { YieldOrReturnFromKeyword = m }) when isTrueYield ->
         error(Error(FSComp.SR.tcConstructRequiresListArrayOrSequence(), m))
 
-    | SynExpr.YieldOrReturn ((_, isTrueReturn), _, m)
-    | SynExpr.YieldOrReturnFrom ((_, isTrueReturn), _, m) when isTrueReturn ->
+    | SynExpr.YieldOrReturn ((_, isTrueReturn), _, _m, { YieldOrReturnKeyword = m })
+    | SynExpr.YieldOrReturnFrom ((_, isTrueReturn), _, _m, { YieldOrReturnFromKeyword = m }) when isTrueReturn ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpressions(), m))
 
-    | SynExpr.YieldOrReturn (_, _, m)
-    | SynExpr.YieldOrReturnFrom (_, _, m)
+    | SynExpr.YieldOrReturn (trivia = { YieldOrReturnKeyword = m })
+    | SynExpr.YieldOrReturnFrom (trivia = { YieldOrReturnFromKeyword = m })
     | SynExpr.ImplicitZero m ->
         error(Error(FSComp.SR.tcConstructRequiresSequenceOrComputations(), m))
 
-    | SynExpr.DoBang (_, m)
-    | SynExpr.MatchBang (range = m)
+    | SynExpr.DoBang (trivia = { DoBangKeyword = m })
+    | SynExpr.MatchBang (trivia = { MatchBangKeyword = m })
     | SynExpr.WhileBang (range = m)
-    | SynExpr.LetOrUseBang (range = m) ->
+    | SynExpr.LetOrUseBang (trivia = { LetOrUseBangKeyword = m }) ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
 
     | SynExpr.IndexFromEnd (rightExpr, m) ->
@@ -6187,7 +6207,7 @@ and TcExprObjectExpr (cenv: cenv) overallTy env tpenv (synObjTy, argopt, binds, 
                 errorR(Error(FSComp.SR.tcCannotInheritFromErasedType(), m))
             (m, intfTy, overrides), tpenv)
 
-    let realObjTy = if isObjTy g objTy && not (isNil extraImpls) then (p23 (List.head extraImpls)) else objTy
+    let realObjTy = if isObjTyAnyNullness g objTy && not (isNil extraImpls) then (p23 (List.head extraImpls)) else objTy
 
     TcPropagatingExprLeafThenConvert cenv overallTy realObjTy env (* canAdhoc *) m (fun () ->
         TcObjectExpr cenv env tpenv (objTy, realObjTy, argopt, binds, extraImpls, mObjTy, mNewExpr, m)
@@ -7132,7 +7152,7 @@ and CheckSuperType (cenv: cenv) ty m =
        typeEquiv g ty g.system_Array_ty ||
        typeEquiv g ty g.system_MulticastDelegate_ty ||
        typeEquiv g ty g.system_Delegate_ty then
-         error(Error(FSComp.SR.tcPredefinedTypeCannotBeUsedAsSuperType(), m))
+         errorR(Error(FSComp.SR.tcPredefinedTypeCannotBeUsedAsSuperType(), m))
 
     if isErasedType g ty then
         errorR(Error(FSComp.SR.tcCannotInheritFromErasedType(), m))
@@ -7312,7 +7332,7 @@ and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: strin
     let formatTy = mkPrintfFormatTy g aty bty cty dty ety
 
     // This might qualify as a format string - check via a type directed rule
-    let ok = not (isObjTy g overallTy.Commit) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit formatTy
+    let ok = not (isObjTyAnyNullness g overallTy.Commit) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit formatTy
 
     if ok then
         // Parse the format string to work out the phantom types
@@ -7391,7 +7411,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
             Choice1Of2 (true, newFormatMethod)
 
         // ... or if that fails then may be a FormattableString by a type-directed rule....
-        elif (not (isObjTy g overallTy.Commit) &&
+        elif (not (isObjTyAnyNullness g overallTy.Commit) &&
               ((g.system_FormattableString_tcref.CanDeref && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit g.system_FormattableString_ty)
                || (g.system_IFormattable_tcref.CanDeref && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit g.system_IFormattable_ty))) then
 
@@ -7412,7 +7432,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
             | None -> languageFeatureNotSupportedInLibraryError LanguageFeature.StringInterpolation m
 
         // ... or if that fails then may be a PrintfFormat by a type-directed rule....
-        elif not (isObjTy g overallTy.Commit) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit formatTy then
+        elif not (isObjTyAnyNullness g overallTy.Commit) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit formatTy then
 
             // And if that succeeds, the printerTy and printerResultTy must be the same (there are no curried arguments)
             UnifyTypes cenv env m printerTy printerResultTy
@@ -7530,9 +7550,9 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
             let concatenableExprs = if canLower then concatenable [] fillExprs parts else []
 
             match concatenableExprs with
-            | [p1; p2; p3; p4] -> mkStaticCall_String_Concat4 g m p1 p2 p3 p4, tpenv
-            | [p1; p2; p3] -> mkStaticCall_String_Concat3 g m p1 p2 p3, tpenv
-            | [p1; p2] -> mkStaticCall_String_Concat2 g m p1 p2, tpenv
+            | [p1; p2; p3; p4] -> TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env m (fun () -> mkStaticCall_String_Concat4 g m p1 p2 p3 p4, tpenv)
+            | [p1; p2; p3] -> TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env m (fun () -> mkStaticCall_String_Concat3 g m p1 p2 p3, tpenv)
+            | [p1; p2] -> TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env m (fun () -> mkStaticCall_String_Concat2 g m p1 p2, tpenv)
             | [p1] -> p1, tpenv
             | _ ->
 
@@ -10869,7 +10889,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             // For all but attributes positioned at the return value, disallow implicitly
             // targeting the return value.
             let tgtEx = if isRet then enum 0 else AttributeTargets.ReturnValue
-            let attrs, _ = TcAttributesMaybeFailEx false cenv envinner tgt tgtEx attrs
+            let attrs, _ = TcAttributesMaybeFailEx TcCanFail.ReportAllErrors cenv envinner tgt tgtEx attrs
             let attrs: Attrib list = attrs
             if attrTgt = enum 0 && not (isNil attrs) then
                 for attr in attrs do
@@ -11131,7 +11151,7 @@ and TcAttributeTargetsOnLetBindings (cenv: cenv) env attrs overallPatTy overallE
         else
             AttributeTargets.ReturnValue ||| AttributeTargets.Field ||| AttributeTargets.Property
 
-    TcAttributesWithPossibleTargets false cenv env attrTgt attrs |> ignore
+    TcAttributesWithPossibleTargets TcCanFail.ReportAllErrors cenv env attrTgt attrs |> ignore
 
 and TcLiteral (cenv: cenv) overallTy env tpenv (attrs, synLiteralValExpr) =
 
@@ -11291,7 +11311,7 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
                 error(Error(FSComp.SR.tcAttributeIsNotValidForLanguageElement(), mAttr))
 
         match ResolveObjectConstructor cenv.nameResolver env.DisplayEnv mAttr ad ty with
-        | Exception _ when canFail -> [ ], true
+        | Exception _ when canFail = TcCanFail.IgnoreAllErrors || canFail = TcCanFail.IgnoreMemberResoutionError -> [ ], true
         | res ->
 
         let item = ForceRaise res
@@ -11396,11 +11416,11 @@ and TcAttributesMaybeFail canFail cenv env attrTgt synAttribs =
     TcAttributesMaybeFailEx canFail cenv env attrTgt (enum 0) synAttribs
 
 and TcAttributesCanFail cenv env attrTgt synAttribs =
-    let attrs, didFail = TcAttributesMaybeFail true cenv env attrTgt synAttribs
+    let attrs, didFail = TcAttributesMaybeFail TcCanFail.IgnoreAllErrors cenv env attrTgt synAttribs
     attrs, (fun () -> if didFail then TcAttributes cenv env attrTgt synAttribs else attrs)
 
 and TcAttributes cenv env attrTgt synAttribs =
-    TcAttributesMaybeFail false cenv env attrTgt synAttribs |> fst
+    TcAttributesMaybeFail TcCanFail.ReportAllErrors cenv env attrTgt synAttribs |> fst
 
 //-------------------------------------------------------------------------
 // TcLetBinding

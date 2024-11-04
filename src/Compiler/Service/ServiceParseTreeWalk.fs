@@ -838,7 +838,7 @@ module SyntaxTraversal =
                 | SynType.Fun(argType = ty1; returnType = ty2) -> [ ty1; ty2 ] |> List.tryPick (traverseSynType path)
                 | SynType.MeasurePower(ty, _, _)
                 | SynType.HashConstraint(ty, _)
-                | SynType.WithNull(ty, _, _)
+                | SynType.WithNull(innerType = ty)
                 | SynType.WithGlobalConstraints(ty, _, _)
                 | SynType.Array(_, ty, _) -> traverseSynType path ty
                 | SynType.StaticConstantNamed(ty1, ty2, _)
@@ -958,7 +958,7 @@ module SyntaxTraversal =
 
             | SynMemberDefn.ImplicitCtor(ctorArgs = pat) -> traverseSynSimplePats path pat
 
-            | SynMemberDefn.ImplicitInherit(synType, synExpr, _identOption, range) ->
+            | SynMemberDefn.ImplicitInherit(synType, synExpr, _identOption, range, _) ->
                 [
                     dive () synType.Range (fun () ->
                         match traverseInherit (synType, range) with
@@ -996,7 +996,8 @@ module SyntaxTraversal =
 
                         |> pick x
                 | ok -> ok
-            | SynMemberDefn.Inherit(synType, _identOption, range) -> traverseInherit (synType, range)
+            | SynMemberDefn.Inherit(Some synType, _identOption, range, _) -> traverseInherit (synType, range)
+            | SynMemberDefn.Inherit(None, _, _, _) -> None
             | SynMemberDefn.ValField _ -> None
             | SynMemberDefn.NestedType(synTypeDefn, _synAccessOption, _range) -> traverseSynTypeDefn path synTypeDefn
 

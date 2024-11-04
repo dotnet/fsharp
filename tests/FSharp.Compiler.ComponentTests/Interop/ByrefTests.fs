@@ -115,7 +115,7 @@ open System.Collections.Generic
 let myDict = ["x",1;"xyz",2] |> dict |> Dictionary 
 
 let checkIfPresent (input:ReadOnlySpan<char>) = 
-    let altLookup = myDict.GetAlternateLookup<string,int,ReadOnlySpan<char>>()
+    let altLookup = myDict.GetAlternateLookup<ReadOnlySpan<char>>()
     let present = altLookup.ContainsKey(input)
     for c in input do
         printf "%c" c
@@ -134,7 +134,7 @@ let main _args =
         |> shouldSucceed
         |> verifyOutputContains [|": false";"x: true";"xyz: true"|]
         |> verifyIL 
-            ["call       valuetype [System.Collections]System.Collections.Generic.Dictionary`2/AlternateLookup`1<!!0,!!1,!!2> [System.Collections]System.Collections.Generic.CollectionExtensions::GetAlternateLookup<string,int32,valuetype [runtime]System.ReadOnlySpan`1<char>>(class [System.Collections]System.Collections.Generic.Dictionary`2<!!0,!!1>)"]
+            ["callvirt   instance valuetype [System.Collections]System.Collections.Generic.Dictionary`2/AlternateLookup`1<!0,!1,!!0> class [System.Collections]System.Collections.Generic.Dictionary`2<string,int32>::GetAlternateLookup<valuetype [runtime]System.ReadOnlySpan`1<char>>()"]
 
     [<FactForNETCOREAPP>]
     let ``Ref structs in generics - GetAlternateLookup`` () =
@@ -144,7 +144,7 @@ open System.Collections.Generic
 
 let main _args = 
     let myDict = ["x",1;"y",2] |> dict |> Dictionary 
-    let altLookup = myDict.GetAlternateLookup<string,int,ReadOnlySpan<char>>()
+    let altLookup = myDict.GetAlternateLookup<ReadOnlySpan<char>>()
     altLookup.ContainsKey(ReadOnlySpan([|'x'|]))
         """
         |> withLangVersionPreview

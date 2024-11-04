@@ -52,6 +52,11 @@
         <target state="translated">Questa espressione è un record anonimo. Usa {{|...|}} invece di {{...}}.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkDeprecatePlacesWhereSeqCanBeOmitted">
+        <source>This construct is deprecated. Sequence expressions should be of the form 'seq {{ ... }}'</source>
+        <target state="new">This construct is deprecated. Sequence expressions should be of the form 'seq {{ ... }}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
         <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
         <target state="translated">Parametro duplicato. Il parametro '{0}' è stato utilizzato più volte in questo metodo.</target>
@@ -307,11 +312,6 @@
         <target state="translated">Genera avvisi se l'attributo 'TailCall' viene utilizzato in funzioni non ricorsive.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureConsistentNowarnLineDirectiveInteraction">
-        <source>The interaction between #nowarn and #line is now consistent.</source>
-        <target state="new">The interaction between #nowarn and #line is now consistent.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
         <source>Constraint intersection on flexible types</source>
         <target state="translated">Intersezione di vincoli su tipi flessibili</target>
@@ -325,6 +325,11 @@
       <trans-unit id="featureDelegateTypeNameResolutionFix">
         <source>fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</source>
         <target state="translated">correggere la risoluzione dei nomi dei tipi delegati, vedere https://github.com/dotnet/fsharp/issues/10228</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
+        <source>Deprecate places where 'seq' can be omitted</source>
+        <target state="new">Deprecate places where 'seq' can be omitted</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDiscardUseValue">
@@ -544,7 +549,7 @@
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
         <source>whitespace relaxation</source>
-        <target state="translated">uso meno restrittivo degli spazi vuoti</target>
+        <target state="new">whitespace relaxation</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace2">
@@ -615,6 +620,11 @@
       <trans-unit id="featureUnmanagedConstraintCsharpInterop">
         <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
         <target state="translated">Interoperabilità tra il vincolo generico non gestito di C# e di F# (crea un modreq aggiuntivo)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureUseTypeSubsumptionCache">
+        <source>Use type conversion cache during compilation</source>
+        <target state="new">Use type conversion cache during compilation</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningIndexedPropertiesGetSetSameType">
@@ -1129,7 +1139,7 @@
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsConstrainedGenericLet">
         <source>A constrained generic construct occurred in the resumable code specification</source>
-        <target state="translated">Costrutto generico vincolato nella specifica del codice ripristinabile</target>
+        <target state="new">A constrained generic construct occurred in the resumable code specification</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsDynamicResumeAtInBody">
@@ -1144,7 +1154,7 @@
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsLetRec">
         <source>A 'let rec' occurred in the resumable code specification</source>
-        <target state="translated">È stata rilevata una funzione 'let rec' nella specifica del codice ripristinabile</target>
+        <target state="new">A 'let rec' occurred in the resumable code specification</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsResumptionInHandlerOrFilter">
@@ -1449,7 +1459,7 @@
       </trans-unit>
       <trans-unit id="tcMissingRequiredMembers">
         <source>The following required properties have to be initialized:{0}</source>
-        <target state="translated">È necessario inizializzare le proprietà obbligatorie seguenti:{0}</target>
+        <target state="new">The following required properties have to be initialized:{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMultipleFieldsInRecord">
@@ -1584,7 +1594,7 @@
       </trans-unit>
       <trans-unit id="tcResumableCodeContainsLetRec">
         <source>Invalid resumable code. A 'let rec' occurred in the resumable code specification</source>
-        <target state="translated">Codice ripristinabile non valido. È stato rilevata una funzione 'let rec' nella specifica del codice ripristinabile</target>
+        <target state="new">Invalid resumable code. A 'let rec' occurred in the resumable code specification</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeFunctionMustBeInline">
@@ -4529,7 +4539,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
         <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
-        <target state="translated">Espressione di calcolo, sequenza o record non valida. Il formato delle espressioni sequenza deve essere 'seq {{ ... }}'</target>
+        <target state="needs-review-translation">Espressione di calcolo, sequenza o record non valida. Il formato delle espressioni sequenza deve essere 'seq {{ ... }}'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpressionWithIfRequiresParenthesis">
@@ -5904,7 +5914,7 @@
       </trans-unit>
       <trans-unit id="optsDebug">
         <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debugging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
-        <target state="translated">Consente di specificare il tipo di debug: full, portable, embedded, pdbonly. '{0}' è l'impostazione predefinita se non viene specificato il tipo di debug e consente di associare un debugger a un programma in esecuzione. 'portable' è un formato multipiattaforma. 'embedded' è un formato multipiattaforma incorporato nel file di output.</target>
+        <target state="new">Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debugging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</target>
         <note />
       </trans-unit>
       <trans-unit id="optsOptimize">
@@ -7159,7 +7169,7 @@
       </trans-unit>
       <trans-unit id="fscRemotingError">
         <source>The resident compilation service was not used because a problem occurred in communicating with the server.</source>
-        <target state="translated">Il servizio di compilazione residente non è stato usato perché si è verificato un problema nella comunicazione con il server.</target>
+        <target state="new">The resident compilation service was not used because a problem occurred in communicating with the server.</target>
         <note />
       </trans-unit>
       <trans-unit id="pathIsInvalid">
@@ -7359,7 +7369,7 @@
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToType">
         <source>An error occurred applying the static arguments to a provided type</source>
-        <target state="translated">Errore durante l'applicazione degli argomenti statici a un tipo fornito</target>
+        <target state="new">An error occurred applying the static arguments to a provided type</target>
         <note />
       </trans-unit>
       <trans-unit id="etUnknownStaticArgumentKind">
@@ -7424,7 +7434,7 @@
       </trans-unit>
       <trans-unit id="etInvalidTypeProviderAssemblyName">
         <source>Assembly '{0}' has TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</source>
-        <target state="translated">Valore '{1}' non valido dell'attributo TypeProviderAssembly nell'assembly '{0}'. Il valore deve essere un nome di assembly valido.</target>
+        <target state="new">Assembly '{0}' has TypeProviderAssembly attribute with invalid value '{1}'. The value should be a valid assembly name</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidMemberNameCtor">
@@ -8009,7 +8019,7 @@
       </trans-unit>
       <trans-unit id="etErrorApplyingStaticArgumentsToMethod">
         <source>An error occurred applying the static arguments to a provided method</source>
-        <target state="translated">Si è verificato un errore durante l'applicazione degli argomenti statici a un metodo fornito</target>
+        <target state="new">An error occurred applying the static arguments to a provided method</target>
         <note />
       </trans-unit>
       <trans-unit id="pplexUnexpectedChar">
@@ -8139,7 +8149,7 @@
       </trans-unit>
       <trans-unit id="CallerMemberNameIsOverridden">
         <source>The CallerMemberNameAttribute applied to parameter '{0}' will have no effect. It is overridden by the CallerFilePathAttribute.</source>
-        <target state="translated">CallerMemberNameAttribute applicato al parametro '{0}' non avrà alcun effetto. CallerFilePathAttribute ne eseguirà l'override.</target>
+        <target state="new">The CallerMemberNameAttribute applied to parameter '{0}' will have no effect. It is overridden by the CallerFilePathAttribute.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
@@ -8454,7 +8464,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionTry">
         <source>Used to introduce a block of code that might generate an exception. Used together with 'with' or 'finally'.</source>
-        <target state="needs-review-translation">Usata per introdurre un blocco di codice che potrebbe generare un'eccezione. Usata insieme a with o finally.</target>
+        <target state="new">Used to introduce a block of code that might generate an exception. Used together with 'with' or 'finally'.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionType">

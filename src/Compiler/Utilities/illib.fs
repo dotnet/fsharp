@@ -1139,7 +1139,7 @@ module IPartialEqualityComparer =
                 member _.GetHashCode(Wrap x) = per.GetHashCode x
             }
         // Wrap a Wrap _ around all keys in case the key type is itself a type using null as a representation
-        let dict = Dictionary<WrapType<'T>, obj>(wper)
+        let dict = Dictionary<WrapType<'T>, _>(wper)
 
         seq
         |> List.filter (fun v ->

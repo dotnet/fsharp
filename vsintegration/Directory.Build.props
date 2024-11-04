@@ -4,7 +4,7 @@
     <TargetFramework>net472</TargetFramework>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <UseVsMicroBuildAssemblyVersion>true</UseVsMicroBuildAssemblyVersion>
-    <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
+    <ExcludeFromSourceOnlyBuild>true</ExcludeFromSourceOnlyBuild>
     <SetupProductArch>Neutral</SetupProductArch>
     <BypassVsixValidation>true</BypassVsixValidation>
   </PropertyGroup>

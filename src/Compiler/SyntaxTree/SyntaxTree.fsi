@@ -409,7 +409,10 @@ type SynTypeConstraint =
     | WhereTyparSupportsNull of typar: SynTypar * range: range
 
     /// F# syntax is 'typar : null
-    | WhereTyparNotSupportsNull of genericName: SynTypar * range: range
+    | WhereTyparNotSupportsNull of
+        genericName: SynTypar *
+        range: range *
+        trivia: SynTypeConstraintWhereTyparNotSupportsNullTrivia
 
     /// F# syntax is 'typar: comparison
     | WhereTyparIsComparable of typar: SynTypar * range: range
@@ -527,7 +530,7 @@ type SynType =
     /// F# syntax: ident=1 etc., used in static parameters to type providers
     | StaticConstantNamed of ident: SynType * value: SynType * range: range
 
-    | WithNull of innerType: SynType * ambivalent: bool * range: range
+    | WithNull of innerType: SynType * ambivalent: bool * range: range * trivia: SynTypeWithNullTrivia
 
     | Paren of innerType: SynType * range: range
 
@@ -874,12 +877,12 @@ type SynExpr =
     /// F# syntax: yield expr
     /// F# syntax: return expr
     /// Computation expressions only
-    | YieldOrReturn of flags: (bool * bool) * expr: SynExpr * range: range
+    | YieldOrReturn of flags: (bool * bool) * expr: SynExpr * range: range * trivia: SynExprYieldOrReturnTrivia
 
     /// F# syntax: yield! expr
     /// F# syntax: return! expr
     /// Computation expressions only
-    | YieldOrReturnFrom of flags: (bool * bool) * expr: SynExpr * range: range
+    | YieldOrReturnFrom of flags: (bool * bool) * expr: SynExpr * range: range * trivia: SynExprYieldOrReturnFromTrivia
 
     /// F# syntax: let! pat = expr in expr
     /// F# syntax: use! pat = expr in expr
@@ -906,7 +909,7 @@ type SynExpr =
 
     /// F# syntax: do! expr
     /// Computation expressions only
-    | DoBang of expr: SynExpr * range: range
+    | DoBang of expr: SynExpr * range: range * trivia: SynExprDoBangTrivia
 
     /// F# syntax: 'while! ... do ...'
     | WhileBang of whileDebugPoint: DebugPointAtWhile * whileExpr: SynExpr * doExpr: SynExpr * range: range
@@ -1651,7 +1654,12 @@ type SynMemberDefn =
         trivia: SynMemberDefnImplicitCtorTrivia
 
     /// An implicit inherit definition, 'inherit <typ>(args...) as base'
-    | ImplicitInherit of inheritType: SynType * inheritArgs: SynExpr * inheritAlias: Ident option * range: range
+    | ImplicitInherit of
+        inheritType: SynType *
+        inheritArgs: SynExpr *
+        inheritAlias: Ident option *
+        range: range *
+        trivia: SynMemberDefnInheritTrivia
 
     /// A 'let' definition within a class
     | LetBindings of bindings: SynBinding list * isStatic: bool * isRecursive: bool * range: range
@@ -1667,7 +1675,7 @@ type SynMemberDefn =
     | Interface of interfaceType: SynType * withKeyword: range option * members: SynMemberDefns option * range: range
 
     /// An 'inherit' definition within a class
-    | Inherit of baseType: SynType * asIdent: Ident option * range: range
+    | Inherit of baseType: SynType option * asIdent: Ident option * range: range * trivia: SynMemberDefnInheritTrivia
 
     /// A 'val' definition within a class
     | ValField of fieldInfo: SynField * range: range

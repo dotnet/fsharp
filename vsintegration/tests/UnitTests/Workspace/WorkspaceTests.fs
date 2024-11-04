@@ -19,10 +19,9 @@ open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.Shell
 open VisualFSharp.UnitTests.Editor
-open NUnit.Framework
+open Xunit
 open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
-[<TestFixture>]
 module WorkspaceTests =
 
     let compileFileAsDll (workspace: Workspace) filePath outputFilePath =
@@ -170,15 +169,15 @@ module WorkspaceTests =
         let doc = getDocument workspace filePath
         let parseResults, checkResults = doc.GetFSharpParseAndCheckResultsAsync("assertEmptyDocumentDiagnostics") |> CancellableTask.runSynchronouslyWithoutCancellation
         
-        Assert.IsEmpty(parseResults.Diagnostics)
-        Assert.IsEmpty(checkResults.Diagnostics)
+        Assert.Empty(parseResults.Diagnostics)
+        Assert.Empty(checkResults.Diagnostics)
 
     let assertHasDocumentDiagnostics (workspace: Workspace) (filePath: string) =
         let doc = getDocument workspace filePath
         let parseResults, checkResults = doc.GetFSharpParseAndCheckResultsAsync("assertHasDocumentDiagnostics") |> CancellableTask.runSynchronouslyWithoutCancellation
         
-        Assert.IsEmpty(parseResults.Diagnostics)
-        Assert.IsNotEmpty(checkResults.Diagnostics)
+        Assert.Empty(parseResults.Diagnostics)
+        Assert.NotEmpty(checkResults.Diagnostics)
 
     type TestFSharpWorkspaceProjectContext(mainProj: Project) =
 
@@ -286,7 +285,7 @@ module WorkspaceTests =
 //                let proj = workspace.CurrentSolution.GetProject(projInfo.Id)
 //                new TestFSharpWorkspaceProjectContext(proj) :> IFSharpWorkspaceProjectContext
 
-//    [<Test>]
+//    [<Fact>]
 //    let ``Script file opened in misc files workspace will get transferred to normal workspace``() =
 //        use workspace = createWorkspace()
 //        use miscFilesWorkspace = createMiscFileWorkspace()
@@ -306,25 +305,25 @@ module WorkspaceTests =
 //            let projInfo = createProjectInfoWithFileOnDisk filePath
 //            addProject miscFilesWorkspace projInfo
 
-//            Assert.IsTrue(hasDocument miscFilesWorkspace filePath)
-//            Assert.IsFalse(hasDocument workspace filePath)
+//            Assert.True(hasDocument miscFilesWorkspace filePath)
+//            Assert.False(hasDocument workspace filePath)
 
-//            Assert.IsFalse(isDocumentOpen miscFilesWorkspace filePath)
+//            Assert.False(isDocumentOpen miscFilesWorkspace filePath)
 //            openDocument miscFilesWorkspace filePath
 
 //            // Although we opened the document, it has been transferred to the other workspace.
-//            Assert.IsFalse(hasDocument miscFilesWorkspace filePath)
-//            Assert.IsTrue(hasDocument workspace filePath)
+//            Assert.False(hasDocument miscFilesWorkspace filePath)
+//            Assert.True(hasDocument workspace filePath)
 
 //            // Should not be automatically opened when transferred.
-//            Assert.IsFalse(isDocumentOpen workspace filePath)
+//            Assert.False(isDocumentOpen workspace filePath)
 
 //            assertEmptyDocumentDiagnostics workspace filePath
 
 //        finally
 //            try File.Delete(filePath) with | _ -> ()
 
-//    [<Test>]
+//    [<Fact>]
 //    let ``Script file referencing another script should have no diagnostics``() =
 //        use workspace = createWorkspace()
 //        use miscFilesWorkspace = createMiscFileWorkspace()
@@ -359,7 +358,7 @@ module WorkspaceTests =
 //            try File.Delete(filePath1) with | _ -> ()
 //            try File.Delete(filePath2) with | _ -> ()
 
-//    [<Test>]
+//    [<Fact>]
 //    let ``Script file referencing another script will correctly update when the referenced script file changes``() =
 //        use workspace = createWorkspace()
 //        use miscFilesWorkspace = createMiscFileWorkspace()
@@ -408,7 +407,7 @@ module WorkspaceTests =
 //            try File.Delete(filePath1) with | _ -> ()
 //            try File.Delete(filePath2) with | _ -> ()
 
-//    [<Test>]
+//    [<Fact>]
 //    let ``Script file referencing another script will correctly update when the referenced script file changes with opening in reverse order``() =
 //        use workspace = createWorkspace()
 //        use miscFilesWorkspace = createMiscFileWorkspace()
@@ -457,7 +456,7 @@ module WorkspaceTests =
 //            try File.Delete(filePath1) with | _ -> ()
 //            try File.Delete(filePath2) with | _ -> ()
 
-//    [<Test>]
+//    [<Fact>]
 //    let ``Script file referencing a DLL will correctly update when the referenced DLL file changes``() =
 //        use workspace = createWorkspace()
 //        use miscFilesWorkspace = createMiscFileWorkspace()

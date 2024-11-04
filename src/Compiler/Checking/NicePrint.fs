@@ -773,8 +773,13 @@ module PrintTypes =
         | _ -> 
             if denv.abbreviateAdditionalConstraints then 
                 wordL (tagKeyword "when") ^^ wordL(tagText "<constraints>")
-            elif denv.shortConstraints then 
-                LeftL.leftParen ^^ wordL (tagKeyword "requires") ^^ sepListL (wordL (tagKeyword "and")) cxsL ^^ RightL.rightParen
+            elif denv.shortConstraints then
+                match cxs with
+                | (_,TyparConstraint.AllowsRefStruct _) :: _ ->
+                    // If the first constraint is 'allows ref struct', we do not want to prefix it with 'requires', because that just reads wrong.
+                    LeftL.leftParen ^^ sepListL (wordL (tagKeyword "and")) cxsL ^^ RightL.rightParen
+                | _ ->
+                    LeftL.leftParen ^^ wordL (tagKeyword "requires") ^^ sepListL (wordL (tagKeyword "and")) cxsL ^^ RightL.rightParen
             else
                 wordL (tagKeyword "when") ^^ sepListL (wordL (tagKeyword "and")) cxsL
 
@@ -834,6 +839,12 @@ module PrintTypes =
                 [wordL (tagKeyword "unmanaged")]
             else
                 [wordL (tagKeyword "unmanaged") |> longConstraintPrefix]
+                
+        | TyparConstraint.AllowsRefStruct _ ->
+            if denv.shortConstraints then
+                [wordL (tagKeyword "allows ref struct")]
+            else
+                [wordL (tagKeyword "allows ref struct") |> longConstraintPrefix]
 
         | TyparConstraint.IsReferenceType _ ->
             if denv.shortConstraints then 
@@ -2034,7 +2045,7 @@ module TastDefinitionPrinting =
                 (not vref.IsCompilerGenerated) &&
                 (denv.showObsoleteMembers || not (CheckFSharpAttributesForObsolete denv.g vref.Attribs)) &&
                 (denv.showHiddenMembers || not (CheckFSharpAttributesForHidden denv.g vref.Attribs))
-                
+
         let ctors =
             GetIntrinsicConstructorInfosOfType infoReader m ty
             |> List.filter (fun minfo -> IsMethInfoAccessible amap m ad minfo && not minfo.IsClassConstructor && shouldShow minfo.ArbitraryValRef)
@@ -2046,7 +2057,7 @@ module TastDefinitionPrinting =
                 tycon.ImmediateInterfacesOfFSharpTycon
                 |> List.filter (fun (_, compgen, _) -> not compgen)
                 |> List.map p13
-            else 
+            else
                 GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty
 
         let iimplsLs =
@@ -2180,7 +2191,7 @@ module TastDefinitionPrinting =
         let inherits = 
             [ if not (suppressInheritanceAndInterfacesForTyInSimplifiedDisplays g amap m ty) then 
                 match GetSuperTypeOfType g amap m ty with 
-                | Some superTy when not (isObjTy g superTy) && not (isValueTypeTy g superTy) ->
+                | Some superTy when not (isObjTyAnyNullness g superTy) && not (isValueTypeTy g superTy) ->
                     superTy
                 | _ -> ()
             ]

@@ -14,7 +14,7 @@ let _ =
         printfn "Test Failed"
         exit 1
     else
-        printfn "Test Passed"
-        System.IO.File.WriteAllText("test.ok", "ok")
+        printf "TEST PASSED OK" 
+        printf "TEST PASSED OK" ;
         exit 0
 ()
