@@ -220,9 +220,9 @@ let GetScopedPragmasForHashDirective hd (langVersion: LanguageVersion) =
     [
         match hd with
         | ParsedHashDirective("nowarn", args, _) ->
-            for s in args do
-                let rd =
-                    match s with
+            for arg in args do
+                let rangeAndDescription =
+                    match arg with
                     | ParsedHashDirectiveArgument.Int32(n, m) -> Some(m, WarningDescription.Int32 n)
                     | ParsedHashDirectiveArgument.Ident(ident, m) -> Some(m, WarningDescription.Ident ident)
                     | ParsedHashDirectiveArgument.String(s, _, m) -> Some(m, WarningDescription.String s)
