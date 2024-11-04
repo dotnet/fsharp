@@ -18,7 +18,7 @@ Write-Host "Repository path: $repo_path"
 
 [string] $default_tfm = "netstandard2.0"
 
-[string] $artifacts_bin_path = Join-Path $repo_path "artifacts" "bin"
+[string] $artifacts_bin_path = Join-Path (Join-Path $repo_path "artifacts") "bin"
 
 # List projects to verify, with TFMs
 $projects = @{
