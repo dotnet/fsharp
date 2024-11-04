@@ -825,5 +825,6 @@ stages:
               installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: dotnet tool restore
             displayName: Restore dotnet tools
-          - script: ./eng/verify-il.ps1
+          - powershell: .\eng\ilverify.ps1
             displayName: Run ILVerify
+            workingDirectory: $(Build.SourcesDirectory)
