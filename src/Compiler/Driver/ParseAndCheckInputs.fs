@@ -228,7 +228,7 @@ let GetScopedPragmasForHashDirective hd (langVersion: LanguageVersion) =
                     | ParsedHashDirectiveArgument.String(s, _, m) -> Some(m, WarningDescription.String s)
                     | _ -> None
 
-                match rd with
+                match rangeAndDescription with
                 | None -> ()
                 | Some(m, description) ->
                     match GetWarningNumber(m, description, langVersion, WarningNumberSource.CompilerDirective) with
