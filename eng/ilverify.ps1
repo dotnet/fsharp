@@ -29,11 +29,11 @@ $projects = @{
 # Run build script for each configuration (NOTE: We don't build Proto)
 foreach ($configuration in $configurations) {
     Write-Host "Building $configuration configuration..."
- #   & $script -c $configuration
- #   if ($LASTEXITCODE -ne 0 -And $LASTEXITCODE -ne '') {
- #       Write-Host "Build failed for $configuration configuration (last exit code: $LASTEXITCODE)."
- #       exit 1
- #   }
+    & $script -c $configuration
+    if ($LASTEXITCODE -ne 0 -And $LASTEXITCODE -ne '') {
+        Write-Host "Build failed for $configuration configuration (last exit code: $LASTEXITCODE)."
+        exit 1
+    }
 }
 
 # Check if ilverify is installed and available from the tool list (using `dotnet tool list -g `), and install it globally if not found.
