@@ -351,6 +351,7 @@ type TcCanFail =
     | IgnoreAllErrors
     | ReportAllErrors
 
+/// Represents a pattern  that is used in a true match clause e.g. | pat -> expr
 [<RequireQualifiedAccess>]
 [<Struct>]
 type TcTrueMatchClause =
