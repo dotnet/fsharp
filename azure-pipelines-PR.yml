@@ -810,7 +810,8 @@ stages:
             condition: always()
         - job: Run ILVerify
           pool:
-            vmImage: $(WindowsMachineQueueName)
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
           steps:
           - checkout: self
             clean: true

@@ -3,54 +3,60 @@
   "isRoot": true,
   "tools": {
     "dotnet-counters": {
+      "version": "8.0.547301",
       "commands": [
         "dotnet-counters"
       ],
-      "version": "8.0.547301"
+      "rollForward": true
     },
     "dotnet-dump": {
+      "version": "8.0.547301",
       "commands": [
         "dotnet-dump"
       ],
-      "version": "8.0.547301"
+      "rollForward": true
     },
     "dotnet-gcdump": {
+      "version": "8.0.547301",
       "commands": [
         "dotnet-gcdump"
       ],
-      "version": "8.0.547301"
+      "rollForward": true
     },
     "dotnet-sos": {
+      "version": "8.0.547301",
       "commands": [
         "dotnet-sos"
       ],
-      "version": "8.0.547301"
+      "rollForward": true
     },
     "dotnet-symbol": {
+      "version": "8.0.547301",
       "commands": [
         "dotnet-symbol"
       ],
-      "version": "8.0.547301"
+      "rollForward": true
     },
     "dotnet-trace": {
+      "version": "8.0.547301",
       "commands": [
         "dotnet-trace"
       ],
-      "version": "8.0.547301"
+      "rollForward": true
+    },
+    "dotnet-ilverify": {
+      "version": "9.0.0-rc.2.24473.5",
+      "commands": [
+        "ilverify"
+      ],
+      "rollForward": true
     },
     "fantomas": {
       "version": "6.2.3",
       "commands": [
         "fantomas"
       ],
-      "rollForward": false
-    },
-    "dotnet-ilverify": {
-      "version": "8.0.0",
-      "commands": [
-        "ilverify"
-      ],
-      "rollForward": false
+      "rollForward": true
     }
   }
 }
