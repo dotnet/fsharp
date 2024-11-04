@@ -476,7 +476,7 @@ let assertRange
 [<AutoOpen>]
 module TempDirUtils =
     let getTempPath dir =
-        Path.Combine(Path.GetTempPath(), dir)
+        Path.Combine(TestFramework.tempDirectoryOfThisTestRun, dir)
 
     /// Returns the file name part of a temp file name created with tryCreateTemporaryFileName ()
     /// and an added process id and thread id to ensure uniqueness between threads.
