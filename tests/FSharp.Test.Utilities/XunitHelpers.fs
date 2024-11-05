@@ -8,6 +8,8 @@ open System
 open Xunit.Sdk
 open Xunit.Abstractions
 
+open TestFramework
+
 /// Disables custom internal parallelization added with XUNIT_EXTRAS.
 /// Execute test cases in a class or a module one by one instead of all at once. Allow other collections to run simultaneously.
 [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Method, AllowMultiple = false)>]
@@ -23,6 +25,11 @@ type FSharpXunitFramework(sink: IMessageSink) =
         // This gets executed once per test assembly.
         log "FSharpXunitFramework installing TestConsole redirection"
         TestConsole.install()
+
+    interface IDisposable with
+        member _.Dispose() =
+            cleanUpTemporaryDirectoryOfThisTestRun ()
+            base.Dispose()       
 
 #else
 
@@ -130,7 +137,12 @@ type FSharpXunitFramework(sink: IMessageSink) =
         // right at the start of the test run is here in the constructor.
         // This gets executed once per test assembly.
         log "FSharpXunitFramework with XUNIT_EXTRAS installing TestConsole redirection"
-        TestConsole.install() 
+        TestConsole.install()
+
+    interface IDisposable with
+        member _.Dispose() =
+            cleanUpTemporaryDirectoryOfThisTestRun ()
+            base.Dispose()        
 
     override this.CreateDiscoverer (assemblyInfo) =
         { new XunitTestFrameworkDiscoverer(assemblyInfo, this.SourceInformationProvider, this.DiagnosticMessageSink) with
