@@ -2608,6 +2608,8 @@ val (|SpecialEquatableHeadType|_|): TcGlobals -> TType -> TType list voption
 [<return: Struct>]
 val (|SpecialNotEquatableHeadType|_|): TcGlobals -> TType -> unit voption
 
+val (|TyparTy|StructTy|NullTrueValue|NullableRefType|WithoutNullRefType|UnresolvedRefType|): TType * TcGlobals -> Choice<unit,unit,unit,unit,unit,unit>
+
 /// Matches if the given expression is an application
 /// of the range or range-step operator on an integral type
 /// and returns the type, start, step, and finish if so.

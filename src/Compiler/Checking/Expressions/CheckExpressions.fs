@@ -2974,7 +2974,16 @@ let TcRuntimeTypeTest isCast isOperator (cenv: cenv) denv m tgtTy srcTy =
         else
             error(Error(FSComp.SR.tcTypeTestErased(NicePrint.minimalStringOfType denv tgtTy, NicePrint.minimalStringOfType denv (stripTyEqnsWrtErasure EraseAll g tgtTy)), m))
     else
-        for ety in getErasedTypes g tgtTy true do
+        let checkTrgtNullness = 
+            match (srcTy,g),(tgtTy,g) with
+            | (NullableRefType|NullTrueValue), WithoutNullRefType when g.checkNullness -> 
+                let srcNice = NicePrint.minimalStringOfTypeWithNullness denv srcTy
+                let tgtNice = NicePrint.minimalStringOfTypeWithNullness denv tgtTy
+                warning(Error(FSComp.SR.tcDowncastFromNullableToWithoutNull(srcNice,tgtNice,tgtNice), m))
+                false
+            | (NullableRefType|NullTrueValue), (NullableRefType|NullTrueValue) -> not isCast //a type test (unlike type cast) will never return true for  null in the source, therefore adding |null to target does not help => keep the erasure warning
+            | _ -> true
+        for ety in getErasedTypes g tgtTy checkTrgtNullness do
             if isMeasureTy g ety then
                 warning(Error(FSComp.SR.tcTypeTestLosesMeasures(NicePrint.minimalStringOfType denv ety), m))
             else
@@ -6108,7 +6117,10 @@ and TcExprDowncast (cenv: cenv) overallTy env tpenv (synExpr, synInnerExpr, m) =
 
     // TcRuntimeTypeTest ensures tgtTy is a nominal type. Hence we can insert a check here
     // based on the nullness semantics of the nominal type.
-    let expr = mkCallUnbox g m tgtTy innerExpr
+    let expr = 
+        match (tgtTy,g) with
+        | NullTrueValue | NullableRefType when g.checkNullness -> mkCallUnboxFast g m tgtTy innerExpr
+        | _ ->  mkCallUnbox g m tgtTy innerExpr
     expr, tpenv
 
 and TcExprLazy (cenv: cenv) overallTy env tpenv (synInnerExpr, m) =

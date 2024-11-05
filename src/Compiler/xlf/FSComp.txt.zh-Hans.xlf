@@ -1337,6 +1337,11 @@
         <target state="translated">仅原子表达式支持速记 lambda 语法，例如隐含的“_”参数上的方法、属性、字段或索引器。例如:“let f = _.Length”。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcDowncastFromNullableToWithoutNull">
+        <source>Nullness warning: Downcasting from '{0}' into '{1}' can introduce unexpected null values. Cast to '{2}|null' instead or handle the null before downcasting.</source>
+        <target state="new">Nullness warning: Downcasting from '{0}' into '{1}' can introduce unexpected null values. Cast to '{2}|null' instead or handle the null before downcasting.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcEmptyBodyRequiresBuilderZeroMethod">
         <source>An empty body may only be used if the computation expression builder defines a 'Zero' method.</source>
         <target state="new">An empty body may only be used if the computation expression builder defines a 'Zero' method.</target>
