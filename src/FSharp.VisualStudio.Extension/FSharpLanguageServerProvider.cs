@@ -248,7 +248,7 @@ internal class ProjectObserver(FSharpWorkspace workspace) : IObserver<IQueryResu
 
             foreach (var projectInfo in projectInfos)
             {
-                workspace.AddProject(projectPath, projectInfo.Item1, projectInfo.Item2.Split(';'));
+                workspace.AddOrUpdateProject(projectPath, projectInfo.Item1, projectInfo.Item2.Split(';'));
             }
 
             workspace.Debug_DumpMermaid("../../../../dep-graph.md");

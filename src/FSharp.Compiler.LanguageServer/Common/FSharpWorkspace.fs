@@ -262,7 +262,8 @@ type FSharpWorkspace() =
 
     member this.OpenFile = this.ChangeFile
 
-    member _.AddProject(projectConfig: ProjectConfig, sourceFilePaths: string seq) =
+    /// Adds or updates an F# project in the workspace. Project is identified by the project file and output path or FSharpProjectIdentifier.
+    member _.AddOrUpdateProject(projectConfig: ProjectConfig, sourceFilePaths: string seq) =
 
         let projectIdentifier = projectConfig.Identifier
 
@@ -338,7 +339,7 @@ type FSharpWorkspace() =
     /// Adds an F# project to the workspace. The project is identified by path to the .fsproj file and output path.
     /// The compiler arguments are used to build the project's snapshot.
     /// References are created automatically between known projects based on the compiler arguments and output paths.
-    member this.AddProject(projectPath: string, outputPath, compilerArgs) =
+    member this.AddOrUpdateProject(projectPath: string, outputPath, compilerArgs) =
 
         let directoryPath = Path.GetDirectoryName(projectPath)
 
@@ -366,16 +367,16 @@ type FSharpWorkspace() =
                 else
                     Some(Path.Combine(directoryPath, line)))
 
-        this.AddProject(projectPath, outputPath, sourceFiles, referencesOnDisk, otherOptions)
+        this.AddOrUpdateProject(projectPath, outputPath, sourceFiles, referencesOnDisk, otherOptions)
 
     /// Adds an F# project to the workspace. The project is identified by path to the .fsproj file and output path.
     /// References are created automatically between known projects based on the compiler arguments and output paths.
-    member this.AddProject(projectFileName, outputFileName, sourceFiles, referencesOnDisk, otherOptions) =
+    member this.AddOrUpdateProject(projectFileName, outputFileName, sourceFiles, referencesOnDisk, otherOptions) =
 
         let projectConfig =
             ProjectConfig(projectFileName, Some outputFileName, referencesOnDisk, otherOptions)
 
-        this.AddProject(projectConfig, sourceFiles)
+        this.AddOrUpdateProject(projectConfig, sourceFiles)
 
     member _.GetProjectSnapshot = depGraph.GetProjectSnapshot
 
