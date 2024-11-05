@@ -27,6 +27,7 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.IO
+open FSharp.Compiler.LexerStore
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseHelpers
@@ -241,7 +242,7 @@ let GetScopedPragmasForHashDirective hd (langVersion: LanguageVersion) =
 
 let private collectCodeComments (lexbuf: UnicodeLexing.Lexbuf) (tripleSlashComments: range list) =
     [
-        yield! LexbufCommentStore.GetComments(lexbuf)
+        yield! CommentStore.GetComments(lexbuf)
         yield! (List.map CommentTrivia.LineComment tripleSlashComments)
     ]
     |> List.sortBy (function
@@ -287,7 +288,7 @@ let PostParseModuleImpls
                 yield! GetScopedPragmasForHashDirective hd lexbuf.LanguageVersion
         ]
 
-    let conditionalDirectives = LexbufIfdefStore.GetTrivia(lexbuf)
+    let conditionalDirectives = IfdefStore.GetTrivia(lexbuf)
     let codeComments = collectCodeComments lexbuf tripleSlashComments
 
     let trivia: ParsedImplFileInputTrivia =
@@ -338,7 +339,7 @@ let PostParseModuleSpecs
                 yield! GetScopedPragmasForHashDirective hd lexbuf.LanguageVersion
         ]
 
-    let conditionalDirectives = LexbufIfdefStore.GetTrivia(lexbuf)
+    let conditionalDirectives = IfdefStore.GetTrivia(lexbuf)
     let codeComments = collectCodeComments lexbuf tripleSlashComments
 
     let trivia: ParsedSigFileInputTrivia =
@@ -490,15 +491,13 @@ let ParseInput
             if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
                 let impl = Parser.implementationFile lexer lexbuf
 
-                let tripleSlashComments =
-                    LexbufLocalXmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
+                let tripleSlashComments = XmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
 
                 PostParseModuleImpls(defaultNamespace, fileName, isLastCompiland, impl, lexbuf, tripleSlashComments, Set identStore)
             elif FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
                 let intfs = Parser.signatureFile lexer lexbuf
 
-                let tripleSlashComments =
-                    LexbufLocalXmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
+                let tripleSlashComments = XmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
 
                 PostParseModuleSpecs(defaultNamespace, fileName, isLastCompiland, intfs, lexbuf, tripleSlashComments, Set identStore)
             else if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
