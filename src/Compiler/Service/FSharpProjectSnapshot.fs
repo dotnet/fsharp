@@ -179,20 +179,20 @@ type ReferenceOnDisk =
 
 /// A snapshot of an F# project. The source file type can differ based on which stage of compilation the snapshot is used for.
 type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
-    (projectCore: ProjectConfig, referencedProjects: FSharpReferencedProjectSnapshot list, sourceFiles: 'T list) =
+    (projectConfig: ProjectConfig, referencedProjects: FSharpReferencedProjectSnapshot list, sourceFiles: 'T list) =
 
     // Version of project without source files
     let baseVersion =
         lazy
-            (projectCore.Version
+            (projectConfig.Version
              |> Md5Hasher.addBytes' (referencedProjects |> Seq.map _.Version))
 
     let baseVersionString = lazy (baseVersion.Value |> Md5Hasher.toString)
 
     let baseCacheKeyWith (label, version) =
         { new ICacheKey<_, _> with
-            member _.GetLabel() = $"{label} ({projectCore.Label})"
-            member _.GetKey() = projectCore.Identifier
+            member _.GetLabel() = $"{label} ({projectConfig.Label})"
+            member _.GetKey() = projectConfig.Identifier
             member _.GetVersion() = baseVersionString.Value, version
         }
 
@@ -204,8 +204,8 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
     let noFileVersionsKey =
         lazy
             ({ new ICacheKey<_, _> with
-                 member _.GetLabel() = projectCore.Label
-                 member _.GetKey() = projectCore.Identifier
+                 member _.GetLabel() = projectConfig.Label
+                 member _.GetKey() = projectConfig.Identifier
 
                  member _.GetVersion() =
                      noFileVersionsHash.Value |> Md5Hasher.toString
@@ -227,8 +227,8 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
     let fullKey =
         lazy
             ({ new ICacheKey<_, _> with
-                 member _.GetLabel() = projectCore.Label
-                 member _.GetKey() = projectCore.Identifier
+                 member _.GetLabel() = projectConfig.Label
+                 member _.GetKey() = projectConfig.Identifier
                  member _.GetVersion() = fullHash.Value |> Md5Hasher.toString
              })
 
@@ -257,48 +257,48 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
             (let hash, f = lastFileHash.Value
 
              { new ICacheKey<_, _> with
-                 member _.GetLabel() = $"{f.FileName} ({projectCore.Label})"
-                 member _.GetKey() = f.FileName, projectCore.Identifier
+                 member _.GetLabel() = $"{f.FileName} ({projectConfig.Label})"
+                 member _.GetKey() = f.FileName, projectConfig.Identifier
                  member _.GetVersion() = hash |> Md5Hasher.toString
              })
 
     let sourceFileNames = lazy (sourceFiles |> List.map (fun x -> x.FileName))
 
-    member _.ProjectFileName = projectCore.ProjectFileName
-    member _.ProjectId = projectCore.ProjectId
-    member _.Identifier = projectCore.Identifier
-    member _.ReferencesOnDisk = projectCore.ReferencesOnDisk
-    member _.OtherOptions = projectCore.OtherOptions
+    member _.ProjectFileName = projectConfig.ProjectFileName
+    member _.ProjectId = projectConfig.ProjectId
+    member _.Identifier = projectConfig.Identifier
+    member _.ReferencesOnDisk = projectConfig.ReferencesOnDisk
+    member _.OtherOptions = projectConfig.OtherOptions
     member _.ReferencedProjects = referencedProjects
 
     member _.IsIncompleteTypeCheckEnvironment =
-        projectCore.IsIncompleteTypeCheckEnvironment
+        projectConfig.IsIncompleteTypeCheckEnvironment
 
-    member _.UseScriptResolutionRules = projectCore.UseScriptResolutionRules
-    member _.LoadTime = projectCore.LoadTime
-    member _.UnresolvedReferences = projectCore.UnresolvedReferences
-    member _.OriginalLoadReferences = projectCore.OriginalLoadReferences
-    member _.Stamp = projectCore.Stamp
-    member _.CommandLineOptions = projectCore.CommandLineOptions
-    member _.ProjectDirectory = projectCore.ProjectDirectory
+    member _.UseScriptResolutionRules = projectConfig.UseScriptResolutionRules
+    member _.LoadTime = projectConfig.LoadTime
+    member _.UnresolvedReferences = projectConfig.UnresolvedReferences
+    member _.OriginalLoadReferences = projectConfig.OriginalLoadReferences
+    member _.Stamp = projectConfig.Stamp
+    member _.CommandLineOptions = projectConfig.CommandLineOptions
+    member _.ProjectDirectory = projectConfig.ProjectDirectory
 
-    member _.OutputFileName = projectCore.OutputFileName
+    member _.OutputFileName = projectConfig.OutputFileName
 
-    member _.ProjectCore = projectCore
+    member _.ProjectConfig = projectConfig
 
     member _.SourceFiles = sourceFiles
 
     member _.SourceFileNames = sourceFileNames.Value
 
-    member _.Label = projectCore.Label
+    member _.Label = projectConfig.Label
 
     member _.IndexOf fileName =
         sourceFiles
         |> List.tryFindIndex (fun x -> x.FileName = fileName)
-        |> Option.defaultWith (fun () -> failwith (sprintf "Unable to find file %s in project %s" fileName projectCore.ProjectFileName))
+        |> Option.defaultWith (fun () -> failwith (sprintf "Unable to find file %s in project %s" fileName projectConfig.ProjectFileName))
 
     member private _.With(sourceFiles: 'T list) =
-        ProjectSnapshotBase(projectCore, referencedProjects, sourceFiles)
+        ProjectSnapshotBase(projectConfig, referencedProjects, sourceFiles)
 
     /// Create a new snapshot with given source files replacing files in this snapshot with the same name. Other files remain unchanged.
     member this.Replace(changedSourceFiles: 'T list) =
@@ -335,7 +335,7 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
     /// The newest last modified time of any file in this snapshot including the project file
     member _.GetLastModifiedTimeOnDisk() =
         seq {
-            projectCore.ProjectFileName
+            projectConfig.ProjectFileName
 
             yield!
                 sourceFiles
@@ -351,7 +351,7 @@ type internal ProjectSnapshotBase<'T when 'T :> IFileSnapshot>
     member _.LastFileVersion = lastFileHash.Value |> fst
 
     /// Version for parsing - doesn't include any references because they don't affect parsing (...right?)
-    member _.ParsingVersion = projectCore.VersionForParsing |> Md5Hasher.toString
+    member _.ParsingVersion = projectConfig.VersionForParsing |> Md5Hasher.toString
 
     /// A key for this snapshot but without file versions. So it will be the same across any in-file changes.
     member _.NoFileVersionsKey = noFileVersionsKey.Value
@@ -426,28 +426,40 @@ and ProjectConfig
              }
              |> Seq.toList)
 
-    let outputFileName =
+    let outputFileNameValue =
         lazy
             (outputFileName
              |> Option.orElseWith (fun () -> otherOptions |> findOutputFileName))
 
     let identifier =
-        lazy (projectFileName, outputFileName.Value |> Option.defaultValue "")
+        lazy
+            ((projectFileName, outputFileNameValue.Value |> Option.defaultValue "")
+             |> FSharpProjectIdentifier)
 
     new(projectFileName: string,
         outputFileName: string option,
-        referencesOnDisk: ReferenceOnDisk list,
-        otherOptions: string list,
+        referencesOnDisk: string seq,
+        otherOptions: string seq,
         ?isIncompleteTypeCheckEnvironment: bool,
         ?useScriptResolutionRules: bool,
         ?loadTime: DateTime,
         ?stamp: int64,
         ?projectId: string) =
+
+        let referencesOnDisk =
+            referencesOnDisk
+            |> Seq.map (fun path ->
+                {
+                    Path = path
+                    LastModified = FileSystem.GetLastWriteTimeShim path
+                })
+            |> Seq.toList
+
         ProjectConfig(
             projectFileName,
             outputFileName,
             referencesOnDisk,
-            otherOptions,
+            otherOptions |> Seq.toList,
             isIncompleteTypeCheckEnvironment = defaultArg isIncompleteTypeCheckEnvironment false,
             useScriptResolutionRules = defaultArg useScriptResolutionRules false,
             unresolvedReferences = None,
@@ -458,8 +470,8 @@ and ProjectConfig
         )
 
     member val ProjectDirectory = !! Path.GetDirectoryName(projectFileName)
-    member _.OutputFileName = outputFileName.Value
-    member _.Identifier: ProjectIdentifier = identifier.Value
+    member _.OutputFileName = outputFileNameValue.Value
+    member _.Identifier = identifier.Value
     member _.Version = fullHash.Value
     member _.Label = projectFileName |> shortPath
     member _.VersionForParsing = hashForParsing.Value
@@ -477,6 +489,22 @@ and ProjectConfig
     member _.Stamp = stamp
     member _.UnresolvedReferences = unresolvedReferences
     member _.OriginalLoadReferences = originalLoadReferences
+
+    /// Creates a copy of this project config with a new set of references
+    member internal _.With(newReferencesOnDisk) =
+        ProjectConfig(
+            projectFileName,
+            outputFileName,
+            newReferencesOnDisk,
+            otherOptions,
+            isIncompleteTypeCheckEnvironment,
+            useScriptResolutionRules,
+            unresolvedReferences,
+            originalLoadReferences,
+            loadTime,
+            stamp,
+            projectId
+        )
 
 and [<NoComparison; CustomEquality; Experimental("This FCS API is experimental and subject to change.")>] FSharpReferencedProjectSnapshot =
     /// <summary>
@@ -571,7 +599,7 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
         projectSnapshot.Replace(changedSourceFiles) |> FSharpProjectSnapshot
 
     member _.Label = projectSnapshot.Label
-    member _.Identifier = FSharpProjectIdentifier projectSnapshot.ProjectCore.Identifier
+    member _.Identifier = projectSnapshot.ProjectConfig.Identifier
     member _.ProjectFileName = projectSnapshot.ProjectFileName
     member _.ProjectId = projectSnapshot.ProjectId
     member _.SourceFiles = projectSnapshot.SourceFiles
@@ -606,20 +634,22 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
             stamp: int64 option
         ) =
 
-        let projectCore =
+        let projectConfig =
             ProjectConfig(
-                projectFileName = projectFileName,
-                outputFileName = outputFileName,
-                ?projectId = projectId,
-                referencesOnDisk = referencesOnDisk,
-                otherOptions = otherOptions,
-                isIncompleteTypeCheckEnvironment = isIncompleteTypeCheckEnvironment,
-                useScriptResolutionRules = useScriptResolutionRules,
-                loadTime = loadTime,
-                ?stamp = stamp
+                projectFileName,
+                outputFileName,
+                referencesOnDisk,
+                otherOptions,
+                isIncompleteTypeCheckEnvironment,
+                useScriptResolutionRules,
+                unresolvedReferences,
+                originalLoadReferences,
+                loadTime,
+                stamp,
+                projectId
             )
 
-        ProjectSnapshotBase(projectCore, referencedProjects, sourceFiles)
+        ProjectSnapshotBase(projectConfig, referencedProjects, sourceFiles)
         |> FSharpProjectSnapshot
 
     static member FromOptions(options: FSharpProjectOptions, getFileSnapshot, ?snapshotAccumulator) =

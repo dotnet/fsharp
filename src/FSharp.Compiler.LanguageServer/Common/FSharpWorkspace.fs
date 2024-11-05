@@ -248,24 +248,92 @@ type FSharpWorkspace() =
     // TODO: we might need something more sophisticated eventually
     // for now it's important that the result id is unique every time
     // in order to be able to clear previous diagnostics
-    member this.GetDiagnosticResultId() = Interlocked.Increment(&resultIdCounter)
+    member _.GetDiagnosticResultId() = Interlocked.Increment(&resultIdCounter)
 
-    member this.OpenFile(file: Uri, content) =
-        openFiles.AddOrUpdate(file.LocalPath, content, (fun _ _ -> content)) |> ignore
-
-    // No changes in the dep graph. If we already read the contents from disk we don't want to invalidate it.
-
-    member this.CloseFile(file: Uri) =
+    member _.CloseFile(file: Uri) =
         openFiles.TryRemove(file.LocalPath) |> ignore
 
         // The file may have had changes that weren't saved to disk and are therefore undone by closing it.
         depGraph.AddOrUpdateFile(file.LocalPath, FSharpFileSnapshot.CreateFromFileSystem(file.LocalPath))
 
-    member this.ChangeFile(file: Uri, content) =
-
+    member _.ChangeFile(file: Uri, content) =
+        openFiles.AddOrUpdate(file.LocalPath, content, (fun _ _ -> content)) |> ignore
         depGraph.AddOrUpdateFile(file.LocalPath, FSharpFileSnapshot.CreateFromString(file.LocalPath, content))
 
-        this.OpenFile(file, content)
+    member this.OpenFile = this.ChangeFile
+
+    member _.AddProject(projectConfig: ProjectConfig, sourceFilePaths: string seq) =
+
+        let projectIdentifier = projectConfig.Identifier
+
+        // Add the project identifier to the map
+        // TODO: do something if it's empty?
+        outputPathMap.AddOrUpdate(projectIdentifier.OutputFileName, (fun _ -> projectIdentifier), (fun _ _ -> projectIdentifier))
+        |> ignore
+
+        // Find any referenced projects that we aleady know about
+        let projectReferences =
+            projectConfig.ReferencesOnDisk
+            |> Seq.choose (fun ref ->
+                match outputPathMap.TryGetValue ref.Path with
+                | true, projectIdentifier -> Some projectIdentifier
+                | _ -> None)
+            |> Set
+
+        depGraph.Transact(fun depGraph ->
+
+            depGraph
+                .AddReferencesOnDisk(projectConfig.ReferencesOnDisk)
+                .AddProjectConfig(projectIdentifier, (fun refsOnDisk -> projectConfig.With(refsOnDisk |> Seq.toList)))
+                .AddProjectWithoutFiles(
+                    (fun (projectConfig, referencedProjects) ->
+
+                        let referencedProjects =
+                            referencedProjects
+                            |> Seq.map (fun s ->
+                                FSharpReferencedProjectSnapshot.FSharpReference(
+                                    s.OutputFileName
+                                    |> Option.defaultWith (fun () -> failwith "project doesn't have output filename"),
+                                    s
+                                ))
+                            |> Seq.toList
+
+                        projectConfig, referencedProjects)
+                )
+                .AddSourceFiles(
+                    sourceFilePaths
+                    |> Seq.map (fun path ->
+                        path,
+                        match openFiles.TryGetValue(path) with
+                        | true, content -> FSharpFileSnapshot.CreateFromString(path, content)
+                        | false, _ -> FSharpFileSnapshot.CreateFromFileSystem path)
+                )
+                .AddProjectSnapshot(
+                    (fun ((projectConfig, referencedProjects), sourceFiles) ->
+                        ProjectSnapshot(projectConfig, referencedProjects, sourceFiles |> Seq.toList)
+                        |> FSharpProjectSnapshot)
+                )
+
+            // In case this is an update, we should check for any existing project references that are not contained in the incoming compiler args and remove them
+            let existingReferences = depGraph.GetProjectReferencesOf projectIdentifier |> Set
+
+            let referencesToRemove = existingReferences - projectReferences
+            let referencesToAdd = projectReferences - existingReferences
+
+            for projectId in referencesToRemove do
+                depGraph.RemoveProjectReference(projectIdentifier, projectId)
+
+            for projectId in referencesToAdd do
+                depGraph.AddProjectReference(projectIdentifier, projectId)
+
+            // Check if any projects we know about depend on this project and add the references if they don't already exist
+            let dependentProjectIds =
+                depGraph.GetProjectsThatReference projectIdentifier.OutputFileName
+
+            for dependentProjectId in dependentProjectIds do
+                depGraph.AddProjectReference(dependentProjectId, projectIdentifier)
+
+            projectIdentifier)
 
     /// Adds an F# project to the workspace. The project is identified by path to the .fsproj file and output path.
     /// The compiler arguments are used to build the project's snapshot.
@@ -302,101 +370,12 @@ type FSharpWorkspace() =
 
     /// Adds an F# project to the workspace. The project is identified by path to the .fsproj file and output path.
     /// References are created automatically between known projects based on the compiler arguments and output paths.
-    member _.AddProject(projectFileName, outputFileName, sourceFiles, referencesOnDisk, otherOptions) =
+    member this.AddProject(projectFileName, outputFileName, sourceFiles, referencesOnDisk, otherOptions) =
 
-        let projectIdentifier = FSharpProjectIdentifier(projectFileName, outputFileName)
+        let projectConfig =
+            ProjectConfig(projectFileName, Some outputFileName, referencesOnDisk, otherOptions)
 
-        // Add the project identifier to the map
-        outputPathMap.AddOrUpdate(outputFileName, (fun _ -> projectIdentifier), (fun _ _ -> projectIdentifier))
-        |> ignore
-
-        let referencesOnDisk =
-            referencesOnDisk
-            |> Seq.map (fun path ->
-                {
-                    Path = path
-                    LastModified = File.GetLastWriteTimeUtc path
-                })
-            |> Seq.toList
-
-        // Find any referenced projects that we aleady know about
-        let projectReferences =
-            referencesOnDisk
-            |> Seq.choose (fun ref ->
-                match outputPathMap.TryGetValue ref.Path with
-                | true, projectIdentifier -> Some projectIdentifier
-                | _ -> None)
-            |> Set
-
-        depGraph.Transact(fun depGraph ->
-
-            depGraph
-                .AddReferencesOnDisk(referencesOnDisk)
-                .AddProjectConfig(
-                    projectIdentifier,
-                    (fun refsOnDisk ->
-                        ProjectConfig(
-                            projectFileName = projectIdentifier.ProjectFileName,
-                            outputFileName = Some projectIdentifier.OutputFileName,
-                            projectId = None,
-                            referencesOnDisk = (refsOnDisk |> Seq.toList),
-                            otherOptions = otherOptions,
-                            isIncompleteTypeCheckEnvironment = false,
-                            useScriptResolutionRules = false,
-                            loadTime = DateTime.Now,
-                            unresolvedReferences = None,
-                            originalLoadReferences = [],
-                            stamp = None
-                        ))
-                )
-                .AddProjectWithoutFiles(
-                    (fun (projectConfig, referencedProjects) ->
-
-                        let referencedProjects =
-                            referencedProjects
-                            |> Seq.map (fun s ->
-                                FSharpReferencedProjectSnapshot.FSharpReference(
-                                    s.OutputFileName
-                                    |> Option.defaultWith (fun () -> failwith "project doesn't have output filename"),
-                                    s
-                                ))
-                            |> Seq.toList
-
-                        projectConfig, referencedProjects)
-                )
-                .AddSourceFiles(
-                    sourceFiles
-                    |> Seq.map (fun path ->
-                        path,
-                        match openFiles.TryGetValue(path) with
-                        | true, content -> FSharpFileSnapshot.CreateFromString(path, content)
-                        | false, _ -> FSharpFileSnapshot.CreateFromFileSystem path)
-                )
-                .AddProjectSnapshot(
-                    (fun ((projectConfig, referencedProjects), sourceFiles) ->
-                        ProjectSnapshot(projectConfig, referencedProjects, sourceFiles |> Seq.toList)
-                        |> FSharpProjectSnapshot)
-                )
-
-            // In case this is an update, we should check for any existing project references that are not contained in the incoming compiler args and remove them
-            let existingReferences = depGraph.GetProjectReferencesOf projectIdentifier |> Set
-
-            let referencesToRemove = existingReferences - projectReferences
-            let referencesToAdd = projectReferences - existingReferences
-
-            for projectId in referencesToRemove do
-                depGraph.RemoveProjectReference(projectIdentifier, projectId)
-
-            for projectId in referencesToAdd do
-                depGraph.AddProjectReference(projectIdentifier, projectId)
-
-            // Check if any projects we know about depend on this project and add the references if they don't already exist
-            let dependentProjectIds = depGraph.GetProjectsThatReference outputFileName
-
-            for dependentProjectId in dependentProjectIds do
-                depGraph.AddProjectReference(dependentProjectId, projectIdentifier)
-
-            projectIdentifier)
+        this.AddProject(projectConfig, sourceFiles)
 
     member _.GetProjectSnapshot = depGraph.GetProjectSnapshot
 
