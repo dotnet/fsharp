@@ -64,15 +64,48 @@ it's a good idea to check the previous link for any old or stalled insertions in
 Update the `insertTargetBranch` value at the bottom of `azure-pipelines.yml` in the appropriate release branch.  E.g., when VS 17.3 snapped and switched to ask mode, [this PR](https://github.com/dotnet/fsharp/pull/13456/files) correctly updates the insertion target so that future builds from that F# branch will get auto-inserted to VS.
 
 ### When VS `main` is open for insertions for preview releases of VS:
-
-1. Create a new `release/dev*` branch (e.g., `release/dev17.4`) and initially set its HEAD commit to that of the previous release (e.g., `release/dev17.3` in this case).
+0. Disable auto-merges from `main` to **current** release branch, please make a change for the following file and create a pull request:
+https://github.com/dotnet/roslyn-tools/blob/6d7c182c46f8319d7922561e2c1586c7aadce19e/src/GitHubCreateMergePRs/config.xml#L52-L74
+> You should comment out the `main -> release/devXX.X` flow until step #4 is completed (`<merge from="main" to="release/dev17.13" />`)
+2. Create a new `release/dev*` branch (e.g., `release/dev17.4`) and initially set its HEAD commit to that of the previous release (e.g., `release/dev17.3` in this case).
    ```console
    git checkout -b release/dev17.4
    git reset --hard upstream/release/dev17.3
    git push --set-upstream upstream release/dev17.4
    ```
-3. Set the new branch to receive auto-merges from `main`, and also set the old release branch to flow into the new one.  [This PR](https://github.com/dotnet/roslyn-tools/pull/1245/files) is a good example of what to do when a new `release/dev17.4` branch is created that should receive merges from both `main` and the previous release branch, `release/dev17.3`.
-4. Set the packages from the new branch to flow into the correct package feeds via the `darc` tool.  To do this:
+3. Update versions in both `main` and new release branch **they need to match, so release notes bot knows which changelog file to check**
+4. Update target insertion branches in the `azure-pipelines.yml`:    
+   1. F# release branch
+   ```yaml
+   # Release branch for F#
+   # Should be 'current' release branch name, i.e. 'release/dev17.10' in dotnet/fsharp/refs/heads/main, 'release/dev17.10' in dotnet/fsharp/refs/heads/release/dev17.10 and 'release/dev17.9' in dotnet/fsharp/refs/heads/release/dev17.9
+   # Should **never** be 'main' in dotnet/fsharp/refs/heads/main, since it will start inserting to VS twice.
+   - name: FSharpReleaseBranchName
+     value: release/dev17.13
+   ```
+   2. VS insertion branch
+   ```yaml
+   # VS Insertion branch name (NOT the same as F# branch)
+   # Should be previous release branch or 'main' in 'main' and 'main' in release branch
+   # (since for all *new* release branches we insert into VS main and for all *previous* releases we insert into corresponding VS release),
+   # i.e. 'rel/d17.9' *or* 'main' in dotnet/fsharp/refs/heads/main and 'main' in F# dotnet/fsharp/refs/heads/release/dev17.10 (latest release branch)
+   - name: VSInsertionTargetBranchName
+     value: main
+   ```
+   > [!NOTE] Note  
+   > For the **old** release branch `VSInsertionTargetBranchName` should point to corresponding VS release target branch (e.g. should be `rel/d17.13` in the F# repo branch `release/dev17.13`)
+   > For both `main` and **new** release branch `VSInsertionTargetBranchName` should be `main`.
+   >
+   > `FSharpReleaseBranchName` should **always** be the most recent in `main` and corresponding release branch name in release branches.
+
+   3. Oneloc branch:
+   ```yaml
+   # Localization: we only run it for specific release branches
+      - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.13') }}:
+   ```
+5. Set the new branch to receive auto-merges from `main`, and also set the old release branch to flow into the new one.  [This PR](https://github.com/dotnet/roslyn-tools/pull/1245/files) is a good example of what to do when a new `release/dev17.4` branch is created that should receive merges from both `main` and the previous release branch, `release/dev17.3`. Old release branch should stop receiving updates from the `main`.
+  
+6. Set the packages from the new branch to flow into the correct package feeds via the `darc` tool.  To do this:
    1. Ensure the latest `darc` tool is installed by running `eng/common/darc-init.ps1`.
    2. (only needed once) Run the command `darc authenticate`.  A text file will be opened with instructions on how to populate access tokens.
    3. Check the current package/channel subscriptions by running `darc get-default-channels --source-repo fsharp`.  For this example, notice that the latest subscription shows the F# branch `release/dev17.3` is getting added to the `VS 17.3` channel.
