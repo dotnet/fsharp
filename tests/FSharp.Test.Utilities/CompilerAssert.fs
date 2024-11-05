@@ -589,7 +589,7 @@ module CompilerAssertHelpers =
             compilationRefs, deps
 
     let compileCompilation ignoreWarnings (cmpl: Compilation) f =
-        let outputDirectory = DirectoryInfo(createTemporaryDirectory "compileCompilation")
+        let outputDirectory = createTemporaryDirectory()
         f (compileCompilationAux outputDirectory ignoreWarnings cmpl)
 
     // NOTE: This function will not clean up all the compiled projects after itself.
@@ -599,7 +599,7 @@ module CompilerAssertHelpers =
         let outputDirectory =
             match cmpl with
             | Compilation(outputDirectory = Some outputDirectory) -> DirectoryInfo(outputDirectory.FullName)
-            | Compilation _ -> DirectoryInfo(createTemporaryDirectory "returnCompilation")
+            | Compilation _ -> createTemporaryDirectory()
 
         outputDirectory.Create()
         compileCompilationAux outputDirectory ignoreWarnings cmpl

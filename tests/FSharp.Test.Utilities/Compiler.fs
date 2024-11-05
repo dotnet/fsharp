@@ -736,7 +736,7 @@ module rec Compiler =
         let outputDirectory =
             match fs.OutputDirectory with
             | Some di -> di
-            | None -> DirectoryInfo(createTemporaryDirectory "compileFSharp")
+            | None -> createTemporaryDirectory()
         let references = processReferences fs.References outputDirectory
         let compilation = Compilation.CreateFromSources([fs.Source] @ fs.AdditionalSources, output, options, fs.TargetFramework, references, name, outputDirectory)
         compileFSharpCompilation compilation fs.IgnoreWarnings (FS fs)
@@ -786,7 +786,7 @@ module rec Compiler =
         let outputDirectory =
             match csSource.OutputDirectory with
             | Some di -> di
-            | None -> DirectoryInfo(createTemporaryDirectory "compileCSharp")
+            | None -> createTemporaryDirectory()
 
         let additionalReferences =
             processReferences csSource.References outputDirectory
@@ -927,7 +927,7 @@ module rec Compiler =
                 let outputDirectory =
                     match fsSource.OutputDirectory with
                     | Some di -> di
-                    | None -> DirectoryInfo(createTemporaryDirectory "typecheckResults")
+                    | None -> createTemporaryDirectory()
                 let references = processReferences fsSource.References outputDirectory
                 if references.IsEmpty then
                     Array.empty
@@ -1063,7 +1063,7 @@ module rec Compiler =
             let outputDirectory =
                 match fs.OutputDirectory with
                 | Some di -> di
-                | None -> DirectoryInfo(createTemporaryDirectory "runFsi")
+                | None -> createTemporaryDirectory()
             outputDirectory.Create()
 
             let references = processReferences fs.References outputDirectory

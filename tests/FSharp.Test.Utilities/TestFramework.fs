@@ -9,29 +9,27 @@ open System.Reflection
 open Scripting
 open Xunit
 open FSharp.Compiler.IO
-open FSharp.Test
 
 let getShortId() = Guid.NewGuid().ToString().[..7]
 
-// Temporary directory is TempPath + "/FSharp.Test.Utilities/yyy-MM-dd-xxxxxxx/"
+// Temporary directory is TempPath + "/FSharp.Test.Utilities/xxxxxxx/"
 let tempDirectoryOfThisTestRun =
     let temp = Path.GetTempPath()
-    let today = DateTime.Now.ToString("yyyy-MM-dd")
-    let directory =
-        DirectoryInfo(temp).CreateSubdirectory($"FSharp.Test.Utilities/{today}-{getShortId()}")
+    lazy DirectoryInfo(temp).CreateSubdirectory($"FSharp.Test.Utilities/{getShortId()}")
 
-    directory.FullName
+let cleanUpTemporaryDirectoryOfThisTestRun () =
+    if tempDirectoryOfThisTestRun.IsValueCreated then
+        try tempDirectoryOfThisTestRun.Value.Delete(true) with _ -> ()
 
-let createTemporaryDirectory (part: string) =
-    DirectoryInfo(tempDirectoryOfThisTestRun)
-        .CreateSubdirectory($"{part}-{getShortId()}")
-        .FullName
+let createTemporaryDirectory () =
+    tempDirectoryOfThisTestRun.Value
+        .CreateSubdirectory($"{getShortId()}")
 
 let getTemporaryFileName () =
-    (createTemporaryDirectory "temp") ++ $"tmp_{getShortId()}"
+    createTemporaryDirectory().FullName ++ getShortId()
 
 let getTemporaryFileNameInDirectory (directory: string) =
-    directory ++ $"tmp_{getShortId()}"
+    directory ++ getShortId()
 
 // Well, this function is AI generated.
 let rec copyDirectory (sourceDir: string) (destinationDir: string) (recursive: bool) =
@@ -470,11 +468,8 @@ let testConfig sourceDir (relativePathToTestFixture: string) =
     let cfg = suiteHelpers.Value
     let testFixtureFullPath = Path.GetFullPath(sourceDir ++ relativePathToTestFixture)
 
-    let description = relativePathToTestFixture.Split('\\', '/') |> String.concat "-"
-
-    let tempTestRoot = createTemporaryDirectory description
     let tempTestDir =
-        DirectoryInfo(tempTestRoot)
+        createTemporaryDirectory()
             .CreateSubdirectory(relativePathToTestFixture)
             .FullName
     copyDirectory testFixtureFullPath tempTestDir true
@@ -483,7 +478,7 @@ let testConfig sourceDir (relativePathToTestFixture: string) =
 
 let createConfigWithEmptyDirectory() =
     let cfg = suiteHelpers.Value
-    { cfg with Directory = createTemporaryDirectory "temp" }
+    { cfg with Directory = createTemporaryDirectory().FullName }
 
 type RedirectToType =
     | Overwrite of FilePath

@@ -32,8 +32,8 @@
     </Compile>
     <None Include="ScriptingShims.fsx" />
     <Compile Include="TestConsole.fs" />
-    <Compile Include="XunitHelpers.fs" />
     <Compile Include="TestFramework.fs" />
+    <Compile Include="XunitHelpers.fs" />
     <Compile Include="ILChecker.fs" />
     <Compile Include="Utilities.fs" />
     <Compile Include="CompilerAssert.fs" />
