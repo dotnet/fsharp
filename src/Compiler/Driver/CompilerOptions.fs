@@ -832,7 +832,7 @@ let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) =
         CompilerOption(
             "nowarn",
             tagWarnList,
-            OptionStringList(fun n -> tcConfigB.TurnWarningOff(rangeCmdArgs, trimFS n)),
+            OptionStringList(fun n -> tcConfigB.TurnWarningOff(rangeCmdArgs, n)),
             None,
             Some(FSComp.SR.optsNowarn ())
         )
@@ -840,7 +840,7 @@ let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) =
         CompilerOption(
             "warnon",
             tagWarnList,
-            OptionStringList(fun n -> tcConfigB.TurnWarningOn(rangeCmdArgs, trimFS n)),
+            OptionStringList(fun n -> tcConfigB.TurnWarningOn(rangeCmdArgs, n)),
             None,
             Some(FSComp.SR.optsWarnOn ())
         )
