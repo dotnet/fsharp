@@ -613,6 +613,18 @@ type MyIndexerClass() =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3581, Line 3, Col 14, Line 3, Col 22, "An indexed property's getter and setter must have the same type. Property 'Indexer1' has getter of type 'string' but setter of type 'float'.")
+
+    [<Fact>]
+    let ``Mixing named arguments + callback style and getter should not compile``() =
+        Fsx """
+type LabeledProperty = 
+    abstract member alert: title:string * message:string option -> unit with get,set
+"""
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3874, Line 3, Col 5, Line 3, Col 85, "Abstract properties cannot have named arguments with get and set accessors.")
+        ]
         
     [<Fact>]
     let ``Indexed2PropertiesSameType_fs preview``() =

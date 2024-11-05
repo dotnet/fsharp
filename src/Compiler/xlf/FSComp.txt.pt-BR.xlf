@@ -1217,6 +1217,11 @@
         <target state="translated">(Nome sugerido)</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAbstractPropertyCannotHaveNamedArgumentsWithGetSet">
+        <source>Abstract properties cannot have named arguments with get and set accessors.</source>
+        <target state="new">Abstract properties cannot have named arguments with get and set accessors.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAccessModifiersNotAllowedInSRTPConstraint">
         <source>Access modifiers cannot be applied to an SRTP constraint.</source>
         <target state="new">Access modifiers cannot be applied to an SRTP constraint.</target>

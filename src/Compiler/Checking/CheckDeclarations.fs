@@ -4313,7 +4313,11 @@ module TcDeclarations =
             for slot in ds do
                 if isAbstractSlot slot then
                     match slot with
-                    | SynMemberDefn.AbstractSlot (slotSig = synVal; range = m) ->
+                    | SynMemberDefn.AbstractSlot (slotSig = synVal; flags = flags; range = m) as slot ->
+                        let isGetterSetter = flags.MemberKind = SynMemberKind.PropertyGetSet || flags.MemberKind = SynMemberKind.PropertySet || flags.MemberKind = SynMemberKind.PropertyGet
+                        let hasNamedArgs = not synVal.SynInfo.ArgNames.IsEmpty
+                        if hasNamedArgs && isGetterSetter then
+                            errorR(Error(FSComp.SR.tcAbstractPropertyCannotHaveNamedArgumentsWithGetSet(), m))
                         CheckDuplicatesArgNames synVal m
                     | _ -> ()
 
