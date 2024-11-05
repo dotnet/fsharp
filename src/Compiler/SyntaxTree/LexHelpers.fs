@@ -99,9 +99,8 @@ let mkLexargs
     }
 
 /// Register the lexbuf and call the given function
-let reusingLexbufForParsing lexbuf f =
+let reusingLexbufForParsing (lexbuf: Lexbuf) f =
     use _ = UseBuildPhase BuildPhase.Parse
-    clearStore lexbuf
 
     try
         f ()

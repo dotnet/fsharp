@@ -8,8 +8,6 @@ open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
 
-val clearStore: Lexbuf -> unit
-
 val getSynArgNameGenerator: Lexbuf -> SynArgNameGenerator
 
 [<RequireQualifiedAccess>]
