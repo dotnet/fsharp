@@ -29,11 +29,11 @@ $projects = @{
 # Run build script for each configuration (NOTE: We don't build Proto)
 foreach ($configuration in $configurations) {
     Write-Host "Building $configuration configuration..."
-    & $script -c $configuration
-    if ($LASTEXITCODE -ne 0 -And $LASTEXITCODE -ne '') {
-        Write-Host "Build failed for $configuration configuration (last exit code: $LASTEXITCODE)."
-        exit 1
-    }
+#    & $script -c $configuration
+#    if ($LASTEXITCODE -ne 0 -And $LASTEXITCODE -ne '') {
+#        Write-Host "Build failed for $configuration configuration (last exit code: $LASTEXITCODE)."
+#        exit 1
+#    }
 }
 
 # Check if ilverify is installed and available from the tool list (using `dotnet tool list -g `), and install it globally if not found.
@@ -74,7 +74,6 @@ if (-not (Test-Path $runtime_path)) {
 }
 
 # For every artifact, every configuration and TFM, run a dotnet-ilverify with references from discovered runtime directory:
-$ilverify_output = @()
 foreach ($project in $projects.Keys) {
     foreach ($tfm in $projects[$project]) {
         foreach ($configuration in $configurations) {
@@ -93,48 +92,57 @@ foreach ($project in $projects.Keys) {
                 } else { "" }
             $ilverify_cmd = "dotnet ilverify --statistics --sanity-checks --tokens $dll_path -r '$runtime_path/*.dll' -r '$artifacts_bin_path/$project/$configuration/$tfm/FSharp.Core.dll' $ignore_errors_string"
             Write-Host "Running ilverify command:`n $ilverify_cmd"
+
             # Append output to output array
-            $ilverify_output += @(Invoke-Expression "& $ilverify_cmd" -ErrorAction SilentlyContinue)
+            $ilverify_output = @(Invoke-Expression "& $ilverify_cmd" -ErrorAction SilentlyContinue)
+
+            # Normalize output, get rid of paths in log like
+            #  [IL]: Error [StackUnexpected]: [/Users/u/code/fsharp3/artifacts/bin/FSharp.Compiler.Service/Release/net9.0/FSharp.Core.dll : Microsoft.FSharp.Collections.ArrayModule+Parallel::Choose([FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,Microsoft.FSharp.Core.FSharpOption`1<!!1>>, !!0[])][offset 0x00000081][found Byte] Unexpected type on the stack.
+            # This is a quick and dirty way to do it, but it works for now.
+            $ilverify_output = $ilverify_output | ForEach-Object {
+                if ($_ -match "\[IL\]: Error \[") {
+                    $parts = $_ -split " "
+                    "$($parts[0]) $($parts[1]) $($parts[2]) $($parts[4..$parts.Length])"
+                } elseif ($_ -match "Error\(s\) Verifying") {
+                    # do nothing
+                } else {
+                    $_
+                }
+            }
+
+            $baseline_file = Join-Path $repo_path "eng" "ilverify_${project}_${configuration}_${tfm}.bsl"
+
+            $baseline_actual_file = [System.IO.Path]::ChangeExtension($baseline_file, 'bsl.actual')
+
+            if (-not (Test-Path $baseline_file)) {
+                Write-Host "Baseline file not found: $baseline_file"
+                $ilverify_output | Set-Content $baseline_actual_file
+                exit 1
+            }
+
+            # Read baseline file into string array
+            [string[]] $baseline = Get-Content $baseline_file
+
+            if ($baseline.Length -eq 0) {
+                Write-Host "Baseline file is empty: $baseline_file"
+                $ilverify_output | Set-Content $baseline_actual_file
+                exit 1
+            }
+
+            # Compare contents of both arrays, error if they're not equal
+
+            $cmp = Compare-Object $ilverify_output $baseline
+
+            if (-not $cmp) {
+                Write-Host "ILverify output matches baseline."
+            } else {
+                Write-Host "ILverify output does not match baseline, differences:"
+
+                $cmp | Format-Table | Out-String | Write-Host
+                $ilverify_output | Set-Content $baseline_actual_file
+
+                exit 1
+            }
         }
     }
-}
-
-# Normalize output, get rid of paths in log like
-#  [IL]: Error [StackUnexpected]: [/Users/u/code/fsharp3/artifacts/bin/FSharp.Compiler.Service/Release/net9.0/FSharp.Core.dll : Microsoft.FSharp.Collections.ArrayModule+Parallel::Choose([FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,Microsoft.FSharp.Core.FSharpOption`1<!!1>>, !!0[])][offset 0x00000081][found Byte] Unexpected type on the stack.
-# This is a quick and dirty way to do it, but it works for now.
-$ilverify_output = $ilverify_output | ForEach-Object {
-    if ($_ -match "\[IL\]: Error \[") {
-        $parts = $_ -split " "
-        "$($parts[0]) $($parts[1]) $($parts[2]) $($parts[4..$parts.Length])"
-    } elseif ($_ -match "Error\(s\) Verifying") {
-        # do nothing
-    } else {
-        $_
-    }
-}
-
-$baseline_file = Join-Path $repo_path "eng" "ilverify.bsl"
-
-if (-not (Test-Path $baseline_file)) {
-    Write-Host "Baseline file not found: $baseline_file"
-    exit 1
-}
-
-# Read baseline file into string array
-[string[]] $baseline = Get-Content $baseline_file
-
-# Compare contents of both arrays, error if they're not equal
-
-$cmp = Compare-Object $ilverify_output $baseline
-
-if (($null -ne $baseline) -And (-not $cmp)) {
-    Write-Host "ILverify output matches baseline."
-} else {
-    Write-Host "ILverify output does not match baseline, differences:"
-
-    $cmp | Format-Table | Out-String | Write-Host
-
-    $output_file = Join-Path $repo_path "eng" "ilverify.bsl.actual"
-    $ilverify_output | Set-Content $output_file
-    exit 1
 }
