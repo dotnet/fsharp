@@ -146,3 +146,5 @@ foreach ($project in $projects.Keys) {
         }
     }
 }
+
+exit 0
