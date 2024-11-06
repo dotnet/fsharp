@@ -30,7 +30,7 @@ type FSharpLanguageServer
     (jsonRpc: JsonRpc, logger: ILspLogger, ?initialWorkspace: FSharpWorkspace, ?addExtraHandlers: Action<IServiceCollection>) =
     inherit AbstractLanguageServer<FSharpRequestContext>(jsonRpc, logger)
 
-    let initialWorkspace = defaultArg initialWorkspace (FSharpWorkspace.Create [])
+    let initialWorkspace = defaultArg initialWorkspace (FSharpWorkspace())
 
     do
         // This spins up the queue and ensure the LSP is ready to start receiving requests
@@ -67,7 +67,7 @@ type FSharpLanguageServer
         lspServices :> ILspServices
 
     static member Create() =
-        FSharpLanguageServer.Create(FSharpWorkspace.Create Seq.empty, (fun _ -> ()))
+        FSharpLanguageServer.Create(FSharpWorkspace(), (fun _ -> ()))
 
     static member Create(initialWorkspace, addExtraHandlers: Action<IServiceCollection>) =
         FSharpLanguageServer.Create(LspLogger System.Diagnostics.Trace.TraceInformation, initialWorkspace, addExtraHandlers)

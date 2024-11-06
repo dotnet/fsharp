@@ -15,8 +15,7 @@ type CapabilitiesManager(scOverrides: IServerCapabilitiesOverride seq) =
             TextDocumentSync = TextDocumentSyncOptions(OpenClose = true, Change = TextDocumentSyncKind.Full),
             DiagnosticOptions =
                 DiagnosticOptions(WorkDoneProgress = true, InterFileDependencies = true, Identifier = "potato", WorkspaceDiagnostics = true),
-            CompletionProvider =
-                CompletionOptions(TriggerCharacters=[|"."; " "|], ResolveProvider=true, WorkDoneProgress=true),
+            CompletionProvider = CompletionOptions(TriggerCharacters = [| "."; " " |], ResolveProvider = true, WorkDoneProgress = true),
             HoverProvider = SumType<bool, HoverOptions>(HoverOptions(WorkDoneProgress = true))
         )
 

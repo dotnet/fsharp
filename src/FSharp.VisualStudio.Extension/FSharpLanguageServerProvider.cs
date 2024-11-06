@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Packaging;
 using System.IO.Pipelines;
 using System.Linq;
 using System.Threading;
@@ -82,8 +83,8 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
                 Range = false
             },
             HoverProvider = new HoverOptions()
-            { 
-                WorkDoneProgress = true 
+            {
+                WorkDoneProgress = true
             }
         };
         return capabilities;
@@ -101,7 +102,7 @@ internal class SemanticTokensHandler
         FSharpRequestContext context,
         CancellationToken cancellationToken)
     {
-        var tokens = await context.GetSemanticTokensForFile(request!.TextDocument!.Uri).Please(cancellationToken);
+        var tokens = await context.Workspace.Query.GetSemanticTokensForFile(request!.TextDocument!.Uri).Please(cancellationToken);
 
         return new SemanticTokens { Data = tokens };
     }
@@ -117,15 +118,16 @@ internal class VsDiagnosticsHandler
     [LanguageServerEndpoint(VSInternalMethods.DocumentPullDiagnosticName)]
     public async Task<VSInternalDiagnosticReport[]> HandleRequestAsync(VSInternalDocumentDiagnosticsParams request, FSharpRequestContext context, CancellationToken cancellationToken)
     {
-        var result = await context.GetDiagnosticsForFile(request!.TextDocument!.Uri).Please(cancellationToken);
+       var report = await context.Workspace.Query.GetDiagnosticsForFile(request!.TextDocument!.Uri).Please(cancellationToken);
 
-        var rep = new VSInternalDiagnosticReport
+       var vsReport = new VSInternalDiagnosticReport
         {
-            ResultId = "potato1", // Has to be present for diagnostic to show up
-            //Identifier = 69,
+            ResultId = report.ResultId,
+            //Identifier = 1,
             //Version = 1,
+
             Diagnostics =
-                 result.Select(d =>
+                 report.Diagnostics.Select(d =>
 
                  new Diagnostic
                  {
@@ -143,7 +145,7 @@ internal class VsDiagnosticsHandler
              ).ToArray()
         };
 
-        return [rep];
+        return [vsReport];
     }
 
     [LanguageServerEndpoint("textDocument/_vs_getProjectContexts")]
@@ -171,6 +173,108 @@ internal class VsDiagnosticsHandler
 }
 
 
+internal class SolutionObserver : IObserver<IQueryResults<ISolutionSnapshot>>
+{
+    public void OnCompleted()
+    {
+
+    }
+
+    public void OnError(Exception error)
+    {
+    }
+
+    public void OnNext(IQueryResults<ISolutionSnapshot> value)
+    {
+        Trace.TraceInformation("Solution was updated");
+    }
+
+}
+
+internal class ProjectObserver(FSharpWorkspace workspace) : IObserver<IQueryResults<IProjectSnapshot>>
+{
+    private readonly FSharpWorkspace workspace = workspace;
+
+    internal void ProcessProject(IProjectSnapshot project)
+    {
+        project.Id.TryGetValue("ProjectPath", out var projectPath);
+
+        List<(string, string)> projectInfos = [];
+
+        if (projectPath != null && projectPath.ToLower().EndsWith(".fsproj"))
+        {
+            var configs = project.ActiveConfigurations.ToList();
+
+            foreach (var config in configs)
+            {
+                if (config != null)
+                {
+                    // Extract bin output path for each active config
+                    var data = config.OutputGroups;
+
+                    string? outputPath = null;
+                    foreach (var group in data)
+                    {
+                        if (group.Name == "Built")
+                        {
+                            foreach (var output in group.Outputs)
+                            {
+                                if (output.FinalOutputPath != null && (output.FinalOutputPath.ToLower().EndsWith(".dll") || output.FinalOutputPath.ToLower().EndsWith(".exe")))
+                                {
+                                    outputPath = output.FinalOutputPath;
+                                    break;
+                                }
+                            }
+                            if (outputPath != null)
+                            {
+                                break;
+                            }
+                        }
+                    }
+
+                    foreach (var ruleResults in config.RuleResults)
+                    {
+                        // XXX Idk why `.Where` does not work with these IAsyncQueryable type
+                        if (ruleResults?.RuleName == "CompilerCommandLineArgs")
+                        {
+                            // XXX Not sure why there would be more than one item for this rule result
+                            // Taking first one, ignoring the rest
+                            var args = ruleResults?.Items?.FirstOrDefault()?.Name;
+                            if (args != null && outputPath != null) projectInfos.Add((outputPath, args));
+                        }
+                    }
+                }
+            }
+
+            foreach (var projectInfo in projectInfos)
+            {
+                workspace.Projects.AddOrUpdate(projectPath, projectInfo.Item1, projectInfo.Item2.Split(';'));
+            }
+
+            workspace.Debug_DumpMermaid("../../../../dep-graph.md");
+
+
+        }
+    }
+
+    public void OnNext(IQueryResults<IProjectSnapshot> result)
+    {
+        foreach (var project in result)
+        {
+            this.ProcessProject(project);
+        }
+    }
+
+    public void OnCompleted()
+    {
+    }
+
+    public void OnError(Exception error)
+    {
+    }
+}
+
+
 [VisualStudioContribution]
 internal class FSharpLanguageServerProvider : LanguageServerProvider
 {
@@ -194,76 +298,37 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
     {
         var ws = this.Extensibility.Workspaces();
 
-        IQueryResults<IProjectSnapshot>? result = await ws.QueryProjectsAsync(project => project
+        var projectQuery = (IAsyncQueryable<IProjectSnapshot> project) => project
             .With(p => p.ActiveConfigurations
+                .With(c => c.ConfigurationDimensions.With(d => d.Name).With(d => d.Value))
+                .With(c => c.Properties.With(p => p.Name).With(p => p.Value))
+                .With(c => c.OutputGroups.With(g => g.Name).With(g => g.Outputs.With(o => o.Name).With(o => o.FinalOutputPath).With(o => o.RootRelativeURL)))
                 .With(c => c.RuleResultsByRuleName("CompilerCommandLineArgs")
                     .With(r => r.RuleName)
                     .With(r => r.Items)))
-            .With(p => new { p.ActiveConfigurations, p.Id, p.Guid }), cancellationToken);
+            .With(p => p.ProjectReferences
+                .With(r => r.ReferencedProjectPath)
+                .With(r => r.CanonicalName)
+                .With(r => r.Id)
+                .With(r => r.Name)
+                .With(r => r.ProjectGuid)
+                .With(r => r.ReferencedProjectId)
+                .With(r => r.ReferenceType));
 
+        IQueryResults<IProjectSnapshot>? result = await ws.QueryProjectsAsync(p => projectQuery(p).With(p => new { p.ActiveConfigurations, p.Id, p.Guid }), cancellationToken);
 
-        List<(string, string)> projectsAndCommandLineArgs = [];
+        var workspace = new FSharpWorkspace();
+
         foreach (var project in result)
         {
-            project.Id.TryGetValue("ProjectPath", out var projectPath);
+            var observer = new ProjectObserver(workspace);
 
-            List<string> commandLineArgs = [];
-            if (projectPath != null)
-            {
-                // There can be multiple Active Configurations, e.g. one for net8.0 and one for net472
-                // TODO For now taking any single one of them, but we might actually want to pick specific one
-                var config = project.ActiveConfigurations.FirstOrDefault();
-                if (config != null)
-                {
-                    foreach (var ruleResults in config.RuleResults)
-                    {
-                        // XXX Idk why `.Where` does not work with these IAsyncQuerable type
-                        if (ruleResults?.RuleName == "CompilerCommandLineArgs")
-                        {
-                            // XXX Not sure why there would be more than one item for this rule result
-                            // Taking first one, ignoring the rest
-                            var args = ruleResults?.Items?.FirstOrDefault()?.Name;
-                            if (args != null) commandLineArgs.Add(args);
-                        }
-                    }
-                }
-                if (commandLineArgs.Count > 0)
-                {
-                    projectsAndCommandLineArgs.Add((projectPath, commandLineArgs[0]));
-                }
-            }
+            await projectQuery(project.AsQueryable()).SubscribeAsync(observer, CancellationToken.None);
 
-            try
-            {
-                this.ProcessProject(project);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex);
-            }
+            // TODO: should we do this, or are we guaranteed it will get processed?
+            // observer.ProcessProject(project);
         }
 
-        FSharpWorkspace workspace;
-
-        try
-        {
-            List<FSharpProjectSnapshot> snapshots = [];
-            foreach(var args in projectsAndCommandLineArgs)
-            {
-                var lines = args.Item2.Split(';'); // XXX Probably not robust enough
-                var path = args.Item1;
-
-                string directoryPath = Path.GetDirectoryName(path) ?? throw new Exception("Directory path should not be null");
-                var snapshot = FSharpProjectSnapshot.FromCommandLineArgs(
-                    lines, directoryPath, Path.GetFileName(path));
-                snapshots.Add(snapshot);
-            }
-            workspace = FSharpWorkspace.Create(snapshots);
-        }
-        catch
-        {
-            workspace = FSharpWorkspace.Create([]);
-        }
 
         var ((clientStream, serverStream), _server) = FSharpLanguageServer.Create(workspace, (serviceCollection) =>
         {
@@ -272,41 +337,25 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
             serviceCollection.AddSingleton<IMethodHandler, SemanticTokensHandler>();
         });
 
+        var solutions = await ws.QuerySolutionAsync(
+    solution => solution.With(solution => solution.FileName),
+    cancellationToken);
+
+        var singleSolution = solutions.FirstOrDefault();
+
+        if (singleSolution != null)
+        {
+            var unsubscriber = await singleSolution
+                .AsQueryable()
+                .With(p => p.Projects.With(p => p.Files))
+                .SubscribeAsync(new SolutionObserver(), CancellationToken.None);
+        }
+
+
         return new DuplexPipe(
             PipeReader.Create(clientStream),
             PipeWriter.Create(serverStream));
     }
-
-    private void ProcessProject(IProjectSnapshot project)
-    {
-        List<IQueryResultItem<IFileSnapshot>>? files = project.Files.Please();
-        var references = project.ProjectReferences.Please();
-
-        var properties = project.Properties.Please();
-        var id = project.Id;
-
-        var configurationDimensions = project.ConfigurationDimensions.Please();
-        var configurations = project.Configurations.Please();
-
-        foreach (var configuration in configurations)
-        {
-            this.ProcessConfiguration(configuration.Value);
-        }
-    }
-
-    private void ProcessConfiguration(IProjectConfigurationSnapshot configuration)
-    {
-        var properties = configuration.Properties.Please();
-        var packageReferences = configuration.PackageReferences.Please();
-        var assemblyReferences = configuration.AssemblyReferences.Please();
-        var refNames = assemblyReferences.Select(r => r.Value.Name).ToList();
-        var dimensions = configuration.ConfigurationDimensions.Please();
-        var outputGroups = configuration.OutputGroups.Please();
-        var buildProperties = configuration.BuildProperties.Please();
-        var buildPropDictionary = buildProperties.Select(p => (p.Value.Name, p.Value.Value)).ToList();
-        return;
-    }
-
 
     /// <inheritdoc/>
     public override Task OnServerInitializationResultAsync(ServerInitializationResult serverInitializationResult, LanguageServerInitializationFailureInfo? initializationFailureInfo, CancellationToken cancellationToken)

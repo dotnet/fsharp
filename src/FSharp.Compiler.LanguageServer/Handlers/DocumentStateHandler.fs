@@ -21,7 +21,7 @@ type DocumentStateHandler() =
             ) =
             let contextHolder = context.LspServices.GetRequiredService<ContextHolder>()
 
-            contextHolder.UpdateWorkspace _.OpenFile(request.TextDocument.Uri, request.TextDocument.Text)
+            contextHolder.UpdateWorkspace _.Files.Open(request.TextDocument.Uri, request.TextDocument.Text)
 
             Task.FromResult(SemanticTokensDeltaPartialResult())
 
@@ -35,7 +35,7 @@ type DocumentStateHandler() =
             ) =
             let contextHolder = context.LspServices.GetRequiredService<ContextHolder>()
 
-            contextHolder.UpdateWorkspace _.ChangeFile(request.TextDocument.Uri, request.ContentChanges.[0].Text)
+            contextHolder.UpdateWorkspace _.Files.Edit(request.TextDocument.Uri, request.ContentChanges.[0].Text)
 
             Task.FromResult(SemanticTokensDeltaPartialResult())
 
@@ -49,6 +49,6 @@ type DocumentStateHandler() =
             ) =
             let contextHolder = context.LspServices.GetRequiredService<ContextHolder>()
 
-            contextHolder.UpdateWorkspace _.CloseFile(request.TextDocument.Uri)
+            contextHolder.UpdateWorkspace _.Files.Close(request.TextDocument.Uri)
 
             Task.CompletedTask
