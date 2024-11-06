@@ -94,6 +94,7 @@ type LanguageFeature =
     | ParsedHashDirectiveArgumentNonQuotes
     | EmptyBodiedComputationExpressions
     | AllowObjectExpressionWithoutOverrides
+    | DontWarnOnUppercaseIdentifiersInBindingPatterns
     | UseTypeSubsumptionCache
     | DeprecatePlacesWhereSeqCanBeOmitted
 
@@ -222,6 +223,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
                 LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, previewVersion
                 LanguageFeature.AllowObjectExpressionWithoutOverrides, previewVersion
+                LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns, previewVersion
                 LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted, previewVersion
             ]
 
@@ -379,6 +381,8 @@ type LanguageVersion(versionText) =
         | LanguageFeature.ParsedHashDirectiveArgumentNonQuotes -> FSComp.SR.featureParsedHashDirectiveArgumentNonString ()
         | LanguageFeature.EmptyBodiedComputationExpressions -> FSComp.SR.featureEmptyBodiedComputationExpressions ()
         | LanguageFeature.AllowObjectExpressionWithoutOverrides -> FSComp.SR.featureAllowObjectExpressionWithoutOverrides ()
+        | LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns ->
+            FSComp.SR.featureDontWarnOnUppercaseIdentifiersInBindingPatterns ()
         | LanguageFeature.UseTypeSubsumptionCache -> FSComp.SR.featureUseTypeSubsumptionCache ()
         | LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted -> FSComp.SR.featureDeprecatePlacesWhereSeqCanBeOmitted ()
 
