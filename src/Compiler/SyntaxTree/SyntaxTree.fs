@@ -1047,6 +1047,10 @@ type SynMatchClause =
             | None -> e.Range
             | Some x -> unionRanges e.Range x.Range
 
+    member this.IsTrueMatchClause =
+        let (SynMatchClause(trivia = trivia)) = this
+        trivia.BarRange.IsSome && trivia.ArrowRange.IsSome
+
     member this.Range =
         match this with
         | SynMatchClause(range = m) -> m

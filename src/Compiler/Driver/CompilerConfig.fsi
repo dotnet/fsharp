@@ -17,6 +17,7 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.BuildGraph
 
@@ -926,7 +927,20 @@ val TryResolveFileUsingPaths: paths: string seq * m: range * fileName: string ->
 
 val ResolveFileUsingPaths: paths: string seq * m: range * fileName: string -> string
 
-val GetWarningNumber: m: range * warningNumber: string * prefixSupported: bool -> int option
+[<RequireQualifiedAccess>]
+type WarningNumberSource =
+    | CommandLineOption
+    | CompilerDirective
+
+[<RequireQualifiedAccess>]
+type WarningDescription =
+    | Int32 of int
+    | String of string
+    | Ident of Ident
+
+val GetWarningNumber:
+    m: range * description: WarningDescription * langVersion: LanguageVersion * source: WarningNumberSource ->
+        int option
 
 /// Get the name used for FSharp.Core
 val GetFSharpCoreLibraryName: unit -> string
