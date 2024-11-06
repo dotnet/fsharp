@@ -852,7 +852,7 @@ let ParseInputFilesSequential (tcConfig: TcConfig, lexResourceManager, sourceFil
 /// Parse multiple input files from disk
 let ParseInputFiles (tcConfig: TcConfig, lexResourceManager, sourceFiles, diagnosticsLogger: DiagnosticsLogger, retryLocked) =
     try
-        if tcConfig.concurrentBuild then
+        if tcConfig.parallelParsing then
             ParseInputFilesInParallel(tcConfig, lexResourceManager, sourceFiles, diagnosticsLogger, retryLocked)
         else
             ParseInputFilesSequential(tcConfig, lexResourceManager, sourceFiles, diagnosticsLogger, retryLocked)
