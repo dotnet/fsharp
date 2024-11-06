@@ -102,7 +102,7 @@ internal class SemanticTokensHandler
         FSharpRequestContext context,
         CancellationToken cancellationToken)
     {
-        var tokens = await context.GetSemanticTokensForFile(request!.TextDocument!.Uri).Please(cancellationToken);
+        var tokens = await context.Workspace.Query.GetSemanticTokensForFile(request!.TextDocument!.Uri).Please(cancellationToken);
 
         return new SemanticTokens { Data = tokens };
     }
@@ -118,7 +118,7 @@ internal class VsDiagnosticsHandler
     [LanguageServerEndpoint(VSInternalMethods.DocumentPullDiagnosticName)]
     public async Task<VSInternalDiagnosticReport[]> HandleRequestAsync(VSInternalDocumentDiagnosticsParams request, FSharpRequestContext context, CancellationToken cancellationToken)
     {
-       var report = await context.GetDiagnosticsForFile(request!.TextDocument!.Uri).Please(cancellationToken);
+       var report = await context.Workspace.Query.GetDiagnosticsForFile(request!.TextDocument!.Uri).Please(cancellationToken);
 
        var vsReport = new VSInternalDiagnosticReport
         {
@@ -248,7 +248,7 @@ internal class ProjectObserver(FSharpWorkspace workspace) : IObserver<IQueryResu
 
             foreach (var projectInfo in projectInfos)
             {
-                workspace.AddOrUpdateProject(projectPath, projectInfo.Item1, projectInfo.Item2.Split(';'));
+                workspace.Projects.AddOrUpdate(projectPath, projectInfo.Item1, projectInfo.Item2.Split(';'));
             }
 
             workspace.Debug_DumpMermaid("../../../../dep-graph.md");

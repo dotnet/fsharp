@@ -4,7 +4,6 @@
 		<OutputType>Exe</OutputType>
 		<TargetFramework>net8.0</TargetFramework>
 		<CheckNulls>true</CheckNulls>
-
 	</PropertyGroup>
 
 	<ItemGroup Label="Package References">
@@ -36,6 +35,8 @@
 		<Compile Include="common\DependencyGraph.fs" />
 		<Compile Include="Common\LifecycleManager.fs" />
 		<Compile Include="Common\CapabilitiesManager.fs" />
+		<Compile Include="common\FSharpWorkspaceState.fs" />
+		<Compile Include="common\FSharpWorkspaceQuery.fs" />
 		<Compile Include="Common\FSharpWorkspace.fs" />
 		<Compile Include="Common\FSharpRequestContext.fs" />
 		<Compile Include="Handlers\LanguageFeaturesHandler.fs" />
