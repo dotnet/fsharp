@@ -337,6 +337,11 @@
         <target state="translated">rimuovi criterio nell'utilizzo dell'associazione</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureDontWarnOnUppercaseIdentifiersInBindingPatterns">
+        <source>Don't warn on uppercase identifiers in binding patterns</source>
+        <target state="new">Don't warn on uppercase identifiers in binding patterns</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDotlessFloat32Literal">
         <source>dotless float32 literal</source>
         <target state="translated">valore letterale float32 senza punti</target>

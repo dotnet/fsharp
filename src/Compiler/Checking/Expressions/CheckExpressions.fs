@@ -1017,6 +1017,12 @@ type TcCanFail =
     | IgnoreMemberResoutionError
     | IgnoreAllErrors
     | ReportAllErrors
+    
+[<RequireQualifiedAccess>]
+[<Struct>]
+type TcTrueMatchClause =
+    | Yes
+    | No
 
 let TcAddNullnessToType (warn: bool) (cenv: cenv) (env: TcEnv) nullness innerTyC m =
     let g = cenv.g
@@ -2516,8 +2522,12 @@ module BindingNormalization =
                 match memberFlagsOpt with
                 | None ->
                     let extraDot = if synLongId.ThereIsAnExtraDotAtTheEnd then ExtraDotAfterIdentifier.Yes else ExtraDotAfterIdentifier.No
-
-                    match ResolvePatternLongIdent cenv.tcSink nameResolver AllIdsOK true m ad env.NameEnv TypeNameResolutionInfo.Default longId extraDot with
+                    let warnOnUpper =
+                        if not args.IsEmpty then
+                            WarnOnUpperUnionCaseLabel
+                        else AllIdsOK  
+                    
+                    match ResolvePatternLongIdent cenv.tcSink nameResolver warnOnUpper true m ad env.NameEnv TypeNameResolutionInfo.Default longId extraDot with
                     | Item.NewDef id ->
                         if id.idText = opNameCons then
                             NormalizedBindingPat(pat, rhsExpr, valSynData, typars)
@@ -6435,10 +6445,8 @@ and TcExprILAssembly (cenv: cenv) overallTy env tpenv (ilInstrs, synTyArgs, synA
 and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpenv e =
     let g = cenv.g
     match e with
-    | SynExpr.Lambda (isMember, isSubsequent, synSimplePats, bodyExpr, _, m, _) when isMember || isFirst || isSubsequent ->
-
+    | SynExpr.Lambda (isMember, isSubsequent, synSimplePats, bodyExpr, _parsedData, m, _trivia) when isMember || isFirst || isSubsequent ->
         let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m overallTy.Commit
-
         let vs, (TcPatLinearEnv (tpenv, names, takenNames)) =
             cenv.TcSimplePats cenv isMember CheckCxs domainTy env (TcPatLinearEnv (tpenv, Map.empty, takenNames)) synSimplePats
 
@@ -8084,7 +8092,7 @@ and TcForEachExpr cenv overallTy env tpenv (seqExprOnly, isFromSource, synPat, s
 
     let pat, _, vspecs, envinner, tpenv =
         let env = { env with eIsControlFlow = false }
-        TcMatchPattern cenv enumElemTy env tpenv synPat None
+        TcMatchPattern cenv enumElemTy env tpenv synPat None TcTrueMatchClause.No
 
     let elemVar, pat =
         // nice: don't introduce awful temporary for r.h.s. in the 99% case where we know what we're binding it to
@@ -10614,10 +10622,15 @@ and TcAndPatternCompileMatchClauses mExpr mMatch actionOnFailure cenv inputExprO
     let matchVal, expr = CompilePatternForMatchClauses cenv env mExpr mMatch true actionOnFailure inputExprOpt inputTy resultTy.Commit clauses
     matchVal, expr, tpenv
 
-and TcMatchPattern cenv inputTy env tpenv (synPat: SynPat) (synWhenExprOpt: SynExpr option) =
+and TcMatchPattern (cenv: cenv) inputTy env tpenv (synPat: SynPat) (synWhenExprOpt: SynExpr option) (tcTrueMatchClause: TcTrueMatchClause) =
     let g = cenv.g
     let m = synPat.Range
-    let patf', (TcPatLinearEnv (tpenv, names, _)) = cenv.TcPat WarnOnUpperCase cenv env None (TcPatValFlags (ValInline.Optional, permitInferTypars, noArgOrRetAttribs, false, None, false)) (TcPatLinearEnv (tpenv, Map.empty, Set.empty)) inputTy synPat
+    let warnOnUpperFlag =
+        match tcTrueMatchClause with
+        | TcTrueMatchClause.Yes -> WarnOnUpperUnionCaseLabel
+        | TcTrueMatchClause.No -> WarnOnUpperVariablePatterns
+
+    let patf', (TcPatLinearEnv (tpenv, names, _)) = cenv.TcPat warnOnUpperFlag cenv env None (TcPatValFlags (ValInline.Optional, permitInferTypars, noArgOrRetAttribs, false, None, false)) (TcPatLinearEnv (tpenv, Map.empty, Set.empty)) inputTy synPat
     let envinner, values, vspecMap = MakeAndPublishSimpleValsForMergedScope cenv env m names
 
     let whenExprOpt, tpenv =
@@ -10638,9 +10651,15 @@ and TcMatchClauses cenv inputTy (resultTy: OverallTy) env tpenv clauses =
     resultList,tpEnv
 
 and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchClause =
-    let (SynMatchClause(synPat, synWhenExprOpt, synResultExpr, patm, spTgt, _)) = synMatchClause
+    let (SynMatchClause(synPat, synWhenExprOpt, synResultExpr, patm, spTgt, trivia)) = synMatchClause
 
-    let pat, whenExprOpt, vspecs, envinner, tpenv = TcMatchPattern cenv inputTy env tpenv synPat synWhenExprOpt
+    let isTrueMatchClause =
+        if synMatchClause.IsTrueMatchClause then
+            TcTrueMatchClause.Yes
+        else
+            TcTrueMatchClause.No
+   
+    let pat, whenExprOpt, vspecs, envinner, tpenv = TcMatchPattern cenv inputTy env tpenv synPat synWhenExprOpt isTrueMatchClause
 
     let resultEnv =
         if isFirst then envinner

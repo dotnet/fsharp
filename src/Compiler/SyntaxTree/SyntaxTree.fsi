@@ -1177,6 +1177,9 @@ type SynMatchClause =
     /// Gets the syntax range of part of this construct
     member RangeOfGuardAndRhs: range
 
+    /// Is a pattern used in a true match clause e.g. | pat -> expr
+    member IsTrueMatchClause: bool
+
     /// Gets the syntax range of this construct
     member Range: range
 

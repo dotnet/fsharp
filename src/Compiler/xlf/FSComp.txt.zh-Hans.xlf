@@ -337,6 +337,11 @@
         <target state="translated">放弃使用绑定模式</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureDontWarnOnUppercaseIdentifiersInBindingPatterns">
+        <source>Don't warn on uppercase identifiers in binding patterns</source>
+        <target state="new">Don't warn on uppercase identifiers in binding patterns</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDotlessFloat32Literal">
         <source>dotless float32 literal</source>
         <target state="translated">无点 float32 文本</target>
