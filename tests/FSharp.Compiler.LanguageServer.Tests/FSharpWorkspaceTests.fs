@@ -18,6 +18,12 @@ type ProjectConfig with
         let referencesOnDisk = defaultArg referencesOnDisk []
         ProjectConfig(projectFileName, Some outputPath, referencesOnDisk, [])
 
+let getReferencedSnapshot (projectIdentifier: FSharpProjectIdentifier) (projectSnapshot: FSharpProjectSnapshot) =
+    projectSnapshot.ReferencedProjects
+        |> Seq.pick (function
+            | FSharpReference(x, snapshot) when x = projectIdentifier.OutputFileName -> Some snapshot
+            | _ -> None)
+
 let sourceFileOnDisk (content: string) =
     let path = getTemporaryFileName () + ".fs"
     FileSystem.OpenFileForWriteShim(path).Write(content)
@@ -36,7 +42,7 @@ let ``Add project to workspace`` () =
     let outputPath = "test.dll"
     let compilerArgs = [| "test.fs" |]
     let projectIdentifier = workspace.AddOrUpdateProject(projectPath, outputPath, compilerArgs)
-    let projectSnapshot = workspace.GetProjectSnapshot(projectIdentifier)
+    let projectSnapshot = workspace.GetProjectSnapshot(projectIdentifier).Value
     Assert.NotNull(projectSnapshot)
     Assert.Equal(projectPath, projectSnapshot.ProjectFileName)
     Assert.Equal(Some outputPath, projectSnapshot.OutputFileName)
@@ -152,8 +158,8 @@ let ``Add multiple projects with references`` () =
     let projectIdentifier2 =
         workspace.AddOrUpdateProject(projectPath2, outputPath2, compilerArgs2)
 
-    let projectSnapshot1 = workspace.GetProjectSnapshot(projectIdentifier1)
-    let projectSnapshot2 = workspace.GetProjectSnapshot(projectIdentifier2)
+    let projectSnapshot1 = workspace.GetProjectSnapshot(projectIdentifier1).Value
+    let projectSnapshot2 = workspace.GetProjectSnapshot(projectIdentifier2).Value
     Assert.Contains("test1.fs", projectSnapshot1.SourceFiles |> Seq.map (fun f -> f.FileName))
     Assert.Contains("test2.fs", projectSnapshot2.SourceFiles |> Seq.map (fun f -> f.FileName))
 
@@ -182,32 +188,22 @@ let ``Propagate changes to snapshots`` () =
     let pid3 =
         workspace.AddOrUpdateProject(ProjectConfig.Minimal("p3", referencesOnDisk = [ pid2.OutputFileName ]), [ file3.LocalPath ])
 
-    let s3 = workspace.GetProjectSnapshot(pid3)
+    let s3 = workspace.GetProjectSnapshot(pid3).Value
 
-    s3.ReferencedProjects
-    |> Seq.pick (function
-        | FSharpReference(x, snapshot) when x = pid2.OutputFileName -> Some snapshot
-        | _ -> None)
-    |> _.ReferencedProjects
-    |> Seq.pick (function
-        | FSharpReference(x, snapshot) when x = pid1.OutputFileName -> Some snapshot
-        | _ -> None)
+    s3
+    |> getReferencedSnapshot pid2
+    |> getReferencedSnapshot pid1
     |> assertFileHasContent file1.LocalPath "let x = 1"
 
     let updatedContent = "let x = 2"
 
     workspace.ChangeFile(file1, updatedContent)
 
-    let s3 = workspace.GetProjectSnapshot(pid3)
+    let s3 = workspace.GetProjectSnapshot(pid3).Value
 
-    s3.ReferencedProjects
-    |> Seq.pick (function
-        | FSharpReference(x, snapshot) when x = pid2.OutputFileName -> Some snapshot
-        | _ -> None)
-    |> _.ReferencedProjects
-    |> Seq.pick (function
-        | FSharpReference(x, snapshot) when x = pid1.OutputFileName -> Some snapshot
-        | _ -> None)
+    s3
+    |> getReferencedSnapshot pid2
+    |> getReferencedSnapshot pid1
     |> assertFileHasContent file1.LocalPath updatedContent
 
 [<Fact>]
@@ -220,7 +216,7 @@ let ``Update project by adding a source file`` () =
     let newSourceFile = "newTest.fs"
     let newCompilerArgs = [| "test.fs"; newSourceFile |]
     workspace.AddOrUpdateProject(projectPath, outputPath, newCompilerArgs) |> ignore
-    let projectSnapshot = workspace.GetProjectSnapshot(projectIdentifier)
+    let projectSnapshot = workspace.GetProjectSnapshot(projectIdentifier).Value
     Assert.NotNull(projectSnapshot)
     Assert.Contains("test.fs", projectSnapshot.SourceFiles |> Seq.map (fun f -> f.FileName))
     Assert.Contains(newSourceFile, projectSnapshot.SourceFiles |> Seq.map (fun f -> f.FileName))
@@ -244,10 +240,8 @@ let ``Update project by adding a reference`` () =
 
     let newCompilerArgs2 = [| "test2.fs"; "-r:test1.dll" |]
     workspace.AddOrUpdateProject(projectPath2, outputPath2, newCompilerArgs2) |> ignore
-    let projectSnapshot1 = workspace.GetProjectSnapshot(projectIdentifier1)
-    let projectSnapshot2 = workspace.GetProjectSnapshot(projectIdentifier2)
-    Assert.NotNull(projectSnapshot1)
-    Assert.NotNull(projectSnapshot2)
+    let projectSnapshot1 = workspace.GetProjectSnapshot(projectIdentifier1).Value
+    let projectSnapshot2 = workspace.GetProjectSnapshot(projectIdentifier2).Value
 
     Assert.Contains(
         projectSnapshot1,
@@ -274,8 +268,8 @@ let ``Create references in existing projects`` () =
     let projectIdentifier2 =
         workspace.AddOrUpdateProject(projectPath2, outputPath2, compilerArgs2)
 
-    let projectSnapshot1 = workspace.GetProjectSnapshot(projectIdentifier1)
-    let projectSnapshot2 = workspace.GetProjectSnapshot(projectIdentifier2)
+    let projectSnapshot1 = workspace.GetProjectSnapshot(projectIdentifier1).Value
+    let projectSnapshot2 = workspace.GetProjectSnapshot(projectIdentifier2).Value
 
     Assert.DoesNotContain(
         projectSnapshot1,
@@ -287,8 +281,8 @@ let ``Create references in existing projects`` () =
 
     let newCompilerArgs2 = [| "test2.fs"; "-r:test1.dll" |]
     workspace.AddOrUpdateProject(projectPath2, outputPath2, newCompilerArgs2) |> ignore
-    let projectSnapshot1 = workspace.GetProjectSnapshot(projectIdentifier1)
-    let projectSnapshot2 = workspace.GetProjectSnapshot(projectIdentifier2)
+    let projectSnapshot1 = workspace.GetProjectSnapshot(projectIdentifier1).Value
+    let projectSnapshot2 = workspace.GetProjectSnapshot(projectIdentifier2).Value
 
     Assert.Contains(
         projectSnapshot1,
@@ -297,3 +291,10 @@ let ``Create references in existing projects`` () =
             | FSharpReferencedProjectSnapshot.FSharpReference(_, s) -> Some s
             | _ -> None)
     )
+
+[<Fact>]
+let ``Asking for an unknown project snapshot returns None`` () =
+
+    let workspace = FSharpWorkspace()
+
+    Assert.Equal(None, workspace.GetProjectSnapshot(FSharpProjectIdentifier("hello", "world")))

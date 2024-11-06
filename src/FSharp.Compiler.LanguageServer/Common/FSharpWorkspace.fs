@@ -223,7 +223,16 @@ module internal WorkspaceDependencyGraphExtensions =
             |> Seq.map this.GetValue
             |> _.UnpackMany(WorkspaceNode.projectSnapshot)
 
-/// This type holds the current state of an F# workspace (or, solution). It's mutable but thread-safe. It accepts updates to the state and can provide immutable snapshots of contained F# projects. The state can be built up incrementally by adding projects and dependencies between them.
+/// This type holds the current state of an F# workspace. It's mutable but thread-safe. It accepts updates to the state and can provide
+/// immutable snapshots of contained F# projects which can be used to query `FSharpChecker` for diagnostics and other information.
+///
+/// The state can be built up incrementally by adding projects with one of `AddOrUpdateProject` overloads. Updates to any project properties are
+/// done the same way. Each project is identified by its project file path and output path or by `FSharpProjectIdentifier`. When the same project is
+/// added again it will be updated with the new information.
+///
+/// Project references are discovered automatically as projects are added or updated.
+///
+/// Updates to file contents are signaled through `OpenFile`, `ChangeFile` and `CloseFile` methods.
 type FSharpWorkspace() =
 
     let depGraph = LockOperatedDependencyGraph() :> IThreadSafeDependencyGraph<_, _>
@@ -250,16 +259,20 @@ type FSharpWorkspace() =
     // in order to be able to clear previous diagnostics
     member _.GetDiagnosticResultId() = Interlocked.Increment(&resultIdCounter)
 
+    /// Indicates that a file has been closed. Any changes that were not saved to disk are undone and any further reading
+    /// of the file's contents will be from the filesystem.
     member _.CloseFile(file: Uri) =
         openFiles.TryRemove(file.LocalPath) |> ignore
 
         // The file may have had changes that weren't saved to disk and are therefore undone by closing it.
         depGraph.AddOrUpdateFile(file.LocalPath, FSharpFileSnapshot.CreateFromFileSystem(file.LocalPath))
 
+    /// Indicates that a file has been changed and now has the given content. If it wasn't previously open it is considered open now.
     member _.ChangeFile(file: Uri, content) =
         openFiles.AddOrUpdate(file.LocalPath, content, (fun _ _ -> content)) |> ignore
         depGraph.AddOrUpdateFile(file.LocalPath, FSharpFileSnapshot.CreateFromString(file.LocalPath, content))
 
+    /// Indicates that a file has been opened and has the given content. Any updates to the file should be done through `ChangeFile`.
     member this.OpenFile = this.ChangeFile
 
     /// Adds or updates an F# project in the workspace. Project is identified by the project file and output path or FSharpProjectIdentifier.
@@ -336,9 +349,6 @@ type FSharpWorkspace() =
 
             projectIdentifier)
 
-    /// Adds an F# project to the workspace. The project is identified by path to the .fsproj file and output path.
-    /// The compiler arguments are used to build the project's snapshot.
-    /// References are created automatically between known projects based on the compiler arguments and output paths.
     member this.AddOrUpdateProject(projectPath: string, outputPath, compilerArgs) =
 
         let directoryPath = Path.GetDirectoryName(projectPath)
@@ -369,8 +379,6 @@ type FSharpWorkspace() =
 
         this.AddOrUpdateProject(projectPath, outputPath, sourceFiles, referencesOnDisk, otherOptions)
 
-    /// Adds an F# project to the workspace. The project is identified by path to the .fsproj file and output path.
-    /// References are created automatically between known projects based on the compiler arguments and output paths.
     member this.AddOrUpdateProject(projectFileName, outputFileName, sourceFiles, referencesOnDisk, otherOptions) =
 
         let projectConfig =
@@ -378,7 +386,11 @@ type FSharpWorkspace() =
 
         this.AddOrUpdateProject(projectConfig, sourceFiles)
 
-    member _.GetProjectSnapshot = depGraph.GetProjectSnapshot
+    member _.GetProjectSnapshot projectIdentifier =
+        try
+            depGraph.GetProjectSnapshot projectIdentifier |> Some
+        with :? KeyNotFoundException ->
+            None
 
     member _.GetProjectSnapshotForFile(file: Uri) =
 
