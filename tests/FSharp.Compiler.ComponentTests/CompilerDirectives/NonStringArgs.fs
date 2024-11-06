@@ -24,15 +24,20 @@ module NonStringArgs =
         |> asExe
         |> compile
         |> shouldFail
-        |> withDiagnostics[
+        |> withDiagnostics [
             if languageVersion = "8.0" then
-                (Warning 203, Line 6, Col 1, Line 6, Col 13, "Invalid warning number 'FS'")
                 (Error 3350, Line 3, Col 9, Line 3, Col 11, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
                 (Error 3350, Line 4, Col 9, Line 4, Col 15, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
                 (Error 3350, Line 5, Col 9, Line 5, Col 13, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
+                (Warning 203, Line 6, Col 9, Line 6, Col 13, "Invalid warning number 'FS'");
+                (Warning 203, Line 7, Col 9, Line 7, Col 17, "Invalid warning number 'FSBLAH'");
             else
-                (Warning 203, Line 3, Col 1, Line 3, Col 11, "Invalid warning number 'FS'")
-                (Warning 203, Line 6, Col 1, Line 6, Col 13, "Invalid warning number 'FS'")
+                (Warning 203, Line 3, Col 9, Line 3, Col 11, "Invalid warning number 'FS'");
+                (Warning 203, Line 4, Col 9, Line 4, Col 15, "Invalid warning number 'FSBLAH'");
+                (Warning 203, Line 5, Col 9, Line 5, Col 13, "Invalid warning number 'ACME'");
+                (Warning 203, Line 6, Col 9, Line 6, Col 13, "Invalid warning number 'FS'");
+                (Warning 203, Line 7, Col 9, Line 7, Col 17, "Invalid warning number 'FSBLAH'");
+                (Warning 203, Line 8, Col 9, Line 8, Col 15, "Invalid warning number 'ACME'")
             ]
 
 
@@ -55,14 +60,20 @@ module NonStringArgs =
         |> asExe
         |> compile
         |> shouldFail
-        |> withDiagnostics[
+        |> withDiagnostics [
             if languageVersion = "8.0" then
-                (Warning 203, Line 2, Col 1, Line 9, Col 11, "Invalid warning number 'FS'")
                 (Error 3350, Line 4, Col 5, Line 4, Col 7, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
                 (Error 3350, Line 5, Col 5, Line 5, Col 11, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
                 (Error 3350, Line 6, Col 5, Line 6, Col 9, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
+                (Warning 203, Line 7, Col 5, Line 7, Col 9, "Invalid warning number 'FS'");
+                (Warning 203, Line 8, Col 5, Line 8, Col 13, "Invalid warning number 'FSBLAH'");
             else
-                (Warning 203, Line 2, Col 1, Line 9, Col 11, "Invalid warning number 'FS'")
+                (Warning 203, Line 4, Col 5, Line 4, Col 7, "Invalid warning number 'FS'");
+                (Warning 203, Line 5, Col 5, Line 5, Col 11, "Invalid warning number 'FSBLAH'");
+                (Warning 203, Line 6, Col 5, Line 6, Col 9, "Invalid warning number 'ACME'");
+                (Warning 203, Line 7, Col 5, Line 7, Col 9, "Invalid warning number 'FS'");
+                (Warning 203, Line 8, Col 5, Line 8, Col 13, "Invalid warning number 'FSBLAH'");
+                (Warning 203, Line 9, Col 5, Line 9, Col 11, "Invalid warning number 'ACME'")
             ]
 
 
@@ -81,12 +92,18 @@ module NonStringArgs =
         |> shouldFail
         |> withDiagnostics [
             if languageVersion = "8.0" then
-                (Warning 203, Line 3, Col 1, Line 3, Col 44, "Invalid warning number 'FS'")
                 (Error 3350, Line 3, Col 9, Line 3, Col 11, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
                 (Error 3350, Line 3, Col 12, Line 3, Col 18, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
                 (Error 3350, Line 3, Col 19, Line 3, Col 23, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
+                (Warning 203, Line 3, Col 24, Line 3, Col 28, "Invalid warning number 'FS'");
+                (Warning 203, Line 3, Col 29, Line 3, Col 37, "Invalid warning number 'FSBLAH'");
             else
-                (Warning 203, Line 3, Col 1, Line 3, Col 44, "Invalid warning number 'FS'")
+                (Warning 203, Line 3, Col 9, Line 3, Col 11, "Invalid warning number 'FS'");
+                (Warning 203, Line 3, Col 12, Line 3, Col 18, "Invalid warning number 'FSBLAH'");
+                (Warning 203, Line 3, Col 19, Line 3, Col 23, "Invalid warning number 'ACME'");
+                (Warning 203, Line 3, Col 24, Line 3, Col 28, "Invalid warning number 'FS'");
+                (Warning 203, Line 3, Col 29, Line 3, Col 37, "Invalid warning number 'FSBLAH'");
+                (Warning 203, Line 3, Col 38, Line 3, Col 44, "Invalid warning number 'ACME'")
             ]
 
 
@@ -128,10 +145,30 @@ module DoBinding =
                 (Warning 1104, Line 5, Col 15, Line 5, Col 31, "Identifiers containing '@' are reserved for use in F# code generation")
                 (Error 3350, Line 2, Col 9, Line 2, Col 11, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
                 (Error 3350, Line 2, Col 12, Line 2, Col 18, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
+                (Warning 203, Line 2, Col 26, Line 2, Col 34, "Invalid warning number 'FS3221'")
                 ]
         else
             compileResult
             |> shouldSucceed
+
+
+    [<InlineData("8.0")>]
+    [<InlineData("9.0")>]
+    [<Theory>]
+    let ``#nowarn - errors - compiler options`` (languageVersion) =
+
+        FSharp """
+match None with None -> ()      // creates FS0025 - ignored due to flag
+""                              // creates FS0020 - ignored due to flag
+        """                     // creates FS0988 - not ignored, different flag prefix
+        |> withLangVersion languageVersion
+        |> withOptions ["--nowarn:NU0988"; "--nowarn:FS25"; "--nowarn:20"; "--nowarn:FS"; "--nowarn:FSBLAH"]
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+                (Warning 988, Line 3, Col 3, Line 3, Col 3, "Main module of program is empty: nothing will happen when it is run")
+            ]
 
 
     [<InlineData("8.0")>]
@@ -248,7 +285,7 @@ printfn "Hello, World"
         |> asExe
         |> compile
         |> shouldFail
-        |> withDiagnostics[
+        |> withDiagnostics [
             (Error 76, Line 2, Col 9, Line 2, Col 11, "This directive may only be used in F# script files (extensions .fsx or .fsscript). Either remove the directive, move this code to a script file or delimit the directive with '#if INTERACTIVE'/'#endif'.")
             (Error 76, Line 3, Col 9, Line 3, Col 14, "This directive may only be used in F# script files (extensions .fsx or .fsscript). Either remove the directive, move this code to a script file or delimit the directive with '#if INTERACTIVE'/'#endif'.")
             (Error 76, Line 4, Col 9, Line 4, Col 17, "This directive may only be used in F# script files (extensions .fsx or .fsscript). Either remove the directive, move this code to a script file or delimit the directive with '#if INTERACTIVE'/'#endif'.")
