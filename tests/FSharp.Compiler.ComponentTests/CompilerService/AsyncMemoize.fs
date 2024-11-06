@@ -11,40 +11,40 @@ open FSharp.Compiler.Diagnostics
 
 open Xunit
 
-[<AutoOpen>]
-module internal JobEvents =
+let tap f x = f x; x
 
-    let tap f x = f x; x
+let internal record (cache: AsyncMemoize<_,_,_>) =
 
-    let record (cache: AsyncMemoize<_,_,_>) =
+    let events = ResizeArray()
 
-        let events = ResizeArray()
+    let waitForIdle() = SpinWait.SpinUntil(fun () -> not cache.Updating)
 
-        let waitForIdle() = SpinWait.SpinUntil(fun () -> not cache.Updating)
+    waitForIdle()
+    cache.Event
+    |> Event.map (fun (e, (_, k, _)) -> e, k)
+    |> Event.add events.Add
 
+    let getEvents () =
         waitForIdle()
-        cache.Event
-        |> Event.map (fun (e, (_, k, _)) -> e, k)
-        |> Event.add events.Add
+        events |> List.ofSeq |> tap (printfn "events: %A")
 
-        let getEvents () =
-            waitForIdle()
-            events |> List.ofSeq |> tap (printfn "events: %A")
+    getEvents
 
-        getEvents
+let check getEvents assertFunction =
+    let actual = getEvents()
+    assertFunction actual
 
-    let check getEvents assertFunction =
-        let actual = getEvents()
-        assertFunction actual
+let waitUntil getEvents condition =
+    while getEvents() |> condition |> not do ()
 
-    let waitUntil getEvents condition =
-        while getEvents() |> condition |> not do ()
+let recorded (expected: 't list) (actual: 't list) =
+    Assert.Equal<'t>(expected, actual)
 
-    let recorded (expected: 't list) (actual: 't list) = Assert.Equal<'t>(expected, actual)
+let countOf value count events =
+    events |> Seq.filter (fst >> (=) value) |> Seq.length |> (=) count
 
-    let countOf value count events = events |> Seq.filter (fst >> (=) value) |> Seq.length |> (=) count
-
-    let received value events = events |> List.tryLast |> Option.map (fst >> (=) value) |> Option.defaultValue false
+let received value events =
+    events |> List.tryLast |> Option.map (fst >> (=) value) |> Option.defaultValue false
 
 [<Fact>]
 let ``Basics``() =
@@ -128,16 +128,14 @@ let ``Job is restarted if first requestor cancels`` () =
         let events = record memoize
 
         use cts1 = new CancellationTokenSource()
-        use cts2 = new CancellationTokenSource()
-        use cts3 = new CancellationTokenSource()
 
         let key = 1
 
         let _task1 = Async.StartAsTask( memoize.Get'(key, computation key), cancellationToken = cts1.Token)
 
         jobStarted.Wait()
-        let _task2 = Async.StartAsTask( memoize.Get'(key, computation key), cancellationToken = cts2.Token)
-        let _task3 = Async.StartAsTask( memoize.Get'(key, computation key), cancellationToken = cts3.Token)
+        let task2 = Async.StartAsTask( memoize.Get'(key, computation key))
+        let task3 = Async.StartAsTask( memoize.Get'(key, computation key))
 
         waitUntil events (countOf Requested 3)
 
@@ -147,7 +145,8 @@ let ``Job is restarted if first requestor cancels`` () =
 
         jobStarted.Wait()
 
-        Assert.Equal(2, _task2.Result)
+        Assert.Equal(2, task2.Result)
+        Assert.Equal(2, task3.Result)
 
         check events recorded
               [ Requested, key
@@ -174,7 +173,6 @@ let ``Job is restarted if first requestor cancels but keeps running if second re
 
         use cts1 = new CancellationTokenSource()
         use cts2 = new CancellationTokenSource()
-        use cts3 = new CancellationTokenSource()
 
         let key = 1
 
@@ -184,7 +182,7 @@ let ``Job is restarted if first requestor cancels but keeps running if second re
         jobStarted.Reset() |> ignore
 
         let _task2 = Async.StartAsTask( memoize.Get'(key, computation key), cancellationToken = cts2.Token)
-        let task3 = Async.StartAsTask( memoize.Get'(key, computation key), cancellationToken = cts3.Token)
+        let task3 = Async.StartAsTask( memoize.Get'(key, computation key))
 
         waitUntil events (countOf Requested 3)
 
