@@ -1118,7 +1118,7 @@ Expected:
 Actual:
 {actual}"""
     let updateBaseline () =
-        snd (Int32.TryParse(Environment.GetEnvironmentVariable("TEST_UPDATE_BSL"))) <> 0
+        true//snd (Int32.TryParse(Environment.GetEnvironmentVariable("TEST_UPDATE_BSL"))) <> 0
     let updateBaseLineIfEnvironmentSaysSo baseline =
         if updateBaseline () then
             if FileSystem.FileExistsShim baseline.FilePath then

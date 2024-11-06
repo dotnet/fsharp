@@ -101,7 +101,7 @@ let ``Downcasting and typetests`` compilation =
     |> withNoWarn 52
     |> verifyCompilation DoNotOptimize
 
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NullableDowncasting.fs"|], BaselineSuffix = "opt")>]
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NullableDowncasting.fs"|], BaselineSuffix = ".opt")>]
 let ``Downcasting and typetests optimized`` compilation =  
     compilation
     |> withNoWarn 52

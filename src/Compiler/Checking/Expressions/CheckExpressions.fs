@@ -2976,18 +2976,18 @@ let TcRuntimeTypeTest isCast isOperator (cenv: cenv) denv m tgtTy srcTy =
     else
         let checkTrgtNullness = 
             match (srcTy,g),(tgtTy,g) with
-            | (NullableRefType|NullTrueValue), WithoutNullRefType when g.checkNullness -> 
+            | (NullableRefType|NullTrueValue|NullableTypar), WithoutNullRefType when g.checkNullness && isCast -> 
                 let srcNice = NicePrint.minimalStringOfTypeWithNullness denv srcTy
                 let tgtNice = NicePrint.minimalStringOfTypeWithNullness denv tgtTy
                 warning(Error(FSComp.SR.tcDowncastFromNullableToWithoutNull(srcNice,tgtNice,tgtNice), m))
                 false
-            | (NullableRefType|NullTrueValue), (NullableRefType|NullTrueValue) -> not isCast //a type test (unlike type cast) will never return true for  null in the source, therefore adding |null to target does not help => keep the erasure warning
+            | (NullableRefType|NullTrueValue|NullableTypar), (NullableRefType|NullTrueValue|NullableTypar) -> not isCast //a type test (unlike type cast) will never return true for  null in the source, therefore adding |null to target does not help => keep the erasure warning
             | _ -> true
         for ety in getErasedTypes g tgtTy checkTrgtNullness do
             if isMeasureTy g ety then
                 warning(Error(FSComp.SR.tcTypeTestLosesMeasures(NicePrint.minimalStringOfType denv ety), m))
             else
-                warning(Error(FSComp.SR.tcTypeTestLossy(NicePrint.minimalStringOfType denv ety, NicePrint.minimalStringOfTypeWithNullness denv (stripTyEqnsWrtErasure EraseAll g ety)), m))
+                warning(Error(FSComp.SR.tcTypeTestLossy(NicePrint.minimalStringOfTypeWithNullness denv ety, NicePrint.minimalStringOfType denv (stripTyEqnsWrtErasure EraseAll g ety)), m))
 
 ///  Checks, warnings and constraint assertions for upcasts
 let TcStaticUpcast (cenv: cenv) denv m tgtTy srcTy =
@@ -6119,7 +6119,7 @@ and TcExprDowncast (cenv: cenv) overallTy env tpenv (synExpr, synInnerExpr, m) =
     // based on the nullness semantics of the nominal type.
     let expr = 
         match (tgtTy,g) with
-        | NullTrueValue | NullableRefType when g.checkNullness -> mkCallUnboxFast g m tgtTy innerExpr
+        | NullTrueValue | NullableRefType | NullableTypar when g.checkNullness -> mkCallUnboxFast g m tgtTy innerExpr   
         | _ ->  mkCallUnbox g m tgtTy innerExpr
     expr, tpenv
 

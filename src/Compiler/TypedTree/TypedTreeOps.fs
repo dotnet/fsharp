@@ -9320,10 +9320,13 @@ let (|SpecialEquatableHeadType|_|) g ty = (|SpecialComparableHeadType|_|) g ty
 let (|SpecialNotEquatableHeadType|_|) g ty = 
     if isFunTy g ty then ValueSome() else ValueNone
 
-let (|TyparTy|StructTy|NullTrueValue|NullableRefType|WithoutNullRefType|UnresolvedRefType|) (ty,g) = 
+let (|TyparTy|NullableTypar|StructTy|NullTrueValue|NullableRefType|WithoutNullRefType|UnresolvedRefType|) (ty,g) = 
     let sty = ty |> stripTyEqns g
     if isTyparTy g sty then 
-        TyparTy
+        if (nullnessOfTy g sty).TryEvaluate() = ValueSome NullnessInfo.WithNull then
+            NullableTypar
+        else
+            TyparTy
     elif isStructTy g sty then 
         StructTy
     elif TypeNullIsTrueValue g sty then
@@ -9344,7 +9347,7 @@ let canUseUnboxFast (g:TcGlobals) m ty =
      if g.checkNullness then
          match (ty,g) with
          | TyparTy | WithoutNullRefType | UnresolvedRefType  -> false
-         | StructTy | NullTrueValue | NullableRefType  -> true
+         | StructTy | NullTrueValue | NullableRefType | NullableTypar  -> true
      else
          not (isTyparTy g ty) && 
          not (TypeNullNotLiked g m ty)
