@@ -814,10 +814,10 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         | SynMemberDefn.Interface(members = Some membs) ->
                             for m in membs do
                                 yield! walkMember m
-                        | SynMemberDefn.Inherit(_, _, m) ->
+                        | SynMemberDefn.Inherit(range = m) ->
                             // can break on the "inherit" clause
                             yield! checkRange m
-                        | SynMemberDefn.ImplicitInherit(_, arg, _, m) ->
+                        | SynMemberDefn.ImplicitInherit(_, arg, _, m, _) ->
                             // can break on the "inherit" clause
                             yield! checkRange m
                             yield! walkExpr true arg
