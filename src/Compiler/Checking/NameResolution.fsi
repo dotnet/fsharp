@@ -565,7 +565,8 @@ type LookupKind =
 
 /// Indicates if a warning should be given for the use of upper-case identifiers in patterns
 type WarnOnUpperFlag =
-    | WarnOnUpperCase
+    | WarnOnUpperUnionCaseLabel
+    | WarnOnUpperVariablePatterns
     | AllIdsOK
 
 /// Indicates whether we permit a direct reference to a type generator. Only set when resolving the
