@@ -474,6 +474,34 @@ namespace N
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn for rec call in Sequential in use scope`` () =
+        """
+namespace N
+
+    module M =
+
+        [<TailCall>]
+        let rec f () =
+            let path = System.IO.Path.GetTempFileName()
+            use file = System.IO.File.Open(path, System.IO.FileMode.Open)
+            printfn "Hi!"
+            f ()
+        """
+        |> FSharp
+        |> withLangVersion80
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 11
+                        StartColumn = 13
+                        EndLine = 11
+                        EndColumn = 14 }
+              Message =
+                "The member or function 'f' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+        ]
+
+    [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn for invalid tailcalls in async expression`` () =
         """
 namespace N

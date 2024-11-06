@@ -1005,6 +1005,16 @@ let parsedHashDirectiveArguments (input: ParsedHashDirectiveArgument list) (lang
             | false -> None)
         input
 
+let parsedHashDirectiveArgumentsNoCheck (input: ParsedHashDirectiveArgument list) =
+    List.map
+        (function
+        | ParsedHashDirectiveArgument.String(s, _, _) -> s
+        | ParsedHashDirectiveArgument.SourceIdentifier(_, v, _) -> v
+        | ParsedHashDirectiveArgument.Int32(n, m) -> string n
+        | ParsedHashDirectiveArgument.Ident(ident, m) -> ident.idText
+        | ParsedHashDirectiveArgument.LongIdent(ident, m) -> longIdentToString ident)
+        input
+
 let parsedHashDirectiveStringArguments (input: ParsedHashDirectiveArgument list) (_langVersion: LanguageVersion) =
     List.choose
         (function

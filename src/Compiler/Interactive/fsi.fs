@@ -898,7 +898,8 @@ type internal DiagnosticsLoggerThatStopsOnFirstError
     override _.DiagnosticSink(diagnostic, severity) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
 
-        if diagnostic.ReportAsError(tcConfig.diagnosticsOptions, severity) then
+        match diagnostic.AdjustSeverity(tcConfig.diagnosticsOptions, severity) with
+        | FSharpDiagnosticSeverity.Error ->
             fsiStdinSyphon.PrintDiagnostic(tcConfig, diagnostic)
             errorCount <- errorCount + 1
 
@@ -906,20 +907,14 @@ type internal DiagnosticsLoggerThatStopsOnFirstError
                 exit 1 (* non-zero exit code *)
             // STOP ON FIRST ERROR (AVOIDS PARSER ERROR RECOVERY)
             raise StopProcessing
-        elif diagnostic.ReportAsWarning(tcConfig.diagnosticsOptions, severity) then
-            DoWithDiagnosticColor FSharpDiagnosticSeverity.Warning (fun () ->
+        | (FSharpDiagnosticSeverity.Warning | FSharpDiagnosticSeverity.Info) as adjustedSeverity ->
+            DoWithDiagnosticColor adjustedSeverity (fun () ->
                 fsiConsoleOutput.Error.WriteLine()
                 diagnostic.WriteWithContext(fsiConsoleOutput.Error, "  ", fsiStdinSyphon.GetLine, tcConfig, severity)
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.Flush())
-        elif diagnostic.ReportAsInfo(tcConfig.diagnosticsOptions, severity) then
-            DoWithDiagnosticColor FSharpDiagnosticSeverity.Info (fun () ->
-                fsiConsoleOutput.Error.WriteLine()
-                diagnostic.WriteWithContext(fsiConsoleOutput.Error, "  ", fsiStdinSyphon.GetLine, tcConfig, severity)
-                fsiConsoleOutput.Error.WriteLine()
-                fsiConsoleOutput.Error.WriteLine()
-                fsiConsoleOutput.Error.Flush())
+        | FSharpDiagnosticSeverity.Hidden -> ()
 
     override _.ErrorCount = errorCount
 
@@ -3844,7 +3839,8 @@ type FsiInteractionProcessor
             istate, Completed None
 
         | ParsedHashDirective("nowarn", nowarnArguments, m) ->
-            let numbers = (parsedHashDirectiveArguments nowarnArguments tcConfigB.langVersion)
+            let numbers = (parsedHashDirectiveArgumentsNoCheck nowarnArguments)
+
             List.iter (fun (d: string) -> tcConfigB.TurnWarningOff(m, d)) numbers
             istate, Completed None
 
