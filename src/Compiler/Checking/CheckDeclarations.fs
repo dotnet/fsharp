@@ -4314,9 +4314,15 @@ module TcDeclarations =
                 if isAbstractSlot slot then
                     match slot with
                     | SynMemberDefn.AbstractSlot (slotSig = synVal; flags = flags; range = m) as slot ->
-                        let (SynValSig(ident = SynIdent(id, _))) = synVal
+                        let (SynValSig(ident = SynIdent(id, _); synType = synType)) = synVal
+                        let hasNamedArgs =
+                            match synType with
+                            | SynType.Fun(argType= SynType.Tuple(path = pathSegments); returnType = _) ->
+                                pathSegments
+                                |> List.exists (function SynTupleTypeSegment.Type(SynType.SignatureParameter(id = Some id)) -> true | _ -> false)
+                            | _ -> false
+                            
                         let isGetterSetter = flags.MemberKind = SynMemberKind.PropertyGetSet || flags.MemberKind = SynMemberKind.PropertySet || flags.MemberKind = SynMemberKind.PropertyGet
-                        let hasNamedArgs = not synVal.SynInfo.ArgNames.IsEmpty
                         // Indexed properties uses "Item"y member name and are allowed with get and set
                         if id.idText <> "Item" && hasNamedArgs && isGetterSetter then
                             errorR(Error(FSComp.SR.tcAbstractPropertyCannotHaveNamedArgumentsWithGetSet(), m))
