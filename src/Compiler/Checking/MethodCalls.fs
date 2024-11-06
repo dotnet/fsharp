@@ -1771,7 +1771,7 @@ module ProvidedMethodCalls =
                     | _ when typeEquiv g normTy g.float32_ty -> Const.Single(v :?> float32)
                     | _ when typeEquiv g normTy g.float_ty -> Const.Double(v :?> float)
                     | _ when typeEquiv g normTy g.char_ty -> Const.Char(v :?> char)
-                    | _ when typeEquiv g normTy g.string_ty -> Const.String(v :?> string)
+                    | _ when typeEquiv g normTy g.string_ty -> Const.String(!!v :?> string)
                     | _ when typeEquiv g normTy g.decimal_ty -> Const.Decimal(v :?> decimal)
                     | _ when typeEquiv g normTy g.unit_ty -> Const.Unit
                     | _ -> fail()

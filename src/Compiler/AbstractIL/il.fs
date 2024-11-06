@@ -481,11 +481,11 @@ type ILAssemblyRef(data) =
     override x.GetHashCode() = uniqueStamp
 
     override x.Equals yobj =
-        ((yobj :?> ILAssemblyRef).UniqueStamp = uniqueStamp)
+        ((!!yobj :?> ILAssemblyRef).UniqueStamp = uniqueStamp)
 
     interface IComparable with
         override x.CompareTo yobj =
-            compare (yobj :?> ILAssemblyRef).UniqueStamp uniqueStamp
+            compare (!!yobj :?> ILAssemblyRef).UniqueStamp uniqueStamp
 
     static member Create(name, hash, publicKey, retargetable, version, locale) =
         ILAssemblyRef
@@ -750,7 +750,7 @@ type ILTypeRef =
     override x.GetHashCode() = x.hashCode
 
     override x.Equals yobj =
-        let y = (yobj :?> ILTypeRef)
+        let y = (!!yobj :?> ILTypeRef)
 
         (x.ApproxId = y.ApproxId)
         && (x.Scope = y.Scope)
@@ -793,7 +793,7 @@ type ILTypeRef =
     interface IComparable with
 
         override x.CompareTo yobj =
-            let y = (yobj :?> ILTypeRef)
+            let y = (!!yobj :?> ILTypeRef)
             let c = compare x.ApproxId y.ApproxId
 
             if c <> 0 then

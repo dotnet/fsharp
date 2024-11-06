@@ -168,7 +168,7 @@ type ReflectionDependencyManagerProvider
     let keyProperty (x: objnull) = x |> keyProperty.GetValue |> string
 
     let helpMessagesProperty (x: objnull) =
-        let toStringArray (o: objnull) = o :?> string[]
+        let toStringArray (o: objnull) = !!o :?> string[]
 
         match helpMessagesProperty with
         | Some helpMessagesProperty -> x |> helpMessagesProperty.GetValue |> toStringArray
@@ -334,31 +334,31 @@ type ReflectionDependencyManagerProvider
             member _.StdOut =
                 match getInstanceProperty<string[]> (result.GetType()) "StdOut" with
                 | None -> [||]
-                | Some p -> p.GetValue(result) :?> string[]
+                | Some p -> !!p.GetValue(result) :?> string[]
 
             /// The resolution error log (* process stderror *)
             member _.StdError =
                 match getInstanceProperty<string[]> (result.GetType()) "StdError" with
                 | None -> [||]
-                | Some p -> p.GetValue(result) :?> string[]
+                | Some p -> !!p.GetValue(result) :?> string[]
 
             /// The resolution paths
             member _.Resolutions =
                 match getInstanceProperty<seq<string>> (result.GetType()) "Resolutions" with
                 | None -> Seq.empty<string>
-                | Some p -> p.GetValue(result) :?> seq<string>
+                | Some p -> !!p.GetValue(result) :?> seq<string>
 
             /// The source code file paths
             member _.SourceFiles =
                 match getInstanceProperty<seq<string>> (result.GetType()) "SourceFiles" with
                 | None -> Seq.empty<string>
-                | Some p -> p.GetValue(result) :?> seq<string>
+                | Some p -> !!p.GetValue(result) :?> seq<string>
 
             /// The roots to package directories
             member _.Roots =
                 match getInstanceProperty<seq<string>> (result.GetType()) "Roots" with
                 | None -> Seq.empty<string>
-                | Some p -> p.GetValue(result) :?> seq<string>
+                | Some p -> !!p.GetValue(result) :?> seq<string>
         }
 
     static member MakeResultFromFields
@@ -473,8 +473,8 @@ type ReflectionDependencyManagerProvider
                         match tupleFields |> Array.length with
                         | 3 ->
                             tupleFields[0] :?> bool,
-                            tupleFields[1] :?> string list |> List.toSeq,
-                            tupleFields[2] :?> string list |> List.distinct |> List.toSeq
+                            !!tupleFields[1] :?> string list |> List.toSeq,
+                            !!tupleFields[2] :?> string list |> List.distinct |> List.toSeq
                         | _ -> false, seqEmpty, seqEmpty
 
                     ReflectionDependencyManagerProvider.MakeResultFromFields(success, [||], [||], Seq.empty, sourceFiles, packageRoots)
