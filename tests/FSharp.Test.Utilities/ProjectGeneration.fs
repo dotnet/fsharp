@@ -951,8 +951,7 @@ type ProjectWorkflowBuilder
         ?runTimeout,
         ?autoStart,
         ?isExistingProject,
-        ?enablePartialTypeChecking,
-        ?withChecker
+        ?enablePartialTypeChecking
     ) =
 
     let useTransparentCompiler = defaultArg useTransparentCompiler TestContext.UseTransparentCompiler
@@ -978,10 +977,6 @@ type ProjectWorkflowBuilder
                 documentSource = (if useGetSource then DocumentSource.Custom getSource else DocumentSource.FileSystem),
                 useTransparentCompiler = useTransparentCompiler
             ))
-
-    let withChecker = defaultArg withChecker ignore
-
-    do withChecker checker
 
     let mapProjectAsync f workflow =
         async {

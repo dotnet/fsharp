@@ -34,43 +34,36 @@ module internal JobEvents =
     let print fileId x = printfn $"{fileId}: %A{x}"
     let tapPrint fileId = Event.map (tap (print fileId))
 
-    let pipe () =
-        let cacheEvent = Event<_>()
-        cacheEvent.Publish, cacheEvent.Trigger
+    let recordAll() =
+        let mutable cache : AsyncMemoize<_,_,_> option = None
+        let events = ResizeArray()
 
-    let filterName fileId published =
-        published
-        |> Event.map (fun (e, (_l, (f: string, _p), _)) -> (Path.GetFileName f), e)
-        |> Event.filter (fun (f, _) -> f = fileName fileId)
-        |> Event.map snd 
-        |> tapPrint fileId
+        let waitForIdle() = SpinWait.SpinUntil(fun () -> not cache.Value.Updating)
 
-    let collect jobEvents =
-        let collector es  e = e :: es
+        let observe (getCache: CompilerCaches -> AsyncMemoize<_,_,_>) (checker: FSharpChecker) =
+            cache <- Some (getCache checker.Caches)
+            waitForIdle()
+            cache.Value.Event
+            |> Event.map (fun (e, (_l, (f: string, _p), _)) -> (Path.GetFileName f), e)
+            |> Event.add events.Add
 
-        jobEvents
-        |> Event.scan collector []
-        |> Event.map List.rev
+        let getEvents () =
+            waitForIdle()
+            events |> List.ofSeq
 
-    let collectCount n published = published |> collect |> Event.filter (fun actual -> List.length actual >= n)
+        observe, getEvents
 
-    let check (expected: _ list) (actual: _ list) = Assert.Equal<JobEvent>(expected, actual)
+    let record() =
+        let observe, getEvents = recordAll()
 
-    let checkAllEvents published expected =
-        task {
-            let received = published |> Event.map fst |> tapPrint "all" |> collectCount (List.length expected) 
-            use _ = received |> tapPrint "actual" |> Observable.subscribe (check expected)
-            return! received |> Async.AwaitEvent |> Async.Ignore
-        }
+        let check fileId expected =
+            let events = getEvents()
+            let fileName = fileName fileId
+            let actual = events |> Seq.filter (fun e -> fst e = fileName) |> Seq.map snd |> Seq.toList
+            printfn $"{fileId}: %A{actual}"
+            Assert.Equal<JobEvent>(expected, actual)
 
-    let wait published fileId expected =
-        task {
-            let received = published |> filterName fileId |> collectCount (List.length expected)
-            use _ = received |> tapPrint fileId |> Observable.subscribe (check expected)
-            return! received |> Async.AwaitEvent |> Async.Ignore
-        }
-
-let withTimeout (checkTask: Task<_>) = Assert.True(checkTask.Wait(TimeSpan.FromSeconds 1.))
+        observe, check
 
 #nowarn "57"
 
@@ -156,9 +149,6 @@ let makeTestProject () =
 
 let testWorkflow () =
     ProjectWorkflowBuilder(makeTestProject(), useTransparentCompiler = true)
-    
-let testWorkflowWithChecker(withChecker) =
-    ProjectWorkflowBuilder(makeTestProject(), useTransparentCompiler = true, withChecker = withChecker)
 
 [<Fact>]
 let ``Edit file, check it, then check dependent file`` () =
@@ -269,33 +259,30 @@ let ``Changes in a referenced project`` () =
 [<Fact>]
 let ``File is not checked twice`` () =
 
-    let published, trigger = JobEvents.pipe()
+    let observe, check = JobEvents.record()
 
-    let firstOK = JobEvents.wait published "First" [Requested; Started; Finished; Requested; Requested; Requested; Requested; Weakened; Requested; Started; Finished]
-    let thirdOK = JobEvents.wait published "Third" [Requested; Started; Finished; Requested; Requested; Weakened; Requested; Started; Finished]
-
-    testWorkflowWithChecker(fun checker -> checker.Caches.TcIntermediate.OnEvent trigger) {
+    testWorkflow() {
+        withChecker (observe _.TcIntermediate)
         updateFile "First" updatePublicSurface
         checkFile "Third" expectOk
     } |> ignore
 
-    Task.WhenAll(firstOK, thirdOK)
+    check "First" [Weakened; Requested; Started; Finished]
+    check "Third" [Weakened; Requested; Started; Finished]
 
 
 [<Fact>]
 let ``If a file is checked as a dependency it's not re-checked later`` () =
-    let published, trigger = JobEvents.pipe()
+    let observe, check = JobEvents.record()
 
-    let intermediateTypeChecks = JobEvents.wait published "Third" [Requested; Started; Finished; Requested; Requested; Weakened; Requested;
-    Started; Finished; Requested]
-
-    testWorkflowWithChecker (fun checker -> checker.Caches.TcIntermediate.OnEvent trigger) {      
+    testWorkflow() {
+        withChecker (observe _.TcIntermediate)
         updateFile "First" updatePublicSurface
         checkFile "Last" expectOk
         checkFile "Third" expectOk
     } |> ignore
 
-    intermediateTypeChecks
+    check "Third" [Weakened; Requested; Started; Finished; Requested]
 
 // [<Fact>] TODO: differentiate complete and minimal checking requests
 let ``We don't check files that are not depended on`` () =
@@ -307,9 +294,8 @@ let ``We don't check files that are not depended on`` () =
 
     let cacheEvents = ConcurrentQueue()
 
-    ProjectWorkflowBuilder(project,
-        useTransparentCompiler = true,
-        withChecker = (fun checker -> checker.Caches.TcIntermediate.OnEvent cacheEvents.Enqueue)) {       
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {  
+        withChecker (fun checker -> checker.Caches.TcIntermediate.OnEvent cacheEvents.Enqueue)
         updateFile "First" updatePublicSurface
         checkFile "Last" expectOk
     } |> ignore
@@ -412,16 +398,17 @@ let ``Changing impl files doesn't invalidate cache when they have signatures`` (
         { sourceFile "B" ["A"] with SignatureFile = AutoGenerated },
         { sourceFile "C" ["B"] with SignatureFile = AutoGenerated })
 
-    let published, trigger = JobEvents.pipe()
-    JobEvents.checkAllEvents published [] |> ignore
+    let observe, getEvents = JobEvents.recordAll()
 
     ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
         updateFile "A" updatePublicSurface
         checkFile "C" expectOk
-        withChecker (fun checker -> checker.Caches.TcIntermediate.OnEvent trigger)
+        withChecker ( observe _.TcIntermediate)
         updateFile "A" updateInternal
         checkFile "C" expectOk
-    }
+    } |> ignore
+
+    Assert.Empty(getEvents())
 
 [<Fact>]
 let ``Changing impl file doesn't invalidate an in-memory referenced project`` () =
@@ -856,17 +843,15 @@ let ``LoadClosure for script is computed once`` () =
         let project = SyntheticProject.CreateForScript(
             sourceFile "First" [])
 
-        let published, trigger = JobEvents.pipe()
-
-        let check = JobEvents.checkAllEvents published [Requested; Started; Finished; Requested; Started; Finished]
+        let observe, getEvents = JobEvents.recordAll()
     
-        ProjectWorkflowBuilder(project,
-            useTransparentCompiler = true,
-            withChecker = (fun checker -> checker.Caches.ScriptClosure.OnEvent trigger) ) {
+        ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+            withChecker (observe _.ScriptClosure)
             checkFile "First" expectOk
         }
         |> ignore
-        check
+        
+        Assert.Empty(getEvents())
 
 [<Fact>]
 let ``LoadClosure for script is recomputed after changes`` () =
@@ -874,15 +859,10 @@ let ``LoadClosure for script is recomputed after changes`` () =
     let project = SyntheticProject.CreateForScript(
         sourceFile "First" [])
 
-    let published, trigger = JobEvents.pipe()
-
-    let check =
-        JobEvents.wait published "First"
-            [Requested; Started; Finished; Weakened; Requested; Started; Finished; Weakened; Requested; Started; Finished]
-  
-    ProjectWorkflowBuilder(project,
-        useTransparentCompiler = true,
-        withChecker = (fun checker -> checker.Caches.ScriptClosure.OnEvent trigger)) {
+    let observe, check = JobEvents.record()
+ 
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        withChecker (observe _.ScriptClosure)
         checkFile "First" expectOk
         updateFile "First" updateInternal
         checkFile "First" expectOk
@@ -890,7 +870,7 @@ let ``LoadClosure for script is recomputed after changes`` () =
         checkFile "First" expectOk
     } |> ignore
 
-    check
+    check "First" [Weakened; Requested; Started; Finished; Weakened; Requested; Started; Finished]
     
 [<Fact>]
 let ``TryGetRecentCheckResultsForFile returns None before first call to ParseAndCheckFileInProject`` () =
