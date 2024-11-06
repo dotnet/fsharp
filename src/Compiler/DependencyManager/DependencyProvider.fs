@@ -334,31 +334,31 @@ type ReflectionDependencyManagerProvider
             member _.StdOut =
                 match getInstanceProperty<string[]> (result.GetType()) "StdOut" with
                 | None -> [||]
-                | Some p -> !!p.GetValue(result) :?> string[]
+                | Some p -> !! p.GetValue(result) :?> string[]
 
             /// The resolution error log (* process stderror *)
             member _.StdError =
                 match getInstanceProperty<string[]> (result.GetType()) "StdError" with
                 | None -> [||]
-                | Some p -> !!p.GetValue(result) :?> string[]
+                | Some p -> !! p.GetValue(result) :?> string[]
 
             /// The resolution paths
             member _.Resolutions =
                 match getInstanceProperty<seq<string>> (result.GetType()) "Resolutions" with
                 | None -> Seq.empty<string>
-                | Some p -> !!p.GetValue(result) :?> seq<string>
+                | Some p -> !! p.GetValue(result) :?> seq<string>
 
             /// The source code file paths
             member _.SourceFiles =
                 match getInstanceProperty<seq<string>> (result.GetType()) "SourceFiles" with
                 | None -> Seq.empty<string>
-                | Some p -> !!p.GetValue(result) :?> seq<string>
+                | Some p -> !! p.GetValue(result) :?> seq<string>
 
             /// The roots to package directories
             member _.Roots =
                 match getInstanceProperty<seq<string>> (result.GetType()) "Roots" with
                 | None -> Seq.empty<string>
-                | Some p -> !!p.GetValue(result) :?> seq<string>
+                | Some p -> !! p.GetValue(result) :?> seq<string>
         }
 
     static member MakeResultFromFields
