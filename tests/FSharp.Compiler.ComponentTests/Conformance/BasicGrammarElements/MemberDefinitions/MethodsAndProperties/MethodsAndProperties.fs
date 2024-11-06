@@ -618,12 +618,13 @@ type MyIndexerClass() =
     let ``Mixing named arguments + callback style and getter should not compile``() =
         Fsx """
 type LabeledProperty = 
+    abstract member Item: index: int * string -> char with get
     abstract member alert: title:string * message:string option -> unit with get,set
 """
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3874, Line 3, Col 5, Line 3, Col 85, "Abstract properties cannot have named arguments with get and set accessors.")
+            (Error 3874, Line 4, Col 5, Line 4, Col 85, "Abstract properties cannot have named arguments with get and set accessors.")
         ]
         
     [<Fact>]

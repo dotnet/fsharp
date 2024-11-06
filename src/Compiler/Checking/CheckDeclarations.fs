@@ -4314,9 +4314,11 @@ module TcDeclarations =
                 if isAbstractSlot slot then
                     match slot with
                     | SynMemberDefn.AbstractSlot (slotSig = synVal; flags = flags; range = m) as slot ->
+                        let (SynValSig(ident = SynIdent(id, _))) = synVal
                         let isGetterSetter = flags.MemberKind = SynMemberKind.PropertyGetSet || flags.MemberKind = SynMemberKind.PropertySet || flags.MemberKind = SynMemberKind.PropertyGet
                         let hasNamedArgs = not synVal.SynInfo.ArgNames.IsEmpty
-                        if hasNamedArgs && isGetterSetter then
+                        // Indexed properties uses "Item"y member name and are allowed with get and set
+                        if id.idText <> "Item" && hasNamedArgs && isGetterSetter then
                             errorR(Error(FSComp.SR.tcAbstractPropertyCannotHaveNamedArgumentsWithGetSet(), m))
                         CheckDuplicatesArgNames synVal m
                     | _ -> ()
