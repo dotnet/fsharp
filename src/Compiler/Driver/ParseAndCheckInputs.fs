@@ -217,25 +217,23 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, fileName, intf) 
         SynModuleOrNamespaceSig(lid, isRecursive, kind, decls, xmlDoc, attributes, None, range, trivia)
 
 let GetScopedPragmasForHashDirective hd (langVersion: LanguageVersion) =
-    let supportsNonStringArguments =
-        langVersion.SupportsFeature(LanguageFeature.ParsedHashDirectiveArgumentNonQuotes)
-
     [
         match hd with
-        | ParsedHashDirective("nowarn", numbers, m) ->
-            for s in numbers do
-                let warningNumber =
-                    match supportsNonStringArguments, s with
-                    | _, ParsedHashDirectiveArgument.SourceIdentifier _ -> None
-                    | true, ParsedHashDirectiveArgument.LongIdent _ -> None
-                    | true, ParsedHashDirectiveArgument.Int32(n, _) -> GetWarningNumber(m, string n, true)
-                    | true, ParsedHashDirectiveArgument.Ident(s, _) -> GetWarningNumber(m, s.idText, true)
-                    | _, ParsedHashDirectiveArgument.String(s, _, _) -> GetWarningNumber(m, s, true)
+        | ParsedHashDirective("nowarn", args, _) ->
+            for arg in args do
+                let rangeAndDescription =
+                    match arg with
+                    | ParsedHashDirectiveArgument.Int32(n, m) -> Some(m, WarningDescription.Int32 n)
+                    | ParsedHashDirectiveArgument.Ident(ident, m) -> Some(m, WarningDescription.Ident ident)
+                    | ParsedHashDirectiveArgument.String(s, _, m) -> Some(m, WarningDescription.String s)
                     | _ -> None
 
-                match warningNumber with
+                match rangeAndDescription with
                 | None -> ()
-                | Some n -> ScopedPragma.WarningOff(m, n)
+                | Some(m, description) ->
+                    match GetWarningNumber(m, description, langVersion, WarningNumberSource.CompilerDirective) with
+                    | None -> ()
+                    | Some n -> ScopedPragma.WarningOff(m, n)
         | _ -> ()
     ]
 
@@ -855,7 +853,7 @@ let ParseInputFilesSequential (tcConfig: TcConfig, lexResourceManager, sourceFil
 /// Parse multiple input files from disk
 let ParseInputFiles (tcConfig: TcConfig, lexResourceManager, sourceFiles, diagnosticsLogger: DiagnosticsLogger, retryLocked) =
     try
-        if tcConfig.concurrentBuild then
+        if tcConfig.parallelParsing then
             ParseInputFilesInParallel(tcConfig, lexResourceManager, sourceFiles, diagnosticsLogger, retryLocked)
         else
             ParseInputFilesSequential(tcConfig, lexResourceManager, sourceFiles, diagnosticsLogger, retryLocked)
@@ -912,7 +910,8 @@ let ProcessMetaCommandsFromInput
                 state
 
             | ParsedHashDirective("nowarn", hashArguments, m) ->
-                let arguments = parsedHashDirectiveArguments hashArguments tcConfig.langVersion
+                let arguments = parsedHashDirectiveArgumentsNoCheck hashArguments
+
                 List.fold (fun state d -> nowarnF state (m, d)) state arguments
 
             | ParsedHashDirective(("reference" | "r") as c, [], m) ->
