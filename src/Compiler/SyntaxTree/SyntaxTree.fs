@@ -1047,6 +1047,10 @@ type SynMatchClause =
             | None -> e.Range
             | Some x -> unionRanges e.Range x.Range
 
+    member this.IsTrueMatchClause =
+        let (SynMatchClause(trivia = trivia)) = this
+        trivia.BarRange.IsSome && trivia.ArrowRange.IsSome
+
     member this.Range =
         match this with
         | SynMatchClause(range = m) -> m
@@ -1488,7 +1492,12 @@ type SynMemberDefn =
         range: range *
         trivia: SynMemberDefnImplicitCtorTrivia
 
-    | ImplicitInherit of inheritType: SynType * inheritArgs: SynExpr * inheritAlias: Ident option * range: range
+    | ImplicitInherit of
+        inheritType: SynType *
+        inheritArgs: SynExpr *
+        inheritAlias: Ident option *
+        range: range *
+        trivia: SynMemberDefnInheritTrivia
 
     | LetBindings of bindings: SynBinding list * isStatic: bool * isRecursive: bool * range: range
 

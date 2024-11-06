@@ -825,7 +825,7 @@ module InterfaceStubGenerator =
                 | SynMemberDefn.Open _
                 | SynMemberDefn.ImplicitCtor _
                 | SynMemberDefn.Inherit _ -> None
-                | SynMemberDefn.ImplicitInherit(_, expr, _, _) -> walkExpr expr
+                | SynMemberDefn.ImplicitInherit(_, expr, _, _, _) -> walkExpr expr
 
         and walkBinding (SynBinding(expr = expr)) = walkExpr expr
 
