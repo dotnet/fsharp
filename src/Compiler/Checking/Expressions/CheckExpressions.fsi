@@ -351,6 +351,13 @@ type TcCanFail =
     | IgnoreAllErrors
     | ReportAllErrors
 
+/// Represents a pattern  that is used in a true match clause e.g. | pat -> expr
+[<RequireQualifiedAccess>]
+[<Struct>]
+type TcTrueMatchClause =
+    | Yes
+    | No
+
 /// Represents a recursive binding after it has been both checked and generalized, but
 /// before initialization recursion has been rewritten
 type PreInitializationGraphEliminationBinding =
@@ -703,6 +710,7 @@ val TcMatchPattern:
     tpenv: UnscopedTyparEnv ->
     synPat: SynPat ->
     synWhenExprOpt: SynExpr option ->
+    tcTrueMatchClause: TcTrueMatchClause ->
         Pattern * Expr option * Val list * TcEnv * UnscopedTyparEnv
 
 [<return: Struct>]
