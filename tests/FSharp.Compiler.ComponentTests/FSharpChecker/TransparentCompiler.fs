@@ -30,10 +30,6 @@ open OpenTelemetry.Trace
 module internal JobEvents =
     let fileName fileId = $"File%s{fileId}.fs"
 
-    let tap f x = f x; x
-    let print fileId x = printfn $"{fileId}: %A{x}"
-    let tapPrint fileId = Event.map (tap (print fileId))
-
     let recordAll() =
         let mutable cache : AsyncMemoize<_,_,_> option = None
         let events = ResizeArray()
