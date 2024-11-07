@@ -53,8 +53,8 @@
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerOptions+attempt@373::Invoke([FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<FSharp.Compiler.CompilerOptions+CompilerOption>)][offset 0x00000E9F][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerOptions+processArg@333::Invoke([FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>)][offset 0x0000004D][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerOptions+ResponseFile+parseLine@239::Invoke(string)][offset 0x00000031][found Char] Unexpected type on the stack.
-[IL]: Error [StackUnexpected]: : FSharp.Compiler.ParseAndCheckInputs+Pipe #1 stage #1 at line 1866@1866::Invoke(int32)][offset 0x00000030][found Char] Unexpected type on the stack.
-[IL]: Error [StackUnexpected]: : FSharp.Compiler.ParseAndCheckInputs+Pipe #1 stage #1 at line 1866@1866::Invoke(int32)][offset 0x00000039][found Char] Unexpected type on the stack.
+[IL]: Error [StackUnexpected]: : FSharp.Compiler.ParseAndCheckInputs+Pipe #1 stage #1 at line 1865@1865::Invoke(int32)][offset 0x00000030][found Char] Unexpected type on the stack.
+[IL]: Error [StackUnexpected]: : FSharp.Compiler.ParseAndCheckInputs+Pipe #1 stage #1 at line 1865@1865::Invoke(int32)][offset 0x00000039][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerImports+line@560-1::Invoke(string)][offset 0x0000000B][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerConfig+TcConfig::.ctor([FSharp.Compiler.Service]FSharp.Compiler.CompilerConfig+TcConfigBuilder, bool)][offset 0x0000062B][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerConfig+TcConfig::.ctor([FSharp.Compiler.Service]FSharp.Compiler.CompilerConfig+TcConfigBuilder, bool)][offset 0x00000634][found Char] Unexpected type on the stack.
@@ -96,10 +96,6 @@
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.IO.FileSystemUtils::trimQuotes(string)][offset 0x00000014][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : Internal.Utilities.Library.String::lowerCaseFirstChar(string)][offset 0x0000003F][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : Internal.Utilities.Library.Array+loop@276-4::Invoke(int32)][offset 0x00000012][found Byte] Unexpected type on the stack.
-Types found: 23171
-Types verified: 23171
-Methods found: 88115
-Methods verified: 88115
 [IL]: Error [StackUnexpected]: : Microsoft.FSharp.Collections.ArrayModule+Parallel::Choose([FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,Microsoft.FSharp.Core.FSharpOption`1<!!1>>, !!0[])][offset 0x000000A0][found Byte] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : Microsoft.FSharp.Collections.ArrayModule+Parallel::Filter([FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>, !!0[])][offset 0x00000029][found Byte] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : Microsoft.FSharp.Collections.ArrayModule+Parallel::Partition([FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>, !!0[])][offset 0x00000038][found Byte] Unexpected type on the stack.
@@ -117,7 +113,3 @@ Methods verified: 88115
 [IL]: Error [StackUnexpected]: : Microsoft.FSharp.Core.BasicInlinedOperations::castclassPrim(object)][offset 0x00000006][found ref 'T'][expected value 'T'] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : Microsoft.FSharp.Core.BasicInlinedOperations::notnullPrim(!!0)][offset 0x00000002][found Nullobjref 'NullReference'][expected value 'T'] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : Microsoft.FSharp.Core.BasicInlinedOperations::iscastPrim(object)][offset 0x00000006][found ref 'T'][expected value 'T'] Unexpected type on the stack.
-Types found: 2954
-Types verified: 2954
-Methods found: 11088
-Methods verified: 11088
