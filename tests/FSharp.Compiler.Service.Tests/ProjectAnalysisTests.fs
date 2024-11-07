@@ -5,7 +5,7 @@
 let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e ->  false
 
 open Xunit
-open FsUnit
+open FSharp.Test.Assert
 open FSharp.Test
 open System
 open System.IO
@@ -96,7 +96,7 @@ let mmmm2 : M.CAbbrev = new M.CAbbrev() // note, these don't count as uses of C
 let ``Test project1 whole project errors`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project1.options) |> Async.RunImmediate
-    wholeProjectResults .Diagnostics.Length |> shouldEqual 2
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 2
     wholeProjectResults.Diagnostics[1].Message.Contains("Incomplete pattern matches on this expression") |> shouldEqual true // yes it does
     wholeProjectResults.Diagnostics[1].ErrorNumber |> shouldEqual 25
 

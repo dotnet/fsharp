@@ -13,7 +13,7 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open TestFramework
-open FsUnit
+open FSharp.Test.Assert
 open Xunit
 open FSharp.Test.Utilities
 
