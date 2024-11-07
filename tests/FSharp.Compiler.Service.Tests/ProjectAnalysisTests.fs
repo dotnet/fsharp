@@ -19,8 +19,6 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Symbols.FSharpExprPatterns
 open TestFramework
 
-// Exculde because of some GC tests
-[<Collection(nameof DoNotRunInParallel)>]
 module internal Project1 =
 
     let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
@@ -128,6 +126,7 @@ let ``Test project1 and make sure TcImports gets cleaned up`` () =
     let weakTcImports = test ()
     checker.InvalidateConfiguration Project1.options
     checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+    GC.Collect()
     System.Threading.SpinWait.SpinUntil(fun () -> not weakTcImports.IsAlive)
 
 [<Fact>]
