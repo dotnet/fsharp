@@ -28,9 +28,6 @@
 </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\service\FsUnit.fs">
-      <Link>FsUnit.fs</Link>
-    </Compile>
     <Compile Include="..\FSharp.Test.Utilities\XunitSetup.fs">
       <Link>XunitSetup.fs</Link>
     </Compile>
