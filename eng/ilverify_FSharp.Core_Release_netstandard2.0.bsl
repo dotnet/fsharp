@@ -10,7 +10,3 @@
 [IL]: Error [StackUnexpected]: : Microsoft.FSharp.Core.StringModule::Filter([FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,bool>, string)][offset 0x0000006C][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : Microsoft.FSharp.Core.LanguagePrimitives+HashCompare::GenericEqualityCharArray(char[], char[])][offset 0x0000001C][found Short] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : Microsoft.FSharp.Core.LanguagePrimitives+HashCompare::GenericEqualityCharArray(char[], char[])][offset 0x00000023][found Short] Unexpected type on the stack.
-Types found: 2207
-Types verified: 2207
-Methods found: 9493
-Methods verified: 9493
