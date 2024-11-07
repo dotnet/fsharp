@@ -406,7 +406,7 @@ let ``Test ManyProjectsStressTest all symbols`` useTransparentCompiler =
 
 //-----------------------------------------------------------------------------------------
 
-type internal MultiProjectDirty1() =
+type internal MultiProjectDirty1(checker: FSharpChecker) =
 
     let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
     let baseName = getTemporaryFileName()
@@ -430,7 +430,7 @@ let x = "F#"
         let args = mkProjectCommandLineArgs (dllName, fileNames)
         { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
-type internal MultiProjectDirty2(multiProjectDirty1: MultiProjectDirty1) =
+type internal MultiProjectDirty2(checker: FSharpChecker, multiProjectDirty1: MultiProjectDirty1) =
 
     let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
     let baseName = getTemporaryFileName ()
@@ -468,8 +468,8 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
     // A private checker because we subscribe to FileChecked.
     let checker = FSharpChecker.Create(useTransparentCompiler = useTransparentCompiler)
 
-    let multiProjectDirty1 = MultiProjectDirty1()
-    let multiProjectDirty2 = MultiProjectDirty2(multiProjectDirty1)
+    let multiProjectDirty1 = MultiProjectDirty1(checker)
+    let multiProjectDirty2 = MultiProjectDirty2(checker, multiProjectDirty1)
 
     //  register to count the file checks
     let mutable count = 0
@@ -586,13 +586,10 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
     printfn "Old write time: '%A', ticks = %d"  wt1b wt1b.Ticks
     printfn "New write time: '%A', ticks = %d"  wt2b wt2b.Ticks
 
-    System.Threading.Thread.Sleep(1000)
-
     count |> shouldEqual 4
     let wholeProjectResults2AfterChange2 = checker.ParseAndCheckProject(proj2options) |> Async.RunImmediate
 
     count |> shouldEqual 6 // note, causes two files to be type checked, one from each project
-
 
     let wholeProjectResults1AfterChange2 = checker.ParseAndCheckProject(proj1options) |> Async.RunImmediate
 
