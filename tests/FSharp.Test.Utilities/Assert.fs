@@ -3,7 +3,7 @@ namespace FSharp.Test
 module Assert =
     open FluentAssertions
     open System.Collections
-    open System.Text
+    open Xunit
     open System.IO
 
     let inline shouldBeEqualWith (expected : ^T) (message: string) (actual: ^U) =
@@ -18,8 +18,17 @@ module Assert =
     let inline shouldContain (needle : string) (haystack : string) =
         haystack.Should().Contain(needle) |> ignore    
 
+    // One fine day, all of the 3 things below should be purged and replaced with pure Assert.Equal.
+    // Xunit checks types by default. These are just artifacts of the testing chaos in the repo back in a day.
     let inline shouldBe (expected : ^T) (actual : ^U) =
         actual.Should().Be(expected, "") |> ignore
+
+    let inline areEqual (expected: ^T) (actual: ^T) =
+        Assert.Equal<^T>(expected, actual)
+
+    let inline shouldEqual (x: 'a) (y: 'a) =
+        Assert.Equal<'a>(x, y)
+    //
 
     let inline shouldBeEmpty (actual : ^T when ^T :> IEnumerable) =
         actual.Should().BeEmpty("") |> ignore

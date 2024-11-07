@@ -2,7 +2,6 @@
 
 open FSharp.Compiler.Symbols
 open Xunit
-open FsUnit
 open FSharp.Test.Compiler
 open Signatures.TestHelpers
 
