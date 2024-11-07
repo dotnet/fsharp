@@ -1,7 +1,7 @@
 module FSharp.Compiler.Service.Tests.ServiceUntypedParseTests
 
 open System.IO
-open FsUnit
+open FSharp.Test.Assert
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax

@@ -5,7 +5,7 @@ open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
-open FsUnit
+open FSharp.Test.Assert
 open Xunit
 
 module ActivePatterns =
