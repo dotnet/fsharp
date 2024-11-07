@@ -15,7 +15,3 @@
 [IL]: Error [StackUnexpected]: : Microsoft.FSharp.Core.BasicInlinedOperations::castclassPrim(object)][offset 0x00000006][found ref 'T'][expected value 'T'] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : Microsoft.FSharp.Core.BasicInlinedOperations::notnullPrim(!!0)][offset 0x00000002][found Nullobjref 'NullReference'][expected value 'T'] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : Microsoft.FSharp.Core.BasicInlinedOperations::iscastPrim(object)][offset 0x00000006][found ref 'T'][expected value 'T'] Unexpected type on the stack.
-Types found: 2954
-Types verified: 2954
-Methods found: 11088
-Methods verified: 11088
