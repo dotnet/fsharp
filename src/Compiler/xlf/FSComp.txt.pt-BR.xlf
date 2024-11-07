@@ -1228,8 +1228,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcAbstractPropertyCannotHaveNamedArgumentsWithGetSet">
-        <source>Abstract properties cannot have named arguments with get and set accessors.</source>
-        <target state="new">Abstract properties cannot have named arguments with get and set accessors.</target>
+        <source>Abstract function-type properties with get/set accessors cannot have named arguments inside the function-type definition. Use unnamed function arguments instead.</source>
+        <target state="new">Abstract function-type properties with get/set accessors cannot have named arguments inside the function-type definition. Use unnamed function arguments instead.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAccessModifiersNotAllowedInSRTPConstraint">

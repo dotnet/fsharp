@@ -628,7 +628,7 @@ type LabeledProperty =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3874, Line 5, Col 5, Line 5, Col 85, "Abstract properties cannot have named arguments with get and set accessors.")
+            (Error 3874, Line 5, Col 5, Line 5, Col 85, "Abstract function-type properties with get/set accessors cannot have named arguments inside the function-type definition. Use unnamed function arguments instead.")
         ]
         
     [<Fact>]
