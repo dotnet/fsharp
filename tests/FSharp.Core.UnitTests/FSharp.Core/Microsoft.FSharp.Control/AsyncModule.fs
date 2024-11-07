@@ -470,27 +470,23 @@ type AsyncModule() =
     member _.``error on one workflow should cancel all others``() =
         task {
             use failOnlyOne = new Semaphore(0, 1)
-            // Start from 1.
-            let mutable running = new CountdownEvent(1)
+            let mutable cancelled = 0
+            let mutable started = 0
 
             let job i = async {
-                use! holder = Async.OnCancel (running.Signal >> ignore)
-                running.AddCount 1
+                use! holder = Async.OnCancel (fun () -> Interlocked.Increment &cancelled |> ignore)
+                Interlocked.Increment &started |> ignore
                 do! failOnlyOne |> Async.AwaitWaitHandle |> Async.Ignore
-                running.Signal() |> ignore
                 failwith "boom" 
             }
 
             let test = Async.Parallel [ for i in 1 .. 100 -> job i ] |> Async.Catch |> Async.Ignore |> Async.StartAsTask
-            // Wait for more than one job to start
-            while running.CurrentCount < 2 do
+            while started < 2 do
                 do! Task.Yield()
-            printfn $"started jobs: {running.CurrentCount - 1}"
             failOnlyOne.Release() |> ignore
             do! test
-            // running.CurrentCount should eventually settle back at 1. Signal it one more time and it should be 0.
-            running.Signal() |> ignore
-            return! Async.AwaitWaitHandle running.WaitHandle
+            printfn $"started: {started}, cancelled: {cancelled}"
+            Assert.True(started - 1 <= cancelled, $"started {started} jobs but cancelled only {cancelled}")
         }
 
     [<Fact>]
