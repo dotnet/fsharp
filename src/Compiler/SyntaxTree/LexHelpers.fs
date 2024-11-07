@@ -12,6 +12,7 @@ open Internal.Utilities.Text.Lexing
 open FSharp.Compiler.IO
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
+open FSharp.Compiler.LexerStore
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.Parser
@@ -98,10 +99,8 @@ let mkLexargs
     }
 
 /// Register the lexbuf and call the given function
-let reusingLexbufForParsing lexbuf f =
+let reusingLexbufForParsing (lexbuf: Lexbuf) f =
     use _ = UseBuildPhase BuildPhase.Parse
-    LexbufLocalXmlDocStore.ClearXmlDoc lexbuf
-    LexbufCommentStore.ClearComments lexbuf
 
     try
         f ()
