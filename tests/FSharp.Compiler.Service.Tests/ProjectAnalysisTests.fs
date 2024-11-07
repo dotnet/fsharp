@@ -5,7 +5,7 @@
 let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e ->  false
 
 open Xunit
-open FsUnit
+open FSharp.Test.Assert
 open FSharp.Test
 open System
 open System.IO
@@ -98,7 +98,7 @@ let mmmm2 : M.CAbbrev = new M.CAbbrev() // note, these don't count as uses of C
 let ``Test project1 whole project errors`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project1.options) |> Async.RunImmediate
-    wholeProjectResults .Diagnostics.Length |> shouldEqual 2
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 2
     wholeProjectResults.Diagnostics[1].Message.Contains("Incomplete pattern matches on this expression") |> shouldEqual true // yes it does
     wholeProjectResults.Diagnostics[1].ErrorNumber |> shouldEqual 25
 
@@ -110,6 +110,9 @@ let ``Test project1 whole project errors`` () =
 [<Fact>]
 let ``Test project1 and make sure TcImports gets cleaned up`` () =
 
+    // A private checker for this test.
+    let checker = FSharpChecker.Create()
+    
     let test () =
         let _, checkFileAnswer = checker.ParseAndCheckFileInProject(Project1.fileName1, 0, Project1.fileSource1, Project1.options) |> Async.RunImmediate
         match checkFileAnswer with
@@ -125,15 +128,7 @@ let ``Test project1 and make sure TcImports gets cleaned up`` () =
     let weakTcImports = test ()
     checker.InvalidateConfiguration Project1.options
     checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-
-    //collect 2 more times for good measure,
-    // See for example: https://github.com/dotnet/runtime/discussions/108081
-    GC.Collect(2, GCCollectionMode.Forced, true)
-    GC.WaitForPendingFinalizers()
-    GC.Collect()
-    GC.WaitForPendingFinalizers()
-
-    Assert.False weakTcImports.IsAlive
+    System.Threading.SpinWait.SpinUntil(fun () -> not weakTcImports.IsAlive)
 
 [<Fact>]
 let ``Test Project1 should have protected FullName and TryFullName return same results`` () =

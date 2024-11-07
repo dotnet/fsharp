@@ -30,6 +30,7 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Text
 
 open Xunit
+open FSharp.Test.Utilities
 
 open FSharp.Test.Utilities
 
@@ -226,8 +227,7 @@ let sourceFile fileId deps =
       IsPhysicalFile = false }
 
 
-let OptionsCache = ConcurrentDictionary<_, Lazy<_>>()
-
+let OptionsCache = ConcurrentDictionary<_, Lazy<FSharpProjectOptions>>()
 
 type SyntheticProject =
     { Name: string
@@ -351,9 +351,9 @@ type SyntheticProject =
                 UnresolvedReferences = None
                 OriginalLoadReferences = []
                 Stamp = None }
-
-        
+       
         OptionsCache.GetOrAdd(key, factory).Value
+
 
 
     member this.GetAllProjects() =
@@ -1030,8 +1030,7 @@ type ProjectWorkflowBuilder
 
     member this.Execute(workflow: Async<WorkflowContext>) =
         try
-            // We don't want the defaultCancellationToken.
-            Async.RunSynchronously(workflow, cancellationToken = Threading.CancellationToken.None, ?timeout = runTimeout)
+            Async.RunSynchronously(workflow, ?timeout = runTimeout)
         finally
             if initialContext.IsNone && not isExistingProject then
                 this.DeleteProjectDir()
