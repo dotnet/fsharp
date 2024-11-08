@@ -1,7 +1,6 @@
 ﻿module Signatures.NestedTypeTests
 
 open Xunit
-open FsUnit
 open FSharp.Test
 open FSharp.Test.Compiler
 open Signatures.TestHelpers

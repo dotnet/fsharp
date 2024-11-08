@@ -16,7 +16,7 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
-open FSharp.Compiler.ParseHelpers
+open FSharp.Compiler.LexerStore
 
 type public HashIfExpression() =
     let preludes = [|"#if "; "#elif "|]
