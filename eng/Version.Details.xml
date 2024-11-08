@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Dependencies>
   <ProductDependencies>
-    <Dependency Name="Microsoft.SourceBuild.Intermediate.source-build-reference-packages" Version="10.0.0-alpha.1.24554.1">
+    <Dependency Name="Microsoft.SourceBuild.Intermediate.source-build-reference-packages" Version="10.0.0-alpha.1.24556.1">
       <Uri>https://github.com/dotnet/source-build-reference-packages</Uri>
-      <Sha>e781442b88c4d939f06a94f38f24a5dc18c383d4</Sha>
+      <Sha>346f2ca639adb1b363592e27bf62aba52916ea3f</Sha>
       <SourceBuild RepoName="source-build-reference-packages" ManagedOnly="true" />
     </Dependency>
     <!-- Intermediate is necessary for source build. -->
