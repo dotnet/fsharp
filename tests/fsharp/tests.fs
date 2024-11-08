@@ -404,7 +404,7 @@ module CoreTests =
         let diffs = fsdiff cfg outFile expectedFile
         match diffs with
         | "" -> ()
-        | _ -> Assert.failf "'%s' and '%s' differ; %A" outFile expectedFile diffs
+        | _ -> failwithf "'%s' and '%s' differ; %A" outFile expectedFile diffs
 
     [<Fact>]
     let fsfromcs () =
@@ -468,7 +468,7 @@ module CoreTests =
             let diffs = fsdiff cfg outFile expectedFile
             match diffs with
             | "" -> ()
-            | _ -> Assert.failf "'%s' and '%s' differ; %A" outFile expectedFile diffs
+            | _ -> failwithf "'%s' and '%s' differ; %A" outFile expectedFile diffs
 
         // check error messages for some cases
         let outFile = "compilation.errors.output.txt"
@@ -478,7 +478,7 @@ module CoreTests =
         let diffs = fsdiff cfg outFile expectedFile
         match diffs with
         | "" -> ()
-        | _ -> Assert.failf "'%s' and '%s' differ; %A" outFile expectedFile diffs
+        | _ -> failwithf "'%s' and '%s' differ; %A" outFile expectedFile diffs
 
     [<Fact>]
     let ``fsi-reference`` () =
@@ -619,11 +619,11 @@ module CoreTests =
 
         match fsdiff cfg diffFileOut expectedFileOut with
         | "" -> ()
-        | diffs -> Assert.failf "'%s' and '%s' differ; %A" diffFileOut expectedFileOut diffs
+        | diffs -> failwithf "'%s' and '%s' differ; %A" diffFileOut expectedFileOut diffs
 
         match fsdiff cfg diffFileErr expectedFileErr with
         | "" -> ()
-        | diffs -> Assert.failf "'%s' and '%s' differ; %A" diffFileErr expectedFileErr diffs
+        | diffs -> failwithf "'%s' and '%s' differ; %A" diffFileErr expectedFileErr diffs
 
     [<Fact>]
     let ``printing`` () =
@@ -1031,13 +1031,13 @@ module CoreTests =
 
         match diffs with
         | "" -> ()
-        | _ -> Assert.failf "'%s' and '%s' differ; %A" stdoutPath stdoutBaseline diffs
+        | _ -> failwithf "'%s' and '%s' differ; %A" stdoutPath stdoutBaseline diffs
 
         let diffs2 = fsdiff cfg stderrPath stderrBaseline
 
         match diffs2 with
         | "" -> ()
-        | _ -> Assert.failf "'%s' and '%s' differ; %A" stderrPath stderrBaseline diffs2
+        | _ -> failwithf "'%s' and '%s' differ; %A" stderrPath stderrBaseline diffs2
 
     [<Fact>]
     let ``load-script`` () =
@@ -1160,13 +1160,13 @@ module CoreTests =
 
         match diffs with
         | "" -> ()
-        | _ -> Assert.failf "'%s' and '%s' differ; %A" stdoutPath stdoutBaseline diffs
+        | _ -> failwithf "'%s' and '%s' differ; %A" stdoutPath stdoutBaseline diffs
 
         let diffs2 = fsdiff cfg stderrPath stderrBaseline
 
         match diffs2 with
         | "" -> ()
-        | _ -> Assert.failf "'%s' and '%s' differ; %A" stderrPath stderrBaseline diffs2
+        | _ -> failwithf "'%s' and '%s' differ; %A" stderrPath stderrBaseline diffs2
 #endif
 
 
@@ -1739,7 +1739,7 @@ module RegressionTests =
         match diff with
         | "" -> ()
         | _ ->
-            Assert.failf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff
+            failwithf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff
 
         let outFile2 = "output.test.txt"
         let expectedFile2 = "output.test.bsl"
@@ -1750,7 +1750,7 @@ module RegressionTests =
         match diff2 with
         | "" -> ()
         | _ ->
-            Assert.failf "'%s' and '%s' differ; %A" (getfullpath cfg outFile2) (getfullpath cfg expectedFile2) diff2
+            failwithf "'%s' and '%s' differ; %A" (getfullpath cfg outFile2) (getfullpath cfg expectedFile2) diff2
 #endif
 
     [<Fact>]
@@ -1838,7 +1838,7 @@ module OptimizationTests =
         match diff with
         | "" -> ()
         | _ ->
-            Assert.failf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff
+            failwithf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff
 
 
     [<Fact>]
@@ -1855,7 +1855,7 @@ module OptimizationTests =
 
         match diff with
         | "" -> ()
-        | _ -> Assert.failf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff
+        | _ -> failwithf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff
 
 
     [<Fact>]
@@ -1872,7 +1872,7 @@ module OptimizationTests =
 
         match diff with
         | "" -> ()
-        | _ -> Assert.failf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff
+        | _ -> failwithf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff
 
 
     [<Fact>]
@@ -1889,7 +1889,7 @@ module OptimizationTests =
 
         match diff with
         | "" -> ()
-        | _ -> Assert.failf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff
+        | _ -> failwithf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff
 
 
     [<Fact>]
@@ -1922,7 +1922,7 @@ module OptimizationTests =
         match ``test--optimize.il`` with
             | [] -> ()
             | lines ->
-                Assert.failf "Error: optimizations not removed.  Relevant lines from IL file follow: %A" lines
+                failwithf "Error: optimizations not removed.  Relevant lines from IL file follow: %A" lines
 
         let numElim =
             File.ReadLines (getfullpath cfg "test.il")

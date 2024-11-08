@@ -67,6 +67,8 @@ type AsyncType() =
             |> Async.Parallel
             |> Async.RunSynchronously
             |> Set.ofArray
+        printfn $"RunSynchronously used {usedThreads.Count} threads. Environment.ProcessorCount is {Environment.ProcessorCount}."
+        // Some arbitrary large number but in practice it should not use more threads than there are CPU cores.
         Assert.True(usedThreads.Count < 256, $"RunSynchronously used {usedThreads.Count} threads.")
 
     [<Theory>]
