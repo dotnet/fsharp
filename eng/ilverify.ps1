@@ -74,6 +74,7 @@ if (-not (Test-Path $runtime_path)) {
 }
 
 # For every artifact, every configuration and TFM, run a dotnet-ilverify with references from discovered runtime directory:
+[bool] $failed = $false
 foreach ($project in $projects.Keys) {
     foreach ($tfm in $projects[$project]) {
         foreach ($configuration in $configurations) {
@@ -90,7 +91,7 @@ foreach ($project in $projects.Keys) {
                         "-g $_"
                     }
                 } else { "" }
-            $ilverify_cmd = "dotnet ilverify --statistics --sanity-checks --tokens $dll_path -r '$runtime_path/*.dll' -r '$artifacts_bin_path/$project/$configuration/$tfm/FSharp.Core.dll' $ignore_errors_string"
+            $ilverify_cmd = "dotnet ilverify --sanity-checks --tokens $dll_path -r '$runtime_path/*.dll' -r '$artifacts_bin_path/$project/$configuration/$tfm/FSharp.Core.dll' $ignore_errors_string"
             Write-Host "Running ilverify command:`n $ilverify_cmd"
 
             # Append output to output array
@@ -117,7 +118,8 @@ foreach ($project in $projects.Keys) {
             if (-not (Test-Path $baseline_file)) {
                 Write-Host "Baseline file not found: $baseline_file"
                 $ilverify_output | Set-Content $baseline_actual_file
-                exit 1
+                $failed = $true
+                continue
             }
 
             # Read baseline file into string array
@@ -126,7 +128,8 @@ foreach ($project in $projects.Keys) {
             if ($baseline.Length -eq 0) {
                 Write-Host "Baseline file is empty: $baseline_file"
                 $ilverify_output | Set-Content $baseline_actual_file
-                exit 1
+                $failed = $true
+                continue
             }
 
             # Compare contents of both arrays, error if they're not equal
@@ -140,11 +143,16 @@ foreach ($project in $projects.Keys) {
 
                 $cmp | Format-Table | Out-String | Write-Host
                 $ilverify_output | Set-Content $baseline_actual_file
-
-                exit 1
+                $failed = $true
+                continue
             }
         }
     }
+}
+
+if ($failed) {
+    Write-Host "ILverify failed."
+    exit 1
 }
 
 exit 0

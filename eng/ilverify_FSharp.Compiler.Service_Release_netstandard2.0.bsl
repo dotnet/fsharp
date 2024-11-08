@@ -52,11 +52,11 @@
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerOptions::attempt@372([FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,Microsoft.FSharp.Core.Unit>, [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<FSharp.Compiler.CompilerOptions+CompilerOptionBlock>, [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>, [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>, string, string, string, string, [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<FSharp.Compiler.CompilerOptions+CompilerOption>)][offset 0x00000A99][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerOptions::processArg@332([FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,Microsoft.FSharp.Core.Unit>, [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<FSharp.Compiler.CompilerOptions+CompilerOptionBlock>, [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<FSharp.Compiler.CompilerOptions+CompilerOption>, [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>)][offset 0x0000003E][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerOptions::AddPathMapping([FSharp.Compiler.Service]FSharp.Compiler.CompilerConfig+TcConfigBuilder, string)][offset 0x0000000B][found Char] Unexpected type on the stack.
-[IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerOptions::subSystemVersionSwitch$cont@636([FSharp.Compiler.Service]FSharp.Compiler.CompilerConfig+TcConfigBuilder, string, [FSharp.Core]Microsoft.FSharp.Core.Unit)][offset 0x0000000B][found Char] Unexpected type on the stack.
+[IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerOptions::subSystemVersionSwitch$cont@656([FSharp.Compiler.Service]FSharp.Compiler.CompilerConfig+TcConfigBuilder, string, [FSharp.Core]Microsoft.FSharp.Core.Unit)][offset 0x0000000B][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnderflow]: : FSharp.Compiler.CompilerOptions::DoWithColor([System.Console]System.ConsoleColor, [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<Microsoft.FSharp.Core.Unit,!!0>)][offset 0x0000005E] Stack underflow.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerOptions+ResponseFile+parseLine@239::Invoke(string)][offset 0x00000026][found Char] Unexpected type on the stack.
-[IL]: Error [StackUnexpected]: : FSharp.Compiler.ParseAndCheckInputs+CheckMultipleInputsUsingGraphMode@1866::Invoke(int32)][offset 0x00000031][found Char] Unexpected type on the stack.
-[IL]: Error [StackUnexpected]: : FSharp.Compiler.ParseAndCheckInputs+CheckMultipleInputsUsingGraphMode@1866::Invoke(int32)][offset 0x0000003A][found Char] Unexpected type on the stack.
+[IL]: Error [StackUnexpected]: : FSharp.Compiler.ParseAndCheckInputs+CheckMultipleInputsUsingGraphMode@1865::Invoke(int32)][offset 0x00000031][found Char] Unexpected type on the stack.
+[IL]: Error [StackUnexpected]: : FSharp.Compiler.ParseAndCheckInputs+CheckMultipleInputsUsingGraphMode@1865::Invoke(int32)][offset 0x0000003A][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerImports+TcConfig-TryResolveLibWithDirectories@558-1::Invoke([FSharp.Core]Microsoft.FSharp.Core.Unit)][offset 0x00000021][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerImports+TcConfig-TryResolveLibWithDirectories@558-1::Invoke([FSharp.Core]Microsoft.FSharp.Core.Unit)][offset 0x0000003B][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerConfig+TcConfig::.ctor([FSharp.Compiler.Service]FSharp.Compiler.CompilerConfig+TcConfigBuilder, bool)][offset 0x0000059C][found Char] Unexpected type on the stack.
@@ -123,10 +123,6 @@
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.IO.FileSystemUtils::trimQuotes(string)][offset 0x00000014][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : Internal.Utilities.Library.String::lowerCaseFirstChar(string)][offset 0x0000003A][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : Internal.Utilities.Library.Array::loop@275-3(bool[], int32)][offset 0x00000008][found Byte] Unexpected type on the stack.
-Types found: 19622
-Types verified: 19622
-Methods found: 81924
-Methods verified: 81924
 [IL]: Error [StackUnexpected]: : Microsoft.FSharp.Collections.ArrayModule+Parallel::Choose([FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,Microsoft.FSharp.Core.FSharpOption`1<!!1>>, !!0[])][offset 0x00000081][found Byte] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : Microsoft.FSharp.Collections.ArrayModule+Parallel::Filter([FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>, !!0[])][offset 0x00000029][found Byte] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : Microsoft.FSharp.Collections.ArrayModule+Parallel::Partition([FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>, !!0[])][offset 0x00000038][found Byte] Unexpected type on the stack.
@@ -139,7 +135,3 @@ Methods verified: 81924
 [IL]: Error [StackUnexpected]: : Microsoft.FSharp.Core.StringModule::Filter([FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,bool>, string)][offset 0x0000006C][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : Microsoft.FSharp.Core.LanguagePrimitives+HashCompare::GenericEqualityCharArray(char[], char[])][offset 0x0000001C][found Short] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : Microsoft.FSharp.Core.LanguagePrimitives+HashCompare::GenericEqualityCharArray(char[], char[])][offset 0x00000023][found Short] Unexpected type on the stack.
-Types found: 2207
-Types verified: 2207
-Methods found: 9493
-Methods verified: 9493
