@@ -872,6 +872,15 @@ type OperatorsModule2() =
         let result = Operators.string 123.456M
         Assert.AreEqual("123.456", result)
 
+        let result = Operators.string { new obj () with override _.ToString () = null }
+        Assert.AreEqual("", result)
+
+        let result = Operators.string { new obj () with override _.ToString () = Operators.string null }
+        Assert.AreEqual("", result)
+        
+        let result = Operators.string { new IFormattable with override _.ToString (_, _) = null }
+        Assert.AreEqual("", result)
+
         // Following tests ensure that InvariantCulture is used if type implements IFormattable
         
         // safe current culture, then switch culture
