@@ -92,16 +92,61 @@ let ResolveFileUsingPaths (paths, m, fileName) =
         let searchMessage = String.concat "\n " paths
         raise (FileNameNotResolved(fileName, searchMessage, m))
 
-let GetWarningNumber (numberString) =
-    let trimPrefix (s: string) =
-        if s.StartsWithOrdinal "FS" then s[2..] else s
+[<RequireQualifiedAccess>]
+type WarningNumberSource =
+    | CommandLineOption
+    | CompilerDirective
 
-    let tryParseInt (s: string) =
-        match Int32.TryParse s with
-        | true, n -> Some n
-        | false, _ -> None
+[<RequireQualifiedAccess>]
+type WarningDescription =
+    | Int32 of int
+    | String of string
+    | Ident of Ident
 
-    tryParseInt (trimPrefix numberString)
+let GetWarningNumber (m, description: WarningDescription, langVersion: LanguageVersion, source: WarningNumberSource) =
+    let argFeature = LanguageFeature.ParsedHashDirectiveArgumentNonQuotes
+
+    let parse (numStr: string) =
+        let trimPrefix (s: string) =
+            if s.StartsWithOrdinal "FS" then s[2..] else s
+
+        let tryParseIntWithFailAction (s: string) (failAction: unit -> unit) =
+            match Int32.TryParse s with
+            | true, n -> Some n
+            | false, _ ->
+                failAction ()
+                None
+
+        let warnInvalid () =
+            warning (Error(FSComp.SR.buildInvalidWarningNumber numStr, m))
+
+        if source = WarningNumberSource.CommandLineOption then
+            tryParseIntWithFailAction (trimPrefix numStr) id
+        elif langVersion.SupportsFeature(argFeature) then
+            tryParseIntWithFailAction (trimPrefix numStr) warnInvalid
+        else
+            tryParseIntWithFailAction numStr id
+
+    match description with
+    | WarningDescription.Int32 n ->
+        if tryCheckLanguageFeatureAndRecover langVersion argFeature m then
+            Some n
+        else
+            None
+    | WarningDescription.String s ->
+        if
+            source = WarningNumberSource.CompilerDirective
+            && not (langVersion.SupportsFeature argFeature)
+            && s.StartsWithOrdinal "FS"
+        then
+            warning (Error(FSComp.SR.buildInvalidWarningNumber s, m))
+
+        parse s
+    | WarningDescription.Ident ident ->
+        if tryCheckLanguageFeatureAndRecover langVersion argFeature m then
+            parse ident.idText
+        else
+            None
 
 let ComputeMakePathAbsolute implicitIncludeDir (path: string) =
     try
@@ -927,7 +972,7 @@ type TcConfigBuilder =
     member tcConfigB.TurnWarningOff(m: range, s: string) =
         use _ = UseBuildPhase BuildPhase.Parameter
 
-        match GetWarningNumber s with
+        match GetWarningNumber(m, WarningDescription.String s, tcConfigB.langVersion, WarningNumberSource.CommandLineOption) with
         | None -> ()
         | Some n ->
             // nowarn:62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
@@ -942,7 +987,7 @@ type TcConfigBuilder =
     member tcConfigB.TurnWarningOn(m: range, s: string) =
         use _ = UseBuildPhase BuildPhase.Parameter
 
-        match GetWarningNumber s with
+        match GetWarningNumber(m, WarningDescription.String s, tcConfigB.langVersion, WarningNumberSource.CommandLineOption) with
         | None -> ()
         | Some n ->
             // warnon 62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
