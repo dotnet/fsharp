@@ -31,7 +31,7 @@ type Async with
         task.Result
 
 // Create one global interactive checker instance
-let checker = FSharpChecker.Create(useTransparentCompiler = FSharp.Test.TestContext.UseTransparentCompiler)
+let checker = FSharpChecker.Create(useTransparentCompiler = FSharp.Test.CompilerAssert.UseTransparentCompiler)
 
 type TempFile(ext, contents: string) =
     let tmpFile =  Path.ChangeExtension(getTemporaryFileName (), ext)

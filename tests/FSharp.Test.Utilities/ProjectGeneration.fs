@@ -954,7 +954,7 @@ type ProjectWorkflowBuilder
         ?enablePartialTypeChecking
     ) =
 
-    let useTransparentCompiler = defaultArg useTransparentCompiler TestContext.UseTransparentCompiler
+    let useTransparentCompiler = defaultArg useTransparentCompiler CompilerAssert.UseTransparentCompiler
     let useGetSource = not useTransparentCompiler && defaultArg useGetSource false
     let useChangeNotifications = not useTransparentCompiler && defaultArg useChangeNotifications false
     let autoStart = defaultArg autoStart true

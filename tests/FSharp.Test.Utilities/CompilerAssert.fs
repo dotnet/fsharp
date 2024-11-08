@@ -307,15 +307,13 @@ and Compilation =
                 | n -> Some n
             Compilation(sources, output, options, targetFramework, cmplRefs, name, outputDirectory)
 
-module TestContext =
+module CompilerAssertHelpers =
 
     let UseTransparentCompiler =
         FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically ||
         not (String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TEST_TRANSPARENT_COMPILER")))
 
-    let Checker = FSharpChecker.Create(suggestNamesForErrors=true, useTransparentCompiler = UseTransparentCompiler)
-
-module CompilerAssertHelpers =
+    let checker = FSharpChecker.Create(suggestNamesForErrors=true, useTransparentCompiler = UseTransparentCompiler)
 
     // Unlike C# whose entrypoint is always string[] F# can make an entrypoint with 0 args, or with an array of string[]
     let mkDefaultArgs (entryPoint:MethodBase) : obj[] = [|
@@ -439,7 +437,7 @@ module CompilerAssertHelpers =
 
         // Generate a response file, purely for diagnostic reasons.
         File.WriteAllLines(Path.ChangeExtension(outputFilePath, ".rsp"), args)
-        let errors, ex = TestContext.Checker.Compile args |> Async.RunImmediate
+        let errors, ex = checker.Compile args |> Async.RunImmediate
         errors, ex, outputFilePath
 
     let compileDisposable (outputDirectory:DirectoryInfo) isExe options targetFramework nameOpt (sources:SourceCodeFileKind list) =
@@ -678,6 +676,10 @@ Updated automatically, please check diffs in your pull request, changes must be 
 """
         )
 
+    static member UseTransparentCompiler = UseTransparentCompiler
+
+    static member Checker = checker
+
     static member DefaultProjectOptions = defaultProjectOptions
 
     static member GenerateFsInputPath() =
@@ -743,7 +745,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         Assert.Equal(expectedOutput, output)  
 
     static member Pass (source: string) =
-        let parseResults, fileAnswer = TestContext.Checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions TargetFramework.Current) |> Async.RunImmediate
+        let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions TargetFramework.Current) |> Async.RunImmediate
 
         Assert.Empty(parseResults.Diagnostics)
 
@@ -757,7 +759,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         let defaultOptions = defaultProjectOptions TargetFramework.Current
         let options = { defaultOptions with OtherOptions = Array.append options defaultOptions.OtherOptions}
 
-        let parseResults, fileAnswer = TestContext.Checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, options) |> Async.RunImmediate
+        let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, options) |> Async.RunImmediate
 
         Assert.Empty(parseResults.Diagnostics)
 
@@ -771,7 +773,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         let absoluteSourceFile = System.IO.Path.Combine(sourceDirectory, sourceFile)
         let parseResults, fileAnswer =
             let defaultOptions = defaultProjectOptions TargetFramework.Current
-            TestContext.Checker.ParseAndCheckFileInProject(
+            checker.ParseAndCheckFileInProject(
                 sourceFile,
                 0,
                 SourceText.ofString (File.ReadAllText absoluteSourceFile),
@@ -802,7 +804,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         let errors =
             let parseResults, fileAnswer =
                 let defaultOptions = defaultProjectOptions TargetFramework.Current
-                TestContext.Checker.ParseAndCheckFileInProject(
+                checker.ParseAndCheckFileInProject(
                     name,
                     0,
                     SourceText.ofString source,
@@ -828,7 +830,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         let errors =
             let parseResults, fileAnswer =
                 let defaultOptions = defaultProjectOptions TargetFramework.Current
-                TestContext.Checker.ParseAndCheckFileInProject(
+                checker.ParseAndCheckFileInProject(
                     "test.fs",
                     0,
                     SourceText.ofString source,
@@ -849,7 +851,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
     static member ParseAndTypeCheck(options, name, source: string) =
         let parseResults, fileAnswer =
             let defaultOptions = defaultProjectOptionsForFilePath name TargetFramework.Current
-            TestContext.Checker.ParseAndCheckFileInProject(
+            checker.ParseAndCheckFileInProject(
                 name,
                 0,
                 SourceText.ofString source,
@@ -872,7 +874,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         let errors =
             let parseResults, fileAnswer =
                 let defaultOptions = defaultProjectOptions TargetFramework.Current
-                TestContext.Checker.ParseAndCheckFileInProject(
+                checker.ParseAndCheckFileInProject(
                     "test.fs",
                     0,
                     SourceText.ofString source,
@@ -1026,7 +1028,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
             { FSharpParsingOptions.Default with
                 SourceFiles = [| sourceFileName |]
                 LangVersionText = langVersion }
-        TestContext.Checker.ParseFile(sourceFileName, SourceText.ofString source, parsingOptions) |> Async.RunImmediate
+        checker.ParseFile(sourceFileName, SourceText.ofString source, parsingOptions) |> Async.RunImmediate
 
     static member ParseWithErrors (source: string, ?langVersion: string) = fun expectedParseErrors ->
         let parseResults = CompilerAssert.Parse (source, ?langVersion=langVersion)

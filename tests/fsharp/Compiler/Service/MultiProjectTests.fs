@@ -63,7 +63,7 @@ let test() =
             """
             |> SourceText.ofString
         let _, checkAnswer = 
-            TestContext.Checker.ParseAndCheckFileInProject("test.fs", 0, fsText, fsOptions)
+            CompilerAssert.Checker.ParseAndCheckFileInProject("test.fs", 0, fsText, fsOptions)
             |> Async.RunImmediate
 
 
@@ -128,13 +128,13 @@ let test() =
     [<Fact>]
     let ``Using a CSharp reference project in-memory and it gets GCed``() =
         let weakRef = AssertInMemoryCSharpReferenceIsValid()
-        TestContext.Checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+        CompilerAssert.Checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
         GC.Collect(2, GCCollectionMode.Forced, true)
         Assert.shouldBeFalse(weakRef.IsAlive)
 
     [<Fact>]
     let ``Using compiler service, file referencing a DLL will correctly update when the referenced DLL file changes``() =
-        let checker = TestContext.Checker
+        let checker = CompilerAssert.Checker
 
         // Create an assembly with the module Script1 and function x.
         let dllPath1 = 

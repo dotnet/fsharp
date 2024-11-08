@@ -57,7 +57,8 @@ marker4"""
     [<InlineData("marker3", "    |]")>]
     [<InlineData("marker4", "    )")>]
     member this.TestIndentation(marker: string, expectedLine: string) =
-        let checker = TestContext.Checker
+        let checker =
+            FSharpChecker.Create(useTransparentCompiler = CompilerAssertHelpers.UseTransparentCompiler)
 
         let position = indentTemplate.IndexOf(marker)
         Assert.True(position >= 0, "Precondition failed: unable to find marker in template")
@@ -95,7 +96,8 @@ marker4"""
     [<InlineData(true, "        ")>]
     [<InlineData(false, "")>]
     member this.TestPasteChanges_PastingOntoIndentedLine(enabled: bool, prefix: string) =
-        let checker = TestContext.Checker
+        let checker =
+            FSharpChecker.Create(useTransparentCompiler = CompilerAssertHelpers.UseTransparentCompiler)
 
         let parsingOptions, _ =
             checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
@@ -161,7 +163,8 @@ somethingElseHere
     [<InlineData "">]
     [<InlineData "        ">]
     member this.TestPasteChanges_PastingOntoEmptyLine(prefix: string) =
-        let checker = TestContext.Checker
+        let checker =
+            FSharpChecker.Create(useTransparentCompiler = CompilerAssertHelpers.UseTransparentCompiler)
 
         let parsingOptions, _ =
             checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions
@@ -221,7 +224,8 @@ somethingElseHere
 
     [<Fact>]
     member this.TestPasteChanges_PastingWithAutoIndentationInPasteSpan() =
-        let checker = TestContext.Checker
+        let checker =
+            FSharpChecker.Create(useTransparentCompiler = CompilerAssertHelpers.UseTransparentCompiler)
 
         let parsingOptions, _ =
             checker.GetParsingOptionsFromProjectOptions RoslynTestHelpers.DefaultProjectOptions

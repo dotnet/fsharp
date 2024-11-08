@@ -16,7 +16,7 @@ let parseSourceCode (name: string, code: string) =
         }
 
     let result =
-        TestContext.Checker.ParseFile(name, sourceText, parsingOptions) |> Async.RunSynchronously
+        CompilerAssert.Checker.ParseFile(name, sourceText, parsingOptions) |> Async.RunSynchronously
 
     result.ParseTree
 
