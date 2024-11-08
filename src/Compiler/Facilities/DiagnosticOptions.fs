@@ -8,20 +8,6 @@ namespace FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Text
 
 [<RequireQualifiedAccess>]
-type WarnScope =
-    | Off of range
-    | On of range
-    | OpenOff of range
-    | OpenOn of range
-
-type WarnScopeMap = WarnScopeMap of Map<int64, WarnScope list>
-
-type LineMap =
-    | LineMap of Map<int, int>
-
-    static member Empty = LineMap Map.empty
-
-[<RequireQualifiedAccess>]
 type FSharpDiagnosticSeverity =
     | Hidden
     | Info
@@ -36,9 +22,8 @@ type FSharpDiagnosticOptions =
         WarnOn: int list
         WarnAsError: int list
         WarnAsWarn: int list
-        mutable FSharp9CompatibleNowarn: bool // set after setting compiler options
-        mutable LineMap: LineMap // set after lexing
-        mutable WarnScopes: WarnScopeMap // set after lexing
+        WarnScopesFeatureIsSupported: bool
+        mutable WarnScopeData: obj option
     }
 
     static member Default =
@@ -49,9 +34,8 @@ type FSharpDiagnosticOptions =
             WarnOn = []
             WarnAsError = []
             WarnAsWarn = []
-            FSharp9CompatibleNowarn = false
-            LineMap = LineMap.Empty
-            WarnScopes = WarnScopeMap Map.empty
+            WarnScopesFeatureIsSupported = true
+            WarnScopeData = None
         }
 
     member x.CheckXmlDocs =

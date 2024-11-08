@@ -22,6 +22,7 @@ open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
@@ -91,24 +92,16 @@ let ResolveFileUsingPaths (paths, m, fileName) =
         let searchMessage = String.concat "\n " paths
         raise (FileNameNotResolved(fileName, searchMessage, m))
 
-let GetWarningNumber (m, warningNumber: string, prefixSupported) =
-    try
-        let warningNumber =
-            if warningNumber.StartsWithOrdinal "FS" then
-                if prefixSupported then
-                    warningNumber.Substring 2
-                else
-                    raise (new ArgumentException())
-            else
-                warningNumber
+let GetWarningNumber (numberString) =
+    let trimPrefix (s: string) =
+        if s.StartsWithOrdinal "FS" then s[2..] else s
 
-        if Char.IsDigit(warningNumber[0]) then
-            Some(int32 warningNumber)
-        else
-            None
-    with _ ->
-        warning (Error(FSComp.SR.buildInvalidWarningNumber warningNumber, m))
-        None
+    let tryParseInt (s: string) =
+        match Int32.TryParse s with
+        | true, n -> Some n
+        | false, _ -> None
+
+    tryParseInt (trimPrefix numberString)
 
 let ComputeMakePathAbsolute implicitIncludeDir (path: string) =
     try
@@ -528,7 +521,7 @@ type TcConfigBuilder =
         mutable optSettings: Optimizer.OptimizationSettings
         mutable emitTailcalls: bool
         mutable deterministic: bool
-        mutable concurrentBuild: bool
+        mutable parallelParsing: bool
         mutable parallelIlxGen: bool
         mutable emitMetadataAssembly: MetadataAssemblyGeneration
         mutable preferredUiLang: string option
@@ -620,6 +613,8 @@ type TcConfigBuilder =
         mutable dumpSignatureData: bool
 
         mutable realsig: bool
+
+        mutable compilationMode: TcGlobals.CompilationMode
     }
 
     // Directories to start probing in
@@ -777,7 +772,7 @@ type TcConfigBuilder =
                 }
             emitTailcalls = true
             deterministic = false
-            concurrentBuild = true
+            parallelParsing = true
             parallelIlxGen = FSharpExperimentalFeaturesEnabledAutomatically
             emitMetadataAssembly = MetadataAssemblyGeneration.None
             preferredUiLang = None
@@ -834,6 +829,7 @@ type TcConfigBuilder =
             dumpSignatureData = false
             realsig = false
             strictIndentation = None
+            compilationMode = TcGlobals.CompilationMode.Unset
         }
 
     member tcConfigB.FxResolver =
@@ -928,10 +924,10 @@ type TcConfigBuilder =
         tcConfigB.outputFile <- Some outfile
         outfile, pdbfile, assemblyName
 
-    member tcConfigB.TurnWarningOff(m, s: string) =
+    member tcConfigB.TurnWarningOff(m: range, s: string) =
         use _ = UseBuildPhase BuildPhase.Parameter
 
-        match GetWarningNumber(m, s, tcConfigB.langVersion.SupportsFeature(LanguageFeature.ParsedHashDirectiveArgumentNonQuotes)) with
+        match GetWarningNumber s with
         | None -> ()
         | Some n ->
             // nowarn:62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
@@ -943,10 +939,10 @@ type TcConfigBuilder =
                     WarnOff = ListSet.insert (=) n tcConfigB.diagnosticsOptions.WarnOff
                 }
 
-    member tcConfigB.TurnWarningOn(m, s: string) =
+    member tcConfigB.TurnWarningOn(m: range, s: string) =
         use _ = UseBuildPhase BuildPhase.Parameter
 
-        match GetWarningNumber(m, s, tcConfigB.langVersion.SupportsFeature(LanguageFeature.ParsedHashDirectiveArgumentNonQuotes)) with
+        match GetWarningNumber s with
         | None -> ()
         | Some n ->
             // warnon 62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
@@ -1339,7 +1335,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.optSettings = data.optSettings
     member _.emitTailcalls = data.emitTailcalls
     member _.deterministic = data.deterministic
-    member _.concurrentBuild = data.concurrentBuild
+    member _.parallelParsing = data.parallelParsing
     member _.parallelIlxGen = data.parallelIlxGen
     member _.emitMetadataAssembly = data.emitMetadataAssembly
     member _.pathMap = data.pathMap
@@ -1378,6 +1374,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.typeCheckingConfig = data.typeCheckingConfig
     member _.dumpSignatureData = data.dumpSignatureData
     member _.realsig = data.realsig
+    member _.compilationMode = data.compilationMode
 
     static member Create(builder, validate) =
         use _ = UseBuildPhase BuildPhase.Parameter

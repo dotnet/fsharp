@@ -259,8 +259,8 @@ type ArrayModule() =
     [<Fact>]
     member _.Except() =
         // integer array
-        let intArr1 = [| yield! {1..100}
-                         yield! {1..100} |]
+        let intArr1 = [| yield! seq {1..100}
+                         yield! seq {1..100} |]
         let intArr2 = [| 1 .. 10 |]
         let expectedIntArr = [| 11 .. 100 |]
 

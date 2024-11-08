@@ -86,9 +86,6 @@ val ProcessMetaCommandsFromInput:
 /// Process all the #r, #I etc. in an input.
 val ApplyMetaCommandsFromInputToTcConfig: TcConfig * ParsedInput * string * DependencyProvider -> TcConfig
 
-/// Report warnings about ignored warn directives.
-val CheckLegacyWarnDirectivePlacement: LanguageVersion * WarnScopeMap * ParsedInput -> unit
-
 /// Parse one input stream
 val ParseOneInputStream:
     tcConfig: TcConfig *

@@ -846,7 +846,7 @@ type internal FsiStdinSyphon(errorWriter: TextWriter) =
 /// Encapsulates functions used to write to outWriter and errorWriter
 type internal FsiConsoleOutput(tcConfigB, outWriter: TextWriter, errorWriter: TextWriter) =
 
-    let nullOut = new StreamWriter(Stream.Null) :> TextWriter
+    let nullOut = TextWriter.Null
 
     let fprintfnn (os: TextWriter) fmt =
         Printf.kfprintf
@@ -898,7 +898,7 @@ type internal DiagnosticsLoggerThatStopsOnFirstError
     override _.DiagnosticSink(diagnostic, severity) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
 
-        match diagnostic.AdjustedSeverity(tcConfig.diagnosticsOptions, severity) with
+        match diagnostic.AdjustSeverity(tcConfig.diagnosticsOptions, severity) with
         | FSharpDiagnosticSeverity.Error ->
             fsiStdinSyphon.PrintDiagnostic(tcConfig, diagnostic)
             errorCount <- errorCount + 1
@@ -907,15 +907,8 @@ type internal DiagnosticsLoggerThatStopsOnFirstError
                 exit 1 (* non-zero exit code *)
             // STOP ON FIRST ERROR (AVOIDS PARSER ERROR RECOVERY)
             raise StopProcessing
-        | FSharpDiagnosticSeverity.Warning ->
-            DoWithDiagnosticColor FSharpDiagnosticSeverity.Warning (fun () ->
-                fsiConsoleOutput.Error.WriteLine()
-                diagnostic.WriteWithContext(fsiConsoleOutput.Error, "  ", fsiStdinSyphon.GetLine, tcConfig, severity)
-                fsiConsoleOutput.Error.WriteLine()
-                fsiConsoleOutput.Error.WriteLine()
-                fsiConsoleOutput.Error.Flush())
-        | FSharpDiagnosticSeverity.Info ->
-            DoWithDiagnosticColor FSharpDiagnosticSeverity.Info (fun () ->
+        | (FSharpDiagnosticSeverity.Warning | FSharpDiagnosticSeverity.Info) as adjustedSeverity ->
+            DoWithDiagnosticColor adjustedSeverity (fun () ->
                 fsiConsoleOutput.Error.WriteLine()
                 diagnostic.WriteWithContext(fsiConsoleOutput.Error, "  ", fsiStdinSyphon.GetLine, tcConfig, severity)
                 fsiConsoleOutput.Error.WriteLine()
@@ -1204,11 +1197,6 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
     do
         if tcConfigB.clearResultsCache then
             dependencyProvider.ClearResultsCache(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError rangeCmdArgs)
-
-        if tcConfigB.utf8output then
-            let prev = Console.OutputEncoding
-            Console.OutputEncoding <- Encoding.UTF8
-            System.AppDomain.CurrentDomain.ProcessExit.Add(fun _ -> Console.OutputEncoding <- prev)
 
     do
         let firstArg =
@@ -2487,10 +2475,7 @@ type internal FsiDynamicCompiler
                     [],
                     [ impl ],
                     (isLastCompiland, isExe),
-                    {
-                        ConditionalDirectives = []
-                        CodeComments = []
-                    },
+                    ParsedFileInputTrivia.Empty,
                     Set.empty
                 )
             )
@@ -3705,7 +3690,7 @@ type FsiInteractionProcessor
 
                     Parser.interaction lexerWhichSavesLastToken tokenizer.LexBuffer)
 
-            WarnScopes.MergeInto diagnosticOptions tokenizer.LexBuffer
+            WarnScopes.MergeInto diagnosticOptions [] tokenizer.LexBuffer
 
             Some input
         with e ->
@@ -4650,6 +4635,20 @@ type FsiEvaluationSession
         with e ->
             warning (e)
 
+    let restoreEncoding =
+        if tcConfigB.utf8output && Console.OutputEncoding <> Text.Encoding.UTF8 then
+            let previousEncoding = Console.OutputEncoding
+            Console.OutputEncoding <- Encoding.UTF8
+
+            Some(
+                { new IDisposable with
+                    member _.Dispose() =
+                        Console.OutputEncoding <- previousEncoding
+                }
+            )
+        else
+            None
+
     do
         updateBannerText () // resetting banner text after parsing options
 
@@ -4793,6 +4792,7 @@ type FsiEvaluationSession
         member _.Dispose() =
             (tcImports :> IDisposable).Dispose()
             uninstallMagicAssemblyResolution.Dispose()
+            restoreEncoding |> Option.iter (fun x -> x.Dispose())
 
     /// Load the dummy interaction, load the initial files, and,
     /// if interacting, start the background thread to read the standard input.

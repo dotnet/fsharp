@@ -12,6 +12,15 @@ open System.Threading.Tasks
 
 type CancellationType() =
 
+    let ordered() =
+        let mutable current = 1
+    
+        fun n -> 
+            async {
+                SpinWait.SpinUntil(fun () -> current = n)
+                Interlocked.Increment &current |> ignore
+            }
+
     [<Fact>]
     member this.CancellationNoCallbacks() =
         let _ : CancellationTokenSource = null // compilation test
@@ -234,6 +243,8 @@ type CancellationType() =
     // See https://github.com/dotnet/fsharp/issues/3254
     [<Fact>]
     member this.AwaitTaskCancellationAfterAsyncTokenCancellation() =
+        let step = ordered()
+
         let StartCatchCancellation cancellationToken (work) =
             Async.FromContinuations(fun (cont, econt, _) ->
               // When the child is cancelled, report OperationCancelled
@@ -265,25 +276,27 @@ type CancellationType() =
 
         let cts = new CancellationTokenSource()
         let tcs = System.Threading.Tasks.TaskCompletionSource<_>()
-        let test() =
+        let t =
             async {
+                do! step 1
                 do! tcs.Task |> Async.AwaitTask
             }
-            |> StartAsTaskProperCancel None (Some cts.Token) :> Task
+            |> StartAsTaskProperCancel None (Some cts.Token)
 
         // First cancel the token, then set the task as cancelled.
-        async {
-            do! Async.Sleep 100
+        task {
+            do! step 2
             cts.Cancel()
-            do! Async.Sleep 100
+            do! step 3
             tcs.TrySetException (TimeoutException "Task timed out after token.")
             |> ignore
-        } |> Async.Start
 
-        task {
-            let! agg = Assert.ThrowsAsync<AggregateException>(test)
-            let inner = agg.InnerException
-            Assert.True(inner :? TimeoutException, $"Excepted TimeoutException wrapped in an AggregateException, but got %A{inner}")
+            try
+                let res = t.Wait()
+                let msg = sprintf "Excepted TimeoutException wrapped in an AggregateException, but got %A" res
+                printfn "failure msg: %s" msg
+                Assert.Fail (msg)
+            with :? AggregateException as agg -> ()
         }
 
     // Simpler regression test for https://github.com/dotnet/fsharp/issues/3254

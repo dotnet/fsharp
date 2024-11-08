@@ -52,6 +52,11 @@
         <target state="translated">이 식은 익명 레코드입니다. {{...}} 대신 {{|...|}}을 사용하세요.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkDeprecatePlacesWhereSeqCanBeOmitted">
+        <source>This construct is deprecated. Sequence expressions should be of the form 'seq {{ ... }}'</source>
+        <target state="new">This construct is deprecated. Sequence expressions should be of the form 'seq {{ ... }}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkDuplicatedMethodParameter">
         <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
         <target state="translated">매개 변수가 중복되었습니다. 이 메소드에서 매개 변수 '{0}'이(가) 두 번 이상 사용되었습니다.</target>
@@ -322,9 +327,19 @@
         <target state="translated">대리자 형식 이름의 해결 방법을 수정합니다. https://github.com/dotnet/fsharp/issues/10228 참조하세요.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
+        <source>Deprecate places where 'seq' can be omitted</source>
+        <target state="new">Deprecate places where 'seq' can be omitted</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDiscardUseValue">
         <source>discard pattern in use binding</source>
         <target state="translated">사용 중인 패턴 바인딩 무시</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureDontWarnOnUppercaseIdentifiersInBindingPatterns">
+        <source>Don't warn on uppercase identifiers in binding patterns</source>
+        <target state="new">Don't warn on uppercase identifiers in binding patterns</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDotlessFloat32Literal">
@@ -615,6 +630,11 @@
       <trans-unit id="featureUnmanagedConstraintCsharpInterop">
         <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
         <target state="translated">C#과 F#의 관리되지 않는 제네릭 제약 조건 간의 Interop(추가 modreq 내보내기)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureUseTypeSubsumptionCache">
+        <source>Use type conversion cache during compilation</source>
+        <target state="new">Use type conversion cache during compilation</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningIndexedPropertiesGetSetSameType">
@@ -4544,7 +4564,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
         <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
-        <target state="translated">레코드, 시퀀스 또는 계산 식이 잘못되었습니다. 시퀀스 식의 형식은 'seq {{ ... }}'여야 합니다.</target>
+        <target state="needs-review-translation">레코드, 시퀀스 또는 계산 식이 잘못되었습니다. 시퀀스 식의 형식은 'seq {{ ... }}'여야 합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpressionWithIfRequiresParenthesis">

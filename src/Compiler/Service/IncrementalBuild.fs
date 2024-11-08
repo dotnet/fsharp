@@ -30,6 +30,7 @@ open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
@@ -129,7 +130,7 @@ module IncrementalBuildSyntaxTree =
                     [],
                     [],
                     isLastCompiland,
-                    { ConditionalDirectives = []; CodeComments = [] },
+                    ParsedFileInputTrivia.Empty,
                     Set.empty
                 )
             ), sourceRange, fileName, [||]
@@ -263,7 +264,6 @@ type BoundModel private (
 
             beforeFileChecked.Trigger fileName
                     
-            CheckLegacyWarnDirectivePlacement(tcConfig.langVersion, tcConfig.diagnosticsOptions.WarnScopes, input)
             ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, !! Path.GetDirectoryName(fileName), tcImports.DependencyProvider) |> ignore
             let sink = TcResultsSinkImpl(tcGlobals)
             let hadParseErrors = not (Array.isEmpty parseErrors)
@@ -547,7 +547,7 @@ type FrameworkImportsCache(size) =
                     lazyWork
             )
         node
-                
+
 
     /// This function strips the "System" assemblies from the tcConfig and returns a age-cached TcImports for them.
     member this.Get(tcConfig: TcConfig) =
@@ -577,7 +577,8 @@ type FrameworkImportsCache(size) =
                         tcGlobals.noDebugAttributes,
                         tcGlobals.pathMap,
                         tcConfig.langVersion,
-                        tcConfig.realsig
+                        tcConfig.realsig,
+                        tcConfig.compilationMode
                     )
 
             else

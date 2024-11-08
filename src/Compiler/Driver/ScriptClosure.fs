@@ -448,7 +448,6 @@ module ScriptPreprocessClosure =
                         use _ = UseDiagnosticsLogger diagnosticsLogger
                         let pathOfMetaCommandSource = !! Path.GetDirectoryName(fileName)
                         let preSources = tcConfig.GetAvailableLoadedSources()
-                        CheckLegacyWarnDirectivePlacement(tcConfig.langVersion, tcConfig.diagnosticsOptions.WarnScopes, parseResult)
 
                         let tcConfigResult =
                             ApplyMetaCommandsFromInputToTcConfig(tcConfig, parseResult, pathOfMetaCommandSource, dependencyProvider)

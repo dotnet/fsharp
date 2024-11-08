@@ -3,7 +3,7 @@
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
-open FsUnit
+open FSharp.Test.Assert
 open Xunit
 
 [<Fact>]

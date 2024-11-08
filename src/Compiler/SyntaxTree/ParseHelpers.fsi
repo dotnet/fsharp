@@ -38,25 +38,6 @@ val rhs2: parseState: IParseState -> i: int -> j: int -> range
 
 val rhs: parseState: IParseState -> i: int -> range
 
-type IParseState with
-
-    member SynArgNameGenerator: SyntaxTreeOps.SynArgNameGenerator
-    member ResetSynArgNameGenerator: unit -> unit
-
-module LexbufLocalXmlDocStore =
-
-    val ClearXmlDoc: lexbuf: UnicodeLexing.Lexbuf -> unit
-
-    val SaveXmlDocLine: lexbuf: UnicodeLexing.Lexbuf * lineText: string * range: range -> unit
-
-    val GrabXmlDocBeforeMarker: lexbuf: UnicodeLexing.Lexbuf * markerRange: range -> PreXmlDoc
-
-    val AddGrabPoint: lexbuf: UnicodeLexing.Lexbuf -> unit
-
-    val AddGrabPointDelayed: lexbuf: UnicodeLexing.Lexbuf -> unit
-
-    val ReportInvalidXmlDocPositions: lexbuf: UnicodeLexing.Lexbuf -> range list
-
 type LexerIfdefStackEntry =
     | IfDefIf
     | IfDefElse
@@ -68,34 +49,6 @@ type LexerIfdefStack = LexerIfdefStackEntries
 type LexerEndlineContinuation =
     | Token
     | IfdefSkip of int * range: range
-
-type LexerIfdefExpression =
-    | IfdefAnd of LexerIfdefExpression * LexerIfdefExpression
-    | IfdefOr of LexerIfdefExpression * LexerIfdefExpression
-    | IfdefNot of LexerIfdefExpression
-    | IfdefId of string
-
-val LexerIfdefEval: lookup: (string -> bool) -> _arg1: LexerIfdefExpression -> bool
-
-module LexbufIfdefStore =
-
-    val SaveIfHash: lexbuf: UnicodeLexing.Lexbuf * lexed: string * expr: LexerIfdefExpression * range: range -> unit
-
-    val SaveElseHash: lexbuf: UnicodeLexing.Lexbuf * lexed: string * range: range -> unit
-
-    val SaveEndIfHash: lexbuf: UnicodeLexing.Lexbuf * lexed: string * range: range -> unit
-
-    val GetTrivia: lexbuf: UnicodeLexing.Lexbuf -> ConditionalDirectiveTrivia list
-
-module LexbufCommentStore =
-
-    val SaveSingleLineComment: lexbuf: UnicodeLexing.Lexbuf * startRange: range * endRange: range -> unit
-
-    val SaveBlockComment: lexbuf: UnicodeLexing.Lexbuf * startRange: range * endRange: range -> unit
-
-    val GetComments: lexbuf: UnicodeLexing.Lexbuf -> CommentTrivia list
-
-    val ClearComments: lexbuf: UnicodeLexing.Lexbuf -> unit
 
 [<RequireQualifiedAccess>]
 type LexerStringStyle =
@@ -302,3 +255,5 @@ val mkSynField:
     rangeStart: range ->
     leadingKeyword: SynLeadingKeyword option ->
         SynField
+
+val leadingKeywordIsAbstract: SynLeadingKeyword -> bool

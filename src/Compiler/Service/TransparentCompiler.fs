@@ -1302,8 +1302,6 @@ type internal TransparentCompiler
 
                 //beforeFileChecked.Trigger fileName
 
-                CheckLegacyWarnDirectivePlacement(tcConfig.langVersion, tcConfig.diagnosticsOptions.WarnScopes, input)
-
                 ApplyMetaCommandsFromInputToTcConfig(tcConfig, input, Path.GetDirectoryName fileName |> (!!), tcImports.DependencyProvider)
                 |> ignore
 

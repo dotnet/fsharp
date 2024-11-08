@@ -185,7 +185,7 @@ let trySaveXmlDoc (lexbuf: LexBuffer<char>) (buff: (range * StringBuilder) optio
     | None -> ()
     | Some (start, sb) ->
         let xmlCommentLineRange = mkFileIndexRange start.FileIndex start.Start (posOfLexPosition lexbuf.StartPos)
-        LexbufLocalXmlDocStore.SaveXmlDocLine (lexbuf, sb.ToString(), xmlCommentLineRange)
+        XmlDocStore.SaveXmlDocLine (lexbuf, sb.ToString(), xmlCommentLineRange)
 
 let tryAppendXmlDoc (buff: (range * StringBuilder) option) (s:string) =
     match buff with
@@ -733,7 +733,7 @@ rule token (args: LexArgs) (skip: bool) = parse
  | "////" op_char*
      { // 4+ slash are 1-line comments, online 3 slash are XmlDoc
        let m = lexbuf.LexemeRange
-       LexbufLocalXmlDocStore.AddGrabPointDelayed(lexbuf)
+       XmlDocStore.AddGrabPointDelayed(lexbuf)
        if not skip then LINE_COMMENT (LexCont.SingleLineComment(args.ifdefStack, args.stringNest, 1, m))
        else singleLineComment (None,1,m,m,args) skip lexbuf }
 
@@ -748,7 +748,7 @@ rule token (args: LexArgs) (skip: bool) = parse
  | "//" op_char*
      { // Need to read all operator symbols too, otherwise it might be parsed by a rule below
        let m = lexbuf.LexemeRange
-       LexbufLocalXmlDocStore.AddGrabPointDelayed(lexbuf)
+       XmlDocStore.AddGrabPointDelayed(lexbuf)
        if not skip then LINE_COMMENT (LexCont.SingleLineComment(args.ifdefStack, args.stringNest, 1, m))
        else singleLineComment (None,1,m,m,args) skip lexbuf }
 
@@ -818,8 +818,8 @@ rule token (args: LexArgs) (skip: bool) = parse
             // Construct the new position
             if args.applyLineDirectives then
                 let fileIndex = match file with Some f -> FileIndex.fileIndexOfFile f | None -> pos.FileIndex
+                WarnScopes.RegisterLineDirective(lexbuf, fileIndex, line)
                 lexbuf.EndPos <- pos.ApplyLineDirective(fileIndex, line)
-                WarnScopes.RegisterLineDirective(lexbuf, pos.FileIndex, fileIndex, line)
             else
                 // add a newline when we don't apply a directive since we consumed a newline getting here
                 incrLine lexbuf
@@ -1038,7 +1038,7 @@ rule token (args: LexArgs) (skip: bool) = parse
      let lexed = lexeme lexbuf
      let isTrue, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion lexbuf.StrictIndentation args lookup lexed
      args.ifdefStack <- (IfDefIf,m) :: args.ifdefStack
-     LexbufIfdefStore.SaveIfHash(lexbuf, lexed, expr, m)
+     IfdefStore.SaveIfHash(lexbuf, lexed, expr, m)
      let contCase = if isTrue then LexerEndlineContinuation.Token else LexerEndlineContinuation.IfdefSkip(0, m)
      let tok = HASH_IF(m, lexed, LexCont.EndLine(args.ifdefStack, args.stringNest, contCase))
      if skip then endline contCase args skip lexbuf else tok }
@@ -1052,7 +1052,7 @@ rule token (args: LexArgs) (skip: bool) = parse
        let m = lexbuf.LexemeRange
        shouldStartLine args lexbuf m (FSComp.SR.lexHashElseMustBeFirst())
        args.ifdefStack <- (IfDefElse,m) :: rest
-       LexbufIfdefStore.SaveElseHash(lexbuf, lexed, m)
+       IfdefStore.SaveElseHash(lexbuf, lexed, m)
        let tok = HASH_ELSE(m, lexed, LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(0, m)))
        if skip then endline (LexerEndlineContinuation.IfdefSkip(0, m)) args skip lexbuf else tok }
 
@@ -1064,7 +1064,7 @@ rule token (args: LexArgs) (skip: bool) = parse
      | _ :: rest ->
         shouldStartLine args lexbuf m (FSComp.SR.lexHashEndifMustBeFirst())
         args.ifdefStack <- rest
-        LexbufIfdefStore.SaveEndIfHash(lexbuf, lexed, m)
+        IfdefStore.SaveEndIfHash(lexbuf, lexed, m)
         let tok = HASH_ENDIF(m,lexed,LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Token))
         if not skip then tok else endline LexerEndlineContinuation.Token args skip lexbuf }
 
@@ -1082,17 +1082,12 @@ rule token (args: LexArgs) (skip: bool) = parse
      lexbuf.StartPos <- lexbuf.StartPos.ShiftColumnBy(n)
      HASH_IDENT(lexemeTrimLeft lexbuf (n+1)) }
 
- | anywhite* ("#nowarn" | "#warnon") anywhite+ anystring
+ | anywhite* ("#nowarn" | "#warnon") anystring
    { let m = lexbuf.LexemeRange
      shouldStartLine args lexbuf m (FSComp.SR.lexWarnDirectiveMustBeFirst())
      WarnScopes.ParseAndRegisterWarnDirective lexbuf
      let tok = WARN_DIRECTIVE(m, lexeme lexbuf, LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Token))
      if skip then endline LexerEndlineContinuation.Token args skip lexbuf else tok }
-
- | anywhite* ("#nowarn" | "#warnon")
-   { let tok = WHITESPACE (LexCont.Token (args.ifdefStack, args.stringNest))
-     let tok = fail args lexbuf (FSComp.SR.lexWarnDirectiveMustHaveArgs()) tok
-     if skip then token args skip lexbuf else tok }
 
  | surrogateChar surrogateChar
 
@@ -1116,7 +1111,7 @@ and ifdefSkip (n: int) (m: range) (args: LexArgs) (skip: bool) = parse
        let lexed = lexeme lexbuf
        let lookup id = List.contains id args.conditionalDefines
        let _, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion lexbuf.StrictIndentation args lookup lexed
-       LexbufIfdefStore.SaveIfHash(lexbuf, lexed, expr, m)
+       IfdefStore.SaveIfHash(lexbuf, lexed, expr, m)
        let tok = INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(n+1, m)))
        if skip then endline (LexerEndlineContinuation.IfdefSkip(n+1, m)) args skip lexbuf else tok }
 
@@ -1134,12 +1129,12 @@ and ifdefSkip (n: int) (m: range) (args: LexArgs) (skip: bool) = parse
          | (IfDefElse,_) :: _rest -> LEX_FAILURE (FSComp.SR.lexHashEndifRequiredForElse())
          | (IfDefIf,_) :: rest ->
            let m = lexbuf.LexemeRange
-           LexbufIfdefStore.SaveElseHash(lexbuf, lexed, m)
+           IfdefStore.SaveElseHash(lexbuf, lexed, m)
            args.ifdefStack <- (IfDefElse,m) :: rest
            if not skip then HASH_ELSE(m,lexed,LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Token))
            else endline LexerEndlineContinuation.Token args skip lexbuf
       else
-         LexbufIfdefStore.SaveElseHash(lexbuf, lexed, m)
+         IfdefStore.SaveElseHash(lexbuf, lexed, m)
          if not skip then INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(n, m)))
          else endline (LexerEndlineContinuation.IfdefSkip(n, m)) args skip lexbuf }
 
@@ -1155,13 +1150,13 @@ and ifdefSkip (n: int) (m: range) (args: LexArgs) (skip: bool) = parse
           match args.ifdefStack with
           | [] ->  LEX_FAILURE (FSComp.SR.lexHashEndingNoMatchingIf())
           | _ :: rest ->
-              LexbufIfdefStore.SaveEndIfHash(lexbuf, lexed, m)
+              IfdefStore.SaveEndIfHash(lexbuf, lexed, m)
               args.ifdefStack <- rest
               if not skip then HASH_ENDIF(m,lexed,LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Token))
               else endline LexerEndlineContinuation.Token args skip lexbuf
        else
            shouldStartLine args lexbuf m (FSComp.SR.lexWrongNestedHashEndif())
-           LexbufIfdefStore.SaveEndIfHash(lexbuf, lexed, m)
+           IfdefStore.SaveEndIfHash(lexbuf, lexed, m)
            let tok = INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(n-1, m)))
            if not skip then tok else endline (LexerEndlineContinuation.IfdefSkip(n-1, m)) args skip lexbuf }
 
@@ -1721,13 +1716,13 @@ and singleLineComment (cargs: SingleLineCommentArgs) (skip: bool) = parse
        // Saves the documentation (if we're collecting any) into a buffer-local variable.
        if not skip then LINE_COMMENT (LexCont.Token(args.ifdefStack, args.stringNest))
        else
-           if Option.isNone buff then LexbufCommentStore.SaveSingleLineComment(lexbuf, mStart, mEnd)
+           if Option.isNone buff then CommentStore.SaveSingleLineComment(lexbuf, mStart, mEnd)
            token args skip lexbuf }
 
  | eof
      { let buff, _n, mStart, mEnd, args = cargs
        trySaveXmlDoc lexbuf buff
-       LexbufCommentStore.SaveSingleLineComment(lexbuf, mStart, mEnd)
+       CommentStore.SaveSingleLineComment(lexbuf, mStart, mEnd)
        // NOTE: it is legal to end a file with this comment, so we'll return EOF as a token
        EOF (LexCont.Token(args.ifdefStack, args.stringNest)) }
 
@@ -1768,7 +1763,7 @@ and comment (cargs: BlockCommentArgs) (skip: bool) = parse
 
  | "(*)"
     { let n, m, args = cargs
-      LexbufLocalXmlDocStore.AddGrabPoint(lexbuf)
+      XmlDocStore.AddGrabPoint(lexbuf)
       if not skip then COMMENT (LexCont.Comment(args.ifdefStack, args.stringNest, n, m))
       else comment cargs skip lexbuf }
 
@@ -1789,10 +1784,10 @@ and comment (cargs: BlockCommentArgs) (skip: bool) = parse
           if not skip then COMMENT (LexCont.Comment(args.ifdefStack, args.stringNest, n-1, m))
           else comment (n-1,m,args) skip lexbuf
       else
-          LexbufLocalXmlDocStore.AddGrabPointDelayed(lexbuf)
+          XmlDocStore.AddGrabPointDelayed(lexbuf)
           if not skip then COMMENT (LexCont.Token(args.ifdefStack, args.stringNest))
           else
-              LexbufCommentStore.SaveBlockComment(lexbuf, m, lexbuf.LexemeRange) 
+              CommentStore.SaveBlockComment(lexbuf, m, lexbuf.LexemeRange) 
               token args skip lexbuf }
 
  | anywhite+

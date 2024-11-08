@@ -39,27 +39,21 @@ type CommentTrivia =
     | LineComment of range: range
     | BlockComment of range: range
 
-/// Represents additional information for ParsedImplFileInput
+/// Represents additional information for ParsedImplFileInput / ParsedSigFileInput
 [<NoEquality; NoComparison>]
-type ParsedImplFileInputTrivia =
+type ParsedFileInputTrivia =
     {
         /// Preprocessor directives of type #if, #else or #endif
         ConditionalDirectives: ConditionalDirectiveTrivia list
+
+        // /// Warn directives (#nowarn / #warnon)
+        // WarnDirectives: range list           // should be enabled once tooling wants it
 
         /// Represent code comments found in the source file
         CodeComments: CommentTrivia list
     }
 
-/// Represents additional information for ParsedSigFileInputTrivia
-[<NoEquality; NoComparison>]
-type ParsedSigFileInputTrivia =
-    {
-        /// Preprocessor directives of type #if, #else or #endif
-        ConditionalDirectives: ConditionalDirectiveTrivia list
-
-        /// Represent code comments found in the source file
-        CodeComments: CommentTrivia list
-    }
+    static member Empty: ParsedFileInputTrivia
 
 /// Represents additional information for SynExpr.TryWith
 [<NoEquality; NoComparison>]

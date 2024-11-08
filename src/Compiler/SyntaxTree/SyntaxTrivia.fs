@@ -28,18 +28,19 @@ type CommentTrivia =
     | BlockComment of range: range
 
 [<NoEquality; NoComparison>]
-type ParsedImplFileInputTrivia =
+type ParsedFileInputTrivia =
     {
         ConditionalDirectives: ConditionalDirectiveTrivia list
+        // WarnDirectives: range list      // This should be enabled once the tools can process it
         CodeComments: CommentTrivia list
     }
 
-[<NoEquality; NoComparison>]
-type ParsedSigFileInputTrivia =
-    {
-        ConditionalDirectives: ConditionalDirectiveTrivia list
-        CodeComments: CommentTrivia list
-    }
+    static member Empty =
+        {
+            ConditionalDirectives = []
+            // WarnDirectives = []
+            CodeComments = []
+        }
 
 [<NoEquality; NoComparison>]
 type SynExprTryWithTrivia =

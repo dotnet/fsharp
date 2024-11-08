@@ -38,7 +38,7 @@ type SynLongIdent =
 
     member this.Range =
         match this with
-        | SynLongIdent([], _, _) -> failwith "rangeOfLidwd"
+        | SynLongIdent([], _, _) -> failwith "rangeOfLid"
         | SynLongIdent([ id ], [], _) -> id.idRange
         | SynLongIdent([ id ], [ m ], _) -> unionRanges id.idRange m
         | SynLongIdent(h :: t, [], _) -> unionRanges h.idRange (List.last t).idRange
@@ -1048,6 +1048,10 @@ type SynMatchClause =
             | None -> e.Range
             | Some x -> unionRanges e.Range x.Range
 
+    member this.IsTrueMatchClause =
+        let (SynMatchClause(trivia = trivia)) = this
+        trivia.BarRange.IsSome && trivia.ArrowRange.IsSome
+
     member this.Range =
         match this with
         | SynMatchClause(range = m) -> m
@@ -1489,7 +1493,12 @@ type SynMemberDefn =
         range: range *
         trivia: SynMemberDefnImplicitCtorTrivia
 
-    | ImplicitInherit of inheritType: SynType * inheritArgs: SynExpr * inheritAlias: Ident option * range: range
+    | ImplicitInherit of
+        inheritType: SynType *
+        inheritArgs: SynExpr *
+        inheritAlias: Ident option *
+        range: range *
+        trivia: SynMemberDefnInheritTrivia
 
     | LetBindings of bindings: SynBinding list * isStatic: bool * isRecursive: bool * range: range
 
@@ -1497,7 +1506,7 @@ type SynMemberDefn =
 
     | Interface of interfaceType: SynType * withKeyword: range option * members: SynMemberDefns option * range: range
 
-    | Inherit of baseType: SynType * asIdent: Ident option * range: range * trivia: SynMemberDefnInheritTrivia
+    | Inherit of baseType: SynType option * asIdent: Ident option * range: range * trivia: SynMemberDefnInheritTrivia
 
     | ValField of fieldInfo: SynField * range: range
 
@@ -1758,7 +1767,7 @@ type ParsedImplFileInput =
         hashDirectives: ParsedHashDirective list *
         contents: SynModuleOrNamespace list *
         flags: (bool * bool) *
-        trivia: ParsedImplFileInputTrivia *
+        trivia: ParsedFileInputTrivia *
         identifiers: Set<string>
 
     member x.QualifiedName =
@@ -1787,7 +1796,7 @@ type ParsedSigFileInput =
         qualifiedNameOfFile: QualifiedNameOfFile *
         hashDirectives: ParsedHashDirective list *
         contents: SynModuleOrNamespaceSig list *
-        trivia: ParsedSigFileInputTrivia *
+        trivia: ParsedFileInputTrivia *
         identifiers: Set<string>
 
     member x.QualifiedName =

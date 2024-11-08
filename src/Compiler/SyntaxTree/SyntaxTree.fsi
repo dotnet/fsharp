@@ -1178,6 +1178,9 @@ type SynMatchClause =
     /// Gets the syntax range of part of this construct
     member RangeOfGuardAndRhs: range
 
+    /// Is a pattern used in a true match clause e.g. | pat -> expr
+    member IsTrueMatchClause: bool
+
     /// Gets the syntax range of this construct
     member Range: range
 
@@ -1655,7 +1658,12 @@ type SynMemberDefn =
         trivia: SynMemberDefnImplicitCtorTrivia
 
     /// An implicit inherit definition, 'inherit <typ>(args...) as base'
-    | ImplicitInherit of inheritType: SynType * inheritArgs: SynExpr * inheritAlias: Ident option * range: range
+    | ImplicitInherit of
+        inheritType: SynType *
+        inheritArgs: SynExpr *
+        inheritAlias: Ident option *
+        range: range *
+        trivia: SynMemberDefnInheritTrivia
 
     /// A 'let' definition within a class
     | LetBindings of bindings: SynBinding list * isStatic: bool * isRecursive: bool * range: range
@@ -1671,7 +1679,7 @@ type SynMemberDefn =
     | Interface of interfaceType: SynType * withKeyword: range option * members: SynMemberDefns option * range: range
 
     /// An 'inherit' definition within a class
-    | Inherit of baseType: SynType * asIdent: Ident option * range: range * trivia: SynMemberDefnInheritTrivia
+    | Inherit of baseType: SynType option * asIdent: Ident option * range: range * trivia: SynMemberDefnInheritTrivia
 
     /// A 'val' definition within a class
     | ValField of fieldInfo: SynField * range: range
@@ -1948,7 +1956,7 @@ type ParsedImplFileInput =
         hashDirectives: ParsedHashDirective list *
         contents: SynModuleOrNamespace list *
         flags: (bool * bool) *
-        trivia: ParsedImplFileInputTrivia *
+        trivia: ParsedFileInputTrivia *
         identifiers: Set<string>
 
     member FileName: string
@@ -1961,7 +1969,7 @@ type ParsedImplFileInput =
 
     member Contents: SynModuleOrNamespace list
 
-    member Trivia: ParsedImplFileInputTrivia
+    member Trivia: ParsedFileInputTrivia
 
     member IsLastCompiland: bool
 
@@ -1975,7 +1983,7 @@ type ParsedSigFileInput =
         qualifiedNameOfFile: QualifiedNameOfFile *
         hashDirectives: ParsedHashDirective list *
         contents: SynModuleOrNamespaceSig list *
-        trivia: ParsedSigFileInputTrivia *
+        trivia: ParsedFileInputTrivia *
         identifiers: Set<string>
 
     member FileName: string
@@ -1986,7 +1994,7 @@ type ParsedSigFileInput =
 
     member Contents: SynModuleOrNamespaceSig list
 
-    member Trivia: ParsedSigFileInputTrivia
+    member Trivia: ParsedFileInputTrivia
 
 /// Represents the syntax tree for a parsed implementation or signature file
 [<NoEquality; NoComparison; RequireQualifiedAccess>]

@@ -21,6 +21,7 @@ open System.Text
 open System.Threading
 
 open Internal.Utilities
+open Internal.Utilities.TypeHashing
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 
@@ -76,7 +77,7 @@ type DiagnosticsLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, 
     override x.DiagnosticSink(diagnostic, severity) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
 
-        match diagnostic.AdjustedSeverity(tcConfigB.diagnosticsOptions, severity) with
+        match diagnostic.AdjustSeverity(tcConfigB.diagnosticsOptions, severity) with
         | FSharpDiagnosticSeverity.Error ->
             if errors >= tcConfig.maxErrors then
                 x.HandleTooManyErrors(FSComp.SR.fscTooManyErrors ())
@@ -266,9 +267,6 @@ let SetProcessThreadLocals tcConfigB =
     | Some s -> Thread.CurrentThread.CurrentUICulture <- CultureInfo(s)
     | None -> ()
 
-    if tcConfigB.utf8output then
-        Console.OutputEncoding <- Encoding.UTF8
-
 let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, lcidFromCodePage, argv) =
     let mutable inputFilesRef = []
 
@@ -283,7 +281,10 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, lcidFromCodePage, argv)
     // This is where flags are interpreted by the command line fsc.exe.
     ParseCompilerOptions(collect, GetCoreFscCompilerOptions tcConfigB, List.tail (PostProcessCompilerArgs abbrevArgs argv))
 
-    tcConfigB.diagnosticsOptions.FSharp9CompatibleNowarn <- not <| tcConfigB.langVersion.SupportsFeature LanguageFeature.ScopedNowarn
+    tcConfigB.diagnosticsOptions <-
+        { tcConfigB.diagnosticsOptions with
+            WarnScopesFeatureIsSupported = tcConfigB.langVersion.SupportsFeature LanguageFeature.ScopedNowarn
+        }
 
     let inputFiles = List.rev inputFilesRef
 
@@ -505,7 +506,8 @@ let main1
             defaultCopyFSharpCore = defaultCopyFSharpCore,
             tryGetMetadataSnapshot = tryGetMetadataSnapshot,
             sdkDirOverride = None,
-            rangeForErrors = range0
+            rangeForErrors = range0,
+            compilationMode = CompilationMode.OneOff
         )
 
     tcConfigB.exiter <- exiter
@@ -544,6 +546,17 @@ let main1
     match getParallelReferenceResolutionFromEnvironment () with
     | Some parallelReferenceResolution -> tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
     | None -> ()
+
+    if tcConfigB.utf8output && Console.OutputEncoding <> Encoding.UTF8 then
+        let previousEncoding = Console.OutputEncoding
+        Console.OutputEncoding <- Encoding.UTF8
+
+        disposables.Register(
+            { new IDisposable with
+                member _.Dispose() =
+                    Console.OutputEncoding <- previousEncoding
+            }
+        )
 
     // Display the banner text, if necessary
     if not bannerAlreadyPrinted then
@@ -642,9 +655,6 @@ let main1
 
     if not tcConfig.continueAfterParseFailure then
         AbortOnError(diagnosticsLogger, exiter)
-
-    for input in inputs do
-        CheckLegacyWarnDirectivePlacement(tcConfig.langVersion, tcConfig.diagnosticsOptions.WarnScopes, fst input)
 
     let tcConfig =
         (tcConfig, inputs)
@@ -886,11 +896,7 @@ let main3
                 TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_InternalsVisibleToAttribute topAttrs.assemblyAttrs
                 |> Option.isSome
 
-            let observer =
-                if hasIvt then
-                    Fsharp.Compiler.SignatureHash.PublicAndInternal
-                else
-                    Fsharp.Compiler.SignatureHash.PublicOnly
+            let observer = if hasIvt then PublicAndInternal else PublicOnly
 
             let optDataHash =
                 optDataResources
@@ -1233,16 +1239,6 @@ let CompileFromCommandLineArguments
     ) =
 
     use disposables = new DisposablesTracker()
-    let savedOut = Console.Out
-
-    use _ =
-        { new IDisposable with
-            member _.Dispose() =
-                try
-                    Console.SetOut(savedOut)
-                with _ ->
-                    ()
-        }
 
     main1 (
         ctok,
