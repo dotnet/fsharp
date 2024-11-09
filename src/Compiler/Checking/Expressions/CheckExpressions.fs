@@ -4270,6 +4270,15 @@ and TcValSpec (cenv: cenv) env declKind newOk containerInfo memFlagsOpt thisTyOp
                         setterTy, synInfo
                 | SynMemberKind.PropertyGetSet ->
                     error(InternalError("Unexpected SynMemberKind.PropertyGetSet from signature parsing", m))
+                    
+            let isGetterSetter = memberFlags.MemberKind = SynMemberKind.PropertyGetSet || memberFlags.MemberKind = SynMemberKind.PropertySet || memberFlags.MemberKind = SynMemberKind.PropertyGet
+            // Indexed properties uses "Item" member name and are allowed with get and set
+            if id.idText <> "Item" && isGetterSetter then
+                if not valSynInfo.ArgNames.IsEmpty then
+                    errorR(Error(FSComp.SR.tcAbstractPropertyCannotHaveNamedArgumentsWithGetSet(), m))
+            
+                if valSynInfo.ArgNames.IsEmpty && isFunTy g tyR && isAnyTupleTy g (domainOfFunTy g tyR)  then
+                    errorR(Error(FSComp.SR.tcInvalidPropertyType(), m))
 
             // Take "unit" into account in the signature
             let valSynInfo = AdjustValSynInfoInSignature g tyR valSynInfo

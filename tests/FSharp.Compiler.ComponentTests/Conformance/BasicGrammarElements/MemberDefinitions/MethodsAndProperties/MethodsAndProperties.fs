@@ -628,7 +628,8 @@ type LabeledProperty =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3874, Line 5, Col 5, Line 5, Col 85, "Abstract function-type properties with get/set accessors cannot have named arguments inside the function-type definition. Use unnamed function arguments instead.")
+            (Error 3874, Line 5, Col 5, Line 5, Col 85, "Abstract function-type properties with get/set accessors cannot have named arguments inside the function-type definition. Use unnamed function arguments instead.");
+            (Error 701, Line 6, Col 5, Line 6, Col 72, "This property has an invalid type. Properties taking multiple indexer arguments should have types of the form 'ty1 * ty2 -> ty3'. Properties returning functions should have types of the form '(ty1 -> ty2)'.")
         ]
         
     [<Fact>]
