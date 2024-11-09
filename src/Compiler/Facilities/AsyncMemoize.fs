@@ -172,6 +172,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
     let mutable strengthened = 0
     let mutable cleared = 0
 
+    let mutable updates_in_flight = 0
+
     let mutable cancel_ct_registration_original = 0
     let mutable cancel_exception_original = 0
     let mutable cancel_original_processed = 0
@@ -325,154 +327,154 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
     // raise ex -- Suppose there's no need to raise here - where does it even go?
 
     let processStateUpdate post (key: KeyData<_, _>, action: StateUpdate<_>) =
-        task {
-            do! Task.Yield()
+        lock.Do(fun () ->
+            task {
 
-            do!
-                lock.Do(fun () ->
-                    task {
+                let cached = cache.TryGet(key.Key, key.Version)
 
-                        let cached = cache.TryGet(key.Key, key.Version)
+                match action, cached with
 
-                        match action, cached with
+                | OriginatorCanceled, Some(Running(tcs, cts, computation, _, _)) ->
 
-                        | OriginatorCanceled, Some(Running(tcs, cts, computation, _, _)) ->
+                    Interlocked.Increment &cancel_original_processed |> ignore
 
-                            Interlocked.Increment &cancel_original_processed |> ignore
+                    decrRequestCount key
 
-                            decrRequestCount key
+                    if requestCounts[key] < 1 then
+                        cancelRegistration key
+                        cts.Cancel()
+                        tcs.TrySetCanceled() |> ignore
+                        // Remember the job in case it completes after cancellation
+                        cache.Set(key.Key, key.Version, key.Label, Job.Canceled DateTime.Now)
+                        requestCounts.Remove key |> ignore
+                        log (Canceled, key)
+                        Interlocked.Increment &canceled |> ignore
+                        use _ = Activity.start $"{name}: Canceled job" [| "key", key.Label |]
+                        ()
 
-                            if requestCounts[key] < 1 then
-                                cancelRegistration key
-                                cts.Cancel()
-                                tcs.TrySetCanceled() |> ignore
-                                // Remember the job in case it completes after cancellation
-                                cache.Set(key.Key, key.Version, key.Label, Job.Canceled DateTime.Now)
-                                requestCounts.Remove key |> ignore
-                                log (Canceled, key)
-                                Interlocked.Increment &canceled |> ignore
-                                use _ = Activity.start $"{name}: Canceled job" [| "key", key.Label |]
-                                ()
+                    else
+                        // We need to restart the computation
+                        Task.Run(fun () ->
+                            Async.StartAsTask(
+                                async {
 
-                            else
-                                // We need to restart the computation
-                                Task.Run(fun () ->
-                                    Async.StartAsTask(
-                                        async {
+                                    let cachingLogger = new CachingDiagnosticsLogger(None)
 
-                                            let cachingLogger = new CachingDiagnosticsLogger(None)
+                                    try
+                                        // TODO: Should unify starting and restarting
+                                        log (Restarted, key)
+                                        Interlocked.Increment &restarted |> ignore
+                                        System.Diagnostics.Trace.TraceInformation $"{name} Restarted {key.Label}"
+                                        let currentLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+                                        DiagnosticsThreadStatics.DiagnosticsLogger <- cachingLogger
 
-                                            try
-                                                // TODO: Should unify starting and restarting
-                                                log (Restarted, key)
-                                                Interlocked.Increment &restarted |> ignore
-                                                System.Diagnostics.Trace.TraceInformation $"{name} Restarted {key.Label}"
-                                                let currentLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-                                                DiagnosticsThreadStatics.DiagnosticsLogger <- cachingLogger
+                                        try
+                                            let! result = computation
+                                            post (key, (JobCompleted(result, cachingLogger.CapturedDiagnostics)))
+                                            return ()
+                                        finally
+                                            DiagnosticsThreadStatics.DiagnosticsLogger <- currentLogger
+                                    with
+                                    | TaskCancelled _ ->
+                                        Interlocked.Increment &cancel_exception_subsequent |> ignore
+                                        post (key, CancelRequest)
+                                        ()
+                                    | ex -> post (key, (JobFailed(ex, cachingLogger.CapturedDiagnostics)))
+                                }
+                            ),
+                            cts.Token)
+                        |> ignore
 
-                                                try
-                                                    let! result = computation
-                                                    post (key, (JobCompleted(result, cachingLogger.CapturedDiagnostics)))
-                                                    return ()
-                                                finally
-                                                    DiagnosticsThreadStatics.DiagnosticsLogger <- currentLogger
-                                            with
-                                            | TaskCancelled _ ->
-                                                Interlocked.Increment &cancel_exception_subsequent |> ignore
-                                                post (key, CancelRequest)
-                                                ()
-                                            | ex -> post (key, (JobFailed(ex, cachingLogger.CapturedDiagnostics)))
-                                        }
-                                    ),
-                                    cts.Token)
-                                |> ignore
+                | CancelRequest, Some(Running(tcs, cts, _c, _, _)) ->
 
-                        | CancelRequest, Some(Running(tcs, cts, _c, _, _)) ->
+                    Interlocked.Increment &cancel_subsequent_processed |> ignore
 
-                            Interlocked.Increment &cancel_subsequent_processed |> ignore
+                    decrRequestCount key
 
-                            decrRequestCount key
+                    if requestCounts[key] < 1 then
+                        cancelRegistration key
+                        cts.Cancel()
+                        tcs.TrySetCanceled() |> ignore
+                        // Remember the job in case it completes after cancellation
+                        cache.Set(key.Key, key.Version, key.Label, Job.Canceled DateTime.Now)
+                        requestCounts.Remove key |> ignore
+                        log (Canceled, key)
+                        Interlocked.Increment &canceled |> ignore
+                        use _ = Activity.start $"{name}: Canceled job" [| "key", key.Label |]
+                        ()
 
-                            if requestCounts[key] < 1 then
-                                cancelRegistration key
-                                cts.Cancel()
-                                tcs.TrySetCanceled() |> ignore
-                                // Remember the job in case it completes after cancellation
-                                cache.Set(key.Key, key.Version, key.Label, Job.Canceled DateTime.Now)
-                                requestCounts.Remove key |> ignore
-                                log (Canceled, key)
-                                Interlocked.Increment &canceled |> ignore
-                                use _ = Activity.start $"{name}: Canceled job" [| "key", key.Label |]
-                                ()
+                // Probably in some cases cancellation can be fired off even after we just unregistered it
+                | CancelRequest, None
+                | CancelRequest, Some(Completed _)
+                | CancelRequest, Some(Job.Canceled _)
+                | CancelRequest, Some(Job.Failed _)
+                | OriginatorCanceled, None
+                | OriginatorCanceled, Some(Completed _)
+                | OriginatorCanceled, Some(Job.Canceled _)
+                | OriginatorCanceled, Some(Job.Failed _) -> ()
 
-                        // Probably in some cases cancellation can be fired off even after we just unregistered it
-                        | CancelRequest, None
-                        | CancelRequest, Some(Completed _)
-                        | CancelRequest, Some(Job.Canceled _)
-                        | CancelRequest, Some(Job.Failed _)
-                        | OriginatorCanceled, None
-                        | OriginatorCanceled, Some(Completed _)
-                        | OriginatorCanceled, Some(Job.Canceled _)
-                        | OriginatorCanceled, Some(Job.Failed _) -> ()
+                | JobFailed(ex, diags), Some(Running(tcs, _cts, _c, _ts, loggers)) ->
+                    cancelRegistration key
+                    cache.Set(key.Key, key.Version, key.Label, Job.Failed(DateTime.Now, ex))
+                    requestCounts.Remove key |> ignore
+                    log (Failed, key)
+                    Interlocked.Increment &failed |> ignore
+                    failures.Add(key.Label, ex)
 
-                        | JobFailed(ex, diags), Some(Running(tcs, _cts, _c, _ts, loggers)) ->
-                            cancelRegistration key
-                            cache.Set(key.Key, key.Version, key.Label, Job.Failed(DateTime.Now, ex))
-                            requestCounts.Remove key |> ignore
-                            log (Failed, key)
-                            Interlocked.Increment &failed |> ignore
-                            failures.Add(key.Label, ex)
+                    for logger in loggers do
+                        diags |> replayDiagnostics logger
 
-                            for logger in loggers do
-                                diags |> replayDiagnostics logger
+                    tcs.TrySetException ex |> ignore
 
-                            tcs.TrySetException ex |> ignore
+                | JobCompleted(result, diags), Some(Running(tcs, _cts, _c, started, loggers)) ->
+                    cancelRegistration key
+                    cache.Set(key.Key, key.Version, key.Label, (Completed(result, diags)))
+                    requestCounts.Remove key |> ignore
+                    log (Finished, key)
+                    Interlocked.Increment &completed |> ignore
+                    let duration = float (DateTime.Now - started).Milliseconds
 
-                        | JobCompleted(result, diags), Some(Running(tcs, _cts, _c, started, loggers)) ->
-                            cancelRegistration key
-                            cache.Set(key.Key, key.Version, key.Label, (Completed(result, diags)))
-                            requestCounts.Remove key |> ignore
-                            log (Finished, key)
-                            Interlocked.Increment &completed |> ignore
-                            let duration = float (DateTime.Now - started).Milliseconds
+                    avgDurationMs <-
+                        if completed < 2 then
+                            duration
+                        else
+                            avgDurationMs + (duration - avgDurationMs) / float completed
 
-                            avgDurationMs <-
-                                if completed < 2 then
-                                    duration
-                                else
-                                    avgDurationMs + (duration - avgDurationMs) / float completed
+                    for logger in loggers do
+                        diags |> replayDiagnostics logger
 
-                            for logger in loggers do
-                                diags |> replayDiagnostics logger
+                    if tcs.TrySetResult result = false then
+                        internalError key.Label "Invalid state: Completed job already completed"
 
-                            if tcs.TrySetResult result = false then
-                                internalError key.Label "Invalid state: Completed job already completed"
+                // Sometimes job can be canceled but it still manages to complete (or fail)
+                | JobFailed _, Some(Job.Canceled _)
+                | JobCompleted _, Some(Job.Canceled _) -> ()
 
-                        // Sometimes job can be canceled but it still manages to complete (or fail)
-                        | JobFailed _, Some(Job.Canceled _)
-                        | JobCompleted _, Some(Job.Canceled _) -> ()
+                // Job can't be evicted from cache while it's running because then subsequent requesters would be waiting forever
+                | JobFailed _, None -> internalError key.Label "Invalid state: Running job missing in cache (failed)"
 
-                        // Job can't be evicted from cache while it's running because then subsequent requesters would be waiting forever
-                        | JobFailed _, None -> internalError key.Label "Invalid state: Running job missing in cache (failed)"
+                | JobCompleted _, None -> internalError key.Label "Invalid state: Running job missing in cache (completed)"
 
-                        | JobCompleted _, None -> internalError key.Label "Invalid state: Running job missing in cache (completed)"
+                | JobFailed(ex, _diags), Some(Completed(_job, _diags2)) ->
+                    internalError key.Label $"Invalid state: Failed Completed job \n%A{ex}"
 
-                        | JobFailed(ex, _diags), Some(Completed(_job, _diags2)) ->
-                            internalError key.Label $"Invalid state: Failed Completed job \n%A{ex}"
+                | JobCompleted(_result, _diags), Some(Completed(_job, _diags2)) ->
+                    internalError key.Label "Invalid state: Double-Completed job"
 
-                        | JobCompleted(_result, _diags), Some(Completed(_job, _diags2)) ->
-                            internalError key.Label "Invalid state: Double-Completed job"
+                | JobFailed(ex, _diags), Some(Job.Failed(_, ex2)) ->
+                    internalError key.Label $"Invalid state: Double-Failed job \n%A{ex} \n%A{ex2}"
 
-                        | JobFailed(ex, _diags), Some(Job.Failed(_, ex2)) ->
-                            internalError key.Label $"Invalid state: Double-Failed job \n%A{ex} \n%A{ex2}"
-
-                        | JobCompleted(_result, _diags), Some(Job.Failed(_, ex2)) ->
-                            internalError key.Label $"Invalid state: Completed Failed job \n%A{ex2}"
-                    })
-        }
+                | JobCompleted(_result, _diags), Some(Job.Failed(_, ex2)) ->
+                    internalError key.Label $"Invalid state: Completed Failed job \n%A{ex2}"
+            })
 
     let rec post msg =
-        Task.Run(fun () -> processStateUpdate post msg :> Task) |> ignore
+        Interlocked.Increment &updates_in_flight |> ignore
+        backgroundTask {
+            do! processStateUpdate post msg
+            Interlocked.Decrement &updates_in_flight |> ignore
+        }
+        |> ignore
 
     member this.Get'(key, computation) =
 
@@ -564,7 +566,9 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
     member this.OnEvent = this.Event.Add
 
-    member this.Count = cache.Count
+    member _.Count = lock.Do(fun () -> Task.FromResult cache.Count).Result
+
+    member _.Updating = updates_in_flight > 0
 
     member _.Locked = lock.Semaphore.CurrentCount < 1
 
