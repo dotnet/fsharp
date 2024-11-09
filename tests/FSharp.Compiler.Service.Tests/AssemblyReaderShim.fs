@@ -1,6 +1,5 @@
 ﻿module FSharp.Compiler.Service.Tests.AssemblyReaderShim
 
-open FsUnit
 open FSharp.Compiler.Text
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open Xunit

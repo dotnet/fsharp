@@ -4,6 +4,7 @@ namespace FSharp.Compiler.UnitTests
 
 open Xunit
 open System
+open FSharp.Test
 
 
 module ``String Tests`` =
