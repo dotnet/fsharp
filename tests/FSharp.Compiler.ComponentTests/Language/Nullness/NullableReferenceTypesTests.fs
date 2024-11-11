@@ -37,6 +37,35 @@ let parsedDate3 = DateTime.Parse(null)
                  Error 3261, Line 5, Col 19, Line 5, Col 39, "Nullness warning: The type 'string' does not support 'null'."]
 
 [<Fact>]
+let ``Downcasts and typetests with nullables``() = 
+    FSharp """module MyLib
+type AB = A | B
+
+let warnOnCastFromNull (o: objnull) = o :?> AB
+let warnOnCastFromNonNullToNull(o:obj) = o :?> (AB | null)
+let warnOnTypeTestNullable(o:objnull) = o :? (AB|null)
+let warnOnTypeTestRepeatedNestedNullable(o:obj) = o :? (list<((AB | null) array | null) > |null)
+
+let doNotWarnOnCastFromNullToOption(o:objnull) = o :?> Option<AB>
+let doNotWarnOnTypeTestOption(o:objnull) = o :? Option<AB>
+let doNotWarnOnGenericCastToNullableGeneric<'b when 'b:not null and 'b:not struct>(a: objnull) = a :?> ('b|null)
+let doNotWarnOnDownCastNestedNullable(o:obj) = o :? list<AB|null>
+let doNotWarnOnDowncastRepeatedNestedNullable(o:objnull) = o :? list<((AB | null) array | null) > 
+
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics
+                [ Error 3264, Line 4, Col 39, Line 4, Col 47, "Nullness warning: Downcasting from 'objnull' into 'AB' can introduce unexpected null values. Cast to 'AB|null' instead or handle the null before downcasting."
+                  Error 3261, Line 5, Col 42, Line 5, Col 59, "Nullness warning: The types 'obj' and 'AB | null' do not have compatible nullability."
+                  Error 3060, Line 5, Col 42, Line 5, Col 59, "This type test or downcast will erase the provided type 'AB | null' to the type 'AB'"
+                  Error 3060, Line 6, Col 41, Line 6, Col 55, "This type test or downcast will erase the provided type 'AB | null' to the type 'AB'"
+                  Error 3261, Line 7, Col 51, Line 7, Col 97, "Nullness warning: The types 'obj' and 'AB | null array | null list | null' do not have compatible nullability."
+                  Error 3060, Line 7, Col 51, Line 7, Col 97, "This type test or downcast will erase the provided type 'List<AB | null array | null> | null' to the type 'List<AB array>'"]
+
+
+[<Fact>]
 let ``Can convert generic value to objnull arg`` () =
     FSharp """module TestLib
 

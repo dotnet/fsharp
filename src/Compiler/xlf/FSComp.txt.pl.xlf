@@ -1342,6 +1342,11 @@
         <target state="translated">Składnia lambda skrótu jest obsługiwana tylko w przypadku wyrażeń niepodzielnych, takich jak metoda, właściwość, pole lub indeksator w dorozumianym argumencie „_”. Na przykład: „let f = _. Length”.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcDowncastFromNullableToWithoutNull">
+        <source>Nullness warning: Downcasting from '{0}' into '{1}' can introduce unexpected null values. Cast to '{2}|null' instead or handle the null before downcasting.</source>
+        <target state="new">Nullness warning: Downcasting from '{0}' into '{1}' can introduce unexpected null values. Cast to '{2}|null' instead or handle the null before downcasting.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcEmptyBodyRequiresBuilderZeroMethod">
         <source>An empty body may only be used if the computation expression builder defines a 'Zero' method.</source>
         <target state="new">An empty body may only be used if the computation expression builder defines a 'Zero' method.</target>

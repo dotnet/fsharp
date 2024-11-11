@@ -1834,7 +1834,7 @@ let rec buildMethodPass2 cenv tref (typB: TypeBuilder) emEnv (mdef: ILMethodDef)
         let methB =
             System.Diagnostics.Debug.Assert(not (isNull definePInvokeMethod), "Runtime does not have DefinePInvokeMethod") // Absolutely can't happen
 
-            (!!definePInvokeMethod)
+            !!(!!definePInvokeMethod)
                 .Invoke(
                     typB,
                     [|
