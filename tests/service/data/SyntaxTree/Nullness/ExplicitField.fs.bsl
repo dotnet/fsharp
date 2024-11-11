@@ -17,7 +17,8 @@ ImplFile
                            ([], false, Some myString,
                             WithNull
                               (LongIdent (SynLongIdent ([string], [], [None])),
-                               false, (3,31--3,44)), true,
+                               false, (3,31--3,44), { BarRange = (3,38--3,39) }),
+                            true,
                             PreXmlDoc ((3,8), FSharp.Compiler.Xml.XmlDocCollector),
                             None, (3,8--3,44),
                             { LeadingKeyword = Some (Val (3,8--3,11))

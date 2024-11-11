@@ -154,7 +154,7 @@
       </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
         <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
-        <target state="translated">Variablenbezeichner in Großbuchstaben sollten im Allgemeinen nicht in Mustern verwendet werden und können ein Hinweis auf eine fehlende open-Deklaration oder einen falsch geschriebenen Musternamen sein.</target>
+        <target state="needs-review-translation">Variablenbezeichner in Großbuchstaben sollten im Allgemeinen nicht in Mustern verwendet werden und können ein Hinweis auf eine fehlende open-Deklaration oder einen falsch geschriebenen Musternamen sein.</target>
         <note />
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructor">
@@ -204,7 +204,7 @@
       </trans-unit>
       <trans-unit id="NameClash2">
         <source>The {0} '{1}' cannot be defined because the name '{2}' clashes with the {3} '{4}' in this type or module</source>
-        <target state="translated">{0} "{1}" kann nicht definiert werden, weil der Name "{2}" einen Konflikt mit {3} "{4}" in diesem Typ oder Modul verursacht.</target>
+        <target state="new">The {0} '{1}' cannot be defined because the name '{2}' clashes with the {3} '{4}' in this type or module</target>
         <note />
       </trans-unit>
       <trans-unit id="Duplicate1">

@@ -16,13 +16,14 @@ ImplFile
                     (SynBindingReturnInfo
                        (WithNull
                           (LongIdent (SynLongIdent ([string], [], [None])),
-                           false, (1,8--1,21)), (1,8--1,21), [],
-                        { ColonRange = Some (1,6--1,7) })),
+                           false, (1,8--1,21), { BarRange = (1,15--1,16) }),
+                        (1,8--1,21), [], { ColonRange = Some (1,6--1,7) })),
                   Typed
                     (Null (1,24--1,28),
                      WithNull
                        (LongIdent (SynLongIdent ([string], [], [None])), false,
-                        (1,8--1,21)), (1,24--1,28)), (1,4--1,5), Yes (1,0--1,28),
+                        (1,8--1,21), { BarRange = (1,15--1,16) }), (1,24--1,28)),
+                  (1,4--1,5), Yes (1,0--1,28),
                   { LeadingKeyword = Let (1,0--1,3)
                     InlineKeyword = None
                     EqualsRange = Some (1,22--1,23) })], (1,0--1,28))],

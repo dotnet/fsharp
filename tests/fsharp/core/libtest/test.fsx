@@ -559,9 +559,9 @@ do test "cwewvewho0" (match box(Some 3)    with :? option<string> -> false | _ -
 do test "cwewvewho-" (match box([3])    with :? list<int> as v -> (v = [3]) | _ -> false)
 do test "cwewvewhoa" (match box([3])    with :? list<string> as v -> false | _ -> true)
 
-do test "cwewvewhos" (match (null:obj)    with :? list<int> as v -> false | _ -> true)
+do test "cwewvewhos" (match (null:obj)   with :? list<int> as v -> false | _ -> true)
 
-let pattest<'a> (obj:obj) fail (succeed : 'a -> bool) = match obj  with :? 'a as x -> succeed x | _ -> fail()
+let pattest<'a> (obj:objnull) fail (succeed : 'a -> bool) = match obj  with :? 'a as x -> succeed x | _ -> fail()
 
 do test "cwewvewhoq" (pattest<int>   (box(1))                       (fun () -> false) (fun v -> v = 1))
 do test "cwewvewhow" (pattest<int>   (null)                         (fun () -> true ) (fun _ -> false))
@@ -5646,7 +5646,7 @@ let aa =
   match !failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
+      printf "TEST PASSED OK" ;
       exit 0
   | _ -> 
       stdout.WriteLine "Test Failed"

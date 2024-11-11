@@ -3,7 +3,6 @@
 namespace FSharp.Test.ScriptHelpers
 
 open System
-open System.Collections.Generic
 open System.IO
 open System.Text
 open System.Threading
@@ -11,7 +10,7 @@ open FSharp.Compiler
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
-open FSharp.Test.Utilities
+open FSharp.Test
 
 [<RequireQualifiedAccess>]
 type LangVersion =
@@ -25,7 +24,26 @@ type LangVersion =
     | Latest
     | SupportsMl
 
-type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVersion) =
+type private EventedTextWriter() =
+    inherit TextWriter()
+    let sb = StringBuilder()
+    let sw = new StringWriter()
+    let lineWritten = Event<string>()
+    member _.LineWritten = lineWritten.Publish
+    override _.Encoding = Encoding.UTF8
+    override _.Write(c: char) =
+        if c = '\n' then
+            let line =
+                let v = sb.ToString()
+                if v.EndsWith("\r") then v.Substring(0, v.Length - 1)
+                else v
+            sb.Clear() |> ignore
+            sw.WriteLine line
+            lineWritten.Trigger(line)
+        else sb.Append(c) |> ignore
+    override _.ToString() = sw.ToString()
+
+type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVersion, ?input: string) =
 
     let additionalArgs = defaultArg additionalArgs [||]
     let quiet = defaultArg quiet true
@@ -54,13 +72,32 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
 
     let argv = Array.append baseArgs additionalArgs
 
+    let inReader = new StringReader(defaultArg input "")
+    let outWriter = new EventedTextWriter()
+    let errorWriter = new EventedTextWriter()
+
+    let previousIn, previousOut, previousError = Console.In, Console.Out, Console.Error
+
+    do
+        Console.SetIn inReader
+        Console.SetOut outWriter
+        Console.SetError errorWriter
+
     let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr)
 
     member _.ValueBound = fsi.ValueBound
 
     member _.Fsi = fsi
 
-    member _.Eval(code: string, ?cancellationToken: CancellationToken, ?desiredCulture: Globalization.CultureInfo) =
+    member _.OutputProduced = outWriter.LineWritten
+
+    member _.ErrorProduced = errorWriter.LineWritten
+
+    member _.GetOutput() = string outWriter
+
+    member _.GetErrorOutput() = string errorWriter
+
+    member this.Eval(code: string, ?cancellationToken: CancellationToken, ?desiredCulture: Globalization.CultureInfo) =
         let originalCulture = Thread.CurrentThread.CurrentCulture
         Thread.CurrentThread.CurrentCulture <- Option.defaultValue Globalization.CultureInfo.InvariantCulture desiredCulture
 
@@ -88,7 +125,11 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
         }
 
     interface IDisposable with
-        member this.Dispose() = ((this.Fsi) :> IDisposable).Dispose()
+        member this.Dispose() =
+            ((this.Fsi) :> IDisposable).Dispose()
+            Console.SetIn previousIn
+            Console.SetOut previousOut
+            Console.SetError previousError
 
 [<AutoOpen>]
 module TestHelpers =
@@ -101,15 +142,3 @@ module TestHelpers =
         | Error ex -> raise ex
 
     let ignoreValue = getValue >> ignore
-
-    let getTempDir () =
-        let sysTempDir = Path.GetTempPath()
-        let customTempDirName = Guid.NewGuid().ToString("D")
-        let fullDirName = Path.Combine(sysTempDir, customTempDirName)
-        let dirInfo = Directory.CreateDirectory(fullDirName)
-        { new Object() with
-            member _.ToString() = dirInfo.FullName
-          interface IDisposable with
-            member _.Dispose() =
-                dirInfo.Delete(true)
-        }

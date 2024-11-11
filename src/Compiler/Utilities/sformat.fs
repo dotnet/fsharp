@@ -1012,7 +1012,7 @@ module Display =
         // Recursive descent
         let rec nestedObjL depthLim prec (x: obj, ty: Type) = objL ShowAll depthLim prec (x, ty)
 
-        and objL showMode depthLim prec (x: obj, ty: Type) =
+        and objL showMode depthLim prec (x: objnull, ty: Type) =
             let info = Value.GetValueInfo bindingFlags (x, ty)
             try
                 if depthLim <= 0 || exceededPrintSize () then
@@ -1337,9 +1337,6 @@ module Display =
 
                 if
                     word = "map"
-                    && (match v with
-                        | null -> false
-                        | _ -> true)
                     && tyv.IsGenericType
                     && tyv.GetGenericTypeDefinition() = typedefof<KeyValuePair<int, int>>
                 then

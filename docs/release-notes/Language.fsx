@@ -25,7 +25,11 @@ Directory.EnumerateFiles(path, "*.md")
     | "preview", "preview" -> 0
     | "preview", _ -> -1
     | _, "preview" -> 1
-    | _, _ -> compare (int b) (int a))
+    | _, _ -> 
+        match System.Decimal.TryParse(b), System.Decimal.TryParse(b) with
+        | (true, a) , ( true, b) -> compare (int b) (int a)
+        | _ -> failwithf "Cannot compare %s with %s" b a
+    )
 |> Seq.map (fun file ->
     let version = Path.GetFileNameWithoutExtension(file)
     let version = if version = "preview" then "Preview" else version

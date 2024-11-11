@@ -175,6 +175,13 @@ let tname_IsByRefLikeAttribute = "System.Runtime.CompilerServices.IsByRefLikeAtt
 // Table of all these "globals"
 //-------------------------------------------------------------------------
 
+[<RequireQualifiedAccess>]
+type CompilationMode =
+    | Unset
+    | OneOff
+    | Service
+    | Interactive
+
 type TcGlobals(
     compilingFSharpCore: bool,
     ilg: ILGlobals,
@@ -190,11 +197,10 @@ type TcGlobals(
     noDebugAttributes: bool,
     pathMap: PathMap,
     langVersion: LanguageVersion,
-    realsig: bool) =
+    realsig: bool,
+    compilationMode: CompilationMode) =
 
   let v_langFeatureNullness = langVersion.SupportsFeature LanguageFeature.NullnessChecking
-
-  let v_renderNullness = checkNullness && v_langFeatureNullness
 
   let v_knownWithNull =
       if v_langFeatureNullness then KnownWithNull else KnownAmbivalentToNull
@@ -1113,8 +1119,6 @@ type TcGlobals(
 
   member _.langFeatureNullness = v_langFeatureNullness
 
-  member _.renderNullnessAnnotations = v_renderNullness
-
   member _.knownWithNull = v_knownWithNull
 
   member _.knownWithoutNull = v_knownWithoutNull
@@ -1494,6 +1498,7 @@ type TcGlobals(
   member val attrib_CallerFilePathAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerFilePathAttribute"
   member val attrib_CallerMemberNameAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerMemberNameAttribute"
   member val attrib_SkipLocalsInitAttribute  = findSysAttrib "System.Runtime.CompilerServices.SkipLocalsInitAttribute"
+  member val attrib_DecimalConstantAttribute = findSysAttrib "System.Runtime.CompilerServices.DecimalConstantAttribute"
   member val attribs_Unsupported = v_attribs_Unsupported
 
   member val attrib_ProjectionParameterAttribute           = mk_MFCore_attrib "ProjectionParameterAttribute"
@@ -1827,6 +1832,8 @@ type TcGlobals(
 
   /// Are we assuming all code gen is for F# interactive, with no static linking
   member _.isInteractive=isInteractive
+
+  member val compilationMode = compilationMode
 
   /// Indicates if we are generating witness arguments for SRTP constraints. Only done if the FSharp.Core
   /// supports witness arguments.

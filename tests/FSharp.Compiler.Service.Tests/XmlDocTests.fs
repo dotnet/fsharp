@@ -5,7 +5,7 @@ open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Test.Compiler
-open FsUnit
+open FSharp.Test.Assert
 open Xunit
 
 let (|Types|TypeSigs|) = function

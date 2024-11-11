@@ -25,7 +25,8 @@ ImplFile
                                 (WithNull
                                    (LongIdent
                                       (SynLongIdent ([string], [], [None])),
-                                    false, (1,16--1,29)), (1,15--1,30)),
+                                    false, (1,16--1,29),
+                                    { BarRange = (1,23--1,24) }), (1,15--1,30)),
                               (1,12--1,30)), (1,11--1,31))], None, (1,4--1,31)),
                   None, Const (Int32 42, (1,34--1,36)), (1,4--1,31), NoneAtLet,
                   { LeadingKeyword = Let (1,0--1,3)

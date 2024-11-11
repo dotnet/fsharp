@@ -1612,19 +1612,22 @@ let p_tyar_constraint x st =
     | TyparConstraint.SupportsComparison _          -> p_byte 10 st
     | TyparConstraint.SupportsEquality _            -> p_byte 11 st
     | TyparConstraint.IsUnmanaged _                 -> p_byte 12 st
-    | TyparConstraint.NotSupportsNull _             -> 
-        failwith "NotSupportsNull constraints should only be emitted to streamB"
+    
+    | TyparConstraint.NotSupportsNull _
+    | TyparConstraint.AllowsRefStruct _ -> 
+        failwith $"%A{x} constraints should only be emitted to streamB"
 
-// Some extra F# 5.0 constraints are stored in stream B, these will be ignored by earlier F# compilers
+// Some extra F#9+ constraints are stored in stream B, these will be ignored by earlier F# compilers
 let p_tyar_constraintB x st = 
     match x with 
     | TyparConstraint.NotSupportsNull _             -> p_byteB 1 st
-    | _ -> failwith "only NotSupportsNull constraints should be emitted to streamB"
+    | TyparConstraint.AllowsRefStruct _             -> p_byteB 2 st
+    | _ -> failwith "only NotSupportsNull and AllowsRefStruct constraints should be emitted to streamB"
 
 let p_tyar_constraints cxs st = 
-    let cxs1, cxs2 = cxs |> List.partition (function TyparConstraint.NotSupportsNull _ -> false | _ -> true)
+    let cxs1, cxs2 = cxs |> List.partition (function TyparConstraint.NotSupportsNull _ | TyparConstraint.AllowsRefStruct _ -> false | _ -> true)
     p_list p_tyar_constraint cxs1 st
-    // Some extra F# 5.0 constraints are stored in stream B, these will be ignored by earlier F# compilers
+    // Some extra F#9+ constraints are stored in stream B, these will be ignored by earlier F# compilers
     p_listB p_tyar_constraintB cxs2 st
 
 let u_tyar_constraint st =
@@ -1645,16 +1648,17 @@ let u_tyar_constraint st =
     | 12 ->                         (fun       _ -> TyparConstraint.IsUnmanaged range0)
     | _ -> ufailwith st "u_tyar_constraint"
 
-// Some extra F# 5.0 constraints are stored in stream B, these will be ignored by earlier F# compilers
+// Some extra F#9+ constraints are stored in stream B, these will be ignored by earlier F# compilers
 let u_tyar_constraintB st = 
     let tag = u_byteB st
     match tag with
-    | 1 ->  TyparConstraint.NotSupportsNull range0
+    | 1 -> TyparConstraint.NotSupportsNull range0
+    | 2 -> TyparConstraint.AllowsRefStruct range0
     | _ -> ufailwith st "u_tyar_constraintB - unexpected constraint in streamB" 
 
 let u_tyar_constraints st =
     let cxs1 = u_list_revi u_tyar_constraint st
-    // Some extra F# 5.0 constraints are stored in stream B, these will be ignored by earlier F# compilers
+    // Some extra F#9+ constraints are stored in stream B, these will be ignored by earlier F# compilers
     //
     // If the B stream is not present (e.g. reading F# 4.5 components) then this list will be empty
     // via the implementation of u_listB.

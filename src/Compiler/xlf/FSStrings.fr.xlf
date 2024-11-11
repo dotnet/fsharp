@@ -154,7 +154,7 @@
       </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
         <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
-        <target state="translated">Les identificateurs de variables en majuscules ne doivent généralement pas être utilisés dans les modèles. Ils peuvent indiquer une absence de déclaration open ou un nom de modèle mal orthographié.</target>
+        <target state="needs-review-translation">Les identificateurs de variables en majuscules ne doivent généralement pas être utilisés dans les modèles. Ils peuvent indiquer une absence de déclaration open ou un nom de modèle mal orthographié.</target>
         <note />
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructor">
@@ -204,7 +204,7 @@
       </trans-unit>
       <trans-unit id="NameClash2">
         <source>The {0} '{1}' cannot be defined because the name '{2}' clashes with the {3} '{4}' in this type or module</source>
-        <target state="translated">Impossible de définir le {0} '{1}', car le nom '{2}' est en conflit avec le {3} '{4}' dans ce type ou module</target>
+        <target state="new">The {0} '{1}' cannot be defined because the name '{2}' clashes with the {3} '{4}' in this type or module</target>
         <note />
       </trans-unit>
       <trans-unit id="Duplicate1">

@@ -212,8 +212,7 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (restart required);
-Cache parsing results (experimental)</value>
+Enable fast find references &amp; rename (restart required)</value>
   </data>
   <data name="6012" xml:space="preserve">
     <value>Advanced</value>
@@ -359,6 +358,9 @@ Use live (unsaved) buffers for analysis</value>
   </data>
   <data name="RemoveUnnecessaryParentheses" xml:space="preserve">
     <value>Remove unnecessary parentheses</value>
+  </data>
+  <data name="AddMissingSeq" xml:space="preserve">
+    <value>Add missing 'seq'</value>
   </data>
   <data name="RemarksHeader" xml:space="preserve">
     <value>Remarks:</value>

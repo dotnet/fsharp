@@ -5,7 +5,7 @@
 let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e ->  false
 
 open Xunit
-open FsUnit
+open FSharp.Test.Assert
 open FSharp.Test
 open System
 open System.IO
@@ -96,7 +96,7 @@ let mmmm2 : M.CAbbrev = new M.CAbbrev() // note, these don't count as uses of C
 let ``Test project1 whole project errors`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project1.options) |> Async.RunImmediate
-    wholeProjectResults .Diagnostics.Length |> shouldEqual 2
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 2
     wholeProjectResults.Diagnostics[1].Message.Contains("Incomplete pattern matches on this expression") |> shouldEqual true // yes it does
     wholeProjectResults.Diagnostics[1].ErrorNumber |> shouldEqual 25
 
@@ -108,6 +108,9 @@ let ``Test project1 whole project errors`` () =
 [<Fact>]
 let ``Test project1 and make sure TcImports gets cleaned up`` () =
 
+    // A private checker for this test.
+    let checker = FSharpChecker.Create()
+    
     let test () =
         let _, checkFileAnswer = checker.ParseAndCheckFileInProject(Project1.fileName1, 0, Project1.fileSource1, Project1.options) |> Async.RunImmediate
         match checkFileAnswer with
@@ -123,8 +126,7 @@ let ``Test project1 and make sure TcImports gets cleaned up`` () =
     let weakTcImports = test ()
     checker.InvalidateConfiguration Project1.options
     checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-    GC.Collect(2, GCCollectionMode.Forced, blocking = true)
-    Assert.False weakTcImports.IsAlive
+    System.Threading.SpinWait.SpinUntil(fun () -> not weakTcImports.IsAlive)
 
 [<Fact>]
 let ``Test Project1 should have protected FullName and TryFullName return same results`` () =
@@ -713,7 +715,7 @@ let ``Test project2 all symbols in signature`` () =
              "field x"; "field y"; "GenericClass`1"; "generic parameter T"; "member .ctor";
              "member GenericMethod"; "generic parameter U"] |> List.sort
 
-    shouldPairwiseEqual e r
+    shouldEqual e r
 
 [<Fact>]
 let ``Test project2 all uses of all signature symbols`` () =
@@ -4637,11 +4639,9 @@ let callToOverload = B(5).Overload(4)
     let fileNames = [|fileName1|]
     let args = mkProjectCommandLineArgs (dllName, [])
 
-[<Theory>]
-// [<InlineData true>] // Flaky, reenable when stable
-[<InlineData false>]
-let ``Test project36 FSharpMemberOrFunctionOrValue.IsBaseValue`` useTransparentCompiler =
-    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+[<Fact>]
+let ``Test project36 FSharpMemberOrFunctionOrValue.IsBaseValue`` () =
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
     let options = { keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (Project36.projFileName, Project36.args) with SourceFiles = Project36.fileNames }
     let wholeProjectResults =
         keepAssemblyContentsChecker.ParseAndCheckProject(options)
@@ -4654,11 +4654,9 @@ let ``Test project36 FSharpMemberOrFunctionOrValue.IsBaseValue`` useTransparentC
         else None)
     |> fun baseSymbol -> shouldEqual true baseSymbol.IsBaseValue
 
-[<Theory>]
-// [<InlineData true>] // Flaky, reenable when stable
-[<InlineData false>]
-let ``Test project36 FSharpMemberOrFunctionOrValue.IsConstructorThisValue & IsMemberThisValue`` useTransparentCompiler =
-    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+[<Fact>]
+let ``Test project36 FSharpMemberOrFunctionOrValue.IsConstructorThisValue & IsMemberThisValue`` () =
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
     let options = { keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (Project36.projFileName, Project36.args) with SourceFiles = Project36.fileNames }
     let wholeProjectResults = keepAssemblyContentsChecker.ParseAndCheckProject(options) |> Async.RunImmediate
     let declarations =
@@ -4693,11 +4691,9 @@ let ``Test project36 FSharpMemberOrFunctionOrValue.IsConstructorThisValue & IsMe
     | _ -> failwith "unexpected expression"
     |> shouldEqual true
 
-[<Theory>]
-// [<InlineData true>] // Flaky, reenable when stable
-[<InlineData false>]
-let ``Test project36 FSharpMemberOrFunctionOrValue.LiteralValue`` useTransparentCompiler =
-    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+[<Fact>]
+let ``Test project36 FSharpMemberOrFunctionOrValue.LiteralValue`` () =
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
     let options = { keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (Project36.projFileName, Project36.args) with SourceFiles = Project36.fileNames }
     let wholeProjectResults = keepAssemblyContentsChecker.ParseAndCheckProject(options) |> Async.RunImmediate
     let project36Module = wholeProjectResults.AssemblySignature.Entities[0]
@@ -5314,11 +5310,9 @@ let foo (a: Foo): bool =
     let args = mkProjectCommandLineArgs (dllName, [])
     let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
-[<Theory>]
-// [<InlineData true>] // Flaky, reenable when stable
-[<InlineData false>]
-let ``Test typed AST for struct unions`` useTransparentCompiler = // See https://github.com/fsharp/FSharp.Compiler.Service/issues/756
-    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+[<Fact>]
+let ``Test typed AST for struct unions`` () = // See https://github.com/fsharp/FSharp.Compiler.Service/issues/756
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
     let wholeProjectResults = keepAssemblyContentsChecker.ParseAndCheckProject(ProjectStructUnions.options) |> Async.RunImmediate
 
     let declarations =
@@ -5404,10 +5398,8 @@ let ``Test diagnostics with line directives ignored`` () =
 
 //------------------------------------------------------
 
-[<Theory>]
-// [<InlineData true>] // Flaky, reenable when stable
-[<InlineData false>]
-let ``ParseAndCheckFileResults contains ImplFile list if FSharpChecker is created with keepAssemblyContent flag set to true`` useTransparentCompiler =
+[<Fact>]
+let ``ParseAndCheckFileResults contains ImplFile list if FSharpChecker is created with keepAssemblyContent flag set to true`` () =
 
     let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
     let base2 = getTemporaryFileName ()
@@ -5422,7 +5414,7 @@ type A(i:int) =
 
     let fileNames = [|fileName1|]
     let args = mkProjectCommandLineArgs (dllName, [])
-    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
     let options = { keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
     let fileCheckResults =
@@ -5490,10 +5482,8 @@ let ``#4030, Incremental builder creation warnings 5`` () =
 
 //------------------------------------------------------
 
-[<Theory>]
-// [<InlineData true>] // Flaky, reenable when stable
-[<InlineData false>]
-let ``Unused opens in rec module smoke test 1`` useTransparentCompiler =
+[<Fact>]
+let ``Unused opens in rec module smoke test 1`` () =
 
     let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
     let base2 = getTemporaryFileName ()
@@ -5541,7 +5531,7 @@ type UseTheThings(i:int) =
 
     let fileNames = [|fileName1|]
     let args = mkProjectCommandLineArgs (dllName, [])
-    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
     let options = { keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
     let fileCheckResults =
@@ -5565,10 +5555,8 @@ type UseTheThings(i:int) =
            (((25, 5), (25, 21)), "open SomeUnusedModule")]
     unusedOpensData |> shouldEqual expected
 
-[<Theory>]
-// [<InlineData true>] // Flaky, reenable when stable
-[<InlineData false>]
-let ``Unused opens in non rec module smoke test 1`` useTransparentCompiler =
+[<Fact>]
+let ``Unused opens in non rec module smoke test 1`` () =
 
     let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
     let base2 = getTemporaryFileName ()
@@ -5628,7 +5616,7 @@ type UseTheThings(i:int) =
 
     let fileNames = [|fileName1|]
     let args = mkProjectCommandLineArgs (dllName, [])
-    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
     let options = { keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
     let fileCheckResults =
@@ -5654,10 +5642,8 @@ type UseTheThings(i:int) =
            (((37, 10), (37, 21)), "open type FSharpEnum2 // Unused, should appear.")]
     unusedOpensData |> shouldEqual expected
 
-[<Theory>]
-// [<InlineData true>] // Flaky, reenable when stable
-[<InlineData false>]
-let ``Unused opens smoke test auto open`` useTransparentCompiler =
+[<Fact>]
+let ``Unused opens smoke test auto open`` () =
 
     let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
     let base2 = getTemporaryFileName ()
@@ -5713,7 +5699,7 @@ module M2 =
 
     let fileNames = [|fileName1|]
     let args = mkProjectCommandLineArgs (dllName, [])
-    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
     let options = { keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
     let fileCheckResults =
@@ -5813,7 +5799,7 @@ let ``References from #r nuget are included in script project options`` () =
         |> Seq.choose (fun f -> f.FileName |> Option.map Path.GetFileName)
         |> Seq.distinct
     printfn "%s" (assemblyNames |> String.concat "\n")
-    assemblyNames |> should contain "Dapper.dll"
+    Assert.Contains("Dapper.dll", assemblyNames)
 
 module internal EmptyProject =
     let base2 = getTemporaryFileName ()

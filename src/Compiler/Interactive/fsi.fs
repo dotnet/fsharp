@@ -846,7 +846,7 @@ type internal FsiStdinSyphon(errorWriter: TextWriter) =
 /// Encapsulates functions used to write to outWriter and errorWriter
 type internal FsiConsoleOutput(tcConfigB, outWriter: TextWriter, errorWriter: TextWriter) =
 
-    let nullOut = new StreamWriter(Stream.Null) :> TextWriter
+    let nullOut = TextWriter.Null
 
     let fprintfnn (os: TextWriter) fmt =
         Printf.kfprintf
@@ -898,7 +898,8 @@ type internal DiagnosticsLoggerThatStopsOnFirstError
     override _.DiagnosticSink(diagnostic, severity) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
 
-        if diagnostic.ReportAsError(tcConfig.diagnosticsOptions, severity) then
+        match diagnostic.AdjustSeverity(tcConfig.diagnosticsOptions, severity) with
+        | FSharpDiagnosticSeverity.Error ->
             fsiStdinSyphon.PrintDiagnostic(tcConfig, diagnostic)
             errorCount <- errorCount + 1
 
@@ -906,20 +907,14 @@ type internal DiagnosticsLoggerThatStopsOnFirstError
                 exit 1 (* non-zero exit code *)
             // STOP ON FIRST ERROR (AVOIDS PARSER ERROR RECOVERY)
             raise StopProcessing
-        elif diagnostic.ReportAsWarning(tcConfig.diagnosticsOptions, severity) then
-            DoWithDiagnosticColor FSharpDiagnosticSeverity.Warning (fun () ->
+        | (FSharpDiagnosticSeverity.Warning | FSharpDiagnosticSeverity.Info) as adjustedSeverity ->
+            DoWithDiagnosticColor adjustedSeverity (fun () ->
                 fsiConsoleOutput.Error.WriteLine()
                 diagnostic.WriteWithContext(fsiConsoleOutput.Error, "  ", fsiStdinSyphon.GetLine, tcConfig, severity)
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.Flush())
-        elif diagnostic.ReportAsInfo(tcConfig.diagnosticsOptions, severity) then
-            DoWithDiagnosticColor FSharpDiagnosticSeverity.Info (fun () ->
-                fsiConsoleOutput.Error.WriteLine()
-                diagnostic.WriteWithContext(fsiConsoleOutput.Error, "  ", fsiStdinSyphon.GetLine, tcConfig, severity)
-                fsiConsoleOutput.Error.WriteLine()
-                fsiConsoleOutput.Error.WriteLine()
-                fsiConsoleOutput.Error.Flush())
+        | FSharpDiagnosticSeverity.Hidden -> ()
 
     override _.ErrorCount = errorCount
 
@@ -1202,11 +1197,6 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
     do
         if tcConfigB.clearResultsCache then
             dependencyProvider.ClearResultsCache(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError rangeCmdArgs)
-
-        if tcConfigB.utf8output then
-            let prev = Console.OutputEncoding
-            Console.OutputEncoding <- Encoding.UTF8
-            System.AppDomain.CurrentDomain.ProcessExit.Add(fun _ -> Console.OutputEncoding <- prev)
 
     do
         let firstArg =
@@ -1675,34 +1665,6 @@ let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
     let qname = QualifiedNameOfFile.QualifiedNameOfFile(Ident(moduleName, m))
     entity, v, CheckedImplFile.CheckedImplFile(qname, [], mty, contents, false, false, StampMap.Empty, Map.empty)
 
-let scriptingSymbolsPath =
-    let createDirectory (path: string) =
-        lazy
-            try
-                if not (Directory.Exists(path)) then
-                    Directory.CreateDirectory(path) |> ignore
-
-                path
-            with _ ->
-                path
-
-    createDirectory (Path.Combine(Path.GetTempPath(), $"{DateTime.Now:s}-{Guid.NewGuid():n}".Replace(':', '-')))
-
-let deleteScriptingSymbols () =
-    try
-#if !DEBUG
-        if scriptingSymbolsPath.IsValueCreated then
-            if Directory.Exists(scriptingSymbolsPath.Value) then
-                Directory.Delete(scriptingSymbolsPath.Value, true)
-#else
-        ()
-#endif
-    with _ ->
-        ()
-
-AppDomain.CurrentDomain.ProcessExit
-|> Event.add (fun _ -> deleteScriptingSymbols ())
-
 let dynamicCcuName = "FSI-ASSEMBLY"
 
 /// Encapsulates the coordination of the typechecking, optimization and code generation
@@ -1763,6 +1725,33 @@ type internal FsiDynamicCompiler
     let infoReader = InfoReader(tcGlobals, tcImports.GetImportMap())
 
     let reportedAssemblies = Dictionary<string, DateTime>()
+
+    let scriptingSymbolsPath =
+        let createDirectory (path: string) =
+            try
+                if not (Directory.Exists(path)) then
+                    Directory.CreateDirectory(path) |> ignore
+
+                path
+            with _ ->
+                path
+
+        createDirectory (Path.Combine(Path.GetTempPath(), $"{DateTime.Now:s}-{Guid.NewGuid():n}".Replace(':', '-')))
+
+    let deleteScriptingSymbols () =
+        try
+#if !DEBUG
+            if Directory.Exists(scriptingSymbolsPath) then
+                Directory.Delete(scriptingSymbolsPath, true)
+#else
+            ()
+#endif
+        with _ ->
+            ()
+
+    do
+        AppDomain.CurrentDomain.ProcessExit
+        |> Event.add (fun _ -> deleteScriptingSymbols ())
 
     /// Add attributes
     let CreateModuleFragment (tcConfigB: TcConfigBuilder, dynamicCcuName, codegenResults) =
@@ -1841,7 +1830,7 @@ type internal FsiDynamicCompiler
             {
                 ilg = tcGlobals.ilg
                 outfile = $"{multiAssemblyName}-{dynamicAssemblyId}.dll"
-                pdbfile = Some(Path.Combine(scriptingSymbolsPath.Value, $"{multiAssemblyName}-{dynamicAssemblyId}.pdb"))
+                pdbfile = Some(Path.Combine(scriptingSymbolsPath, $"{multiAssemblyName}-{dynamicAssemblyId}.pdb"))
                 emitTailcalls = tcConfig.emitTailcalls
                 deterministic = tcConfig.deterministic
                 portablePDB = true
@@ -3850,7 +3839,8 @@ type FsiInteractionProcessor
             istate, Completed None
 
         | ParsedHashDirective("nowarn", nowarnArguments, m) ->
-            let numbers = (parsedHashDirectiveArguments nowarnArguments tcConfigB.langVersion)
+            let numbers = (parsedHashDirectiveArgumentsNoCheck nowarnArguments)
+
             List.iter (fun (d: string) -> tcConfigB.TurnWarningOff(m, d)) numbers
             istate, Completed None
 
@@ -4647,6 +4637,20 @@ type FsiEvaluationSession
         with e ->
             warning (e)
 
+    let restoreEncoding =
+        if tcConfigB.utf8output && Console.OutputEncoding <> Text.Encoding.UTF8 then
+            let previousEncoding = Console.OutputEncoding
+            Console.OutputEncoding <- Encoding.UTF8
+
+            Some(
+                { new IDisposable with
+                    member _.Dispose() =
+                        Console.OutputEncoding <- previousEncoding
+                }
+            )
+        else
+            None
+
     do
         updateBannerText () // resetting banner text after parsing options
 
@@ -4694,7 +4698,7 @@ type FsiEvaluationSession
     let lexResourceManager = LexResourceManager()
 
     /// The lock stops the type checker running at the same time as the server intellisense implementation.
-    let tcLockObject = box 7 // any new object will do
+    let tcLockObject = box 7 |> Unchecked.nonNull // any new object will do
 
     let resolveAssemblyRef (aref: ILAssemblyRef) =
         // Explanation: This callback is invoked during compilation to resolve assembly references
@@ -4790,6 +4794,7 @@ type FsiEvaluationSession
         member _.Dispose() =
             (tcImports :> IDisposable).Dispose()
             uninstallMagicAssemblyResolution.Dispose()
+            restoreEncoding |> Option.iter (fun x -> x.Dispose())
 
     /// Load the dummy interaction, load the initial files, and,
     /// if interacting, start the background thread to read the standard input.

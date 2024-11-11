@@ -261,9 +261,6 @@
   <data name="Send_Additional_Telemetry" xml:space="preserve">
     <value>Send additional performance telemetry</value>
   </data>
-  <data name="Use_syntax_tree_cache" xml:space="preserve">
-    <value>Cache parsing results (experimental)</value>
-  </data>
   <data name="Enable_partial_type_checking" xml:space="preserve">
     <value>Enable partial type checking</value>
   </data>

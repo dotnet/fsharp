@@ -2531,6 +2531,9 @@ type TyparConstraint =
     
     /// A constraint that a type is .NET unmanaged type
     | IsUnmanaged of range: range
+    
+    /// An anti-constraint indicating that ref structs (e.g. Span<>) are allowed here
+    | AllowsRefStruct of range:range
 
     // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -4354,6 +4357,12 @@ type NullnessVar() =
        | Some soln -> soln.TryEvaluate()
 
     member nv.IsSolved = solution.IsSome
+
+    member nv.IsFullySolved = 
+        match solution with
+        | None -> false
+        | Some (Nullness.Known _) -> true
+        | Some (Nullness.Variable v) -> v.IsFullySolved
 
     member nv.Set(nullness) = 
        assert (not nv.IsSolved) 

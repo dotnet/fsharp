@@ -327,11 +327,6 @@
         <target state="translated">Использовать прозрачный компилятор (требуется перезагрузка)</target>
         <note />
       </trans-unit>
-      <trans-unit id="Use_syntax_tree_cache">
-        <source>Cache parsing results (experimental)</source>
-        <target state="translated">Результаты анализа кэша (экспериментальная функция)</target>
-        <note />
-      </trans-unit>
     </body>
   </file>
 </xliff>

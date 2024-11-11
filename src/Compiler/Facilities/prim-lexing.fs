@@ -238,13 +238,13 @@ type internal Position =
         Position(x.FileIndex, x.Line, x.OriginalLine, x.StartOfLineAbsoluteOffset, x.StartOfLineAbsoluteOffset - 1)
 
     member x.ApplyLineDirective(fileIdx, line) =
-        Position(fileIdx, line, x.OriginalLine, x.AbsoluteOffset, x.AbsoluteOffset)
+        Position(fileIdx, line, x.OriginalLine + 1, x.AbsoluteOffset, x.AbsoluteOffset)
 
     override p.ToString() = $"({p.Line},{p.Column})"
 
     static member Empty = Position()
 
-    static member FirstLine fileIdx = Position(fileIdx, 1, 0, 0, 0)
+    static member FirstLine fileIdx = Position(fileIdx, 1, 1, 0, 0)
 
 type internal LexBufferFiller<'Char> = LexBuffer<'Char> -> unit
 

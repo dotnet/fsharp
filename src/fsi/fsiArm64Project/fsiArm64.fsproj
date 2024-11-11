@@ -5,7 +5,7 @@
   <PropertyGroup>
     <TargetFrameworks>net472</TargetFrameworks>
     <PlatformTarget>arm64</PlatformTarget>
-    <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
+    <ExcludeFromSourceOnlyBuild>true</ExcludeFromSourceOnlyBuild>
     <DefineConstants>$(DefineConstants);FSI_SHADOW_COPY_REFERENCES;FSI_SERVER</DefineConstants>
   </PropertyGroup>
 

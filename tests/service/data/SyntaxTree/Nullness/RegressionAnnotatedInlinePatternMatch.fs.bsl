@@ -15,7 +15,7 @@ ImplFile
                         Fun
                           (WithNull
                              (LongIdent (SynLongIdent ([string], [], [None])),
-                              false, (2,15--2,28)),
+                              false, (2,15--2,28), { BarRange = (2,22--2,23) }),
                            StaticConstant
                              (String ("456", Regular, (2,32--2,37)),
                               (2,32--2,37)), (2,15--2,37),

@@ -17,6 +17,11 @@
         <target state="translated">添加缺少的实例成员参数</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddMissingSeq">
+        <source>Add missing 'seq'</source>
+        <target state="new">Add missing 'seq'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">添加“新”关键字</target>
@@ -174,9 +179,8 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (restart required);
-Cache parsing results (experimental)</source>
-        <target state="translated">F# 项目和缓存性能选项；
+Enable fast find references &amp; rename (restart required)</source>
+        <target state="needs-review-translation">F# 项目和缓存性能选项；
 启用内存中跨项目引用；
 Enable_partial_type_checking;
 IntelliSense 性能选项；

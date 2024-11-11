@@ -7,7 +7,7 @@ open System.IO
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 open FSharp.Compiler.Symbols
-open NUnit.Framework
+open Xunit
 open FSharp.Compiler.GraphChecking
 open TypeChecks.TestUtils
 
@@ -100,8 +100,8 @@ let graphFromTypedTree (checker: FSharpChecker) (projectOptions: FSharpProjectOp
         return files, graph
     }
 
-[<TestCaseSource(nameof localProjects)>]
-[<Explicit("Slow! Only useful as a sanity check that the test codebase is sound.")>]
+[<MemberData(nameof localProjects)>]
+[<Theory(Skip = "Slow! Only useful as a sanity check that the test codebase is sound.")>]
 let ``Create Graph from typed tree`` (projectArgumentsFilePath: string) =
     let previousDir = Environment.CurrentDirectory
 
@@ -181,7 +181,7 @@ let ``Create Graph from typed tree`` (projectArgumentsFilePath: string) =
                     let isSuperSet = Set.isSuperset depsFromHeuristic depsFromTypedTree
                     let delta = Set.difference depsFromTypedTree depsFromHeuristic
 
-                    Assert.IsTrue(
+                    Assert.True(
                         isSuperSet,
                         $"""{relativePath fileName} did not contain a superset of the typed tree dependencies:
 {source} is missing dependencies: %A{depNames delta}."""

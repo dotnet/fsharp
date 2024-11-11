@@ -14,7 +14,9 @@ ImplFile
                               ([], SynTypar (T, None, false), [],
                                { AmpersandRanges = [] })],
                            [WhereTyparNotSupportsNull
-                              (SynTypar (T, None, false), (1,15--1,27));
+                              (SynTypar (T, None, false), (1,15--1,27),
+                               { ColonRange = (1,17--1,18)
+                                 NotRange = (1,19--1,22) });
                             WhereTyparIsEquatable
                               (SynTypar (T, None, false), (1,32--1,43))],
                            (1,6--1,44))), [], [C],

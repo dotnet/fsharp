@@ -78,7 +78,7 @@ function Run-Build([string]$rootDir, [string]$increment) {
     /p:ContinuousIntegrationBuild=false `
     /p:OfficialBuildId="" `
     /p:QuietRestore=false `
-    /p:DotNetBuildFromSource=false `
+    /p:DotNetBuildSourceOnly=false `
     /p:Deterministic=true `
     /p:DebugDeterminism=true `
     /p:Features="debug-determinism" `

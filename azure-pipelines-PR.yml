@@ -487,7 +487,9 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'NUnit'
+              testResultsFormat: 'XUnit'
+              testRunTitle: WindowsCompressedMetadata $(_testKind)
+              mergeTestResults: true
               testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_configuration)'
             continueOnError: true
@@ -557,8 +559,10 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'NUnit'
+              testResultsFormat: 'XUnit'
+              testRunTitle: Linux
               testResultsFiles: '*.xml'
+              mergeTestResults: true
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
             continueOnError: true
             condition: always()
@@ -600,8 +604,10 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'NUnit'
+              testResultsFormat: 'XUnit'
               testResultsFiles: '*.xml'
+              testRunTitle: MacOS
+              mergeTestResults: true
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
             continueOnError: true
             condition: always()
@@ -802,3 +808,23 @@ stages:
               artifactName: 'Trim Test Logs Attempt $(System.JobAttempt) Logs $(_kind)'
             continueOnError: true
             condition: always()
+        - job: ILVerify
+          pool:
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          steps:
+          - checkout: self
+            clean: true
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              useGlobalJson: true
+              includePreviewVersions: true
+              workingDirectory: $(Build.SourcesDirectory)
+              installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: dotnet tool restore
+            displayName: Restore dotnet tools
+          - pwsh: .\eng\ilverify.ps1
+            displayName: Run ILVerify
+            workingDirectory: $(Build.SourcesDirectory)

@@ -1476,7 +1476,7 @@ module internal Salsa =
             vs.LanguageService <- ls
             vs :> VisualStudio
         with e -> 
-            // Need to just print the error because NUnit has not fully initialized the exception at this point.
+            // Need to just print the error because the framework has not fully initialized the exception at this point.
             printf "Error in createSimple: %A" e
             reraise() 
     
