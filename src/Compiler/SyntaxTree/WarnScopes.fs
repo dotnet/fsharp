@@ -35,8 +35,8 @@ module internal WarnScopes =
     type private TempData =
         {
             OriginalFileIndex: int
-            WarnDirectives: WarnDirective list
-            LineMap: Map<int, int * (int * int) list>
+            mutable WarnDirectives: WarnDirective list
+            mutable LineMap: Map<int, int * (int * int) list>
         }
 
     let private initialData (lexbuf: Lexbuf) =
@@ -46,62 +46,15 @@ module internal WarnScopes =
             LineMap = Map.empty
         }
 
-    let private dataKey = "WarnScopeData"
-
-    let private getData (lexbuf: Lexbuf) =
-        if not <| lexbuf.BufferLocalStore.ContainsKey dataKey then
-            lexbuf.BufferLocalStore.Add(dataKey, initialData lexbuf)
-
-        lexbuf.BufferLocalStore[dataKey] :?> TempData
-
-    let private setData (lexbuf: Lexbuf) (data: TempData) =
-        lexbuf.BufferLocalStore[dataKey] <- data
-
-    let removeTemporaryData (lexbuf: Lexbuf) =
-        lexbuf.BufferLocalStore.Remove dataKey |> ignore
-
-    // *************************************
-    // After lexing, the (processed) warn scope data are kept in diagnosticOptions
-    // *************************************
-
-    /// The range between #nowarn and #warnon, or #warnon and #nowarn, for a warning number.
-    /// Or between the directive and eof, for the "Open" cases.
-    [<RequireQualifiedAccess>]
-    type private WarnScope =
-        | Off of range
-        | On of range
-        | OpenOff of range
-        | OpenOn of range
-
-    type private WarnScopeData =
-        {
-            /// The collected WarnScope objects (collected during lexing)
-            warnScopes: Map<int64, WarnScope list>
-            /// Information about the mapping implied by the #line directives.
-            /// The Map key is the file index of the surrogate source.
-            /// The Map value contains the file index of the original source and
-            /// a list of mapped sections (surrogate and original start lines).
-            lineMaps: Map<int, (int * (int * int) list)>
-        }
-
-    let private getWarnScopeData (diagnosticOptions: FSharpDiagnosticOptions) =
-        match diagnosticOptions.WarnScopeData with
-        | None ->
-            {
-                warnScopes = Map.empty
-                lineMaps = Map.empty
-            }
-        | Some data -> data :?> WarnScopeData
-
-    let private setWarnScopeData (diagnosticOptions: FSharpDiagnosticOptions) data =
-        diagnosticOptions.WarnScopeData <- Some data
+    let private getTempData (lexbuf: Lexbuf) =
+        lexbuf.GetLocalData("WarnScopeData", (fun () -> initialData lexbuf))
 
     // *************************************
     // Collect the line directives to correctly interact with them
     // *************************************
 
     let RegisterLineDirective (lexbuf, fileIndex, line: int) =
-        let data = getData lexbuf
+        let data = getTempData lexbuf
         let sectionMap = line, lexbuf.StartPos.OriginalLine + 1
 
         let changer entry =
@@ -121,9 +74,7 @@ module internal WarnScopes =
                 else
                     Some(originalFileIndex, sectionMap :: maps)
 
-        let newLineMap = data.LineMap.Change(fileIndex, changer)
-        let newData = { data with LineMap = newLineMap }
-        setData lexbuf newData
+        data.LineMap <- data.LineMap.Change(fileIndex, changer)
 
     // *************************************
     // Collect the warn scopes during lexing
@@ -217,11 +168,6 @@ module internal WarnScopes =
             IsWarnon = isWarnon
         }
 
-    let private index (fileIndex, warningNumber) =
-        (int64 fileIndex <<< 32) + int64 warningNumber
-
-    let private warnNumFromIndex (idx: int64) = idx &&& 0xFFFFFFFFL
-
     let private getScopes idx warnScopes =
         Map.tryFind idx warnScopes |> Option.defaultValue []
 
@@ -229,15 +175,49 @@ module internal WarnScopes =
         mkFileIndexRange m1.FileIndex m1.Start m2.End
 
     let ParseAndRegisterWarnDirective (lexbuf: Lexbuf) =
-        let data = getData lexbuf
+        let data = getTempData lexbuf
         let warnDirective = parseDirective data.OriginalFileIndex lexbuf
+        data.WarnDirectives <- warnDirective :: data.WarnDirectives
 
-        let newData =
-            { data with
-                WarnDirectives = warnDirective :: data.WarnDirectives
+    // *************************************
+    // After lexing, the (processed) warn scope data are kept in diagnosticOptions
+    // *************************************
+
+    type private FileIndex = int
+    type private WarningNumber = int
+    type private LineNumber = int
+
+    /// The range between #nowarn and #warnon, or #warnon and #nowarn, for a warning number.
+    /// Or between the directive and eof, for the "Open" cases.
+    [<RequireQualifiedAccess>]
+    type private WarnScope =
+        | Off of range
+        | On of range
+        | OpenOff of range
+        | OpenOn of range
+
+    type private WarnScopeData =
+        {
+            /// The collected WarnScope objects (collected during lexing)
+            warnScopes: Map<FileIndex * WarningNumber, WarnScope list>
+            /// Information about the mapping implied by the #line directives.
+            /// The Map key is the file index of the surrogate source.
+            /// The Map value contains the file index of the original source and
+            /// a list of mapped sections (surrogate and original start lines).
+            lineMaps: Map<FileIndex, (FileIndex * (LineNumber * LineNumber) list)>
+        }
+
+    let private getWarnScopeData (diagnosticOptions: FSharpDiagnosticOptions) =
+        match diagnosticOptions.WarnScopeData with
+        | None ->
+            {
+                warnScopes = Map.empty
+                lineMaps = Map.empty
             }
+        | Some data -> data :?> WarnScopeData
 
-        setData lexbuf newData
+    let private setWarnScopeData (diagnosticOptions: FSharpDiagnosticOptions) data =
+        diagnosticOptions.WarnScopeData <- Some data
 
     // *************************************
     // Move the warnscope data to diagnosticOptions / make ranges available
@@ -246,7 +226,7 @@ module internal WarnScopes =
     let private processWarnCmd (langVersion: LanguageVersion) warnScopeMap (wd: WarnCmd) =
         match wd with
         | WarnCmd.Nowarn(n, m) ->
-            let idx = index (m.FileIndex, n)
+            let idx = m.FileIndex, n
 
             match getScopes idx warnScopeMap with
             | WarnScope.OpenOn m' :: t -> warnScopeMap.Add(idx, WarnScope.On(mkScope m' m) :: t)
@@ -258,7 +238,7 @@ module internal WarnScopes =
                 warnScopeMap
             | scopes -> warnScopeMap.Add(idx, WarnScope.OpenOff(mkScope m m) :: scopes)
         | WarnCmd.Warnon(n, m) ->
-            let idx = index (m.FileIndex, n)
+            let idx = m.FileIndex, n
 
             match getScopes idx warnScopeMap with
             | WarnScope.OpenOff m' :: t -> warnScopeMap.Add(idx, WarnScope.Off(mkScope m' m) :: t)
@@ -269,7 +249,7 @@ module internal WarnScopes =
             | scopes -> warnScopeMap.Add(idx, WarnScope.OpenOn(mkScope m m) :: scopes)
 
     let MergeInto (diagnosticOptions: FSharpDiagnosticOptions) (subModuleRanges: range list) (lexbuf: Lexbuf) =
-        let data = getData lexbuf
+        let data = getTempData lexbuf
         let warnDirectives = List.rev data.WarnDirectives
 
         let warnCmds =
@@ -321,10 +301,10 @@ module internal WarnScopes =
             setWarnScopeData diagnosticOptions newWarnScopeData)
 
     let getDirectiveRanges (lexbuf: Lexbuf) =
-        (getData lexbuf).WarnDirectives |> List.rev |> List.map _.DirectiveRange
+        (getTempData lexbuf).WarnDirectives |> List.rev |> List.map _.DirectiveRange
 
     let getCommentRanges (lexbuf: Lexbuf) =
-        (getData lexbuf).WarnDirectives |> List.rev |> List.choose _.CommentRange
+        (getTempData lexbuf).WarnDirectives |> List.rev |> List.choose _.CommentRange
 
     // *************************************
     // Apply the warn scopes after lexing
@@ -366,7 +346,7 @@ module internal WarnScopes =
         match mo, diagnosticOptions.WarnScopesFeatureIsSupported with
         | Some m, true ->
             let mOrig = originalRange data.lineMaps m
-            let scopes = getScopes (index (mOrig.FileIndex, warningNumber)) data.warnScopes
+            let scopes = getScopes (mOrig.FileIndex, warningNumber) data.warnScopes
             List.exists (isEnclosingWarnonScope mOrig) scopes
         | _ -> false
 
@@ -376,8 +356,6 @@ module internal WarnScopes =
         match mo with
         | Some m ->
             let mOrig = originalRange data.lineMaps m
-            let scopes = getScopes (index (mOrig.FileIndex, warningNumber)) data.warnScopes
+            let scopes = getScopes (mOrig.FileIndex, warningNumber) data.warnScopes
             List.exists (isEnclosingNowarnScope mOrig) scopes
-        | None ->
-            data.warnScopes
-            |> Map.exists (fun idx _ -> warnNumFromIndex idx = warningNumber)
+        | None -> data.warnScopes |> Map.exists (fun idx _ -> snd idx = warningNumber)

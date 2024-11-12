@@ -9,6 +9,9 @@ open Internal.Utilities.Text.Lexing
 
 type Lexbuf = LexBuffer<char>
 
+type LexBuffer<'char> with
+    member GetLocalData<'T when 'T: not null>: key: string * initializer: (unit -> 'T) -> 'T
+
 val StringAsLexbuf:
     reportLibraryOnlyFeatures: bool * langVersion: LanguageVersion * strictIndentation: bool option * string -> Lexbuf
 

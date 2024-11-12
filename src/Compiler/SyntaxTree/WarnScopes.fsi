@@ -24,9 +24,6 @@ module internal WarnScopes =
     /// Get the ranges of any comments after warn directives
     val getCommentRanges: Lexbuf -> range list
 
-    /// Clear the temporary warn scope related data in the Lexbuf
-    val removeTemporaryData: Lexbuf -> unit
-
     /// Check if the range is inside a WarnScope.On scope
     val IsWarnon: FSharpDiagnosticOptions -> warningNumber: int -> mo: range option -> bool
 

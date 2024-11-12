@@ -8,6 +8,16 @@ open Internal.Utilities.Text.Lexing
 
 type Lexbuf = LexBuffer<char>
 
+type LexBuffer<'char> with
+
+    member lexbuf.GetLocalData<'T when 'T: not null>(key: string, initializer) =
+        match lexbuf.BufferLocalStore.TryGetValue key with
+        | true, data -> data :?> 'T
+        | _ ->
+            let data = initializer ()
+            lexbuf.BufferLocalStore[key] <- data
+            data
+
 let StringAsLexbuf (reportLibraryOnlyFeatures, langVersion, strictIndentation, s: string) =
     LexBuffer<char>
         .FromChars(reportLibraryOnlyFeatures, langVersion, strictIndentation, s.ToCharArray())
