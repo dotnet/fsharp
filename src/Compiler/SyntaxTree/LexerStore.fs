@@ -51,19 +51,12 @@ module XmlDocStore =
         let startPos = lexbuf.StartPos
         collector.AddGrabPointDelayed(mkPos startPos.Line startPos.Column)
 
-    let private tryGetStoreData<'T when 'T: not null> (lexbuf: Lexbuf) key =
-        let store = lexbuf.BufferLocalStore
-
-        match store.TryGetValue key with
-        | true, data -> Some(data :?> 'T)
-        | _ -> None
-
     /// Called from the parser each time we parse a construct that marks the end of an XML doc comment range,
     /// e.g. a 'type' declaration. The markerRange is the range of the keyword that delimits the construct.
     let GrabXmlDocBeforeMarker (lexbuf: Lexbuf, markerRange: range) =
-        match tryGetStoreData lexbuf "XmlDoc" with
+        match lexbuf.TryGetLocalData "XmlDoc" with
         | Some collector -> PreXmlDoc.CreateFromGrabPoint(collector, markerRange.Start)
-        | _ -> PreXmlDoc.Empty
+        | None -> PreXmlDoc.Empty
 
     let ReportInvalidXmlDocPositions (lexbuf: Lexbuf) =
         let collector = getCollector lexbuf

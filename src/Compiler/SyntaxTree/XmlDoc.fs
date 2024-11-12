@@ -132,8 +132,6 @@ type XmlDocCollector() =
     let mutable currentGrabPointCommentsCount = 0
     let mutable delayedGrabPoint = ValueNone
 
-    member _.IsEmpty = currentGrabPointCommentsCount = 0
-
     member _.AddGrabPoint(pos: pos) =
         if currentGrabPointCommentsCount = 0 then
             ()
