@@ -11,35 +11,11 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
 
 //------------------------------------------------------------------------
-// Lexbuf.BufferLocalStore is used during lexing/parsing of a file for different purposes.
-// All access happens through the functions and modules below.
-//------------------------------------------------------------------------
-
-let private getStoreData<'T when 'T: not null> (lexbuf: Lexbuf) key (getInitialData: unit -> 'T) =
-    let store = lexbuf.BufferLocalStore
-
-    match store.TryGetValue key with
-    | true, data -> data :?> 'T
-    | _ ->
-        let data = getInitialData ()
-        store[key] <- data
-        data
-
-let private tryGetStoreData<'T when 'T: not null> (lexbuf: Lexbuf) key =
-    let store = lexbuf.BufferLocalStore
-
-    match store.TryGetValue key with
-    | true, data -> Some(data :?> 'T)
-    | _ -> None
-
-let private setStoreData (lexbuf: Lexbuf) key data = lexbuf.BufferLocalStore[key] <- data
-
-//------------------------------------------------------------------------
 // A SynArgNameGenerator for the current file, used by the parser
 //------------------------------------------------------------------------
 
 let getSynArgNameGenerator (lexbuf: Lexbuf) =
-    getStoreData lexbuf "SynArgNameGenerator" SynArgNameGenerator
+    lexbuf.GetLocalData("SynArgNameGenerator", SynArgNameGenerator)
 
 //------------------------------------------------------------------------
 // A XmlDocCollector, used to hold the current accumulated Xml doc lines, and related access functions
@@ -47,10 +23,8 @@ let getSynArgNameGenerator (lexbuf: Lexbuf) =
 
 [<RequireQualifiedAccess>]
 module XmlDocStore =
-    let private xmlDocKey = "XmlDoc"
-
-    let private getCollector (lexbuf: Lexbuf) =
-        getStoreData lexbuf xmlDocKey XmlDocCollector
+    let private getCollector (lexbuf: Lexbuf) : XmlDocCollector =
+        lexbuf.GetLocalData("XmlDoc", XmlDocCollector)
 
     /// Called from the lexer to save a single line of XML doc comment.
     let SaveXmlDocLine (lexbuf: Lexbuf, lineText, range: range) =
@@ -77,10 +51,17 @@ module XmlDocStore =
         let startPos = lexbuf.StartPos
         collector.AddGrabPointDelayed(mkPos startPos.Line startPos.Column)
 
+    let private tryGetStoreData<'T when 'T: not null> (lexbuf: Lexbuf) key =
+        let store = lexbuf.BufferLocalStore
+
+        match store.TryGetValue key with
+        | true, data -> Some(data :?> 'T)
+        | _ -> None
+
     /// Called from the parser each time we parse a construct that marks the end of an XML doc comment range,
     /// e.g. a 'type' declaration. The markerRange is the range of the keyword that delimits the construct.
     let GrabXmlDocBeforeMarker (lexbuf: Lexbuf, markerRange: range) =
-        match tryGetStoreData lexbuf xmlDocKey with
+        match tryGetStoreData lexbuf "XmlDoc" with
         | Some collector -> PreXmlDoc.CreateFromGrabPoint(collector, markerRange.Start)
         | _ -> PreXmlDoc.Empty
 
@@ -108,7 +89,7 @@ let rec LexerIfdefEval (lookup: string -> bool) =
 [<RequireQualifiedAccess>]
 module IfdefStore =
     let private getStore (lexbuf: Lexbuf) =
-        getStoreData lexbuf "Ifdef" ResizeArray<ConditionalDirectiveTrivia>
+        lexbuf.GetLocalData("Ifdef", ResizeArray<ConditionalDirectiveTrivia>)
 
     let private mkRangeWithoutLeadingWhitespace (lexed: string) (m: range) : range =
         let startColumn = lexed.Length - lexed.TrimStart().Length
@@ -152,7 +133,7 @@ module IfdefStore =
 [<RequireQualifiedAccess>]
 module CommentStore =
     let private getStore (lexbuf: Lexbuf) =
-        getStoreData lexbuf "Comments" ResizeArray<CommentTrivia>
+        lexbuf.GetLocalData("Comments", ResizeArray<CommentTrivia>)
 
     let SaveSingleLineComment (lexbuf: Lexbuf, startRange: range, endRange: range) =
         let store = getStore lexbuf

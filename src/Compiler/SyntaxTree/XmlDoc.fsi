@@ -43,6 +43,9 @@ type internal XmlDocCollector =
     /// Create a fresh XmlDocCollector
     new: unit -> XmlDocCollector
 
+    /// True if no XML documentation lines have been collected yet
+    member IsEmpty: bool
+
     /// Add a point where prior XmlDoc are collected
     member AddGrabPoint: pos: pos -> unit
 
