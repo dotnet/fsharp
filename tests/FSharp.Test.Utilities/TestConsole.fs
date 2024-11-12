@@ -79,3 +79,11 @@ module TestConsole =
         member _.ErrorText =
             Console.Error.Flush()
             string error
+
+    type ProvideInput(input: string) =
+        let oldIn = localIn.Value
+        do
+            new StringReader(input) |> localIn.Set
+
+        interface IDisposable with
+            member this.Dispose (): unit = localIn.Set oldIn

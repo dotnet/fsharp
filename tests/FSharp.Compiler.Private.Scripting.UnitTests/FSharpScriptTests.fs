@@ -88,6 +88,23 @@ x
 #endif
 
     [<Fact>]
+    member _.``Capture console input``() =
+        use _ = new TestConsole.ProvideInput("stdin:1234\r\n")
+        use script = new FSharpScript()
+        let opt = script.Eval("System.Console.ReadLine()") |> getValue
+        let value = opt.Value
+        Assert.Equal(typeof<string>, value.ReflectionType)
+        Assert.Equal("stdin:1234", downcast value.ReflectionValue)
+
+    [<Fact>]
+    member _.``Capture console output/error``() =
+        use capture = new TestConsole.ExecutionCapture()
+        use script = new FSharpScript()
+        script.Eval("printfn \"stdout:1234\"; eprintfn \"stderr:5678\"") |> ignoreValue
+        Assert.Contains("stdout:1234", capture.OutText)
+        Assert.Contains("stderr:5678", capture.ErrorText)
+
+    [<Fact>]
     member _.``Maintain state between submissions``() =
         use script = new FSharpScript()
         script.Eval("let add x y = x + y") |> ignoreValue
@@ -457,6 +474,7 @@ let x =
 "
         script.Eval(code) |> ignoreValue
         Assert.False(foundInner)
+
 
     [<Fact>]
     member _.``Script with nuget package that yields out of order dependencies works correctly``() =
