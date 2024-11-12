@@ -32,7 +32,7 @@ type DirectoryAttribute(dir: string) =
         | _ -> None
 
     let createCompilationUnit path (filename: string) =
-        let outputDirectoryPath = createTemporaryDirectory "dir"
+        let outputDirectoryPath = createTemporaryDirectory().FullName
         let sourceFilePath = normalizePathSeparator (path ++ filename)
         let fsBslFilePath = sourceFilePath + baselineSuffix + ".err.bsl"
         let ilBslFilePath =

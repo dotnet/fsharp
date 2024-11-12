@@ -126,6 +126,7 @@ let ``Test project1 and make sure TcImports gets cleaned up`` () =
     let weakTcImports = test ()
     checker.InvalidateConfiguration Project1.options
     checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+    GC.Collect()
     System.Threading.SpinWait.SpinUntil(fun () -> not weakTcImports.IsAlive)
 
 [<Fact>]
@@ -4401,7 +4402,7 @@ let ``Test Project33 extension methods`` () =
              ("GetValue", ["member"; "extmem"])]
 
 module internal Project34 =
-    let directoryPath = createTemporaryDirectory "Project34"
+    let directoryPath = createTemporaryDirectory().FullName
     let sourceFileName = Path.Combine(directoryPath, "Program.fs")
     let dllName = Path.ChangeExtension(sourceFileName, ".dll")
     let projFileName = Path.ChangeExtension(sourceFileName, ".fsproj")
