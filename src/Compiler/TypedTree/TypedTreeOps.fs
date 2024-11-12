@@ -9252,6 +9252,7 @@ let TypeNullNotLiked g m ty =
     && not (TypeNullIsTrueValue g ty) 
     && not (TypeNullNever g ty) 
 
+
 let rec TypeHasDefaultValueAux isNew g m ty = 
     let ty = stripTyEqnsAndMeasureEqns g ty
     (if isNew then TypeNullIsExtraValueNew g m ty else TypeNullIsExtraValue g m ty)
@@ -9318,15 +9319,37 @@ let (|SpecialEquatableHeadType|_|) g ty = (|SpecialComparableHeadType|_|) g ty
 let (|SpecialNotEquatableHeadType|_|) g ty = 
     if isFunTy g ty then ValueSome() else ValueNone
 
+let (|TyparTy|NullableTypar|StructTy|NullTrueValue|NullableRefType|WithoutNullRefType|UnresolvedRefType|) (ty,g) = 
+    let sty = ty |> stripTyEqns g
+    if isTyparTy g sty then 
+        if (nullnessOfTy g sty).TryEvaluate() = ValueSome NullnessInfo.WithNull then
+            NullableTypar
+        else
+            TyparTy
+    elif isStructTy g sty then 
+        StructTy
+    elif TypeNullIsTrueValue g sty then
+        NullTrueValue
+    else
+        match (nullnessOfTy g sty).TryEvaluate() with
+        | ValueSome NullnessInfo.WithNull -> NullableRefType
+        | ValueSome NullnessInfo.WithoutNull -> WithoutNullRefType
+        | _ -> UnresolvedRefType
+
 // Can we use the fast helper for the 'LanguagePrimitives.IntrinsicFunctions.TypeTestGeneric'? 
 let canUseTypeTestFast g ty = 
      not (isTyparTy g ty) && 
      not (TypeNullIsTrueValue g ty)
 
 // Can we use the fast helper for the 'LanguagePrimitives.IntrinsicFunctions.UnboxGeneric'? 
-let canUseUnboxFast g m ty = 
-     not (isTyparTy g ty) && 
-     not (TypeNullNotLiked g m ty)
+let canUseUnboxFast (g:TcGlobals) m ty = 
+     if g.checkNullness then
+         match (ty,g) with
+         | TyparTy | WithoutNullRefType | UnresolvedRefType  -> false
+         | StructTy | NullTrueValue | NullableRefType | NullableTypar  -> true
+     else
+         not (isTyparTy g ty) && 
+         not (TypeNullNotLiked g m ty)
      
 //--------------------------------------------------------------------------
 // Nullness tests and pokes 

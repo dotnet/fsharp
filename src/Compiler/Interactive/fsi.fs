@@ -122,7 +122,7 @@ module internal Utilities =
             }
         else
             let specialized = typedefof<AnyToLayoutSpecialization<_>>.MakeGenericType [| ty |]
-            Activator.CreateInstance(specialized) :?> IAnyToLayoutCall
+            !! Activator.CreateInstance(specialized) :?> IAnyToLayoutCall
 
     let callStaticMethod (ty: Type) name args =
         ty.InvokeMember(
@@ -4760,7 +4760,7 @@ type FsiEvaluationSession
     let makeNestedException (userExn: #Exception) =
         // clone userExn -- make userExn the inner exception, to retain the stacktrace on raise
         let arguments = [| userExn.Message :> obj; userExn :> obj |]
-        Activator.CreateInstance(userExn.GetType(), arguments) :?> Exception
+        !! Activator.CreateInstance(userExn.GetType(), arguments) :?> Exception
 
     let commitResult res =
         match res with
