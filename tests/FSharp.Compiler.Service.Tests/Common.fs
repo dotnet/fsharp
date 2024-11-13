@@ -475,7 +475,7 @@ let assertRange
 
 [<AutoOpen>]
 module TempDirUtils =
-    let getTempPath dir = 
+    let getTempPath dir =
         Path.Combine(tempDirectoryOfThisTestRun.Value.FullName, dir)
 
     /// Returns the file name part of a temp file name created with tryCreateTemporaryFileName ()

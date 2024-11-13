@@ -8,7 +8,7 @@ open System.Threading
 module TestConsole =
 
     /// Redirects reads performed on different async execution contexts to the relevant TextReader held by AsyncLocal.
-    type RedirectingTextReader() =
+    type private RedirectingTextReader() =
         inherit TextReader()
         let holder = AsyncLocal<_>()
         do holder.Value <- TextReader.Null
@@ -19,7 +19,7 @@ module TestConsole =
         member _.Set (reader: TextReader) = holder.Value <- reader
 
     /// Redirects writes performed on different async execution contexts to the relevant TextWriter held by AsyncLocal.
-    type RedirectingTextWriter() =
+    type private RedirectingTextWriter() =
         inherit TextWriter()
         let holder = AsyncLocal<TextWriter>()
         do holder.Value <- TextWriter.Null
@@ -31,9 +31,9 @@ module TestConsole =
         member _.Value = holder.Value
         member _.Set (writer: TextWriter) = holder.Value <- writer
 
-    let localIn = new RedirectingTextReader()
-    let localOut = new RedirectingTextWriter()
-    let localError = new RedirectingTextWriter()
+    let private localIn = new RedirectingTextReader()
+    let private localOut = new RedirectingTextWriter()
+    let private localError = new RedirectingTextWriter()
 
     let install () = 
         Console.SetIn localIn
@@ -41,7 +41,7 @@ module TestConsole =
         Console.SetError localError
     
     // Taps into the redirected console stream.
-    type CapturingWriter(redirecting: RedirectingTextWriter) as this =
+    type private CapturingWriter(redirecting: RedirectingTextWriter) as this =
         inherit StringWriter()
         let wrapped = redirecting.Value
         do redirecting.Set this

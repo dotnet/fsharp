@@ -421,7 +421,7 @@ let logConfig (cfg: TestConfig) =
     log "---------------------------------------------------------------"
 
 let outputPassed (output: string) = output.Contains "TEST PASSED OK"
-    
+
 let checkResultPassed result =
     match result with
     | CmdResult.ErrorLevel (msg1, err) -> Assert.Fail (sprintf "%s. ERRORLEVEL %d" msg1 err)

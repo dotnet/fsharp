@@ -36,7 +36,7 @@ module ScriptRunner =
             let res = evalScriptFromDiskInSharedSession engine cu
             match res with
             | CompilationResult.Failure _ -> res
-            | CompilationResult.Success _ ->               
+            | CompilationResult.Success _ ->
                 if capture.OutText |> TestFramework.outputPassed then
                     res
                 else
