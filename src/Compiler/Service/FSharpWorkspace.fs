@@ -1,11 +1,13 @@
-namespace FSharp.Compiler.LanguageServer.Common
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+
+namespace FSharp.Compiler.CodeAnalysis.Workspace
 
 open System.IO
 open System.Threading
 
 open FSharp.Compiler.CodeAnalysis
 
-open DependencyGraph
+open Internal.Utilities.DependencyGraph
 open FSharpWorkspaceState
 open FSharpWorkspaceQuery
 

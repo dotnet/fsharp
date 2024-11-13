@@ -13,6 +13,7 @@ open Microsoft.VisualStudio.LanguageServer.Protocol
 open StreamJsonRpc
 open Nerdbank.Streams
 open System.Diagnostics
+open FSharp.Compiler.CodeAnalysis.Workspace
 
 [<AutoOpen>]
 module Stuff =

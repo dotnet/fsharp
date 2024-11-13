@@ -12,6 +12,7 @@ using System.IO.Pipelines;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using FSharp.Compiler.CodeAnalysis.Workspace;
 using FSharp.Compiler.LanguageServer;
 using FSharp.Compiler.LanguageServer.Common;
 
@@ -102,7 +103,7 @@ internal class SemanticTokensHandler
         FSharpRequestContext context,
         CancellationToken cancellationToken)
     {
-        var tokens = await context.Workspace.Query.GetSemanticTokensForFile(request!.TextDocument!.Uri).Please(cancellationToken);
+        var tokens = await context.GetSemanticTokensForFile(request!.TextDocument!.Uri);
 
         return new SemanticTokens { Data = tokens };
     }

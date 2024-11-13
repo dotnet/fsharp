@@ -1,7 +1,9 @@
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+
 /// This Dependency Graph provides a way to maintain an up-to-date but lazy set of dependent values.
 /// When changes are applied to the graph (either vertices change value or edges change), no computation is performed.
 /// Only when a value is requested it is lazily computed and thereafter stored until invalidated by further changes.
-module FSharp.Compiler.LanguageServer.Common.DependencyGraph
+module Internal.Utilities.DependencyGraph
 
 open System.Collections.Generic
 
