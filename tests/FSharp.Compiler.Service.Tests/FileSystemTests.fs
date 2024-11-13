@@ -1,7 +1,7 @@
 ﻿module FSharp.Compiler.Service.Tests.FileSystemTests
 
 open Xunit
-open FsUnit
+open FSharp.Test.Assert
 open FSharp.Test
 open System
 open System.IO

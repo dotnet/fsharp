@@ -28,9 +28,6 @@
 </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\service\FsUnit.fs">
-      <Link>FsUnit.fs</Link>
-    </Compile>
     <Compile Include="CompilerDirectives\Line.fs" />
     <Compile Include="CompilerDirectives\Ifdef.fs" />
     <Compile Include="CompilerDirectives\NonStringArgs.fs" />
