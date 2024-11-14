@@ -996,7 +996,7 @@ type private LoadClosureTestShim(currentFileSystem: IFileSystem) =
             )
 
 // Because it is mutating FileSystem!
-[<Collection(nameof DoNotRunInParallel)>]
+[<Collection(nameof NotThreadSafeResourceCollection)>]
 module TestsMutatingFileSystem =
     
     [<Theory>]

@@ -26,7 +26,7 @@ module File2
 let B = File1.A + File1.A"""
 
 // FileSystem is a global shared resource.
-[<Collection(nameof DoNotRunInParallel)>]
+[<Collection(nameof NotThreadSafeResourceCollection)>]
 type internal MyFileSystem() =
     inherit DefaultFileSystem()
         static member FilesCache = dict [(fileName1, file1); (fileName2, file2)]

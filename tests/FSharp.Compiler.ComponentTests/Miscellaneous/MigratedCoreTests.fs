@@ -94,7 +94,7 @@ let ``comprehensions-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/comprehens
 let ``comprehensions-FSI`` () = singleTestBuildAndRun "core/comprehensions" FSI
 
 // Cancels default token.
-[<Collection(nameof DoNotRunInParallel)>]
+[<Collection(nameof NotThreadSafeResourceCollection)>]
 module Comprehensionshw =
     [<Fact>]
     let ``comprehensionshw-FSC_DEBUG`` () = singleTestBuildAndRun "core/comprehensions-hw" FSC_DEBUG
@@ -379,7 +379,7 @@ let ``recordResolution-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/recordRe
 let ``recordResolution-FSI`` () = singleTestBuildAndRun "core/recordResolution" FSI
 
 // Cancels default token.
-[<Collection(nameof DoNotRunInParallel)>]
+[<Collection(nameof NotThreadSafeResourceCollection)>]
 module CoreControl =
     // This test has hardcoded expectations about current synchronization context
     // Will be moved out of FsharpSuite.Tests in a later phase for desktop framework

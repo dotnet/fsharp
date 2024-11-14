@@ -7,7 +7,7 @@ open FSharp.Test
 open FSharp.Test.Compiler
 open System
 
-[<Collection(nameof DoNotRunInParallel)>]
+[<Collection(nameof NotThreadSafeResourceCollection)>]
 module utf8output =
 
     [<Fact>]

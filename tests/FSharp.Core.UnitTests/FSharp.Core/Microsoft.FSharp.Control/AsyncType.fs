@@ -12,7 +12,7 @@ open System.Threading
 open System.Threading.Tasks
 
 // Cancels default token.
-[<Collection(nameof FSharp.Test.DoNotRunInParallel)>]
+[<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 module AsyncType =
 
     type ExpectedContinuation = Success | Exception | Cancellation
@@ -40,7 +40,7 @@ module AsyncType =
 
         async { return () } |> expect Success
 
-[<Collection(nameof FSharp.Test.DoNotRunInParallel)>]
+[<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 type AsyncType() =
 
     let ignoreSynchCtx f =

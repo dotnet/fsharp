@@ -13,7 +13,7 @@ open TestFramework
 /// Disables custom internal parallelization added with XUNIT_EXTRAS.
 /// Execute test cases in a class or a module one by one instead of all at once. Allow other collections to run simultaneously.
 [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Method, AllowMultiple = false)>]
-type RunInSequenceAttribute() = inherit Attribute()
+type RunTestCasesInSequenceAttribute() = inherit Attribute()
 
 #if !XUNIT_EXTRAS
 /// Installs console support for parallel test runs and conditionally enables optional xUnit customizations.
@@ -69,8 +69,8 @@ module TestCaseCustomizations =
             isNull testCase.TestMethod.TestClass.TestCollection.CollectionDefinition
             && testCase.TestMethod.TestClass.Class.GetCustomAttributes(typeof<Xunit.CollectionAttribute>) |> Seq.isEmpty
             // is not marked with `[<RunInSequence>]` attribute
-            && testCase.TestMethod.Method.GetCustomAttributes(typeof<RunInSequenceAttribute>) |> Seq.isEmpty
-            && testCase.TestMethod.TestClass.Class.GetCustomAttributes(typeof<RunInSequenceAttribute>) |> Seq.isEmpty
+            && testCase.TestMethod.Method.GetCustomAttributes(typeof<RunTestCasesInSequenceAttribute>) |> Seq.isEmpty
+            && testCase.TestMethod.TestClass.Class.GetCustomAttributes(typeof<RunTestCasesInSequenceAttribute>) |> Seq.isEmpty
 
         if canFullyParallelize then
             let oldTestMethod = testCase.TestMethod

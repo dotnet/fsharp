@@ -313,7 +313,7 @@ module Helpers =
     let require x msg = if not x then failwith msg
     let failtest str = raise (TestException str)
 
-[<Collection(nameof FSharp.Test.DoNotRunInParallel)>]
+[<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 type Basics() = 
     [<Fact>]
     member _.testShortCircuitResult() =

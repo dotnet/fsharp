@@ -1,4 +1,4 @@
-﻿[<Xunit.Collection(nameof FSharp.Test.DoNotRunInParallel)>]
+﻿[<Xunit.Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 module FSharp.Compiler.Service.Tests.PerfTests
 
 open Xunit
