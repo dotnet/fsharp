@@ -32,7 +32,6 @@ open FSharp.Compiler.Text
 open Xunit
 open FSharp.Test.Utilities
 
-open FSharp.Test.Utilities
 
 open OpenTelemetry
 open OpenTelemetry.Resources
