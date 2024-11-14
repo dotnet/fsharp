@@ -1,6 +1,7 @@
 ﻿module FSharp.Compiler.Service.Tests.MultiProjectAnalysisTests
 
 open Xunit
+open FSharp.Test
 open FSharp.Test.Assert
 open System.IO
 open System.Collections.Generic
@@ -14,8 +15,7 @@ open TestFramework
 
 let toIList (x: _ array) = x :> IList<_>
 let numProjectsForStressTest = 100
-let internal checker = FSharpChecker.Create(projectCacheSize=numProjectsForStressTest + 10)
-let internal transparentCompilerChecker = FSharpChecker.Create(projectCacheSize=numProjectsForStressTest + 10, useTransparentCompiler=true)
+let internal checker = FSharpChecker.Create(projectCacheSize=numProjectsForStressTest + 10, useTransparentCompiler = CompilerAssertHelpers.UseTransparentCompiler)
 
 /// Extract range info
 let internal tups (m:range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
@@ -124,12 +124,8 @@ let u = Case1 3
                                     FSharpReferencedProject.FSharpReference(Project1B.dllName, Project1B.options); |] }
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-[<Theory>]
-[<InlineData(true)>]
-[<InlineData(false)>]
-let ``Test multi project 1 basic`` useTransparentCompiler =
-
-    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
+[<Fact>]
+let ``Test multi project 1 basic`` () =
     
     let wholeProjectResults = checker.ParseAndCheckProject(MultiProject1.options) |> Async.RunImmediate
 
@@ -141,12 +137,8 @@ let ``Test multi project 1 basic`` useTransparentCompiler =
     [ for x in wholeProjectResults.AssemblySignature.Entities[0].MembersFunctionsAndValues -> x.DisplayName ]
         |> shouldEqual ["p"; "c"; "u"]
 
-[<Theory>]
-[<InlineData(true)>]
-[<InlineData(false)>]
-let ``Test multi project 1 all symbols`` useTransparentCompiler =
-
-    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
+[<Fact>]
+let ``Test multi project 1 all symbols`` () =
 
     let p1A = checker.ParseAndCheckProject(Project1A.options) |> Async.RunImmediate
     let p1B = checker.ParseAndCheckProject(Project1B.options) |> Async.RunImmediate
@@ -183,12 +175,8 @@ let ``Test multi project 1 all symbols`` useTransparentCompiler =
 
     usesOfx1FromProject1AInMultiProject1 |> shouldEqual usesOfx1FromMultiProject1InMultiProject1
 
-[<Theory>]
-[<InlineData(true)>]
-[<InlineData(false)>]
-let ``Test multi project 1 xmldoc`` useTransparentCompiler =
-
-    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
+[<Fact>]
+let ``Test multi project 1 xmldoc`` () =
 
     let p1A = checker.ParseAndCheckProject(Project1A.options) |> Async.RunImmediate
     let p1B = checker.ParseAndCheckProject(Project1B.options) |> Async.RunImmediate
@@ -263,12 +251,12 @@ let ``Test multi project 1 xmldoc`` useTransparentCompiler =
 //------------------------------------------------------------------------------------
 
 
+type private Project = { ModuleName: string; FileName: string; Options: FSharpProjectOptions; DllName: string }
 // A project referencing many sub-projects
-module internal ManyProjectsStressTest =
+type private ManyProjectsStressTest() =
 
     let numProjectsForStressTest = 100
 
-    type Project = { ModuleName: string; FileName: string; Options: FSharpProjectOptions; DllName: string }
     let projects =
         [ for i in 1 .. numProjectsForStressTest do
                 let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
@@ -325,34 +313,23 @@ let p = ("""
         |> function Some x -> x | None -> if a = jointProject.FileName then "fileN" else "??"
 
 
-    let makeCheckerForStressTest ensureBigEnough useTransparentCompiler =
+    member _.JointProject = jointProject
+    member _.Projects = projects
+    member _.CleanFileName a = cleanFileName a
+    static member MakeCheckerForStressTest ensureBigEnough =
         let size = (if ensureBigEnough then numProjectsForStressTest + 10 else numProjectsForStressTest / 2 )
-        FSharpChecker.Create(projectCacheSize=size, useTransparentCompiler=useTransparentCompiler)
+        FSharpChecker.Create(projectCacheSize=size, useTransparentCompiler = CompilerAssertHelpers.UseTransparentCompiler)
 
-[<Theory>]
-[<InlineData(true)>]
-[<InlineData(false)>]
-let ``Test ManyProjectsStressTest basic`` useTransparentCompiler =
 
-    let checker = ManyProjectsStressTest.makeCheckerForStressTest true useTransparentCompiler
 
-    let wholeProjectResults = checker.ParseAndCheckProject(ManyProjectsStressTest.jointProject.Options) |> Async.RunImmediate
+[<Fact>]
+let ``Test ManyProjectsStressTest basic`` () =
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities -> x.DisplayName ] |> shouldEqual ["JointProject"]
+    let manyProjectsStressTest = ManyProjectsStressTest()
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities[0].NestedEntities -> x.DisplayName ] |> shouldEqual []
+    let checker = ManyProjectsStressTest.MakeCheckerForStressTest true
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities[0].MembersFunctionsAndValues -> x.DisplayName ]
-        |> shouldEqual ["p"]
-
-[<Theory>]
-[<InlineData(true)>]
-[<InlineData(false)>]
-let ``Test ManyProjectsStressTest cache too small`` useTransparentCompiler =
-
-    let checker = ManyProjectsStressTest.makeCheckerForStressTest false useTransparentCompiler
-
-    let wholeProjectResults = checker.ParseAndCheckProject(ManyProjectsStressTest.jointProject.Options) |> Async.RunImmediate
+    let wholeProjectResults = checker.ParseAndCheckProject(manyProjectsStressTest.JointProject.Options) |> Async.RunImmediate
 
     [ for x in wholeProjectResults.AssemblySignature.Entities -> x.DisplayName ] |> shouldEqual ["JointProject"]
 
@@ -361,16 +338,33 @@ let ``Test ManyProjectsStressTest cache too small`` useTransparentCompiler =
     [ for x in wholeProjectResults.AssemblySignature.Entities[0].MembersFunctionsAndValues -> x.DisplayName ]
         |> shouldEqual ["p"]
 
-[<Theory>]
-[<InlineData(true)>]
-[<InlineData(false)>]
-let ``Test ManyProjectsStressTest all symbols`` useTransparentCompiler =
+[<Fact>]
+let ``Test ManyProjectsStressTest cache too small`` () =
 
-  let checker = ManyProjectsStressTest.makeCheckerForStressTest true useTransparentCompiler
+    let manyProjectsStressTest = ManyProjectsStressTest()
+
+    let checker = ManyProjectsStressTest.MakeCheckerForStressTest false
+
+    let wholeProjectResults = checker.ParseAndCheckProject(manyProjectsStressTest.JointProject.Options) |> Async.RunImmediate
+
+    [ for x in wholeProjectResults.AssemblySignature.Entities -> x.DisplayName ] |> shouldEqual ["JointProject"]
+
+    [ for x in wholeProjectResults.AssemblySignature.Entities[0].NestedEntities -> x.DisplayName ] |> shouldEqual []
+
+    [ for x in wholeProjectResults.AssemblySignature.Entities[0].MembersFunctionsAndValues -> x.DisplayName ]
+        |> shouldEqual ["p"]
+
+[<Fact>]
+let ``Test ManyProjectsStressTest all symbols`` () =
+
+  let manyProjectsStressTest = ManyProjectsStressTest()
+
+
+  let checker = ManyProjectsStressTest.MakeCheckerForStressTest true
   for i in 1 .. 10 do
     printfn "stress test iteration %d (first may be slow, rest fast)" i
-    let projectsResults = [ for p in ManyProjectsStressTest.projects -> p, checker.ParseAndCheckProject(p.Options) |> Async.RunImmediate ]
-    let jointProjectResults = checker.ParseAndCheckProject(ManyProjectsStressTest.jointProject.Options) |> Async.RunImmediate
+    let projectsResults = [ for p in manyProjectsStressTest.Projects -> p, checker.ParseAndCheckProject(p.Options) |> Async.RunImmediate ]
+    let jointProjectResults = checker.ParseAndCheckProject(manyProjectsStressTest.JointProject.Options) |> Async.RunImmediate
 
     let vsFromJointProject =
         [ for s in jointProjectResults.GetAllUsesOfAllSymbols() do
@@ -388,13 +382,13 @@ let ``Test ManyProjectsStressTest all symbols`` useTransparentCompiler =
 
         let usesFromJointProject =
             jointProjectResults.GetUsesOfSymbol(vFromProject)
-                |> Array.map (fun s -> s.Symbol.DisplayName, ManyProjectsStressTest.cleanFileName  s.FileName, tups s.Symbol.DeclarationLocation.Value)
+                |> Array.map (fun s -> s.Symbol.DisplayName, manyProjectsStressTest.CleanFileName  s.FileName, tups s.Symbol.DeclarationLocation.Value)
 
         usesFromJointProject.Length |> shouldEqual 1
 
 //-----------------------------------------------------------------------------------------
 
-module internal MultiProjectDirty1 =
+type internal MultiProjectDirty1(checker: FSharpChecker) =
 
     let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
     let baseName = getTemporaryFileName()
@@ -405,18 +399,20 @@ module internal MultiProjectDirty1 =
 let x = "F#"
 """
 
-    FileSystem.OpenFileForWriteShim(fileName1).Write(content)
+    do FileSystem.OpenFileForWriteShim(fileName1).Write(content)
 
-    let cleanFileName a = if a = fileName1 then "Project1" else "??"
 
     let fileNames = [|fileName1|]
 
-    let getOptions() =
+    member _.Content = content
+    member _.CleanFileName a = if a = fileName1 then "Project1" else "??"
+    member _.DllName = dllName
+    member _.FileName1 = fileName1
+    member _.GetOptions() =
         let args = mkProjectCommandLineArgs (dllName, fileNames)
         { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
-module internal MultiProjectDirty2 =
-
+type internal MultiProjectDirty2(checker: FSharpChecker, multiProjectDirty1: MultiProjectDirty1) =
 
     let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
     let baseName = getTemporaryFileName ()
@@ -430,43 +426,49 @@ open Project1
 let y = x
 let z = Project1.x
 """
-    FileSystem.OpenFileForWriteShim(fileName1).Write(content)
+    do FileSystem.OpenFileForWriteShim(fileName1).Write(content)
 
     let cleanFileName a = if a = fileName1 then "Project2" else "??"
 
     let fileNames = [|fileName1|]
 
-    let getOptions() =
+    member _.CleanFileName a = cleanFileName a
+    member _.DllName = dllName
+    member _.FileName1 = fileName1
+    member _.GetOptions() =
         let args = mkProjectCommandLineArgs (dllName, fileNames)
         let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
         { options with
-            OtherOptions = Array.append options.OtherOptions [| ("-r:" + MultiProjectDirty1.dllName) |]
-            ReferencedProjects = [| FSharpReferencedProject.FSharpReference(MultiProjectDirty1.dllName, MultiProjectDirty1.getOptions()) |] }
+            OtherOptions = Array.append options.OtherOptions [| ("-r:" + multiProjectDirty1.DllName) |]
+            ReferencedProjects = [| FSharpReferencedProject.FSharpReference(multiProjectDirty1.DllName, multiProjectDirty1.GetOptions()) |] }
 
-[<Theory>]
-// [<InlineData(true)>]
-[<InlineData(false)>]
-let ``Test multi project symbols should pick up changes in dependent projects`` useTransparentCompiler =
+[<Fact>]
+let ``Test multi project symbols should pick up changes in dependent projects`` () =
 
-    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
+    // A private checker because we subscribe to FileChecked.
+    let checker = FSharpChecker.Create(useTransparentCompiler = CompilerAssertHelpers.UseTransparentCompiler)
+
+    let multiProjectDirty1 = MultiProjectDirty1(checker)
+    let multiProjectDirty2 = MultiProjectDirty2(checker, multiProjectDirty1)
 
     //  register to count the file checks
-    let count = ref 0
-    checker.FileChecked.Add (fun _ -> incr count)
+    let mutable count = 0
+
+    checker.FileChecked.Add (fun _ -> System.Threading.Interlocked.Increment &count |> ignore)
 
     //---------------- Write the first version of the file in project 1 and check the project --------------------
 
-    let proj1options = MultiProjectDirty1.getOptions()
+    let proj1options = multiProjectDirty1.GetOptions()
 
     let wholeProjectResults1 = checker.ParseAndCheckProject(proj1options) |> Async.RunImmediate
 
-    count.Value |> shouldEqual 1
+    count |> shouldEqual 1
 
     let backgroundParseResults1, backgroundTypedParse1 =
-        checker.GetBackgroundCheckResultsForFileInProject(MultiProjectDirty1.fileName1, proj1options)
+        checker.GetBackgroundCheckResultsForFileInProject(multiProjectDirty1.FileName1, proj1options)
         |> Async.RunImmediate
 
-    count.Value |> shouldEqual 1
+    count |> shouldEqual 1
 
     //---------------- Get a symbol from project 1 and look up its uses in both projects --------------------
 
@@ -476,19 +478,19 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
     printfn "Symbol found. Checking symbol uses in another project..."
 
-    let proj2options = MultiProjectDirty2.getOptions()
+    let proj2options = multiProjectDirty2.GetOptions()
 
     let wholeProjectResults2 = checker.ParseAndCheckProject(proj2options) |> Async.RunImmediate
 
-    count.Value |> shouldEqual 2
+    count |> shouldEqual 2
 
     let _ = checker.ParseAndCheckProject(proj2options) |> Async.RunImmediate
 
-    count.Value |> shouldEqual 2 // cached
+    count |> shouldEqual 2 // cached
 
     let usesOfXSymbolInProject1 =
         wholeProjectResults1.GetUsesOfSymbol(xSymbol)
-        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty1.cleanFileName su.FileName, tups su.Range)
+        |> Array.map (fun su -> su.Symbol.ToString(), multiProjectDirty1.CleanFileName su.FileName, tups su.Range)
 
     usesOfXSymbolInProject1
     |> shouldEqual
@@ -496,7 +498,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
     let usesOfXSymbolInProject2 =
         wholeProjectResults2.GetUsesOfSymbol(xSymbol)
-        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty2.cleanFileName su.FileName, tups su.Range)
+        |> Array.map (fun su -> su.Symbol.ToString(), multiProjectDirty2.CleanFileName su.FileName, tups su.Range)
 
     usesOfXSymbolInProject2
     |> shouldEqual
@@ -506,22 +508,21 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
     //---------------- Change the file by adding a line, then re-check everything --------------------
 
     let wt0 = System.DateTime.UtcNow
-    let wt1 = FileSystem.GetLastWriteTimeShim MultiProjectDirty1.fileName1
-    printfn "Writing new content to file '%s'" MultiProjectDirty1.fileName1
-
-    System.Threading.Thread.Sleep(1000)
-    FileSystem.OpenFileForWriteShim(MultiProjectDirty1.fileName1).Write(System.Environment.NewLine + MultiProjectDirty1.content)
-    printfn "Wrote new content to file '%s'"  MultiProjectDirty1.fileName1
-    let wt2 = FileSystem.GetLastWriteTimeShim MultiProjectDirty1.fileName1
+    let wt1 = FileSystem.GetLastWriteTimeShim multiProjectDirty1.FileName1
+    printfn "Writing new content to file '%s'" multiProjectDirty1.FileName1
+    FileSystem.OpenFileForWriteShim(multiProjectDirty1.FileName1).Write(System.Environment.NewLine + multiProjectDirty1.Content)
+    printfn "Wrote new content to file '%s'"  multiProjectDirty1.FileName1
+    let wt2 = FileSystem.GetLastWriteTimeShim multiProjectDirty1.FileName1
+    Assert.NotEqual(wt1, wt2)
     printfn "Current time: '%A', ticks = %d"  wt0 wt0.Ticks
     printfn "Old write time: '%A', ticks = %d"  wt1 wt1.Ticks
     printfn "New write time: '%A', ticks = %d"  wt2 wt2.Ticks
 
     let wholeProjectResults1AfterChange1 = checker.ParseAndCheckProject(proj1options) |> Async.RunImmediate
-    count.Value |> shouldEqual 3
+    count |> shouldEqual 3
 
     let backgroundParseResults1AfterChange1, backgroundTypedParse1AfterChange1 =
-        checker.GetBackgroundCheckResultsForFileInProject(MultiProjectDirty1.fileName1, proj1options)
+        checker.GetBackgroundCheckResultsForFileInProject(multiProjectDirty1.FileName1, proj1options)
         |> Async.RunImmediate
 
     let xSymbolUseAfterChange1 = backgroundTypedParse1AfterChange1.GetSymbolUseAtLocation(4, 4, "", ["x"])
@@ -533,11 +534,11 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
     let wholeProjectResults2AfterChange1 = checker.ParseAndCheckProject(proj2options) |> Async.RunImmediate
 
-    count.Value |> shouldEqual 4
+    count |> shouldEqual 4
 
     let usesOfXSymbolInProject1AfterChange1 =
         wholeProjectResults1AfterChange1.GetUsesOfSymbol(xSymbolAfterChange1)
-        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty1.cleanFileName su.FileName, tups su.Range)
+        |> Array.map (fun su -> su.Symbol.ToString(), multiProjectDirty1.CleanFileName su.FileName, tups su.Range)
 
     usesOfXSymbolInProject1AfterChange1
     |> shouldEqual
@@ -545,7 +546,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
     let usesOfXSymbolInProject2AfterChange1 =
         wholeProjectResults2AfterChange1.GetUsesOfSymbol(xSymbolAfterChange1)
-        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty2.cleanFileName su.FileName, tups su.Range)
+        |> Array.map (fun su -> su.Symbol.ToString(), multiProjectDirty2.CleanFileName su.FileName, tups su.Range)
 
     usesOfXSymbolInProject2AfterChange1
     |> shouldEqual
@@ -555,29 +556,27 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
     //---------------- Revert the change to the file --------------------
 
     let wt0b = System.DateTime.UtcNow
-    let wt1b = FileSystem.GetLastWriteTimeShim MultiProjectDirty1.fileName1
-    printfn "Writing old content to file '%s'" MultiProjectDirty1.fileName1
-    System.Threading.Thread.Sleep(1000)
-    FileSystem.OpenFileForWriteShim(MultiProjectDirty1.fileName1).Write(MultiProjectDirty1.content)
-    printfn "Wrote old content to file '%s'"  MultiProjectDirty1.fileName1
-    let wt2b = FileSystem.GetLastWriteTimeShim MultiProjectDirty1.fileName1
+    let wt1b = FileSystem.GetLastWriteTimeShim multiProjectDirty1.FileName1
+    printfn "Writing old content to file '%s'" multiProjectDirty1.FileName1
+    FileSystem.OpenFileForWriteShim(multiProjectDirty1.FileName1).Write(multiProjectDirty1.Content)
+    printfn "Wrote old content to file '%s'"  multiProjectDirty1.FileName1
+    let wt2b = FileSystem.GetLastWriteTimeShim multiProjectDirty1.FileName1
+    Assert.NotEqual(wt1b, wt2b)
     printfn "Current time: '%A', ticks = %d"  wt0b wt0b.Ticks
     printfn "Old write time: '%A', ticks = %d"  wt1b wt1b.Ticks
     printfn "New write time: '%A', ticks = %d"  wt2b wt2b.Ticks
 
-    count.Value |> shouldEqual 4
+    count |> shouldEqual 4
     let wholeProjectResults2AfterChange2 = checker.ParseAndCheckProject(proj2options) |> Async.RunImmediate
 
-    System.Threading.Thread.Sleep(1000)
-    count.Value |> shouldEqual 6 // note, causes two files to be type checked, one from each project
-
+    count |> shouldEqual 6 // note, causes two files to be type checked, one from each project
 
     let wholeProjectResults1AfterChange2 = checker.ParseAndCheckProject(proj1options) |> Async.RunImmediate
 
-    count.Value |> shouldEqual 6 // the project is already checked
+    count |> shouldEqual 6 // the project is already checked
 
     let backgroundParseResults1AfterChange2, backgroundTypedParse1AfterChange2 =
-        checker.GetBackgroundCheckResultsForFileInProject(MultiProjectDirty1.fileName1, proj1options)
+        checker.GetBackgroundCheckResultsForFileInProject(multiProjectDirty1.FileName1, proj1options)
         |> Async.RunImmediate
 
     let xSymbolUseAfterChange2 = backgroundTypedParse1AfterChange2.GetSymbolUseAtLocation(4, 4, "", ["x"])
@@ -587,7 +586,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
     let usesOfXSymbolInProject1AfterChange2 =
         wholeProjectResults1AfterChange2.GetUsesOfSymbol(xSymbolAfterChange2)
-        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty1.cleanFileName su.FileName, tups su.Range)
+        |> Array.map (fun su -> su.Symbol.ToString(), multiProjectDirty1.CleanFileName su.FileName, tups su.Range)
 
     usesOfXSymbolInProject1AfterChange2
     |> shouldEqual
@@ -596,7 +595,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
     let usesOfXSymbolInProject2AfterChange2 =
         wholeProjectResults2AfterChange2.GetUsesOfSymbol(xSymbolAfterChange2)
-        |> Array.map (fun su -> su.Symbol.ToString(), MultiProjectDirty2.cleanFileName su.FileName, tups su.Range)
+        |> Array.map (fun su -> su.Symbol.ToString(), multiProjectDirty2.CleanFileName su.FileName, tups su.Range)
 
     usesOfXSymbolInProject2AfterChange2
     |> shouldEqual
@@ -682,12 +681,8 @@ let v = Project2A.C().InternalMember // access an internal symbol
             ReferencedProjects = [| FSharpReferencedProject.FSharpReference(Project2A.dllName, Project2A.options); |] }
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-[<Theory>]
-[<InlineData(true)>]
-[<InlineData(false)>]
-let ``Test multi project2 errors`` useTransparentCompiler =
-
-    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
+[<Fact>]
+let ``Test multi project2 errors`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project2B.options) |> Async.RunImmediate
     for e in wholeProjectResults.Diagnostics do
@@ -700,12 +695,8 @@ let ``Test multi project2 errors`` useTransparentCompiler =
     wholeProjectResultsC.Diagnostics.Length |> shouldEqual 1
 
 
-[<Theory>]
-[<InlineData(true)>]
-[<InlineData(false)>]
-let ``Test multi project 2 all symbols`` useTransparentCompiler =
-
-    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
+[<Fact>]
+let ``Test multi project 2 all symbols`` () =
 
     let mpA = checker.ParseAndCheckProject(Project2A.options) |> Async.RunImmediate
     let mpB = checker.ParseAndCheckProject(Project2B.options) |> Async.RunImmediate
@@ -783,12 +774,8 @@ let fizzBuzz = function
             ReferencedProjects = [| FSharpReferencedProject.FSharpReference(Project3A.dllName, Project3A.options) |] }
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-[<Theory>]
-[<InlineData(true)>]
-[<InlineData(false)>]
-let ``Test multi project 3 whole project errors`` useTransparentCompiler =
-
-    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
+[<Fact>]
+let ``Test multi project 3 whole project errors`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(MultiProject3.options) |> Async.RunImmediate
     for e in wholeProjectResults.Diagnostics do
@@ -796,12 +783,8 @@ let ``Test multi project 3 whole project errors`` useTransparentCompiler =
 
     wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
-[<Theory>]
-[<InlineData(true)>]
-[<InlineData(false)>]
-let ``Test active patterns' XmlDocSig declared in referenced projects`` useTransparentCompiler =
-
-    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
+[<Fact>]
+let ``Test active patterns' XmlDocSig declared in referenced projects`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(MultiProject3.options) |> Async.RunImmediate
     let backgroundParseResults1, backgroundTypedParse1 =
@@ -830,13 +813,9 @@ let ``Test active patterns' XmlDocSig declared in referenced projects`` useTrans
 //------------------------------------------------------------------------------------
 
 
-[<Theory>]
-[<InlineData(true)>]
-[<InlineData(false)>]
-let ``In-memory cross-project references to projects using generative type provides should fallback to on-disk references`` useTransparentCompiler =
-    
-    let checker = if useTransparentCompiler then transparentCompilerChecker else checker
-    
+[<Fact>]
+let ``In-memory cross-project references to projects using generative type provides should fallback to on-disk references`` () =
+        
     // The type provider and its dependency are compiled as part of the solution build
 #if DEBUG
     let csDLL = __SOURCE_DIRECTORY__ + @"/../../artifacts/bin/TestTP/Debug/netstandard2.0/CSharp_Analysis.dll"
