@@ -1822,7 +1822,6 @@ type internal TransparentCompiler
 
                             return assemblyDataResult
                 with
-                | TaskCancelled ex -> return raise ex
                 | ex ->
                     errorR (exn ($"Error while computing assembly data for project {projectSnapshot.Label}: {ex}"))
                     return ProjectAssemblyDataResult.Unavailable true

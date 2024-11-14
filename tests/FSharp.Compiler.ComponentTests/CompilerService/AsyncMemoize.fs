@@ -17,34 +17,39 @@ let internal record (cache: AsyncMemoize<_,_,_>) =
 
     let events = Collections.Concurrent.ConcurrentQueue()
 
-    let waitForIdle() = SpinWait.SpinUntil(fun () -> not cache.Updating)
-
-    waitForIdle()
     cache.Event
     |> Event.map (fun (e, (_, k, _)) -> e, k)
     |> Event.add events.Enqueue
 
-    let getEvents () =
-        waitForIdle()
-        events |> List.ofSeq |> tap (printfn "events: %A")
+    let getEvents () = events |> List.ofSeq
 
     getEvents
 
-let check getEvents assertFunction =
+let check getEvents assertFunction expected =
     let actual = getEvents()
-    assertFunction actual
+    assertFunction expected actual
 
 let waitUntil getEvents condition =
-    while getEvents() |> condition |> not do ()
+    SpinWait.SpinUntil(fun () -> getEvents() |> condition)
 
 let recorded (expected: 't list) (actual: 't list) =
     Assert.Equal<'t>(expected, actual)
 
-let countOf value count events =
-    events |> Seq.filter (fst >> (=) value) |> Seq.length |> (=) count
+let countOf value events =
+    events |> Seq.filter (fst >> (=) value) |> Seq.length
 
 let received value events =
     events |> List.tryLast |> Option.map (fst >> (=) value) |> Option.defaultValue false
+
+let internal wrapKey key =
+    { new ICacheKey<_, _> with
+        member _.GetKey() = key
+        member _.GetVersion() = Unchecked.defaultof<_>
+        member _.GetLabel() = match key.ToString() with | null -> "" | s -> s
+    }
+
+let assertTaskCanceled (task: Task<_>) =
+    Assert.ThrowsAnyAsync<OperationCanceledException>(fun () -> task).Result |> ignore
 
 [<Fact>]
 let ``Basics``() =
@@ -58,12 +63,12 @@ let ``Basics``() =
 
     let result =
         seq {
-            memoize.Get'(5, computation 5)
-            memoize.Get'(5, computation 5)
-            memoize.Get'(2, computation 2)
-            memoize.Get'(5, computation 5)
-            memoize.Get'(3, computation 3)
-            memoize.Get'(2, computation 2)
+            memoize.Get(wrapKey 5, computation 5)
+            memoize.Get(wrapKey 5, computation 5)
+            memoize.Get(wrapKey 2, computation 2)
+            memoize.Get(wrapKey 5, computation 5)
+            memoize.Get(wrapKey 3, computation 3)
+            memoize.Get(wrapKey 2, computation 2)
         }
         |> Async.Parallel
         |> Async.RunSynchronously
@@ -72,138 +77,148 @@ let ``Basics``() =
 
     Assert.Equal<int array>(expected, result)
 
-    check events <| fun events ->
-        let groups = events |> Seq.groupBy snd |> Seq.toList
-        Assert.Equal(3, groups.Length)
-        for key, events in groups do
-            Assert.Equal<Set<(JobEvent * int)>>(Set [ Requested, key; Started, key; Finished, key ], Set events)
+    let groups = events() |> Seq.groupBy snd |> Seq.toList
+    Assert.Equal(3, groups.Length)
+    for key, events in groups do
+        Assert.Equal<Set<(JobEvent * int)>>(Set [ Requested, key; Started, key; Finished, key ], Set events)
+
+[<Fact>]
+let ``We can disconnect a request from a running job`` () =
+
+    let cts = new CancellationTokenSource()
+    let canFinish = new ManualResetEventSlim(false)
+
+    let computation = async {
+        canFinish.Wait()
+    }
+
+    let memoize = AsyncMemoize<_, int, _>(cancelUnawaitedJobs = false, cancelDuplicateRunningJobs = true)
+    let events = record memoize
+
+    let key = 1
+
+    let task1 = Async.StartAsTask( memoize.Get(wrapKey 1, computation), cancellationToken = cts.Token)
+
+    waitUntil events (received Started)
+    cts.Cancel()
+
+    assertTaskCanceled task1
+
+    canFinish.Set() |> ignore
+
+    waitUntil events (received Finished)
+
+    check events recorded
+          [ Requested, key
+            Started, key
+            Finished, key ]
 
 [<Fact>]
 let ``We can cancel a job`` () =
-    task {
 
-        let jobStarted = new ManualResetEventSlim(false)
-        let cts = new CancellationTokenSource()
-        let ctsCancelled = new ManualResetEventSlim(false)
+    let cts = new CancellationTokenSource()
 
-        let computation = async {
-            use! _catch = Async.OnCancel ignore
-            jobStarted.Set()
-            ctsCancelled.Wait()
-            do! async { }
-            failwith "Should be canceled before it gets here"
-        }
-
-        let memoize = AsyncMemoize<_, int, _>()
-        let events = record memoize
-
-        let key = 1
-
-        let _task1 = Async.StartAsTask( memoize.Get'(1, computation), cancellationToken = cts.Token)
-
-        jobStarted.Wait()
-        cts.Cancel()
-        ctsCancelled.Set()
-
-        check events recorded
-             [ Requested, key
-               Started, key
-               Canceled, key ]
+    let computation = async {
+        while true do
+            do! Async.Sleep 1000
     }
+
+    let memoize = AsyncMemoize<_, int, _>()
+    let events = record memoize
+
+    let key = 1
+
+    let task1 = Async.StartAsTask( memoize.Get(wrapKey 1, computation), cancellationToken = cts.Token)
+
+    waitUntil events (received Started)
+
+    cts.Cancel()
+
+    assertTaskCanceled task1
+
+    check events recorded
+          [ Requested, key
+            Started, key
+            Canceled, key ]
 
 [<Fact>]
 let ``Job is restarted if first requestor cancels`` () =
-        let jobStarted = new SemaphoreSlim(0)
+    let jobCanComplete = new ManualResetEventSlim(false)
 
-        let jobCanComplete = new ManualResetEventSlim(false)
+    let computation key = async {
+        jobCanComplete.Wait()
+        return key * 2
+    }
 
-        let computation key = async {
-            jobStarted.Release() |> ignore
+    let memoize = AsyncMemoize<_, int, _>()
+    let events = record memoize
 
-            jobCanComplete.Wait()
-            return key * 2
-        }
+    use cts1 = new CancellationTokenSource()
 
-        let memoize = AsyncMemoize<_, int, _>()
-        let events = record memoize
+    let key = 1
 
-        use cts1 = new CancellationTokenSource()
+    let _task1 = Async.StartAsTask( memoize.Get(wrapKey key, computation key), cancellationToken = cts1.Token)
 
-        let key = 1
+    waitUntil events (received Started)
+    cts1.Cancel()
 
-        let _task1 = Async.StartAsTask( memoize.Get'(key, computation key), cancellationToken = cts1.Token)
+    waitUntil events (received Canceled)
 
-        jobStarted.Wait()
-        let task2 = Async.StartAsTask( memoize.Get'(key, computation key))
-        let task3 = Async.StartAsTask( memoize.Get'(key, computation key))
+    let task2 = Async.StartAsTask( memoize.Get(wrapKey key, computation key))
 
-        waitUntil events (countOf Requested 3)
+    waitUntil events (countOf Started >> (=) 2)
 
-        cts1.Cancel()
+    jobCanComplete.Set() |> ignore
 
-        jobCanComplete.Set() |> ignore
+    Assert.Equal(2, task2.Result)
 
-        jobStarted.Wait()
+    check events recorded
+      [ Requested, key
+        Started, key
+        Canceled, key
+        Requested, key
+        Started, key
+        Finished, key ]
 
-        Assert.Equal(2, task2.Result)
-        Assert.Equal(2, task3.Result)
-
-        check events recorded
-              [ Requested, key
-                Started, key
-                Requested, key
-                Requested, key
-                Restarted, key
-                Finished, key ]
 
 [<Fact>]
-let ``Job is restarted if first requestor cancels but keeps running if second requestor cancels`` () =
-        let jobStarted = new ManualResetEventSlim(false)
+let ``Job keeps running if only one requestor cancels`` () =
 
-        let jobCanComplete = new ManualResetEventSlim(false)
+    let jobCanComplete = new ManualResetEventSlim(false)
 
-        let computation key = async {
-            jobStarted.Set() |> ignore
-            jobCanComplete.Wait()
-            return key * 2
-        }
+    let computation key = async {
+        jobCanComplete.Wait()
+        return key * 2
+    }
         
-        let memoize = AsyncMemoize<_, int, _>()
-        let events = record memoize
+    let memoize = AsyncMemoize<_, int, _>()
+    let events = record memoize
 
-        use cts1 = new CancellationTokenSource()
-        use cts2 = new CancellationTokenSource()
+    use cts = new CancellationTokenSource()
 
-        let key = 1
+    let key = 1
 
-        let _task1 = Async.StartAsTask( memoize.Get'(key, computation key), cancellationToken = cts1.Token)
+    let task1 = Async.StartAsTask( memoize.Get(wrapKey key, computation key))
 
-        jobStarted.Wait()
-        jobStarted.Reset() |> ignore
+    waitUntil events (received Started)
 
-        let _task2 = Async.StartAsTask( memoize.Get'(key, computation key), cancellationToken = cts2.Token)
-        let task3 = Async.StartAsTask( memoize.Get'(key, computation key))
+    let task2 = Async.StartAsTask( memoize.Get(wrapKey key, computation key) |> Async.Ignore, cancellationToken = cts.Token)
 
-        waitUntil events (countOf Requested 3)
+    waitUntil events (countOf Requested >> (=) 2)
 
-        cts1.Cancel()
+    cts.Cancel()
 
-        jobStarted.Wait()
+    assertTaskCanceled task2
 
-        cts2.Cancel()
+    jobCanComplete.Set() |> ignore
 
-        jobCanComplete.Set() |> ignore
+    Assert.Equal(2, task1.Result)
 
-        Assert.Equal(2, task3.Result)
-
-        check events recorded
-          [ Requested, key
-            Started, key
-            Requested, key
-            Requested, key
-            Restarted, key
-            Finished, key ]
-
+    check events recorded
+      [ Requested, key
+        Started, key
+        Requested, key
+        Finished, key ]
 
 type ExpectedException() =
     inherit Exception()
@@ -290,7 +305,7 @@ let ``Stress test`` () =
                         let timeoutMs = rng.Next(minTimeout, maxTimeout)
                         let key = keys[rng.Next keys.Length]
                         let result = key * 2
-                        let job = cache.Get'(key, computation durationMs result)
+                        let job = cache.Get(wrapKey key, computation durationMs result)
                         let cts = new CancellationTokenSource()
                         let runningJob = Async.StartAsTask(job, cancellationToken = cts.Token)
                         cts.CancelAfter timeoutMs
@@ -328,60 +343,55 @@ let ``Stress test`` () =
     Assert.True ((float completed) > ((float started) * 0.1), "Less than 10 % completed jobs")
 
 
-[<Theory>]
-[<InlineData(true, 1)>]
-[<InlineData(false, 2)>]
-let ``Cancel running jobs with the same key`` cancelDuplicate expectFinished =
-    let cache = AsyncMemoize(cancelDuplicateRunningJobs=cancelDuplicate)
+[<Fact>]
+let ``Cancel running jobs with the same key`` () =
+    let cache = AsyncMemoize(cancelUnawaitedJobs = false, cancelDuplicateRunningJobs = true)
 
-    let mutable started = 0
-    let mutable finished = 0
-
-    let job1started = new ManualResetEventSlim(false)
-    let job1finished = new ManualResetEventSlim(false)
+    let events = record cache
 
     let jobCanContinue = new ManualResetEventSlim(false)
 
-    let job2started = new ManualResetEventSlim(false)
-    let job2finished = new ManualResetEventSlim(false)
-
-    let work onStart onFinish = async {
-        Interlocked.Increment &started |> ignore
-        onStart() |> ignore
+    let work = async {
         jobCanContinue.Wait()
-        do! Async.Sleep 100
-        Interlocked.Increment &finished |> ignore
-        onFinish() |> ignore
     }
 
-    let key1 =
+    let key version =
         { new ICacheKey<_, _> with
                 member _.GetKey() = 1
-                member _.GetVersion() = 1
-                member _.GetLabel() = "key1" }
+                member _.GetVersion() = version
+                member _.GetLabel() = $"key1 {version}" }
 
-    cache.Get(key1, work job1started.Set job1finished.Set) |> Async.Catch |> Async.Ignore |> Async.Start
+    let cts = new CancellationTokenSource()
 
-    job1started.Wait()
+    let jobsToCancel = 
+        [ for i in 1 .. 10 -> Async.StartAsTask(cache.Get(key i , work), cancellationToken = cts.Token) ]
 
-    let key2 =
-        { new ICacheKey<_, _> with
-                member _.GetKey() = key1.GetKey()
-                member _.GetVersion() = key1.GetVersion() + 1
-                member _.GetLabel() = "key2" }
+    waitUntil events (countOf Started >> (=) 10)
 
-    cache.Get(key2, work job2started.Set job2finished.Set ) |> Async.Catch |> Async.Ignore |> Async.Start
+    // detach requests from their running computations
+    cts.Cancel()
 
-    job2started.Wait()
+    for job in jobsToCancel do assertTaskCanceled job
+
+    // now the jobs should continue running unobserved
+    Assert.Equal(0, events() |> countOf Canceled)
+
+    // new request should cancel the unobserved jobs
+    let job = cache.Get(key 11, work) |> Async.StartAsTask
+
+    waitUntil events (countOf Canceled >> (=) 10)
+
+    waitUntil events (countOf Started >> (=) 11)
 
     jobCanContinue.Set() |> ignore
-        
-    job2finished.Wait()
-        
-    if not cancelDuplicate then
-        job1finished.Wait()
 
-    Assert.Equal((2, expectFinished), (started, finished))
+    job.Wait()
+
+    Assert.Equal(0, events() |> countOf Failed)
+
+    Assert.Equal(10, events() |> countOf Canceled)
+
+    Assert.Equal(1, events() |> countOf Finished)
 
 type DummyException(msg) =
     inherit Exception(msg)
