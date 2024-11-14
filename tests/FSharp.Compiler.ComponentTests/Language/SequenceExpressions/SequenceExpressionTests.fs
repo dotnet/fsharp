@@ -335,6 +335,54 @@ if sum <> 110 then
     |> runCode
     |> shouldSucceed
 
+[<Fact>]
+let ``With clause in seq expression can bind specific exn type``() =
+
+    Fsx """
+open System
+let whatIsIt =
+    seq {
+        try
+            yield 1
+        with
+        | :? AggregateException as exc when (exc.InnerException :? OperationCanceledException) -> ()
+    }
+    |> Seq.head
+    """
+    |> compile
+    |> verifyIL [
+    """IL_0000:  ldarg.1
+       IL_0001:  isinst     [runtime]System.AggregateException
+       IL_0006:  stloc.0
+       IL_0007:  ldloc.0""";
+    
+    """IL_000a:  ldloc.0
+       IL_000b:  callvirt   instance class [runtime]System.Exception [runtime]System.Exception::get_InnerException()
+       IL_0010:  stloc.1
+       IL_0011:  ldloc.1
+       IL_0012:  isinst     [runtime]System.OperationCanceledException"""]
+
+[<Fact>]
+let ``With clause in seq expression can bind many exn subtypes``() =
+
+    Fsx """
+open System
+let whatIsIt =
+    seq {
+        try
+            yield (10/0)
+        with
+        | :? AggregateException as exc when (exc.InnerException :? OperationCanceledException) -> ()
+        | :? AggregateException as exagg when (exagg.InnerExceptions.GetHashCode()) = 15 -> yield (exagg.InnerExceptions.GetHashCode())
+        | :? AggregateException as exagg -> yield (exagg.InnerExceptions.GetHashCode())
+        | :? DivideByZeroException as exn when exn.Message = "abc" -> yield 0
+        | _ -> yield 1
+    }
+    |> Seq.head
+    """
+    |> runCode
+    |> shouldSucceed
+
 [<Theory>]
 [<InlineData("41","42","43")>]
 [<InlineData("()","42","43")>]
