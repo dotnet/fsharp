@@ -340,7 +340,7 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
                         MatchClause(patR, condR, TTarget(vspecs, matchBody, None), patR.Range)
 
                     let filterClause =
-                        MatchClause(patR, condR, TTarget([], Expr.Const(Const.Int32 1, m, g.int_ty), None), patR.Range)
+                        MatchClause(patR, condR, TTarget(vspecs, Expr.Const(Const.Int32 1, m, g.int_ty), None), patR.Range)
 
                     (handlerClause, filterClause), tpenv)
 
