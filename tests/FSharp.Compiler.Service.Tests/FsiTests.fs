@@ -22,7 +22,7 @@ module FsiTests =
         let allArgs = Array.append argv [|"--noninteractive"; if useOneDynamicAssembly then "--multiemit-" else "--multiemit+" |]
 
         let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
-        FsiEvaluationSession.Create(fsiConfig, allArgs, TextReader.Null, TextWriter.Null, TextWriter.Null, collectible = true)
+        FsiEvaluationSession.Create(fsiConfig, allArgs, stdin, stdout, stderr, collectible = true)
 
     [<Fact>]
     let ``No bound values at the start of FSI session`` () =
