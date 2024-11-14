@@ -18,6 +18,9 @@
     </Content>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="SurfaceArea.fs" Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp'" />
+    <Compile Include="..\FSharp.Test.Utilities\XunitSetup.fs">
+      <Link>XunitSetup.fs</Link>
+    </Compile>
     <Compile Include="Common.fs" />
     <Compile Include="GeneratedCodeSymbolsTests.fs" />
     <Compile Include="AssemblyReaderShim.fs" />
