@@ -533,7 +533,7 @@ module Command =
                 | :? System.IO.IOException -> //input closed is ok if process is closed
                     ()
                 }
-            Async.RunSynchronously(sources |> pipeFile, cancellationToken = Threading.CancellationToken.None)
+            sources |> pipeFile |> Async.RunSynchronously
 
         let inF fCont cmdArgs =
             match redirect.Input with
