@@ -11,16 +11,17 @@ open Internal.Utilities.DependencyGraph
 open FSharpWorkspaceState
 open FSharpWorkspaceQuery
 
-/// This type holds the current state of an F# workspace. It's mutable but thread-safe. It accepts updates to the state and can be queried for
-/// information about the workspace.
+/// This type holds the current state of an F# workspace. It's mutable but thread-safe.
+/// It accepts updates to the state and can be queried for information about the workspace.
 ///
-/// The state can be built up incrementally by adding projects with one of `Projects.AddOrUpdate` overloads. Updates to any project properties are
-/// done the same way. Each project is identified by its project file path and output path or by `FSharpProjectIdentifier`. When the same project is
-/// added again it will be updated with the new information.
+/// The state can be built up incrementally by adding projects with one of the `Projects.AddOrUpdate` overloads.
+/// Updates to any project properties are done the same way. Each project is identified by its project file
+/// path and output path or by `FSharpProjectIdentifier`. When the same project is added again, it will be
+/// updated with the new information.
 ///
 /// Project references are discovered automatically as projects are added or updated.
 ///
-/// Updates to file contents are signaled through `Files.Open`, `Files.Edit` and `Files.Close` methods.
+/// Updates to file contents are signaled through the `Files.Open`, `Files.Edit`, and `Files.Close` methods.
 type FSharpWorkspace(checker: FSharpChecker) =
 
     let depGraph = LockOperatedDependencyGraph() :> IThreadSafeDependencyGraph<_, _>

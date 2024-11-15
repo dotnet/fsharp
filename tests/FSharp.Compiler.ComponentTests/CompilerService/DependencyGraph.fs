@@ -1,8 +1,9 @@
-module DependencyGraphTests
+module CompilerService.DependencyGraph
 
-open FSharp.Compiler.LanguageServer.Common.DependencyGraph.Internal
 open Xunit
-open FSharp.Compiler.LanguageServer.Common.DependencyGraph
+open Internal.Utilities.DependencyGraph.Internal
+open Internal.Utilities.DependencyGraph
+
 
 [<Fact>]
 let ``Can add a node to the graph`` () =

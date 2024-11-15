@@ -1,11 +1,12 @@
-module FSharpWorkspaceTests
+module CompilerService.FSharpWorkspace
 
 open System
 open Xunit
-open FSharp.Compiler.LanguageServer.Common
+
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open TestFramework
 open FSharp.Compiler.IO
+open FSharp.Compiler.CodeAnalysis.Workspace
 
 #nowarn "57"
 
