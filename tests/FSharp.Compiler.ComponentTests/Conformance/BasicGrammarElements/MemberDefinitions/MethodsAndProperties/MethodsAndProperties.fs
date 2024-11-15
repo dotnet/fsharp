@@ -624,13 +624,60 @@ type LabeledProperty =
     abstract member alert2: string * string option -> unit with get,set
     abstract member alert3: (string * string option -> unit) with get,set
     abstract member alert4: MyFunc with get,set
+
+module PropertyOverrideTests = begin
+    [<AbstractClass>]
+    type A = class
+      abstract S1 : title:string * message:string option -> unit with get,set
+    end
+
+    type IA = interface
+      abstract S1 : title:string * message:string option -> unit with get,set
+    end
+end
 """
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3874, Line 5, Col 5, Line 5, Col 85, "Abstract function-type properties with get/set accessors cannot have named arguments inside the function-type definition. Use unnamed function arguments instead.");
-            (Error 701, Line 6, Col 5, Line 6, Col 72, "This property has an invalid type. Properties taking multiple indexer arguments should have types of the form 'ty1 * ty2 -> ty3'. Properties returning functions should have types of the form '(ty1 -> ty2)'.")
+            (Error 3874, Line 5, Col 5, Line 5, Col 85, "Abstract function-type properties with get/set accessors cannot have named arguments inside the function-type definition. Use unnamed function arguments instead.")
+            (Error 3874, Line 13, Col 7, Line 13, Col 78, "Abstract function-type properties with get/set accessors cannot have named arguments inside the function-type definition. Use unnamed function arguments instead.")
+            (Error 3874, Line 17, Col 7, Line 17, Col 78, "Abstract function-type properties with get/set accessors cannot have named arguments inside the function-type definition. Use unnamed function arguments instead.")
         ]
+        
+    [<Fact>]
+    let ``Mixing named arguments + callback style and getter should not compile in signature file`` () =
+        let encodeFs =
+            FsSource """module PropertyOverrideTests
+
+    [<AbstractClass>]
+    type A = class
+      abstract S1 : title:string * message:string option -> unit with get,set
+    end
+    
+    type IA = interface
+      abstract S1 : title:string * message:string option -> unit with get,set
+    end"""
+        Fsi """module PropertyOverrideTests
+    
+    [<AbstractClass>]
+    type A = class
+      abstract S1 : title:string * message:string option -> unit with get,set
+    end
+
+    type IA = interface
+      abstract S1 : title:string * message:string option -> unit with get,set
+    end""" 
+        |> withAdditionalSourceFile encodeFs
+        |> withLangVersion90
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3874, Line 5, Col 7, Line 5, Col 78, "Abstract function-type properties with get/set accessors cannot have named arguments inside the function-type definition. Use unnamed function arguments instead.")
+            (Error 3874, Line 9, Col 7, Line 9, Col 78, "Abstract function-type properties with get/set accessors cannot have named arguments inside the function-type definition. Use unnamed function arguments instead.")
+            (Error 3874, Line 5, Col 7, Line 5, Col 78, "Abstract function-type properties with get/set accessors cannot have named arguments inside the function-type definition. Use unnamed function arguments instead.")
+            (Error 3874, Line 9, Col 7, Line 9, Col 78, "Abstract function-type properties with get/set accessors cannot have named arguments inside the function-type definition. Use unnamed function arguments instead.")
+        ]
+
         
     [<Fact>]
     let ``Indexed2PropertiesSameType_fs preview``() =

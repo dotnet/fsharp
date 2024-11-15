@@ -4313,7 +4313,7 @@ module TcDeclarations =
             for slot in ds do
                 if isAbstractSlot slot then
                     match slot with
-                    | SynMemberDefn.AbstractSlot (slotSig = synVal; flags = flags; range = m) as slot ->
+                    | SynMemberDefn.AbstractSlot (slotSig = synVal; flags = flags; range = m) ->
                         CheckDuplicatesArgNames synVal m
                     | _ -> ()
 

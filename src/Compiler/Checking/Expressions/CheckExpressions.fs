@@ -4263,7 +4263,11 @@ and TcValSpec (cenv: cenv) env declKind newOk containerInfo memFlagsOpt thisTyOp
                 | SynMemberKind.PropertySet ->
                     let fakeArgReprInfos = [ for n in SynInfo.AritiesOfArgs valSynInfo do yield [ for _ in 1 .. n do yield ValReprInfo.unnamedTopArg1 ] ]
                     let arginfos, returnTy = GetTopTauTypeInFSharpForm g fakeArgReprInfos declaredTy m
-                    if arginfos.Length > 1 then error(Error(FSComp.SR.tcInvalidPropertyType(), m))
+                    if arginfos.Length > 1 then errorR(Error(FSComp.SR.tcInvalidPropertyType(), m))
+                    // Indexed properties uses "Item" member name and are allowed with get and set
+                    if id.idText <> "Item" && not valSynInfo.ArgNames.IsEmpty then
+                        errorR(Error(FSComp.SR.tcAbstractPropertyCannotHaveNamedArgumentsWithGetSet(), m))
+
                     match memberFlags.MemberKind with
                     | SynMemberKind.PropertyGet ->
                         if SynInfo.HasNoArgs valSynInfo then
@@ -4279,15 +4283,6 @@ and TcValSpec (cenv: cenv) env declKind newOk containerInfo memFlagsOpt thisTyOp
                         setterTy, synInfo
                 | SynMemberKind.PropertyGetSet ->
                     error(InternalError("Unexpected SynMemberKind.PropertyGetSet from signature parsing", m))
-                    
-            let isGetterSetter = memberFlags.MemberKind = SynMemberKind.PropertyGetSet || memberFlags.MemberKind = SynMemberKind.PropertySet || memberFlags.MemberKind = SynMemberKind.PropertyGet
-            // Indexed properties uses "Item" member name and are allowed with get and set
-            if id.idText <> "Item" && isGetterSetter then
-                if not valSynInfo.ArgNames.IsEmpty then
-                    errorR(Error(FSComp.SR.tcAbstractPropertyCannotHaveNamedArgumentsWithGetSet(), m))
-            
-                if valSynInfo.ArgNames.IsEmpty && isFunTy g tyR && isAnyTupleTy g (domainOfFunTy g tyR)  then
-                    errorR(Error(FSComp.SR.tcInvalidPropertyType(), m))
 
             // Take "unit" into account in the signature
             let valSynInfo = AdjustValSynInfoInSignature g tyR valSynInfo
