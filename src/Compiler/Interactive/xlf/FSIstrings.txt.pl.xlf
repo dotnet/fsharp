@@ -3,8 +3,8 @@
   <file datatype="xml" source-language="en" target-language="pl" original="../FSIstrings.resx">
     <body>
       <trans-unit id="fsiDetailedHelpLink">
-        <source>See https://learn.microsoft.com/en-us/dotnet/fsharp/language-reference/fsharp-interactive-options for more details.</source>
-        <target state="new">See https://learn.microsoft.com/en-us/dotnet/fsharp/language-reference/fsharp-interactive-options for more details.</target>
+        <source>See https://learn.microsoft.com/dotnet/fsharp/language-reference/fsharp-interactive-options for more details.</source>
+        <target state="new">See https://learn.microsoft.com/dotnet/fsharp/language-reference/fsharp-interactive-options for more details.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiEntryPointWontBeInvoked">
