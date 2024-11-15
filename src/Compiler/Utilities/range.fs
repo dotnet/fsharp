@@ -193,7 +193,8 @@ type FileIndexTable() =
     //
     // TO move forward we should eventually introduce a new type NormalizedFileName that tracks this invariant.
     member t.FileToIndex normalize filePath =
-        lock fileToIndexTable <| fun () ->
+        lock fileToIndexTable
+        <| fun () ->
             match fileToIndexTable.TryGetValue filePath with
             | true, idx -> idx
             | _ ->
