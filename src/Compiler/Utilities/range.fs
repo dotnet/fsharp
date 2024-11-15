@@ -193,28 +193,28 @@ type FileIndexTable() =
     //
     // TO move forward we should eventually introduce a new type NormalizedFileName that tracks this invariant.
     member t.FileToIndex normalize filePath =
-        match fileToIndexTable.TryGetValue filePath with
-        | true, idx -> idx
-        | _ ->
-
-            // Try again looking for a normalized entry.
-            let normalizedFilePath =
-                if normalize then
-                    FileSystem.NormalizePathShim filePath
-                else
-                    filePath
-
-            match fileToIndexTable.TryGetValue normalizedFilePath with
-            | true, idx ->
-                // Record the non-normalized entry if necessary
-                if filePath <> normalizedFilePath then
-                    lock fileToIndexTable (fun () -> fileToIndexTable[filePath] <- idx)
-
-                // Return the index
-                idx
-
+        lock fileToIndexTable <| fun () ->
+            match fileToIndexTable.TryGetValue filePath with
+            | true, idx -> idx
             | _ ->
-                lock fileToIndexTable (fun () ->
+
+                // Try again looking for a normalized entry.
+                let normalizedFilePath =
+                    if normalize then
+                        FileSystem.NormalizePathShim filePath
+                    else
+                        filePath
+
+                match fileToIndexTable.TryGetValue normalizedFilePath with
+                | true, idx ->
+                    // Record the non-normalized entry if necessary
+                    if filePath <> normalizedFilePath then
+                        fileToIndexTable[filePath] <- idx
+
+                    // Return the index
+                    idx
+
+                | _ ->
                     // Get the new index
                     let idx = indexToFileTable.Count
 
@@ -227,7 +227,7 @@ type FileIndexTable() =
                         fileToIndexTable[filePath] <- idx
 
                     // Return the index
-                    idx)
+                    idx
 
     member t.IndexToFile n =
         if n < 0 then
