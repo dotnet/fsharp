@@ -4266,7 +4266,7 @@ and TcValSpec (cenv: cenv) env declKind newOk containerInfo memFlagsOpt thisTyOp
                     if arginfos.Length > 1 then error(Error(FSComp.SR.tcInvalidPropertyType(), m))
                     // Indexed properties uses "Item" member name and are allowed with get and set
                     if id.idText <> "Item" && not valSynInfo.ArgNames.IsEmpty then
-                        errorR(Error(FSComp.SR.tcAbstractPropertyCannotHaveNamedArgumentsWithGetSet(), m))
+                        error(Error(FSComp.SR.tcAbstractPropertyCannotHaveNamedArgumentsWithGetSet(), m))
 
                     match memberFlags.MemberKind with
                     | SynMemberKind.PropertyGet ->
