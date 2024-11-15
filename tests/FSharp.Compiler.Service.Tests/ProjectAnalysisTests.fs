@@ -5792,18 +5792,20 @@ let checkContentAsScript content =
     | FSharpCheckFileAnswer.Aborted -> failwith "no check results"
     | FSharpCheckFileAnswer.Succeeded r -> r
 
-[<Fact>]
-let ``References from #r nuget are included in script project options`` () =
-    let checkResults = checkContentAsScript """
-#i "nuget:https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json"
-#r "nuget: Dapper"
-"""
-    let assemblyNames =
-        checkResults.ProjectContext.GetReferencedAssemblies()
-        |> Seq.choose (fun f -> f.FileName |> Option.map Path.GetFileName)
-        |> Seq.distinct
-    printfn "%s" (assemblyNames |> String.concat "\n")
-    Assert.Contains("Dapper.dll", assemblyNames)
+[<Collection(nameof NotThreadSafeResourceCollection)>]
+module ScriptClosureCacheUse =
+    [<Fact>]
+    let ``References from #r nuget are included in script project options`` () =
+        let checkResults = checkContentAsScript """
+    #i "nuget:https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json"
+    #r "nuget: Dapper"
+    """
+        let assemblyNames =
+            checkResults.ProjectContext.GetReferencedAssemblies()
+            |> Seq.choose (fun f -> f.FileName |> Option.map Path.GetFileName)
+            |> Seq.distinct
+        printfn "%s" (assemblyNames |> String.concat "\n")
+        Assert.Contains("Dapper.dll", assemblyNames)
 
 module internal EmptyProject =
     let base2 = getTemporaryFileName ()
