@@ -255,8 +255,6 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
     member this.Count = lock cache <| fun () -> cache.Count
 
-    member _.Updating = false
-
     member this.DebuggerDisplay =
 
         let (|Running|_|) (job: Job<_>) = job.Task |> Option.filter (_.IsCompleted >> not)

@@ -72,8 +72,6 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
     member Count: int
 
-    member Updating: bool
-
 /// A drop-in replacement for AsyncMemoize that disables caching and just runs the computation every time.
 type internal AsyncMemoizeDisabled<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVersion: equality> =
 
