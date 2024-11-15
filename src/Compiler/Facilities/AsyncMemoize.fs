@@ -44,17 +44,17 @@ type AsyncLazy<'t>(computation: Async<'t>, ?cancelUnawaited: bool) =
             let cts = new CancellationTokenSource()
             let work = Async.StartAsTask(computation, cancellationToken = cts.Token)
             state <- Created (work, cts, 1)
-            work, true
+            work
         | Created (work, cts, count) ->
             state <- Created (work, cts, count + 1)
-            work, (count = 0)
+            work
 
     member _.Request =
         async {
-            let work, firstRequest = lock stateUpdateSync request
+            let work = lock stateUpdateSync request
             try
                 let! ct = Async.CancellationToken
-                let options = if firstRequest then TaskContinuationOptions.ExecuteSynchronously else TaskContinuationOptions.None
+                let options = TaskContinuationOptions.ExecuteSynchronously
                 try
                     return!
                         // Using ContinueWith with a CancellationToken allows detaching from the running 'work' task.
@@ -132,7 +132,7 @@ type private KeyData<'TKey, 'TVersion> =
         Version: 'TVersion
     }
 
-type Job<'t> = AsyncLazy<Result<'t * CapturingDiagnosticsLogger, exn * CapturingDiagnosticsLogger>>
+type Job<'t> = AsyncLazy<Result<'t, exn> * CapturingDiagnosticsLogger>
 
 [<DebuggerDisplay("{DebuggerDisplay}")>]
 type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVersion: equality
@@ -152,6 +152,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
     let eventCounts = [for j in JobEvent.AllEvents -> j, ref 0] |> dict
     let mutable hits = 0
     let mutable duration = 0L
+    let mutable events_in_flight = 0
 
     let keyTuple (keyData: KeyData<_, _>) = keyData.Label, keyData.Key, keyData.Version
 
@@ -189,16 +190,15 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 let logger = CapturingDiagnosticsLogger "cache"
                 SetThreadDiagnosticsLoggerNoUnwind logger
 
-                match! Async.Catch computation with
-
-                | Choice1Of2 result ->
+                try
+                    let! result = computation
                     log Finished key
                     Interlocked.Add(&duration, sw.ElapsedMilliseconds) |> ignore
-                    return Result.Ok(result, logger)
-
-                | Choice2Of2 ex ->
+                    return Result.Ok result, logger
+                with
+                | ex ->
                     log Failed key
-                    return Result.Error(ex, logger)
+                    return Result.Error ex, logger
             }
 
         let getOrAdd () =
@@ -226,14 +226,12 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
             use _ = new CompilationGlobalsScope()
 
-            match! job.Request with
-
-            | Result.Ok(result, logger) ->
-                logger.CommitDelayedDiagnostics DiagnosticsThreadStatics.DiagnosticsLogger
+            let! result, logger = job.Request
+            logger.CommitDelayedDiagnostics DiagnosticsThreadStatics.DiagnosticsLogger
+            match result with
+            | Ok result ->
                 return result
-
-            | Result.Error(ex, logger) ->
-                logger.CommitDelayedDiagnostics DiagnosticsThreadStatics.DiagnosticsLogger
+            | Error ex ->
                 return raise ex
         }
 
@@ -244,7 +242,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
         versionsAndJobs
         |> Seq.tryPick (fun (version, job) ->
             match predicate version, job.Result with
-            | true, Some(Result.Ok(result, _)) -> Some result
+            | true, Some(Ok result, _) -> Some result
             | _ -> None)
 
     member _.Clear() = cache.Clear()

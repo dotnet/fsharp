@@ -11,35 +11,48 @@ open FSharp.Compiler.Diagnostics
 
 open Xunit
 
-let tap f x = f x; x
+let internal observe (cache: AsyncMemoize<_,_,_>) =
 
-let internal record (cache: AsyncMemoize<_,_,_>) =
+    let collected = new MailboxProcessor<_>(fun _ -> async {})
 
-    let events = Collections.Concurrent.ConcurrentQueue()
+    let arrivals = MailboxProcessor.Start(fun inbox ->
+        let rec loop events = async {
+            let! (e, (_, k, _)) = inbox.Receive()
+            let events = (e, k) :: events
+            printfn $"{k}: {e}"
+            collected.Post events
+            do! loop events
+        }
+        loop []
+    )
 
-    cache.Event
-    |> Event.map (fun (e, (_, k, _)) -> e, k)
-    |> Event.add events.Enqueue
+    cache.Event.Add arrivals.Post
 
-    let getEvents () = events |> List.ofSeq
+    let next () = collected.Receive(10_000)
 
-    getEvents
+    next
 
-let check getEvents assertFunction expected =
-    let actual = getEvents()
-    assertFunction expected actual
+let rec awaitEvents next condition =
+    async {
+        match! next () with
+        | events when condition events -> return events
+        | _ -> return! awaitEvents next condition
+    }
 
-let waitUntil getEvents condition =
-    SpinWait.SpinUntil(fun () -> getEvents() |> condition)
+let rec eventsWhen next condition =
+    awaitEvents next condition |> Async.RunSynchronously
 
-let recorded (expected: 't list) (actual: 't list) =
-    Assert.Equal<'t>(expected, actual)
+let waitUntil next condition =
+    eventsWhen next condition |> ignore
+
+let expect next (expected: 't list) =
+    let actual = eventsWhen next (List.length >> (=) expected.Length)
+    Assert.Equal<'t list>(expected, actual |> List.rev)
 
 let countOf value events =
     events |> Seq.filter (fst >> (=) value) |> Seq.length
 
-let received value events =
-    events |> List.tryLast |> Option.map (fst >> (=) value) |> Option.defaultValue false
+let received event = function (a, _) :: _ when a = event -> true | _ -> false
 
 let internal wrapKey key =
     { new ICacheKey<_, _> with
@@ -59,7 +72,7 @@ let ``Basics``() =
     }
 
     let memoize = AsyncMemoize<int, int, int>()
-    let events = record memoize
+    let events = observe memoize
 
     let result =
         seq {
@@ -77,7 +90,9 @@ let ``Basics``() =
 
     Assert.Equal<int array>(expected, result)
 
-    let groups = events() |> Seq.groupBy snd |> Seq.toList
+    let events = eventsWhen events (countOf Finished >> (=) 3)
+
+    let groups = events |> Seq.groupBy snd |> Seq.toList
     Assert.Equal(3, groups.Length)
     for key, events in groups do
         Assert.Equal<Set<(JobEvent * int)>>(Set [ Requested, key; Started, key; Finished, key ], Set events)
@@ -93,7 +108,7 @@ let ``We can disconnect a request from a running job`` () =
     }
 
     let memoize = AsyncMemoize<_, int, _>(cancelUnawaitedJobs = false, cancelDuplicateRunningJobs = true)
-    let events = record memoize
+    let events = observe memoize
 
     let key = 1
 
@@ -106,9 +121,7 @@ let ``We can disconnect a request from a running job`` () =
 
     canFinish.Set() |> ignore
 
-    waitUntil events (received Finished)
-
-    check events recorded
+    expect events
           [ Requested, key
             Started, key
             Finished, key ]
@@ -124,7 +137,7 @@ let ``We can cancel a job`` () =
     }
 
     let memoize = AsyncMemoize<_, int, _>()
-    let events = record memoize
+    let events = observe memoize
 
     let key = 1
 
@@ -136,7 +149,7 @@ let ``We can cancel a job`` () =
 
     assertTaskCanceled task1
 
-    check events recorded
+    expect events
           [ Requested, key
             Started, key
             Canceled, key ]
@@ -151,7 +164,7 @@ let ``Job is restarted if first requestor cancels`` () =
     }
 
     let memoize = AsyncMemoize<_, int, _>()
-    let events = record memoize
+    let events = observe memoize
 
     use cts1 = new CancellationTokenSource()
 
@@ -172,7 +185,7 @@ let ``Job is restarted if first requestor cancels`` () =
 
     Assert.Equal(2, task2.Result)
 
-    check events recorded
+    expect events
       [ Requested, key
         Started, key
         Canceled, key
@@ -192,7 +205,7 @@ let ``Job keeps running if only one requestor cancels`` () =
     }
         
     let memoize = AsyncMemoize<_, int, _>()
-    let events = record memoize
+    let events = observe memoize
 
     use cts = new CancellationTokenSource()
 
@@ -214,7 +227,7 @@ let ``Job keeps running if only one requestor cancels`` () =
 
     Assert.Equal(2, task1.Result)
 
-    check events recorded
+    expect events
       [ Requested, key
         Started, key
         Requested, key
@@ -347,7 +360,7 @@ let ``Stress test`` () =
 let ``Cancel running jobs with the same key`` () =
     let cache = AsyncMemoize(cancelUnawaitedJobs = false, cancelDuplicateRunningJobs = true)
 
-    let events = record cache
+    let events = observe cache
 
     let jobCanContinue = new ManualResetEventSlim(false)
 
@@ -373,25 +386,26 @@ let ``Cancel running jobs with the same key`` () =
 
     for job in jobsToCancel do assertTaskCanceled job
 
-    // now the jobs should continue running unobserved
-    Assert.Equal(0, events() |> countOf Canceled)
-
-    // new request should cancel the unobserved jobs
     let job = cache.Get(key 11, work) |> Async.StartAsTask
 
-    waitUntil events (countOf Canceled >> (=) 10)
+    // up til now the jobs should have been running unobserved
+    let current = eventsWhen events (received Requested)
+    Assert.Equal(0, current |> countOf Canceled)
 
-    waitUntil events (countOf Started >> (=) 11)
+    // new request should cancel the unobserved jobs
+    waitUntil events (received Started)
 
     jobCanContinue.Set() |> ignore
 
     job.Wait()
 
-    Assert.Equal(0, events() |> countOf Failed)
+    let events = eventsWhen events (received Finished)
 
-    Assert.Equal(10, events() |> countOf Canceled)
+    Assert.Equal(0, events |> countOf Failed)
 
-    Assert.Equal(1, events() |> countOf Finished)
+    Assert.Equal(10, events |> countOf Canceled)
+
+    Assert.Equal(1, events |> countOf Finished)
 
 type DummyException(msg) =
     inherit Exception(msg)
