@@ -12,7 +12,7 @@ open System.Runtime.CompilerServices
 
 type AsyncLazyState<'t> =
     | Initial of Async<'t>
-    | Created of Task<'t> * CancellationTokenSource * int
+    | Created of Task<'t> * CancellationTokenSource * requestCount: int
 
 /// Represents a computation that will execute only once but can be requested by multiple clients.
 /// It keeps track of the number of requests. When all clients cancel their requests, the underlying computation will also cancel and can be restarted.
