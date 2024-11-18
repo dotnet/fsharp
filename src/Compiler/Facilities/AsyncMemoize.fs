@@ -36,7 +36,7 @@ type AsyncLazy<'t>(computation: Async<'t>, ?cancelUnawaited: bool) =
         | Created(work, cts, count) ->
             state <- Created(work, cts, count - 1)
             if cancelUnawaited then cancelIfUnawaited () 
-        | _ -> ()
+        | state -> failwith $"Invalid AsyncLazyState: {state}"
 
     let request () =
         match state with
@@ -75,7 +75,7 @@ type AsyncLazy<'t>(computation: Async<'t>, ?cancelUnawaited: bool) =
     member _.CancelIfUnawaited() = lock stateUpdateSync cancelIfUnawaited
 
     member _.Task = match state with Created(t, _, _) -> Some t | _ -> None
-    member this.Result = 
+    member this.TryResult = 
         this.Task
         |> Option.filter (fun t -> t.Status = TaskStatus.RanToCompletion)
         |> Option.map _.Result
@@ -240,7 +240,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
         versionsAndJobs
         |> Seq.tryPick (fun (version, job) ->
-            match predicate version, job.Result with
+            match predicate version, job.TryResult with
             | true, Some(Ok result, _) -> Some result
             | _ -> None)
 
