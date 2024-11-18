@@ -2461,7 +2461,7 @@ let FeeFeeInstr (cenv: cenv) doc =
 type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs: int) =
 
     let g = mgbuf.cenv.g
-    let locals = ResizeArray<(string * (Mark * Mark)) list * ILType * bool>(10)
+    let locals = ResizeArray<(string * (Mark * Mark)) list * ILType * bool * bool>(10)
     let codebuf = ResizeArray<ILInstr>(200)
     let exnSpecs = ResizeArray<ILExceptionSpec>(10)
 
@@ -2651,18 +2651,18 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
 
     member _.PreallocatedArgCount = alreadyUsedArgs
 
-    member _.AllocLocal(ranges, ty, isFixed) =
+    member _.AllocLocal(ranges, ty, isFixed, canBeReallocd) =
         let j = locals.Count
-        locals.Add((ranges, ty, isFixed))
+        locals.Add((ranges, ty, isFixed, canBeReallocd))
         j
 
-    member cgbuf.ReallocLocal(cond, ranges, ty, isFixed) =
+    member cgbuf.ReallocLocal(cond, ranges, ty, isFixed, canBeReallocd) =
         match ResizeArray.tryFindIndexi cond locals with
         | Some j ->
-            let prevRanges, _, isFixed = locals[j]
-            locals[j] <- ((ranges @ prevRanges), ty, isFixed)
+            let prevRanges, _, isFixed, canBeReallocd = locals[j]
+            locals[j] <- ((ranges @ prevRanges), ty, isFixed, canBeReallocd)
             j, true
-        | None -> cgbuf.AllocLocal(ranges, ty, isFixed), false
+        | None -> cgbuf.AllocLocal(ranges, ty, isFixed, canBeReallocd), false
 
     member _.Close() =
 
@@ -2772,7 +2772,7 @@ let CodeGenThen (cenv: cenv) mgbuf (entryPointInfo, methodName, eenv, alreadyUse
         && not cenv.options.localOptimizationsEnabled
         ->
         let ilTy = selfArg.Type |> GenType cenv m eenv.tyenv
-        let idx = cgbuf.AllocLocal([ (selfArg.LogicalName, (start, finish)) ], ilTy, false)
+        let idx = cgbuf.AllocLocal([ (selfArg.LogicalName, (start, finish)) ], ilTy, false, true)
         cgbuf.EmitStartOfHiddenCode()
         CG.EmitInstrs cgbuf (pop 0) Push0 [ mkLdarg0; I_stloc(uint16 idx) ]
     | _ -> ()
@@ -2792,7 +2792,7 @@ let CodeGenThen (cenv: cenv) mgbuf (entryPointInfo, methodName, eenv, alreadyUse
 
     let localDebugSpecs: ILLocalDebugInfo list =
         locals
-        |> List.mapi (fun i (nms, _, _isFixed) -> List.map (fun nm -> (i, nm)) nms)
+        |> List.mapi (fun i (nms, _, _isFixed, _canBeReallocd) -> List.map (fun nm -> (i, nm)) nms)
         |> List.concat
         |> List.map (fun (i, (nm, (start, finish))) ->
             {
@@ -2802,7 +2802,7 @@ let CodeGenThen (cenv: cenv) mgbuf (entryPointInfo, methodName, eenv, alreadyUse
 
     let ilLocals =
         locals
-        |> List.map (fun (infos, ty, isFixed) ->
+        |> List.map (fun (infos, ty, isFixed, _canBeReallocd) ->
             let loc =
                 // in interactive environment, attach name and range info to locals to improve debug experience
                 if cenv.options.isInteractive && cenv.options.generateDebugSymbols then
@@ -3441,7 +3441,7 @@ and GenLinearExpr cenv cgbuf eenv expr sequel preSteps (contf: FakeUnit -> FakeU
                 contf Fake
 
     | Expr.Let(bind, body, _, _) ->
-        // Process the debug point and see if there's a replacement technique to process this expression
+
         if preSteps && GenExprPreSteps cenv cgbuf eenv expr sequel then
             contf Fake
         else
@@ -3837,7 +3837,7 @@ and UnionCodeGen (cgbuf: CodeGenBuffer) =
             CG.GenerateDelayMark cgbuf "unionCodeGenMark"
 
         member _.GenLocal ilTy =
-            cgbuf.AllocLocal([], ilTy, false) |> uint16
+            cgbuf.AllocLocal([], ilTy, false, true) |> uint16
 
         member _.SetMarkToHere m = CG.SetMarkToHere cgbuf m
 
@@ -4673,7 +4673,7 @@ and GenIndirectCall cenv cgbuf eenv (funcTy, tyargs, curriedArgs, m) sequel =
     let instrs =
         EraseClosures.mkCallFunc
             cenv.ilxPubCloEnv
-            (fun ty -> cgbuf.AllocLocal([], ty, false) |> uint16)
+            (fun ty -> cgbuf.AllocLocal([], ty, false, true) |> uint16)
             eenv.tyenv.Count
             isTailCall
             ilxClosureApps
@@ -9822,6 +9822,9 @@ and GenGetLocalVRef cenv cgbuf eenv m (vref: ValRef) storeSequel =
 and GenStoreVal cgbuf eenv m (vspec: Val) =
     GenSetStorage vspec.Range cgbuf (StorageForVal m vspec eenv)
 
+and CanRealloc isFixed eenv ty i (_, ty2, isFixed2, canBeReallocd) =
+    canBeReallocd && not isFixed2 && not isFixed && not (IntMap.mem i eenv.liveLocals) && (ty = ty2)
+
 /// Allocate IL locals
 and AllocLocal cenv cgbuf eenv compgen (v, ty, isFixed) (scopeMarks: Mark * Mark) : int * _ * _ =
     // The debug range for the local
@@ -9829,14 +9832,16 @@ and AllocLocal cenv cgbuf eenv compgen (v, ty, isFixed) (scopeMarks: Mark * Mark
     // Get an index for the local
     let j, realloc =
         if cenv.options.localOptimizationsEnabled then
+            let canBeReallocd = not (v = WellKnownNames.CopyOfStruct)
             cgbuf.ReallocLocal(
-                (fun i (_, ty2, isFixed2) -> not isFixed2 && not isFixed && not (IntMap.mem i eenv.liveLocals) && (ty = ty2)),
+                CanRealloc isFixed eenv ty,
                 ranges,
                 ty,
-                isFixed
+                isFixed,
+                canBeReallocd
             )
         else
-            cgbuf.AllocLocal(ranges, ty, isFixed), false
+            cgbuf.AllocLocal(ranges, ty, isFixed, false), false
 
     j,
     realloc,
