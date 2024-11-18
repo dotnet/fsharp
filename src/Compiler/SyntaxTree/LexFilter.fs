@@ -7,11 +7,11 @@ module internal FSharp.Compiler.LexFilter
 open System
 open System.Collections.Generic
 open Internal.Utilities.Text.Lexing
-open FSharp.Compiler
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
+open FSharp.Compiler.LexerStore
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Parser
@@ -665,7 +665,7 @@ type LexFilterImpl (
         let lastTokenEnd = state.EndPos
         let token = lexer lexbuf
 
-        LexbufLocalXmlDocStore.AddGrabPoint(lexbuf)
+        XmlDocStore.AddGrabPoint(lexbuf)
 
         // Now we've got the token, remember the lexbuf state, associating it with the token
         // and remembering it as the last observed lexbuf state for the wrapped lexer function.

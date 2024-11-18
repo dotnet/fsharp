@@ -1,7 +1,7 @@
 ﻿module FSharp.Compiler.Service.Tests.InteractiveCheckerTests
 
 open Xunit
-open FsUnit
+open FSharp.Test.Assert
 open System
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax

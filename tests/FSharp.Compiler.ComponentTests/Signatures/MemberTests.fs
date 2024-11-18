@@ -1,7 +1,6 @@
 ﻿module Signatures.MemberTests
 
 open Xunit
-open FsUnit
 open FSharp.Test.Compiler
 open Signatures.TestHelpers
 
