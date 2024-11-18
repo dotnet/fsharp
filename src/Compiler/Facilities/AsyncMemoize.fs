@@ -66,7 +66,7 @@ type AsyncLazy<'t>(computation: Async<'t>, ?cancelUnawaited: bool) =
                         |> Async.AwaitTask
                 // Cancellation check before entering the `with` ensures TaskCanceledEXception coming from the ContinueWith task will never be raised here.
                 // The cancellation continuation will always be called in case of cancellation.
-                with ex -> return raise ex 
+                with exn -> return raise exn
             finally
                 lock stateUpdateSync afterRequest
         }
@@ -152,7 +152,6 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
     let eventCounts = [for j in JobEvent.AllEvents -> j, ref 0] |> dict
     let mutable hits = 0
     let mutable duration = 0L
-    let mutable events_in_flight = 0
 
     let keyTuple (keyData: KeyData<_, _>) = keyData.Label, keyData.Key, keyData.Version
 
@@ -196,9 +195,9 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                     Interlocked.Add(&duration, sw.ElapsedMilliseconds) |> ignore
                     return Result.Ok result, logger
                 with
-                | ex ->
+                | exn ->
                     log Failed key
-                    return Result.Error ex, logger
+                    return Result.Error exn, logger
             }
 
         let getOrAdd () =
@@ -231,8 +230,8 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
             match result with
             | Ok result ->
                 return result
-            | Error ex ->
-                return raise ex
+            | Error exn ->
+                return raise exn
         }
 
     member _.TryGet(key: 'TKey, predicate: 'TVersion -> bool) : 'TValue option =
