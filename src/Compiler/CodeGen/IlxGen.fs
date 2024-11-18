@@ -2772,7 +2772,10 @@ let CodeGenThen (cenv: cenv) mgbuf (entryPointInfo, methodName, eenv, alreadyUse
         && not cenv.options.localOptimizationsEnabled
         ->
         let ilTy = selfArg.Type |> GenType cenv m eenv.tyenv
-        let idx = cgbuf.AllocLocal([ (selfArg.LogicalName, (start, finish)) ], ilTy, false, true)
+
+        let idx =
+            cgbuf.AllocLocal([ (selfArg.LogicalName, (start, finish)) ], ilTy, false, true)
+
         cgbuf.EmitStartOfHiddenCode()
         CG.EmitInstrs cgbuf (pop 0) Push0 [ mkLdarg0; I_stloc(uint16 idx) ]
     | _ -> ()
@@ -9823,7 +9826,11 @@ and GenStoreVal cgbuf eenv m (vspec: Val) =
     GenSetStorage vspec.Range cgbuf (StorageForVal m vspec eenv)
 
 and CanRealloc isFixed eenv ty i (_, ty2, isFixed2, canBeReallocd) =
-    canBeReallocd && not isFixed2 && not isFixed && not (IntMap.mem i eenv.liveLocals) && (ty = ty2)
+    canBeReallocd
+    && not isFixed2
+    && not isFixed
+    && not (IntMap.mem i eenv.liveLocals)
+    && (ty = ty2)
 
 /// Allocate IL locals
 and AllocLocal cenv cgbuf eenv compgen (v, ty, isFixed) (scopeMarks: Mark * Mark) : int * _ * _ =
@@ -9833,13 +9840,7 @@ and AllocLocal cenv cgbuf eenv compgen (v, ty, isFixed) (scopeMarks: Mark * Mark
     let j, realloc =
         if cenv.options.localOptimizationsEnabled then
             let canBeReallocd = not (v = WellKnownNames.CopyOfStruct)
-            cgbuf.ReallocLocal(
-                CanRealloc isFixed eenv ty,
-                ranges,
-                ty,
-                isFixed,
-                canBeReallocd
-            )
+            cgbuf.ReallocLocal(CanRealloc isFixed eenv ty, ranges, ty, isFixed, canBeReallocd)
         else
             cgbuf.AllocLocal(ranges, ty, isFixed, false), false
 

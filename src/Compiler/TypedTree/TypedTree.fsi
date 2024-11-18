@@ -20,7 +20,8 @@ open FSharp.Core.CompilerServices
 [<RequireQualifiedAccess>]
 module WellKnownNames =
     /// Special name for the defensive copy of a struct, we use it in situations like when we get an address of a field in ax-assembly scenario.
-    [<Literal>] val CopyOfStruct: string = "copyOfStruct"
+    [<Literal>]
+    val CopyOfStruct: string = "copyOfStruct"
 
 val getNameOfScopeRef: sref: ILScopeRef -> string
 
