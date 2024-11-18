@@ -206,13 +206,12 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 let logger = CapturingDiagnosticsLogger "cache"
                 SetThreadDiagnosticsLoggerNoUnwind logger
 
-                try
-                    let! result = computation
+                match! computation |> Async.Catch with
+                | Choice1Of2 result ->
                     log Finished key
                     Interlocked.Add(&duration, sw.ElapsedMilliseconds) |> ignore
                     return Result.Ok result, logger
-                with
-                | exn ->
+                | Choice2Of2 exn ->
                     log Failed key
                     return Result.Error exn, logger
             }
