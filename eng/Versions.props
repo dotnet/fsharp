@@ -25,7 +25,7 @@
     <FSCorePackageVersionValue>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSCorePackageVersionValue>
     <FSCoreVersionPrefix>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSCoreVersionPrefix>
     <FSCoreVersion>$(FSMajorVersion).$(FSMinorVersion).0.0</FSCoreVersion>
-    <FSCoreShippedVersion>8.0.0.0</FSCoreShippedVersion>
+    <FSCoreShippedVersion>9.0.0.0</FSCoreShippedVersion>
     <!-- -->
     <!-- FSharp.Compiler.Service version -->
     <FCSMajorVersion>43</FCSMajorVersion>
@@ -37,7 +37,7 @@
     <FSharpLibrariesChangelogVersion>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSharpLibrariesChangelogVersion>
     <!-- -->
     <!-- The current published nuget package -->
-    <FSharpCoreShippedPackageVersionValue>9.0.100-beta.24466.6</FSharpCoreShippedPackageVersionValue>
+    <FSharpCoreShippedPackageVersionValue>9.0.100</FSharpCoreShippedPackageVersionValue>
     <!-- -->
     <!-- The pattern for specifying the preview package -->
     <FSharpCorePreviewPackageVersionValue>$(FSCorePackageVersionValue)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersionValue>
