@@ -235,16 +235,16 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
         }
 
     member _.TryGet(key: 'TKey, predicate: 'TVersion -> bool) : 'TValue option =
-        lock cache <| fun () ->
-            cache.GetAll(key)
-            |> Seq.tryPick (fun (version, job) ->
-                match predicate version, job.TryResult with
-                | true, Some(Ok result, _) -> Some result
-                | _ -> None)
+        let versionsAndJobs = lock cache <| fun () -> cache.GetAll(key) |> Seq.toList
+        versionsAndJobs
+        |> Seq.tryPick (fun (version, job) ->
+            match predicate version, job.TryResult with
+            | true, Some(Ok result, _) -> Some result
+            | _ -> None)
 
-    member _.Clear() = cache.Clear()
+    member _.Clear() = lock cache cache.Clear
 
-    member _.Clear predicate = cache.Clear predicate
+    member _.Clear predicate = lock cache <| fun () -> cache.Clear predicate
 
     member val Event = event.Publish
 
