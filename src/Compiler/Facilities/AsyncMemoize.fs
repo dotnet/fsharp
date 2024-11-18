@@ -5,53 +5,49 @@ open System.Diagnostics
 open System.IO
 open System.Threading
 open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open System.Runtime.ExceptionServices
 
 open FSharp.Compiler.DiagnosticsLogger
 open Internal.Utilities.Library
-open System.Runtime.CompilerServices
 
 type AsyncLazyState<'t> =
-    | Initial of Async<'t>
-    | Created of Task<'t> * CancellationTokenSource * requestCount: int
+    | Initial of computation: Async<'t>
+    | Running of initialComputation: Async<'t> * work: Task<'t> * CancellationTokenSource * requestCount: int
+    | Completed of result: 't
+    | Faulted of exn
 
 /// Represents a computation that will execute only once but can be requested by multiple clients.
 /// It keeps track of the number of requests. When all clients cancel their requests, the underlying computation will also cancel and can be restarted.
 /// If cancelUnawaited is set to false, the computation will run to completion even when all requests are canceled.
-type AsyncLazy<'t>(computation: Async<'t>, ?cancelUnawaited: bool) =
-
-    let cancelUnawaited = defaultArg cancelUnawaited true
+type AsyncLazy<'t> private (initial: AsyncLazyState<'t>, cancelUnawaited: bool, cacheException: bool) =
 
     let stateUpdateSync = obj()
-    let mutable state = Initial computation
+    let mutable state = initial
 
     let cancelIfUnawaited () =
         match state with
-        | Created(work, cts, 0) when not work.IsCompleted ->
+        | Running(computation, _, cts, 0) ->
             cts.Cancel()
             state <- Initial computation
         | _ -> ()
 
     let afterRequest () =
         match state with
-        | Created(work, cts, count) ->
-            state <- Created(work, cts, count - 1)
+        | Running(computation, work, _, _) when work.IsCompleted ->
+            state <-
+                try
+                    Completed work.Result
+                with
+                | exn ->
+                    if cacheException then Faulted exn else Initial computation
+        | Running(c, work, cts, count) ->
+            state <- Running(c, work, cts, count - 1)
             if cancelUnawaited then cancelIfUnawaited () 
-        | state -> failwith $"Invalid AsyncLazyState: {state}"
+        | _ -> () // Nothing more to do if another request already transitioned the state.
 
-    let request () =
-        match state with
-        | Initial computation ->
-            let cts = new CancellationTokenSource()
-            let work = Async.StartAsTask(computation, cancellationToken = cts.Token)
-            state <- Created (work, cts, 1)
-            work
-        | Created (work, cts, count) ->
-            state <- Created (work, cts, count + 1)
-            work
-
-    member _.Request =
+    let detachable (work: Task<'t>) =
         async {
-            let work = lock stateUpdateSync request
             try
                 let! ct = Async.CancellationToken
                 let options = TaskContinuationOptions.ExecuteSynchronously
@@ -64,21 +60,42 @@ type AsyncLazy<'t>(computation: Async<'t>, ?cancelUnawaited: bool) =
                         // but will immediately proceed to the finally block.
                         work.ContinueWith((fun (t: Task<_>) -> t.Result), ct, options, TaskScheduler.Current)
                         |> Async.AwaitTask
-                // Cancellation check before entering the `with` ensures TaskCanceledEXception coming from the ContinueWith task will never be raised here.
+                // Cancellation check before entering the `with` ensures TaskCanceledException coming from the ContinueWith task will never be raised here.
                 // The cancellation continuation will always be called in case of cancellation.
                 with exn -> return raise exn
             finally
                 lock stateUpdateSync afterRequest
         }
 
+    let request () =
+        match state with
+        | Initial computation ->
+            let cts = new CancellationTokenSource()
+            let work = Async.StartAsTask(computation, cancellationToken = cts.Token)
+            state <- Running (computation, work, cts, 1)
+            detachable work
+        | Running (c, work, cts, count) ->
+            state <- Running (c, work, cts, count + 1)
+            detachable work
+        | Completed result ->
+            async { return result }
+        | Faulted exn ->
+            async { return raise exn }
+
+    // computation will deallocate after state transition to Completed ot Faulted.
+    new (computation, ?cancelUnawaited: bool, ?cacheException) =
+        AsyncLazy(Initial computation, defaultArg cancelUnawaited true, defaultArg cacheException false)
+
+    member _.Request() = lock stateUpdateSync request
 
     member _.CancelIfUnawaited() = lock stateUpdateSync cancelIfUnawaited
 
-    member _.Task = match state with Created(t, _, _) -> Some t | _ -> None
-    member this.TryResult = 
-        this.Task
-        |> Option.filter (fun t -> t.Status = TaskStatus.RanToCompletion)
-        |> Option.map _.Result
+    member _.State = state
+
+    member this.TryResult =
+        match state with
+        | Completed result -> Some result
+        | _ -> None
 
 [<AutoOpen>]
 module internal Utils =
@@ -181,7 +198,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 Version = key.GetVersion()
             }
 
-        let wrappedComputation =
+        let wrapppedComputation =
             async {
                 use! _handler = Async.OnCancel (fun () -> log Canceled key)
                 let sw = Stopwatch.StartNew()
@@ -205,7 +222,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
             let countHit v = Interlocked.Increment &hits |> ignore; v
             let cacheSetNewJob () =
-                let job = Job(wrappedComputation, cancelUnawaited = cancelUnawaitedJobs)
+                let job = Job(wrapppedComputation, cancelUnawaited = cancelUnawaitedJobs)
                 cache.Set(key.Key, key.Version, key.Label, job)
                 job
 
@@ -225,7 +242,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
             use _ = new CompilationGlobalsScope()
 
-            let! result, logger = job.Request
+            let! result, logger = job.Request()
             logger.CommitDelayedDiagnostics DiagnosticsThreadStatics.DiagnosticsLogger
             match result with
             | Ok result ->
@@ -235,12 +252,12 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
         }
 
     member _.TryGet(key: 'TKey, predicate: 'TVersion -> bool) : 'TValue option =
-        let versionsAndJobs = lock cache <| fun () -> cache.GetAll(key) |> Seq.toList
-        versionsAndJobs
-        |> Seq.tryPick (fun (version, job) ->
-            match predicate version, job.TryResult with
-            | true, Some(Ok result, _) -> Some result
-            | _ -> None)
+        lock cache <| fun () ->
+            cache.GetAll(key)
+            |> Seq.tryPick (fun (version, job) ->
+                match predicate version, job.TryResult with
+                | true, Some(Ok result, _) -> Some result
+                | _ -> None)
 
     member _.Clear() = lock cache cache.Clear
 
@@ -254,17 +271,15 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
     member this.DebuggerDisplay =
 
-        let (|Running|_|) (job: Job<_>) = job.Task |> Option.filter (_.IsCompleted >> not)
-        let (|Faulted|_|) (job: Job<_>) = job.Task |> Option.filter _.IsFaulted
-
-        let status = function
-            | Running _ -> "Running"
-            | Faulted _ -> "Faulted"
-            | _ -> "other"
-
         let cachedJobs = cache.GetValues() |> Seq.map (fun (_,_,job) -> job)
 
-        let valueStats = cachedJobs |> Seq.countBy status |> Map
+        let jobStateName = function
+        | Initial _ -> nameof Initial
+        | Running _ -> nameof Running
+        | Completed _ -> nameof Completed
+        | Faulted _ -> nameof Faulted
+
+        let valueStats = cachedJobs |> Seq.countBy (_.State >> jobStateName) |> Map
         let getStat key = valueStats.TryFind key |> Option.defaultValue 0
 
         let running =
