@@ -20,6 +20,7 @@ usage()
   echo "  --rebuild                      Rebuild all projects"
   echo "  --pack                         Build nuget packages"
   echo "  --publish                      Publish build artifacts"
+  echo "  --sign                         Sign build artifacts"
   echo "  --help                         Print help and exit"
   echo ""
   echo "Test actions:"
@@ -58,6 +59,7 @@ build=false
 rebuild=false
 pack=false
 publish=false
+sign=false
 test_core_clr=false
 test_compilercomponent_tests=false
 test_benchmarks=false
@@ -128,6 +130,9 @@ while [[ $# > 0 ]]; do
       ;;
     --publish)
       publish=true
+      ;;
+    --sign)
+      sign=true
       ;;
     --testcoreclr|--test|-t)
       test_core_clr=true
@@ -298,6 +303,7 @@ function BuildSolution {
       /p:Rebuild=$rebuild \
       /p:Pack=$pack \
       /p:Publish=$publish \
+      /p:Sign=$sign \
       /p:UseRoslynAnalyzers=$enable_analyzers \
       /p:ContinuousIntegrationBuild=$ci \
       /p:QuietRestore=$quiet_restore \
