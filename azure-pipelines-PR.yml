@@ -589,7 +589,7 @@ stages:
         # MacOS
         - job: MacOS
           pool:
-            vmImage: macos-12
+            vmImage: macos-latest
           timeoutInMinutes: 120
           variables:
           - name: _SignType
@@ -727,7 +727,7 @@ stages:
         # Plain FCS build Mac
         - job: Plain_Build_MacOS
           pool:
-            vmImage: macos-12
+            vmImage: macos-latest
           variables:
           - name: _BuildConfig
             value: Debug
