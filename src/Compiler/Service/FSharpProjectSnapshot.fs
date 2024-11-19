@@ -386,7 +386,7 @@ and internal ProjectSnapshotWithSources = ProjectSnapshotBase<FSharpFileSnapshot
 
 /// All required information for compiling a project except the source files and referenced projects. It's kept separate so it can be reused
 /// for different stages of a project snapshot and also between changes to the source files.
-and ProjectConfig
+and [<Experimental("This FCS API is experimental and subject to change.")>] ProjectConfig
     internal
     (
         projectFileName: string,

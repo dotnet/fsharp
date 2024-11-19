@@ -7,6 +7,23 @@
 ! AssemblyReference: System.Reflection.Emit.ILGeneration
 ! AssemblyReference: System.Reflection.Metadata
 ! AssemblyReference: netstandard
+<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: <Dependencies>j__TPar Dependencies
+<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: <Dependencies>j__TPar get_Dependencies()
+<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: <Dependents>j__TPar Dependents
+<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: <Dependents>j__TPar get_Dependents()
+<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: <Nodes>j__TPar Nodes
+<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: <Nodes>j__TPar get_Nodes()
+<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: Boolean Equals(<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar])
+<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: Boolean Equals(<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar], System.Collections.IEqualityComparer)
+<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: Boolean Equals(System.Object)
+<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: Int32 CompareTo(<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar])
+<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: Int32 CompareTo(System.Object)
+<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: Int32 CompareTo(System.Object, System.Collections.IComparer)
+<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: Int32 GetHashCode()
+<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: Int32 GetHashCode(System.Collections.IEqualityComparer)
+<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: System.String ToString()
+<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: Void .ctor(<Dependencies>j__TPar, <Dependents>j__TPar, <Nodes>j__TPar)
 FSharp.Compiler.AbstractIL.IL+ILArgConvention+Tags: Int32 CDecl
 FSharp.Compiler.AbstractIL.IL+ILArgConvention+Tags: Int32 Default
 FSharp.Compiler.AbstractIL.IL+ILArgConvention+Tags: Int32 FastCall
@@ -2414,6 +2431,7 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: Boolean get_IsS
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: FSharpFileSnapshot Create(System.String, System.String, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.Threading.Tasks.Task`1[FSharp.Compiler.Text.ISourceTextNew]])
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: FSharpFileSnapshot CreateFromDocumentSource(System.String, FSharp.Compiler.CodeAnalysis.DocumentSource)
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: FSharpFileSnapshot CreateFromFileSystem(System.String)
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: FSharpFileSnapshot CreateFromString(System.String, System.String)
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: Int32 GetHashCode()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: System.String FileName
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: System.String GetFileName()
@@ -2434,7 +2452,11 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: Int32 GetH
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: Int32 Tag
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: Int32 get_Tag()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: System.String OutputFileName
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: System.String ProjectFileName
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: System.String ToString()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: System.String get_OutputFileName()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: System.String get_ProjectFileName()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: System.String get_outputFileName()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: System.String get_projectFileName()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: System.String outputFileName
@@ -2445,7 +2467,9 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Boolean get_
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Boolean get_UseScriptResolutionRules()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjectIdentifier Identifier
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjectIdentifier get_Identifier()
-FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjectSnapshot Create(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk], Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot], Boolean, Boolean, System.DateTime, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet], Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[FSharp.Compiler.Text.Range,System.String,System.String]], Microsoft.FSharp.Core.FSharpOption`1[System.Int64])
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjectSnapshot Create(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk], Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot], Boolean, Boolean, System.DateTime, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet], Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[FSharp.Compiler.Text.Range,System.String,System.String]], Microsoft.FSharp.Core.FSharpOption`1[System.Int64])
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjectSnapshot FromCommandLineArgs(System.String[], System.String, System.String)
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjectSnapshot FromResponseFile(System.IO.FileInfo, System.String)
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjectSnapshot Replace(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot])
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot] SourceFiles
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot] get_SourceFiles()
@@ -2464,7 +2488,9 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FS
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet] get_UnresolvedReferences()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Core.FSharpOption`1[System.Int64] Stamp
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Core.FSharpOption`1[System.Int64] get_Stamp()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Core.FSharpOption`1[System.String] OutputFileName
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Core.FSharpOption`1[System.String] ProjectId
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_OutputFileName()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_ProjectId()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: System.DateTime LoadTime
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: System.DateTime get_LoadTime()
@@ -2496,6 +2522,8 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: Bo
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: Boolean get_IsFSharpReference()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: Boolean get_IsILModuleReference()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: Boolean get_IsPEReference()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: Byte[] Version
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: Byte[] get_Version()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot+FSharpReference
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot+ILModuleReference
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot+PEReference
@@ -2510,6 +2538,41 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: In
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: System.String OutputFile
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: System.String ToString()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: System.String get_OutputFile()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Boolean IsIncompleteTypeCheckEnvironment
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Boolean UseScriptResolutionRules
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Boolean get_IsIncompleteTypeCheckEnvironment()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Boolean get_UseScriptResolutionRules()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Byte[] Version
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Byte[] VersionForParsing
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Byte[] get_Version()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Byte[] get_VersionForParsing()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: FSharpProjectIdentifier Identifier
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: FSharpProjectIdentifier get_Identifier()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk] ReferencesOnDisk
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk] get_ReferencesOnDisk()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[System.String] CommandLineOptions
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[System.String] OtherOptions
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_CommandLineOptions()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_OtherOptions()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[FSharp.Compiler.Text.Range,System.String,System.String]] OriginalLoadReferences
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[FSharp.Compiler.Text.Range,System.String,System.String]] get_OriginalLoadReferences()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet] UnresolvedReferences
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet] get_UnresolvedReferences()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Core.FSharpOption`1[System.Int64] Stamp
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Core.FSharpOption`1[System.Int64] get_Stamp()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Core.FSharpOption`1[System.String] OutputFileName
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Core.FSharpOption`1[System.String] ProjectId
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_OutputFileName()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_ProjectId()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: System.DateTime LoadTime
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: System.DateTime get_LoadTime()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: System.String Label
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: System.String ProjectDirectory
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: System.String ProjectFileName
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: System.String get_Label()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: System.String get_ProjectDirectory()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: System.String get_ProjectFileName()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Void .ctor(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.String], System.Collections.Generic.IEnumerable`1[System.String], System.Collections.Generic.IEnumerable`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.DateTime], Microsoft.FSharp.Core.FSharpOption`1[System.Int64], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk: Boolean Equals(ReferenceOnDisk)
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk: Boolean Equals(ReferenceOnDisk, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk: Boolean Equals(System.Object)
@@ -2529,7 +2592,38 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.Proje
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspace: FSharp.Compiler.CodeAnalysis.FSharpChecker Checker
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspace: FSharp.Compiler.CodeAnalysis.FSharpChecker get_Checker()
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspace: FSharpWorkspaceFiles Files
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspace: FSharpWorkspaceFiles get_Files()
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspace: FSharpWorkspaceProjects Projects
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspace: FSharpWorkspaceProjects get_Projects()
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspace: FSharpWorkspaceQuery Query
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspace: FSharpWorkspaceQuery get_Query()
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspace: Void .ctor()
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspace: Void .ctor(FSharp.Compiler.CodeAnalysis.FSharpChecker)
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpDiagnosticReport: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] Diagnostics
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpDiagnosticReport: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] get_Diagnostics()
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpDiagnosticReport: System.String ResultId
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpDiagnosticReport: System.String get_ResultId()
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpWorkspaceQuery: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpDiagnosticReport] GetDiagnosticsForFile(System.Uri)
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpWorkspaceQuery: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.EditorServices.SemanticClassificationView]] GetSemanticClassification(System.Uri)
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpWorkspaceQuery: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot] GetProjectSnapshot(FSharpProjectIdentifier)
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpWorkspaceQuery: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot] GetProjectSnapshotForFile(System.Uri)
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpWorkspaceQuery: System.Threading.Tasks.Task`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceTextNew]] GetSource(System.Uri)
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery: FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpDiagnosticReport
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery: FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpWorkspaceQuery
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceFiles: Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.Uri,System.String],Microsoft.FSharp.Core.Unit] Open
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceFiles: Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.Uri,System.String],Microsoft.FSharp.Core.Unit] get_Open()
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceFiles: Void Close(System.Uri)
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceFiles: Void Edit(System.Uri, System.String)
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceProjects: FSharpProjectIdentifier AddOrUpdate(ProjectConfig, System.Collections.Generic.IEnumerable`1[System.String])
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceProjects: FSharpProjectIdentifier AddOrUpdate(System.String, System.String, System.Collections.Generic.IEnumerable`1[System.String])
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceProjects: FSharpProjectIdentifier AddOrUpdate(System.String, System.String, System.Collections.Generic.IEnumerable`1[System.String], System.Collections.Generic.IEnumerable`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[System.String])
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState: FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceFiles
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState: FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceProjects
 FSharp.Compiler.CompilerEnvironment: Boolean IsCheckerSupportedSubcategory(System.String)
 FSharp.Compiler.CompilerEnvironment: Boolean IsCompilable(System.String)
 FSharp.Compiler.CompilerEnvironment: Boolean IsScriptFile(System.String)
@@ -12257,6 +12351,67 @@ FSharp.Compiler.Xml.XmlDoc: System.String[] GetElaboratedXmlLines()
 FSharp.Compiler.Xml.XmlDoc: System.String[] UnprocessedLines
 FSharp.Compiler.Xml.XmlDoc: System.String[] get_UnprocessedLines()
 FSharp.Compiler.Xml.XmlDoc: Void .ctor(System.String[], FSharp.Compiler.Text.Range)
+Internal.Utilities.DependencyGraph+DependencyNode`2[Identifier,Value]: Identifier Id
+Internal.Utilities.DependencyGraph+DependencyNode`2[Identifier,Value]: Identifier get_Id()
+Internal.Utilities.DependencyGraph+DependencyNode`2[Identifier,Value]: Microsoft.FSharp.Core.FSharpFunc`2[System.Collections.Generic.IEnumerable`1[Value],Value] Compute
+Internal.Utilities.DependencyGraph+DependencyNode`2[Identifier,Value]: Microsoft.FSharp.Core.FSharpFunc`2[System.Collections.Generic.IEnumerable`1[Value],Value] get_Compute()
+Internal.Utilities.DependencyGraph+DependencyNode`2[Identifier,Value]: Microsoft.FSharp.Core.FSharpOption`1[Value] Value
+Internal.Utilities.DependencyGraph+DependencyNode`2[Identifier,Value]: Microsoft.FSharp.Core.FSharpOption`1[Value] get_Value()
+Internal.Utilities.DependencyGraph+DependencyNode`2[Identifier,Value]: System.String ToString()
+Internal.Utilities.DependencyGraph+DependencyNode`2[Identifier,Value]: Void .ctor(Identifier, Microsoft.FSharp.Core.FSharpOption`1[Value], Microsoft.FSharp.Core.FSharpFunc`2[System.Collections.Generic.IEnumerable`1[Value],Value])
+Internal.Utilities.DependencyGraph+GraphBuilder`4[Id,Val,T,State]: GraphBuilder`4 AddDependentNode[a,b](Id, Microsoft.FSharp.Core.FSharpFunc`2[T,Val], Microsoft.FSharp.Core.FSharpFunc`2[System.Collections.Generic.IEnumerable`1[Val],a], b)
+Internal.Utilities.DependencyGraph+GraphBuilder`4[Id,Val,T,State]: GraphBuilder`4 AddDependentNode[a](Id, Microsoft.FSharp.Core.FSharpFunc`2[T,Val], Microsoft.FSharp.Core.FSharpFunc`2[System.Collections.Generic.IEnumerable`1[Val],a])
+Internal.Utilities.DependencyGraph+GraphBuilder`4[Id,Val,T,State]: IDependencyGraph`2 Graph
+Internal.Utilities.DependencyGraph+GraphBuilder`4[Id,Val,T,State]: IDependencyGraph`2 get_Graph()
+Internal.Utilities.DependencyGraph+GraphBuilder`4[Id,Val,T,State]: State State
+Internal.Utilities.DependencyGraph+GraphBuilder`4[Id,Val,T,State]: State get_State()
+Internal.Utilities.DependencyGraph+GraphBuilder`4[Id,Val,T,State]: System.Collections.Generic.IEnumerable`1[Id] Ids
+Internal.Utilities.DependencyGraph+GraphBuilder`4[Id,Val,T,State]: System.Collections.Generic.IEnumerable`1[Id] get_Ids()
+Internal.Utilities.DependencyGraph+GraphBuilder`4[Id,Val,T,State]: Void .ctor(IDependencyGraph`2, System.Collections.Generic.IEnumerable`1[Id], Microsoft.FSharp.Core.FSharpFunc`2[System.Collections.Generic.IEnumerable`1[Val],T], State)
+Internal.Utilities.DependencyGraph+GraphExtensions: System.Collections.Generic.IEnumerable`1[a] UnpackMany[NodeValue,a](System.Collections.Generic.IEnumerable`1[NodeValue], Microsoft.FSharp.Core.FSharpFunc`2[NodeValue,Microsoft.FSharp.Core.FSharpOption`1[a]])
+Internal.Utilities.DependencyGraph+GraphExtensions: System.Tuple`2[a,System.Collections.Generic.IEnumerable`1[b]] UnpackOneMany[NodeValue,a,b](System.Collections.Generic.IEnumerable`1[NodeValue], Microsoft.FSharp.Core.FSharpFunc`2[NodeValue,Microsoft.FSharp.Core.FSharpOption`1[a]], Microsoft.FSharp.Core.FSharpFunc`2[NodeValue,Microsoft.FSharp.Core.FSharpOption`1[b]])
+Internal.Utilities.DependencyGraph+GraphExtensions: UnpackedDependency UnpackOne[NodeValue,UnpackedDependency](System.Collections.Generic.IEnumerable`1[NodeValue], Microsoft.FSharp.Core.FSharpFunc`2[NodeValue,Microsoft.FSharp.Core.FSharpOption`1[UnpackedDependency]])
+Internal.Utilities.DependencyGraph+GraphExtensions: a Unpack[NodeValue,a](NodeValue, Microsoft.FSharp.Core.FSharpFunc`2[NodeValue,Microsoft.FSharp.Core.FSharpOption`1[a]])
+Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]: System.Collections.Generic.IEnumerable`1[Id] AddList(System.Collections.Generic.IEnumerable`1[System.Tuple`2[Id,Val]])
+Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]: System.Collections.Generic.IEnumerable`1[Id] GetDependenciesOf(Id)
+Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]: System.Collections.Generic.IEnumerable`1[Id] GetDependentsOf(Id)
+Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]: System.Collections.Generic.IEnumerable`1[Internal.Utilities.DependencyGraph+DependencyNode`2[Id,Val]] Debug_GetNodes(Microsoft.FSharp.Core.FSharpFunc`2[Id,System.Boolean])
+Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]: System.String Debug_RenderMermaid(Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[Id,Id]])
+Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]: Val GetValue(Id)
+Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]: Void AddDependency(Id, Id)
+Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]: Void AddOrUpdateNode(Id, System.Collections.Generic.IEnumerable`1[Id], Microsoft.FSharp.Core.FSharpFunc`2[System.Collections.Generic.IEnumerable`1[Val],Val])
+Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]: Void AddOrUpdateNode(Id, Val)
+Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]: Void OnWarning(Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit])
+Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]: Void RemoveDependency(Id, Id)
+Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]: Void RemoveNode(Id)
+Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]: Void UpdateNode(Id, Microsoft.FSharp.Core.FSharpFunc`2[Val,Val])
+Internal.Utilities.DependencyGraph+IThreadSafeDependencyGraph`2[Id,Val]: a Transact[a](Microsoft.FSharp.Core.FSharpFunc`2[Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val],a])
+Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: <>f__AnonymousType4056634344`3[System.Collections.Generic.Dictionary`2[Id,System.Collections.Generic.HashSet`1[Id]],System.Collections.Generic.Dictionary`2[Id,System.Collections.Generic.HashSet`1[Id]],System.Collections.Generic.Dictionary`2[Id,Internal.Utilities.DependencyGraph+DependencyNode`2[Id,Val]]] Debug
+Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: <>f__AnonymousType4056634344`3[System.Collections.Generic.Dictionary`2[Id,System.Collections.Generic.HashSet`1[Id]],System.Collections.Generic.Dictionary`2[Id,System.Collections.Generic.HashSet`1[Id]],System.Collections.Generic.Dictionary`2[Id,Internal.Utilities.DependencyGraph+DependencyNode`2[Id,Val]]] get_Debug()
+Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: Microsoft.FSharp.Collections.FSharpList`1[Id] AddList(System.Collections.Generic.IEnumerable`1[System.Tuple`2[Id,Val]])
+Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: System.Collections.Generic.IEnumerable`1[Id] GetDependenciesOf(Id)
+Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: System.Collections.Generic.IEnumerable`1[Id] GetDependentsOf(Id)
+Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: System.Collections.Generic.IEnumerable`1[Internal.Utilities.DependencyGraph+DependencyNode`2[Id,Val]] Debug_GetNodes(Microsoft.FSharp.Core.FSharpFunc`2[Id,System.Boolean])
+Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: System.String Debug_RenderMermaid(Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[Id,Id]])
+Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: Val GetValue(Id)
+Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: Void .ctor()
+Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: Void AddDependency(Id, Id)
+Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: Void AddOrUpdateNode(Id, System.Collections.Generic.IEnumerable`1[Id], Microsoft.FSharp.Core.FSharpFunc`2[System.Collections.Generic.IEnumerable`1[Val],Val])
+Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: Void AddOrUpdateNode(Id, Val)
+Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: Void OnWarning(Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit])
+Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: Void RemoveDependency(Id, Id)
+Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: Void RemoveNode(Id)
+Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: Void UpdateNode(Id, Microsoft.FSharp.Core.FSharpFunc`2[Val,Val])
+Internal.Utilities.DependencyGraph+Internal: Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]
+Internal.Utilities.DependencyGraph+LockOperatedDependencyGraph`2[Id,Val]: Void .ctor()
+Internal.Utilities.DependencyGraph: Internal.Utilities.DependencyGraph+DependencyNode`2[Identifier,Value]
+Internal.Utilities.DependencyGraph: Internal.Utilities.DependencyGraph+GraphBuilder`4[Id,Val,T,State]
+Internal.Utilities.DependencyGraph: Internal.Utilities.DependencyGraph+GraphExtensions
+Internal.Utilities.DependencyGraph: Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]
+Internal.Utilities.DependencyGraph: Internal.Utilities.DependencyGraph+IThreadSafeDependencyGraph`2[Id,Val]
+Internal.Utilities.DependencyGraph: Internal.Utilities.DependencyGraph+Internal
+Internal.Utilities.DependencyGraph: Internal.Utilities.DependencyGraph+LockOperatedDependencyGraph`2[Id,Val]
+Internal.Utilities.DependencyGraph: Void insert[a,b](a, b, System.Collections.Generic.Dictionary`2[a,b])
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: System.Collections.Generic.IDictionary`2[TDictKey,TDictValue] CreateDictionary(T[])
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: System.Collections.Generic.IDictionary`2[TDictKey,TDictValue] GetDictionary()
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: T[] GetArray()
