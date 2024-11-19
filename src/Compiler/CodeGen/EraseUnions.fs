@@ -1327,7 +1327,7 @@ let mkClassUnionDef
                         if isStruct then
                             None
                         else
-                            match td.Extends with
+                            match td.Extends.Value with
                             | None -> Some g.ilg.typ_Object.TypeSpec
                             | Some ilTy -> Some ilTy.TypeSpec
 
@@ -1449,7 +1449,7 @@ let mkClassUnionDef
 
         else
             let baseTySpec =
-                (match td.Extends with
+                (match td.Extends.Value with
                  | None -> g.ilg.typ_Object
                  | Some ilTy -> ilTy)
                     .TypeSpec
@@ -1571,7 +1571,7 @@ let mkClassUnionDef
                     genericParams = td.GenericParams,
                     attributes = enum 0,
                     layout = ILTypeDefLayout.Auto,
-                    implements = emptyILInterfaceImpls,
+                    implements = [],
                     extends = Some g.ilg.typ_Object,
                     methods = emptyILMethods,
                     securityDecls = emptyILSecurityDecls,
@@ -1579,7 +1579,6 @@ let mkClassUnionDef
                     methodImpls = emptyILMethodImpls,
                     events = emptyILEvents,
                     properties = emptyILProperties,
-                    additionalFlags = ILTypeDefAdditionalFlags.None,
                     customAttrs = emptyILCustomAttrsStored
                 )
                     .WithNestedAccess(cud.UnionCasesAccessibility)
@@ -1603,8 +1602,8 @@ let mkClassUnionDef
                         @ td.NestedTypes.AsList()
                     ),
                 extends =
-                    (match td.Extends with
-                     | None -> Some g.ilg.typ_Object
+                    (match td.Extends.Value with
+                     | None -> Some g.ilg.typ_Object |> notlazy
                      | _ -> td.Extends),
                 methods =
                     mkILMethods (
