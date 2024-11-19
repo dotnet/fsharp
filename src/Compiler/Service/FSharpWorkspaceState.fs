@@ -227,7 +227,6 @@ module internal WorkspaceDependencyGraphExtensions =
             this.GetValue(WorkspaceNodeKey.SourceFile file)
             |> _.Unpack(WorkspaceNode.sourceFile)
 
-
 /// Interface for managing files in an F# workspace.
 type FSharpWorkspaceFiles internal (depGraph: IThreadSafeDependencyGraph<_, _>) =
 

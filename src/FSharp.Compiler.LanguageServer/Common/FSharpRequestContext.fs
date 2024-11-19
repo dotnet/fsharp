@@ -4,8 +4,6 @@ open Microsoft.CommonLanguageServerProtocol.Framework
 open System.Threading
 open System.Threading.Tasks
 
-
-
 open System
 open System.Collections.Generic
 open Microsoft.VisualStudio.LanguageServer.Protocol
@@ -85,7 +83,6 @@ module TokenTypes =
     let toIndex (x: string) =
         SemanticTokenTypes.AllTypes |> Seq.findIndex (fun y -> y = x)
 
-
 type FSharpRequestContext(lspServices: ILspServices, logger: ILspLogger, workspace: FSharpWorkspace) =
     member _.LspServices = lspServices
     member _.Logger = logger
@@ -104,15 +101,13 @@ type FSharpRequestContext(lspServices: ILspServices, logger: ILspLogger, workspa
                 view.ForEach(fun item ->
                     let range = item.Range
                     let tokenType = item.Type |> TokenTypes.FSharpTokenTypeToLSP |> TokenTypes.toIndex
-                    tokens.Add( range, tokenType )
-                )
+                    tokens.Add(range, tokenType))
 
                 let syntacticClassifications =
                     TokenTypes.GetSyntacticTokenTypes source file.LocalPath
                     |> Seq.map (fun (r, t) -> (r, TokenTypes.toIndex t))
 
-                let allTokens =
-                    Seq.append tokens syntacticClassifications
+                let allTokens = Seq.append tokens syntacticClassifications
 
                 let lspFormatTokens =
                     allTokens
@@ -163,8 +158,7 @@ type FSharpRequestContext(lspServices: ILspServices, logger: ILspLogger, workspa
                     |> Seq.concat
                     |> Seq.toArray
 
-            | _ ->
-                return [||]
+            | _ -> return [||]
         }
 
 type ContextHolder(workspace, lspServices: ILspServices) =

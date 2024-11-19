@@ -54,7 +54,7 @@ module Internal =
             match dependents.TryGetValue id with
             | true, set ->
                 for dependent in set do
-                    nodes.[dependent] <- { nodes.[dependent] with Value = None }
+                    nodes[dependent] <- { nodes[dependent] with Value = None }
                     invalidateDependents dependent
             | false, _ -> ()
 
@@ -123,10 +123,10 @@ module Internal =
             match node.Value with
             | Some value -> value
             | None ->
-                let dependencies = dependencies.[id]
+                let dependencies = dependencies[id]
                 let values = dependencies |> Seq.map (fun id -> this.GetValue id)
                 let value = node.Compute values
-                nodes.[id] <- { node with Value = Some value }
+                nodes[id] <- { node with Value = Some value }
                 value
 
         member this.GetDependenciesOf(identifier: 'Id) =
