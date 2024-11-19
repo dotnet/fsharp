@@ -198,7 +198,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 Version = key.GetVersion()
             }
 
-        let wrapppedComputation =
+        let wrappedComputation =
             async {
                 use! _handler = Async.OnCancel (fun () -> log Canceled key)
                 let sw = Stopwatch.StartNew()
@@ -221,7 +221,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
 
             let countHit v = Interlocked.Increment &hits |> ignore; v
             let cacheSetNewJob () =
-                let job = Job(wrapppedComputation, cancelUnawaited = cancelUnawaitedJobs)
+                let job = Job(wrappedComputation, cancelUnawaited = cancelUnawaitedJobs)
                 cache.Set(key.Key, key.Version, key.Label, job)
                 job
 
