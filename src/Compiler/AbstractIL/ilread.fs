@@ -2107,7 +2107,37 @@ and typeDefReader ctxtH : ILTypeDefStored =
         let struct (endFieldsIdx, endMethodsIdx) = seekReadTypeDefRowExtents ctxt info idx
         let typars = seekReadGenericParams ctxt 0 (tomd_TypeDef, idx)
         let numTypars = typars.Length
-        let super = seekReadOptionalTypeDefOrRef ctxt numTypars AsObject extendsIdx
+
+        let kind =
+            let extendsTag = extendsIdx.tag
+            let extendsIdx = extendsIdx.index
+
+            if flags &&& 0x00000020 <> 0x0 then
+                ILTypeDefAdditionalFlags.Interface
+            else if extendsIdx = 0 && extendsTag = tdor_TypeDef then
+                ILTypeDefAdditionalFlags.Class
+            else
+                let extendsName =
+                    if extendsTag = tdor_TypeDef then
+                        let mutable addr = ctxt.rowAddr TableNames.TypeDef extendsIdx
+                        let _ = seekReadInt32Adv mdv &addr
+                        let nameIdx = seekReadStringIdx ctxt mdv &addr
+                        let namespaceIdx = seekReadStringIdx ctxt mdv &addr
+                        readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
+                    elif extendsTag = tdor_TypeRef then
+                        let _, nameIdx, namespaceIdx = seekReadTypeRefRow ctxt mdv extendsIdx
+                        readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
+                    else
+                        ""
+
+                match extendsName with
+                | "System.Enum" -> ILTypeDefAdditionalFlags.Enum
+                | "System.Delegate" when nm <> "System.MulticastDelegate" -> ILTypeDefAdditionalFlags.Delegate
+                | "System.MulticastDelegate" -> ILTypeDefAdditionalFlags.Delegate
+                | "System.ValueType" when nm <> "System.Enum" -> ILTypeDefAdditionalFlags.ValueType
+                | _ -> ILTypeDefAdditionalFlags.Class
+
+        let super = seekReadSuperType ctxt numTypars AsObject extendsIdx
         let layout = typeLayoutOfFlags ctxt mdv flags idx
 
         let hasLayout =
@@ -2176,9 +2206,9 @@ and typeDefReader ctxtH : ILTypeDefStored =
 
         let additionalFlags =
             if containsExtensionMethods then
-                ILTypeDefAdditionalFlags.CanContainExtensionMethods
+                ILTypeDefAdditionalFlags.CanContainExtensionMethods ||| kind
             else
-                ILTypeDefAdditionalFlags.None
+                kind
 
         let mdefs = seekReadMethods ctxt numTypars methodsIdx endMethodsIdx
         let fdefs = seekReadFields ctxt (numTypars, hasLayout) fieldsIdx endFieldsIdx
@@ -2455,6 +2485,12 @@ and seekReadOptionalTypeDefOrRef (ctxt: ILMetadataReader) numTypars boxity idx =
         None
     else
         Some(seekReadTypeDefOrRef ctxt numTypars boxity List.empty idx)
+
+and seekReadSuperType (ctxt: ILMetadataReader) numTypars boxity idx =
+    if idx = TaggedIndex(tdor_TypeDef, 0) then
+        emptyILExtends
+    else
+        InterruptibleLazy(fun () -> seekReadOptionalTypeDefOrRef ctxt numTypars boxity idx)
 
 and seekReadField ctxt mdv (numTypars, hasLayout) (idx: int) =
     let flags, nameIdx, typeIdx = seekReadFieldRow ctxt mdv idx
