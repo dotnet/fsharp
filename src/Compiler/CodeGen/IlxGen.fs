@@ -2659,7 +2659,7 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
     member cgbuf.ReallocLocal(cond, ranges, ty, isFixed, canBeReallocd) =
         match ResizeArray.tryFindIndexi cond locals with
         | Some j ->
-            let prevRanges, _, isFixed, canBeReallocd = locals[j]
+            let prevRanges, _, isFixed, _ = locals[j]
             locals[j] <- ((ranges @ prevRanges), ty, isFixed, canBeReallocd)
             j, true
         | None -> cgbuf.AllocLocal(ranges, ty, isFixed, canBeReallocd), false
