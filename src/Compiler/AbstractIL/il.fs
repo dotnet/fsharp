@@ -2610,7 +2610,7 @@ let convertTypeAccessFlags access =
     | ILTypeDefAccess.Nested ILMemberAccess.FamilyOrAssembly -> TypeAttributes.NestedFamORAssem
     | ILTypeDefAccess.Nested ILMemberAccess.Assembly -> TypeAttributes.NestedAssembly
 
-let convertTypeKind (kind: ILTypeDefAdditionalFlags) =
+let convertTypeKind kind =
     match kind with
     | HasFlag ILTypeDefAdditionalFlags.Interface -> TypeAttributes.Abstract ||| TypeAttributes.Interface
     | _ -> TypeAttributes.Class
