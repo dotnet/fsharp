@@ -336,7 +336,7 @@ type FSharpWorkspaceProjects internal (depGraph: IThreadSafeDependencyGraph<_, _
 
     member this.AddOrUpdate(projectPath: string, outputPath, compilerArgs) =
 
-        let directoryPath = Path.GetDirectoryName(projectPath)
+        let directoryPath = Path.GetDirectoryName(projectPath) |> Option.ofObj |> Option.defaultValue ""
 
         let fsharpFileExtensions = set [| ".fs"; ".fsi"; ".fsx" |]
 
