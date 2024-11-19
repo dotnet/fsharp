@@ -302,6 +302,8 @@
     <Compile Include="CompilerService\LruCache.fs" />
     <Compile Include="CompilerService\AsyncLock.fs" />
     <Compile Include="CompilerService\AsyncMemoize.fs" />
+    <Compile Include="CompilerService\FSharpWorkspace.fs" />
+    <Compile Include="CompilerService\DependencyGraph.fs" />
     <Compile Include="Debugger\PortablePdbs.fs" />
     <Compile Include="Diagnostics\async.fs" />
     <Compile Include="Diagnostics\General.fs" />
@@ -366,5 +368,6 @@
   <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
     <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
   </ItemGroup>
+
 
 </Project>
