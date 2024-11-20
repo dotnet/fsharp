@@ -7,8 +7,11 @@ open System.Threading
 type Cancellable =
     static let tokenHolder = AsyncLocal<CancellationToken voption>()
 
+    static let guard = String.IsNullOrWhiteSpace (Environment.GetEnvironmentVariable("DISABLE_CHECKANDTHROW_ASSERT"))
+
     static let ensureToken msg =
-        tokenHolder.Value |> ValueOption.defaultWith (fun () -> failwith msg)
+        tokenHolder.Value
+        |> ValueOption.defaultWith (fun () -> if guard then failwith msg else CancellationToken.None)
 
     static member Token = ensureToken "Token not available outside of Cancellable computation."
 
