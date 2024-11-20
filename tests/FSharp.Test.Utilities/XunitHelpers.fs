@@ -4,6 +4,7 @@ open System
 open Xunit.Sdk
 open Xunit.Abstractions
 
+open FSharp.Compiler
 open TestFramework
 
 /// Installs console support for parallel test runs.
@@ -14,6 +15,7 @@ type FSharpXunitFramework(sink: IMessageSink) =
         // right at the start of the test run is here in the constructor.
         // This gets executed once per test assembly.
         MessageSink.sinkWriter |> ignore
+        Cancellable.EnsureCheckAndThrowInvokedWithAmbientCancellable()
         TestConsole.install()
 
     interface IDisposable with

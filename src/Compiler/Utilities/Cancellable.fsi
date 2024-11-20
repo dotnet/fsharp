@@ -8,6 +8,8 @@ type Cancellable =
     static member internal UsingToken: CancellationToken -> IDisposable
     static member Token: CancellationToken
     static member CheckAndThrow: unit -> unit
+    static member internal CheckAndThrowEvent: IEvent<CancellationToken voption>
+    static member internal EnsureCheckAndThrowInvokedWithAmbientCancellable: unit -> unit
 
 namespace Internal.Utilities.Library
 
