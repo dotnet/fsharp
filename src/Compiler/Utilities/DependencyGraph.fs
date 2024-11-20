@@ -1,7 +1,9 @@
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+
 /// This Dependency Graph provides a way to maintain an up-to-date but lazy set of dependent values.
 /// When changes are applied to the graph (either vertices change value or edges change), no computation is performed.
 /// Only when a value is requested it is lazily computed and thereafter stored until invalidated by further changes.
-module FSharp.Compiler.LanguageServer.Common.DependencyGraph
+module internal Internal.Utilities.DependencyGraph
 
 open System.Collections.Generic
 
@@ -52,7 +54,7 @@ module Internal =
             match dependents.TryGetValue id with
             | true, set ->
                 for dependent in set do
-                    nodes.[dependent] <- { nodes.[dependent] with Value = None }
+                    nodes[dependent] <- { nodes[dependent] with Value = None }
                     invalidateDependents dependent
             | false, _ -> ()
 
@@ -64,12 +66,7 @@ module Internal =
             nodes |> insert node.Id node
             invalidateDependents node.Id
 
-        member _.Debug =
-            {|
-                Nodes = nodes
-                Dependencies = dependencies
-                Dependents = dependents
-            |}
+        member _.Debug_Nodes = nodes
 
         member _.AddOrUpdateNode(id: 'Id, value: 'Val) =
             addNode
@@ -121,10 +118,10 @@ module Internal =
             match node.Value with
             | Some value -> value
             | None ->
-                let dependencies = dependencies.[id]
+                let dependencies = dependencies[id]
                 let values = dependencies |> Seq.map (fun id -> this.GetValue id)
                 let value = node.Compute values
-                nodes.[id] <- { node with Value = Some value }
+                nodes[id] <- { node with Value = Some value }
                 value
 
         member this.GetDependenciesOf(identifier: 'Id) =

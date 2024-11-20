@@ -1,8 +1,9 @@
-module DependencyGraphTests
+module CompilerService.DependencyGraph
 
-open FSharp.Compiler.LanguageServer.Common.DependencyGraph.Internal
 open Xunit
-open FSharp.Compiler.LanguageServer.Common.DependencyGraph
+open Internal.Utilities.DependencyGraph.Internal
+open Internal.Utilities.DependencyGraph
+
 
 [<Fact>]
 let ``Can add a node to the graph`` () =
@@ -41,14 +42,14 @@ let ``Can update a value`` () =
     graph.AddOrUpdateNode(1, 2) |> ignore
 
     // Values were invalidated
-    Assert.Equal(None, graph.Debug.Nodes[2].Value)
-    Assert.Equal(None, graph.Debug.Nodes[3].Value)
-    Assert.Equal(None, graph.Debug.Nodes[4].Value)
+    Assert.Equal(None, graph.Debug_Nodes[2].Value)
+    Assert.Equal(None, graph.Debug_Nodes[3].Value)
+    Assert.Equal(None, graph.Debug_Nodes[4].Value)
 
     Assert.Equal(7, graph.GetValue(4))
-    Assert.Equal(Some 3, graph.Debug.Nodes[2].Value)
-    Assert.Equal(Some 4, graph.Debug.Nodes[3].Value)
-    Assert.Equal(Some 7, graph.Debug.Nodes[4].Value)
+    Assert.Equal(Some 3, graph.Debug_Nodes[2].Value)
+    Assert.Equal(Some 4, graph.Debug_Nodes[3].Value)
+    Assert.Equal(Some 7, graph.Debug_Nodes[4].Value)
 
 [<Fact>]
 let ``Dependencies are ordered`` () =
@@ -153,8 +154,8 @@ let ``GraphBuilder with chained AddDependentNode calls`` () =
     builder.Graph.AddOrUpdateNode(1, CaseA 2) |> ignore
 
     // Values were invalidated
-    Assert.Equal(None, graph.Debug.Nodes[2].Value)
-    Assert.Equal(None, graph.Debug.Nodes[3].Value)
+    Assert.Equal(None, graph.Debug_Nodes[2].Value)
+    Assert.Equal(None, graph.Debug_Nodes[3].Value)
 
     // Check new values
     Assert.Equal(CaseB "2", graph.GetValue(2))

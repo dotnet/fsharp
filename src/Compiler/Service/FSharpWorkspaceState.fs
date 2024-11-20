@@ -1,5 +1,7 @@
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+
 /// Code to handle state management in an F# workspace.
-module FSharp.Compiler.LanguageServer.Common.FSharpWorkspaceState
+module FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState
 
 open System
 open System.IO
@@ -8,8 +10,7 @@ open System.Collections.Concurrent
 
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open Internal.Utilities.Collections
-
-open DependencyGraph
+open Internal.Utilities.DependencyGraph
 
 #nowarn "57"
 
@@ -221,6 +222,11 @@ module internal WorkspaceDependencyGraphExtensions =
             |> Seq.map this.GetValue
             |> _.UnpackMany(WorkspaceNode.projectSnapshot)
 
+        [<Extension>]
+        static member GetSourceFile(this: IDependencyGraph<_, _>, file) =
+            this.GetValue(WorkspaceNodeKey.SourceFile file)
+            |> _.Unpack(WorkspaceNode.sourceFile)
+
 /// Interface for managing files in an F# workspace.
 type FSharpWorkspaceFiles internal (depGraph: IThreadSafeDependencyGraph<_, _>) =
 
@@ -330,7 +336,8 @@ type FSharpWorkspaceProjects internal (depGraph: IThreadSafeDependencyGraph<_, _
 
     member this.AddOrUpdate(projectPath: string, outputPath, compilerArgs) =
 
-        let directoryPath = Path.GetDirectoryName(projectPath)
+        let directoryPath =
+            Path.GetDirectoryName(projectPath) |> Option.ofObj |> Option.defaultValue ""
 
         let fsharpFileExtensions = set [| ".fs"; ".fsi"; ".fsx" |]
 
