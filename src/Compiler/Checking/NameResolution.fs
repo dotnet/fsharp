@@ -3369,7 +3369,10 @@ let rec ResolvePatternLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv nu
 exception UpperCaseIdentifierInPattern of range
 
 /// Indicates if a warning should be given for the use of upper-case identifiers in patterns
-type WarnOnUpperFlag = WarnOnUpperCase | AllIdsOK
+type WarnOnUpperFlag =
+    | WarnOnUpperUnionCaseLabel
+    | WarnOnUpperVariablePatterns
+    | AllIdsOK
 
 // Long ID in a pattern
 let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified warnOnUpper newDef m ad nenv numTyArgsOpt (id: Ident) (rest: Ident list) extraDotAtTheEnd =
@@ -3389,13 +3392,21 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
             | true, res when not newDef -> ResolveUnqualifiedItem ncenv nenv m res
             | _ ->
                 // Single identifiers in patterns - variable bindings
-                if
-                    not newDef
-                    && warnOnUpper = WarnOnUpperCase
-                    && id.idText.Length >= 3
-                    && System.Char.ToLowerInvariant id.idText[0] <> id.idText[0]
+                let supportsDontWarnOnUppercaseIdentifiers = ncenv.g.langVersion.SupportsFeature(LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns)
+                let isUpperCaseIdentifier = (not newDef && System.Char.ToLowerInvariant id.idText[0] <> id.idText[0])
+                if (supportsDontWarnOnUppercaseIdentifiers && isUpperCaseIdentifier)
                 then
-                    warning(UpperCaseIdentifierInPattern m)
+                    match warnOnUpper with
+                    | WarnOnUpperUnionCaseLabel -> warning(UpperCaseIdentifierInPattern m)
+                    | WarnOnUpperVariablePatterns
+                    | AllIdsOK -> ()
+                else
+                    // HACK: This is an historical hack that seems to related the use country and language codes, which are very common in codebases
+                    if isUpperCaseIdentifier && id.idText.Length >= 3 then
+                        match warnOnUpper with
+                        | WarnOnUpperUnionCaseLabel
+                        | WarnOnUpperVariablePatterns ->  warning(UpperCaseIdentifierInPattern m)
+                        | AllIdsOK -> ()
 
                 // If there's an extra dot, we check whether the single identifier is a union, module or namespace and report it to the sink for the sake of tooling
                 match extraDotAtTheEnd with

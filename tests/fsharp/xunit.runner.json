@@ -1,5 +1,4 @@
 {
   "$schema": "https://xunit.net/schema/current/xunit.runner.schema.json",
-  "appDomain": "ifAvailable",
-  "shadowCopy": false
+  "appDomain": "denied"
 }

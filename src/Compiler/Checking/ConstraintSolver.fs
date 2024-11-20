@@ -1035,7 +1035,6 @@ and SolveTypMeetsTyparConstraints (csenv: ConstraintSolverEnv) ndeep m2 trace ty
 
 and shouldWarnUselessNullCheck (csenv:ConstraintSolverEnv) =
     csenv.g.checkNullness &&
-    csenv.IsSpeculativeForMethodOverloading = false &&
     csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.IsSome    
 
 // nullness1: actual
@@ -1102,7 +1101,7 @@ and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: Option
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull ->             
             CompleteD
         | NullnessInfo.WithoutNull, NullnessInfo.WithNull -> 
-            if csenv.g.checkNullness && not csenv.IsSpeculativeForMethodOverloading then               
+            if csenv.g.checkNullness then               
                  WarnD(ConstraintSolverNullnessWarningWithTypes(csenv.DisplayEnv, ty1, ty2, n1, n2, csenv.m, m2)) 
             else
                 CompleteD
@@ -2682,8 +2681,7 @@ and SolveTypeUseNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
             do! WarnD (ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsTrueValue(NicePrint.minimalStringOfType denv ty), m, m2))
         elif TypeNullIsExtraValueNew g m ty then 
             if g.checkNullness then
-                let denv = { denv with showNullnessAnnotations = Some true }
-                do! WarnD (ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfType denv ty), m, m2))
+                do! WarnD (ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfTypeWithNullness denv ty), m, m2))
         else
             match tryDestTyparTy g ty with
             | ValueSome tp ->
@@ -2710,8 +2708,7 @@ and SolveNullnessNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: O
             | NullnessInfo.WithoutNull -> ()
             | NullnessInfo.WithNull -> 
                 if g.checkNullness && TypeNullIsExtraValueNew g m ty then
-                    let denv = { denv with showNullnessAnnotations = Some true }
-                    return! WarnD(ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfType denv ty), m, m2))
+                    return! WarnD(ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsExtraValue(NicePrint.minimalStringOfTypeWithNullness denv ty), m, m2))
     }
 
 and SolveTypeCanCarryNullness (csenv: ConstraintSolverEnv)  ty nullness =

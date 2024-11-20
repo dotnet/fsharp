@@ -337,6 +337,11 @@
         <target state="translated">rimuovi criterio nell'utilizzo dell'associazione</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureDontWarnOnUppercaseIdentifiersInBindingPatterns">
+        <source>Don't warn on uppercase identifiers in binding patterns</source>
+        <target state="new">Don't warn on uppercase identifiers in binding patterns</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDotlessFloat32Literal">
         <source>dotless float32 literal</source>
         <target state="translated">valore letterale float32 senza punti</target>
@@ -1335,6 +1340,11 @@
       <trans-unit id="tcDotLambdaAtNotSupportedExpression">
         <source>Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'.</source>
         <target state="translated">La sintassi lambda a sintassi abbreviata è supportata solo per le espressioni atomiche, ad esempio metodo, proprietà, campo o indicizzatore nell'argomento '_' implicito. Ad esempio: 'let f = _. Lunghezza'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcDowncastFromNullableToWithoutNull">
+        <source>Nullness warning: Downcasting from '{0}' into '{1}' can introduce unexpected null values. Cast to '{2}|null' instead or handle the null before downcasting.</source>
+        <target state="new">Nullness warning: Downcasting from '{0}' into '{1}' can introduce unexpected null values. Cast to '{2}|null' instead or handle the null before downcasting.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcEmptyBodyRequiresBuilderZeroMethod">

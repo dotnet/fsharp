@@ -1,7 +1,7 @@
 ﻿module FSharp.Compiler.Service.Tests.EditorTests
 
 open Xunit
-open FsUnit
+open FSharp.Test.Assert
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Service.Tests.Common

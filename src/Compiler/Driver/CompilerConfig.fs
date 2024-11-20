@@ -566,7 +566,7 @@ type TcConfigBuilder =
         mutable optSettings: Optimizer.OptimizationSettings
         mutable emitTailcalls: bool
         mutable deterministic: bool
-        mutable concurrentBuild: bool
+        mutable parallelParsing: bool
         mutable parallelIlxGen: bool
         mutable emitMetadataAssembly: MetadataAssemblyGeneration
         mutable preferredUiLang: string option
@@ -817,7 +817,7 @@ type TcConfigBuilder =
                 }
             emitTailcalls = true
             deterministic = false
-            concurrentBuild = true
+            parallelParsing = true
             parallelIlxGen = FSharpExperimentalFeaturesEnabledAutomatically
             emitMetadataAssembly = MetadataAssemblyGeneration.None
             preferredUiLang = None
@@ -1380,7 +1380,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.optSettings = data.optSettings
     member _.emitTailcalls = data.emitTailcalls
     member _.deterministic = data.deterministic
-    member _.concurrentBuild = data.concurrentBuild
+    member _.parallelParsing = data.parallelParsing
     member _.parallelIlxGen = data.parallelIlxGen
     member _.emitMetadataAssembly = data.emitMetadataAssembly
     member _.pathMap = data.pathMap

@@ -13,7 +13,7 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open TestFramework
-open FsUnit
+open FSharp.Test.Assert
 open Xunit
 open FSharp.Test.Utilities
 
@@ -476,7 +476,7 @@ let assertRange
 [<AutoOpen>]
 module TempDirUtils =
     let getTempPath dir =
-        Path.Combine(Path.GetTempPath(), dir)
+        Path.Combine(tempDirectoryOfThisTestRun.Value.FullName, dir)
 
     /// Returns the file name part of a temp file name created with tryCreateTemporaryFileName ()
     /// and an added process id and thread id to ensure uniqueness between threads.

@@ -114,3 +114,5 @@ Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
                                          locked by the F# Interactive process
 --multiemit[+|-]                         Emit multiple assemblies (on by
                                          default)
+
+See https://learn.microsoft.com/dotnet/fsharp/language-reference/fsharp-interactive-options for more details.

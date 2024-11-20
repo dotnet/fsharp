@@ -589,7 +589,7 @@ stages:
         # MacOS
         - job: MacOS
           pool:
-            vmImage: macos-12
+            vmImage: macos-latest
           timeoutInMinutes: 120
           variables:
           - name: _SignType
@@ -727,7 +727,7 @@ stages:
         # Plain FCS build Mac
         - job: Plain_Build_MacOS
           pool:
-            vmImage: macos-12
+            vmImage: macos-latest
           variables:
           - name: _BuildConfig
             value: Debug
@@ -808,3 +808,23 @@ stages:
               artifactName: 'Trim Test Logs Attempt $(System.JobAttempt) Logs $(_kind)'
             continueOnError: true
             condition: always()
+        - job: ILVerify
+          pool:
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          steps:
+          - checkout: self
+            clean: true
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              useGlobalJson: true
+              includePreviewVersions: true
+              workingDirectory: $(Build.SourcesDirectory)
+              installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: dotnet tool restore
+            displayName: Restore dotnet tools
+          - pwsh: .\eng\ilverify.ps1
+            displayName: Run ILVerify
+            workingDirectory: $(Build.SourcesDirectory)
