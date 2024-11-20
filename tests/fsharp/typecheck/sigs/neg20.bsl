@@ -109,7 +109,7 @@ neg20.fs(128,19,128,22): typecheck error FS0001: This expression was expected to
 but here has type
     'obj'    
 
-neg20.fs(131,5,131,24): typecheck error FS0041: No overloads match for method 'OM3'.
+neg20.fs(131,12,131,15): typecheck error FS0041: No overloads match for method 'OM3'.
 
 Known types of arguments: string * obj
 
@@ -133,19 +133,19 @@ neg20.fs(158,13,158,36): typecheck error FS0502: The member or object constructo
 
 neg20.fs(159,13,159,32): typecheck error FS0502: The member or object constructor 'SM5' takes 2 type argument(s) but is here given 1. The required signature is 'static member C.SM5<'b,'c> : y: 'a * z: 'b -> int'.
 
-neg20.fs(162,13,162,24): typecheck error FS0502: The member or object constructor 'M1' takes 0 type argument(s) but is here given 1. The required signature is 'member C.M1: unit -> int'.
+neg20.fs(162,15,162,24): typecheck error FS0502: The member or object constructor 'M1' takes 0 type argument(s) but is here given 1. The required signature is 'member C.M1: unit -> int'.
 
-neg20.fs(163,13,163,25): typecheck error FS0502: The member or object constructor 'M2' takes 0 type argument(s) but is here given 1. The required signature is 'member C.M2: y: int -> int'.
+neg20.fs(163,15,163,25): typecheck error FS0502: The member or object constructor 'M2' takes 0 type argument(s) but is here given 1. The required signature is 'member C.M2: y: int -> int'.
 
-neg20.fs(164,13,164,27): typecheck error FS0502: The member or object constructor 'M3' takes 0 type argument(s) but is here given 1. The required signature is 'member C.M3: y: int * z: int -> int'.
+neg20.fs(164,15,164,27): typecheck error FS0502: The member or object constructor 'M3' takes 0 type argument(s) but is here given 1. The required signature is 'member C.M3: y: int * z: int -> int'.
 
 neg20.fs(165,27,165,28): typecheck error FS0495: The member or object constructor 'M3' has no argument or settable return property 'x'. The required signature is member C.M3: y: int * z: int -> int.
 
-neg20.fs(166,13,166,35): typecheck error FS0502: The member or object constructor 'M4' takes 1 type argument(s) but is here given 2. The required signature is 'member C.M4: y: 'a * z: 'b -> int'.
+neg20.fs(166,15,166,35): typecheck error FS0502: The member or object constructor 'M4' takes 1 type argument(s) but is here given 2. The required signature is 'member C.M4: y: 'a * z: 'b -> int'.
 
-neg20.fs(167,13,167,31): typecheck error FS0502: The member or object constructor 'M5' takes 2 type argument(s) but is here given 1. The required signature is 'member C.M5<'b,'c> : y: 'a * z: 'b -> int'.
+neg20.fs(167,15,167,31): typecheck error FS0502: The member or object constructor 'M5' takes 2 type argument(s) but is here given 1. The required signature is 'member C.M5<'b,'c> : y: 'a * z: 'b -> int'.
 
-neg20.fs(182,14,182,31): typecheck error FS0041: No overloads match for method 'M'.
+neg20.fs(182,17,182,18): typecheck error FS0041: No overloads match for method 'M'.
 
 Known types of arguments: string * objnull
 
@@ -179,7 +179,7 @@ neg20.fs(184,34,184,39): typecheck error FS0001: This expression was expected to
 but here has type
     'objnull'    
 
-neg20.fs(188,14,188,31): typecheck error FS0041: No overloads match for method 'M'.
+neg20.fs(188,17,188,18): typecheck error FS0041: No overloads match for method 'M'.
 
 Known types of arguments: string * objnull
 
@@ -289,7 +289,7 @@ neg20.fs(319,8,319,17): typecheck error FS3132: This type definition may not hav
 
 neg20.fs(322,8,322,18): typecheck error FS3132: This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.
 
-neg20.fs(335,11,335,24): typecheck error FS0041: A unique overload for method 'String' could not be determined based on type information prior to this program point. A type annotation may be needed.
+neg20.fs(335,18,335,24): typecheck error FS0041: A unique overload for method 'String' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known type of argument: 'a0
 
@@ -298,7 +298,7 @@ Candidates:
  - System.String(value: nativeptr<char>) : System.String
  - System.String(value: nativeptr<sbyte>) : System.String
 
-neg20.fs(336,11,336,22): typecheck error FS0041: A unique overload for method 'Guid' could not be determined based on type information prior to this program point. A type annotation may be needed.
+neg20.fs(336,18,336,22): typecheck error FS0041: A unique overload for method 'Guid' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known type of argument: 'a0
 
