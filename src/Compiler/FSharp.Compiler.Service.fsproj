@@ -546,8 +546,6 @@
     <Compile Include="Service\service.fs" />
     <Compile Include="Service\FSharpWorkspaceState.fs" />
     <Compile Include="Service\FSharpWorkspaceQuery.fs" />
-    <Compile Include="Service\FSharpWorkspaceState.fs" />
-    <Compile Include="Service\FSharpWorkspaceQuery.fs" />
     <Compile Include="Service\FSharpWorkspace.fs" />
     <Compile Include="Service\ServiceInterfaceStubGenerator.fsi" />
     <Compile Include="Service\ServiceInterfaceStubGenerator.fs" />
