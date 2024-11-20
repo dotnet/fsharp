@@ -5,32 +5,24 @@ open System.Threading
 
 [<Sealed>]
 type Cancellable =
-    static let token = AsyncLocal<CancellationToken voption>()
+    static let tokenHolder = AsyncLocal<CancellationToken voption>()
 
-    static let checkAndThrowEvent = Event<CancellationToken voption>()
+    static let ensureToken msg =
+        tokenHolder.Value |> ValueOption.defaultWith (fun () -> failwith msg)
 
-    static member Token = token.Value |> ValueOption.defaultValue CancellationToken.None
+    static member Token = ensureToken "Token not available outside of Cancellable computation."
 
     static member UsingToken(ct) =
-        let oldCt = token.Value
-        token.Value <- ValueSome ct
+        let oldCt = tokenHolder.Value
+        tokenHolder.Value <- ValueSome ct
 
         { new IDisposable with
-            member _.Dispose() = token.Value <- oldCt
+            member _.Dispose() = tokenHolder.Value <- oldCt
         }
 
-    static member CheckAndThrowEvent = checkAndThrowEvent.Publish
-
-    static member EnsureCheckAndThrowInvokedWithAmbientCancellable() =
-        Cancellable.CheckAndThrowEvent.Add
-        <| fun tokenOpt ->
-            if tokenOpt.IsNone then
-                failwith "CheckAndThrow invoked outside of Cancellable."
-
     static member CheckAndThrow() =
-        checkAndThrowEvent.Trigger token.Value
-        assert token.Value.IsSome
-        Cancellable.Token.ThrowIfCancellationRequested()
+        let token = ensureToken "CheckAndThrow invoked outside of Cancellable computation."
+        token.ThrowIfCancellationRequested()
 
 namespace Internal.Utilities.Library
 

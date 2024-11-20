@@ -20,6 +20,7 @@ let mutable private wasCancelled = false
 let runCancelFirstTime f =
     let mutable requestCount = 0
     fun () ->
+        use _ = Cancellable.UsingToken cts.Token
         if requestCount = 0 then
             cts.Cancel()
 
@@ -147,6 +148,7 @@ let referenceReaderProject getPreTypeDefs (cancelOnModuleAccess: bool) (options:
 let parseAndCheck path source options =
     cts <- new CancellationTokenSource()
     wasCancelled <- false
+    use _ = Cancellable.UsingToken cts.Token
 
     try
         match Async.RunSynchronously(checker.ParseAndCheckFileInProject(path, 0, SourceText.ofString source, options), cancellationToken = cts.Token) with
