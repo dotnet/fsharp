@@ -7,23 +7,6 @@
 ! AssemblyReference: System.Reflection.Emit.ILGeneration
 ! AssemblyReference: System.Reflection.Metadata
 ! AssemblyReference: netstandard
-<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: <Dependencies>j__TPar Dependencies
-<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: <Dependencies>j__TPar get_Dependencies()
-<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: <Dependents>j__TPar Dependents
-<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: <Dependents>j__TPar get_Dependents()
-<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: <Nodes>j__TPar Nodes
-<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: <Nodes>j__TPar get_Nodes()
-<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: Boolean Equals(<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar])
-<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: Boolean Equals(<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar], System.Collections.IEqualityComparer)
-<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: Boolean Equals(System.Object)
-<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: Int32 CompareTo(<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar])
-<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: Int32 CompareTo(System.Object)
-<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: Int32 GetHashCode()
-<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: System.String ToString()
-<>f__AnonymousType4056634344`3[<Dependencies>j__TPar,<Dependents>j__TPar,<Nodes>j__TPar]: Void .ctor(<Dependencies>j__TPar, <Dependents>j__TPar, <Nodes>j__TPar)
 FSharp.Compiler.AbstractIL.IL+ILArgConvention+Tags: Int32 CDecl
 FSharp.Compiler.AbstractIL.IL+ILArgConvention+Tags: Int32 Default
 FSharp.Compiler.AbstractIL.IL+ILArgConvention+Tags: Int32 FastCall
@@ -12349,67 +12332,6 @@ FSharp.Compiler.Xml.XmlDoc: System.String[] GetElaboratedXmlLines()
 FSharp.Compiler.Xml.XmlDoc: System.String[] UnprocessedLines
 FSharp.Compiler.Xml.XmlDoc: System.String[] get_UnprocessedLines()
 FSharp.Compiler.Xml.XmlDoc: Void .ctor(System.String[], FSharp.Compiler.Text.Range)
-Internal.Utilities.DependencyGraph+DependencyNode`2[Identifier,Value]: Identifier Id
-Internal.Utilities.DependencyGraph+DependencyNode`2[Identifier,Value]: Identifier get_Id()
-Internal.Utilities.DependencyGraph+DependencyNode`2[Identifier,Value]: Microsoft.FSharp.Core.FSharpFunc`2[System.Collections.Generic.IEnumerable`1[Value],Value] Compute
-Internal.Utilities.DependencyGraph+DependencyNode`2[Identifier,Value]: Microsoft.FSharp.Core.FSharpFunc`2[System.Collections.Generic.IEnumerable`1[Value],Value] get_Compute()
-Internal.Utilities.DependencyGraph+DependencyNode`2[Identifier,Value]: Microsoft.FSharp.Core.FSharpOption`1[Value] Value
-Internal.Utilities.DependencyGraph+DependencyNode`2[Identifier,Value]: Microsoft.FSharp.Core.FSharpOption`1[Value] get_Value()
-Internal.Utilities.DependencyGraph+DependencyNode`2[Identifier,Value]: System.String ToString()
-Internal.Utilities.DependencyGraph+DependencyNode`2[Identifier,Value]: Void .ctor(Identifier, Microsoft.FSharp.Core.FSharpOption`1[Value], Microsoft.FSharp.Core.FSharpFunc`2[System.Collections.Generic.IEnumerable`1[Value],Value])
-Internal.Utilities.DependencyGraph+GraphBuilder`4[Id,Val,T,State]: GraphBuilder`4 AddDependentNode[a,b](Id, Microsoft.FSharp.Core.FSharpFunc`2[T,Val], Microsoft.FSharp.Core.FSharpFunc`2[System.Collections.Generic.IEnumerable`1[Val],a], b)
-Internal.Utilities.DependencyGraph+GraphBuilder`4[Id,Val,T,State]: GraphBuilder`4 AddDependentNode[a](Id, Microsoft.FSharp.Core.FSharpFunc`2[T,Val], Microsoft.FSharp.Core.FSharpFunc`2[System.Collections.Generic.IEnumerable`1[Val],a])
-Internal.Utilities.DependencyGraph+GraphBuilder`4[Id,Val,T,State]: IDependencyGraph`2 Graph
-Internal.Utilities.DependencyGraph+GraphBuilder`4[Id,Val,T,State]: IDependencyGraph`2 get_Graph()
-Internal.Utilities.DependencyGraph+GraphBuilder`4[Id,Val,T,State]: State State
-Internal.Utilities.DependencyGraph+GraphBuilder`4[Id,Val,T,State]: State get_State()
-Internal.Utilities.DependencyGraph+GraphBuilder`4[Id,Val,T,State]: System.Collections.Generic.IEnumerable`1[Id] Ids
-Internal.Utilities.DependencyGraph+GraphBuilder`4[Id,Val,T,State]: System.Collections.Generic.IEnumerable`1[Id] get_Ids()
-Internal.Utilities.DependencyGraph+GraphBuilder`4[Id,Val,T,State]: Void .ctor(IDependencyGraph`2, System.Collections.Generic.IEnumerable`1[Id], Microsoft.FSharp.Core.FSharpFunc`2[System.Collections.Generic.IEnumerable`1[Val],T], State)
-Internal.Utilities.DependencyGraph+GraphExtensions: System.Collections.Generic.IEnumerable`1[a] UnpackMany[NodeValue,a](System.Collections.Generic.IEnumerable`1[NodeValue], Microsoft.FSharp.Core.FSharpFunc`2[NodeValue,Microsoft.FSharp.Core.FSharpOption`1[a]])
-Internal.Utilities.DependencyGraph+GraphExtensions: System.Tuple`2[a,System.Collections.Generic.IEnumerable`1[b]] UnpackOneMany[NodeValue,a,b](System.Collections.Generic.IEnumerable`1[NodeValue], Microsoft.FSharp.Core.FSharpFunc`2[NodeValue,Microsoft.FSharp.Core.FSharpOption`1[a]], Microsoft.FSharp.Core.FSharpFunc`2[NodeValue,Microsoft.FSharp.Core.FSharpOption`1[b]])
-Internal.Utilities.DependencyGraph+GraphExtensions: UnpackedDependency UnpackOne[NodeValue,UnpackedDependency](System.Collections.Generic.IEnumerable`1[NodeValue], Microsoft.FSharp.Core.FSharpFunc`2[NodeValue,Microsoft.FSharp.Core.FSharpOption`1[UnpackedDependency]])
-Internal.Utilities.DependencyGraph+GraphExtensions: a Unpack[NodeValue,a](NodeValue, Microsoft.FSharp.Core.FSharpFunc`2[NodeValue,Microsoft.FSharp.Core.FSharpOption`1[a]])
-Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]: System.Collections.Generic.IEnumerable`1[Id] AddList(System.Collections.Generic.IEnumerable`1[System.Tuple`2[Id,Val]])
-Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]: System.Collections.Generic.IEnumerable`1[Id] GetDependenciesOf(Id)
-Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]: System.Collections.Generic.IEnumerable`1[Id] GetDependentsOf(Id)
-Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]: System.Collections.Generic.IEnumerable`1[Internal.Utilities.DependencyGraph+DependencyNode`2[Id,Val]] Debug_GetNodes(Microsoft.FSharp.Core.FSharpFunc`2[Id,System.Boolean])
-Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]: System.String Debug_RenderMermaid(Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[Id,Id]])
-Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]: Val GetValue(Id)
-Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]: Void AddDependency(Id, Id)
-Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]: Void AddOrUpdateNode(Id, System.Collections.Generic.IEnumerable`1[Id], Microsoft.FSharp.Core.FSharpFunc`2[System.Collections.Generic.IEnumerable`1[Val],Val])
-Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]: Void AddOrUpdateNode(Id, Val)
-Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]: Void OnWarning(Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit])
-Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]: Void RemoveDependency(Id, Id)
-Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]: Void RemoveNode(Id)
-Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]: Void UpdateNode(Id, Microsoft.FSharp.Core.FSharpFunc`2[Val,Val])
-Internal.Utilities.DependencyGraph+IThreadSafeDependencyGraph`2[Id,Val]: a Transact[a](Microsoft.FSharp.Core.FSharpFunc`2[Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val],a])
-Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: <>f__AnonymousType4056634344`3[System.Collections.Generic.Dictionary`2[Id,System.Collections.Generic.HashSet`1[Id]],System.Collections.Generic.Dictionary`2[Id,System.Collections.Generic.HashSet`1[Id]],System.Collections.Generic.Dictionary`2[Id,Internal.Utilities.DependencyGraph+DependencyNode`2[Id,Val]]] Debug
-Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: <>f__AnonymousType4056634344`3[System.Collections.Generic.Dictionary`2[Id,System.Collections.Generic.HashSet`1[Id]],System.Collections.Generic.Dictionary`2[Id,System.Collections.Generic.HashSet`1[Id]],System.Collections.Generic.Dictionary`2[Id,Internal.Utilities.DependencyGraph+DependencyNode`2[Id,Val]]] get_Debug()
-Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: Microsoft.FSharp.Collections.FSharpList`1[Id] AddList(System.Collections.Generic.IEnumerable`1[System.Tuple`2[Id,Val]])
-Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: System.Collections.Generic.IEnumerable`1[Id] GetDependenciesOf(Id)
-Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: System.Collections.Generic.IEnumerable`1[Id] GetDependentsOf(Id)
-Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: System.Collections.Generic.IEnumerable`1[Internal.Utilities.DependencyGraph+DependencyNode`2[Id,Val]] Debug_GetNodes(Microsoft.FSharp.Core.FSharpFunc`2[Id,System.Boolean])
-Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: System.String Debug_RenderMermaid(Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[Id,Id]])
-Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: Val GetValue(Id)
-Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: Void .ctor()
-Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: Void AddDependency(Id, Id)
-Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: Void AddOrUpdateNode(Id, System.Collections.Generic.IEnumerable`1[Id], Microsoft.FSharp.Core.FSharpFunc`2[System.Collections.Generic.IEnumerable`1[Val],Val])
-Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: Void AddOrUpdateNode(Id, Val)
-Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: Void OnWarning(Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit])
-Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: Void RemoveDependency(Id, Id)
-Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: Void RemoveNode(Id)
-Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]: Void UpdateNode(Id, Microsoft.FSharp.Core.FSharpFunc`2[Val,Val])
-Internal.Utilities.DependencyGraph+Internal: Internal.Utilities.DependencyGraph+Internal+DependencyGraph`2[Id,Val]
-Internal.Utilities.DependencyGraph+LockOperatedDependencyGraph`2[Id,Val]: Void .ctor()
-Internal.Utilities.DependencyGraph: Internal.Utilities.DependencyGraph+DependencyNode`2[Identifier,Value]
-Internal.Utilities.DependencyGraph: Internal.Utilities.DependencyGraph+GraphBuilder`4[Id,Val,T,State]
-Internal.Utilities.DependencyGraph: Internal.Utilities.DependencyGraph+GraphExtensions
-Internal.Utilities.DependencyGraph: Internal.Utilities.DependencyGraph+IDependencyGraph`2[Id,Val]
-Internal.Utilities.DependencyGraph: Internal.Utilities.DependencyGraph+IThreadSafeDependencyGraph`2[Id,Val]
-Internal.Utilities.DependencyGraph: Internal.Utilities.DependencyGraph+Internal
-Internal.Utilities.DependencyGraph: Internal.Utilities.DependencyGraph+LockOperatedDependencyGraph`2[Id,Val]
-Internal.Utilities.DependencyGraph: Void insert[a,b](a, b, System.Collections.Generic.Dictionary`2[a,b])
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: System.Collections.Generic.IDictionary`2[TDictKey,TDictValue] CreateDictionary(T[])
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: System.Collections.Generic.IDictionary`2[TDictKey,TDictValue] GetDictionary()
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: T[] GetArray()
