@@ -521,7 +521,8 @@ let ComputeTypeAccess (tref: ILTypeRef) hidden (accessibility: Accessibility) re
 
 /// Indicates how type parameters are mapped to IL type variables
 [<NoEquality; NoComparison>]
-type TypeReprEnv(reprs: Map<Stamp, (uint16 * Typar)>, count: int, templateReplacement: (TyconRef * ILTypeRef * Typars * TyparInstantiation) option) =
+type TypeReprEnv
+    (reprs: Map<Stamp, (uint16 * Typar)>, count: int, templateReplacement: (TyconRef * ILTypeRef * Typars * TyparInstantiation) option) =
 
     static let empty = TypeReprEnv(count = 0, reprs = Map.empty, templateReplacement = None)
 
@@ -536,7 +537,7 @@ type TypeReprEnv(reprs: Map<Stamp, (uint16 * Typar)>, count: int, templateReplac
     /// Lookup a type parameter
     member _.Item(tp: Typar, m: range) =
         try
-            reprs[tp.Stamp] |>fst
+            reprs[tp.Stamp] |> fst
         with :? KeyNotFoundException ->
             errorR (InternalError("Undefined or unsolved type variable: " + showL (typarL tp), m))
             // Random value for post-hoc diagnostic analysis on generated tree *
@@ -574,7 +575,12 @@ type TypeReprEnv(reprs: Map<Stamp, (uint16 * Typar)>, count: int, templateReplac
     member eenv.ForTyconRef(tcref: TyconRef) = eenv.ForTycon tcref.Deref
 
     /// Get a list of the Typars in this environment
-    member eenv.AsUserProvidedTypars() = reprs |> Map.toList |> List.map(fun (_, (_, tp)) -> tp) |> List.filter(fun tp -> not tp.IsCompilerGenerated) |> Zset.ofList typarOrder
+    member eenv.AsUserProvidedTypars() =
+        reprs
+        |> Map.toList
+        |> List.map (fun (_, (_, tp)) -> tp)
+        |> List.filter (fun tp -> not tp.IsCompilerGenerated)
+        |> Zset.ofList typarOrder
 
 //--------------------------------------------------------------------------
 // Generate type references
@@ -6922,9 +6928,13 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
             g.CompilerGlobalState.Value.StableNameGenerator.GetUniqueCompilerGeneratedName(basenameSafeForUseAsTypename, expr.Range, uniq)
 
         let ilCloTypeRef = NestedTypeRefForCompLoc eenv.cloc cloName
+
         let initialFreeTyvars =
             match g.realsig with
-            | true -> { emptyFreeTyvars with FreeTypars = eenv.tyenv.AsUserProvidedTypars() }
+            | true ->
+                { emptyFreeTyvars with
+                    FreeTypars = eenv.tyenv.AsUserProvidedTypars()
+                }
             | false -> emptyFreeTyvars
 
         ilCloTypeRef, initialFreeTyvars
@@ -6938,7 +6948,12 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
             | None -> opts
             | Some(tcref, _, typars, _) -> opts.WithTemplateReplacement(tyconRefEq g tcref, typars)
 
-        accFreeInExpr opts expr { emptyFreeVars with FreeTyvars = initialFreeTyvars }
+        accFreeInExpr
+            opts
+            expr
+            { emptyFreeVars with
+                FreeTyvars = initialFreeTyvars
+            }
 
     // Partition the free variables when some can be accessed from places besides the immediate environment
     // Also filter out the current value being bound, if any, as it is available from the "this"
