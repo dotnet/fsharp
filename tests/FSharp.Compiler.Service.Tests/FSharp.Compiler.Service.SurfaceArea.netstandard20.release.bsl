@@ -1623,7 +1623,6 @@ FSharp.Compiler.AbstractIL.IL+ILTypeDefAdditionalFlags: ILTypeDefAdditionalFlags
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAdditionalFlags: ILTypeDefAdditionalFlags Enum
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAdditionalFlags: ILTypeDefAdditionalFlags Interface
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAdditionalFlags: ILTypeDefAdditionalFlags IsKnownToBeAttribute
-FSharp.Compiler.AbstractIL.IL+ILTypeDefAdditionalFlags: ILTypeDefAdditionalFlags None
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAdditionalFlags: ILTypeDefAdditionalFlags ValueType
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAdditionalFlags: Int32 value__
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Explicit: ILTypeDefLayoutInfo Item
