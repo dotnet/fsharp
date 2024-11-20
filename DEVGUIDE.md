@@ -226,6 +226,22 @@ dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fs
 dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --filter "SurfaceAreaTest" -c Release /p:BUILDING_USING_DOTNET=true
 ```
 
+### Updating ILVerify baselines
+
+These control IL for the core modules of the compiler. The baselines are located in the `eng` folder and look like:
+```
+ilverify_FSharp.Compiler.Service_Debug_net9.0.bsl
+ilverify_FSharp.Compiler.Service_Debug_netstandard2.0.bsl
+ilverify_FSharp.Compiler.Service_Release_net9.0.bsl
+ilverify_FSharp.Compiler.Service_Release_netstandard2.0.bsl
+ilverify_FSharp.Core_Debug_netstandard2.0.bsl
+ilverify_FSharp.Core_Debug_netstandard2.1.bsl
+ilverify_FSharp.Core_Release_netstandard2.0.bsl
+ilverify_FSharp.Core_Release_netstandard2.1.bsl
+```
+
+If you want to update them, run the [ilverify.ps1]([url](https://github.com/dotnet/fsharp/blob/main/eng/ilverify.ps1)) script in PowerShell. The script will create `.actual` files. If the differences make sense, replace the original baselines with the actual files. 
+
 ## Automated Source Code Formatting
 
 Some of the code in this repository is formatted automatically by [Fantomas](https://github.com/fsprojects/fantomas). To format all files use:

@@ -11,7 +11,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 ***********************************************************************************************
 -->
 
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project TreatAsLocalProperty="RestoreAdditionalProjectSources" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <UsingTask TaskName="MapSourceRoots" AssemblyFile="$(FSharpBuildAssemblyFile)" />
   
   <PropertyGroup>

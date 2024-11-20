@@ -12,6 +12,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\FSharp.Test.Utilities\XunitSetup.fs">
+      <Link>XunitSetup.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\Compiler\Interactive\ControlledExecution.fs" />
     <Compile Include="$(FSharpSourcesRoot)\Compiler\Utilities\RidHelpers.fs" />
     <Compile Include="DependencyManagerInteractiveTests.fs" />

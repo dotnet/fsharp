@@ -11,6 +11,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\FSharp.Test.Utilities\XunitSetup.fs">
+      <Link>XunitSetup.fs</Link>
+    </Compile>
     <Compile Include="WriteCodeFragmentTests.fs" />
     <Compile Include="MapSourceRootsTests.fs" />
   </ItemGroup>
