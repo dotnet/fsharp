@@ -4,7 +4,6 @@ open System
 open Xunit.Sdk
 open Xunit.Abstractions
 
-open FSharp.Compiler
 open TestFramework
 
 /// Installs console support for parallel test runs.
