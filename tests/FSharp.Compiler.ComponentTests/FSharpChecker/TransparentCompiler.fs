@@ -31,7 +31,7 @@ let fileName fileId = $"File%s{fileId}.fs"
 
 let internal recordAllEvents groupBy =
     let mutable cache : AsyncMemoize<_,_,_> option = None
-    let events = ResizeArray()
+    let events = ConcurrentQueue()
 
     let waitForIdle() = SpinWait.SpinUntil(fun () -> not cache.Value.Updating)
 
@@ -40,7 +40,7 @@ let internal recordAllEvents groupBy =
         waitForIdle()
         cache.Value.Event
         |> Event.map (fun (e, k) -> groupBy k, e)
-        |> Event.add events.Add
+        |> Event.add events.Enqueue
 
     let getEvents () =
         waitForIdle()

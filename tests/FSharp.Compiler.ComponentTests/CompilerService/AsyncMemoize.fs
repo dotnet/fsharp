@@ -15,14 +15,14 @@ let tap f x = f x; x
 
 let internal record (cache: AsyncMemoize<_,_,_>) =
 
-    let events = ResizeArray()
+    let events = Collections.Concurrent.ConcurrentQueue()
 
     let waitForIdle() = SpinWait.SpinUntil(fun () -> not cache.Updating)
 
     waitForIdle()
     cache.Event
     |> Event.map (fun (e, (_, k, _)) -> e, k)
-    |> Event.add events.Add
+    |> Event.add events.Enqueue
 
     let getEvents () =
         waitForIdle()

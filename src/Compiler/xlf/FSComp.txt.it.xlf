@@ -1342,6 +1342,11 @@
         <target state="translated">La sintassi lambda a sintassi abbreviata è supportata solo per le espressioni atomiche, ad esempio metodo, proprietà, campo o indicizzatore nell'argomento '_' implicito. Ad esempio: 'let f = _. Lunghezza'.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcDowncastFromNullableToWithoutNull">
+        <source>Nullness warning: Downcasting from '{0}' into '{1}' can introduce unexpected null values. Cast to '{2}|null' instead or handle the null before downcasting.</source>
+        <target state="new">Nullness warning: Downcasting from '{0}' into '{1}' can introduce unexpected null values. Cast to '{2}|null' instead or handle the null before downcasting.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcEmptyBodyRequiresBuilderZeroMethod">
         <source>An empty body may only be used if the computation expression builder defines a 'Zero' method.</source>
         <target state="new">An empty body may only be used if the computation expression builder defines a 'Zero' method.</target>

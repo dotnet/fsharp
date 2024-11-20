@@ -10,6 +10,14 @@ open System.IO
 open System.Text
 open System.Diagnostics
 
+module MessageSink =
+    let sinkWriter =
+#if DEBUG
+        Console.Out
+#else
+        TextWriter.Null
+#endif
+
 [<AutoOpen>]
 module Scripting =
 
@@ -77,7 +85,7 @@ module Scripting =
         if Directory.Exists output then 
             Directory.Delete(output, true) 
 
-    let log format = printfn format
+    let log format = fprintfn MessageSink.sinkWriter format
 
     type FilePath = string
 
