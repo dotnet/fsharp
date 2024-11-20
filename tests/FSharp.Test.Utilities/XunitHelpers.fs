@@ -18,6 +18,8 @@ type FSharpXunitFramework(sink: IMessageSink) =
 
     interface IDisposable with
         member _.Dispose() =
-            cleanUpTemporaryDirectoryOfThisTestRun ()
-            base.Dispose()       
+            match Environment.GetEnvironmentVariable("FSHARP_RETAIN_TESTBUILDS") with
+            | null -> cleanUpTemporaryDirectoryOfThisTestRun  ()
+            | _ -> ()
+            base.Dispose()
 

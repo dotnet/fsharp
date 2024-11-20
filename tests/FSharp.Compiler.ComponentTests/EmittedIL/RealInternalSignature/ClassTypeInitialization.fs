@@ -484,10 +484,15 @@ printfn "%A" (MyClass.result())
         ]
 
 
-    [<InlineData(true)>]        // RealSig
-    [<InlineData(false)>]       // Regular
+    [<InlineData(true, true)>]          // RealSig Optimize
+    [<InlineData(true, false)>]         // RealSig NoOptimize
+    [<InlineData(false, true)>]         // Regular Optimize
+    [<InlineData(false, false)>]        // Regular NoOptimize
     [<Theory>]
-    let ``nested generic closure`` (realSig) =
+    let ``nested generic closure`` (realSig, optimize) =
+        let withOptimization compilation =
+            if optimize then compilation |> withOptimize
+            else compilation |> withNoOptimize
 
         FSharp """
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
@@ -842,6 +847,325 @@ namespace Microsoft.FSharp.Core.CompilerServices
 """
         |> asExe
         |> withRealInternalSignature realSig
-        |> withOptimize
+        |> withOptimization
         |> compileAndRun
         |> shouldSucceed
+
+    [<InlineData(true, true)>]          // RealSig Optimize
+    [<InlineData(true, false)>]         // RealSig NoOptimize
+    [<InlineData(false, true)>]         // Regular Optimize
+    [<InlineData(false, false)>]        // Regular NoOptimize
+    [<Theory>]
+    let ``Generic class with closure with constraints`` (realSig, optimize) =
+        let withOptimization compilation =
+            if optimize then compilation |> withOptimize
+            else compilation |> withNoOptimize
+
+        FSharp """
+namespace Test
+open System
+
+module RuntimeHelpers =
+    [<Sealed>]
+    type MyType<'A,'B when 'B :> seq<'A>>(sources: seq<'B>) =
+
+        member x.MoveNext() =
+            let rec takeInner c =
+                let rec takeOuter b =
+                    if b.ToString () = "1" then failwith "Oops"
+                    if sources |> Seq.length > 10 then
+                        sources |> Seq.skip 10
+                    else
+                        sources
+                if c.ToString() = "1" then failwith "Oops"
+                if sources |> Seq.length < 5 then
+                    sources
+                else
+                    takeOuter 7
+            takeInner 3
+
+open RuntimeHelpers
+module doIt =
+    let x = seq {  ArraySegment([|1uy; 2uy; 3uy|]); ArraySegment([|1uy; 2uy; 3uy|]); ArraySegment([|1uy; 2uy; 3uy|]); }
+    let enumerator = x |> MyType<_,_>
+    for i in enumerator.MoveNext() do
+        printfn "%A" i
+    """
+        |> asExe
+        |> withRealInternalSignature realSig
+        |> withOptimization
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<InlineData(true, true)>]          // RealSig Optimize
+    [<InlineData(true, false)>]         // RealSig NoOptimize
+    [<InlineData(false, true)>]         // Regular Optimize
+    [<InlineData(false, false)>]        // Regular NoOptimize
+    [<Theory>]
+    let ``AgedLookup`` (realSig, optimize) =
+        let withOptimization compilation =
+            if optimize then compilation |> withOptimize
+            else compilation |> withNoOptimize
+
+        FSharp """
+namespace Internal.Utilities.Collections
+
+open System
+
+[<StructuralEquality; NoComparison>]
+type internal ValueStrength<'T when 'T: not struct> =
+    | Strong of 'T
+    | Weak of WeakReference<'T>
+
+type internal AgedLookup<'Token, 'Key, 'Value when 'Value: not struct>(keepStrongly: int, areSimilar, ?requiredToKeep, ?keepMax: int) =
+    /// The list of items stored. Youngest is at the end of the list.
+    /// The choice of order is somewhat arbitrary. If the other way then adding
+    /// items would be O(1) and removing O(N).
+    let mutable refs: ('Key * ValueStrength<'Value>) list = []
+
+    let mutable keepStrongly = keepStrongly
+
+    // The 75 here determines how long the list should be passed the end of strongly held
+    // references. Some operations are O(N) and we don't want to let things get out of
+    // hand.
+    let keepMax = defaultArg keepMax 75
+    let mutable keepMax = max keepStrongly keepMax
+    let requiredToKeep = defaultArg requiredToKeep (fun _ -> false)
+
+    /// Look up the given key, return <c>None</c> if not found.
+    let TryPeekKeyValueImpl (data, key) =
+        let rec Lookup key =
+            function
+            // Treat a list of key-value pairs as a lookup collection.
+            // This function returns true if two keys are the same according to the predicate
+            // function passed in.
+            | [] -> None
+            | (similarKey, value) :: t ->
+                if areSimilar (key, similarKey) then
+                    Some(similarKey, value)
+                else
+                    Lookup key t
+
+        Lookup key data
+
+    /// Determines whether a particular key exists.
+    let Exists (data, key) = TryPeekKeyValueImpl(data, key).IsSome
+
+    /// Set a particular key's value.
+    let Add (data, key, value) = data @ [ key, value ]
+
+    /// Promote a particular key value.
+    let Promote (data, key, value) =
+        (data |> List.filter (fun (similarKey, _) -> not (areSimilar (key, similarKey))))
+        @ [ (key, value) ]
+
+    /// Remove a particular key value.
+    let RemoveImpl (data, key) =
+        let keep =
+            data |> List.filter (fun (similarKey, _) -> not (areSimilar (key, similarKey)))
+
+        keep
+
+    let TryGetKeyValueImpl (data, key) =
+        match TryPeekKeyValueImpl(data, key) with
+        | Some(similarKey, value) as result ->
+            // If the result existed, move it to the end of the list (more likely to keep it)
+            result, Promote(data, similarKey, value)
+        | None -> None, data
+
+    /// Remove weak entries from the list that have been collected.
+    let FilterAndHold (tok: 'Token) =
+        ignore tok // reading 'refs' requires a token
+
+        [
+            for key, value in refs do
+                match value with
+                | Strong(value) -> yield (key, value)
+                | Weak(weakReference) ->
+                    match weakReference.TryGetTarget() with
+                    | false, _ -> ()
+                    | true, value -> yield key, value
+        ]
+
+    let AssignWithStrength (tok, newData) =
+        let actualLength = List.length newData
+        let tossThreshold = max 0 (actualLength - keepMax) // Delete everything less than this threshold
+        let weakThreshold = max 0 (actualLength - keepStrongly) // Weaken everything less than this threshold
+
+        let newData = newData |> List.mapi (fun n kv -> n, kv) // Place the index.
+
+        let newData =
+            newData
+            |> List.filter (fun (n: int, v) -> n >= tossThreshold || requiredToKeep (snd v))
+
+        let newData =
+            newData
+            |> List.map (fun (n: int, (k, v)) ->
+                let handle =
+                    if n < weakThreshold && not (requiredToKeep v) then
+                        Weak(WeakReference<_>(v))
+                    else
+                        Strong(v)
+
+                k, handle)
+
+        ignore tok // Updating refs requires tok
+        refs <- newData
+
+    member al.TryPeekKeyValue(tok, key) =
+        // Returns the original key value as well since it may be different depending on equality test.
+        let data = FilterAndHold(tok)
+        TryPeekKeyValueImpl(data, key)
+
+    member al.TryGetKeyValue(tok, key) =
+        let data = FilterAndHold(tok)
+        let result, newData = TryGetKeyValueImpl(data, key)
+        AssignWithStrength(tok, newData)
+        result
+
+    member al.TryGet(tok, key) =
+        let data = FilterAndHold(tok)
+        let result, newData = TryGetKeyValueImpl(data, key)
+        AssignWithStrength(tok, newData)
+
+        match result with
+        | Some(_, value) -> Some(value)
+        | None -> None
+
+    member al.Put(tok, key, value) =
+        let data = FilterAndHold(tok)
+
+        let data = if Exists(data, key) then RemoveImpl(data, key) else data
+
+        let data = Add(data, key, value)
+        AssignWithStrength(tok, data) // This will remove extras
+
+    member al.Remove(tok, key) =
+        let data = FilterAndHold(tok)
+        let newData = RemoveImpl(data, key)
+        AssignWithStrength(tok, newData)
+
+    member al.Clear(tok) =
+        let _discards = FilterAndHold(tok)
+        AssignWithStrength(tok, [])
+
+    member al.Resize(tok, newKeepStrongly, ?newKeepMax) =
+        let newKeepMax = defaultArg newKeepMax 75
+        keepStrongly <- newKeepStrongly
+        keepMax <- max newKeepStrongly newKeepMax
+        let keep = FilterAndHold(tok)
+        AssignWithStrength(tok, keep)
+    """
+        |> asLibrary
+        |> withRealInternalSignature realSig
+        |> withOptimization
+        |> compile
+        |> shouldSucceed
+
+    [<InlineData(true, true)>]          // RealSig Optimize
+    [<InlineData(true, false)>]         // RealSig NoOptimize
+    [<InlineData(false, true)>]         // Regular Optimize
+    [<InlineData(false, false)>]        // Regular NoOptimize
+    [<Theory>]
+    let ``BigTuples`` (realSig, optimize) =
+        let withOptimization compilation =
+            if optimize then compilation |> withOptimize
+            else compilation |> withNoOptimize
+
+        FSharp """
+namespace Equality
+
+type BigGenericTuple<'a> = BigGenericTuple of int * 'a * byte * int * 'a * byte
+    """
+        |> asLibrary
+        |> withRealInternalSignature realSig
+        |> withOptimization
+        |> compile
+        |> shouldSucceed
+
+    [<InlineData(true, true)>]          // RealSig Optimize
+    [<InlineData(true, false)>]         // RealSig NoOptimize
+    [<InlineData(false, true)>]         // Regular Optimize
+    [<InlineData(false, false)>]        // Regular NoOptimize
+    [<Theory>]
+    let ``Array groupBy id`` (realSig, optimize) =
+        let withOptimization compilation =
+            if optimize then compilation |> withOptimize
+            else compilation |> withNoOptimize
+
+        FSharp """
+module GroupByTest
+let ``for _ in Array groupBy id [||] do ...`` () = [|for _ in Array.groupBy id [||] do 0|]
+    """
+        |> asLibrary
+        |> withRealInternalSignature realSig
+        |> withOptimization
+        |> compile
+        |> shouldSucceed
+
+
+    let roundTripWithInterfaceGeneration(realsig, optimize, implementationFile) =
+        let withOptimization compilation =
+            if optimize then compilation |> withOptimize
+            else compilation |> withNoOptimize
+
+        let generatedSignature =
+            Fs implementationFile
+            |> withRealInternalSignature realsig
+            |> withOptimization
+            |> printSignatures
+
+        Fsi generatedSignature
+        |> asLibrary
+        |> withAdditionalSourceFile (FsSource implementationFile)
+        |> withRealInternalSignature realsig
+        |> withOptimization
+        |> compile
+        |> shouldSucceed
+
+    [<InlineData(true, true)>]          // RealSig Optimize
+    [<InlineData(true, false)>]         // RealSig NoOptimize
+    [<InlineData(false, true)>]         // Regular Optimize
+    [<InlineData(false, false)>]        // Regular NoOptimize
+    [<Theory>]
+    let ``generic-parameter-order-roundtrip`` (realsig, optimize) =
+
+        let implementationFile = """
+module OrderMatters
+
+type IMonad<'a> =
+    interface
+        // Hash constraint leads to another type parameter
+        abstract bind : #IMonad<'a> -> ('a -> #IMonad<'b>) -> IMonad<'b>
+    end"""
+
+        roundTripWithInterfaceGeneration(realsig, optimize, implementationFile)
+
+    [<InlineData(true, true)>]          // RealSig Optimize
+    [<InlineData(true, false)>]         // RealSig NoOptimize
+    [<InlineData(false, true)>]         // Regular Optimize
+    [<InlineData(false, false)>]        // Regular NoOptimize
+    [<Theory>]
+    let ``members_basic-roundtrip`` (realsig, optimize) =
+
+        let implementationFile = """
+namespace GenericInterfaceTest
+
+    type Foo<'a> =
+      interface 
+          abstract fun1 : 'a -> 'a
+          abstract fun2 : int -> int
+      end
+
+
+    type Bar<'b> =
+      class 
+          val store : 'b
+          interface Foo<'b> with
+            member self.fun1(x) = x
+            member self.fun2(x) = 1
+          end
+          new(x) = { store = x }
+      end"""
+
+        roundTripWithInterfaceGeneration(realsig, optimize, implementationFile)

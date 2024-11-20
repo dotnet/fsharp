@@ -316,8 +316,15 @@ module TestFunctions =
 
     //SOURCE=TestFunction23.fs  SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction23.exe"	# TestFunction23.fs -
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction23.fs"|])>]
-    let ``TestFunction23_fs`` compilation =
+    let ``TestFunction23_RealInternalSignatureOff_fs`` compilation =
         compilation
+        |> withRealInternalSignatureOff
+        |> verifyCompilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction23.fs"|])>]
+    let ``TestFunction23_RealInternalSignatureOn_fs`` compilation =
+        compilation
+        |> withRealInternalSignatureOn
         |> verifyCompilation
 
     //SOURCE=TestFunction24.fs   SCFLAGS="-g --optimize-" PEVER=/Exp_Fail COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction24.exe"	# TestFunction24.fs -

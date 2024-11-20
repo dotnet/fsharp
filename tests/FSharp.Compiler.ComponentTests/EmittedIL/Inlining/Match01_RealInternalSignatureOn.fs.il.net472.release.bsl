@@ -17,16 +17,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -459,363 +449,6 @@
       } 
     } 
 
-    .class auto ansi serializable sealed nested assembly beforefieldinit clo@4
-           extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>
-    {
-      .field public class Match01/Test1 this
-      .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .field public class Match01/Test1 obj
-      .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .method assembly specialname rtspecialname 
-              instance void  .ctor(class Match01/Test1 this,
-                                   class Match01/Test1 obj) cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor()
-        IL_0006:  ldarg.0
-        IL_0007:  ldarg.1
-        IL_0008:  stfld      class Match01/Test1 Match01/Test1/clo@4::this
-        IL_000d:  ldarg.0
-        IL_000e:  ldarg.2
-        IL_000f:  stfld      class Match01/Test1 Match01/Test1/clo@4::obj
-        IL_0014:  ret
-      } 
-
-      .method public strict virtual instance int32 Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
-      {
-        
-        .maxstack  7
-        .locals init (int32 V_0,
-                 int32 V_1,
-                 class Match01/Test1/X11 V_2,
-                 class Match01/Test1/X11 V_3,
-                 class [runtime]System.Collections.IComparer V_4,
-                 int32 V_5,
-                 int32 V_6,
-                 class Match01/Test1/X12 V_7,
-                 class Match01/Test1/X12 V_8,
-                 class Match01/Test1/X13 V_9,
-                 class Match01/Test1/X13 V_10,
-                 class Match01/Test1/X14 V_11,
-                 class Match01/Test1/X14 V_12)
-        IL_0000:  ldarg.0
-        IL_0001:  ldfld      class Match01/Test1 Match01/Test1/clo@4::this
-        IL_0006:  ldfld      int32 Match01/Test1::_tag
-        IL_000b:  stloc.0
-        IL_000c:  ldarg.0
-        IL_000d:  ldfld      class Match01/Test1 Match01/Test1/clo@4::obj
-        IL_0012:  ldfld      int32 Match01/Test1::_tag
-        IL_0017:  stloc.1
-        IL_0018:  ldloc.0
-        IL_0019:  ldloc.1
-        IL_001a:  bne.un     IL_013f
-
-        IL_001f:  ldarg.0
-        IL_0020:  ldfld      class Match01/Test1 Match01/Test1/clo@4::this
-        IL_0025:  call       instance int32 Match01/Test1::get_Tag()
-        IL_002a:  switch     ( 
-                              IL_003f,
-                              IL_007c,
-                              IL_00bd,
-                              IL_00fe)
-        IL_003f:  ldarg.0
-        IL_0040:  ldfld      class Match01/Test1 Match01/Test1/clo@4::this
-        IL_0045:  castclass  Match01/Test1/X11
-        IL_004a:  stloc.2
-        IL_004b:  ldarg.0
-        IL_004c:  ldfld      class Match01/Test1 Match01/Test1/clo@4::obj
-        IL_0051:  castclass  Match01/Test1/X11
-        IL_0056:  stloc.3
-        IL_0057:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-        IL_005c:  stloc.s    V_4
-        IL_005e:  ldloc.2
-        IL_005f:  ldfld      int32 Match01/Test1/X11::item
-        IL_0064:  stloc.s    V_5
-        IL_0066:  ldloc.3
-        IL_0067:  ldfld      int32 Match01/Test1/X11::item
-        IL_006c:  stloc.s    V_6
-        IL_006e:  ldloc.s    V_5
-        IL_0070:  ldloc.s    V_6
-        IL_0072:  cgt
-        IL_0074:  ldloc.s    V_5
-        IL_0076:  ldloc.s    V_6
-        IL_0078:  clt
-        IL_007a:  sub
-        IL_007b:  ret
-
-        IL_007c:  ldarg.0
-        IL_007d:  ldfld      class Match01/Test1 Match01/Test1/clo@4::this
-        IL_0082:  castclass  Match01/Test1/X12
-        IL_0087:  stloc.s    V_7
-        IL_0089:  ldarg.0
-        IL_008a:  ldfld      class Match01/Test1 Match01/Test1/clo@4::obj
-        IL_008f:  castclass  Match01/Test1/X12
-        IL_0094:  stloc.s    V_8
-        IL_0096:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-        IL_009b:  stloc.s    V_4
-        IL_009d:  ldloc.s    V_7
-        IL_009f:  ldfld      int32 Match01/Test1/X12::item
-        IL_00a4:  stloc.s    V_5
-        IL_00a6:  ldloc.s    V_8
-        IL_00a8:  ldfld      int32 Match01/Test1/X12::item
-        IL_00ad:  stloc.s    V_6
-        IL_00af:  ldloc.s    V_5
-        IL_00b1:  ldloc.s    V_6
-        IL_00b3:  cgt
-        IL_00b5:  ldloc.s    V_5
-        IL_00b7:  ldloc.s    V_6
-        IL_00b9:  clt
-        IL_00bb:  sub
-        IL_00bc:  ret
-
-        IL_00bd:  ldarg.0
-        IL_00be:  ldfld      class Match01/Test1 Match01/Test1/clo@4::this
-        IL_00c3:  castclass  Match01/Test1/X13
-        IL_00c8:  stloc.s    V_9
-        IL_00ca:  ldarg.0
-        IL_00cb:  ldfld      class Match01/Test1 Match01/Test1/clo@4::obj
-        IL_00d0:  castclass  Match01/Test1/X13
-        IL_00d5:  stloc.s    V_10
-        IL_00d7:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-        IL_00dc:  stloc.s    V_4
-        IL_00de:  ldloc.s    V_9
-        IL_00e0:  ldfld      int32 Match01/Test1/X13::item
-        IL_00e5:  stloc.s    V_5
-        IL_00e7:  ldloc.s    V_10
-        IL_00e9:  ldfld      int32 Match01/Test1/X13::item
-        IL_00ee:  stloc.s    V_6
-        IL_00f0:  ldloc.s    V_5
-        IL_00f2:  ldloc.s    V_6
-        IL_00f4:  cgt
-        IL_00f6:  ldloc.s    V_5
-        IL_00f8:  ldloc.s    V_6
-        IL_00fa:  clt
-        IL_00fc:  sub
-        IL_00fd:  ret
-
-        IL_00fe:  ldarg.0
-        IL_00ff:  ldfld      class Match01/Test1 Match01/Test1/clo@4::this
-        IL_0104:  castclass  Match01/Test1/X14
-        IL_0109:  stloc.s    V_11
-        IL_010b:  ldarg.0
-        IL_010c:  ldfld      class Match01/Test1 Match01/Test1/clo@4::obj
-        IL_0111:  castclass  Match01/Test1/X14
-        IL_0116:  stloc.s    V_12
-        IL_0118:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-        IL_011d:  stloc.s    V_4
-        IL_011f:  ldloc.s    V_11
-        IL_0121:  ldfld      int32 Match01/Test1/X14::item
-        IL_0126:  stloc.s    V_5
-        IL_0128:  ldloc.s    V_12
-        IL_012a:  ldfld      int32 Match01/Test1/X14::item
-        IL_012f:  stloc.s    V_6
-        IL_0131:  ldloc.s    V_5
-        IL_0133:  ldloc.s    V_6
-        IL_0135:  cgt
-        IL_0137:  ldloc.s    V_5
-        IL_0139:  ldloc.s    V_6
-        IL_013b:  clt
-        IL_013d:  sub
-        IL_013e:  ret
-
-        IL_013f:  ldloc.0
-        IL_0140:  ldloc.1
-        IL_0141:  sub
-        IL_0142:  ret
-      } 
-
-    } 
-
-    .class auto ansi serializable sealed nested assembly beforefieldinit 'clo@4-1'
-           extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>
-    {
-      .field public class Match01/Test1 this
-      .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .field public object obj
-      .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .field public class Match01/Test1 objTemp
-      .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .method assembly specialname rtspecialname 
-              instance void  .ctor(class Match01/Test1 this,
-                                   object obj,
-                                   class Match01/Test1 objTemp) cil managed
-      {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor()
-        IL_0006:  ldarg.0
-        IL_0007:  ldarg.1
-        IL_0008:  stfld      class Match01/Test1 Match01/Test1/'clo@4-1'::this
-        IL_000d:  ldarg.0
-        IL_000e:  ldarg.2
-        IL_000f:  stfld      object Match01/Test1/'clo@4-1'::obj
-        IL_0014:  ldarg.0
-        IL_0015:  ldarg.3
-        IL_0016:  stfld      class Match01/Test1 Match01/Test1/'clo@4-1'::objTemp
-        IL_001b:  ret
-      } 
-
-      .method public strict virtual instance int32 Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
-      {
-        
-        .maxstack  7
-        .locals init (int32 V_0,
-                 int32 V_1,
-                 class Match01/Test1/X11 V_2,
-                 class Match01/Test1/X11 V_3,
-                 int32 V_4,
-                 int32 V_5,
-                 class Match01/Test1/X12 V_6,
-                 class Match01/Test1/X12 V_7,
-                 class Match01/Test1/X13 V_8,
-                 class Match01/Test1/X13 V_9,
-                 class Match01/Test1/X14 V_10,
-                 class Match01/Test1/X14 V_11)
-        IL_0000:  ldarg.0
-        IL_0001:  ldfld      object Match01/Test1/'clo@4-1'::obj
-        IL_0006:  unbox.any  Match01/Test1
-        IL_000b:  brfalse    IL_0137
-
-        IL_0010:  ldarg.0
-        IL_0011:  ldfld      class Match01/Test1 Match01/Test1/'clo@4-1'::this
-        IL_0016:  ldfld      int32 Match01/Test1::_tag
-        IL_001b:  stloc.0
-        IL_001c:  ldarg.0
-        IL_001d:  ldfld      class Match01/Test1 Match01/Test1/'clo@4-1'::objTemp
-        IL_0022:  ldfld      int32 Match01/Test1::_tag
-        IL_0027:  stloc.1
-        IL_0028:  ldloc.0
-        IL_0029:  ldloc.1
-        IL_002a:  bne.un     IL_0133
-
-        IL_002f:  ldarg.0
-        IL_0030:  ldfld      class Match01/Test1 Match01/Test1/'clo@4-1'::this
-        IL_0035:  call       instance int32 Match01/Test1::get_Tag()
-        IL_003a:  switch     ( 
-                              IL_004f,
-                              IL_0085,
-                              IL_00bf,
-                              IL_00f9)
-        IL_004f:  ldarg.0
-        IL_0050:  ldfld      class Match01/Test1 Match01/Test1/'clo@4-1'::this
-        IL_0055:  castclass  Match01/Test1/X11
-        IL_005a:  stloc.2
-        IL_005b:  ldarg.0
-        IL_005c:  ldfld      class Match01/Test1 Match01/Test1/'clo@4-1'::objTemp
-        IL_0061:  castclass  Match01/Test1/X11
-        IL_0066:  stloc.3
-        IL_0067:  ldloc.2
-        IL_0068:  ldfld      int32 Match01/Test1/X11::item
-        IL_006d:  stloc.s    V_4
-        IL_006f:  ldloc.3
-        IL_0070:  ldfld      int32 Match01/Test1/X11::item
-        IL_0075:  stloc.s    V_5
-        IL_0077:  ldloc.s    V_4
-        IL_0079:  ldloc.s    V_5
-        IL_007b:  cgt
-        IL_007d:  ldloc.s    V_4
-        IL_007f:  ldloc.s    V_5
-        IL_0081:  clt
-        IL_0083:  sub
-        IL_0084:  ret
-
-        IL_0085:  ldarg.0
-        IL_0086:  ldfld      class Match01/Test1 Match01/Test1/'clo@4-1'::this
-        IL_008b:  castclass  Match01/Test1/X12
-        IL_0090:  stloc.s    V_6
-        IL_0092:  ldarg.0
-        IL_0093:  ldfld      class Match01/Test1 Match01/Test1/'clo@4-1'::objTemp
-        IL_0098:  castclass  Match01/Test1/X12
-        IL_009d:  stloc.s    V_7
-        IL_009f:  ldloc.s    V_6
-        IL_00a1:  ldfld      int32 Match01/Test1/X12::item
-        IL_00a6:  stloc.s    V_4
-        IL_00a8:  ldloc.s    V_7
-        IL_00aa:  ldfld      int32 Match01/Test1/X12::item
-        IL_00af:  stloc.s    V_5
-        IL_00b1:  ldloc.s    V_4
-        IL_00b3:  ldloc.s    V_5
-        IL_00b5:  cgt
-        IL_00b7:  ldloc.s    V_4
-        IL_00b9:  ldloc.s    V_5
-        IL_00bb:  clt
-        IL_00bd:  sub
-        IL_00be:  ret
-
-        IL_00bf:  ldarg.0
-        IL_00c0:  ldfld      class Match01/Test1 Match01/Test1/'clo@4-1'::this
-        IL_00c5:  castclass  Match01/Test1/X13
-        IL_00ca:  stloc.s    V_8
-        IL_00cc:  ldarg.0
-        IL_00cd:  ldfld      class Match01/Test1 Match01/Test1/'clo@4-1'::objTemp
-        IL_00d2:  castclass  Match01/Test1/X13
-        IL_00d7:  stloc.s    V_9
-        IL_00d9:  ldloc.s    V_8
-        IL_00db:  ldfld      int32 Match01/Test1/X13::item
-        IL_00e0:  stloc.s    V_4
-        IL_00e2:  ldloc.s    V_9
-        IL_00e4:  ldfld      int32 Match01/Test1/X13::item
-        IL_00e9:  stloc.s    V_5
-        IL_00eb:  ldloc.s    V_4
-        IL_00ed:  ldloc.s    V_5
-        IL_00ef:  cgt
-        IL_00f1:  ldloc.s    V_4
-        IL_00f3:  ldloc.s    V_5
-        IL_00f5:  clt
-        IL_00f7:  sub
-        IL_00f8:  ret
-
-        IL_00f9:  ldarg.0
-        IL_00fa:  ldfld      class Match01/Test1 Match01/Test1/'clo@4-1'::this
-        IL_00ff:  castclass  Match01/Test1/X14
-        IL_0104:  stloc.s    V_10
-        IL_0106:  ldarg.0
-        IL_0107:  ldfld      class Match01/Test1 Match01/Test1/'clo@4-1'::objTemp
-        IL_010c:  castclass  Match01/Test1/X14
-        IL_0111:  stloc.s    V_11
-        IL_0113:  ldloc.s    V_10
-        IL_0115:  ldfld      int32 Match01/Test1/X14::item
-        IL_011a:  stloc.s    V_4
-        IL_011c:  ldloc.s    V_11
-        IL_011e:  ldfld      int32 Match01/Test1/X14::item
-        IL_0123:  stloc.s    V_5
-        IL_0125:  ldloc.s    V_4
-        IL_0127:  ldloc.s    V_5
-        IL_0129:  cgt
-        IL_012b:  ldloc.s    V_4
-        IL_012d:  ldloc.s    V_5
-        IL_012f:  clt
-        IL_0131:  sub
-        IL_0132:  ret
-
-        IL_0133:  ldloc.0
-        IL_0134:  ldloc.1
-        IL_0135:  sub
-        IL_0136:  ret
-
-        IL_0137:  ldc.i4.1
-        IL_0138:  ret
-      } 
-
-    } 
-
     .field assembly initonly int32 _tag
     .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -971,40 +604,171 @@
       IL_0015:  ret
     } 
 
+    .method assembly static int32  CompareTo$cont@4(class Match01/Test1 this,
+                                                    class Match01/Test1 obj,
+                                                    class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  5
+      .locals init (int32 V_0,
+               int32 V_1,
+               class Match01/Test1/X11 V_2,
+               class Match01/Test1/X11 V_3,
+               class [runtime]System.Collections.IComparer V_4,
+               int32 V_5,
+               int32 V_6,
+               class Match01/Test1/X12 V_7,
+               class Match01/Test1/X12 V_8,
+               class Match01/Test1/X13 V_9,
+               class Match01/Test1/X13 V_10,
+               class Match01/Test1/X14 V_11,
+               class Match01/Test1/X14 V_12)
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      int32 Match01/Test1::_tag
+      IL_0006:  stloc.0
+      IL_0007:  ldarg.1
+      IL_0008:  ldfld      int32 Match01/Test1::_tag
+      IL_000d:  stloc.1
+      IL_000e:  ldloc.0
+      IL_000f:  ldloc.1
+      IL_0010:  bne.un     IL_0108
+
+      IL_0015:  ldarg.0
+      IL_0016:  call       instance int32 Match01/Test1::get_Tag()
+      IL_001b:  switch     ( 
+                            IL_0030,
+                            IL_0063,
+                            IL_009a,
+                            IL_00d1)
+      IL_0030:  ldarg.0
+      IL_0031:  castclass  Match01/Test1/X11
+      IL_0036:  stloc.2
+      IL_0037:  ldarg.1
+      IL_0038:  castclass  Match01/Test1/X11
+      IL_003d:  stloc.3
+      IL_003e:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
+      IL_0043:  stloc.s    V_4
+      IL_0045:  ldloc.2
+      IL_0046:  ldfld      int32 Match01/Test1/X11::item
+      IL_004b:  stloc.s    V_5
+      IL_004d:  ldloc.3
+      IL_004e:  ldfld      int32 Match01/Test1/X11::item
+      IL_0053:  stloc.s    V_6
+      IL_0055:  ldloc.s    V_5
+      IL_0057:  ldloc.s    V_6
+      IL_0059:  cgt
+      IL_005b:  ldloc.s    V_5
+      IL_005d:  ldloc.s    V_6
+      IL_005f:  clt
+      IL_0061:  sub
+      IL_0062:  ret
+
+      IL_0063:  ldarg.0
+      IL_0064:  castclass  Match01/Test1/X12
+      IL_0069:  stloc.s    V_7
+      IL_006b:  ldarg.1
+      IL_006c:  castclass  Match01/Test1/X12
+      IL_0071:  stloc.s    V_8
+      IL_0073:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
+      IL_0078:  stloc.s    V_4
+      IL_007a:  ldloc.s    V_7
+      IL_007c:  ldfld      int32 Match01/Test1/X12::item
+      IL_0081:  stloc.s    V_5
+      IL_0083:  ldloc.s    V_8
+      IL_0085:  ldfld      int32 Match01/Test1/X12::item
+      IL_008a:  stloc.s    V_6
+      IL_008c:  ldloc.s    V_5
+      IL_008e:  ldloc.s    V_6
+      IL_0090:  cgt
+      IL_0092:  ldloc.s    V_5
+      IL_0094:  ldloc.s    V_6
+      IL_0096:  clt
+      IL_0098:  sub
+      IL_0099:  ret
+
+      IL_009a:  ldarg.0
+      IL_009b:  castclass  Match01/Test1/X13
+      IL_00a0:  stloc.s    V_9
+      IL_00a2:  ldarg.1
+      IL_00a3:  castclass  Match01/Test1/X13
+      IL_00a8:  stloc.s    V_10
+      IL_00aa:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
+      IL_00af:  stloc.s    V_4
+      IL_00b1:  ldloc.s    V_9
+      IL_00b3:  ldfld      int32 Match01/Test1/X13::item
+      IL_00b8:  stloc.s    V_5
+      IL_00ba:  ldloc.s    V_10
+      IL_00bc:  ldfld      int32 Match01/Test1/X13::item
+      IL_00c1:  stloc.s    V_6
+      IL_00c3:  ldloc.s    V_5
+      IL_00c5:  ldloc.s    V_6
+      IL_00c7:  cgt
+      IL_00c9:  ldloc.s    V_5
+      IL_00cb:  ldloc.s    V_6
+      IL_00cd:  clt
+      IL_00cf:  sub
+      IL_00d0:  ret
+
+      IL_00d1:  ldarg.0
+      IL_00d2:  castclass  Match01/Test1/X14
+      IL_00d7:  stloc.s    V_11
+      IL_00d9:  ldarg.1
+      IL_00da:  castclass  Match01/Test1/X14
+      IL_00df:  stloc.s    V_12
+      IL_00e1:  call       class [runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
+      IL_00e6:  stloc.s    V_4
+      IL_00e8:  ldloc.s    V_11
+      IL_00ea:  ldfld      int32 Match01/Test1/X14::item
+      IL_00ef:  stloc.s    V_5
+      IL_00f1:  ldloc.s    V_12
+      IL_00f3:  ldfld      int32 Match01/Test1/X14::item
+      IL_00f8:  stloc.s    V_6
+      IL_00fa:  ldloc.s    V_5
+      IL_00fc:  ldloc.s    V_6
+      IL_00fe:  cgt
+      IL_0100:  ldloc.s    V_5
+      IL_0102:  ldloc.s    V_6
+      IL_0104:  clt
+      IL_0106:  sub
+      IL_0107:  ret
+
+      IL_0108:  ldloc.0
+      IL_0109:  ldloc.1
+      IL_010a:  sub
+      IL_010b:  ret
+    } 
+
     .method public hidebysig virtual final instance int32  CompareTo(class Match01/Test1 obj) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
-      .maxstack  4
-      .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32> V_0)
+      .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  brfalse.s  IL_001a
+      IL_0001:  brfalse.s  IL_0011
 
       IL_0003:  ldarg.1
-      IL_0004:  brfalse.s  IL_0018
+      IL_0004:  brfalse.s  IL_000f
 
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
-      IL_0008:  newobj     instance void Match01/Test1/clo@4::.ctor(class Match01/Test1,
-                                                                    class Match01/Test1)
-      IL_000d:  stloc.0
-      IL_000e:  ldloc.0
-      IL_000f:  ldnull
-      IL_0010:  tail.
-      IL_0012:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::Invoke(!0)
+      IL_0008:  ldnull
+      IL_0009:  call       int32 Match01/Test1::CompareTo$cont@4(class Match01/Test1,
+                                                                 class Match01/Test1,
+                                                                 class [FSharp.Core]Microsoft.FSharp.Core.Unit)
+      IL_000e:  ret
+
+      IL_000f:  ldc.i4.1
+      IL_0010:  ret
+
+      IL_0011:  ldarg.1
+      IL_0012:  brfalse.s  IL_0016
+
+      IL_0014:  ldc.i4.m1
+      IL_0015:  ret
+
+      IL_0016:  ldc.i4.0
       IL_0017:  ret
-
-      IL_0018:  ldc.i4.1
-      IL_0019:  ret
-
-      IL_001a:  ldarg.1
-      IL_001b:  brfalse.s  IL_001f
-
-      IL_001d:  ldc.i4.m1
-      IL_001e:  ret
-
-      IL_001f:  ldc.i4.0
-      IL_0020:  ret
     } 
 
     .method public hidebysig virtual final instance int32  CompareTo(object obj) cil managed
@@ -1019,43 +783,171 @@
       IL_000c:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance int32  CompareTo(object obj,
-                                      class [runtime]System.Collections.IComparer comp) cil managed
+    .method assembly static int32  'CompareTo$cont@4-1'(class Match01/Test1 this,
+                                                        object obj,
+                                                        class Match01/Test1 objTemp,
+                                                        class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  5
-      .locals init (class Match01/Test1 V_0,
-               class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32> V_1)
+      .locals init (int32 V_0,
+               int32 V_1,
+               class Match01/Test1/X11 V_2,
+               class Match01/Test1/X11 V_3,
+               int32 V_4,
+               int32 V_5,
+               class Match01/Test1/X12 V_6,
+               class Match01/Test1/X12 V_7,
+               class Match01/Test1/X13 V_8,
+               class Match01/Test1/X13 V_9,
+               class Match01/Test1/X14 V_10,
+               class Match01/Test1/X14 V_11)
+      IL_0000:  ldarg.1
+      IL_0001:  unbox.any  Match01/Test1
+      IL_0006:  brfalse    IL_00fb
+
+      IL_000b:  ldarg.0
+      IL_000c:  ldfld      int32 Match01/Test1::_tag
+      IL_0011:  stloc.0
+      IL_0012:  ldarg.2
+      IL_0013:  ldfld      int32 Match01/Test1::_tag
+      IL_0018:  stloc.1
+      IL_0019:  ldloc.0
+      IL_001a:  ldloc.1
+      IL_001b:  bne.un     IL_00f7
+
+      IL_0020:  ldarg.0
+      IL_0021:  call       instance int32 Match01/Test1::get_Tag()
+      IL_0026:  switch     ( 
+                            IL_003b,
+                            IL_0067,
+                            IL_0097,
+                            IL_00c7)
+      IL_003b:  ldarg.0
+      IL_003c:  castclass  Match01/Test1/X11
+      IL_0041:  stloc.2
+      IL_0042:  ldarg.2
+      IL_0043:  castclass  Match01/Test1/X11
+      IL_0048:  stloc.3
+      IL_0049:  ldloc.2
+      IL_004a:  ldfld      int32 Match01/Test1/X11::item
+      IL_004f:  stloc.s    V_4
+      IL_0051:  ldloc.3
+      IL_0052:  ldfld      int32 Match01/Test1/X11::item
+      IL_0057:  stloc.s    V_5
+      IL_0059:  ldloc.s    V_4
+      IL_005b:  ldloc.s    V_5
+      IL_005d:  cgt
+      IL_005f:  ldloc.s    V_4
+      IL_0061:  ldloc.s    V_5
+      IL_0063:  clt
+      IL_0065:  sub
+      IL_0066:  ret
+
+      IL_0067:  ldarg.0
+      IL_0068:  castclass  Match01/Test1/X12
+      IL_006d:  stloc.s    V_6
+      IL_006f:  ldarg.2
+      IL_0070:  castclass  Match01/Test1/X12
+      IL_0075:  stloc.s    V_7
+      IL_0077:  ldloc.s    V_6
+      IL_0079:  ldfld      int32 Match01/Test1/X12::item
+      IL_007e:  stloc.s    V_4
+      IL_0080:  ldloc.s    V_7
+      IL_0082:  ldfld      int32 Match01/Test1/X12::item
+      IL_0087:  stloc.s    V_5
+      IL_0089:  ldloc.s    V_4
+      IL_008b:  ldloc.s    V_5
+      IL_008d:  cgt
+      IL_008f:  ldloc.s    V_4
+      IL_0091:  ldloc.s    V_5
+      IL_0093:  clt
+      IL_0095:  sub
+      IL_0096:  ret
+
+      IL_0097:  ldarg.0
+      IL_0098:  castclass  Match01/Test1/X13
+      IL_009d:  stloc.s    V_8
+      IL_009f:  ldarg.2
+      IL_00a0:  castclass  Match01/Test1/X13
+      IL_00a5:  stloc.s    V_9
+      IL_00a7:  ldloc.s    V_8
+      IL_00a9:  ldfld      int32 Match01/Test1/X13::item
+      IL_00ae:  stloc.s    V_4
+      IL_00b0:  ldloc.s    V_9
+      IL_00b2:  ldfld      int32 Match01/Test1/X13::item
+      IL_00b7:  stloc.s    V_5
+      IL_00b9:  ldloc.s    V_4
+      IL_00bb:  ldloc.s    V_5
+      IL_00bd:  cgt
+      IL_00bf:  ldloc.s    V_4
+      IL_00c1:  ldloc.s    V_5
+      IL_00c3:  clt
+      IL_00c5:  sub
+      IL_00c6:  ret
+
+      IL_00c7:  ldarg.0
+      IL_00c8:  castclass  Match01/Test1/X14
+      IL_00cd:  stloc.s    V_10
+      IL_00cf:  ldarg.2
+      IL_00d0:  castclass  Match01/Test1/X14
+      IL_00d5:  stloc.s    V_11
+      IL_00d7:  ldloc.s    V_10
+      IL_00d9:  ldfld      int32 Match01/Test1/X14::item
+      IL_00de:  stloc.s    V_4
+      IL_00e0:  ldloc.s    V_11
+      IL_00e2:  ldfld      int32 Match01/Test1/X14::item
+      IL_00e7:  stloc.s    V_5
+      IL_00e9:  ldloc.s    V_4
+      IL_00eb:  ldloc.s    V_5
+      IL_00ed:  cgt
+      IL_00ef:  ldloc.s    V_4
+      IL_00f1:  ldloc.s    V_5
+      IL_00f3:  clt
+      IL_00f5:  sub
+      IL_00f6:  ret
+
+      IL_00f7:  ldloc.0
+      IL_00f8:  ldloc.1
+      IL_00f9:  sub
+      IL_00fa:  ret
+
+      IL_00fb:  ldc.i4.1
+      IL_00fc:  ret
+    } 
+
+    .method public hidebysig virtual final instance int32  CompareTo(object obj, class [runtime]System.Collections.IComparer comp) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  6
+      .locals init (class Match01/Test1 V_0)
       IL_0000:  ldarg.1
       IL_0001:  unbox.any  Match01/Test1
       IL_0006:  stloc.0
       IL_0007:  ldarg.0
-      IL_0008:  brfalse.s  IL_001d
+      IL_0008:  brfalse.s  IL_0014
 
       IL_000a:  ldarg.0
       IL_000b:  ldarg.1
       IL_000c:  ldloc.0
-      IL_000d:  newobj     instance void Match01/Test1/'clo@4-1'::.ctor(class Match01/Test1,
-                                                                        object,
-                                                                        class Match01/Test1)
-      IL_0012:  stloc.1
-      IL_0013:  ldloc.1
-      IL_0014:  ldnull
-      IL_0015:  tail.
-      IL_0017:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::Invoke(!0)
-      IL_001c:  ret
+      IL_000d:  ldnull
+      IL_000e:  call       int32 Match01/Test1::'CompareTo$cont@4-1'(class Match01/Test1,
+                                                                     object,
+                                                                     class Match01/Test1,
+                                                                     class [FSharp.Core]Microsoft.FSharp.Core.Unit)
+      IL_0013:  ret
 
-      IL_001d:  ldarg.1
-      IL_001e:  unbox.any  Match01/Test1
-      IL_0023:  brfalse.s  IL_0027
+      IL_0014:  ldarg.1
+      IL_0015:  unbox.any  Match01/Test1
+      IL_001a:  brfalse.s  IL_001e
 
-      IL_0025:  ldc.i4.m1
-      IL_0026:  ret
+      IL_001c:  ldc.i4.m1
+      IL_001d:  ret
 
-      IL_0027:  ldc.i4.0
-      IL_0028:  ret
+      IL_001e:  ldc.i4.0
+      IL_001f:  ret
     } 
 
     .method public hidebysig virtual final instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
@@ -1179,9 +1071,7 @@
       IL_000b:  ret
     } 
 
-    .method public hidebysig instance bool 
-            Equals(class Match01/Test1 obj,
-                   class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig instance bool Equals(class Match01/Test1 obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -1285,9 +1175,7 @@
       IL_00c7:  ret
     } 
 
-    .method public hidebysig virtual final 
-            instance bool  Equals(object obj,
-                                  class [runtime]System.Collections.IEqualityComparer comp) cil managed
+    .method public hidebysig virtual final instance bool  Equals(object obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
@@ -1558,9 +1446,7 @@
   .field private class [runtime]System.Type Type@
   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method public specialname rtspecialname 
-          instance void  .ctor(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes MemberType,
-                               class [runtime]System.Type Type) cil managed
+  .method public specialname rtspecialname instance void  .ctor(valuetype System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes MemberType, class [runtime]System.Type Type) cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
