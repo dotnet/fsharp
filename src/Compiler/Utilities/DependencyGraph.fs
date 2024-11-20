@@ -3,7 +3,7 @@
 /// This Dependency Graph provides a way to maintain an up-to-date but lazy set of dependent values.
 /// When changes are applied to the graph (either vertices change value or edges change), no computation is performed.
 /// Only when a value is requested it is lazily computed and thereafter stored until invalidated by further changes.
-module Internal.Utilities.DependencyGraph
+module internal Internal.Utilities.DependencyGraph
 
 open System.Collections.Generic
 
@@ -33,7 +33,6 @@ type IDependencyGraph<'Id, 'Val when 'Id: equality> =
     abstract member RemoveDependency: node: 'Id * noLongerDependsOn: 'Id -> unit
     abstract member UpdateNode: id: 'Id * update: ('Val -> 'Val) -> unit
     abstract member RemoveNode: id: 'Id -> unit
-    abstract member Debug_GetNodes: ('Id -> bool) -> DependencyNode<'Id, 'Val> seq
     abstract member Debug_RenderMermaid: ?mapping: ('Id -> 'Id) -> string
     abstract member OnWarning: (string -> unit) -> unit
 
@@ -66,12 +65,7 @@ module Internal =
             nodes |> insert node.Id node
             invalidateDependents node.Id
 
-        member _.Debug =
-            {|
-                Nodes = nodes
-                Dependencies = dependencies
-                Dependents = dependents
-            |}
+        member _.Debug_Nodes = nodes
 
         member _.AddOrUpdateNode(id: 'Id, value: 'Val) =
             addNode
@@ -199,9 +193,6 @@ module Internal =
                 | false, _ -> ()
             | false, _ -> ()
 
-        member this.Debug_GetNodes(predicate: 'Id -> bool) : DependencyNode<'Id, 'Val> seq =
-            nodes.Values |> Seq.filter (fun node -> predicate node.Id)
-
         member _.Debug_RenderMermaid(?mapping) =
 
             let mapping = defaultArg mapping id
@@ -232,8 +223,6 @@ module Internal =
         member _.OnWarning(f) = warningSubscribers.Add f |> ignore
 
         interface IDependencyGraph<'Id, 'Val> with
-
-            member this.Debug_GetNodes(predicate) = self.Debug_GetNodes(predicate)
 
             member _.AddOrUpdateNode(id, value) = self.AddOrUpdateNode(id, value)
             member _.AddList(nodes) = self.AddList(nodes)
@@ -320,9 +309,6 @@ type LockOperatedDependencyGraph<'Id, 'Val when 'Id: equality and 'Id: not null>
 
         member _.OnWarning(f) =
             lock lockObj (fun () -> graph.OnWarning f)
-
-        member _.Debug_GetNodes(predicate) =
-            lock lockObj (fun () -> graph.Debug_GetNodes(predicate))
 
         member _.Debug_RenderMermaid(m) =
             lock lockObj (fun () -> graph.Debug_RenderMermaid(?mapping = m))
