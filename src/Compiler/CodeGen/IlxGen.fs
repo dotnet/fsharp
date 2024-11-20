@@ -11013,7 +11013,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                     yield! ilDebugDisplayAttributes
                 ]
 
-            let typeKind =
+            let ilTypeDefKind =
                 match tyconRepr with
                 | TFSharpTyconRepr o ->
                     match o.fsobjmodel_kind with
@@ -11033,7 +11033,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
 
             let requiresExtraField =
                 let isEmptyStruct =
-                    (match typeKind with
+                    (match ilTypeDefKind with
                      | HasFlag ILTypeDefAdditionalFlags.ValueType -> true
                      | _ -> false)
                     &&
@@ -11549,7 +11549,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             ILTypeDefLayout.Auto, ILDefaultPInvokeEncoding.Ansi
 
                         | _ when
-                            (match typeKind with
+                            (match ilTypeDefKind with
                              | HasFlag ILTypeDefAdditionalFlags.ValueType -> true
                              | _ -> false)
                             ->
@@ -11593,7 +11593,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                     | ILTypeDefLayout.Sequential _ -> List.iter validateSequential ilFieldDefs
                     | _ -> ()
 
-                    let tdef = tdef.WithKind(typeKind).WithLayout(tdLayout).WithEncoding(tdEncoding)
+                    let tdef =
+                        tdef.WithKind(ilTypeDefKind).WithLayout(tdLayout).WithEncoding(tdEncoding)
 
                     tdef, None
 

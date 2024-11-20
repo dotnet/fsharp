@@ -2574,6 +2574,16 @@ type ILTypeDefAdditionalFlags =
     /// or this information may not be available at the time the ILTypeDef is created
     | CanContainExtensionMethods = 1024
 
+let internal typeKindFlags =
+    ILTypeDefAdditionalFlags.Class |||
+    ILTypeDefAdditionalFlags.ValueType |||
+    ILTypeDefAdditionalFlags.Interface |||
+    ILTypeDefAdditionalFlags.Enum |||
+    ILTypeDefAdditionalFlags.Delegate
+
+let inline internal resetTypeKind flags =
+    flags &&& ~~~typeKindFlags
+
 let (|HasFlag|_|) (flag: ILTypeDefAdditionalFlags) flags =
     flags &&& flag = flag
 
@@ -2879,6 +2889,7 @@ type ILTypeDef
     member x.WithKind(kind) =
         x.With(
             attributes = (x.Attributes ||| convertTypeKind kind),
+            newAdditionalFlags = (resetTypeKind additionalFlags ||| kind),
             extends =
                 match kind with
                 | HasFlag ILTypeDefAdditionalFlags.Interface -> emptyILExtends
