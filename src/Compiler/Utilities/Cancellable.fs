@@ -7,7 +7,8 @@ open System.Threading
 type Cancellable =
     static let tokenHolder = AsyncLocal<CancellationToken voption>()
 
-    static let guard = String.IsNullOrWhiteSpace (Environment.GetEnvironmentVariable("DISABLE_CHECKANDTHROW_ASSERT"))
+    static let guard =
+        String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("DISABLE_CHECKANDTHROW_ASSERT"))
 
     static let ensureToken msg =
         tokenHolder.Value
