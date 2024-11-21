@@ -95,18 +95,11 @@ Our repository gets a high volume of pull requests and reviewing each of them is
 
 ### Feedback
 
-Your pull request will now go through extensive checks by the subject matter experts on our team. Please be patient; we have hundreds of pull requests across all of our repositories. Update your pull request according to feedback until it is approved by one of the Roslyn team members. After that, one of our team members may adjust the branch you merge into based on the expected release schedule.
-
-**During pull request review**
-A core contributor will review your pull request and provide feedback.
-
-### Automatic repo rules
-
-To ensure that there is not a large backlog of inactive PRs, the pull request will be marked as stale after two weeks of no activity. After another two weeks, it will be reset  to 'Draft' state.
+Contributors will review your pull request and provide feedback.
 
 ## Merging pull requests
 
-When your pull request has had all feedback addressed, it has been signed off by one or more reviewers with commit access, and all checks are green, we will commit it.
+When your pull request has had the feedback addressed, and it has been signed off by two or more core team reviewers with commit access, and all checks are green, we will commit it.
 
 ## Code of conduct
 
