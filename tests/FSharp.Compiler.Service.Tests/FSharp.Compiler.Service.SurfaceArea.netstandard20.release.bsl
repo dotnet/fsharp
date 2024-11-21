@@ -11280,6 +11280,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Underscore
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Upcast
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Val
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Void
+FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 WarnDirective
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 When
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 While
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 WhileBang
@@ -11475,6 +11476,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsUnderscore
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsUpcast
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsVal
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsVoid
+FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsWarnDirective
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsWhen
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsWhile
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsWhileBang
@@ -11666,6 +11668,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsUnderscore()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsUpcast()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsVal()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsVoid()
+FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsWarnDirective()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsWhen()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsWhile()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsWhileBang()
@@ -11857,6 +11860,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FShar
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind Upcast
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind Val
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind Void
+FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind WarnDirective
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind When
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind While
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind WhileBang
@@ -12048,6 +12052,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FShar
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_Upcast()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_Val()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_Void()
+FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_WarnDirective()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_When()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_While()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_WhileBang()
