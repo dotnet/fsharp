@@ -4,7 +4,6 @@
 module internal FSharp.Compiler.ParseAndCheckInputs
 
 open System
-open System.Diagnostics
 open System.IO
 open System.Threading
 open System.Collections.Generic
@@ -41,7 +40,6 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TcGlobals
 
 let CanonicalizeFilename fileName =
@@ -217,27 +215,6 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, fileName, intf) 
 
         SynModuleOrNamespaceSig(lid, isRecursive, kind, decls, xmlDoc, attributes, None, range, trivia)
 
-let GetScopedPragmasForHashDirective hd (langVersion: LanguageVersion) =
-    [
-        match hd with
-        | ParsedHashDirective("nowarn", args, _) ->
-            for arg in args do
-                let rangeAndDescription =
-                    match arg with
-                    | ParsedHashDirectiveArgument.Int32(n, m) -> Some(m, WarningDescription.Int32 n)
-                    | ParsedHashDirectiveArgument.Ident(ident, m) -> Some(m, WarningDescription.Ident ident)
-                    | ParsedHashDirectiveArgument.String(s, _, m) -> Some(m, WarningDescription.String s)
-                    | _ -> None
-
-                match rangeAndDescription with
-                | None -> ()
-                | Some(m, description) ->
-                    match GetWarningNumber(m, description, langVersion, WarningNumberSource.CompilerDirective) with
-                    | None -> ()
-                    | Some n -> ScopedPragma.WarningOff(m, n)
-        | _ -> ()
-    ]
-
 let private collectCodeComments (lexbuf: UnicodeLexing.Lexbuf) (tripleSlashComments: range list) =
     [
         yield! CommentStore.GetComments(lexbuf)
@@ -275,17 +252,6 @@ let PostParseModuleImpls
     let qualName = QualFileNameOfImpls fileName impls
     let isScript = IsScript fileName
 
-    let scopedPragmas =
-        [
-            for SynModuleOrNamespace(decls = decls) in impls do
-                for d in decls do
-                    match d with
-                    | SynModuleDecl.HashDirective(hd, _) -> yield! GetScopedPragmasForHashDirective hd lexbuf.LanguageVersion
-                    | _ -> ()
-            for hd in hashDirectives do
-                yield! GetScopedPragmasForHashDirective hd lexbuf.LanguageVersion
-        ]
-
     let conditionalDirectives = IfdefStore.GetTrivia(lexbuf)
     let codeComments = collectCodeComments lexbuf tripleSlashComments
 
@@ -296,7 +262,7 @@ let PostParseModuleImpls
         }
 
     ParsedInput.ImplFile(
-        ParsedImplFileInput(fileName, isScript, qualName, scopedPragmas, hashDirectives, impls, isLastCompiland, trivia, identifiers)
+        ParsedImplFileInput(fileName, isScript, qualName, [], hashDirectives, impls, isLastCompiland, trivia, identifiers)
     )
 
 let PostParseModuleSpecs
@@ -326,17 +292,6 @@ let PostParseModuleSpecs
 
     let qualName = QualFileNameOfSpecs fileName specs
 
-    let scopedPragmas =
-        [
-            for SynModuleOrNamespaceSig(decls = decls) in specs do
-                for d in decls do
-                    match d with
-                    | SynModuleSigDecl.HashDirective(hd, _) -> yield! GetScopedPragmasForHashDirective hd lexbuf.LanguageVersion
-                    | _ -> ()
-            for hd in hashDirectives do
-                yield! GetScopedPragmasForHashDirective hd lexbuf.LanguageVersion
-        ]
-
     let conditionalDirectives = IfdefStore.GetTrivia(lexbuf)
     let codeComments = collectCodeComments lexbuf tripleSlashComments
 
@@ -346,7 +301,7 @@ let PostParseModuleSpecs
             CodeComments = codeComments
         }
 
-    ParsedInput.SigFile(ParsedSigFileInput(fileName, qualName, scopedPragmas, hashDirectives, specs, trivia, identifiers))
+    ParsedInput.SigFile(ParsedSigFileInput(fileName, qualName, [], hashDirectives, specs, trivia, identifiers))
 
 type ModuleNamesDict = Map<string, Map<string, QualifiedNameOfFile>>
 
@@ -449,66 +404,60 @@ let ParseInput
     use _ = UseDiagnosticsLogger delayLogger
     use _ = UseBuildPhase BuildPhase.Parse
 
-    let mutable scopedPragmas = []
-
     try
-        let input =
-            let identStore = HashSet<string>()
+        let identStore = HashSet<string>()
 
-            let lexer =
-                if identCapture then
-                    (fun x ->
-                        let token = lexer x
+        let lexer =
+            if identCapture then
+                (fun x ->
+                    let token = lexer x
 
-                        match token with
-                        | Parser.token.PERCENT_OP ident
-                        | Parser.token.FUNKY_OPERATOR_NAME ident
-                        | Parser.token.ADJACENT_PREFIX_OP ident
-                        | Parser.token.PLUS_MINUS_OP ident
-                        | Parser.token.INFIX_AMP_OP ident
-                        | Parser.token.INFIX_STAR_DIV_MOD_OP ident
-                        | Parser.token.PREFIX_OP ident
-                        | Parser.token.INFIX_BAR_OP ident
-                        | Parser.token.INFIX_AT_HAT_OP ident
-                        | Parser.token.INFIX_COMPARE_OP ident
-                        | Parser.token.INFIX_STAR_STAR_OP ident
-                        | Parser.token.IDENT ident -> identStore.Add ident |> ignore
-                        | _ -> ()
+                    match token with
+                    | Parser.token.PERCENT_OP ident
+                    | Parser.token.FUNKY_OPERATOR_NAME ident
+                    | Parser.token.ADJACENT_PREFIX_OP ident
+                    | Parser.token.PLUS_MINUS_OP ident
+                    | Parser.token.INFIX_AMP_OP ident
+                    | Parser.token.INFIX_STAR_DIV_MOD_OP ident
+                    | Parser.token.PREFIX_OP ident
+                    | Parser.token.INFIX_BAR_OP ident
+                    | Parser.token.INFIX_AT_HAT_OP ident
+                    | Parser.token.INFIX_COMPARE_OP ident
+                    | Parser.token.INFIX_STAR_STAR_OP ident
+                    | Parser.token.IDENT ident -> identStore.Add ident |> ignore
+                    | _ -> ()
 
-                        token)
-                else
-                    lexer
-
-            if FSharpMLCompatFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
-                if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
-                    errorR (Error(FSComp.SR.buildInvalidSourceFileExtensionML fileName, rangeStartup))
-                else
-                    mlCompatWarning (FSComp.SR.buildCompilingExtensionIsForML ()) rangeStartup
-
-            // Call the appropriate parser - for signature files or implementation files
-            if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
-                let impl = Parser.implementationFile lexer lexbuf
-
-                let tripleSlashComments = XmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
-
-                PostParseModuleImpls(defaultNamespace, fileName, isLastCompiland, impl, lexbuf, tripleSlashComments, Set identStore)
-            elif FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
-                let intfs = Parser.signatureFile lexer lexbuf
-
-                let tripleSlashComments = XmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
-
-                PostParseModuleSpecs(defaultNamespace, fileName, isLastCompiland, intfs, lexbuf, tripleSlashComments, Set identStore)
-            else if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
-                error (Error(FSComp.SR.buildInvalidSourceFileExtensionUpdated fileName, rangeStartup))
+                    token)
             else
-                error (Error(FSComp.SR.buildInvalidSourceFileExtension fileName, rangeStartup))
+                lexer
 
-        scopedPragmas <- input.ScopedPragmas
-        input
+        if FSharpMLCompatFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
+            if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
+                errorR (Error(FSComp.SR.buildInvalidSourceFileExtensionML fileName, rangeStartup))
+            else
+                mlCompatWarning (FSComp.SR.buildCompilingExtensionIsForML ()) rangeStartup
+
+        // Call the appropriate parser - for signature files or implementation files
+        if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
+            let impl = Parser.implementationFile lexer lexbuf
+
+            let tripleSlashComments = XmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
+
+            PostParseModuleImpls(defaultNamespace, fileName, isLastCompiland, impl, lexbuf, tripleSlashComments, Set identStore)
+        elif FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
+            let intfs = Parser.signatureFile lexer lexbuf
+
+            let tripleSlashComments = XmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
+
+            PostParseModuleSpecs(defaultNamespace, fileName, isLastCompiland, intfs, lexbuf, tripleSlashComments, Set identStore)
+        else if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
+            error (Error(FSComp.SR.buildInvalidSourceFileExtensionUpdated fileName, rangeStartup))
+        else
+            error (Error(FSComp.SR.buildInvalidSourceFileExtension fileName, rangeStartup))
     finally
         // OK, now commit the errors, since the ScopedPragmas will (hopefully) have been scraped
         let filteringDiagnosticsLogger =
-            GetDiagnosticsLoggerFilteringByScopedPragmas(false, scopedPragmas, diagnosticOptions, diagnosticsLogger)
+            GetDiagnosticsLoggerFilteringByScopedNowarn(diagnosticOptions, diagnosticsLogger)
 
         delayLogger.CommitDelayedDiagnostics filteringDiagnosticsLogger
 
@@ -862,9 +811,7 @@ let ParseInputFiles (tcConfig: TcConfig, lexResourceManager, sourceFiles, diagno
         tcConfig.exiter.Exit 1
 
 let ProcessMetaCommandsFromInput
-    (nowarnF: 'state -> range * string -> 'state,
-     hashReferenceF: 'state -> range * string * Directive -> 'state,
-     loadSourceF: 'state -> range * string -> unit)
+    (hashReferenceF: 'state -> range * string * Directive -> 'state, loadSourceF: 'state -> range * string -> unit)
     (tcConfig: TcConfigBuilder, inp: ParsedInput, pathOfMetaCommandSource, state0)
     =
 
@@ -907,11 +854,6 @@ let ProcessMetaCommandsFromInput
                     | _ -> errorR (Error(FSComp.SR.buildInvalidHashIDirective (), m))
 
                 state
-
-            | ParsedHashDirective("nowarn", hashArguments, m) ->
-                let arguments = parsedHashDirectiveArgumentsNoCheck hashArguments
-
-                List.fold (fun state d -> nowarnF state (m, d)) state arguments
 
             | ParsedHashDirective(("reference" | "r") as c, [], m) ->
                 if not canHaveScriptMetaCommands then
@@ -1033,19 +975,9 @@ let ProcessMetaCommandsFromInput
         let state = List.fold ProcessMetaCommandsFromModuleImpl state implFile.Contents
         state
 
-let ApplyNoWarnsToTcConfig (tcConfig: TcConfig, inp: ParsedInput, pathOfMetaCommandSource) =
-    // Clone
-    let tcConfigB = tcConfig.CloneToBuilder()
-    let addNoWarn = fun () (m, s) -> tcConfigB.TurnWarningOff(m, s)
-    let addReference = fun () (_m, _s, _) -> ()
-    let addLoadedSource = fun () (_m, _s) -> ()
-    ProcessMetaCommandsFromInput (addNoWarn, addReference, addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())
-    TcConfig.Create(tcConfigB, validate = false)
-
 let ApplyMetaCommandsFromInputToTcConfig (tcConfig: TcConfig, inp: ParsedInput, pathOfMetaCommandSource, dependencyProvider) =
     // Clone
     let tcConfigB = tcConfig.CloneToBuilder()
-    let getWarningNumber = fun () _ -> ()
 
     let addReferenceDirective =
         fun () (m, path, directive) -> tcConfigB.AddReferenceDirective(dependencyProvider, m, path, directive)
@@ -1053,7 +985,7 @@ let ApplyMetaCommandsFromInputToTcConfig (tcConfig: TcConfig, inp: ParsedInput, 
     let addLoadedSource =
         fun () (m, s) -> tcConfigB.AddLoadedSource(m, s, pathOfMetaCommandSource)
 
-    ProcessMetaCommandsFromInput (getWarningNumber, addReferenceDirective, addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())
+    ProcessMetaCommandsFromInput (addReferenceDirective, addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())
     TcConfig.Create(tcConfigB, validate = false)
 
 /// Build the initial type checking environment
@@ -1426,15 +1358,15 @@ let CheckOneInput
     }
 
 // Within a file, equip loggers to locally filter w.r.t. scope pragmas in each input
-let DiagnosticsLoggerForInput (tcConfig: TcConfig, input: ParsedInput, oldLogger) =
-    GetDiagnosticsLoggerFilteringByScopedPragmas(false, input.ScopedPragmas, tcConfig.diagnosticsOptions, oldLogger)
+let DiagnosticsLoggerForInput (tcConfig: TcConfig, oldLogger) =
+    GetDiagnosticsLoggerFilteringByScopedNowarn(tcConfig.diagnosticsOptions, oldLogger)
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
 let CheckOneInputEntry (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt) tcState input =
     cancellable {
         // Equip loggers to locally filter w.r.t. scope pragmas in each input
         use _ =
-            UseTransformedDiagnosticsLogger(fun oldLogger -> DiagnosticsLoggerForInput(tcConfig, input, oldLogger))
+            UseTransformedDiagnosticsLogger(fun oldLogger -> DiagnosticsLoggerForInput(tcConfig, oldLogger))
 
         use _ = UseBuildPhase BuildPhase.TypeCheck
 
@@ -1934,7 +1866,7 @@ let CheckMultipleInputsUsingGraphMode
             inputsWithLoggers
             |> List.toArray
             |> Array.map (fun (input, oldLogger) ->
-                let logger = DiagnosticsLoggerForInput(tcConfig, input, oldLogger)
+                let logger = DiagnosticsLoggerForInput(tcConfig, oldLogger)
                 input, logger)
 
         let processFile (node: NodeToTypeCheck) (state: State) : Finisher<NodeToTypeCheck, State, PartialResult> =
