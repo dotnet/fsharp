@@ -88,6 +88,7 @@ type LanguageFeature =
     | DontWarnOnUppercaseIdentifiersInBindingPatterns
     | UseTypeSubsumptionCache
     | DeprecatePlacesWhereSeqCanBeOmitted
+    | ScopedNowarn
 
 /// LanguageVersion management
 type LanguageVersion =
