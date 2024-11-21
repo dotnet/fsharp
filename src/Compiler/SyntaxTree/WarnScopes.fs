@@ -5,6 +5,7 @@ namespace FSharp.Compiler
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
@@ -23,6 +24,11 @@ module internal WarnScopes =
     type private WarnCmd =
         | Nowarn of int * range
         | Warnon of int * range
+
+        member w.WarningNumber =
+            match w with
+            | Nowarn(n, _)
+            | Warnon(n, _) -> n
 
     type private WarnDirective =
         {
@@ -312,6 +318,21 @@ module internal WarnScopes =
             |> Map.map (fun _ (oidx, sectionMaps) -> oidx, List.rev sectionMaps)
 
         lock diagnosticOptions (fun () -> merge lexbufLineMaps lexbufWarnScopes)
+
+    let getDirectiveTrivia (lexbuf: Lexbuf) =
+        let mkTrivia d =
+            if isWarnonDirective d then
+                WarnDirectiveTrivia.Warnon(d.WarnCmds |> List.map _.WarningNumber, d.DirectiveRange)
+            else
+                WarnDirectiveTrivia.Nowarn(d.WarnCmds |> List.map _.WarningNumber, d.DirectiveRange)
+
+        (getTempData lexbuf).WarnDirectives |> List.rev |> List.map mkTrivia
+
+    let getCommentTrivia (lexbuf: Lexbuf) =
+        (getTempData lexbuf).WarnDirectives
+        |> List.rev
+        |> List.choose _.CommentRange
+        |> List.map CommentTrivia.LineComment
 
     // *************************************
     // Apply the warn scopes after lexing
