@@ -82,11 +82,12 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
                     Delta = false
                 },
                 Range = false
-            },
-            HoverProvider = new HoverOptions()
-            {
-                WorkDoneProgress = true
             }
+            //,
+            //HoverProvider = new HoverOptions()
+            //{
+            //    WorkDoneProgress = true
+            //}
         };
         return capabilities;
     }
@@ -331,7 +332,7 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
         }
 
 
-        var ((clientStream, serverStream), _server) = FSharpLanguageServer.Create(workspace, (serviceCollection) =>
+        var ((inputStream, outputStream), _server) = FSharpLanguageServer.Create(workspace, (serviceCollection) =>
         {
             serviceCollection.AddSingleton<IServerCapabilitiesOverride, VsServerCapabilitiesOverride>();
             serviceCollection.AddSingleton<IMethodHandler, VsDiagnosticsHandler>();
@@ -352,10 +353,9 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
                 .SubscribeAsync(new SolutionObserver(), CancellationToken.None);
         }
 
-
         return new DuplexPipe(
-            PipeReader.Create(clientStream),
-            PipeWriter.Create(serverStream));
+            PipeReader.Create(inputStream),
+            PipeWriter.Create(outputStream));
     }
 
     /// <inheritdoc/>

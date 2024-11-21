@@ -89,7 +89,7 @@ type FSharpLanguageServer
 
         jsonRpc.TraceSource.Listeners.Add(listener) |> ignore
 
-        jsonRpc.TraceSource.Switch.Level <- SourceLevels.Information
+        jsonRpc.TraceSource.Switch.Level <- SourceLevels.All
 
         let server =
             new FSharpLanguageServer(jsonRpc, logger, initialWorkspace, ?addExtraHandlers = addExtraHandlers)
