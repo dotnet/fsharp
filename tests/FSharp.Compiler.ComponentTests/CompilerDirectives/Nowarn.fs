@@ -21,8 +21,8 @@ module Nowarn =
     let private fs = String.concat Environment.NewLine >> FsSource
     let private fsMod lines = fs ("module A" :: lines)
     let private fsSub lines = fs ("namespace A" :: "module B =" :: (lines |> List.map (fun s -> "  " + s)))
-    // let private fsi = String.concat Environment.NewLine >> FsiSource
-    // let private fsx = String.concat Environment.NewLine >> FsxSourceCode
+    let private fsi = String.concat Environment.NewLine >> FsiSource
+    let private fsx = String.concat Environment.NewLine >> FsxSourceCode
     
     let private fsiSource44 = [
         "namespace A"
@@ -50,50 +50,50 @@ module Nowarn =
     
     let private testData =
         [
-        // vp, [], [fsMod [make20]], [W20, 2]
-        // vp, [], [fsMod [nowarn 20; make20]], []
-        // vp, [], [fsMod ["#nowarn 20;;"; make20]], []
-        // vp, [], [fsMod [make20; nowarn 20; make20; warnon 20; make20]], [W20, 2; W20, 6]
-        // v9, [], [fsMod [make20; nowarn 20; make20; warnon 20; make20]], [Error 3350, 5]
-        // vp, [], [fsMod [nowarn 20; line1; make20]], []
-        v9, [], [fsMod [nowarn 20; line1; make20]], [W20, 1]     // this one will change, see RFC
-        // vp, [], [fsMod [nowarn 20; line10; make20]], []
+        vp, [], [fsMod [make20]], [W20, 2]
+        vp, [], [fsMod [nowarn 20; make20]], []
+        vp, [], [fsMod ["#nowarn 20;;"; make20]], []
+        vp, [], [fsMod [make20; nowarn 20; make20; warnon 20; make20]], [W20, 2; W20, 6]
+        v9, [], [fsMod [make20; nowarn 20; make20; warnon 20; make20]], [Error 3350, 5]
+        vp, [], [fsMod [nowarn 20; line1; make20]], []
+        v9, [], [fsMod [nowarn 20; line1; make20]], []     // real v9 shows a warning here
+        vp, [], [fsMod [nowarn 20; line10; make20]], []
         v9, [], [fsMod [nowarn 20; line10; make20]], []
-        // vp, [], [fsMod [nowarn 20; line1; make20; warnon 20; make20]], [W20, 3]
-        // v9, [], [fsMod [nowarn 20; line1; make20; warnon 20; make20]], [Error 3350, 2]
-        // vp, ["--nowarn:20"], [fsMod [make20]], []
+        vp, [], [fsMod [nowarn 20; line1; make20; warnon 20; make20]], [W20, 3]
+        v9, [], [fsMod [nowarn 20; line1; make20; warnon 20; make20]], [Error 3350, 2]
+        vp, ["--nowarn:20"], [fsMod [make20]], []
         v9, ["--nowarn:20"], [fsMod [make20]], []
-        // vp, ["--nowarn:20"], [fsMod [warnon 20; make20]], [W20, 3]
-        // v9, ["--nowarn:20"], [fsMod [warnon 20; make20]], [Error 3350, 2]
-        // vp, ["--warnon:3579"], [fsMod ["""ignore $"{1}" """]], [Warning 3579, 2]
+        vp, ["--nowarn:20"], [fsMod [warnon 20; make20]], [W20, 3]
+        v9, ["--nowarn:20"], [fsMod [warnon 20; make20]], [Error 3350, 2]
+        vp, ["--warnon:3579"], [fsMod ["""ignore $"{1}" """]], [Warning 3579, 2]
         v9, ["--warnon:3579"], [fsMod ["""ignore $"{1}" """]], [Warning 3579, 2]
-        // vp, [], [fsMod ["#warnon 3579"; """ignore $"{1}" """]], [Warning 3579, 3]
-        // v9, [], [fsMod ["#warnon 3579"; """ignore $"{1}" """]], [Error 3350, 2]
-        // vp, ["--warnaserror"], [fsMod [make20]], [Error 20, 2]
-        // vp, ["--warnaserror"; "--nowarn:20"], [fsMod [make20]], []
-        // vp, ["--warnaserror"; "--nowarn:20"], [fsMod [warnon 20; make20]], [Error 20, 3]
-        // v9, ["--warnaserror"; "--nowarn:20"], [fsMod [warnon 20; make20]], [Error 3350, 2]
-        // vp, ["--warnaserror"], [fsMod [nowarn 20; make20]], []
-        // vp, ["--warnaserror"; "--warnaserror-:20"], [fsMod [make20]], [W20, 2]
-        // vp, ["--warnaserror:20"], [fsMod [nowarn 20; make20]], []
-        // vp, [], [fsSub [nowarn 20; make20]], []
+        vp, [], [fsMod ["#warnon 3579"; """ignore $"{1}" """]], [Warning 3579, 3]
+        v9, [], [fsMod ["#warnon 3579"; """ignore $"{1}" """]], [Error 3350, 2]
+        vp, ["--warnaserror"], [fsMod [make20]], [Error 20, 2]
+        vp, ["--warnaserror"; "--nowarn:20"], [fsMod [make20]], []
+        vp, ["--warnaserror"; "--nowarn:20"], [fsMod [warnon 20; make20]], [Error 20, 3]
+        v9, ["--warnaserror"; "--nowarn:20"], [fsMod [warnon 20; make20]], [Error 3350, 2]
+        vp, ["--warnaserror"], [fsMod [nowarn 20; make20]], []
+        vp, ["--warnaserror"; "--warnaserror-:20"], [fsMod [make20]], [W20, 2]
+        vp, ["--warnaserror:20"], [fsMod [nowarn 20; make20]], []
+        vp, [], [fsSub [nowarn 20; make20]], []
         v9, [], [fsSub [nowarn 20; make20]], [Warning 236, 3; W20, 4]
-        // vp, [], [fsSub [make20; nowarn 20; make20; warnon 20; make20]], [W20, 3; W20, 7]
+        vp, [], [fsSub [make20; nowarn 20; make20; warnon 20; make20]], [W20, 3; W20, 7]
         v9, [], [fsSub [make20; nowarn 20; make20; warnon 20; make20]], [Warning 236, 4; Warning 236, 6; W20, 3; W20, 5; W20, 7]
-        // vp, [], [fsi fsiSource44; fs fsSource44], [Warning 44, 4; Warning 44, 8]
-        // v9, [], [fsi fsiSource44; fs fsSource44], [Error 3350, 7]
-        // vp, [], [fsx ["module A"; make20; nowarn 20; make20; warnon 20; make20]], []  // 20 is not checked in scripts
-        // vp, [], [fsx ["module A"; make25; nowarn 25; make25; warnon 25; make25]], [Warning 25, 2; Warning 25, 6]
-        // v9, [], [fsx ["module A"; make25; nowarn 25; make25; warnon 25; make25]], [Error 3350, 5]
-        // vp, [], [fsMod ["let x ="; nowarn 20; "    1"; warnon 20; "    2"; "    3"; "4"]], [W20, 6; W20, 8]
-        // vp, [], [fsMod [nowarn 20; nowarn 20; warnon 20; make20]], [Information 3876, 3; W20, 5]
-        // vp, [], [fsMod [nowarn 20; warnon 20; warnon 20; make20]], [Warning 3876, 4; W20, 5]
-        // vp, ["--warnon:3876"], [fsMod [nowarn 20; nowarn 20; warnon 20; make20]], [Warning 3876, 3; W20, 5]
-        // vp, [], [fsMod ["#nowarn \"\"\"20\"\"\" "; make20]], []
-        // vp, [], [fsMod ["#nowarnx 20"; make20]], [Error 3353, 2]
-        // vp, [], [fsMod ["#nowarn 20 // comment"; make20]], []
-        // vp, [], [fsMod ["#nowarn"; make20]], [Error 3875, 2]
-        // vp, [], [fsMod ["let a = 1; #nowarn 20"; make20]], [Error 3874, 2]
+        vp, [], [fsi fsiSource44; fs fsSource44], [Warning 44, 4; Warning 44, 8]
+        v9, [], [fsi fsiSource44; fs fsSource44], [Error 3350, 7]
+        vp, [], [fsx ["module A"; make20; nowarn 20; make20; warnon 20; make20]], []  // 20 is not checked in scripts
+        vp, [], [fsx ["module A"; make25; nowarn 25; make25; warnon 25; make25]], [Warning 25, 2; Warning 25, 6]
+        v9, [], [fsx ["module A"; make25; nowarn 25; make25; warnon 25; make25]], [Error 3350, 5]
+        vp, [], [fsMod ["let x ="; nowarn 20; "    1"; warnon 20; "    2"; "    3"; "4"]], [W20, 6; W20, 8]
+        vp, [], [fsMod [nowarn 20; nowarn 20; warnon 20; make20]], [Information 3876, 3; W20, 5]
+        vp, [], [fsMod [nowarn 20; warnon 20; warnon 20; make20]], [Warning 3876, 4; W20, 5]
+        vp, ["--warnon:3876"], [fsMod [nowarn 20; nowarn 20; warnon 20; make20]], [Warning 3876, 3; W20, 5]
+        vp, [], [fsMod ["#nowarn \"\"\"20\"\"\" "; make20]], []
+        vp, [], [fsMod ["#nowarnx 20"; make20]], [Error 3353, 2]
+        vp, [], [fsMod ["#nowarn 20 // comment"; make20]], []
+        vp, [], [fsMod ["#nowarn"; make20]], [Error 3875, 2]
+        vp, [], [fsMod ["let a = 1; #nowarn 20"; make20]], [Error 3874, 2]
         ]
         |> List.mapi (fun i (v, fl, sources, diags) -> [|
             box (i + 1)
@@ -146,7 +146,7 @@ module Nowarn =
         |> compile
         |> withDiags testId langVersion flags sources (Array.toList expectedDiags)
 
-    [<Fact(Skip = "to be enabled with scoped nowarn")>]
+    [<Fact>]
     let testBadLineDirectiveInteraction() =
         let sources =
             [
@@ -168,7 +168,7 @@ module Nowarn =
         if errorInfo.Range.StartLine <> 3 then Assert.Fail $"expected warning in line 3, got line {errorInfo.Range.StartLine}"
         if not <| errorInfo.Message.StartsWith "The file 'test.fsy' was also pointed to" then Assert.Fail $"unexpected message {errorInfo.Message}"
  
-    [<Fact(Skip = "to be enabled with scoped nowarn")>]
+    [<Fact>]
     let warnDirectiveArgRange() =
         FSharp """
 module A

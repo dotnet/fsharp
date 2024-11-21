@@ -30,6 +30,7 @@ open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
@@ -130,7 +131,10 @@ module IncrementalBuildSyntaxTree =
                     [],
                     [],
                     isLastCompiland,
-                    { ConditionalDirectives = []; CodeComments = [] },
+                    {
+                        ConditionalDirectives = []
+                        CodeComments = []
+                    },
                     Set.empty
                 )
             ), sourceRange, fileName, [||]

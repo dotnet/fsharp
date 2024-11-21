@@ -215,7 +215,9 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, fileName, intf) 
 
         SynModuleOrNamespaceSig(lid, isRecursive, kind, decls, xmlDoc, attributes, None, range, trivia)
 
-let private collectCodeComments (lexbuf: UnicodeLexing.Lexbuf) (tripleSlashComments: range list) =
+let private collectCodeComments (lexbuf: UnicodeLexing.Lexbuf) =
+    let tripleSlashComments = XmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
+
     [
         yield! CommentStore.GetComments(lexbuf)
         yield! (List.map CommentTrivia.LineComment tripleSlashComments)
@@ -224,6 +226,34 @@ let private collectCodeComments (lexbuf: UnicodeLexing.Lexbuf) (tripleSlashComme
         | CommentTrivia.LineComment r
         | CommentTrivia.BlockComment r -> r.StartLine, r.StartColumn)
 
+let private getImplSubmoduleRanges (impls: ParsedImplFileFragment list) =
+    let getDecls (impl: ParsedImplFileFragment) =
+        match impl with
+        | ParsedImplFileFragment.AnonModule(decls, _) -> decls
+        | ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(decls = decls)) -> decls
+        | ParsedImplFileFragment.NamespaceFragment(decls = decls) -> decls
+
+    let getSubmoduleRange decl =
+        match decl with
+        | SynModuleDecl.NestedModule(range = m) -> Some m
+        | _ -> None
+
+    impls |> List.collect getDecls |> List.choose getSubmoduleRange
+
+let private getSpecSubmoduleRanges (specs: ParsedSigFileFragment list) =
+    let getDecls (spec: ParsedSigFileFragment) =
+        match spec with
+        | ParsedSigFileFragment.AnonModule(decls, _) -> decls
+        | ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(decls = decls)) -> decls
+        | ParsedSigFileFragment.NamespaceFragment(decls = decls) -> decls
+
+    let getSubmoduleRange decl =
+        match decl with
+        | SynModuleSigDecl.NestedModule(range = m) -> Some m
+        | _ -> None
+
+    specs |> List.collect getDecls |> List.choose getSubmoduleRange
+
 let PostParseModuleImpls
     (
         defaultNamespace,
@@ -231,9 +261,18 @@ let PostParseModuleImpls
         isLastCompiland,
         ParsedImplFile(hashDirectives, impls),
         lexbuf: UnicodeLexing.Lexbuf,
-        tripleSlashComments: range list,
+        diagnosticOptions: FSharpDiagnosticOptions,
         identifiers: Set<string>
     ) =
+
+    lexbuf |> WarnScopes.MergeInto diagnosticOptions (getImplSubmoduleRanges impls)
+
+    let trivia: ParsedImplFileInputTrivia =
+        {
+            ConditionalDirectives = IfdefStore.GetTrivia(lexbuf)
+            CodeComments = collectCodeComments lexbuf
+        }
+
     let othersWithSameName =
         impls
         |> List.rev
@@ -252,18 +291,7 @@ let PostParseModuleImpls
     let qualName = QualFileNameOfImpls fileName impls
     let isScript = IsScript fileName
 
-    let conditionalDirectives = IfdefStore.GetTrivia(lexbuf)
-    let codeComments = collectCodeComments lexbuf tripleSlashComments
-
-    let trivia: ParsedImplFileInputTrivia =
-        {
-            ConditionalDirectives = conditionalDirectives
-            CodeComments = codeComments
-        }
-
-    ParsedInput.ImplFile(
-        ParsedImplFileInput(fileName, isScript, qualName, [], hashDirectives, impls, isLastCompiland, trivia, identifiers)
-    )
+    ParsedInput.ImplFile(ParsedImplFileInput(fileName, isScript, qualName, [], hashDirectives, impls, isLastCompiland, trivia, identifiers))
 
 let PostParseModuleSpecs
     (
@@ -272,9 +300,18 @@ let PostParseModuleSpecs
         isLastCompiland,
         ParsedSigFile(hashDirectives, specs),
         lexbuf: UnicodeLexing.Lexbuf,
-        tripleSlashComments: range list,
+        diagnosticOptions: FSharpDiagnosticOptions,
         identifiers: Set<string>
     ) =
+
+    lexbuf |> WarnScopes.MergeInto diagnosticOptions (getSpecSubmoduleRanges specs)
+
+    let trivia: ParsedSigFileInputTrivia =
+        {
+            ConditionalDirectives = IfdefStore.GetTrivia(lexbuf)
+            CodeComments = collectCodeComments lexbuf
+        }
+
     let othersWithSameName =
         specs
         |> List.rev
@@ -291,15 +328,6 @@ let PostParseModuleSpecs
         |> List.mapi (fun i x -> PostParseModuleSpec(i, defaultNamespace, isLastCompiland, fileName, x))
 
     let qualName = QualFileNameOfSpecs fileName specs
-
-    let conditionalDirectives = IfdefStore.GetTrivia(lexbuf)
-    let codeComments = collectCodeComments lexbuf tripleSlashComments
-
-    let trivia: ParsedSigFileInputTrivia =
-        {
-            ConditionalDirectives = conditionalDirectives
-            CodeComments = codeComments
-        }
 
     ParsedInput.SigFile(ParsedSigFileInput(fileName, qualName, [], hashDirectives, specs, trivia, identifiers))
 
@@ -440,16 +468,10 @@ let ParseInput
         // Call the appropriate parser - for signature files or implementation files
         if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
             let impl = Parser.implementationFile lexer lexbuf
-
-            let tripleSlashComments = XmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
-
-            PostParseModuleImpls(defaultNamespace, fileName, isLastCompiland, impl, lexbuf, tripleSlashComments, Set identStore)
+            PostParseModuleImpls(defaultNamespace, fileName, isLastCompiland, impl, lexbuf, diagnosticOptions, Set identStore)
         elif FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
             let intfs = Parser.signatureFile lexer lexbuf
-
-            let tripleSlashComments = XmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
-
-            PostParseModuleSpecs(defaultNamespace, fileName, isLastCompiland, intfs, lexbuf, tripleSlashComments, Set identStore)
+            PostParseModuleSpecs(defaultNamespace, fileName, isLastCompiland, intfs, lexbuf, diagnosticOptions, Set identStore)
         else if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
             error (Error(FSComp.SR.buildInvalidSourceFileExtensionUpdated fileName, rangeStartup))
         else
