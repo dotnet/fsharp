@@ -600,11 +600,11 @@ try {
     }
 
     if ($testCoreClr) {
-        $cpuLimit = if ($ci) { "-m:2 -- xUnit.MaxParallelThreads=0.25x" } else { "" }
+        $cpuLimit = if ($ci) { "-m:1" } else { "" }
         TestUsingMSBuild -path "$RepoRoot\FSharp.sln" -targetFramework $script:coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -settings $cpuLimit
     }
 
-    if ($testDesktop) {
+    if ($testDesktop -and $ci) {
         $bgJob = TestUsingMSBuild -path "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\" -asBackgroundJob $true
 
         TestUsingMSBuild -path "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\"
@@ -614,6 +614,10 @@ try {
         TestUsingMSBuild -path "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Core.UnitTests\"
 
         Receive -job $bgJob
+    }
+
+    if ($testDesktop -and -not $ci ) {
+        TestUsingMSBuild -path "$RepoRoot\FSharp.sln" -targetFramework $script:desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\"
     }
 
     if ($testFSharpQA) {
