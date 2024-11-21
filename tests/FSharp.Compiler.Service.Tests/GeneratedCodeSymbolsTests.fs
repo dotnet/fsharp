@@ -5,9 +5,6 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
 
-[<Literal>]
-let dirName = "GeneratedCodeSymbolsTests"
-
 [<Fact>]
 let ``IsUnionCaseTester for Is* member in a class`` () =
     let source = """
@@ -16,8 +13,7 @@ module Lib
 type T () =
     member x.IsM = 1
 """
-    let cleanup, options = createProjectOptions dirName [ source ] [ "--langversion:preview" ]
-    use _holder = cleanup
+    let options = createProjectOptions [ source ] [ "--langversion:preview" ]
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=false)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
@@ -46,8 +42,7 @@ module Lib
 
 type T = A | B
 """
-    let cleanup, options = createProjectOptions dirName [ source ] [ "--langversion:preview" ]
-    use _holder = cleanup
+    let options = createProjectOptions [ source ] [ "--langversion:preview" ]
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=false)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
@@ -80,8 +75,7 @@ type T =
     member x.IsC
         with get () = false
 """
-    let cleanup, options = createProjectOptions dirName [ source ] [ "--langversion:preview" ]
-    use _holder = cleanup
+    let  options = createProjectOptions [ source ] [ "--langversion:preview" ]
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=false)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
