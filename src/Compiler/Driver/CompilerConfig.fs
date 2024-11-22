@@ -877,9 +877,10 @@ type TcConfigBuilder =
             strictIndentation = None
             compilationMode = TcGlobals.CompilationMode.Unset
         }
-    
+
     member tcConfigB.SetLangVersion v =
         tcConfigB.langVersion <- v
+
         tcConfigB.diagnosticsOptions <-
             { tcConfigB.diagnosticsOptions with
                 WarnScopesFeatureIsSupported = v.SupportsFeature LanguageFeature.ScopedNowarn
