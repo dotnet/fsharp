@@ -2273,51 +2273,25 @@ type PhasedDiagnostic with
             diagnostic.OutputContext(buf, prefix, fileLineFunction)
             diagnostic.Output(buf, tcConfig, severity))
 
-//----------------------------------------------------------------------------
-// Scoped #nowarn pragmas
-
-/// Build an DiagnosticsLogger that delegates to another DiagnosticsLogger but filters warnings turned off by the given pragma declarations
-//
-// NOTE: we allow a flag to turn of strict file checking. This is because file names sometimes don't match due to use of
-// #line directives, e.g. for pars.fs/pars.fsy. In this case we just test by line number - in most cases this is sufficient
-// because we install a filtering error handler on a file-by-file basis for parsing and type-checking.
-// However this is indicative of a more systematic problem where source-line
-// sensitive operations (lexfilter and warning filtering) do not always
-// interact well with #line directives.
-type DiagnosticsLoggerFilteringByScopedPragmas
-    (checkFile, scopedPragmas, diagnosticOptions: FSharpDiagnosticOptions, diagnosticsLogger: DiagnosticsLogger) =
-    inherit DiagnosticsLogger("DiagnosticsLoggerFilteringByScopedPragmas")
+/// Build an DiagnosticsLogger that delegates to another DiagnosticsLogger but filters warnings
+type DiagnosticsLoggerFilteringByScopedNowarn(diagnosticOptions: FSharpDiagnosticOptions, diagnosticsLogger: DiagnosticsLogger) =
+    inherit DiagnosticsLogger("DiagnosticsLoggerFilteringByScopedNowarn")
 
     let mutable realErrorPresent = false
 
     override _.DiagnosticSink(diagnostic: PhasedDiagnostic, severity) =
+
         if severity = FSharpDiagnosticSeverity.Error then
             realErrorPresent <- true
             diagnosticsLogger.DiagnosticSink(diagnostic, severity)
         else
-            let report =
-                let warningNum = diagnostic.Number
-
-                match diagnostic.Range with
-                | Some m ->
-                    scopedPragmas
-                    |> List.exists (fun pragma ->
-                        let (ScopedPragma.WarningOff(pragmaRange, warningNumFromPragma)) = pragma
-
-                        warningNum = warningNumFromPragma
-                        && (not checkFile || m.FileIndex = pragmaRange.FileIndex)
-                        && posGeq m.Start pragmaRange.Start)
-                    |> not
-                | None -> true
-
-            if report then
-                match diagnostic.AdjustSeverity(diagnosticOptions, severity) with
-                | FSharpDiagnosticSeverity.Hidden -> ()
-                | s -> diagnosticsLogger.DiagnosticSink(diagnostic, s)
+            match diagnostic.AdjustSeverity(diagnosticOptions, severity) with
+            | FSharpDiagnosticSeverity.Hidden -> ()
+            | s -> diagnosticsLogger.DiagnosticSink(diagnostic, s)
 
     override _.ErrorCount = diagnosticsLogger.ErrorCount
 
     override _.CheckForRealErrorsIgnoringWarnings = realErrorPresent
 
-let GetDiagnosticsLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, diagnosticOptions, diagnosticsLogger) =
-    DiagnosticsLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, diagnosticOptions, diagnosticsLogger) :> DiagnosticsLogger
+let GetDiagnosticsLoggerFilteringByScopedNowarn (diagnosticOptions, diagnosticsLogger) =
+    DiagnosticsLoggerFilteringByScopedNowarn(diagnosticOptions, diagnosticsLogger) :> DiagnosticsLogger
