@@ -31,6 +31,7 @@
     <Compile Include="..\FSharp.Test.Utilities\XunitSetup.fs">
       <Link>XunitSetup.fs</Link>
     </Compile>
+    <Compile Include="CompilerDirectives\Nowarn.fs" />
     <Compile Include="CompilerDirectives\Line.fs" />
     <Compile Include="CompilerDirectives\Ifdef.fs" />
     <Compile Include="CompilerDirectives\NonStringArgs.fs" />

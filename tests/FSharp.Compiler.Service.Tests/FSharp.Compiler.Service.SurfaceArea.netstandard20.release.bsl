@@ -2236,9 +2236,6 @@ FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: FSharp.Compiler.CodeAnalysis.
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: FSharp.Compiler.CodeAnalysis.FSharpParsingOptions get_Default()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions DiagnosticOptions
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions get_DiagnosticOptions()
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Int32 CompareTo(FSharp.Compiler.CodeAnalysis.FSharpParsingOptions)
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Int32 CompareTo(System.Object)
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Int32 CompareTo(System.Object, System.Collections.IComparer)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Int32 GetHashCode()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Microsoft.FSharp.Collections.FSharpList`1[System.String] ConditionalDefines
@@ -2803,13 +2800,12 @@ FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean Equals(FSharp.Compi
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean Equals(System.Object)
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean GlobalWarnAsError
+FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean WarnScopesFeatureIsSupported
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean get_CheckXmlDocs()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean get_GlobalWarnAsError()
+FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean get_WarnScopesFeatureIsSupported()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions Default
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions get_Default()
-FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Int32 CompareTo(FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions)
-FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Int32 CompareTo(System.Object)
-FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Int32 CompareTo(System.Object, System.Collections.IComparer)
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Int32 GetHashCode()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Int32 WarnLevel
@@ -2822,8 +2818,12 @@ FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Microsoft.FSharp.Collection
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Microsoft.FSharp.Collections.FSharpList`1[System.Int32] get_WarnAsWarn()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Microsoft.FSharp.Collections.FSharpList`1[System.Int32] get_WarnOff()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Microsoft.FSharp.Collections.FSharpList`1[System.Int32] get_WarnOn()
+FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Microsoft.FSharp.Core.FSharpOption`1[System.Object] WarnScopeData
+FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Microsoft.FSharp.Core.FSharpOption`1[System.Object] WarnScopeData@
+FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Microsoft.FSharp.Core.FSharpOption`1[System.Object] get_WarnScopeData()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: System.String ToString()
-FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Void .ctor(Int32, Boolean, Microsoft.FSharp.Collections.FSharpList`1[System.Int32], Microsoft.FSharp.Collections.FSharpList`1[System.Int32], Microsoft.FSharp.Collections.FSharpList`1[System.Int32], Microsoft.FSharp.Collections.FSharpList`1[System.Int32])
+FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Void .ctor(Int32, Boolean, Microsoft.FSharp.Collections.FSharpList`1[System.Int32], Microsoft.FSharp.Collections.FSharpList`1[System.Int32], Microsoft.FSharp.Collections.FSharpList`1[System.Int32], Microsoft.FSharp.Collections.FSharpList`1[System.Int32], Boolean, Microsoft.FSharp.Core.FSharpOption`1[System.Object])
+FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Void set_WarnScopeData(Microsoft.FSharp.Core.FSharpOption`1[System.Object])
 FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity+Tags: Int32 Error
 FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity+Tags: Int32 Hidden
 FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity+Tags: Int32 Info
