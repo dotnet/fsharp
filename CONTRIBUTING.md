@@ -4,7 +4,7 @@ One of the easiest ways to contribute is to participate in discussions on GitHub
 
 ## General feedback and discussions?
 
-Start a discussion on the [repository issue tracker](https://github.com/dotnet/fsharp/issues).
+Start a [discussion](https://github.com/dotnet/fsharp/discussions) on the [repository issue tracker](https://github.com/dotnet/fsharp/issues).
 
 ## Bugs and feature requests?
 
