@@ -3,14 +3,15 @@
 open Microsoft.CommonLanguageServerProtocol.Framework
 open Microsoft.VisualStudio.LanguageServer.Protocol
 open FSharp.Compiler.LanguageServer.Common
+open FSharp.Compiler.LanguageServer
 open System.Threading.Tasks
 open System.Threading
+open System.Collections.Generic
 
 type LanguageFeaturesHandler() =
     interface IMethodHandler with
         member _.MutatesSolutionState = false
 
-    // TODO: this is not getting called
     interface IRequestHandler<DocumentDiagnosticParams, SumType<RelatedFullDocumentDiagnosticReport, RelatedUnchangedDocumentDiagnosticReport>, FSharpRequestContext> with
         [<LanguageServerEndpoint(Methods.TextDocumentDiagnosticName)>]
         member _.HandleRequestAsync
@@ -19,4 +20,26 @@ type LanguageFeaturesHandler() =
                 context: FSharpRequestContext,
                 cancellationToken: CancellationToken
             ) =
-            Task.FromResult(new RelatedUnchangedDocumentDiagnosticReport())
+            task {
+
+                let! fsharpDiagnosticReport = context.Workspace.Query.GetDiagnosticsForFile request.TextDocument.Uri
+
+                let report =
+                    FullDocumentDiagnosticReport(
+                        Items = (fsharpDiagnosticReport.Diagnostics |> Array.map (_.ToLspDiagnostic())),
+                        ResultId = fsharpDiagnosticReport.ResultId
+                    )
+
+                let relatedDocuments = Dictionary()
+
+                relatedDocuments.Add(
+                    request.TextDocument.Uri,
+                    SumType<FullDocumentDiagnosticReport, UnchangedDocumentDiagnosticReport> report
+                )
+
+                return
+                    SumType<RelatedFullDocumentDiagnosticReport, RelatedUnchangedDocumentDiagnosticReport>(
+                        RelatedFullDocumentDiagnosticReport(RelatedDocuments = relatedDocuments)
+                    )
+
+            }

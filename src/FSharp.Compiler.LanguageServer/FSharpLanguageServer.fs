@@ -68,7 +68,10 @@ type FSharpLanguageServer
         lspServices :> ILspServices
 
     static member Create() =
-        FSharpLanguageServer.Create(FSharpWorkspace(), (fun _ -> ()))
+        FSharpLanguageServer.Create(FSharpWorkspace())
+
+    static member Create(initialWorkspace) =
+        FSharpLanguageServer.Create(initialWorkspace, (fun _ -> ()))
 
     static member Create(initialWorkspace, addExtraHandlers: Action<IServiceCollection>) =
         FSharpLanguageServer.Create(LspLogger System.Diagnostics.Trace.TraceInformation, initialWorkspace, addExtraHandlers)

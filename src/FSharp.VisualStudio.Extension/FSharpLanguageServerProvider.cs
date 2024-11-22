@@ -13,6 +13,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FSharp.Compiler.CodeAnalysis.Workspace;
+using FSharp.Compiler.Diagnostics;
 using FSharp.Compiler.LanguageServer;
 using FSharp.Compiler.LanguageServer.Common;
 
@@ -28,6 +29,7 @@ using Nerdbank.Streams;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 using static FSharp.Compiler.CodeAnalysis.ProjectSnapshot;
+using static FSharp.Compiler.LanguageServer.Utils;
 
 /// <inheritdoc/>
 #pragma warning disable VSEXTPREVIEW_LSP // Type is for evaluation purposes only and is subject to change or removal in future updates.
@@ -74,8 +76,8 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
             {
                 Legend = new()
                 {
-                    TokenTypes = [ ..SemanticTokenTypes.AllTypes], // XXX should be extended
-                    TokenModifiers = [ ..SemanticTokenModifiers.AllModifiers]
+                    TokenTypes = [.. SemanticTokenTypes.AllTypes], // XXX should be extended
+                    TokenModifiers = [.. SemanticTokenModifiers.AllModifiers]
                 },
                 Full = new SemanticTokensFullOptions()
                 {
@@ -120,31 +122,14 @@ internal class VsDiagnosticsHandler
     [LanguageServerEndpoint(VSInternalMethods.DocumentPullDiagnosticName)]
     public async Task<VSInternalDiagnosticReport[]> HandleRequestAsync(VSInternalDocumentDiagnosticsParams request, FSharpRequestContext context, CancellationToken cancellationToken)
     {
-       var report = await context.Workspace.Query.GetDiagnosticsForFile(request!.TextDocument!.Uri).Please(cancellationToken);
+        var report = await context.Workspace.Query.GetDiagnosticsForFile(request!.TextDocument!.Uri).Please(cancellationToken);
 
-       var vsReport = new VSInternalDiagnosticReport
+        var vsReport = new VSInternalDiagnosticReport
         {
             ResultId = report.ResultId,
             //Identifier = 1,
             //Version = 1,
-
-            Diagnostics =
-                 report.Diagnostics.Select(d =>
-
-                 new Diagnostic
-                 {
-                     Range = new Microsoft.VisualStudio.LanguageServer.Protocol.Range
-                     {
-                         // F# uses 1-based indexing for lines, need to adjust
-                         Start = new Position { Line = d.StartLine-1, Character = d.StartColumn },
-                         End = new Position { Line = d.EndLine-1, Character = d.EndColumn }
-                     },
-                     Severity = DiagnosticSeverity.Error,
-                     Message = $"LSP: {d.Message}",
-                     //Source = "Intellisense",
-                     Code = d.ErrorNumberText
-                 }
-             ).ToArray()
+            Diagnostics = [.. report.Diagnostics.Select(FSharpDiagnosticExtensions.ToLspDiagnostic)]
         };
 
         return [vsReport];

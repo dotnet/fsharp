@@ -4,6 +4,7 @@
 		<OutputType>Exe</OutputType>
 		<TargetFramework>net8.0</TargetFramework>
 		<CheckNulls>true</CheckNulls>
+		<Nullable>enable</Nullable>
 	</PropertyGroup>
 
 	<ItemGroup Label="Package References">
@@ -32,12 +33,12 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<Compile Include="Utils.fs" />
 		<Compile Include="Common\LifecycleManager.fs" />
 		<Compile Include="Common\CapabilitiesManager.fs" />
 		<Compile Include="Common\FSharpRequestContext.fs" />
 		<Compile Include="Handlers\LanguageFeaturesHandler.fs" />
 		<Compile Include="Handlers\DocumentStateHandler.fs" />
-		<Compile Include="Utils.fs" />
 		<Compile Include="FSharpLanguageServer.fs" />
 		<Compile Include="Executable.fs" />
 	</ItemGroup>
@@ -48,4 +49,3 @@
 	</ItemGroup>
 
 </Project>
- 

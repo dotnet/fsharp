@@ -7,34 +7,9 @@ open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open TestFramework
 open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis.Workspace
+open FSharp.Test.ProjectGeneration.WorkspaceHelpers
 
 #nowarn "57"
-
-type ProjectConfig with
-
-    static member Minimal(?name, ?outputPath, ?referencesOnDisk) =
-        let name = defaultArg name "test"
-        let projectFileName = $"{name}.fsproj"
-        let outputPath = defaultArg outputPath $"{name}.dll"
-        let referencesOnDisk = defaultArg referencesOnDisk []
-        ProjectConfig(projectFileName, Some outputPath, referencesOnDisk, [])
-
-let getReferencedSnapshot (projectIdentifier: FSharpProjectIdentifier) (projectSnapshot: FSharpProjectSnapshot) =
-    projectSnapshot.ReferencedProjects
-        |> Seq.pick (function
-            | FSharpReference(x, snapshot) when x = projectIdentifier.OutputFileName -> Some snapshot
-            | _ -> None)
-
-let sourceFileOnDisk (content: string) =
-    let path = getTemporaryFileName () + ".fs"
-    FileSystem.OpenFileForWriteShim(path).Write(content)
-    Uri(path)
-
-let assertFileHasContent filePath expectedContent (projectSnapshot: FSharpProjectSnapshot) =
-    let fileSnapshot =
-        projectSnapshot.SourceFiles |> Seq.find (_.FileName >> (=) filePath)
-
-    Assert.Equal(expectedContent, fileSnapshot.GetSource().Result.ToString())
 
 [<Fact>]
 let ``Add project to workspace`` () =
@@ -89,7 +64,7 @@ let ``Close file in workspace`` () =
     let fileOnDisk = sourceFileOnDisk contentOnDisk
 
     let _projectIdentifier =
-        workspace.Projects.AddOrUpdate(ProjectConfig.Minimal(), [ fileOnDisk.LocalPath ])
+        workspace.Projects.AddOrUpdate(ProjectConfig.Empty(), [ fileOnDisk.LocalPath ])
 
     workspace.Files.Open(fileOnDisk, contentOnDisk)
 
@@ -123,7 +98,7 @@ let ``Change file in workspace`` () =
     let fileUri = Uri("file:///test.fs")
 
     let _projectIdentifier =
-        workspace.Projects.AddOrUpdate(ProjectConfig.Minimal(), [ fileUri.LocalPath ])
+        workspace.Projects.AddOrUpdate(ProjectConfig.Empty(), [ fileUri.LocalPath ])
 
     let initialContent = "let x = 2"
 
@@ -177,17 +152,17 @@ let ``Propagate changes to snapshots`` () =
     let workspace = FSharpWorkspace()
 
     let file1 = sourceFileOnDisk "let x = 1"
-    let pid1 = workspace.Projects.AddOrUpdate(ProjectConfig.Minimal("p1"), [ file1.LocalPath ])
+    let pid1 = workspace.Projects.AddOrUpdate(ProjectConfig.Empty("p1"), [ file1.LocalPath ])
 
     let file2 = sourceFileOnDisk "let y = 2"
 
     let pid2 =
-        workspace.Projects.AddOrUpdate(ProjectConfig.Minimal("p2", referencesOnDisk = [ pid1.OutputFileName ]), [ file2.LocalPath ])
+        workspace.Projects.AddOrUpdate(ProjectConfig.Empty("p2", referencesOnDisk = [ pid1.OutputFileName ]), [ file2.LocalPath ])
 
     let file3 = sourceFileOnDisk "let z = 3"
 
     let pid3 =
-        workspace.Projects.AddOrUpdate(ProjectConfig.Minimal("p3", referencesOnDisk = [ pid2.OutputFileName ]), [ file3.LocalPath ])
+        workspace.Projects.AddOrUpdate(ProjectConfig.Empty("p3", referencesOnDisk = [ pid2.OutputFileName ]), [ file3.LocalPath ])
 
     let s3 = workspace.Query.GetProjectSnapshot(pid3).Value
 
