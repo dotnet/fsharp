@@ -10714,6 +10714,28 @@ FSharp.Compiler.SyntaxTrivia.SynValSigTrivia: Microsoft.FSharp.Core.FSharpOption
 FSharp.Compiler.SyntaxTrivia.SynValSigTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_WithKeyword()
 FSharp.Compiler.SyntaxTrivia.SynValSigTrivia: System.String ToString()
 FSharp.Compiler.SyntaxTrivia.SynValSigTrivia: Void .ctor(FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia+Nowarn: FSharp.Compiler.Text.Range Item2
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia+Nowarn: FSharp.Compiler.Text.Range get_Item2()
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia+Nowarn: Microsoft.FSharp.Collections.FSharpList`1[System.Int32] get_warnNumbers()
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia+Nowarn: Microsoft.FSharp.Collections.FSharpList`1[System.Int32] warnNumbers
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia+Tags: Int32 Nowarn
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia+Tags: Int32 Warnon
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia+Warnon: FSharp.Compiler.Text.Range Item2
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia+Warnon: FSharp.Compiler.Text.Range get_Item2()
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia+Warnon: Microsoft.FSharp.Collections.FSharpList`1[System.Int32] get_warnNumbers()
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia+Warnon: Microsoft.FSharp.Collections.FSharpList`1[System.Int32] warnNumbers
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia: Boolean IsNowarn
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia: Boolean IsWarnon
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia: Boolean get_IsNowarn()
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia: Boolean get_IsWarnon()
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia: FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia NewNowarn(Microsoft.FSharp.Collections.FSharpList`1[System.Int32], FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia: FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia NewWarnon(Microsoft.FSharp.Collections.FSharpList`1[System.Int32], FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia: FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia+Nowarn
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia: FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia+Tags
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia: FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia+Warnon
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia: Int32 Tag
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia: Int32 get_Tag()
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia: System.String ToString()
 FSharp.Compiler.Text.ISourceText: Boolean ContentEquals(FSharp.Compiler.Text.ISourceText)
 FSharp.Compiler.Text.ISourceText: Boolean SubTextEquals(System.String, Int32)
 FSharp.Compiler.Text.ISourceText: Char Item [Int32]

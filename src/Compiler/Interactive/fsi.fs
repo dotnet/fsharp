@@ -2474,10 +2474,7 @@ type internal FsiDynamicCompiler
                     [],
                     [ impl ],
                     (isLastCompiland, isExe),
-                    {
-                        ConditionalDirectives = []
-                        CodeComments = []
-                    },
+                    ParsedImplFileInputTrivia.Empty,
                     Set.empty
                 )
             )

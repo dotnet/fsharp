@@ -131,10 +131,7 @@ module IncrementalBuildSyntaxTree =
                     [],
                     [],
                     isLastCompiland,
-                    {
-                        ConditionalDirectives = []
-                        CodeComments = []
-                    },
+                    ParsedImplFileInputTrivia.Empty,
                     Set.empty
                 )
             ), sourceRange, fileName, [||]

@@ -221,6 +221,7 @@ let private collectCodeComments (lexbuf: UnicodeLexing.Lexbuf) =
     [
         yield! CommentStore.GetComments(lexbuf)
         yield! (List.map CommentTrivia.LineComment tripleSlashComments)
+        yield! WarnScopes.getCommentTrivia lexbuf
     ]
     |> List.sortBy (function
         | CommentTrivia.LineComment r
@@ -270,6 +271,7 @@ let PostParseModuleImpls
     let trivia: ParsedImplFileInputTrivia =
         {
             ConditionalDirectives = IfdefStore.GetTrivia(lexbuf)
+            // WarnDirectives = WarnScopes.getDirectiveTrivia (lexbuf)
             CodeComments = collectCodeComments lexbuf
         }
 
@@ -309,6 +311,7 @@ let PostParseModuleSpecs
     let trivia: ParsedSigFileInputTrivia =
         {
             ConditionalDirectives = IfdefStore.GetTrivia(lexbuf)
+            // WarnDirectives = WarnScopes.getDirectiveTrivia (lexbuf)
             CodeComments = collectCodeComments lexbuf
         }
 
@@ -544,18 +547,7 @@ let ReportParsingStatistics res =
 let EmptyParsedInput (fileName, isLastCompiland) =
     if FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
         ParsedInput.SigFile(
-            ParsedSigFileInput(
-                fileName,
-                QualFileNameOfImpls fileName [],
-                [],
-                [],
-                [],
-                {
-                    ConditionalDirectives = []
-                    CodeComments = []
-                },
-                Set.empty
-            )
+            ParsedSigFileInput(fileName, QualFileNameOfImpls fileName [], [], [], [], ParsedSigFileInputTrivia.Empty, Set.empty)
         )
     else
         ParsedInput.ImplFile(
@@ -567,10 +559,7 @@ let EmptyParsedInput (fileName, isLastCompiland) =
                 [],
                 [],
                 isLastCompiland,
-                {
-                    ConditionalDirectives = []
-                    CodeComments = []
-                },
+                ParsedImplFileInputTrivia.Empty,
                 Set.empty
             )
         )
