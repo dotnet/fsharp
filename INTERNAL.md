@@ -38,7 +38,7 @@ their respective branches.
 
 [VS 16.1](https://dev.azure.com/devdiv/DevDiv/_release?definitionId=1669&_a=releases)
 
-VS 16.0 and prior were done manually
+VS 16.0 and prior were done manually.
 
 ## VS Insertions as part of the build definition
 
@@ -64,6 +64,7 @@ it's a good idea to check the previous link for any old or stalled insertions in
 Update the `insertTargetBranch` value at the bottom of `azure-pipelines.yml` in the appropriate release branch.  E.g., when VS 17.3 snapped and switched to ask mode, [this PR](https://github.com/dotnet/fsharp/pull/13456/files) correctly updates the insertion target so that future builds from that F# branch will get auto-inserted to VS.
 
 ### When VS `main` is open for insertions for preview releases of VS:
+
 0. Disable auto-merges from `main` to **current** release branch, please make a change for the following file and create a pull request:
 https://github.com/dotnet/roslyn-tools/blob/6d7c182c46f8319d7922561e2c1586c7aadce19e/src/GitHubCreateMergePRs/config.xml#L52-L74
 > You should comment out the `main -> release/devXX.X` flow until step #4 is completed (`<merge from="main" to="release/dev17.13" />`)
@@ -131,6 +132,23 @@ Since github issue filtering is currently not flexible enough, that query was ge
 Invoke-WebRequest -Uri "https://api.github.com/repos/dotnet/fsharp/labels?per_page=100" | ConvertFrom-Json | % { $_.name } | ? { $_.StartsWith("Area-") } | % { Write-Host -NoNewLine ('-label:"' + $_ + '" ') }
 ```
 
-## Other links
+## Fix problems with the internal source mirror
 
-[Internal source mirror](https://dev.azure.com/dnceng/internal/_git/dotnet-fsharp).
+The repo is [here](https://dev.azure.com/dnceng/internal/_git/dotnet-fsharp), the CI is [here](https://dnceng.visualstudio.com/internal/_build?definitionId=499).
+
+If something breaks in the CI there and you want to experiment, the general workflow is the following:
+1. Make a branch
+2. Make a change
+3. Run the build from your branch. If needed, set the "skipTests" variable to "true" - can save time at this stage.
+4. Once the problem and the fix is identified, make a PR to THIS (dotnet/fsharp) repo - it will propagate to the internal mirror just afterwards.
+5. Delete all your work in the internal repo.
+
+**DO NOT** try to push to the internal repo - this will mess up the flows. **DO NOT** create PRs to not confuse anyone.
+
+You need the following permissions to do the above investigations:
+- "Generic contribute"
+- "Create branch"
+- "Queue builds"
+- "Edit queue build configuration"
+
+If anything, reach out to the "First Responders" team.
