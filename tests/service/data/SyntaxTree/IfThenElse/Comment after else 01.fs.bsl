@@ -23,6 +23,7 @@ ImplFile
                    IfToThenRange = (1,0--1,9) }), (1,0--4,5))], PreXmlDocEmpty,
           [], None, (1,0--5,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [BlockComment (3,5--3,33)] }, set []))
 
 (1,0)-(2,0) parse warning The declarations in this file will be placed in an implicit module 'Comment after else 01' based on the file name 'Comment after else 01.fs'. However this is not a valid F# identifier, so the contents will not be accessible from other files. Consider renaming the file or adding a 'module' or 'namespace' declaration at the top of the file.

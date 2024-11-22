@@ -47,4 +47,5 @@ ImplFile
       (true, true),
       { ConditionalDirectives =
          [If (Not (Ident "FOO"), (3,0--3,8)); EndIf (5,0--5,6)]
+        WarnDirectives = []
         CodeComments = [] }, set []))

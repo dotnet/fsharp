@@ -42,4 +42,5 @@ SigFile
           Some (Internal (2,7--2,15)), (2,0--6,43),
           { LeadingKeyword = Module (2,0--2,6) })],
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [LineComment (4,0--4,90)] }, set []))

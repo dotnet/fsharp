@@ -22,6 +22,7 @@ ImplFile
            Expr (Const (Unit, (3,0--3,2)), (3,0--3,2))], PreXmlDocEmpty, [],
           None, (1,0--3,2), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (3,0)-(3,1) parse error Incomplete structured construct at or before this point in binding. Expected '=' or other token.

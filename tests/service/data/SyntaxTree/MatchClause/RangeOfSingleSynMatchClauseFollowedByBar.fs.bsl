@@ -39,6 +39,7 @@ ImplFile
               (2,0--8,1))], PreXmlDocEmpty, [], None, (2,0--9,0),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (9,0)-(9,0) parse error Incomplete structured construct at or before this point in pattern matching

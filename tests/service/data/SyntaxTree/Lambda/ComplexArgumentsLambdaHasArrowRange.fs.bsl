@@ -161,4 +161,5 @@ ImplFile
                  { ArrowRange = Some (5,4--5,6) }), (2,0--6,13))],
           PreXmlDocEmpty, [], None, (2,0--7,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

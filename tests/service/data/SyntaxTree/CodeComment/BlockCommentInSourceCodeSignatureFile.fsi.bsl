@@ -17,4 +17,5 @@ SigFile
                    EqualsRange = None }), (4,0--4,19))], PreXmlDocEmpty, [],
           None, (2,0--4,19), { LeadingKeyword = Namespace (2,0--2,9) })],
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [BlockComment (4,6--4,13)] }, set []))

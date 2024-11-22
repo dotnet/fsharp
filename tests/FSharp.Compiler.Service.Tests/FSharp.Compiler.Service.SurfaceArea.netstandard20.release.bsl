@@ -10142,14 +10142,18 @@ FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: Microsoft.FSharp.Collect
 FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia] get_CodeComments()
 FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia] ConditionalDirectives
 FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia] get_ConditionalDirectives()
+FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia] WarnDirectives
+FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia] get_WarnDirectives()
 FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: System.String ToString()
-FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: Void .ctor(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia])
+FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: Void .ctor(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia])
 FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia] CodeComments
 FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia] get_CodeComments()
 FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia] ConditionalDirectives
 FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia] get_ConditionalDirectives()
+FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia] WarnDirectives
+FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia] get_WarnDirectives()
 FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: System.String ToString()
-FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: Void .ctor(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia])
+FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: Void .ctor(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia])
 FSharp.Compiler.SyntaxTrivia.SynArgPatsNamePatPairsTrivia: FSharp.Compiler.Text.Range ParenRange
 FSharp.Compiler.SyntaxTrivia.SynArgPatsNamePatPairsTrivia: FSharp.Compiler.Text.Range get_ParenRange()
 FSharp.Compiler.SyntaxTrivia.SynArgPatsNamePatPairsTrivia: System.String ToString()

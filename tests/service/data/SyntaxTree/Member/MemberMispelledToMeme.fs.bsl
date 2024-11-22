@@ -57,6 +57,7 @@ ImplFile
                     WithKeyword = None })], (1,0--2,39))], PreXmlDocEmpty, [],
           None, (1,0--2,39), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (2,3)-(2,9) parse error Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration.

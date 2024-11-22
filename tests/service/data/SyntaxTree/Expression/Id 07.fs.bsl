@@ -6,6 +6,7 @@ ImplFile
           [Expr (FromParseError (Ident , (1,0--1,1)), (1,0--1,1))],
           PreXmlDocEmpty, [], None, (1,0--1,1), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))
 
 (1,0)-(1,1) parse error This is not a valid identifier

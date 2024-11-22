@@ -49,4 +49,5 @@ ImplFile
           PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (2,0--13,14), { LeadingKeyword = Module (5,0--5,6) })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

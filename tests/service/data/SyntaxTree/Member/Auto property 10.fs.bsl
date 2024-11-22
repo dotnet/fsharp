@@ -41,6 +41,7 @@ ImplFile
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--4,29), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (5,0)-(5,0) parse error Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (4:22). Try indenting this further.

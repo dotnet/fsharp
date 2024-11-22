@@ -18,6 +18,7 @@ ImplFile
                  (1,0--1,6)), (1,0--1,6))], PreXmlDocEmpty, [], None, (1,0--1,6),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (1,5)-(1,6) parse error Unexpected end of input in expression

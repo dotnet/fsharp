@@ -25,6 +25,7 @@ SigFile
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--5,11), { LeadingKeyword = Module (1,0--1,6) })],
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (3,9)-(5,0) parse error Incomplete structured construct at or before this point in signature file. Expected ':', '=' or other token.

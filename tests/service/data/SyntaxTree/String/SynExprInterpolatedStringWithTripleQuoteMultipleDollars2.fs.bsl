@@ -15,4 +15,5 @@ ImplFile
               (2,0--2,16))], PreXmlDocEmpty, [], None, (2,0--2,16),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

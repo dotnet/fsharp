@@ -50,4 +50,5 @@ SigFile
                     WithKeyword = None })], (3,0--5,30))], PreXmlDocEmpty, [],
           None, (2,0--5,30), { LeadingKeyword = Namespace (2,0--2,9) })],
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

@@ -21,4 +21,5 @@ ImplFile
                       GreaterRange = (2,22--2,23) }), (2,0--2,23)), (2,0--2,23))],
           PreXmlDocEmpty, [], None, (2,0--2,23), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

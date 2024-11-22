@@ -6,6 +6,7 @@ ImplFile
          ([Interface 05], false, AnonModule, [], PreXmlDocEmpty, [], None,
           (8,0--8,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (7,0)-(7,1) parse error Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (3:1). Try indenting this further.

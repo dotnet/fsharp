@@ -31,4 +31,5 @@ SigFile
                     WithKeyword = None })], (2,0--3,11))], PreXmlDocEmpty, [],
           None, (2,0--4,0), { LeadingKeyword = None })],
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

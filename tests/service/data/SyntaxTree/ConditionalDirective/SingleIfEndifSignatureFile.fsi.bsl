@@ -19,4 +19,5 @@ SigFile
           { LeadingKeyword = Namespace (2,0--2,9) })],
       { ConditionalDirectives =
          [If (Ident "DEBUG", (5,4--5,13)); EndIf (7,4--7,10)]
+        WarnDirectives = []
         CodeComments = [] }, set []))

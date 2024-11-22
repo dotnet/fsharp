@@ -13,6 +13,7 @@ ImplFile
                  (1,0--1,4)), (1,0--1,4))], PreXmlDocEmpty, [], None, (1,0--1,4),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (1,3)-(1,4) parse error Unexpected symbol ')' in expression
