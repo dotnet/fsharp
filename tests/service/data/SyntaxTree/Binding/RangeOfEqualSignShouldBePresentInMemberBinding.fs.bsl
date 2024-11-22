@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Binding/RangeOfEqualSignShouldBePresentInMemberBinding.fs", false,
-      QualifiedNameOfFile RangeOfEqualSignShouldBePresentInMemberBinding, [], [],
+      QualifiedNameOfFile RangeOfEqualSignShouldBePresentInMemberBinding, [],
       [SynModuleOrNamespace
          ([RangeOfEqualSignShouldBePresentInMemberBinding], false, AnonModule,
           [Types

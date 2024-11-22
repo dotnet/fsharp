@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Lambda/DestructedLambdaHasArrowRange.fs", false,
-      QualifiedNameOfFile DestructedLambdaHasArrowRange, [], [],
+      QualifiedNameOfFile DestructedLambdaHasArrowRange, [],
       [SynModuleOrNamespace
          ([DestructedLambdaHasArrowRange], false, AnonModule,
           [Expr

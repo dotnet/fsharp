@@ -1,7 +1,6 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Type/Interface 06.fs", false, QualifiedNameOfFile Interface 06, [],
-      [],
       [SynModuleOrNamespace
          ([Interface 06], false, AnonModule, [], PreXmlDocEmpty, [], None,
           (7,0--7,0), { LeadingKeyword = None })], (true, true),

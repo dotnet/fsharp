@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/CodeComment/CommentAfterSourceCodeSignatureFile.fsi",
-      QualifiedNameOfFile CommentAfterSourceCodeSignatureFile, [], [],
+      QualifiedNameOfFile CommentAfterSourceCodeSignatureFile, [],
       [SynModuleOrNamespaceSig
          ([Meh], false, DeclaredNamespace,
           [Val

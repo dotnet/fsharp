@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/ModuleMember/Let 04.fs", false, QualifiedNameOfFile Module, [], [],
+     ("/root/ModuleMember/Let 04.fs", false, QualifiedNameOfFile Module, [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Let (false, [], (3,0--3,3));

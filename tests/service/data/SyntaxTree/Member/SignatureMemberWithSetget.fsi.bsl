@@ -1,7 +1,6 @@
 SigFile
   (ParsedSigFileInput
      ("/root/Member/SignatureMemberWithSetget.fsi", QualifiedNameOfFile Meh, [],
-      [],
       [SynModuleOrNamespaceSig
          ([Meh], false, NamedModule,
           [Types

@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Type/SynTypeFunHasRangeOfArrow.fs", false,
-      QualifiedNameOfFile SynTypeFunHasRangeOfArrow, [], [],
+      QualifiedNameOfFile SynTypeFunHasRangeOfArrow, [],
       [SynModuleOrNamespace
          ([SynTypeFunHasRangeOfArrow], false, AnonModule,
           [Types

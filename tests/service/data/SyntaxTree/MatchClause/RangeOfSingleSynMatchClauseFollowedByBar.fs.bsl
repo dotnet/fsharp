@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/MatchClause/RangeOfSingleSynMatchClauseFollowedByBar.fs", false,
-      QualifiedNameOfFile RangeOfSingleSynMatchClauseFollowedByBar, [], [],
+      QualifiedNameOfFile RangeOfSingleSynMatchClauseFollowedByBar, [],
       [SynModuleOrNamespace
          ([RangeOfSingleSynMatchClauseFollowedByBar], false, AnonModule,
           [Expr

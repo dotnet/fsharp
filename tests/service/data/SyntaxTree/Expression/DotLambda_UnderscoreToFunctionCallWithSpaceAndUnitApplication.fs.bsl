@@ -3,7 +3,7 @@ ImplFile
      ("/root/Expression/DotLambda_UnderscoreToFunctionCallWithSpaceAndUnitApplication.fs",
       false,
       QualifiedNameOfFile
-        DotLambda_UnderscoreToFunctionCallWithSpaceAndUnitApplication, [], [],
+        DotLambda_UnderscoreToFunctionCallWithSpaceAndUnitApplication, [],
       [SynModuleOrNamespace
          ([DotLambda_UnderscoreToFunctionCallWithSpaceAndUnitApplication], false,
           AnonModule,

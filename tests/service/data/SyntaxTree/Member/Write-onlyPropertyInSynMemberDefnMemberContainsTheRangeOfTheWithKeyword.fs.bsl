@@ -4,7 +4,7 @@ ImplFile
       false,
       QualifiedNameOfFile
         Write-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([Foo], false, DeclaredNamespace,
           [Types

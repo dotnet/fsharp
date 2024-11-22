@@ -3,7 +3,7 @@ ImplFile
      ("/root/Binding/RangeOfAttributeShouldBeIncludedInSynMemberDefnMember.fs",
       false,
       QualifiedNameOfFile RangeOfAttributeShouldBeIncludedInSynMemberDefnMember,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([RangeOfAttributeShouldBeIncludedInSynMemberDefnMember], false,
           AnonModule,

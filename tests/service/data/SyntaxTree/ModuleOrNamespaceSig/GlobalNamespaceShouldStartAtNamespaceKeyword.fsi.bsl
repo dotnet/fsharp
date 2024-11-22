@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/ModuleOrNamespaceSig/GlobalNamespaceShouldStartAtNamespaceKeyword.fsi",
-      QualifiedNameOfFile GlobalNamespaceShouldStartAtNamespaceKeyword, [], [],
+      QualifiedNameOfFile GlobalNamespaceShouldStartAtNamespaceKeyword, [],
       [SynModuleOrNamespaceSig
          ([], false, GlobalNamespace,
           [Types

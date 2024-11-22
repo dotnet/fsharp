@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/ExplicitField.fs", false,
-      QualifiedNameOfFile ExplicitField, [], [],
+      QualifiedNameOfFile ExplicitField, [],
       [SynModuleOrNamespace
          ([ExplicitField], false, AnonModule,
           [Types

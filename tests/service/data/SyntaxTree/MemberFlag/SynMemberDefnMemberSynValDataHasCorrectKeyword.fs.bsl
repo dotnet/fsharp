@@ -2,7 +2,7 @@ ImplFile
   (ParsedImplFileInput
      ("/root/MemberFlag/SynMemberDefnMemberSynValDataHasCorrectKeyword.fs",
       false, QualifiedNameOfFile SynMemberDefnMemberSynValDataHasCorrectKeyword,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([SynMemberDefnMemberSynValDataHasCorrectKeyword], false, AnonModule,
           [Types

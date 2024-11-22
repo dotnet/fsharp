@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/UnionCase/UnionCaseFieldsCanHaveComments.fs", false,
-      QualifiedNameOfFile UnionCaseFieldsCanHaveComments, [], [],
+      QualifiedNameOfFile UnionCaseFieldsCanHaveComments, [],
       [SynModuleOrNamespace
          ([UnionCaseFieldsCanHaveComments], false, AnonModule,
           [Types

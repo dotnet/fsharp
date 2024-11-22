@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/UnionCase/SingleSynUnionCaseWithoutBar.fs", false,
-      QualifiedNameOfFile SingleSynUnionCaseWithoutBar, [], [],
+      QualifiedNameOfFile SingleSynUnionCaseWithoutBar, [],
       [SynModuleOrNamespace
          ([SingleSynUnionCaseWithoutBar], false, AnonModule,
           [Types

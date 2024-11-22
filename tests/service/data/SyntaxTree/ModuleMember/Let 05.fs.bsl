@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/ModuleMember/Let 05.fs", false, QualifiedNameOfFile Let 05, [], [],
+     ("/root/ModuleMember/Let 05.fs", false, QualifiedNameOfFile Let 05, [],
       [SynModuleOrNamespace
          ([Let 05], false, AnonModule,
           [Let

@@ -3,7 +3,6 @@ ImplFile
      ("/root/ConditionalDirective/DirectivesInMultilineStringAreNotReportedAsTrivia.fs",
       false,
       QualifiedNameOfFile DirectivesInMultilineStringAreNotReportedAsTrivia, [],
-      [],
       [SynModuleOrNamespace
          ([DirectivesInMultilineStringAreNotReportedAsTrivia], false, AnonModule,
           [Let

@@ -3,7 +3,7 @@ ImplFile
      ("/root/Expression/SynExprMatchBangContainsTheRangeOfTheMatchAndWithKeyword.fs",
       false,
       QualifiedNameOfFile
-        SynExprMatchBangContainsTheRangeOfTheMatchAndWithKeyword, [], [],
+        SynExprMatchBangContainsTheRangeOfTheMatchAndWithKeyword, [],
       [SynModuleOrNamespace
          ([SynExprMatchBangContainsTheRangeOfTheMatchAndWithKeyword], false,
           AnonModule,
