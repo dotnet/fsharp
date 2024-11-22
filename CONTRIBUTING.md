@@ -60,7 +60,7 @@ There are additional considerations
 - Is the risk of accepting this change High or even Medium
   For an acceptable PR with a high risk, we will definitely need to discuss mitigations for the risk.  A decision to upgrade the SDK or VS needs to be always low risk for our customers, they have businesses to run, they don't want to have to deal with our - risky behavior.  We may defer or delay risky PRs into a later release or abandon it.
 - Is the change as small as possible
-- Should it be chopped up into smaller chunks
+- Should it be chopped up into smaller, yet independently valuable and releasable to production, chunks
 - Is the cost of reviewing the change worth the improvement made by the change
 Again, some PR’s are too big or provide too little value to merge.
 
