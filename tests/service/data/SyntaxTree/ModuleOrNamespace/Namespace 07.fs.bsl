@@ -19,6 +19,7 @@ ImplFile
                     WithKeyword = None })], (3,0--3,12))], PreXmlDocEmpty, [],
           None, (1,0--3,12), { LeadingKeyword = Namespace (1,0--1,9) })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))
 
 (3,0)-(3,4) parse error Unexpected start of structured construct in implementation file. Expected identifier, 'global' or other token.

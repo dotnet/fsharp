@@ -271,7 +271,7 @@ let PostParseModuleImpls
     let trivia: ParsedImplFileInputTrivia =
         {
             ConditionalDirectives = IfdefStore.GetTrivia(lexbuf)
-            // WarnDirectives = WarnScopes.getDirectiveTrivia (lexbuf)
+            WarnDirectives = WarnScopes.getDirectiveTrivia (lexbuf)
             CodeComments = collectCodeComments lexbuf
         }
 
@@ -311,7 +311,7 @@ let PostParseModuleSpecs
     let trivia: ParsedSigFileInputTrivia =
         {
             ConditionalDirectives = IfdefStore.GetTrivia(lexbuf)
-            // WarnDirectives = WarnScopes.getDirectiveTrivia (lexbuf)
+            WarnDirectives = WarnScopes.getDirectiveTrivia (lexbuf)
             CodeComments = collectCodeComments lexbuf
         }
 

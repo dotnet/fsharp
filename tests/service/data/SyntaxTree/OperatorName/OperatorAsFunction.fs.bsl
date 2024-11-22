@@ -20,4 +20,5 @@ ImplFile
                  Const (Int32 4, (2,6--2,7)), (2,0--2,7)), (2,0--2,7))],
           PreXmlDocEmpty, [], None, (2,0--2,7), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

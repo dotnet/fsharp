@@ -11,4 +11,5 @@ ImplFile
           [Expr (Const (Unit, (7,0--7,2)), (7,0--7,2))], PreXmlDocEmpty, [],
           None, (5,0--7,2), { LeadingKeyword = Namespace (5,0--5,9) })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

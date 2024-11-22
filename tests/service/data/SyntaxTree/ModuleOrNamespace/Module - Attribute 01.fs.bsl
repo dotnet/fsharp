@@ -32,4 +32,5 @@ ImplFile
              Range = (2,0--2,11) }], None, (2,0--5,20),
           { LeadingKeyword = Module (3,0--3,6) })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

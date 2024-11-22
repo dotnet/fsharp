@@ -37,6 +37,7 @@ ImplFile
                     WithKeyword = None })], (2,0--3,20))], PreXmlDocEmpty, [],
           None, (2,0--4,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (3,6)-(3,20) parse warning This construct is deprecated: it is only for use in the F# library

@@ -51,8 +51,8 @@ type ParsedImplFileInputTrivia =
         /// Preprocessor directives of type #if, #else or #endif
         ConditionalDirectives: ConditionalDirectiveTrivia list
 
-        // /// Warn directives (#nowarn / #warnon)
-        // WarnDirectives: WarnDirectiveTrivia list
+        /// Warn directives (#nowarn / #warnon)
+        WarnDirectives: WarnDirectiveTrivia list
 
         /// Represent code comments found in the source file
         CodeComments: CommentTrivia list
@@ -67,8 +67,8 @@ type ParsedSigFileInputTrivia =
         /// Preprocessor directives of type #if, #else or #endif
         ConditionalDirectives: ConditionalDirectiveTrivia list
 
-        // /// Warn directives (#nowarn / #warnon)
-        // WarnDirectives: WarnDirectiveTrivia list
+        /// Warn directives (#nowarn / #warnon)
+        WarnDirectives: WarnDirectiveTrivia list
 
         /// Represent code comments found in the source file
         CodeComments: CommentTrivia list

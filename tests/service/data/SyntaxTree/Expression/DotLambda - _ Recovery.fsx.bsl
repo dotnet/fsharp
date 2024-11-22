@@ -10,6 +10,7 @@ ImplFile
                  Some (1,2--1,3), (1,0--1,3)), (1,0--1,3))], PreXmlDocEmpty, [],
           None, (1,0--1,3), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (1,2)-(1,3) parse error Unexpected symbol ')' in expression. Expected '.' or other token.

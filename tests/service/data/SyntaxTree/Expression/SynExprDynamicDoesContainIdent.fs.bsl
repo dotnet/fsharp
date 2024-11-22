@@ -7,4 +7,5 @@ ImplFile
           [Expr (Dynamic (Ident x, (2,1--2,2), Ident k, (2,0--2,3)), (2,0--2,3))],
           PreXmlDocEmpty, [], None, (2,0--2,3), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

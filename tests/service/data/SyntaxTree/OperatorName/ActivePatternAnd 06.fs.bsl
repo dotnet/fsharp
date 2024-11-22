@@ -34,6 +34,7 @@ ImplFile
                     EqualsRange = Some (1,36--1,37) })], (1,0--1,44))],
           PreXmlDocEmpty, [], None, (1,0--1,44), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))
 
 (1,0)-(1,44) parse warning The declarations in this file will be placed in an implicit module 'ActivePatternAnd 06' based on the file name 'ActivePatternAnd 06.fs'. However this is not a valid F# identifier, so the contents will not be accessible from other files. Consider renaming the file or adding a 'module' or 'namespace' declaration at the top of the file.

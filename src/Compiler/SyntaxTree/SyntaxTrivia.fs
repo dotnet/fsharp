@@ -36,14 +36,14 @@ type CommentTrivia =
 type ParsedImplFileInputTrivia =
     {
         ConditionalDirectives: ConditionalDirectiveTrivia list
-        // WarnDirectives: WarnDirectiveTrivia list
+        WarnDirectives: WarnDirectiveTrivia list
         CodeComments: CommentTrivia list
     }
 
     static member Empty =
         {
             ConditionalDirectives = []
-            // WarnDirectives = []
+            WarnDirectives = []
             CodeComments = []
         }
 
@@ -51,14 +51,14 @@ type ParsedImplFileInputTrivia =
 type ParsedSigFileInputTrivia =
     {
         ConditionalDirectives: ConditionalDirectiveTrivia list
-        // WarnDirectives: WarnDirectiveTrivia list
+        WarnDirectives: WarnDirectiveTrivia list
         CodeComments: CommentTrivia list
     }
 
     static member Empty =
         {
             ConditionalDirectives = []
-            // WarnDirectives = []
+            WarnDirectives = []
             CodeComments = []
         }
 

@@ -49,6 +49,7 @@ ImplFile
                     WithKeyword = None })], (4,0--4,16))], PreXmlDocEmpty, [],
           None, (1,0--4,16), { LeadingKeyword = Namespace (1,0--1,9) })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))
 
 (3,19)-(3,29) parse error Unexpected function type in union case field definition. If you intend the field to be a function, consider wrapping the function signature with parens, e.g. | Case of a -> b into | Case of (a -> b).

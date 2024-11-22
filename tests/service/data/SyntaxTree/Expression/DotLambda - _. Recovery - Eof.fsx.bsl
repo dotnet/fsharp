@@ -21,6 +21,7 @@ ImplFile
                       DotRange = (1,6--1,7) }), (1,0--1,7)), (1,0--1,7))],
           PreXmlDocEmpty, [], None, (1,0--1,7), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))
 
 (1,6)-(1,7) parse error Unexpected end of input in expression

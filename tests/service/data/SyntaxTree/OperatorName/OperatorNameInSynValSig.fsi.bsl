@@ -38,4 +38,5 @@ SigFile
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (2,0--3,37), { LeadingKeyword = Module (2,0--2,6) })],
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
