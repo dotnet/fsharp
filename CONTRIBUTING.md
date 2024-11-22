@@ -50,7 +50,7 @@ Security issues and bugs should be reported privately, via email, to the Microso
 - Is the performance improvement measured and can regressions be identified?
 - Will our existing customers be able to without effort upgrading the **Major** release of an SDK or VS?
 - Will our existing customers be able to without effort upgrading the **Minor** release of an SDK or VS?
-- Does it break VS, Rider or Ionide?
+- This change is not binary breaking (i.e. does not break VS, Rider or Ionide)?
 - Does it have adequate testing?
 - Do all existing tests run unmodified?
 
