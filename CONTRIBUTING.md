@@ -57,7 +57,7 @@ Security issues and bugs should be reported privately, via email, to the Microso
 In general answers to the above should be **Yes**.  A **No** to any of them is not disqualifying of the PR, however a no answer will need an explanation and a discussion.
  
 There are additional considerations
-- Is the risk of accepting this change High or even Medium
+- Is the risk of accepting this change High or even Medium, these really refer to how much of the existing user or codebase is impacted. How likely do we feel we are to revert the changes later.
   For an acceptable PR with a high risk, we will definitely need to discuss mitigations for the risk.  A decision to upgrade the SDK or VS needs to be always low risk for our customers, they have businesses to run, they don't want to have to deal with our - risky behavior.  We may defer or delay risky PRs into a later release or abandon it.
 - Is the change as small as possible
 - Should it be chopped up into smaller, yet independently valuable and releasable to production, chunks
