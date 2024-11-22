@@ -379,7 +379,7 @@ type PhasedDiagnostic with
         // Level 2
         | _ -> 2
 
-    member x.IsEnabled(severity, options) =
+    member private x.IsEnabled(severity, options) =
         let level = options.WarnLevel
         let specificWarnOn = options.WarnOn
         let n = x.Number
@@ -412,19 +412,25 @@ type PhasedDiagnostic with
     member x.AdjustSeverity(options, severity) =
         let n = x.Number
 
-        let warnOff () = List.contains n options.WarnOff
+        let localWarnon () = WarnScopes.IsWarnon options n x.Range
+
+        let localNowarn () = WarnScopes.IsNowarn options n x.Range
+
+        let warnOff () =
+            List.contains n options.WarnOff && not (localWarnon ()) || localNowarn ()
 
         match severity with
         | FSharpDiagnosticSeverity.Error -> FSharpDiagnosticSeverity.Error
         | FSharpDiagnosticSeverity.Warning when
             x.IsEnabled(severity, options)
             && ((options.GlobalWarnAsError && not (warnOff ()))
-                || List.contains n options.WarnAsError)
+                || List.contains n options.WarnAsError && not (localNowarn ()))
             && not (List.contains n options.WarnAsWarn)
             ->
             FSharpDiagnosticSeverity.Error
+        | FSharpDiagnosticSeverity.Info when List.contains n options.WarnAsError && not (localNowarn ()) -> FSharpDiagnosticSeverity.Error
         | FSharpDiagnosticSeverity.Warning when x.IsEnabled(severity, options) && not (warnOff ()) -> FSharpDiagnosticSeverity.Warning
-        | FSharpDiagnosticSeverity.Info when List.contains n options.WarnAsError -> FSharpDiagnosticSeverity.Error
+        | FSharpDiagnosticSeverity.Warning when localWarnon () -> FSharpDiagnosticSeverity.Warning
         | FSharpDiagnosticSeverity.Info when List.contains n options.WarnOn && not (warnOff ()) -> FSharpDiagnosticSeverity.Warning
         | FSharpDiagnosticSeverity.Info when x.IsEnabled(severity, options) && not (warnOff ()) -> FSharpDiagnosticSeverity.Info
         | _ -> FSharpDiagnosticSeverity.Hidden
