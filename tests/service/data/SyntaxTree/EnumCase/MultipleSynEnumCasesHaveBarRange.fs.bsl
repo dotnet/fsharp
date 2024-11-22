@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/EnumCase/MultipleSynEnumCasesHaveBarRange.fs", false,
-      QualifiedNameOfFile MultipleSynEnumCasesHaveBarRange, [], [],
+      QualifiedNameOfFile MultipleSynEnumCasesHaveBarRange, [],
       [SynModuleOrNamespace
          ([MultipleSynEnumCasesHaveBarRange], false, AnonModule,
           [Types

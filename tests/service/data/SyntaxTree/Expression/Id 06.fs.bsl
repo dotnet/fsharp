@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Expression/Id 06.fs", false, QualifiedNameOfFile Id 06, [], [],
+     ("/root/Expression/Id 06.fs", false, QualifiedNameOfFile Id 06, [],
       [SynModuleOrNamespace
          ([Id 06], false, AnonModule,
           [Expr (FromParseError (Ident , (1,0--1,2)), (1,0--1,2))],

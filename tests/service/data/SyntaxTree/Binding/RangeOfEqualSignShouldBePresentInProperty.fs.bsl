@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Binding/RangeOfEqualSignShouldBePresentInProperty.fs", false,
-      QualifiedNameOfFile RangeOfEqualSignShouldBePresentInProperty, [], [],
+      QualifiedNameOfFile RangeOfEqualSignShouldBePresentInProperty, [],
       [SynModuleOrNamespace
          ([RangeOfEqualSignShouldBePresentInProperty], false, AnonModule,
           [Types

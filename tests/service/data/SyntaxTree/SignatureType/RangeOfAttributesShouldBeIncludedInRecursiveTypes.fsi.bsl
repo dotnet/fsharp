@@ -2,7 +2,6 @@ SigFile
   (ParsedSigFileInput
      ("/root/SignatureType/RangeOfAttributesShouldBeIncludedInRecursiveTypes.fsi",
       QualifiedNameOfFile RangeOfAttributesShouldBeIncludedInRecursiveTypes, [],
-      [],
       [SynModuleOrNamespaceSig
          ([SomeNamespace], false, DeclaredNamespace,
           [Types

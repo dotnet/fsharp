@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/String/SynConstStringWithSynStringKindRegular.fs", false,
-      QualifiedNameOfFile SynConstStringWithSynStringKindRegular, [], [],
+      QualifiedNameOfFile SynConstStringWithSynStringKindRegular, [],
       [SynModuleOrNamespace
          ([SynConstStringWithSynStringKindRegular], false, AnonModule,
           [Let

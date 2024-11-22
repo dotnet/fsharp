@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Type/Enum 09 - Eof.fs", false, QualifiedNameOfFile Module, [], [],
+     ("/root/Type/Enum 09 - Eof.fs", false, QualifiedNameOfFile Module, [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Types

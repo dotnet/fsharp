@@ -2,7 +2,7 @@ ImplFile
   (ParsedImplFileInput
      ("/root/Type/SynTypeDefnWithUnionContainsTheRangeOfTheEqualsSign.fs", false,
       QualifiedNameOfFile SynTypeDefnWithUnionContainsTheRangeOfTheEqualsSign,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([SynTypeDefnWithUnionContainsTheRangeOfTheEqualsSign], false,
           AnonModule,

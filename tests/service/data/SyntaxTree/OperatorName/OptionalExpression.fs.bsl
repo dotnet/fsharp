@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/OperatorName/OptionalExpression.fs", false,
-      QualifiedNameOfFile OptionalExpression, [], [],
+      QualifiedNameOfFile OptionalExpression, [],
       [SynModuleOrNamespace
          ([OptionalExpression], false, AnonModule,
           [Expr

@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Type/NamedParametersInDelegateType.fs", false,
-      QualifiedNameOfFile NamedParametersInDelegateType, [], [],
+      QualifiedNameOfFile NamedParametersInDelegateType, [],
       [SynModuleOrNamespace
          ([NamedParametersInDelegateType], false, AnonModule,
           [Types

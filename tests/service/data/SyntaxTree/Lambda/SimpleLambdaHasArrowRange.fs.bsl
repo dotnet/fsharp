@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Lambda/SimpleLambdaHasArrowRange.fs", false,
-      QualifiedNameOfFile SimpleLambdaHasArrowRange, [], [],
+      QualifiedNameOfFile SimpleLambdaHasArrowRange, [],
       [SynModuleOrNamespace
          ([SimpleLambdaHasArrowRange], false, AnonModule,
           [Expr

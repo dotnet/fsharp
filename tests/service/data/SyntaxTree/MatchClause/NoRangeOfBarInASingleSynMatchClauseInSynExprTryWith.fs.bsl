@@ -3,7 +3,7 @@ ImplFile
      ("/root/MatchClause/NoRangeOfBarInASingleSynMatchClauseInSynExprTryWith.fs",
       false,
       QualifiedNameOfFile NoRangeOfBarInASingleSynMatchClauseInSynExprTryWith,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([NoRangeOfBarInASingleSynMatchClauseInSynExprTryWith], false,
           AnonModule,

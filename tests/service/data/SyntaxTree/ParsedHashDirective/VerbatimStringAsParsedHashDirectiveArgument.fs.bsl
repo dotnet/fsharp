@@ -2,7 +2,6 @@ ImplFile
   (ParsedImplFileInput
      ("/root/ParsedHashDirective/VerbatimStringAsParsedHashDirectiveArgument.fs",
       false, QualifiedNameOfFile VerbatimStringAsParsedHashDirectiveArgument, [],
-      [],
       [SynModuleOrNamespace
          ([VerbatimStringAsParsedHashDirectiveArgument], false, AnonModule,
           [HashDirective

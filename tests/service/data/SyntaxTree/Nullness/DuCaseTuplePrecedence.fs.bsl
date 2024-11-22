@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/DuCaseTuplePrecedence.fs", false,
-      QualifiedNameOfFile DuCaseTuplePrecedence, [], [],
+      QualifiedNameOfFile DuCaseTuplePrecedence, [],
       [SynModuleOrNamespace
          ([DuCaseTuplePrecedence], false, AnonModule,
           [Types

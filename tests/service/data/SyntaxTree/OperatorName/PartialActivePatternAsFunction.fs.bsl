@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/OperatorName/PartialActivePatternAsFunction.fs", false,
-      QualifiedNameOfFile PartialActivePatternAsFunction, [], [],
+      QualifiedNameOfFile PartialActivePatternAsFunction, [],
       [SynModuleOrNamespace
          ([PartialActivePatternAsFunction], false, AnonModule,
           [Expr

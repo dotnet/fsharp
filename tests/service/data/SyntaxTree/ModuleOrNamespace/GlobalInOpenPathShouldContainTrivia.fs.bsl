@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/ModuleOrNamespace/GlobalInOpenPathShouldContainTrivia.fs", false,
-      QualifiedNameOfFile GlobalInOpenPathShouldContainTrivia, [], [],
+      QualifiedNameOfFile GlobalInOpenPathShouldContainTrivia, [],
       [SynModuleOrNamespace
          ([Ionide; VSCode; FSharp], false, DeclaredNamespace,
           [Open

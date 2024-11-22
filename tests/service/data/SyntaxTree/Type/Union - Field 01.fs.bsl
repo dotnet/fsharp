@@ -1,7 +1,6 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Type/Union - Field 01.fs", false, QualifiedNameOfFile Module, [],
-      [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Types

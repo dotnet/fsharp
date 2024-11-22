@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/SynType/SynTypeOrWithAppTypeOnTheRightHandSide.fs", false,
-      QualifiedNameOfFile SynTypeOrWithAppTypeOnTheRightHandSide, [], [],
+      QualifiedNameOfFile SynTypeOrWithAppTypeOnTheRightHandSide, [],
       [SynModuleOrNamespace
          ([SynTypeOrWithAppTypeOnTheRightHandSide], false, AnonModule,
           [Let

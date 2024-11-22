@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/LeadingKeyword/ExternKeyword.fs", false,
-      QualifiedNameOfFile ExternKeyword, [], [],
+      QualifiedNameOfFile ExternKeyword, [],
       [SynModuleOrNamespace
          ([ExternKeyword], false, AnonModule,
           [Let

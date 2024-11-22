@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/DotLambda_NestedPropertiesAfterUnderscore.fs", false,
-      QualifiedNameOfFile DotLambda_NestedPropertiesAfterUnderscore, [], [],
+      QualifiedNameOfFile DotLambda_NestedPropertiesAfterUnderscore, [],
       [SynModuleOrNamespace
          ([DotLambda_NestedPropertiesAfterUnderscore], false, AnonModule,
           [Let

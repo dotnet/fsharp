@@ -94,13 +94,13 @@ let PrependPathToSpec x (SynModuleOrNamespaceSig(longId, isRecursive, kind, decl
 
 let PrependPathToInput x inp =
     match inp with
-    | ParsedInput.ImplFile(ParsedImplFileInput(b, c, q, d, hd, impls, e, trivia, i)) ->
+    | ParsedInput.ImplFile(ParsedImplFileInput(b, c, q, hd, impls, e, trivia, i)) ->
         ParsedInput.ImplFile(
-            ParsedImplFileInput(b, c, PrependPathToQualFileName x q, d, hd, List.map (PrependPathToImpl x) impls, e, trivia, i)
+            ParsedImplFileInput(b, c, PrependPathToQualFileName x q, hd, List.map (PrependPathToImpl x) impls, e, trivia, i)
         )
 
-    | ParsedInput.SigFile(ParsedSigFileInput(b, q, d, hd, specs, trivia, i)) ->
-        ParsedInput.SigFile(ParsedSigFileInput(b, PrependPathToQualFileName x q, d, hd, List.map (PrependPathToSpec x) specs, trivia, i))
+    | ParsedInput.SigFile(ParsedSigFileInput(b, q, hd, specs, trivia, i)) ->
+        ParsedInput.SigFile(ParsedSigFileInput(b, PrependPathToQualFileName x q, hd, List.map (PrependPathToSpec x) specs, trivia, i))
 
 let IsValidAnonModuleName (modname: string) =
     modname |> String.forall (fun c -> Char.IsLetterOrDigit c || c = '_')
@@ -293,7 +293,7 @@ let PostParseModuleImpls
     let qualName = QualFileNameOfImpls fileName impls
     let isScript = IsScript fileName
 
-    ParsedInput.ImplFile(ParsedImplFileInput(fileName, isScript, qualName, [], hashDirectives, impls, isLastCompiland, trivia, identifiers))
+    ParsedInput.ImplFile(ParsedImplFileInput(fileName, isScript, qualName, hashDirectives, impls, isLastCompiland, trivia, identifiers))
 
 let PostParseModuleSpecs
     (
@@ -332,7 +332,7 @@ let PostParseModuleSpecs
 
     let qualName = QualFileNameOfSpecs fileName specs
 
-    ParsedInput.SigFile(ParsedSigFileInput(fileName, qualName, [], hashDirectives, specs, trivia, identifiers))
+    ParsedInput.SigFile(ParsedSigFileInput(fileName, qualName, hashDirectives, specs, trivia, identifiers))
 
 type ModuleNamesDict = Map<string, Map<string, QualifiedNameOfFile>>
 
@@ -377,26 +377,26 @@ let DeduplicateModuleName (moduleNamesDict: ModuleNamesDict) (fileName: string) 
 let DeduplicateParsedInputModuleName (moduleNamesDict: ModuleNamesDict) input =
     match input with
     | ParsedInput.ImplFile implFile ->
-        let (ParsedImplFileInput(fileName, isScript, qualNameOfFile, scopedPragmas, hashDirectives, modules, flags, trivia, identifiers)) =
+        let (ParsedImplFileInput(fileName, isScript, qualNameOfFile, hashDirectives, modules, flags, trivia, identifiers)) =
             implFile
 
         let qualNameOfFileR, moduleNamesDictR =
             DeduplicateModuleName moduleNamesDict fileName qualNameOfFile
 
         let implFileR =
-            ParsedImplFileInput(fileName, isScript, qualNameOfFileR, scopedPragmas, hashDirectives, modules, flags, trivia, identifiers)
+            ParsedImplFileInput(fileName, isScript, qualNameOfFileR, hashDirectives, modules, flags, trivia, identifiers)
 
         let inputR = ParsedInput.ImplFile implFileR
         inputR, moduleNamesDictR
     | ParsedInput.SigFile sigFile ->
-        let (ParsedSigFileInput(fileName, qualNameOfFile, scopedPragmas, hashDirectives, modules, trivia, identifiers)) =
+        let (ParsedSigFileInput(fileName, qualNameOfFile, hashDirectives, modules, trivia, identifiers)) =
             sigFile
 
         let qualNameOfFileR, moduleNamesDictR =
             DeduplicateModuleName moduleNamesDict fileName qualNameOfFile
 
         let sigFileR =
-            ParsedSigFileInput(fileName, qualNameOfFileR, scopedPragmas, hashDirectives, modules, trivia, identifiers)
+            ParsedSigFileInput(fileName, qualNameOfFileR, hashDirectives, modules, trivia, identifiers)
 
         let inputT = ParsedInput.SigFile sigFileR
         inputT, moduleNamesDictR
@@ -547,7 +547,7 @@ let ReportParsingStatistics res =
 let EmptyParsedInput (fileName, isLastCompiland) =
     if FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
         ParsedInput.SigFile(
-            ParsedSigFileInput(fileName, QualFileNameOfImpls fileName [], [], [], [], ParsedSigFileInputTrivia.Empty, Set.empty)
+            ParsedSigFileInput(fileName, QualFileNameOfImpls fileName [], [], [], ParsedSigFileInputTrivia.Empty, Set.empty)
         )
     else
         ParsedInput.ImplFile(
@@ -555,7 +555,6 @@ let EmptyParsedInput (fileName, isLastCompiland) =
                 fileName,
                 false,
                 QualFileNameOfImpls fileName [],
-                [],
                 [],
                 [],
                 isLastCompiland,
@@ -1236,7 +1235,7 @@ let SkippedImplFilePlaceholder (tcConfig: TcConfig, tcImports: TcImports, tcGlob
                     tcState
 
             let emptyImplFile =
-                CheckedImplFile(qualNameOfFile, [], rootSigTy, ModuleOrNamespaceContents.TMDefs [], false, false, StampMap [], Map.empty)
+                CheckedImplFile(qualNameOfFile, rootSigTy, ModuleOrNamespaceContents.TMDefs [], false, false, StampMap [], Map.empty)
 
             let tcEnvAtEnd = tcStateForImplFile.TcEnvFromImpls
             Some((tcEnvAtEnd, EmptyTopAttrs, Some emptyImplFile, ccuSigForFile), tcState)

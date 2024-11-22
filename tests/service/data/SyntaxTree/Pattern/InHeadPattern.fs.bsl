@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Pattern/InHeadPattern.fs", false, QualifiedNameOfFile InHeadPattern,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([InHeadPattern], false, AnonModule,
           [Let

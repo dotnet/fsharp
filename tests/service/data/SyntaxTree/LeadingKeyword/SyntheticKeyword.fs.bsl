@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/LeadingKeyword/SyntheticKeyword.fs", false,
-      QualifiedNameOfFile SyntheticKeyword, [], [],
+      QualifiedNameOfFile SyntheticKeyword, [],
       [SynModuleOrNamespace
          ([SyntheticKeyword], false, AnonModule,
           [Expr

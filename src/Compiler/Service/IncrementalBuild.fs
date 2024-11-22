@@ -129,7 +129,6 @@ module IncrementalBuildSyntaxTree =
                     sigName,
                     [],
                     [],
-                    [],
                     isLastCompiland,
                     ParsedImplFileInputTrivia.Empty,
                     Set.empty

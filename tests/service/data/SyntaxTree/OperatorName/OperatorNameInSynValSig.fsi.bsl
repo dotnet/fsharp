@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/OperatorName/OperatorNameInSynValSig.fsi",
-      QualifiedNameOfFile IntrinsicOperators, [], [],
+      QualifiedNameOfFile IntrinsicOperators, [],
       [SynModuleOrNamespaceSig
          ([IntrinsicOperators], false, NamedModule,
           [Val

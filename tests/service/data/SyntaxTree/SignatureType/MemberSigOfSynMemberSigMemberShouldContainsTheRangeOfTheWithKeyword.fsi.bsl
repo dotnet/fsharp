@@ -3,7 +3,6 @@ SigFile
      ("/root/SignatureType/MemberSigOfSynMemberSigMemberShouldContainsTheRangeOfTheWithKeyword.fsi",
       QualifiedNameOfFile
         MemberSigOfSynMemberSigMemberShouldContainsTheRangeOfTheWithKeyword, [],
-      [],
       [SynModuleOrNamespaceSig
          ([X], false, DeclaredNamespace,
           [Types

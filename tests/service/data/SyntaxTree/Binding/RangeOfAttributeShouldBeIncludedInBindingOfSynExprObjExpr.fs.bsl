@@ -3,7 +3,7 @@ ImplFile
      ("/root/Binding/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs",
       false,
       QualifiedNameOfFile
-        RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr, [], [],
+        RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr, [],
       [SynModuleOrNamespace
          ([RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr], false,
           AnonModule,

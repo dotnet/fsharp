@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/ModuleOrNamespace/Module 04.fs", false, QualifiedNameOfFile A.B.C,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([A; B; C], false, NamedModule,
           [Expr (Const (Unit, (3,0--3,2)), (3,0--3,2))],

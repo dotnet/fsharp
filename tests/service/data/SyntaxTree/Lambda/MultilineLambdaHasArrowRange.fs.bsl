@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Lambda/MultilineLambdaHasArrowRange.fs", false,
-      QualifiedNameOfFile MultilineLambdaHasArrowRange, [], [],
+      QualifiedNameOfFile MultilineLambdaHasArrowRange, [],
       [SynModuleOrNamespace
          ([MultilineLambdaHasArrowRange], false, AnonModule,
           [Expr

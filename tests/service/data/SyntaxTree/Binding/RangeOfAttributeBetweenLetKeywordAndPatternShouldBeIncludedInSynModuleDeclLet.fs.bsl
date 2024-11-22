@@ -4,7 +4,7 @@ ImplFile
       false,
       QualifiedNameOfFile
         RangeOfAttributeBetweenLetKeywordAndPatternShouldBeIncludedInSynModuleDeclLet,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([RangeOfAttributeBetweenLetKeywordAndPatternShouldBeIncludedInSynModuleDeclLet],
           false, AnonModule,

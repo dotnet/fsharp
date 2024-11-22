@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/SimplePats/SimplePats 02.fs", false, QualifiedNameOfFile SimplePats,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([SimplePats], false, NamedModule,
           [Types

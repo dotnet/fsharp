@@ -1661,7 +1661,7 @@ let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
 
     let contents = TMDefs([ TMDefs[TMDefRec(false, [], [], [ mbinding ], m)] ])
     let qname = QualifiedNameOfFile.QualifiedNameOfFile(Ident(moduleName, m))
-    entity, v, CheckedImplFile.CheckedImplFile(qname, [], mty, contents, false, false, StampMap.Empty, Map.empty)
+    entity, v, CheckedImplFile.CheckedImplFile(qname, mty, contents, false, false, StampMap.Empty, Map.empty)
 
 let dynamicCcuName = "FSI-ASSEMBLY"
 
@@ -2470,7 +2470,6 @@ type internal FsiDynamicCompiler
                     fileName,
                     true,
                     ComputeQualifiedNameOfFileFromUniquePath(m, prefixPath),
-                    [],
                     [],
                     [ impl ],
                     (isLastCompiland, isExe),

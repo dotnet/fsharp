@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/MemberFlag/SynExprObjMembersHaveCorrectKeywords.fs", false,
-      QualifiedNameOfFile SynExprObjMembersHaveCorrectKeywords, [], [],
+      QualifiedNameOfFile SynExprObjMembersHaveCorrectKeywords, [],
       [SynModuleOrNamespace
          ([SynExprObjMembersHaveCorrectKeywords], false, AnonModule,
           [Let
