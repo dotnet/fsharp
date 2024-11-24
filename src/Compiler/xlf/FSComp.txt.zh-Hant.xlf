@@ -908,8 +908,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsCheckNulls">
-        <source>Enable nullness declarations and checks</source>
-        <target state="new">Enable nullness declarations and checks</target>
+        <source>Enable nullness declarations and checks (off by default)</source>
+        <target state="new">Enable nullness declarations and checks (off by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsClearResultsCache">
@@ -918,8 +918,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsCompressMetadata">
-        <source>Compress interface and optimization data files</source>
-        <target state="translated">壓縮介面和最佳化資料檔案</target>
+        <source>Compress interface and optimization data files (on by default)</source>
+        <target state="needs-review-translation">壓縮介面和最佳化資料檔案</target>
         <note />
       </trans-unit>
       <trans-unit id="optsGetLangVersions">
@@ -948,13 +948,13 @@
         <note />
       </trans-unit>
       <trans-unit id="optsRealsig">
-        <source>Generate assembly with IL visibility that matches the source code visibility</source>
-        <target state="translated">產生具有符合原始程式碼可見度的 IL 可見度組件</target>
+        <source>Generate assembly with IL visibility that matches the source code visibility (off by default)</source>
+        <target state="needs-review-translation">產生具有符合原始程式碼可見度的 IL 可見度組件</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOnly">
-        <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
-        <target state="translated">產生參考組件，而非完整組件作為主要輸出</target>
+        <source>Produce a reference assembly, instead of a full assembly, as the primary output (off by default)</source>
+        <target state="needs-review-translation">產生參考組件，而非完整組件作為主要輸出</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOut">
@@ -978,8 +978,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsStrictIndentation">
-        <source>Override indentation rules implied by the language version</source>
-        <target state="translated">覆寫語言版本隱含的縮排規則</target>
+        <source>Override indentation rules implied by the language version (off by default)</source>
+        <target state="needs-review-translation">覆寫語言版本隱含的縮排規則</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
@@ -5823,13 +5823,13 @@
         <note />
       </trans-unit>
       <trans-unit id="optsDelaySign">
-        <source>Delay-sign the assembly using only the public portion of the strong name key</source>
-        <target state="translated">只使用強式名稱金鑰的公開金鑰延遲簽署組件</target>
+        <source>Delay-sign the assembly using only the public portion of the strong name key (off by default)</source>
+        <target state="needs-review-translation">只使用強式名稱金鑰的公開金鑰延遲簽署組件</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPublicSign">
-        <source>Public-sign the assembly using only the public portion of the strong name key, and mark the assembly as signed</source>
-        <target state="translated">僅使用強式名稱金鑰的公開金鑰公開簽署組件，並將組件標記為已簽署</target>
+        <source>Public-sign the assembly using only the public portion of the strong name key, and mark the assembly as signed (off by default)</source>
+        <target state="needs-review-translation">僅使用強式名稱金鑰的公開金鑰公開簽署組件，並將組件標記為已簽署</target>
         <note />
       </trans-unit>
       <trans-unit id="optsWriteXml">
@@ -5888,8 +5888,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsEmbedAllSource">
-        <source>Embed all source files in the portable PDB file</source>
-        <target state="translated">內嵌可攜式 PDB 檔案中的所有來源檔案</target>
+        <source>Embed all source files in the portable PDB file (off by default)</source>
+        <target state="needs-review-translation">內嵌可攜式 PDB 檔案中的所有來源檔案</target>
         <note />
       </trans-unit>
       <trans-unit id="optsEmbedSource">
@@ -5918,8 +5918,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsDebugPM">
-        <source>Emit debug information (Short form: -g)</source>
-        <target state="translated">發出偵錯資訊 (簡短形式: -g)</target>
+        <source>Emit debug information (Short form: -g) (off by default)</source>
+        <target state="needs-review-translation">發出偵錯資訊 (簡短形式: -g)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsDebug">
@@ -5928,33 +5928,33 @@
         <note />
       </trans-unit>
       <trans-unit id="optsOptimize">
-        <source>Enable optimizations (Short form: -O)</source>
-        <target state="translated">啟用最佳化 (簡短形式: -O)</target>
+        <source>Enable optimizations (Short form: -O) (on by default)</source>
+        <target state="needs-review-translation">啟用最佳化 (簡短形式: -O)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsTailcalls">
-        <source>Enable or disable tailcalls</source>
-        <target state="translated">啟用或停用 Tail 呼叫</target>
+        <source>Enable or disable tailcalls (on by default)</source>
+        <target state="needs-review-translation">啟用或停用 Tail 呼叫</target>
         <note />
       </trans-unit>
       <trans-unit id="optsDeterministic">
-        <source>Produce a deterministic assembly (including module version GUID and timestamp)</source>
-        <target state="translated">產生確定性組件 (包括模組版本 GUID 及時間戳記)</target>
+        <source>Produce a deterministic assembly (including module version GUID and timestamp) (off by default)</source>
+        <target state="needs-review-translation">產生確定性組件 (包括模組版本 GUID 及時間戳記)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsCrossoptimize">
-        <source>Enable or disable cross-module optimizations</source>
-        <target state="translated">啟用或停用跨模組最佳化</target>
+        <source>Enable or disable cross-module optimizations (on by default)</source>
+        <target state="needs-review-translation">啟用或停用跨模組最佳化</target>
         <note />
       </trans-unit>
       <trans-unit id="optsWarnaserrorPM">
-        <source>Report all warnings as errors</source>
-        <target state="translated">將所有警告回報為錯誤</target>
+        <source>Report all warnings as errors (off by default)</source>
+        <target state="needs-review-translation">將所有警告回報為錯誤</target>
         <note />
       </trans-unit>
       <trans-unit id="optsWarnaserror">
-        <source>Report specific warnings as errors</source>
-        <target state="translated">將特定的警告回報為錯誤</target>
+        <source>Report specific warnings as errors (off by default)</source>
+        <target state="needs-review-translation">將特定的警告回報為錯誤</target>
         <note />
       </trans-unit>
       <trans-unit id="optsWarn">
@@ -5973,8 +5973,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsChecked">
-        <source>Generate overflow checks</source>
-        <target state="translated">產生溢位核對</target>
+        <source>Generate overflow checks (off by default)</source>
+        <target state="needs-review-translation">產生溢位核對</target>
         <note />
       </trans-unit>
       <trans-unit id="optsDefine">
@@ -6158,13 +6158,13 @@
         <note />
       </trans-unit>
       <trans-unit id="optsConsoleColors">
-        <source>Output warning and error messages in color</source>
-        <target state="translated">輸出彩色的警告和錯誤訊息</target>
+        <source>Output warning and error messages in color (on by default)</source>
+        <target state="needs-review-translation">輸出彩色的警告和錯誤訊息</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUseHighEntropyVA">
-        <source>Enable high-entropy ASLR</source>
-        <target state="translated">啟用高熵 ASLR</target>
+        <source>Enable high-entropy ASLR (off by default)</source>
+        <target state="needs-review-translation">啟用高熵 ASLR</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSubSystemVersion">
@@ -6178,8 +6178,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsEmitDebugInfoInQuotations">
-        <source>Emit debug information in quotations</source>
-        <target state="translated">發出在引號內的偵錯資訊</target>
+        <source>Emit debug information in quotations (off by default)</source>
+        <target state="needs-review-translation">發出在引號內的偵錯資訊</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPreferredUiLang">

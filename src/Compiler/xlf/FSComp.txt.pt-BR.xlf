@@ -908,8 +908,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsCheckNulls">
-        <source>Enable nullness declarations and checks</source>
-        <target state="new">Enable nullness declarations and checks</target>
+        <source>Enable nullness declarations and checks (off by default)</source>
+        <target state="new">Enable nullness declarations and checks (off by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsClearResultsCache">
@@ -918,8 +918,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsCompressMetadata">
-        <source>Compress interface and optimization data files</source>
-        <target state="translated">Compactar arquivos de dados de otimização e interface</target>
+        <source>Compress interface and optimization data files (on by default)</source>
+        <target state="needs-review-translation">Compactar arquivos de dados de otimização e interface</target>
         <note />
       </trans-unit>
       <trans-unit id="optsGetLangVersions">
@@ -948,13 +948,13 @@
         <note />
       </trans-unit>
       <trans-unit id="optsRealsig">
-        <source>Generate assembly with IL visibility that matches the source code visibility</source>
-        <target state="translated">Gerar um assembly com visibilidade IL que corresponda à visibilidade do código-fonte.</target>
+        <source>Generate assembly with IL visibility that matches the source code visibility (off by default)</source>
+        <target state="needs-review-translation">Gerar um assembly com visibilidade IL que corresponda à visibilidade do código-fonte.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOnly">
-        <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
-        <target state="translated">Produzir um assembly de referência, em vez de um assembly completo, como a saída primária</target>
+        <source>Produce a reference assembly, instead of a full assembly, as the primary output (off by default)</source>
+        <target state="needs-review-translation">Produzir um assembly de referência, em vez de um assembly completo, como a saída primária</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOut">
@@ -978,8 +978,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsStrictIndentation">
-        <source>Override indentation rules implied by the language version</source>
-        <target state="translated">Substituir regras de recuo implícitas pela versão da linguagem</target>
+        <source>Override indentation rules implied by the language version (off by default)</source>
+        <target state="needs-review-translation">Substituir regras de recuo implícitas pela versão da linguagem</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
@@ -5823,13 +5823,13 @@
         <note />
       </trans-unit>
       <trans-unit id="optsDelaySign">
-        <source>Delay-sign the assembly using only the public portion of the strong name key</source>
-        <target state="translated">Assinatura atrasada do assembly usando somente a parte pública da chave de nome forte</target>
+        <source>Delay-sign the assembly using only the public portion of the strong name key (off by default)</source>
+        <target state="needs-review-translation">Assinatura atrasada do assembly usando somente a parte pública da chave de nome forte</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPublicSign">
-        <source>Public-sign the assembly using only the public portion of the strong name key, and mark the assembly as signed</source>
-        <target state="translated">Assine de forma pública o assembly usando a única parte pública da chave de nome forte e marque o assembly como assinado</target>
+        <source>Public-sign the assembly using only the public portion of the strong name key, and mark the assembly as signed (off by default)</source>
+        <target state="needs-review-translation">Assine de forma pública o assembly usando a única parte pública da chave de nome forte e marque o assembly como assinado</target>
         <note />
       </trans-unit>
       <trans-unit id="optsWriteXml">
@@ -5888,8 +5888,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsEmbedAllSource">
-        <source>Embed all source files in the portable PDB file</source>
-        <target state="translated">Inserir todos os arquivos de origem no arquivo PDB portátil</target>
+        <source>Embed all source files in the portable PDB file (off by default)</source>
+        <target state="needs-review-translation">Inserir todos os arquivos de origem no arquivo PDB portátil</target>
         <note />
       </trans-unit>
       <trans-unit id="optsEmbedSource">
@@ -5918,8 +5918,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsDebugPM">
-        <source>Emit debug information (Short form: -g)</source>
-        <target state="translated">Emita as informação de depuração (Forma abreviada: -g)</target>
+        <source>Emit debug information (Short form: -g) (off by default)</source>
+        <target state="needs-review-translation">Emita as informação de depuração (Forma abreviada: -g)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsDebug">
@@ -5928,33 +5928,33 @@
         <note />
       </trans-unit>
       <trans-unit id="optsOptimize">
-        <source>Enable optimizations (Short form: -O)</source>
-        <target state="translated">Habilite otimizações (Forma abreviada: -O)</target>
+        <source>Enable optimizations (Short form: -O) (on by default)</source>
+        <target state="needs-review-translation">Habilite otimizações (Forma abreviada: -O)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsTailcalls">
-        <source>Enable or disable tailcalls</source>
-        <target state="translated">Habilitar ou desabilitar tailcalls</target>
+        <source>Enable or disable tailcalls (on by default)</source>
+        <target state="needs-review-translation">Habilitar ou desabilitar tailcalls</target>
         <note />
       </trans-unit>
       <trans-unit id="optsDeterministic">
-        <source>Produce a deterministic assembly (including module version GUID and timestamp)</source>
-        <target state="translated">Produzir um assembly determinístico (incluindo GUID de versão de módulo e carimbo de data/hora)</target>
+        <source>Produce a deterministic assembly (including module version GUID and timestamp) (off by default)</source>
+        <target state="needs-review-translation">Produzir um assembly determinístico (incluindo GUID de versão de módulo e carimbo de data/hora)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsCrossoptimize">
-        <source>Enable or disable cross-module optimizations</source>
-        <target state="translated">Habilite ou desabilite otimizações de módulo cruzado</target>
+        <source>Enable or disable cross-module optimizations (on by default)</source>
+        <target state="needs-review-translation">Habilite ou desabilite otimizações de módulo cruzado</target>
         <note />
       </trans-unit>
       <trans-unit id="optsWarnaserrorPM">
-        <source>Report all warnings as errors</source>
-        <target state="translated">Relatar todos os avisos como erros</target>
+        <source>Report all warnings as errors (off by default)</source>
+        <target state="needs-review-translation">Relatar todos os avisos como erros</target>
         <note />
       </trans-unit>
       <trans-unit id="optsWarnaserror">
-        <source>Report specific warnings as errors</source>
-        <target state="translated">Relatar avisos específicos como erros</target>
+        <source>Report specific warnings as errors (off by default)</source>
+        <target state="needs-review-translation">Relatar avisos específicos como erros</target>
         <note />
       </trans-unit>
       <trans-unit id="optsWarn">
@@ -5973,8 +5973,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsChecked">
-        <source>Generate overflow checks</source>
-        <target state="translated">Gerar verificações de estouro</target>
+        <source>Generate overflow checks (off by default)</source>
+        <target state="needs-review-translation">Gerar verificações de estouro</target>
         <note />
       </trans-unit>
       <trans-unit id="optsDefine">
@@ -6158,13 +6158,13 @@
         <note />
       </trans-unit>
       <trans-unit id="optsConsoleColors">
-        <source>Output warning and error messages in color</source>
-        <target state="translated">Mensagens de aviso e erro de saída em cores</target>
+        <source>Output warning and error messages in color (on by default)</source>
+        <target state="needs-review-translation">Mensagens de aviso e erro de saída em cores</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUseHighEntropyVA">
-        <source>Enable high-entropy ASLR</source>
-        <target state="translated">Habilitar ASLR de alta entropia</target>
+        <source>Enable high-entropy ASLR (off by default)</source>
+        <target state="needs-review-translation">Habilitar ASLR de alta entropia</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSubSystemVersion">
@@ -6178,8 +6178,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsEmitDebugInfoInQuotations">
-        <source>Emit debug information in quotations</source>
-        <target state="translated">Emitir informações de depuração entre aspas</target>
+        <source>Emit debug information in quotations (off by default)</source>
+        <target state="needs-review-translation">Emitir informações de depuração entre aspas</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPreferredUiLang">

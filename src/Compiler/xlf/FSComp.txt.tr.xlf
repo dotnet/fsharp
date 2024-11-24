@@ -908,8 +908,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsCheckNulls">
-        <source>Enable nullness declarations and checks</source>
-        <target state="new">Enable nullness declarations and checks</target>
+        <source>Enable nullness declarations and checks (off by default)</source>
+        <target state="new">Enable nullness declarations and checks (off by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsClearResultsCache">
@@ -918,8 +918,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsCompressMetadata">
-        <source>Compress interface and optimization data files</source>
-        <target state="translated">Arabirim ve iyileştirme veri dosyalarını sıkıştır</target>
+        <source>Compress interface and optimization data files (on by default)</source>
+        <target state="needs-review-translation">Arabirim ve iyileştirme veri dosyalarını sıkıştır</target>
         <note />
       </trans-unit>
       <trans-unit id="optsGetLangVersions">
@@ -948,13 +948,13 @@
         <note />
       </trans-unit>
       <trans-unit id="optsRealsig">
-        <source>Generate assembly with IL visibility that matches the source code visibility</source>
-        <target state="translated">Kaynak kodu görünürlüğüyle eşleşen IL görünürlüğüne sahip bütünleştirilmiş kod oluşturma</target>
+        <source>Generate assembly with IL visibility that matches the source code visibility (off by default)</source>
+        <target state="needs-review-translation">Kaynak kodu görünürlüğüyle eşleşen IL görünürlüğüne sahip bütünleştirilmiş kod oluşturma</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOnly">
-        <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
-        <target state="translated">Birincil çıktı olarak, tam bir derleme yerine, başvuru bütünleştirilmiş kodu üretin</target>
+        <source>Produce a reference assembly, instead of a full assembly, as the primary output (off by default)</source>
+        <target state="needs-review-translation">Birincil çıktı olarak, tam bir derleme yerine, başvuru bütünleştirilmiş kodu üretin</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOut">
@@ -978,8 +978,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsStrictIndentation">
-        <source>Override indentation rules implied by the language version</source>
-        <target state="translated">Dil sürümü tarafından kapsanan girinti kurallarını geçersiz kıl</target>
+        <source>Override indentation rules implied by the language version (off by default)</source>
+        <target state="needs-review-translation">Dil sürümü tarafından kapsanan girinti kurallarını geçersiz kıl</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
@@ -5823,13 +5823,13 @@
         <note />
       </trans-unit>
       <trans-unit id="optsDelaySign">
-        <source>Delay-sign the assembly using only the public portion of the strong name key</source>
-        <target state="translated">Derlemeyi tanımlayıcı ad anahtarının yalnızca ortak kısmını kullanarak gecikmeli imzala</target>
+        <source>Delay-sign the assembly using only the public portion of the strong name key (off by default)</source>
+        <target state="needs-review-translation">Derlemeyi tanımlayıcı ad anahtarının yalnızca ortak kısmını kullanarak gecikmeli imzala</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPublicSign">
-        <source>Public-sign the assembly using only the public portion of the strong name key, and mark the assembly as signed</source>
-        <target state="translated">Tanımlayıcı ad anahtarının yalnızca genel bölümünü kullanarak, bütünleştirilmiş kodu genel olarak imzala ve bütünleştirilmiş kodu imzalanmış olarak işaretle</target>
+        <source>Public-sign the assembly using only the public portion of the strong name key, and mark the assembly as signed (off by default)</source>
+        <target state="needs-review-translation">Tanımlayıcı ad anahtarının yalnızca genel bölümünü kullanarak, bütünleştirilmiş kodu genel olarak imzala ve bütünleştirilmiş kodu imzalanmış olarak işaretle</target>
         <note />
       </trans-unit>
       <trans-unit id="optsWriteXml">
@@ -5888,8 +5888,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsEmbedAllSource">
-        <source>Embed all source files in the portable PDB file</source>
-        <target state="translated">Tüm kaynak dosyaları taşınabilir PDB dosyasına ekle</target>
+        <source>Embed all source files in the portable PDB file (off by default)</source>
+        <target state="needs-review-translation">Tüm kaynak dosyaları taşınabilir PDB dosyasına ekle</target>
         <note />
       </trans-unit>
       <trans-unit id="optsEmbedSource">
@@ -5918,8 +5918,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsDebugPM">
-        <source>Emit debug information (Short form: -g)</source>
-        <target state="translated">Hata ayıklama bilgilerini yay (Kısa biçimi: -g)</target>
+        <source>Emit debug information (Short form: -g) (off by default)</source>
+        <target state="needs-review-translation">Hata ayıklama bilgilerini yay (Kısa biçimi: -g)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsDebug">
@@ -5928,33 +5928,33 @@
         <note />
       </trans-unit>
       <trans-unit id="optsOptimize">
-        <source>Enable optimizations (Short form: -O)</source>
-        <target state="translated">İyileştirmeleri etkinleştir (Kısa biçimi: -O)</target>
+        <source>Enable optimizations (Short form: -O) (on by default)</source>
+        <target state="needs-review-translation">İyileştirmeleri etkinleştir (Kısa biçimi: -O)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsTailcalls">
-        <source>Enable or disable tailcalls</source>
-        <target state="translated">Tail çağrılarını etkinleştir veya devre dışı bırak</target>
+        <source>Enable or disable tailcalls (on by default)</source>
+        <target state="needs-review-translation">Tail çağrılarını etkinleştir veya devre dışı bırak</target>
         <note />
       </trans-unit>
       <trans-unit id="optsDeterministic">
-        <source>Produce a deterministic assembly (including module version GUID and timestamp)</source>
-        <target state="translated">Belirleyici bir bütünleştirilmiş kod oluşturun (modül sürümü GUID'i ve zaman damgası dahil)</target>
+        <source>Produce a deterministic assembly (including module version GUID and timestamp) (off by default)</source>
+        <target state="needs-review-translation">Belirleyici bir bütünleştirilmiş kod oluşturun (modül sürümü GUID'i ve zaman damgası dahil)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsCrossoptimize">
-        <source>Enable or disable cross-module optimizations</source>
-        <target state="translated">Modüller arası iyileştirmeleri etkinleştir veya devre dışı bırak</target>
+        <source>Enable or disable cross-module optimizations (on by default)</source>
+        <target state="needs-review-translation">Modüller arası iyileştirmeleri etkinleştir veya devre dışı bırak</target>
         <note />
       </trans-unit>
       <trans-unit id="optsWarnaserrorPM">
-        <source>Report all warnings as errors</source>
-        <target state="translated">Tüm uyarıları hata olarak bildir</target>
+        <source>Report all warnings as errors (off by default)</source>
+        <target state="needs-review-translation">Tüm uyarıları hata olarak bildir</target>
         <note />
       </trans-unit>
       <trans-unit id="optsWarnaserror">
-        <source>Report specific warnings as errors</source>
-        <target state="translated">Belirli uyarıları hata olarak bildir</target>
+        <source>Report specific warnings as errors (off by default)</source>
+        <target state="needs-review-translation">Belirli uyarıları hata olarak bildir</target>
         <note />
       </trans-unit>
       <trans-unit id="optsWarn">
@@ -5973,8 +5973,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsChecked">
-        <source>Generate overflow checks</source>
-        <target state="translated">Taşma denetimleri oluştur</target>
+        <source>Generate overflow checks (off by default)</source>
+        <target state="needs-review-translation">Taşma denetimleri oluştur</target>
         <note />
       </trans-unit>
       <trans-unit id="optsDefine">
@@ -6158,13 +6158,13 @@
         <note />
       </trans-unit>
       <trans-unit id="optsConsoleColors">
-        <source>Output warning and error messages in color</source>
-        <target state="translated">Renkli çıkış uyarısı ve hata iletileri</target>
+        <source>Output warning and error messages in color (on by default)</source>
+        <target state="needs-review-translation">Renkli çıkış uyarısı ve hata iletileri</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUseHighEntropyVA">
-        <source>Enable high-entropy ASLR</source>
-        <target state="translated">Yüksek entropili ASLR'yi etkinleştir</target>
+        <source>Enable high-entropy ASLR (off by default)</source>
+        <target state="needs-review-translation">Yüksek entropili ASLR'yi etkinleştir</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSubSystemVersion">
@@ -6178,8 +6178,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsEmitDebugInfoInQuotations">
-        <source>Emit debug information in quotations</source>
-        <target state="translated">Tırnak içindeki hata ayıklama bilgilerini yay</target>
+        <source>Emit debug information in quotations (off by default)</source>
+        <target state="needs-review-translation">Tırnak içindeki hata ayıklama bilgilerini yay</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPreferredUiLang">
