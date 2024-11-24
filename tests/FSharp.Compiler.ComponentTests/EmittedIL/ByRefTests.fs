@@ -175,25 +175,25 @@ let test1 () =
                 (
                     FSharpDiagnosticSeverity.Warning,
                     52,
-                    (3, 30, 3, 45),
+                    (3, 31, 3, 44),
                     "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed"
                 )
                 (
                     FSharpDiagnosticSeverity.Warning,
                     52,
-                    (7, 5, 7, 20),
+                    (7, 6, 7, 19),
                     "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed"
                 )
                 (
                     FSharpDiagnosticSeverity.Warning,
                     52,
-                    (10, 5, 10, 26),
+                    (10, 4, 10, 25),
                     "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed"
                 )
                 (
                     FSharpDiagnosticSeverity.Warning,
                     52,
-                    (20, 5, 20, 29),
+                    (20, 17, 20, 28),
                     "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed"
                 )
             |]

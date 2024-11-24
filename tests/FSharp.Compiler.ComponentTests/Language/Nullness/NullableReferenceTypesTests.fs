@@ -32,9 +32,9 @@ let parsedDate3 = DateTime.Parse(null)
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics     
-                [Error 3261, Line 3, Col 18, Line 3, Col 52, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
-                 Error 3261, Line 4, Col 33, Line 4, Col 50, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
-                 Error 3261, Line 5, Col 19, Line 5, Col 39, "Nullness warning: The type 'string' does not support 'null'."]
+                [Error 3261, Line 3, Col 27, Line 3, Col 32, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
+                 Error 3261, Line 4, Col 42, Line 4, Col 47, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
+                 Error 3261, Line 5, Col 28, Line 5, Col 33, "Nullness warning: The type 'string' does not support 'null'."]
 
 [<Fact>]
 let ``Downcasts and typetests with nullables``() = 
