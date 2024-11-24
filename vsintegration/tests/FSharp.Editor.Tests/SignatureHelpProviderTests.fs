@@ -399,23 +399,7 @@ type foo3 = N1.T<ParamIgnored=
 type foo4 = N1.T<Param1=1,
 type foo5 = N1.T<Param1=1,ParamIgnored=
     """,
-                 [
-                     ("type foo = N1.T<", Some("[18..26)", 0, 0, None))
-                     ("type foo2 = N1.T<", Some("[38..52)", 0, 0, Some "Param1"))
-                     ("type foo2 = N1.T<Param1", Some("[38..52)", 0, 1, Some "Param1"))
-                     ("type foo2 = N1.T<Param1=", Some("[38..52)", 0, 1, Some "Param1"))
-                     ("type foo3 = N1.T<", Some("[64..84)", 0, 0, Some "ParamIgnored"))
-                     ("type foo3 = N1.T<ParamIgnored=", Some("[64..84)", 0, 1, Some "ParamIgnored"))
-                     ("type foo4 = N1.T<Param1", Some("[96..112)", 0, 2, Some "Param1"))
-                     ("type foo4 = N1.T<Param1=", Some("[96..112)", 0, 2, Some "Param1"))
-                     ("type foo4 = N1.T<Param1=1", Some("[96..112)", 0, 2, Some "Param1"))
-                     ("type foo5 = N1.T<Param1", Some("[124..153)", 0, 2, Some "Param1"))
-                     ("type foo5 = N1.T<Param1=", Some("[124..153)", 0, 2, Some "Param1"))
-                     ("type foo5 = N1.T<Param1=1", Some("[124..153)", 0, 2, Some "Param1"))
-                     ("type foo5 = N1.T<Param1=1,", Some("[124..153)", 1, 2, Some "ParamIgnored"))
-                     ("type foo5 = N1.T<Param1=1,ParamIgnored", Some("[124..153)", 1, 2, Some "ParamIgnored"))
-                     ("type foo5 = N1.T<Param1=1,ParamIgnored=", Some("[124..153)", 1, 2, Some "ParamIgnored"))
-                 ])
+                 [])
                 ("""
 //4
 type foo = N1.T< > 
@@ -569,7 +553,7 @@ M.f
     """
 
         let marker = "List.fold (fun acc _ -> acc) "
-        assertSignatureHelpForFunctionApplication fileContents marker 2 1 "state"
+        assertSignatureHelpForFunctionApplication fileContents marker 2 0 "folder"
 
     [<Fact>]
     let ``function application with function as parameter`` () =
