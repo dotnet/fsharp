@@ -9732,7 +9732,8 @@ and TcMethodApplicationThen
     let exprTy = (tyOfExpr g expr)
 
     for problematicTy in GetDisallowedNullness g exprTy do
-        printfn "%s" (NicePrint.minimalStringOfType env.DisplayEnv problematicTy)
+        let denv = env.DisplayEnv
+        warning(Error(FSComp.SR.tcDisallowedNullableApplication(methodName,NicePrint.minimalStringOfType denv problematicTy), m))
 
     PropagateThenTcDelayed cenv overallTy env tpenv mWholeExpr (MakeApplicableExprNoFlex cenv expr) exprTy atomicFlag delayed
 

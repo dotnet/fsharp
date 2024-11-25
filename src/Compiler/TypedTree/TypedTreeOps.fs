@@ -9231,6 +9231,13 @@ let GetDisallowedNullness (g:TcGlobals) (ty:TType) =
                 
                 match alreadyWrappedInOuterWithNull, tcr.TypeAbbrev with
                 | true, _ when isStructTyconRef tcr -> ty :: tyArgs
+                | true, _ when tcr.IsMeasureableReprTycon -> 
+                    match tcr.TypeReprInfo with
+                    | TMeasureableRepr realType ->
+                        if hasWithNullAnyWhere realType true |> List.isEmpty then
+                            []
+                        else [ty]
+                    | _ -> []
                 | true, Some tAbbrev -> (hasWithNullAnyWhere tAbbrev true) @ tyArgs
                 | _ -> tyArgs
 
@@ -9246,7 +9253,14 @@ let GetDisallowedNullness (g:TcGlobals) (ty:TType) =
 
             | TType_forall _ -> []
             | TType_ucase _ -> []
-            | TType_measure _ -> if alreadyWrappedInOuterWithNull then [ty] else []
+            | TType_measure m ->
+                if alreadyWrappedInOuterWithNull then 
+                    let measuresInside = 
+                        ListMeasureVarOccs m 
+                        |> List.choose (fun x -> x.Solution)
+                        |> List.collect (fun x -> hasWithNullAnyWhere x true)
+                    ty :: measuresInside
+                else []
 
         hasWithNullAnyWhere ty false
     else

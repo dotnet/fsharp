@@ -50,19 +50,23 @@ open System.Text.Json
 type mykg
 type mykgalias = int<mykg>
 
+[<MeasureAnnotatedAbbreviation>]  // Despite being an abbreviation, this points to a string - does not warn
+type string<[<Measure>] 'Measure> = string|null
+
 [<EntryPoint>]
 let main _args =
     let a = JsonSerializer.Deserialize<{| x: int |}> "null"
     let a = JsonSerializer.Deserialize<int> "null"
     let a = JsonSerializer.Deserialize<int * float> "null"
-    let a = JsonSerializer.Deserialize<struct(int * float)> "null"
+    let a = JsonSerializer.Deserialize<struct(int * float)> "null" 
     let a = JsonSerializer.Deserialize<int<mykg>> "null"
     let a = JsonSerializer.Deserialize<mykgalias> "null"
 
     // Should be ok from here below
     let b = JsonSerializer.Deserialize<int list> "null"
     let b = JsonSerializer.Deserialize<mykgalias array> "null"
-    let b = JsonSerializer.Deserialize<set<int<mykg>>> "null"
+    let b = JsonSerializer.Deserialize<Set<int<mykg>>> "null"
+    let b = JsonSerializer.Deserialize<string<mykg>> "null"
 
     0"""
     |> asLibrary
