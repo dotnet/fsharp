@@ -15,7 +15,6 @@ open FSharp.Test.ProjectGeneration.WorkspaceHelpers
 open FSharp.Compiler.CodeAnalysis.Workspace
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 
-
 #nowarn "57"
 
 type TestRpcClient(jsonRpc, rpcTrace, workspace, initializeResult: InitializeResult) =
@@ -26,7 +25,6 @@ type TestRpcClient(jsonRpc, rpcTrace, workspace, initializeResult: InitializeRes
     member val Capabilities = initializeResult.Capabilities
 
     member _.RpcTrace = rpcTrace.ToString()
-
 
 let initializeLanguageServer (workspace) =
 
@@ -53,18 +51,19 @@ let initializeLanguageServer (workspace) =
     // Set the TraceLevel to Information to get all informational, warning and error messages
     server.JsonRpc.TraceSource.Switch.Level <- SourceLevels.All
 
-    let initializeParams = InitializeParams(
-        ProcessId = System.Diagnostics.Process.GetCurrentProcess().Id,
-        RootUri = Uri("file:///c:/temp"),
-        InitializationOptions = None)
+    let initializeParams =
+        InitializeParams(
+            ProcessId = System.Diagnostics.Process.GetCurrentProcess().Id,
+            RootUri = Uri("file:///c:/temp"),
+            InitializationOptions = None
+        )
 
     jsonRpc.StartListening()
 
     task {
-        let! response = jsonRpc.InvokeAsync<InitializeResult>("initialize", initializeParams);
+        let! response = jsonRpc.InvokeAsync<InitializeResult>("initialize", initializeParams)
         return TestRpcClient(jsonRpc, rpcTrace, workspace, response)
     }
-
 
 [<Fact>]
 let ``The server can process the initialization message`` () =
@@ -75,9 +74,9 @@ let ``The server can process the initialization message`` () =
 
     }
 
+/// Initialize workspace, open a document, get diagnostics, edit the document, get diagnostics, close the document
 [<Fact>]
 let ``Basic server workflow`` () =
-    // Initialize workspace, open a document, get diagnostics, edit the document, get diagnostics, close the document
     task {
 
         let! client = initializeLanguageServer None
@@ -90,34 +89,102 @@ let ``Basic server workflow`` () =
         let _projectIdentifier =
             workspace.Projects.AddOrUpdate(ProjectConfig.Create(), [ fileOnDisk.LocalPath ])
 
-        do! client.JsonRpc.NotifyAsync(Methods.TextDocumentDidOpenName, DidOpenTextDocumentParams(
-            TextDocument = TextDocumentItem(
-                Uri = fileOnDisk,
-                LanguageId = "F#",
-                Version = 1,
-                Text = contentOnDisk
+        do!
+            client.JsonRpc.NotifyAsync(
+                Methods.TextDocumentDidOpenName,
+                DidOpenTextDocumentParams(
+                    TextDocument = TextDocumentItem(Uri = fileOnDisk, LanguageId = "F#", Version = 1, Text = contentOnDisk)
+                )
             )
-        ))
 
-        let! diagnosticsResponse = client.JsonRpc.InvokeAsync<SumType<RelatedFullDocumentDiagnosticReport, RelatedUnchangedDocumentDiagnosticReport>>(Methods.TextDocumentDiagnosticName, DocumentDiagnosticParams(TextDocument=TextDocumentIdentifier(Uri=fileOnDisk)))
+        let! diagnosticsResponse =
+            client.JsonRpc.InvokeAsync<SumType<RelatedFullDocumentDiagnosticReport, RelatedUnchangedDocumentDiagnosticReport>>(
+                Methods.TextDocumentDiagnosticName,
+                DocumentDiagnosticParams(TextDocument = TextDocumentIdentifier(Uri = fileOnDisk))
+            )
 
-        Assert.Equal(0, (diagnosticsResponse.First.RelatedDocuments |> Seq.head |> _.Value.First.Items.Length))
+        Assert.Equal(
+            0,
+            (diagnosticsResponse.First.RelatedDocuments
+             |> Seq.head
+             |> _.Value.First.Items.Length)
+        )
 
         let contentEdit = $"{contentOnDisk}\nx <- 2"
 
-        do! client.JsonRpc.NotifyAsync(Methods.TextDocumentDidChangeName, DidChangeTextDocumentParams(
-            TextDocument = VersionedTextDocumentIdentifier(
-                Uri = fileOnDisk,
-                Version = 2
-            ),
-            ContentChanges = [| TextDocumentContentChangeEvent(
-                Text = contentEdit
-            )|]
-        ))
+        do!
+            client.JsonRpc.NotifyAsync(
+                Methods.TextDocumentDidChangeName,
+                DidChangeTextDocumentParams(
+                    TextDocument = VersionedTextDocumentIdentifier(Uri = fileOnDisk, Version = 2),
+                    ContentChanges = [| TextDocumentContentChangeEvent(Text = contentEdit) |]
+                )
+            )
 
-        let! diagnosticsResponse = client.JsonRpc.InvokeAsync<SumType<RelatedFullDocumentDiagnosticReport, RelatedUnchangedDocumentDiagnosticReport>>(Methods.TextDocumentDiagnosticName, DocumentDiagnosticParams(TextDocument=TextDocumentIdentifier(Uri=fileOnDisk)))
+        let! diagnosticsResponse =
+            client.JsonRpc.InvokeAsync<SumType<RelatedFullDocumentDiagnosticReport, RelatedUnchangedDocumentDiagnosticReport>>(
+                Methods.TextDocumentDiagnosticName,
+                DocumentDiagnosticParams(TextDocument = TextDocumentIdentifier(Uri = fileOnDisk))
+            )
 
-        Assert.Equal(1, (diagnosticsResponse.First.RelatedDocuments |> Seq.head |> _.Value.First.Items.Length))
+        let diagnostics =
+            diagnosticsResponse.First.RelatedDocuments |> Seq.head |> _.Value.First.Items
 
+        Assert.Equal(1, diagnostics.Length)
+        Assert.Contains("This value is not mutable", diagnostics[0].Message)
 
+        do!
+            client.JsonRpc.NotifyAsync(
+                Methods.TextDocumentDidCloseName,
+                DidCloseTextDocumentParams(TextDocument = TextDocumentIdentifier(Uri = fileOnDisk))
+            )
+
+        let! diagnosticsResponse =
+            client.JsonRpc.InvokeAsync<SumType<RelatedFullDocumentDiagnosticReport, RelatedUnchangedDocumentDiagnosticReport>>(
+                Methods.TextDocumentDiagnosticName,
+                DocumentDiagnosticParams(TextDocument = TextDocumentIdentifier(Uri = fileOnDisk))
+            )
+
+        // We didn't save the file, so it should be again read from disk and have no diagnostics
+        Assert.Equal(
+            0,
+            (diagnosticsResponse.First.RelatedDocuments
+             |> Seq.head
+             |> _.Value.First.Items.Length)
+        )
+    }
+
+[<Fact>]
+let ``Full semantic tokens`` () =
+
+    task {
+        let! client = initializeLanguageServer None
+        let workspace = client.Workspace
+        let contentOnDisk = "let x = 1"
+        let fileOnDisk = sourceFileOnDisk contentOnDisk
+        let _projectIdentifier =
+            workspace.Projects.AddOrUpdate(ProjectConfig.Create(), [ fileOnDisk.LocalPath ])
+        do!
+            client.JsonRpc.NotifyAsync(
+                Methods.TextDocumentDidOpenName,
+                DidOpenTextDocumentParams(
+                    TextDocument = TextDocumentItem(Uri = fileOnDisk, LanguageId = "F#", Version = 1, Text = contentOnDisk)
+                )
+            )
+        let! semanticTokensResponse =
+            client.JsonRpc.InvokeAsync<SemanticTokens>(
+                Methods.TextDocumentSemanticTokensFullName,
+                SemanticTokensParams(TextDocument = TextDocumentIdentifier(Uri = fileOnDisk))
+            )
+        Assert.NotNull(semanticTokensResponse)
+    }
+
+[<Fact>]
+let ``Shutdown and exit`` () =
+    task {
+        let! client = initializeLanguageServer None
+
+        let! _respone = client.JsonRpc.InvokeAsync<_>(Methods.ShutdownName)
+
+        do! client.JsonRpc.NotifyAsync(Methods.ExitName)
     }

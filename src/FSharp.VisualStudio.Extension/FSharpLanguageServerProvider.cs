@@ -321,7 +321,7 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
         {
             serviceCollection.AddSingleton<IServerCapabilitiesOverride, VsServerCapabilitiesOverride>();
             serviceCollection.AddSingleton<IMethodHandler, VsDiagnosticsHandler>();
-            serviceCollection.AddSingleton<IMethodHandler, SemanticTokensHandler>();
+            //serviceCollection.AddSingleton<IMethodHandler, SemanticTokensHandler>();
         });
 
         var solutions = await ws.QuerySolutionAsync(

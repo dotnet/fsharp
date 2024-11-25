@@ -2,11 +2,13 @@
 
 open Microsoft.CommonLanguageServerProtocol.Framework
 open Microsoft.VisualStudio.LanguageServer.Protocol
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 open FSharp.Compiler.LanguageServer.Common
 open FSharp.Compiler.LanguageServer
 open System.Threading.Tasks
 open System.Threading
 open System.Collections.Generic
+open Microsoft.VisualStudio.FSharp.Editor
 
 type LanguageFeaturesHandler() =
     interface IMethodHandler with
@@ -20,7 +22,7 @@ type LanguageFeaturesHandler() =
                 context: FSharpRequestContext,
                 cancellationToken: CancellationToken
             ) =
-            task {
+            cancellableTask {
 
                 let! fsharpDiagnosticReport = context.Workspace.Query.GetDiagnosticsForFile request.TextDocument.Uri
 
@@ -41,5 +43,14 @@ type LanguageFeaturesHandler() =
                     SumType<RelatedFullDocumentDiagnosticReport, RelatedUnchangedDocumentDiagnosticReport>(
                         RelatedFullDocumentDiagnosticReport(RelatedDocuments = relatedDocuments)
                     )
-
             }
+            |> CancellableTask.start cancellationToken
+
+    interface IRequestHandler<SemanticTokensParams, SemanticTokens, FSharpRequestContext> with
+        [<LanguageServerEndpoint(Methods.TextDocumentSemanticTokensFullName)>]
+        member _.HandleRequestAsync(request: SemanticTokensParams, context: FSharpRequestContext, cancellationToken: CancellationToken) =
+            cancellableTask {
+                let! tokens = context.GetSemanticTokensForFile(request.TextDocument.Uri)
+                return SemanticTokens(Data = tokens)
+            }
+            |> CancellableTask.start cancellationToken

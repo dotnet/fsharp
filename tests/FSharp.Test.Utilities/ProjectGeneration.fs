@@ -1467,8 +1467,6 @@ module WorkspaceHelpers =
 
         static member Create(?name) =
             let name = defaultArg name "test"
-            //let projectFileName = $"{name}.fsproj"
-            //let outputPath = $"{name}.dll"
 
             let snapshot, _ =
                 CompilerAssertHelpers.checker.GetProjectSnapshotFromScript(name, SourceTextNew.ofString "", assumeDotNetFramework = false)

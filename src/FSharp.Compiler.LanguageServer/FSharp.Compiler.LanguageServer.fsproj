@@ -33,6 +33,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<Compile Include="..\..\vsintegration\src\FSharp.Editor\Common\CancellableTasks.fs" />
 		<Compile Include="Utils.fs" />
 		<Compile Include="Common\LifecycleManager.fs" />
 		<Compile Include="Common\CapabilitiesManager.fs" />
