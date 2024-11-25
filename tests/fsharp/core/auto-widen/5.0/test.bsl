@@ -9,7 +9,7 @@ test.fsx(14,33,14,41): typecheck error FS0001: This expression was expected to h
 but here has type
     'int'    
 
-test.fsx(17,20,17,44): typecheck error FS0001: This expression was expected to have type
+test.fsx(17,33,17,38): typecheck error FS0001: This expression was expected to have type
     'obj'    
 but here has type
     'int'    
