@@ -1815,7 +1815,6 @@ val TypeNullIsTrueValue: TcGlobals -> TType -> bool
 
 val TypeNullIsExtraValue: TcGlobals -> range -> TType -> bool
 
-
 /// A type coming via interop from C# can be holding a nullness combination not supported in F#.
 /// Prime example are APIs marked as T|null applied to structs, tuples and anons.
 /// Unsupported values can also be nested within generic type arguments, e.g. a List<Tuple<string,T|null>> applied to an anon.
