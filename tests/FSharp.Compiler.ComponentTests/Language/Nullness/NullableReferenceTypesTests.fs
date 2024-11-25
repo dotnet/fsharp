@@ -18,6 +18,59 @@ let typeCheckWithStrictNullness cu =
     |> typecheck
 
 
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``Report warning when applying anon record to a nullable generic return value`` () =
+    FSharp """
+open System.Text.Json
+type R = { x: int }
+type RA = {| x: int |}
+
+[<EntryPoint>]
+let main _args =
+    let a = JsonSerializer.Deserialize<{| x: int |}> "null"
+    let _a = a.x
+
+    let b = JsonSerializer.Deserialize<RA> "null"
+    let _b = b.x
+
+    let c = JsonSerializer.Deserialize<R> "null"
+    let _c = c.x
+    0"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics []
+
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``Report warning when generic type instance creates a null-disallowed type`` () =
+    FSharp """
+open System.Text.Json
+
+[<Measure>]
+type mykg
+type mykgalias = int<mykg>
+
+[<EntryPoint>]
+let main _args =
+    let a = JsonSerializer.Deserialize<{| x: int |}> "null"
+    let a = JsonSerializer.Deserialize<int> "null"
+    let a = JsonSerializer.Deserialize<int * float> "null"
+    let a = JsonSerializer.Deserialize<struct(int * float)> "null"
+    let a = JsonSerializer.Deserialize<int<mykg>> "null"
+    let a = JsonSerializer.Deserialize<mykgalias> "null"
+
+    // Should be ok from here below
+    let b = JsonSerializer.Deserialize<int list> "null"
+    let b = JsonSerializer.Deserialize<mykgalias array> "null"
+    let b = JsonSerializer.Deserialize<set<int<mykg>>> "null"
+
+    0"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics []
+
+
 
 [<FSharp.Test.FactForNETCOREAPPAttribute>]
 let ``Does report when null goes to DateTime Parse`` () =
