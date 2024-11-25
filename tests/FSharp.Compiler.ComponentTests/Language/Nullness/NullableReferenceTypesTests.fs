@@ -39,7 +39,10 @@ let main _args =
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics []
+    |> withDiagnostics 
+            [ Error 3265, Line 8, Col 13, Line 8, Col 60, "Application of method 'Deserialize' attempted to create a disallowed nullable (T|null) type for '{| x: int |}'. Such type will not report nulness warnings correctly."
+              Error 3265, Line 11, Col 13, Line 11, Col 50, "Application of method 'Deserialize' attempted to create a disallowed nullable (T|null) type for '{| x: int |}'. Such type will not report nulness warnings correctly."
+              Error 3261, Line 15, Col 14, Line 15, Col 17, "Nullness warning: The types 'R' and 'R | null' do not have compatible nullability."]
 
 [<FSharp.Test.FactForNETCOREAPPAttribute>]
 let ``Report warning when generic type instance creates a null-disallowed type`` () =
@@ -72,7 +75,14 @@ let main _args =
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics []
+    |> withDiagnostics 
+            [ Error 3265, Line 13, Col 13, Line 13, Col 60, "Application of method 'Deserialize' attempted to create a disallowed nullable (T|null) type for '{| x: int |}'. Such type will not report nulness warnings correctly."
+              Error 3265, Line 14, Col 13, Line 14, Col 51, "Application of method 'Deserialize' attempted to create a disallowed nullable (T|null) type for 'System.Int32'. Such type will not report nulness warnings correctly."
+              Error 3265, Line 15, Col 13, Line 15, Col 59, "Application of method 'Deserialize' attempted to create a disallowed nullable (T|null) type for '(int * float)'. Such type will not report nulness warnings correctly."
+              Error 3265, Line 16, Col 13, Line 16, Col 67, "Application of method 'Deserialize' attempted to create a disallowed nullable (T|null) type for 'struct (int * float)'. Such type will not report nulness warnings correctly."
+              Error 3265, Line 17, Col 13, Line 17, Col 57, "Application of method 'Deserialize' attempted to create a disallowed nullable (T|null) type for 'int<mykg>'. Such type will not report nulness warnings correctly."
+              Error 3265, Line 18, Col 13, Line 18, Col 57, "Application of method 'Deserialize' attempted to create a disallowed nullable (T|null) type for 'int<mykg>'. Such type will not report nulness warnings correctly."]
+   
 
 
 
