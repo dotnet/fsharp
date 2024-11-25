@@ -371,12 +371,14 @@ let rec tdef_ty2ty_ilmbody2ilmbody_mdefs2mdefs isInKnownSet enc fs (tdef: ILType
     let implements =
         tdef.Implements.Value
         |> List.map (fun x -> { x with Type = fTyInCtxtR x.Type })
-        |> InterruptibleLazy.FromValue
+        |> notlazy
+
+    let extends = tdef.Extends.Value |> Option.map fTyInCtxtR |> notlazy
 
     tdef.With(
         implements = implements,
         genericParams = gparams_ty2ty fTyInCtxtR tdef.GenericParams,
-        extends = Option.map fTyInCtxtR tdef.Extends,
+        extends = extends,
         methods = mdefsR,
         nestedTypes = tdefs_ty2ty_ilmbody2ilmbody_mdefs2mdefs isInKnownSet (enc @ [ tdef ]) fs tdef.NestedTypes,
         fields = fdefsR,

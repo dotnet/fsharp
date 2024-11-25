@@ -54,7 +54,7 @@ let GetSuperTypeOfType g amap m ty =
 #endif
         | ILTypeMetadata (TILObjectReprData(scoref, _, tdef)) ->
             let tinst = argsOfAppTy g ty
-            match tdef.Extends with
+            match tdef.Extends.Value with
             | None -> None
             | Some ilTy ->   // 'inherit' can refer to a type which has nullable type arguments (e.g. List<string?>)
                 let typeAttrs = AttributesFromIL(tdef.MetadataIndex,tdef.CustomAttrsStored)

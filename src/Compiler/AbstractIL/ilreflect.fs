@@ -2160,7 +2160,7 @@ let rec buildTypeDefPass1b cenv nesting emEnv (tdef: ILTypeDef) =
     let genArgs = getGenericArgumentsOfType typB
     let emEnv = envPushTyvars emEnv genArgs
     // Parent may reference types being defined, so has to come after it's Pass1 creation
-    tdef.Extends
+    tdef.Extends.Value
     |> Option.iter (fun ty -> typB.SetParentAndLog(convType cenv emEnv ty))
     // build constraints on ILGenericParameterDefs. Constraints may reference types being defined,
     // so have to come after all types are created
@@ -2334,7 +2334,7 @@ let createTypeRef (visited: Dictionary<_, _>, created: Dictionary<_, _>) emEnv t
         if verbose2 then
             dprintf "buildTypeDefPass4: Creating Super Class Chain of %s\n" tdef.Name
 
-        tdef.Extends |> Option.iter (traverseType CollectTypes.All)
+        tdef.Extends.Value |> Option.iter (traverseType CollectTypes.All)
 
         // We absolutely need the exact interface types...
         if verbose2 then
