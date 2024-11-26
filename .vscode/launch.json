@@ -5,7 +5,7 @@
         {
             "id": "fscArgsPrompt",
             "description": "Enter arguments for fsc",
-            "default": "",
+            "default": "@compile.rsp",
             "type": "promptString"
         },
         {
@@ -44,7 +44,12 @@
                     "enabled": true
                 }
             },
-            "allowFastEvaluate": true
+            "expressionEvaluationOptions": {
+                "allowFastEvaluate": true,
+                "allowImplicitFuncEval": true,
+                "allowToString": true,
+                "showRawValues": true
+            }
         },
         {
             "name": "Launch FSC (Debug)",
@@ -76,7 +81,12 @@
                     "enabled": true
                 }
             },
-            "allowFastEvaluate": true
+            "expressionEvaluationOptions": {
+                "allowFastEvaluate": true,
+                "allowImplicitFuncEval": true,
+                "allowToString": true,
+                "showRawValues": true
+            }
         },
         {
             "name": "Attach to a .NET process with debugger",
@@ -91,7 +101,12 @@
             "justMyCode": true,
             "enableStepFiltering": false,
             "requireExactSource": false,
-            "allowFastEvaluate": true
+            "expressionEvaluationOptions": {
+                "allowFastEvaluate": true,
+                "allowImplicitFuncEval": true,
+                "allowToString": true,
+                "showRawValues": true
+            }
         }
     ]
 }

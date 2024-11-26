@@ -228,7 +228,8 @@ dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fs
 
 ### Updating ILVerify baselines
 
-These control IL for the core modules of the compiler. The baselines are located in the `eng` folder and look like:
+These are IL baseline tests for the core assemblies of the compiler (FSharp.Core and FSharp.Compiler.Service). The baselines are located in the `tests/ILVerify` folder and look like:
+
 ```
 ilverify_FSharp.Compiler.Service_Debug_net9.0.bsl
 ilverify_FSharp.Compiler.Service_Debug_netstandard2.0.bsl
@@ -240,7 +241,9 @@ ilverify_FSharp.Core_Release_netstandard2.0.bsl
 ilverify_FSharp.Core_Release_netstandard2.1.bsl
 ```
 
-If you want to update them, run the [ilverify.ps1]([url](https://github.com/dotnet/fsharp/blob/main/eng/ilverify.ps1)) script in PowerShell. The script will create `.actual` files. If the differences make sense, replace the original baselines with the actual files. 
+If you want to update them, either
+a. Run the [ilverify.ps1]([url](https://github.com/dotnet/fsharp/blob/main/tests/ILVerify/ilverify.ps1)) script in PowerShell. The script will create `.actual` files. If the differences make sense, replace the original baselines with the actual files.
+b. Set the `TEST_UPDATE_BSL` to `1` (please refer to "Updating baselines in tests" section in this file) **and** run `ilverify.ps1` - this will automatically replace baselines. After that, please carefully review the change and push it to your branch if it makes sense.
 
 ## Automated Source Code Formatting
 
