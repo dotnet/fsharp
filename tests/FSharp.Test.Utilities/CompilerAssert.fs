@@ -444,7 +444,7 @@ module CompilerAssertHelpers =
         let name =
             match nameOpt with
             | Some name -> name
-            | _ -> getTemporaryFileNameInDirectory outputDirectory.FullName
+            | _ -> getTemporaryFileNameInDirectory outputDirectory
 
         let outputFilePath = Path.ChangeExtension (Path.Combine(outputDirectory.FullName, name), if isExe then ".exe" else ".dll")
         let sources =
@@ -508,7 +508,7 @@ module CompilerAssertHelpers =
 
     let compile isExe options (source:SourceCodeFileKind) f =
         let outputFilePath = Path.ChangeExtension (getTemporaryFileName (), if isExe then ".exe" else ".dll")
-        let tempDir = Path.GetDirectoryName outputFilePath
+        let tempDir = Directory.GetParent outputFilePath
 
         let sourceFile =
             match source.GetSourceText with
@@ -521,10 +521,7 @@ module CompilerAssertHelpers =
                 // On Disk file
                 source
 
-        try
-            f (rawCompile outputFilePath isExe options TargetFramework.Current [sourceFile])
-        finally
-            try Directory.Delete(tempDir, true) with | _ -> ()
+        f (rawCompile outputFilePath isExe options TargetFramework.Current [sourceFile])
 
     let rec compileCompilationAux outputDirectory ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * exn option * string) * string list =
 
@@ -548,7 +545,7 @@ module CompilerAssertHelpers =
 
         res, (deps @ deps2)
 
-    and evaluateReferences (outputPath:DirectoryInfo) ignoreWarnings (cmpl: Compilation) : string[] * string list =
+    and evaluateReferences (outputDir:DirectoryInfo) ignoreWarnings (cmpl: Compilation) : string[] * string list =
         match cmpl with
         | Compilation(_, _, _, _, cmpls, _, _) ->
             let compiledRefs =
@@ -556,13 +553,13 @@ module CompilerAssertHelpers =
                 |> List.map (fun cmpl ->
                         match cmpl with
                         | CompilationReference (cmpl, staticLink) ->
-                            compileCompilationAux outputPath ignoreWarnings cmpl, staticLink
+                            compileCompilationAux outputDir ignoreWarnings cmpl, staticLink
                         | TestCompilationReference (cmpl) ->
                             let fileName =
                                 match cmpl with
                                 | TestCompilation.CSharp c when not (String.IsNullOrWhiteSpace c.AssemblyName) -> c.AssemblyName
-                                | _ -> getTemporaryFileNameInDirectory outputPath.FullName
-                            let tmp = Path.Combine(outputPath.FullName, Path.ChangeExtension(fileName, ".dll"))
+                                | _ -> getTemporaryFileNameInDirectory outputDir
+                            let tmp = Path.Combine(outputDir.FullName, Path.ChangeExtension(fileName, ".dll"))
                             cmpl.EmitAsFile tmp
                             (([||], None, tmp), []), false)
 
