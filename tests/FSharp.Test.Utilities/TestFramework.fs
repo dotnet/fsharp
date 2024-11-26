@@ -28,8 +28,10 @@ let createTemporaryDirectory () =
 let getTemporaryFileName () =
     createTemporaryDirectory().FullName ++ getShortId()
 
-let getTemporaryFileNameInDirectory (directory: string) =
-    directory ++ getShortId()
+let changeExtension path extension = Path.ChangeExtension(path, extension)
+
+let getTemporaryFileNameInDirectory (directory: DirectoryInfo) =
+    directory.FullName ++ getShortId()
 
 // Well, this function is AI generated.
 let rec copyDirectory (sourceDir: string) (destinationDir: string) (recursive: bool) =
