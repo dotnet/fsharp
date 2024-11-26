@@ -72,19 +72,19 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
                         //new(PullDiagnosticCategories.DocumentAnalyzerSemantic),
                     ]
             },
-            SemanticTokensOptions = new()
-            {
-                Legend = new()
-                {
-                    TokenTypes = [.. SemanticTokenTypes.AllTypes], // XXX should be extended
-                    TokenModifiers = [.. SemanticTokenModifiers.AllModifiers]
-                },
-                Full = new SemanticTokensFullOptions()
-                {
-                    Delta = false
-                },
-                Range = false
-            }
+            //SemanticTokensOptions = new()
+            //{
+            //    Legend = new()
+            //    {
+            //        TokenTypes = [.. SemanticTokenTypes.AllTypes], // XXX should be extended
+            //        TokenModifiers = [.. SemanticTokenModifiers.AllModifiers]
+            //    },
+            //    Full = new SemanticTokensFullOptions()
+            //    {
+            //        Delta = false
+            //    },
+            //    Range = false
+            //}
             //,
             //HoverProvider = new HoverOptions()
             //{
@@ -96,13 +96,13 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
 }
 
 internal class VsDiagnosticsHandler
-    : IRequestHandler<VSInternalDocumentDiagnosticsParams, VSInternalDiagnosticReport[], FSharpRequestContext>,
+    : IRequestHandler<VSInternalDiagnosticParams, VSInternalDiagnosticReport[], FSharpRequestContext>,
       IRequestHandler<VSGetProjectContextsParams, VSProjectContextList, FSharpRequestContext>
 {
     public bool MutatesSolutionState => false;
 
     [LanguageServerEndpoint(VSInternalMethods.DocumentPullDiagnosticName, LanguageServerConstants.DefaultLanguageName)]
-    public async Task<VSInternalDiagnosticReport[]> HandleRequestAsync(VSInternalDocumentDiagnosticsParams request, FSharpRequestContext context, CancellationToken cancellationToken)
+    public async Task<VSInternalDiagnosticReport[]> HandleRequestAsync(VSInternalDiagnosticParams request, FSharpRequestContext context, CancellationToken cancellationToken)
     {
         var report = await context.Workspace.Query.GetDiagnosticsForFile(request!.TextDocument!.Uri).Please(cancellationToken);
 
