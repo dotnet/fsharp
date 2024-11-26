@@ -8,14 +8,14 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 --target:winexe                          Build a Windows executable
 --target:library                         Build a library (Short form: -a)
 --target:module                          Build a module that can be added to another assembly
---delaysign[+|-]                         Delay-sign the assembly using only the public portion of the strong name key (off by default)
+--delaysign[+|-]                         Delay-sign the assembly using only the public portion of the strong name key
 --publicsign[+|-]                        Public-sign the assembly using only the public portion of the strong name
-                                         key, and mark the assembly as signed (off by default)
+                                         key, and mark the assembly as signed
 --doc:<file>                             Write the xmldoc of the assembly to the given file
 --keyfile:<file>                         Specify a strong name key file
 --platform:<string>                      Limit which platforms this code can run on: x86, x64, Arm, Arm64, Itanium,
                                          anycpu32bitpreferred, or anycpu. The default is anycpu.
---compressmetadata[+|-]                  Compress interface and optimization data files (on by default)
+--compressmetadata[+|-]                  Compress interface and optimization data files
 --nooptimizationdata                     Only include optimization information essential for implementing inlined
                                          constructs. Inhibits cross-module inlining but improves binary
                                          compatibility.
@@ -26,7 +26,7 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
                                          signature files
 --nocopyfsharpcore                       Don't copy FSharp.Core.dll along the produced binaries
 --refonly[+|-]                           Produce a reference assembly, instead of a full assembly, as the primary
-                                         output (off by default)
+                                         output
 --refout:<file>                          Produce a reference assembly with the specified file path.
 
 
@@ -47,41 +47,41 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 
 
                 - CODE GENERATION -
---debug[+|-]                             Emit debug information (Short form: -g) (off by default)
+--debug[+|-]                             Emit debug information (Short form: -g)
 --debug:{full|pdbonly|portable|embedded} Specify debugging type: full, portable, embedded, pdbonly. ('full' is the
                                          default if no debugging type specified and enables attaching a debugger to a
                                          running program, 'portable' is a cross-platform format, 'embedded' is a
                                          cross-platform format embedded into the output file).
---embed[+|-]                             Embed all source files in the portable PDB file (off by default)
+--embed[+|-]                             Embed all source files in the portable PDB file
 --embed:<file;...>                       Embed specific source files in the portable PDB file
 --sourcelink:<file>                      Source link information file to embed in the portable PDB file
---optimize[+|-]                          Enable optimizations (Short form: -O) (on by default)
---tailcalls[+|-]                         Enable or disable tailcalls (on by default)
+--optimize[+|-]                          Enable optimizations (Short form: -O)
+--tailcalls[+|-]                         Enable or disable tailcalls
 --deterministic[+|-]                     Produce a deterministic assembly (including module version GUID and
-                                         timestamp) (off by default)
---realsig[+|-]                           Generate assembly with IL visibility that matches the source code visibility (off by default)
+                                         timestamp)
+--realsig[+|-]                           Generate assembly with IL visibility that matches the source code visibility
 --pathmap:<path=sourcePath;...>          Maps physical paths to source path names output by the compiler
---crossoptimize[+|-]                     Enable or disable cross-module optimizations (on by default)
+--crossoptimize[+|-]                     Enable or disable cross-module optimizations
 --reflectionfree                         Disable implicit generation of constructs using reflection
 
 
                 - ERRORS AND WARNINGS -
---warnaserror[+|-]                       Report all warnings as errors (off by default)
---warnaserror[+|-]:<warn;...>            Report specific warnings as errors (off by default)
+--warnaserror[+|-]                       Report all warnings as errors
+--warnaserror[+|-]:<warn;...>            Report specific warnings as errors
 --warn:<n>                               Set a warning level (0-5)
 --nowarn:<warn;...>                      Disable specific warning messages
 --warnon:<warn;...>                      Enable specific warnings that may be off by default
---checknulls[+|-]                        Enable nullness declarations and checks (off by default)
---consolecolors[+|-]                     Output warning and error messages in color (on by default)
+--checknulls[+|-]                        Enable nullness declarations and checks
+--consolecolors[+|-]                     Output warning and error messages in color
 
 
                 - LANGUAGE -
 --langversion:?                          Display the allowed values for language version.
 --langversion:{version|latest|preview}   Specify language version such as 'latest' or 'preview'.
---checked[+|-]                           Generate overflow checks (off by default)
+--checked[+|-]                           Generate overflow checks
 --define:<string>                        Define conditional compilation symbols (Short form: -d)
 --mlcompatibility                        Ignore ML compatibility warnings
---strict-indentation[+|-]                Override indentation rules implied by the language version (off by default)
+--strict-indentation[+|-]                Override indentation rules implied by the language version
 
 
                 - MISCELLANEOUS -
@@ -111,6 +111,6 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 --staticlink:<file>                      Statically link the given assembly and all referenced DLLs that depend on
                                          this assembly. Use an assembly name e.g. mylib, not a DLL name.
 --pdb:<string>                           Name the output debug file
---highentropyva[+|-]                     Enable high-entropy ASLR (off by default)
+--highentropyva[+|-]                     Enable high-entropy ASLR
 --subsystemversion:<string>              Specify subsystem version of this assembly
---quotations-debug[+|-]                  Emit debug information in quotations (off by default)
+--quotations-debug[+|-]                  Emit debug information in quotations
