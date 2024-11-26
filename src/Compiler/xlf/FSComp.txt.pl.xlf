@@ -1338,8 +1338,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcDisallowedNullableApplication">
-        <source>Application of method '{0}' attempted to create a disallowed nullable (T|null) type for '{1}'. Such type will not report nulness warnings correctly.</source>
-        <target state="new">Application of method '{0}' attempted to create a disallowed nullable (T|null) type for '{1}'. Such type will not report nulness warnings correctly.</target>
+        <source>Application of method '{0}' attempted to create a nullable type ('T | null) for '{1}'. Nullness warnings won't be reported correctly for such types.</source>
+        <target state="new">Application of method '{0}' attempted to create a nullable type ('T | null) for '{1}'. Nullness warnings won't be reported correctly for such types.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcDotLambdaAtNotSupportedExpression">
