@@ -229,7 +229,7 @@ stages:
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
+              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
 
@@ -247,8 +247,8 @@ stages:
             condition: failed()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\$(_configuration)'
-                ArtifactName: 'Windows $(_configuration) $(_testKind) process dumps'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
+                ArtifactName: 'Windows Release $(_testKind) process dumps'
                 ArtifactType: Container
                 parallel: true
 
@@ -269,7 +269,7 @@ stages:
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
+              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
 
@@ -287,8 +287,8 @@ stages:
             condition: failed()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\$(_configuration)'
-                ArtifactName: 'Windows $(_configuration) $(_testKind) process dumps'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
+                ArtifactName: 'Windows Release $(_testKind) process dumps'
                 ArtifactType: Container
                 parallel: true
 
@@ -309,7 +309,7 @@ stages:
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
+              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
 
@@ -327,8 +327,8 @@ stages:
             condition: failed()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\$(_configuration)'
-                ArtifactName: 'Windows $(_configuration) $(_testKind) process dumps'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
+                ArtifactName: 'Windows Release $(_testKind) process dumps'
                 ArtifactType: Container
                 parallel: true
 
@@ -349,7 +349,7 @@ stages:
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
+              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
 
@@ -367,8 +367,8 @@ stages:
             condition: failed()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\$(_configuration)'
-                ArtifactName: 'Windows $(_configuration) $(_testKind) process dumps'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
+                ArtifactName: 'Windows Release $(_testKind) process dumps'
                 ArtifactType: Container
                 parallel: true
 
@@ -385,7 +385,7 @@ stages:
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
+              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
 
@@ -403,8 +403,8 @@ stages:
             condition: failed()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\$(_configuration)'
-                ArtifactName: 'Windows $(_configuration) $(_testKind) process dumps'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
+                ArtifactName: 'Windows Release $(_testKind) process dumps'
                 ArtifactType: Container
                 parallel: true
 
