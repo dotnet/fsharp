@@ -908,8 +908,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsCheckNulls">
-        <source>Enable nullness declarations and checks (off by default)</source>
-        <target state="new">Enable nullness declarations and checks (off by default)</target>
+        <source>Enable nullness declarations and checks</source>
+        <target state="new">Enable nullness declarations and checks</target>
         <note />
       </trans-unit>
       <trans-unit id="optsClearResultsCache">
@@ -918,8 +918,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsCompressMetadata">
-        <source>Compress interface and optimization data files (on by default)</source>
-        <target state="needs-review-translation">인터페이스 및 최적화 데이터 파일 압축</target>
+        <source>Compress interface and optimization data files</source>
+        <target state="translated">인터페이스 및 최적화 데이터 파일 압축</target>
         <note />
       </trans-unit>
       <trans-unit id="optsGetLangVersions">
@@ -948,13 +948,13 @@
         <note />
       </trans-unit>
       <trans-unit id="optsRealsig">
-        <source>Generate assembly with IL visibility that matches the source code visibility (off by default)</source>
-        <target state="needs-review-translation">소스 코드 표시 유형과 일치하는 IL 표시 유형을 사용하여 어셈블리 생성</target>
+        <source>Generate assembly with IL visibility that matches the source code visibility</source>
+        <target state="translated">소스 코드 표시 유형과 일치하는 IL 표시 유형을 사용하여 어셈블리 생성</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOnly">
-        <source>Produce a reference assembly, instead of a full assembly, as the primary output (off by default)</source>
-        <target state="needs-review-translation">주 출력으로 전체 어셈블리 대신 참조 어셈블리를 생성합니다.</target>
+        <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
+        <target state="translated">주 출력으로 전체 어셈블리 대신 참조 어셈블리를 생성합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOut">
@@ -978,8 +978,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsStrictIndentation">
-        <source>Override indentation rules implied by the language version (off by default)</source>
-        <target state="needs-review-translation">언어 버전에 포함된 들여쓰기 규칙 재정의</target>
+        <source>Override indentation rules implied by the language version</source>
+        <target state="translated">언어 버전에 포함된 들여쓰기 규칙 재정의</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
@@ -5823,13 +5823,13 @@
         <note />
       </trans-unit>
       <trans-unit id="optsDelaySign">
-        <source>Delay-sign the assembly using only the public portion of the strong name key (off by default)</source>
-        <target state="needs-review-translation">강력한 이름 키의 공개 부분만 사용하여 어셈블리 서명을 연기합니다.</target>
+        <source>Delay-sign the assembly using only the public portion of the strong name key</source>
+        <target state="translated">강력한 이름 키의 공개 부분만 사용하여 어셈블리 서명을 연기합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPublicSign">
-        <source>Public-sign the assembly using only the public portion of the strong name key, and mark the assembly as signed (off by default)</source>
-        <target state="needs-review-translation">강력한 이름 키의 공개 부분만 사용하여 어셈블리를 공개 서명하고, 어셈블리를 서명됨으로 표시합니다.</target>
+        <source>Public-sign the assembly using only the public portion of the strong name key, and mark the assembly as signed</source>
+        <target state="translated">강력한 이름 키의 공개 부분만 사용하여 어셈블리를 공개 서명하고, 어셈블리를 서명됨으로 표시합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsWriteXml">
@@ -5888,8 +5888,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsEmbedAllSource">
-        <source>Embed all source files in the portable PDB file (off by default)</source>
-        <target state="needs-review-translation">이식 가능한 PDB 파일에 모든 소스 파일 포함</target>
+        <source>Embed all source files in the portable PDB file</source>
+        <target state="translated">이식 가능한 PDB 파일에 모든 소스 파일 포함</target>
         <note />
       </trans-unit>
       <trans-unit id="optsEmbedSource">
@@ -5918,8 +5918,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsDebugPM">
-        <source>Emit debug information (Short form: -g) (off by default)</source>
-        <target state="needs-review-translation">디버그 정보를 내보냅니다(약식: -g).</target>
+        <source>Emit debug information (Short form: -g)</source>
+        <target state="translated">디버그 정보를 내보냅니다(약식: -g).</target>
         <note />
       </trans-unit>
       <trans-unit id="optsDebug">
@@ -5928,33 +5928,33 @@
         <note />
       </trans-unit>
       <trans-unit id="optsOptimize">
-        <source>Enable optimizations (Short form: -O) (on by default)</source>
-        <target state="needs-review-translation">최적화를 사용합니다(약식: -O).</target>
+        <source>Enable optimizations (Short form: -O)</source>
+        <target state="translated">최적화를 사용합니다(약식: -O).</target>
         <note />
       </trans-unit>
       <trans-unit id="optsTailcalls">
-        <source>Enable or disable tailcalls (on by default)</source>
-        <target state="needs-review-translation">마무리 호출을 사용하거나 사용하지 않습니다.</target>
+        <source>Enable or disable tailcalls</source>
+        <target state="translated">마무리 호출을 사용하거나 사용하지 않습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsDeterministic">
-        <source>Produce a deterministic assembly (including module version GUID and timestamp) (off by default)</source>
-        <target state="needs-review-translation">결정적 어셈블리(모듈 버전 GUID 및 타임스탬프 포함) 생성</target>
+        <source>Produce a deterministic assembly (including module version GUID and timestamp)</source>
+        <target state="translated">결정적 어셈블리(모듈 버전 GUID 및 타임스탬프 포함) 생성</target>
         <note />
       </trans-unit>
       <trans-unit id="optsCrossoptimize">
-        <source>Enable or disable cross-module optimizations (on by default)</source>
-        <target state="needs-review-translation">크로스 모듈을 최적화하거나 최적화하지 않습니다.</target>
+        <source>Enable or disable cross-module optimizations</source>
+        <target state="translated">크로스 모듈을 최적화하거나 최적화하지 않습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsWarnaserrorPM">
-        <source>Report all warnings as errors (off by default)</source>
-        <target state="needs-review-translation">모든 경고를 오류로 보고합니다.</target>
+        <source>Report all warnings as errors</source>
+        <target state="translated">모든 경고를 오류로 보고합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsWarnaserror">
-        <source>Report specific warnings as errors (off by default)</source>
-        <target state="needs-review-translation">특정 경고를 오류로 보고합니다.</target>
+        <source>Report specific warnings as errors</source>
+        <target state="translated">특정 경고를 오류로 보고합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsWarn">
@@ -5973,8 +5973,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsChecked">
-        <source>Generate overflow checks (off by default)</source>
-        <target state="needs-review-translation">오버플로 검사를 생성합니다.</target>
+        <source>Generate overflow checks</source>
+        <target state="translated">오버플로 검사를 생성합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsDefine">
@@ -6158,13 +6158,13 @@
         <note />
       </trans-unit>
       <trans-unit id="optsConsoleColors">
-        <source>Output warning and error messages in color (on by default)</source>
-        <target state="needs-review-translation">경고 및 오류 메시지를 색으로 구분하여 출력</target>
+        <source>Output warning and error messages in color</source>
+        <target state="translated">경고 및 오류 메시지를 색으로 구분하여 출력</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUseHighEntropyVA">
-        <source>Enable high-entropy ASLR (off by default)</source>
-        <target state="needs-review-translation">높은 엔트로피 ASLR 사용</target>
+        <source>Enable high-entropy ASLR</source>
+        <target state="translated">높은 엔트로피 ASLR 사용</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSubSystemVersion">
@@ -6178,8 +6178,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsEmitDebugInfoInQuotations">
-        <source>Emit debug information in quotations (off by default)</source>
-        <target state="needs-review-translation">인용구의 디버그 정보를 내보냅니다.</target>
+        <source>Emit debug information in quotations</source>
+        <target state="translated">인용구의 디버그 정보를 내보냅니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPreferredUiLang">
