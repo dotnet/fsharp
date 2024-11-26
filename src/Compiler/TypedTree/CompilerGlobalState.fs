@@ -73,4 +73,6 @@ let newUnique() = System.Threading.Interlocked.Increment &uniqueCount
 /// Unique name generator for stamps attached to to val_specs, tycon_specs etc.
 //++GLOBAL MUTABLE STATE (concurrency-safe)
 let mutable private stampCount = 0L
-let newStamp() = System.Threading.Interlocked.Increment &stampCount
+let newStamp() =
+    let stamp = System.Threading.Interlocked.Increment &stampCount
+    stamp
