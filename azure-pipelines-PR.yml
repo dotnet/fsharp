@@ -248,7 +248,7 @@ stages:
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows Release $(_testKind) process dumps'
+                ArtifactName: 'Windows Release WindowsLangVersionPreview process dumps'
                 ArtifactType: Container
                 parallel: true
 
@@ -288,7 +288,7 @@ stages:
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows Release $(_testKind) process dumps'
+                ArtifactName: 'Windows Release WindowsNoRealsig_testCoreclr process dumps'
                 ArtifactType: Container
                 parallel: true
 
@@ -328,7 +328,7 @@ stages:
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows Release $(_testKind) process dumps'
+                ArtifactName: 'Windows Release WindowsNoRealsig_testDesktop process dumps'
                 ArtifactType: Container
                 parallel: true
 
@@ -368,7 +368,7 @@ stages:
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows Release $(_testKind) process dumps'
+                ArtifactName: 'Windows Release WindowsStrictIndentation process dumps'
                 ArtifactType: Container
                 parallel: true
 
@@ -404,7 +404,7 @@ stages:
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows Release $(_testKind) process dumps'
+                ArtifactName: 'Windows Release WindowsNoStrictIndentation process dumps'
                 ArtifactType: Container
                 parallel: true
 
