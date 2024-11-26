@@ -12,7 +12,7 @@ type DocumentStateHandler() =
         member _.MutatesSolutionState = true
 
     interface IRequestHandler<DidOpenTextDocumentParams, SemanticTokensDeltaPartialResult, FSharpRequestContext> with
-        [<LanguageServerEndpoint(Methods.TextDocumentDidOpenName)>]
+        [<LanguageServerEndpoint(Methods.TextDocumentDidOpenName, LanguageServerConstants.DefaultLanguageName)>]
         member _.HandleRequestAsync
             (
                 request: DidOpenTextDocumentParams,
@@ -26,7 +26,7 @@ type DocumentStateHandler() =
             Task.FromResult(SemanticTokensDeltaPartialResult())
 
     interface IRequestHandler<DidChangeTextDocumentParams, SemanticTokensDeltaPartialResult, FSharpRequestContext> with
-        [<LanguageServerEndpoint(Methods.TextDocumentDidChangeName)>]
+        [<LanguageServerEndpoint(Methods.TextDocumentDidChangeName, LanguageServerConstants.DefaultLanguageName)>]
         member _.HandleRequestAsync
             (
                 request: DidChangeTextDocumentParams,
@@ -40,7 +40,7 @@ type DocumentStateHandler() =
             Task.FromResult(SemanticTokensDeltaPartialResult())
 
     interface INotificationHandler<DidCloseTextDocumentParams, FSharpRequestContext> with
-        [<LanguageServerEndpoint(Methods.TextDocumentDidCloseName)>]
+        [<LanguageServerEndpoint(Methods.TextDocumentDidCloseName, LanguageServerConstants.DefaultLanguageName)>]
         member _.HandleNotificationAsync
             (
                 request: DidCloseTextDocumentParams,

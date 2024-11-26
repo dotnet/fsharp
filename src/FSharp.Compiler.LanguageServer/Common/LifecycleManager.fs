@@ -6,10 +6,12 @@ open StreamJsonRpc
 open System.Threading.Tasks
 open Microsoft.Extensions.DependencyInjection
 
+#nowarn "3261"
+
 type LspServiceLifeCycleManager() =
 
     interface ILifeCycleManager with
-        member this.ShutdownAsync(message: string) =
+        member _.ShutdownAsync(message: string) =
             task {
                 try
                     printfn "Shutting down"
@@ -18,7 +20,7 @@ type LspServiceLifeCycleManager() =
                 | :? ConnectionLostException -> ()
             }
 
-        member this.ExitAsync() = Task.CompletedTask
+        member _.ExitAsync() = Task.CompletedTask
 
 type FSharpLspServices(serviceCollection: IServiceCollection) as this =
 
@@ -27,15 +29,17 @@ type FSharpLspServices(serviceCollection: IServiceCollection) as this =
     let serviceProvider = serviceCollection.BuildServiceProvider()
 
     interface ILspServices with
-        member this.GetRequiredService<'T when 'T: not null>() : 'T =
-            serviceProvider.GetRequiredService<'T>()
+        member _.GetRequiredService() = serviceProvider.GetRequiredService()
 
-        member this.TryGetService(t) = serviceProvider.GetService(t)
+        member _.GetService() = serviceProvider.GetService()
 
-        member this.GetRequiredServices() = serviceProvider.GetServices()
+        member _.GetRequiredServices() = serviceProvider.GetServices()
 
-        member this.GetRegisteredServices() = failwith "Not implemented"
+        member _.Dispose() = serviceProvider.Dispose()
 
-        member this.SupportsGetRegisteredServices() = false
-
-        member this.Dispose() = ()
+        member _.TryGetService(``type``, service) =
+            match serviceProvider.GetService(``type``) with
+            | NonNull x ->
+                service <- x
+                true
+            | Null -> false

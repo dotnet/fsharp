@@ -15,7 +15,7 @@ type LanguageFeaturesHandler() =
         member _.MutatesSolutionState = false
 
     interface IRequestHandler<DocumentDiagnosticParams, SumType<RelatedFullDocumentDiagnosticReport, RelatedUnchangedDocumentDiagnosticReport>, FSharpRequestContext> with
-        [<LanguageServerEndpoint(Methods.TextDocumentDiagnosticName)>]
+        [<LanguageServerEndpoint(Methods.TextDocumentDiagnosticName, LanguageServerConstants.DefaultLanguageName)>]
         member _.HandleRequestAsync
             (
                 request: DocumentDiagnosticParams,
@@ -46,11 +46,11 @@ type LanguageFeaturesHandler() =
             }
             |> CancellableTask.start cancellationToken
 
-    interface IRequestHandler<SemanticTokensParams, SemanticTokens, FSharpRequestContext> with
-        [<LanguageServerEndpoint(Methods.TextDocumentSemanticTokensFullName)>]
-        member _.HandleRequestAsync(request: SemanticTokensParams, context: FSharpRequestContext, cancellationToken: CancellationToken) =
-            cancellableTask {
-                let! tokens = context.GetSemanticTokensForFile(request.TextDocument.Uri)
-                return SemanticTokens(Data = tokens)
-            }
-            |> CancellableTask.start cancellationToken
+    //interface IRequestHandler<SemanticTokensParams, SemanticTokens, FSharpRequestContext> with
+    //    [<LanguageServerEndpoint(Methods.TextDocumentSemanticTokensFullName, LanguageServerConstants.DefaultLanguageName)>]
+    //    member _.HandleRequestAsync(request: SemanticTokensParams, context: FSharpRequestContext, cancellationToken: CancellationToken) =
+    //        cancellableTask {
+    //            let! tokens = context.GetSemanticTokensForFile(request.TextDocument.Uri)
+    //            return SemanticTokens(Data = tokens)
+    //        }
+    //        |> CancellableTask.start cancellationToken

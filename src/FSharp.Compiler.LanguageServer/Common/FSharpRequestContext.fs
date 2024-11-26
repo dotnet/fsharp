@@ -173,14 +173,15 @@ type ContextHolder(workspace, lspServices: ILspServices) =
 
 type FShapRequestContextFactory(lspServices: ILspServices) =
 
-    interface IRequestContextFactory<FSharpRequestContext> with
+    inherit AbstractRequestContextFactory<FSharpRequestContext>()
 
-        member _.CreateRequestContextAsync<'TRequestParam>
-            (
-                queueItem: IQueueItem<FSharpRequestContext>,
-                requestParam: 'TRequestParam,
-                cancellationToken: CancellationToken
-            ) =
-            lspServices.GetRequiredService<ContextHolder>()
-            |> _.GetContext()
-            |> Task.FromResult
+    override _.CreateRequestContextAsync<'TRequestParam>
+        (
+            queueItem: IQueueItem<FSharpRequestContext>,
+            methodHandler: IMethodHandler,
+            requestParam: 'TRequestParam,
+            cancellationToken: CancellationToken
+        ) =
+        lspServices.GetRequiredService<ContextHolder>()
+        |> _.GetContext()
+        |> Task.FromResult

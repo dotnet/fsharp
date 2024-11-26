@@ -14,6 +14,7 @@ open StreamJsonRpc
 open Nerdbank.Streams
 open System.Diagnostics
 open FSharp.Compiler.CodeAnalysis.Workspace
+open System.Text.Json
 
 [<AutoOpen>]
 module Stuff =
@@ -29,7 +30,9 @@ type Extensions =
 
 type FSharpLanguageServer
     (jsonRpc: JsonRpc, logger: ILspLogger, ?initialWorkspace: FSharpWorkspace, ?addExtraHandlers: Action<IServiceCollection>) =
-    inherit AbstractLanguageServer<FSharpRequestContext>(jsonRpc, logger)
+
+    // TODO: Switch to SystemTextJsonLanguageServer
+    inherit NewtonsoftLanguageServer<FSharpRequestContext>(jsonRpc, Newtonsoft.Json.JsonSerializer.CreateDefault(), logger)
 
     let initialWorkspace = defaultArg initialWorkspace (FSharpWorkspace())
 
@@ -38,8 +41,6 @@ type FSharpLanguageServer
         base.Initialize()
 
     member _.JsonRpc: JsonRpc = jsonRpc
-
-    member private this.GetBaseHandlerProvider() = base.GetHandlerProvider()
 
     override this.ConstructLspServices() =
         let serviceCollection = new ServiceCollection()
@@ -53,8 +54,7 @@ type FSharpLanguageServer
                 .AddSingleton<IMethodHandler, DocumentStateHandler>()
                 .AddSingleton<IMethodHandler, LanguageFeaturesHandler>()
                 .AddSingleton<ILspLogger>(logger)
-                .AddSingleton<IRequestContextFactory<FSharpRequestContext>, FShapRequestContextFactory>()
-                .AddSingleton<IHandlerProvider>(fun _ -> this.GetBaseHandlerProvider())
+                .AddSingleton<AbstractRequestContextFactory<FSharpRequestContext>, FShapRequestContextFactory>()
                 .AddSingleton<IInitializeManager<InitializeParams, InitializeResult>, CapabilitiesManager>()
                 .AddSingleton(this)
                 .AddSingleton<ILifeCycleManager>(new LspServiceLifeCycleManager())

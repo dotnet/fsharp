@@ -95,31 +95,13 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
     }
 }
 
-internal class SemanticTokensHandler
-    : IRequestHandler<SemanticTokensParams, SemanticTokens, FSharpRequestContext>
-{
-    public bool MutatesSolutionState => false;
-
-    [LanguageServerEndpoint("textDocument/semanticTokens/full")]
-    public async Task<SemanticTokens> HandleRequestAsync(
-        SemanticTokensParams request,
-        FSharpRequestContext context,
-        CancellationToken cancellationToken)
-    {
-        var tokens = await context.GetSemanticTokensForFile(request!.TextDocument!.Uri);
-
-        return new SemanticTokens { Data = tokens };
-    }
-}
-
-
 internal class VsDiagnosticsHandler
     : IRequestHandler<VSInternalDocumentDiagnosticsParams, VSInternalDiagnosticReport[], FSharpRequestContext>,
       IRequestHandler<VSGetProjectContextsParams, VSProjectContextList, FSharpRequestContext>
 {
     public bool MutatesSolutionState => false;
 
-    [LanguageServerEndpoint(VSInternalMethods.DocumentPullDiagnosticName)]
+    [LanguageServerEndpoint(VSInternalMethods.DocumentPullDiagnosticName, LanguageServerConstants.DefaultLanguageName)]
     public async Task<VSInternalDiagnosticReport[]> HandleRequestAsync(VSInternalDocumentDiagnosticsParams request, FSharpRequestContext context, CancellationToken cancellationToken)
     {
         var report = await context.Workspace.Query.GetDiagnosticsForFile(request!.TextDocument!.Uri).Please(cancellationToken);
@@ -135,7 +117,7 @@ internal class VsDiagnosticsHandler
         return [vsReport];
     }
 
-    [LanguageServerEndpoint("textDocument/_vs_getProjectContexts")]
+    [LanguageServerEndpoint("textDocument/_vs_getProjectContexts", LanguageServerConstants.DefaultLanguageName)]
     public Task<VSProjectContextList> HandleRequestAsync(VSGetProjectContextsParams request, FSharpRequestContext context, CancellationToken cancellationToken)
     {
         return Task.FromResult(new VSProjectContextList()
