@@ -2111,7 +2111,7 @@ type AnonTypeGenerationTable() =
                     for propName, fldName, fldTy in flds ->
                         let attrs = if isStruct then [ GetReadOnlyAttribute g ] else []
 
-                        mkLdfldMethodDef ("get_" + propName, ILMemberAccess.Public, false, ilTy, fldName, fldTy, attrs)
+                        mkLdfldMethodDef ("get_" + propName, ILMemberAccess.Public, false, ilTy, fldName, fldTy, [], attrs)
                         |> g.AddMethodGeneratedAttributes
                     yield! genToStringMethod ilTy
                 ]
@@ -11180,6 +11180,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             let ilFieldAttrs =
                                 GenAttrs cenv eenv propAttribs
                                 @ [ mkCompilationMappingAttrWithSeqNum g (int SourceConstructFlags.Field) i ]
+                                @ GenAdditionalAttributesForTy g fspec.FormalType
 
                             yield
                                 ILPropertyDef(
@@ -11210,14 +11211,15 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
 
                             let isStruct = isStructTyconRef tcref
 
-                            let attrs =
+                            let retTyAttrs = GenAdditionalAttributesForTy g fspec.FormalType
+                            let attrs =                              
                                 if isStruct && not isStatic then
-                                    [ GetReadOnlyAttribute g ]
+                                    [ GetReadOnlyAttribute g]
                                 else
                                     []
 
                             yield
-                                mkLdfldMethodDef (ilMethName, access, isStatic, ilThisTy, ilFieldName, ilPropType, attrs)
+                                mkLdfldMethodDef (ilMethName, access, isStatic, ilThisTy, ilFieldName, ilPropType, retTyAttrs, attrs)
                                 |> g.AddMethodGeneratedAttributes
 
                     // Generate property setter methods for the mutable fields
@@ -11357,6 +11359,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             else
                                 Some(g.ilg.typ_Object.TypeSpec)
 
+                        // This needs attributes for nullness!
                         let ilMethodDef =
                             (mkILSimpleStorageCtorWithParamNames (
                                 spec,
@@ -11796,6 +11799,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                     let ilPropType = GenType cenv m eenv.tyenv fld.FormalType
                     let ilMethName = "get_" + fld.LogicalName
                     let ilFieldName = ComputeFieldName exnc fld
+                    let retTyAttrs = GenAdditionalAttributesForTy g fspec.FormalType
 
                     let ilMethodDef =
                         let def =
