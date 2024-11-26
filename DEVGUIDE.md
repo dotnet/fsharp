@@ -242,8 +242,9 @@ ilverify_FSharp.Core_Release_netstandard2.1.bsl
 ```
 
 If you want to update them, either
-a. Run the [ilverify.ps1]([url](https://github.com/dotnet/fsharp/blob/main/tests/ILVerify/ilverify.ps1)) script in PowerShell. The script will create `.actual` files. If the differences make sense, replace the original baselines with the actual files.
-b. Set the `TEST_UPDATE_BSL` to `1` (please refer to "Updating baselines in tests" section in this file) **and** run `ilverify.ps1` - this will automatically replace baselines. After that, please carefully review the change and push it to your branch if it makes sense.
+
+1. Run the [ilverify.ps1]([url](https://github.com/dotnet/fsharp/blob/main/tests/ILVerify/ilverify.ps1)) script in PowerShell. The script will create `.actual` files. If the differences make sense, replace the original baselines with the actual files.
+2. Set the `TEST_UPDATE_BSL` to `1` (please refer to "Updating baselines in tests" section in this file) **and** run `ilverify.ps1` - this will automatically replace baselines. After that, please carefully review the change and push it to your branch if it makes sense.
 
 ## Automated Source Code Formatting
 
