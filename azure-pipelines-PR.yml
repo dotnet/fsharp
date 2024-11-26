@@ -248,7 +248,7 @@ stages:
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows $(_configuration) $(_testKind) process dumps'
+                ArtifactName: 'Windows Release $(_testKind) process dumps'
                 ArtifactType: Container
                 parallel: true
 
