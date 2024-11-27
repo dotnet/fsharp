@@ -1,12 +1,10 @@
 namespace Internal.Utilities.Collections
 
-open System
 open System.Diagnostics
 open System.IO
 open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
-open System.Runtime.ExceptionServices
 
 open FSharp.Compiler.DiagnosticsLogger
 open Internal.Utilities.Library
@@ -34,17 +32,10 @@ type AsyncLazy<'t> private (initial: AsyncLazyState<'t>, cancelUnawaited: bool, 
 
     let afterRequest () =
         match state with
-        | Running(computation, work, _, _) when work.IsCompleted ->
-            state <-
-                try
-                    Completed work.Result
-                with
-                | exn ->
-                    if cacheException then Faulted exn else Initial computation
         | Running(c, work, cts, count) ->
             state <- Running(c, work, cts, count - 1)
             if cancelUnawaited then cancelIfUnawaited () 
-        | _ -> () // Nothing more to do if another request already transitioned the state.
+        | _ -> () // Nothing more to do if state already transitioned.
 
     let detachable (work: Task<'t>) =
         async {
@@ -66,12 +57,23 @@ type AsyncLazy<'t> private (initial: AsyncLazyState<'t>, cancelUnawaited: bool, 
             finally
                 lock stateUpdateSync afterRequest
         }
+    
+    let workCompleted computation (work: Task<_>) =
+        lock stateUpdateSync <| fun () ->
+            state <-
+                try
+                    Completed work.Result
+                with
+                | exn ->
+                    if cacheException then Faulted exn else Initial computation
 
     let request () =
         match state with
         | Initial computation ->
             let cts = new CancellationTokenSource()
             let work = Async.StartAsTask(computation, cancellationToken = cts.Token)
+            // Ensure state is updated even when not awaited.
+            work.ContinueWith(workCompleted computation, TaskContinuationOptions.NotOnCanceled) |> ignore
             state <- Running (computation, work, cts, 1)
             detachable work
         | Running (c, work, cts, count) ->

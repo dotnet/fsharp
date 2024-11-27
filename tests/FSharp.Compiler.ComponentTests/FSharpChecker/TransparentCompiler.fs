@@ -1,4 +1,5 @@
-﻿module FSharpChecker.TransparentCompiler
+﻿[<Xunit.Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
+module FSharpChecker.TransparentCompiler
 
 open System.Collections.Concurrent
 open System.Diagnostics
