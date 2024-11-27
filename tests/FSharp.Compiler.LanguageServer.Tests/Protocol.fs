@@ -1,4 +1,4 @@
-module LanguageServerTests
+module LanguageServer.Protocol
 
 open System
 open Xunit
@@ -176,7 +176,10 @@ let ``Full semantic tokens`` () =
                 Methods.TextDocumentSemanticTokensFullName,
                 SemanticTokensParams(TextDocument = TextDocumentIdentifier(Uri = fileOnDisk))
             )
-        Assert.NotNull(semanticTokensResponse)
+
+        let expected = [| 0; 0; 0; 1; 0; 0; 0; 3; 15; 0; 0; 4; 1; 17; 0; 0; 4; 1; 19; 0 |]
+
+        Assert.Equal<int array>(expected, semanticTokensResponse.Data)
     }
 
 [<Fact>]

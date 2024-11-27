@@ -15,7 +15,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Compile Include="LanguageServerTests.fs" />
+		<Compile Include="Protocol.fs" />
 		<Compile Include="Program.fs" />
 	</ItemGroup>
 
