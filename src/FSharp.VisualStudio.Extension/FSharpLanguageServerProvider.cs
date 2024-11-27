@@ -72,19 +72,19 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
                         //new(PullDiagnosticCategories.DocumentAnalyzerSemantic),
                     ]
             },
-            //SemanticTokensOptions = new()
-            //{
-            //    Legend = new()
-            //    {
-            //        TokenTypes = [.. SemanticTokenTypes.AllTypes], // XXX should be extended
-            //        TokenModifiers = [.. SemanticTokenModifiers.AllModifiers]
-            //    },
-            //    Full = new SemanticTokensFullOptions()
-            //    {
-            //        Delta = false
-            //    },
-            //    Range = false
-            //}
+            SemanticTokensOptions = new()
+            {
+                Legend = new()
+                {
+                    TokenTypes = [.. SemanticTokenTypes.AllTypes], // XXX should be extended
+                    TokenModifiers = [.. SemanticTokenModifiers.AllModifiers]
+                },
+                Full = new SemanticTokensFullOptions()
+                {
+                    Delta = false
+                },
+                Range = false
+            }
             //,
             //HoverProvider = new HoverOptions()
             //{

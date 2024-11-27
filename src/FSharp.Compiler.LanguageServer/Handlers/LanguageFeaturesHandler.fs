@@ -46,11 +46,11 @@ type LanguageFeaturesHandler() =
             }
             |> CancellableTask.start cancellationToken
 
-    //interface IRequestHandler<SemanticTokensParams, SemanticTokens, FSharpRequestContext> with
-    //    [<LanguageServerEndpoint(Methods.TextDocumentSemanticTokensFullName, LanguageServerConstants.DefaultLanguageName)>]
-    //    member _.HandleRequestAsync(request: SemanticTokensParams, context: FSharpRequestContext, cancellationToken: CancellationToken) =
-    //        cancellableTask {
-    //            let! tokens = context.GetSemanticTokensForFile(request.TextDocument.Uri)
-    //            return SemanticTokens(Data = tokens)
-    //        }
-    //        |> CancellableTask.start cancellationToken
+    interface IRequestHandler<SemanticTokensParams, SemanticTokens, FSharpRequestContext> with
+        [<LanguageServerEndpoint(Methods.TextDocumentSemanticTokensFullName, LanguageServerConstants.DefaultLanguageName)>]
+        member _.HandleRequestAsync(request: SemanticTokensParams, context: FSharpRequestContext, cancellationToken: CancellationToken) =
+            cancellableTask {
+                let! tokens = context.GetSemanticTokensForFile(request.TextDocument.Uri)
+                return SemanticTokens(Data = tokens)
+            }
+            |> CancellableTask.start cancellationToken

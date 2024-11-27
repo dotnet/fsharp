@@ -38,6 +38,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol" Version="17.13.6-preview" />
+	</ItemGroup>
+
+	<ItemGroup>
 
 		<ProjectReference Include="$(FSharpTestsRoot)\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
 		<ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Compiler.LanguageServer\FSharp.Compiler.LanguageServer.fsproj" />
