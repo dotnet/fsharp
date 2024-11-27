@@ -712,6 +712,8 @@ let setSignatureFile tcConfigB s =
 let setAllSignatureFiles tcConfigB () =
     tcConfigB.printAllSignatureFiles <- true
 
+let formatBoolOption (value: bool) = if value then "on" else "off"
+
 // option tags
 let tagString = "<string>"
 let tagExe = "exe"
@@ -870,7 +872,7 @@ let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) =
             tagNone,
             OptionSwitch(fun switch -> tcConfigB.checkNullness <- switch = OptionSwitch.On),
             None,
-            Some(FSComp.SR.optsCheckNulls ())
+            Some(FSComp.SR.optsCheckNulls (formatBoolOption tcConfigB.checkNullness))
         )
 
         CompilerOption(
@@ -1047,17 +1049,17 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
         [
             CompilerOption("optimize", tagNone, OptionSwitch(SetOptimizeSwitch tcConfigB), None, Some(FSComp.SR.optsOptimize ()))
 
-            CompilerOption("tailcalls", tagNone, OptionSwitch(SetTailcallSwitch tcConfigB), None, Some(FSComp.SR.optsTailcalls ()))
+            CompilerOption("tailcalls", tagNone, OptionSwitch(SetTailcallSwitch tcConfigB), None, Some(FSComp.SR.optsTailcalls (formatBoolOption tcConfigB.emitTailcalls)))
 
             CompilerOption(
                 "deterministic",
                 tagNone,
                 OptionSwitch(SetDeterministicSwitch tcConfigB),
                 None,
-                Some(FSComp.SR.optsDeterministic ())
+                Some(FSComp.SR.optsDeterministic (formatBoolOption tcConfigB.deterministic))
             )
 
-            CompilerOption("realsig", tagNone, OptionSwitch(SetRealsig tcConfigB), None, Some(FSComp.SR.optsRealsig ()))
+            CompilerOption("realsig", tagNone, OptionSwitch(SetRealsig tcConfigB), None, Some(FSComp.SR.optsRealsig (formatBoolOption tcConfigB.realsig)))
 
             CompilerOption("pathmap", tagPathMap, OptionStringList(AddPathMapping tcConfigB), None, Some(FSComp.SR.optsPathMap ()))
 
@@ -1144,7 +1146,7 @@ let languageFlags tcConfigB =
             tagNone,
             OptionSwitch(fun switch -> tcConfigB.checkOverflow <- (switch = OptionSwitch.On)),
             None,
-            Some(FSComp.SR.optsChecked ())
+            Some(FSComp.SR.optsChecked (formatBoolOption tcConfigB.checkOverflow))
         )
 
         CompilerOption("define", tagString, OptionString(defineSymbol tcConfigB), None, Some(FSComp.SR.optsDefine ()))

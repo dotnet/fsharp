@@ -908,8 +908,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsCheckNulls">
-        <source>Enable nullness declarations and checks</source>
-        <target state="new">Enable nullness declarations and checks</target>
+        <source>Enable nullness declarations and checks ({0} by default)</source>
+        <target state="new">Enable nullness declarations and checks ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsClearResultsCache">
@@ -948,8 +948,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsRealsig">
-        <source>Generate assembly with IL visibility that matches the source code visibility</source>
-        <target state="translated">Vygenerovat sestavení s viditelností IL, které odpovídá viditelnosti zdrojového kódu</target>
+        <source>Generate assembly with IL visibility that matches the source code visibility ({0} by default)</source>
+        <target state="new">Generate assembly with IL visibility that matches the source code visibility ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOnly">
@@ -5933,13 +5933,13 @@
         <note />
       </trans-unit>
       <trans-unit id="optsTailcalls">
-        <source>Enable or disable tailcalls</source>
-        <target state="translated">Zapnout nebo vypnout volání funkce Tail</target>
+        <source>Enable or disable tailcalls ({0} by default)</source>
+        <target state="new">Enable or disable tailcalls ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsDeterministic">
-        <source>Produce a deterministic assembly (including module version GUID and timestamp)</source>
-        <target state="translated">Vytvoří deterministické sestavení (včetně GUID verze modulu a časového razítka).</target>
+        <source>Produce a deterministic assembly (including module version GUID and timestamp) ({0} by default)</source>
+        <target state="new">Produce a deterministic assembly (including module version GUID and timestamp) ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsCrossoptimize">
@@ -5973,8 +5973,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsChecked">
-        <source>Generate overflow checks</source>
-        <target state="translated">Generovat kontroly přetečení</target>
+        <source>Generate overflow checks ({0} by default)</source>
+        <target state="new">Generate overflow checks ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsDefine">
