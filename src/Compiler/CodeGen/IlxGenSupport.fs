@@ -13,7 +13,11 @@ open FSharp.Compiler.TypedTree
 /// Make a method that simply loads a field
 let mkLdfldMethodDef (ilMethName, iLAccess, isStatic, ilTy, ilFieldName, ilPropType, retTyAttrs, customAttrs) =
     let ilFieldSpec = mkILFieldSpecInTy (ilTy, ilFieldName, ilPropType)
-    let ilReturn = { mkILReturn ilPropType with CustomAttrsStored = storeILCustomAttrs retTyAttrs}
+
+    let ilReturn =
+        { mkILReturn ilPropType with
+            CustomAttrsStored = storeILCustomAttrs retTyAttrs
+        }
 
     let ilMethodDef =
         if isStatic then

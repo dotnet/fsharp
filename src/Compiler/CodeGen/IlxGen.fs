@@ -2057,7 +2057,9 @@ type AnonTypeGenerationTable() =
         if ilTypeRef.Scope.IsLocalRef then
 
             let flds =
-                [ for i, nm in Array.indexed nms -> (nm, nm + "@", ILType.TypeVar(uint16 i), []) ]
+                [
+                    for i, nm in Array.indexed nms -> (nm, nm + "@", ILType.TypeVar(uint16 i), [])
+                ]
 
             let ilGenericParams =
                 [
@@ -2082,7 +2084,7 @@ type AnonTypeGenerationTable() =
             let ilFieldDefs =
                 mkILFields
                     [
-                        for _, fldName, fldTy,_attrs in flds ->
+                        for _, fldName, fldTy, _attrs in flds ->
                             let fdef = mkILInstanceField (fldName, fldTy, None, ILMemberAccess.Private)
                             let attrs = [ g.CompilerGeneratedAttribute; g.DebuggerBrowsableNeverAttribute ]
                             fdef.With(customAttrs = mkILCustomAttrs attrs)
@@ -2092,7 +2094,7 @@ type AnonTypeGenerationTable() =
             let ilProperties =
                 mkILProperties
                     [
-                        for i, (propName, _fldName, fldTy,_attrs) in List.indexed flds ->
+                        for i, (propName, _fldName, fldTy, _attrs) in List.indexed flds ->
                             ILPropertyDef(
                                 name = propName,
                                 attributes = PropertyAttributes.None,
@@ -2108,7 +2110,7 @@ type AnonTypeGenerationTable() =
 
             let ilMethods =
                 [
-                    for propName, fldName, fldTy,_attrs in flds ->
+                    for propName, fldName, fldTy, _attrs in flds ->
                         let attrs = if isStruct then [ GetReadOnlyAttribute g ] else []
 
                         mkLdfldMethodDef ("get_" + propName, ILMemberAccess.Public, false, ilTy, fldName, fldTy, ILAttributes.Empty, attrs)
@@ -2158,7 +2160,7 @@ type AnonTypeGenerationTable() =
 
             let rfields =
                 (tps, flds)
-                ||> List.map2 (fun tp (propName, _fldName, _fldTy,_attrs) ->
+                ||> List.map2 (fun tp (propName, _fldName, _fldTy, _attrs) ->
                     Construct.NewRecdField
                         false
                         None
@@ -5843,7 +5845,8 @@ and GenActualSlotsig
         GenReturnType cenv m eenv.tyenv (Option.map (instType instForSlotSig) ilSlotRetTy)
 
     let iLRet = mkILReturn ilRetTy
-    let ilRetWithAttrs = 
+
+    let ilRetWithAttrs =
         match ilSlotRetTy with
         | None -> iLRet
         | Some t ->
@@ -11220,9 +11223,10 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             let isStruct = isStructTyconRef tcref
 
                             let retTyAttrs = GenAdditionalAttributesForTy g fspec.FormalType |> mkILCustomAttrs
-                            let attrs =                              
+
+                            let attrs =
                                 if isStruct && not isStatic then
-                                    [ GetReadOnlyAttribute g]
+                                    [ GetReadOnlyAttribute g ]
                                 else
                                     []
 
@@ -11241,9 +11245,15 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
 
                             let ilParams =
                                 let param = mkILParamNamed ("value", ilPropType)
+
                                 match GenAdditionalAttributesForTy g fspec.FormalType with
                                 | [] -> [ param ]
-                                | attrs -> [ {param with CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs attrs ) }]
+                                | attrs ->
+                                    [
+                                        { param with
+                                            CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs attrs)
+                                        }
+                                    ]
 
                             let ilReturn = mkILReturn ILType.Void
 
@@ -11812,7 +11822,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                     let ilPropType = GenType cenv m eenv.tyenv fld.FormalType
                     let ilMethName = "get_" + fld.LogicalName
                     let ilFieldName = ComputeFieldName exnc fld
-                    let typeDerivedAttributes = GenAdditionalAttributesForTy g fld.FormalType 
+                    let typeDerivedAttributes = GenAdditionalAttributesForTy g fld.FormalType
 
                     let ilMethodDef =
                         let def =

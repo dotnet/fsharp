@@ -214,16 +214,17 @@ let mkUnionCaseFieldId (fdef: IlxUnionCaseField) =
     // Use the lower case name of a field or constructor as the field/parameter name if it differs from the uppercase name
     fdef.LowerName, fdef.Type
 
-let inline getFieldsNullability (g:TcGlobals) (ilf:ILFieldDef) =
+let inline getFieldsNullability (g: TcGlobals) (ilf: ILFieldDef) =
     if g.checkNullness then
         ilf.CustomAttrs.AsArray()
         |> Array.tryFind (IsILAttrib g.attrib_NullableAttribute)
-    else None
+    else
+        None
 
 let mkUnionCaseFieldIdAndAttrs g fdef =
-    let nm,t = mkUnionCaseFieldId fdef
+    let nm, t = mkUnionCaseFieldId fdef
     let attrs = getFieldsNullability g fdef.ILField
-    nm,t,attrs |> Option.toList
+    nm, t, attrs |> Option.toList
 
 let refToFieldInTy ty (nm, fldTy) = mkILFieldSpecInTy (ty, nm, fldTy)
 
@@ -724,7 +725,7 @@ let mkMethodsAndPropertiesForFields
                 let ilReturn =
                     match getFieldsNullability g field.ILField with
                     | None -> ilReturn
-                    | Some a -> ilReturn.WithCustomAttrs(mkILCustomAttrsFromArray [|a|])
+                    | Some a -> ilReturn.WithCustomAttrs(mkILCustomAttrsFromArray [| a |])
 
                 yield
                     mkILNonGenericInstanceMethod (
@@ -816,7 +817,10 @@ let convAlternativeDef
 
                     match getFieldsNullability g fd.ILField with
                     | None -> plainParam
-                    | Some a -> { plainParam with CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrsFromArray [|a|]) } )
+                    | Some a ->
+                        { plainParam with
+                            CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrsFromArray [| a |])
+                        })
 
                 |> Array.toList,
                 mkILReturn baseTy,
@@ -824,7 +828,6 @@ let convAlternativeDef
             )
             |> addAltAttribs
             |> addMethodGeneratedAttrs
-            
 
         mdef
 
@@ -987,7 +990,6 @@ let convAlternativeDef
                         )
                         |> addAltAttribs
                         |> addMethodGeneratedAttrs
-                        
 
                     let nullaryProp =
 
@@ -1162,6 +1164,7 @@ let convAlternativeDef
                             |> Array.map (fun field ->
                                 let fldName, fldTy, attrs = mkUnionCaseFieldIdAndAttrs g field
                                 let fdef = mkILInstanceField (fldName, fldTy, None, ILMemberAccess.Assembly)
+
                                 let fdef =
                                     match attrs with
                                     | [] -> fdef
@@ -1204,9 +1207,10 @@ let convAlternativeDef
                                  cud.UnionCasesAccessibility)
 
                         let basicCtorFields =
-                            basicFields |> List.map (fun fdef -> 
+                            basicFields
+                            |> List.map (fun fdef ->
                                 let existingAttrs = fdef.CustomAttrs.AsArray()
-                                let nullableAttr = getFieldsNullability g fdef |> Option.toList                                 
+                                let nullableAttr = getFieldsNullability g fdef |> Option.toList
                                 fdef.Name, fdef.FieldType, nullableAttr)
 
                         let basicCtorMeth =
@@ -1304,7 +1308,7 @@ let mkClassUnionDef
         | SingleCase
         | RuntimeTypes
         | TailOrNull -> []
-        | IntegerTag -> [ let n,t = mkTagFieldId g.ilg cuspec in n,t,[] ]
+        | IntegerTag -> [ let n, t = mkTagFieldId g.ilg cuspec in n, t, [] ]
 
     let isStruct = td.IsStruct
 
@@ -1344,7 +1348,9 @@ let mkClassUnionDef
                         if isStruct && not (cidx = minNullaryIdx) then
                             []
                         else
-                            let fields = alt.FieldDefs |> Array.map (mkUnionCaseFieldIdAndAttrs g) |> Array.toList
+                            let fields =
+                                alt.FieldDefs |> Array.map (mkUnionCaseFieldIdAndAttrs g) |> Array.toList
+
                             [
                                 (mkILSimpleStorageCtor (
                                     baseInit,
@@ -1414,7 +1420,10 @@ let mkClassUnionDef
                         fieldDefs
                         |> Array.filter (fun f -> fieldsEmitted.Add(struct (f.LowerName, f.Type)))
 
-                    let fields = fieldsToBeAddedIntoType |> Array.map (mkUnionCaseFieldIdAndAttrs g) |> Array.toList
+                    let fields =
+                        fieldsToBeAddedIntoType
+                        |> Array.map (mkUnionCaseFieldIdAndAttrs g)
+                        |> Array.toList
 
                     let props, meths =
                         mkMethodsAndPropertiesForFields
@@ -1437,6 +1446,7 @@ let mkClassUnionDef
             for fldName, fldTy, attrs in (selfFields @ tagFieldsInObject) do
                 let fdef =
                     let fdef = mkILInstanceField (fldName, fldTy, None, ILMemberAccess.Assembly)
+
                     match attrs with
                     | [] -> fdef
                     | attrs -> fdef.With(customAttrs = mkILCustomAttrs attrs)

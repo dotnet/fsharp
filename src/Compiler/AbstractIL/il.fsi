@@ -2217,7 +2217,12 @@ val internal prependInstrsToClassCtor:
 
 /// Derived functions for making some simple constructors
 val internal mkILStorageCtor:
-    ILInstr list * ILType * (string * ILType * ILAttribute list) list * ILMemberAccess * ILDebugPoint option * ILDebugImports option ->
+    ILInstr list *
+    ILType *
+    (string * ILType * ILAttribute list) list *
+    ILMemberAccess *
+    ILDebugPoint option *
+    ILDebugImports option ->
         ILMethodDef
 
 val internal mkILSimpleStorageCtor:
