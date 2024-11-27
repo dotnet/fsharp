@@ -14,7 +14,7 @@ val mkLdfldMethodDef:
     ilTy: ILType *
     ilFieldName: string *
     ilPropType: ILType *
-    retTyAttrs: ILAttribute list *
+    retTyAttrs: ILAttributes *
     customAttrs: ILAttribute list ->
         ILMethodDef
 

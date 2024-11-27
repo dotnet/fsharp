@@ -2111,7 +2111,7 @@ type AnonTypeGenerationTable() =
                     for propName, fldName, fldTy in flds ->
                         let attrs = if isStruct then [ GetReadOnlyAttribute g ] else []
 
-                        mkLdfldMethodDef ("get_" + propName, ILMemberAccess.Public, false, ilTy, fldName, fldTy, [], attrs)
+                        mkLdfldMethodDef ("get_" + propName, ILMemberAccess.Public, false, ilTy, fldName, fldTy, ILAttributes.Empty, attrs)
                         |> g.AddMethodGeneratedAttributes
                     yield! genToStringMethod ilTy
                 ]
@@ -5843,7 +5843,15 @@ and GenActualSlotsig
         GenReturnType cenv m eenv.tyenv (Option.map (instType instForSlotSig) ilSlotRetTy)
 
     let iLRet = mkILReturn ilRetTy
-    ilParams, iLRet
+    let ilRetWithAttrs = 
+        match ilSlotRetTy with
+        | None -> iLRet
+        | Some t ->
+            match GenAdditionalAttributesForTy cenv.g t with
+            | [] -> iLRet
+            | attrs -> iLRet.WithCustomAttrs(mkILCustomAttrs attrs)
+
+    ilParams, ilRetWithAttrs
 
 and GenNameOfOverridingMethod cenv (useMethodImpl, slotsig) =
     let (TSlotSig(nameOfOverridenMethod, enclTypOfOverridenMethod, _, _, _, _)) =
@@ -11211,7 +11219,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
 
                             let isStruct = isStructTyconRef tcref
 
-                            let retTyAttrs = GenAdditionalAttributesForTy g fspec.FormalType
+                            let retTyAttrs = GenAdditionalAttributesForTy g fspec.FormalType |> mkILCustomAttrs
                             let attrs =                              
                                 if isStruct && not isStatic then
                                     [ GetReadOnlyAttribute g]
@@ -11799,11 +11807,11 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                     let ilPropType = GenType cenv m eenv.tyenv fld.FormalType
                     let ilMethName = "get_" + fld.LogicalName
                     let ilFieldName = ComputeFieldName exnc fld
-                    let retTyAttrs = GenAdditionalAttributesForTy g fspec.FormalType
+                    let retTyAttrs = GenAdditionalAttributesForTy g fld.FormalType |> mkILCustomAttrs
 
                     let ilMethodDef =
                         let def =
-                            mkLdfldMethodDef (ilMethName, reprAccess, false, ilThisTy, ilFieldName, ilPropType, [])
+                            mkLdfldMethodDef (ilMethName, reprAccess, false, ilThisTy, ilFieldName, ilPropType, retTyAttrs, [])
 
                         if ilPropName = "Message" then
                             def.WithVirtual(true)
