@@ -53,6 +53,11 @@ let ``Nullable attr for plain records`` compilation =
     compilation
     |> verifyCompilation DoNotOptimize
 
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ExceptionType.fs"|])>]
+let ``Nullable attr for exception types`` compilation =  
+    compilation
+    |> verifyCompilation DoNotOptimize
+
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ReferenceDU.fs"|])>]
 let ``Nullable attr for ref DUs`` compilation =  
     compilation

@@ -97,7 +97,7 @@ let mkLocalPrivateAttributeWithPropertyConstructors
                 (g.AddFieldGeneratedAttributes(mkILInstanceField (name, ilType, None, getFieldMemberAccess codegenStyle))),
                 [],
                 [],
-                (name, name, ilType)
+                (name, name, ilType, [])
             | EncapsulatedProperties ->
                 let fieldName = name + "@"
 
@@ -119,7 +119,7 @@ let mkLocalPrivateAttributeWithPropertyConstructors
                         )
                     )
                 ],
-                (name, fieldName, ilType))
+                (name, fieldName, ilType, []))
 
     // Generate constructor with required arguments
     let ilCtorDef =
@@ -170,7 +170,7 @@ let mkLocalPrivateAttributeWithByteAndByteArrayConstructors (g: TcGlobals, name:
                 Some g.ilg.typ_Attribute.TypeSpec,
                 ilTy,
                 [],
-                [ (fieldName, fieldName, fieldType) ],
+                [ (fieldName, fieldName, fieldType, []) ],
                 ILMemberAccess.Public,
                 None,
                 None

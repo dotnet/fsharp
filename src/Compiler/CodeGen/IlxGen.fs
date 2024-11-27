@@ -77,10 +77,10 @@ let iLdcSingle i = AI_ldc(DT_R4, ILConst.R4 i)
 
 /// Choose the constructor parameter names for fields
 let ChooseParamNames fieldNamesAndTypes =
-    let takenFieldNames = fieldNamesAndTypes |> List.map p23 |> Set.ofList
+    let takenFieldNames = fieldNamesAndTypes |> List.map p24 |> Set.ofList
 
     fieldNamesAndTypes
-    |> List.map (fun (ilPropName, ilFieldName, ilPropType) ->
+    |> List.map (fun (ilPropName, ilFieldName, ilPropType, attrs) ->
         let lowerPropName = String.uncapitalize ilPropName
 
         let ilParamName =
@@ -89,7 +89,7 @@ let ChooseParamNames fieldNamesAndTypes =
             else
                 lowerPropName
 
-        ilParamName, ilFieldName, ilPropType)
+        ilParamName, ilFieldName, ilPropType, attrs)
 
 /// Approximation for purposes of optimization and giving a warning when compiling definition-only files as EXEs
 let CheckCodeDoesSomething (code: ILCode) =
@@ -2057,7 +2057,7 @@ type AnonTypeGenerationTable() =
         if ilTypeRef.Scope.IsLocalRef then
 
             let flds =
-                [ for i, nm in Array.indexed nms -> (nm, nm + "@", ILType.TypeVar(uint16 i)) ]
+                [ for i, nm in Array.indexed nms -> (nm, nm + "@", ILType.TypeVar(uint16 i), []) ]
 
             let ilGenericParams =
                 [
@@ -2082,7 +2082,7 @@ type AnonTypeGenerationTable() =
             let ilFieldDefs =
                 mkILFields
                     [
-                        for _, fldName, fldTy in flds ->
+                        for _, fldName, fldTy,_attrs in flds ->
                             let fdef = mkILInstanceField (fldName, fldTy, None, ILMemberAccess.Private)
                             let attrs = [ g.CompilerGeneratedAttribute; g.DebuggerBrowsableNeverAttribute ]
                             fdef.With(customAttrs = mkILCustomAttrs attrs)
@@ -2092,7 +2092,7 @@ type AnonTypeGenerationTable() =
             let ilProperties =
                 mkILProperties
                     [
-                        for i, (propName, _fldName, fldTy) in List.indexed flds ->
+                        for i, (propName, _fldName, fldTy,_attrs) in List.indexed flds ->
                             ILPropertyDef(
                                 name = propName,
                                 attributes = PropertyAttributes.None,
@@ -2108,7 +2108,7 @@ type AnonTypeGenerationTable() =
 
             let ilMethods =
                 [
-                    for propName, fldName, fldTy in flds ->
+                    for propName, fldName, fldTy,_attrs in flds ->
                         let attrs = if isStruct then [ GetReadOnlyAttribute g ] else []
 
                         mkLdfldMethodDef ("get_" + propName, ILMemberAccess.Public, false, ilTy, fldName, fldTy, ILAttributes.Empty, attrs)
@@ -2158,7 +2158,7 @@ type AnonTypeGenerationTable() =
 
             let rfields =
                 (tps, flds)
-                ||> List.map2 (fun tp (propName, _fldName, _fldTy) ->
+                ||> List.map2 (fun tp (propName, _fldName, _fldTy,_attrs) ->
                     Construct.NewRecdField
                         false
                         None
@@ -11238,7 +11238,13 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             let ilPropName = fspec.LogicalName
                             let ilFieldSpec = mkILFieldSpecInTy (ilThisTy, ilFieldName, ilPropType)
                             let ilMethName = "set_" + ilPropName
-                            let ilParams = [ mkILParamNamed ("value", ilPropType) ]
+
+                            let ilParams =
+                                let param = mkILParamNamed ("value", ilPropType)
+                                match GenAdditionalAttributesForTy g fspec.FormalType with
+                                | [] -> [ param ]
+                                | attrs -> [ {param with CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs attrs ) }]
+
                             let ilReturn = mkILReturn ILType.Void
 
                             let iLAccess = ComputeMemberAccess isPropHidden taccessPublic cenv.g.realsig
@@ -11356,7 +11362,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                         let fieldNamesAndTypes =
                             relevantFields
                             |> List.map (fun (_, ilFieldName, _, _, _, ilPropType, _, fspec) ->
-                                (fspec.LogicalName, ilFieldName, ilPropType))
+                                (fspec.LogicalName, ilFieldName, ilPropType, GenAdditionalAttributesForTy g fspec.FormalType))
 
                         let isStructRecord = tycon.IsStructRecordOrUnionTycon
 
@@ -11367,7 +11373,6 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             else
                                 Some(g.ilg.typ_Object.TypeSpec)
 
-                        // This needs attributes for nullness!
                         let ilMethodDef =
                             (mkILSimpleStorageCtorWithParamNames (
                                 spec,
@@ -11807,10 +11812,11 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                     let ilPropType = GenType cenv m eenv.tyenv fld.FormalType
                     let ilMethName = "get_" + fld.LogicalName
                     let ilFieldName = ComputeFieldName exnc fld
-                    let retTyAttrs = GenAdditionalAttributesForTy g fld.FormalType |> mkILCustomAttrs
+                    let typeDerivedAttributes = GenAdditionalAttributesForTy g fld.FormalType 
 
                     let ilMethodDef =
                         let def =
+                            let retTyAttrs = typeDerivedAttributes |> mkILCustomAttrs
                             mkLdfldMethodDef (ilMethName, reprAccess, false, ilThisTy, ilFieldName, ilPropType, retTyAttrs, [])
 
                         if ilPropName = "Message" then
@@ -11834,11 +11840,12 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) : ILTypeRef option =
                             customAttrs =
                                 mkILCustomAttrs (
                                     GenAttrs cenv eenv fld.PropertyAttribs
+                                    @ typeDerivedAttributes
                                     @ [ mkCompilationMappingAttrWithSeqNum g (int SourceConstructFlags.Field) i ]
                                 )
                         )
 
-                    yield (ilMethodDef, ilFieldDef, ilPropDef, (ilPropName, ilFieldName, ilPropType))
+                    yield (ilMethodDef, ilFieldDef, ilPropDef, (ilPropName, ilFieldName, ilPropType, typeDerivedAttributes))
             ]
             |> List.unzip4
 
