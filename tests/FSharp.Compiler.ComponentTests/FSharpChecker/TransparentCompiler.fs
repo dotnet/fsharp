@@ -33,17 +33,13 @@ let internal recordAllEvents groupBy =
     let mutable cache : AsyncMemoize<_,_,_> option = None
     let events = ConcurrentQueue()
 
-    let waitForIdle() = SpinWait.SpinUntil(fun () -> not cache.Value.Updating)
-
     let observe (getCache: CompilerCaches -> AsyncMemoize<_,_,_>) (checker: FSharpChecker) =
         cache <- Some (getCache checker.Caches)
-        waitForIdle()
         cache.Value.Event
         |> Event.map (fun (e, k) -> groupBy k, e)
         |> Event.add events.Enqueue
 
     let getEvents () =
-        waitForIdle()
         events |> List.ofSeq
 
     observe, getEvents
