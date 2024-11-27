@@ -35,3 +35,11 @@ let ``for Failure _ | _ in ...`` () = [|for Failure _ | _ in [||] do 0|]
 let ``for true | false in ...`` () = [|for true | false in [||] do 0|]
 let ``for true | _ in ...`` () = [|for true | _ in [||] do 0|]
 let ``for _ | true in ...`` () = [|for _ | true in [||] do 0|]
+
+// https://github.com/dotnet/fsharp/issues/18066
+let ``[|for x in uint64Array -> x|]`` (xs : uint64 array) = [|for x in xs -> x|]
+let ``[|for x in uint64Array -> int x|]`` (xs : uint64 array) = [|for x in xs -> int x|]
+let ``[|for x in intArray -> uint64 x|]`` (xs : int array) = [|for x in xs -> uint64 x|]
+let ``[|for x in unativeintArray -> x|]`` (xs : unativeint array) = [|for x in xs -> x|]
+let ``[|for x in unativeintArray -> int x|]`` (xs : unativeint array) = [|for x in xs -> int x|]
+let ``[|for x in intArray -> unativeint x|]`` (xs : int array) = [|for x in xs -> unativeint x|]
