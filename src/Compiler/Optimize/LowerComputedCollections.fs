@@ -359,9 +359,11 @@ module List =
 module Array =
     let private mkIlInstr (g: TcGlobals) specific any ilTy =
         if ilTy = g.ilg.typ_Int32 then specific DT_I4
-        elif ilTy = g.ilg.typ_Int64 || ilTy = g.ilg.typ_UInt64 then specific DT_I8
+        elif ilTy = g.ilg.typ_Int64 then specific DT_I8
+        elif ilTy = g.ilg.typ_UInt64 then specific DT_U8
         elif ilTy = g.ilg.typ_UInt32 then specific DT_U4
-        elif ilTy = g.ilg.typ_IntPtr || ilTy = g.ilg.typ_UIntPtr then specific DT_I
+        elif ilTy = g.ilg.typ_IntPtr then specific DT_I
+        elif ilTy = g.ilg.typ_UIntPtr then specific DT_U
         elif ilTy = g.ilg.typ_Int16 then specific DT_I2
         elif ilTy = g.ilg.typ_UInt16 then specific DT_U2
         elif ilTy = g.ilg.typ_SByte then specific DT_I1
