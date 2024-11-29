@@ -6015,14 +6015,14 @@ and remapExprImpl (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) exp
     // This is "ok", in the sense that it is always valid to fix these up to be uses
     // of a temporary local, e.g.
     //       &(E.RF) --> let mutable v = E.RF in &v
-    
+
     | Expr.Op (TOp.ValFieldGetAddr (rfref, readonly), tinst, [arg], m) when 
           not rfref.RecdField.IsMutable && 
           not (entityRefInThisAssembly ctxt.g.compilingFSharpCore rfref.TyconRef) -> 
 
         let tinst = remapTypes tmenv tinst 
         let arg = remapExprImpl ctxt compgen tmenv arg 
-        let tmp, _ = mkMutableCompGenLocal m "copyOfStruct" (actualTyOfRecdFieldRef rfref tinst)
+        let tmp, _ = mkMutableCompGenLocal m WellKnownNames.CopyOfStruct (actualTyOfRecdFieldRef rfref tinst)
         mkCompGenLet m tmp (mkRecdFieldGetViaExprAddr (arg, rfref, tinst, m)) (mkValAddr m readonly (mkLocalValRef tmp))
 
     | Expr.Op (TOp.UnionCaseFieldGetAddr (uref, cidx, readonly), tinst, [arg], m) when 
@@ -6031,7 +6031,7 @@ and remapExprImpl (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) exp
 
         let tinst = remapTypes tmenv tinst 
         let arg = remapExprImpl ctxt compgen tmenv arg 
-        let tmp, _ = mkMutableCompGenLocal m "copyOfStruct" (actualTyOfUnionFieldRef uref cidx tinst)
+        let tmp, _ = mkMutableCompGenLocal m WellKnownNames.CopyOfStruct (actualTyOfUnionFieldRef uref cidx tinst)
         mkCompGenLet m tmp (mkUnionCaseFieldGetProvenViaExprAddr (arg, uref, tinst, cidx, m)) (mkValAddr m readonly (mkLocalValRef tmp))
 
     | Expr.Op (op, tinst, args, m) -> 
@@ -7252,8 +7252,8 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
             // Take a defensive copy
             let tmp, _ = 
                 match mut with 
-                | NeverMutates -> mkCompGenLocal m "copyOfStruct" ty
-                | _ -> mkMutableCompGenLocal m "copyOfStruct" ty
+                | NeverMutates -> mkCompGenLocal m WellKnownNames.CopyOfStruct ty
+                | _ -> mkMutableCompGenLocal m WellKnownNames.CopyOfStruct ty
 
             // This local is special in that it ignore byref scoping rules.
             tmp.SetIgnoresByrefScope()
@@ -9252,6 +9252,7 @@ let TypeNullNotLiked g m ty =
     && not (TypeNullIsTrueValue g ty) 
     && not (TypeNullNever g ty) 
 
+
 let rec TypeHasDefaultValueAux isNew g m ty = 
     let ty = stripTyEqnsAndMeasureEqns g ty
     (if isNew then TypeNullIsExtraValueNew g m ty else TypeNullIsExtraValue g m ty)
@@ -9318,15 +9319,37 @@ let (|SpecialEquatableHeadType|_|) g ty = (|SpecialComparableHeadType|_|) g ty
 let (|SpecialNotEquatableHeadType|_|) g ty = 
     if isFunTy g ty then ValueSome() else ValueNone
 
+let (|TyparTy|NullableTypar|StructTy|NullTrueValue|NullableRefType|WithoutNullRefType|UnresolvedRefType|) (ty,g) = 
+    let sty = ty |> stripTyEqns g
+    if isTyparTy g sty then 
+        if (nullnessOfTy g sty).TryEvaluate() = ValueSome NullnessInfo.WithNull then
+            NullableTypar
+        else
+            TyparTy
+    elif isStructTy g sty then 
+        StructTy
+    elif TypeNullIsTrueValue g sty then
+        NullTrueValue
+    else
+        match (nullnessOfTy g sty).TryEvaluate() with
+        | ValueSome NullnessInfo.WithNull -> NullableRefType
+        | ValueSome NullnessInfo.WithoutNull -> WithoutNullRefType
+        | _ -> UnresolvedRefType
+
 // Can we use the fast helper for the 'LanguagePrimitives.IntrinsicFunctions.TypeTestGeneric'? 
 let canUseTypeTestFast g ty = 
      not (isTyparTy g ty) && 
      not (TypeNullIsTrueValue g ty)
 
 // Can we use the fast helper for the 'LanguagePrimitives.IntrinsicFunctions.UnboxGeneric'? 
-let canUseUnboxFast g m ty = 
-     not (isTyparTy g ty) && 
-     not (TypeNullNotLiked g m ty)
+let canUseUnboxFast (g:TcGlobals) m ty = 
+     if g.checkNullness then
+         match (ty,g) with
+         | TyparTy | WithoutNullRefType | UnresolvedRefType  -> false
+         | StructTy | NullTrueValue | NullableRefType | NullableTypar  -> true
+     else
+         not (isTyparTy g ty) && 
+         not (TypeNullNotLiked g m ty)
      
 //--------------------------------------------------------------------------
 // Nullness tests and pokes 

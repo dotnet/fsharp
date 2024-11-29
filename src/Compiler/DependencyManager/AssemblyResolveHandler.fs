@@ -41,7 +41,7 @@ type AssemblyResolveHandlerCoreclr(assemblyProbingPaths: AssemblyResolutionProbe
 
     member _.ResolveAssemblyNetStandard (ctxt: 'T) (assemblyName: AssemblyName) : Assembly =
         let loadAssembly path =
-            loadFromAssemblyPathMethod.Invoke(ctxt, [| path |]) :?> Assembly
+            !! loadFromAssemblyPathMethod.Invoke(ctxt, [| path |]) :?> Assembly
 
         let assemblyPaths =
             match assemblyProbingPaths with

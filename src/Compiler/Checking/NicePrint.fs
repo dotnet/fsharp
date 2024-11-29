@@ -2954,3 +2954,6 @@ let minimalStringOfType denv ty =
     let denv = suppressNullnessAnnotations denv
     let denvMin = { denv with showInferenceTyparAnnotations=false; showStaticallyResolvedTyparAnnotations=false }
     showL (PrintTypes.layoutTypeWithInfoAndPrec denvMin SimplifyTypes.typeSimplificationInfo0 2 ty)
+
+let minimalStringOfTypeWithNullness denv ty = 
+    minimalStringOfType {denv with showNullnessAnnotations = Some true} ty

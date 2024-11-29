@@ -13,24 +13,26 @@ open Xunit.Sdk
 
 let getShortId() = Guid.NewGuid().ToString().[..7]
 
-// Temporary directory is TempPath + "/FSharp.Test.Utilities/yyy-MM-dd-xxxxxxx/"
+// Temporary directory is TempPath + "/FSharp.Test.Utilities/xxxxxxx/"
 let tempDirectoryOfThisTestRun =
-    let tempDir = Path.GetTempPath()
-    let today = DateTime.Now.ToString("yyyy-MM-dd")
-    DirectoryInfo(tempDir)
-        .CreateSubdirectory($"FSharp.Test.Utilities/{today}-{getShortId()}")
-        .FullName
+    let temp = Path.GetTempPath()
+    lazy DirectoryInfo(temp).CreateSubdirectory($"FSharp.Test.Utilities/{getShortId()}")
 
-let createTemporaryDirectory (part: string) =
-    DirectoryInfo(tempDirectoryOfThisTestRun)
-        .CreateSubdirectory($"{part}-{getShortId()}")
-        .FullName
+let cleanUpTemporaryDirectoryOfThisTestRun () =
+    if tempDirectoryOfThisTestRun.IsValueCreated then
+        try tempDirectoryOfThisTestRun.Value.Delete(true) with _ -> ()
+
+let createTemporaryDirectory () =
+    tempDirectoryOfThisTestRun.Value
+        .CreateSubdirectory($"{getShortId()}")
 
 let getTemporaryFileName () =
-    (createTemporaryDirectory "temp") ++ $"tmp_{getShortId()}"
+    createTemporaryDirectory().FullName ++ getShortId()
 
-let getTemporaryFileNameInDirectory (directory: string) =
-    directory ++ $"tmp_{getShortId()}"
+let changeExtension path extension = Path.ChangeExtension(path, extension)
+
+let getTemporaryFileNameInDirectory (directory: DirectoryInfo) =
+    directory.FullName ++ getShortId()
 
 // Well, this function is AI generated.
 let rec copyDirectory (sourceDir: string) (destinationDir: string) (recursive: bool) =
@@ -425,13 +427,12 @@ let logConfig (cfg: TestConfig) =
     log "PEVERIFY                 = %s" cfg.PEVERIFY
     log "---------------------------------------------------------------"
 
-let checkOutputPassed (output: string) =
-    Assert.True(output.Contains "TEST PASSED OK", $"Output does not contain 'TEST PASSED OK':\n{output}")
+let outputPassed (output: string) = output.Contains "TEST PASSED OK"
 
 let checkResultPassed result =
     match result with
     | CmdResult.ErrorLevel (msg1, err) -> Assert.Fail (sprintf "%s. ERRORLEVEL %d" msg1 err)
-    | CmdResult.Success output -> checkOutputPassed output
+    | CmdResult.Success output -> Assert.True(outputPassed output, "Output does not contain 'TEST PASSED OK'")
 
 let checkResult result =
     match result with
@@ -474,11 +475,8 @@ let testConfig sourceDir (relativePathToTestFixture: string) =
     let cfg = suiteHelpers.Value
     let testFixtureFullPath = Path.GetFullPath(sourceDir ++ relativePathToTestFixture)
 
-    let description = relativePathToTestFixture.Split('\\', '/') |> String.concat "-"
-
-    let tempTestRoot = createTemporaryDirectory description
     let tempTestDir =
-        DirectoryInfo(tempTestRoot)
+        createTemporaryDirectory()
             .CreateSubdirectory(relativePathToTestFixture)
             .FullName
     copyDirectory testFixtureFullPath tempTestDir true
@@ -487,7 +485,7 @@ let testConfig sourceDir (relativePathToTestFixture: string) =
 
 let createConfigWithEmptyDirectory() =
     let cfg = suiteHelpers.Value
-    { cfg with Directory = createTemporaryDirectory "temp" }
+    { cfg with Directory = createTemporaryDirectory().FullName }
 
 type RedirectToType =
     | Overwrite of FilePath
