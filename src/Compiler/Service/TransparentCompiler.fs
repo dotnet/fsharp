@@ -1821,9 +1821,7 @@ type internal TransparentCompiler
                             Trace.TraceInformation($"Using in-memory project reference: {name}")
 
                             return assemblyDataResult
-                with
-                | TaskCancelled ex -> return raise ex
-                | ex ->
+                with ex ->
                     errorR (exn ($"Error while computing assembly data for project {projectSnapshot.Label}: {ex}"))
                     return ProjectAssemblyDataResult.Unavailable true
             }
