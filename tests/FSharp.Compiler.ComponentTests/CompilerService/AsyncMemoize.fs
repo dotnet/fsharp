@@ -128,6 +128,8 @@ let ``We can disconnect a request from a running job`` () =
             Started, key
             Finished, key ]
 
+[<Fact>]
+let ``We can cancel a job`` () =
 
     let cts = new CancellationTokenSource()
 
