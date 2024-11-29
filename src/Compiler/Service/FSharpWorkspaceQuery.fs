@@ -14,6 +14,7 @@ open FSharpWorkspaceState
 
 #nowarn "57"
 
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpDiagnosticReport internal (diagnostics, resultId: int) =
 
     member _.Diagnostics = diagnostics
@@ -21,6 +22,7 @@ type FSharpDiagnosticReport internal (diagnostics, resultId: int) =
     /// The result ID of the diagnostics. This needs to be unique for each version of the document in order to be able to clear old diagnostics.
     member _.ResultId = resultId.ToString()
 
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpWorkspaceQuery internal (depGraph: IThreadSafeDependencyGraph<_, _>, checker: FSharpChecker) =
 
     let mutable resultIdCounter = 0
