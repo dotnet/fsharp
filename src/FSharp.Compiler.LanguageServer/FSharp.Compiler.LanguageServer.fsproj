@@ -10,6 +10,7 @@
 	<ItemGroup Label="Package References">
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
 		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol" Version="17.13.6-preview" />
+		<PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.12.21" />
 		<PackageReference Include="StreamJsonRpc" Version="2.21.3-preview" />
 	</ItemGroup>
 
