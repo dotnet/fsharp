@@ -44,7 +44,7 @@ VS 16.0 and prior were done manually.
 
 Starting with the 16.4 release and moving forwards, the VS insertion is generated as part of the build.  The relevant
 bits can be found near the bottom of [`azure-pipelines.yml`](azure-pipelines.yml) under the `VS Insertion` header.  The
-interesting parameters are `componentBranchName` and `insertTargetBranch`.  In short, when an internal signed build
+interesting parameters are `componentBranchName` and `insertTargetBranch`.  In short, when an internal [signed build](https://dev.azure.com/dnceng/internal/_build?definitionId=499&_a=summary)
 completes and the name of the branch built exactly equals the value in the `componentBranchName` parameter, a component
 insertion into VS will be created into the `insertTargetBranch` branch.  The link to the insertion PR will be found
 near the bottom of the build under the title 'Insert into VS'.  Examine the log for 'Insert VS Payload' and near the
@@ -56,6 +56,15 @@ Note that insertions for other teams will also be listed.
 
 Insertions to any other VS branch (e.g., `main`) will have the auto-merge flag set and should handle themselves, but
 it's a good idea to check the previous link for any old or stalled insertions into VS `main`.
+
+### What has to be done regularly
+
+1. Go to [signed builds](https://dev.azure.com/dnceng/internal/_build?definitionId=499&_a=summary) and make sure latest one for both main and release branches are passing.
+2. Go to [insertion PRs](https://dev.azure.com/devdiv/DevDiv/_git/VS/pullrequests?createdBy=122d5278-3e55-4868-9d40-1e28c2515fc4&_a=active) and find the latest insertion PR for current release branch. (E.g. `Insert F# dev17.13 20241128.1 Payload into main`)
+3. Check CI is passing and all comments are resolved.
+4. Check that F# package version is not downgraded (unless that's intended for some reason) by the PR.
+5. Approve it.
+6. Abandon any older unmerged PRs that shouldn't be inserted.
 
 ## Preparing for a new VS release branch
 
