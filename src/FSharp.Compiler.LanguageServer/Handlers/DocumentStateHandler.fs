@@ -7,6 +7,8 @@ open FSharp.Compiler.LanguageServer.Common
 open System.Threading
 open System.Threading.Tasks
 
+#nowarn "57"
+
 type DocumentStateHandler() =
     interface IMethodHandler with
         member _.MutatesSolutionState = true

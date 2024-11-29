@@ -10,6 +10,8 @@ open System.Threading
 open System.Collections.Generic
 open Microsoft.VisualStudio.FSharp.Editor
 
+#nowarn "57"
+
 type LanguageFeaturesHandler() =
     interface IMethodHandler with
         member _.MutatesSolutionState = false

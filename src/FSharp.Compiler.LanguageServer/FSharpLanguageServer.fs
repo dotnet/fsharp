@@ -14,7 +14,9 @@ open StreamJsonRpc
 open Nerdbank.Streams
 open System.Diagnostics
 open FSharp.Compiler.CodeAnalysis.Workspace
-open System.Text.Json
+
+#nowarn "57"
+
 
 [<AutoOpen>]
 module Stuff =

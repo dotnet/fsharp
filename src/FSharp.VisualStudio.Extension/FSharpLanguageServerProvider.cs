@@ -6,14 +6,11 @@ namespace FSharp.VisualStudio.Extension;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.IO.Packaging;
 using System.IO.Pipelines;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FSharp.Compiler.CodeAnalysis.Workspace;
-using FSharp.Compiler.Diagnostics;
 using FSharp.Compiler.LanguageServer;
 using FSharp.Compiler.LanguageServer.Common;
 
@@ -26,10 +23,6 @@ using Microsoft.VisualStudio.LanguageServer.Protocol;
 using Microsoft.VisualStudio.ProjectSystem.Query;
 using Microsoft.VisualStudio.RpcContracts.LanguageServerProvider;
 using Nerdbank.Streams;
-using Newtonsoft.Json.Linq;
-using StreamJsonRpc;
-using static FSharp.Compiler.CodeAnalysis.ProjectSnapshot;
-using static FSharp.Compiler.LanguageServer.Utils;
 
 /// <inheritdoc/>
 #pragma warning disable VSEXTPREVIEW_LSP // Type is for evaluation purposes only and is subject to change or removal in future updates.
