@@ -6015,14 +6015,14 @@ and remapExprImpl (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) exp
     // This is "ok", in the sense that it is always valid to fix these up to be uses
     // of a temporary local, e.g.
     //       &(E.RF) --> let mutable v = E.RF in &v
-    
+
     | Expr.Op (TOp.ValFieldGetAddr (rfref, readonly), tinst, [arg], m) when 
           not rfref.RecdField.IsMutable && 
           not (entityRefInThisAssembly ctxt.g.compilingFSharpCore rfref.TyconRef) -> 
 
         let tinst = remapTypes tmenv tinst 
         let arg = remapExprImpl ctxt compgen tmenv arg 
-        let tmp, _ = mkMutableCompGenLocal m "copyOfStruct" (actualTyOfRecdFieldRef rfref tinst)
+        let tmp, _ = mkMutableCompGenLocal m WellKnownNames.CopyOfStruct (actualTyOfRecdFieldRef rfref tinst)
         mkCompGenLet m tmp (mkRecdFieldGetViaExprAddr (arg, rfref, tinst, m)) (mkValAddr m readonly (mkLocalValRef tmp))
 
     | Expr.Op (TOp.UnionCaseFieldGetAddr (uref, cidx, readonly), tinst, [arg], m) when 
@@ -6031,7 +6031,7 @@ and remapExprImpl (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) exp
 
         let tinst = remapTypes tmenv tinst 
         let arg = remapExprImpl ctxt compgen tmenv arg 
-        let tmp, _ = mkMutableCompGenLocal m "copyOfStruct" (actualTyOfUnionFieldRef uref cidx tinst)
+        let tmp, _ = mkMutableCompGenLocal m WellKnownNames.CopyOfStruct (actualTyOfUnionFieldRef uref cidx tinst)
         mkCompGenLet m tmp (mkUnionCaseFieldGetProvenViaExprAddr (arg, uref, tinst, cidx, m)) (mkValAddr m readonly (mkLocalValRef tmp))
 
     | Expr.Op (op, tinst, args, m) -> 
@@ -7252,8 +7252,8 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
             // Take a defensive copy
             let tmp, _ = 
                 match mut with 
-                | NeverMutates -> mkCompGenLocal m "copyOfStruct" ty
-                | _ -> mkMutableCompGenLocal m "copyOfStruct" ty
+                | NeverMutates -> mkCompGenLocal m WellKnownNames.CopyOfStruct ty
+                | _ -> mkMutableCompGenLocal m WellKnownNames.CopyOfStruct ty
 
             // This local is special in that it ignore byref scoping rules.
             tmp.SetIgnoresByrefScope()
