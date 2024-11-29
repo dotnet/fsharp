@@ -17,7 +17,6 @@ open FSharp.Compiler.CodeAnalysis.Workspace
 
 #nowarn "57"
 
-
 [<AutoOpen>]
 module Stuff =
     [<Literal>]
