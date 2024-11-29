@@ -22,6 +22,7 @@ open FSharpWorkspaceQuery
 /// Project references are discovered automatically as projects are added or updated.
 ///
 /// Updates to file contents are signaled through the `Files.Open`, `Files.Edit`, and `Files.Close` methods.
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpWorkspace(checker: FSharpChecker) =
 
     let depGraph = LockOperatedDependencyGraph() :> IThreadSafeDependencyGraph<_, _>

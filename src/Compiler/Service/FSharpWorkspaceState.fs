@@ -228,6 +228,7 @@ module internal WorkspaceDependencyGraphExtensions =
             |> _.Unpack(WorkspaceNode.sourceFile)
 
 /// Interface for managing files in an F# workspace.
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpWorkspaceFiles internal (depGraph: IThreadSafeDependencyGraph<_, _>) =
 
     /// Open files in the editor.
@@ -255,6 +256,7 @@ type FSharpWorkspaceFiles internal (depGraph: IThreadSafeDependencyGraph<_, _>) 
         | false, _ -> None
 
 /// Interface for managing with projects in an F# workspace.
+[<Experimental("This FCS API is experimental and subject to change.")>]
 type FSharpWorkspaceProjects internal (depGraph: IThreadSafeDependencyGraph<_, _>, files: FSharpWorkspaceFiles) =
 
     /// A map from project output path to project identifier.
