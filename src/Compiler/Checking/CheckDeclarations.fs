@@ -1837,6 +1837,10 @@ module MutRecBindingChecking =
                     [ for defnB in defnAs do
                         match defnB with
                         | Phase2AIncrClassCtor (_, Some incrCtorInfo) -> yield incrCtorInfo.InstanceCtorVal
+                        | Phase2AInherit(_synBaseTy, _arg, baseValOpt, _m) -> 
+                            match baseValOpt with 
+                            | Some baseVal -> yield baseVal
+                            | None -> ()
                         | _ -> () ])
 
                 let envForDeclsUpdated = 
