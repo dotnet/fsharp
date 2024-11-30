@@ -779,3 +779,38 @@ type T =
              (Warning 3558, Line 10, Col 9, Line 10, Col 10, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
              (Warning 3558, Line 11, Col 17, Line 11, Col 18, "If a type uses both [<Sealed>] and [<AbstractClass>] attributes, it means it is static. Explicit field declarations are not allowed.")
          ]
+
+    [<Fact>]
+    let ``Calling protected static base member from static should not raise a MethodAccessException`` () =
+        Fsx """
+#nowarn "44" // using Uri.EscapeString just because it's protected static
+
+type C(str : string) =
+    inherit System.Uri(str)
+    
+    static do
+        System.Uri.EscapeString("data") |> ignore
+
+C("http://example.com") |> ignore
+        """
+         |> compileAndRun
+         |> shouldSucceed
+
+    [<Fact>]
+    let ``Calling protected static base member from static should not raise a MethodAccessException 2`` () =
+        Fsx """
+#nowarn "44" // using Uri.EscapeString just because it's protected static
+
+type C(str : string) =
+    inherit System.Uri(str)
+    
+    static do
+        C.Do()
+
+    static member internal Do() =
+        System.Uri.EscapeString("data") |> ignore
+
+C("http://example.com") |> ignore
+        """
+         |> compileAndRun
+         |> shouldSucceed
