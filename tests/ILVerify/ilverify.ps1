@@ -4,11 +4,12 @@
 
 Write-Host "Checking whether running on Windows: $IsWindows"
 
-[string] $repo_path = (Get-Item -Path $PSScriptRoot).Parent
+[string] $repo_path = (Get-Item -Path $PSScriptRoot).Parent.Parent
 
 Write-Host "Repository path: $repo_path"
 
 [string] $script = if ($IsWindows) { Join-Path $repo_path "build.cmd" } else { Join-Path $repo_path "build.sh" }
+[string] $additional_arguments = if ($IsWindows) { "-noVisualStudio" } else { "" }
 
 # Set configurations to build
 [string[]] $configurations = @("Debug", "Release")
@@ -29,7 +30,7 @@ $projects = @{
 # Run build script for each configuration (NOTE: We don't build Proto)
 foreach ($configuration in $configurations) {
     Write-Host "Building $configuration configuration..."
-    & $script -c $configuration
+    & $script -c $configuration $additional_arguments
     if ($LASTEXITCODE -ne 0 -And $LASTEXITCODE -ne '') {
         Write-Host "Build failed for $configuration configuration (last exit code: $LASTEXITCODE)."
         exit 1
@@ -111,14 +112,20 @@ foreach ($project in $projects.Keys) {
                 }
             }
 
-            $baseline_file = Join-Path $repo_path "eng" "ilverify_${project}_${configuration}_${tfm}.bsl"
+            $baseline_file = Join-Path $repo_path "tests/ILVerify" "ilverify_${project}_${configuration}_${tfm}.bsl"
 
             $baseline_actual_file = [System.IO.Path]::ChangeExtension($baseline_file, 'bsl.actual')
 
             if (-not (Test-Path $baseline_file)) {
                 Write-Host "Baseline file not found: $baseline_file"
-                $ilverify_output | Set-Content $baseline_actual_file
-                $failed = $true
+                if ($env:TEST_UPDATE_BSL -eq "1") {
+                    Write-Host "Creating initial baseline file: $baseline_file"
+                    $ilverify_output | Set-Content $baseline_file
+                } else {
+                    Write-Host "Creating .actual baseline file: $baseline_actual_file"
+                    $ilverify_output | Set-Content $baseline_actual_file
+                    $failed = $true
+                }
                 continue
             }
 
@@ -127,8 +134,14 @@ foreach ($project in $projects.Keys) {
 
             if ($baseline.Length -eq 0) {
                 Write-Host "Baseline file is empty: $baseline_file"
-                $ilverify_output | Set-Content $baseline_actual_file
-                $failed = $true
+                if ($env:TEST_UPDATE_BSL -eq "1") {
+                    Write-Host "Updating empty baseline file: $baseline_file"
+                    $ilverify_output | Set-Content $baseline_file
+                } else {
+                    Write-Host "Creating initial .actual baseline file: $baseline_actual_file"
+                    $ilverify_output | Set-Content $baseline_actual_file
+                    $failed = $true
+                }
                 continue
             }
 
@@ -142,10 +155,19 @@ foreach ($project in $projects.Keys) {
                 Write-Host "ILverify output does not match baseline, differences:"
 
                 $cmp | Format-Table | Out-String | Write-Host
-                $ilverify_output | Set-Content $baseline_actual_file
+
+                # Update baselines if TEST_UPDATE_BSL is set to 1
+                if ($env:TEST_UPDATE_BSL -eq "1") {
+                    Write-Host "Updating baseline file: $baseline_file"
+                    $ilverify_output | Set-Content $baseline_file
+                } else {
+                    $ilverify_output | Set-Content $baseline_actual_file
+                }
                 $failed = $true
                 continue
             }
+
+
         }
     }
 }
