@@ -150,7 +150,7 @@ and TcSimplePat optionalArgsOK checkConstraints (cenv: cenv) ty env patEnv p (at
         TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnvR p attribs
 
     | SynSimplePat.Attrib (p, pattribs, _) ->
-        TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnv p (attribs @ pattribs)
+        TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnv p pattribs
 
 // raise an error if any optional args precede any non-optional args
 and ValidateOptArgOrder (synSimplePats: SynSimplePats) =
