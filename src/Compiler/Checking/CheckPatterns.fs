@@ -35,6 +35,7 @@ type cenv = TcFileState
 // Helpers that should be elsewhere
 //-------------------------------------------------------------------------
 
+// CAUTION: This function operates over the untyped tree, so should be used only when absolutely necessary. It doesn't verify assembly origine nor does it respect type aliases.
 let inline findSynAttribute (attrName: string) (synAttrs: SynAttributes) =
     let attributesToSearch =
         if attrName.EndsWith("Attribute") then

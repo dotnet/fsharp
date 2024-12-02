@@ -3222,34 +3222,41 @@ module EstablishTypeDefinitionCores =
                   ignore inSig 
 #endif
 
-                  // This case deals with ordinary type and measure abbreviations 
-                  if not hasMeasureableAttr then 
+                  // This case deals with ordinary type and measure abbreviations
+                  if not hasMeasureableAttr then
                     let kind = if hasMeasureAttr then TyparKind.Measure else TyparKind.Type
                     let ty, _ = TcTypeOrMeasureAndRecover (Some kind) cenv NoNewTypars checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No envinner tpenv rhsType
 
-                    // Give a warning if `AutoOpenAttribute` is being aliased.
+
+                    // Give a warning if `AutoOpenAttribute` or `StructAttribute` is being aliased.
                     // If the user were to alias the `Microsoft.FSharp.Core.AutoOpenAttribute` type, it would not be detected by the project graph dependency resolution algorithm.
+                    let attributes = [ g.attrib_AutoOpenAttribute; g.attrib_StructAttribute ]
+
                     match stripTyEqns g ty with
-                    | AppTy g (tcref, _) when not tcref.IsErased ->
-                        match tcref.CompiledRepresentation with
-                        | CompiledTypeRepr.ILAsmOpen _ -> ()
-                        | CompiledTypeRepr.ILAsmNamed _ ->
-                            if tcref.CompiledRepresentationForNamedType.FullName = g.attrib_AutoOpenAttribute.TypeRef.FullName then
-                                warning(Error(FSComp.SR.chkAutoOpenAttributeInTypeAbbrev(), tycon.Id.idRange))
-                    | _ -> ()
-                    
-                    if not firstPass then 
-                        let ftyvs = freeInTypeLeftToRight g false ty 
+                        | AppTy g (tcref, _) when tcref.IsErased ->
+                            match tcref.CompiledRepresentation with
+                            | CompiledTypeRepr.ILAsmOpen _ -> ()
+                            | CompiledTypeRepr.ILAsmNamed _ ->
+                                let fullname = tcref.CompiledRepresentationForNamedType.FullName
+
+                                attributes
+                                |> List.tryFind (fun a -> a.TypeRef.FullName = fullname)
+                                |> Option.iter (fun a -> warning(Error(FSComp.SR.chkAttributeAliased(a.TypeRef.FullName), a.TyconRef.Range)))
+
+                        | _ -> ()
+
+                    if not firstPass then
+                        let ftyvs = freeInTypeLeftToRight g false ty
                         let typars = tycon.Typars m
-                        if ftyvs.Length <> typars.Length then 
+                        if ftyvs.Length <> typars.Length then
                             errorR(Deprecated(FSComp.SR.tcTypeAbbreviationHasTypeParametersMissingOnType(), tycon.Range))
 
                     if firstPass then
                         tycon.SetTypeAbbrev (Some ty)
 
             | _ -> ()
-        
-        with RecoverableException exn -> 
+
+        with RecoverableException exn ->
             errorRecovery exn m
 
     // Third phase: check and publish the super types. Run twice, once before constraints are established

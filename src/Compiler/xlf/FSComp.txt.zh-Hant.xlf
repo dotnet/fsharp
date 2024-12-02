@@ -37,9 +37,9 @@
         <target state="translated">如果類型同時使用 [&lt;Sealed&gt;] 和 [&lt;AbstractClass&gt;] 屬性，表示其為靜態。不允許其他建構函式。</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkAutoOpenAttributeInTypeAbbrev">
-        <source>FSharp.Core.AutoOpenAttribute should not be aliased.</source>
-        <target state="translated">不應別名化 FSharp.Core.AutoOpenAttribute。</target>
+      <trans-unit id="chkAttributeAliased">
+        <source>{0} should not be aliased.</source>
+        <target state="new">{0} should not be aliased.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">

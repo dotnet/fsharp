@@ -37,9 +37,9 @@
         <target state="translated">Если тип использует атрибуты [&lt;Sealed&gt;] и [&lt;AbstractClass&gt;], это означает, что он статический. Дополнительный конструктор не разрешен.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkAutoOpenAttributeInTypeAbbrev">
-        <source>FSharp.Core.AutoOpenAttribute should not be aliased.</source>
-        <target state="translated">FSharp.Core.AutoOpenAttribute не должен быть псевдонимом.</target>
+      <trans-unit id="chkAttributeAliased">
+        <source>{0} should not be aliased.</source>
+        <target state="new">{0} should not be aliased.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">
