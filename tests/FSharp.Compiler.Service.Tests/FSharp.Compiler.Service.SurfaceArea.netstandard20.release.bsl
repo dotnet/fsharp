@@ -2451,6 +2451,8 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Boolean get_
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjectIdentifier Identifier
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjectIdentifier get_Identifier()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjectSnapshot Create(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk], Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot], Boolean, Boolean, System.DateTime, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet], Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[FSharp.Compiler.Text.Range,System.String,System.String]], Microsoft.FSharp.Core.FSharpOption`1[System.Int64])
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjectSnapshot FromCommandLineArgs(System.String[], System.String, System.String)
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjectSnapshot FromResponseFile(System.IO.FileInfo, System.String)
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjectSnapshot Replace(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot])
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot] SourceFiles
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot] get_SourceFiles()
@@ -2473,6 +2475,8 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FS
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Core.FSharpOption`1[System.String] ProjectId
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_OutputFileName()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_ProjectId()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: ProjectConfig ProjectConfig
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: ProjectConfig get_ProjectConfig()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: System.DateTime LoadTime
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: System.DateTime get_LoadTime()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: System.String Label

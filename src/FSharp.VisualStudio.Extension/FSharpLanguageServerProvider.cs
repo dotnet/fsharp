@@ -6,8 +6,6 @@ namespace FSharp.VisualStudio.Extension;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.IO.Packaging;
 using System.IO.Pipelines;
 using System.Linq;
 using System.Threading;
@@ -25,9 +23,6 @@ using Microsoft.VisualStudio.LanguageServer.Protocol;
 using Microsoft.VisualStudio.ProjectSystem.Query;
 using Microsoft.VisualStudio.RpcContracts.LanguageServerProvider;
 using Nerdbank.Streams;
-using Newtonsoft.Json.Linq;
-using StreamJsonRpc;
-using static FSharp.Compiler.CodeAnalysis.ProjectSnapshot;
 
 /// <inheritdoc/>
 #pragma warning disable VSEXTPREVIEW_LSP // Type is for evaluation purposes only and is subject to change or removal in future updates.
@@ -74,82 +69,48 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
             {
                 Legend = new()
                 {
-                    TokenTypes = [ ..SemanticTokenTypes.AllTypes], // XXX should be extended
-                    TokenModifiers = [ ..SemanticTokenModifiers.AllModifiers]
+                    TokenTypes = [.. SemanticTokenTypes.AllTypes], // XXX should be extended
+                    TokenModifiers = [.. SemanticTokenModifiers.AllModifiers]
                 },
                 Full = new SemanticTokensFullOptions()
                 {
                     Delta = false
                 },
                 Range = false
-            },
-            HoverProvider = new HoverOptions()
-            {
-                WorkDoneProgress = true
             }
+            //,
+            //HoverProvider = new HoverOptions()
+            //{
+            //    WorkDoneProgress = true
+            //}
         };
         return capabilities;
     }
 }
 
-internal class SemanticTokensHandler
-    : IRequestHandler<SemanticTokensParams, SemanticTokens, FSharpRequestContext>
-{
-    public bool MutatesSolutionState => false;
-
-    [LanguageServerEndpoint("textDocument/semanticTokens/full")]
-    public async Task<SemanticTokens> HandleRequestAsync(
-        SemanticTokensParams request,
-        FSharpRequestContext context,
-        CancellationToken cancellationToken)
-    {
-        var tokens = await context.GetSemanticTokensForFile(request!.TextDocument!.Uri);
-
-        return new SemanticTokens { Data = tokens };
-    }
-}
-
-
 internal class VsDiagnosticsHandler
-    : IRequestHandler<VSInternalDocumentDiagnosticsParams, VSInternalDiagnosticReport[], FSharpRequestContext>,
+    : IRequestHandler<VSInternalDiagnosticParams, VSInternalDiagnosticReport[], FSharpRequestContext>,
       IRequestHandler<VSGetProjectContextsParams, VSProjectContextList, FSharpRequestContext>
 {
     public bool MutatesSolutionState => false;
 
-    [LanguageServerEndpoint(VSInternalMethods.DocumentPullDiagnosticName)]
-    public async Task<VSInternalDiagnosticReport[]> HandleRequestAsync(VSInternalDocumentDiagnosticsParams request, FSharpRequestContext context, CancellationToken cancellationToken)
+    [LanguageServerEndpoint(VSInternalMethods.DocumentPullDiagnosticName, LanguageServerConstants.DefaultLanguageName)]
+    public async Task<VSInternalDiagnosticReport[]> HandleRequestAsync(VSInternalDiagnosticParams request, FSharpRequestContext context, CancellationToken cancellationToken)
     {
-       var report = await context.Workspace.Query.GetDiagnosticsForFile(request!.TextDocument!.Uri).Please(cancellationToken);
+        var report = await context.Workspace.Query.GetDiagnosticsForFile(request!.TextDocument!.Uri).Please(cancellationToken);
 
-       var vsReport = new VSInternalDiagnosticReport
+        var vsReport = new VSInternalDiagnosticReport
         {
             ResultId = report.ResultId,
             //Identifier = 1,
             //Version = 1,
-
-            Diagnostics =
-                 report.Diagnostics.Select(d =>
-
-                 new Diagnostic
-                 {
-                     Range = new Microsoft.VisualStudio.LanguageServer.Protocol.Range
-                     {
-                         // F# uses 1-based indexing for lines, need to adjust
-                         Start = new Position { Line = d.StartLine-1, Character = d.StartColumn },
-                         End = new Position { Line = d.EndLine-1, Character = d.EndColumn }
-                     },
-                     Severity = DiagnosticSeverity.Error,
-                     Message = $"LSP: {d.Message}",
-                     //Source = "Intellisense",
-                     Code = d.ErrorNumberText
-                 }
-             ).ToArray()
+            Diagnostics = [.. report.Diagnostics.Select(FSharpDiagnosticExtensions.ToLspDiagnostic)]
         };
 
         return [vsReport];
     }
 
-    [LanguageServerEndpoint("textDocument/_vs_getProjectContexts")]
+    [LanguageServerEndpoint("textDocument/_vs_getProjectContexts", LanguageServerConstants.DefaultLanguageName)]
     public Task<VSProjectContextList> HandleRequestAsync(VSGetProjectContextsParams request, FSharpRequestContext context, CancellationToken cancellationToken)
     {
         return Task.FromResult(new VSProjectContextList()
@@ -331,11 +292,10 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
         }
 
 
-        var ((clientStream, serverStream), _server) = FSharpLanguageServer.Create(workspace, (serviceCollection) =>
+        var ((inputStream, outputStream), _server) = FSharpLanguageServer.Create(workspace, (serviceCollection) =>
         {
             serviceCollection.AddSingleton<IServerCapabilitiesOverride, VsServerCapabilitiesOverride>();
             serviceCollection.AddSingleton<IMethodHandler, VsDiagnosticsHandler>();
-            serviceCollection.AddSingleton<IMethodHandler, SemanticTokensHandler>();
         });
 
         var solutions = await ws.QuerySolutionAsync(
@@ -352,10 +312,9 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
                 .SubscribeAsync(new SolutionObserver(), CancellationToken.None);
         }
 
-
         return new DuplexPipe(
-            PipeReader.Create(clientStream),
-            PipeWriter.Create(serverStream));
+            PipeReader.Create(inputStream),
+            PipeWriter.Create(outputStream));
     }
 
     /// <inheritdoc/>

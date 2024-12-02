@@ -11,8 +11,6 @@ using Extension = Microsoft.VisualStudio.Extensibility.Extension;
 internal class ExtensionEntrypoint : Extension
 {
 
-    
-
     /// <inheritdoc/>
     public override ExtensionConfiguration ExtensionConfiguration => new()
     {

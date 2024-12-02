@@ -15,8 +15,17 @@ type CapabilitiesManager(scOverrides: IServerCapabilitiesOverride seq) =
             TextDocumentSync = TextDocumentSyncOptions(OpenClose = true, Change = TextDocumentSyncKind.Full),
             DiagnosticOptions =
                 DiagnosticOptions(WorkDoneProgress = true, InterFileDependencies = true, Identifier = "potato", WorkspaceDiagnostics = true),
-            CompletionProvider = CompletionOptions(TriggerCharacters = [| "."; " " |], ResolveProvider = true, WorkDoneProgress = true),
-            HoverProvider = SumType<bool, HoverOptions>(HoverOptions(WorkDoneProgress = true))
+            //CompletionProvider = CompletionOptions(TriggerCharacters = [| "."; " " |], ResolveProvider = true, WorkDoneProgress = true),
+            //HoverProvider = SumType<bool, HoverOptions>(HoverOptions(WorkDoneProgress = true))
+            SemanticTokensOptions =
+                SemanticTokensOptions(
+                    Legend =
+                        SemanticTokensLegend(
+                            TokenTypes = (SemanticTokenTypes.AllTypes |> Seq.toArray), // XXX should be extended
+                            TokenModifiers = (SemanticTokenModifiers.AllModifiers |> Seq.toArray)
+                        ),
+                    Range = false
+                )
         )
 
     interface IInitializeManager<InitializeParams, InitializeResult> with

@@ -616,6 +616,7 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
     member _.OriginalLoadReferences = projectSnapshot.OriginalLoadReferences
     member _.Stamp = projectSnapshot.Stamp
     member _.OutputFileName = projectSnapshot.OutputFileName
+    member _.ProjectConfig = projectSnapshot.ProjectConfig
 
     static member Create
         (

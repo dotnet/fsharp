@@ -15,6 +15,8 @@ open Nerdbank.Streams
 open System.Diagnostics
 open FSharp.Compiler.CodeAnalysis.Workspace
 
+#nowarn "57"
+
 [<AutoOpen>]
 module Stuff =
     [<Literal>]
@@ -29,7 +31,9 @@ type Extensions =
 
 type FSharpLanguageServer
     (jsonRpc: JsonRpc, logger: ILspLogger, ?initialWorkspace: FSharpWorkspace, ?addExtraHandlers: Action<IServiceCollection>) =
-    inherit AbstractLanguageServer<FSharpRequestContext>(jsonRpc, logger)
+
+    // TODO: Switch to SystemTextJsonLanguageServer
+    inherit NewtonsoftLanguageServer<FSharpRequestContext>(jsonRpc, Newtonsoft.Json.JsonSerializer.CreateDefault(), logger)
 
     let initialWorkspace = defaultArg initialWorkspace (FSharpWorkspace())
 
@@ -38,8 +42,6 @@ type FSharpLanguageServer
         base.Initialize()
 
     member _.JsonRpc: JsonRpc = jsonRpc
-
-    member private this.GetBaseHandlerProvider() = base.GetHandlerProvider()
 
     override this.ConstructLspServices() =
         let serviceCollection = new ServiceCollection()
@@ -53,8 +55,7 @@ type FSharpLanguageServer
                 .AddSingleton<IMethodHandler, DocumentStateHandler>()
                 .AddSingleton<IMethodHandler, LanguageFeaturesHandler>()
                 .AddSingleton<ILspLogger>(logger)
-                .AddSingleton<IRequestContextFactory<FSharpRequestContext>, FShapRequestContextFactory>()
-                .AddSingleton<IHandlerProvider>(fun _ -> this.GetBaseHandlerProvider())
+                .AddSingleton<AbstractRequestContextFactory<FSharpRequestContext>, FShapRequestContextFactory>()
                 .AddSingleton<IInitializeManager<InitializeParams, InitializeResult>, CapabilitiesManager>()
                 .AddSingleton(this)
                 .AddSingleton<ILifeCycleManager>(new LspServiceLifeCycleManager())
@@ -68,7 +69,10 @@ type FSharpLanguageServer
         lspServices :> ILspServices
 
     static member Create() =
-        FSharpLanguageServer.Create(FSharpWorkspace(), (fun _ -> ()))
+        FSharpLanguageServer.Create(FSharpWorkspace())
+
+    static member Create(initialWorkspace) =
+        FSharpLanguageServer.Create(initialWorkspace, (fun _ -> ()))
 
     static member Create(initialWorkspace, addExtraHandlers: Action<IServiceCollection>) =
         FSharpLanguageServer.Create(LspLogger System.Diagnostics.Trace.TraceInformation, initialWorkspace, addExtraHandlers)
@@ -89,7 +93,7 @@ type FSharpLanguageServer
 
         jsonRpc.TraceSource.Listeners.Add(listener) |> ignore
 
-        jsonRpc.TraceSource.Switch.Level <- SourceLevels.Information
+        jsonRpc.TraceSource.Switch.Level <- SourceLevels.All
 
         let server =
             new FSharpLanguageServer(jsonRpc, logger, initialWorkspace, ?addExtraHandlers = addExtraHandlers)
