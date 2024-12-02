@@ -612,6 +612,11 @@
         <target state="translated">representação estrutural para padrões ativos</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureSupportValueOptionsAsOptionalParameters">
+        <source>Support ValueOption as valid type for optional member parameters</source>
+        <target state="new">Support ValueOption as valid type for optional member parameters</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureUnionIsPropertiesVisible">
         <source>Union case test properties</source>
         <target state="translated">Propriedades de teste de caso de união</target>

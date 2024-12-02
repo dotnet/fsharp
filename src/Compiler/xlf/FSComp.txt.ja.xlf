@@ -612,6 +612,11 @@
         <target state="translated">アクティブなパターンの構造体表現</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureSupportValueOptionsAsOptionalParameters">
+        <source>Support ValueOption as valid type for optional member parameters</source>
+        <target state="new">Support ValueOption as valid type for optional member parameters</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureUnionIsPropertiesVisible">
         <source>Union case test properties</source>
         <target state="translated">ユニオン ケースのテスト プロパティ</target>
