@@ -1515,15 +1515,17 @@ Actual:
             match result with
             | CompilationResult.Success _ -> result
             | CompilationResult.Failure r ->
-                eprintfn "\nAll errors:"
-                r.Diagnostics |> Seq.iter (eprintfn "%A")
-                
+                let messages = r.Diagnostics |> List.map (fun e -> $"%A{e}") |> String.concat ";\n"
+                let diagnostics = $"""All errors:\n{messages}"""
+
+                eprintfn $"\n{diagnostics}"
+
                 match r.Output with
                 | Some (EvalOutput { Result = Result.Error ex })
                 | Some (ExecutionOutput {Outcome = Failure ex }) ->
-                    raise ex
-                | _ ->                  
-                    failwithf "Operation failed (expected to succeed)."
+                    failwithf $"Eval or Execution has failed (expected to succeed): %A{ex}\n{diagnostics}"
+                | _ ->
+                    failwithf $"Operation failed (expected to succeed).\n{diagnostics}"
 
         let shouldFail (result: CompilationResult) : CompilationResult =
             match result with
