@@ -722,7 +722,7 @@ let main2
           tcImports: TcImports,
           frameworkTcImports,
           generatedCcu: CcuThunk,
-          typedImplFiles: CheckedImplFile list,
+          typedImplFiles,
           topAttrs,
           tcConfig: TcConfig,
           outfile,
@@ -783,7 +783,6 @@ let main2
     use _ = UseBuildPhase BuildPhase.Output
 
     if tcConfig.printSignature || tcConfig.printAllSignatureFiles then
-        ReportTime tcConfig $"Write {typedImplFiles.Length} signature files"
         InterfaceFileWriter.WriteInterfaceFile(tcGlobals, tcConfig, InfoReader(tcGlobals, tcImports.GetImportMap()), typedImplFiles)
 
     ReportTime tcConfig "Write XML doc signatures"

@@ -128,6 +128,52 @@ The phases taking the longest are marked in the right. Those are assembly import
 
 Optimizations are not relevant in the dev loop with run/debug/test cycles so we won't take those into account.
 
+## Experiment: force-generated signature files efficiency
+
+In the initial discussions, we decided to make an experiment to see if force-generating and caching signature files in a project saves much time during recompilations.
+
+My setup was a project of 25 independent big files (copies of `Utilities.fs`).
+There, I measured (few times, with cleaning artifacts, using `--times`):
+1. Typechecking - **time1**
+2. Typechecking + all signature generation (`--allsigs`) - **time2**
+3. Typechecking with signatures generated (left from previous run and added to the project) - **time3**
+4. Typechecking with partial signature usage and generation (20 sigs used, 5 generated) - **time4**
+
+I picked a slow machine to better see the differences. But _all the differences_ were largely **marginal** (including between **time1** and **time3**). I can imagine squeezing stable single-digit % performance differences in a cleaner experiment - that said:
+- It's not clear if it's going to be for better or for worse, since the signature generation penalty can be bigger than the benefit of having them.
+- Even if it's for better, such a small improvement won't be worse the hassle.
+
+Therefore, I think it's not the way to go here.
+
+<details>
+
+<summary>Numbers, for completeness</summary>
+
+```
+Normal compilation:
+1. Typecheck: 23.7531
+1. Typecheck: 27.4234
+1. Typecheck: 24.5202
+
+Normal compilation + generating signatures (added extra `ReportTime` for measuring the latter):
+1. Typecheck: 26.5991, Siggen: 1.9369
+1. Typecheck: 25.0246, Siggen: 1.7517
+1. Typecheck: 27.0057, Siggen: 1.9093
+
+Compilation with given signatures:
+1. Typecheck: 25.7741
+1. Typecheck: 26.2904
+1. Typecheck: 24.3852
+
+Compilation with given 80% signatures + generating 20% signatures:
+1. Typecheck: 24.1338, Siggen: 0.5284
+1. Typecheck: 27.6037, Siggen: 0.7526
+1. Typecheck: 25.6967, Siggen: 0.6244
+```
+
+</details>
+
+
 ## Implementation plan
 
 The conclusion from the above is that there is a lot of potential in caching - at the same time, implementing things to the full potential right away will require serious changes in the compiler code, which will be dangerous, hard to test and review. Therefore, I propose to implement the feature in stages where each stage brings gains in some scenarios.
