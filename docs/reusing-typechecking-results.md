@@ -152,23 +152,23 @@ Therefore, I think it's not the way to go here.
 ```
 Normal compilation:
 1. Typecheck: 23.7531
-1. Typecheck: 27.4234
-1. Typecheck: 24.5202
+2. Typecheck: 27.4234
+3. Typecheck: 24.5202
 
 Normal compilation + generating signatures (added extra `ReportTime` for measuring the latter):
 1. Typecheck: 26.5991, Siggen: 1.9369
-1. Typecheck: 25.0246, Siggen: 1.7517
-1. Typecheck: 27.0057, Siggen: 1.9093
+2. Typecheck: 25.0246, Siggen: 1.7517
+3. Typecheck: 27.0057, Siggen: 1.9093
 
 Compilation with given signatures:
 1. Typecheck: 25.7741
-1. Typecheck: 26.2904
-1. Typecheck: 24.3852
+2. Typecheck: 26.2904
+3. Typecheck: 24.3852
 
 Compilation with given 80% signatures + generating 20% signatures:
 1. Typecheck: 24.1338, Siggen: 0.5284
-1. Typecheck: 27.6037, Siggen: 0.7526
-1. Typecheck: 25.6967, Siggen: 0.6244
+2. Typecheck: 27.6037, Siggen: 0.7526
+3. Typecheck: 25.6967, Siggen: 0.6244
 ```
 
 </details>
