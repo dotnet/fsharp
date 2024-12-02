@@ -1516,7 +1516,7 @@ Actual:
             | CompilationResult.Success _ -> result
             | CompilationResult.Failure r ->
                 let messages = r.Diagnostics |> List.map (fun e -> $"%A{e}") |> String.concat ";\n"
-                let diagnostics = $"""All errors:\n{messages}"""
+                let diagnostics = $"All errors:\n{messages}"
 
                 eprintfn $"\n{diagnostics}"
 
