@@ -1906,11 +1906,17 @@ val mkNoneCase: TcGlobals -> UnionCaseRef
 /// Create the union case 'Some(expr)' for an option type
 val mkSomeCase: TcGlobals -> UnionCaseRef
 
+/// Create the struct union case 'ValueNone' for a voption type
+val mkValueNoneCase: TcGlobals -> UnionCaseRef
+
 /// Create the struct union case 'ValueSome(expr)' for a voption type
 val mkValueSomeCase: TcGlobals -> UnionCaseRef
 
 /// Create the struct union case 'Some' or 'ValueSome(expr)' for a voption type
 val mkAnySomeCase: TcGlobals -> isStruct: bool -> UnionCaseRef
+
+/// Create the struct expression 'ValueNone' for an voption type
+val mkValueNone: TcGlobals -> TType -> range -> Expr
 
 /// Create the expression '[]' for a list type
 val mkNil: TcGlobals -> range -> TType -> Expr

@@ -1476,9 +1476,12 @@ let rec GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g (calledArg: C
 /// can be used with 'CalleeSide' optional arguments
 let GetDefaultExpressionForCalleeSideOptionalArg g (calledArg: CalledArg) eCallerMemberName (mMethExpr: range) =
     let calledArgTy = calledArg.CalledArgumentType
-    let calledNonOptTy = 
-        if isOptionTy g calledArgTy then 
-            destOptionTy g calledArgTy 
+    let calledNonOptTy =
+        if isOptionTy g calledArgTy then
+            destOptionTy g calledArgTy
+        elif g.langVersion.SupportsFeature(LanguageFeature.SupportValueOptionsAsOptionalParameters)
+             && isValueOptionTy g calledArgTy then
+            destValueOptionTy g calledArgTy
         else
             calledArgTy // should be unreachable
 
@@ -1494,7 +1497,12 @@ let GetDefaultExpressionForCalleeSideOptionalArg g (calledArg: CalledArg) eCalle
         let memberNameExpr = Expr.Const (Const.String callerName, mMethExpr, calledNonOptTy)
         mkSome g calledNonOptTy memberNameExpr mMethExpr
     | _ ->
-        mkNone g calledNonOptTy mMethExpr
+        if g.langVersion.SupportsFeature(LanguageFeature.SupportValueOptionsAsOptionalParameters)
+           && isValueOptionTy g calledArgTy
+        then
+            mkValueNone g calledArgTy mMethExpr
+        else
+            mkNone g calledNonOptTy mMethExpr
 
 /// Get the expression that must be inserted on the caller side for an optional arg where
 /// no caller argument has been provided. 
