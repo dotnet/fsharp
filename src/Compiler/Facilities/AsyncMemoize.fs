@@ -41,21 +41,17 @@ type AsyncLazy<'t> private (initial: AsyncLazyState<'t>, cancelUnawaited: bool, 
         async {
             try
                 let! ct = Async.CancellationToken
-                let options = TaskContinuationOptions.ExecuteSynchronously
-                try
-                    return!
-                        // Using ContinueWith with a CancellationToken allows detaching from the running 'work' task.
-                        // This ensures the lazy 'work' and its awaiting requests can be independently managed 
-                        // by separate CancellationTokenSources, enabling individual cancellation.
-                        // Essentially, if this async computation is canceled, it won't wait for the 'work' to complete
-                        // but will immediately proceed to the finally block.
-                        work.ContinueWith((fun (t: Task<_>) -> t.Result), ct, options, TaskScheduler.Current)
-                        |> Async.AwaitTask
-                // Cancellation check before entering the `with` ensures TaskCanceledException coming from the ContinueWith task will never be raised here.
-                // The cancellation continuation will always be called in case of cancellation.
-                with exn -> return raise exn
-            finally
-                lock stateUpdateSync afterRequest
+                return!
+                    // Using ContinueWith with a CancellationToken allows detaching from the running 'work' task.
+                    // This ensures the lazy 'work' and its awaiting requests can be independently managed 
+                    // by separate CancellationTokenSources, enabling individual cancellation.
+                    // Essentially, if this async computation is canceled, it won't wait for the 'work' to complete
+                    // but will immediately proceed to the finally block.
+                    work.ContinueWith((fun (t: Task<_>) -> t.Result), ct)
+                    |> Async.AwaitTask
+            // Cancellation check before entering the `with` ensures TaskCanceledException coming from the ContinueWith task will never be raised here.
+            // The cancellation continuation will always be called in case of cancellation.
+            with exn -> return raise exn
         }
     
     let workCompleted computation (work: Task<_>) =
@@ -88,7 +84,13 @@ type AsyncLazy<'t> private (initial: AsyncLazyState<'t>, cancelUnawaited: bool, 
     new (computation, ?cancelUnawaited: bool, ?cacheException) =
         AsyncLazy(Initial computation, defaultArg cancelUnawaited true, defaultArg cacheException false)
 
-    member _.Request() = lock stateUpdateSync request
+    member _.Request() =
+        async { 
+            try
+                return! lock stateUpdateSync request
+            finally
+                lock stateUpdateSync afterRequest
+        }
 
     member _.CancelIfUnawaited() = lock stateUpdateSync cancelIfUnawaited
 

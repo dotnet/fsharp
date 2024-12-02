@@ -34,7 +34,6 @@ let internal observe (cache: AsyncMemoize<_,_,_>) =
 
 let rec awaitEvents next condition =
     async {
-        do! Async.Sleep 10
         match! next () with
         | events when condition events -> return events
         | _ -> return! awaitEvents next condition
@@ -173,10 +172,12 @@ let ``Job is restarted if first requestor cancels`` () =
 
     let key = 1
 
-    let _task1 = Async.StartAsTask( memoize.Get(wrapKey key, computation key), cancellationToken = cts1.Token)
+    let task1 = Async.StartAsTask( memoize.Get(wrapKey key, computation key), cancellationToken = cts1.Token)
 
     waitUntil events (received Started)
     cts1.Cancel()
+
+    assertTaskCanceled task1
 
     waitUntil events (received Canceled)
 
@@ -397,7 +398,6 @@ let ``Cancel running jobs with the same key`` () =
 
     waitUntil events (countOf Canceled >> (=) 10)
 
-    // new request should cancel the unobserved jobs
     waitUntil events (received Started)
 
     jobCanContinue.Set() |> ignore
