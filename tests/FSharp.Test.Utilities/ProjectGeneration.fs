@@ -24,6 +24,7 @@ open System.Text.RegularExpressions
 open System.Threading.Tasks
 open System.Xml
 
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open FSharp.Compiler.Diagnostics
@@ -37,6 +38,9 @@ open OpenTelemetry.Resources
 open OpenTelemetry.Trace
 open TestFramework
 open FSharp.Compiler.IO
+open FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState
+open FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery
+open FSharp.Compiler.CodeAnalysis.Workspace
 
 #nowarn "57" // Experimental feature use
 
@@ -1455,23 +1459,62 @@ type SyntheticProject with
 
 module WorkspaceHelpers =
 
+    let createTestProjectDirName () =
+        let projectDirectoryName = $"FSharp-Test-Project-{Guid.NewGuid().ToString()[..8]}"
+        Path.GetTempPath() ++ projectDirectoryName
+
     type ProjectConfig with
 
         /// Creates an empty project configuration with optional parameters for name, output path, and references on disk.
         static member Empty(?name, ?outputPath, ?referencesOnDisk) =
+            let directory = createTestProjectDirName()
             let name = defaultArg name "test"
-            let projectFileName = $"{name}.fsproj"
-            let outputPath = defaultArg outputPath $"{name}.dll"
+            let projectFileName = directory ++ $"{name}.fsproj"
+            let outputPath = defaultArg outputPath (directory ++ $"{name}.dll")
             let referencesOnDisk = defaultArg referencesOnDisk []
             ProjectConfig(projectFileName, Some outputPath, referencesOnDisk, [])
 
         static member Create(?name) =
             let name = defaultArg name "test"
-
+            let fullPath = createTestProjectDirName() ++ $"{name}.fsproj"
             let snapshot, _ =
-                CompilerAssertHelpers.checker.GetProjectSnapshotFromScript(name, SourceTextNew.ofString "", assumeDotNetFramework = false)
+                CompilerAssertHelpers.checker.GetProjectSnapshotFromScript(fullPath, SourceTextNew.ofString "", assumeDotNetFramework = false)
                 |>  Async.RunSynchronously
             snapshot.ProjectConfig
+
+        member this.FileUri(fileName) =
+            this.ProjectDirectory ++ fileName |> Uri
+
+    type FSharpWorkspaceQuery with
+
+        member this.GetSignature(sourceFile) =
+            this.GetCheckResultsForFile(sourceFile)
+            |> Async.map (Option.bind(_.GenerateSignature()))
+
+    type FSharpWorkspaceProjects with
+
+        member projects.AddFileBefore(projectIdentifier, newFile: Uri, addBefore: Uri) =
+            let existingFiles = projects.files.OfProject projectIdentifier
+            let newFiles = seq {
+                for file in existingFiles do
+                    if file = addBefore.LocalPath then
+                        yield newFile.LocalPath
+                    yield file
+                }
+            projects.Update(projectIdentifier, newFiles)
+
+
+    //type FSharpWorkspace with
+
+    //    member this.AddSignatureFile(projectIdentifier, sourceFile) =
+
+
+    //        async {
+    //            let! signature = this.Query.GetSignature(sourceFile)
+    //            this.Projects.AddOrUpdate
+    //        }
+
+
 
     /// Retrieves the referenced project snapshot from the given project snapshot based on the project identifier.
     let getReferencedSnapshot (projectIdentifier: FSharpProjectIdentifier) (projectSnapshot: FSharpProjectSnapshot) =

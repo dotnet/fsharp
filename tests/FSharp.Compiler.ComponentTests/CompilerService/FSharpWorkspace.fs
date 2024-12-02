@@ -198,6 +198,18 @@ let ``Update project by adding a source file`` () =
     Assert.Contains(newSourceFile, projectSnapshot.SourceFiles |> Seq.map (fun f -> f.FileName))
 
 [<Fact>]
+let ``Update project by removing a source file`` () =
+    let workspace = FSharpWorkspace()
+    let projectPath = "test.fsproj"
+    let outputPath = "test.dll"
+    let compilerArgs = [| "test.fs"; "newTest.fs" |]
+    let projectIdentifier = workspace.Projects.AddOrUpdate(projectPath, outputPath, compilerArgs)
+    let newCompilerArgs = [| "test.fs" |]
+    workspace.Projects.AddOrUpdate(projectPath, outputPath, newCompilerArgs) |> ignore
+    let files = workspace.Files.OfProject(projectIdentifier) |> Seq.toArray
+    Assert.Equal<string array>([| "test.fs" |], files)
+
+[<Fact>]
 let ``Update project by adding a reference`` () =
     let workspace = FSharpWorkspace()
     let projectPath1 = "test1.fsproj"
@@ -274,3 +286,17 @@ let ``Asking for an unknown project snapshot returns None`` () =
     let workspace = FSharpWorkspace()
 
     Assert.Equal(None, workspace.Query.GetProjectSnapshot(FSharpProjectIdentifier("hello", "world")))
+
+
+[<Fact>]
+let ``Works with signature files`` () =
+
+    let workspace = FSharpWorkspace()
+
+    let projectConfig = ProjectConfig.Create()
+
+    let _projectIdentifier = workspace.Projects.AddOrUpdate(projectConfig, [ "test.fs" ])
+
+    //let signatureFilePath, signatureFileContent = workspace.Projects.AddSignatureFile(projectIdentifier, "test.fs")
+
+    ()

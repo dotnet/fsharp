@@ -46,6 +46,8 @@ type FSharpWorkspace(checker: FSharpChecker) =
             )
         )
 
+    member internal _.DepGraph = depGraph
+
     member internal this.Debug_DumpMermaid(path) =
         let content =
             depGraph.Debug_RenderMermaid (function

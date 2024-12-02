@@ -10,6 +10,7 @@ open System.Threading
 open FSharp.Compiler.CodeAnalysis
 
 open Internal.Utilities.DependencyGraph
+open Internal.Utilities.Library.Extras
 open FSharpWorkspaceState
 
 #nowarn "57"
@@ -32,6 +33,8 @@ type FSharpWorkspaceQuery internal (depGraph: IThreadSafeDependencyGraph<_, _>, 
     // in order to be able to clear previous diagnostics
     let getDiagnosticResultId () = Interlocked.Increment(&resultIdCounter)
 
+    member internal _.Checker = checker
+
     member _.GetProjectSnapshot projectIdentifier =
         try
             depGraph.GetProjectSnapshot projectIdentifier |> Some
@@ -47,26 +50,33 @@ type FSharpWorkspaceQuery internal (depGraph: IThreadSafeDependencyGraph<_, _>, 
         // Otherwise we have to keep track of which project/configuration is active
         |> Seq.tryHead // For now just get the first one
 
+    member this.GetParseAndCheckResultsForFile(file: Uri) =
+        this.GetProjectSnapshotForFile file
+        |> Option.map (fun snapshot ->
+            async {
+                let! parseResult, checkFileAnswer = checker.ParseAndCheckFileInProject(file.LocalPath, snapshot, "LSP Get diagnostics")
+
+                return
+                    match checkFileAnswer with
+                    | FSharpCheckFileAnswer.Succeeded result -> Some parseResult, Some result
+                    | FSharpCheckFileAnswer.Aborted -> Some parseResult, None
+            })
+        |> Option.defaultValue (async.Return(None, None))
+
+    member this.GetCheckResultsForFile(file: Uri) =
+        this.GetParseAndCheckResultsForFile file |> Async.map snd
+
     // TODO: split to parse and check diagnostics
     member this.GetDiagnosticsForFile(file: Uri) =
-        async {
+        this.GetParseAndCheckResultsForFile file
+        |> Async.map (fun results ->
+            let diagnostics =
+                match results with
+                | _, Some checkResult -> checkResult.Diagnostics
+                | Some parseResult, _ -> parseResult.Diagnostics
+                | _ -> [||]
 
-            let! diagnostics =
-                this.GetProjectSnapshotForFile file
-                |> Option.map (fun snapshot ->
-                    async {
-                        let! parseResult, checkFileAnswer =
-                            checker.ParseAndCheckFileInProject(file.LocalPath, snapshot, "LSP Get diagnostics")
-
-                        return
-                            match checkFileAnswer with
-                            | FSharpCheckFileAnswer.Succeeded result -> result.Diagnostics
-                            | FSharpCheckFileAnswer.Aborted -> parseResult.Diagnostics
-                    })
-                |> Option.defaultValue (async.Return [||])
-
-            return FSharpDiagnosticReport(diagnostics, getDiagnosticResultId ())
-        }
+            FSharpDiagnosticReport(diagnostics, getDiagnosticResultId ()))
 
     member this.GetSemanticClassification(file) =
 
