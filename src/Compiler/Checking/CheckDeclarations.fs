@@ -3232,18 +3232,29 @@ module EstablishTypeDefinitionCores =
                     // If the user were to alias the `Microsoft.FSharp.Core.AutoOpenAttribute` type, it would not be detected by the project graph dependency resolution algorithm.
                     let attributes = [ g.attrib_AutoOpenAttribute; g.attrib_StructAttribute ]
 
+                    (*match stripTyEqns g ty with
+                    | AppTy g (tcref, _) when not tcref.IsErased ->
+                        match tcref.CompiledRepresentation with
+                        | CompiledTypeRepr.ILAsmOpen _ -> ()
+                        | CompiledTypeRepr.ILAsmNamed _ ->
+                            if tcref.CompiledRepresentationForNamedType.FullName = g.attrib_AutoOpenAttribute.TypeRef.FullName then
+                                warning(Error(FSComp.SR.chkAutoOpenAttributeInTypeAbbrev(), tycon.Id.idRange))
+                    | _ -> ()*)
+
+
+
                     match stripTyEqns g ty with
-                        | AppTy g (tcref, _) when tcref.IsErased ->
-                            match tcref.CompiledRepresentation with
-                            | CompiledTypeRepr.ILAsmOpen _ -> ()
-                            | CompiledTypeRepr.ILAsmNamed _ ->
-                                let fullname = tcref.CompiledRepresentationForNamedType.FullName
+                    | AppTy g (tcref, _) when tcref.IsErased ->
+                        match tcref.CompiledRepresentation with
+                        | CompiledTypeRepr.ILAsmOpen _ -> ()
+                        | CompiledTypeRepr.ILAsmNamed _ ->
+                            let fullname = tcref.CompiledRepresentationForNamedType.FullName
 
-                                attributes
-                                |> List.tryFind (fun a -> a.TypeRef.FullName = fullname)
-                                |> Option.iter (fun a -> warning(Error(FSComp.SR.chkAttributeAliased(a.TypeRef.FullName), a.TyconRef.Range)))
+                            attributes
+                            |> List.tryFind (fun a -> a.TypeRef.FullName = fullname)
+                            |> Option.iter (fun a -> warning(Error(FSComp.SR.chkAttributeAliased(a.TypeRef.FullName), tycon.Id.idRange)))
 
-                        | _ -> ()
+                    | _ -> ()
 
                     if not firstPass then
                         let ftyvs = freeInTypeLeftToRight g false ty

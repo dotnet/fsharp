@@ -3893,6 +3893,8 @@ let mkValueSomeCase (g: TcGlobals) = mkUnionCaseRef g.valueoption_tcr_canon "Val
 
 let mkAnySomeCase g isStruct = (if isStruct then mkValueSomeCase g else mkSomeCase g)
 
+let mkValueSome g ty arg m = mkUnionCaseExpr(mkValueSomeCase g, [ty], [arg], m)
+
 let mkValueNone g ty m = mkUnionCaseExpr(mkValueNoneCase g, [ty], [], m)
 
 type ValRef with 

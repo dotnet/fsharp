@@ -1915,6 +1915,9 @@ val mkValueSomeCase: TcGlobals -> UnionCaseRef
 /// Create the struct union case 'Some' or 'ValueSome(expr)' for a voption type
 val mkAnySomeCase: TcGlobals -> isStruct: bool -> UnionCaseRef
 
+/// Create the expression 'ValueSome(expr)'
+val mkValueSome: TcGlobals -> TType -> Expr -> range -> Expr
+
 /// Create the struct expression 'ValueNone' for an voption type
 val mkValueNone: TcGlobals -> TType -> range -> Expr
 

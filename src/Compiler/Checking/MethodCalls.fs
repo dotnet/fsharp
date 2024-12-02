@@ -337,12 +337,18 @@ let AdjustCalledArgTypeForOptionals (infoReader: InfoReader) ad enforceNullableO
     if callerArg.IsExplicitOptional then 
         match calledArg.OptArgInfo with 
         // CSharpMethod(?x = arg), optional C#-style argument, may have nullable type
-        | CallerSide _ -> 
+        | CallerSide _ ->
             if g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop then
                 if isNullableTy g calledArgTy then
-                    mkOptionTy g (destNullableTy g calledArgTy), TypeDirectedConversionUsed.No, None
+                    if g.langVersion.SupportsFeature LanguageFeature.SupportValueOptionsAsOptionalParameters && isValueOptionTy g calledArgTy then
+                        mkValueOptionTy g (destNullableTy g calledArgTy), TypeDirectedConversionUsed.No, None
+                    else
+                        mkOptionTy g (destNullableTy g calledArgTy), TypeDirectedConversionUsed.No, None
                 else
-                    mkOptionTy g calledArgTy, TypeDirectedConversionUsed.No, None
+                    if g.langVersion.SupportsFeature LanguageFeature.SupportValueOptionsAsOptionalParameters && isValueOptionTy g calledArgTy then
+                        mkValueOptionTy g calledArgTy, TypeDirectedConversionUsed.No, None
+                    else
+                        mkOptionTy g calledArgTy, TypeDirectedConversionUsed.No, None
             else
                 calledArgTy, TypeDirectedConversionUsed.No, None
 
@@ -392,9 +398,11 @@ let AdjustCalledArgTypeForOptionals (infoReader: InfoReader) ad enforceNullableO
 
         // FSharpMethod(x = arg), optional F#-style argument, should have option type
         | CalleeSide ->
-            let calledArgTy2 = 
+            let calledArgTy2 =
                 if isOptionTy g calledArgTy then
                     destOptionTy g calledArgTy
+                elif g.langVersion.SupportsFeature LanguageFeature.SupportValueOptionsAsOptionalParameters && isValueOptionTy g calledArgTy then
+                    destValueOptionTy g calledArgTy
                 else
                     calledArgTy
             AdjustCalledArgTypeForTypeDirectedConversionsAndAutoQuote infoReader ad callerArgTy calledArgTy2 calledArg m
@@ -1497,8 +1505,7 @@ let GetDefaultExpressionForCalleeSideOptionalArg g (calledArg: CalledArg) eCalle
         let memberNameExpr = Expr.Const (Const.String callerName, mMethExpr, calledNonOptTy)
         mkSome g calledNonOptTy memberNameExpr mMethExpr
     | _ ->
-        if g.langVersion.SupportsFeature(LanguageFeature.SupportValueOptionsAsOptionalParameters)
-           && isValueOptionTy g calledArgTy
+        if g.langVersion.SupportsFeature(LanguageFeature.SupportValueOptionsAsOptionalParameters) && isValueOptionTy g calledArgTy
         then
             mkValueNone g calledArgTy mMethExpr
         else
@@ -1581,20 +1588,24 @@ let AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName (infoReader: 
                     // AdjustCallerArgExpr later on will deal with any nullable conversion
                     callerArgExpr
 
-            | CalleeSide -> 
-                if isOptCallerArg then 
+            | CalleeSide ->
+                if isOptCallerArg then
                     // FSharpMethod(?x=b) --> FSharpMethod(?x=b)
-                    callerArgExpr 
-                else                            
+                    callerArgExpr
+                else
                     // FSharpMethod(x=b) when FSharpMethod(A) --> FSharpMethod(?x=Some(b :> A))
-                    if isOptionTy g calledArgTy then 
-                        let calledNonOptTy = destOptionTy g calledArgTy 
+                    if isOptionTy g calledArgTy then
+                        let calledNonOptTy = destOptionTy g calledArgTy
                         let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap infoReader ad isOutArg calledNonOptTy reflArgInfo callerArgTy m callerArgExpr
                         mkSome g calledNonOptTy callerArgExpr2 m
-                    else 
+                    elif g.langVersion.SupportsFeature(LanguageFeature.SupportValueOptionsAsOptionalParameters) && isValueOptionTy g calledArgTy then
+                        let calledNonOptTy = destValueOptionTy g calledArgTy
+                        let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap infoReader ad isOutArg calledNonOptTy reflArgInfo callerArgTy m callerArgExpr
+                        mkValueSome g calledNonOptTy callerArgExpr2 m
+                    else
                         assert false
-                        callerArgExpr // defensive code - this case is unreachable 
-                        
+                        callerArgExpr // defensive code - this case is unreachable
+
         let callerArg2 = CallerArg(tyOfExpr g callerArgExpr2, m, isOptCallerArg, callerArgExpr2)
         { assignedArg with CallerArg=callerArg2 }
 

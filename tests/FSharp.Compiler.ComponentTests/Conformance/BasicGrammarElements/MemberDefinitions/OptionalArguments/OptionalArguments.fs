@@ -199,6 +199,7 @@ type X() =
 let main _ =
     X.M(ValueSome 1)
     X.M(ValueNone)
+    X.M(1)
     X.M()
     0
             """
@@ -212,7 +213,7 @@ let main _ =
             |> shouldSucceed
             |> run
             |> shouldSucceed
-            |> withOutputContainsAllInOrder ["VSome 1"; "VNone"; "VNone"]
+            |> withOutputContainsAllInOrder ["VSome ValueSome 1"; "VSome ValueNone"; "VSome 1"; "VNone"]
             |> verifyIL ["""
 .method public static void  M<a>(valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpValueOption`1<!!a> x) cil managed
 {
@@ -274,6 +275,7 @@ type X() =
 let main _ =
     X.M(ValueSome 1)
     X.M(ValueNone)
+    X.M(1)
     X.M()
     0
             """
@@ -287,7 +289,7 @@ let main _ =
             |> shouldSucceed
             |> run
             |> shouldSucceed
-            |> withOutputContainsAllInOrder ["VSome 1"; "VNone"; "VNone"]
+            |> withOutputContainsAllInOrder ["VSome ValueSome 1"; "VSome ValueNone"; "VSome 1"; "VNone"]
             |> verifyIL ["""
 .method public static void  M<a>(valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpValueOption`1<!!a> x) cil managed
 {
@@ -332,3 +334,33 @@ let main _ =
     IL_0049:  ret
 }
         """]
+        
+    [<Fact>]
+    let ``Optional Arguments in constructor can be a ValueOption+StructAttribute attribute with langversion=preview`` () =
+        let source =
+            FSharp """
+module Program
+type X() =
+    static member M([<StructAttribute>] ?x) =
+        match x with
+        | ValueSome x -> printfn "VSome %A" x
+        | ValueNone -> printfn "VNone"
+
+[<EntryPoint>]
+let main _ =
+    X.M(ValueSome 1)
+    X.M(ValueNone)
+    X.M()
+    0
+            """
+        let compilation =
+            source
+            |> withLangVersionPreview
+            |> asExe
+            |> compile
+
+        compilation
+            |> shouldSucceed
+            |> run
+            |> shouldSucceed
+            |> withOutputContainsAllInOrder ["VSome 1"; "VNone"; "VNone"]
