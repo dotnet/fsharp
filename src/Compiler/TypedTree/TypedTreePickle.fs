@@ -2177,6 +2177,32 @@ and p_modul_typ (x: ModuleOrNamespaceType) st =
       (x.ModuleOrNamespaceKind, x.AllValsAndMembers, x.AllEntities)
       st
 
+and p_qualified_name_of_file qualifiedNameOfFile st =
+    let (QualifiedNameOfFile ident) = qualifiedNameOfFile
+    p_ident ident st
+
+and p_pragma pragma st =
+    let (ScopedPragma.WarningOff (range, warningNumber)) = pragma
+    p_range range st
+    p_int warningNumber st
+
+and p_pragmas x st =
+    p_list p_pragma x st
+
+and p_checked_impl_file (file: CheckedImplFile) st =
+    p_tup5
+        p_qualified_name_of_file
+        p_pragmas
+        p_modul_typ
+        p_bool
+        p_bool
+        (file.QualifiedNameOfFile,
+         file.Pragmas,
+         file.Signature,
+         file.HasExplicitEntryPoint,
+         file.IsScript)
+        st
+
 and u_tycon_repr st =
     let tag1 = u_byte st
     match tag1 with
@@ -2510,6 +2536,40 @@ and u_modul_typ st =
           (u_qlist u_entity_spec) st
     ModuleOrNamespaceType(x1, x3, x5)
 
+and u_qualified_name_of_file st = 
+    let ident = u_ident st
+    QualifiedNameOfFile(ident)
+
+and u_pragma st =
+    let range = u_range st
+    let warningNumber = u_int st
+    ScopedPragma.WarningOff (range, warningNumber)
+
+and u_pragmas st =
+    u_list u_pragma st
+
+and u_checked_impl_file st = 
+    let qualifiedNameOfFile, pragmas, signature, hasExplicitEntryPoint, isScript =
+        u_tup5
+            u_qualified_name_of_file
+            u_pragmas
+            u_modul_typ
+            u_bool
+            u_bool
+            st
+
+    CheckedImplFile(
+        qualifiedNameOfFile,
+        pragmas,
+        signature,
+        // ModuleOrNamespaceContents needs implementing, feels hard but doable
+        Unchecked.defaultof<_>,
+        hasExplicitEntryPoint,
+        isScript,
+        // this anon record map can be likely easily built in top of primitives here 
+        Unchecked.defaultof<_>,
+        // something about debug points, not sure we care here
+        Unchecked.defaultof<_>)
 
 //---------------------------------------------------------------------------
 // Pickle/unpickle for F# expressions (for optimization data)
@@ -2906,8 +2966,29 @@ let pickleModuleOrNamespace mspec st = p_entity_spec mspec st
 let pickleCcuInfo (minfo: PickledCcuInfo) st =
     p_tup4 pickleModuleOrNamespace p_string p_bool (p_space 3) (minfo.mspec, minfo.compileTimeWorkingDir, minfo.usesQuotations, ()) st
 
+let pickleTcInfo (tcInfo: PickledTcInfo) (st: WriterState) =
+    p_attribs tcInfo.MainMethodAttrs st
+    p_attribs tcInfo.NetModuleAttrs st
+    p_attribs tcInfo.AssemblyAttrs st
+
+    p_list p_checked_impl_file tcInfo.DeclaredImpls st
+
 let unpickleModuleOrNamespace st = u_entity_spec st
 
 let unpickleCcuInfo st =
     let a, b, c, _space = u_tup4 unpickleModuleOrNamespace u_string u_bool (u_space 3) st
     { mspec=a; compileTimeWorkingDir=b; usesQuotations=c }
+
+let unpickleTcInfo st : PickledTcInfo =
+    let mainMethodAttrs = u_attribs st
+    let netModuleAttrs = u_attribs st
+    let assemblyAttrs = u_attribs st
+
+    let declaredImpls = u_list u_checked_impl_file st
+
+    {
+        MainMethodAttrs = mainMethodAttrs
+        NetModuleAttrs = netModuleAttrs
+        AssemblyAttrs = assemblyAttrs
+        DeclaredImpls = declaredImpls
+    }
