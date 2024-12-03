@@ -17,6 +17,12 @@ open FSharp.Compiler.TypeProviders
 open FSharp.Compiler.Xml
 open FSharp.Core.CompilerServices
 
+[<RequireQualifiedAccess>]
+module WellKnownNames =
+    /// Special name for the defensive copy of a struct, we use it in situations like when we get an address of a field in ax-assembly scenario.
+    [<Literal>]
+    val CopyOfStruct: string = "copyOfStruct"
+
 val getNameOfScopeRef: sref: ILScopeRef -> string
 
 type Stamp = int64
@@ -3100,6 +3106,7 @@ type NullnessVar =
     member Evaluate: unit -> NullnessInfo
     member TryEvaluate: unit -> NullnessInfo voption
     member IsSolved: bool
+    member IsFullySolved: bool
     member Set: Nullness -> unit
     member Unset: unit -> unit
     member Solution: Nullness

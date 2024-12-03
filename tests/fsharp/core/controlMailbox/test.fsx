@@ -6,9 +6,7 @@ module Core_controlMailBox
 
 #nowarn "40" // recursive references
 
-#if NETCOREAPP
 open System.Threading.Tasks
-#endif
 
 let biggerThanTrampoliningLimit = 10000
 
@@ -49,22 +47,27 @@ let checkQuiet s x1 x2 =
         (test s false; 
          log (sprintf "expected: %A, got %A" x2 x1))
 
-let check s x1 x2 = 
+let check s x1 x2 =
     if x1 = x2 then test s true
     else (test s false; log (sprintf "expected: %A, got %A" x2 x1))
 
+let checkAsync s (x1: Task<_>) x2 = check s x1.Result x2
+
 open Microsoft.FSharp.Control
-open Microsoft.FSharp.Control.WebExtensions
 
 module MailboxProcessorBasicTests = 
+
     let test() =
         check 
             "c32398u6: MailboxProcessor null"
-            (let mb1 = new MailboxProcessor<int>(fun inbox -> async { return () })
-             mb1.Start();
-             100)
-            100
 
+            (
+                let mb1 = new MailboxProcessor<int>(fun inbox -> async { return () })
+                mb1.Start()
+                100
+            )
+
+            100
 
         check 
             "c32398u7: MailboxProcessor Receive/PostAndReply"
@@ -197,9 +200,10 @@ module MailboxProcessorBasicTests =
                 200
 
         for n in [0; 1; 100; 1000; 100000 ] do
-            check 
+            checkAsync
                 (sprintf "c32398u: MailboxProcessor Post/Receive, n=%d" n)
-                (let received = ref 0
+                (task {
+                 let received = ref 0
                  let mb1 = new MailboxProcessor<int>(fun inbox -> 
                     async { for i in 0 .. n-1 do 
                                 let! _ = inbox.Receive()
@@ -208,47 +212,36 @@ module MailboxProcessorBasicTests =
                  for i in 0 .. n-1 do
                      mb1.Post(i)
                  while !received < n do
-                     if !received % 100 = 0 then 
-                         printfn "received = %d" !received
-#if NETCOREAPP
-                     Task.Delay(1).Wait()
-#else
-                     System.Threading.Thread.Sleep(1)
-#endif
-                 !received)
+                     do! Task.Yield()
+                 return !received})
                 n
 
         for timeout in [0; 10] do
           for n in [0; 1; 100] do
-            check 
+            checkAsync 
                 (sprintf "c32398u: MailboxProcessor Post/TryReceive, n=%d, timeout=%d" n timeout)
-                (let received = ref 0
+                (task {
+                 let received = ref 0
                  let mb1 = new MailboxProcessor<int>(fun inbox -> 
                     async { while !received < n do 
-                                let! msgOpt = inbox.TryReceive(timeout=timeout)
-                                match msgOpt with 
-                                | None -> 
-                                    do if !received % 100 = 0 then 
-                                           printfn "timeout!, received = %d" !received
-                                | Some _ -> do incr received })
+                                match! inbox.TryReceive(timeout=timeout) with
+                                | Some _ -> incr received
+                                | _ -> ()
+                    })
+
+                 mb1.Post(0)
+
                  mb1.Start();
                  for i in 0 .. n-1 do
-#if NETCOREAPP
-                     Task.Delay(1).Wait();
-#else
-                     System.Threading.Thread.Sleep(1)
-#endif
                      mb1.Post(i)
+                     do! Task.Yield()
                  while !received < n do
-                     if !received % 100 = 0 then 
-                         printfn "main thread: received = %d" !received
-#if NETCOREAPP
-                     Task.Delay(1).Wait();
-#else
-                     System.Threading.Thread.Sleep(1)
-#endif
-                 !received)
+                    do! Task.Yield()
+                 return !received})
                 n
+
+
+(* Disabled for timing issues. Some replacement TryScan tests were added to FSharp.Core.UnitTests.
 
         for i in 1..10 do
             for sleep in [0;1;10] do
@@ -284,8 +277,11 @@ module MailboxProcessorBasicTests =
                         !timedOut)
                        (Some true)
 
-        check "cf72361: MailboxProcessor TryScan wo/timeout" 
-           (let timedOut = ref None
+*)
+
+        checkAsync "cf72361: MailboxProcessor TryScan wo/timeout" 
+           (task {
+            let timedOut = ref None
             let mb = new MailboxProcessor<bool>(fun inbox ->
                     async {
                         let! result = inbox.TryScan((fun i -> if i then async { return () } |> Some  else None))
@@ -298,65 +294,58 @@ module MailboxProcessorBasicTests =
             w.Start()
             while w.ElapsedMilliseconds < 100L do
                 mb.Post(false)
-#if NETCOREAPP
-                Task.Delay(0).Wait();
-#else
-                System.Threading.Thread.Sleep(0)
-#endif
+                do! Task.Yield()
             let r = !timedOut
             mb.Post(true)
-            r)
+            return r})
             None
 
 module MailboxProcessorErrorEventTests =
     exception Err of int
     let test() =
         // Make sure the event doesn't get raised if no error
-        check 
+        checkAsync 
             "c32398u9330: MailboxProcessor Error (0)"
-            (let mb1 = new MailboxProcessor<int>(fun inbox -> async { return () })
-             let res = ref 100
-             mb1.Error.Add(fun _ -> res := 0)
+            (task {
+             let mb1 = new MailboxProcessor<int>(fun inbox -> async { return () })
+             mb1.Error.Add(fun _ -> failwith "unexpected error event")
              mb1.Start();
-#if NETCOREAPP
-             Task.Delay(200).Wait();
-#else
-             System.Threading.Thread.Sleep(200)
-#endif
-             !res)
+             do! Task.Delay(200)
+             return 100})
             100
 
         // Make sure the event does get raised if error
-        check 
+        check
             "c32398u9331: MailboxProcessor Error (1)"
             (let mb1 = new MailboxProcessor<int>(fun inbox -> async { failwith "fail" })
-             let res = ref 0
-             mb1.Error.Add(fun _ -> res := 100)
+             use res = new System.Threading.ManualResetEventSlim(false)
+             mb1.Error.Add(fun _ -> res.Set())
              mb1.Start();
-#if NETCOREAPP
-             Task.Delay(200).Wait();
-#else
-             System.Threading.Thread.Sleep(200)
-#endif
-             !res)
-            100
+             res.Wait()
+             true)
+            true
 
         // Make sure the event does get raised after message receive 
-        check 
+        checkAsync
             "c32398u9332: MailboxProcessor Error (2)"
-            (let mb1 = new MailboxProcessor<int>(fun inbox -> 
-                                    async { let! msg = inbox.Receive() 
-                                            raise (Err msg) })
-             let res = ref 0
-             mb1.Error.Add(function Err n -> res := n | _ -> check "rwe90r - unexpected error" 0 1)
-             mb1.Start();
-             mb1.Post 100
-#if NETCOREAPP
-             Task.Delay(200).Wait();
-#else
-             System.Threading.Thread.Sleep(200)
-#endif
-             !res)
+            (
+                let errorNumber = TaskCompletionSource<_>()
+
+                let mb1 = new MailboxProcessor<int>( fun inbox -> async {
+                       let! msg = inbox.Receive() 
+                       raise (Err msg)
+                   })
+
+                mb1.Error.Add(function
+                   | Err n -> errorNumber.SetResult n
+                   | _ -> 
+                       check "rwe90r - unexpected error" 0 1 )
+
+                mb1.Start();
+                mb1.Post 100
+
+                errorNumber.Task
+            )
             100
         
 type msg = Increment of int | Fetch of AsyncReplyChannel<int> | Reset
@@ -472,13 +461,10 @@ let test7() =
 
 
 let timeoutboxes str = new MailboxProcessor<'b>(fun inbox ->
-    async { for i in 1 .. 10 do
-#if NETCOREAPP
-                Task.Delay(200).Wait()
-#else
-                do System.Threading.Thread.Sleep 200
-#endif
-                })
+    async {
+        for i in 1 .. 10 do
+            do! Async.Sleep 200
+    })
 
 // Timeout
 let timeout_tpar() =
@@ -553,17 +539,9 @@ let timeout_para_def() =
         test "default timeout & PostAndAsyncReply" false
     with _ -> test "default timeout & PostAndAsyncReply" true
 
-// Useful class: put "checkpoints" in the code.
-// Check they are called in the right order.
-type Path(str) =
-    let mutable current = 0
-    member p.Check n = check (str + " #" + string (current+1)) n (current+1)
-                       current <- n
-
-
-
 module LotsOfMessages = 
     let test () =
+      task {
         let N = 200000
         let count = ref N
 
@@ -586,12 +564,9 @@ module LotsOfMessages =
             check "celrv09ervkn" (queueLength >= logger.CurrentQueueLength) true
             queueLength <- logger.CurrentQueueLength 
     
-#if NETCOREAPP
-            Task.Delay(10).Wait()
-#else
-            System.Threading.Thread.Sleep(10)
-#endif
+            do! Task.Delay(10)
         check "celrv09ervknf3ew" logger.CurrentQueueLength 0
+      }
 
 let RunAll() = 
     MailboxProcessorBasicTests.test()
@@ -608,11 +583,11 @@ let RunAll() =
     timeout_tpar_def()
     // ToDo: 7/31/2008: Disabled because of probable timing issue.  QA needs to re-enable post-CTP.
     // Tracked by bug FSharp 1.0:2891
-    //test15()
+    // test15()
     // ToDo: 7/31/2008: Disabled because of probable timing issue.  QA needs to re-enable post-CTP.
     // Tracked by bug FSharp 1.0:2891
-    //test15b()
-    LotsOfMessages.test()
+    // test15b()
+    LotsOfMessages.test().Wait()
 
 #if TESTS_AS_APP
 let RUN() = RunAll(); failures
@@ -621,9 +596,12 @@ RunAll()
 let aa =
   if not failures.IsEmpty then 
       stdout.WriteLine "Test Failed"
+      stdout.WriteLine()
+      stdout.WriteLine "failures:"
+      failures |> List.iter stdout.WriteLine
       exit 1
   else   
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
+      printf "TEST PASSED OK" ;
       exit 0
 #endif

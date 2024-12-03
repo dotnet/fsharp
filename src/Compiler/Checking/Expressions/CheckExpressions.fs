@@ -43,6 +43,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
+open Import
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
@@ -1016,6 +1017,12 @@ type TcCanFail =
     | IgnoreMemberResoutionError
     | IgnoreAllErrors
     | ReportAllErrors
+    
+[<RequireQualifiedAccess>]
+[<Struct>]
+type TcTrueMatchClause =
+    | Yes
+    | No
 
 let TcAddNullnessToType (warn: bool) (cenv: cenv) (env: TcEnv) nullness innerTyC m =
     let g = cenv.g
@@ -2515,8 +2522,12 @@ module BindingNormalization =
                 match memberFlagsOpt with
                 | None ->
                     let extraDot = if synLongId.ThereIsAnExtraDotAtTheEnd then ExtraDotAfterIdentifier.Yes else ExtraDotAfterIdentifier.No
-
-                    match ResolvePatternLongIdent cenv.tcSink nameResolver AllIdsOK true m ad env.NameEnv TypeNameResolutionInfo.Default longId extraDot with
+                    let warnOnUpper =
+                        if not args.IsEmpty then
+                            WarnOnUpperUnionCaseLabel
+                        else AllIdsOK  
+                    
+                    match ResolvePatternLongIdent cenv.tcSink nameResolver warnOnUpper true m ad env.NameEnv TypeNameResolutionInfo.Default longId extraDot with
                     | Item.NewDef id ->
                         if id.idText = opNameCons then
                             NormalizedBindingPat(pat, rhsExpr, valSynData, typars)
@@ -2973,11 +2984,20 @@ let TcRuntimeTypeTest isCast isOperator (cenv: cenv) denv m tgtTy srcTy =
         else
             error(Error(FSComp.SR.tcTypeTestErased(NicePrint.minimalStringOfType denv tgtTy, NicePrint.minimalStringOfType denv (stripTyEqnsWrtErasure EraseAll g tgtTy)), m))
     else
-        for ety in getErasedTypes g tgtTy true do
+        let checkTrgtNullness = 
+            match (srcTy,g),(tgtTy,g) with
+            | (NullableRefType|NullTrueValue|NullableTypar), WithoutNullRefType when g.checkNullness && isCast -> 
+                let srcNice = NicePrint.minimalStringOfTypeWithNullness denv srcTy
+                let tgtNice = NicePrint.minimalStringOfTypeWithNullness denv tgtTy
+                warning(Error(FSComp.SR.tcDowncastFromNullableToWithoutNull(srcNice,tgtNice,tgtNice), m))
+                false
+            | (NullableRefType|NullTrueValue|NullableTypar), (NullableRefType|NullTrueValue|NullableTypar) -> not isCast //a type test (unlike type cast) will never return true for  null in the source, therefore adding |null to target does not help => keep the erasure warning
+            | _ -> true
+        for ety in getErasedTypes g tgtTy checkTrgtNullness do
             if isMeasureTy g ety then
                 warning(Error(FSComp.SR.tcTypeTestLosesMeasures(NicePrint.minimalStringOfType denv ety), m))
             else
-                warning(Error(FSComp.SR.tcTypeTestLossy(NicePrint.minimalStringOfType denv ety, NicePrint.minimalStringOfType denv (stripTyEqnsWrtErasure EraseAll g ety)), m))
+                warning(Error(FSComp.SR.tcTypeTestLossy(NicePrint.minimalStringOfTypeWithNullness denv ety, NicePrint.minimalStringOfType denv (stripTyEqnsWrtErasure EraseAll g ety)), m))
 
 ///  Checks, warnings and constraint assertions for upcasts
 let TcStaticUpcast (cenv: cenv) denv m tgtTy srcTy =
@@ -3283,7 +3303,7 @@ let AnalyzeArbitraryExprAsEnumerable (cenv: cenv) (env: TcEnv) localAlloc m expr
 
         let enumElemTy =
 
-            if isObjTy g enumElemTy then
+            if isObjTyAnyNullness g enumElemTy then
                 // Look for an 'Item' property, or a set of these with consistent return types
                 let allEquivReturnTypes (minfo: MethInfo) (others: MethInfo list) =
                     let returnTy = minfo.GetFSharpReturnType(cenv.amap, m, [])
@@ -5891,6 +5911,17 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         TcForEachExpr cenv overallTy env tpenv (seqExprOnly, isFromSource, pat, synEnumExpr, synBodyExpr, m, spFor, spIn, m)
 
     | SynExpr.ComputationExpr (hasSeqBuilder, comp, m) ->
+        let isIndexRange = match comp with | SynExpr.IndexRange _ -> true | _ -> false
+        let deprecatedPlacesWhereSeqCanBeOmitted =
+            cenv.g.langVersion.SupportsFeature LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted
+        if
+            deprecatedPlacesWhereSeqCanBeOmitted
+            && isIndexRange
+            && not hasSeqBuilder
+            && not cenv.g.compilingFSharpCore
+        then
+            warning (Error(FSComp.SR.chkDeprecatePlacesWhereSeqCanBeOmitted (), m))
+
         let env = ExitFamilyRegion env
         cenv.TcSequenceExpressionEntry cenv env overallTy tpenv (hasSeqBuilder, comp) m
 
@@ -5991,23 +6022,23 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
         TcQuotationExpr cenv overallTy env tpenv (oper, raw, ast, isFromQueryExpression, m)
 
-    | SynExpr.YieldOrReturn ((isTrueYield, _), _, m)
-    | SynExpr.YieldOrReturnFrom ((isTrueYield, _), _, m) when isTrueYield ->
+    | SynExpr.YieldOrReturn ((isTrueYield, _), _, _m, { YieldOrReturnKeyword = m })
+    | SynExpr.YieldOrReturnFrom ((isTrueYield, _), _, _m, { YieldOrReturnFromKeyword = m }) when isTrueYield ->
         error(Error(FSComp.SR.tcConstructRequiresListArrayOrSequence(), m))
 
-    | SynExpr.YieldOrReturn ((_, isTrueReturn), _, m)
-    | SynExpr.YieldOrReturnFrom ((_, isTrueReturn), _, m) when isTrueReturn ->
+    | SynExpr.YieldOrReturn ((_, isTrueReturn), _, _m, { YieldOrReturnKeyword = m })
+    | SynExpr.YieldOrReturnFrom ((_, isTrueReturn), _, _m, { YieldOrReturnFromKeyword = m }) when isTrueReturn ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpressions(), m))
 
-    | SynExpr.YieldOrReturn (_, _, m)
-    | SynExpr.YieldOrReturnFrom (_, _, m)
+    | SynExpr.YieldOrReturn (trivia = { YieldOrReturnKeyword = m })
+    | SynExpr.YieldOrReturnFrom (trivia = { YieldOrReturnFromKeyword = m })
     | SynExpr.ImplicitZero m ->
         error(Error(FSComp.SR.tcConstructRequiresSequenceOrComputations(), m))
 
-    | SynExpr.DoBang (_, m)
-    | SynExpr.MatchBang (range = m)
+    | SynExpr.DoBang (trivia = { DoBangKeyword = m })
+    | SynExpr.MatchBang (trivia = { MatchBangKeyword = m })
     | SynExpr.WhileBang (range = m)
-    | SynExpr.LetOrUseBang (range = m) ->
+    | SynExpr.LetOrUseBang (trivia = { LetOrUseBangKeyword = m }) ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
 
     | SynExpr.IndexFromEnd (rightExpr, m) ->
@@ -6096,7 +6127,10 @@ and TcExprDowncast (cenv: cenv) overallTy env tpenv (synExpr, synInnerExpr, m) =
 
     // TcRuntimeTypeTest ensures tgtTy is a nominal type. Hence we can insert a check here
     // based on the nullness semantics of the nominal type.
-    let expr = mkCallUnbox g m tgtTy innerExpr
+    let expr = 
+        match (tgtTy,g) with
+        | NullTrueValue | NullableRefType | NullableTypar when g.checkNullness -> mkCallUnboxFast g m tgtTy innerExpr   
+        | _ ->  mkCallUnbox g m tgtTy innerExpr
     expr, tpenv
 
 and TcExprLazy (cenv: cenv) overallTy env tpenv (synInnerExpr, m) =
@@ -6195,7 +6229,7 @@ and TcExprObjectExpr (cenv: cenv) overallTy env tpenv (synObjTy, argopt, binds, 
                 errorR(Error(FSComp.SR.tcCannotInheritFromErasedType(), m))
             (m, intfTy, overrides), tpenv)
 
-    let realObjTy = if isObjTy g objTy && not (isNil extraImpls) then (p23 (List.head extraImpls)) else objTy
+    let realObjTy = if isObjTyAnyNullness g objTy && not (isNil extraImpls) then (p23 (List.head extraImpls)) else objTy
 
     TcPropagatingExprLeafThenConvert cenv overallTy realObjTy env (* canAdhoc *) m (fun () ->
         TcObjectExpr cenv env tpenv (objTy, realObjTy, argopt, binds, extraImpls, mObjTy, mNewExpr, m)
@@ -6411,10 +6445,8 @@ and TcExprILAssembly (cenv: cenv) overallTy env tpenv (ilInstrs, synTyArgs, synA
 and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpenv e =
     let g = cenv.g
     match e with
-    | SynExpr.Lambda (isMember, isSubsequent, synSimplePats, bodyExpr, _, m, _) when isMember || isFirst || isSubsequent ->
-
+    | SynExpr.Lambda (isMember, isSubsequent, synSimplePats, bodyExpr, _parsedData, m, _trivia) when isMember || isFirst || isSubsequent ->
         let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m overallTy.Commit
-
         let vs, (TcPatLinearEnv (tpenv, names, takenNames)) =
             cenv.TcSimplePats cenv isMember CheckCxs domainTy env (TcPatLinearEnv (tpenv, Map.empty, takenNames)) synSimplePats
 
@@ -7140,7 +7172,7 @@ and CheckSuperType (cenv: cenv) ty m =
        typeEquiv g ty g.system_Array_ty ||
        typeEquiv g ty g.system_MulticastDelegate_ty ||
        typeEquiv g ty g.system_Delegate_ty then
-         error(Error(FSComp.SR.tcPredefinedTypeCannotBeUsedAsSuperType(), m))
+         errorR(Error(FSComp.SR.tcPredefinedTypeCannotBeUsedAsSuperType(), m))
 
     if isErasedType g ty then
         errorR(Error(FSComp.SR.tcCannotInheritFromErasedType(), m))
@@ -7320,7 +7352,7 @@ and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: strin
     let formatTy = mkPrintfFormatTy g aty bty cty dty ety
 
     // This might qualify as a format string - check via a type directed rule
-    let ok = not (isObjTy g overallTy.Commit) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit formatTy
+    let ok = not (isObjTyAnyNullness g overallTy.Commit) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit formatTy
 
     if ok then
         // Parse the format string to work out the phantom types
@@ -7399,7 +7431,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
             Choice1Of2 (true, newFormatMethod)
 
         // ... or if that fails then may be a FormattableString by a type-directed rule....
-        elif (not (isObjTy g overallTy.Commit) &&
+        elif (not (isObjTyAnyNullness g overallTy.Commit) &&
               ((g.system_FormattableString_tcref.CanDeref && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit g.system_FormattableString_ty)
                || (g.system_IFormattable_tcref.CanDeref && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit g.system_IFormattable_ty))) then
 
@@ -7420,7 +7452,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
             | None -> languageFeatureNotSupportedInLibraryError LanguageFeature.StringInterpolation m
 
         // ... or if that fails then may be a PrintfFormat by a type-directed rule....
-        elif not (isObjTy g overallTy.Commit) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit formatTy then
+        elif not (isObjTyAnyNullness g overallTy.Commit) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit formatTy then
 
             // And if that succeeds, the printerTy and printerResultTy must be the same (there are no curried arguments)
             UnifyTypes cenv env m printerTy printerResultTy
@@ -8060,7 +8092,7 @@ and TcForEachExpr cenv overallTy env tpenv (seqExprOnly, isFromSource, synPat, s
 
     let pat, _, vspecs, envinner, tpenv =
         let env = { env with eIsControlFlow = false }
-        TcMatchPattern cenv enumElemTy env tpenv synPat None
+        TcMatchPattern cenv enumElemTy env tpenv synPat None TcTrueMatchClause.No
 
     let elemVar, pat =
         // nice: don't introduce awful temporary for r.h.s. in the 99% case where we know what we're binding it to
@@ -10590,10 +10622,15 @@ and TcAndPatternCompileMatchClauses mExpr mMatch actionOnFailure cenv inputExprO
     let matchVal, expr = CompilePatternForMatchClauses cenv env mExpr mMatch true actionOnFailure inputExprOpt inputTy resultTy.Commit clauses
     matchVal, expr, tpenv
 
-and TcMatchPattern cenv inputTy env tpenv (synPat: SynPat) (synWhenExprOpt: SynExpr option) =
+and TcMatchPattern (cenv: cenv) inputTy env tpenv (synPat: SynPat) (synWhenExprOpt: SynExpr option) (tcTrueMatchClause: TcTrueMatchClause) =
     let g = cenv.g
     let m = synPat.Range
-    let patf', (TcPatLinearEnv (tpenv, names, _)) = cenv.TcPat WarnOnUpperCase cenv env None (TcPatValFlags (ValInline.Optional, permitInferTypars, noArgOrRetAttribs, false, None, false)) (TcPatLinearEnv (tpenv, Map.empty, Set.empty)) inputTy synPat
+    let warnOnUpperFlag =
+        match tcTrueMatchClause with
+        | TcTrueMatchClause.Yes -> WarnOnUpperUnionCaseLabel
+        | TcTrueMatchClause.No -> WarnOnUpperVariablePatterns
+
+    let patf', (TcPatLinearEnv (tpenv, names, _)) = cenv.TcPat warnOnUpperFlag cenv env None (TcPatValFlags (ValInline.Optional, permitInferTypars, noArgOrRetAttribs, false, None, false)) (TcPatLinearEnv (tpenv, Map.empty, Set.empty)) inputTy synPat
     let envinner, values, vspecMap = MakeAndPublishSimpleValsForMergedScope cenv env m names
 
     let whenExprOpt, tpenv =
@@ -10614,9 +10651,15 @@ and TcMatchClauses cenv inputTy (resultTy: OverallTy) env tpenv clauses =
     resultList,tpEnv
 
 and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchClause =
-    let (SynMatchClause(synPat, synWhenExprOpt, synResultExpr, patm, spTgt, _)) = synMatchClause
+    let (SynMatchClause(synPat, synWhenExprOpt, synResultExpr, patm, spTgt, trivia)) = synMatchClause
 
-    let pat, whenExprOpt, vspecs, envinner, tpenv = TcMatchPattern cenv inputTy env tpenv synPat synWhenExprOpt
+    let isTrueMatchClause =
+        if synMatchClause.IsTrueMatchClause then
+            TcTrueMatchClause.Yes
+        else
+            TcTrueMatchClause.No
+   
+    let pat, whenExprOpt, vspecs, envinner, tpenv = TcMatchPattern cenv inputTy env tpenv synPat synWhenExprOpt isTrueMatchClause
 
     let resultEnv =
         if isFirst then envinner

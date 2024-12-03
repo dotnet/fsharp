@@ -13,6 +13,7 @@ open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
 open FSharp.DependencyManager.Nuget
 open FSharp.Test.ScriptHelpers
+open FSharp.Test
 open FSharp.Test.Utilities
 
 open Internal.Utilities
@@ -148,8 +149,7 @@ type DependencyManagerInteractiveTests() =
         Assert.Equal(0, result.Roots |> Seq.length)
         ()
 
-
-    [<Fact(Skip="failing on main")>]
+    [<Fact>]
     member _.``Multiple Instances of DependencyProvider should be isolated``() =
 
         let assemblyProbingPaths () = Seq.empty<string>
@@ -721,103 +721,65 @@ x |> Seq.iter(fun r ->
 
     [<Fact>]
     member _.``Verify that #help produces help text for fsi + dependency manager``() =
-        let expected = [|
-            """  F# Interactive directives:"""
-            """"""
-            """    #r "file.dll";;                               // Reference (dynamically load) the given DLL"""
-            """    #i "package source uri";;                     // Include package source uri when searching for packages"""
-            """    #I "path";;                                   // Add the given search path for referenced DLLs"""
-            """    #load "file.fs" ...;;                         // Load the given file(s) as if compiled and referenced"""
-            """    #time ["on"|"off"];;                          // Toggle timing on/off"""
-            """    #clear;;                                      // Clear screen"""
-            """    #help;;                                       // Display help"""
-            """    #help "idn";;                                 // Display documentation for an identifier, e.g. #help "List.map";;"""
-            """    #quit;;                                       // Exit"""
-            """"""
-            """  F# Interactive command line options:"""
-            """"""
+        let expected = """
+  F# Interactive directives:
 
-            // this is the end of the line each different platform has a different mechanism for starting fsi
-            // Actual output looks similar to: """      See 'testhost --help' for options"""
-            """--help' for options"""
+    #r "file.dll";;                               // Reference (dynamically load) the given DLL
+    #i "package source uri";;                     // Include package source uri when searching for packages
+    #I "path";;                                   // Add the given search path for referenced DLLs
+    #load "file.fs" ...;;                         // Load the given file(s) as if compiled and referenced
+    #time ["on"|"off"];;                          // Toggle timing on/off
+    #help;;                                       // Display help
+    #help "idn";;                                 // Display documentation for an identifier, e.g. #help "List.map";;
+    #clear;;                                      // Clear screen
+    #quit;;                                       // Exit
 
-            """"""
-            """"""
-        |]
+  F# Interactive command line options:"""
 
-        let mutable found = 0
-        let lines = System.Collections.Generic.List()
-        use sawExpectedOutput = new ManualResetEvent(false)
-        let verifyOutput (line: string) =
-            let compareLine (s: string) =
-                if s = "" then line = ""
-                else line.EndsWith(s)
-            lines.Add(line)
-            match expected |> Array.tryFind(compareLine) with
-            | None -> ()
-            | Some t ->
-                found <- found + 1
-                if found = expected.Length then sawExpectedOutput.Set() |> ignore
-
-        let text = "#help"
-        use output = new RedirectConsoleOutput()
         use script = new FSharpScript(quiet = false, langVersion = LangVersion.V47)
-        let mutable found = 0
-        output.OutputProduced.Add (fun line -> verifyOutput line)
-        let opt = script.Eval(text) |> getValue
-        Assert.True(sawExpectedOutput.WaitOne(TimeSpan.FromSeconds(5.0)), sprintf "Expected to see error sentinel value written\nexpected:%A\nactual:%A" expected lines)
 
+        use capture = new TestConsole.ExecutionCapture()
+        let opt = script.Eval("#help") |> getValue
+
+        let output = capture.OutText
+
+        Assert.Contains(expected, output)
+
+        // this is the end of the line each different platform has a different mechanism for starting fsi
+        // Actual output looks similar to: """      See 'testhost --help' for options"""
+        Assert.EndsWith("--help' for options", output.Trim())
 
     [<Fact>]
     member _.``Verify that #help produces help text for fsi + dependency manager language version preview``() =
-        let expected = [|
-            """  F# Interactive directives:"""
-            """"""
-            """    #r "file.dll";;                               // Reference (dynamically load) the given DLL"""
-            """    #i "package source uri";;                     // Include package source uri when searching for packages"""
-            """    #I "path";;                                   // Add the given search path for referenced DLLs"""
-            """    #load "file.fs" ...;;                         // Load the given file(s) as if compiled and referenced"""
-            """    #time ["on"|"off"];;                          // Toggle timing on/off"""
-            """    #help;;                                       // Display help"""
-            """    #help "idn";;                                 // Display documentation for an identifier, e.g. #help "List.map";;"""
-            """    #r "nuget:FSharp.Data, 3.1.2";;               // Load Nuget Package 'FSharp.Data' version '3.1.2'"""
-            """    #r "nuget:FSharp.Data";;                      // Load Nuget Package 'FSharp.Data' with the highest version"""
-            """    #clear;;                                      // Clear screen"""
-            """    #quit;;                                       // Exit"""
-            """"""
-            """  F# Interactive command line options:"""
-            """"""
+        let expected = """
+  F# Interactive directives:
 
-            // this is the end of the line each different platform has a different mechanism for starting fsi
-            // Actual output looks similar to: """      See 'testhost --help' for options"""
-            """--help' for options"""
+    #r "file.dll";;                               // Reference (dynamically load) the given DLL
+    #i "package source uri";;                     // Include package source uri when searching for packages
+    #I "path";;                                   // Add the given search path for referenced DLLs
+    #load "file.fs" ...;;                         // Load the given file(s) as if compiled and referenced
+    #time ["on"|"off"];;                          // Toggle timing on/off
+    #help;;                                       // Display help
+    #help "idn";;                                 // Display documentation for an identifier, e.g. #help "List.map";;
+    #r "nuget:FSharp.Data, 3.1.2";;               // Load Nuget Package 'FSharp.Data' version '3.1.2'
+    #r "nuget:FSharp.Data";;                      // Load Nuget Package 'FSharp.Data' with the highest version
+    #clear;;                                      // Clear screen
+    #quit;;                                       // Exit
 
-            """"""
-            """"""
-        |]
+  F# Interactive command line options:"""
 
-        let mutable found = 0
-        let lines = System.Collections.Generic.List()
-        use sawExpectedOutput = new ManualResetEvent(false)
-        let verifyOutput (line: string) =
-            let compareLine (s: string) =
-                if s = "" then line = ""
-                else line.EndsWith(s)
-            lines.Add(line)
-            match expected |> Array.tryFind(compareLine) with
-            | None -> ()
-            | Some t ->
-                found <- found + 1
-                if found = expected.Length then sawExpectedOutput.Set() |> ignore
-
-        let text = "#help"
-        use output = new RedirectConsoleOutput()
         use script = new FSharpScript(quiet = false, langVersion = LangVersion.Preview)
-        let mutable found = 0
-        output.OutputProduced.Add (fun line -> verifyOutput line)
-        let opt = script.Eval(text) |> getValue
-        Assert.True(sawExpectedOutput.WaitOne(TimeSpan.FromSeconds(5.0)), sprintf "Expected to see error sentinel value written\nexpected:%A\nactual:%A" expected lines)
 
+        use capture = new TestConsole.ExecutionCapture()
+        let opt = script.Eval("#help") |> getValue
+
+        let output = capture.OutText
+
+        Assert.Contains(expected, output)
+
+        // this is the end of the line each different platform has a different mechanism for starting fsi
+        // Actual output looks similar to: """      See 'testhost --help' for options"""
+        Assert.EndsWith("--help' for options", output.Trim())
 
     [<Fact>]
     member _.``Verify that timeout --- times out and fails``() =

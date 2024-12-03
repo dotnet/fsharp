@@ -15,14 +15,14 @@ type ObsoleteSeqFunctions() =
 
         // Negative index
         for i = -1 downto -10 do
-           CheckThrowsArgumentException (fun () -> Seq.nth i { 10 .. 20 } |> ignore)
+           CheckThrowsArgumentException (fun () -> Seq.nth i (seq { 10 .. 20 }) |> ignore)
 
         // Out of range
         for i = 11 to 20 do
-           CheckThrowsArgumentException (fun () -> Seq.nth i { 10 .. 20 } |> ignore)
+           CheckThrowsArgumentException (fun () -> Seq.nth i (seq { 10 .. 20 }) |> ignore)
 
          // integer Seq
-        let resultInt = Seq.nth 3 { 10..20 } 
+        let resultInt = Seq.nth 3 (seq { 10..20 }) 
         Assert.AreEqual(13, resultInt)
 
         // string Seq

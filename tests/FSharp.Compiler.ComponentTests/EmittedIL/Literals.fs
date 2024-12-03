@@ -176,35 +176,242 @@ let [<Literal>] x = System.Int32.MaxValue + 1
         }
 
     [<Fact>]
-    let ``Compilation fails when using decimal arithmetic in literal``() =
+    let ``Decimal literals are properly initialized``() =
         FSharp """
-module LiteralArithmetic
+module DecimalInit
 
-let [<Literal>] x = 1m + 1m
+[<Literal>]
+let x = 5.5m
         """
         |> withLangVersion80
         |> compile
-        |> shouldFail
-        |> withResults [
-            { Error = Error 267
-              Range = { StartLine = 4
-                        StartColumn = 21
-                        EndLine = 4
-                        EndColumn = 23 }
-              Message = "This is not a valid constant expression or custom attribute value" }
-            { Error = Error 267
-              Range = { StartLine = 4
-                        StartColumn = 26
-                        EndLine = 4
-                        EndColumn = 28 }
-              Message = "This is not a valid constant expression or custom attribute value" }
-            { Error = Error 267
-              Range = { StartLine = 4
-                        StartColumn = 21
-                        EndLine = 4
-                        EndColumn = 28 }
-              Message = "This is not a valid constant expression or custom attribute value" }
+        |> shouldSucceed
+        |> verifyIL [
+            """
+.class public abstract auto ansi sealed DecimalInit
+       extends [runtime]System.Object
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+  .field public static initonly valuetype [runtime]System.Decimal x
+  .custom instance void [runtime]System.Runtime.CompilerServices.DecimalConstantAttribute::.ctor(uint8,
+                                                                                                        uint8,
+                                                                                                        int32,
+                                                                                                        int32,
+                                                                                                        int32) = ( 01 00 01 00 00 00 00 00 00 00 00 00 37 00 00 00   
+                                                                                                                   00 00 ) 
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .method private specialname rtspecialname static void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$DecimalInit::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$DecimalInit::init@
+    IL_000b:  pop
+    IL_000c:  ret
+  } 
+
+  .method assembly specialname static void staticInitialization@() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.s   55
+    IL_0002:  ldc.i4.0
+    IL_0003:  ldc.i4.0
+    IL_0004:  ldc.i4.0
+    IL_0005:  ldc.i4.1
+    IL_0006:  newobj     instance void [runtime]System.Decimal::.ctor(int32,
+                                                                             int32,
+                                                                             int32,
+                                                                             bool,
+                                                                             uint8)
+    IL_000b:  stsfld     valuetype [runtime]System.Decimal DecimalInit::x
+    IL_0010:  ret
+  } 
+
+} 
+
+.class private abstract auto ansi sealed '<StartupCode$assembly>'.$DecimalInit
+       extends [runtime]System.Object
+{
+  .field static assembly int32 init@
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+  .method private specialname rtspecialname static void  .cctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  call       void DecimalInit::staticInitialization@()
+    IL_0005:  ret
+  } 
+
+}
+"""
         ]
+
+    [<Fact>]
+    let ``Arithmetic can be used for constructing decimal literals``() =
+        FSharp """
+module LiteralArithmetic
+
+[<Literal>]
+let x = 1m + 2m
+        """
+        |> withLangVersion80
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            """.field public static initonly valuetype [runtime]System.Decimal x
+.custom instance void [runtime]System.Runtime.CompilerServices.DecimalConstantAttribute::.ctor(uint8,
+                                                                                                    uint8,
+                                                                                                    int32,
+                                                                                                    int32,
+                                                                                                    int32) = ( 01 00 00 00 00 00 00 00 00 00 00 00 03 00 00 00 
+                                                                                                                00 00 )"""
+            """
+.method assembly specialname static void staticInitialization@() cil managed
+{
+
+.maxstack  8
+IL_0000:  ldc.i4.3
+IL_0001:  ldc.i4.0
+IL_0002:  ldc.i4.0
+IL_0003:  ldc.i4.0
+IL_0004:  ldc.i4.0
+IL_0005:  newobj     instance void [runtime]System.Decimal::.ctor(int32,
+                                                                        int32,
+                                                                        int32,
+                                                                        bool,
+                                                                        uint8)
+IL_000a:  stsfld     valuetype [runtime]System.Decimal LiteralArithmetic::x
+IL_000f:  ret
+}
+"""
+        ]
+
+    [<Fact>]
+    let ``Pattern matching decimal literal``() =
+        FSharp """
+module PatternMatch
+
+[<Literal>]
+let x = 5m
+
+let test () =
+    match x with
+    | 5m -> 0
+    | _ -> 1
+        """
+        |> withLangVersion80
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            """
+.field public static initonly valuetype [runtime]System.Decimal x
+.custom instance void [runtime]System.Runtime.CompilerServices.DecimalConstantAttribute::.ctor(uint8,
+                                                                                                    uint8,
+                                                                                                    int32,
+                                                                                                    int32,
+                                                                                                    int32) = ( 01 00 00 00 00 00 00 00 00 00 00 00 05 00 00 00 
+                                                                                                                00 00 )"""
+            """
+.method public static int32  test() cil managed
+    {
+
+.maxstack  8
+.locals init (valuetype [runtime]System.Decimal V_0)
+IL_0000:  ldc.i4.5
+IL_0001:  ldc.i4.0
+IL_0002:  ldc.i4.0
+IL_0003:  ldc.i4.0
+IL_0004:  ldc.i4.0
+IL_0005:  newobj     instance void [netstandard]System.Decimal::.ctor(int32,
+                                                                            int32,
+                                                                            int32,
+                                                                            bool,
+                                                                            uint8)
+IL_000a:  stloc.0
+IL_000b:  ldloc.0
+IL_000c:  ldc.i4.5
+IL_000d:  ldc.i4.0
+IL_000e:  ldc.i4.0
+IL_000f:  ldc.i4.0
+IL_0010:  ldc.i4.0
+IL_0011:  newobj     instance void [netstandard]System.Decimal::.ctor(int32,
+                                                                            int32,
+                                                                            int32,
+                                                                            bool,
+                                                                            uint8)
+IL_0016:  call       bool [netstandard]System.Decimal::op_Equality(valuetype [netstandard]System.Decimal,
+                                                                valuetype [netstandard]System.Decimal)
+  """
+        ]
+
+    [<Fact>]
+    let ``Multiple decimals literals can be created``() =
+        FSharp """
+module DecimalLiterals
+
+[<Literal>]
+let x = 41m
+
+[<Literal>]
+let y = 42m
+        """
+        |> withLangVersion80
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            """
+.field public static initonly valuetype [runtime]System.Decimal x
+.custom instance void [runtime]System.Runtime.CompilerServices.DecimalConstantAttribute::.ctor(uint8,
+                                                                                                    uint8,
+                                                                                                    int32,
+                                                                                                    int32,
+                                                                                                    int32) = ( 01 00 00 00 00 00 00 00 00 00 00 00 29 00 00 00   
+                                                                                                                00 00 )
+"""
+            """
+.field public static initonly valuetype [runtime]System.Decimal y
+.custom instance void [runtime]System.Runtime.CompilerServices.DecimalConstantAttribute::.ctor(uint8,
+                                                                                                    uint8,
+                                                                                                    int32,
+                                                                                                    int32,
+                                                                                                    int32) = ( 01 00 00 00 00 00 00 00 00 00 00 00 2A 00 00 00   
+                                                                                                                00 00 )
+"""
+            """
+.method assembly specialname static void staticInitialization@() cil managed
+{
+
+.maxstack  8
+IL_0000:  ldc.i4.s   41
+IL_0002:  ldc.i4.0
+IL_0003:  ldc.i4.0
+IL_0004:  ldc.i4.0
+IL_0005:  ldc.i4.0
+IL_0006:  newobj     instance void [runtime]System.Decimal::.ctor(int32,
+                                                                            int32,
+                                                                            int32,
+                                                                            bool,
+                                                                            uint8)
+IL_000b:  stsfld     valuetype [runtime]System.Decimal DecimalLiterals::x
+IL_0010:  ldc.i4.s   42
+IL_0012:  ldc.i4.0
+IL_0013:  ldc.i4.0
+IL_0014:  ldc.i4.0
+IL_0015:  ldc.i4.0
+IL_0016:  newobj     instance void [runtime]System.Decimal::.ctor(int32,
+                                                                            int32,
+                                                                            int32,
+                                                                            bool,
+                                                                            uint8)
+IL_001b:  stsfld     valuetype [runtime]System.Decimal DecimalLiterals::y
+IL_0020:  ret
+} 
+"""
+            ]
 
     [<Fact>]
     let ``Compilation fails when using arithmetic with a non-literal in literal``() =

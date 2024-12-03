@@ -1319,7 +1319,7 @@ let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, d
                     | Some einfo -> 
                         match delArgVals with 
                         | [] -> error(nonStandardEventError einfo.EventName m)
-                        | h :: _ when not (isObjTy g h.Type) -> error(nonStandardEventError einfo.EventName m)
+                        | h :: _ when not (isObjTyAnyNullness g h.Type) -> error(nonStandardEventError einfo.EventName m)
                         | h :: t -> [exprForVal m h; mkRefTupledVars g m t] 
                     | None -> 
                         if isNil delArgTys then [mkUnit g m] else List.map (exprForVal m) delArgVals
@@ -1771,7 +1771,7 @@ module ProvidedMethodCalls =
                     | _ when typeEquiv g normTy g.float32_ty -> Const.Single(v :?> float32)
                     | _ when typeEquiv g normTy g.float_ty -> Const.Double(v :?> float)
                     | _ when typeEquiv g normTy g.char_ty -> Const.Char(v :?> char)
-                    | _ when typeEquiv g normTy g.string_ty -> Const.String(v :?> string)
+                    | _ when typeEquiv g normTy g.string_ty -> Const.String(!!v :?> string)
                     | _ when typeEquiv g normTy g.decimal_ty -> Const.Decimal(v :?> decimal)
                     | _ when typeEquiv g normTy g.unit_ty -> Const.Unit
                     | _ -> fail()

@@ -17,6 +17,6 @@ module OtherModule =
 
   let _ =
           stdout.WriteLine "Test Passed"
-          System.IO.File.WriteAllText("test.ok","ok")
+          printf "TEST PASSED OK" ;
           exit 0
 

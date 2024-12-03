@@ -1,7 +1,6 @@
 module Signatures.ModuleOrNamespaceTests
 
 open Xunit
-open FsUnit
 open FSharp.Test.Compiler
 open Signatures.TestHelpers
 
@@ -20,8 +19,7 @@ type Map<'t,'v> =
 """
     |> printSignatures
     |> prependNewline
-    |> should
-        equal
+    |> assertEqualIgnoreLineEnding
         """
 namespace Foo.Types
 
@@ -43,8 +41,7 @@ type Foo =
 """
     |> printSignatures
     |> prependNewline
-    |> should
-        equal
+    |> assertEqualIgnoreLineEnding
         """
 namespace Hey.There
 
@@ -101,8 +98,7 @@ module internal CodePrinter =
         id"""
     |> printSignatures
     |> prependNewline
-    |> should
-        equal
+    |> assertEqualIgnoreLineEnding
         """
 namespace Fantomas.Core
 
@@ -156,7 +152,7 @@ open System.Runtime.CompilerServices
 do ()
 """
     |> printSignatures
-    |> should equal "namespace System"
+    |> assertEqualIgnoreLineEnding "namespace System"
         
 [<Fact>]
 let ``Empty module`` () =
@@ -167,7 +163,7 @@ module Foobar
 do ()
 """
     |> printSignatures
-    |> should equal "module Foobar"
+    |> assertEqualIgnoreLineEnding "module Foobar"
 
 [<Fact>]
 let ``Two empty namespaces`` () =
@@ -183,7 +179,7 @@ do ()
 """
     |> printSignatures
     |> prependNewline
-    |> should equal """
+    |> assertEqualIgnoreLineEnding """
 namespace Foo
 namespace Bar"""
 
@@ -196,7 +192,7 @@ namespace rec Foobar
 do ()
 """
     |> printSignatures
-    |> should equal "namespace Foobar"
+    |> assertEqualIgnoreLineEnding "namespace Foobar"
 
 [<Fact>]
 let ``Attribute on nested module`` () =
@@ -211,7 +207,7 @@ module Area =
 """
     |> printSignatures
     |> prependNewline
-    |> should equal """
+    |> assertEqualIgnoreLineEnding """
 namespace MyApp.Types
 
   [<RequireQualifiedAccess; CompilationRepresentation (enum<CompilationRepresentationFlags> (4))>]

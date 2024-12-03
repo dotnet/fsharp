@@ -89,6 +89,24 @@ let ``SupportsNull`` compilation =
     |> withNoWarn 52
     |> verifyCompilation DoNotOptimize
 
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"GenericCode.fs"|])>]
+let ``GenericCode`` compilation =  
+    compilation
+    |> withNoWarn 52
+    |> verifyCompilation DoNotOptimize
+
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NullableDowncasting.fs"|])>]
+let ``Downcasting and typetests`` compilation =  
+    compilation
+    |> withNoWarn 52
+    |> verifyCompilation DoNotOptimize
+
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NullableDowncasting.fs"|], BaselineSuffix = ".opt")>]
+let ``Downcasting and typetests optimized`` compilation =  
+    compilation
+    |> withNoWarn 52
+    |> verifyCompilation Optimize
+
 
 module Interop  =
     open System.IO

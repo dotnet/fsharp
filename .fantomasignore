@@ -109,6 +109,7 @@ src/Compiler/Utilities/illib.fs
 
 
 src/Compiler/Utilities/NullnessShims.fs
+src/Compiler/Utilities/DependencyGraph.fs
 src/Compiler/Utilities/LruCache.fsi
 src/Compiler/Utilities/LruCache.fs
 src/Compiler/Utilities/HashMultiMap.fsi
@@ -116,6 +117,10 @@ src/Compiler/Utilities/HashMultiMap.fs
 src/Compiler/Facilities/AsyncMemoize.fsi
 src/Compiler/Facilities/AsyncMemoize.fs
 src/Compiler/AbstractIL/il.fs
+src/Compiler/SyntaxTree/LexerStore.fs
+
+src/Compiler/Driver/GraphChecking/Graph.fsi
+src/Compiler/Driver/GraphChecking/Graph.fs
 
 # Fantomas limitations on implementation files  (to investigate)
 

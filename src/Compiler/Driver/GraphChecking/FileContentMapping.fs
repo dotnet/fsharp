@@ -212,7 +212,7 @@ let visitSynMemberDefn (md: SynMemberDefn) : FileContentEntry list =
             yield! collectFromOption visitBinding memberDefnForGet
             yield! collectFromOption visitBinding memberDefnForSet
         | SynMemberDefn.ImplicitCtor(ctorArgs = pat) -> yield! visitPat pat
-        | SynMemberDefn.ImplicitInherit(inheritType, inheritArgs, _, _) ->
+        | SynMemberDefn.ImplicitInherit(inheritType, inheritArgs, _, _, _) ->
             yield! visitSynType inheritType
             yield! visitSynExpr inheritArgs
         | SynMemberDefn.LetBindings(bindings = bindings) -> yield! List.collect visitBinding bindings
@@ -220,7 +220,8 @@ let visitSynMemberDefn (md: SynMemberDefn) : FileContentEntry list =
         | SynMemberDefn.Interface(interfaceType, _, members, _) ->
             yield! visitSynType interfaceType
             yield! collectFromOption (List.collect visitSynMemberDefn) members
-        | SynMemberDefn.Inherit(baseType, _, _) -> yield! visitSynType baseType
+        | SynMemberDefn.Inherit(baseType = Some baseType) -> yield! visitSynType baseType
+        | SynMemberDefn.Inherit(baseType = None) -> ()
         | SynMemberDefn.ValField(fieldInfo, _) -> yield! visitSynField fieldInfo
         | SynMemberDefn.NestedType _ -> ()
         | SynMemberDefn.AutoProperty(attributes = attributes; typeOpt = typeOpt; synExpr = synExpr) ->
@@ -523,7 +524,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             visit expr (fun exprNodes ->
                 [ yield! exprNodes; yield! List.collect visitSynMatchClause clauses ]
                 |> continuation)
-        | SynExpr.DoBang(expr, _) -> visit expr continuation
+        | SynExpr.DoBang(expr = expr) -> visit expr continuation
         | SynExpr.WhileBang(whileExpr = whileExpr; doExpr = doExpr) ->
             visit whileExpr (fun whileNodes -> visit doExpr (fun doNodes -> whileNodes @ doNodes |> continuation))
         | SynExpr.LibraryOnlyILAssembly(typeArgs = typeArgs; args = args; retTy = retTy) ->

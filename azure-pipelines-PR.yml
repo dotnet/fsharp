@@ -229,7 +229,7 @@ stages:
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
+              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
 
@@ -247,8 +247,8 @@ stages:
             condition: failed()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\$(_configuration)'
-                ArtifactName: 'Windows $(_configuration) $(_testKind) process dumps'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
+                ArtifactName: 'Windows Release WindowsLangVersionPreview process dumps'
                 ArtifactType: Container
                 parallel: true
 
@@ -269,7 +269,7 @@ stages:
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
+              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
 
@@ -287,8 +287,8 @@ stages:
             condition: failed()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\$(_configuration)'
-                ArtifactName: 'Windows $(_configuration) $(_testKind) process dumps'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
+                ArtifactName: 'Windows Release WindowsNoRealsig_testCoreclr process dumps'
                 ArtifactType: Container
                 parallel: true
 
@@ -309,7 +309,7 @@ stages:
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
+              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
 
@@ -327,8 +327,8 @@ stages:
             condition: failed()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\$(_configuration)'
-                ArtifactName: 'Windows $(_configuration) $(_testKind) process dumps'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
+                ArtifactName: 'Windows Release WindowsNoRealsig_testDesktop process dumps'
                 ArtifactType: Container
                 parallel: true
 
@@ -349,7 +349,7 @@ stages:
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
+              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
 
@@ -367,8 +367,8 @@ stages:
             condition: failed()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\$(_configuration)'
-                ArtifactName: 'Windows $(_configuration) $(_testKind) process dumps'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
+                ArtifactName: 'Windows Release WindowsStrictIndentation process dumps'
                 ArtifactType: Container
                 parallel: true
 
@@ -385,7 +385,7 @@ stages:
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
+              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
 
@@ -403,8 +403,8 @@ stages:
             condition: failed()
             continueOnError: true
             inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\$(_configuration)'
-                ArtifactName: 'Windows $(_configuration) $(_testKind) process dumps'
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
+                ArtifactName: 'Windows Release WindowsNoStrictIndentation process dumps'
                 ArtifactType: Container
                 parallel: true
 
@@ -487,7 +487,9 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'NUnit'
+              testResultsFormat: 'XUnit'
+              testRunTitle: WindowsCompressedMetadata $(_testKind)
+              mergeTestResults: true
               testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_configuration)'
             continueOnError: true
@@ -557,8 +559,10 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'NUnit'
+              testResultsFormat: 'XUnit'
+              testRunTitle: Linux
               testResultsFiles: '*.xml'
+              mergeTestResults: true
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
             continueOnError: true
             condition: always()
@@ -585,7 +589,7 @@ stages:
         # MacOS
         - job: MacOS
           pool:
-            vmImage: macos-12
+            vmImage: macos-latest
           timeoutInMinutes: 120
           variables:
           - name: _SignType
@@ -600,8 +604,10 @@ stages:
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
-              testResultsFormat: 'NUnit'
+              testResultsFormat: 'XUnit'
               testResultsFiles: '*.xml'
+              testRunTitle: MacOS
+              mergeTestResults: true
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
             continueOnError: true
             condition: always()
@@ -721,7 +727,7 @@ stages:
         # Plain FCS build Mac
         - job: Plain_Build_MacOS
           pool:
-            vmImage: macos-12
+            vmImage: macos-latest
           variables:
           - name: _BuildConfig
             value: Debug
@@ -802,3 +808,23 @@ stages:
               artifactName: 'Trim Test Logs Attempt $(System.JobAttempt) Logs $(_kind)'
             continueOnError: true
             condition: always()
+        - job: ILVerify
+          pool:
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          steps:
+          - checkout: self
+            clean: true
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              useGlobalJson: true
+              includePreviewVersions: true
+              workingDirectory: $(Build.SourcesDirectory)
+              installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: dotnet tool restore
+            displayName: Restore dotnet tools
+          - pwsh: .\tests\ILVerify\ilverify.ps1
+            displayName: Run ILVerify
+            workingDirectory: $(Build.SourcesDirectory)

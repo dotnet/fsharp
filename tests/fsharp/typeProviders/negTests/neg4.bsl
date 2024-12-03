@@ -17,12 +17,12 @@ neg4.fsx(30,5,30,22): typecheck error FS3062: This type test with a provided typ
 
 neg4.fsx(36,5,36,28): typecheck error FS3060: This type test or downcast will erase the provided type 'HelloWorldType' to the type 'System.Object'
 
-neg4.fsx(42,8,42,33): typecheck error FS3063: Cannot inherit from erased provided type
+neg4.fsx(42,16,42,33): typecheck error FS3063: Cannot inherit from erased provided type
 
-neg4.fsx(42,8,42,33): typecheck error FS3063: Cannot inherit from erased provided type
+neg4.fsx(42,16,42,33): typecheck error FS3063: Cannot inherit from erased provided type
 
-neg4.fsx(47,8,47,35): typecheck error FS3063: Cannot inherit from erased provided type
+neg4.fsx(47,16,47,33): typecheck error FS3063: Cannot inherit from erased provided type
 
-neg4.fsx(47,8,47,35): typecheck error FS3063: Cannot inherit from erased provided type
+neg4.fsx(47,16,47,33): typecheck error FS3063: Cannot inherit from erased provided type
 
 neg4.fsx(52,25,52,42): typecheck error FS3063: Cannot inherit from erased provided type

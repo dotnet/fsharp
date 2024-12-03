@@ -9,7 +9,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
-open FsUnit
+open FSharp.Test.Assert
 open Internal.Utilities.Library
 open FSharp.Compiler.Service.Tests.Common
 open Xunit
@@ -115,7 +115,7 @@ type PreTypeDefData =
                 mkILMethods []
 
         let typeAttributes = TypeAttributes.Public
-        ILTypeDef(this.Name, typeAttributes, ILTypeDefLayout.Auto, [], None, [],
+        ILTypeDef(this.Name, typeAttributes, ILTypeDefLayout.Auto, emptyILInterfaceImpls, [],
             None, methodsDefs, mkILTypeDefs [], mkILFields [], emptyILMethodImpls, mkILEvents [], mkILProperties [], ILTypeDefAdditionalFlags.None,
             emptyILSecurityDecls, emptyILCustomAttrsStored)
 

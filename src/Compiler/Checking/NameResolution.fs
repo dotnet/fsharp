@@ -3369,7 +3369,10 @@ let rec ResolvePatternLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv nu
 exception UpperCaseIdentifierInPattern of range
 
 /// Indicates if a warning should be given for the use of upper-case identifiers in patterns
-type WarnOnUpperFlag = WarnOnUpperCase | AllIdsOK
+type WarnOnUpperFlag =
+    | WarnOnUpperUnionCaseLabel
+    | WarnOnUpperVariablePatterns
+    | AllIdsOK
 
 // Long ID in a pattern
 let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified warnOnUpper newDef m ad nenv numTyArgsOpt (id: Ident) (rest: Ident list) extraDotAtTheEnd =
@@ -3389,13 +3392,21 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
             | true, res when not newDef -> ResolveUnqualifiedItem ncenv nenv m res
             | _ ->
                 // Single identifiers in patterns - variable bindings
-                if
-                    not newDef
-                    && warnOnUpper = WarnOnUpperCase
-                    && id.idText.Length >= 3
-                    && System.Char.ToLowerInvariant id.idText[0] <> id.idText[0]
+                let supportsDontWarnOnUppercaseIdentifiers = ncenv.g.langVersion.SupportsFeature(LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns)
+                let isUpperCaseIdentifier = (not newDef && System.Char.ToLowerInvariant id.idText[0] <> id.idText[0])
+                if (supportsDontWarnOnUppercaseIdentifiers && isUpperCaseIdentifier)
                 then
-                    warning(UpperCaseIdentifierInPattern m)
+                    match warnOnUpper with
+                    | WarnOnUpperUnionCaseLabel -> warning(UpperCaseIdentifierInPattern m)
+                    | WarnOnUpperVariablePatterns
+                    | AllIdsOK -> ()
+                else
+                    // HACK: This is an historical hack that seems to related the use country and language codes, which are very common in codebases
+                    if isUpperCaseIdentifier && id.idText.Length >= 3 then
+                        match warnOnUpper with
+                        | WarnOnUpperUnionCaseLabel
+                        | WarnOnUpperVariablePatterns ->  warning(UpperCaseIdentifierInPattern m)
+                        | AllIdsOK -> ()
 
                 // If there's an extra dot, we check whether the single identifier is a union, module or namespace and report it to the sink for the sake of tooling
                 match extraDotAtTheEnd with
@@ -4422,14 +4433,14 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
         //
         // Don't show GetHashCode or Equals for F# types that admit equality as an abnormal operation
         let isUnseenDueToBasicObjRules =
-            not (isObjTy g ty) &&
+            not (isObjTyAnyNullness g ty) &&
             not minfo.IsExtensionMember &&
             match minfo.LogicalName with
             | "GetType"  -> false
-            | "GetHashCode"  -> isObjTy g minfo.ApparentEnclosingType && not (AugmentTypeDefinitions.TypeDefinitelyHasEquality g ty)
+            | "GetHashCode"  -> isObjTyAnyNullness g minfo.ApparentEnclosingType && not (AugmentTypeDefinitions.TypeDefinitelyHasEquality g ty)
             | "ToString" -> false
             | "Equals" ->
-                if not (isObjTy g minfo.ApparentEnclosingType) then
+                if not (isObjTyAnyNullness g minfo.ApparentEnclosingType) then
                     // declaring type is not System.Object - show it
                     false
                 elif minfo.IsInstance then
@@ -4440,7 +4451,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
                     true
             | _ ->
                 // filter out self methods of obj type
-                isObjTy g minfo.ApparentEnclosingType
+                isObjTyAnyNullness g minfo.ApparentEnclosingType
 
         let result =
             not isUnseenDueToBasicObjRules &&
@@ -5121,14 +5132,14 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
                 //
                 // Don't show GetHashCode or Equals for F# types that admit equality as an abnormal operation
                 let isUnseenDueToBasicObjRules =
-                    not (isObjTy g ty) &&
+                    not (isObjTyAnyNullness g ty) &&
                     not minfo.IsExtensionMember &&
                     match minfo.LogicalName with
                     | "GetType"  -> false
-                    | "GetHashCode"  -> isObjTy g minfo.ApparentEnclosingType && not (AugmentTypeDefinitions.TypeDefinitelyHasEquality g ty)
+                    | "GetHashCode"  -> isObjTyAnyNullness g minfo.ApparentEnclosingType && not (AugmentTypeDefinitions.TypeDefinitelyHasEquality g ty)
                     | "ToString" -> false
                     | "Equals" ->
-                        if not (isObjTy g minfo.ApparentEnclosingType) then
+                        if not (isObjTyAnyNullness g minfo.ApparentEnclosingType) then
                             // declaring type is not System.Object - show it
                             false
                         elif minfo.IsInstance then
@@ -5139,7 +5150,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
                             true
                     | _ ->
                         // filter out self methods of obj type
-                        isObjTy g minfo.ApparentEnclosingType
+                        isObjTyAnyNullness g minfo.ApparentEnclosingType
                 let result =
                     not isUnseenDueToBasicObjRules &&
                     not minfo.IsInstance = statics &&

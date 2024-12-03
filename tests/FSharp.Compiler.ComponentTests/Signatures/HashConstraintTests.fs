@@ -1,7 +1,6 @@
 module Signatures.HashConstraintTests
 
 open Xunit
-open FsUnit
 open FSharp.Test.Compiler
 open Signatures.TestHelpers
 
@@ -21,8 +20,7 @@ let noa<'n when 'n :> Node> (n: 'n option) =
     | Some n -> [| n :> Node |]
 """
     |> printSignatures
-    |> should
-        equal
+    |> assertEqualIgnoreLineEnding
         """
 module Foo
 

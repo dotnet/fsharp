@@ -3,7 +3,7 @@
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
-open FsUnit
+open FSharp.Test.Assert
 open Xunit
 
 [<Fact>]

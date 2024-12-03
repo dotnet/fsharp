@@ -21,6 +21,7 @@ open System.Text
 open System.Threading
 
 open Internal.Utilities
+open Internal.Utilities.TypeHashing
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 
@@ -76,7 +77,8 @@ type DiagnosticsLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, 
     override x.DiagnosticSink(diagnostic, severity) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
 
-        if diagnostic.ReportAsError(tcConfig.diagnosticsOptions, severity) then
+        match diagnostic.AdjustSeverity(tcConfigB.diagnosticsOptions, severity) with
+        | FSharpDiagnosticSeverity.Error ->
             if errors >= tcConfig.maxErrors then
                 x.HandleTooManyErrors(FSComp.SR.fscTooManyErrors ())
                 exiter.Exit 1
@@ -92,11 +94,8 @@ type DiagnosticsLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, 
                 Debug.Assert(false, sprintf "Lookup exception in compiler: %s" (diagnostic.Exception.ToString()))
             | _ -> ()
 
-        elif diagnostic.ReportAsWarning(tcConfig.diagnosticsOptions, severity) then
-            x.HandleIssue(tcConfig, diagnostic, FSharpDiagnosticSeverity.Warning)
-
-        elif diagnostic.ReportAsInfo(tcConfig.diagnosticsOptions, severity) then
-            x.HandleIssue(tcConfig, diagnostic, severity)
+        | FSharpDiagnosticSeverity.Hidden -> ()
+        | s -> x.HandleIssue(tcConfig, diagnostic, s)
 
 /// Create an error logger that counts and prints errors
 let ConsoleDiagnosticsLogger (tcConfigB: TcConfigBuilder, exiter: Exiter) =
@@ -272,9 +271,6 @@ let SetProcessThreadLocals tcConfigB =
     match tcConfigB.preferredUiLang with
     | Some s -> Thread.CurrentThread.CurrentUICulture <- CultureInfo(s)
     | None -> ()
-
-    if tcConfigB.utf8output then
-        Console.OutputEncoding <- Encoding.UTF8
 
 let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, lcidFromCodePage, argv) =
     let mutable inputFilesRef = []
@@ -510,7 +506,8 @@ let main1
             defaultCopyFSharpCore = defaultCopyFSharpCore,
             tryGetMetadataSnapshot = tryGetMetadataSnapshot,
             sdkDirOverride = None,
-            rangeForErrors = range0
+            rangeForErrors = range0,
+            compilationMode = CompilationMode.OneOff
         )
 
     tcConfigB.exiter <- exiter
@@ -549,6 +546,17 @@ let main1
     match getParallelReferenceResolutionFromEnvironment () with
     | Some parallelReferenceResolution -> tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
     | None -> ()
+
+    if tcConfigB.utf8output && Console.OutputEncoding <> Encoding.UTF8 then
+        let previousEncoding = Console.OutputEncoding
+        Console.OutputEncoding <- Encoding.UTF8
+
+        disposables.Register(
+            { new IDisposable with
+                member _.Dispose() =
+                    Console.OutputEncoding <- previousEncoding
+            }
+        )
 
     // Display the banner text, if necessary
     if not bannerAlreadyPrinted then
@@ -895,11 +903,7 @@ let main3
                 TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_InternalsVisibleToAttribute topAttrs.assemblyAttrs
                 |> Option.isSome
 
-            let observer =
-                if hasIvt then
-                    Fsharp.Compiler.SignatureHash.PublicAndInternal
-                else
-                    Fsharp.Compiler.SignatureHash.PublicOnly
+            let observer = if hasIvt then PublicAndInternal else PublicOnly
 
             let optDataHash =
                 optDataResources
@@ -1242,16 +1246,6 @@ let CompileFromCommandLineArguments
     ) =
 
     use disposables = new DisposablesTracker()
-    let savedOut = Console.Out
-
-    use _ =
-        { new IDisposable with
-            member _.Dispose() =
-                try
-                    Console.SetOut(savedOut)
-                with _ ->
-                    ()
-        }
 
     main1 (
         ctok,

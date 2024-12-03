@@ -27,12 +27,15 @@ module AccessibilityAnnotations_PermittedLocations =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 561, Line 18, Col 5, Line 18, Col 62, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
-            (Error 561, Line 19, Col 5, Line 19, Col 62, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
-            (Error 561, Line 20, Col 5, Line 20, Col 62, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
-            (Error 10, Line 21, Col 14, Line 21, Col 20, "Unexpected keyword 'public' in member definition. Expected identifier, '(', '(*)' or other token.")
-            (Error 561, Line 21, Col 14, Line 22, Col 62, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
-            (Error 10, Line 23, Col 14, Line 23, Col 22, "Unexpected keyword 'internal' in member definition. Expected identifier, '(', '(*)' or other token.")
+            (Error 531, Line 18, Col 5, Line 18, Col 11, "Accessibility modifiers should come immediately prior to the identifier naming a construct")
+            (Error 561, Line 18, Col 5, Line 18, Col 11, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+            (Error 531, Line 19, Col 5, Line 19, Col 12, "Accessibility modifiers should come immediately prior to the identifier naming a construct")
+            (Error 561, Line 19, Col 5, Line 19, Col 12, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+            (Error 531, Line 20, Col 5, Line 20, Col 13, "Accessibility modifiers should come immediately prior to the identifier naming a construct")
+            (Error 561, Line 20, Col 5, Line 20, Col 13, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+            (Error 561, Line 21, Col 14, Line 21, Col 20, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+            (Error 561, Line 22, Col 14, Line 22, Col 21, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+            (Error 561, Line 23, Col 14, Line 23, Col 22, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
         ]
 
     // SOURCE=E_accessibilityOnInterface01.fs              SCFLAGS="--test:ErrorRanges"         # E_accessibilityOnInterface01.fs
@@ -42,7 +45,8 @@ module AccessibilityAnnotations_PermittedLocations =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 561, Line 13, Col 5, Line 13, Col 67, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+            (Error 531, Line 13, Col 5, Line 13, Col 11, "Accessibility modifiers should come immediately prior to the identifier naming a construct")
+            (Error 561, Line 13, Col 5, Line 13, Col 11, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
         ]
 
     // SOURCE=E_accessibilityOnInterface02.fs              SCFLAGS="--test:ErrorRanges"         # E_accessibilityOnInterface02.fs
@@ -52,7 +56,8 @@ module AccessibilityAnnotations_PermittedLocations =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 561, Line 15, Col 5, Line 15, Col 68, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+            (Error 531, Line 15, Col 5, Line 15, Col 12, "Accessibility modifiers should come immediately prior to the identifier naming a construct")
+            (Error 561, Line 15, Col 5, Line 15, Col 12, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
         ]
 
     // SOURCE=E_accessibilityOnInterface03.fs              SCFLAGS="--test:ErrorRanges"         # E_accessibilityOnInterface03.fs
@@ -62,7 +67,8 @@ module AccessibilityAnnotations_PermittedLocations =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 561, Line 15, Col 5, Line 15, Col 69, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+            (Error 531, Line 15, Col 5, Line 15, Col 13, "Accessibility modifiers should come immediately prior to the identifier naming a construct")
+            (Error 561, Line 15, Col 5, Line 15, Col 13, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
         ]
 
     // SOURCE=E_accessibilityOnInterface04.fs              SCFLAGS="--test:ErrorRanges"         # E_accessibilityOnInterface04.fs
@@ -72,7 +78,7 @@ module AccessibilityAnnotations_PermittedLocations =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 10, Line 15, Col 14, Line 15, Col 20, "Unexpected keyword 'public' in member definition. Expected identifier, '(', '(*)' or other token.")
+            (Error 561, Line 15, Col 14, Line 15, Col 20, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
         ]
 
     // SOURCE=E_accessibilityOnInterface05.fs              SCFLAGS="--test:ErrorRanges"         # E_accessibilityOnInterface05.fs
@@ -82,7 +88,7 @@ module AccessibilityAnnotations_PermittedLocations =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 10, Line 15, Col 14, Line 15, Col 21, "Unexpected keyword 'private' in member definition. Expected identifier, '(', '(*)' or other token.")
+            (Error 561, Line 15, Col 14, Line 15, Col 21, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
         ]
 
     // SOURCE=E_accessibilityOnInterface06.fs              SCFLAGS="--test:ErrorRanges"         # E_accessibilityOnInterface06.fs
@@ -92,7 +98,7 @@ module AccessibilityAnnotations_PermittedLocations =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 10, Line 15, Col 14, Line 15, Col 22, "Unexpected keyword 'internal' in member definition. Expected identifier, '(', '(*)' or other token.")
+            (Error 561, Line 15, Col 14, Line 15, Col 22, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
         ]
 
     // SOURCE=E_accessibilityOnRecords.fs                  SCFLAGS="--test:ErrorRanges"         # E_accessibilityOnRecords.fs
@@ -159,4 +165,33 @@ module AccessibilityAnnotations_PermittedLocations =
         |> shouldFail
         |> withDiagnostics [
             (Error 531, Line 8, Col 13, Line 8, Col 20, "Accessibility modifiers should come immediately prior to the identifier naming a construct")
+        ]
+
+    [<Fact>]
+    let ``Signature File Test: abstract member cannot have access modifiers`` () =
+        Fsi """module Program
+
+type A =
+    abstract internal B: int ->int
+    abstract member internal E: int ->int
+    abstract member C: int with internal get, private set
+    abstract internal D: int with get, set
+    static abstract internal B2: int ->int
+    static abstract member internal E2: int ->int
+    static abstract member C2: int with internal get, private set
+    static abstract internal D2: int with get, set""" 
+        |> withOptions ["--nowarn:3535"]
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 0561, Line 4, Col 14, Line 4, Col 22, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+            (Error 0561, Line 5, Col 21, Line 5, Col 29, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+            (Error 0561, Line 6, Col 33, Line 6, Col 41, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+            (Error 0561, Line 6, Col 47, Line 6, Col 54, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+            (Error 0561, Line 7, Col 14, Line 7, Col 22, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+            (Error 0561, Line 8, Col 21, Line 8, Col 29, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+            (Error 0561, Line 9, Col 28, Line 9, Col 36, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+            (Error 0561, Line 10, Col 41, Line 10, Col 49, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+            (Error 0561, Line 10, Col 55, Line 10, Col 62, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
+            (Error 0561, Line 11, Col 21, Line 11, Col 29, "Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.")
         ]

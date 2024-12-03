@@ -28,7 +28,9 @@
       <Link>scriptlib.fsx</Link>
     </Compile>
     <None Include="ScriptingShims.fsx" />
+    <Compile Include="TestConsole.fs" />
     <Compile Include="TestFramework.fs" />
+    <Compile Include="XunitHelpers.fs" />
     <Compile Include="ILChecker.fs" />
     <Compile Include="Utilities.fs" />
     <Compile Include="CompilerAssert.fs" />
@@ -40,6 +42,10 @@
     <Compile Include="DirectoryAttribute.fs" />
     <Compile Include="ReflectionHelper.fs" />
     <Compile Include="SurfaceArea.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="XunitSetup.fs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -62,7 +68,6 @@
 
 
   <ItemGroup>
-    <PackageReference Include="NUnit" Version="$(NUnitVersion)" /> <!-- TODO: This should be removed once all NUnit frameworks are migrated to xUnit -->
     <PackageReference Include="xunit" Version="$(XUnitVersion)" />
     <PackageReference Include="FluentAssertions" Version="$(FluentAssertionsVersion)" />
   </ItemGroup>
