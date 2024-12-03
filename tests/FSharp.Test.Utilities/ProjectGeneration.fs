@@ -1019,7 +1019,7 @@ type ProjectWorkflowBuilder
             Sdk.CreateTracerProviderBuilder()
                 .AddSource("fsc")
                 .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName="F#", serviceVersion = "1"))
-                .AddJaegerExporter()
+                .AddOtlpExporter()
                 .Build()
             |> Some
         activity <- Activity.start ctx.Project.Name [ Activity.Tags.project, ctx.Project.Name; "UsingTransparentCompiler", useTransparentCompiler.ToString() ] |> Some
@@ -1482,39 +1482,49 @@ module WorkspaceHelpers =
                 |>  Async.RunSynchronously
             snapshot.ProjectConfig
 
+        /// Returns URI of a file in the project directory.
         member this.FileUri(fileName) =
             this.ProjectDirectory ++ fileName |> Uri
 
     type FSharpWorkspaceQuery with
 
-        member this.GetSignature(sourceFile) =
+        member this.GetSignature(sourceFile: Uri) =
+            use _ = Activity.start "FSharpWorkspace.GetSignature" [ Activity.Tags.fileName, sourceFile.LocalPath ]
             this.GetCheckResultsForFile(sourceFile)
             |> Async.map (Option.bind(_.GenerateSignature()))
 
     type FSharpWorkspaceProjects with
 
         member projects.AddFileBefore(projectIdentifier, newFile: Uri, addBefore: Uri) =
+            use _ = Activity.start "FSharpWorkspace.AddFileBefore" [ Activity.Tags.project, projectIdentifier.ToString(); "newFile", newFile.LocalPath; "addBefore", addBefore.LocalPath ]
+
             let existingFiles = projects.files.OfProject projectIdentifier
             let newFiles = seq {
                 for file in existingFiles do
                     if file = addBefore.LocalPath then
-                        yield newFile.LocalPath
-                    yield file
+                        newFile.LocalPath
+                    file
                 }
             projects.Update(projectIdentifier, newFiles)
 
+    type FSharpWorkspace with
 
-    //type FSharpWorkspace with
+        member this.AddSignatureFile(projectIdentifier, sourceFile: Uri, ?writeToDisk) =
+            use _ = Activity.start "FSharpWorkspace.AddSignatureFile" [ Activity.Tags.project, projectIdentifier.ToString(); "sourceFile", sourceFile.LocalPath ]
 
-    //    member this.AddSignatureFile(projectIdentifier, sourceFile) =
-
-
-    //        async {
-    //            let! signature = this.Query.GetSignature(sourceFile)
-    //            this.Projects.AddOrUpdate
-    //        }
-
-
+            let writeToDisk = defaultArg writeToDisk true
+            async {
+                match! this.Query.GetSignature sourceFile with
+                | None -> return failwith $"Couldn't get signature for {sourceFile}"
+                | Some signature ->
+                    let signatureFileUri = Uri $"{sourceFile.LocalPath}i"
+                    if writeToDisk then
+                        FileSystem.OpenFileForWriteShim(signatureFileUri.LocalPath).Write(signature)
+                    else
+                        this.Files.Open(signatureFileUri, signature.ToString())
+                    this.Projects.AddFileBefore(projectIdentifier, newFile=signatureFileUri, addBefore=sourceFile)
+                    return signatureFileUri, signature
+            }
 
     /// Retrieves the referenced project snapshot from the given project snapshot based on the project identifier.
     let getReferencedSnapshot (projectIdentifier: FSharpProjectIdentifier) (projectSnapshot: FSharpProjectSnapshot) =

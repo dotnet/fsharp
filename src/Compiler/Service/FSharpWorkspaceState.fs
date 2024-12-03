@@ -9,8 +9,10 @@ open System.Runtime.CompilerServices
 open System.Collections.Concurrent
 
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
+open FSharp.Compiler.Diagnostics
 open Internal.Utilities.Collections
 open Internal.Utilities.DependencyGraph
+open Internal.Utilities.Library
 
 #nowarn "57"
 
@@ -252,16 +254,24 @@ type FSharpWorkspaceFiles internal (depGraph: IThreadSafeDependencyGraph<_, _>) 
     let openFiles = ConcurrentDictionary<string, string>()
 
     /// Indicates that a file has been opened and has the given content. Any updates to the file should be done through `Files.Edit`.
-    member this.Open = this.Edit
+    member _.Open(file: Uri, content) =
+        use _ = Activity.start "Files.Open" [ Activity.Tags.fileName, file.LocalPath ]
+
+        openFiles.AddOrUpdate(file.LocalPath, content, (fun _ _ -> content)) |> ignore
+        depGraph.AddOrUpdateFile(file.LocalPath, FSharpFileSnapshot.CreateFromString(file.LocalPath, content))
 
     /// Indicates that a file has been changed and now has the given content. If it wasn't previously open it is considered open now.
     member _.Edit(file: Uri, content) =
+        use _ = Activity.start "Files.Edit" [ Activity.Tags.fileName, file.LocalPath ]
+
         openFiles.AddOrUpdate(file.LocalPath, content, (fun _ _ -> content)) |> ignore
         depGraph.AddOrUpdateFile(file.LocalPath, FSharpFileSnapshot.CreateFromString(file.LocalPath, content))
 
     /// Indicates that a file has been closed. Any changes that were not saved to disk are undone and any further reading
     /// of the file's contents will be from the filesystem.
     member _.Close(file: Uri) =
+        use _ = Activity.start "Files.Close" [ Activity.Tags.fileName, file.LocalPath ]
+
         openFiles.TryRemove(file.LocalPath) |> ignore
 
         // The file may have had changes that weren't saved to disk and are therefore undone by closing it.
@@ -292,6 +302,11 @@ type FSharpWorkspaceProjects internal (depGraph: IThreadSafeDependencyGraph<_, _
 
     /// Adds or updates an F# project in the workspace. Project is identified by the project file and output path or FSharpProjectIdentifier.
     member _.AddOrUpdate(projectConfig: ProjectConfig, sourceFilePaths: string seq) =
+
+        use _ = Activity.start "Projects.AddOrUpdate" [
+            Activity.Tags.project, projectConfig.Identifier.ToString()
+            "sourceFiles", sourceFilePaths |> String.concat "; "
+        ]
 
         let projectIdentifier = projectConfig.Identifier
 
@@ -357,6 +372,9 @@ type FSharpWorkspaceProjects internal (depGraph: IThreadSafeDependencyGraph<_, _
 
             projectIdentifier)
 
+    member this.AddOrUpdate(projectConfig, sourceFilePaths: Uri seq) =
+        this.AddOrUpdate(projectConfig, sourceFilePaths |> Seq.map _.LocalPath)
+
     member this.AddOrUpdate(projectPath: string, outputPath, compilerArgs) =
 
         let directoryPath =
@@ -396,6 +414,12 @@ type FSharpWorkspaceProjects internal (depGraph: IThreadSafeDependencyGraph<_, _
         this.AddOrUpdate(projectConfig, sourceFiles)
 
     member _.Update(projectIdentifier, newSourceFiles) =
+
+        use _ = Activity.start "Projects.Update" [
+            Activity.Tags.project, projectIdentifier.ToString() |> (!!)
+            "sourceFiles", newSourceFiles |> String.concat "; "
+        ]
+
         let existingSourceFiles = depGraph.GetFilesOf projectIdentifier |> Seq.map (fun f -> f.FileName, f) |> Map
 
         let newFilesWithSnapshots =

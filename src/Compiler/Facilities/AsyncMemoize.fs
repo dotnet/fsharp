@@ -43,7 +43,7 @@ type AsyncLazy<'t> private (initial: AsyncLazyState<'t>, cancelUnawaited: bool, 
                     if cacheException then Faulted exn else Initial computation
         | Running(c, work, cts, count) ->
             state <- Running(c, work, cts, count - 1)
-            if cancelUnawaited then cancelIfUnawaited () 
+            if cancelUnawaited then cancelIfUnawaited ()
         | _ -> () // Nothing more to do if another request already transitioned the state.
 
     let detachable (work: Task<'t>) =
@@ -54,7 +54,7 @@ type AsyncLazy<'t> private (initial: AsyncLazyState<'t>, cancelUnawaited: bool, 
                 try
                     return!
                         // Using ContinueWith with a CancellationToken allows detaching from the running 'work' task.
-                        // This ensures the lazy 'work' and its awaiting requests can be independently managed 
+                        // This ensures the lazy 'work' and its awaiting requests can be independently managed
                         // by separate CancellationTokenSources, enabling individual cancellation.
                         // Essentially, if this async computation is canceled, it won't wait for the 'work' to complete
                         // but will immediately proceed to the finally block.
@@ -102,7 +102,7 @@ module internal Utils =
 
     /// Return file name with one directory above it
     let shortPath (path: string) =
-        let dirPath = !! Path.GetDirectoryName(path)
+        let dirPath = Path.GetDirectoryName(path) |> Option.ofObj |> Option.defaultValue ""
 
         let dir =
             dirPath.Split Path.DirectorySeparatorChar
@@ -232,7 +232,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
             |> Option.map countHit
             |> Option.defaultWith cacheSetNewJob
 
-        async {            
+        async {
             let otherVersions, job = lock cache getOrAdd
 
             log Requested key

@@ -559,7 +559,7 @@ let fuzzingTest seed (project: SyntheticProject) = task {
         Sdk.CreateTracerProviderBuilder()
             .AddSource("fsc")
             .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName="F# Fuzzing", serviceVersion = "1"))
-            .AddJaegerExporter()
+            .AddOtlpExporter()
             .Build()
 
     use _ = Activity.start $"Fuzzing {project.Name}" [ Activity.Tags.project, project.Name; "seed", seed.ToString() ]

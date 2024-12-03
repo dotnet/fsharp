@@ -7,13 +7,37 @@ open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open TestFramework
 open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis.Workspace
+open FSharp.Compiler.Diagnostics
 open FSharp.Test.ProjectGeneration.WorkspaceHelpers
+open OpenTelemetry
+open OpenTelemetry.Resources
+open OpenTelemetry.Trace
 
 #nowarn "57"
 
+/// Wrapper for FSharpWorkspace to use in tests. Provides OpenTelemetry tracing.
+type TestingWorkspace(testName) =
+    inherit FSharpWorkspace()
+
+    let tracerProvider =
+        Sdk
+            .CreateTracerProviderBuilder()
+            .AddSource("fsc")
+            .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName="F#", serviceVersion = "1"))
+            .AddOtlpExporter()
+            .Build()
+
+    let activity = Activity.start $"Test FSharpWorkspace {testName}" []
+
+    interface IDisposable with
+        member _.Dispose() =
+            activity.Dispose()
+            tracerProvider.ForceFlush() |> ignore
+            tracerProvider.Dispose()
+
 [<Fact>]
 let ``Add project to workspace`` () =
-    let workspace = FSharpWorkspace()
+    use workspace = new TestingWorkspace("Add project to workspace")
     let projectPath = "test.fsproj"
     let outputPath = "test.dll"
     let compilerArgs = [| "test.fs" |]
@@ -26,7 +50,7 @@ let ``Add project to workspace`` () =
 
 [<Fact>]
 let ``Open file in workspace`` () =
-    let workspace = FSharpWorkspace()
+    use workspace = new TestingWorkspace("Open file in workspace")
     let fileUri = Uri("file:///test.fs")
     let content = "let x = 1"
 
@@ -58,7 +82,7 @@ let ``Open file in workspace`` () =
 
 [<Fact>]
 let ``Close file in workspace`` () =
-    let workspace = FSharpWorkspace()
+    use workspace = new TestingWorkspace("Close file in workspace")
 
     let contentOnDisk = "let x = 1"
     let fileOnDisk = sourceFileOnDisk contentOnDisk
@@ -93,7 +117,7 @@ let ``Close file in workspace`` () =
 
 [<Fact>]
 let ``Change file in workspace`` () =
-    let workspace = FSharpWorkspace()
+    use workspace = new TestingWorkspace("Change file in workspace")
 
     let fileUri = Uri("file:///test.fs")
 
@@ -119,7 +143,7 @@ let ``Change file in workspace`` () =
 
 [<Fact>]
 let ``Add multiple projects with references`` () =
-    let workspace = FSharpWorkspace()
+    use workspace = new TestingWorkspace("Add multiple projects with references")
     let projectPath1 = "test1.fsproj"
     let outputPath1 = "test1.dll"
     let compilerArgs1 = [| "test1.fs" |]
@@ -149,7 +173,7 @@ let ``Add multiple projects with references`` () =
 
 [<Fact>]
 let ``Propagate changes to snapshots`` () =
-    let workspace = FSharpWorkspace()
+    use workspace = new TestingWorkspace("Propagate changes to snapshots")
 
     let file1 = sourceFileOnDisk "let x = 1"
     let pid1 = workspace.Projects.AddOrUpdate(ProjectConfig.Empty("p1"), [ file1.LocalPath ])
@@ -184,7 +208,7 @@ let ``Propagate changes to snapshots`` () =
 
 [<Fact>]
 let ``Update project by adding a source file`` () =
-    let workspace = FSharpWorkspace()
+    use workspace = new TestingWorkspace("Update project by adding a source file")
     let projectPath = "test.fsproj"
     let outputPath = "test.dll"
     let compilerArgs = [| "test.fs" |]
@@ -199,7 +223,7 @@ let ``Update project by adding a source file`` () =
 
 [<Fact>]
 let ``Update project by removing a source file`` () =
-    let workspace = FSharpWorkspace()
+    use workspace = new TestingWorkspace("Update project by removing a source file")
     let projectPath = "test.fsproj"
     let outputPath = "test.dll"
     let compilerArgs = [| "test.fs"; "newTest.fs" |]
@@ -211,7 +235,7 @@ let ``Update project by removing a source file`` () =
 
 [<Fact>]
 let ``Update project by adding a reference`` () =
-    let workspace = FSharpWorkspace()
+    use workspace = new TestingWorkspace("Update project by adding a reference")
     let projectPath1 = "test1.fsproj"
     let outputPath1 = "test1.dll"
     let compilerArgs1 = [| "test1.fs" |]
@@ -241,7 +265,7 @@ let ``Update project by adding a reference`` () =
 
 [<Fact>]
 let ``Create references in existing projects`` () =
-    let workspace = FSharpWorkspace()
+    use workspace = new TestingWorkspace("Create references in existing projects")
     let projectPath1 = "test1.fsproj"
     let outputPath1 = "test1.dll"
     let compilerArgs1 = [| "test1.fs" |]
@@ -283,7 +307,7 @@ let ``Create references in existing projects`` () =
 [<Fact>]
 let ``Asking for an unknown project snapshot returns None`` () =
 
-    let workspace = FSharpWorkspace()
+    use workspace = new TestingWorkspace("Asking for an unknown project snapshot returns None")
 
     Assert.Equal(None, workspace.Query.GetProjectSnapshot(FSharpProjectIdentifier("hello", "world")))
 
@@ -291,12 +315,36 @@ let ``Asking for an unknown project snapshot returns None`` () =
 [<Fact>]
 let ``Works with signature files`` () =
 
-    let workspace = FSharpWorkspace()
+    use workspace = new TestingWorkspace("Works with signature files")
 
     let projectConfig = ProjectConfig.Create()
 
-    let _projectIdentifier = workspace.Projects.AddOrUpdate(projectConfig, [ "test.fs" ])
+    let sourceFileUri = projectConfig.FileUri "test.fs"
 
-    //let signatureFilePath, signatureFileContent = workspace.Projects.AddSignatureFile(projectIdentifier, "test.fs")
+    let source = "let x = 1"
 
-    ()
+    let projectIdentifier = workspace.Projects.AddOrUpdate(projectConfig, [ sourceFileUri ])
+
+    workspace.Files.Open(sourceFileUri, source)
+
+    task {
+
+        let! signatureUri, _signatureSource = workspace.AddSignatureFile(projectIdentifier, sourceFileUri, writeToDisk=false)
+
+        let! diag = workspace.Query.GetDiagnosticsForFile(signatureUri)
+
+        Assert.Equal(0, diag.Diagnostics.Length)
+
+        workspace.Files.Edit(signatureUri, "val x: error")
+
+        let! diag = workspace.Query.GetDiagnosticsForFile(signatureUri)
+
+        Assert.Equal(1, diag.Diagnostics.Length)
+
+        workspace.Files.Edit(signatureUri, "val y: int")
+
+        let! diag = workspace.Query.GetDiagnosticsForFile(sourceFileUri)
+
+        Assert.Equal(1, diag.Diagnostics.Length)
+
+    }
