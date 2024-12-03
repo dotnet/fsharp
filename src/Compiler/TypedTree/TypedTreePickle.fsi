@@ -83,6 +83,9 @@ val internal p_ty: pickler<TType>
 /// Serialize a TAST description of a compilation unit
 val internal pickleCcuInfo: pickler<PickledCcuInfo>
 
+/// Serialize typechecking info
+val internal pickleTcInfo: pickler<PickledTcInfo>
+
 /// Serialize an arbitrary object using the given pickler
 val pickleObjWithDanglingCcus:
     inMem: bool -> file: string -> TcGlobals -> scope: CcuThunk -> pickler<'T> -> 'T -> ByteBuffer * ByteBuffer
@@ -144,6 +147,9 @@ val internal u_ty: unpickler<TType>
 
 /// Deserialize a TAST description of a compilation unit
 val internal unpickleCcuInfo: ReaderState -> PickledCcuInfo
+
+/// Deserialize typechecking info
+val internal unpickleTcInfo: ReaderState -> PickledTcInfo
 
 /// Deserialize an arbitrary object which may have holes referring to other compilation units
 val internal unpickleObjWithDanglingCcus:
