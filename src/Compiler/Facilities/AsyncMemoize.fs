@@ -131,6 +131,7 @@ type internal JobEvent =
     static member AllEvents = [Requested; Started; Restarted; Finished; Canceled; Evicted; Collected; Weakened; Strengthened; Failed; Cleared]
 
 type internal ICacheKey<'TKey, 'TVersion> =
+    // TODO Key should probably be renamed to Identifier
     abstract member GetKey: unit -> 'TKey
     abstract member GetVersion: unit -> 'TVersion
     abstract member GetLabel: unit -> string
