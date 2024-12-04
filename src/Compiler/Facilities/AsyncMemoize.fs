@@ -22,12 +22,17 @@ type AsyncLazy<'t> private (initial: AsyncLazyState<'t>, cancelUnawaited: bool, 
 
     let stateUpdateSync = obj()
     let mutable state = initial
+    // This should remain the only function that mutates the state.
     let withStateUpdate f =
-        lock stateUpdateSync <| fun () -> let next, result = f state in state <- next; result
+        lock stateUpdateSync <| fun () ->
+            let next, result = f state
+            state <- next
+            result
     let updateState f = withStateUpdate <| fun prev -> f prev, ()
 
     let cancelIfUnawaited cancelUnawaited = function
         | Running(computation, _, cts, 0) when cancelUnawaited ->
+            // To keep state updates fast we don't actually wait for the work to cancel.
             cts.Cancel()
             Initial computation
         | state -> state
@@ -59,11 +64,15 @@ type AsyncLazy<'t> private (initial: AsyncLazyState<'t>, cancelUnawaited: bool, 
             let computeThenUpdate = async {
                 try
                     let! result = computation
-                    updateState <| fun _ -> Completed result
+                    // If the state is other than Running it means this work item is abandoned
+                    // because of signalled cancel in cancelIfUnawaited.
+                    updateState <| function Running _ -> Completed result | state -> state
                     return result
                 with
                 | exn ->
-                    updateState <| fun _ -> if cacheException then Faulted exn else Initial computation
+                    updateState <| function
+                        | Running _ -> if cacheException then Faulted exn else Initial computation
+                        | state -> state
                     return raise exn
             }
             let work = Async.StartAsTask(computeThenUpdate, cancellationToken = cts.Token)
