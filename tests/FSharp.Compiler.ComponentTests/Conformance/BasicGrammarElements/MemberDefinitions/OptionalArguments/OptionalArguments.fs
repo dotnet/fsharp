@@ -150,12 +150,70 @@ but here has type
     ''b voption'    "]
 
     [<Fact>]
-    let ``Optional Arguments can't be a Option+StructAttribute attribute with langversion=preview`` () =
+    let ``Optional Arguments wrap Option`` () =
         let source =
             FSharp """
 module Program
 type X() =
-    static member M([<StructAttribute>] ?x) =
+    static member M(?x) =
+        match x with
+        | Some x -> printfn "Some %A" x
+        | None -> printfn "None"
+
+[<EntryPoint>]
+let main _ =
+    X.M(Some 1)
+    X.M(None)
+    X.M(1)
+    X.M()
+    0
+            """
+        source
+            |> asExe
+            |> withLangVersionPreview
+            |> withNoWarn 25
+            |> compile
+            |> shouldSucceed
+            |> run
+            |> shouldSucceed
+            |> withOutputContainsAllInOrder ["Some Some 1"; "Some None"; "Some 1"; "None"]
+
+    [<Fact>]
+    let ``Optional Arguments wrap ValueOption`` () =
+        let source =
+            FSharp """
+module Program
+type X() =
+    static member M(?x) =
+        match x with
+        | Some x -> printfn "Some %A" x
+        | None -> printfn "None"
+
+[<EntryPoint>]
+let main _ =
+    X.M(ValueSome 1)
+    X.M(ValueNone)
+    X.M(1)
+    X.M()
+    0
+            """
+        source
+            |> asExe
+            |> withLangVersionPreview
+            |> withNoWarn 25
+            |> compile
+            |> shouldSucceed
+            |> run
+            |> shouldSucceed
+            |> withOutputContainsAllInOrder ["Some ValueSome 1"; "Some ValueNone"; "Some 1"; "None"]
+
+    [<Fact>]
+    let ``Optional Struct Arguments wrap Option`` () =
+        let source =
+            FSharp """
+module Program
+type X() =
+    static member M([<Struct>] ?x) =
         match x with
         | ValueSome x -> printfn "VSome %A" x
         | ValueNone -> printfn "VNone"
@@ -164,25 +222,49 @@ type X() =
 let main _ =
     X.M(Some 1)
     X.M(None)
+    X.M(1)
     X.M()
     0
             """
         source
-            |> asLibrary
+            |> asExe
             |> withLangVersionPreview
             |> withNoWarn 25
             |> compile
-            |> shouldFail
-            |> withDiagnostics [
-                Error 1, Line 11, Col 9, Line 11, Col 15, "This expression was expected to have type
-    ''a voption'    
-but here has type
-    ''b option'    "
-                Error 1, Line 12, Col 9, Line 12, Col 13, "This expression was expected to have type
-    ''a voption'    
-but here has type
-    ''b option'    "
-            ]
+            |> shouldSucceed
+            |> run
+            |> shouldSucceed
+            |> withOutputContainsAllInOrder ["VSome Some 1"; "VSome None"; "VSome 1"; "VNone"]
+
+    [<Fact>]
+    let ``Optional Struct Arguments wrap ValueOption`` () =
+        let source =
+            FSharp """
+module Program
+type X() =
+    static member M([<Struct>] ?x) =
+        match x with
+        | ValueSome x -> printfn "VSome %A" x
+        | ValueNone -> printfn "VNone"
+
+[<EntryPoint>]
+let main _ =
+    X.M(ValueSome 1)
+    X.M(ValueNone)
+    X.M(1)
+    X.M()
+    0
+            """
+        source
+            |> asExe
+            |> withLangVersionPreview
+            |> withNoWarn 25
+            |> compile
+            |> shouldSucceed
+            |> run
+            |> shouldSucceed
+            |> withOutputContainsAllInOrder ["VSome ValueSome 1"; "VSome ValueNone"; "VSome 1"; "VNone"]
+
 
     [<Fact>]
     let ``Optional Arguments can be a ValueOption+StructAttribute attribute with langversion=preview`` () =
@@ -334,23 +416,24 @@ let main _ =
     IL_0049:  ret
 }
         """]
-        
+
     [<Fact>]
-    let ``Optional Arguments in constructor can be a ValueOption+StructAttribute attribute with langversion=preview`` () =
+    let ``Optional Arguments in constructor wrap Option`` () =
         let source =
             FSharp """
 module Program
-type X() =
-    static member M([<StructAttribute>] ?x) =
+type X<'T>(?x: 'T) =
+    member _.M() =
         match x with
-        | ValueSome x -> printfn "VSome %A" x
-        | ValueNone -> printfn "VNone"
+        | Some x -> printfn "Some %A" x
+        | None -> printfn "None"
 
 [<EntryPoint>]
 let main _ =
-    X.M(ValueSome 1)
-    X.M(ValueNone)
-    X.M()
+    X(Some 1).M()
+    X(None).M()
+    X(1).M()
+    X().M()
     0
             """
         let compilation =
@@ -363,4 +446,167 @@ let main _ =
             |> shouldSucceed
             |> run
             |> shouldSucceed
-            |> withOutputContainsAllInOrder ["VSome 1"; "VNone"; "VNone"]
+            |> withOutputContainsAllInOrder ["Some Some 1"; "Some None"; "Some 1"; "None"]
+
+    [<Fact>]
+    let ``Optional Arguments in constructor wrap ValueOption`` () =
+        let source =
+            FSharp """
+module Program
+type X<'T>(?x: 'T) =
+    member _.M() =
+        match x with
+        | Some x -> printfn "Some %A" x
+        | None -> printfn "None"
+
+[<EntryPoint>]
+let main _ =
+    X(ValueSome 1).M()
+    X(ValueNone).M()
+    X(1).M()
+    X().M()
+    0
+            """
+        let compilation =
+            source
+            |> withLangVersionPreview
+            |> asExe
+            |> compile
+
+        compilation
+            |> shouldSucceed
+            |> run
+            |> shouldSucceed
+            |> withOutputContainsAllInOrder ["Some ValueSome 1"; "Some ValueNone"; "Some 1"; "None"]
+
+    [<Fact>]
+    let ``Optional Struct Arguments in constructor wrap Option`` () =
+        let source =
+            FSharp """
+module Program
+type X<'T>([<Struct>] ?x: 'T) =
+    member _.M() =
+        match x with
+        | ValueSome x -> printfn "VSome %A" x
+        | ValueNone -> printfn "VNone"
+
+[<EntryPoint>]
+let main _ =
+    X(Some 1).M()
+    X(None).M()
+    X(1).M()
+    X().M()
+    0
+            """
+        let compilation =
+            source
+            |> withLangVersionPreview
+            |> asExe
+            |> compile
+
+        compilation
+            |> shouldSucceed
+            |> run
+            |> shouldSucceed
+            |> withOutputContainsAllInOrder ["VSome Some 1"; "VSome None"; "VSome 1"; "VNone"]
+
+    [<Fact>]
+    let ``Optional Struct Arguments in constructor wrap ValueOption`` () =
+        let source =
+            FSharp """
+module Program
+type X<'T>([<Struct>] ?x: 'T) =
+    member _.M() =
+        match x with
+        | ValueSome x -> printfn "VSome %A" x
+        | ValueNone -> printfn "VNone"
+
+[<EntryPoint>]
+let main _ =
+    X(ValueSome 1).M()
+    X(ValueNone).M()
+    X(1).M()
+    X().M()
+    0
+            """
+        let compilation =
+            source
+            |> withLangVersionPreview
+            |> asExe
+            |> compile
+
+        compilation
+            |> shouldSucceed
+            |> run
+            |> shouldSucceed
+            |> withOutputContainsAllInOrder ["VSome ValueSome 1"; "VSome ValueNone"; "VSome 1"; "VNone"]
+
+    [<Fact>]
+    let ``Optional Arguments in constructor can be a ValueOption+StructAttribute attribute with langversion=preview`` () =
+        let source =
+            FSharp """
+module Program
+type X<'T>([<Struct>] ?x: 'T) =
+    member _.M() =
+        match x with
+        | ValueSome x -> printfn "VSome %A" x
+        | ValueNone -> printfn "VNone"
+
+[<EntryPoint>]
+let main _ =
+    X(ValueSome 1).M()
+    X(ValueNone).M()
+    X(1).M()
+    X().M()
+    0
+            """
+        let compilation =
+            source
+            |> withLangVersionPreview
+            |> asExe
+            |> compile
+
+        compilation
+            |> shouldSucceed
+            |> run
+            |> shouldSucceed
+            |> withOutputContainsAllInOrder ["VSome ValueSome 1"; "VSome ValueNone"; "VSome 1"; "VNone"]
+            
+    [<Fact>]
+    let ``Optional Arguments in constructor can't be a ValueOption+StructAttribute attribute with langversion=90`` () =
+        let source =
+            FSharp """
+module Program
+type X<'T>([<Struct>] ?x: 'T) =
+    member _.M() =
+        match x with
+        | ValueSome x -> printfn "VSome %A" x
+        | ValueNone -> printfn "VNone"
+
+[<EntryPoint>]
+let main _ =
+    X(ValueSome 1).M()
+    X(ValueNone).M()
+    X(1).M()
+    X().M()
+    0
+            """
+        let compilation =
+            source
+            |> withLangVersion90
+            |> withNoWarn 25
+            |> asLibrary
+            |> compile
+
+        compilation
+            |> shouldFail
+            |> withDiagnostics [
+                Error 1, Line 6, Col 11, Line 6, Col 22, "This expression was expected to have type
+    ''T option'    
+but here has type
+    ''a voption'    "
+                Error 1, Line 7, Col 11, Line 7, Col 20, "This expression was expected to have type
+    ''T option'    
+but here has type
+    ''a voption'    "
+            ]
