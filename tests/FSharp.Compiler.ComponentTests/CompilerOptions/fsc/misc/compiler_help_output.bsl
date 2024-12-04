@@ -8,7 +8,8 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 --target:winexe                          Build a Windows executable
 --target:library                         Build a library (Short form: -a)
 --target:module                          Build a module that can be added to another assembly
---delaysign[+|-]                         Delay-sign the assembly using only the public portion of the strong name key (off by default)
+--delaysign[+|-]                         Delay-sign the assembly using only the public portion of the strong name key
+                                         (off by default)
 --publicsign[+|-]                        Public-sign the assembly using only the public portion of the strong name
                                          key, and mark the assembly as signed (off by default)
 --doc:<file>                             Write the xmldoc of the assembly to the given file
@@ -59,7 +60,8 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 --tailcalls[+|-]                         Enable or disable tailcalls (on by default)
 --deterministic[+|-]                     Produce a deterministic assembly (including module version GUID and
                                          timestamp) (off by default)
---realsig[+|-]                           Generate assembly with IL visibility that matches the source code visibility (off by default)
+--realsig[+|-]                           Generate assembly with IL visibility that matches the source code visibility
+                                         (off by default)
 --pathmap:<path=sourcePath;...>          Maps physical paths to source path names output by the compiler
 --crossoptimize[+|-]                     Enable or disable cross-module optimizations (on by default)
 --reflectionfree                         Disable implicit generation of constructs using reflection
