@@ -12,22 +12,31 @@ open FSharp.Test.ProjectGeneration.WorkspaceHelpers
 open OpenTelemetry
 open OpenTelemetry.Resources
 open OpenTelemetry.Trace
+open FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState
 
 #nowarn "57"
 
 /// Wrapper for FSharpWorkspace to use in tests. Provides OpenTelemetry tracing.
-type TestingWorkspace(testName) =
+type TestingWorkspace(testName) as _this =
     inherit FSharpWorkspace()
+
+    let debugGraphPath = __SOURCE_DIRECTORY__ ++ $"{testName}.md"
 
     let tracerProvider =
         Sdk
             .CreateTracerProviderBuilder()
             .AddSource("fsc")
             .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName="F#", serviceVersion = "1"))
-            .AddOtlpExporter()
+            .AddOtlpExporter(fun config ->
+                // Each test is slowed down by this much if no one is listening to the telemetry
+                config.TimeoutMilliseconds <- 50)
             .Build()
 
     let activity = Activity.start $"Test FSharpWorkspace {testName}" []
+
+    do _this.Projects.Debug_DumpGraphOnEveryChange <- Some debugGraphPath
+
+    member _.DebugGraphPath = debugGraphPath
 
     interface IDisposable with
         member _.Dispose() =
@@ -207,7 +216,7 @@ let ``Propagate changes to snapshots`` () =
     |> assertFileHasContent file1.LocalPath updatedContent
 
 [<Fact>]
-let ``Update project by adding a source file`` () =
+let ``AddOrUpdate project by adding a source file`` () =
     use workspace = new TestingWorkspace("Update project by adding a source file")
     let projectPath = "test.fsproj"
     let outputPath = "test.dll"
@@ -216,6 +225,21 @@ let ``Update project by adding a source file`` () =
     let newSourceFile = "newTest.fs"
     let newCompilerArgs = [| "test.fs"; newSourceFile |]
     workspace.Projects.AddOrUpdate(projectPath, outputPath, newCompilerArgs) |> ignore
+    let projectSnapshot = workspace.Query.GetProjectSnapshot(projectIdentifier).Value
+    Assert.NotNull(projectSnapshot)
+    Assert.Contains("test.fs", projectSnapshot.SourceFiles |> Seq.map (fun f -> f.FileName))
+    Assert.Contains(newSourceFile, projectSnapshot.SourceFiles |> Seq.map (fun f -> f.FileName))
+
+[<Fact>]
+let ``Update project by adding a source file`` () =
+    use workspace = new TestingWorkspace("Update project by adding a source file")
+    let projectPath = "test.fsproj"
+    let outputPath = "test.dll"
+    let compilerArgs = [| "test.fs" |]
+    let projectIdentifier = workspace.Projects.AddOrUpdate(projectPath, outputPath, compilerArgs)
+    let newSourceFile = "newTest.fs"
+    let newSourceFiles = [| "test.fs"; newSourceFile |]
+    workspace.Projects.Update(projectIdentifier, newSourceFiles) |> ignore
     let projectSnapshot = workspace.Query.GetProjectSnapshot(projectIdentifier).Value
     Assert.NotNull(projectSnapshot)
     Assert.Contains("test.fs", projectSnapshot.SourceFiles |> Seq.map (fun f -> f.FileName))
@@ -335,16 +359,17 @@ let ``Works with signature files`` () =
 
         Assert.Equal(0, diag.Diagnostics.Length)
 
-        workspace.Files.Edit(signatureUri, "val x: error")
+        workspace.Files.Edit(signatureUri, "module Test\n\nval x: error")
 
         let! diag = workspace.Query.GetDiagnosticsForFile(signatureUri)
 
         Assert.Equal(1, diag.Diagnostics.Length)
+        Assert.Equal("The type 'error' is not defined.", diag.Diagnostics[0].Message)
 
-        workspace.Files.Edit(signatureUri, "val y: int")
+        workspace.Files.Edit(signatureUri, "module Test\n\nval y: int")
 
         let! diag = workspace.Query.GetDiagnosticsForFile(sourceFileUri)
 
         Assert.Equal(1, diag.Diagnostics.Length)
-
+        Assert.Equal("Module 'Test' requires a value 'y'", diag.Diagnostics[0].Message)
     }

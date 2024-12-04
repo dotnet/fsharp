@@ -6,6 +6,7 @@ namespace FSharp.VisualStudio.Extension;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.IO.Pipelines;
 using System.Linq;
 using System.Threading;
@@ -16,6 +17,7 @@ using FSharp.Compiler.LanguageServer.Common;
 
 using Microsoft.CommonLanguageServerProtocol.Framework;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.FSharp.Core;
 using Microsoft.VisualStudio.Extensibility;
 using Microsoft.VisualStudio.Extensibility.Editor;
 using Microsoft.VisualStudio.Extensibility.LanguageServer;
@@ -213,8 +215,11 @@ internal class ProjectObserver(FSharpWorkspace workspace) : IObserver<IQueryResu
                 workspace.Projects.AddOrUpdate(projectPath, projectInfo.Item1, projectInfo.Item2.Split(';'));
             }
 
-            workspace.Debug_DumpMermaid("../../../../dep-graph.md");
+            //var graphPath = Path.Combine(Path.GetDirectoryName(projectPath) ?? ".", "..", "depGraph.md");
 
+            //workspace.projects.Debug_DumpGraphOnEveryChange = FSharpOption<string>.Some(graphPath);
+
+            //Trace.TraceInformation($"Auto-saving workspace graph to {graphPath}");
 
         }
     }

@@ -239,10 +239,12 @@ module internal WorkspaceDependencyGraphExtensions =
             this.GetDependenciesOf(WorkspaceNodeKey.ProjectSnapshot project)
             |> Seq.where (WorkspaceNode.sourceFileKey >> _.IsSome)
             |> Seq.iter (fun fileId -> this.RemoveDependency(projectId, noLongerDependsOn = fileId))
-            this.AddList(
-                sourceFiles
-                |> Seq.map (fun (file, snapshot) -> WorkspaceNodeKey.SourceFile file, WorkspaceNodeValue.SourceFile snapshot))
-            |> Seq.iter (fun fileId -> this.AddDependency(WorkspaceNodeKey.ProjectSnapshot project, dependsOn = fileId))
+
+            sourceFiles
+            |> Seq.map (fun (file, snapshot) -> WorkspaceNodeKey.SourceFile file, WorkspaceNodeValue.SourceFile snapshot)
+            |> this.AddList
+            |> Seq.iter (fun fileId ->
+                this.AddDependency(WorkspaceNodeKey.ProjectSnapshot project, dependsOn = fileId))
 
 
 
@@ -298,10 +300,21 @@ type FSharpWorkspaceProjects internal (depGraph: IThreadSafeDependencyGraph<_, _
         |> Option.map (fun content -> FSharpFileSnapshot.CreateFromString(path, content))
         |> Option.defaultWith (fun () -> FSharpFileSnapshot.CreateFromFileSystem path)
 
+    member val internal Debug_DumpGraphOnEveryChange: string option = None with get, set
+
     member internal _.files = files
 
+    member internal this.Debug_DumpMermaid(path) =
+        let content =
+            depGraph.Debug_RenderMermaid (function
+                // Collapse all reference on disk nodes into one. Otherwise the graph is too big to render.
+                | WorkspaceGraphTypes.WorkspaceNodeKey.ReferenceOnDisk _ -> WorkspaceGraphTypes.WorkspaceNodeKey.ReferenceOnDisk "..."
+                | x -> x)
+
+        File.WriteAllText(path, content)
+
     /// Adds or updates an F# project in the workspace. Project is identified by the project file and output path or FSharpProjectIdentifier.
-    member _.AddOrUpdate(projectConfig: ProjectConfig, sourceFilePaths: string seq) =
+    member this.AddOrUpdate(projectConfig: ProjectConfig, sourceFilePaths: string seq) =
 
         use _ = Activity.start "Projects.AddOrUpdate" [
             Activity.Tags.project, projectConfig.Identifier.ToString()
@@ -370,6 +383,8 @@ type FSharpWorkspaceProjects internal (depGraph: IThreadSafeDependencyGraph<_, _
             for dependentProjectId in dependentProjectIds do
                 depGraph.AddProjectReference(dependentProjectId, projectIdentifier)
 
+            this.Debug_DumpGraphOnEveryChange |> Option.iter (this.Debug_DumpMermaid)
+
             projectIdentifier)
 
     member this.AddOrUpdate(projectConfig, sourceFilePaths: Uri seq) =
@@ -413,20 +428,27 @@ type FSharpWorkspaceProjects internal (depGraph: IThreadSafeDependencyGraph<_, _
 
         this.AddOrUpdate(projectConfig, sourceFiles)
 
-    member _.Update(projectIdentifier, newSourceFiles) =
+    member this.Update(projectIdentifier, newSourceFiles) =
+
+        let newSourceFiles = newSourceFiles |> Seq.cache
 
         use _ = Activity.start "Projects.Update" [
-            Activity.Tags.project, projectIdentifier.ToString() |> (!!)
+            Activity.Tags.project, !! projectIdentifier.ToString()
             "sourceFiles", newSourceFiles |> String.concat "; "
         ]
 
-        let existingSourceFiles = depGraph.GetFilesOf projectIdentifier |> Seq.map (fun f -> f.FileName, f) |> Map
+        depGraph.Transact(fun depGraph ->
 
-        let newFilesWithSnapshots =
-            newSourceFiles
-            |> Seq.map (fun path ->
-                path,
-                existingSourceFiles.TryFind path
-                |> Option.defaultWith (fun () -> createFileSnapshot path))
+            let existingSourceFiles = depGraph.GetFilesOf projectIdentifier |> Seq.map (fun f -> f.FileName, f) |> Map
 
-        depGraph.ReplaceSourceFiles(projectIdentifier, newFilesWithSnapshots)
+            let newFilesWithSnapshots =
+                newSourceFiles
+                |> Seq.map (fun path ->
+                    path,
+                    existingSourceFiles.TryFind path
+                    |> Option.defaultWith (fun () -> createFileSnapshot path))
+
+            depGraph.ReplaceSourceFiles(projectIdentifier, newFilesWithSnapshots)
+
+            this.Debug_DumpGraphOnEveryChange |> Option.iter (this.Debug_DumpMermaid)
+        )
