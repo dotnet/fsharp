@@ -18,6 +18,73 @@ let typeCheckWithStrictNullness cu =
     |> typecheck
 
 
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``Report warning when applying anon record to a nullable generic return value`` () =
+    FSharp """
+open System.Text.Json
+type R = { x: int }
+type RA = {| x: int |}
+
+[<EntryPoint>]
+let main _args =
+    let a = JsonSerializer.Deserialize<{| x: int |}> "null"
+    let _a = a.x
+
+    let b = JsonSerializer.Deserialize<RA> "null"
+    let _b = b.x
+
+    let c = JsonSerializer.Deserialize<R> "null"
+    let _c = c.x
+    0"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics 
+            [ Error 3265, Line 8, Col 13, Line 8, Col 60, "Application of method 'Deserialize' attempted to create a nullable type ('T | null) for '{| x: int |}'. Nullness warnings won't be reported correctly for such types."
+              Error 3265, Line 11, Col 13, Line 11, Col 50, "Application of method 'Deserialize' attempted to create a nullable type ('T | null) for '{| x: int |}'. Nullness warnings won't be reported correctly for such types."
+              Error 3261, Line 15, Col 14, Line 15, Col 17, "Nullness warning: The types 'R' and 'R | null' do not have compatible nullability."]
+
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``Report warning when generic type instance creates a null-disallowed type`` () =
+    FSharp """
+open System.Text.Json
+
+[<Measure>]
+type mykg
+type mykgalias = int<mykg>
+
+[<MeasureAnnotatedAbbreviation>]  // Despite being an abbreviation, this points to a string - does not warn
+type string<[<Measure>] 'Measure> = string|null
+
+[<EntryPoint>]
+let main _args =
+    let a = JsonSerializer.Deserialize<{| x: int |}> "null"
+    let a = JsonSerializer.Deserialize<int> "null"
+    let a = JsonSerializer.Deserialize<int * float> "null"
+    let a = JsonSerializer.Deserialize<struct(int * float)> "null" 
+    let a = JsonSerializer.Deserialize<int<mykg>> "null"
+    let a = JsonSerializer.Deserialize<mykgalias> "null"
+
+    // Should be ok from here below
+    let b = JsonSerializer.Deserialize<int list> "null"
+    let b = JsonSerializer.Deserialize<mykgalias array> "null"
+    let b = JsonSerializer.Deserialize<Set<int<mykg>>> "null"
+    let b = JsonSerializer.Deserialize<string<mykg>> "null"
+
+    0"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics 
+            [ Error 3265, Line 13, Col 13, Line 13, Col 60, "Application of method 'Deserialize' attempted to create a nullable type ('T | null) for '{| x: int |}'. Nullness warnings won't be reported correctly for such types."
+              Error 3265, Line 14, Col 13, Line 14, Col 51, "Application of method 'Deserialize' attempted to create a nullable type ('T | null) for 'System.Int32'. Nullness warnings won't be reported correctly for such types."
+              Error 3265, Line 15, Col 13, Line 15, Col 59, "Application of method 'Deserialize' attempted to create a nullable type ('T | null) for '(int * float)'. Nullness warnings won't be reported correctly for such types."
+              Error 3265, Line 16, Col 13, Line 16, Col 67, "Application of method 'Deserialize' attempted to create a nullable type ('T | null) for 'struct (int * float)'. Nullness warnings won't be reported correctly for such types."
+              Error 3265, Line 17, Col 13, Line 17, Col 57, "Application of method 'Deserialize' attempted to create a nullable type ('T | null) for 'int<mykg>'. Nullness warnings won't be reported correctly for such types."
+              Error 3265, Line 18, Col 13, Line 18, Col 57, "Application of method 'Deserialize' attempted to create a nullable type ('T | null) for 'int<mykg>'. Nullness warnings won't be reported correctly for such types."]
+   
+
+
 
 [<FSharp.Test.FactForNETCOREAPPAttribute>]
 let ``Does report when null goes to DateTime Parse`` () =

@@ -21,6 +21,7 @@ open FSharp.Compiler.NameResolution
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.EditorServices
+open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 
 /// Accumulated results of type checking. The minimum amount of state in order to continue type-checking following files.
 [<NoEquality; NoComparison>]
@@ -101,41 +102,43 @@ type internal CompilerCaches =
 
     new: sizeFactor: int -> CompilerCaches
 
-    member AssemblyData: AsyncMemoize<(string * string), (string * string), ProjectAssemblyDataResult>
+    member AssemblyData: AsyncMemoize<FSharpProjectIdentifier, (string * string), ProjectAssemblyDataResult>
 
-    member BootstrapInfo: AsyncMemoize<(string * string), string, (BootstrapInfo option * FSharpDiagnostic array)>
+    member BootstrapInfo: AsyncMemoize<FSharpProjectIdentifier, string, (BootstrapInfo option * FSharpDiagnostic array)>
 
     member BootstrapInfoStatic:
-        AsyncMemoize<(string * string), (string * string), (int * TcImports * TcGlobals * TcInfo * Event<unit>)>
+        AsyncMemoize<FSharpProjectIdentifier, (string * string), (int * TcImports * TcGlobals * TcInfo * Event<unit>)>
 
     member DependencyGraph:
         AsyncMemoize<(DependencyGraphType option * byte array), string, (Graph<NodeToTypeCheck> * Graph<FileIndex>)>
 
     member FrameworkImports: AsyncMemoize<string, FrameworkImportsCacheKey, (TcGlobals * TcImports)>
 
-    member ItemKeyStore: AsyncMemoize<(string * (string * string)), string, ItemKeyStore option>
+    member ItemKeyStore: AsyncMemoize<(string * FSharpProjectIdentifier), string, ItemKeyStore option>
 
     member ParseAndCheckAllFilesInProject: AsyncMemoizeDisabled<obj, obj, obj>
 
     member ParseAndCheckFileInProject:
-        AsyncMemoize<(string * (string * string)), string * string, (FSharpParseFileResults * FSharpCheckFileAnswer)>
+        AsyncMemoize<(string * FSharpProjectIdentifier), string * string, (FSharpParseFileResults *
+        FSharpCheckFileAnswer)>
 
-    member ParseAndCheckProject: AsyncMemoize<(string * string), string, FSharpCheckProjectResults>
+    member ParseAndCheckProject: AsyncMemoize<FSharpProjectIdentifier, string, FSharpCheckProjectResults>
 
     member ParseFile:
-        AsyncMemoize<((string * string) * string), (string * string * bool), ProjectSnapshot.FSharpParsedFile>
+        AsyncMemoize<(FSharpProjectIdentifier * string), (string * string * bool), ProjectSnapshot.FSharpParsedFile>
 
     member ParseFileWithoutProject: AsyncMemoize<string, string, FSharpParseFileResults>
 
     member ProjectExtras: AsyncMemoizeDisabled<obj, obj, obj>
 
-    member SemanticClassification: AsyncMemoize<(string * (string * string)), string, SemanticClassificationView option>
+    member SemanticClassification:
+        AsyncMemoize<(string * FSharpProjectIdentifier), string, SemanticClassificationView option>
 
     member SizeFactor: int
 
-    member TcIntermediate: AsyncMemoize<(string * (string * string)), (string * int), TcIntermediate>
+    member TcIntermediate: AsyncMemoize<(string * FSharpProjectIdentifier), (string * int), TcIntermediate>
 
-    member ScriptClosure: AsyncMemoize<(string * (string * string)), string, LoadClosure>
+    member ScriptClosure: AsyncMemoize<(string * FSharpProjectIdentifier), string, LoadClosure>
 
     member TcLastFile: AsyncMemoizeDisabled<obj, obj, obj>
 
