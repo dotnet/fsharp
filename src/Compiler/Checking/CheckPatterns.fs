@@ -39,7 +39,7 @@ type cenv = TcFileState
 let inline findSynAttribute (attrName: string) (synAttrs: SynAttributes) =
     let attributesToSearch =
         if attrName.EndsWith("Attribute") then
-            set [attrName; attrName.AsSpan().Slice(0, attrName.Length - 9).ToString()]
+            set [attrName; attrName.Substring(0, attrName.Length - 9).ToString()]
         else
             set [attrName; attrName + "Attribute"]
 
