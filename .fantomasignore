@@ -109,6 +109,7 @@ src/Compiler/Utilities/illib.fs
 
 
 src/Compiler/Utilities/NullnessShims.fs
+src/Compiler/Utilities/DependencyGraph.fs
 src/Compiler/Utilities/LruCache.fsi
 src/Compiler/Utilities/LruCache.fs
 src/Compiler/Utilities/HashMultiMap.fsi
@@ -120,6 +121,8 @@ src/Compiler/SyntaxTree/LexerStore.fs
 
 src/Compiler/Driver/GraphChecking/Graph.fsi
 src/Compiler/Driver/GraphChecking/Graph.fs
+
+src/FSharp.Compiler.LanguageServer/Common/LifecycleManager.fs
 
 # Fantomas limitations on implementation files  (to investigate)
 
