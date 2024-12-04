@@ -61,22 +61,23 @@ type AsyncLazy<'t> private (initial: AsyncLazyState<'t>, cancelUnawaited: bool, 
     let request = function
         | Initial computation ->
             let cts = new CancellationTokenSource()
-            let computeThenUpdate = async {
+            let work = Async.StartAsTask( async {
                 try
                     let! result = computation
-                    // If the state is other than Running it means this work item is abandoned
-                    // because of signalled cancel in cancelIfUnawaited.
-                    updateState <| function Running _ -> Completed result | state -> state
+                    // If associated cts is signalled it means this work item was abandoned
+                    // and it should not alter the state.
+                    updateState <| function
+                        | state when cts.IsCancellationRequested -> state
+                        | _ -> Completed result
                     return result
                 with
                 | exn ->
                     updateState <| function
-                        | Running _ -> if cacheException then Faulted exn else Initial computation
-                        | state -> state
+                        | state when cts.IsCancellationRequested -> state
+                        | _ -> if cacheException then Faulted exn else Initial computation
                     return raise exn
-            }
-            let work = Async.StartAsTask(computeThenUpdate, cancellationToken = cts.Token)
-            Running (computeThenUpdate, work, cts, 1),
+            }, cancellationToken = cts.Token)
+            Running (computation, work, cts, 1),
             detachable work
         | Running (c, work, cts, count) ->
             Running (c, work, cts, count + 1),
