@@ -9728,9 +9728,12 @@ and TcMethodApplicationThen
         let (CallerNamedArg(id, _)) = List.head attributeAssignedNamedItems
         errorR(Error(FSComp.SR.tcNamedArgumentDidNotMatch(id.idText), id.idRange))
 
-
     // Resolve the "delayed" lookups
     let exprTy = (tyOfExpr g expr)
+
+    for problematicTy in GetDisallowedNullness g exprTy do
+        let denv = env.DisplayEnv
+        warning(Error(FSComp.SR.tcDisallowedNullableApplication(methodName,NicePrint.minimalStringOfType denv problematicTy), m))
 
     PropagateThenTcDelayed cenv overallTy env tpenv mWholeExpr (MakeApplicableExprNoFlex cenv expr) exprTy atomicFlag delayed
 
