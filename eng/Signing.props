@@ -1,5 +1,13 @@
 <Project>
 
+  <!--
+    VisualFSharp.sln only produces artifacts files when built with full framework MSBuild,
+    so we need to allow empty sign list when building VisualFSharp.sln with Core MSBuild.
+   -->
+  <PropertyGroup Condition="'$(MSBuildRuntimeType)' == 'Core' and $(Projects.Contains('VisualFSharp.sln'))">
+    <AllowEmptySignList>true</AllowEmptySignList>
+  </PropertyGroup>
+
   <ItemGroup>
     <FileSignInfo Include="Nerdbank.Streams.dll" CertificateName="None" />
     <FileSignInfo Include="Newtonsoft.Json.dll" CertificateName="None" />
