@@ -48,6 +48,8 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TestTP", "tests\service\dat
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{4E4F41D9-86A7-4F5D-B735-1A0744AB68AC}"
 	ProjectSection(SolutionItems) = preProject
+		docs\builder-caches.md = docs\builder-caches.md
+		docs\changing-the-ast.md = docs\changing-the-ast.md
 		docs\coding-standards.md = docs\coding-standards.md
 		docs\compiler-startup-performance.md = docs\compiler-startup-performance.md
 		docs\debug-emit.md = docs\debug-emit.md
@@ -57,12 +59,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{4E4F41D9-8
 		docs\index.md = docs\index.md
 		docs\large-inputs-and-stack-overflows.md = docs\large-inputs-and-stack-overflows.md
 		docs\memory-usage.md = docs\memory-usage.md
-		docs\optimizations.md = docs\optimizations.md
-		docs\optimizations-equality.md = docs\optimizations-equality.md
-		docs\overview.md = docs\overview.md
-		docs\builder-caches.md = docs\builder-caches.md
-		docs\changing-the-ast.md = docs\changing-the-ast.md
 		docs\names.md = docs\names.md
+		docs\optimizations-equality.md = docs\optimizations-equality.md
+		docs\optimizations.md = docs\optimizations.md
+		docs\overview.md = docs\overview.md
 		docs\perf-discussions-archive.md = docs\perf-discussions-archive.md
 		docs\project-builds.md = docs\project-builds.md
 		docs\representations.md = docs\representations.md
@@ -84,8 +84,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fcs", "fcs", "{B86EBFF1-E03
 		docs\fcs\symbols.fsx = docs\fcs\symbols.fsx
 		docs\fcs\tokenizer.fsx = docs\fcs\tokenizer.fsx
 		docs\fcs\typedtree.fsx = docs\fcs\typedtree.fsx
-		docs\fcs\untypedtree.fsx = docs\fcs\untypedtree.fsx
 		docs\fcs\untypedtree-apis.fsx = docs\fcs\untypedtree-apis.fsx
+		docs\fcs\untypedtree.fsx = docs\fcs\untypedtree.fsx
 	EndProjectSection
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "fsc", "src\fsc\fscProject\fsc.fsproj", "{10D15DBB-EFF0-428C-BA83-41600A93EEC4}"
@@ -142,6 +142,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".FSharp.Compiler.Service", 
 		docs\release-notes\.FSharp.Compiler.Service\8.0.200.md = docs\release-notes\.FSharp.Compiler.Service\8.0.200.md
 		docs\release-notes\.FSharp.Compiler.Service\8.0.202.md = docs\release-notes\.FSharp.Compiler.Service\8.0.202.md
 		docs\release-notes\.FSharp.Compiler.Service\8.0.300.md = docs\release-notes\.FSharp.Compiler.Service\8.0.300.md
+		docs\release-notes\.FSharp.Compiler.Service\8.0.400.md = docs\release-notes\.FSharp.Compiler.Service\8.0.400.md
+		docs\release-notes\.FSharp.Compiler.Service\9.0.100.md = docs\release-notes\.FSharp.Compiler.Service\9.0.100.md
+		docs\release-notes\.FSharp.Compiler.Service\9.0.200.md = docs\release-notes\.FSharp.Compiler.Service\9.0.200.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".FSharp.Core", ".FSharp.Core", "{23798638-A1E9-4DAE-9C9C-F5D87499ADD6}"
@@ -158,8 +161,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".Language", ".Language", "{
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".VisualStudio", ".VisualStudio", "{AF70EC5A-8E7C-4FDA-857D-AF08082CFC64}"
 	ProjectSection(SolutionItems) = preProject
-		docs\release-notes\.VisualStudio\17.9.md = docs\release-notes\.VisualStudio\17.9.md
 		docs\release-notes\.VisualStudio\17.10.md = docs\release-notes\.VisualStudio\17.10.md
+		docs\release-notes\.VisualStudio\17.9.md = docs\release-notes\.VisualStudio\17.9.md
 	EndProjectSection
 EndProject
 Global

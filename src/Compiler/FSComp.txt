@@ -1538,6 +1538,7 @@ tcPassingWithoutNullToNonNullQuickAP,"You can remove this |NonNullQuick| pattern
 tcPassingWithoutNullTononNullFunction,"You can remove this `nonNull` assertion."
 3263,tcNullableToStringOverride,"With nullness checking enabled, overrides of .ToString() method must return a non-nullable string. You can handle potential nulls via the built-in string function."
 3264,tcDowncastFromNullableToWithoutNull,"Nullness warning: Downcasting from '%s' into '%s' can introduce unexpected null values. Cast to '%s|null' instead or handle the null before downcasting."
+3265,tcDisallowedNullableApplication,"Application of method '%s' attempted to create a nullable type ('T | null) for '%s'. Nullness warnings won't be reported correctly for such types."
 3268,csNullNotNullConstraintInconsistent,"The constraints 'null' and 'not null' are inconsistent"
 3271,tcNullnessCheckingNotEnabled,"The 'nullness checking' language feature is not enabled. This use of a nullness checking construct will be ignored."
 csTypeHasNullAsTrueValue,"The type '%s' uses 'null' as a representation value but a non-null type is expected"
