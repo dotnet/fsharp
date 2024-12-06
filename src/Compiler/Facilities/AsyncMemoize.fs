@@ -1,12 +1,10 @@
 namespace Internal.Utilities.Collections
 
-open System
 open System.Diagnostics
 open System.IO
 open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
-open System.Runtime.ExceptionServices
 
 open FSharp.Compiler.DiagnosticsLogger
 open Internal.Utilities.Library
@@ -24,71 +22,84 @@ type AsyncLazy<'t> private (initial: AsyncLazyState<'t>, cancelUnawaited: bool, 
 
     let stateUpdateSync = obj()
     let mutable state = initial
+    // This should remain the only function that mutates the state.
+    let withStateUpdate f =
+        lock stateUpdateSync <| fun () ->
+            let next, result = f state
+            state <- next
+            result
+    let updateState f = withStateUpdate <| fun prev -> f prev, ()
 
-    let cancelIfUnawaited () =
-        match state with
-        | Running(computation, _, cts, 0) ->
+    let cancelIfUnawaited cancelUnawaited = function
+        | Running(computation, _, cts, 0) when cancelUnawaited ->
+            // To keep state updates fast we don't actually wait for the work to cancel.
             cts.Cancel()
-            state <- Initial computation
-        | _ -> ()
+            Initial computation
+        | state -> state
 
-    let afterRequest () =
-        match state with
-        | Running(computation, work, _, _) when work.IsCompleted ->
-            state <-
-                try
-                    Completed work.Result
-                with
-                | exn ->
-                    if cacheException then Faulted exn else Initial computation
-        | Running(c, work, cts, count) ->
-            state <- Running(c, work, cts, count - 1)
-            if cancelUnawaited then cancelIfUnawaited ()
-        | _ -> () // Nothing more to do if another request already transitioned the state.
+    let afterRequest = function
+        | Running(c, work, cts, count) -> Running(c, work, cts, count - 1) |> cancelIfUnawaited cancelUnawaited
+        | state -> state // Nothing more to do if state already transitioned.
 
     let detachable (work: Task<'t>) =
         async {
             try
                 let! ct = Async.CancellationToken
-                let options = TaskContinuationOptions.ExecuteSynchronously
-                try
-                    return!
-                        // Using ContinueWith with a CancellationToken allows detaching from the running 'work' task.
-                        // This ensures the lazy 'work' and its awaiting requests can be independently managed
-                        // by separate CancellationTokenSources, enabling individual cancellation.
-                        // Essentially, if this async computation is canceled, it won't wait for the 'work' to complete
-                        // but will immediately proceed to the finally block.
-                        work.ContinueWith((fun (t: Task<_>) -> t.Result), ct, options, TaskScheduler.Current)
-                        |> Async.AwaitTask
-                // Cancellation check before entering the `with` ensures TaskCanceledException coming from the ContinueWith task will never be raised here.
-                // The cancellation continuation will always be called in case of cancellation.
-                with exn -> return raise exn
-            finally
-                lock stateUpdateSync afterRequest
+                return!
+                    // Using ContinueWith with a CancellationToken allows detaching from the running 'work' task.
+                    // This ensures the lazy 'work' and its awaiting requests can be independently managed 
+                    // by separate CancellationTokenSources, enabling individual cancellation.
+                    // Essentially, if this async computation is canceled, it won't wait for the 'work' to complete
+                    // but will immediately proceed to the finally block.
+                    work.ContinueWith((fun (t: Task<_>) -> t.Result), ct)
+                    |> Async.AwaitTask
+            // Cancellation check before entering the `with` ensures TaskCanceledException coming from the ContinueWith task will never be raised here.
+            // The cancellation continuation will always be called in case of cancellation.
+            with exn -> return raise exn
         }
 
-    let request () =
-        match state with
+    let request = function
         | Initial computation ->
             let cts = new CancellationTokenSource()
-            let work = Async.StartAsTask(computation, cancellationToken = cts.Token)
-            state <- Running (computation, work, cts, 1)
+            let work = Async.StartAsTask( async {
+                try
+                    let! result = computation
+                    // If associated cts is signalled it means this work item was abandoned
+                    // and it should not alter the state.
+                    updateState <| function
+                        | state when cts.IsCancellationRequested -> state
+                        | _ -> Completed result
+                    return result
+                with
+                | exn ->
+                    updateState <| function
+                        | state when cts.IsCancellationRequested -> state
+                        | _ -> if cacheException then Faulted exn else Initial computation
+                    return raise exn
+            }, cancellationToken = cts.Token)
+            Running (computation, work, cts, 1),
             detachable work
         | Running (c, work, cts, count) ->
-            state <- Running (c, work, cts, count + 1)
+            Running (c, work, cts, count + 1),
             detachable work
-        | Completed result ->
-            async { return result }
-        | Faulted exn ->
-            async { return raise exn }
+        | Completed result as state ->
+            state, async { return result }
+        | Faulted exn as state ->
+            state, async { return raise exn }
 
     // computation will deallocate after state transition to Completed ot Faulted.
     new (computation, ?cancelUnawaited: bool, ?cacheException) =
         AsyncLazy(Initial computation, defaultArg cancelUnawaited true, defaultArg cacheException false)
 
-    member _.Request() = lock stateUpdateSync request
+    member _.Request() =
+        async { 
+            try
+                return! withStateUpdate request
+            finally
+                updateState afterRequest
+        }
 
-    member _.CancelIfUnawaited() = lock stateUpdateSync cancelIfUnawaited
+    member _.CancelIfUnawaited() = updateState (cancelIfUnawaited true)
 
     member _.State = state
 
