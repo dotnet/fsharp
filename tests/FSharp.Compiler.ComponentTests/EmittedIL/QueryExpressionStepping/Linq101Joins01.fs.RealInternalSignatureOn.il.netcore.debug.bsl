@@ -12,7 +12,7 @@
 .assembly extern System.Linq
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         
-  .ver 8:0:0:0
+  .ver 9:0:0:0
 }
 .assembly assembly
 {
@@ -25,16 +25,6 @@
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
-}
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
 }
 .module assembly.exe
 
@@ -137,9 +127,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Tuple`2<string,class [Utils]Utils/Product> 
-            Invoke(string c,
-                   class [Utils]Utils/Product p) cil managed
+    .method public strict virtual instance class [runtime]System.Tuple`2<string,class [Utils]Utils/Product> Invoke(string c, class [Utils]Utils/Product p) cil managed
     {
       
       .maxstack  8
@@ -341,9 +329,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Tuple`2<string,class [runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>> 
-            Invoke(string c,
-                   class [runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> ps) cil managed
+    .method public strict virtual instance class [runtime]System.Tuple`2<string,class [runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>> Invoke(string c, class [runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> ps) cil managed
     {
       
       .maxstack  8
@@ -544,9 +530,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Tuple`2<string,class [runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>> 
-            Invoke(string c,
-                   class [runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> ps) cil managed
+    .method public strict virtual instance class [runtime]System.Tuple`2<string,class [runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>> Invoke(string c, class [runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> ps) cil managed
     {
       
       .maxstack  8
@@ -816,9 +800,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance class [runtime]System.Tuple`2<string,class [runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>> 
-            Invoke(string c,
-                   class [runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> ps) cil managed
+    .method public strict virtual instance class [runtime]System.Tuple`2<string,class [runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>> Invoke(string c, class [runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> ps) cil managed
     {
       
       .maxstack  8
