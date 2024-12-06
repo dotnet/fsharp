@@ -9215,6 +9215,57 @@ let reqTyForArgumentNullnessInference g actualTy reqTy =
         changeWithNullReqTyToVariable g reqTy       
     | _ -> reqTy
 
+
+let GetDisallowedNullness (g:TcGlobals) (ty:TType) =
+    if g.checkNullness then
+        let rec hasWithNullAnyWhere ty alreadyWrappedInOuterWithNull = 
+            match ty with
+            | TType_var (tp, n) -> 
+                let withNull = alreadyWrappedInOuterWithNull || n.TryEvaluate() = (ValueSome NullnessInfo.WithNull)
+                match tp.Solution with
+                | None -> []
+                | Some t -> hasWithNullAnyWhere t withNull
+
+            | TType_app (tcr, tinst, nullnessOrig) -> 
+                let tyArgs = tinst |> List.collect (fun t -> hasWithNullAnyWhere t false)
+                
+                match alreadyWrappedInOuterWithNull, tcr.TypeAbbrev with
+                | true, _ when isStructTyconRef tcr -> ty :: tyArgs
+                | true, _ when tcr.IsMeasureableReprTycon -> 
+                    match tcr.TypeReprInfo with
+                    | TMeasureableRepr realType ->
+                        if hasWithNullAnyWhere realType true |> List.isEmpty then
+                            []
+                        else [ty]
+                    | _ -> []
+                | true, Some tAbbrev -> (hasWithNullAnyWhere tAbbrev true) @ tyArgs
+                | _ -> tyArgs
+
+            | TType_tuple (_,tupTypes) ->
+                let inner = tupTypes |> List.collect (fun t -> hasWithNullAnyWhere t false)
+                if alreadyWrappedInOuterWithNull then ty :: inner else inner
+
+            | TType_anon (anon,tys) -> 
+                let inner = tys |> List.collect (fun t -> hasWithNullAnyWhere t false)
+                if alreadyWrappedInOuterWithNull then ty :: inner else inner
+            | TType_fun (d, r, _) ->
+                (hasWithNullAnyWhere d false) @ (hasWithNullAnyWhere r false)
+
+            | TType_forall _ -> []
+            | TType_ucase _ -> []
+            | TType_measure m ->
+                if alreadyWrappedInOuterWithNull then 
+                    let measuresInside = 
+                        ListMeasureVarOccs m 
+                        |> List.choose (fun x -> x.Solution)
+                        |> List.collect (fun x -> hasWithNullAnyWhere x true)
+                    ty :: measuresInside
+                else []
+
+        hasWithNullAnyWhere ty false
+    else
+        []
+
 let TypeHasAllowNull (tcref:TyconRef) g m =
     not tcref.IsStructOrEnumTycon &&
     not (isByrefLikeTyconRef g m tcref) && 

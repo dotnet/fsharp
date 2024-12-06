@@ -116,19 +116,20 @@ https://github.com/dotnet/roslyn-tools/blob/6d7c182c46f8319d7922561e2c1586c7aadc
 5. Set the new branch to receive auto-merges from `main`, and also set the old release branch to flow into the new one.  [This PR](https://github.com/dotnet/roslyn-tools/pull/1245/files) is a good example of what to do when a new `release/dev17.4` branch is created that should receive merges from both `main` and the previous release branch, `release/dev17.3`. Old release branch should stop receiving updates from the `main`.
   
 6. Set the packages from the new branch to flow into the correct package feeds via the `darc` tool.  To do this:
-   1. Ensure the latest `darc` tool is installed by running `eng/common/darc-init.ps1`.
-   2. (only needed once) Run the command `darc authenticate`.  A text file will be opened with instructions on how to populate access tokens.
-   3. Check the current package/channel subscriptions by running `darc get-default-channels --source-repo fsharp`.  For this example, notice that the latest subscription shows the F# branch `release/dev17.3` is getting added to the `VS 17.3` channel.
-   4. Get the list of `darc` channels and determine the appropriate one to use for the new branch via the command `darc get-channels`.  For this example, notice that a channel named `VS 17.4` is listed.
-   5. Add the new F# branch to the appropriate `darc` channel.  In this example, run `darc add-default-channel --channel "VS 17.4" --branch release/dev17.4 --repo https://github.com/dotnet/fsharp`
-   6. Ensure the subscription was added by repeating step 3 above.
-   7. Note, the help in the `darc` tool is really good.  E.g., you can simply run `darc` to see a list of all commands available, and if you run `darc <some-command>` with no arguments, you'll be given a list of arguments you can use.
-   8. Ensure that version numbers are bumped for a new branch.
-   9. Change needed subscriptions for arcade and SDK:
+
+   1. To use `darc` you need to be a member of the `dotnetes-maestro-users` entitlement. You can request access at [coreidentity.microsoft.com](https://coreidentity.microsoft.com/manage/Entitlement/entitlement/dotnetesmaes-z54r)   
+   2. Ensure the latest `darc` tool is installed by running `eng/common/darc-init.ps1`.
+   3. (only needed once) Run the command `darc authenticate`.  A text file will be opened with instructions on how to populate access tokens.
+   4. Check the current package/channel subscriptions by running `darc get-default-channels --source-repo fsharp`.  For this example, notice that the latest subscription shows the F# branch `release/dev17.3` is getting added to the `VS 17.3` channel.
+   5. Get the list of `darc` channels and determine the appropriate one to use for the new branch via the command `darc get-channels`.  For this example, notice that a channel named `VS 17.4` is listed.
+   6. Add the new F# branch to the appropriate `darc` channel.  In this example, run `darc add-default-channel --channel "VS 17.4" --branch release/dev17.4 --repo https://github.com/dotnet/fsharp`
+   7. Ensure the subscription was added by repeating step 3 above.
+   8. Note, the help in the `darc` tool is really good.  E.g., you can simply run `darc` to see a list of all commands available, and if you run `darc <some-command>` with no arguments, you'll be given a list of arguments you can use.
+   9. Ensure that version numbers are bumped for a new branch.
+   10. Change needed subscriptions for arcade and SDK:
       1. `darc get-subscriptions --target-repo fsharp`, and then use `darc update-subscription --id <subscription id>` for corresponding channels (e.g. target new VS channel to specific SDK channel, or set up arcade auto-merges to release/* or main branch, depending on the timeline of release/upgrade cycle).
       2. If new subscription needs to be added, the following command should be used `darc add-subscription --source-repo https://github.com/dotnet/arcade --target-repo https://github.com/dotnet/fsharp --target-branch <target_branch> --channel "<target_channel>" --update-frequency everyDay --standard-automerge
-   10. Update mibc and other dependencies if needed, refer to https://github.com/dotnet/arcade/blob/main/Documentation/Darc.md#updating-dependencies-in-your-local-repository for more information 
-`
+   11. Update mibc and other dependencies if needed, refer to https://github.com/dotnet/arcade/blob/main/Documentation/Darc.md#updating-dependencies-in-your-local-repository for more information 
 
 ## Labeling issues on GitHub
 
