@@ -2,7 +2,7 @@ ImplFile
   (ParsedImplFileInput
      ("/root/MatchClause/RangeOfBarInASingleSynMatchClauseInSynExprMatch.fs",
       false, QualifiedNameOfFile RangeOfBarInASingleSynMatchClauseInSynExprMatch,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([RangeOfBarInASingleSynMatchClauseInSynExprMatch], false, AnonModule,
           [Expr
@@ -26,4 +26,5 @@ ImplFile
                                 WithKeyword = (2,10--2,14) }), (2,0--3,36))],
           PreXmlDocEmpty, [], None, (2,0--4,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

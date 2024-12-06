@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/LeadingKeyword/StaticMemberValKeyword.fs", false,
-      QualifiedNameOfFile StaticMemberValKeyword, [], [],
+      QualifiedNameOfFile StaticMemberValKeyword, [],
       [SynModuleOrNamespace
          ([StaticMemberValKeyword], false, AnonModule,
           [Types
@@ -41,4 +41,5 @@ ImplFile
                                  WithKeyword = None })], (2,0--3,33))],
           PreXmlDocEmpty, [], None, (2,0--4,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

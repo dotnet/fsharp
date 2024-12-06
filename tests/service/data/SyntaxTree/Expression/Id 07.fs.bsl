@@ -1,11 +1,12 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Expression/Id 07.fs", false, QualifiedNameOfFile Id 07, [], [],
+     ("/root/Expression/Id 07.fs", false, QualifiedNameOfFile Id 07, [],
       [SynModuleOrNamespace
          ([Id 07], false, AnonModule,
           [Expr (FromParseError (Ident , (1,0--1,1)), (1,0--1,1))],
           PreXmlDocEmpty, [], None, (1,0--1,1), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))
 
 (1,0)-(1,1) parse error This is not a valid identifier

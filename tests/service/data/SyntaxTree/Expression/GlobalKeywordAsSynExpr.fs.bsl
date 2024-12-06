@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/GlobalKeywordAsSynExpr.fs", false,
-      QualifiedNameOfFile GlobalKeywordAsSynExpr, [], [],
+      QualifiedNameOfFile GlobalKeywordAsSynExpr, [],
       [SynModuleOrNamespace
          ([GlobalKeywordAsSynExpr], false, AnonModule,
           [Expr
@@ -12,4 +12,5 @@ ImplFile
                  (2,0--2,6)), (2,0--2,6))], PreXmlDocEmpty, [], None, (2,0--2,6),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
