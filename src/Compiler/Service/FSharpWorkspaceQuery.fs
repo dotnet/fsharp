@@ -38,7 +38,8 @@ type FSharpWorkspaceQuery internal (depGraph: IThreadSafeDependencyGraph<_, _>, 
     member internal _.Checker = checker
 
     member _.GetProjectSnapshot projectIdentifier =
-        use _ = Activity.start "GetProjectSnapshot" [ Activity.Tags.project, projectIdentifier.ToString() |> (!!) ]
+        use _ =
+            Activity.start "GetProjectSnapshot" [ Activity.Tags.project, projectIdentifier.ToString() |> (!!) ]
 
         try
             depGraph.GetProjectSnapshot projectIdentifier |> Some
@@ -46,7 +47,8 @@ type FSharpWorkspaceQuery internal (depGraph: IThreadSafeDependencyGraph<_, _>, 
             None
 
     member _.GetProjectSnapshotForFile(file: Uri) =
-        use _ = Activity.start "GetProjectSnapshotForFile" [ Activity.Tags.fileName, file.LocalPath ]
+        use _ =
+            Activity.start "GetProjectSnapshotForFile" [ Activity.Tags.fileName, file.LocalPath ]
 
         depGraph.GetProjectsContaining file.LocalPath
 
@@ -56,7 +58,9 @@ type FSharpWorkspaceQuery internal (depGraph: IThreadSafeDependencyGraph<_, _>, 
         |> Seq.tryHead // For now just get the first one
 
     member this.GetParseAndCheckResultsForFile(file: Uri) =
-        use _ = Activity.start "GetParseAndCheckResultsForFile" [ Activity.Tags.fileName, file.LocalPath ]
+        use _ =
+            Activity.start "GetParseAndCheckResultsForFile" [ Activity.Tags.fileName, file.LocalPath ]
+
         this.GetProjectSnapshotForFile file
         |> Option.map (fun snapshot ->
             async {
@@ -67,14 +71,15 @@ type FSharpWorkspaceQuery internal (depGraph: IThreadSafeDependencyGraph<_, _>, 
                     | FSharpCheckFileAnswer.Succeeded result -> Some parseResult, Some result
                     | FSharpCheckFileAnswer.Aborted -> Some parseResult, None
             })
-        |> Option.defaultValue (async.Return (None, None))
+        |> Option.defaultValue (async.Return(None, None))
 
     member this.GetCheckResultsForFile(file) =
         this.GetParseAndCheckResultsForFile file |> Async.map snd
 
     // TODO: split to parse and check diagnostics
     member this.GetDiagnosticsForFile(file: Uri) =
-        use _ = Activity.start "GetDiagnosticsForFile" [ Activity.Tags.fileName, file.LocalPath ]
+        use _ =
+            Activity.start "GetDiagnosticsForFile" [ Activity.Tags.fileName, file.LocalPath ]
 
         this.GetParseAndCheckResultsForFile file
         |> Async.map (fun results ->
@@ -87,7 +92,8 @@ type FSharpWorkspaceQuery internal (depGraph: IThreadSafeDependencyGraph<_, _>, 
             FSharpDiagnosticReport(diagnostics, getDiagnosticResultId ()))
 
     member this.GetSemanticClassification(file: Uri) =
-        use _ = Activity.start "GetSemanticClassification" [ Activity.Tags.fileName, file.LocalPath ]
+        use _ =
+            Activity.start "GetSemanticClassification" [ Activity.Tags.fileName, file.LocalPath ]
 
         this.GetProjectSnapshotForFile file
         |> Option.map (fun snapshot ->
