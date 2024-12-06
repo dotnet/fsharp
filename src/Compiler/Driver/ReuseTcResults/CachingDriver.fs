@@ -98,7 +98,7 @@ type CachingDriver(tcConfig: TcConfig) =
         for KeyValue(idx, _) in graph do
             let fileName = sourceFiles[idx].FileName
             let lastWriteTime = FileSystem.GetLastWriteTimeShim fileName
-            list.Add $"%i{idx},{fileName},{lastWriteTime}"
+            list.Add $"%i{idx},{fileName},{lastWriteTime.ToOADate()}"
 
         for KeyValue(idx, deps) in graph do
             for depIdx in deps do
@@ -109,7 +109,7 @@ type CachingDriver(tcConfig: TcConfig) =
     let getThisCompilationReferences =
         List.map (fun (r: AssemblyReference) -> r.Text)
         >> List.map (fun fileName -> fileName, FileSystem.GetLastWriteTimeShim fileName)
-        >> List.map (fun (fileName, lastWriteTime) -> $"{fileName},{lastWriteTime}")
+        >> List.map (fun (fileName, lastWriteTime) -> $"{fileName},{lastWriteTime.ToOADate()}")
         >> List.toArray
 
     member _.TryReuseTcResults inputs =
