@@ -3,6 +3,8 @@ namespace FSharp.Compiler.LanguageServer
 open Microsoft.CommonLanguageServerProtocol.Framework
 open Microsoft.VisualStudio.LanguageServer.Protocol
 
+open System.Diagnostics
+
 open FSharp.Compiler.Diagnostics
 open System.Runtime.CompilerServices
 
@@ -52,3 +54,37 @@ type FSharpDiagnosticExtensions =
             //Source = "Intellisense",
             Code = SumType<int, _> this.ErrorNumberText
         )
+
+
+
+module Activity =
+    let listen (filter) logMsg =
+        let indent (activity: Activity) =
+            let rec loop (activity: Activity) n =
+                match activity.Parent with
+                | Null -> n
+                | NonNull parent -> loop (parent) (n + 1)
+
+            String.replicate (loop activity 0) "    "
+
+        let collectTags (activity: Activity) =
+            [ for tag in activity.Tags -> $"{tag.Key}: %A{tag.Value}" ]
+            |> String.concat ", "
+
+        let listener =
+            new ActivityListener(
+                ShouldListenTo = (fun source -> source.Name = FSharp.Compiler.Diagnostics.ActivityNames.FscSourceName),
+                Sample =
+                    (fun context ->
+                        if filter context.Name then
+                            ActivitySamplingResult.AllDataAndRecorded
+                        else
+                            ActivitySamplingResult.None),
+                ActivityStarted = (fun a -> logMsg $"{indent a}{a.OperationName}     {collectTags a}")
+            )
+
+        ActivitySource.AddActivityListener(listener)
+
+    let listenToAll () = listen (fun _ -> true) Trace.TraceInformation
+    let listenToSome () =
+        listen (fun x -> not <| x.Contains "StackGuard" ) Trace.TraceInformation

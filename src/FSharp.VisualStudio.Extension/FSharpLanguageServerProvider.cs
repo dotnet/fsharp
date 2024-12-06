@@ -12,6 +12,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FSharp.Compiler.CodeAnalysis.Workspace;
+using FSharp.Compiler.Diagnostics;
 using FSharp.Compiler.LanguageServer;
 using FSharp.Compiler.LanguageServer.Common;
 
@@ -22,9 +23,16 @@ using Microsoft.VisualStudio.Extensibility;
 using Microsoft.VisualStudio.Extensibility.Editor;
 using Microsoft.VisualStudio.Extensibility.LanguageServer;
 using Microsoft.VisualStudio.LanguageServer.Protocol;
+using Microsoft.VisualStudio.OpenTelemetry.ClientExtensions;
+using Microsoft.VisualStudio.OpenTelemetry.ClientExtensions.Exporters;
+using Microsoft.VisualStudio.OpenTelemetry.Collector.Settings;
 using Microsoft.VisualStudio.ProjectSystem.Query;
 using Microsoft.VisualStudio.RpcContracts.LanguageServerProvider;
 using Nerdbank.Streams;
+using OpenTelemetry;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using static FSharp.Compiler.Syntax.SynType;
 
 /// <inheritdoc/>
 #pragma warning disable VSEXTPREVIEW_LSP // Type is for evaluation purposes only and is subject to change or removal in future updates.
@@ -67,19 +75,19 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
                         //new(PullDiagnosticCategories.DocumentAnalyzerSemantic),
                     ]
             },
-            SemanticTokensOptions = new()
-            {
-                Legend = new()
-                {
-                    TokenTypes = [.. SemanticTokenTypes.AllTypes], // XXX should be extended
-                    TokenModifiers = [.. SemanticTokenModifiers.AllModifiers]
-                },
-                Full = new SemanticTokensFullOptions()
-                {
-                    Delta = false
-                },
-                Range = false
-            }
+            //SemanticTokensOptions = new()
+            //{
+            //    Legend = new()
+            //    {
+            //        TokenTypes = [.. SemanticTokenTypes.AllTypes], // XXX should be extended
+            //        TokenModifiers = [.. SemanticTokenModifiers.AllModifiers]
+            //    },
+            //    Full = new SemanticTokensFullOptions()
+            //    {
+            //        Delta = false
+            //    },
+            //    Range = false
+            //}
             //,
             //HoverProvider = new HoverOptions()
             //{
@@ -263,6 +271,52 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
     /// <inheritdoc/>
     public override async Task<IDuplexPipe?> CreateServerConnectionAsync(CancellationToken cancellationToken)
     {
+        var activitySourceName = "fsc";
+
+        //var tracerProvider = Sdk
+        //    .CreateTracerProviderBuilder()
+        //    .AddSource(activitySourceName)
+        //    .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName: "F# VS Extension", serviceVersion: "1"))
+        //    .AddConsoleExporter()
+        //    .AddOtlpExporter()
+        //    //.AddOtlpExporter(config => config.TimeoutMilliseconds = 50)
+        //    .Build();
+
+
+        FSharp.Compiler.LanguageServer.Activity.listenToSome();
+
+        const string vsMajorVersion = "17.0";
+
+        var settings = OpenTelemetryExporterSettingsBuilder
+            .CreateVSDefault(vsMajorVersion)
+            .Build();
+
+        try
+        {
+            var tracerProvider = Sdk.CreateTracerProviderBuilder()
+                    .AddVisualStudioDefaultTraceExporter(settings)
+                    //.AddConsoleExporter()
+                    .AddOtlpExporter()
+                    .Build();
+        }
+        catch (Exception e)
+        {
+            Trace.TraceError($"Failed to create OpenTelemetry tracer provider: {e}");
+        }
+
+
+        var activitySource = new ActivitySource(activitySourceName);
+        var activity = activitySource.CreateActivity("CreateServerConnectionAsync", ActivityKind.Internal);
+
+        if (activity != null)
+        {
+            activity.Start();
+        }
+        else
+        {
+            Trace.TraceWarning("Failed to start OpenTelemetry activity, there are no listeners");
+        }
+
         var ws = this.Extensibility.Workspaces();
 
         var projectQuery = (IAsyncQueryable<IProjectSnapshot> project) => project
@@ -320,7 +374,7 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
         return new DuplexPipe(
             PipeReader.Create(inputStream),
             PipeWriter.Create(outputStream));
-    }
+        }
 
     /// <inheritdoc/>
     public override Task OnServerInitializationResultAsync(ServerInitializationResult serverInitializationResult, LanguageServerInitializationFailureInfo? initializationFailureInfo, CancellationToken cancellationToken)

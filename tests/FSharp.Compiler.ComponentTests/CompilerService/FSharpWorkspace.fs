@@ -359,12 +359,12 @@ let ``Works with signature files`` () =
 
         Assert.Equal(0, diag.Diagnostics.Length)
 
-        workspace.Files.Edit(signatureUri, "module Test\n\nval x: error")
+        workspace.Files.Edit(signatureUri, "module Test\n\nval x: potato")
 
         let! diag = workspace.Query.GetDiagnosticsForFile(signatureUri)
 
         Assert.Equal(1, diag.Diagnostics.Length)
-        Assert.Equal("The type 'error' is not defined.", diag.Diagnostics[0].Message)
+        Assert.Equal("The type 'potato' is not defined.", diag.Diagnostics[0].Message)
 
         workspace.Files.Edit(signatureUri, "module Test\n\nval y: int")
 

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFramework>net8.0-windows</TargetFramework>
-		<Nullable>enable</Nullable>
+		<Nullable>disable</Nullable>
 		<LangVersion>12</LangVersion>
 		<NeutralLanguage>en-US</NeutralLanguage>
 		<!-- The VisualStudio.Extensibility preview packages are available from the azure-public/vside/msft_consumption feed -->
@@ -9,18 +9,26 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.VisualStudio.Extensibility.Sdk" Version="17.10.2059-preview-3-g914e66a9d4" />
-		<PackageReference Include="Microsoft.VisualStudio.Extensibility.Build" Version="17.10.2059-preview-3-g914e66a9d4" />
-		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol.Internal" Version="17.10.34-preview" />
-		<PackageReference Include="Microsoft.VisualStudio.ProjectSystem.Query" Version="17.10.105-pre" />
-		<PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.12.21" />
+		<PackageReference Include="Microsoft.VisualStudio.Extensibility.Sdk" Version="17.13.39351" />
+		<PackageReference Include="Microsoft.VisualStudio.Extensibility.Build" Version="17.13.39351" />
+		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol.Internal" Version="17.13.7-preview" />
+		<PackageReference Include="Microsoft.VisualStudio.OpenTelemetry.ClientExtensions" Version="0.1.718-beta" />
+		<PackageReference Include="Microsoft.VisualStudio.OpenTelemetry.Collector" Version="0.1.718-beta" />
+		<PackageReference Include="Microsoft.VisualStudio.ProjectSystem.Query" Version="17.13.53-pre-g2e2e7c24c7" />
+		<PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.13.2" />
+		<PackageReference Include="OpenTelemetry" Version="1.10.0" />
+		<PackageReference Include="OpenTelemetry.Api" Version="1.10.0" />
+		<PackageReference Include="OpenTelemetry.Api.ProviderBuilderExtensions" Version="1.10.0" />
+		<PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.10.0" />
+		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.10.0" />
+		<PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.10.0" />
+		<PackageReference Include="System.Diagnostics.DiagnosticSource" Version="9.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\FSharp.Compiler.LanguageServer\FSharp.Compiler.LanguageServer.fsproj" />
 		<ProjectReference Include="..\Microsoft.CommonLanguageServerProtocol.Framework.Proxy\Microsoft.CommonLanguageServerProtocol.Framework.Proxy.csproj" />
 	</ItemGroup>
-
 
 	<Target Name="NoLocalizeEmptyResx" AfterTargets="EnsureResourceToMergeWithCTO">
 		<ItemGroup>
