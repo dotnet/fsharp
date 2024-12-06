@@ -462,6 +462,8 @@
     <Compile Include="Driver\GraphChecking\GraphProcessing.fsi" />
     <Compile Include="Driver\GraphChecking\GraphProcessing.fs" />
     <Content Include="Driver\GraphChecking\Docs.md" />
+    <Compile Include="Driver\ReuseTcResults\CachingDriver.fsi" />
+    <Compile Include="Driver\ReuseTcResults\CachingDriver.fs" />
     <Compile Include="Driver\ParseAndCheckInputs.fsi" />
     <Compile Include="Driver\ParseAndCheckInputs.fs" />
     <Compile Include="Driver\ScriptClosure.fsi" />

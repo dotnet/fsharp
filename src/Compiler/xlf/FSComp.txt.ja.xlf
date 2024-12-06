@@ -967,6 +967,11 @@
         <target state="translated">リフレクションを使用してコンストラクトの暗黙的な生成を無効にする</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsReuseTcResults">
+        <source>Reuse previous typechecking results for faster compilation</source>
+        <target state="new">Reuse previous typechecking results for faster compilation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsSetLangVersion">
         <source>Specify language version such as 'latest' or 'preview'.</source>
         <target state="translated">'latest' や 'preview' などの言語バージョンを指定します。</target>

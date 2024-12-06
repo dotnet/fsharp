@@ -39,6 +39,12 @@ module internal Activity =
     module Events =
         val cacheHit: string
 
+        val reuseTcResultsCachePrefix: string
+        val reuseTcResultsCachePresent: string
+        val reuseTcResultsCacheAbsent: string
+        val reuseTcResultsCacheHit: string
+        val reuseTcResultsCacheMissed: string
+
     val startNoTags: name: string -> IDisposable
 
     val start: name: string -> tags: (string * string) seq -> IDisposable

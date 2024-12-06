@@ -445,6 +445,11 @@ type TypeCheckingMode =
     | Graph
 
 [<RequireQualifiedAccess>]
+type ReuseTcResults =
+    | On
+    | Off
+
+[<RequireQualifiedAccess>]
 type TypeCheckingConfig =
     {
         Mode: TypeCheckingMode
@@ -651,6 +656,8 @@ type TcConfigBuilder =
 
         mutable parallelReferenceResolution: ParallelReferenceResolution
 
+        mutable reuseTcResults: ReuseTcResults
+
         mutable captureIdentifiersWhenParsing: bool
 
         mutable typeCheckingConfig: TypeCheckingConfig
@@ -660,6 +667,8 @@ type TcConfigBuilder =
         mutable realsig: bool
 
         mutable compilationMode: TcGlobals.CompilationMode
+
+        mutable cmdLineArgs: string array
     }
 
     // Directories to start probing in
@@ -861,6 +870,7 @@ type TcConfigBuilder =
             xmlDocInfoLoader = None
             exiter = QuitProcessExiter
             parallelReferenceResolution = ParallelReferenceResolution.Off
+            reuseTcResults = ReuseTcResults.Off
             captureIdentifiersWhenParsing = false
             typeCheckingConfig =
                 {
@@ -875,6 +885,7 @@ type TcConfigBuilder =
             realsig = false
             strictIndentation = None
             compilationMode = TcGlobals.CompilationMode.Unset
+            cmdLineArgs = [||]
         }
 
     member tcConfigB.FxResolver =
@@ -1415,11 +1426,13 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.xmlDocInfoLoader = data.xmlDocInfoLoader
     member _.exiter = data.exiter
     member _.parallelReferenceResolution = data.parallelReferenceResolution
+    member _.reuseTcResults = data.reuseTcResults
     member _.captureIdentifiersWhenParsing = data.captureIdentifiersWhenParsing
     member _.typeCheckingConfig = data.typeCheckingConfig
     member _.dumpSignatureData = data.dumpSignatureData
     member _.realsig = data.realsig
     member _.compilationMode = data.compilationMode
+    member _.cmdLineArgs = data.cmdLineArgs
 
     static member Create(builder, validate) =
         use _ = UseBuildPhase BuildPhase.Parameter
