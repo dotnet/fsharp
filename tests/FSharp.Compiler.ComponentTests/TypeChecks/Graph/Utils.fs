@@ -5,7 +5,7 @@ open FSharp.Compiler.GraphChecking
 open FSharp.Compiler.Text
 open FSharp.Compiler.Syntax
 
-let private checker = FSharpChecker.Create()
+open FSharp.Test
 
 let parseSourceCode (name: string, code: string) =
     let sourceText = SourceText.ofString code
@@ -16,7 +16,7 @@ let parseSourceCode (name: string, code: string) =
         }
 
     let result =
-        checker.ParseFile(name, sourceText, parsingOptions) |> Async.RunSynchronously
+        CompilerAssert.Checker.ParseFile(name, sourceText, parsingOptions) |> Async.RunSynchronously
 
     result.ParseTree
 

@@ -1,5 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
+// Because of shared fsi session.
+[<FSharp.Test.RunTestCasesInSequence>]
 module Language.BooleanReturningAndReturnTypeDirectedPartialActivePatternTests
 
 open Xunit

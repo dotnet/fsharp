@@ -763,7 +763,7 @@ module CoreTests =
 
 #endif
 
-#if !NETCOREAPP    
+#if !NETCOREAPP
     [<Fact>]
     let quotes () =
         let cfg = testConfig "core/quotes"

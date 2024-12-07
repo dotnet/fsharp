@@ -8,6 +8,8 @@ open FSharp.Test.Compiler
 open System
 open System.IO
 
+// reportTime uses global state.
+[<Collection(nameof NotThreadSafeResourceCollection)>]
 module times =
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/times)
