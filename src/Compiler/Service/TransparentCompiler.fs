@@ -258,44 +258,45 @@ module private TypeCheckingGraphProcessing =
 
             return finalFileResults, state
         }
-        
-type CacheSizes = {
-    ParseFileKeepStrongly: int
-    ParseFileKeepWeakly: int
-    ParseFileWithoutProjectKeepStrongly: int
-    ParseFileWithoutProjectKeepWeakly: int
-    ParseAndCheckFileInProjectKeepStrongly: int
-    ParseAndCheckFileInProjectKeepWeakly: int
-    ParseAndCheckAllFilesInProjectKeepStrongly: int
-    ParseAndCheckAllFilesInProjectKeepWeakly: int
-    ParseAndCheckProjectKeepStrongly: int
-    ParseAndCheckProjectKeepWeakly: int
-    FrameworkImportsKeepStrongly: int
-    FrameworkImportsKeepWeakly: int
-    BootstrapInfoStaticKeepStrongly: int
-    BootstrapInfoStaticKeepWeakly: int
-    BootstrapInfoKeepStrongly: int
-    BootstrapInfoKeepWeakly: int
-    TcLastFileKeepStrongly: int
-    TcLastFileKeepWeakly: int
-    TcIntermediateKeepStrongly: int
-    TcIntermediateKeepWeakly: int
-    DependencyGraphKeepStrongly: int
-    DependencyGraphKeepWeakly: int
-    ProjectExtrasKeepStrongly: int
-    ProjectExtrasKeepWeakly: int
-    AssemblyDataKeepStrongly: int
-    AssemblyDataKeepWeakly: int
-    SemanticClassificationKeepStrongly: int
-    SemanticClassificationKeepWeakly: int
-    ItemKeyStoreKeepStrongly: int
-    ItemKeyStoreKeepWeakly: int
-    ScriptClosureKeepStrongly: int
-    ScriptClosureKeepWeakly: int
-}
-with
+
+type CacheSizes =
+    {
+        ParseFileKeepStrongly: int
+        ParseFileKeepWeakly: int
+        ParseFileWithoutProjectKeepStrongly: int
+        ParseFileWithoutProjectKeepWeakly: int
+        ParseAndCheckFileInProjectKeepStrongly: int
+        ParseAndCheckFileInProjectKeepWeakly: int
+        ParseAndCheckAllFilesInProjectKeepStrongly: int
+        ParseAndCheckAllFilesInProjectKeepWeakly: int
+        ParseAndCheckProjectKeepStrongly: int
+        ParseAndCheckProjectKeepWeakly: int
+        FrameworkImportsKeepStrongly: int
+        FrameworkImportsKeepWeakly: int
+        BootstrapInfoStaticKeepStrongly: int
+        BootstrapInfoStaticKeepWeakly: int
+        BootstrapInfoKeepStrongly: int
+        BootstrapInfoKeepWeakly: int
+        TcLastFileKeepStrongly: int
+        TcLastFileKeepWeakly: int
+        TcIntermediateKeepStrongly: int
+        TcIntermediateKeepWeakly: int
+        DependencyGraphKeepStrongly: int
+        DependencyGraphKeepWeakly: int
+        ProjectExtrasKeepStrongly: int
+        ProjectExtrasKeepWeakly: int
+        AssemblyDataKeepStrongly: int
+        AssemblyDataKeepWeakly: int
+        SemanticClassificationKeepStrongly: int
+        SemanticClassificationKeepWeakly: int
+        ItemKeyStoreKeepStrongly: int
+        ItemKeyStoreKeepWeakly: int
+        ScriptClosureKeepStrongly: int
+        ScriptClosureKeepWeakly: int
+    }
+
     static member Create sizeFactor =
-    
+
         {
             ParseFileKeepStrongly = 50 * sizeFactor
             ParseFileKeepWeakly = 20 * sizeFactor
@@ -309,17 +310,17 @@ with
             ParseAndCheckProjectKeepWeakly = 2 * sizeFactor
             FrameworkImportsKeepStrongly = sizeFactor
             FrameworkImportsKeepWeakly = 2 * sizeFactor
-            BootstrapInfoStaticKeepStrongly = sizeFactor 
+            BootstrapInfoStaticKeepStrongly = sizeFactor
             BootstrapInfoStaticKeepWeakly = 2 * sizeFactor
             BootstrapInfoKeepStrongly = sizeFactor
-            BootstrapInfoKeepWeakly =  2 * sizeFactor
-            TcLastFileKeepStrongly = sizeFactor 
+            BootstrapInfoKeepWeakly = 2 * sizeFactor
+            TcLastFileKeepStrongly = sizeFactor
             TcLastFileKeepWeakly = 2 * sizeFactor
             TcIntermediateKeepStrongly = 20 * sizeFactor
             TcIntermediateKeepWeakly = 20 * sizeFactor
             DependencyGraphKeepStrongly = sizeFactor
             DependencyGraphKeepWeakly = 2 * sizeFactor
-            ProjectExtrasKeepStrongly = sizeFactor 
+            ProjectExtrasKeepStrongly = sizeFactor
             ProjectExtrasKeepWeakly = 2 * sizeFactor
             AssemblyDataKeepStrongly = sizeFactor
             AssemblyDataKeepWeakly = 2 * sizeFactor
@@ -328,12 +329,13 @@ with
             ItemKeyStoreKeepStrongly = sizeFactor
             ItemKeyStoreKeepWeakly = 2 * sizeFactor
             ScriptClosureKeepStrongly = sizeFactor
-            ScriptClosureKeepWeakly = 2 * sizeFactor        
+            ScriptClosureKeepWeakly = 2 * sizeFactor
         }
-        
-    static member Default = 
+
+    static member Default =
         let sizeFactor = 100
         CacheSizes.Create sizeFactor
+
 type internal CompilerCaches(sizeFactor: CacheSizes) =
 
     let sf = sizeFactor
@@ -343,17 +345,33 @@ type internal CompilerCaches(sizeFactor: CacheSizes) =
     member val ParseFile = AsyncMemoize(keepStrongly = sf.ParseFileKeepStrongly, keepWeakly = sf.ParseFileKeepWeakly, name = "ParseFile")
 
     member val ParseFileWithoutProject =
-        AsyncMemoize<string, string, FSharpParseFileResults>(sf.ParseFileWithoutProjectKeepStrongly, keepWeakly = sf.ParseFileWithoutProjectKeepWeakly, name = "ParseFileWithoutProject")
+        AsyncMemoize<string, string, FSharpParseFileResults>(
+            sf.ParseFileWithoutProjectKeepStrongly,
+            keepWeakly = sf.ParseFileWithoutProjectKeepWeakly,
+            name = "ParseFileWithoutProject"
+        )
 
-    member val ParseAndCheckFileInProject = AsyncMemoize(sf.ParseAndCheckFileInProjectKeepStrongly, sf.ParseAndCheckFileInProjectKeepWeakly, name = "ParseAndCheckFileInProject")
+    member val ParseAndCheckFileInProject =
+        AsyncMemoize(
+            sf.ParseAndCheckFileInProjectKeepStrongly,
+            sf.ParseAndCheckFileInProjectKeepWeakly,
+            name = "ParseAndCheckFileInProject"
+        )
 
-    member val ParseAndCheckAllFilesInProject = AsyncMemoizeDisabled(sf.ParseAndCheckAllFilesInProjectKeepStrongly, sf.ParseAndCheckAllFilesInProjectKeepWeakly, name = "ParseAndCheckFullProject")
+    member val ParseAndCheckAllFilesInProject =
+        AsyncMemoizeDisabled(
+            sf.ParseAndCheckAllFilesInProjectKeepStrongly,
+            sf.ParseAndCheckAllFilesInProjectKeepWeakly,
+            name = "ParseAndCheckFullProject"
+        )
 
-    member val ParseAndCheckProject = AsyncMemoize(sf.ParseAndCheckProjectKeepStrongly, sf.ParseAndCheckProjectKeepWeakly, name = "ParseAndCheckProject")
+    member val ParseAndCheckProject =
+        AsyncMemoize(sf.ParseAndCheckProjectKeepStrongly, sf.ParseAndCheckProjectKeepWeakly, name = "ParseAndCheckProject")
 
     member val FrameworkImports = AsyncMemoize(sf.FrameworkImportsKeepStrongly, sf.FrameworkImportsKeepWeakly, name = "FrameworkImports")
 
-    member val BootstrapInfoStatic = AsyncMemoize(sf.BootstrapInfoStaticKeepStrongly, sf.BootstrapInfoStaticKeepWeakly, name = "BootstrapInfoStatic")
+    member val BootstrapInfoStatic =
+        AsyncMemoize(sf.BootstrapInfoStaticKeepStrongly, sf.BootstrapInfoStaticKeepWeakly, name = "BootstrapInfoStatic")
 
     member val BootstrapInfo = AsyncMemoize(sf.BootstrapInfoKeepStrongly, sf.BootstrapInfoKeepWeakly, name = "BootstrapInfo")
 
@@ -367,7 +385,8 @@ type internal CompilerCaches(sizeFactor: CacheSizes) =
 
     member val AssemblyData = AsyncMemoize(sf.AssemblyDataKeepStrongly, sf.AssemblyDataKeepWeakly, name = "AssemblyData")
 
-    member val SemanticClassification = AsyncMemoize(sf.SemanticClassificationKeepStrongly, sf.SemanticClassificationKeepWeakly, name = "SemanticClassification")
+    member val SemanticClassification =
+        AsyncMemoize(sf.SemanticClassificationKeepStrongly, sf.SemanticClassificationKeepWeakly, name = "SemanticClassification")
 
     member val ItemKeyStore = AsyncMemoize(sf.ItemKeyStoreKeepStrongly, sf.ItemKeyStoreKeepWeakly, name = "ItemKeyStore")
 
@@ -412,7 +431,7 @@ type internal TransparentCompiler
 
     // Is having just one of these ok?
     let lexResourceManager = Lexhelp.LexResourceManager()
-    
+
     let cacheSizes = defaultArg cacheSizes CacheSizes.Default
 
     // Mutable so we can easily clear them by creating a new instance
@@ -2159,11 +2178,11 @@ type internal TransparentCompiler
 
     member _.Caches = caches
 
-    member _.SetCacheSize(cacheSize : CacheSizes) =
+    member _.SetCacheSize(cacheSize: CacheSizes) =
         if cacheSize <> caches.CacheSizes then
             caches <- CompilerCaches(cacheSize)
 
-    member x.SetCacheSizeFactor(sizeFactor : int) =
+    member x.SetCacheSizeFactor(sizeFactor: int) =
         let newCacheSize = CacheSizes.Create sizeFactor
         x.SetCacheSize newCacheSize
 

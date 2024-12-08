@@ -137,7 +137,7 @@ type FSharpChecker
                 captureIdentifiersWhenParsing,
                 getSource,
                 useChangeNotifications,
-                ?cacheSizes= transparentCompilerCacheSizes
+                ?cacheSizes = transparentCompilerCacheSizes
             )
             :> IBackgroundCompiler
         else
@@ -201,7 +201,7 @@ type FSharpChecker
             ?captureIdentifiersWhenParsing: bool,
             ?documentSource: DocumentSource,
             ?useTransparentCompiler: bool,
-            ?transparentCompilerCacheSizes : CacheSizes
+            ?transparentCompilerCacheSizes: CacheSizes
         ) =
 
         use _ = Activity.startNoTags "FSharpChecker.Create"
