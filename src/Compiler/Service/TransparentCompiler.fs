@@ -258,6 +258,7 @@ module private TypeCheckingGraphProcessing =
 
             return finalFileResults, state
         }
+        
 type CacheSizes = {
     ParseFileKeepStrongly: int
     ParseFileKeepWeakly: int
@@ -401,7 +402,6 @@ type internal TransparentCompiler
         captureIdentifiersWhenParsing,
         getSource: (string -> Async<ISourceText option>) option,
         useChangeNotifications,
-        useSyntaxTreeCache,
         ?cacheSizes
     ) as self =
 

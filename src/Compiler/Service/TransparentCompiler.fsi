@@ -98,40 +98,43 @@ type internal Extensions =
         fileSnapshots: #ProjectSnapshot.IFileSnapshot list * ?extraKeyFlag: DependencyGraphType ->
             ICacheKey<(DependencyGraphType option * byte array), string>
 
-type CacheSizes = {
-    ParseFileKeepStrongly: int
-    ParseFileKeepWeakly: int
-    ParseFileWithoutProjectKeepStrongly: int
-    ParseFileWithoutProjectKeepWeakly: int
-    ParseAndCheckFileInProjectKeepStrongly: int
-    ParseAndCheckFileInProjectKeepWeakly: int
-    ParseAndCheckAllFilesInProjectKeepStrongly: int
-    ParseAndCheckAllFilesInProjectKeepWeakly: int
-    ParseAndCheckProjectKeepStrongly: int
-    ParseAndCheckProjectKeepWeakly: int
-    FrameworkImportsKeepStrongly: int
-    FrameworkImportsKeepWeakly: int
-    BootstrapInfoStaticKeepStrongly: int
-    BootstrapInfoStaticKeepWeakly: int
-    BootstrapInfoKeepStrongly: int
-    BootstrapInfoKeepWeakly: int
-    TcLastFileKeepStrongly: int
-    TcLastFileKeepWeakly: int
-    TcIntermediateKeepStrongly: int
-    TcIntermediateKeepWeakly: int
-    DependencyGraphKeepStrongly: int
-    DependencyGraphKeepWeakly: int
-    ProjectExtrasKeepStrongly: int
-    ProjectExtrasKeepWeakly: int
-    AssemblyDataKeepStrongly: int
-    AssemblyDataKeepWeakly: int
-    SemanticClassificationKeepStrongly: int
-    SemanticClassificationKeepWeakly: int
-    ItemKeyStoreKeepStrongly: int
-    ItemKeyStoreKeepWeakly: int
-    ScriptClosureKeepStrongly: int
-    ScriptClosureKeepWeakly: int
-}
+[<Experimental("This FCS type is experimental and will likely change or be removed in the future.")>]
+type CacheSizes = 
+    {
+        ParseFileKeepStrongly: int
+        ParseFileKeepWeakly: int
+        ParseFileWithoutProjectKeepStrongly: int
+        ParseFileWithoutProjectKeepWeakly: int
+        ParseAndCheckFileInProjectKeepStrongly: int
+        ParseAndCheckFileInProjectKeepWeakly: int
+        ParseAndCheckAllFilesInProjectKeepStrongly: int
+        ParseAndCheckAllFilesInProjectKeepWeakly: int
+        ParseAndCheckProjectKeepStrongly: int
+        ParseAndCheckProjectKeepWeakly: int
+        FrameworkImportsKeepStrongly: int
+        FrameworkImportsKeepWeakly: int
+        BootstrapInfoStaticKeepStrongly: int
+        BootstrapInfoStaticKeepWeakly: int
+        BootstrapInfoKeepStrongly: int
+        BootstrapInfoKeepWeakly: int
+        TcLastFileKeepStrongly: int
+        TcLastFileKeepWeakly: int
+        TcIntermediateKeepStrongly: int
+        TcIntermediateKeepWeakly: int
+        DependencyGraphKeepStrongly: int
+        DependencyGraphKeepWeakly: int
+        ProjectExtrasKeepStrongly: int
+        ProjectExtrasKeepWeakly: int
+        AssemblyDataKeepStrongly: int
+        AssemblyDataKeepWeakly: int
+        SemanticClassificationKeepStrongly: int
+        SemanticClassificationKeepWeakly: int
+        ItemKeyStoreKeepStrongly: int
+        ItemKeyStoreKeepWeakly: int
+        ScriptClosureKeepStrongly: int
+        ScriptClosureKeepWeakly: int
+    }
+    static member Create: sizeFactor: int -> CacheSizes
 
 type internal CompilerCaches =
 
@@ -194,7 +197,6 @@ type internal TransparentCompiler =
         captureIdentifiersWhenParsing: bool *
         getSource: (string -> Async<ISourceText option>) option *
         useChangeNotifications: bool *
-        useSyntaxTreeCache: bool *
         ?cacheSizes: CacheSizes ->
             TransparentCompiler
 
