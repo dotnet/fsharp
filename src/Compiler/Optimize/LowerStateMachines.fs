@@ -38,11 +38,11 @@ type StateMachineConversionFirstPhaseResult =
      resumableVars: FreeVars
    }
 
-// #if DEBUG
+#if DEBUG
 let sm_verbose = try not (isNull(System.Environment.GetEnvironmentVariable "FSharp_StateMachineVerbose")) with _ -> false
-// #else
-// let sm_verbose = true
-// #endif
+#else
+let sm_verbose = false
+#endif
 
 let rec (|OptionalResumeAtExpr|) g expr =
     match stripDebugPoints expr with
@@ -197,12 +197,11 @@ type LowerStateMachine(g: TcGlobals) =
          | _ ->
             (env, expr)
 
-    let rec TryReduceApp (env: env) expr (args: Expr list) remake = 
+    let rec TryReduceApp (env: env) expr (args: Expr list) = 
         if isNil args then  None else
         match expr with 
         | Expr.TyLambda _ 
         | Expr.Lambda _ -> 
-            if sm_verbose then printfn "Entering lambda\n%A" (DebugPrint.showExpr expr)
             let macroTypars, macroParamsCurried, macroBody, _rty = stripTopLambda (expr, tyOfExpr g expr)
             let m = macroBody.Range
             if not (isNil macroTypars) then 
@@ -222,10 +221,9 @@ type LowerStateMachine(g: TcGlobals) =
                         Some expandedExpr 
                     else
                         if sm_verbose then printfn "application was partial, reducing further args %A" laterArgs
-                        TryReduceApp env expandedExpr laterArgs remake
+                        TryReduceApp env expandedExpr laterArgs
 
         | NewDelegateExpr g (_, macroParams, macroBody, _, _) -> 
-            if sm_verbose then printfn "Entering delegate\n%A" (DebugPrint.showExpr expr)
             let m = expr.Range
             let macroVal2 = mkLambdas g m [] macroParams (macroBody, tyOfExpr g macroBody)
             if args.Length < macroParams.Length then 
@@ -239,33 +237,28 @@ type LowerStateMachine(g: TcGlobals) =
                     Some expandedExpr 
                 else
                     if sm_verbose then printfn "application was partial, reducing further args %A" laterArgs
-                    TryReduceApp env expandedExpr laterArgs remake
+                    TryReduceApp env expandedExpr laterArgs
 
         | Expr.Let (bind, bodyExpr, m, _) -> 
-            if sm_verbose then printfn "TryReduceApp Let\n%A" (DebugPrint.showExpr expr)
-            match TryReduceApp env bodyExpr args remake with 
+            match TryReduceApp env bodyExpr args with 
             | Some bodyExpr2 -> Some (mkLetBind m bind bodyExpr2)
             | None -> None
 
         | Expr.LetRec (binds, bodyExpr, m, _) ->
-            if sm_verbose then printfn "TryReduceApp LetRec\n%A" (DebugPrint.showExpr expr)
-            match TryReduceApp env bodyExpr args remake with 
+            match TryReduceApp env bodyExpr args with 
             | Some bodyExpr2 -> Some (mkLetRecBinds m binds bodyExpr2)
             | None -> None
 
         | Expr.Sequential (x1, bodyExpr, sp, m) -> 
-            if sm_verbose then printfn "TryReduceApp Sequential\n%A" (DebugPrint.showExpr expr)
-            match TryReduceApp env bodyExpr args remake with 
+            match TryReduceApp env bodyExpr args with 
             | Some bodyExpr2 -> Some (Expr.Sequential (x1, bodyExpr2, sp, m))
             | None -> None
 
         // This construct arises from the 'mkDefault' in the 'Throw' case of an incomplete pattern match
         | Expr.Const (Const.Zero, m, ty) -> 
-            if sm_verbose then printfn "TryReduceApp Const\n%A" (DebugPrint.showExpr expr)
             Some (Expr.Const (Const.Zero, m, ty))
 
         | Expr.Match (spBind, mExpr, dtree, targets, m, ty) ->
-            if sm_verbose then printfn "TryReduceApp Match\n%A" (DebugPrint.showExpr expr)
             let mutable newTyOpt = None
             let targets2 = 
                 targets |> Array.choose (fun (TTarget(vs, targetExpr, flags)) -> 
@@ -286,7 +279,7 @@ type LowerStateMachine(g: TcGlobals) =
                             Some targetExpr2
                         | _ ->
 
-                        match TryReduceApp env targetExpr args remake with 
+                        match TryReduceApp env targetExpr args with 
                         | Some targetExpr2 -> 
                             newTyOpt <- Some (tyOfExpr g targetExpr2) 
                             Some targetExpr2
@@ -301,39 +294,30 @@ type LowerStateMachine(g: TcGlobals) =
                 None
 
         | WhileExpr (sp1, sp2, guardExpr, bodyExpr, m) ->
-            if sm_verbose then printfn "TryReduceApp While\n%A" (DebugPrint.showExpr expr)
-            match TryReduceApp env bodyExpr args remake with
+            match TryReduceApp env bodyExpr args with
             | Some bodyExpr2 -> Some (mkWhile g (sp1, sp2, guardExpr, bodyExpr2, m))
             | None -> None
 
         | TryFinallyExpr (sp1, sp2, ty, bodyExpr, compensation, m) ->
-            if sm_verbose then printfn "TryReduceApp TryFinally\n%A" (DebugPrint.showExpr expr)
-            match TryReduceApp env bodyExpr args remake with
+            match TryReduceApp env bodyExpr args with
             | Some bodyExpr2 -> Some (mkTryFinally g (bodyExpr2, compensation, m, ty, sp1, sp2))
             | None -> None
 
         | TryWithExpr (spTry, spWith, resTy, bodyExpr, filterVar, filterExpr, handlerVar, handlerExpr, m) ->
-            if sm_verbose then printfn "TryReduceApp TryWith\n%A" (DebugPrint.showExpr expr)
-            match TryReduceApp env bodyExpr args remake with
+            match TryReduceApp env bodyExpr args with
             | Some bodyExpr2 -> Some (mkTryWith g (bodyExpr2, filterVar, filterExpr, handlerVar, handlerExpr, m, resTy, spTry, spWith))
             | None -> None
 
         | Expr.DebugPoint (dp, innerExpr) -> 
-            if sm_verbose then printfn "TryReduceApp DebugPoint\n%A" (DebugPrint.showExpr expr)
-            match TryReduceApp env innerExpr args remake with 
+            match TryReduceApp env innerExpr args with 
             | Some innerExpr2 -> Some (Expr.DebugPoint (dp, innerExpr2))
             | None -> None
-            
-        // | Expr.App _ ->
-        //     if sm_verbose then printfn "TryReduceApp App\n%A" (DebugPrint.showExpr expr)
-        //     TryReduceExpr env expr args remake
 
-        | otherwise -> 
-            if sm_verbose then printfn "failed TryReduceApp\n%A\n%A" (DebugPrint.showExpr otherwise) otherwise
+        | _ -> 
             None
 
     // Apply a single expansion of resumable code at the outermost position in an arbitrary expression
-    and TryReduceExpr (env: env) expr args remake = 
+    let rec TryReduceExpr (env: env) expr args remake = 
         if sm_verbose then printfn "expanding defns and reducing %A..." expr
         //if sm_verbose then printfn "checking %A for possible resumable code application..." expr
         match expr with
@@ -342,12 +326,11 @@ type LowerStateMachine(g: TcGlobals) =
             let defn = env.ResumableCodeDefns[defnRef.Deref]
             if sm_verbose then printfn "found resumable code %A --> %A" defnRef defn 
             // Expand the resumable code definition
-            match TryReduceApp env defn args remake with 
+            match TryReduceApp env defn args with 
             | Some expandedExpr -> 
                 if sm_verbose then printfn "expanded resumable code %A --> %A..." defnRef expandedExpr
                 Some expandedExpr
             | None -> 
-                if sm_verbose then printfn "failed to expand resumable code %A" defnRef
                 Some (remake defn)
 
         // defn.Invoke x --> let arg = x in [defn][arg/x]
@@ -362,12 +345,11 @@ type LowerStateMachine(g: TcGlobals) =
 
         | _ -> 
             //let (env, expr) = BindResumableCodeDefinitions env expr
-            match TryReduceApp env expr args remake with 
+            match TryReduceApp env expr args with 
             | Some expandedExpr -> 
                 if sm_verbose then printfn "reduction = %A, args = %A --> %A..." expr args expandedExpr
                 Some expandedExpr
             | None -> 
-                if sm_verbose then printfn "failed to reduce %A" (DebugPrint.showExpr expr)
                 None
 
     // Repeated top-down rewrite
@@ -466,8 +448,7 @@ type LowerStateMachine(g: TcGlobals) =
         let res = 
             match expr with 
             | ResumableCodeInvoke g (_, _, _, m, _) ->
-                if sm_verbose then printfn "found delegate invoke in top-level resumable code"
-                Result.Error (FSComp.SR.reprResumableCodeInvokeNotReduced(m.ToString()))
+                Result.Error (FSComp.SR.reprResumableCodeInvokeNotReduced(!!m.ToString()))
 
             // Eliminate 'if __useResumableCode ...' within.  
             | IfUseResumableStateMachinesExpr g (thenExpr, _) -> 
@@ -885,9 +866,6 @@ type LowerStateMachine(g: TcGlobals) =
             if frees |> Zset.exists (isExpandVar g) then 
                 let nonfree = frees |> Zset.elements |> List.filter (isExpandVar g) |> List.map (fun v -> v.DisplayName) |> String.concat ","
                 let msg = FSComp.SR.reprResumableCodeValueHasNoDefinition(nonfree)
-                
-                if sm_verbose then 
-                    printfn "Resumable code value has no definition: %s" msg
                 fallback msg
             else
                 let pcExprROpt = pcExprOpt |> Option.map (ConvertStateMachineLeafExpression env)
@@ -908,7 +886,6 @@ type LowerStateMachine(g: TcGlobals) =
                 let phase1 = ConvertResumableCode env pcValInfo codeExprR 
                 match phase1 with 
                 | Result.Error msg -> 
-                    if sm_verbose then printfn "Phase1 failed : %s :\n%s" msg (DebugPrint.showExpr codeExprR)
                     fallback msg
                 | Result.Ok phase1 ->
 
@@ -937,9 +914,8 @@ type LowerStateMachine(g: TcGlobals) =
                 let res = remake (moveNextExprWithJumpTable, phase1.stateVars, phase1.thisVars)
                 LoweredStateMachineResult.Lowered res
 
-        | other -> 
+        | _ -> 
             let msg = FSComp.SR.reprStateMachineInvalidForm()
-            if sm_verbose then printfn "Not a state machine expr: \n %s" (DebugPrint.showExpr other)
             fallback msg
 
 let LowerStateMachineExpr g (overallExpr: Expr) : LoweredStateMachineResult =

@@ -1754,7 +1754,6 @@ type internal TransparentCompiler
                 cacheKey.GetKey(),
                 (fun (_fullVersion, fileContentVersion) -> fileContentVersion = (snd version))
             )
-        
 
         match parseFileResultsAndcheckFileAnswer with
         | Some(parseFileResults, FSharpCheckFileAnswer.Succeeded checkFileResults) -> Some(parseFileResults, checkFileResults)

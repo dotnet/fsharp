@@ -18,7 +18,7 @@
     "FSharp.suggestGitignore": false,
     "FSharp.enableMSBuildProjectGraph": true,
     "FSharp.enableAdaptiveLspServer": true,
-    "FSharp.workspacePath": "./FSharp.Compiler.Service.sln",
+    "FSharp.workspacePath": "FSharp.Compiler.Service.sln",
     "FSharp.workspaceModePeekDeepLevel": 1,
     "FSharp.excludeProjectDirectories": [
         ".git",
@@ -53,7 +53,5 @@
         }
     },
     "editor.inlayHints.enabled": "offUnlessPressed",
-    "dotnet.defaultSolution": "FSharp.Compiler.Service.sln",
-    "FSharp.fsac.netCoreDllPath": "C:\\Users\\jimmy\\Repositories\\public\\TheAngryByrd\\FsAutoComplete\\src\\FsAutoComplete\\bin\\Release\\",
-    "FSharp.fcs.transparentCompiler.enabled": true
+    "dotnet.defaultSolution": "FSharp.Compiler.Service.sln"
 }
