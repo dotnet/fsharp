@@ -560,7 +560,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                     mkILStorageCtor (
                         [ mkLdarg0; mkNormalCall (mkILCtorMethSpecForTy (cenv.mkILTyFuncTy, [])) ],
                         nowTy,
-                        mkILCloFldSpecs cenv nowFields,
+                        mkILCloFldSpecs cenv nowFields |> List.map (fun (name, t) -> (name, t, [])),
                         ILMemberAccess.Assembly,
                         None,
                         None
@@ -695,7 +695,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                         mkILStorageCtor (
                             [ mkLdarg0; mkNormalCall (mkILCtorMethSpecForTy (nowEnvParentClass, [])) ],
                             nowTy,
-                            mkILCloFldSpecs cenv nowFields,
+                            mkILCloFldSpecs cenv nowFields |> List.map (fun (name, t) -> (name, t, [])),
                             ILMemberAccess.Assembly,
                             None,
                             cloImports
