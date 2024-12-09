@@ -5438,7 +5438,7 @@ braceExpr:
 
   | LBRACE rbrace
      { let m = rhs2 parseState 1 2
-       SynExpr.Record(None, None, [], m) }
+       SynExpr.ComputationExpr(false, SynExpr.Const(SynConst.Unit, m), m) }
 
 braceExprBody:
   | recdExpr
