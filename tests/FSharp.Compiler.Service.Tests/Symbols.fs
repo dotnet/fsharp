@@ -787,6 +787,46 @@ type T() =
 
         assertRange (9, 19) (9, 20) mProp
 
+
+    [<Fact>]
+    let ``Repr info 01`` () =
+        let _, checkResults =
+            getParseAndCheckResults """
+module Module
+
+let f x = ()
+"""
+        let mfv = findSymbolByName "f" checkResults :?> FSharpMemberOrFunctionOrValue
+        let param = mfv.CurriedParameterGroups[0][0]
+        param.Name.Value |> shouldEqual "x"
+
+    [<Fact>]
+    let ``Repr info 02`` () =
+        let _, checkResults =
+            getParseAndCheckResults """
+module Module
+
+do
+    let f x = ()
+    ()
+"""
+        let mfv = findSymbolByName "f" checkResults :?> FSharpMemberOrFunctionOrValue
+        let param = mfv.CurriedParameterGroups[0][0]
+        param.Name.Value |> shouldEqual "x"
+
+    [<Fact>]
+    let ``Repr info 03`` () =
+        let _, checkResults =
+            getParseAndCheckResults """
+module Module
+
+type T() =
+    let f x = ()
+"""
+        let mfv = findSymbolByName "f" checkResults :?> FSharpMemberOrFunctionOrValue
+        let param = mfv.CurriedParameterGroups[0][0]
+        param.Name.Value |> shouldEqual "x"
+
 module GetValSignatureText =
     let private assertSignature (expected:string) source (lineNumber, column, line, identifier) =
         let _, checkResults = getParseAndCheckResults source
