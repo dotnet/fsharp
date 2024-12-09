@@ -2587,6 +2587,14 @@ let inline internal resetTypeKind flags =
 let (|HasFlag|_|) (flag: ILTypeDefAdditionalFlags) flags =
     flags &&& flag = flag
 
+let inline typeKindByNames extendsName typeName =
+    match extendsName with
+    | "System.Enum" -> ILTypeDefAdditionalFlags.Enum
+    | "System.Delegate" when typeName <> "System.MulticastDelegate" -> ILTypeDefAdditionalFlags.Delegate
+    | "System.MulticastDelegate" -> ILTypeDefAdditionalFlags.Delegate
+    | "System.ValueType" when typeName <> "System.Enum" -> ILTypeDefAdditionalFlags.ValueType
+    | _ -> ILTypeDefAdditionalFlags.Class
+
 let typeKindOfFlags nm (super: ILType option) flags =
     if (flags &&& 0x00000020) <> 0x0 then
         ILTypeDefAdditionalFlags.Interface
@@ -2595,18 +2603,7 @@ let typeKindOfFlags nm (super: ILType option) flags =
         | None -> ILTypeDefAdditionalFlags.Class
         | Some ty ->
             let name = ty.TypeSpec.Name
-
-            if name = "System.Enum" then
-                ILTypeDefAdditionalFlags.Enum
-            elif
-                (name = "System.Delegate" && nm <> "System.MulticastDelegate")
-                || name = "System.MulticastDelegate"
-            then
-                ILTypeDefAdditionalFlags.Delegate
-            elif name = "System.ValueType" && nm <> "System.Enum" then
-                ILTypeDefAdditionalFlags.ValueType
-            else
-                ILTypeDefAdditionalFlags.Class
+            typeKindByNames name nm
 
 let convertTypeAccessFlags access =
     match access with

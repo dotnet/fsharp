@@ -1515,6 +1515,8 @@ type ILTypeDefAdditionalFlags =
 
 val (|HasFlag|_|): flag: ILTypeDefAdditionalFlags -> flags: ILTypeDefAdditionalFlags -> bool
 
+val inline internal typeKindByNames: extendsName: string -> typeName: string -> ILTypeDefAdditionalFlags
+
 /// Represents IL Type Definitions.
 [<NoComparison; NoEquality>]
 type ILTypeDef =

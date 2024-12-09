@@ -2130,12 +2130,7 @@ and typeDefReader ctxtH : ILTypeDefStored =
                     else
                         ""
 
-                match extendsName with
-                | "System.Enum" -> ILTypeDefAdditionalFlags.Enum
-                | "System.Delegate" when nm <> "System.MulticastDelegate" -> ILTypeDefAdditionalFlags.Delegate
-                | "System.MulticastDelegate" -> ILTypeDefAdditionalFlags.Delegate
-                | "System.ValueType" when nm <> "System.Enum" -> ILTypeDefAdditionalFlags.ValueType
-                | _ -> ILTypeDefAdditionalFlags.Class
+                typeKindByNames extendsName nm
 
         let super = seekReadSuperType ctxt numTypars AsObject extendsIdx
         let layout = typeLayoutOfFlags ctxt mdv flags idx
