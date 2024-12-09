@@ -22,20 +22,24 @@ type AsyncLazy<'t> private (initial: AsyncLazyState<'t>, cancelUnawaited: bool, 
 
     let stateUpdateSync = obj()
     let mutable state = initial
+    // This should remain the only function that mutates the state.
+    let withStateUpdate f =
+        lock stateUpdateSync <| fun () ->
+            let next, result = f state
+            state <- next
+            result
+    let updateState f = withStateUpdate <| fun prev -> f prev, ()
 
-    let cancelIfUnawaited () =
-        match state with
-        | Running(computation, _, cts, 0) ->
+    let cancelIfUnawaited cancelUnawaited = function
+        | Running(computation, _, cts, 0) when cancelUnawaited ->
+            // To keep state updates fast we don't actually wait for the work to cancel.
             cts.Cancel()
-            state <- Initial computation
-        | _ -> ()
+            Initial computation
+        | state -> state
 
-    let afterRequest () =
-        match state with
-        | Running(c, work, cts, count) ->
-            state <- Running(c, work, cts, count - 1)
-            if cancelUnawaited then cancelIfUnawaited () 
-        | _ -> () // Nothing more to do if state already transitioned.
+    let afterRequest = function
+        | Running(c, work, cts, count) -> Running(c, work, cts, count - 1) |> cancelIfUnawaited cancelUnawaited
+        | state -> state // Nothing more to do if state already transitioned.
 
     let detachable (work: Task<'t>) =
         async {
@@ -53,32 +57,35 @@ type AsyncLazy<'t> private (initial: AsyncLazyState<'t>, cancelUnawaited: bool, 
             // The cancellation continuation will always be called in case of cancellation.
             with exn -> return raise exn
         }
-    
-    let workCompleted computation (work: Task<_>) =
-        lock stateUpdateSync <| fun () ->
-            state <-
-                try
-                    Completed work.Result
-                with
-                | exn ->
-                    if cacheException then Faulted exn else Initial computation
 
-    let request () =
-        match state with
+    let request = function
         | Initial computation ->
             let cts = new CancellationTokenSource()
-            let work = Async.StartAsTask(computation, cancellationToken = cts.Token)
-            // Ensure state is updated even when not awaited.
-            work.ContinueWith(workCompleted computation, TaskContinuationOptions.NotOnCanceled) |> ignore
-            state <- Running (computation, work, cts, 1)
+            let work = Async.StartAsTask( async {
+                try
+                    let! result = computation
+                    // If associated cts is signalled it means this work item was abandoned
+                    // and it should not alter the state.
+                    updateState <| function
+                        | state when cts.IsCancellationRequested -> state
+                        | _ -> Completed result
+                    return result
+                with
+                | exn ->
+                    updateState <| function
+                        | state when cts.IsCancellationRequested -> state
+                        | _ -> if cacheException then Faulted exn else Initial computation
+                    return raise exn
+            }, cancellationToken = cts.Token)
+            Running (computation, work, cts, 1),
             detachable work
         | Running (c, work, cts, count) ->
-            state <- Running (c, work, cts, count + 1)
+            Running (c, work, cts, count + 1),
             detachable work
-        | Completed result ->
-            async { return result }
-        | Faulted exn ->
-            async { return raise exn }
+        | Completed result as state ->
+            state, async { return result }
+        | Faulted exn as state ->
+            state, async { return raise exn }
 
     // computation will deallocate after state transition to Completed ot Faulted.
     new (computation, ?cancelUnawaited: bool, ?cacheException) =
@@ -87,12 +94,12 @@ type AsyncLazy<'t> private (initial: AsyncLazyState<'t>, cancelUnawaited: bool, 
     member _.Request() =
         async { 
             try
-                return! lock stateUpdateSync request
+                return! withStateUpdate request
             finally
-                lock stateUpdateSync afterRequest
+                updateState afterRequest
         }
 
-    member _.CancelIfUnawaited() = lock stateUpdateSync cancelIfUnawaited
+    member _.CancelIfUnawaited() = updateState (cancelIfUnawaited true)
 
     member _.State = state
 

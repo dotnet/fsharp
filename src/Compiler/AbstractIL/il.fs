@@ -4208,14 +4208,25 @@ let mkILStorageCtorWithParamNames (preblock: ILInstr list, ty, extraParams, flds
             | Some x -> I_seqpoint x
             | None -> ()
             yield! preblock
-            for (n, (_pnm, nm, fieldTy)) in List.indexed flds do
+            for (n, (_pnm, nm, fieldTy,_attrs)) in List.indexed flds do
                 mkLdarg0
                 mkLdarg (uint16 (n + 1))
                 mkNormalStfld (mkILFieldSpecInTy (ty, nm, fieldTy))
         ]
 
     let body = mkMethodBody (false, [], 2, nonBranchingInstrsToCode code, tag, imports)
-    mkILCtor (access, (flds |> List.map (fun (pnm, _, ty) -> mkILParamNamed (pnm, ty))) @ extraParams, body)
+    let fieldParams = 
+        [
+            for (pnm,_,ty,attrs) in flds do
+                let ilParam = mkILParamNamed (pnm, ty)
+                let ilParam =
+                    match attrs with
+                    | [] -> ilParam
+                    | attrs -> {ilParam with CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs attrs ) }
+                yield ilParam
+        ]    
+
+    mkILCtor (access, fieldParams @ extraParams , body)
 
 let mkILSimpleStorageCtorWithParamNames (baseTySpec, ty, extraParams, flds, access, tag, imports) =
     let preblock =
@@ -4226,7 +4237,7 @@ let mkILSimpleStorageCtorWithParamNames (baseTySpec, ty, extraParams, flds, acce
     mkILStorageCtorWithParamNames (preblock, ty, extraParams, flds, access, tag, imports)
 
 let addParamNames flds =
-    flds |> List.map (fun (nm, ty) -> (nm, nm, ty))
+    flds |> List.map (fun (nm, ty, attrs) -> (nm, nm, ty, attrs))
 
 let mkILSimpleStorageCtor (baseTySpec, ty, extraParams, flds, access, tag, imports) =
     mkILSimpleStorageCtorWithParamNames (baseTySpec, ty, extraParams, addParamNames flds, access, tag, imports)

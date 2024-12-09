@@ -44,7 +44,17 @@ let ``Nullable attr for anon records`` compilation =
     |> verifyCompilation DoNotOptimize
 
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Records.fs"|])>]
-let ``Nullable attr for records`` compilation =  
+let ``Nullable attr for records with generics`` compilation =  
+    compilation
+    |> verifyCompilation DoNotOptimize
+
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PlainRecord.fs"|])>]
+let ``Nullable attr for plain records`` compilation =  
+    compilation
+    |> verifyCompilation DoNotOptimize
+
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ExceptionType.fs"|])>]
+let ``Nullable attr for exception types`` compilation =  
     compilation
     |> verifyCompilation DoNotOptimize
 

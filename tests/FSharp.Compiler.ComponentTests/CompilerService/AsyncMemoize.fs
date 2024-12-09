@@ -197,6 +197,40 @@ let ``Job is restarted if first requestor cancels`` () =
         Started, key
         Finished, key ]
 
+[<Fact>]
+let ``Job is actually cancelled and restarted`` () =
+    let jobCanComplete = new ManualResetEvent(false)
+    let mutable finishedCount = 0
+
+    let computation = async {
+        do! awaitHandle jobCanComplete
+        Interlocked.Increment &finishedCount |> ignore
+        return 42
+    }
+
+    let memoize = AsyncMemoize<_, int, _>()
+    let events = observe memoize
+
+    let key = wrapKey 1
+
+    for i in 1 .. 10 do
+        use cts = new CancellationTokenSource()
+        let task = Async.StartAsTask( memoize.Get(key, computation), cancellationToken = cts.Token)
+        waitUntil events (received Started)
+        cts.Cancel()
+        assertTaskCanceled task
+        waitUntil events (received Canceled)
+        Assert.Equal(1, memoize.Count)
+
+    let _task2 = Async.StartAsTask( memoize.Get(key, computation))
+
+    waitUntil events (received Started)
+
+    jobCanComplete.Set() |> ignore
+
+    waitUntil events (received Finished)
+
+    Assert.Equal(1, finishedCount)
 
 [<Fact>]
 let ``Job keeps running if only one requestor cancels`` () =
