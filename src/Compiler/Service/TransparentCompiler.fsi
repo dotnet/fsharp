@@ -137,7 +137,7 @@ type CacheSizes =
 
 type internal CompilerCaches =
 
-    new: sizeFactor: CacheSizes -> CompilerCaches
+    new: cacheSizes: CacheSizes -> CompilerCaches
 
     member AssemblyData: AsyncMemoize<FSharpProjectIdentifier, (string * string), ProjectAssemblyDataResult>
 

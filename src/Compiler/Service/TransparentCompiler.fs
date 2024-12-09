@@ -336,61 +336,60 @@ type CacheSizes =
         let sizeFactor = 100
         CacheSizes.Create sizeFactor
 
-type internal CompilerCaches(sizeFactor: CacheSizes) =
+type internal CompilerCaches(cacheSizes: CacheSizes) =
+    let cs = cacheSizes
 
-    let sf = sizeFactor
+    member _.CacheSizes = cs
 
-    member _.CacheSizes = sf
-
-    member val ParseFile = AsyncMemoize(keepStrongly = sf.ParseFileKeepStrongly, keepWeakly = sf.ParseFileKeepWeakly, name = "ParseFile")
+    member val ParseFile = AsyncMemoize(keepStrongly = cs.ParseFileKeepStrongly, keepWeakly = cs.ParseFileKeepWeakly, name = "ParseFile")
 
     member val ParseFileWithoutProject =
         AsyncMemoize<string, string, FSharpParseFileResults>(
-            sf.ParseFileWithoutProjectKeepStrongly,
-            keepWeakly = sf.ParseFileWithoutProjectKeepWeakly,
+            cs.ParseFileWithoutProjectKeepStrongly,
+            keepWeakly = cs.ParseFileWithoutProjectKeepWeakly,
             name = "ParseFileWithoutProject"
         )
 
     member val ParseAndCheckFileInProject =
         AsyncMemoize(
-            sf.ParseAndCheckFileInProjectKeepStrongly,
-            sf.ParseAndCheckFileInProjectKeepWeakly,
+            cs.ParseAndCheckFileInProjectKeepStrongly,
+            cs.ParseAndCheckFileInProjectKeepWeakly,
             name = "ParseAndCheckFileInProject"
         )
 
     member val ParseAndCheckAllFilesInProject =
         AsyncMemoizeDisabled(
-            sf.ParseAndCheckAllFilesInProjectKeepStrongly,
-            sf.ParseAndCheckAllFilesInProjectKeepWeakly,
+            cs.ParseAndCheckAllFilesInProjectKeepStrongly,
+            cs.ParseAndCheckAllFilesInProjectKeepWeakly,
             name = "ParseAndCheckFullProject"
         )
 
     member val ParseAndCheckProject =
-        AsyncMemoize(sf.ParseAndCheckProjectKeepStrongly, sf.ParseAndCheckProjectKeepWeakly, name = "ParseAndCheckProject")
+        AsyncMemoize(cs.ParseAndCheckProjectKeepStrongly, cs.ParseAndCheckProjectKeepWeakly, name = "ParseAndCheckProject")
 
-    member val FrameworkImports = AsyncMemoize(sf.FrameworkImportsKeepStrongly, sf.FrameworkImportsKeepWeakly, name = "FrameworkImports")
+    member val FrameworkImports = AsyncMemoize(cs.FrameworkImportsKeepStrongly, cs.FrameworkImportsKeepWeakly, name = "FrameworkImports")
 
     member val BootstrapInfoStatic =
-        AsyncMemoize(sf.BootstrapInfoStaticKeepStrongly, sf.BootstrapInfoStaticKeepWeakly, name = "BootstrapInfoStatic")
+        AsyncMemoize(cs.BootstrapInfoStaticKeepStrongly, cs.BootstrapInfoStaticKeepWeakly, name = "BootstrapInfoStatic")
 
-    member val BootstrapInfo = AsyncMemoize(sf.BootstrapInfoKeepStrongly, sf.BootstrapInfoKeepWeakly, name = "BootstrapInfo")
+    member val BootstrapInfo = AsyncMemoize(cs.BootstrapInfoKeepStrongly, cs.BootstrapInfoKeepWeakly, name = "BootstrapInfo")
 
-    member val TcLastFile = AsyncMemoizeDisabled(sf.TcLastFileKeepStrongly, sf.TcLastFileKeepWeakly, name = "TcLastFile")
+    member val TcLastFile = AsyncMemoizeDisabled(cs.TcLastFileKeepStrongly, cs.TcLastFileKeepWeakly, name = "TcLastFile")
 
-    member val TcIntermediate = AsyncMemoize(sf.TcIntermediateKeepStrongly, sf.TcIntermediateKeepWeakly, name = "TcIntermediate")
+    member val TcIntermediate = AsyncMemoize(cs.TcIntermediateKeepStrongly, cs.TcIntermediateKeepWeakly, name = "TcIntermediate")
 
-    member val DependencyGraph = AsyncMemoize(sf.DependencyGraphKeepStrongly, sf.DependencyGraphKeepWeakly, name = "DependencyGraph")
+    member val DependencyGraph = AsyncMemoize(cs.DependencyGraphKeepStrongly, cs.DependencyGraphKeepWeakly, name = "DependencyGraph")
 
-    member val ProjectExtras = AsyncMemoizeDisabled(sf.ProjectExtrasKeepStrongly, sf.ProjectExtrasKeepWeakly, name = "ProjectExtras")
+    member val ProjectExtras = AsyncMemoizeDisabled(cs.ProjectExtrasKeepStrongly, cs.ProjectExtrasKeepWeakly, name = "ProjectExtras")
 
-    member val AssemblyData = AsyncMemoize(sf.AssemblyDataKeepStrongly, sf.AssemblyDataKeepWeakly, name = "AssemblyData")
+    member val AssemblyData = AsyncMemoize(cs.AssemblyDataKeepStrongly, cs.AssemblyDataKeepWeakly, name = "AssemblyData")
 
     member val SemanticClassification =
-        AsyncMemoize(sf.SemanticClassificationKeepStrongly, sf.SemanticClassificationKeepWeakly, name = "SemanticClassification")
+        AsyncMemoize(cs.SemanticClassificationKeepStrongly, cs.SemanticClassificationKeepWeakly, name = "SemanticClassification")
 
-    member val ItemKeyStore = AsyncMemoize(sf.ItemKeyStoreKeepStrongly, sf.ItemKeyStoreKeepWeakly, name = "ItemKeyStore")
+    member val ItemKeyStore = AsyncMemoize(cs.ItemKeyStoreKeepStrongly, cs.ItemKeyStoreKeepWeakly, name = "ItemKeyStore")
 
-    member val ScriptClosure = AsyncMemoize(sf.ScriptClosureKeepStrongly, sf.ScriptClosureKeepWeakly, name = "ScriptClosure")
+    member val ScriptClosure = AsyncMemoize(cs.ScriptClosureKeepStrongly, cs.ScriptClosureKeepWeakly, name = "ScriptClosure")
 
     member this.Clear(projects: Set<FSharpProjectIdentifier>) =
         let shouldClear project = projects |> Set.contains project
@@ -1468,17 +1467,6 @@ type internal TransparentCompiler
                         node,
                         (fun tcInfo ->
 
-                            // if tcInfo.stateContainsNodes |> Set.contains fileNode then
-                            //     failwith $"Oops!"
-
-                            //if
-                            //    tcInfo.stateContainsNodes
-                            // Signature files don't have to be right above the impl file... if we need this check then
-                            // we need to do it differently
-                            //    |> Set.contains (NodeToTypeCheck.ArtificialImplFile(index - 1))
-                            //then
-                            //  failwith $"Oops???"
-
                             let partialResult, tcState = finisher tcInfo.tcState
 
                             let tcEnv, topAttribs, _checkImplFileOpt, ccuSigForFile = partialResult
@@ -1513,9 +1501,6 @@ type internal TransparentCompiler
                     Finisher(
                         fileNode,
                         (fun tcInfo ->
-
-                            // if tcInfo.stateContainsNodes |> Set.contains fileNode then
-                            //     failwith $"Oops!"
 
                             let parsedInput = projectSnapshot.SourceFiles[index].ParsedInput
                             let prefixPathOpt = None
