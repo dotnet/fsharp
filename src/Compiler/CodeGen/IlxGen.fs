@@ -11541,7 +11541,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
 
                     let tdef =
                         if isKnownToBeAttribute then
-                            tdef.WithAdditionalFlags(ILTypeDefAdditionalFlags.IsKnownToBeAttribute, false)
+                            tdef.WithIsKnownToBeAttribute()
                         else
                             tdef
 

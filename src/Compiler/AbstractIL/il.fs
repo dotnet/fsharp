@@ -2902,9 +2902,8 @@ type ILTypeDef
     member x.WithInitSemantics(init) =
         x.With(attributes = (x.Attributes ||| convertInitSemantics init))
 
-    member x.WithAdditionalFlags(flags, rewriteInsteadOfAdd) =
-        let additionalFlags = if rewriteInsteadOfAdd then flags else flags ||| additionalFlags
-        x.With(newAdditionalFlags = additionalFlags)
+    member x.WithIsKnownToBeAttribute() =
+        x.With(newAdditionalFlags = (additionalFlags ||| ILTypeDefAdditionalFlags.IsKnownToBeAttribute))
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()

@@ -1626,7 +1626,7 @@ type ILTypeDef =
     member internal WithEncoding: ILDefaultPInvokeEncoding -> ILTypeDef
     member internal WithSpecialName: bool -> ILTypeDef
     member internal WithInitSemantics: ILTypeInit -> ILTypeDef
-    member internal WithAdditionalFlags: ILTypeDefAdditionalFlags * rewriteInsteadOfAdd: bool -> ILTypeDef
+    member internal WithIsKnownToBeAttribute: unit -> ILTypeDef
 
     /// Functional update
     member With:
