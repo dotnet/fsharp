@@ -174,7 +174,7 @@ let (|WithTrailingStringSpecifierRemoved|) (s: string) =
         let i = s.AsSpan(0, s.Length - 2).LastIndexOfAnyExcept '%'
         let diff = s.Length - 2 - i
         if diff &&& 1 <> 0 then
-            s[..i]
+            s[..s.Length - 3]
         else
             s
     else
