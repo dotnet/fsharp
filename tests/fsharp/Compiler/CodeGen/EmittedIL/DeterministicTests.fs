@@ -8,7 +8,7 @@ open FSharp.Test.Compiler
 open Xunit
 
 
-
+[<RunTestCasesInSequenceAttribute>]
 module DeterministicTests =
 
     let commonOptions = ["--refonly";"--deterministic";"--nooptimizationdata"]

@@ -26,6 +26,7 @@ module Native =
 
 type scriptHost (?langVersion: LangVersion) = inherit FSharpScript(langVersion=defaultArg langVersion LangVersion.Preview)
 
+[<Collection(nameof NotThreadSafeResourceCollection)>]
 type DependencyManagerInteractiveTests() =
 
     let getValue ((value: Result<FsiValue option, exn>), (errors: FSharpDiagnostic[])) =

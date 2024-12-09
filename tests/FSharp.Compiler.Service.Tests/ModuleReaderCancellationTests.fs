@@ -1,3 +1,4 @@
+[<FSharp.Test.RunTestCasesInSequence>]
 module FSharp.Compiler.Service.Tests.ModuleReaderCancellationTests
 
 open System
