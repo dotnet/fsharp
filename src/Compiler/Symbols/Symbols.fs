@@ -2134,42 +2134,26 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                    |> makeReadOnlyCollection ]
              |> makeReadOnlyCollection
 
-        | V v -> 
-        match v.ValReprInfo with 
-        | None ->
-            let _, tau = v.GeneralizedType
-            if isFunTy cenv.g tau then
-                let argTysl, _typ = stripFunTy cenv.g tau
-                [ for ty in argTysl do
-                    let allArguments =
-                        if isRefTupleTy cenv.g ty
-                        then tryDestRefTupleTy cenv.g ty
-                        else [ty]
-                    let m = defaultArg x.DeclarationLocationOpt range0
+        | V v ->
+            match arityOfValForDisplay v.Deref with
+            | ValReprInfo(_, curriedArgInfos, _) ->
+                let tau = v.TauType
+                let argTysl, _ = GetTopTauTypeInFSharpForm cenv.g curriedArgInfos tau range0
+                let argTysl = if v.IsInstanceMember then argTysl.Tail else argTysl
+                [ for argTys in argTysl do
                     yield
-                      allArguments
-                      |> List.map (fun arg -> FSharpParameter(cenv, arg, ValReprInfo.unnamedTopArg1, m))
-                      |> makeReadOnlyCollection ]
+                        [ for argTy, argInfo in argTys do 
+                            let isParamArrayArg = HasFSharpAttribute cenv.g cenv.g.attrib_ParamArrayAttribute argInfo.Attribs
+                            let isInArg = HasFSharpAttribute cenv.g cenv.g.attrib_InAttribute argInfo.Attribs && isByrefTy cenv.g argTy
+                            let isOutArg = HasFSharpAttribute cenv.g cenv.g.attrib_OutAttribute argInfo.Attribs && isByrefTy cenv.g argTy
+                            let isOptionalArg = HasFSharpAttribute cenv.g cenv.g.attrib_OptionalArgumentAttribute argInfo.Attribs
+                            let m =
+                                match argInfo.Name with
+                                | Some v -> v.idRange
+                                | None -> defaultArg x.DeclarationLocationOpt range0
+                            yield FSharpParameter(cenv, argTy, argInfo, None, m, isParamArrayArg, isInArg, isOutArg, isOptionalArg, false) ]
+                        |> makeReadOnlyCollection ]
                 |> makeReadOnlyCollection
-            else makeReadOnlyCollection []
-        | Some (ValReprInfo(_typars, curriedArgInfos, _retInfo)) -> 
-            let tau = v.TauType
-            let argTysl, _ = GetTopTauTypeInFSharpForm cenv.g curriedArgInfos tau range0
-            let argTysl = if v.IsInstanceMember then argTysl.Tail else argTysl
-            [ for argTys in argTysl do 
-                 yield 
-                   [ for argTy, argInfo in argTys do 
-                        let isParamArrayArg = HasFSharpAttribute cenv.g cenv.g.attrib_ParamArrayAttribute argInfo.Attribs
-                        let isInArg = HasFSharpAttribute cenv.g cenv.g.attrib_InAttribute argInfo.Attribs && isByrefTy cenv.g argTy
-                        let isOutArg = HasFSharpAttribute cenv.g cenv.g.attrib_OutAttribute argInfo.Attribs && isByrefTy cenv.g argTy
-                        let isOptionalArg = HasFSharpAttribute cenv.g cenv.g.attrib_OptionalArgumentAttribute argInfo.Attribs
-                        let m =
-                            match argInfo.Name with
-                            | Some v -> v.idRange
-                            | None -> defaultArg x.DeclarationLocationOpt range0
-                        yield FSharpParameter(cenv, argTy, argInfo, None, m, isParamArrayArg, isInArg, isOutArg, isOptionalArg, false) ] 
-                   |> makeReadOnlyCollection ]
-             |> makeReadOnlyCollection
 
     member x.ReturnParameter = 
         checkIsResolved()
