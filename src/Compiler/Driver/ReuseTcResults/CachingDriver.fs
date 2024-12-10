@@ -111,9 +111,7 @@ type CachingDriver(tcConfig: TcConfig) =
 
         list.ToArray()
 
-    let getThisCompilationReferences =
-        Seq.map formatAssemblyReference
-        >> Seq.toArray
+    let getThisCompilationReferences = Seq.map formatAssemblyReference >> Seq.toArray
 
     member _.TryReuseTcResults inputs =
         let prevTcDataOpt = readPrevTcData ()
