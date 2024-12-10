@@ -830,7 +830,11 @@ module rec Compiler =
     let compileExisting (cUnit: CompilationUnit) : CompilationResult =
         match cUnit with
         | FS fs ->
-            let outputFilePath = Path.ChangeExtension(fs.Source.GetSourceFileName, ".dll")
+            let sourceFilePath = fs.Source.GetSourceFileName
+            if (not <| File.Exists sourceFilePath) then
+                failwith "File doesn't exist. Create it to use this function."
+
+            let outputFilePath = Path.ChangeExtension(sourceFilePath, ".dll")
             let err, _, _ = rawCompile outputFilePath false fs.Options TargetFramework.Current [ fs.Source ]
             let diagnostics = err |> fromFSharpDiagnostic
 

@@ -76,6 +76,11 @@ type CachingDriver(tcConfig: TcConfig) =
         else
             None
 
+    let formatAssemblyReference (r: AssemblyReference) =
+        let fileName = r.Text
+        let lastWriteTime = FileSystem.GetLastWriteTimeShim fileName
+        sprintf "%s,%O" fileName (lastWriteTime.ToOADate())
+
     let getThisCompilationCmdLine args = args
 
     // maybe split into two things?
@@ -107,10 +112,8 @@ type CachingDriver(tcConfig: TcConfig) =
         list.ToArray()
 
     let getThisCompilationReferences =
-        List.map (fun (r: AssemblyReference) -> r.Text)
-        >> List.map (fun fileName -> fileName, FileSystem.GetLastWriteTimeShim fileName)
-        >> List.map (fun (fileName, lastWriteTime) -> $"{fileName},{lastWriteTime.ToOADate()}")
-        >> List.toArray
+        Seq.map formatAssemblyReference
+        >> Seq.toArray
 
     member _.TryReuseTcResults inputs =
         let prevTcDataOpt = readPrevTcData ()
@@ -122,10 +125,11 @@ type CachingDriver(tcConfig: TcConfig) =
                 References = getThisCompilationReferences tcConfig.referencedDLLs
             }
 
-        if prevTcDataOpt.IsSome then
+        match prevTcDataOpt with
+        | Some prevTcData ->
             use _ = Activity.start Activity.Events.reuseTcResultsCachePresent []
 
-            if prevTcDataOpt.Value = thisTcData then
+            if prevTcData = thisTcData then
                 use _ = Activity.start Activity.Events.reuseTcResultsCacheHit []
 
                 () // do nothing, yet
@@ -133,7 +137,8 @@ type CachingDriver(tcConfig: TcConfig) =
                 use _ = Activity.start Activity.Events.reuseTcResultsCacheMissed []
 
                 writeThisTcData thisTcData
-        else
+
+        | None ->
             use _ = Activity.start Activity.Events.reuseTcResultsCacheAbsent []
 
             writeThisTcData thisTcData
