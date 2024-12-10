@@ -835,7 +835,7 @@ let rec goutput_tdef enc env contents os (cd: ILTypeDef) =
         output_sqstring os cd.Name
         goutput_gparams env os cd.GenericParams
         output_string os "\n\t"
-        goutput_superclass env os cd.Extends
+        goutput_superclass env os cd.Extends.Value
         output_string os "\n\t"
         goutput_implements env os cd.Implements.Value
         output_string os "\n{\n "
