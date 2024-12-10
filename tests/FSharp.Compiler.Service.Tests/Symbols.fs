@@ -1271,3 +1271,33 @@ type T() =
             )
 
         Assert.False hasPropertySymbols
+
+module Delegates =
+    [<Fact>]
+    let ``IL metadata`` () =
+        let _, checkResults = getParseAndCheckResults """
+    module Delegates
+    open System
+
+    typeof<Delegate>
+    typeof<MulticastDelegate>
+    typeof<EventHandler>
+    typeof<Action>
+    """
+
+        let symbols =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.choose (fun su -> match su.Symbol with :? FSharpEntity as entity -> Some entity | _ -> None)
+            |> Seq.map (fun su -> su.DisplayName, su)
+            |> dict
+
+        let delegateType = symbols["Delegate"]
+        delegateType.IsDelegate |> shouldEqual false
+        delegateType.IsClass |> shouldEqual true
+
+        let multicastDelegateType = symbols["MulticastDelegate"]
+        multicastDelegateType.IsDelegate |> shouldEqual false
+        multicastDelegateType.IsClass |> shouldEqual true
+
+        symbols["EventHandler"].IsDelegate |> shouldEqual true
+        symbols["Action"].IsDelegate |> shouldEqual true
