@@ -398,7 +398,9 @@ type FSharpWorkspaceProjects internal (depGraph: IThreadSafeDependencyGraph<_, _
         let fsharpFileExtensions = set [| ".fs"; ".fsi"; ".fsx" |]
 
         let isFSharpFile (file: string) =
-            Set.exists (fun (ext: string) -> file.EndsWith(ext, StringComparison.Ordinal)) fsharpFileExtensions
+            file.Length > 0
+            && file[0] <> '-'
+            && Set.exists (fun (ext: string) -> file.EndsWith(ext, StringComparison.Ordinal)) fsharpFileExtensions
 
         let isReference: string -> bool = _.StartsWith("-r:")
 

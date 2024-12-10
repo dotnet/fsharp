@@ -13,6 +13,7 @@ open OpenTelemetry
 open OpenTelemetry.Resources
 open OpenTelemetry.Trace
 open FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState
+open System.IO
 
 #nowarn "57"
 
@@ -372,4 +373,64 @@ let ``Works with signature files`` () =
 
         Assert.Equal(1, diag.Diagnostics.Length)
         Assert.Equal("Module 'Test' requires a value 'y'", diag.Diagnostics[0].Message)
+    }
+
+
+
+let reposDir = __SOURCE_DIRECTORY__ ++ ".." ++ ".." ++ ".." ++ ".."
+let giraffeDir = reposDir ++ "Giraffe" ++ "src" ++ "Giraffe" |> Path.GetFullPath
+let giraffeTestsDir = reposDir ++ "Giraffe" ++ "tests" ++ "Giraffe.Tests" |> Path.GetFullPath
+let giraffeSampleDir = reposDir ++ "Giraffe" ++ "samples" ++ "EndpointRoutingApp" ++ "EndpointRoutingApp" |> Path.GetFullPath
+let giraffeSignaturesDir = reposDir ++ "giraffe-signatures" ++ "src" ++ "Giraffe" |> Path.GetFullPath
+let giraffeSignaturesTestsDir = reposDir ++ "giraffe-signatures" ++ "tests" ++ "Giraffe.Tests" |> Path.GetFullPath
+let giraffeSignaturesSampleDir = reposDir ++ "giraffe-signatures" ++ "samples" ++ "EndpointRoutingApp" ++ "EndpointRoutingApp" |> Path.GetFullPath
+
+type GiraffeFactAttribute() =
+    inherit Xunit.FactAttribute()
+        do
+            if not (Directory.Exists giraffeDir) then
+                do base.Skip <- $"Giraffe not found ({giraffeDir}). You can get it here: https://github.com/giraffe-fsharp/Giraffe"
+            if not (Directory.Exists giraffeSignaturesDir) then
+                do base.Skip <- $"Giraffe (with signatures) not found ({giraffeSignaturesDir}). You can get it here: https://github.com/nojaf/Giraffe/tree/signatures"
+
+
+[<GiraffeFact>]
+let ``Giraffe signature test`` () =
+    use workspace = new TestingWorkspace("Giraffe signature test")
+
+    let responseFileName = "compilerArgs.rsp"
+
+    let _identifiers =
+        [
+            giraffeSignaturesDir
+            giraffeSignaturesTestsDir
+            giraffeSignaturesSampleDir ]
+        |> Seq.map (fun dir ->
+            let projectName = Path.GetFileName dir
+            let dllName = $"{projectName}.dll"
+            let responseFile = dir ++ responseFileName
+            let outputFile = dir ++ "bin" ++ "Debug" ++ "net6.0" ++ dllName
+            let projectFile = dir ++ projectName + ".fsproj"
+            let compilerArgs = File.ReadAllLines responseFile
+            workspace.Projects.AddOrUpdate(projectFile, outputFile, compilerArgs)
+        )
+        |> Seq.toList
+
+    task {
+        let _ = workspace.Files.OpenFromDisk(giraffeSignaturesSampleDir ++ "Program.fs")
+
+        let! diag = workspace.Query.GetDiagnosticsForFile(Uri(giraffeSignaturesSampleDir ++ "Program.fs"))
+        Assert.Equal(0, diag.Diagnostics.Length)
+
+        let middlewareFsiSource = workspace.Files.OpenFromDisk(giraffeSignaturesDir ++ "Middleware.fsi")
+        let middlewareFsiNewSource = middlewareFsiSource.Replace("static member AddGiraffe:", "static member AddGiraffe2:")
+
+        let! diag = workspace.Query.GetDiagnosticsForFile(Uri(giraffeSignaturesDir ++ "Middleware.fsi"))
+        Assert.Equal(0, diag.Diagnostics.Length)
+
+        workspace.Files.Edit(Uri(giraffeSignaturesDir ++ "Middleware.fsi"), middlewareFsiNewSource)
+
+        let! diag = workspace.Query.GetDiagnosticsForFile(Uri(giraffeSignaturesSampleDir ++ "Program.fs"))
+        Assert.Equal(1, diag.Diagnostics.Length)
+        Assert.Equal("The type 'IServiceCollection' does not define the field, constructor or member 'AddGiraffe'.", diag.Diagnostics[0].Message)
     }

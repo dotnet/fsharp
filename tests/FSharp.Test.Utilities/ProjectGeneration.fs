@@ -1507,6 +1507,14 @@ module WorkspaceHelpers =
                 }
             projects.Update(projectIdentifier, newFiles)
 
+    type FSharpWorkspaceFiles with
+
+        /// Opens the file from a given path in the Workspace using content read from disk.
+        member this.OpenFromDisk(path) =
+            let content = FileSystem.OpenFileForReadShim(path).ReadAllText()
+            this.Open(Uri path, content)
+            content
+
     type FSharpWorkspace with
 
         member this.AddSignatureFile(projectIdentifier, sourceFile: Uri, ?writeToDisk) =
