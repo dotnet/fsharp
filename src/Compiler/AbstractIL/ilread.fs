@@ -2148,6 +2148,7 @@ and typeDefReader ctxtH : ILTypeDefStored =
                     ctxt.fileName.EndsWith("System.Runtime.dll")
                     || ctxt.fileName.EndsWith("mscorlib.dll")
                     || ctxt.fileName.EndsWith("netstandard.dll")
+                    || ctxt.fileName.EndsWith("System.Private.CoreLib.dll")
 
                 while attrIdx <= attrsEndIdx && not containsExtensionMethods do
                     let mutable addr = ctxt.rowAddr TableNames.CustomAttribute attrIdx
