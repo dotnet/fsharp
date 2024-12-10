@@ -600,7 +600,7 @@ try {
     }
 
     if ($testCoreClr) {
-        $cpuLimit = if ($ci) { "-m:1" } else { "" }
+        $cpuLimit = if ($ci) { "-m:2 -- xUnit.MaxParallelThreads=0.25x" } else { "" }
         TestUsingMSBuild -path "$RepoRoot\FSharp.sln" -targetFramework $script:coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -settings $cpuLimit
     }
 
