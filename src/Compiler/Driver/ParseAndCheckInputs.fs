@@ -31,6 +31,7 @@ open FSharp.Compiler.LexerStore
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseHelpers
+open FSharp.Compiler.ReuseTcResults
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Syntax.PrettyNaming
@@ -1960,6 +1961,10 @@ let CheckMultipleInputsUsingGraphMode
         partialResults, tcState)
 
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
+
+    if tcConfig.reuseTcResults = ReuseTcResults.On then
+        CachingDriver(tcConfig).TryReuseTcResults(inputs)
+
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
     let results, tcState =
         match tcConfig.typeCheckingConfig.Mode with
