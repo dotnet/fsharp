@@ -18,6 +18,7 @@ open System.Collections.Generic
 open FSharp.Compiler.CodeAnalysis
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
+open Xunit.Sdk
 
 
 type TheoryForNETCOREAPPAttribute() =
@@ -42,7 +43,7 @@ type FactForDESKTOPAttribute() =
 module Utilities =
 
     type Async with
-        static member RunImmediate (computation: Async<'T>, ?cancellationToken ) =
+        static member RunImmediate (computation: Async<'T>, ?cancellationToken) =
             let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
             let ts = TaskCompletionSource<'T>()
             let task = ts.Task
@@ -215,8 +216,7 @@ let main argv = 0"""
                     File.WriteAllText(directoryBuildPropsFileName, directoryBuildProps)
                     File.WriteAllText(directoryBuildTargetsFileName, directoryBuildTargets)
 
-                    let timeout = 120000
-                    let exitCode, dotnetoutput, dotneterrors = Commands.executeProcess config.DotNetExe "build" projectDirectory timeout
+                    let exitCode, dotnetoutput, dotneterrors = Commands.executeProcess config.DotNetExe "build" projectDirectory
                     
                     if exitCode <> 0 || errors.Length > 0 then
                         errors <- dotneterrors

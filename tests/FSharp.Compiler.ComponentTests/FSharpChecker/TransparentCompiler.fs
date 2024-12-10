@@ -1,4 +1,5 @@
-﻿module FSharpChecker.TransparentCompiler
+﻿[<Xunit.Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
+module FSharpChecker.TransparentCompiler
 
 open System.Collections.Concurrent
 open System.Diagnostics
@@ -991,6 +992,8 @@ type private LoadClosureTestShim(currentFileSystem: IFileSystem) =
                 ?shouldShadowCopy = shouldShadowCopy
             )
 
+// Because it is mutating FileSystem!
+[<Collection(nameof NotThreadSafeResourceCollection)>]
 module TestsMutatingFileSystem =
 
     [<Theory>]
