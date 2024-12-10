@@ -1,5 +1,4 @@
-﻿[<FSharp.Test.RunTestCasesInSequence>]
-module FSharp.Compiler.Service.Tests.ProjectAnalysisTests
+﻿module FSharp.Compiler.Service.Tests.ProjectAnalysisTests
 
 #nowarn "57" // Experimental stuff
 
