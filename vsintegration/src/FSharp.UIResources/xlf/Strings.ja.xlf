@@ -327,11 +327,6 @@
         <target state="translated">Transparent Compiler を使用する (再起動が必要)</target>
         <note />
       </trans-unit>
-      <trans-unit id="Use_syntax_tree_cache">
-        <source>Cache parsing results (experimental)</source>
-        <target state="translated">キャッシュ解析の結果 (試験段階)</target>
-        <note />
-      </trans-unit>
     </body>
   </file>
 </xliff>

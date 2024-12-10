@@ -1,7 +1,6 @@
 ﻿module Signatures.NestedTypeTests
 
 open Xunit
-open FsUnit
 open FSharp.Test
 open FSharp.Test.Compiler
 open Signatures.TestHelpers
@@ -35,7 +34,7 @@ let f (g: Upper<int>.Lower<string>) = g.Meh()
 """
     |> withReferences [ CSLib ]
     |> printSignatures
-    |> should equal
+    |> assertEqualIgnoreLineEnding
         """
 module Sample
 
@@ -74,7 +73,7 @@ let f (g: Root<TimeSpan,TimeSpan,TimeSpan,TimeSpan,TimeSpan>.Foo<int, float, str
 """
     |> withReferences [ CSLib ]
     |> printSignatures
-    |> should equal
+    |> assertEqualIgnoreLineEnding
         """
 module Sample
 

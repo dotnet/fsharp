@@ -161,6 +161,34 @@ type public Fsi() as this =
 
         builder
 
+    let mutable bufferLimit = None
+
+    let textOutput =
+        lazy System.Collections.Generic.Queue<_>(defaultArg bufferLimit 1024)
+
+    override this.LogEventsFromTextOutput(line, msgImportance) =
+        if this.CaptureTextOutput then
+            textOutput.Value.Enqueue line
+
+            match bufferLimit with
+            | Some limit when textOutput.Value.Count > limit -> textOutput.Value.Dequeue() |> ignore
+            | _ -> ()
+
+        base.LogEventsFromTextOutput(line, msgImportance)
+
+    member _.BufferLimit
+        with get () = defaultArg bufferLimit 0
+        and set limit = bufferLimit <- if limit = 0 then None else Some limit
+
+    member val CaptureTextOutput = false with get, set
+
+    [<Output>]
+    member this.TextOutput =
+        if this.CaptureTextOutput then
+            textOutput.Value |> String.concat Environment.NewLine
+        else
+            String.Empty
+
     // --codepage <int>: Specify the codepage to use when opening source files
     member _.CodePage
         with get () = codePage
@@ -388,10 +416,10 @@ type public Fsi() as this =
         let builder = generateCommandLineBuilder ()
         builder.GetCapturedArguments() |> String.concat Environment.NewLine
 
-    // expose this to internal components (for nunit testing)
+    // expose this to internal components (for unit testing)
     member internal fsi.InternalGenerateCommandLineCommands() = fsi.GenerateCommandLineCommands()
 
-    // expose this to internal components (for nunit testing)
+    // expose this to internal components (for unit testing)
     member internal fsi.InternalGenerateResponseFileCommands() = fsi.GenerateResponseFileCommands()
 
     member internal fsi.InternalExecuteTool(pathToTool, responseFileCommands, commandLineCommands) =

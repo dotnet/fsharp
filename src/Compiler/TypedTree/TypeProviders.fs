@@ -141,10 +141,10 @@ let CreateTypeProvider (
                 IsHostedExecution= isInteractive, 
                 SystemRuntimeAssemblyVersion = systemRuntimeAssemblyVersion)
 #endif
-        protect (fun () -> Activator.CreateInstance(typeProviderImplementationType, [| box e|]) :?> ITypeProvider )
+        protect (fun () -> !!(Activator.CreateInstance(typeProviderImplementationType, [| box e|])) :?> ITypeProvider )
 
     elif not(isNull(typeProviderImplementationType.GetConstructor [| |])) then 
-        protect (fun () -> Activator.CreateInstance typeProviderImplementationType :?> ITypeProvider )
+        protect (fun () -> !!(Activator.CreateInstance typeProviderImplementationType) :?> ITypeProvider )
 
     else
         // No appropriate constructor found
@@ -739,7 +739,7 @@ type ProvidedMethodBase (x: MethodBase, ctxt) =
                 let paramsAsObj = 
                     try (!!meth).Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x |], null) 
                     with err -> raise (StripException (StripException err))
-                paramsAsObj :?> ParameterInfo[] 
+                !!paramsAsObj :?> ParameterInfo[] 
 
         staticParams |> ProvidedParameterInfo.CreateArrayNonNull ctxt
 
@@ -979,7 +979,7 @@ type ProvidedExprType =
     | ProvidedTryFinallyExpr of ProvidedExpr * ProvidedExpr
     | ProvidedLambdaExpr of ProvidedVar * ProvidedExpr
     | ProvidedCallExpr of ProvidedExpr option * ProvidedMethodInfo * ProvidedExpr[] 
-    | ProvidedConstantExpr of obj * ProvidedType
+    | ProvidedConstantExpr of objnull * ProvidedType
     | ProvidedDefaultExpr of ProvidedType
     | ProvidedNewTupleExpr of ProvidedExpr[]
     | ProvidedTupleGetExpr of ProvidedExpr * int

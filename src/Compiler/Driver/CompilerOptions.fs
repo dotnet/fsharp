@@ -622,6 +622,26 @@ let splittingSwitch (tcConfigB: TcConfigBuilder) switch =
 let callVirtSwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.alwaysCallVirt <- switch = OptionSwitch.On
 
+let callParallelCompilationSwitch (tcConfigB: TcConfigBuilder) switch =
+    tcConfigB.parallelIlxGen <- switch = OptionSwitch.On
+
+    let (graphCheckingMode, optMode) =
+        match switch with
+        | OptionSwitch.On -> TypeCheckingMode.Graph, OptimizationProcessingMode.Parallel
+        | OptionSwitch.Off -> TypeCheckingMode.Sequential, OptimizationProcessingMode.Sequential
+
+    if tcConfigB.typeCheckingConfig.Mode <> graphCheckingMode then
+        tcConfigB.typeCheckingConfig <-
+            { tcConfigB.typeCheckingConfig with
+                Mode = graphCheckingMode
+            }
+
+    if tcConfigB.optSettings.processingMode <> optMode then
+        tcConfigB.optSettings <-
+            { tcConfigB.optSettings with
+                processingMode = optMode
+            }
+
 let useHighEntropyVASwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.useHighEntropyVA <- switch = OptionSwitch.On
 
@@ -832,7 +852,7 @@ let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) =
         CompilerOption(
             "nowarn",
             tagWarnList,
-            OptionStringList(fun n -> tcConfigB.TurnWarningOff(rangeCmdArgs, trimFS n)),
+            OptionStringList(fun n -> tcConfigB.TurnWarningOff(rangeCmdArgs, n)),
             None,
             Some(FSComp.SR.optsNowarn ())
         )
@@ -840,7 +860,7 @@ let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) =
         CompilerOption(
             "warnon",
             tagWarnList,
-            OptionStringList(fun n -> tcConfigB.TurnWarningOn(rangeCmdArgs, trimFS n)),
+            OptionStringList(fun n -> tcConfigB.TurnWarningOn(rangeCmdArgs, n)),
             None,
             Some(FSComp.SR.optsWarnOn ())
         )
@@ -1365,9 +1385,9 @@ let testFlag tcConfigB =
             | "DumpDebugInfo" -> tcConfigB.dumpDebugInfo <- true
             | "ShowLoadedAssemblies" -> tcConfigB.showLoadedAssemblies <- true
             | "ContinueAfterParseFailure" -> tcConfigB.continueAfterParseFailure <- true
-            | "ParallelOff" -> tcConfigB.concurrentBuild <- false
-            | "ParallelIlxGen" -> tcConfigB.parallelIlxGen <- true
-            | "GraphBasedChecking" ->
+            | "ParallelOff" -> tcConfigB.parallelParsing <- false
+            | "ParallelIlxGen" -> tcConfigB.parallelIlxGen <- true // Kept as --test:.. flag for temporary backwards compatibility during .NET10 period.
+            | "GraphBasedChecking" -> // Kept as --test:.. flag for temporary backwards compatibility during .NET10 period.
                 tcConfigB.typeCheckingConfig <-
                     { tcConfigB.typeCheckingConfig with
                         Mode = TypeCheckingMode.Graph
@@ -1378,7 +1398,7 @@ let testFlag tcConfigB =
                         DumpGraph = true
                     }
             | "DumpSignatureData" -> tcConfigB.dumpSignatureData <- true
-            | "ParallelOptimization" ->
+            | "ParallelOptimization" -> // Kept as --test:.. flag for temporary backwards compatibility during .NET10 period.
                 tcConfigB.optSettings <-
                     { tcConfigB.optSettings with
                         processingMode = OptimizationProcessingMode.Parallel
@@ -1689,6 +1709,14 @@ let internalFlags (tcConfigB: TcConfigBuilder) =
             tagNone,
             OptionUnit(fun () -> tcConfigB.parallelReferenceResolution <- ParallelReferenceResolution.On),
             Some(InternalCommandLineOption("--parallelreferenceresolution", rangeCmdArgs)),
+            None
+        )
+
+        CompilerOption(
+            "parallelcompilation",
+            tagNone,
+            OptionSwitch(callParallelCompilationSwitch tcConfigB),
+            Some(InternalCommandLineOption("--parallelcompilation", rangeCmdArgs)),
             None
         )
 

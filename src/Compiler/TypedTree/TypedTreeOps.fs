@@ -1853,7 +1853,20 @@ let isArray1DTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -
 
 let isUnitTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tyconRefEq g g.unit_tcr_canon tcref | _ -> false) 
 
-let isObjTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tyconRefEq g g.system_Object_tcref tcref | _ -> false) 
+let isObjTyAnyNullness g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tyconRefEq g g.system_Object_tcref tcref | _ -> false) 
+
+let isObjNullTy g ty = 
+    ty 
+    |> stripTyEqns g 
+    |> (function TType_app(tcref, _, n) when (not g.checkNullness) || (n.TryEvaluate() <> ValueSome(NullnessInfo.WithoutNull)) 
+                -> tyconRefEq g g.system_Object_tcref tcref | _ -> false)
+
+let isObjTyWithoutNull (g:TcGlobals) ty = 
+    g.checkNullness &&
+    ty 
+    |> stripTyEqns g 
+    |> (function TType_app(tcref, _, n) when (n.TryEvaluate() = ValueSome(NullnessInfo.WithoutNull)) 
+                -> tyconRefEq g g.system_Object_tcref tcref | _ -> false) 
 
 let isValueTypeTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tyconRefEq g g.system_Value_tcref tcref | _ -> false) 
 
@@ -6002,14 +6015,14 @@ and remapExprImpl (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) exp
     // This is "ok", in the sense that it is always valid to fix these up to be uses
     // of a temporary local, e.g.
     //       &(E.RF) --> let mutable v = E.RF in &v
-    
+
     | Expr.Op (TOp.ValFieldGetAddr (rfref, readonly), tinst, [arg], m) when 
           not rfref.RecdField.IsMutable && 
           not (entityRefInThisAssembly ctxt.g.compilingFSharpCore rfref.TyconRef) -> 
 
         let tinst = remapTypes tmenv tinst 
         let arg = remapExprImpl ctxt compgen tmenv arg 
-        let tmp, _ = mkMutableCompGenLocal m "copyOfStruct" (actualTyOfRecdFieldRef rfref tinst)
+        let tmp, _ = mkMutableCompGenLocal m WellKnownNames.CopyOfStruct (actualTyOfRecdFieldRef rfref tinst)
         mkCompGenLet m tmp (mkRecdFieldGetViaExprAddr (arg, rfref, tinst, m)) (mkValAddr m readonly (mkLocalValRef tmp))
 
     | Expr.Op (TOp.UnionCaseFieldGetAddr (uref, cidx, readonly), tinst, [arg], m) when 
@@ -6018,7 +6031,7 @@ and remapExprImpl (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) exp
 
         let tinst = remapTypes tmenv tinst 
         let arg = remapExprImpl ctxt compgen tmenv arg 
-        let tmp, _ = mkMutableCompGenLocal m "copyOfStruct" (actualTyOfUnionFieldRef uref cidx tinst)
+        let tmp, _ = mkMutableCompGenLocal m WellKnownNames.CopyOfStruct (actualTyOfUnionFieldRef uref cidx tinst)
         mkCompGenLet m tmp (mkUnionCaseFieldGetProvenViaExprAddr (arg, uref, tinst, cidx, m)) (mkValAddr m readonly (mkLocalValRef tmp))
 
     | Expr.Op (op, tinst, args, m) -> 
@@ -7239,8 +7252,8 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
             // Take a defensive copy
             let tmp, _ = 
                 match mut with 
-                | NeverMutates -> mkCompGenLocal m "copyOfStruct" ty
-                | _ -> mkMutableCompGenLocal m "copyOfStruct" ty
+                | NeverMutates -> mkCompGenLocal m WellKnownNames.CopyOfStruct ty
+                | _ -> mkMutableCompGenLocal m WellKnownNames.CopyOfStruct ty
 
             // This local is special in that it ignore byref scoping rules.
             tmp.SetIgnoresByrefScope()
@@ -9202,6 +9215,57 @@ let reqTyForArgumentNullnessInference g actualTy reqTy =
         changeWithNullReqTyToVariable g reqTy       
     | _ -> reqTy
 
+
+let GetDisallowedNullness (g:TcGlobals) (ty:TType) =
+    if g.checkNullness then
+        let rec hasWithNullAnyWhere ty alreadyWrappedInOuterWithNull = 
+            match ty with
+            | TType_var (tp, n) -> 
+                let withNull = alreadyWrappedInOuterWithNull || n.TryEvaluate() = (ValueSome NullnessInfo.WithNull)
+                match tp.Solution with
+                | None -> []
+                | Some t -> hasWithNullAnyWhere t withNull
+
+            | TType_app (tcr, tinst, nullnessOrig) -> 
+                let tyArgs = tinst |> List.collect (fun t -> hasWithNullAnyWhere t false)
+                
+                match alreadyWrappedInOuterWithNull, tcr.TypeAbbrev with
+                | true, _ when isStructTyconRef tcr -> ty :: tyArgs
+                | true, _ when tcr.IsMeasureableReprTycon -> 
+                    match tcr.TypeReprInfo with
+                    | TMeasureableRepr realType ->
+                        if hasWithNullAnyWhere realType true |> List.isEmpty then
+                            []
+                        else [ty]
+                    | _ -> []
+                | true, Some tAbbrev -> (hasWithNullAnyWhere tAbbrev true) @ tyArgs
+                | _ -> tyArgs
+
+            | TType_tuple (_,tupTypes) ->
+                let inner = tupTypes |> List.collect (fun t -> hasWithNullAnyWhere t false)
+                if alreadyWrappedInOuterWithNull then ty :: inner else inner
+
+            | TType_anon (anon,tys) -> 
+                let inner = tys |> List.collect (fun t -> hasWithNullAnyWhere t false)
+                if alreadyWrappedInOuterWithNull then ty :: inner else inner
+            | TType_fun (d, r, _) ->
+                (hasWithNullAnyWhere d false) @ (hasWithNullAnyWhere r false)
+
+            | TType_forall _ -> []
+            | TType_ucase _ -> []
+            | TType_measure m ->
+                if alreadyWrappedInOuterWithNull then 
+                    let measuresInside = 
+                        ListMeasureVarOccs m 
+                        |> List.choose (fun x -> x.Solution)
+                        |> List.collect (fun x -> hasWithNullAnyWhere x true)
+                    ty :: measuresInside
+                else []
+
+        hasWithNullAnyWhere ty false
+    else
+        []
+
 let TypeHasAllowNull (tcref:TyconRef) g m =
     not tcref.IsStructOrEnumTycon &&
     not (isByrefLikeTyconRef g m tcref) && 
@@ -9238,6 +9302,7 @@ let TypeNullNotLiked g m ty =
        not (TypeNullIsExtraValue g m ty) 
     && not (TypeNullIsTrueValue g ty) 
     && not (TypeNullNever g ty) 
+
 
 let rec TypeHasDefaultValueAux isNew g m ty = 
     let ty = stripTyEqnsAndMeasureEqns g ty
@@ -9305,15 +9370,37 @@ let (|SpecialEquatableHeadType|_|) g ty = (|SpecialComparableHeadType|_|) g ty
 let (|SpecialNotEquatableHeadType|_|) g ty = 
     if isFunTy g ty then ValueSome() else ValueNone
 
+let (|TyparTy|NullableTypar|StructTy|NullTrueValue|NullableRefType|WithoutNullRefType|UnresolvedRefType|) (ty,g) = 
+    let sty = ty |> stripTyEqns g
+    if isTyparTy g sty then 
+        if (nullnessOfTy g sty).TryEvaluate() = ValueSome NullnessInfo.WithNull then
+            NullableTypar
+        else
+            TyparTy
+    elif isStructTy g sty then 
+        StructTy
+    elif TypeNullIsTrueValue g sty then
+        NullTrueValue
+    else
+        match (nullnessOfTy g sty).TryEvaluate() with
+        | ValueSome NullnessInfo.WithNull -> NullableRefType
+        | ValueSome NullnessInfo.WithoutNull -> WithoutNullRefType
+        | _ -> UnresolvedRefType
+
 // Can we use the fast helper for the 'LanguagePrimitives.IntrinsicFunctions.TypeTestGeneric'? 
 let canUseTypeTestFast g ty = 
      not (isTyparTy g ty) && 
      not (TypeNullIsTrueValue g ty)
 
 // Can we use the fast helper for the 'LanguagePrimitives.IntrinsicFunctions.UnboxGeneric'? 
-let canUseUnboxFast g m ty = 
-     not (isTyparTy g ty) && 
-     not (TypeNullNotLiked g m ty)
+let canUseUnboxFast (g:TcGlobals) m ty = 
+     if g.checkNullness then
+         match (ty,g) with
+         | TyparTy | WithoutNullRefType | UnresolvedRefType  -> false
+         | StructTy | NullTrueValue | NullableRefType | NullableTypar  -> true
+     else
+         not (isTyparTy g ty) && 
+         not (TypeNullNotLiked g m ty)
      
 //--------------------------------------------------------------------------
 // Nullness tests and pokes 
@@ -10020,7 +10107,7 @@ let EvalArithUnOp (opInt8, opInt16, opInt32, opInt64, opUInt8, opUInt16, opUInt3
         | _ -> error (Error ( FSComp.SR.tastNotAConstantExpression(), m))
     with :? System.OverflowException -> error (Error ( FSComp.SR.tastConstantExpressionOverflow(), m))
 
-let EvalArithBinOp (opInt8, opInt16, opInt32, opInt64, opUInt8, opUInt16, opUInt32, opUInt64, opSingle, opDouble) (arg1: Expr) (arg2: Expr) =
+let EvalArithBinOp (opInt8, opInt16, opInt32, opInt64, opUInt8, opUInt16, opUInt32, opUInt64, opSingle, opDouble, opDecimal) (arg1: Expr) (arg2: Expr) =
     // At compile-time we check arithmetic
     let m = unionRanges arg1.Range arg2.Range
     try
@@ -10035,6 +10122,7 @@ let EvalArithBinOp (opInt8, opInt16, opInt32, opInt64, opUInt8, opUInt16, opUInt
         | Expr.Const (Const.UInt64 x1, _, ty), Expr.Const (Const.UInt64 x2, _, _) -> Expr.Const (Const.UInt64 (opUInt64 x1 x2), m, ty)
         | Expr.Const (Const.Single x1, _, ty), Expr.Const (Const.Single x2, _, _) -> Expr.Const (Const.Single (opSingle x1 x2), m, ty)
         | Expr.Const (Const.Double x1, _, ty), Expr.Const (Const.Double x2, _, _) -> Expr.Const (Const.Double (opDouble x1 x2), m, ty)
+        | Expr.Const (Const.Decimal x1, _, ty), Expr.Const (Const.Decimal x2, _, _) -> Expr.Const (Const.Decimal (opDecimal x1 x2), m, ty)
         | _ -> error (Error ( FSComp.SR.tastNotAConstantExpression(), m))
     with :? System.OverflowException -> error (Error ( FSComp.SR.tastConstantExpressionOverflow(), m))
 
@@ -10066,9 +10154,10 @@ let rec EvalAttribArgExpr suppressLangFeatureCheck (g: TcGlobals) (x: Expr) =
         | Const.Single _
         | Const.Char _
         | Const.Zero
-        | Const.String _ -> 
+        | Const.String _
+        | Const.Decimal _ ->
             x
-        | Const.Decimal _ | Const.IntPtr _ | Const.UIntPtr _ | Const.Unit ->
+        | Const.IntPtr _ | Const.UIntPtr _ | Const.Unit ->
             errorR (Error ( FSComp.SR.tastNotAConstantExpression(), m))
             x
 
@@ -10084,7 +10173,7 @@ let rec EvalAttribArgExpr suppressLangFeatureCheck (g: TcGlobals) (x: Expr) =
 
         match v1 with
         | IntegerConstExpr ->
-            EvalArithBinOp ((|||), (|||), (|||), (|||), (|||), (|||), (|||), (|||), ignore2, ignore2) v1 (EvalAttribArgExpr suppressLangFeatureCheck g arg2) 
+            EvalArithBinOp ((|||), (|||), (|||), (|||), (|||), (|||), (|||), (|||), ignore2, ignore2, ignore2) v1 (EvalAttribArgExpr suppressLangFeatureCheck g arg2) 
         | _ ->
             errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
             x
@@ -10099,7 +10188,7 @@ let rec EvalAttribArgExpr suppressLangFeatureCheck (g: TcGlobals) (x: Expr) =
             Expr.Const (Const.Char (x1 + x2), m, ty)
         | _ ->
             checkFeature()
-            EvalArithBinOp (Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+)) v1 v2
+            EvalArithBinOp (Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+), Checked.(+)) v1 v2
     | SpecificBinopExpr g g.unchecked_subtraction_vref (arg1, arg2) ->
         checkFeature()
         let v1, v2 = EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1, EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2
@@ -10108,16 +10197,16 @@ let rec EvalAttribArgExpr suppressLangFeatureCheck (g: TcGlobals) (x: Expr) =
         | Expr.Const (Const.Char x1, m, ty), Expr.Const (Const.Char x2, _, _) ->
             Expr.Const (Const.Char (x1 - x2), m, ty)
         | _ ->
-            EvalArithBinOp (Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-)) v1 v2
+            EvalArithBinOp (Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-), Checked.(-)) v1 v2
     | SpecificBinopExpr g g.unchecked_multiply_vref (arg1, arg2) ->
         checkFeature()
-        EvalArithBinOp (Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*)) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
+        EvalArithBinOp (Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*), Checked.(*)) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
     | SpecificBinopExpr g g.unchecked_division_vref (arg1, arg2) ->
         checkFeature()
-        EvalArithBinOp ((/), (/), (/), (/), (/), (/), (/), (/), (/), (/)) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
+        EvalArithBinOp ((/), (/), (/), (/), (/), (/), (/), (/), (/), (/), (/)) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
     | SpecificBinopExpr g g.unchecked_modulus_vref (arg1, arg2) ->
         checkFeature()
-        EvalArithBinOp ((%), (%), (%), (%), (%), (%), (%), (%), (%), (%)) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
+        EvalArithBinOp ((%), (%), (%), (%), (%), (%), (%), (%), (%), (%), (%)) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
     | SpecificBinopExpr g g.bitwise_shift_left_vref (arg1, arg2) ->
         checkFeature()
         EvalArithShiftOp ((<<<), (<<<), (<<<), (<<<), (<<<), (<<<), (<<<), (<<<)) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg1) (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
@@ -10130,7 +10219,7 @@ let rec EvalAttribArgExpr suppressLangFeatureCheck (g: TcGlobals) (x: Expr) =
 
         match v1 with
         | IntegerConstExpr ->
-            EvalArithBinOp ((&&&), (&&&), (&&&), (&&&), (&&&), (&&&), (&&&), (&&&), ignore2, ignore2) v1 (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
+            EvalArithBinOp ((&&&), (&&&), (&&&), (&&&), (&&&), (&&&), (&&&), (&&&), ignore2, ignore2, ignore2) v1 (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
         | _ ->
             errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
             x
@@ -10140,7 +10229,7 @@ let rec EvalAttribArgExpr suppressLangFeatureCheck (g: TcGlobals) (x: Expr) =
 
         match v1 with
         | IntegerConstExpr ->
-            EvalArithBinOp ((^^^), (^^^), (^^^), (^^^), (^^^), (^^^), (^^^), (^^^), ignore2, ignore2) v1 (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
+            EvalArithBinOp ((^^^), (^^^), (^^^), (^^^), (^^^), (^^^), (^^^), (^^^), ignore2, ignore2, ignore2) v1 (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
         | _ ->
             errorR (Error (FSComp.SR.tastNotAConstantExpression(), x.Range))
             x
@@ -10150,7 +10239,7 @@ let rec EvalAttribArgExpr suppressLangFeatureCheck (g: TcGlobals) (x: Expr) =
 
         match v1 with
         | FloatConstExpr ->
-            EvalArithBinOp (ignore2, ignore2, ignore2, ignore2, ignore2, ignore2, ignore2, ignore2, ( ** ), ( ** )) v1 (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
+            EvalArithBinOp (ignore2, ignore2, ignore2, ignore2, ignore2, ignore2, ignore2, ignore2, ( ** ), ( ** ), ignore2) v1 (EvalAttribArgExpr SuppressLanguageFeatureCheck.Yes g arg2)
         | _ ->
             errorR (Error (FSComp.SR.tastNotAConstantExpression(), x.Range))
             x

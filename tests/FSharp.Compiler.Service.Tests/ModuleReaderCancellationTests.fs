@@ -9,7 +9,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
-open FsUnit
+open FSharp.Test.Assert
 open Internal.Utilities.Library
 open FSharp.Compiler.Service.Tests.Common
 open Xunit
@@ -20,6 +20,7 @@ let mutable private wasCancelled = false
 let runCancelFirstTime f =
     let mutable requestCount = 0
     fun () ->
+        use _ = Cancellable.UsingToken cts.Token
         if requestCount = 0 then
             cts.Cancel()
 
@@ -115,7 +116,7 @@ type PreTypeDefData =
                 mkILMethods []
 
         let typeAttributes = TypeAttributes.Public
-        ILTypeDef(this.Name, typeAttributes, ILTypeDefLayout.Auto, [], None, [],
+        ILTypeDef(this.Name, typeAttributes, ILTypeDefLayout.Auto, emptyILInterfaceImpls, [],
             None, methodsDefs, mkILTypeDefs [], mkILFields [], emptyILMethodImpls, mkILEvents [], mkILProperties [], ILTypeDefAdditionalFlags.None,
             emptyILSecurityDecls, emptyILCustomAttrsStored)
 
@@ -147,6 +148,7 @@ let referenceReaderProject getPreTypeDefs (cancelOnModuleAccess: bool) (options:
 let parseAndCheck path source options =
     cts <- new CancellationTokenSource()
     wasCancelled <- false
+    use _ = Cancellable.UsingToken cts.Token
 
     try
         match Async.RunSynchronously(checker.ParseAndCheckFileInProject(path, 0, SourceText.ofString source, options), cancellationToken = cts.Token) with
@@ -172,6 +174,10 @@ open Ns1.Ns2
 let t: T = T()
 """
 
+
+[<Fact>]
+let ``CheckAndThrow is not allowed to throw outside of cancellable`` () =
+    Assert.Throws<Exception>(fun () -> Cancellable.CheckAndThrow())
 
 [<Fact>]
 let ``Type defs 01 - assembly import`` () =

@@ -20,7 +20,7 @@ module internal Graph =
     /// Create a reverse of the graph.
     val reverse<'Node when 'Node: equality> : originalGraph: Graph<'Node> -> Graph<'Node>
     /// Print the contents of the graph to the standard output.
-    val print: graph: Graph<'Node> -> unit
+    val print: graph: Graph<'Node> -> unit when 'Node: not null
     /// Create a simple Mermaid graph
     val serialiseToMermaid: graph: Graph<FileIndex * string> -> string
     /// Create a simple Mermaid graph and save it under the path specified.

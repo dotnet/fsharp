@@ -89,7 +89,6 @@ type LanguageServicePerformanceOptions =
         EnableParallelReferenceResolution: bool
         EnableFastFindReferencesAndRename: bool
         EnablePartialTypeChecking: bool
-        UseSyntaxTreeCache: bool
         KeepAllBackgroundResolutions: bool
         KeepAllBackgroundSymbolUses: bool
         EnableBackgroundItemKeyStoreAndSemanticClassification: bool
@@ -104,7 +103,6 @@ type LanguageServicePerformanceOptions =
             EnableParallelReferenceResolution = false
             EnableFastFindReferencesAndRename = true
             EnablePartialTypeChecking = true
-            UseSyntaxTreeCache = FSharpExperimentalFeaturesEnabledAutomatically
             KeepAllBackgroundResolutions = false
             KeepAllBackgroundSymbolUses = false
             EnableBackgroundItemKeyStoreAndSemanticClassification = true

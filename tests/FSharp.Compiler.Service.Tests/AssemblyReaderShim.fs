@@ -1,6 +1,5 @@
 ﻿module FSharp.Compiler.Service.Tests.AssemblyReaderShim
 
-open FsUnit
 open FSharp.Compiler.Text
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open Xunit
@@ -23,4 +22,4 @@ let x = 123
 
     let fileName, options = mkTestFileAndOptions source [| |]
     checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString source, options) |> Async.RunImmediate |> ignore
-    gotRequest |> should be True
+    gotRequest |> Assert.True

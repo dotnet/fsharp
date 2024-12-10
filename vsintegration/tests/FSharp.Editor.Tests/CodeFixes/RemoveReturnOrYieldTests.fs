@@ -102,3 +102,50 @@ let answer question =
     let actual = codeFix |> tryFix code Auto
 
     Assert.Equal(expected, actual)
+
+[<Fact>]
+let ``Handles spaces`` () =
+    let code =
+        """
+let answer question =
+    yield      42
+"""
+
+    let expected =
+        Some
+            {
+                Message = "Remove 'yield'"
+                FixedCode =
+                    """
+let answer question =
+    42
+"""
+            }
+
+    let actual = codeFix |> tryFix code Auto
+
+    Assert.Equal(expected, actual)
+
+[<Fact>]
+let ``Handles new lines`` () =
+    let code =
+        """
+let answer question =
+    return!
+        42
+"""
+
+    let expected =
+        Some
+            {
+                Message = "Remove 'return!'"
+                FixedCode =
+                    """
+let answer question =
+    42
+"""
+            }
+
+    let actual = codeFix |> tryFix code Auto
+
+    Assert.Equal(expected, actual)

@@ -32,6 +32,11 @@ open FSharp.Compiler.TypeProviders
 open FSharp.Core.CompilerServices
 #endif
 
+[<RequireQualifiedAccess>]
+module WellKnownNames =
+    /// Special name for the defensive copy of a struct, we use it in situations like when we get an address of a field in ax-assembly scenario.
+    let [<Literal>] CopyOfStruct = "copyOfStruct"
+
 type Stamp = int64
 
 type StampMap<'T> = Map<Stamp, 'T>
@@ -4357,6 +4362,12 @@ type NullnessVar() =
        | Some soln -> soln.TryEvaluate()
 
     member nv.IsSolved = solution.IsSome
+
+    member nv.IsFullySolved = 
+        match solution with
+        | None -> false
+        | Some (Nullness.Known _) -> true
+        | Some (Nullness.Variable v) -> v.IsFullySolved
 
     member nv.Set(nullness) = 
        assert (not nv.IsSolved) 

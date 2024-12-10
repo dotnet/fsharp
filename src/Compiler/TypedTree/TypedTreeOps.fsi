@@ -1666,8 +1666,14 @@ val rankOfArrayTyconRef: TcGlobals -> TyconRef -> int
 /// Determine if a type is the F# unit type
 val isUnitTy: TcGlobals -> TType -> bool
 
-/// Determine if a type is the System.Object type
-val isObjTy: TcGlobals -> TType -> bool
+/// Determine if a type is the System.Object type with any nullness qualifier
+val isObjTyAnyNullness: TcGlobals -> TType -> bool
+
+/// Determine if a type is the (System.Object | null) type. Allows either nullness if null checking is disabled.
+val isObjNullTy: TcGlobals -> TType -> bool
+
+/// Determine if a type is a strictly non-nullable System.Object type. If nullness checking is disabled, this returns false.
+val isObjTyWithoutNull: TcGlobals -> TType -> bool
 
 /// Determine if a type is the System.ValueType type
 val isValueTypeTy: TcGlobals -> TType -> bool
@@ -1808,6 +1814,11 @@ val CompileAsEvent: TcGlobals -> Attribs -> bool
 val TypeNullIsTrueValue: TcGlobals -> TType -> bool
 
 val TypeNullIsExtraValue: TcGlobals -> range -> TType -> bool
+
+/// A type coming via interop from C# can be holding a nullness combination not supported in F#.
+/// Prime example are APIs marked as T|null applied to structs, tuples and anons.
+/// Unsupported values can also be nested within generic type arguments, e.g. a List<Tuple<string,T|null>> applied to an anon.
+val GetDisallowedNullness: TcGlobals -> TType -> TType list
 
 val TypeHasAllowNull: TyconRef -> TcGlobals -> range -> bool
 
@@ -2601,6 +2612,9 @@ val (|SpecialEquatableHeadType|_|): TcGlobals -> TType -> TType list voption
 
 [<return: Struct>]
 val (|SpecialNotEquatableHeadType|_|): TcGlobals -> TType -> unit voption
+
+val (|TyparTy|NullableTypar|StructTy|NullTrueValue|NullableRefType|WithoutNullRefType|UnresolvedRefType|):
+    TType * TcGlobals -> Choice<unit, unit, unit, unit, unit, unit, unit>
 
 /// Matches if the given expression is an application
 /// of the range or range-step operator on an integral type

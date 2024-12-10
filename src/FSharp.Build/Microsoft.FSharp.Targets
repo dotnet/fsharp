@@ -380,6 +380,7 @@ this file.
               OtherFlags="$(FscOtherFlags)"
               OutputAssembly="@(IntermediateAssembly)"
               OutputRefAssembly="@(IntermediateRefAssembly)"
+    	      ParallelCompilation="@(ParallelCompilation)"
               PathMap="$(PathMap)"
               PdbFile="$(PdbFile)"
               Platform="$(PlatformTarget)"

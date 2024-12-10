@@ -1090,7 +1090,7 @@ module MutRecBindingChecking =
 
                             [Phase2AIncrClassCtor (staticCtorInfo, Some incrCtorInfo)], innerState
                               
-                        | Some (SynMemberDefn.ImplicitInherit (ty, arg, _baseIdOpt, m)), _ ->
+                        | Some (SynMemberDefn.ImplicitInherit (ty, arg, _baseIdOpt, m, _)), _ ->
                             if tcref.TypeOrMeasureKind = TyparKind.Measure then
                                 error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m))
 
@@ -3322,9 +3322,8 @@ module EstablishTypeDefinitionCores =
                   | SynTypeDefnSimpleRepr.Record _ ->
                       if tycon.IsStructRecordOrUnionTycon then Some(g.system_Value_ty)
                       else None
-                  | SynTypeDefnSimpleRepr.General (kind, _, slotsigs, fields, isConcrete, _, _, _) ->
+                  | SynTypeDefnSimpleRepr.General (kind, inherits, slotsigs, fields, isConcrete, _, _, _) ->
                       let kind = InferTyconKind g (kind, attrs, slotsigs, fields, inSig, isConcrete, m)
-                                           
                       match inheritedTys with 
                       | [] -> 
                           match kind with 
@@ -3333,18 +3332,27 @@ module EstablishTypeDefinitionCores =
                           | SynTypeDefnKind.Opaque | SynTypeDefnKind.Class | SynTypeDefnKind.Interface -> None
                           | _ -> error(InternalError("should have inferred tycon kind", m)) 
 
-                      | [(ty, m)] -> 
-                          if not firstPass && not (match kind with SynTypeDefnKind.Class -> true | _ -> false) then 
-                              errorR (Error(FSComp.SR.tcStructsInterfacesEnumsDelegatesMayNotInheritFromOtherTypes(), m)) 
-                          CheckSuperType cenv ty m 
+                      | [(ty, m)] ->
+                          let inheritRange =
+                              match inherits with
+                              | [] -> m
+                              | (synType, _, _) :: _ -> synType.Range
+                          if not firstPass && not (match kind with SynTypeDefnKind.Class -> true | _ -> false) then
+                              errorR (Error(FSComp.SR.tcStructsInterfacesEnumsDelegatesMayNotInheritFromOtherTypes(), inheritRange)) 
+                          CheckSuperType cenv ty inheritRange 
                           if isTyparTy g ty then 
                               if firstPass then 
-                                  errorR(Error(FSComp.SR.tcCannotInheritFromVariableType(), m)) 
+                                  errorR(Error(FSComp.SR.tcCannotInheritFromVariableType(), inheritRange)) 
                               Some g.obj_ty_noNulls // a "super" that is a variable type causes grief later
-                          else                          
+                          else                  
                               Some ty 
-                      | _ -> 
-                          error(Error(FSComp.SR.tcTypesCannotInheritFromMultipleConcreteTypes(), m))
+                      | _ ->
+                          match inherits with
+                          | [] -> ()
+                          | _ :: inherits -> 
+                            for synType, _, _ in inherits do
+                                errorR(Error(FSComp.SR.tcTypesCannotInheritFromMultipleConcreteTypes(), synType.Range))
+                          None
 
                   | SynTypeDefnSimpleRepr.Enum _ -> 
                       Some(g.system_Enum_ty) 
@@ -3622,7 +3630,11 @@ module EstablishTypeDefinitionCores =
                         // Note: for a mutually recursive set we can't check this condition 
                         // until "isSealedTy" and "isClassTy" give reliable results. 
                         superTy |> Option.iter (fun ty -> 
-                            let m = match inherits with | [] -> m | (_, m, _) :: _ -> m
+                            let m =
+                                match inherits with
+                                | [] -> m
+                                | (synType, _, _) :: _ -> synType.Range
+
                             if isSealedTy g ty then 
                                 errorR(Error(FSComp.SR.tcCannotInheritFromSealedType(), m))
                             elif not (isClassTy g ty) then 
@@ -4269,7 +4281,7 @@ module TcDeclarations =
     //   multiple (binding or slotsig or field or interface or inherit).
     //   i.e. not local-bindings, implicit ctor or implicit inherit (or tycon?).
     //   atMostOne inherit.
-    let private CheckMembersForm ds = 
+    let private CheckMembersForm ds m = 
         match ds with
         | d :: ds when isImplicitCtor d ->
             // Implicit construction 
@@ -4281,7 +4293,7 @@ module TcDeclarations =
             // Skip over 'let' and 'do' bindings
             let _, ds = ds |> List.takeUntil (function SynMemberDefn.LetBindings _ -> false | _ -> true) 
 
-            // Skip over 'let' and 'do' bindings
+            // Skip over member bindings, abstract slots, interfaces and auto properties
             let _, ds = ds |> List.takeUntil (allFalse [isMember;isAbstractSlot;isInterface;isAutoProperty]) 
 
             match ds with
@@ -4290,9 +4302,9 @@ module TcDeclarations =
              | SynMemberDefn.Interface (range=m) :: _ -> errorR(InternalError("List.takeUntil is wrong, have interface", m))
              | SynMemberDefn.ImplicitCtor (range=m) :: _ -> errorR(InternalError("implicit class construction with two implicit constructions", m))
              | SynMemberDefn.AutoProperty (range=m) :: _ -> errorR(InternalError("List.takeUntil is wrong, have auto property", m))
-             | SynMemberDefn.ImplicitInherit (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveOneInherit(), m))
+             | SynMemberDefn.ImplicitInherit _ :: _ -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveOneInherit(), m))
              | SynMemberDefn.LetBindings (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveLocalBindingsBeforeMembers(), m))
-             | SynMemberDefn.Inherit (range=m) :: _ -> errorR(Error(FSComp.SR.tcInheritDeclarationMissingArguments(), m))
+             | SynMemberDefn.Inherit (trivia= { InheritKeyword = m }) :: _ -> errorR(Error(FSComp.SR.tcInheritDeclarationMissingArguments(), m))
              | SynMemberDefn.NestedType (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypesCannotContainNestedTypes(), m))
              | _ -> ()
         | ds ->
@@ -4458,14 +4470,14 @@ module TcDeclarations =
         | SynTypeDefnRepr.ObjectModel(kind, members, m) ->
             let members = desugarGetSetMembers members
 
-            CheckMembersForm members
+            CheckMembersForm members synTyconInfo.Range
 
             let fields = members |> List.choose (function SynMemberDefn.ValField (fieldInfo = f) -> Some f | _ -> None)
             let implements2 = members |> List.choose (function SynMemberDefn.Interface (interfaceType=ty) -> Some(ty, ty.Range) | _ -> None)
             let inherits =
                 members |> List.choose (function 
-                    | SynMemberDefn.Inherit (ty, idOpt, m) -> Some(ty, m, idOpt)
-                    | SynMemberDefn.ImplicitInherit (ty, _, idOpt, m) -> Some(ty, m, idOpt)
+                    | SynMemberDefn.Inherit (Some ty, idOpt, m, _) -> Some(ty, m, idOpt)
+                    | SynMemberDefn.ImplicitInherit (ty, _, idOpt, m, _) -> Some(ty, m, idOpt)
                     | _ -> None)
 
             //let nestedTycons = cspec |> List.choose (function SynMemberDefn.NestedType (x, _, _) -> Some x | _ -> None)

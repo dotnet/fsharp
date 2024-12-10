@@ -44,7 +44,17 @@ let ``Nullable attr for anon records`` compilation =
     |> verifyCompilation DoNotOptimize
 
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Records.fs"|])>]
-let ``Nullable attr for records`` compilation =  
+let ``Nullable attr for records with generics`` compilation =  
+    compilation
+    |> verifyCompilation DoNotOptimize
+
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PlainRecord.fs"|])>]
+let ``Nullable attr for plain records`` compilation =  
+    compilation
+    |> verifyCompilation DoNotOptimize
+
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ExceptionType.fs"|])>]
+let ``Nullable attr for exception types`` compilation =  
     compilation
     |> verifyCompilation DoNotOptimize
 
@@ -88,6 +98,24 @@ let ``SupportsNull`` compilation =
     compilation
     |> withNoWarn 52
     |> verifyCompilation DoNotOptimize
+
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"GenericCode.fs"|])>]
+let ``GenericCode`` compilation =  
+    compilation
+    |> withNoWarn 52
+    |> verifyCompilation DoNotOptimize
+
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NullableDowncasting.fs"|])>]
+let ``Downcasting and typetests`` compilation =  
+    compilation
+    |> withNoWarn 52
+    |> verifyCompilation DoNotOptimize
+
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NullableDowncasting.fs"|], BaselineSuffix = ".opt")>]
+let ``Downcasting and typetests optimized`` compilation =  
+    compilation
+    |> withNoWarn 52
+    |> verifyCompilation Optimize
 
 
 module Interop  =

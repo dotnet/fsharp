@@ -3,7 +3,6 @@
 namespace FSharp.Test.ScriptHelpers
 
 open System
-open System.Collections.Generic
 open System.IO
 open System.Text
 open System.Threading
@@ -11,7 +10,7 @@ open FSharp.Compiler
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
-open FSharp.Test.Utilities
+open FSharp.Test
 
 [<RequireQualifiedAccess>]
 type LangVersion =
@@ -60,7 +59,7 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
 
     member _.Fsi = fsi
 
-    member _.Eval(code: string, ?cancellationToken: CancellationToken, ?desiredCulture: Globalization.CultureInfo) =
+    member this.Eval(code: string, ?cancellationToken: CancellationToken, ?desiredCulture: Globalization.CultureInfo) =
         let originalCulture = Thread.CurrentThread.CurrentCulture
         Thread.CurrentThread.CurrentCulture <- Option.defaultValue Globalization.CultureInfo.InvariantCulture desiredCulture
 
@@ -88,7 +87,8 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
         }
 
     interface IDisposable with
-        member this.Dispose() = ((this.Fsi) :> IDisposable).Dispose()
+        member this.Dispose() =
+            ((this.Fsi) :> IDisposable).Dispose()
 
 [<AutoOpen>]
 module TestHelpers =
@@ -100,16 +100,4 @@ module TestHelpers =
         | Ok(value) -> value
         | Error ex -> raise ex
 
-    let ignoreValue = getValue >> ignore
-
-    let getTempDir () =
-        let sysTempDir = Path.GetTempPath()
-        let customTempDirName = Guid.NewGuid().ToString("D")
-        let fullDirName = Path.Combine(sysTempDir, customTempDirName)
-        let dirInfo = Directory.CreateDirectory(fullDirName)
-        { new Object() with
-            member _.ToString() = dirInfo.FullName
-          interface IDisposable with
-            member _.Dispose() =
-                dirInfo.Delete(true)
-        }
+    let ignoreValue x = getValue x |> ignore
