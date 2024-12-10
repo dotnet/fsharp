@@ -5,6 +5,7 @@ open System.Threading
 
 [<Sealed>]
 type Cancellable =
+    /// For use in testing only. Cancellable.token should be set only by the cancellable computation.
     static member internal UsingToken: CancellationToken -> IDisposable
     static member Token: CancellationToken
     static member CheckAndThrow: unit -> unit
