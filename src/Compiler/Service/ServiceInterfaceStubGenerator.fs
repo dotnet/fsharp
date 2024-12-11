@@ -877,7 +877,10 @@ module InterfaceStubGenerator =
 
                 | SynExpr.ArrayOrListComputed(_, synExpr, _range) -> walkExpr synExpr
 
-                | SynExpr.ComputationExpr(_, synExpr, _range) -> walkExpr synExpr
+                | SynExpr.ComputationExpr(_, synExpr, _range) ->
+                    match synExpr with
+                    | Some synExpr -> walkExpr synExpr
+                    | None -> None
 
                 | SynExpr.Lambda(body = synExpr) -> walkExpr synExpr
 

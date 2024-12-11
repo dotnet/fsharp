@@ -668,7 +668,10 @@ type SynExpr =
     | IndexFromEnd of expr: SynExpr * range: range
 
     /// F# syntax: { expr }
-    | ComputationExpr of hasSeqBuilder: bool * expr: SynExpr * range: range
+    | ComputationExpr of hasSeqBuilder: bool * expr: SynExpr option * range: range
+
+    /// F# syntax: { }
+    | EmptyRecordOrComputationExpr of range: range
 
     /// First bool indicates if lambda originates from a method. Patterns here are always "simple"
     /// Second bool indicates if this is a "later" part of an iterated sequence of lambdas

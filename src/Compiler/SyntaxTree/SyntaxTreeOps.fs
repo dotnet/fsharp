@@ -863,12 +863,12 @@ let rec synExprContainsError inpExpr =
         | SynExpr.Typar _
         | SynExpr.ImplicitZero _
         | SynExpr.Const _
+        | SynExpr.EmptyRecordOrComputationExpr _
         | SynExpr.Dynamic _ -> false
 
         | SynExpr.TypeTest(e, _, _)
         | SynExpr.Upcast(e, _, _)
         | SynExpr.AddressOf(_, e, _, _)
-        | SynExpr.ComputationExpr(_, e, _)
         | SynExpr.ArrayOrListComputed(_, e, _)
         | SynExpr.Typed(e, _, _)
         | SynExpr.Do(e, _)
@@ -923,6 +923,11 @@ let rec synExprContainsError inpExpr =
                 ]
 
             walkBinds bs || walkBinds binds
+
+        | SynExpr.ComputationExpr(_, e, _) ->
+            match e with
+            | None -> false
+            | Some value -> walkExpr value
 
         | SynExpr.ForEach(_, _, _, _, _, e1, e2, _)
         | SynExpr.While(_, e1, e2, _)

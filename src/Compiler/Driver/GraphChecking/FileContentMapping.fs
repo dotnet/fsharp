@@ -423,7 +423,12 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             | None, Some e -> visit e continuation
             | Some e1, Some e2 -> visit e1 (fun e1Nodes -> visit e2 (fun e2Nodes -> e1Nodes @ e2Nodes |> continuation))
         | SynExpr.IndexFromEnd(expr, _) -> visit expr continuation
-        | SynExpr.ComputationExpr(expr = expr) -> visit expr continuation
+        | SynExpr.ComputationExpr(expr = expr) ->
+            match expr with
+            | None -> continuation []
+            | Some e -> visit e continuation
+
+        | SynExpr.EmptyRecordOrComputationExpr _ -> continuation []
         | SynExpr.Lambda(args = args; body = body) -> visit body (fun bodyNodes -> visitSynSimplePats args @ bodyNodes |> continuation)
         | SynExpr.DotLambda(expr = expr) -> visit expr continuation
         | SynExpr.MatchLambda(matchClauses = clauses) -> List.collect visitSynMatchClause clauses |> continuation

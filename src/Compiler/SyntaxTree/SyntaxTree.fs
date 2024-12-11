@@ -575,7 +575,9 @@ type SynExpr =
 
     | IndexFromEnd of expr: SynExpr * range: range
 
-    | ComputationExpr of hasSeqBuilder: bool * expr: SynExpr * range: range
+    | ComputationExpr of hasSeqBuilder: bool * expr: SynExpr option * range: range
+
+    | EmptyRecordOrComputationExpr of range: range
 
     | Lambda of
         fromMethod: bool *
@@ -780,6 +782,7 @@ type SynExpr =
         | SynExpr.For(range = m)
         | SynExpr.ForEach(range = m)
         | SynExpr.ComputationExpr(range = m)
+        | SynExpr.EmptyRecordOrComputationExpr(range = m)
         | SynExpr.ArrayOrListComputed(range = m)
         | SynExpr.Lambda(range = m)
         | SynExpr.Match(range = m)

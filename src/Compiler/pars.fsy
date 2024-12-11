@@ -5052,6 +5052,12 @@ appExpr:
   | appExpr argExpr %prec expr_app
       { SynExpr.App(ExprAtomicFlag.NonAtomic, false, $1, $2, unionRanges $1.Range $2.Range) }
 
+  | appExpr LBRACE rbrace
+      { let appExprRange = $1.Range
+        let ceRange = rhs2 parseState 1 2
+        let m = unionRanges appExprRange ceRange
+        SynExpr.App(ExprAtomicFlag.NonAtomic, false, $1, SynExpr.ComputationExpr (false, None, ceRange), m) }
+
   | atomicExpr
       { let arg, _ = $1
         arg }
@@ -5438,7 +5444,7 @@ braceExpr:
 
   | LBRACE rbrace
      { let m = rhs2 parseState 1 2
-       SynExpr.ComputationExpr(false, SynExpr.Const(SynConst.Unit, m), m) }
+       SynExpr.EmptyRecordOrComputationExpr(m) }
 
 braceExprBody:
   | recdExpr
@@ -5466,7 +5472,7 @@ arrayExprElements:
 
 computationExpr:
   | sequentialExpr
-     { $1.Range, (fun mLhs -> SynExpr.ComputationExpr(false, $1, mLhs)) }
+     { $1.Range, (fun mLhs -> SynExpr.ComputationExpr(false, Some $1, mLhs)) }
 
 arrowThenExprR:
   | RARROW typedSequentialExprBlockR

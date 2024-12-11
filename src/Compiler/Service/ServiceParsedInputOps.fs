@@ -765,7 +765,6 @@ module ParsedInput =
             | SynExpr.Do(expr = e)
             | SynExpr.Assert(expr = e)
             | SynExpr.ArrayOrListComputed(expr = e)
-            | SynExpr.ComputationExpr(expr = e)
             | SynExpr.Lambda(body = e)
             | SynExpr.DotLambda(expr = e)
             | SynExpr.InferredUpcast(expr = e)
@@ -776,6 +775,10 @@ module ParsedInput =
             | SynExpr.Paren(expr = e)
             | SynExpr.Quote(quotedExpr = e)
             | SynExpr.Typed(expr = e) -> walkExprWithKind parentKind e
+            | SynExpr.ComputationExpr(expr = e) ->
+                match e with
+                | Some e -> walkExprWithKind parentKind e
+                | None -> None
 
             | SynExpr.NamedIndexedPropertySet(expr1 = e1; expr2 = e2)
             | SynExpr.TryFinally(tryExpr = e1; finallyExpr = e2)
@@ -1463,7 +1466,7 @@ module ParsedInput =
                             |> Option.orElseWith (fun () -> defaultTraverse expr)
 
                         // { new | }
-                        | SynExpr.ComputationExpr(expr = SynExpr.ArbitraryAfterError _) when
+                        | SynExpr.ComputationExpr(expr = Some(SynExpr.ArbitraryAfterError _)) when
                             lineStr.Trim().Split(' ') |> Array.contains "new"
                             ->
                             Some(CompletionContext.Inherit(InheritanceContext.Unknown, ([], None)))
@@ -2024,13 +2027,16 @@ module ParsedInput =
             | SynExpr.DoBang(expr = e)
             | SynExpr.YieldOrReturn(expr = e)
             | SynExpr.ArrayOrListComputed(expr = e)
-            | SynExpr.ComputationExpr(expr = e)
             | SynExpr.Do(expr = e)
             | SynExpr.Assert(expr = e)
             | SynExpr.Lazy(expr = e)
             | SynExpr.DotLambda(expr = e)
             | SynExpr.IndexFromEnd(expr = e)
             | SynExpr.YieldOrReturnFrom(expr = e) -> walkExpr e
+            | SynExpr.ComputationExpr(expr = e) ->
+                match e with
+                | None -> ()
+                | Some e -> walkExpr e
 
             | SynExpr.Lambda(args = pats; body = e) ->
                 walkSimplePats pats

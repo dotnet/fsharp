@@ -533,13 +533,13 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         | SynExpr.Ident _
                         | SynExpr.ImplicitZero _
                         | SynExpr.Const _
+                        | SynExpr.EmptyRecordOrComputationExpr _
                         | SynExpr.Dynamic _ -> ()
 
                         | SynExpr.Quote(_, _, e, _, _)
                         | SynExpr.TypeTest(e, _, _)
                         | SynExpr.Upcast(e, _, _)
                         | SynExpr.AddressOf(_, e, _, _)
-                        | SynExpr.ComputationExpr(_, e, _)
                         | SynExpr.ArrayOrListComputed(_, e, _)
                         | SynExpr.Typed(e, _, _)
                         | SynExpr.FromParseError(e, _)
@@ -643,6 +643,10 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
                             yield! walkExprs (fs |> List.map (fun (_, _, e) -> e))
 
+                        | SynExpr.ComputationExpr(_, e, _) ->
+                            match e with
+                            | Some e -> yield! walkExpr false e
+                            | None -> ()
                         | SynExpr.ObjExpr(argOptions = args; bindings = bs; members = ms; extraImpls = is) ->
                             let bs = unionBindingAndMembers bs ms
 

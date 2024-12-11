@@ -346,7 +346,10 @@ module Structure =
                 rcheck Scope.ArrayOrList Collapse.Same r collapse
                 parseExpr e
 
-            | SynExpr.ComputationExpr(_, e, _r) as _c -> parseExpr e
+            | SynExpr.ComputationExpr(_, e, _r) as _c ->
+                match e with
+                | Some e -> parseExpr e
+                | None -> ()
 
             | SynExpr.ObjExpr(
                 argOptions = argOpt; bindings = bindings; members = ms; extraImpls = extraImpls; newExprRange = newRange; range = mWhole) ->

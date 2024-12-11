@@ -632,10 +632,15 @@ module SyntaxTraversal =
 
                     let ok =
                         match isPartOfArrayOrList, synExpr with
-                        | false, LongOrSingleIdent(_, lid, _, _) -> visitor.VisitRecordField(path, None, Some lid)
+                        | false, Some(LongOrSingleIdent(_, lid, _, _)) -> visitor.VisitRecordField(path, None, Some lid)
                         | _ -> None
 
-                    if ok.IsSome then ok else traverseSynExpr synExpr
+                    if ok.IsSome then
+                        ok
+                    else
+                        match synExpr with
+                        | Some synExpr -> traverseSynExpr synExpr
+                        | None -> None
 
                 | SynExpr.Lambda(parsedData = parsedData) ->
                     [
@@ -780,6 +785,7 @@ module SyntaxTraversal =
                 | SynExpr.LibraryOnlyStaticOptimization _
                 | SynExpr.LibraryOnlyUnionCaseFieldGet _
                 | SynExpr.LibraryOnlyUnionCaseFieldSet _
+                | SynExpr.EmptyRecordOrComputationExpr _
                 | SynExpr.ArbitraryAfterError _ -> None
 
             visitor.VisitExpr(origPath, traverseSynExpr origPath, defaultTraverse, expr)
