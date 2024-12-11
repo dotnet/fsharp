@@ -162,7 +162,7 @@ foreach ($project in $projects.Keys) {
             } else {
                 Write-Host "ILverify output does not match baseline, differences:"
 
-                $cmp | Format-Table | Out-String | Write-Host
+                $cmp | Format-Table -AutoSize -Wrap | Out-String | Write-Host
 
                 # Update baselines if TEST_UPDATE_BSL is set to 1
                 if ($env:TEST_UPDATE_BSL -eq "1") {
