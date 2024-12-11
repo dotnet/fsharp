@@ -11,9 +11,13 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTree
 
 /// Make a method that simply loads a field
-let mkLdfldMethodDef (ilMethName, iLAccess, isStatic, ilTy, ilFieldName, ilPropType, customAttrs) =
+let mkLdfldMethodDef (ilMethName, iLAccess, isStatic, ilTy, ilFieldName, ilPropType, retTyAttrs, customAttrs) =
     let ilFieldSpec = mkILFieldSpecInTy (ilTy, ilFieldName, ilPropType)
-    let ilReturn = mkILReturn ilPropType
+
+    let ilReturn =
+        { mkILReturn ilPropType with
+            CustomAttrsStored = storeILCustomAttrs retTyAttrs
+        }
 
     let ilMethodDef =
         if isStatic then
@@ -97,14 +101,14 @@ let mkLocalPrivateAttributeWithPropertyConstructors
                 (g.AddFieldGeneratedAttributes(mkILInstanceField (name, ilType, None, getFieldMemberAccess codegenStyle))),
                 [],
                 [],
-                (name, name, ilType)
+                (name, name, ilType, [])
             | EncapsulatedProperties ->
                 let fieldName = name + "@"
 
                 (g.AddFieldGeneratedAttributes(mkILInstanceField (fieldName, ilType, None, getFieldMemberAccess codegenStyle))),
                 [
                     g.AddMethodGeneratedAttributes(
-                        mkLdfldMethodDef ($"get_{name}", ILMemberAccess.Public, false, ilTy, fieldName, ilType, [])
+                        mkLdfldMethodDef ($"get_{name}", ILMemberAccess.Public, false, ilTy, fieldName, ilType, ILAttributes.Empty, [])
                     )
                 ],
                 [
@@ -119,7 +123,7 @@ let mkLocalPrivateAttributeWithPropertyConstructors
                         )
                     )
                 ],
-                (name, fieldName, ilType))
+                (name, fieldName, ilType, []))
 
     // Generate constructor with required arguments
     let ilCtorDef =
@@ -170,7 +174,7 @@ let mkLocalPrivateAttributeWithByteAndByteArrayConstructors (g: TcGlobals, name:
                 Some g.ilg.typ_Attribute.TypeSpec,
                 ilTy,
                 [],
-                [ (fieldName, fieldName, fieldType) ],
+                [ (fieldName, fieldName, fieldType, []) ],
                 ILMemberAccess.Public,
                 None,
                 None
