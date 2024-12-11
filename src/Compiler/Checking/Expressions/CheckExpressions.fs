@@ -5910,11 +5910,12 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     | SynExpr.ForEach (spFor, spIn, SeqExprOnly seqExprOnly, isFromSource, pat, synEnumExpr, synBodyExpr, m) ->
         TcForEachExpr cenv overallTy env tpenv (seqExprOnly, isFromSource, pat, synEnumExpr, synBodyExpr, m, spFor, spIn, m)
 
-    | SynExpr.ComputationExpr (hasSeqBuilder, comp, m) ->
+    | SynExpr.ComputationExpr (hasSeqBuilder, Some comp, m) ->
         let isIndexRange =
             match comp with
-            | Some(SynExpr.IndexRange _) -> true
+            | (SynExpr.IndexRange _) -> true
             | _ -> false
+
         let deprecatedPlacesWhereSeqCanBeOmitted =
             cenv.g.langVersion.SupportsFeature LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted
         if
@@ -5926,12 +5927,9 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
             warning (Error(FSComp.SR.chkDeprecatePlacesWhereSeqCanBeOmitted (), m))
 
         let env = ExitFamilyRegion env
-        match comp with
-        | Some comp ->
-            cenv.TcSequenceExpressionEntry cenv env overallTy tpenv (hasSeqBuilder, comp) m
-        | None ->
-            cenv.TcSequenceExpressionEntry cenv env overallTy tpenv (hasSeqBuilder, SynExpr.EmptyRecordOrComputationExpr(m)) m
-            
+        cenv.TcSequenceExpressionEntry cenv env overallTy tpenv (hasSeqBuilder, comp) m
+  
+    | SynExpr.ComputationExpr (_, None, m)
     | SynExpr.EmptyRecordOrComputationExpr m ->
         TcNonControlFlowExpr env <| fun env ->
             TcExprRecord cenv overallTy env tpenv (None, None, [], m)
