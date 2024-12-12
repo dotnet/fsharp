@@ -130,6 +130,17 @@ type Foo () =
         |> compile
         |> shouldSucceed
 
+    [<Fact>]
+    let ``Percent signs and format specifiers with string expression`` () =
+        Fsx """
+let x = "abc"
+let s = $"%%%s{x}%%"
+printfn "%s" s
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "%abc%"
+
     [<Theory>]
     // Test different number of interpolated string parts
     [<InlineData("$\"\"\"abc{\"d\"}e\"\"\"")>]

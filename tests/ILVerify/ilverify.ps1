@@ -27,6 +27,14 @@ $projects = @{
     "FSharp.Compiler.Service" = @($default_tfm, "net9.0")
 }
 
+# Check ilverify can run
+Write-Host "ILVerify version:"
+dotnet ilverify --version
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Could not run ILVerify, see output above"
+    exit 2
+}
+
 # Run build script for each configuration (NOTE: We don't build Proto)
 foreach ($configuration in $configurations) {
     Write-Host "Building $configuration configuration..."
@@ -154,7 +162,7 @@ foreach ($project in $projects.Keys) {
             } else {
                 Write-Host "ILverify output does not match baseline, differences:"
 
-                $cmp | Format-Table | Out-String | Write-Host
+                $cmp | Format-Table -AutoSize -Wrap | Out-String | Write-Host
 
                 # Update baselines if TEST_UPDATE_BSL is set to 1
                 if ($env:TEST_UPDATE_BSL -eq "1") {

@@ -21,3 +21,10 @@ let mapNotNullableContents f myOpt =
     match myOpt with
     | MyNotNullNone -> MyNotNullNone
     | MyNotNullSome x -> MyNotNullSome (f x)
+
+
+[<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
+[<NoEquality; NoComparison>]
+type NonGenericNullAsTrueValue = 
+    | MyNone
+    | MySome of nullableString:(string|null)

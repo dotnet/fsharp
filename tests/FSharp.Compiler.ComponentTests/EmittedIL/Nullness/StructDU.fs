@@ -19,3 +19,6 @@ let getVal x =
     match x with
     | C text -> text
     | _ -> failwith "fail"
+
+[<NoComparison;NoEquality;Struct>]
+type SingleCaseStructDu = SingleCaseItIs of nullableString:(string|null)
