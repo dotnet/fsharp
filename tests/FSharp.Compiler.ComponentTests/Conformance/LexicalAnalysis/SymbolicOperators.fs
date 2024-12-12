@@ -35,12 +35,7 @@ module SymbolicOperators =
     [<InlineData(false)>]           // Regular
     [<Theory>]
     let ``SymbolicOperators_E_LessThanDotOpenParen001_fs`` (realsig) =
-        Fsx """// #Regression #Conformance #LexicalAnalysis #Operators 
-// Regression test for FSHARP1.0:4805
-// We are not really after the actual error messages here (some of them have been omitted), rather we
-// want to verify we do not crash!
-//<Expects status="warning" id="FS0064">This construct causes code to be less generic than indicated by the type annotations\. The type variable 'S has been constrained to be type 'int'</Expects>
-//<Expects status="error" id="FS0670">This code is not sufficiently generic\. The type variable  \^T when  \^T : \(static member \( \+ \) :  \^T \*  \^T ->  \^a\) could not be generalized because it would escape its scope</Expects>
+        Fsx """
 
 type public TestType<'T,'S>() =
     
