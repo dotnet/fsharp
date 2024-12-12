@@ -190,7 +190,7 @@ This step won't bring big observable benefits, yet it will create necessary MSBu
 
 In `main1`, we do unpickling (= deserializing) and pickling (= serializing) of the code. This currently happens on the module/namespace basis. 
 
-In this stage, we will fully implement pickling and unpickling of all typechecked files (`CheckedImplFile` per file as well as all other outputs of `main1` which cannot be cheaply recreated like `topAttrs` and `CcuThunk`). Parts of the pickling/unpickling can reuse the primitives already existing in `TypedTreePickle` and built upon them. So we can save acquired typechecking information to the intermediate folder after the typechecking - and for the files not needing retypechecking as per graph diff, skip the phase, instead restoring the typechecking info.
+In this stage, we will fully implement pickling and unpickling of all typechecked files (`CheckedImplFile` per file as well as all other outputs of `main1` which cannot be cheaply recreated like `topAttrs` and `CcuThunk`). Parts of the pickling/unpickling can reuse the primitives already existing in `TypedTreePickle` and built upon them. So we can save acquired typechecking information to the intermediate folder after the typechecking - and for the files not needing retypechecking as per graph diff, skip the phase, instead restoring the typechecking info. We also need to identify the side effects happening during typechecking and probably replay them in such cases.
 
 This is likely the biggest amount of work expected but it will hugely benefit the scenarios when only the edge of the graph is affected (think one test in a test project).
 
