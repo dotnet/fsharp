@@ -568,12 +568,19 @@ try {
 
     $script:BuildMessage = "Failure building product"
     if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish -and -not $skipBuild -and -not $sourceBuild) {
+        $originalSignValue = $sign
+        if ($msbuildEngine -eq "dotnet") {
+            # Building FSharp.sln and VisualFSharp.sln with .NET Core MSBuild
+            # don't produce any artifacts to sign. Skip signing in this case.
+            $sign = $False
+        }
         if ($noVisualStudio) {
             BuildSolution "FSharp.sln" $False
         }
         else {
             BuildSolution "VisualFSharp.sln" $False
         }
+        $sign = $originalSignValue
     }
 
     if ($testBenchmarks) {
