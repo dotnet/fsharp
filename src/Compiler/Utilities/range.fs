@@ -215,7 +215,7 @@ type FileIndexTable() =
             | _ ->
                 lock indexToFileTable (fun () ->
                     // See if it was added on another thread
-                    match fileToIndexTable.TryGetValue filePath with
+                    match fileToIndexTable.TryGetValue normalizedFilePath with
                     | true, idx -> idx
                     | _ ->
                         // Okay it's really not there
