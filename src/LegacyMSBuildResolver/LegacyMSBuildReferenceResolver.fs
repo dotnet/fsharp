@@ -432,7 +432,8 @@ let getResolver () =
                 |]
 
             let rooted, unrooted =
-                references |> Array.partition (fun (path, _) -> FileSystem.IsPathRootedShim(path))
+                references
+                |> Array.partition (fun (path, _) -> FileSystem.IsPathRootedShim(path))
 
             let rootedResults =
                 ResolveCore(
