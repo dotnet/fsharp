@@ -38,17 +38,16 @@ type internal MyFileSystem() =
             | _ -> base.OpenFileForReadShim(filePath, useMemoryMappedFile, shouldShadowCopy)
         override _.FileExistsShim(fileName) = MyFileSystem.FilesCache.ContainsKey(fileName) || base.FileExistsShim(fileName)
 
-let UseMyFileSystem() =
-    let myFileSystem = MyFileSystem()
-    FileSystemAutoOpens.FileSystem <- myFileSystem
-    { new IDisposable with member x.Dispose() = FileSystemAutoOpens.FileSystem <- myFileSystem }
+let useFileSystemShim (shim: IFileSystem) =
+    let originalShim = FileSystem
+    FileSystem <- shim
+    { new IDisposable with member x.Dispose() = FileSystem <- originalShim }
 
 // .NET Core SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service"
 [<FactForDESKTOP>]
 let ``FileSystem compilation test``() =
   if Environment.OSVersion.Platform = PlatformID.Win32NT then // file references only valid on Windows
-    use myFileSystem =  UseMyFileSystem()
-    let programFilesx86Folder = Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")
+    use myFileSystem = useFileSystemShim (MyFileSystem())
 
     let projectOptions =
         let allFlags =
