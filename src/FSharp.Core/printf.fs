@@ -658,8 +658,14 @@ module internal PrintfImpl =
     
     /// Contains functions to handle left/right and no justification case for numbers
     module GenericNumber =
-
-        let isPositive (n: obj) = 
+        
+        let inline singleIsNotNegativeZero (n: single) =
+            BitConverter.DoubleToInt64Bits (float n) <> BitConverter.DoubleToInt64Bits -0.0
+        
+        let inline doubleIsNotNegativeZero (n: double) =
+            BitConverter.DoubleToInt64Bits n <> BitConverter.DoubleToInt64Bits -0.0
+        
+        let isPositive (n: obj) =
             match n with 
             | :? int8 as n -> n >= 0y
             | :? uint8 -> true
@@ -671,8 +677,8 @@ module internal PrintfImpl =
             | :? uint64 -> true
             | :? nativeint as n -> n >= 0n
             | :? unativeint -> true
-            | :? single as n -> n >= 0.0f
-            | :? double as n -> n >= 0.0
+            | :? single as n -> n >= 0.0f && singleIsNotNegativeZero n
+            | :? double as n -> n >= 0.0 && doubleIsNotNegativeZero n
             | :? decimal as n -> n >= 0.0M
             | _ -> failwith "isPositive: unreachable"
 
