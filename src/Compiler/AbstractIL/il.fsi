@@ -1483,15 +1483,6 @@ type ILTypeDefAccess =
     | Private
     | Nested of ILMemberAccess
 
-/// A categorization of type definitions into "kinds"
-[<RequireQualifiedAccess>]
-type ILTypeDefKind =
-    | Class
-    | ValueType
-    | Interface
-    | Enum
-    | Delegate
-
 /// Tables of named type definitions.
 [<NoEquality; NoComparison; Class; Sealed>]
 type ILTypeDefs =
@@ -1514,9 +1505,17 @@ type ILTypeDefs =
 
 [<Flags>]
 type ILTypeDefAdditionalFlags =
-    | None = 0
-    | IsKnownToBeAttribute = 1
-    | CanContainExtensionMethods = 2
+    | Class = 1
+    | ValueType = 2
+    | Interface = 4
+    | Enum = 8
+    | Delegate = 16
+    | IsKnownToBeAttribute = 32
+    | CanContainExtensionMethods = 1024
+
+val (|HasFlag|_|): flag: ILTypeDefAdditionalFlags -> flags: ILTypeDefAdditionalFlags -> bool
+
+val inline internal typeKindByNames: extendsName: string -> typeName: string -> ILTypeDefAdditionalFlags
 
 /// Represents IL Type Definitions.
 [<NoComparison; NoEquality>]
@@ -1529,7 +1528,7 @@ type ILTypeDef =
         layout: ILTypeDefLayout *
         implements: InterruptibleLazy<InterfaceImpl list> *
         genericParams: ILGenericParameterDefs *
-        extends: ILType option *
+        extends: InterruptibleLazy<ILType option> *
         methods: ILMethodDefs *
         nestedTypes: ILTypeDefs *
         fields: ILFieldDefs *
@@ -1542,14 +1541,14 @@ type ILTypeDef =
         metadataIndex: int32 ->
             ILTypeDef
 
-    /// Functional creation of a value, immediate
+    /// Functional creation of a value with lazy calculated data
     new:
         name: string *
         attributes: TypeAttributes *
         layout: ILTypeDefLayout *
         implements: InterruptibleLazy<InterfaceImpl list> *
         genericParams: ILGenericParameterDefs *
-        extends: ILType option *
+        extends: InterruptibleLazy<ILType option> *
         methods: ILMethodDefs *
         nestedTypes: ILTypeDefs *
         fields: ILFieldDefs *
@@ -1561,13 +1560,31 @@ type ILTypeDef =
         customAttrs: ILAttributesStored ->
             ILTypeDef
 
+    /// Functional creation of a value, immediate
+    new:
+        name: string *
+        attributes: TypeAttributes *
+        layout: ILTypeDefLayout *
+        implements: InterfaceImpl list *
+        genericParams: ILGenericParameterDefs *
+        extends: ILType option *
+        methods: ILMethodDefs *
+        nestedTypes: ILTypeDefs *
+        fields: ILFieldDefs *
+        methodImpls: ILMethodImplDefs *
+        events: ILEventDefs *
+        properties: ILPropertyDefs *
+        securityDecls: ILSecurityDecls *
+        customAttrs: ILAttributesStored ->
+            ILTypeDef
+
     member Name: string
     member Attributes: TypeAttributes
     member GenericParams: ILGenericParameterDefs
     member Layout: ILTypeDefLayout
     member NestedTypes: ILTypeDefs
     member Implements: InterruptibleLazy<InterfaceImpl list>
-    member Extends: ILType option
+    member Extends: InterruptibleLazy<ILType option>
     member Methods: ILMethodDefs
     member SecurityDecls: ILSecurityDecls
     member Fields: ILFieldDefs
@@ -1605,10 +1622,11 @@ type ILTypeDef =
     member internal WithImport: bool -> ILTypeDef
     member internal WithHasSecurity: bool -> ILTypeDef
     member internal WithLayout: ILTypeDefLayout -> ILTypeDef
-    member internal WithKind: ILTypeDefKind -> ILTypeDef
+    member internal WithKind: ILTypeDefAdditionalFlags -> ILTypeDef
     member internal WithEncoding: ILDefaultPInvokeEncoding -> ILTypeDef
     member internal WithSpecialName: bool -> ILTypeDef
     member internal WithInitSemantics: ILTypeInit -> ILTypeDef
+    member internal WithIsKnownToBeAttribute: unit -> ILTypeDef
 
     /// Functional update
     member With:
@@ -1617,7 +1635,7 @@ type ILTypeDef =
         ?layout: ILTypeDefLayout *
         ?implements: InterruptibleLazy<InterfaceImpl list> *
         ?genericParams: ILGenericParameterDefs *
-        ?extends: ILType option *
+        ?extends: InterruptibleLazy<ILType option> *
         ?methods: ILMethodDefs *
         ?nestedTypes: ILTypeDefs *
         ?fields: ILFieldDefs *
@@ -2256,6 +2274,8 @@ val internal mkCtorMethSpecForDelegate: ILGlobals -> ILType * bool -> ILMethodSp
 val internal mkILTypeForGlobalFunctions: ILScopeRef -> ILType
 
 val emptyILInterfaceImpls: InterruptibleLazy<InterfaceImpl list>
+
+val emptyILExtends: InterruptibleLazy<ILType option>
 
 /// Making tables of custom attributes, etc.
 val mkILCustomAttrs: ILAttribute list -> ILAttributes
