@@ -82,3 +82,21 @@ let ``FileSystem compilation test``() =
     results.AssemblySignature.Entities.Count |> shouldEqual 2
     results.AssemblySignature.Entities[0].MembersFunctionsAndValues.Count |> shouldEqual 1
     results.AssemblySignature.Entities[0].MembersFunctionsAndValues[0].DisplayName |> shouldEqual "B"
+
+let checkEmptyScriptWithFsShim () =
+    let shim = DefaultFileSystem()
+    let ref: WeakReference = WeakReference(shim)
+
+    use _ = useFileSystemShim shim
+    getParseAndCheckResults "" |> ignore
+
+    ref
+
+[<Fact>]
+let ``File system shim should not leak`` () =
+    let shimRef = checkEmptyScriptWithFsShim ()
+
+    GC.Collect()
+    GC.WaitForPendingFinalizers()
+
+    Assert.False(shimRef.IsAlive)
