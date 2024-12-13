@@ -449,6 +449,7 @@ module ListParallel =
         |> ArrayParallel.map f
         |> Array.toList
 
+[<RequireQualifiedAccess>]
 module Async =
     let map f a =
         async {
