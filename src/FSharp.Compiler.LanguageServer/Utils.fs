@@ -55,8 +55,6 @@ type FSharpDiagnosticExtensions =
             Code = SumType<int, _> this.ErrorNumberText
         )
 
-
-
 module Activity =
     let listen (filter) logMsg =
         let indent (activity: Activity) =
@@ -85,6 +83,8 @@ module Activity =
 
         ActivitySource.AddActivityListener(listener)
 
-    let listenToAll () = listen (fun _ -> true) Trace.TraceInformation
+    let listenToAll () =
+        listen (fun _ -> true) Trace.TraceInformation
+
     let listenToSome () =
-        listen (fun x -> not <| x.Contains "StackGuard" ) Trace.TraceInformation
+        listen (fun x -> not <| x.Contains "StackGuard") Trace.TraceInformation
