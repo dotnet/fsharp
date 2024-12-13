@@ -1223,7 +1223,7 @@ let rec GetTypeDefAsRow cenv env _enc (tdef: ILTypeDef) =
       else
         int tdef.Attributes
 
-    let tdorTag, tdorRow = GetTypeOptionAsTypeDefOrRef cenv env tdef.Extends
+    let tdorTag, tdorRow = GetTypeOptionAsTypeDefOrRef cenv env tdef.Extends.Value
     UnsharedRow
        [| ULong flags
           nelem
