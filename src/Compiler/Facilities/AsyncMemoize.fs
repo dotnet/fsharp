@@ -1,18 +1,112 @@
 namespace Internal.Utilities.Collections
 
-open System
-open System.Collections.Generic
 open System.Diagnostics
 open System.IO
 open System.Threading
 open System.Threading.Tasks
+open System.Runtime.CompilerServices
 
-open FSharp.Compiler
-open FSharp.Compiler.BuildGraph
-open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
 open Internal.Utilities.Library
-open System.Runtime.CompilerServices
+
+type AsyncLazyState<'t> =
+    | Initial of computation: Async<'t>
+    | Running of initialComputation: Async<'t> * work: Task<'t> * CancellationTokenSource * requestCount: int
+    | Completed of result: 't
+    | Faulted of exn
+
+/// Represents a computation that will execute only once but can be requested by multiple clients.
+/// It keeps track of the number of requests. When all clients cancel their requests, the underlying computation will also cancel and can be restarted.
+/// If cancelUnawaited is set to false, the computation will run to completion even when all requests are canceled.
+type AsyncLazy<'t> private (initial: AsyncLazyState<'t>, cancelUnawaited: bool, cacheException: bool) =
+
+    let stateUpdateSync = obj()
+    let mutable state = initial
+    // This should remain the only function that mutates the state.
+    let withStateUpdate f =
+        lock stateUpdateSync <| fun () ->
+            let next, result = f state
+            state <- next
+            result
+    let updateState f = withStateUpdate <| fun prev -> f prev, ()
+
+    let cancelIfUnawaited cancelUnawaited = function
+        | Running(computation, _, cts, 0) when cancelUnawaited ->
+            // To keep state updates fast we don't actually wait for the work to cancel.
+            cts.Cancel()
+            Initial computation
+        | state -> state
+
+    let afterRequest = function
+        | Running(c, work, cts, count) -> Running(c, work, cts, count - 1) |> cancelIfUnawaited cancelUnawaited
+        | state -> state // Nothing more to do if state already transitioned.
+
+    let detachable (work: Task<'t>) =
+        async {
+            try
+                let! ct = Async.CancellationToken
+                return!
+                    // Using ContinueWith with a CancellationToken allows detaching from the running 'work' task.
+                    // This ensures the lazy 'work' and its awaiting requests can be independently managed 
+                    // by separate CancellationTokenSources, enabling individual cancellation.
+                    // Essentially, if this async computation is canceled, it won't wait for the 'work' to complete
+                    // but will immediately proceed to the finally block.
+                    work.ContinueWith((fun (t: Task<_>) -> t.Result), ct)
+                    |> Async.AwaitTask
+            // Cancellation check before entering the `with` ensures TaskCanceledException coming from the ContinueWith task will never be raised here.
+            // The cancellation continuation will always be called in case of cancellation.
+            with exn -> return raise exn
+        }
+
+    let request = function
+        | Initial computation ->
+            let cts = new CancellationTokenSource()
+            let work = Async.StartAsTask( async {
+                try
+                    let! result = computation
+                    // If associated cts is signalled it means this work item was abandoned
+                    // and it should not alter the state.
+                    updateState <| function
+                        | state when cts.IsCancellationRequested -> state
+                        | _ -> Completed result
+                    return result
+                with
+                | exn ->
+                    updateState <| function
+                        | state when cts.IsCancellationRequested -> state
+                        | _ -> if cacheException then Faulted exn else Initial computation
+                    return raise exn
+            }, cancellationToken = cts.Token)
+            Running (computation, work, cts, 1),
+            detachable work
+        | Running (c, work, cts, count) ->
+            Running (c, work, cts, count + 1),
+            detachable work
+        | Completed result as state ->
+            state, async { return result }
+        | Faulted exn as state ->
+            state, async { return raise exn }
+
+    // computation will deallocate after state transition to Completed ot Faulted.
+    new (computation, ?cancelUnawaited: bool, ?cacheException) =
+        AsyncLazy(Initial computation, defaultArg cancelUnawaited true, defaultArg cacheException false)
+
+    member _.Request() =
+        async { 
+            try
+                return! withStateUpdate request
+            finally
+                updateState afterRequest
+        }
+
+    member _.CancelIfUnawaited() = updateState (cancelIfUnawaited true)
+
+    member _.State = state
+
+    member this.TryResult =
+        match state with
+        | Completed result -> Some result
+        | _ -> None
 
 [<AutoOpen>]
 module internal Utils =
@@ -29,52 +123,6 @@ module internal Utils =
 
         $"{dir}{Path.GetFileName path}"
 
-    let replayDiagnostics (logger: DiagnosticsLogger) = Seq.iter ((<|) logger.DiagnosticSink)
-
-    [<return: Struct>]
-    let (|TaskCancelled|_|) (ex: exn) =
-        match ex with
-        | :? System.Threading.Tasks.TaskCanceledException as tce -> ValueSome tce
-        //| :? System.AggregateException as ae ->
-        //    if ae.InnerExceptions |> Seq.forall (fun e -> e :? System.Threading.Tasks.TaskCanceledException) then
-        //        ae.InnerExceptions |> Seq.tryHead |> Option.map (fun e -> e :?> System.Threading.Tasks.TaskCanceledException)
-        //    else
-        //        None
-        | _ -> ValueNone
-
-type internal StateUpdate<'TValue> =
-    | CancelRequest
-    | OriginatorCanceled
-    | JobCompleted of 'TValue * (PhasedDiagnostic * FSharpDiagnosticSeverity) list
-    | JobFailed of exn * (PhasedDiagnostic * FSharpDiagnosticSeverity) list
-
-type internal MemoizeReply<'TValue> =
-    | New of CancellationToken
-    | Existing of Task<'TValue>
-
-type internal MemoizeRequest<'TValue> = GetOrCompute of Async<'TValue> * CancellationToken
-
-[<DebuggerDisplay("{DebuggerDisplay}")>]
-type internal Job<'TValue> =
-    | Running of TaskCompletionSource<'TValue> * CancellationTokenSource * Async<'TValue> * DateTime * ResizeArray<DiagnosticsLogger>
-    | Completed of 'TValue * (PhasedDiagnostic * FSharpDiagnosticSeverity) list
-    | Canceled of DateTime
-    | Failed of DateTime * exn // TODO: probably we don't need to keep this
-
-    member this.DebuggerDisplay =
-        match this with
-        | Running(_, cts, _, ts, _) ->
-            let cancellation =
-                if cts.IsCancellationRequested then
-                    " ! Cancellation Requested"
-                else
-                    ""
-
-            $"Running since {ts.ToShortTimeString()}{cancellation}"
-        | Completed(value, diags) -> $"Completed {value}" + (if diags.Length > 0 then $" ({diags.Length})" else "")
-        | Canceled _ -> "Canceled"
-        | Failed(_, ex) -> $"Failed {ex}"
-
 type internal JobEvent =
     | Requested
     | Started
@@ -87,8 +135,10 @@ type internal JobEvent =
     | Strengthened
     | Failed
     | Cleared
+    static member AllEvents = [Requested; Started; Restarted; Finished; Canceled; Evicted; Collected; Weakened; Strengthened; Failed; Cleared]
 
 type internal ICacheKey<'TKey, 'TVersion> =
+    // TODO Key should probably be renamed to Identifier
     abstract member GetKey: unit -> 'TKey
     abstract member GetVersion: unit -> 'TVersion
     abstract member GetLabel: unit -> string
@@ -111,40 +161,7 @@ type private KeyData<'TKey, 'TVersion> =
         Version: 'TVersion
     }
 
-type internal AsyncLock() =
-
-    let semaphore = new SemaphoreSlim(1, 1)
-
-    member _.Semaphore = semaphore
-
-    member _.Do(f) =
-        task {
-            do! semaphore.WaitAsync()
-
-            try
-                return! f ()
-            finally
-                semaphore.Release() |> ignore
-        }
-
-    interface IDisposable with
-        member _.Dispose() = semaphore.Dispose()
-
-type internal CachingDiagnosticsLogger(originalLogger: DiagnosticsLogger option) =
-    inherit DiagnosticsLogger($"CachingDiagnosticsLogger")
-
-    let capturedDiagnostics = ResizeArray()
-
-    override _.ErrorCount =
-        originalLogger
-        |> Option.map (fun x -> x.ErrorCount)
-        |> Option.defaultValue capturedDiagnostics.Count
-
-    override _.DiagnosticSink(diagnostic: PhasedDiagnostic, severity: FSharpDiagnosticSeverity) =
-        originalLogger |> Option.iter (fun x -> x.DiagnosticSink(diagnostic, severity))
-        capturedDiagnostics.Add(diagnostic, severity)
-
-    member _.CapturedDiagnostics = capturedDiagnostics |> Seq.toList
+type Job<'t> = AsyncLazy<Result<'t, exn> * CapturingDiagnosticsLogger>
 
 [<DebuggerDisplay("{DebuggerDisplay}")>]
 type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVersion: equality
@@ -153,342 +170,39 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
     and 'TVersion:not null
 #endif
     >
-    (?keepStrongly, ?keepWeakly, ?name: string, ?cancelDuplicateRunningJobs: bool) =
+    (?keepStrongly, ?keepWeakly, ?name: string, ?cancelUnawaitedJobs: bool, ?cancelDuplicateRunningJobs: bool) =
 
     let name = defaultArg name "N/A"
+    let cancelUnawaitedJobs = defaultArg cancelUnawaitedJobs true
     let cancelDuplicateRunningJobs = defaultArg cancelDuplicateRunningJobs false
 
     let event = Event<_>()
 
-    let mutable errors = 0
+    let eventCounts = [for j in JobEvent.AllEvents -> j, ref 0] |> dict
     let mutable hits = 0
-    let mutable started = 0
-    let mutable completed = 0
-    let mutable canceled = 0
-    let mutable restarted = 0
-    let mutable failed = 0
-    let mutable evicted = 0
-    let mutable collected = 0
-    let mutable strengthened = 0
-    let mutable cleared = 0
+    let mutable duration = 0L
 
-    let mutable updates_in_flight = 0
+    let keyTuple (keyData: KeyData<_, _>) = keyData.Label, keyData.Key, keyData.Version
 
-    let mutable cancel_ct_registration_original = 0
-    let mutable cancel_exception_original = 0
-    let mutable cancel_original_processed = 0
-    let mutable cancel_ct_registration_subsequent = 0
-    let mutable cancel_exception_subsequent = 0
-    let mutable cancel_subsequent_processed = 0
+    let logK (eventType: JobEvent) key =
+        Interlocked.Increment(eventCounts[eventType]) |> ignore
+        event.Trigger(eventType, key)
 
-    let failures = ResizeArray()
-    let mutable avgDurationMs = 0.0
+    let log eventType keyData = logK eventType (keyTuple keyData)
 
     let cache =
         LruCache<'TKey, 'TVersion, Job<'TValue>>(
             keepStrongly = defaultArg keepStrongly 100,
             keepWeakly = defaultArg keepWeakly 200,
-            requiredToKeep =
-                (function
-                | Running _ -> true
-                | Job.Canceled at when at > DateTime.Now.AddMinutes -5.0 -> true
-                | Job.Failed(at, _) when at > DateTime.Now.AddMinutes -5.0 -> true
-                | _ -> false),
             event =
                 (function
-                | CacheEvent.Evicted ->
-                    (fun k ->
-                        Interlocked.Increment &evicted |> ignore
-                        event.Trigger(JobEvent.Evicted, k))
-                | CacheEvent.Collected ->
-                    (fun k ->
-                        Interlocked.Increment &collected |> ignore
-                        event.Trigger(JobEvent.Collected, k))
-                | CacheEvent.Weakened -> (fun k -> event.Trigger(JobEvent.Weakened, k))
-                | CacheEvent.Strengthened ->
-                    (fun k ->
-                        Interlocked.Increment &strengthened |> ignore
-                        event.Trigger(JobEvent.Strengthened, k))
-                | CacheEvent.Cleared ->
-                    (fun k ->
-                        Interlocked.Increment &cleared |> ignore
-                        event.Trigger(JobEvent.Cleared, k)))
-        )
-
-    let requestCounts = Dictionary<KeyData<_, _>, int>()
-    let cancellationRegistrations = Dictionary<_, _>()
-
-    let saveRegistration key registration =
-        cancellationRegistrations[key] <-
-            match cancellationRegistrations.TryGetValue key with
-            | true, registrations -> registration :: registrations
-            | _ -> [ registration ]
-
-    let cancelRegistration key =
-        match cancellationRegistrations.TryGetValue key with
-        | true, registrations ->
-            for r: CancellationTokenRegistration in registrations do
-                r.Dispose()
-
-            cancellationRegistrations.Remove key |> ignore
-        | _ -> ()
-
-    let incrRequestCount key =
-        requestCounts[key] <-
-            if requestCounts.ContainsKey key then
-                requestCounts[key] + 1
-            else
-                1
-
-    let decrRequestCount key =
-        if requestCounts.ContainsKey key then
-            requestCounts[key] <- requestCounts[key] - 1
-
-    let log (eventType, keyData: KeyData<_, _>) =
-        event.Trigger(eventType, (keyData.Label, keyData.Key, keyData.Version))
-
-    let lock = new AsyncLock()
-
-    let processRequest post (key: KeyData<_, _>, msg) diagnosticLogger =
-
-        lock.Do(fun () ->
-            task {
-
-                let cached, otherVersions = cache.GetAll(key.Key, key.Version)
-
-                let result =
-                    match msg, cached with
-                    | GetOrCompute _, Some(Completed(result, diags)) ->
-                        Interlocked.Increment &hits |> ignore
-                        diags |> replayDiagnostics diagnosticLogger
-                        Existing(Task.FromResult result)
-                    | GetOrCompute(_, ct), Some(Running(tcs, _, _, _, loggers)) ->
-                        Interlocked.Increment &hits |> ignore
-                        incrRequestCount key
-
-                        ct.Register(fun _ ->
-                            let _name = name
-                            Interlocked.Increment &cancel_ct_registration_subsequent |> ignore
-                            post (key, CancelRequest))
-                        |> saveRegistration key
-
-                        loggers.Add diagnosticLogger
-
-                        Existing tcs.Task
-
-                    | GetOrCompute(computation, ct), None
-                    | GetOrCompute(computation, ct), Some(Job.Canceled _)
-                    | GetOrCompute(computation, ct), Some(Job.Failed _) ->
-                        Interlocked.Increment &started |> ignore
-                        incrRequestCount key
-
-                        ct.Register(fun _ ->
-                            let _name = name
-                            Interlocked.Increment &cancel_ct_registration_original |> ignore
-                            post (key, OriginatorCanceled))
-                        |> saveRegistration key
-
-                        let cts = new CancellationTokenSource()
-
-                        cache.Set(
-                            key.Key,
-                            key.Version,
-                            key.Label,
-                            (Running(
-                                TaskCompletionSource<'TValue>(TaskCreationOptions.RunContinuationsAsynchronously),
-                                cts,
-                                computation,
-                                DateTime.Now,
-                                ResizeArray()
-                            ))
-                        )
-
-                        otherVersions
-                        |> Seq.choose (function
-                            | v, Running(_tcs, cts, _, _, _) -> Some(v, cts)
-                            | _ -> None)
-                        |> Seq.iter (fun (_v, cts) ->
-                            use _ = Activity.start $"{name}: Duplicate running job" [| "key", key.Label |]
-                            //System.Diagnostics.Trace.TraceWarning($"{name} Duplicate {key.Label}")
-                            if cancelDuplicateRunningJobs then
-                                //System.Diagnostics.Trace.TraceWarning("Canceling")
-                                cts.Cancel())
-
-                        New cts.Token
-
-                log (Requested, key)
-                return result
-            })
-
-    let internalError key message =
-        let ex = exn (message)
-        failures.Add(key, ex)
-        Interlocked.Increment &errors |> ignore
-    // raise ex -- Suppose there's no need to raise here - where does it even go?
-
-    let processStateUpdate post (key: KeyData<_, _>, action: StateUpdate<_>) =
-        lock.Do(fun () ->
-            task {
-
-                let cached = cache.TryGet(key.Key, key.Version)
-
-                match action, cached with
-
-                | OriginatorCanceled, Some(Running(tcs, cts, computation, _, _)) ->
-
-                    Interlocked.Increment &cancel_original_processed |> ignore
-
-                    decrRequestCount key
-
-                    if requestCounts[key] < 1 then
-                        cancelRegistration key
-                        cts.Cancel()
-                        tcs.TrySetCanceled() |> ignore
-                        // Remember the job in case it completes after cancellation
-                        cache.Set(key.Key, key.Version, key.Label, Job.Canceled DateTime.Now)
-                        requestCounts.Remove key |> ignore
-                        log (Canceled, key)
-                        Interlocked.Increment &canceled |> ignore
-                        use _ = Activity.start $"{name}: Canceled job" [| "key", key.Label |]
-                        ()
-
-                    else
-                        // We need to restart the computation
-                        Task.Run(fun () ->
-                            Async.StartAsTask(
-                                async {
-
-                                    let cachingLogger = new CachingDiagnosticsLogger(None)
-
-                                    try
-                                        // TODO: Should unify starting and restarting
-                                        log (Restarted, key)
-                                        Interlocked.Increment &restarted |> ignore
-                                        System.Diagnostics.Trace.TraceInformation $"{name} Restarted {key.Label}"
-                                        let currentLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-                                        DiagnosticsThreadStatics.DiagnosticsLogger <- cachingLogger
-
-                                        try
-                                            let! result = computation
-                                            post (key, (JobCompleted(result, cachingLogger.CapturedDiagnostics)))
-                                            return ()
-                                        finally
-                                            DiagnosticsThreadStatics.DiagnosticsLogger <- currentLogger
-                                    with
-                                    | TaskCancelled _ ->
-                                        Interlocked.Increment &cancel_exception_subsequent |> ignore
-                                        post (key, CancelRequest)
-                                        ()
-                                    | ex -> post (key, (JobFailed(ex, cachingLogger.CapturedDiagnostics)))
-                                }
-                            ),
-                            cts.Token)
-                        |> ignore
-
-                | CancelRequest, Some(Running(tcs, cts, _c, _, _)) ->
-
-                    Interlocked.Increment &cancel_subsequent_processed |> ignore
-
-                    decrRequestCount key
-
-                    if requestCounts[key] < 1 then
-                        cancelRegistration key
-                        cts.Cancel()
-                        tcs.TrySetCanceled() |> ignore
-                        // Remember the job in case it completes after cancellation
-                        cache.Set(key.Key, key.Version, key.Label, Job.Canceled DateTime.Now)
-                        requestCounts.Remove key |> ignore
-                        log (Canceled, key)
-                        Interlocked.Increment &canceled |> ignore
-                        use _ = Activity.start $"{name}: Canceled job" [| "key", key.Label |]
-                        ()
-
-                // Probably in some cases cancellation can be fired off even after we just unregistered it
-                | CancelRequest, None
-                | CancelRequest, Some(Completed _)
-                | CancelRequest, Some(Job.Canceled _)
-                | CancelRequest, Some(Job.Failed _)
-                | OriginatorCanceled, None
-                | OriginatorCanceled, Some(Completed _)
-                | OriginatorCanceled, Some(Job.Canceled _)
-                | OriginatorCanceled, Some(Job.Failed _) -> ()
-
-                | JobFailed(ex, diags), Some(Running(tcs, _cts, _c, _ts, loggers)) ->
-                    cancelRegistration key
-                    cache.Set(key.Key, key.Version, key.Label, Job.Failed(DateTime.Now, ex))
-                    requestCounts.Remove key |> ignore
-                    log (Failed, key)
-                    Interlocked.Increment &failed |> ignore
-                    failures.Add(key.Label, ex)
-
-                    for logger in loggers do
-                        diags |> replayDiagnostics logger
-
-                    tcs.TrySetException ex |> ignore
-
-                | JobCompleted(result, diags), Some(Running(tcs, _cts, _c, started, loggers)) ->
-                    cancelRegistration key
-                    cache.Set(key.Key, key.Version, key.Label, (Completed(result, diags)))
-                    requestCounts.Remove key |> ignore
-                    log (Finished, key)
-                    Interlocked.Increment &completed |> ignore
-                    let duration = float (DateTime.Now - started).Milliseconds
-
-                    avgDurationMs <-
-                        if completed < 2 then
-                            duration
-                        else
-                            avgDurationMs + (duration - avgDurationMs) / float completed
-
-                    for logger in loggers do
-                        diags |> replayDiagnostics logger
-
-                    if tcs.TrySetResult result = false then
-                        internalError key.Label "Invalid state: Completed job already completed"
-
-                // Sometimes job can be canceled but it still manages to complete (or fail)
-                | JobFailed _, Some(Job.Canceled _)
-                | JobCompleted _, Some(Job.Canceled _) -> ()
-
-                // Job can't be evicted from cache while it's running because then subsequent requesters would be waiting forever
-                | JobFailed _, None -> internalError key.Label "Invalid state: Running job missing in cache (failed)"
-
-                | JobCompleted _, None -> internalError key.Label "Invalid state: Running job missing in cache (completed)"
-
-                | JobFailed(ex, _diags), Some(Completed(_job, _diags2)) ->
-                    internalError key.Label $"Invalid state: Failed Completed job \n%A{ex}"
-
-                | JobCompleted(_result, _diags), Some(Completed(_job, _diags2)) ->
-                    internalError key.Label "Invalid state: Double-Completed job"
-
-                | JobFailed(ex, _diags), Some(Job.Failed(_, ex2)) ->
-                    internalError key.Label $"Invalid state: Double-Failed job \n%A{ex} \n%A{ex2}"
-
-                | JobCompleted(_result, _diags), Some(Job.Failed(_, ex2)) ->
-                    internalError key.Label $"Invalid state: Completed Failed job \n%A{ex2}"
-            })
-
-    let rec post msg =
-        Interlocked.Increment &updates_in_flight |> ignore
-        backgroundTask {
-            do! processStateUpdate post msg
-            Interlocked.Decrement &updates_in_flight |> ignore
-        }
-        |> ignore
-
-    member this.Get'(key, computation) =
-
-        let wrappedKey =
-            { new ICacheKey<_, _> with
-                member _.GetKey() = key
-                member _.GetVersion() = Unchecked.defaultof<_>
-                member _.GetLabel() = match key.ToString() with | null -> "" | s -> s
-            }
-
-        this.Get(wrappedKey, computation)
+                | CacheEvent.Evicted -> logK JobEvent.Evicted
+                | CacheEvent.Collected -> logK JobEvent.Collected
+                | CacheEvent.Weakened -> logK JobEvent.Weakened
+                | CacheEvent.Strengthened -> logK JobEvent.Strengthened
+                | CacheEvent.Cleared -> logK JobEvent.Cleared))
 
     member _.Get(key: ICacheKey<_, _>, computation) =
-
         let key =
             {
                 Label = key.GetLabel()
@@ -496,136 +210,114 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
                 Version = key.GetVersion()
             }
 
-        async {
-            let! ct = Async.CancellationToken
+        let wrappedComputation =
+            async {
+                use! _handler = Async.OnCancel (fun () -> log Canceled key)
+                let sw = Stopwatch.StartNew()
+                log Started key
+                let logger = CapturingDiagnosticsLogger "cache"
+                SetThreadDiagnosticsLoggerNoUnwind logger
 
-            let callerDiagnosticLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+                match! computation |> Async.Catch with
+                | Choice1Of2 result ->
+                    log Finished key
+                    Interlocked.Add(&duration, sw.ElapsedMilliseconds) |> ignore
+                    return Result.Ok result, logger
+                | Choice2Of2 exn ->
+                    log Failed key
+                    return Result.Error exn, logger
+            }
 
-            match!
-                processRequest post (key, GetOrCompute(computation, ct)) callerDiagnosticLogger
-                |> Async.AwaitTask
-            with
-            | New internalCt ->
+        let getOrAdd () =
+            let cached, otherVersions = cache.GetAll(key.Key, key.Version)
 
-                let linkedCtSource = CancellationTokenSource.CreateLinkedTokenSource(ct, internalCt)
-                let cachingLogger = new CachingDiagnosticsLogger(Some callerDiagnosticLogger)
+            let countHit v = Interlocked.Increment &hits |> ignore; v
+            let cacheSetNewJob () =
+                let job = Job(wrappedComputation, cancelUnawaited = cancelUnawaitedJobs)
+                cache.Set(key.Key, key.Version, key.Label, job)
+                job
 
-                try
-                    return!
-                        Async.StartAsTask(
-                            async {
-                                // TODO: Should unify starting and restarting
-                                let currentLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-                                DiagnosticsThreadStatics.DiagnosticsLogger <- cachingLogger
+            otherVersions,
 
-                                log (Started, key)
+            cached
+            |> Option.map countHit
+            |> Option.defaultWith cacheSetNewJob
 
-                                try
-                                    let! result = computation
-                                    post (key, (JobCompleted(result, cachingLogger.CapturedDiagnostics)))
-                                    return result
-                                finally
-                                    DiagnosticsThreadStatics.DiagnosticsLogger <- currentLogger
-                            },
-                            cancellationToken = linkedCtSource.Token
-                        )
-                        |> Async.AwaitTask
-                with
-                | TaskCancelled ex ->
-                    // TODO: do we need to do anything else here? Presumably it should be done by the registration on
-                    // the cancellation token or before we triggered our own cancellation
+        async {            
+            let otherVersions, job = lock cache getOrAdd
 
-                    // Let's send this again just in case. It seems sometimes it's not triggered from the registration?
+            log Requested key
 
-                    Interlocked.Increment &cancel_exception_original |> ignore
+            if cancelDuplicateRunningJobs && not cancelUnawaitedJobs then
+                otherVersions |> Seq.map snd |> Seq.iter _.CancelIfUnawaited()
 
-                    post (key, (OriginatorCanceled))
-                    return raise ex
-                | ex ->
-                    post (key, (JobFailed(ex, cachingLogger.CapturedDiagnostics)))
-                    return raise ex
+            use _ = new CompilationGlobalsScope()
 
-            | Existing job -> return! job |> Async.AwaitTask
-
+            let! result, logger = job.Request()
+            logger.CommitDelayedDiagnostics DiagnosticsThreadStatics.DiagnosticsLogger
+            match result with
+            | Ok result ->
+                return result
+            | Error exn ->
+                return raise exn
         }
 
     member _.TryGet(key: 'TKey, predicate: 'TVersion -> bool) : 'TValue option =
-        let versionsAndJobs = cache.GetAll(key)
+        lock cache <| fun () ->
+            cache.GetAll(key)
+            |> Seq.tryPick (fun (version, job) ->
+                match predicate version, job.TryResult with
+                | true, Some(Ok result, _) -> Some result
+                | _ -> None)
 
-        versionsAndJobs
-        |> Seq.tryPick (fun (version, job) ->
-            match predicate version, job with
-            | true, Completed(completed, _) -> Some completed
-            | _ -> None)
+    member _.Clear() = lock cache cache.Clear
 
-    member _.Clear() = cache.Clear()
-
-    member _.Clear predicate = cache.Clear predicate
+    member _.Clear predicate = lock cache <| fun () -> cache.Clear predicate
 
     member val Event = event.Publish
 
     member this.OnEvent = this.Event.Add
 
-    member _.Count = lock.Do(fun () -> Task.FromResult cache.Count).Result
-
-    member _.Updating = updates_in_flight > 0
-
-    member _.Locked = lock.Semaphore.CurrentCount < 1
-
-    member _.Running =
-        cache.GetValues()
-        |> Seq.filter (function
-            | _, _, Running _ -> true
-            | _ -> false)
-        |> Seq.toArray
+    member this.Count = lock cache <| fun () -> cache.Count
 
     member this.DebuggerDisplay =
-        let locked = if this.Locked then " [LOCKED]" else ""
 
-        let valueStats =
-            cache.GetValues()
-            |> Seq.countBy (function
-                | _, _, Running _ -> "Running"
-                | _, _, Completed _ -> "Completed"
-                | _, _, Job.Canceled _ -> "Canceled"
-                | _, _, Job.Failed _ -> "Failed")
-            |> Map
+        let cachedJobs = cache.GetValues() |> Seq.map (fun (_,_,job) -> job)
+
+        let jobStateName = function
+        | Initial _ -> nameof Initial
+        | Running _ -> nameof Running
+        | Completed _ -> nameof Completed
+        | Faulted _ -> nameof Faulted
+
+        let valueStats = cachedJobs |> Seq.countBy (_.State >> jobStateName) |> Map
+        let getStat key = valueStats.TryFind key |> Option.defaultValue 0
 
         let running =
-            valueStats.TryFind "Running"
-            |> Option.map (sprintf " Running: %d ")
-            |> Option.defaultValue ""
+            let count = getStat "Running"
+            if  count > 0 then $" Running {count}" else ""
 
-        let avgDuration = avgDurationMs |> sprintf "| Avg: %.0f ms"
+        let finished = eventCounts[Finished].Value
+        let avgDuration = if finished = 0 then "" else $"| Avg: %.0f{float duration / float finished} ms"
 
-        let hitRatio =
-            if started > 0 then
-                $" (%.0f{float hits / (float (started + hits)) * 100.0} %%)"
-            else
-                ""
+        let requests = eventCounts[Requested].Value
+        let hitRatio = if requests = 0 then "" else $" (%.0f{float hits / (float (requests)) * 100.0} %%)"
+
+        let faulted = getStat "Faulted"
+        let failed = eventCounts[Failed].Value
 
         let stats =
-            [|
-                if errors + failed > 0 then
+            seq {
+                if faulted + failed > 0 then
                     " (_!_) "
-                if errors > 0 then $"| ERRORS: {errors} " else ""
-                if failed > 0 then $"| FAILED: {failed} " else ""
+                for j in eventCounts.Keys do
+                    let count = eventCounts[j].Value
+                    if count > 0 then $"| {j}: {count}" else ""
                 $"| hits: {hits}{hitRatio} "
-                if started > 0 then $"| started: {started} " else ""
-                if completed > 0 then $"| completed: {completed} " else ""
-                if canceled > 0 then $"| canceled: {canceled} " else ""
-                if restarted > 0 then $"| restarted: {restarted} " else ""
-                if evicted > 0 then $"| evicted: {evicted} " else ""
-                if collected > 0 then $"| collected: {collected} " else ""
-                if cleared > 0 then $"| cleared: {cleared} " else ""
-                if strengthened > 0 then
-                    $"| strengthened: {strengthened} "
-                else
-                    ""
-            |]
+            }
             |> String.concat ""
 
-        $"{locked}{running}{cache.DebuggerDisplay} {stats}{avgDuration}"
+        $"{running} {cache.DebuggerDisplay} {stats}{avgDuration}"
 
 /// A drop-in replacement for AsyncMemoize that disables caching and just runs the computation every time.
 [<DebuggerDisplay("{DebuggerDisplay}")>]

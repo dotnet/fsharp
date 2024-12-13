@@ -2,24 +2,31 @@ namespace FSharp.Compiler
 
 open System
 open System.Threading
-open Internal.Utilities.Library
 
 [<Sealed>]
 type Cancellable =
-    static let token = AsyncLocal<CancellationToken>()
+    static let tokenHolder = AsyncLocal<CancellationToken voption>()
 
-    static member Token = token.Value
+    static let guard =
+        String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("DISABLE_CHECKANDTHROW_ASSERT"))
+
+    static let ensureToken msg =
+        tokenHolder.Value
+        |> ValueOption.defaultWith (fun () -> if guard then failwith msg else CancellationToken.None)
+
+    static member Token = ensureToken "Token not available outside of Cancellable computation."
 
     static member UsingToken(ct) =
-        let oldCt = token.Value
-        token.Value <- ct
+        let oldCt = tokenHolder.Value
+        tokenHolder.Value <- ValueSome ct
 
         { new IDisposable with
-            member this.Dispose() = token.Value <- oldCt
+            member _.Dispose() = tokenHolder.Value <- oldCt
         }
 
     static member CheckAndThrow() =
-        token.Value.ThrowIfCancellationRequested()
+        let token = ensureToken "CheckAndThrow invoked outside of Cancellable computation."
+        token.ThrowIfCancellationRequested()
 
 namespace Internal.Utilities.Library
 

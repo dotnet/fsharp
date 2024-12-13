@@ -1223,7 +1223,7 @@ let rec GetTypeDefAsRow cenv env _enc (tdef: ILTypeDef) =
       else
         int tdef.Attributes
 
-    let tdorTag, tdorRow = GetTypeOptionAsTypeDefOrRef cenv env tdef.Extends
+    let tdorTag, tdorRow = GetTypeOptionAsTypeDefOrRef cenv env tdef.Extends.Value
     UnsharedRow
        [| ULong flags
           nelem
@@ -2026,11 +2026,11 @@ module Codebuf =
         | I_ldelem dt ->
             emitInstrCode codebuf
               (match dt with
-              | DT_I -> i_ldelem_i
+              | DT_I | DT_U -> i_ldelem_i
               | DT_I1 -> i_ldelem_i1
               | DT_I2 -> i_ldelem_i2
               | DT_I4 -> i_ldelem_i4
-              | DT_I8 -> i_ldelem_i8
+              | DT_I8 | DT_U8 -> i_ldelem_i8
               | DT_U1 -> i_ldelem_u1
               | DT_U2 -> i_ldelem_u2
               | DT_U4 -> i_ldelem_u4

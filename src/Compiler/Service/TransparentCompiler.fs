@@ -298,7 +298,7 @@ type internal CompilerCaches(sizeFactor: int) =
 
     member val ScriptClosure = AsyncMemoize(sf, 2 * sf, name = "ScriptClosure")
 
-    member this.Clear(projects: Set<ProjectIdentifier>) =
+    member this.Clear(projects: Set<FSharpProjectIdentifier>) =
         let shouldClear project = projects |> Set.contains project
 
         this.ParseFile.Clear(fst >> shouldClear)
@@ -422,11 +422,11 @@ type internal TransparentCompiler
         (useFsiAuxLib: bool)
         (useSdkRefs: bool)
         (assumeDotNetFramework: bool)
-        (projectIdentifier: ProjectIdentifier)
+        (projectIdentifier: FSharpProjectIdentifier)
         (otherOptions: string list)
         (stamp: int64 option)
         =
-        { new ICacheKey<string * ProjectIdentifier, string> with
+        { new ICacheKey<string * FSharpProjectIdentifier, string> with
             member _.GetKey() = fileName, projectIdentifier
             member _.GetLabel() = $"ScriptClosure for %s{fileName}"
 
@@ -456,7 +456,7 @@ type internal TransparentCompiler
         (useSdkRefs: bool option)
         (sdkDirOverride: string option)
         (assumeDotNetFramework: bool option)
-        (projectIdentifier: ProjectIdentifier)
+        (projectIdentifier: FSharpProjectIdentifier)
         (otherOptions: string list)
         (stamp: int64 option)
         =
@@ -464,7 +464,7 @@ type internal TransparentCompiler
         let useSdkRefs = defaultArg useSdkRefs true
         let assumeDotNetFramework = defaultArg assumeDotNetFramework false
 
-        let key: ICacheKey<string * ProjectIdentifier, string> =
+        let key =
             mkScriptClosureCacheKey
                 fileName
                 source
@@ -826,8 +826,8 @@ type internal TransparentCompiler
     let mutable BootstrapInfoIdCounter = 0
 
     /// Bootstrap info that does not depend source files
-    let ComputeBootstrapInfoStatic (projectSnapshot: ProjectCore, tcConfig: TcConfig, assemblyName: string, loadClosureOpt) =
-        let cacheKey = projectSnapshot.CacheKeyWith("BootstrapInfoStatic", assemblyName)
+    let ComputeBootstrapInfoStatic (projectSnapshot: ProjectSnapshotBase<_>, tcConfig: TcConfig, assemblyName: string, loadClosureOpt) =
+        let cacheKey = projectSnapshot.BaseCacheKeyWith("BootstrapInfoStatic", assemblyName)
 
         caches.BootstrapInfoStatic.Get(
             cacheKey,
@@ -957,7 +957,7 @@ type internal TransparentCompiler
             let outFile, _, assemblyName = tcConfigB.DecideNames sourceFiles
 
             let! bootstrapId, tcImports, tcGlobals, initialTcInfo, importsInvalidatedByTypeProvider =
-                ComputeBootstrapInfoStatic(projectSnapshot.ProjectCore, tcConfig, assemblyName, loadClosureOpt)
+                ComputeBootstrapInfoStatic(projectSnapshot, tcConfig, assemblyName, loadClosureOpt)
 
             // Check for the existence of loaded sources and prepend them to the sources list if present.
             let loadedSources =
@@ -1056,7 +1056,7 @@ type internal TransparentCompiler
                 |> Seq.map (fun f -> LoadSource f isExe (f.FileName = bootstrapInfo.LastFileName))
                 |> MultipleDiagnosticsLoggers.Parallel
 
-            return ProjectSnapshotWithSources(projectSnapshot.ProjectCore, sources |> Array.toList)
+            return ProjectSnapshotWithSources(projectSnapshot.ProjectConfig, projectSnapshot.ReferencedProjects, sources |> Array.toList)
 
         }
 
@@ -1067,7 +1067,7 @@ type internal TransparentCompiler
                 member _.GetLabel() = file.FileName |> shortPath
 
                 member _.GetKey() =
-                    projectSnapshot.ProjectCore.Identifier, file.FileName
+                    projectSnapshot.ProjectConfig.Identifier, file.FileName
 
                 member _.GetVersion() =
                     projectSnapshot.ParsingVersion,
@@ -1467,7 +1467,7 @@ type internal TransparentCompiler
                 |> Seq.map (ComputeParseFile projectSnapshot tcConfig)
                 |> MultipleDiagnosticsLoggers.Parallel
 
-            return ProjectSnapshotBase<_>(projectSnapshot.ProjectCore, parsedInputs |> Array.toList)
+            return ProjectSnapshotBase<_>(projectSnapshot.ProjectConfig, projectSnapshot.ReferencedProjects, parsedInputs |> Array.toList)
         }
 
     // Type check file and all its dependencies
@@ -1821,9 +1821,7 @@ type internal TransparentCompiler
                             Trace.TraceInformation($"Using in-memory project reference: {name}")
 
                             return assemblyDataResult
-                with
-                | TaskCancelled ex -> return raise ex
-                | ex ->
+                with ex ->
                     errorR (exn ($"Error while computing assembly data for project {projectSnapshot.Label}: {ex}"))
                     return ProjectAssemblyDataResult.Unavailable true
             }
@@ -2137,19 +2135,19 @@ type internal TransparentCompiler
             use _ =
                 Activity.start "TransparentCompiler.ClearCache" [| Activity.Tags.userOpName, userOpName |]
 
-            this.Caches.Clear(
-                projects
-                |> Seq.map (function
-                    | FSharpProjectIdentifier(x, y) -> (x, y))
-                |> Set
-            )
+            this.Caches.Clear(Set projects)
 
         member this.ClearCache(options: seq<FSharpProjectOptions>, userOpName: string) : unit =
             use _ =
                 Activity.start "TransparentCompiler.ClearCache" [| Activity.Tags.userOpName, userOpName |]
 
             backgroundCompiler.ClearCache(options, userOpName)
-            this.Caches.Clear(options |> Seq.map (fun o -> o.GetProjectIdentifier()) |> Set)
+
+            this.Caches.Clear(
+                options
+                |> Seq.map (fun o -> o.GetProjectIdentifier() |> FSharpProjectIdentifier)
+                |> Set
+            )
 
         member _.ClearCaches() : unit =
             backgroundCompiler.ClearCaches()
@@ -2365,7 +2363,7 @@ type internal TransparentCompiler
                         useFsiAuxLib
                         useSdkRefs
                         assumeDotNetFramework
-                        (projectFileName, "")
+                        (FSharpProjectIdentifier(projectFileName, ""))
                         otherFlags
                         optionsStamp
 
@@ -2393,6 +2391,7 @@ type internal TransparentCompiler
                 let snapshot =
                     FSharpProjectSnapshot.Create(
                         fileName + ".fsproj",
+                        None,
                         None,
                         sourceFiles,
                         references,
@@ -2445,10 +2444,7 @@ type internal TransparentCompiler
             backgroundCompiler.InvalidateConfiguration(options, userOpName)
 
         member this.InvalidateConfiguration(projectSnapshot: FSharpProjectSnapshot, _userOpName: string) : unit =
-            let (FSharpProjectIdentifier(projectFileName, outputFileName)) =
-                projectSnapshot.Identifier
-
-            this.Caches.Clear(Set.singleton (ProjectIdentifier(projectFileName, outputFileName)))
+            this.Caches.Clear(Set.singleton projectSnapshot.Identifier)
 
         member this.NotifyFileChanged(fileName: string, options: FSharpProjectOptions, userOpName: string) : Async<unit> =
             backgroundCompiler.NotifyFileChanged(fileName, options, userOpName)

@@ -300,8 +300,9 @@
     <Compile Include="CompilerOptions\fsc\sourceFiles.fs" />
     <Compile Include="CompilerService\RangeModule.fs" />
     <Compile Include="CompilerService\LruCache.fs" />
-    <Compile Include="CompilerService\AsyncLock.fs" />
     <Compile Include="CompilerService\AsyncMemoize.fs" />
+    <Compile Include="CompilerService\FSharpWorkspace.fs" />
+    <Compile Include="CompilerService\DependencyGraph.fs" />
     <Compile Include="Debugger\PortablePdbs.fs" />
     <Compile Include="Diagnostics\async.fs" />
     <Compile Include="Diagnostics\General.fs" />
@@ -316,6 +317,7 @@
     <Compile Include="Miscellaneous\MigratedOverloadTests.fs" />
     <Compile Include="Miscellaneous\MigratedTypeCheckTests.fs" />
     <Compile Include="Miscellaneous\GraphTests.fs" />
+    <Compile Include="Miscellaneous\FileIndex.fs" />
     <Compile Include="Signatures\TestHelpers.fs" />
     <Compile Include="Signatures\ModuleOrNamespaceTests.fs" />
     <Compile Include="Signatures\RecordTests.fs" />
@@ -366,5 +368,6 @@
   <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
     <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
   </ItemGroup>
+
 
 </Project>

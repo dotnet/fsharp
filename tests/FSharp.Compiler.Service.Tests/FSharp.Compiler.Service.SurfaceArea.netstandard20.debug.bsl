@@ -1565,7 +1565,7 @@ FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILPropertyDefs Properties
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILPropertyDefs get_Properties()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILSecurityDecls SecurityDecls
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILSecurityDecls get_SecurityDecls()
-FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDef With(Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Reflection.TypeAttributes], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout], Microsoft.FSharp.Core.FSharpOption`1[Internal.Utilities.Library.InterruptibleLazy`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+InterfaceImpl]]], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef]], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILType]], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILMethodDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILTypeDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILFieldDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILMethodImplDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILEventDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILPropertyDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILTypeDefAdditionalFlags], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILAttributesStored], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILSecurityDecls])
+FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDef With(Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Reflection.TypeAttributes], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout], Microsoft.FSharp.Core.FSharpOption`1[Internal.Utilities.Library.InterruptibleLazy`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+InterfaceImpl]]], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef]], Microsoft.FSharp.Core.FSharpOption`1[Internal.Utilities.Library.InterruptibleLazy`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILType]]], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILMethodDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILTypeDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILFieldDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILMethodImplDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILEventDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILPropertyDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILTypeDefAdditionalFlags], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILAttributesStored], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILSecurityDecls])
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDefAccess Access
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDefAccess get_Access()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDefLayout Layout
@@ -1576,16 +1576,17 @@ FSharp.Compiler.AbstractIL.IL+ILTypeDef: Int32 MetadataIndex
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Int32 get_MetadataIndex()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Internal.Utilities.Library.InterruptibleLazy`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+InterfaceImpl]] Implements
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Internal.Utilities.Library.InterruptibleLazy`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+InterfaceImpl]] get_Implements()
+FSharp.Compiler.AbstractIL.IL+ILTypeDef: Internal.Utilities.Library.InterruptibleLazy`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILType]] Extends
+FSharp.Compiler.AbstractIL.IL+ILTypeDef: Internal.Utilities.Library.InterruptibleLazy`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILType]] get_Extends()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef] GenericParams
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef] get_GenericParams()
-FSharp.Compiler.AbstractIL.IL+ILTypeDef: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILType] Extends
-FSharp.Compiler.AbstractIL.IL+ILTypeDef: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILType] get_Extends()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: System.Reflection.TypeAttributes Attributes
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: System.Reflection.TypeAttributes get_Attributes()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: System.String Name
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: System.String get_Name()
-FSharp.Compiler.AbstractIL.IL+ILTypeDef: Void .ctor(System.String, System.Reflection.TypeAttributes, ILTypeDefLayout, Internal.Utilities.Library.InterruptibleLazy`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+InterfaceImpl]], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILType], ILMethodDefs, ILTypeDefs, ILFieldDefs, ILMethodImplDefs, ILEventDefs, ILPropertyDefs, ILTypeDefAdditionalFlags, ILSecurityDecls, ILAttributesStored)
+FSharp.Compiler.AbstractIL.IL+ILTypeDef: Void .ctor(System.String, System.Reflection.TypeAttributes, ILTypeDefLayout, Internal.Utilities.Library.InterruptibleLazy`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+InterfaceImpl]], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef], Internal.Utilities.Library.InterruptibleLazy`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILType]], ILMethodDefs, ILTypeDefs, ILFieldDefs, ILMethodImplDefs, ILEventDefs, ILPropertyDefs, ILTypeDefAdditionalFlags, ILSecurityDecls, ILAttributesStored)
+FSharp.Compiler.AbstractIL.IL+ILTypeDef: Void .ctor(System.String, System.Reflection.TypeAttributes, ILTypeDefLayout, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+InterfaceImpl], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILType], ILMethodDefs, ILTypeDefs, ILFieldDefs, ILMethodImplDefs, ILEventDefs, ILPropertyDefs, ILSecurityDecls, ILAttributesStored)
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess+Nested: ILMemberAccess Item
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess+Nested: ILMemberAccess get_Item()
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess+Tags: Int32 Nested
@@ -1617,47 +1618,13 @@ FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess: Int32 Tag
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess: Int32 get_Tag()
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAdditionalFlags: ILTypeDefAdditionalFlags CanContainExtensionMethods
+FSharp.Compiler.AbstractIL.IL+ILTypeDefAdditionalFlags: ILTypeDefAdditionalFlags Class
+FSharp.Compiler.AbstractIL.IL+ILTypeDefAdditionalFlags: ILTypeDefAdditionalFlags Delegate
+FSharp.Compiler.AbstractIL.IL+ILTypeDefAdditionalFlags: ILTypeDefAdditionalFlags Enum
+FSharp.Compiler.AbstractIL.IL+ILTypeDefAdditionalFlags: ILTypeDefAdditionalFlags Interface
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAdditionalFlags: ILTypeDefAdditionalFlags IsKnownToBeAttribute
-FSharp.Compiler.AbstractIL.IL+ILTypeDefAdditionalFlags: ILTypeDefAdditionalFlags None
+FSharp.Compiler.AbstractIL.IL+ILTypeDefAdditionalFlags: ILTypeDefAdditionalFlags ValueType
 FSharp.Compiler.AbstractIL.IL+ILTypeDefAdditionalFlags: Int32 value__
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind+Tags: Int32 Class
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind+Tags: Int32 Delegate
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind+Tags: Int32 Enum
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind+Tags: Int32 Interface
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind+Tags: Int32 ValueType
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Boolean Equals(ILTypeDefKind)
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Boolean Equals(ILTypeDefKind, System.Collections.IEqualityComparer)
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Boolean Equals(System.Object)
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Boolean IsClass
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Boolean IsDelegate
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Boolean IsEnum
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Boolean IsInterface
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Boolean IsValueType
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Boolean get_IsClass()
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Boolean get_IsDelegate()
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Boolean get_IsEnum()
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Boolean get_IsInterface()
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Boolean get_IsValueType()
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: FSharp.Compiler.AbstractIL.IL+ILTypeDefKind+Tags
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: ILTypeDefKind Class
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: ILTypeDefKind Delegate
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: ILTypeDefKind Enum
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: ILTypeDefKind Interface
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: ILTypeDefKind ValueType
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: ILTypeDefKind get_Class()
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: ILTypeDefKind get_Delegate()
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: ILTypeDefKind get_Enum()
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: ILTypeDefKind get_Interface()
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: ILTypeDefKind get_ValueType()
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Int32 CompareTo(ILTypeDefKind)
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Int32 CompareTo(System.Object)
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Int32 CompareTo(System.Object, System.Collections.IComparer)
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Int32 GetHashCode()
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Int32 GetHashCode(System.Collections.IEqualityComparer)
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Int32 Tag
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: Int32 get_Tag()
-FSharp.Compiler.AbstractIL.IL+ILTypeDefKind: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Explicit: ILTypeDefLayoutInfo Item
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Explicit: ILTypeDefLayoutInfo get_Item()
 FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout+Sequential: ILTypeDefLayoutInfo Item
@@ -1860,6 +1827,7 @@ FSharp.Compiler.AbstractIL.IL+PublicKey: PublicKey KeyAsToken(Byte[])
 FSharp.Compiler.AbstractIL.IL+PublicKey: PublicKey NewPublicKey(Byte[])
 FSharp.Compiler.AbstractIL.IL+PublicKey: PublicKey NewPublicKeyToken(Byte[])
 FSharp.Compiler.AbstractIL.IL+PublicKey: System.String ToString()
+FSharp.Compiler.AbstractIL.IL: Boolean |HasFlag|_|(ILTypeDefAdditionalFlags, ILTypeDefAdditionalFlags)
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILArgConvention
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILArrayShape
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILAssemblyLongevity
@@ -1914,7 +1882,6 @@ FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILType
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILTypeDef
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILTypeDefAccess
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILTypeDefAdditionalFlags
-FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILTypeDefKind
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILTypeDefs
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILTypeInit
@@ -1972,6 +1939,8 @@ FSharp.Compiler.AbstractIL.IL: Int32 NoMetadataIdx
 FSharp.Compiler.AbstractIL.IL: Int32 get_NoMetadataIdx()
 FSharp.Compiler.AbstractIL.IL: Internal.Utilities.Library.InterruptibleLazy`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+InterfaceImpl]] emptyILInterfaceImpls
 FSharp.Compiler.AbstractIL.IL: Internal.Utilities.Library.InterruptibleLazy`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+InterfaceImpl]] get_emptyILInterfaceImpls()
+FSharp.Compiler.AbstractIL.IL: Internal.Utilities.Library.InterruptibleLazy`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILType]] emptyILExtends
+FSharp.Compiler.AbstractIL.IL: Internal.Utilities.Library.InterruptibleLazy`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILType]] get_emptyILExtends()
 FSharp.Compiler.AbstractIL.ILBinaryReader+ILModuleReader: ILModuleDef ILModuleDef
 FSharp.Compiler.AbstractIL.ILBinaryReader+ILModuleReader: ILModuleDef get_ILModuleDef()
 FSharp.Compiler.AbstractIL.ILBinaryReader+ILModuleReader: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILAssemblyRef] ILAssemblyRefs
@@ -2414,6 +2383,7 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: Boolean get_IsS
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: FSharpFileSnapshot Create(System.String, System.String, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.Threading.Tasks.Task`1[FSharp.Compiler.Text.ISourceTextNew]])
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: FSharpFileSnapshot CreateFromDocumentSource(System.String, FSharp.Compiler.CodeAnalysis.DocumentSource)
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: FSharpFileSnapshot CreateFromFileSystem(System.String)
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: FSharpFileSnapshot CreateFromString(System.String, System.String)
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: Int32 GetHashCode()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: System.String FileName
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot: System.String GetFileName()
@@ -2434,7 +2404,11 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: Int32 GetH
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: Int32 Tag
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: Int32 get_Tag()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: System.String OutputFileName
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: System.String ProjectFileName
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: System.String ToString()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: System.String get_OutputFileName()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: System.String get_ProjectFileName()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: System.String get_outputFileName()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: System.String get_projectFileName()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier: System.String outputFileName
@@ -2445,7 +2419,7 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Boolean get_
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Boolean get_UseScriptResolutionRules()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjectIdentifier Identifier
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjectIdentifier get_Identifier()
-FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjectSnapshot Create(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk], Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot], Boolean, Boolean, System.DateTime, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet], Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[FSharp.Compiler.Text.Range,System.String,System.String]], Microsoft.FSharp.Core.FSharpOption`1[System.Int64])
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjectSnapshot Create(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk], Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot], Boolean, Boolean, System.DateTime, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet], Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[FSharp.Compiler.Text.Range,System.String,System.String]], Microsoft.FSharp.Core.FSharpOption`1[System.Int64])
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: FSharpProjectSnapshot Replace(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot])
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot] SourceFiles
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpFileSnapshot] get_SourceFiles()
@@ -2464,7 +2438,9 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FS
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet] get_UnresolvedReferences()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Core.FSharpOption`1[System.Int64] Stamp
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Core.FSharpOption`1[System.Int64] get_Stamp()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Core.FSharpOption`1[System.String] OutputFileName
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Core.FSharpOption`1[System.String] ProjectId
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_OutputFileName()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_ProjectId()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: System.DateTime LoadTime
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot: System.DateTime get_LoadTime()
@@ -2496,6 +2472,8 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: Bo
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: Boolean get_IsFSharpReference()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: Boolean get_IsILModuleReference()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: Boolean get_IsPEReference()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: Byte[] Version
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: Byte[] get_Version()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot+FSharpReference
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot+ILModuleReference
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot+PEReference
@@ -2510,6 +2488,41 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: In
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: System.String OutputFile
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: System.String ToString()
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot: System.String get_OutputFile()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Boolean IsIncompleteTypeCheckEnvironment
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Boolean UseScriptResolutionRules
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Boolean get_IsIncompleteTypeCheckEnvironment()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Boolean get_UseScriptResolutionRules()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Byte[] Version
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Byte[] VersionForParsing
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Byte[] get_Version()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Byte[] get_VersionForParsing()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: FSharpProjectIdentifier Identifier
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: FSharpProjectIdentifier get_Identifier()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk] ReferencesOnDisk
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk] get_ReferencesOnDisk()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[System.String] CommandLineOptions
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[System.String] OtherOptions
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_CommandLineOptions()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_OtherOptions()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[FSharp.Compiler.Text.Range,System.String,System.String]] OriginalLoadReferences
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[FSharp.Compiler.Text.Range,System.String,System.String]] get_OriginalLoadReferences()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet] UnresolvedReferences
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet] get_UnresolvedReferences()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Core.FSharpOption`1[System.Int64] Stamp
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Core.FSharpOption`1[System.Int64] get_Stamp()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Core.FSharpOption`1[System.String] OutputFileName
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Core.FSharpOption`1[System.String] ProjectId
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_OutputFileName()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_ProjectId()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: System.DateTime LoadTime
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: System.DateTime get_LoadTime()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: System.String Label
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: System.String ProjectDirectory
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: System.String ProjectFileName
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: System.String get_Label()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: System.String get_ProjectDirectory()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: System.String get_ProjectFileName()
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig: Void .ctor(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.String], System.Collections.Generic.IEnumerable`1[System.String], System.Collections.Generic.IEnumerable`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.DateTime], Microsoft.FSharp.Core.FSharpOption`1[System.Int64], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk: Boolean Equals(ReferenceOnDisk)
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk: Boolean Equals(ReferenceOnDisk, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk: Boolean Equals(System.Object)
@@ -2529,7 +2542,38 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.Proje
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectIdentifier
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot
+FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspace: FSharp.Compiler.CodeAnalysis.FSharpChecker Checker
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspace: FSharp.Compiler.CodeAnalysis.FSharpChecker get_Checker()
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspace: FSharpWorkspaceFiles Files
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspace: FSharpWorkspaceFiles get_Files()
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspace: FSharpWorkspaceProjects Projects
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspace: FSharpWorkspaceProjects get_Projects()
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspace: FSharpWorkspaceQuery Query
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspace: FSharpWorkspaceQuery get_Query()
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspace: Void .ctor()
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspace: Void .ctor(FSharp.Compiler.CodeAnalysis.FSharpChecker)
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpDiagnosticReport: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] Diagnostics
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpDiagnosticReport: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] get_Diagnostics()
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpDiagnosticReport: System.String ResultId
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpDiagnosticReport: System.String get_ResultId()
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpWorkspaceQuery: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpDiagnosticReport] GetDiagnosticsForFile(System.Uri)
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpWorkspaceQuery: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.EditorServices.SemanticClassificationView]] GetSemanticClassification(System.Uri)
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpWorkspaceQuery: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot] GetProjectSnapshot(FSharpProjectIdentifier)
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpWorkspaceQuery: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot] GetProjectSnapshotForFile(System.Uri)
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpWorkspaceQuery: System.Threading.Tasks.Task`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceTextNew]] GetSource(System.Uri)
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery: FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpDiagnosticReport
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery: FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpWorkspaceQuery
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceFiles: Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.Uri,System.String],Microsoft.FSharp.Core.Unit] Open
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceFiles: Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.Uri,System.String],Microsoft.FSharp.Core.Unit] get_Open()
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceFiles: Void Close(System.Uri)
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceFiles: Void Edit(System.Uri, System.String)
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceProjects: FSharpProjectIdentifier AddOrUpdate(ProjectConfig, System.Collections.Generic.IEnumerable`1[System.String])
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceProjects: FSharpProjectIdentifier AddOrUpdate(System.String, System.String, System.Collections.Generic.IEnumerable`1[System.String])
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceProjects: FSharpProjectIdentifier AddOrUpdate(System.String, System.String, System.Collections.Generic.IEnumerable`1[System.String], System.Collections.Generic.IEnumerable`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[System.String])
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState: FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceFiles
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState: FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceProjects
 FSharp.Compiler.CompilerEnvironment: Boolean IsCheckerSupportedSubcategory(System.String)
 FSharp.Compiler.CompilerEnvironment: Boolean IsCompilable(System.String)
 FSharp.Compiler.CompilerEnvironment: Boolean IsScriptFile(System.String)
