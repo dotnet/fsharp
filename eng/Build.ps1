@@ -368,8 +368,8 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     $projectName = [System.IO.Path]::GetFileNameWithoutExtension($testProject)
     $testLogPath = "$ArtifactsDir\TestResults\$configuration\${projectName}_$targetFramework.xml"
     $testBinLogPath = "$LogDir\${projectName}_$targetFramework.binlog"
-    $args = "test $testProject -c $configuration -f $targetFramework -v n --test-adapter-path $testadapterpath --logger ""xunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
-    $args += " --blame --results-directory $ArtifactsDir\TestResults\$configuration -p:vstestusemsbuildoutput=false"
+    $args = "test ""$testProject"" -c $configuration -f $targetFramework -v n --test-adapter-path ""$testadapterpath"" --logger ""xunit;LogFilePath=$testLogPath"" ""/bl:$testBinLogPath"""
+    $args += " --blame --results-directory ""$ArtifactsDir\TestResults\$configuration"" -p:vstestusemsbuildoutput=false"
 
     if (-not $noVisualStudio -or $norestore) {
         $args += " --no-restore"
@@ -383,13 +383,13 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
         Write-Host("Starting on the background: $args")
         Write-Host("------------------------------------")
         $bgJob = Start-Job -ScriptBlock {
-            & $using:dotnetExe test $using:testProject -c $using:configuration -f $using:targetFramework -v n --test-adapter-path $using:testadapterpath --logger "xunit;LogFilePath=$using:testLogPath" /bl:$using:testBinLogPath  --blame --results-directory $using:ArtifactsDir\TestResults\$using:configuration
+            & $using:dotnetExe test "$using:testProject" -c "$using:configuration" -f "$using:targetFramework" -v n --test-adapter-path "$using:testadapterpath" --logger "xunit;LogFilePath=$using:testLogPath" "/bl:$using:testBinLogPath"  --blame --results-directory "$using:ArtifactsDir\TestResults\$using:configuration"
             if ($LASTEXITCODE -ne 0) {
                 throw "Command failed to execute with exit code $($LASTEXITCODE): $using:dotnetExe $using:args"
             }
         }
         return $bgJob
-    } else{
+    } else {
         Write-Host("$args")
         Exec-Console $dotnetExe $args
     }
