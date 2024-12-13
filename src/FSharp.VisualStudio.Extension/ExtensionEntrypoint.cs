@@ -3,7 +3,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.Extensibility;
 using Extension = Microsoft.VisualStudio.Extensibility.Extension;
-using OpenTelemetry.Trace;
 
 /// <summary>
 /// Extension entrypoint for the VisualStudio.Extensibility extension.
@@ -27,8 +26,6 @@ internal class ExtensionEntrypoint : Extension
     protected override void InitializeServices(IServiceCollection serviceCollection)
     {
         base.InitializeServices(serviceCollection);
-
-        //serviceCollection.AddOpenTelemetry().WithTracing(builder => builder.AddOtlpExporter());
 
         // You can configure dependency injection here by adding services to the serviceCollection.
     }

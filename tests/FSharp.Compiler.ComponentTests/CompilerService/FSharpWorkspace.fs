@@ -17,6 +17,9 @@ open System.IO
 
 #nowarn "57"
 
+// System.Diagnostics.DiagnosticSource seems to be missing in NET FW. Might investigate this later
+#if !NETFRAMEWORK
+
 /// Wrapper for FSharpWorkspace to use in tests. Provides OpenTelemetry tracing.
 type TestingWorkspace(testName) as _this =
     inherit FSharpWorkspace()
@@ -434,3 +437,5 @@ let ``Giraffe signature test`` () =
         Assert.Equal(1, diag.Diagnostics.Length)
         Assert.Equal("The type 'IServiceCollection' does not define the field, constructor or member 'AddGiraffe'.", diag.Diagnostics[0].Message)
     }
+
+#endif
