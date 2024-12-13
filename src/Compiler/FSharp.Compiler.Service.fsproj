@@ -544,7 +544,6 @@
     <Compile Include="Service\TransparentCompiler.fs" />
     <Compile Include="Service\service.fsi" />
     <Compile Include="Service\service.fs" />
-    <Compile Include="Service\FSharpWorkspaceError.fs" />
     <Compile Include="Service\FSharpWorkspaceState.fs" />
     <Compile Include="Service\FSharpWorkspaceQuery.fs" />
     <Compile Include="Service\FSharpWorkspace.fs" />
