@@ -75,6 +75,16 @@ type PrintfTests() =
         Assert.AreEqual("      7B", sprintf "%*X"  8 123  )
         Assert.AreEqual("7B      ", sprintf "%-*X" 8 123  ) 
         
+        
+    [<Fact>]
+    member this.``positive and negative zero``() =
+        test "%f" +0.0 "0.000000"
+        test "%f" -0.0 "-0.000000"
+        test "%f" -0.0000001 "-0.000000"
+        test "%+f" +0.0 "+0.000000"
+        test "%+f" -0.0 "-0.000000"
+        test "%+f" -0.0000001 "-0.000000"
+        
     [<Fact>]
     member _.``union case formatting`` () =
         Assert.AreEqual("CaseOne", sprintf "%A" CaseOne)
