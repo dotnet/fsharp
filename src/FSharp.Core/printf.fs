@@ -874,7 +874,8 @@ module internal PrintfImpl =
 
         let fixupDecimalSign (n: decimal) (nStr: string) =
             // Forward-compatible workaround for a .NET bug which causes -0.0m (negative zero) to be missing its sign (see: https://github.com/dotnet/runtime/issues/110712)
-            if n = 0.0m && not (nStr.StartsWith "-") && GenericNumber.decimalIsNegativeZero n then
+            // This also affects numbers which round/truncate to negative zero (i.e. very small negative numbers)
+            if (n = 0.0m && not (nStr.StartsWith "-") && GenericNumber.decimalIsNegativeZero n) || (n < 0.0m && not (nStr.StartsWith "-")) then
                 "-" + nStr
             else
                 nStr
