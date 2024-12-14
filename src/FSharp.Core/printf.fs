@@ -659,11 +659,14 @@ module internal PrintfImpl =
     /// Contains functions to handle left/right and no justification case for numbers
     module GenericNumber =
         
-        let inline doubleIsNotNegativeZero (n: double) =
-            BitConverter.DoubleToInt64Bits n <> BitConverter.DoubleToInt64Bits -0.0
+        let inline doubleIsPositive (n: double) =
+            n >= 0.0
+                // Ensure -0.0 is treated as negative (see https://github.com/dotnet/fsharp/issues/15557)
+                // and use bitwise comparison because floating point comparison treats +0.0 as equal to -0.0
+                && (BitConverter.DoubleToInt64Bits n <> BitConverter.DoubleToInt64Bits -0.0)
         
-        let inline singleIsNotNegativeZero (n: single) =
-            doubleIsNotNegativeZero (float n)
+        let inline singleIsPositive (n: single) =
+            doubleIsPositive (float n)
         
         let isPositive (n: obj) =
             match n with 
@@ -677,8 +680,8 @@ module internal PrintfImpl =
             | :? uint64 -> true
             | :? nativeint as n -> n >= 0n
             | :? unativeint -> true
-            | :? single as n -> n >= 0.0f && singleIsNotNegativeZero n
-            | :? double as n -> n >= 0.0 && doubleIsNotNegativeZero n
+            | :? single as n -> singleIsPositive n
+            | :? double as n -> doubleIsPositive n
             | :? decimal as n -> n >= 0.0M
             | _ -> failwith "isPositive: unreachable"
 
