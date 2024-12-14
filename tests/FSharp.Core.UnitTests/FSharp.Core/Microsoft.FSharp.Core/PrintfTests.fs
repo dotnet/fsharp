@@ -75,9 +75,21 @@ type PrintfTests() =
         Assert.AreEqual("      7B", sprintf "%*X"  8 123  )
         Assert.AreEqual("7B      ", sprintf "%-*X" 8 123  ) 
         
-        
+
     [<Fact>]
-    member this.``positive and negative zero``() =
+    member this.``sign flag - positive and negative one``() =
+        test "%f"  +1.0         "1.000000"
+        test "%f"  -1.0         "-1.000000"
+        test "%+f" +1.0         "+1.000000"
+        test "%+f" -1.0         "-1.000000"
+        
+        test "%f"  +1.0f        "1.000000"
+        test "%f"  -1.0f        "-1.000000"
+        test "%+f" +1.0f        "+1.000000"
+        test "%+f" -1.0f        "-1.000000"
+            
+    [<Fact>]
+    member this.``sign flag - positive and negative zero``() =
         test "%f"  +0.0         "0.000000"
         test "%f"  -0.0         "-0.000000"
         test "%f"  -0.0000001   "-0.000000"
@@ -91,7 +103,31 @@ type PrintfTests() =
         test "%+f" +0.0f        "+0.000000"
         test "%+f" -0.0f        "-0.000000"
         test "%+f" -0.0000001f  "-0.000000"
+
+    [<Fact>]
+    member this.``sign flag - infinity``() =
+        test "%f"  +infinity    "Infinity"
+        test "%f"  -infinity    "-Infinity"
+        test "%+f" +infinity    "Infinity"
+        test "%+f" -infinity    "-Infinity"
         
+        test "%f"  +infinityf   "Infinity"
+        test "%f"  -infinityf   "-Infinity"
+        test "%+f" +infinityf   "Infinity"
+        test "%+f" -infinityf   "-Infinity"
+
+    [<Fact>]
+    member this.``sign flag - NaN``() =
+        test "%f"  +nan         "NaN"
+        test "%f"  -nan         "NaN"
+        test "%+f" +nan         "NaN"
+        test "%+f" -nan         "NaN"
+        
+        test "%f"  +nanf        "NaN"
+        test "%f"  -nanf        "NaN"
+        test "%+f" +nanf        "NaN"
+        test "%+f" -nanf        "NaN"
+    
     [<Fact>]
     member _.``union case formatting`` () =
         Assert.AreEqual("CaseOne", sprintf "%A" CaseOne)

@@ -659,11 +659,11 @@ module internal PrintfImpl =
     /// Contains functions to handle left/right and no justification case for numbers
     module GenericNumber =
         
-        let inline singleIsNotNegativeZero (n: single) =
-            BitConverter.DoubleToInt64Bits (float n) <> BitConverter.DoubleToInt64Bits -0.0
-        
         let inline doubleIsNotNegativeZero (n: double) =
             BitConverter.DoubleToInt64Bits n <> BitConverter.DoubleToInt64Bits -0.0
+        
+        let inline singleIsNotNegativeZero (n: single) =
+            doubleIsNotNegativeZero (float n)
         
         let isPositive (n: obj) =
             match n with 
