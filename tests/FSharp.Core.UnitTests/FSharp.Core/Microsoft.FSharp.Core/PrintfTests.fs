@@ -75,7 +75,7 @@ type PrintfTests() =
         Assert.AreEqual("      7B", sprintf "%*X"  8 123  )
         Assert.AreEqual("7B      ", sprintf "%-*X" 8 123  ) 
         
-
+    // test cases for https://github.com/dotnet/fsharp/issues/15557
     [<Fact>]
     member this.``sign flag - positive and negative one``() =
         test "%f"  +1.0         "1.000000"
@@ -111,7 +111,7 @@ type PrintfTests() =
         
         test "%f"  +0.0M        "0.000000"
         test "%f"  -0.0M        "-0.000000"
-        test "%f"  -0.0000001M  "0.000000"
+        test "%f"  -0.0000001M  "-0.000000"
         test "%+f" +0.0M        "+0.000000"
         test "%+f" -0.0M        "-0.000000"
         test "%+f" -0.0000001M  "-0.000000"
@@ -139,6 +139,29 @@ type PrintfTests() =
         test "%f"  -nanf        "NaN"
         test "%+f" +nanf        "NaN"
         test "%+f" -nanf        "NaN"
+    
+    // test cases for https://github.com/dotnet/runtime/issues/110712 (same root cause as #15557; listing for completeness)
+    [<Fact>]
+    member this.``zero padding - positive and negative one`` () =
+        test "%010.3f" +1.0  "000001.000"
+        test "%010.3f" -1.0  "-00001.000"
+        
+        test "%010.3f" +1.0f "000001.000"
+        test "%010.3f" -1.0f "-00001.000"
+        
+        test "%010.3f" +1.0M "000001.000"
+        test "%010.3f" -1.0M "-00001.000"
+    
+    [<Fact>]
+    member this.``zero padding - positive and negative zero`` () =
+        test "%010.3f" +0.0  "000000.000"
+        test "%010.3f" -0.0  "-00000.000"
+        
+        test "%010.3f" +0.0f "000000.000"
+        test "%010.3f" -0.0f "-00000.000"
+        
+        test "%010.3f" +0.0M "000000.000"
+        test "%010.3f" -0.0M "-00000.000"
     
     [<Fact>]
     member _.``union case formatting`` () =
