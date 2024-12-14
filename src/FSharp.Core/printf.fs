@@ -668,6 +668,17 @@ module internal PrintfImpl =
         let inline singleIsPositive (n: single) =
             doubleIsPositive (float n)
         
+        let decimalSignBit (n: decimal) =
+            // Unfortunately it's impossible to avoid this array allocation without either targeting .NET 5+ or relying on knowledge about decimal's internal representation
+            let bits = Decimal.GetBits n
+            bits[3] >>> 31
+        
+        let inline decimalIsNegativeZero (n: decimal) =
+            decimalSignBit n <> 0
+        
+        let inline decimalIsPositive (n: decimal) =
+            n > 0.0M || (n = 0.0M && decimalSignBit n = 0)
+        
         let isPositive (n: obj) =
             match n with 
             | :? int8 as n -> n >= 0y
@@ -682,7 +693,7 @@ module internal PrintfImpl =
             | :? unativeint -> true
             | :? single as n -> singleIsPositive n
             | :? double as n -> doubleIsPositive n
-            | :? decimal as n -> n >= 0.0M
+            | :? decimal as n -> decimalIsPositive n
             | _ -> failwith "isPositive: unreachable"
 
         /// handles right justification when pad char = '0'
@@ -861,11 +872,18 @@ module internal PrintfImpl =
     
     module FloatAndDecimal = 
 
+        let fixupDecimalSign (n: decimal) (nStr: string) =
+            // Forward-compatible workaround for a .NET bug which causes -0.0m (negative zero) to be missing its sign (see: https://github.com/dotnet/runtime/issues/110712)
+            if n = 0.0m && not (nStr.StartsWith "-") && GenericNumber.decimalIsNegativeZero n then
+                "-" + nStr
+            else
+                nStr
+        
         let rec toFormattedString fmt (v: obj) = 
             match v with
             | :? single as n -> n.ToString(fmt, CultureInfo.InvariantCulture)
             | :? double as n -> n.ToString(fmt, CultureInfo.InvariantCulture)
-            | :? decimal as n -> n.ToString(fmt, CultureInfo.InvariantCulture)
+            | :? decimal as n -> n.ToString(fmt, CultureInfo.InvariantCulture) |> fixupDecimalSign n
             | _ -> failwith "toFormattedString: unreachable"
 
         let isNumber (x: obj) =
