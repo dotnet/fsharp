@@ -87,6 +87,11 @@ type PrintfTests() =
         test "%f"  -1.0f        "-1.000000"
         test "%+f" +1.0f        "+1.000000"
         test "%+f" -1.0f        "-1.000000"
+        
+        test "%f"  +1.0M        "1.000000"
+        test "%f"  -1.0M        "-1.000000"
+        test "%+f" +1.0M        "+1.000000"
+        test "%+f" -1.0M        "-1.000000"
             
     [<Fact>]
     member this.``sign flag - positive and negative zero``() =
@@ -103,7 +108,14 @@ type PrintfTests() =
         test "%+f" +0.0f        "+0.000000"
         test "%+f" -0.0f        "-0.000000"
         test "%+f" -0.0000001f  "-0.000000"
-
+        
+        test "%f"  +0.0M        "0.000000"
+        test "%f"  -0.0M        "-0.000000"
+        test "%f"  -0.0000001M  "-0.000000"
+        test "%+f" +0.0M        "+0.000000"
+        test "%+f" -0.0M        "-0.000000"
+        test "%+f" -0.0000001M  "-0.000000"
+    
     [<Fact>]
     member this.``sign flag - infinity``() =
         test "%f"  +infinity    "Infinity"
