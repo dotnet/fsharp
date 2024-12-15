@@ -208,7 +208,7 @@ namespace Microsoft.FSharp.Core
     type ClassAttribute() =
         inherit Attribute()
 
-    [<AttributeUsage(AttributeTargets.Field, AllowMultiple=false)>]
+    [<AttributeUsage (AttributeTargets.Field ||| AttributeTargets.Property,AllowMultiple=false)>]
     [<Sealed>]
     type LiteralAttribute() =
         inherit Attribute()

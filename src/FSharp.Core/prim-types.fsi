@@ -283,7 +283,7 @@ namespace Microsoft.FSharp.Core
     /// <summary>Adding this attribute to a value causes it to be compiled as a CLI constant literal.</summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Field,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Field ||| AttributeTargets.Property,AllowMultiple=false)>]  
     [<Sealed>]
     type LiteralAttribute =
         inherit Attribute

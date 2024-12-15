@@ -793,6 +793,14 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
+
+    // SOURCE=LiteralAttribute01.fs	# LiteralAttribute01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"LiteralAttribute01.fs"|])>]
+    let ``LiteralAttribute01 90`` compilation =
+        compilation
+        |> withLangVersion90
+        |> verifyCompile
+        |> shouldSucceed
         
     // SOURCE= E_VolatileField.fs	# E_VolatileField.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_VolatileField.fs"|])>]
