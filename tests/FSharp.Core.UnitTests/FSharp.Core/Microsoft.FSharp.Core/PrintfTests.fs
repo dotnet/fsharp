@@ -140,7 +140,7 @@ type PrintfTests() =
         test "%+f" +nanf        "NaN"
         test "%+f" -nanf        "NaN"
     
-    // test cases for https://github.com/dotnet/runtime/issues/110712 (same root cause as #15557; listing for completeness)
+    // test cases for https://github.com/dotnet/fsharp/issues/15558 (same root cause as #15557; listing for completeness)
     [<Fact>]
     member this.``zero padding - positive and negative one`` () =
         test "%010.3f" +1.0  "000001.000"
