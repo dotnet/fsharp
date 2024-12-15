@@ -209,8 +209,8 @@ type FileIndexTable() =
                 if filePath <> normalizedFilePath then
                     fileToIndexTable[filePath] <- idx
 
-                    // Return the index
-                    idx
+                // Return the index
+                idx
 
             | _ ->
                 lock indexToFileTable (fun () ->
