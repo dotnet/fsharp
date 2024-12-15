@@ -83,3 +83,25 @@ match "ab" with
 | ("a" + "b") -> ()
 | _ -> failwith "Bad pattern match"
 *)
+
+[<Struct>] type UserID = private UserID of int
+    with [<Literal>] static member Maximum = 9999
+
+type UserID2 =
+    UserID2 of int
+        [<Literal>]
+        static member Maximum = 9999
+
+type UserID3() = 
+    [<Literal>]
+    let privateLiteral = 3 
+
+    [<Literal>]
+    static member PublicLiteral = 3
+
+module UserId4 =
+    [<Literal>]
+    let publicLiteral = 3
+
+[<Literal>]
+let resMax = UserID.Maximum + UserID2.Maximum + UserID3.PublicLiteral + UserId4.publicLiteral
