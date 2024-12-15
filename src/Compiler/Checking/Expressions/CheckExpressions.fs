@@ -11202,6 +11202,18 @@ and TcLiteral (cenv: cenv) overallTy env tpenv (attrs, synLiteralValExpr) =
                 false, None
             else
                 true, Some c
+        | Expr.Lambda(unique, ctorThisValOpt, baseValOpt, valParams, bodyExpr, range, overallType) ->
+            let argExpr = EvalLiteralExprOrAttribArg g (stripDebugPoints bodyExpr)
+            match argExpr with
+            | Expr.Const (c, _, ty) ->
+                if c = Const.Zero && isStructTy g ty then
+                    warning(Error(FSComp.SR.tcIllegalStructTypeForConstantExpression(), synLiteralValExpr.Range))
+                    false, None
+                else
+                    true, Some c
+            | _ ->
+                errorR(Error(FSComp.SR.tcInvalidConstantExpression(), synLiteralValExpr.Range))
+                true, Some Const.Unit
         | _ ->
             errorR(Error(FSComp.SR.tcInvalidConstantExpression(), synLiteralValExpr.Range))
             true, Some Const.Unit

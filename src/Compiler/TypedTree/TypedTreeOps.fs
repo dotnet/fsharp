@@ -10135,7 +10135,7 @@ let rec EvalAttribArgExpr suppressLangFeatureCheck (g: TcGlobals) (x: Expr) =
         if suppressLangFeatureCheck = SuppressLanguageFeatureCheck.No then
             checkLanguageFeatureAndRecover g.langVersion LanguageFeature.ArithmeticInLiterals x.Range
 
-    match x with 
+    match stripDebugPoints(x) with 
 
     // Detect standard constants 
     | Expr.Const (c, m, _) -> 
@@ -10294,6 +10294,8 @@ let rec EvalAttribArgExpr suppressLangFeatureCheck (g: TcGlobals) (x: Expr) =
         | _ ->
             errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
             x
+    | Expr.Lambda (ty, a, b, c, body, d, ttype) -> 
+        Expr.Lambda (ty, a, b, c, EvalAttribArgExpr SuppressLanguageFeatureCheck.No g body, d, ttype)
     | _ -> 
         errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
         x
@@ -10329,7 +10331,9 @@ let EvalLiteralExprOrAttribArg g x =
     | Expr.Op (TOp.Coerce, _, [Expr.Op (TOp.Array, [elemTy], args, m)], _)
     | Expr.Op (TOp.Array, [elemTy], args, m) ->
         let args = args |> List.map (EvalAttribArgExpr SuppressLanguageFeatureCheck.No g) 
-        Expr.Op (TOp.Array, [elemTy], args, m) 
+        Expr.Op (TOp.Array, [elemTy], args, m)
+    | Expr.Lambda (ty, a, b, c, body, d, ttype) -> 
+        Expr.Lambda (ty, a, b, c, EvalAttribArgExpr SuppressLanguageFeatureCheck.No g body, d, ttype)
     | _ -> 
         EvalAttribArgExpr SuppressLanguageFeatureCheck.No g x
 
