@@ -193,42 +193,44 @@ type FileIndexTable() =
     //
     // TO move forward we should eventually introduce a new type NormalizedFileName that tracks this invariant.
     member t.FileToIndex normalize filePath =
-        lock fileToIndexTable
-        <| fun () ->
-            match fileToIndexTable.TryGetValue filePath with
-            | true, idx -> idx
+        match fileToIndexTable.TryGetValue filePath with
+        | true, idx -> idx
+        | _ ->
+            // Try again looking for a normalized entry.
+            let normalizedFilePath =
+                if normalize then
+                    FileSystem.NormalizePathShim filePath
+                else
+                    filePath
+
+            match fileToIndexTable.TryGetValue normalizedFilePath with
+            | true, idx ->
+                // Record the non-normalized entry if necessary
+                if filePath <> normalizedFilePath then
+                    fileToIndexTable[filePath] <- idx
+
+                    // Return the index
+                    idx
+
             | _ ->
+                lock indexToFileTable (fun () ->
+                    // See if it was added on another thread
+                    match fileToIndexTable.TryGetValue normalizedFilePath with
+                    | true, idx -> idx
+                    | _ ->
+                        // Okay it's really not there
+                        let idx = indexToFileTable.Count
 
-                // Try again looking for a normalized entry.
-                let normalizedFilePath =
-                    if normalize then
-                        FileSystem.NormalizePathShim filePath
-                    else
-                        filePath
+                        // Record the normalized entry
+                        indexToFileTable.Add normalizedFilePath
+                        fileToIndexTable[normalizedFilePath] <- idx
 
-                match fileToIndexTable.TryGetValue normalizedFilePath with
-                | true, idx ->
-                    // Record the non-normalized entry if necessary
-                    if filePath <> normalizedFilePath then
-                        fileToIndexTable[filePath] <- idx
+                        // Record the non-normalized entry if necessary
+                        if filePath <> normalizedFilePath then
+                            fileToIndexTable[filePath] <- idx
 
-                    // Return the index
-                    idx
-
-                | _ ->
-                    // Get the new index
-                    let idx = indexToFileTable.Count
-
-                    // Record the normalized entry
-                    indexToFileTable.Add normalizedFilePath
-                    fileToIndexTable[normalizedFilePath] <- idx
-
-                    // Record the non-normalized entry if necessary
-                    if filePath <> normalizedFilePath then
-                        fileToIndexTable[filePath] <- idx
-
-                    // Return the index
-                    idx
+                        // Return the index
+                        idx)
 
     member t.IndexToFile n =
         if n < 0 then

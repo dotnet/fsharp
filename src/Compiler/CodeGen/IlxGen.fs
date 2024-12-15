@@ -6270,9 +6270,8 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
             methods = mkILMethods mdefs,
             methodImpls = mkILMethodImpls mimpls,
             nestedTypes = emptyILTypeDefs,
-            implements = InterruptibleLazy.FromValue(ilInterfaceTys),
+            implements = ilInterfaceTys,
             extends = Some super,
-            additionalFlags = ILTypeDefAdditionalFlags.None,
             securityDecls = emptyILSecurityDecls
         )
             .WithSealed(true)
@@ -6708,9 +6707,8 @@ and GenClosureTypeDefs
             methods = mkILMethods mdefs,
             methodImpls = mkILMethodImpls mimpls,
             nestedTypes = emptyILTypeDefs,
-            implements = InterruptibleLazy.FromValue(ilIntfTys),
+            implements = ilIntfTys,
             extends = Some ext,
-            additionalFlags = ILTypeDefAdditionalFlags.None,
             securityDecls = emptyILSecurityDecls
         )
             .WithSealed(true)
@@ -11039,21 +11037,21 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                     | TFSharpUnion
                     | TFSharpRecord ->
                         if tycon.IsStructOrEnumTycon then
-                            ILTypeDefKind.ValueType
+                            ILTypeDefAdditionalFlags.ValueType
                         else
-                            ILTypeDefKind.Class
-                    | TFSharpClass -> ILTypeDefKind.Class
+                            ILTypeDefAdditionalFlags.Class
+                    | TFSharpClass -> ILTypeDefAdditionalFlags.Class
 
-                    | TFSharpStruct -> ILTypeDefKind.ValueType
-                    | TFSharpInterface -> ILTypeDefKind.Interface
-                    | TFSharpEnum -> ILTypeDefKind.Enum
-                    | TFSharpDelegate _ -> ILTypeDefKind.Delegate
-                | _ -> ILTypeDefKind.Class
+                    | TFSharpStruct -> ILTypeDefAdditionalFlags.ValueType
+                    | TFSharpInterface -> ILTypeDefAdditionalFlags.Interface
+                    | TFSharpEnum -> ILTypeDefAdditionalFlags.Enum
+                    | TFSharpDelegate _ -> ILTypeDefAdditionalFlags.Delegate
+                | _ -> ILTypeDefAdditionalFlags.Class
 
             let requiresExtraField =
                 let isEmptyStruct =
                     (match ilTypeDefKind with
-                     | ILTypeDefKind.ValueType -> true
+                     | HasFlag ILTypeDefAdditionalFlags.ValueType -> true
                      | _ -> false)
                     &&
                     // All structs are sequential by default
@@ -11514,12 +11512,6 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                     let isKnownToBeAttribute =
                         ExistsSameHeadTypeInHierarchy g cenv.amap m super g.mk_Attribute_ty
 
-                    let additionalFlags =
-                        if isKnownToBeAttribute then
-                            ILTypeDefAdditionalFlags.IsKnownToBeAttribute
-                        else
-                            ILTypeDefAdditionalFlags.None
-
                     let tdef =
                         mkILGenericClass (
                             ilTypeName,
@@ -11545,7 +11537,13 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             .WithSerializable(isSerializable)
                             .WithAbstract(isAbstract)
                             .WithImport(isComInteropTy g thisTy)
-                            .With(methodImpls = mkILMethodImpls methodImpls, newAdditionalFlags = additionalFlags)
+                            .With(methodImpls = mkILMethodImpls methodImpls)
+
+                    let tdef =
+                        if isKnownToBeAttribute then
+                            tdef.WithIsKnownToBeAttribute()
+                        else
+                            tdef
 
                     let tdLayout, tdEncoding =
                         match TryFindFSharpAttribute g g.attrib_StructLayoutAttribute tycon.Attribs with
@@ -11584,7 +11582,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
 
                         | _ when
                             (match ilTypeDefKind with
-                             | ILTypeDefKind.ValueType -> true
+                             | HasFlag ILTypeDefAdditionalFlags.ValueType -> true
                              | _ -> false)
                             ->
 
@@ -11707,7 +11705,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             methods = mkILMethods ilMethods,
                             methodImpls = mkILMethodImpls methodImpls,
                             nestedTypes = emptyILTypeDefs,
-                            implements = InterruptibleLazy.FromValue(ilIntfTys),
+                            implements = ilIntfTys,
                             extends =
                                 Some(
                                     if tycon.IsStructOrEnumTycon then
@@ -11715,7 +11713,6 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                     else
                                         g.ilg.typ_Object
                                 ),
-                            additionalFlags = ILTypeDefAdditionalFlags.None,
                             securityDecls = emptyILSecurityDecls
                         )
                             .WithLayout(layout)
