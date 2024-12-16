@@ -659,25 +659,9 @@ module internal PrintfImpl =
     /// Contains functions to handle left/right and no justification case for numbers
     module GenericNumber =
         
-        let inline doubleIsPositive (n: double) =
-            n >= 0.0
-                // Ensure -0.0 is treated as negative (see https://github.com/dotnet/fsharp/issues/15557)
-                // and use bitwise comparison because floating point comparison treats +0.0 as equal to -0.0
-                && (BitConverter.DoubleToInt64Bits n <> BitConverter.DoubleToInt64Bits -0.0)
-        
-        let inline singleIsPositive (n: single) =
-            doubleIsPositive (float n)
-        
-        let decimalSignBit (n: decimal) =
-            // Unfortunately it's impossible to avoid this array allocation without either targeting .NET 5+ or relying on knowledge about decimal's internal representation
-            let bits = Decimal.GetBits n
-            bits[3] >>> 31
-        
-        let inline decimalIsNegativeZero (n: decimal) =
-            decimalSignBit n <> 0
-        
-        let inline decimalIsPositive (n: decimal) =
-            n > 0.0M || (n = 0.0M && decimalSignBit n = 0)
+        let inline singleIsPositive n = n >= 0.0f
+        let inline doubleIsPositive n = n >= 0.0
+        let inline decimalIsPositive n = n >= 0.0M
         
         let isPositive (n: obj) =
             match n with 
@@ -871,20 +855,24 @@ module internal PrintfImpl =
             | _ -> invalidArg (nameof spec) "Invalid integer format"
     
     module FloatAndDecimal = 
-
-        let fixupDecimalSign (n: decimal) (nStr: string) =
-            // Forward-compatible workaround for a .NET bug which causes -0.0m (negative zero) to be missing its sign (see: https://github.com/dotnet/runtime/issues/110712)
-            // This also affects numbers which round/truncate to negative zero (i.e. very small negative numbers)
-            if (n = 0.0m && not (nStr.StartsWith "-") && GenericNumber.decimalIsNegativeZero n) || (n < 0.0m && not (nStr.StartsWith "-")) then
-                "-" + nStr
+        
+        let fixupSign isPositive (nStr: string) =
+            // .NET Core and .NET Framework differ in how ToString and other formatting methods handle certain negative floating-point values (namely, -0.0 and values which round to -0.0 upon display).
+            // (see: https://devblogs.microsoft.com/dotnet/floating-point-parsing-and-formatting-improvements-in-net-core-3-0/)
+            // So in order for F#'s sprintf to behave consistently across platforms, we essentially "polyfill" (normalize) the output to ToString across the two runtimes. Specifically we do this by
+            // removing the '-' character in situations where the rest of the sprintf logic treats the number as positive, but .NET Core treats it as negative (i.e. -0.0, or -0.0000000001 when
+            // displaying with only a few decimal places)
+            // TODO: make this work for numbers like -0.0000000001
+            if isPositive && nStr.StartsWith "-" then
+                nStr.Substring 1
             else
                 nStr
         
         let rec toFormattedString fmt (v: obj) = 
             match v with
-            | :? single as n -> n.ToString(fmt, CultureInfo.InvariantCulture)
-            | :? double as n -> n.ToString(fmt, CultureInfo.InvariantCulture)
-            | :? decimal as n -> n.ToString(fmt, CultureInfo.InvariantCulture) |> fixupDecimalSign n
+            | :? single as n -> n.ToString(fmt, CultureInfo.InvariantCulture) |> fixupSign (GenericNumber.singleIsPositive n)
+            | :? double as n -> n.ToString(fmt, CultureInfo.InvariantCulture) |> fixupSign (GenericNumber.doubleIsPositive n)
+            | :? decimal as n -> n.ToString(fmt, CultureInfo.InvariantCulture) |> fixupSign (GenericNumber.decimalIsPositive n)
             | _ -> failwith "toFormattedString: unreachable"
 
         let isNumber (x: obj) =
