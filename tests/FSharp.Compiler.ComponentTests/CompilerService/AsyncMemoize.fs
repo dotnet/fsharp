@@ -28,7 +28,7 @@ let internal observe (cache: AsyncMemoize<_,_,_>) =
 
     cache.Event.Add arrivals.Post
 
-    let next () = collected.Receive(10_000)
+    let next () = collected.Receive()
 
     next
 
