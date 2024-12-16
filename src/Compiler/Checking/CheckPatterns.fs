@@ -347,6 +347,7 @@ and TcPat warnOnUpper (cenv: cenv) env valReprInfo vFlags (patEnv: TcPatLinearEn
         TcPat warnOnUpper cenv env None vFlags patEnv ty p
 
     | SynPat.ArrayOrList (isArray, args, m) ->
+        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, ty, env.AccessRights)
         TcPatArrayOrList warnOnUpper cenv env vFlags patEnv ty isArray args m
 
     | SynPat.Record (flds, m) ->
