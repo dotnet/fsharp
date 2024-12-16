@@ -2594,19 +2594,23 @@ FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpDiagnosticRepo
 FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpDiagnosticReport: System.String ResultId
 FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpDiagnosticReport: System.String get_ResultId()
 FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpWorkspaceQuery: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpDiagnosticReport] GetDiagnosticsForFile(System.Uri)
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpWorkspaceQuery: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults]] GetCheckResultsForFile(System.Uri)
 FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpWorkspaceQuery: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.EditorServices.SemanticClassificationView]] GetSemanticClassification(System.Uri)
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpWorkspaceQuery: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`2[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults],Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults]]] GetParseAndCheckResultsForFile(System.Uri)
 FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpWorkspaceQuery: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot] GetProjectSnapshot(FSharpProjectIdentifier)
 FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpWorkspaceQuery: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpProjectSnapshot] GetProjectSnapshotForFile(System.Uri)
 FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpWorkspaceQuery: System.Threading.Tasks.Task`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceTextNew]] GetSource(System.Uri)
 FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery: FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpDiagnosticReport
 FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery: FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceQuery+FSharpWorkspaceQuery
-FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceFiles: Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.Uri,System.String],Microsoft.FSharp.Core.Unit] Open
-FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceFiles: Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.Uri,System.String],Microsoft.FSharp.Core.Unit] get_Open()
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceFiles: System.Collections.Generic.IEnumerable`1[System.String] OfProject(FSharpProjectIdentifier)
 FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceFiles: Void Close(System.Uri)
 FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceFiles: Void Edit(System.Uri, System.String)
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceFiles: Void Open(System.Uri, System.String)
 FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceProjects: FSharpProjectIdentifier AddOrUpdate(ProjectConfig, System.Collections.Generic.IEnumerable`1[System.String])
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceProjects: FSharpProjectIdentifier AddOrUpdate(ProjectConfig, System.Collections.Generic.IEnumerable`1[System.Uri])
 FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceProjects: FSharpProjectIdentifier AddOrUpdate(System.String, System.String, System.Collections.Generic.IEnumerable`1[System.String])
 FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceProjects: FSharpProjectIdentifier AddOrUpdate(System.String, System.String, System.Collections.Generic.IEnumerable`1[System.String], System.Collections.Generic.IEnumerable`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[System.String])
+FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceProjects: Void Update(FSharpProjectIdentifier, System.Collections.Generic.IEnumerable`1[System.String])
 FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState: FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceFiles
 FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState: FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState+FSharpWorkspaceProjects
 FSharp.Compiler.CompilerEnvironment: Boolean IsCheckerSupportedSubcategory(System.String)
