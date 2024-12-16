@@ -14,7 +14,7 @@ open Internal.Utilities.Library
 open System.Text.RegularExpressions
 
 [<RequireQualifiedAccess>]
-module internal WarnScopes =
+module WarnScopes =
 
     // *************************************
     // Temporary storage (during lexing one file) for warn scope related data
@@ -52,7 +52,7 @@ module internal WarnScopes =
     /// a list of mapped sections (surrogate and original start lines).
     type private LineMaps = Map<FileIndex, FileIndex * (LineNumber * LineNumber) list>
 
-    type private TempData =
+    type private LexbufData =
         {
             OriginalFileIndex: int
             mutable WarnDirectives: WarnDirective list
@@ -66,15 +66,15 @@ module internal WarnScopes =
             LineMaps = Map.empty
         }
 
-    let private getTempData (lexbuf: Lexbuf) =
+    let private getLexbufData (lexbuf: Lexbuf) =
         lexbuf.GetLocalData("WarnScopeData", (fun () -> initialData lexbuf))
 
     // *************************************
     // Collect the line directives during lexing
     // *************************************
 
-    let RegisterLineDirective (lexbuf, fileIndex, line: int) =
-        let data = getTempData lexbuf
+    let internal RegisterLineDirective (lexbuf, fileIndex, line: int) =
+        let data = getLexbufData lexbuf
         let sectionMap = line, lexbuf.StartPos.OriginalLine + 1
 
         let changer entry =
@@ -175,8 +175,8 @@ module internal WarnScopes =
             WarnCmds = warnCmds
         }
 
-    let ParseAndRegisterWarnDirective (lexbuf: Lexbuf) =
-        let data = getTempData lexbuf
+    let internal ParseAndRegisterWarnDirective (lexbuf: Lexbuf) =
+        let data = getLexbufData lexbuf
         let warnDirective = parseDirective data.OriginalFileIndex lexbuf
         data.WarnDirectives <- warnDirective :: data.WarnDirectives
 
@@ -216,7 +216,7 @@ module internal WarnScopes =
     let private getScopes idx warnScopes =
         Map.tryFind idx warnScopes |> Option.defaultValue []
 
-    let MergeInto (diagnosticOptions: FSharpDiagnosticOptions) (subModuleRanges: range list) (lexbuf: Lexbuf) =
+    let internal MergeInto (diagnosticOptions: FSharpDiagnosticOptions) (subModuleRanges: range list) (lexbuf: Lexbuf) =
         let collectWarnCmds warnDirectives =
             if lexbuf.LanguageVersion.SupportsFeature LanguageFeature.ScopedNowarn then
                 warnDirectives |> List.collect _.WarnCmds
@@ -305,7 +305,7 @@ module internal WarnScopes =
 
             setWarnScopeData diagnosticOptions newWarnScopeData
 
-        let tempData = getTempData lexbuf
+        let tempData = getLexbufData lexbuf
 
         let lexbufWarnScopes =
             tempData.WarnDirectives
@@ -319,17 +319,17 @@ module internal WarnScopes =
 
         lock diagnosticOptions (fun () -> merge lexbufLineMaps lexbufWarnScopes)
 
-    let getDirectiveTrivia (lexbuf: Lexbuf) =
+    let internal getDirectiveTrivia (lexbuf: Lexbuf) =
         let mkTrivia d =
             if isWarnonDirective d then
                 WarnDirectiveTrivia.Warnon(d.WarnCmds |> List.map _.WarningNumber, d.DirectiveRange)
             else
                 WarnDirectiveTrivia.Nowarn(d.WarnCmds |> List.map _.WarningNumber, d.DirectiveRange)
 
-        (getTempData lexbuf).WarnDirectives |> List.rev |> List.map mkTrivia
+        (getLexbufData lexbuf).WarnDirectives |> List.rev |> List.map mkTrivia
 
-    let getCommentTrivia (lexbuf: Lexbuf) =
-        (getTempData lexbuf).WarnDirectives
+    let internal getCommentTrivia (lexbuf: Lexbuf) =
+        (getLexbufData lexbuf).WarnDirectives
         |> List.rev
         |> List.choose _.CommentRange
         |> List.map CommentTrivia.LineComment
