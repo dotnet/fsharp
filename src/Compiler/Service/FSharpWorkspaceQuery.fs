@@ -58,20 +58,25 @@ type FSharpWorkspaceQuery internal (depGraph: IThreadSafeDependencyGraph<_, _>, 
         |> Seq.tryHead // For now just get the first one
 
     member this.GetParseAndCheckResultsForFile(file: Uri) =
-        use _ =
-            Activity.start "GetParseAndCheckResultsForFile" [ Activity.Tags.fileName, file.LocalPath ]
+        async {
 
-        this.GetProjectSnapshotForFile file
-        |> Option.map (fun snapshot ->
-            async {
-                let! parseResult, checkFileAnswer = checker.ParseAndCheckFileInProject(file.LocalPath, snapshot)
+            use _ =
+                Activity.start "GetParseAndCheckResultsForFile" [ Activity.Tags.fileName, file.LocalPath ]
 
-                return
-                    match checkFileAnswer with
-                    | FSharpCheckFileAnswer.Succeeded result -> Some parseResult, Some result
-                    | FSharpCheckFileAnswer.Aborted -> Some parseResult, None
-            })
-        |> Option.defaultValue (async.Return(None, None))
+            return!
+                this.GetProjectSnapshotForFile file
+                |> Option.map (fun snapshot ->
+                    async {
+                        let! parseResult, checkFileAnswer = checker.ParseAndCheckFileInProject(file.LocalPath, snapshot)
+
+                        return
+                            match checkFileAnswer with
+                            | FSharpCheckFileAnswer.Succeeded result -> Some parseResult, Some result
+                            | FSharpCheckFileAnswer.Aborted -> Some parseResult, None
+                    })
+                |> Option.defaultValue (async.Return(None, None))
+
+        }
 
     member this.GetCheckResultsForFile(file) =
         this.GetParseAndCheckResultsForFile file |> Async.map snd
