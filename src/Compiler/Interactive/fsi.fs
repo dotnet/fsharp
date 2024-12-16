@@ -1131,7 +1131,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                         tagNone,
                         OptionSwitch(fun flag -> gui <- (flag = OptionSwitch.On)),
                         None,
-                        Some(FSIstrings.SR.fsiGui ())
+                        Some(FSIstrings.SR.fsiGui (formatOptionSwitch gui))
                     )
                     CompilerOption("quiet", "", OptionUnit(fun () -> tcConfigB.noFeedback <- true), None, Some(FSIstrings.SR.fsiQuiet ()))
                     CompilerOption(
@@ -1139,28 +1139,28 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                         tagNone,
                         OptionSwitch(fun flag -> enableConsoleKeyProcessing <- (flag = OptionSwitch.On)),
                         None,
-                        Some(FSIstrings.SR.fsiReadline ())
+                        Some(FSIstrings.SR.fsiReadline (formatOptionSwitch enableConsoleKeyProcessing))
                     )
                     CompilerOption(
                         "quotations-debug",
                         tagNone,
                         OptionSwitch(fun switch -> tcConfigB.emitDebugInfoInQuotations <- switch = OptionSwitch.On),
                         None,
-                        Some(FSIstrings.SR.fsiEmitDebugInfoInQuotations ())
+                        Some(FSIstrings.SR.fsiEmitDebugInfoInQuotations (formatOptionSwitch tcConfigB.emitDebugInfoInQuotations))
                     )
                     CompilerOption(
                         "shadowcopyreferences",
                         tagNone,
                         OptionSwitch(fun flag -> tcConfigB.shadowCopyReferences <- flag = OptionSwitch.On),
                         None,
-                        Some(FSIstrings.SR.shadowCopyReferences ())
+                        Some(FSIstrings.SR.shadowCopyReferences (formatOptionSwitch tcConfigB.shadowCopyReferences))
                     )
                     CompilerOption(
                         "multiemit",
                         tagNone,
                         OptionSwitch(fun flag -> tcConfigB.fsiMultiAssemblyEmit <- flag = OptionSwitch.On),
                         None,
-                        Some(FSIstrings.SR.fsiMultiAssemblyEmitOption ())
+                        Some(FSIstrings.SR.fsiMultiAssemblyEmitOption (formatOptionSwitch tcConfigB.fsiMultiAssemblyEmit))
                     )
                 ]
             )

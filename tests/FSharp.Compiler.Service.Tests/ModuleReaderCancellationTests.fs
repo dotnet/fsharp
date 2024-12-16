@@ -1,3 +1,5 @@
+// Sequential execution because of shared mutable state.
+[<FSharp.Test.RunTestCasesInSequence>]
 module FSharp.Compiler.Service.Tests.ModuleReaderCancellationTests
 
 open System

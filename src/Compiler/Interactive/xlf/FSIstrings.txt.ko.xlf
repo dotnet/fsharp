@@ -38,8 +38,8 @@
         <note />
       </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOption">
-        <source>Emit multiple assemblies (on by default)</source>
-        <target state="translated">여러 어셈블리 내보내기(기본적으로 켜져 있음)</target>
+        <source>Emit multiple assemblies ({0} by default)</source>
+        <target state="new">Emit multiple assemblies ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">
@@ -113,8 +113,8 @@
         <note />
       </trans-unit>
       <trans-unit id="fsiGui">
-        <source>Execute interactions on a Windows Forms event loop (on by default)</source>
-        <target state="translated">Windows Forms 이벤트 루프에서 상호 작용을 실행합니다(기본값: 설정).</target>
+        <source>Execute interactions on a Windows Forms event loop ({0} by default)</source>
+        <target state="new">Execute interactions on a Windows Forms event loop ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiQuiet">
@@ -123,13 +123,13 @@
         <note />
       </trans-unit>
       <trans-unit id="fsiReadline">
-        <source>Support TAB completion in console (on by default)</source>
-        <target state="translated">콘솔에서 Tab 키 완성 기능을 지원합니다(기본값: 설정).</target>
+        <source>Support TAB completion in console ({0} by default)</source>
+        <target state="new">Support TAB completion in console ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiEmitDebugInfoInQuotations">
-        <source>Emit debug information in quotations</source>
-        <target state="translated">인용구의 디버그 정보를 내보냅니다.</target>
+        <source>Emit debug information in quotations ({0} by default)</source>
+        <target state="new">Emit debug information in quotations ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiBanner3">
@@ -298,8 +298,8 @@
         <note />
       </trans-unit>
       <trans-unit id="shadowCopyReferences">
-        <source>Prevents references from being locked by the F# Interactive process</source>
-        <target state="translated">참조가 F# 대화형 프로세스에 의해 잠기지 않도록 합니다.</target>
+        <source>Prevents references from being locked by the F# Interactive process ({0} by default)</source>
+        <target state="new">Prevents references from being locked by the F# Interactive process ({0} by default)</target>
         <note />
       </trans-unit>
     </body>
