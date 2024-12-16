@@ -97,25 +97,30 @@ type PrintfTests() =
     member this.``sign flag - positive and negative zero``() =
         test "%f"  +0.0         "0.000000"
         test "%f"  -0.0         "0.000000"
-        test "%f"  -0.0000001   "0.000000"
         test "%+f" +0.0         "+0.000000"
         test "%+f" -0.0         "+0.000000"
-        // TODO: should this output -0.000000 or +0.000000? See https://github.com/dotnet/fsharp/pull/18147#issuecomment-2546220183
-        // test "%+f" -0.0000001   "+0.000000"
         
         test "%f"  +0.0f        "0.000000"
         test "%f"  -0.0f        "0.000000"
-        test "%f"  -0.0000001f  "0.000000"
         test "%+f" +0.0f        "+0.000000"
         test "%+f" -0.0f        "+0.000000"
-        // see previous comment
-        // test "%+f" -0.0000001f  "+0.000000"
         
         test "%f"  +0.0M        "0.000000"
         test "%f"  -0.0M        "0.000000"
-        test "%f"  -0.0000001M  "0.000000"
         test "%+f" +0.0M        "+0.000000"
         test "%+f" -0.0M        "+0.000000"
+    
+    [<Fact>]
+    member this.``sign flag - very small positive and negative numbers``() =
+        test "%f"  -0.0000001   "0.000000"
+        // TODO: should this output -0.000000 or +0.000000? See https://github.com/dotnet/fsharp/pull/18147#issuecomment-2546220183
+        // test "%+f" -0.0000001   "+0.000000"
+        
+        test "%f"  -0.0000001f  "0.000000"
+        // see previous comment
+        // test "%+f" -0.0000001f  "+0.000000"
+        
+        test "%f"  -0.0000001M  "0.000000"
         // see previous comment
         // test "%+f" -0.0000001M  "+0.000000"
     
