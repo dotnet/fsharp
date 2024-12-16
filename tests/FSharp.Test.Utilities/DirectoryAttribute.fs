@@ -116,6 +116,8 @@ type DirectoryAttribute(dir: string) =
             if not <| FileSystem.FileExistsShim(f) then
                 failwithf "Requested file \"%s\" not found.\nAll files: %A.\nIncludes:%A." f allFiles includes
 
-        fsFiles
-        |> Array.map (fun fs -> createCompilationUnit dirInfo fs)
-        |> Seq.map (fun c -> [| c |])
+        let results =
+            fsFiles
+            |> Array.map (fun fs -> (createCompilationUnit dirInfo fs) :> obj)
+            |> Seq.map (fun c -> [| c  |])
+        results
