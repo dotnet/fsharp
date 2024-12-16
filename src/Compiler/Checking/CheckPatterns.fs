@@ -35,24 +35,6 @@ type cenv = TcFileState
 // Helpers that should be elsewhere
 //-------------------------------------------------------------------------
 
-// CAUTION: This function operates over the untyped tree, so should be used only when absolutely necessary. It doesn't verify assembly origine nor does it respect type aliases.
-let inline findSynAttribute (attrName: string) (synAttrs: SynAttributes) =
-    let attributesToSearch =
-        if attrName.EndsWith("Attribute") then
-            set [attrName; attrName.Substring(0, attrName.Length - 9).ToString()]
-        else
-            set [attrName; attrName + "Attribute"]
-
-    let mutable found = false
-
-    for synAttr in synAttrs do
-        for attr in synAttr.Attributes do
-            let typename = attr.TypeName.LongIdent |> List.last
-            if attributesToSearch.Contains typename.idText then
-                found <- true
-
-    found
-
 let mkNilListPat (g: TcGlobals) m ty = TPat_unioncase(g.nil_ucref, [ty], [], m)
 
 let mkConsListPat (g: TcGlobals) ty ph pt = TPat_unioncase(g.cons_ucref, [ty], [ph;pt], unionRanges ph.Range pt.Range)
@@ -75,6 +57,14 @@ let UnifyRefTupleType contextInfo (cenv: cenv) denv m ty ps =
 
     AddCxTypeEqualsType contextInfo denv cenv.css m ty (TType_tuple (tupInfoRef, ptys))
     ptys
+
+let inline mkOptionalParamTyBasedOnAttribute (g: TcGlobals)  tyarg attribs =
+    if g.langVersion.SupportsFeature(LanguageFeature.SupportValueOptionsAsOptionalParameters)
+        && findSynAttribute "StructAttribute" attribs
+    then
+        mkValueOptionTy g tyarg
+    else
+        mkOptionTy g tyarg
 
 let rec TryAdjustHiddenVarNameToCompGenName (cenv: cenv) env (id: Ident) altNameRefCellOpt =
     match altNameRefCellOpt with
@@ -111,13 +101,8 @@ and TcSimplePat optionalArgsOK checkConstraints (cenv: cenv) ty env patEnv p (at
 
                 let tyarg = NewInferenceType g
 
-                let optionalParamTy =
-                    if g.langVersion.SupportsFeature(LanguageFeature.SupportValueOptionsAsOptionalParameters)
-                       && findSynAttribute "StructAttribute" attribs
-                    then
-                        mkValueOptionTy g tyarg
-                    else
-                        mkOptionTy g tyarg
+                let optionalParamTy = mkOptionalParamTyBasedOnAttribute g tyarg attribs
+
                 UnifyTypes cenv env m ty optionalParamTy
 
             let vFlags = TcPatValFlags (ValInline.Optional, permitInferTypars, noArgOrRetAttribs, false, None, isCompGen)
@@ -131,13 +116,8 @@ and TcSimplePat optionalArgsOK checkConstraints (cenv: cenv) ty env patEnv p (at
         match p with
         // Optional arguments on members
         | SynSimplePat.Id(_, _, _, _, true, _) ->
-            let optionalParamTy =
-                    if g.langVersion.SupportsFeature(LanguageFeature.SupportValueOptionsAsOptionalParameters)
-                       && findSynAttribute "StructAttribute" attribs
-                    then
-                        mkValueOptionTy g ctyR
-                    else
-                        mkOptionTy g ctyR
+            let optionalParamTy = mkOptionalParamTyBasedOnAttribute g ctyR attribs
+
             UnifyTypes cenv env m ty optionalParamTy
         | _ -> UnifyTypes cenv env m ty ctyR
 
