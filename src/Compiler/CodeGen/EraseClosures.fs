@@ -560,7 +560,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                     mkILStorageCtor (
                         [ mkLdarg0; mkNormalCall (mkILCtorMethSpecForTy (cenv.mkILTyFuncTy, [])) ],
                         nowTy,
-                        mkILCloFldSpecs cenv nowFields,
+                        mkILCloFldSpecs cenv nowFields |> List.map (fun (name, t) -> (name, t, [])),
                         ILMemberAccess.Assembly,
                         None,
                         None
@@ -572,7 +572,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                         name = td.Name,
                         genericParams = td.GenericParams,
                         attributes = td.Attributes,
-                        implements = emptyILInterfaceImpls,
+                        implements = [],
                         nestedTypes = emptyILTypeDefs,
                         layout = ILTypeDefLayout.Auto,
                         extends = Some cenv.mkILTyFuncTy,
@@ -582,7 +582,6 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                         methodImpls = emptyILMethodImpls,
                         properties = emptyILProperties,
                         events = emptyILEvents,
-                        additionalFlags = ILTypeDefAdditionalFlags.None,
                         securityDecls = emptyILSecurityDecls
                     )
                         .WithSpecialName(false)
@@ -695,7 +694,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                         mkILStorageCtor (
                             [ mkLdarg0; mkNormalCall (mkILCtorMethSpecForTy (nowEnvParentClass, [])) ],
                             nowTy,
-                            mkILCloFldSpecs cenv nowFields,
+                            mkILCloFldSpecs cenv nowFields |> List.map (fun (name, t) -> (name, t, [])),
                             ILMemberAccess.Assembly,
                             None,
                             cloImports
@@ -706,7 +705,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                         name = td.Name,
                         genericParams = td.GenericParams,
                         attributes = td.Attributes,
-                        implements = emptyILInterfaceImpls,
+                        implements = [],
                         layout = ILTypeDefLayout.Auto,
                         nestedTypes = emptyILTypeDefs,
                         extends = Some nowEnvParentClass,
@@ -716,7 +715,6 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                         methodImpls = emptyILMethodImpls,
                         properties = emptyILProperties,
                         events = emptyILEvents,
-                        additionalFlags = ILTypeDefAdditionalFlags.None,
                         securityDecls = emptyILSecurityDecls
                     )
                         .WithHasSecurity(false)
@@ -733,7 +731,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
 
             // No code is being declared: just bake a (mutable) environment
             let cloCodeR =
-                match td.Extends with
+                match td.Extends.Value with
                 | None -> (mkILNonGenericEmptyCtor (cenv.ilg.typ_Object, None, cloImports)).MethodBody
                 | Some _ -> convILMethodBody (Some nowCloSpec, None) clo.cloCode.Value
 
@@ -768,9 +766,9 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                 td.With(
                     implements = td.Implements,
                     extends =
-                        (match td.Extends with
-                         | None -> Some cenv.ilg.typ_Object
-                         | Some x -> Some(x)),
+                        (match td.Extends.Value with
+                         | None -> Some cenv.ilg.typ_Object |> notlazy
+                         | _ -> td.Extends),
                     name = td.Name,
                     genericParams = td.GenericParams,
                     methods = mkILMethods (ctorMethodDef :: nowMethods),
