@@ -101,7 +101,7 @@ type PrintfTests() =
         test "%+f" +0.0         "+0.000000"
         test "%+f" -0.0         "+0.000000"
         // TODO: should this output -0.000000 or +0.000000? See https://github.com/dotnet/fsharp/pull/18147#issuecomment-2546220183
-        test "%+f" -0.0000001   "+0.000000"
+        // test "%+f" -0.0000001   "+0.000000"
         
         test "%f"  +0.0f        "0.000000"
         test "%f"  -0.0f        "0.000000"
@@ -109,7 +109,7 @@ type PrintfTests() =
         test "%+f" +0.0f        "+0.000000"
         test "%+f" -0.0f        "+0.000000"
         // see previous comment
-        test "%+f" -0.0000001f  "+0.000000"
+        // test "%+f" -0.0000001f  "+0.000000"
         
         test "%f"  +0.0M        "0.000000"
         test "%f"  -0.0M        "0.000000"
@@ -117,7 +117,7 @@ type PrintfTests() =
         test "%+f" +0.0M        "+0.000000"
         test "%+f" -0.0M        "+0.000000"
         // see previous comment
-        test "%+f" -0.0000001M  "+0.000000"
+        // test "%+f" -0.0000001M  "+0.000000"
     
     [<Fact>]
     member this.``sign flag - infinity``() =
@@ -157,14 +157,14 @@ type PrintfTests() =
     
     [<Fact>]
     member this.``zero padding - positive and negative zero`` () =
-        test "%010.3f" +0.0  "000000.000"
-        test "%010.3f" -0.0  "000000.000"
+        test "%010.3f" +0.0         "000000.000"
+        test "%010.3f" -0.0         "000000.000"
         
-        test "%010.3f" +0.0f "000000.000"
-        test "%010.3f" -0.0f "000000.000"
+        test "%010.3f" +0.0f        "000000.000"
+        test "%010.3f" -0.0f        "000000.000"
         
-        test "%010.3f" +0.0M "000000.000"
-        test "%010.3f" -0.0M "000000.000"
+        test "%010.3f" +0.0M        "000000.000"
+        test "%010.3f" -0.0M        "000000.000"
     
     [<Fact>]
     member _.``union case formatting`` () =
