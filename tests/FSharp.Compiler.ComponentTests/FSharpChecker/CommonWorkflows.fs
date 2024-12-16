@@ -147,7 +147,7 @@ let GetAllUsesOfAllSymbols() =
         Sdk.CreateTracerProviderBuilder()
                 .AddSource("fsc")
                 .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName="F#", serviceVersion = "1"))
-                .AddOtlpExporter()
+                .AddJaegerExporter()
                 .Build()
 
     use _ = Activity.start "GetAllUsesOfAllSymbols" [  ]

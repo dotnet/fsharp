@@ -1,24 +1,31 @@
 module CompilerService.FSharpWorkspace
 
 open System
+
 open Xunit
 
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
-open TestFramework
-open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis.Workspace
 open FSharp.Compiler.Diagnostics
 open FSharp.Test.ProjectGeneration.WorkspaceHelpers
 open OpenTelemetry
 open OpenTelemetry.Resources
 open OpenTelemetry.Trace
-open FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspaceState
+open OpenTelemetry.Exporter
 open System.IO
 
 #nowarn "57"
 
 // System.Diagnostics.DiagnosticSource seems to be missing in NET FW. Might investigate this later
 #if !NETFRAMEWORK
+
+type FilteredJaegerExporter(predicate) =
+
+    inherit SimpleActivityExportProcessor(new JaegerExporter(new JaegerExporterOptions()))
+
+    override _.OnEnd(activity: System.Diagnostics.Activity) =
+        if predicate activity then
+            base.OnEnd activity
 
 /// Wrapper for FSharpWorkspace to use in tests. Provides OpenTelemetry tracing.
 type TestingWorkspace(testName) as _this =
@@ -31,9 +38,7 @@ type TestingWorkspace(testName) as _this =
             .CreateTracerProviderBuilder()
             .AddSource("fsc")
             .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName="F#", serviceVersion = "1"))
-            .AddOtlpExporter(fun config ->
-                // Each test is slowed down by this much if no one is listening to the telemetry
-                config.TimeoutMilliseconds <- 50)
+            .AddProcessor(new FilteredJaegerExporter(_.DisplayName >> (<>) "DiagnosticsLogger.StackGuard.Guard"))
             .Build()
 
     let activity = Activity.start $"Test FSharpWorkspace {testName}" []
@@ -342,20 +347,19 @@ let ``Asking for an unknown project snapshot returns None`` () =
 
 [<Fact>]
 let ``Works with signature files`` () =
-
-    use workspace = new TestingWorkspace("Works with signature files")
-
-    let projectConfig = ProjectConfig.Create()
-
-    let sourceFileUri = projectConfig.FileUri "test.fs"
-
-    let source = "let x = 1"
-
-    let projectIdentifier = workspace.Projects.AddOrUpdate(projectConfig, [ sourceFileUri ])
-
-    workspace.Files.Open(sourceFileUri, source)
-
     task {
+
+        use workspace = new TestingWorkspace("Works with signature files")
+
+        let projectConfig = ProjectConfig.Create()
+
+        let sourceFileUri = projectConfig.FileUri "test.fs"
+
+        let source = "let x = 1"
+
+        let projectIdentifier = workspace.Projects.AddOrUpdate(projectConfig, [ sourceFileUri ])
+
+        workspace.Files.Open(sourceFileUri, source)
 
         let! signatureUri, _signatureSource = workspace.AddSignatureFile(projectIdentifier, sourceFileUri, writeToDisk=false)
 
@@ -379,7 +383,6 @@ let ``Works with signature files`` () =
     }
 
 
-
 let reposDir = __SOURCE_DIRECTORY__ ++ ".." ++ ".." ++ ".." ++ ".."
 let giraffeDir = reposDir ++ "Giraffe" ++ "src" ++ "Giraffe" |> Path.GetFullPath
 let giraffeTestsDir = reposDir ++ "Giraffe" ++ "tests" ++ "Giraffe.Tests" |> Path.GetFullPath
@@ -399,27 +402,27 @@ type GiraffeFactAttribute() =
 
 [<GiraffeFact>]
 let ``Giraffe signature test`` () =
-    use workspace = new TestingWorkspace("Giraffe signature test")
-
-    let responseFileName = "compilerArgs.rsp"
-
-    let _identifiers =
-        [
-            giraffeSignaturesDir
-            giraffeSignaturesTestsDir
-            giraffeSignaturesSampleDir ]
-        |> Seq.map (fun dir ->
-            let projectName = Path.GetFileName dir
-            let dllName = $"{projectName}.dll"
-            let responseFile = dir ++ responseFileName
-            let outputFile = dir ++ "bin" ++ "Debug" ++ "net6.0" ++ dllName
-            let projectFile = dir ++ projectName + ".fsproj"
-            let compilerArgs = File.ReadAllLines responseFile
-            workspace.Projects.AddOrUpdate(projectFile, outputFile, compilerArgs)
-        )
-        |> Seq.toList
-
     task {
+        use workspace = new TestingWorkspace("Giraffe signature test")
+
+        let responseFileName = "compilerArgs.rsp"
+
+        let _identifiers =
+            [
+                giraffeSignaturesDir
+                giraffeSignaturesTestsDir
+                giraffeSignaturesSampleDir ]
+            |> Seq.map (fun dir ->
+                let projectName = Path.GetFileName dir
+                let dllName = $"{projectName}.dll"
+                let responseFile = dir ++ responseFileName
+                let outputFile = dir ++ "bin" ++ "Debug" ++ "net6.0" ++ dllName
+                let projectFile = dir ++ projectName + ".fsproj"
+                let compilerArgs = File.ReadAllLines responseFile
+                workspace.Projects.AddOrUpdate(projectFile, outputFile, compilerArgs)
+            )
+            |> Seq.toList
+
         let _ = workspace.Files.OpenFromDisk(giraffeSignaturesSampleDir ++ "Program.fs")
 
         let! diag = workspace.Query.GetDiagnosticsForFile(Uri(giraffeSignaturesSampleDir ++ "Program.fs"))

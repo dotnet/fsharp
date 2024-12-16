@@ -1019,7 +1019,7 @@ type ProjectWorkflowBuilder
             Sdk.CreateTracerProviderBuilder()
                 .AddSource("fsc")
                 .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName="F#", serviceVersion = "1"))
-                .AddOtlpExporter()
+                .AddJaegerExporter()
                 .Build()
             |> Some
         activity <- Activity.start ctx.Project.Name [ Activity.Tags.project, ctx.Project.Name; "UsingTransparentCompiler", useTransparentCompiler.ToString() ] |> Some
