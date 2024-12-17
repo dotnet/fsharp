@@ -4,7 +4,10 @@ module MyTestModule
 type MyDu = 
     | JustLabel
     | JustInt of int
-    | MaybeString of (string | null)
+    | MaybeString of nullableString:(string | null)
+
+[<NoComparison;NoEquality>]
+type SingleCaseDu = SingleCaseItIs of nullableString:(string|null)
 
 let giveMeLabel () = JustLabel
 

@@ -20,7 +20,6 @@
     <Compile Include="..\FSharp.Test.Utilities\XunitSetup.fs">
       <Link>XunitSetup.fs</Link>
     </Compile>
-    <Compile Include="XunitHelpers.fs" />
     <Compile Include="HandleExpects.fs" />
     <Compile Include="single-test.fs" />
     <Compile Include="TypeProviderTests.fs" />
