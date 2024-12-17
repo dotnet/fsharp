@@ -57,7 +57,9 @@ module rec Compiler =
         | FS of FSharpCompilationSource
         | CS of CSharpCompilationSource
         | IL of ILCompilationSource
-        override this.ToString() = match this with | FS fs -> fs.ToString() | _ -> (sprintf "%A" this   )
+
+        override this.ToString() = match this with | FS fs -> fs.ToString() | _ -> (sprintf "%A" this)
+
         member this.OutputDirectory =
             let toString diOpt =
                 match diOpt: DirectoryInfo option with
@@ -67,6 +69,7 @@ module rec Compiler =
             | FS fs -> fs.OutputDirectory |> toString
             | CS cs -> cs.OutputDirectory |> toString
             | _ -> raise (Exception "Not supported for this compilation type")
+
         member this.WithStaticLink(staticLink: bool) = match this with | FS fs -> FS { fs with StaticLink = staticLink } | cu -> cu
 
     type FSharpCompilationSource =

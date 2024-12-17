@@ -56,49 +56,66 @@ type FileInlineDataAttribute (filename: string) =
         | None, Some opt -> Some $"{opt}"
         | _ -> None
 
-    static let fromBoolOption(value: bool option) =
+    static let fromBoolOption(value: bool) =
         match value with
-        | Some true -> Some BooleanOptions.True
-        | Some _ -> Some BooleanOptions.False
-        | None -> None
+        | true -> Some BooleanOptions.True
+        | _ -> Some BooleanOptions.False
 
+    member _.Directory with set v = directory <- Some v
 
-    let getOptions realsigBsl optimizeBsl realsig optimize =
+    member _.Optimize with set v = optimize <- Some v
 
-        [|
-            yield box filename
-            match realsigBsl, realsig with
-            | Some _, realsig -> yield box realsig
-            | _ -> ()
-            match optimizeBsl, optimize with
-            | Some _, optimize -> yield box optimize
-            | _ -> ()
-        |]
+    member _.Realsig with set v = realsig <- Some v
 
-    member _.Directory with get() = directory and set v = directory <- Some v
-
-    member _.Filename with get() = filename
-
-    member _.Optimize with get() = optimize and set v = optimize <- Some v
-
-    member _.Realsig with get() = realsig and set v = realsig <- Some v
-
-    override _.GetData _ =
+    override _.GetData methodInfo =
 
         let realsigOn, realsigOff = getBaselinesForOption realsig "RealInternalSignature"
         let optimizeOn, optimizeOff = getBaselinesForOption optimize "Optimize"
 
-        let arguments = [|
-            let opts = getOptions realsigOn  optimizeOn  true true in yield opts
-            let opts = getOptions realsigOn  optimizeOff true false in yield opts
-            let opts = getOptions realsigOff optimizeOn  false true in yield opts
-            let opts = getOptions realsigOff optimizeOff false false in yield opts
+        let getOptions realsigBsl optimizeBsl realsig optimize =
+
+            let setRealInternalSignature compilation =
+                match realsigBsl, realsig with
+                | Some _, realsig -> compilation |> withRealInternalSignature realsig
+                | _ -> compilation
+
+            let setOptimization compilation =
+                match optimizeBsl, optimize with
+                | Some _, optimize -> compilation |> withOptimization optimize
+                | _ -> compilation
+
+            let directoryAttribute = DirectoryAttribute(directory |> Option.defaultValue "")
+            directoryAttribute.Includes <- [| filename |]
+
+            let compilation: CompilationUnit option =
+                let results = directoryAttribute.GetData methodInfo
+                if results.Count() <> 1 then failwith $"directoryAttribute returned incorrect number of results requires only 1: actual: {results.Count()}"
+                let arguments = results.First()
+                if arguments.Count() <> 1 then failwith $"directoryAttribute returned incorrect number of arguments requires only 1: actual: {arguments.Count()}"
+
+                match arguments.First() with
+                | :? FSharpCompilationSource as fsSource -> Some (FS fsSource)
+                | :? CSharpCompilationSource as csSource -> Some (CS csSource)
+                | :? ILCompilationSource as ilSource -> Some (IL ilSource)
+                | _ -> None
+
+            match compilation with
+            | Some compilation ->
+                let compilation = compilation |> setRealInternalSignature |> setOptimization
+                [| (box compilation) |]
+            | None -> [||]
+
+        System.Diagnostics.Debugger.Launch() |> ignore
+        let results = [|
+            getOptions realsigOn  optimizeOn  true true
+            getOptions realsigOn  optimizeOff true false
+            getOptions realsigOff optimizeOn  false true
+            getOptions realsigOff optimizeOff false false
         |]
 
-        let maxLength = arguments |> Array.map Array.length |> Array.max
-        let results = arguments |> Array.filter (fun arr -> maxLength > 0 && arr.Length = maxLength)
         results
 
+(*
     static member GetCompilation(filename, realsig: bool option, optimize: bool option) =
 
         let methodInfo = StackTrace().GetFrame(1).GetMethod()
@@ -259,3 +276,4 @@ type FileInlineDataAttribute (filename: string) =
         //System.Diagnostics.Debugger.Launch() |> ignore
         //results
 
+*)
