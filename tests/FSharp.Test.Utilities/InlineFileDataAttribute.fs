@@ -69,6 +69,7 @@ type FileInlineDataAttribute (filename: string) =
 
     override _.GetData methodInfo =
 
+        System.Diagnostics.Debugger.Launch() |> ignore
         let realsigOn, realsigOff = getBaselinesForOption realsig "RealInternalSignature"
         let optimizeOn, optimizeOff = getBaselinesForOption optimize "Optimize"
 
@@ -105,7 +106,6 @@ type FileInlineDataAttribute (filename: string) =
                 [| (box compilation) |]
             | None -> [||]
 
-        System.Diagnostics.Debugger.Launch() |> ignore
         let results = [|
             getOptions realsigOn  optimizeOn  true true
             getOptions realsigOn  optimizeOff true false

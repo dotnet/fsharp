@@ -15,8 +15,16 @@ module ComputedCollections =
         |> ignoreWarnings
         |> verifyILBaseline
 
+    let verifyCompilationEx compilation=
+        compilation
+        |> asExe
+        |> withEmbeddedPdb
+        |> withEmbedAllSource
+        |> ignoreWarnings
+        |> verifyILBaseline
+
 //    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Int32RangeArrays.fs"|])>]
-    [<Theory; FileInlineData("Int32RangeArrays.fs", Directory=__SOURCE_DIRECTORY__, Realsig=BooleanOptions.False, Optimize=BooleanOptions.Both)>]
+    [<Theory; FileInlineData("Int32RangeArrays.fs", Directory=__SOURCE_DIRECTORY__, Realsig=BooleanOptions.Both, Optimize=BooleanOptions.Both)>]
     let Int32RangeArrays_fs (compilation) =
         compilation |> verifyCompilation
 
