@@ -6,16 +6,19 @@ namespace FSharp.VisualStudio.Extension;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.IO.Pipelines;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FSharp.Compiler.CodeAnalysis.Workspace;
+using FSharp.Compiler.Diagnostics;
 using FSharp.Compiler.LanguageServer;
 using FSharp.Compiler.LanguageServer.Common;
 
 using Microsoft.CommonLanguageServerProtocol.Framework;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.FSharp.Core;
 using Microsoft.VisualStudio.Extensibility;
 using Microsoft.VisualStudio.Extensibility.Editor;
 using Microsoft.VisualStudio.Extensibility.LanguageServer;
@@ -213,8 +216,11 @@ internal class ProjectObserver(FSharpWorkspace workspace) : IObserver<IQueryResu
                 workspace.Projects.AddOrUpdate(projectPath, projectInfo.Item1, projectInfo.Item2.Split(';'));
             }
 
-            workspace.Debug_DumpMermaid("../../../../dep-graph.md");
+            //var graphPath = Path.Combine(Path.GetDirectoryName(projectPath) ?? ".", "..", "depGraph.md");
 
+            //workspace.projects.Debug_DumpGraphOnEveryChange = FSharpOption<string>.Some(graphPath);
+
+            //Trace.TraceInformation($"Auto-saving workspace graph to {graphPath}");
 
         }
     }
@@ -258,6 +264,42 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
     /// <inheritdoc/>
     public override async Task<IDuplexPipe?> CreateServerConnectionAsync(CancellationToken cancellationToken)
     {
+        var activitySourceName = "fsc";
+
+        FSharp.Compiler.LanguageServer.Activity.listenToSome();
+
+        //const string vsMajorVersion = "17.0";
+
+        //var settings = OpenTelemetryExporterSettingsBuilder
+        //    .CreateVSDefault(vsMajorVersion)
+        //    .Build();
+
+        //try
+        //{
+        //    var tracerProvider = Sdk.CreateTracerProviderBuilder()
+        //            .AddVisualStudioDefaultTraceExporter(settings)
+        //            //.AddConsoleExporter()
+        //            .AddOtlpExporter()
+        //            .Build();
+        //}
+        //catch (Exception e)
+        //{
+        //    Trace.TraceError($"Failed to create OpenTelemetry tracer provider: {e}");
+        //}
+
+
+        var activitySource = new ActivitySource(activitySourceName);
+        var activity = activitySource.CreateActivity("CreateServerConnectionAsync", ActivityKind.Internal);
+
+        if (activity != null)
+        {
+            activity.Start();
+        }
+        else
+        {
+            Trace.TraceWarning("Failed to start OpenTelemetry activity, there are no listeners");
+        }
+
         var ws = this.Extensibility.Workspaces();
 
         var projectQuery = (IAsyncQueryable<IProjectSnapshot> project) => project
@@ -315,7 +357,7 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
         return new DuplexPipe(
             PipeReader.Create(inputStream),
             PipeWriter.Create(outputStream));
-    }
+        }
 
     /// <inheritdoc/>
     public override Task OnServerInitializationResultAsync(ServerInitializationResult serverInitializationResult, LanguageServerInitializationFailureInfo? initializationFailureInfo, CancellationToken cancellationToken)
