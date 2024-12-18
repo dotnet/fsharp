@@ -22,6 +22,7 @@ using Microsoft.FSharp.Core;
 using Microsoft.VisualStudio.Extensibility;
 using Microsoft.VisualStudio.Extensibility.Editor;
 using Microsoft.VisualStudio.Extensibility.LanguageServer;
+using Microsoft.VisualStudio.Extensibility.Settings;
 using Microsoft.VisualStudio.LanguageServer.Protocol;
 using Microsoft.VisualStudio.ProjectSystem.Query;
 using Microsoft.VisualStudio.RpcContracts.LanguageServerProvider;
@@ -41,14 +42,17 @@ internal static class Extensions
 
 internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
 {
-    public ServerCapabilities OverrideServerCapabilities(ServerCapabilities value)
+    public ServerCapabilities OverrideServerCapabilities(FSharpLanguageServerConfig config, ServerCapabilities value, ClientCapabilities clientCapabilities)
     {
         var capabilities = new VSInternalServerCapabilities
         {
             TextDocumentSync = value.TextDocumentSync,
             SupportsDiagnosticRequests = true,
             ProjectContextProvider = true,
-            DiagnosticProvider = new()
+            DiagnosticProvider =
+                config.EnabledFeatures.Diagnostics ?
+
+            new()
             {
                 SupportsMultipleContextsDiagnostics = true,
                 DiagnosticKinds = [
@@ -67,8 +71,8 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
                         //new(PullDiagnosticCategories.DocumentAnalyzerSyntax),
                         //new(PullDiagnosticCategories.DocumentAnalyzerSemantic),
                     ]
-            },
-            SemanticTokensOptions = new()
+            } : null,
+            SemanticTokensOptions = config.EnabledFeatures.SemanticHighlighting ? new()
             {
                 Legend = new()
                 {
@@ -80,7 +84,7 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
                     Delta = false
                 },
                 Range = false
-            }
+            } : null,
             //,
             //HoverProvider = new HoverOptions()
             //{
@@ -268,6 +272,41 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
 
         FSharp.Compiler.LanguageServer.Activity.listenToSome();
 
+#pragma warning disable VSEXTPREVIEW_SETTINGS // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
+        // Write default settings unless they're overridden. Otherwise users can't even find which settings exist.
+
+        var settingsReadResult = await this.Extensibility.Settings().ReadEffectiveValuesAsync(FSharpExtensionSettings.AllStringSettings, cancellationToken);
+
+        var settingValues = FSharpExtensionSettings.AllStringSettings.Select(
+            setting => (setting, settingsReadResult.ValueOrDefault(setting, defaultValue: FSharpExtensionSettings.UNSET)));
+
+        foreach (var (setting, value) in settingValues.Where(x => x.Item2 == FSharpExtensionSettings.UNSET))
+        {
+            await this.Extensibility.Settings().WriteAsync(batch =>
+                batch.WriteSetting(setting, FSharpExtensionSettings.BOTH), "write default settings", cancellationToken);
+        }
+
+        var enabled = new[] { FSharpExtensionSettings.LSP, FSharpExtensionSettings.BOTH };
+
+        var serverConfig = new FSharpLanguageServerConfig(
+            new FSharpLanguageServerFeatures(
+                diagnostics: enabled.Contains(settingsReadResult.ValueOrDefault(FSharpExtensionSettings.GetDiagnosticsFrom, defaultValue: FSharpExtensionSettings.BOTH)),
+                semanticHighlighting: enabled.Contains(settingsReadResult.ValueOrDefault(FSharpExtensionSettings.GetSemanticHighlightingFrom, defaultValue: FSharpExtensionSettings.BOTH))
+                ));
+
+        var disposeToEndSubscription =
+            this.Extensibility.Settings().SubscribeAsync(
+                [FSharpExtensionSettings.FSharpCategory],
+                cancellationToken,
+                changeHandler: result =>
+                {
+                    Trace.TraceInformation($"Settings update", result);
+                });
+
+#pragma warning restore VSEXTPREVIEW_SETTINGS // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
+
         //const string vsMajorVersion = "17.0";
 
         //var settings = OpenTelemetryExporterSettingsBuilder
@@ -333,8 +372,7 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
             // observer.ProcessProject(project);
         }
 
-
-        var ((inputStream, outputStream), _server) = FSharpLanguageServer.Create(workspace, (serviceCollection) =>
+        var ((inputStream, outputStream), _server) = FSharpLanguageServer.Create(workspace, serverConfig, (serviceCollection) =>
         {
             serviceCollection.AddSingleton<IServerCapabilitiesOverride, VsServerCapabilitiesOverride>();
             serviceCollection.AddSingleton<IMethodHandler, VsDiagnosticsHandler>();
@@ -357,7 +395,7 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
         return new DuplexPipe(
             PipeReader.Create(inputStream),
             PipeWriter.Create(outputStream));
-        }
+    }
 
     /// <inheritdoc/>
     public override Task OnServerInitializationResultAsync(ServerInitializationResult serverInitializationResult, LanguageServerInitializationFailureInfo? initializationFailureInfo, CancellationToken cancellationToken)
