@@ -26,7 +26,7 @@ val internal TypeCheck:
     assemblyName: string *
     tcEnv0: CheckBasics.TcEnv *
     openDecls0: TypedTree.OpenDeclaration list *
-    inputs: ParsedInput list * 
+    inputs: ParsedInput list *
     exiter: Exiter *
     outfile: string ->
         TcState * TopAttribs * CheckedImplFile list * CheckBasics.TcEnv
