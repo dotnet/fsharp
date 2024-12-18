@@ -14,6 +14,7 @@ open FSharp.Compiler.IO
 module Parser =
 
     open System.Xml
+    open System.Collections.Concurrent
 
     type Help =
         {
@@ -79,22 +80,19 @@ module Parser =
         let s = if idx > 0 then s.Substring(0, idx) else s
         s
 
-    let xmlDocCache = Dictionary<string, string>()
+    let xmlDocCache = ConcurrentDictionary<string, Lazy<XmlDocument>>()
 
     let tryGetXmlDocument xmlPath =
-        try
-            match xmlDocCache.TryGetValue(xmlPath) with
-            | true, value ->
-                let xmlDocument = XmlDocument()
-                xmlDocument.LoadXml(value)
-                Some xmlDocument
-            | _ ->
+        let valueFactory xmlPath =
+            lazy
                 use stream = FileSystem.OpenFileForReadShim(xmlPath)
                 let rawXml = stream.ReadAllText()
                 let xmlDocument = XmlDocument()
                 xmlDocument.LoadXml(rawXml)
-                xmlDocCache.Add(xmlPath, rawXml)
-                Some xmlDocument
+                xmlDocument
+
+        try
+            Some(xmlDocCache.GetOrAdd(xmlPath, valueFactory).Value)
         with _ ->
             None
 

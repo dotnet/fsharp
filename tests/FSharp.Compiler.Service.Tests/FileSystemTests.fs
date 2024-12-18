@@ -1,4 +1,6 @@
-﻿module FSharp.Compiler.Service.Tests.FileSystemTests
+﻿// FileSystem is a global shared resource.
+[<Xunit.Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
+module FSharp.Compiler.Service.Tests.FileSystemTests
 
 open Xunit
 open FSharp.Test.Assert
@@ -38,17 +40,16 @@ type internal MyFileSystem() =
             | _ -> base.OpenFileForReadShim(filePath, useMemoryMappedFile, shouldShadowCopy)
         override _.FileExistsShim(fileName) = MyFileSystem.FilesCache.ContainsKey(fileName) || base.FileExistsShim(fileName)
 
-let UseMyFileSystem() =
-    let myFileSystem = MyFileSystem()
-    FileSystemAutoOpens.FileSystem <- myFileSystem
-    { new IDisposable with member x.Dispose() = FileSystemAutoOpens.FileSystem <- myFileSystem }
+let useFileSystemShim (shim: IFileSystem) =
+    let originalShim = FileSystem
+    FileSystem <- shim
+    { new IDisposable with member x.Dispose() = FileSystem <- originalShim }
 
 // .NET Core SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service"
 [<FactForDESKTOP>]
 let ``FileSystem compilation test``() =
   if Environment.OSVersion.Platform = PlatformID.Win32NT then // file references only valid on Windows
-    use myFileSystem =  UseMyFileSystem()
-    let programFilesx86Folder = Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")
+    use myFileSystem = useFileSystemShim (MyFileSystem())
 
     let projectOptions =
         let allFlags =
@@ -83,3 +84,21 @@ let ``FileSystem compilation test``() =
     results.AssemblySignature.Entities.Count |> shouldEqual 2
     results.AssemblySignature.Entities[0].MembersFunctionsAndValues.Count |> shouldEqual 1
     results.AssemblySignature.Entities[0].MembersFunctionsAndValues[0].DisplayName |> shouldEqual "B"
+
+let checkEmptyScriptWithFsShim () =
+    let shim = DefaultFileSystem()
+    let ref: WeakReference = WeakReference(shim)
+
+    use _ = useFileSystemShim shim
+    getParseAndCheckResults "" |> ignore
+
+    ref
+
+[<Fact>]
+let ``File system shim should not leak`` () =
+    let shimRef = checkEmptyScriptWithFsShim ()
+
+    GC.Collect()
+    GC.WaitForPendingFinalizers()
+
+    Assert.False(shimRef.IsAlive)
