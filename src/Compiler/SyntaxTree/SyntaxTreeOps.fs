@@ -112,11 +112,14 @@ let rec pushUnaryArg expr arg =
 let inline findSynAttribute (attrName: string) (synAttrs: SynAttributes) =
     let attributesToSearch =
         if attrName.EndsWith("Attribute") then
-            set [attrName; attrName.Substring(0, attrName.Length - 9)]
+            set [ attrName; attrName.Substring(0, attrName.Length - 9) ]
         else
-            set [attrName; attrName + "Attribute"]
+            set [ attrName; attrName + "Attribute" ]
 
-    synAttrs |> List.exists (fun synAttr -> synAttr.Attributes |> List.exists (fun attr -> attributesToSearch.Contains (attr.TypeName.LongIdent |> List.last |> _.idText)))
+    synAttrs
+    |> List.exists (fun synAttr ->
+        synAttr.Attributes
+        |> List.exists (fun attr -> attributesToSearch.Contains(attr.TypeName.LongIdent |> List.last |> _.idText)))
 
 [<return: Struct>]
 let (|SynSingleIdent|_|) x =

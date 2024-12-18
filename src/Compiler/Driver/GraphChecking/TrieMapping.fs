@@ -16,9 +16,7 @@ module private ImmutableHashSet =
     /// Create a new HashSet<'T> with zero elements.
     let empty () = ImmutableHashSet.Empty
 
-
-let isAnyAttributeAutoOpen (attributes: SynAttributes) =
-    findSynAttribute "AutoOpen" attributes
+let isAnyAttributeAutoOpen (attributes: SynAttributes) = findSynAttribute "AutoOpen" attributes
 
 /// Checks to see if the top level ModuleOrNamespace exposes content that could be inferred by any of the subsequent files.
 /// This can happen when a `namespace global` is used, or when a module (with a single ident name) has the `[<AutoOpen>]` attribute.
