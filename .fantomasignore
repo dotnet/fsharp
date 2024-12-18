@@ -122,6 +122,8 @@ src/Compiler/SyntaxTree/LexerStore.fs
 src/Compiler/Driver/GraphChecking/Graph.fsi
 src/Compiler/Driver/GraphChecking/Graph.fs
 
+src/FSharp.Compiler.LanguageServer/Common/LifecycleManager.fs
+
 # Fantomas limitations on implementation files  (to investigate)
 
 src/Compiler/AbstractIL/ilwrite.fs
