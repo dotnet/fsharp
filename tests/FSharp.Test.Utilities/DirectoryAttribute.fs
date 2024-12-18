@@ -119,5 +119,5 @@ type DirectoryAttribute(dir: string) =
         let results =
             fsFiles
             |> Array.map (fun fs -> (createCompilationUnit dirInfo fs) :> obj)
-            |> Seq.map (fun c -> [| c  |])
+            |> Seq.map (fun c -> [| c |])
         results

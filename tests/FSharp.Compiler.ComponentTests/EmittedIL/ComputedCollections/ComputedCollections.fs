@@ -4,18 +4,10 @@ open FSharp.Test
 open FSharp.Test.Compiler
 open Xunit
 
+#nowarn  3391                   //
+
 module ComputedCollections =
-    let verifyCompilation realsig optimize compilation=
-        compilation
-        |> asExe
-        |> withRealInternalSignature realsig
-        |> withOptimization optimize
-        |> withEmbeddedPdb
-        |> withEmbedAllSource
-        |> ignoreWarnings
-        |> verifyILBaseline
-
-    let verifyCompilationEx compilation=
+    let verifyCompilation (compilation: CompilationUnit) =
         compilation
         |> asExe
         |> withEmbeddedPdb
@@ -23,64 +15,50 @@ module ComputedCollections =
         |> ignoreWarnings
         |> verifyILBaseline
 
-//    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Int32RangeArrays.fs"|])>]
-    [<Theory; FileInlineData("Int32RangeArrays.fs", Directory=__SOURCE_DIRECTORY__, Realsig=BooleanOptions.Both, Optimize=BooleanOptions.Both)>]
-    let Int32RangeArrays_fs (compilation) =
-        compilation |> verifyCompilation
+    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "Int32RangeArrays.fs")>]
+    let Int32RangeArrays_fs (compilation: CompilationHelper) =
+        verifyCompilation compilation
 
-//    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Int32RangeLists.fs"|])>]
-//    [<Theory; FileInlineData("Int32RangeArrays.fs", Directory=__SOURCE_DIRECTORY__, Realsig=BooleanOptions.True, Optimize=BooleanOptions.Both)>]
-    let ``Int32RangeLists_fs`` (filename, realsig, optimize) =
-        ignore (filename, realsig, optimize)
-//        FileInlineDataAttribute.GetCompilation()
-//        |> verifyCompilation true true 
+    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "Int32RangeArrays.fs")>]
+    let ``Int32RangeLists_fs`` (compilation: CompilationHelper) =
+        verifyCompilation compilation
         
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UInt64RangeArrays.fs"|])>]
-    let ``UInt64RangeArrays_fs`` compilation =
-        compilation
-        |> verifyCompilation true true 
+    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "UInt64RangeArrays.fs")>]
+    let ``UInt64RangeArrays_fs`` (compilation: CompilationHelper) =
+        verifyCompilation compilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UInt64RangeLists.fs"|])>]
-    let ``UInt64RangeLists_fs`` compilation =
-        compilation
-        |> verifyCompilation true true 
+    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "UInt64RangeLists.fs")>]
+    let ``UInt64RangeLists_fs`` (compilation: CompilationHelper) =
+        verifyCompilation compilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForNInRangeArrays.fs"|])>]
-    let ``ForNInRangeArrays_fs`` compilation =
-        compilation
-        |> verifyCompilation true true 
+    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "ForNInRangeArrays.fs")>]
+    let ``ForNInRangeArrays_fs`` (compilation: CompilationHelper) =
+        verifyCompilation compilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForNInRangeLists.fs"|])>]
-    let ``ForNInRangeLists_fs`` compilation =
-        compilation
-        |> verifyCompilation true true 
+    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "ForNInRangeLists.fs")>]
+    let ``ForNInRangeLists_fs`` (compilation: CompilationHelper) =
+        verifyCompilation compilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForXInArray_ToArray.fs"|])>]
-    let ``ForXInArray_ToArray_fs`` compilation =
-        compilation
-        |> verifyCompilation true true 
+    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "ForXInArray_ToArray.fs")>]
+    let ``ForXInArray_ToArray_fs`` (compilation: CompilationHelper) =
+        verifyCompilation compilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForXInArray_ToList.fs"|])>]
-    let ``ForXInArray_ToList_fs`` compilation =
-        compilation
-        |> verifyCompilation true true 
+    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "ForXInArray_ToList.fs")>]
+    let ``ForXInArray_ToList_fs`` (compilation: CompilationHelper) =
+        verifyCompilation compilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForXInList_ToArray.fs"|])>]
-    let ``ForXInList_ToArray_fs`` compilation =
-        compilation
-        |> verifyCompilation true true 
+    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "ForXInList_ToArray.fs")>]
+    let ``ForXInList_ToArray_fs`` (compilation: CompilationHelper) =
+        verifyCompilation compilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForXInList_ToList.fs"|])>]
-    let ``ForXInList_ToList_fs`` compilation =
-        compilation
-        |> verifyCompilation true true 
+    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "ForXInList_ToList.fs")>]
+    let ``ForXInList_ToList_fs`` (compilation: CompilationHelper) =
+        verifyCompilation compilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForXInSeq_ToArray.fs"|])>]
-    let ``ForXInSeq_ToArray_fs`` compilation =
-        compilation
-        |> verifyCompilation true true 
+    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "ForXInSeq_ToArray.fs")>]
+    let ``ForXInSeq_ToArray_fs`` (compilation: CompilationHelper) =
+        verifyCompilation compilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForXInSeq_ToList.fs"|])>]
-    let ``ForXInSeq_ToList_fs`` compilation =
-        compilation
-        |> verifyCompilation true true 
+    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "ForXInSeq_ToList.fs")>]
+    let ``ForXInSeq_ToList_fs`` (compilation: CompilationHelper) =
+        verifyCompilation compilation

@@ -13,6 +13,7 @@ open FSharp.Test.ScriptHelpers
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open Xunit
+open Xunit.Abstractions
 open System
 open System.Collections.Immutable
 open System.IO
@@ -29,8 +30,8 @@ open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open FSharp.Compiler.CodeAnalysis
 
-
 module rec Compiler =
+
     [<AutoOpen>]
     type SourceUtilities () =
         static member getCurrentMethodName([<CallerMemberName; Optional; DefaultParameterValue("")>] memberName: string) = memberName
@@ -84,7 +85,11 @@ module rec Compiler =
           References:       CompilationUnit list
           TargetFramework:  TargetFramework
           StaticLink:       bool
-          }
+        }
+
+//        interface IXunitSerializable with
+//            member this.Serialize(info: IXunitSerializationInfo) = ()
+//            member this.Deserialize(info: IXunitSerializationInfo) =
 
         member this.CreateOutputDirectory() =
             match this.OutputDirectory with
@@ -1802,10 +1807,10 @@ Actual:
     let printSignatures cUnit = printSignaturesImpl None cUnit
     let printSignaturesWith pageWidth cUnit = printSignaturesImpl (Some pageWidth) cUnit
 
-
     let getImpliedSignatureHash cUnit = 
         let tcResults = cUnit |> typecheckResults
         let hash = tcResults.CalculateSignatureHash()
         match hash with
         | Some h -> h
         | None -> failwith "Implied signature hash returned 'None' which should not happen"
+

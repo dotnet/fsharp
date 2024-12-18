@@ -242,7 +242,7 @@ type CompilationUtil private () =
                     with
                         | _ -> (errors, [||])
                 finally
-                    try Directory.Delete(Path.GetDirectoryName ilFilePath, true) with _ -> ()
+                    () //try Directory.Delete(Path.GetDirectoryName ilFilePath, true) with _ -> ()
         TestCompilation.IL (source, compute)
 
 and CompilationReference =

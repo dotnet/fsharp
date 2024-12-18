@@ -9,6 +9,7 @@ open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 
 open Xunit
+open Xunit.Abstractions
 open Xunit.Sdk
 
 open FSharp.Compiler.IO
@@ -16,264 +17,144 @@ open FSharp.Test.Compiler
 open FSharp.Test.Utilities
 open TestFramework
 
+//[<AutoOpen>]
+//module Extensions =
+//    let getCompilation (compilation: CompilationHelper): CompilationUnit =
+//        let c = unbox<CompilationHelper> compilation
+//        c.Value
+
 type BooleanOptions =
     | True = 1
     | False = 2
     | Both = 3
+    | None = 0
 
 /// Attribute to use with Xunit's TheoryAttribute.
 /// Takes a file, relative to current test suite's root.
 /// Returns a CompilationUnit with encapsulated source code, error baseline and IL baseline (if any).
 [<NoComparison; NoEquality>]
-type FileInlineDataAttribute (filename: string) =
+type FileInlineData (directory: string, filename: string) =
     inherit DataAttribute()
 
-    let mutable directory: string option = None
     let mutable optimize: BooleanOptions option = None
     let mutable realsig: BooleanOptions option = None
 
-    static let getBaselineForOption booleanOption option prefix =
-        let suffix =
-            match booleanOption with
-            | BooleanOptions.True -> "On"
-            | BooleanOptions.False -> "Off"
-            | _ -> failwith "Invalid value for booleanOption"
+    static let computeBoolValues opt =
+        match opt with
+        | Some BooleanOptions.True -> [|Some true|]
+        | Some BooleanOptions.False -> [|Some false|]
+        | Some BooleanOptions.Both -> [|Some true; Some false|]
+        | _ -> [|None|]
 
-        match option with
-        | Some BooleanOptions.Both -> Some $"{prefix}{suffix}"
-        | Some v when v = booleanOption -> Some $"{prefix}{suffix}"
+    static let convertToNullableBool (opt: bool option): obj =
+        match opt with
+        | None -> null
+        | Some opt -> box opt
+
+    member _.Optimize with set v = optimize <- Some v
+
+    member _.Realsig with set v = realsig <- Some v
+
+    override _.GetData _ =
+
+        let getOptions realsig optimize =
+
+            let compilationHelper = CompilationHelper(filename, directory, convertToNullableBool realsig, convertToNullableBool optimize)
+            [| box (compilationHelper) |]
+
+        let results =
+            let rsValues = computeBoolValues realsig
+            let optValues = computeBoolValues optimize
+            [|
+                for r in rsValues do
+                    for o in optValues do
+                        getOptions r o
+            |]
+
+        results
+
+// realsig and optimized are boxed so null = not set, true or false = set
+and CompilationHelper internal (filename: string, directory: string, realsig: obj, optimize: obj) =
+
+    let mutable filename = filename
+    let mutable directory = directory
+    let mutable realsig = realsig
+    let mutable optimize = optimize
+
+    let setRealInternalSignature compilation =
+        match realsig with
+        | null -> compilation
+        | realsig -> compilation |> withRealInternalSignature (unbox realsig)
+
+    let setOptimization compilation =
+        match optimize with
+        | null -> compilation
+        | optimize -> compilation |> withOptimization (unbox optimize)
+
+    static let getBaseline (opt: obj) prefix =
+        match opt with
+        | :? bool as b when b = true -> Some $"{prefix}On"
+        | :? bool as b when b = false -> Some $"{prefix}Off"
         | _ -> None
 
-    static let getBaselinesForOption option prefix =
-        let optionOn =   getBaselineForOption BooleanOptions.True  option prefix
-        let optionOff =  getBaselineForOption BooleanOptions.False option prefix
-        optionOn, optionOff
-
-    static let getBaseline realsigBsl optimizeBsl =
+    static let combineBaselines realsigBsl optimizeBsl =
         match realsigBsl, optimizeBsl with
         | Some rs, Some opt -> Some $"{rs}{opt}"
         | Some rs, None -> Some $"{rs}"
         | None, Some opt -> Some $"{opt}"
         | _ -> None
 
-    static let fromBoolOption(value: bool) =
-        match value with
-        | true -> Some BooleanOptions.True
-        | _ -> Some BooleanOptions.False
+    new() = CompilationHelper("", "", null, null)
 
-    member _.Directory with set v = directory <- Some v
+    // Define the implicit conversion operator
+    static member op_Implicit(helper: CompilationHelper) : CompilationUnit =
+        helper.Value ()
 
-    member _.Optimize with set v = optimize <- Some v
+    member _.Value(): CompilationUnit =
+        let frame = StackTrace().GetFrame(1) // Get the calling method's frame
+        let methodInfo = frame.GetMethod() :?> MethodInfo
 
-    member _.Realsig with set v = realsig <- Some v
+        let directoryAttribute = DirectoryAttribute(directory)
+        directoryAttribute.Includes <- [| filename |]
 
-    override _.GetData methodInfo =
+        let realsigBsl =  (getBaseline realsig  ".RealInternalSignature")
+        let optimizeBsl = (getBaseline optimize ".Optimize")
 
-        System.Diagnostics.Debugger.Launch() |> ignore
-        let realsigOn, realsigOff = getBaselinesForOption realsig "RealInternalSignature"
-        let optimizeOn, optimizeOff = getBaselinesForOption optimize "Optimize"
-
-        let getOptions realsigBsl optimizeBsl realsig optimize =
-
-            let setRealInternalSignature compilation =
-                match realsigBsl, realsig with
-                | Some _, realsig -> compilation |> withRealInternalSignature realsig
-                | _ -> compilation
-
-            let setOptimization compilation =
-                match optimizeBsl, optimize with
-                | Some _, optimize -> compilation |> withOptimization optimize
-                | _ -> compilation
-
-            let directoryAttribute = DirectoryAttribute(directory |> Option.defaultValue "")
-            directoryAttribute.Includes <- [| filename |]
-
-            let compilation: CompilationUnit option =
-                let results = directoryAttribute.GetData methodInfo
-                if results.Count() <> 1 then failwith $"directoryAttribute returned incorrect number of results requires only 1: actual: {results.Count()}"
-                let arguments = results.First()
-                if arguments.Count() <> 1 then failwith $"directoryAttribute returned incorrect number of arguments requires only 1: actual: {arguments.Count()}"
-
-                match arguments.First() with
-                | :? FSharpCompilationSource as fsSource -> Some (FS fsSource)
-                | :? CSharpCompilationSource as csSource -> Some (CS csSource)
-                | :? ILCompilationSource as ilSource -> Some (IL ilSource)
-                | _ -> None
-
-            match compilation with
-            | Some compilation ->
-                let compilation = compilation |> setRealInternalSignature |> setOptimization
-                [| (box compilation) |]
-            | None -> [||]
-
-        let results = [|
-            getOptions realsigOn  optimizeOn  true true
-            getOptions realsigOn  optimizeOff true false
-            getOptions realsigOff optimizeOn  false true
-            getOptions realsigOff optimizeOff false false
-        |]
-
-        results
-
-(*
-    static member GetCompilation(filename, realsig: bool option, optimize: bool option) =
-
-        let methodInfo = StackTrace().GetFrame(1).GetMethod()
-        let fileInlineData = methodInfo.GetCustomAttribute(typeof<FileInlineDataAttribute>) :?> FileInlineDataAttribute
-
-        let directoryAttribute = DirectoryAttribute(fileInlineData.Directory |> Option.defaultValue "")
-        directoryAttribute.Includes <- [| fileInlineData.Filename |]
-
-        let realsigBsl = 
-            let realsigOn, realsigOff = getBaselinesForOption (fromBoolOption realsig) "RealInternalSignature"
-            match realsig with
-            | Some true -> realsigOn
-            | Some false -> realsigOff 
-            | None -> None
-
-        let optimizeBsl =
-            let optimizeOn, optimizeOff = getBaselinesForOption (fromBoolOption optimize) "Optimize"
-            match optimize with
-            | Some true -> optimizeOn
-            | Some false -> optimizeOff
-            | None -> None
-
-        let baseline = getBaseline realsigBsl, optimizeBsl
-
-        match baseline with
+        match combineBaselines realsigBsl optimizeBsl with
         | Some baseline -> directoryAttribute.BaselineSuffix <- baseline
         | _ -> ()
-        let compilation =
-            let results = directoryAttribute.GetData methodInfo
-            let arguments =
-                if results.Count() <> 1 then
-                    failwith $"Directory returned incorrect number of results requires only 1: actual: {results.Count()}"
-                results.First()
-            if arguments.Count() <> 1 then
-                failwith $"Directory returned incorrect number of arguments requires only 1: actual: {arguments.Count()}"
-            let compilation =
-                arguments.First()
-            let compilation =
-                match realsig with
-                | Some realsig -> compilation.withRealsig realsig
-                | None -> compilation
-            let compilation =
-                match optimize with
-                | Some optimize -> compilation.withOptimization optimize
-                | None -> compilation
-            compilation
 
-        compilation
+        let results = directoryAttribute.GetData methodInfo
+        if results.Count() <> 1 then failwith $"directoryAttribute returned incorrect number of results requires only 1: actual: {results.Count()}"
+        let arguments = results.First()
+        if arguments.Count() <> 1 then failwith $"directoryAttribute returned incorrect number of arguments requires only 1: actual: {arguments.Count()}"
+        let compilation = arguments.First()
 
-        //    [|
-        //        match baseline with
-        //        | Some baseline ->
-        //            directoryAttribute.BaselineSuffix <- baseline
-        //            let compilation: obj =
-        //                let results = directoryAttribute.GetData methodInfo
-        //                let arguments =
-        //                    if results.Count() <> 1 then
-        //                        failwith $"Directory returned incorrect number of results requires only 1: actual: {results.Count()}"
-        //                    results.First()
-        //                if arguments.Count() <> 1 then
-        //                    failwith $"Directory returned incorrect number of arguments requires only 1: actual: {arguments.Count()}"
-        //                arguments.First()
-        //            ignore compilation
-        //            yield box filename
-        //            match realsigBsl, realsig with
-        //            | Some _, realsig -> yield box realsig
-        //            | _ -> ()
-        //            match optimizeBsl, optimize with
-        //            | Some _, optimize -> yield box optimize
-        //            | _ -> ()
-        //        | _ -> ()
-        //    |]
+        match compilation with
+        | :? CompilationUnit as cu -> cu |> setRealInternalSignature |> setOptimization
+        | _ -> failwith "No compilation created"
 
-        //let realsigOn =   getBaseline BooleanOptions.True  realsig "RealInternalSignature"
-        //let realsigOff =  getBaseline BooleanOptions.False realsig "RealInternalSignature"
-        //let optimizeOn =  getBaseline BooleanOptions.True  optimize "Optimize"
-        //let optimizeOff = getBaseline BooleanOptions.False optimize "Optimize"
+    override _.ToString(): string =
+        let file = $"File: {filename}"
+        let realsig =
+            match realsig with
+            | :? bool as b -> $" realsig: {b}"
+            | _ -> ""
+        let optimize =
+            match optimize with
+            | :? bool as b -> $" optimize: {b}"
+            | _ -> ""
+        file + realsig + optimize
 
-        //let results = [|
-        //    let opts = getOptions realsigOn  optimizeOn  true true in yield opts
-        //    let opts = getOptions realsigOn  optimizeOff true false in yield opts
-        //    let opts = getOptions realsigOff optimizeOn  false true in yield opts
-        //    let opts = getOptions realsigOff optimizeOff false false in yield opts
-        //|]
-        //System.Diagnostics.Debugger.Launch() |> ignore
-        //results
+    interface IXunitSerializable with
+        member _.Serialize(info: IXunitSerializationInfo) =
+            info.AddValue("filename", filename)
+            info.AddValue("directory", directory)
+            info.AddValue("realsig", realsig)
+            info.AddValue("optimize", optimize)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-        //let getBaseline booleanOption option baseline = 
-        //    let suffix =
-        //        match booleanOption with
-        //        | BooleanOptions.True -> "On"
-        //        | BooleanOptions.False -> "Off"
-        //        | _ -> failwith "Invalid value for booleanOption"
-
-        //    match option with
-        //    | Some BooleanOptions.Both -> Some $"{baseline}{suffix}"
-        //    | Some v when v = booleanOption -> Some $"{baseline}{suffix}"
-        //    | _ -> None
-
-        //let getOptions realsigBsl optimizeBsl realsig optimize =
-        //    let baseline =
-        //        match realsigBsl, optimizeBsl with
-        //        | Some rs, Some opt -> Some $"{rs}{opt}"
-        //        | Some rs, None -> Some $"{rs}"
-        //        | None, Some opt -> Some $"{opt}"
-        //        | _ -> None
-
-        //    let directoryAttribute = DirectoryAttribute(directory)
-        //    directoryAttribute.Includes <- [| filename |]
-        //    [|
-        //        match baseline with
-        //        | Some baseline ->
-        //            directoryAttribute.BaselineSuffix <- baseline
-        //            let compilation: obj =
-        //                let results = directoryAttribute.GetData methodInfo
-        //                let arguments =
-        //                    if results.Count() <> 1 then
-        //                        failwith $"Directory returned incorrect number of results requires only 1: actual: {results.Count()}"
-        //                    results.First()
-        //                if arguments.Count() <> 1 then
-        //                    failwith $"Directory returned incorrect number of arguments requires only 1: actual: {arguments.Count()}"
-        //                arguments.First()
-        //            ignore compilation
-        //            yield box filename
-        //            match realsigBsl, realsig with
-        //            | Some _, realsig -> yield box realsig
-        //            | _ -> ()
-        //            match optimizeBsl, optimize with
-        //            | Some _, optimize -> yield box optimize
-        //            | _ -> ()
-        //        | _ -> ()
-        //    |]
-
-        //let realsigOn =   getBaseline BooleanOptions.True  realsig "RealInternalSignature"
-        //let realsigOff =  getBaseline BooleanOptions.False realsig "RealInternalSignature"
-        //let optimizeOn =  getBaseline BooleanOptions.True  optimize "Optimize"
-        //let optimizeOff = getBaseline BooleanOptions.False optimize "Optimize"
-
-        //let results = [|
-        //    let opts = getOptions realsigOn  optimizeOn  true true in yield opts
-        //    let opts = getOptions realsigOn  optimizeOff true false in yield opts
-        //    let opts = getOptions realsigOff optimizeOn  false true in yield opts
-        //    let opts = getOptions realsigOff optimizeOff false false in yield opts
-        //|]
-        //System.Diagnostics.Debugger.Launch() |> ignore
-        //results
-
-*)
+        member _.Deserialize(info: IXunitSerializationInfo) =
+            filename <- info.GetValue<string>("filename")
+            directory <- info.GetValue<string>("directory")
+            realsig <- info.GetValue<obj>("realsig")
+            optimize <- info.GetValue<obj>("optimize")
