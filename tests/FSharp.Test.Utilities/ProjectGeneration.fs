@@ -32,6 +32,7 @@ open FSharp.Compiler.Text
 open Xunit
 open FSharp.Test.Utilities
 
+
 open OpenTelemetry
 open OpenTelemetry.Resources
 open OpenTelemetry.Trace
@@ -349,9 +350,9 @@ type SyntheticProject =
                 UnresolvedReferences = None
                 OriginalLoadReferences = []
                 Stamp = None }
-
-        
+       
         OptionsCache.GetOrAdd(key, factory).Value
+
 
 
     member this.GetAllProjects() =

@@ -712,6 +712,8 @@ let setSignatureFile tcConfigB s =
 let setAllSignatureFiles tcConfigB () =
     tcConfigB.printAllSignatureFiles <- true
 
+let formatOptionSwitch (value: bool) = if value then "on" else "off"
+
 // option tags
 let tagString = "<string>"
 let tagExe = "exe"
@@ -806,7 +808,7 @@ let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) =
                         GlobalWarnAsError = switch <> OptionSwitch.Off
                     }),
             None,
-            Some(FSComp.SR.optsWarnaserrorPM ())
+            Some(FSComp.SR.optsWarnaserrorPM (formatOptionSwitch tcConfigB.diagnosticsOptions.GlobalWarnAsError))
         )
 
         CompilerOption(
@@ -870,7 +872,7 @@ let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) =
             tagNone,
             OptionSwitch(fun switch -> tcConfigB.checkNullness <- switch = OptionSwitch.On),
             None,
-            Some(FSComp.SR.optsCheckNulls ())
+            Some(FSComp.SR.optsCheckNulls (formatOptionSwitch tcConfigB.checkNullness))
         )
 
         CompilerOption(
@@ -878,7 +880,7 @@ let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) =
             tagNone,
             OptionSwitch(fun switch -> enableConsoleColoring <- switch = OptionSwitch.On),
             None,
-            Some(FSComp.SR.optsConsoleColors ())
+            Some(FSComp.SR.optsConsoleColors (formatOptionSwitch enableConsoleColoring))
         )
     ]
 
@@ -904,7 +906,7 @@ let outputFileFlagsFsc (tcConfigB: TcConfigBuilder) =
             tagNone,
             OptionSwitch(fun s -> tcConfigB.delaysign <- (s = OptionSwitch.On)),
             None,
-            Some(FSComp.SR.optsDelaySign ())
+            Some(FSComp.SR.optsDelaySign (formatOptionSwitch tcConfigB.delaysign))
         )
 
         CompilerOption(
@@ -912,7 +914,7 @@ let outputFileFlagsFsc (tcConfigB: TcConfigBuilder) =
             tagNone,
             OptionSwitch(fun s -> tcConfigB.publicsign <- (s = OptionSwitch.On)),
             None,
-            Some(FSComp.SR.optsPublicSign ())
+            Some(FSComp.SR.optsPublicSign (formatOptionSwitch tcConfigB.publicsign))
         )
 
         CompilerOption("doc", tagFile, OptionString(fun s -> tcConfigB.xmlDocOutputFile <- Some s), None, Some(FSComp.SR.optsWriteXml ()))
@@ -944,7 +946,7 @@ let outputFileFlagsFsc (tcConfigB: TcConfigBuilder) =
             tagNone,
             OptionSwitch(fun switch -> tcConfigB.compressMetadata <- switch = OptionSwitch.On),
             None,
-            Some(FSComp.SR.optsCompressMetadata ())
+            Some(FSComp.SR.optsCompressMetadata (formatOptionSwitch tcConfigB.compressMetadata))
         )
 
         CompilerOption(
@@ -975,7 +977,13 @@ let outputFileFlagsFsc (tcConfigB: TcConfigBuilder) =
             Some(FSComp.SR.optsNoCopyFsharpCore ())
         )
 
-        CompilerOption("refonly", tagNone, OptionSwitch(SetReferenceAssemblyOnlySwitch tcConfigB), None, Some(FSComp.SR.optsRefOnly ()))
+        CompilerOption(
+            "refonly",
+            tagNone,
+            OptionSwitch(SetReferenceAssemblyOnlySwitch tcConfigB),
+            None,
+            Some(FSComp.SR.optsRefOnly (formatOptionSwitch (tcConfigB.emitMetadataAssembly <> MetadataAssemblyGeneration.None)))
+        )
 
         CompilerOption("refout", tagFile, OptionString(SetReferenceAssemblyOutSwitch tcConfigB), None, Some(FSComp.SR.optsRefOut ()))
     ]
@@ -1023,7 +1031,13 @@ let resourcesFlagsFsc (tcConfigB: TcConfigBuilder) =
 let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
     let debug =
         [
-            CompilerOption("debug", tagNone, OptionSwitch(SetDebugSwitch tcConfigB None), None, Some(FSComp.SR.optsDebugPM ()))
+            CompilerOption(
+                "debug",
+                tagNone,
+                OptionSwitch(SetDebugSwitch tcConfigB None),
+                None,
+                Some(FSComp.SR.optsDebugPM (formatOptionSwitch tcConfigB.debuginfo))
+            )
 
             CompilerOption(
                 "debug",
@@ -1036,7 +1050,13 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
 
     let embed =
         [
-            CompilerOption("embed", tagNone, OptionSwitch(SetEmbedAllSourceSwitch tcConfigB), None, Some(FSComp.SR.optsEmbedAllSource ()))
+            CompilerOption(
+                "embed",
+                tagNone,
+                OptionSwitch(SetEmbedAllSourceSwitch tcConfigB),
+                None,
+                Some(FSComp.SR.optsEmbedAllSource (formatOptionSwitch tcConfigB.embedAllSource))
+            )
 
             CompilerOption("embed", tagFileList, OptionStringList tcConfigB.AddEmbeddedSourceFile, None, Some(FSComp.SR.optsEmbedSource ()))
 
@@ -1045,19 +1065,37 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
 
     let codegen =
         [
-            CompilerOption("optimize", tagNone, OptionSwitch(SetOptimizeSwitch tcConfigB), None, Some(FSComp.SR.optsOptimize ()))
+            CompilerOption(
+                "optimize",
+                tagNone,
+                OptionSwitch(SetOptimizeSwitch tcConfigB),
+                None,
+                Some(FSComp.SR.optsOptimize (formatOptionSwitch (tcConfigB.optSettings <> OptimizationSettings.Defaults)))
+            )
 
-            CompilerOption("tailcalls", tagNone, OptionSwitch(SetTailcallSwitch tcConfigB), None, Some(FSComp.SR.optsTailcalls ()))
+            CompilerOption(
+                "tailcalls",
+                tagNone,
+                OptionSwitch(SetTailcallSwitch tcConfigB),
+                None,
+                Some(FSComp.SR.optsTailcalls (formatOptionSwitch tcConfigB.emitTailcalls))
+            )
 
             CompilerOption(
                 "deterministic",
                 tagNone,
                 OptionSwitch(SetDeterministicSwitch tcConfigB),
                 None,
-                Some(FSComp.SR.optsDeterministic ())
+                Some(FSComp.SR.optsDeterministic (formatOptionSwitch tcConfigB.deterministic))
             )
 
-            CompilerOption("realsig", tagNone, OptionSwitch(SetRealsig tcConfigB), None, Some(FSComp.SR.optsRealsig ()))
+            CompilerOption(
+                "realsig",
+                tagNone,
+                OptionSwitch(SetRealsig tcConfigB),
+                None,
+                Some(FSComp.SR.optsRealsig (formatOptionSwitch tcConfigB.realsig))
+            )
 
             CompilerOption("pathmap", tagPathMap, OptionStringList(AddPathMapping tcConfigB), None, Some(FSComp.SR.optsPathMap ()))
 
@@ -1066,7 +1104,11 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
                 tagNone,
                 OptionSwitch(crossOptimizeSwitch tcConfigB),
                 None,
-                Some(FSComp.SR.optsCrossoptimize ())
+                Some(
+                    FSComp.SR.optsCrossoptimize (
+                        formatOptionSwitch (Option.defaultValue false tcConfigB.optSettings.crossAssemblyOptimizationUser)
+                    )
+                )
             )
 
             CompilerOption(
@@ -1144,7 +1186,7 @@ let languageFlags tcConfigB =
             tagNone,
             OptionSwitch(fun switch -> tcConfigB.checkOverflow <- (switch = OptionSwitch.On)),
             None,
-            Some(FSComp.SR.optsChecked ())
+            Some(FSComp.SR.optsChecked (formatOptionSwitch tcConfigB.checkOverflow))
         )
 
         CompilerOption("define", tagString, OptionString(defineSymbol tcConfigB), None, Some(FSComp.SR.optsDefine ()))
@@ -1156,7 +1198,7 @@ let languageFlags tcConfigB =
             tagNone,
             OptionSwitch(fun switch -> tcConfigB.strictIndentation <- Some(switch = OptionSwitch.On)),
             None,
-            Some(FSComp.SR.optsStrictIndentation ())
+            Some(FSComp.SR.optsStrictIndentation (formatOptionSwitch (Option.defaultValue false tcConfigB.strictIndentation)))
         )
     ]
 
@@ -1328,7 +1370,7 @@ let advancedFlagsFsc tcConfigB =
             tagNone,
             OptionSwitch(useHighEntropyVASwitch tcConfigB),
             None,
-            Some(FSComp.SR.optsUseHighEntropyVA ())
+            Some(FSComp.SR.optsUseHighEntropyVA (formatOptionSwitch tcConfigB.useHighEntropyVA))
         )
 
         CompilerOption(
@@ -1344,7 +1386,7 @@ let advancedFlagsFsc tcConfigB =
             tagNone,
             OptionSwitch(fun switch -> tcConfigB.emitDebugInfoInQuotations <- switch = OptionSwitch.On),
             None,
-            Some(FSComp.SR.optsEmitDebugInfoInQuotations ())
+            Some(FSComp.SR.optsEmitDebugInfoInQuotations (formatOptionSwitch tcConfigB.emitDebugInfoInQuotations))
         )
     ]
 

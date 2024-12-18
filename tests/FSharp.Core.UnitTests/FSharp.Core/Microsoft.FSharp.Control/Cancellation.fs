@@ -9,7 +9,7 @@ open FSharp.Test
 open System.Threading
 open System.Threading.Tasks
 
-
+[<Collection(nameof NotThreadSafeResourceCollection)>]
 type CancellationType() =
 
     let ordered() =

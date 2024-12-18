@@ -1,4 +1,5 @@
-﻿module FSharp.Compiler.Service.Tests.PerfTests
+﻿[<Xunit.Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
+module FSharp.Compiler.Service.Tests.PerfTests
 
 open Xunit
 open FSharp.Test.Assert

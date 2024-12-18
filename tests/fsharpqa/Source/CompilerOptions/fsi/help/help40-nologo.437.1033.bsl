@@ -18,7 +18,7 @@ Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
 
                 - CODE GENERATION -
 --debug[+|-]                             Emit debug information (Short form:
-                                         -g)
+                                         -g) (on by default)
 --debug:{full|pdbonly|portable|embedded} Specify debugging type: full,
                                          portable, embedded, pdbonly.
                                          ('pdbonly' is the default if no
@@ -29,33 +29,35 @@ Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
                                          a cross-platform format embedded
                                          into the output file).
 --optimize[+|-]                          Enable optimizations (Short form:
-                                         -O)
---tailcalls[+|-]                         Enable or disable tailcalls
+                                         -O) (on by default)
+--tailcalls[+|-]                         Enable or disable tailcalls (on by
+                                         default)
 --deterministic[+|-]                     Produce a deterministic assembly
                                          (including module version GUID and
-                                         timestamp)
+                                         timestamp) (off by default)
 --realsig[+|-]                           Generate assembly with IL visibility
                                          that matches the source code
-                                         visibility
+                                         visibility (off by default)
 --pathmap:<path=sourcePath;...>          Maps physical paths to source path
                                          names output by the compiler
 --crossoptimize[+|-]                     Enable or disable cross-module
-                                         optimizations
+                                         optimizations (on by default)
 --reflectionfree                         Disable implicit generation of
                                          constructs using reflection
 
 
                 - ERRORS AND WARNINGS -
---warnaserror[+|-]                       Report all warnings as errors
+--warnaserror[+|-]                       Report all warnings as errors (off
+                                         by default)
 --warnaserror[+|-]:<warn;...>            Report specific warnings as errors
 --warn:<n>                               Set a warning level (0-5)
 --nowarn:<warn;...>                      Disable specific warning messages
 --warnon:<warn;...>                      Enable specific warnings that may be
                                          off by default
 --checknulls[+|-]                        Enable nullness declarations and
-                                         checks
+                                         checks (off by default)
 --consolecolors[+|-]                     Output warning and error messages in
-                                         color
+                                         color (on by default)
 
 
                 - LANGUAGE -
@@ -63,12 +65,14 @@ Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
                                          language version.
 --langversion:{version|latest|preview}   Specify language version such as
                                          'latest' or 'preview'.
---checked[+|-]                           Generate overflow checks
+--checked[+|-]                           Generate overflow checks (off by
+                                         default)
 --define:<string>                        Define conditional compilation
                                          symbols (Short form: -d)
 --mlcompatibility                        Ignore ML compatibility warnings
 --strict-indentation[+|-]                Override indentation rules implied
-                                         by the language version
+                                         by the language version (off by
+                                         default)
 
 
                 - MISCELLANEOUS -
@@ -110,8 +114,10 @@ Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
 --readline[+|-]                          Support TAB completion in console
                                          (on by default)
 --quotations-debug[+|-]                  Emit debug information in quotations
+                                         (off by default)
 --shadowcopyreferences[+|-]              Prevents references from being
                                          locked by the F# Interactive process
+                                         (off by default)
 --multiemit[+|-]                         Emit multiple assemblies (on by
                                          default)
 
