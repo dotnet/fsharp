@@ -1,5 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
+// Run sequentially because of shared fsiSession.
+[<FSharp.Test.RunTestCasesInSequence>]
 module Language.SequenceExpression.SequenceExpressionTests
 
 open FSharp.Test

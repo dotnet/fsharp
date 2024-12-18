@@ -313,6 +313,7 @@ module Helpers =
     let require x msg = if not x then failwith msg
     let failtest str = raise (TestException str)
 
+[<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 type Basics() = 
     [<Fact>]
     member _.testShortCircuitResult() =
@@ -1258,10 +1259,6 @@ type Basics() =
             else return! failwith ""
         }
         |> ignore
-
-
-[<CollectionDefinition("BasicsNotInParallel", DisableParallelization = true)>]
-type BasicsNotInParallel() = 
 
     [<Fact; >]
     member _.testTaskUsesSyncContext() =
