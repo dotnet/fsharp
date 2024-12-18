@@ -1,3 +1,5 @@
+// Because of script closure cache.
+[<FSharp.Test.RunTestCasesInSequence>]
 module FSharp.Compiler.Service.Tests.ScriptOptionsTests
 
 open Xunit

@@ -622,8 +622,7 @@ module CompilerAssertHelpers =
         let runtimeconfigPath = Path.ChangeExtension(outputFilePath, ".runtimeconfig.json")
         File.WriteAllText(runtimeconfigPath, runtimeconfig)
 #endif
-        let timeout = 30000
-        let rc, output, errors = Commands.executeProcess fileName arguments (Path.GetDirectoryName(outputFilePath)) timeout
+        let rc, output, errors = Commands.executeProcess fileName arguments (Path.GetDirectoryName(outputFilePath))
         let output = String.Join(Environment.NewLine, output)
         let errors = String.Join(Environment.NewLine, errors)
         ExitCode rc, output, errors
