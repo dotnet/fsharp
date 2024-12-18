@@ -196,31 +196,29 @@ type FileIndexTable() =
         match fileToIndexTable.TryGetValue filePath with
         | true, idx -> idx
         | _ ->
-            // If a write operation can happen, we have to lock the whole read-check-write to avoid race conditions
-            lock fileToIndexTable
-            <| fun () ->
-                match fileToIndexTable.TryGetValue filePath with
-                | true, idx -> idx
-                | _ ->
+            // Try again looking for a normalized entry.
+            let normalizedFilePath =
+                if normalize then
+                    FileSystem.NormalizePathShim filePath
+                else
+                    filePath
 
-                    // Try again looking for a normalized entry.
-                    let normalizedFilePath =
-                        if normalize then
-                            FileSystem.NormalizePathShim filePath
-                        else
-                            filePath
+            match fileToIndexTable.TryGetValue normalizedFilePath with
+            | true, idx ->
+                // Record the non-normalized entry if necessary
+                if filePath <> normalizedFilePath then
+                    fileToIndexTable[filePath] <- idx
 
+                // Return the index
+                idx
+
+            | _ ->
+                lock indexToFileTable (fun () ->
+                    // See if it was added on another thread
                     match fileToIndexTable.TryGetValue normalizedFilePath with
-                    | true, idx ->
-                        // Record the non-normalized entry if necessary
-                        if filePath <> normalizedFilePath then
-                            fileToIndexTable[filePath] <- idx
-
-                        // Return the index
-                        idx
-
+                    | true, idx -> idx
                     | _ ->
-                        // Get the new index
+                        // Okay it's really not there
                         let idx = indexToFileTable.Count
 
                         // Record the normalized entry
@@ -232,7 +230,7 @@ type FileIndexTable() =
                             fileToIndexTable[filePath] <- idx
 
                         // Return the index
-                        idx
+                        idx)
 
     member t.IndexToFile n =
         if n < 0 then

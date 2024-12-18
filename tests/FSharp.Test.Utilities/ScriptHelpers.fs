@@ -100,4 +100,4 @@ module TestHelpers =
         | Ok(value) -> value
         | Error ex -> raise ex
 
-    let ignoreValue x = getValue x |> ignore
+    let ignoreValue = getValue >> ignore

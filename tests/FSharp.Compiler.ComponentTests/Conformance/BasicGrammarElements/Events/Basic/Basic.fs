@@ -6,6 +6,7 @@ open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 
+[<Collection(nameof NotThreadSafeResourceCollection)>]
 module Events =
 
     let verifyCompile compilation =
