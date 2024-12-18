@@ -62,13 +62,12 @@ let arityOfVal (v: Val) =
     | None -> ValReprInfo.emptyValData
     | Some info -> info
 
+let tryGetArityOfValForDisplay (v: Val) =
+    v.ValReprInfoForDisplay
+    |> Option.orElseWith (fun _ -> v.ValReprInfo)
+
 let arityOfValForDisplay (v: Val) =
-    match v.ValReprInfoForDisplay with
-    | Some info -> info
-    | None ->
-         match v.ValReprInfo with
-         | None -> ValReprInfo.emptyValData
-         | Some info -> info
+    tryGetArityOfValForDisplay v |> Option.defaultValue ValReprInfo.emptyValData
 
 let tupInfoRef = TupInfo.Const false
 
