@@ -2135,7 +2135,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
              |> makeReadOnlyCollection
 
         | V v -> 
-        match v.ValReprInfo with 
+        match tryGetArityOfValForDisplay v.Deref with 
         | None ->
             let _, tau = v.GeneralizedType
             if isFunTy cenv.g tau then

@@ -220,7 +220,7 @@ function Test() {
   projectname="${projectname%.*}"
   testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework.xml"
   args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"xunit;LogFilePath=$testlogpath\" --blame-hang-timeout 5minutes --results-directory $artifacts_dir/TestResults/$configuration -p:vstestusemsbuildoutput=false"
-  args+=" -- xUnit.MaxParallelThreads=3"
+  args+=" -- xUnit.MaxParallelThreads=2"
   "$DOTNET_INSTALL_DIR/dotnet" $args || exit $?
 }
 

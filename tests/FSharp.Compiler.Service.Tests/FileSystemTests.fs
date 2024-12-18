@@ -1,4 +1,6 @@
-﻿module FSharp.Compiler.Service.Tests.FileSystemTests
+﻿// FileSystem is a global shared resource.
+[<Xunit.Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
+module FSharp.Compiler.Service.Tests.FileSystemTests
 
 open Xunit
 open FSharp.Test.Assert
@@ -25,8 +27,6 @@ let file2 = """
 module File2
 let B = File1.A + File1.A"""
 
-// FileSystem is a global shared resource.
-[<Collection(nameof NotThreadSafeResourceCollection)>]
 type internal MyFileSystem() =
     inherit DefaultFileSystem()
         static member FilesCache = dict [(fileName1, file1); (fileName2, file2)]
