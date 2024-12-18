@@ -171,57 +171,57 @@ let TypeCheck
             let byteReaderA () = ByteMemory.Empty.AsReadOnly()
             let byteReaderB = None
 
-            let tcInfo = 
+            let tcInfo =
                 GetTypecheckingData(
                     assembly.FileName,
                     assembly.ILScopeRef,
                     assembly.RawMetadata.TryGetILModuleDef(),
                     byteReaderA,
-                    byteReaderB)
+                    byteReaderB
+                )
 
             let rawData = tcInfo.RawData
-            let topAttrs = {
-                mainMethodAttrs = rawData.MainMethodAttrs
-                netModuleAttrs = rawData.NetModuleAttrs
-                assemblyAttrs = rawData.AssemblyAttrs
-            }
+
+            let topAttrs =
+                {
+                    mainMethodAttrs = rawData.MainMethodAttrs
+                    netModuleAttrs = rawData.NetModuleAttrs
+                    assemblyAttrs = rawData.AssemblyAttrs
+                }
 
             // need to understand if anything can be used here, pickling state is hard
             tcInitialState,
-            topAttrs, 
+            topAttrs,
             rawData.DeclaredImpls,
             // this is quite definitely wrong, need to figure out what to do with the environment
             tcInitialState.TcEnvFromImpls
 
         else
-            let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile = CheckClosedInputSet(
-                ctok,
-                diagnosticsLogger.CheckForErrors,
-                tcConfig,
-                tcImports,
-                tcGlobals,
-                None,
-                tcInitialState,
-                eagerFormat,
-                inputs
-            )
+            let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile =
+                CheckClosedInputSet(
+                    ctok,
+                    diagnosticsLogger.CheckForErrors,
+                    tcConfig,
+                    tcImports,
+                    tcGlobals,
+                    None,
+                    tcInitialState,
+                    eagerFormat,
+                    inputs
+                )
 
             if false then
-                let tcInfo = {
-                    MainMethodAttrs = topAttrs.mainMethodAttrs
-                    NetModuleAttrs = topAttrs.netModuleAttrs
-                    AssemblyAttrs = topAttrs.assemblyAttrs
-                    DeclaredImpls = declaredImpls
-                }
+                let tcInfo =
+                    {
+                        MainMethodAttrs = topAttrs.mainMethodAttrs
+                        NetModuleAttrs = topAttrs.netModuleAttrs
+                        AssemblyAttrs = topAttrs.assemblyAttrs
+                        DeclaredImpls = declaredImpls
+                    }
 
                 // will need to pass results further somewhere
-                let _typecheckingDataResources = EncodeTypecheckingData(
-                    tcConfig,
-                    tcGlobals,
-                    tcState.Ccu,
-                    outfile,
-                    false,
-                    tcInfo)
+                let _typecheckingDataResources =
+                    EncodeTypecheckingData(tcConfig, tcGlobals, tcState.Ccu, outfile, false, tcInfo)
 
                 ()
 
