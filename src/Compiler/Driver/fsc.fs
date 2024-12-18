@@ -186,7 +186,7 @@ let TypeCheck
                 assemblyAttrs = rawData.AssemblyAttrs
             }
 
-            // need to understand where if anything can be used here, pickling state is hard
+            // need to understand if anything can be used here, pickling state is hard
             tcInitialState,
             topAttrs, 
             rawData.DeclaredImpls,
