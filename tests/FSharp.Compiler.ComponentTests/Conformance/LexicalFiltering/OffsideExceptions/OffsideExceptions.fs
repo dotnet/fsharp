@@ -11,7 +11,7 @@ module OffsideExceptions =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalFiltering/Basic/OffsideExceptions)
     //<Expects status="success"></Expects>
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "InfixTokenPlusOne.fs")>]
+    [<Theory; FileInlineData("InfixTokenPlusOne.fs")>]
     let InfixTokenPlusOne compilation =
         compilation
         |> getCompilation 
@@ -21,7 +21,7 @@ module OffsideExceptions =
         |> shouldSucceed
         |> ignore
 
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "RelaxWhitespace2.fs")>]
+    [<Theory; FileInlineData("RelaxWhitespace2.fs")>]
     let RelaxWhitespace2 compilation =
         compilation
         |> getCompilation 
@@ -32,7 +32,7 @@ module OffsideExceptions =
         |> shouldSucceed
         |> ignore
 
-    [<Theory; FileInlineData( __SOURCE_DIRECTORY__, "RelaxWhitespace2.fs")>]
+    [<Theory; FileInlineData("RelaxWhitespace2.fs")>]
     let RelaxWhitespace2_Warning25 compilation =
         compilation
         |> getCompilation 
@@ -488,7 +488,7 @@ raise (new Exception("exit 1"))
               Message = "Unexpected end of input in type definition" }
         ] |> ignore
 
-    [<Theory;  FileInlineData(__SOURCE_DIRECTORY__, "RelaxWhitespace2.fs")>]
+    [<Theory;  FileInlineData("RelaxWhitespace2.fs")>]
     let RelaxWhitespace2_Fs50 compilation =
         compilation
         |> getCompilation 

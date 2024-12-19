@@ -10,9 +10,10 @@ module noframework =
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/noframework)
     //<Expects status="success"></Expects>
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"noframework02.fs"|])>]
+    [<Theory; FileInlineData("noframework02.fs")>]
     let ``noframework - noframework02_fs - --noframework`` compilation =
         compilation
+        |> getCompilation 
         |> asFsx
         |> withOptions ["--noframework"]
         |> compile

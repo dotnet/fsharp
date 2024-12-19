@@ -9,7 +9,7 @@ open Xunit
 module Checked =
 
     //  SOURCE=unchecked01.fs       # fsc-default
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "unchecked01.fs")>]
+    [<Theory; FileInlineData("unchecked01.fs")>]
     let ``fsc-unchecked - unchecked01_fs`` compilation =
        compilation
         |> getCompilation 
@@ -18,7 +18,7 @@ module Checked =
         |> shouldSucceed
 
     //  SOURCE=checked01.fs   SCFLAGS="--checked"       # fsc-checked
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "unchecked01.fs")>]
+    [<Theory; FileInlineData("unchecked01.fs")>]
     let ``fsc-unchecked - unchecked01_fs --checked`` compilation =
        compilation
         |> getCompilation 
@@ -28,7 +28,7 @@ module Checked =
         |> shouldSucceed
 
     //  SOURCE=checked01.fs   SCFLAGS="--checked+"      # fsc-checked+
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "unchecked01.fs")>]
+    [<Theory; FileInlineData("unchecked01.fs")>]
     let ``fsc-unchecked - unchecked01_fs --checked+`` compilation =
        compilation
         |> getCompilation 
@@ -38,7 +38,7 @@ module Checked =
         |> shouldSucceed
 
     //  SOURCE=unchecked01.fs SCFLAGS="--checked-"      # fsc-checked-
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "unchecked01.fs")>]
+    [<Theory; FileInlineData("unchecked01.fs")>]
     let ``fsc-unchecked - unchecked01_fs --checked-`` compilation =
        compilation
         |> getCompilation 
@@ -48,7 +48,7 @@ module Checked =
         |> shouldSucceed
 
     //  SOURCE=unchecked01.fs SCFLAGS="--checked-"      # fsc-checked-
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "unchecked01.fs")>]
+    [<Theory; FileInlineData("unchecked01.fs")>]
     let ``fsi-unchecked - unchecked01_fs --checked-`` compilation =
        compilation
         |> getCompilation 
@@ -58,7 +58,7 @@ module Checked =
         |> shouldSucceed
 
     //  SOURCE=checked01.fs   SCFLAGS="--checked"  FSIMODE=EXEC COMPILE_ONLY=1  # fsi-checked
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "checked01.fs")>]
+    [<Theory; FileInlineData("checked01.fs")>]
     let ``fsi-checked - checked01_fs --checked`` compilation =
        compilation
         |> getCompilation 
@@ -68,7 +68,7 @@ module Checked =
         |> shouldSucceed
 
     //  SOURCE=checked01.fs   SCFLAGS="--checked+" FSIMODE=EXEC COMPILE_ONLY=1  # fsi-checked+
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "checked01.fs")>]
+    [<Theory; FileInlineData("checked01.fs")>]
     let ``fsi-checked - checked01_fs --checked+`` compilation =
        compilation
         |> getCompilation 
@@ -78,7 +78,7 @@ module Checked =
         |> shouldSucceed
 
     //  SOURCE=checked01.fs   SCFLAGS="--checked-" FSIMODE=EXEC COMPILE_ONLY=1  # fsi-checked+
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "checked01.fs")>]
+    [<Theory; FileInlineData("checked01.fs")>]
     let ``fsi-checked - checked01_fs --checked-`` compilation =
        compilation
         |> getCompilation 
@@ -91,7 +91,7 @@ module Checked =
     //# Last one wins
 
     //  SOURCE=checked01.fs   SCFLAGS="--checked  --checked+"   # fsc-checkedchecked+
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "checked01.fs")>]
+    [<Theory; FileInlineData("checked01.fs")>]
     let ``fsc-checked - checked01_fs --checked  --checked+`` compilation =
        compilation
         |> getCompilation 
@@ -101,7 +101,7 @@ module Checked =
         |> shouldSucceed
 
     //  SOURCE=checked01.fs   SCFLAGS="--checked- --checked+"   # fsc-checked-checked+
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "checked01.fs")>]
+    [<Theory; FileInlineData("checked01.fs")>]
     let ``fsc-checked - checked01_fs --checked- --checked+`` compilation =
        compilation
         |> getCompilation 
@@ -111,7 +111,7 @@ module Checked =
         |> shouldSucceed
 
     //  SOURCE=unchecked01.fs SCFLAGS="--checked+ --checked-"   # fsc-checked+checked-
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "unchecked01.fs")>]
+    [<Theory; FileInlineData("unchecked01.fs")>]
     let ``fsc-checked - unchecked01_fs --checked+ --checked-`` compilation =
        compilation
         |> getCompilation 
@@ -121,7 +121,7 @@ module Checked =
         |> shouldSucceed
 
     //  SOURCE=checked01.fs   SCFLAGS="--checked  --checked+"   # fsc-checkedchecked+
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "checked01.fs")>]
+    [<Theory; FileInlineData("checked01.fs")>]
     let ``fsi-checked - checked01_fs --checked  --checked+`` compilation =
        compilation
         |> getCompilation 
@@ -131,7 +131,7 @@ module Checked =
         |> shouldSucceed
 
     //  SOURCE=checked01.fs   SCFLAGS="--checked- --checked+"   # fsc-checked-checked+
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "checked01.fs")>]
+    [<Theory; FileInlineData("checked01.fs")>]
     let ``fsi-checked - checked01_fs --checked- --checked+`` compilation =
        compilation
         |> getCompilation 
@@ -141,7 +141,7 @@ module Checked =
         |> shouldSucceed
 
     //  SOURCE=unchecked01.fs SCFLAGS="--checked+ --checked-"   # fsc-checked+checked-
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "unchecked01.fs")>]
+    [<Theory; FileInlineData("unchecked01.fs")>]
     let ``fsi-checked - unchecked01_fs --checked+ --checked-`` compilation =
        compilation
         |> getCompilation 
@@ -152,7 +152,7 @@ module Checked =
 
     //# Unrecognized argument
     //  SOURCE=unrecogarg.fs  SCFLAGS="--Checked"   # fsc--Checked
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "unrecogarg.fs")>]
+    [<Theory; FileInlineData("unrecogarg.fs")>]
     let ``fsc-checked - unchecked01_fs Checked`` compilation =
        compilation
         |> getCompilation 
@@ -165,7 +165,7 @@ module Checked =
         ]
 
     //  SOURCE=unrecogarg.fs  SCFLAGS="--checked*"  # fsc--checked*
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "unrecogarg.fs")>]
+    [<Theory; FileInlineData("unrecogarg.fs")>]
     let ``fsc-checked - unchecked01_fs --checked-star`` compilation =
        compilation
         |> getCompilation 
@@ -178,7 +178,7 @@ module Checked =
         ]
 
     //  SOURCE=unrecogarg.fs  SCFLAGS="--checked*"  # fsc--checked*
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "UncheckedDefaultOf01.fs")>]
+    [<Theory; FileInlineData( "UncheckedDefaultOf01.fs")>]
     let ``fsc-checked - UncheckedDefaultOf01`` compilation =
        compilation
         |> getCompilation 

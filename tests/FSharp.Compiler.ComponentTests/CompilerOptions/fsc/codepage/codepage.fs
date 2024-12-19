@@ -31,7 +31,7 @@ module Codepage =
 
 #if NETFRAMEWORK
 
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "ReferenceBoth.fs")>]
+    [<Theory; FileInlineData("ReferenceBoth.fs")>]
     let ``Reference assembly compiled with same codepages`` compilation =
         compilation
         |> getCompilation
@@ -43,7 +43,7 @@ module Codepage =
             (Error 39, Line 11, Col 13, Line 11, Col 14, "The value, constructor, namespace or type 'б' is not defined.")
         ]
 
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "ReferenceBoth.fs")>]
+    [<Theory; FileInlineData("ReferenceBoth.fs")>]
     let ``Reference assembly compiled with different codepages`` compilation =
         compilation
         |> getCompilation
@@ -55,7 +55,7 @@ module Codepage =
 
     //# Boundary case
     //	SOURCE=E_NoDataForEncoding65535.fs SCFLAGS="--codepage:65535"		# E_NoDataForEncoding65535.fs
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "E_InvalidArgument.fs")>]
+    [<Theory; FileInlineData("E_InvalidArgument.fs")>]
     let ``Reference assembly compiled with no data for codepage`` compilation =
         compilation
         |> getCompilation
@@ -69,7 +69,7 @@ module Codepage =
 
     //# Boundary case
     //	SOURCE=Zero.fs                     SCFLAGS="--codepage:0x0"		# Zero.fs
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "Zero.fs")>]
+    [<Theory; FileInlineData("Zero.fs")>]
     let ``Reference assembly compiled with zero for codepage`` compilation =
         compilation
         |> getCompilation
@@ -82,7 +82,7 @@ module Codepage =
 
 //# Negative cases
     //	SOURCE=E_OutOfRangeArgument01.fs  SCFLAGS="--codepage:65536"		# E_OutOfRangeArgument01.fs
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "E_InvalidArgument.fs")>]
+    [<Theory; FileInlineData("E_InvalidArgument.fs")>]
     let ``OutOfRangeArgument01_fs`` compilation =
         compilation
         |> getCompilation
@@ -100,7 +100,7 @@ Parameter name: codepage")
         ]
 
     //	SOURCE=E_OutOfRangeArgument01.fs   SCFLAGS="--codepage:65536" FSIMODE=EXEC		# E_OutOfRangeArgument01.fs-fsi
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "E_InvalidArgument.fs")>]
+    [<Theory; FileInlineData("E_InvalidArgument.fs")>]
     let ``E_OutOfRangeArgument01_fsx`` compilation =
         compilation
         |> getCompilation
@@ -118,7 +118,7 @@ Parameter name: codepage")
         ]
 
     //	SOURCE=E_NegativeArgument01.fs    SCFLAGS="--codepage:-1"		# E_NegativeArgument01.fs
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "E_InvalidArgument.fs")>]
+    [<Theory; FileInlineData("E_InvalidArgument.fs")>]
     let ``E_NegativeArgument01_fs`` compilation =
         compilation
         |> getCompilation
@@ -136,7 +136,7 @@ Parameter name: codepage")
         ]
 
     //	SOURCE=E_NegativeArgument01.fs     SCFLAGS="--codepage:-1" FSIMODE=EXEC		# E_NegativeArgument01.fs-fsi
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "E_InvalidArgument.fs")>]
+    [<Theory; FileInlineData("E_InvalidArgument.fs")>]
     let ``E_NegativeArgument01_fsx`` compilation =
         compilation
         |> getCompilation
@@ -154,7 +154,7 @@ Parameter name: codepage")
         ]
 
     //	SOURCE=E_NotAValidInteger01.fs    SCFLAGS="--codepage:invalidinteger"		# E_NotAValidInteger01.fs
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "E_InvalidArgument.fs")>]
+    [<Theory; FileInlineData("E_InvalidArgument.fs")>]
     let ``E_NotAValidInteger01_fs`` compilation =
         compilation
         |> getCompilation
@@ -167,7 +167,7 @@ Parameter name: codepage")
         ]
 
     //	SOURCE=E_NotAValidInteger01.fs     SCFLAGS="--codepage:invalidinteger" FSIMODE=EXEC		# E_NotAValidInteger01.fs-fsi
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "E_InvalidArgument.fs")>]
+    [<Theory; FileInlineData("E_InvalidArgument.fs")>]
     let ``E_NotAValidInteger01_fsx`` compilation =
         compilation
         |> getCompilation
@@ -180,7 +180,7 @@ Parameter name: codepage")
         ]
 
     //	SOURCE=E_RequiresParameter01.fs   TAILFLAGS="--codepage" 	# E_RequiresParameter01.fs
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "E_InvalidArgument.fs")>]
+    [<Theory; FileInlineData("E_InvalidArgument.fs")>]
     let ``E_RequiresParameter01_fs`` compilation =
         compilation
         |> getCompilation
@@ -193,7 +193,7 @@ Parameter name: codepage")
         ]
 
 //	SOURCE=E_RequiresParameter01.fs   TAILFLAGS="--codepage"  FSIMODE=EXEC 	# E_RequiresParameter01.fs-fsi
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "E_InvalidArgument.fs")>]
+    [<Theory; FileInlineData("E_InvalidArgument.fs")>]
     let ``E_RequiresParameter01_fsx`` compilation =
         compilation
         |> getCompilation
@@ -206,7 +206,7 @@ Parameter name: codepage")
         ]
 
     //	SOURCE=E_DefaultCodePage02.fsx     COMPILE_ONLY=1   			# E_DefaultCodePage02.fsx
-    [<Theory; FileInlineData(__SOURCE_DIRECTORY__, "libCodepage.fs")>]
+    [<Theory; FileInlineData("libCodepage.fs")>]
     let ``libCodepage_fs`` compilation =
         compilation
         |> getCompilation

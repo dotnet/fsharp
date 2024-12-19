@@ -13,7 +13,7 @@ module ComputedCollections =
         |> ignoreWarnings
         |> verifyILBaseline
 
-    [<Theory; FileInlineData("Int32RangeArrays.fs", __SOURCE_DIRECTORY__)>]
+    [<Theory; FileInlineData("Int32RangeArrays.fs")>]
     let Int32RangeArrays_fs (compilation: CompilationHelper) = 
         compilation
         |> getCompilation
