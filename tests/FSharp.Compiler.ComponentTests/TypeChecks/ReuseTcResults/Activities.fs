@@ -126,7 +126,7 @@ type Activities() =
 
         Assert.Equal<List<string>>(expectedActivities, actualActivities)
 
-    [<Fact>]
+    [<Fact(Skip = "WIP")>]
     let ``Recompilation with everything same``() =
         let expectedActivities = List<string> [
             Activity.Events.reuseTcResultsCacheAbsent

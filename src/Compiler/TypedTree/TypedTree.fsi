@@ -162,6 +162,8 @@ type ValFlags =
 
     member WithMakesNoCriticalTailcalls: ValFlags
 
+    member Flags: int64
+
 /// Represents the kind of a type parameter
 [<RequireQualifiedAccess>]
 type TyparKind =
@@ -291,6 +293,8 @@ type EntityFlags =
 
     /// Get the flags as included in the F# binary metadata
     member PickledBits: int64
+
+    member Flags: int64
 
     member PreEstablishedHasDefaultConstructor: bool
 
@@ -4296,6 +4300,12 @@ type PickledCcuInfo =
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member DebugText: string
+
+type PickledTcInfo =
+    { MainMethodAttrs: Attribs
+      NetModuleAttrs: Attribs
+      AssemblyAttrs: Attribs
+      DeclaredImpls: CheckedImplFile list }
 
 /// Represents a set of free local values. Computed type cached by later phases
 /// (never cached type checking). Cached in expressions. Not pickled.

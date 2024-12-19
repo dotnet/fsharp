@@ -252,6 +252,8 @@ type ValFlags(flags: int64) =
         // Clear the IsGeneratedEventVal, since there's no use in propagating specialname information for generated add/remove event vals
                                                       (flags       &&&   ~~~0b010011001100000000000L) 
 
+    member x.Flags = flags
+
 /// Represents the kind of a type parameter
 [<RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
 type TyparKind = 
@@ -490,6 +492,7 @@ type EntityFlags(flags: int64) =
     /// Get the flags as included in the F# binary metadata
     member x.PickledBits =                         (flags       &&&  ~~~0b000111111000100L)
 
+    member x.Flags = flags
 
 
 exception UndefinedName of 
@@ -5918,6 +5921,12 @@ type PickledCcuInfo =
 
     override _.ToString() = "PickledCcuInfo(...)"
 
+type PickledTcInfo = {
+    MainMethodAttrs: Attribs
+    NetModuleAttrs: Attribs
+    AssemblyAttrs: Attribs
+    DeclaredImpls: CheckedImplFile list
+}
 
 /// Represents a set of free local values. Computed and cached by later phases
 /// (never cached type checking). Cached in expressions. Not pickled.
