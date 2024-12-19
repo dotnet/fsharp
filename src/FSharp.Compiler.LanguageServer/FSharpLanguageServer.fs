@@ -51,6 +51,7 @@ type FSharpLanguageServer
             serviceCollection
                 .AddSingleton(initialWorkspace)
                 .AddSingleton<ContextHolder>()
+                .AddSingleton<FSharpLanguageServerConfig>(config)
                 .AddSingleton<IMethodHandler, InitializeHandler<InitializeParams, InitializeResult, FSharpRequestContext>>()
                 .AddSingleton<IMethodHandler, InitializedHandler<InitializedParams, FSharpRequestContext>>()
                 .AddSingleton<IMethodHandler, DocumentStateHandler>()
