@@ -12,6 +12,24 @@ open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.ParseAndCheckInputs
+open FSharp.Compiler.CheckDeclarations
+
+/// for testing puproses, will remove
+val internal TypeCheck:
+    ctok: CompilationThreadToken *
+    tcConfig: TcConfig *
+    tcImports: TcImports *
+    tcGlobals: TcGlobals *
+    diagnosticsLogger: DiagnosticsLogger *
+    assemblyName: string *
+    tcEnv0: CheckBasics.TcEnv *
+    openDecls0: TypedTree.OpenDeclaration list *
+    inputs: ParsedInput list *
+    exiter: Exiter *
+    outfile: string ->
+        TcState * TopAttribs * CheckedImplFile list * CheckBasics.TcEnv
 
 /// DiagnosticLoggers can be sensitive to the TcConfig flags. During the checking
 /// of the flags themselves we have to create temporary loggers, until the full configuration is
