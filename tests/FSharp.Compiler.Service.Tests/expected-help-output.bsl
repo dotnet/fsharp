@@ -183,3 +183,5 @@
                                          assembly
 --quotations-debug[+|-]                  Emit debug information in quotations
                                          (off by default)
+--reusetypecheckingresults               Reuse previous typechecking results
+                                         for faster compilation

@@ -54,6 +54,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.XmlDocFileWriter
 open FSharp.Compiler.CheckExpressionsOps
+open ReuseTcResults
 
 //----------------------------------------------------------------------------
 // Reporting - warnings, errors
@@ -161,6 +162,13 @@ let TypeCheck
             GetInitialTcState(rangeStartup, ccuName, tcConfig, tcGlobals, tcImports, tcEnv0, openDecls0)
 
         let eagerFormat (diag: PhasedDiagnostic) = diag.EagerlyFormatCore true
+
+        if tcConfig.reuseTcResults = ReuseTcResults.On then
+            let cachingDriver = CachingDriver(tcConfig)
+
+            if cachingDriver.CanReuseTcResults(inputs) then
+                // do nothing, yet
+                ()
 
         CheckClosedInputSet(
             ctok,
@@ -511,6 +519,7 @@ let main1
         )
 
     tcConfigB.exiter <- exiter
+    tcConfigB.cmdLineArgs <- argv
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     SetOptimizeSwitch tcConfigB OptionSwitch.On
