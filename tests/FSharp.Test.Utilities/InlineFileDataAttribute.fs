@@ -33,11 +33,13 @@ type BooleanOptions =
 /// Takes a file, relative to current test suite's root.
 /// Returns a CompilationUnit with encapsulated source code, error baseline and IL baseline (if any).
 [<NoComparison; NoEquality>]
-type FileInlineData (directory: string, filename: string) =
+type FileInlineData(filename: string, realsig: BooleanOptions option, optimize: BooleanOptions option, [<CallerFilePath; Optional; DefaultParameterValue("")>]directory: string) =
     inherit DataAttribute()
 
-    let mutable optimize: BooleanOptions option = None
-    let mutable realsig: BooleanOptions option = None
+    let mutable directory: string = directory
+    let mutable filename: string = filename
+    let mutable optimize: BooleanOptions option = optimize
+    let mutable realsig: BooleanOptions option = realsig
 
     static let computeBoolValues opt =
         match opt with
@@ -46,10 +48,14 @@ type FileInlineData (directory: string, filename: string) =
         | Some BooleanOptions.Both -> [|Some true; Some false|]
         | _ -> [|None|]
 
-    static let convertToNullableBool (opt: bool option): obj =
+    static let convertToBoxed opt =
         match opt with
         | None -> null
         | Some opt -> box opt
+
+    new (filename: string, [<CallerFilePath; Optional; DefaultParameterValue("")>]directory: string) = FileInlineData(filename, None, None, directory)
+
+    member _.Directory with set v = directory <- v
 
     member _.Optimize with set v = optimize <- Some v
 
@@ -59,7 +65,7 @@ type FileInlineData (directory: string, filename: string) =
 
         let getOptions realsig optimize =
 
-            let compilationHelper = CompilationHelper(filename, directory, convertToNullableBool realsig, convertToNullableBool optimize)
+            let compilationHelper = CompilationHelper(filename, directory, convertToBoxed realsig, convertToBoxed optimize)
             [| box (compilationHelper) |]
 
         let results =
@@ -74,7 +80,8 @@ type FileInlineData (directory: string, filename: string) =
         results
 
 // realsig and optimized are boxed so null = not set, true or false = set
-and CompilationHelper internal (filename: string, directory: string, realsig: obj, optimize: obj) =
+and [<NoComparison; NoEquality; AutoOpen>]
+    CompilationHelper internal (filename: obj, directory: obj, realsig: obj, optimize: obj) =
 
     let mutable filename = filename
     let mutable directory = directory
@@ -104,18 +111,24 @@ and CompilationHelper internal (filename: string, directory: string, realsig: ob
         | None, Some opt -> Some $"{opt}"
         | _ -> None
 
-    new() = CompilationHelper("", "", null, null)
+    new() = CompilationHelper(null, null, null, null)
 
-    // Define the implicit conversion operator
-    static member op_Implicit(helper: CompilationHelper) : CompilationUnit =
+    static member getCompilation(helper: CompilationHelper) : CompilationUnit =
         helper.Value ()
 
-    member _.Value(): CompilationUnit =
+    member private _.Value(): CompilationUnit =
         let frame = StackTrace().GetFrame(1) // Get the calling method's frame
         let methodInfo = frame.GetMethod() :?> MethodInfo
 
+        let directory =
+            let path = string directory
+            if File.Exists(path) then
+                Path.GetDirectoryName(path)
+            else
+                path
         let directoryAttribute = DirectoryAttribute(directory)
-        directoryAttribute.Includes <- [| filename |]
+
+        if not (isNull filename) then directoryAttribute.Includes <- [| string filename |]
 
         let realsigBsl =  (getBaseline realsig  ".RealInternalSignature")
         let optimizeBsl = (getBaseline optimize ".Optimize")
