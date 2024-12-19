@@ -149,7 +149,8 @@ let TypeCheck
         tcEnv0,
         openDecls0,
         inputs,
-        exiter: Exiter
+        exiter: Exiter,
+        outfile: string
     ) =
     try
         if isNil inputs then
@@ -162,17 +163,69 @@ let TypeCheck
 
         let eagerFormat (diag: PhasedDiagnostic) = diag.EagerlyFormatCore true
 
-        CheckClosedInputSet(
-            ctok,
-            diagnosticsLogger.CheckForErrors,
-            tcConfig,
-            tcImports,
-            tcGlobals,
-            None,
+        if false then
+            // I don't know yet if this is the right thing even
+            let assembly = (tcImports.DllTable.TryFind tcConfig.primaryAssembly.Name).Value
+
+            // these should be restored from raw resources probably
+            let byteReaderA () = ByteMemory.Empty.AsReadOnly()
+            let byteReaderB = None
+
+            let tcInfo =
+                GetTypecheckingData(
+                    assembly.FileName,
+                    assembly.ILScopeRef,
+                    assembly.RawMetadata.TryGetILModuleDef(),
+                    byteReaderA,
+                    byteReaderB
+                )
+
+            let rawData = tcInfo.RawData
+
+            let topAttrs =
+                {
+                    mainMethodAttrs = rawData.MainMethodAttrs
+                    netModuleAttrs = rawData.NetModuleAttrs
+                    assemblyAttrs = rawData.AssemblyAttrs
+                }
+
+            // need to understand if anything can be used here, pickling state is hard
             tcInitialState,
-            eagerFormat,
-            inputs
-        )
+            topAttrs,
+            rawData.DeclaredImpls,
+            // this is quite definitely wrong, need to figure out what to do with the environment
+            tcInitialState.TcEnvFromImpls
+
+        else
+            let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile =
+                CheckClosedInputSet(
+                    ctok,
+                    diagnosticsLogger.CheckForErrors,
+                    tcConfig,
+                    tcImports,
+                    tcGlobals,
+                    None,
+                    tcInitialState,
+                    eagerFormat,
+                    inputs
+                )
+
+            if false then
+                let tcInfo =
+                    {
+                        MainMethodAttrs = topAttrs.mainMethodAttrs
+                        NetModuleAttrs = topAttrs.netModuleAttrs
+                        AssemblyAttrs = topAttrs.assemblyAttrs
+                        DeclaredImpls = declaredImpls
+                    }
+
+                // will need to pass results further somewhere
+                let _typecheckingDataResources =
+                    EncodeTypecheckingData(tcConfig, tcGlobals, tcState.Ccu, outfile, false, tcInfo)
+
+                ()
+
+            tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
     with exn ->
         errorRecovery exn rangeStartup
         exiter.Exit 1
@@ -693,7 +746,7 @@ let main1
     let inputs = inputs |> List.map fst
 
     let tcState, topAttrs, typedAssembly, _tcEnvAtEnd =
-        TypeCheck(ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger, assemblyName, tcEnv0, openDecls0, inputs, exiter)
+        TypeCheck(ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger, assemblyName, tcEnv0, openDecls0, inputs, exiter, outfile)
 
     AbortOnError(diagnosticsLogger, exiter)
     ReportTime tcConfig "Typechecked"

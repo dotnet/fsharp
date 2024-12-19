@@ -19,6 +19,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.BuildGraph
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text
+open FSharp.Compiler.TypedTreePickle
 open FSharp.Core.CompilerServices
 
 #if !NO_TYPEPROVIDERS
@@ -69,6 +70,23 @@ val EncodeOptimizationData:
     exportRemapping: Remap *
     (CcuThunk * #CcuOptimizationInfo) *
     isIncrementalBuild: bool ->
+        ILResource list
+
+val GetTypecheckingData:
+    file: string *
+    ilScopeRef: ILScopeRef *
+    ilModule: ILModuleDef option *
+    byteReaderA: (unit -> ReadOnlyByteMemory) *
+    byteReaderB: (unit -> ReadOnlyByteMemory) option ->
+        PickledDataWithReferences<PickledTcInfo>
+
+val EncodeTypecheckingData:
+    tcConfig: TcConfig *
+    tcGlobals: TcGlobals *
+    generatedCcu: CcuThunk *
+    outfile: string *
+    isIncrementalBuild: bool *
+    tcInfo: PickledTcInfo ->
         ILResource list
 
 [<RequireQualifiedAccess>]

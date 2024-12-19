@@ -73,6 +73,7 @@
     <Compile Include="SourceTextTests.fs" />
     <Compile Include="SynExprTests.fs" />
     <Compile Include="SynPatTests.fs" />
+    <Compile Include="TypedTreePickleTests.fs" />
   </ItemGroup>
 
 	<ItemGroup>
