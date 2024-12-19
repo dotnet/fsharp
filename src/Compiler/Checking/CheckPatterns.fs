@@ -58,6 +58,14 @@ let UnifyRefTupleType contextInfo (cenv: cenv) denv m ty ps =
     AddCxTypeEqualsType contextInfo denv cenv.css m ty (TType_tuple (tupInfoRef, ptys))
     ptys
 
+let inline mkOptionalParamTyBasedOnAttribute (g: TcGlobals)  tyarg attribs =
+    if g.langVersion.SupportsFeature(LanguageFeature.SupportValueOptionsAsOptionalParameters)
+        && findSynAttribute "StructAttribute" attribs
+    then
+        mkValueOptionTy g tyarg
+    else
+        mkOptionTy g tyarg
+
 let rec TryAdjustHiddenVarNameToCompGenName (cenv: cenv) env (id: Ident) altNameRefCellOpt =
     match altNameRefCellOpt with
     | Some ({contents = SynSimplePatAlternativeIdInfo.Undecided altId } as altNameRefCell) ->
@@ -75,7 +83,7 @@ let rec TryAdjustHiddenVarNameToCompGenName (cenv: cenv) env (id: Ident) altName
     | None -> None
 
 /// Bind the patterns used in a lambda. Not clear why we don't use TcPat.
-and TcSimplePat optionalArgsOK checkConstraints (cenv: cenv) ty env patEnv p =
+and TcSimplePat optionalArgsOK checkConstraints (cenv: cenv) ty env patEnv p (attribs: SynAttributes) =
     let g = cenv.g
     let (TcPatLinearEnv(tpenv, names, takenNames)) = patEnv
 
@@ -85,14 +93,17 @@ and TcSimplePat optionalArgsOK checkConstraints (cenv: cenv) ty env patEnv p =
         // Check to see if pattern translation decides to use an alternative identifier.
         match TryAdjustHiddenVarNameToCompGenName cenv env id altNameRefCellOpt with
         | Some altId ->
-            TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnv (SynSimplePat.Id (altId, None, isCompGen, isMemberThis, isOpt, m) )
+            TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnv (SynSimplePat.Id (altId, None, isCompGen, isMemberThis, isOpt, m) ) attribs
         | None ->
             if isOpt then
                 if not optionalArgsOK then
                     errorR(Error(FSComp.SR.tcOptionalArgsOnlyOnMembers(), m))
 
                 let tyarg = NewInferenceType g
-                UnifyTypes cenv env m ty (mkOptionTy g tyarg)
+
+                let optionalParamTy = mkOptionalParamTyBasedOnAttribute g tyarg attribs
+
+                UnifyTypes cenv env m ty optionalParamTy
 
             let vFlags = TcPatValFlags (ValInline.Optional, permitInferTypars, noArgOrRetAttribs, false, None, isCompGen)
             let _, names, takenNames = TcPatBindingName cenv env id ty isMemberThis None None vFlags (names, takenNames)
@@ -104,20 +115,23 @@ and TcSimplePat optionalArgsOK checkConstraints (cenv: cenv) ty env patEnv p =
 
         match p with
         // Optional arguments on members
-        | SynSimplePat.Id(_, _, _, _, true, _) -> UnifyTypes cenv env m ty (mkOptionTy g ctyR)
+        | SynSimplePat.Id(_, _, _, _, true, _) ->
+            let optionalParamTy = mkOptionalParamTyBasedOnAttribute g ctyR attribs
+
+            UnifyTypes cenv env m ty optionalParamTy
         | _ -> UnifyTypes cenv env m ty ctyR
 
         let patEnvR = TcPatLinearEnv(tpenv, names, takenNames)
-        
+
         // Ensure the untyped typar name sticks
         match cty, ty with
         | SynType.Var(typar = SynTypar(ident = untypedIdent)), TType_var(typar = typedTp) -> typedTp.SetIdent(untypedIdent)
         | _ -> ()
 
-        TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnvR p
+        TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnvR p attribs
 
-    | SynSimplePat.Attrib (p, _, _) ->
-        TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnv p
+    | SynSimplePat.Attrib (p, pattribs, _) ->
+        TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnv p pattribs
 
 // raise an error if any optional args precede any non-optional args
 and ValidateOptArgOrder (synSimplePats: SynSimplePats) =
@@ -166,12 +180,12 @@ and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synS
         [id.idText], patEnvR
 
     | SynSimplePats.SimplePats (pats = [synSimplePat]) ->
-        let v, patEnv = TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnv synSimplePat
+        let v, patEnv = TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnv synSimplePat []
         [v], patEnv
 
     | SynSimplePats.SimplePats (ps, _, m) ->
         let ptys = UnifyRefTupleType env.eContextInfo cenv env.DisplayEnv m ty ps
-        let ps', patEnvR = (patEnv, List.zip ptys ps) ||> List.mapFold (fun patEnv (ty, pat) -> TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnv pat)
+        let ps', patEnvR = (patEnv, List.zip ptys ps) ||> List.mapFold (fun patEnv (ty, pat) -> TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnv pat [])
         ps', patEnvR
 
 and TcSimplePatsOfUnknownType (cenv: cenv) optionalArgsOK checkConstraints env tpenv (pat: SynPat) =

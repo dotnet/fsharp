@@ -44,6 +44,8 @@ val mkSynCompGenSimplePatVar: id: Ident -> SynSimplePat
 
 val pushUnaryArg: expr: SynExpr -> arg: Ident -> SynExpr
 
+val inline findSynAttribute: attrName: string -> synAttrs: SynAttributes -> bool
+
 /// Match a long identifier, including the case for single identifiers which gets a more optimized node in the syntax tree.
 [<return: Struct>]
 val (|LongOrSingleIdent|_|):
