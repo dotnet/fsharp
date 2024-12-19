@@ -4,7 +4,7 @@ ImplFile
       false,
       QualifiedNameOfFile
         InheritSynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([InheritSynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField],
           false, AnonModule,
@@ -23,4 +23,5 @@ ImplFile
               (2,0--2,34))], PreXmlDocEmpty, [], None, (2,0--2,34),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

@@ -1931,12 +1931,6 @@ type ParsedImplFile =
 [<NoEquality; NoComparison>]
 type ParsedSigFile = ParsedSigFile of hashDirectives: ParsedHashDirective list * fragments: ParsedSigFileFragment list
 
-/// Represents a scoped pragma
-[<RequireQualifiedAccess>]
-type ScopedPragma =
-    /// A pragma to turn a warning off
-    | WarningOff of range: range * warningNumber: int
-
 /// Represents a qualifying name for anonymous module specifications and implementations,
 [<NoEquality; NoComparison>]
 type QualifiedNameOfFile =
@@ -1958,7 +1952,6 @@ type ParsedImplFileInput =
         fileName: string *
         isScript: bool *
         qualifiedNameOfFile: QualifiedNameOfFile *
-        scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
         contents: SynModuleOrNamespace list *
         flags: (bool * bool) *
@@ -1970,8 +1963,6 @@ type ParsedImplFileInput =
     member IsScript: bool
 
     member QualifiedName: QualifiedNameOfFile
-
-    member ScopedPragmas: ScopedPragma list
 
     member HashDirectives: ParsedHashDirective list
 
@@ -1989,7 +1980,6 @@ type ParsedSigFileInput =
     | ParsedSigFileInput of
         fileName: string *
         qualifiedNameOfFile: QualifiedNameOfFile *
-        scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
         contents: SynModuleOrNamespaceSig list *
         trivia: ParsedSigFileInputTrivia *
@@ -1998,8 +1988,6 @@ type ParsedSigFileInput =
     member FileName: string
 
     member QualifiedName: QualifiedNameOfFile
-
-    member ScopedPragmas: ScopedPragma list
 
     member HashDirectives: ParsedHashDirective list
 
@@ -2024,9 +2012,6 @@ type ParsedInput =
 
     /// Gets the qualified name used to help match signature and implementation files
     member QualifiedName: QualifiedNameOfFile
-
-    /// Gets the #nowarn and other scoped pragmas
-    member ScopedPragmas: ScopedPragma list
 
     /// Gets a set of all identifiers used in this parsed input. Only populated if captureIdentifiersWhenParsing option was used.
     member Identifiers: Set<string>

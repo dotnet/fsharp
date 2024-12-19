@@ -2,7 +2,7 @@ ImplFile
   (ParsedImplFileInput
      ("/root/ModuleOrNamespace/GlobalNamespaceShouldStartAtNamespaceKeyword.fs",
       false, QualifiedNameOfFile GlobalNamespaceShouldStartAtNamespaceKeyword,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([], false, GlobalNamespace,
           [Types
@@ -21,5 +21,6 @@ ImplFile
           None, (4,0--6,12), { LeadingKeyword = Namespace (4,0--4,9) })],
       (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [LineComment (2,0--2,6); LineComment (3,0--3,6)] },
       set []))

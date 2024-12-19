@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/SignatureType/RangeOfMembersShouldBeIncludedInSynExceptionSigAndSynModuleSigDeclException.fsi",
-      QualifiedNameOfFile FSharp.Compiler.ParseHelpers, [], [],
+      QualifiedNameOfFile FSharp.Compiler.ParseHelpers, [],
       [SynModuleOrNamespaceSig
          ([FSharp; Compiler; ParseHelpers], false, NamedModule,
           [Exception
@@ -56,5 +56,6 @@ SigFile
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), [],
           Some (Internal (2,7--2,15)), (2,0--7,8),
           { LeadingKeyword = Module (2,0--2,6) })], { ConditionalDirectives = []
+                                                      WarnDirectives = []
                                                       CodeComments = [] },
       set []))

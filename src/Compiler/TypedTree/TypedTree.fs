@@ -5590,7 +5590,6 @@ type NamedDebugPointKey =
 type CheckedImplFile = 
     | CheckedImplFile of 
         qualifiedNameOfFile: QualifiedNameOfFile *
-        pragmas: ScopedPragma list *
         signature: ModuleOrNamespaceType *
         contents: ModuleOrNamespaceContents *
         hasExplicitEntryPoint: bool *
@@ -5603,8 +5602,6 @@ type CheckedImplFile =
     member x.Contents = let (CheckedImplFile (contents=res)) = x in res
 
     member x.QualifiedNameOfFile = let (CheckedImplFile (qualifiedNameOfFile=res)) = x in res
-
-    member x.Pragmas = let (CheckedImplFile (pragmas=res)) = x in res
 
     member x.HasExplicitEntryPoint = let (CheckedImplFile (hasExplicitEntryPoint=res)) = x in res
 

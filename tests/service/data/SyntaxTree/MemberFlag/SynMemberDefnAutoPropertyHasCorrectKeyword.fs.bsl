@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/MemberFlag/SynMemberDefnAutoPropertyHasCorrectKeyword.fs", false,
-      QualifiedNameOfFile SynMemberDefnAutoPropertyHasCorrectKeyword, [], [],
+      QualifiedNameOfFile SynMemberDefnAutoPropertyHasCorrectKeyword, [],
       [SynModuleOrNamespace
          ([SynMemberDefnAutoPropertyHasCorrectKeyword], false, AnonModule,
           [Types
@@ -110,4 +110,5 @@ ImplFile
                                  WithKeyword = None })], (2,0--6,27))],
           PreXmlDocEmpty, [], None, (2,0--7,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

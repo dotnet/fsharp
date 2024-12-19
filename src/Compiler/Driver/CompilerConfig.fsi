@@ -543,6 +543,8 @@ type TcConfigBuilder =
         rangeForErrors: range ->
             TcConfigBuilder
 
+    member SetLangVersion: LanguageVersion -> unit
+
     member DecideNames: string list -> string * string option * string
 
     member TurnWarningOff: range * string -> unit

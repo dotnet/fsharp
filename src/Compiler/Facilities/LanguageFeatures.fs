@@ -97,6 +97,7 @@ type LanguageFeature =
     | DontWarnOnUppercaseIdentifiersInBindingPatterns
     | UseTypeSubsumptionCache
     | DeprecatePlacesWhereSeqCanBeOmitted
+    | ScopedNowarn
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -225,6 +226,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.AllowObjectExpressionWithoutOverrides, previewVersion
                 LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns, previewVersion
                 LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted, previewVersion
+                LanguageFeature.ScopedNowarn, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -385,6 +387,7 @@ type LanguageVersion(versionText) =
             FSComp.SR.featureDontWarnOnUppercaseIdentifiersInBindingPatterns ()
         | LanguageFeature.UseTypeSubsumptionCache -> FSComp.SR.featureUseTypeSubsumptionCache ()
         | LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted -> FSComp.SR.featureDeprecatePlacesWhereSeqCanBeOmitted ()
+        | LanguageFeature.ScopedNowarn -> FSComp.SR.featureScopedNowarn ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
