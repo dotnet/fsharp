@@ -574,6 +574,9 @@ module rec Compiler =
     let withNoInterfaceData (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--nointerfacedata" ] "withNoInterfaceData is only supported for F#" cUnit
 
+    let withReuseTcResults (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--reusetypecheckingresults" ] "reusetypecheckingresults is only supported for F#" cUnit
+
     //--refonly[+|-]
     let withRefOnly (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ $"--refonly+" ] "withRefOnly is only supported for F#" cUnit
@@ -822,6 +825,34 @@ module rec Compiler =
         match cUnit with
         | FS fs -> compileFSharp fs
         | CS cs -> compileCSharp cs
+        | _ -> failwith "TODO"
+
+    let compileExisting (cUnit: CompilationUnit) : CompilationResult =
+        match cUnit with
+        | FS fs ->
+            let sourceFilePath = fs.Source.GetSourceFileName
+            if (not <| File.Exists sourceFilePath) then
+                failwith "File doesn't exist. Create it to use this function."
+
+            let outputFilePath = Path.ChangeExtension(sourceFilePath, ".dll")
+            let err, _, _ = rawCompile outputFilePath false fs.Options TargetFramework.Current [ fs.Source ]
+            let diagnostics = err |> fromFSharpDiagnostic
+
+            let result = {
+                OutputPath    = Some outputFilePath
+                Dependencies  = []
+                Adjust        = 0
+                PerFileErrors = diagnostics
+                Diagnostics   = diagnostics |> List.map snd
+                Output        = None
+                Compilation   = cUnit
+            }
+
+            if err.Length = 0 then
+                CompilationResult.Success result
+            else
+                CompilationResult.Failure result
+
         | _ -> failwith "TODO"
 
     let private getAssemblyInBytes (result: CompilationResult) =

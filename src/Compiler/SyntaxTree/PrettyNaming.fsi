@@ -284,6 +284,8 @@ val internal FSharpOptimizationDataResourceName2: string
 
 val internal FSharpSignatureDataResourceName2: string
 
+val internal FSharpTcDataResourceName: string
+
 val GetLongNameFromString: string -> string list
 
 val FormatAndOtherOverloadsString: int -> string
