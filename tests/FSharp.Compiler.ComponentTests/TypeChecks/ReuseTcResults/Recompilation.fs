@@ -125,3 +125,60 @@ printfn $"{M1.helloWorld}" """
                 [ expected ]
 
         Assert.True(outcome)
+
+    [<Theory>]
+    [<InlineData(
+        """
+module M1
+let test1 = 42 """, 
+        """
+module M2
+let test2 = M1.test1 """)>]
+//    [<InlineData(
+//        """
+//module M1
+//let helloWorld = "hello world!" """, 
+//        """
+//module M2
+//printfn $"{M1.helloWorld}" """)>]
+    let ``Multiple files - partial TC info reuse`` (code1: string) (code2: string) =
+        let tempDir = createTemporaryDirectory().FullName
+
+        let fileName1 = "File0"
+        let fileName2 = "File1"
+
+        let tempPath1 = tempDir ++ $"{fileName1}.fs"
+        let tempPath2 = tempDir ++ $"{fileName2}.fs"
+
+        File.WriteAllText(tempPath1, code1) 
+        File.WriteAllText(tempPath2, code2) 
+
+        let cUnit = 
+            FsFromPath tempPath1
+            |> withAdditionalSourceFile (SourceCodeFileKind.Create tempPath2)
+            |> withReuseTcResults
+            |> withNoInterfaceData
+            |> withOptions [ "--compressmetadata-" ]
+            |> withOptions [ "--optimize-" ]
+            
+        let expected =
+            cUnit
+            |> compileExisting
+            |> shouldSucceed
+            |> fun r -> ILChecker.generateIL r.Output.OutputPath.Value []
+
+        File.WriteAllText(tempPath2, code2) 
+
+        let actual =
+            cUnit
+            |> compileExisting
+            |> shouldSucceed
+            |> fun r -> ILChecker.generateIL r.Output.OutputPath.Value []
+
+        let outcome, _msg, _actualIL = 
+            ILChecker.compareIL
+                fileName1 
+                actual 
+                [ expected ]
+
+        Assert.True(outcome)
