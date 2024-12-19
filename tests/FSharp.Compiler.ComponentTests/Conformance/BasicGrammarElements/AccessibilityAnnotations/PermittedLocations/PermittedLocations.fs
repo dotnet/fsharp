@@ -24,6 +24,7 @@ module AccessibilityAnnotations_PermittedLocations =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_accessibilityOnInterface.fs"|])>]
     let ``E_accessibilityOnInterface_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [

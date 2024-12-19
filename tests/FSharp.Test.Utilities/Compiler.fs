@@ -13,6 +13,7 @@ open FSharp.Test.ScriptHelpers
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open Xunit
+open Xunit.Abstractions
 open System
 open System.Collections.Immutable
 open System.IO
@@ -29,8 +30,8 @@ open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open FSharp.Compiler.CodeAnalysis
 
-
 module rec Compiler =
+
     [<AutoOpen>]
     type SourceUtilities () =
         static member getCurrentMethodName([<CallerMemberName; Optional; DefaultParameterValue("")>] memberName: string) = memberName
@@ -57,7 +58,9 @@ module rec Compiler =
         | FS of FSharpCompilationSource
         | CS of CSharpCompilationSource
         | IL of ILCompilationSource
-        override this.ToString() = match this with | FS fs -> fs.ToString() | _ -> (sprintf "%A" this   )
+
+        override this.ToString() = match this with | FS fs -> fs.ToString() | _ -> (sprintf "%A" this)
+
         member this.OutputDirectory =
             let toString diOpt =
                 match diOpt: DirectoryInfo option with
@@ -67,6 +70,7 @@ module rec Compiler =
             | FS fs -> fs.OutputDirectory |> toString
             | CS cs -> cs.OutputDirectory |> toString
             | _ -> raise (Exception "Not supported for this compilation type")
+
         member this.WithStaticLink(staticLink: bool) = match this with | FS fs -> FS { fs with StaticLink = staticLink } | cu -> cu
 
     type FSharpCompilationSource =
@@ -81,7 +85,11 @@ module rec Compiler =
           References:       CompilationUnit list
           TargetFramework:  TargetFramework
           StaticLink:       bool
-          }
+        }
+
+//        interface IXunitSerializable with
+//            member this.Serialize(info: IXunitSerializationInfo) = ()
+//            member this.Deserialize(info: IXunitSerializationInfo) =
 
         member this.CreateOutputDirectory() =
             match this.OutputDirectory with
@@ -536,6 +544,10 @@ module rec Compiler =
 
     let withOptimize (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--optimize+" ] "withOptimize is only supported for F#" cUnit
+
+    let withOptimization (optimization: bool) (cUnit: CompilationUnit) : CompilationUnit =
+        let option = if optimization then "--optimize+" else "--optimize-"
+        withOptionsHelper [ option ] "withOptimization is only supported for F#" cUnit
 
     let withFullPdb(cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--debug:full" ] "withFullPdb is only supported for F#" cUnit
@@ -1795,10 +1807,10 @@ Actual:
     let printSignatures cUnit = printSignaturesImpl None cUnit
     let printSignaturesWith pageWidth cUnit = printSignaturesImpl (Some pageWidth) cUnit
 
-
     let getImpliedSignatureHash cUnit = 
         let tcResults = cUnit |> typecheckResults
         let hash = tcResults.CalculateSignatureHash()
         match hash with
         | Some h -> h
         | None -> failwith "Implied signature hash returned 'None' which should not happen"
+
