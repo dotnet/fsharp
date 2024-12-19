@@ -1388,6 +1388,14 @@ let advancedFlagsFsc tcConfigB =
             None,
             Some(FSComp.SR.optsEmitDebugInfoInQuotations (formatOptionSwitch tcConfigB.emitDebugInfoInQuotations))
         )
+
+        CompilerOption(
+            "reusetypecheckingresults",
+            tagNone,
+            OptionUnit(fun () -> tcConfigB.reuseTcResults <- ReuseTcResults.On),
+            None,
+            Some(FSComp.SR.optsReuseTcResults ())
+        )
     ]
 
 // OptionBlock: Internal options (test use only)
