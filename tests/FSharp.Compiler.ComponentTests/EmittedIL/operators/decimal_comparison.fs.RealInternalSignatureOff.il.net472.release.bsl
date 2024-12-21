@@ -18,16 +18,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -40,13 +30,13 @@
 
 
 
-.class public abstract auto ansi sealed Decimal_comparison_RealInternalSignatureOff
+.class public abstract auto ansi sealed Decimal_comparison
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
 } 
 
-.class private abstract auto ansi sealed '<StartupCode$assembly>'.$Decimal_comparison_RealInternalSignatureOff
+.class private abstract auto ansi sealed '<StartupCode$assembly>'.$Decimal_comparison
        extends [runtime]System.Object
 {
   .field static assembly int32 init@
