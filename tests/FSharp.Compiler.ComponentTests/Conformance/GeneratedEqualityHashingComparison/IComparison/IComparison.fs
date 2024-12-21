@@ -9,36 +9,40 @@ open FSharp.Test.Compiler
 module IComparison =
 
     // SOURCE=DU.fs                                             # DU.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"DU.fs"|])>]
+    [<Theory; FileInlineData("DU.fs")>]
     let``DU_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--nowarn:342"]
         |> compileAndRun
         |> shouldSucceed
 
     // SOURCE=Record.fs                                         # Record.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Record.fs"|])>]
+    [<Theory; FileInlineData("Record.fs")>]
     let``Record_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--nowarn:342"]
         |> compileAndRun
         |> shouldSucceed
 
     // SOURCE=Struct.fs                                         # Struct.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Struct.fs"|])>]
+    [<Theory; FileInlineData("Struct.fs")>]
     let``Struct_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--nowarn:342"]
         |> compileAndRun
         |> shouldSucceed
 
     // SOURCE=W_ImplIComparable.fs                              # W_ImplIComparable.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_ImplIComparable.fs"|])>]
+    [<Theory; FileInlineData("W_ImplIComparable.fs")>]
     let``W_ImplIComparable_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail

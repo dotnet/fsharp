@@ -17,25 +17,28 @@ module MemberDefinitions_MethodsAndProperties =
     let verifyCompileAndRun = verifyCompile >> run
 
     // SOURCE=PartiallyOverriddenProperty.fs							
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PartiallyOverriddenProperty.fs"|])>]
+    [<Theory; FileInlineData("PartiallyOverriddenProperty.fs")>]
     let ``Partially Overridden Property`` compilation =
         compilation
+        |> getCompilation
         |> withCheckNulls
         |> typecheck
         |> shouldSucceed
 
     // SOURCE=AbstractProperties01.fs								# AbstractProperties01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AbstractProperties01.fs"|])>]
+    [<Theory; FileInlineData("AbstractProperties01.fs")>]
     let ``AbstractProperties01_fs`` compilation =
         compilation
+        |> getCompilation
         |> withCheckNulls
         |> verifyCompileAndRun
         |> shouldSucceed
    
     // SOURCE=E_AbstractAndConcreteProp.fs SCFLAGS="--test:ErrorRanges"		# E_AbstractAndConcreteProp.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AbstractAndConcreteProp.fs"|])>]
+    [<Theory; FileInlineData("E_AbstractAndConcreteProp.fs")>]
     let ``E_AbstractAndConcreteProp_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -43,9 +46,10 @@ module MemberDefinitions_MethodsAndProperties =
         ]
 
     // SOURCE=E_AbstractProperties02.fs SCFLAGS="--test:ErrorRanges --flaterrors"		# E_AbstractProperties02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AbstractProperties02.fs"|])>]
+    [<Theory; FileInlineData("E_AbstractProperties02.fs")>]
     let ``E_AbstractProperties02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -54,9 +58,10 @@ module MemberDefinitions_MethodsAndProperties =
         ]
 
     // SOURCE=E_AbstractProperties03.fs SCFLAGS="--test:ErrorRanges"				# E_AbstractProperties03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AbstractProperties03.fs"|])>]
+    [<Theory; FileInlineData("E_AbstractProperties03.fs")>]
     let ``E_AbstractProperties03_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -64,9 +69,10 @@ module MemberDefinitions_MethodsAndProperties =
         ]
 
     // SOURCE=E_ActivePatternMember01.fs  SCFLAGS="--test:ErrorRanges"	# E_ActivePatternMember01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ActivePatternMember01.fs"|])>]
+    [<Theory; FileInlineData("E_ActivePatternMember01.fs")>]
     let ``E_ActivePatternMember01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -75,9 +81,10 @@ module MemberDefinitions_MethodsAndProperties =
         ]
 
     // SOURCE=E_ActivePatternMember02.fs  SCFLAGS="--test:ErrorRanges"	# E_ActivePatternMember02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ActivePatternMember02.fs"|])>]
+    [<Theory; FileInlineData("E_ActivePatternMember02.fs")>]
     let ``E_ActivePatternMember02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -89,9 +96,10 @@ module MemberDefinitions_MethodsAndProperties =
         
 
     // SOURCE=E_ActivePatternMember03.fs  SCFLAGS="--test:ErrorRanges"	# E_ActivePatternMember03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ActivePatternMember03.fs"|])>]
+    [<Theory; FileInlineData("E_ActivePatternMember03.fs")>]
     let ``E_ActivePatternMember03_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -101,9 +109,10 @@ module MemberDefinitions_MethodsAndProperties =
         ]
 
     // SOURCE=E_DuplicateProperty01.fs SCFLAGS="--test:ErrorRanges"	# E_DuplicateProperty01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_DuplicateProperty01.fs"|])>]
+    [<Theory; FileInlineData("E_DuplicateProperty01.fs")>]
     let ``E_DuplicateProperty01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -112,9 +121,10 @@ module MemberDefinitions_MethodsAndProperties =
         ]
 
     // SOURCE=E_IndexerArityMismatch01.fs     SCFLAGS="--test:ErrorRanges --flaterrors"	# E_IndexerArityMismatch01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_IndexerArityMismatch01.fs"|])>]
+    [<Theory; FileInlineData("E_IndexerArityMismatch01.fs")>]
     let ``E_IndexerArityMismatch01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -125,9 +135,10 @@ module MemberDefinitions_MethodsAndProperties =
         ]
 
     // SOURCE=E_IndexerArityMismatch02.fs     SCFLAGS="--test:ErrorRanges --flaterrors"	# E_IndexerArityMismatch02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_IndexerArityMismatch02.fs"|])>]
+    [<Theory; FileInlineData("E_IndexerArityMismatch02.fs")>]
     let ``E_IndexerArityMismatch02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -138,9 +149,10 @@ module MemberDefinitions_MethodsAndProperties =
         ]
 
     // SOURCE=E_IndexerIndeterminateType01.fs SCFLAGS=--test:ErrorRanges			# E_IndexerIndeterminateType01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_IndexerIndeterminateType01.fs"|])>]
+    [<Theory; FileInlineData("E_IndexerIndeterminateType01.fs")>]
     let ``E_IndexerIndeterminateType01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -148,9 +160,10 @@ module MemberDefinitions_MethodsAndProperties =
         ]
 
     // SOURCE=E_IndexerNotSpecified01.fs							# E_IndexerNotSpecified01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_IndexerNotSpecified01.fs"|])>]
+    [<Theory; FileInlineData("E_IndexerNotSpecified01.fs")>]
     let ``E_IndexerNotSpecified01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -158,9 +171,10 @@ module MemberDefinitions_MethodsAndProperties =
         ]
 
     // SOURCE=E_OutscopeThisPtr01.fs      SCFLAGS="--test:ErrorRanges"	# E_OutscopeThisPtr01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_OutscopeThisPtr01.fs"|])>]
+    [<Theory; FileInlineData("E_OutscopeThisPtr01.fs")>]
     let ``E_OutscopeThisPtr01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -168,9 +182,10 @@ module MemberDefinitions_MethodsAndProperties =
         ]
 
     // SOURCE=E_Properties02.fs SCFLAGS="--test:ErrorRanges"		# E_Properties02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Properties02.fs"|])>]
+    [<Theory; FileInlineData("E_Properties02.fs")>]
     let ``E_Properties02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -178,9 +193,10 @@ module MemberDefinitions_MethodsAndProperties =
         ]
 
     // SOURCE=E_Properties06.fs SCFLAGS="--test:ErrorRanges  --flaterrors"	# E_Properties06.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Properties06.fs"|])>]
+    [<Theory; FileInlineData("E_Properties06.fs")>]
     let ``E_Properties06_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -188,9 +204,10 @@ module MemberDefinitions_MethodsAndProperties =
         ]
 
     // SOURCE=E_SettersMustHaveUnit01.fs		# E_SettersMustHaveUnit01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SettersMustHaveUnit01.fs"|])>]
+    [<Theory; FileInlineData("E_SettersMustHaveUnit01.fs")>]
     let ``E_SettersMustHaveUnit01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -198,9 +215,10 @@ module MemberDefinitions_MethodsAndProperties =
         ]
 
     // SOURCE=E_SettersMustHaveUnit02.fs SCFLAGS="--test:ErrorRanges --flaterrors"		# E_SettersMustHaveUnit02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SettersMustHaveUnit02.fs"|])>]
+    [<Theory; FileInlineData("E_SettersMustHaveUnit02.fs")>]
     let ``E_SettersMustHaveUnit02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -208,9 +226,10 @@ module MemberDefinitions_MethodsAndProperties =
         ]
 
     // SOURCE=E_UndefinedThisVariable.fs				# E_UndefinedThisVariable.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UndefinedThisVariable.fs"|])>]
+    [<Theory; FileInlineData("E_UndefinedThisVariable.fs")>]
     let ``E_UndefinedThisVariable_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -218,9 +237,10 @@ module MemberDefinitions_MethodsAndProperties =
         ]
 
     // SOURCE=E_UndefinedThisVariable02.fs				# E_UndefinedThisVariable02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UndefinedThisVariable02.fs"|])>]
+    [<Theory; FileInlineData("E_UndefinedThisVariable02.fs")>]
     let ``E_UndefinedThisVariable02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -228,9 +248,10 @@ module MemberDefinitions_MethodsAndProperties =
         ]
 
     // SOURCE=E_useInstMethodThroughStatic.fs		# E_useInstMethodThroughStatic.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_useInstMethodThroughStatic.fs"|])>]
+    [<Theory; FileInlineData("E_useInstMethodThroughStatic.fs")>]
     let ``E_UseInstMethodThroughStatic_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -238,9 +259,10 @@ module MemberDefinitions_MethodsAndProperties =
         ]
 
     // SOURCE=E_useStaticMethodThroughInstance.fs	# E_useStaticMethodThroughInstance.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_useStaticMethodThroughInstance.fs"|])>]
+    [<Theory; FileInlineData("E_useStaticMethodThroughInstance.fs")>]
     let ``E_useStaticMethodThroughInstance_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -248,190 +270,216 @@ module MemberDefinitions_MethodsAndProperties =
         ]
 
     // SOURCE=genericGenericClass.fs			# genericGenericClass.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"genericGenericClass.fs"|])>]
+    [<Theory; FileInlineData("genericGenericClass.fs")>]
     let ``genericGenericClass_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=GetAndSetKeywords01.fs			# GetAndSetKeywords01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"GetAndSetKeywords01.fs"|])>]
+    [<Theory; FileInlineData("GetAndSetKeywords01.fs")>]
     let ``GetAndSetKeywords01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=GetterSetterDiff01.fs			# GetterSetterDiff01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"GetterSetterDiff01.fs"|])>]
+    [<Theory; FileInlineData("GetterSetterDiff01.fs")>]
     let ``GetterSetterDiff01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Indexer01.fs				# Indexer01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Indexer01.fs"|])>]
+    [<Theory; FileInlineData("Indexer01.fs")>]
     let ``Indexer01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Indexer02.fs				# Indexer02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Indexer02.fs"|])>]
+    [<Theory; FileInlineData("Indexer02.fs")>]
     let ``Indexer02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Indexer02.fs SCFLAGS=-a			# Indexer03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Indexer03.fs"|])>]
+    [<Theory; FileInlineData("Indexer03.fs")>]
     let ``Indexer03_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=instMembers-class.fs			# instMembers-class.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"instMembers-class.fs"|])>]
+    [<Theory; FileInlineData("instMembers-class.fs")>]
     let ``instMembers-class_fs`` compilation =
         compilation
+        |> getCompilation
         |> withOptions ["--nowarn:221"]
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=instMembers-DU.fs			# instMembers-DU.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"instMembers-DU.fs"|])>]
+    [<Theory; FileInlineData("instMembers-DU.fs")>]
     let ``InstMembers-DU_fs`` compilation =
         compilation
+        |> getCompilation
         |> withOptions ["--nowarn:221"]
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=instMembers-Records.fs			# InstMembers-Records.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"instMembers-Records.fs"|])>]
+    [<Theory; FileInlineData("instMembers-Records.fs")>]
     let ``InstMembers-Records_fs`` compilation =
         compilation
+        |> getCompilation
         |> withOptions ["--nowarn:221"]
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=multiParamIndexer.fs			# MultiParamIndexer.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"multiParamIndexer.fs"|])>]
+    [<Theory; FileInlineData("multiParamIndexer.fs")>]
     let ``MultiParamIndexer_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Properties01.fs						# Properties01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Properties01.fs"|])>]
+    [<Theory; FileInlineData("Properties01.fs")>]
     let ``Properties01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Properties02.fs						# Properties02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Properties02.fs"|])>]
+    [<Theory; FileInlineData("Properties02.fs")>]
     let ``Properties02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Properties03.fs						# Properties03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Properties03.fs"|])>]
+    [<Theory; FileInlineData("Properties03.fs")>]
     let ``Properties03_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Properties04.fs						# Properties04.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Properties04.fs"|])>]
+    [<Theory; FileInlineData("Properties04.fs")>]
     let ``Properties04_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Properties05.fs						# Properties05.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Properties05.fs"|])>]
+    [<Theory; FileInlineData("Properties05.fs")>]
     let ``Properties05_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=RecursiveLetValues.fs					# RecursiveLetValues.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"RecursiveLetValues.fs"|])>]
+    [<Theory; FileInlineData("RecursiveLetValues.fs")>]
     let ``RecursiveLetValues_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=StaticGenericField01.fs					# StaticGenericField01
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StaticGenericField01.fs"|])>]
+    [<Theory; FileInlineData("StaticGenericField01.fs")>]
     let ``StaticGenericField01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=staticMembers-class.fs			# StaticMembers-Class.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"staticMembers-class.fs"|])>]
+    [<Theory; FileInlineData("staticMembers-class.fs")>]
     let ``StaticMembers-Class_fs`` compilation =
         compilation
+        |> getCompilation
         |> withOptions ["--nowarn:221"]
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=staticMembers-DU.fs			# StaticMembers-DU.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"staticMembers-DU.fs"|])>]
+    [<Theory; FileInlineData("staticMembers-DU.fs")>]
     let ``StaticMembers-DU_fs`` compilation =
         compilation
+        |> getCompilation
         |> withOptions ["--nowarn:221"]
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=staticMembers-Records.fs			# StaticMembers-Record.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"staticMembers-Records.fs"|])>]
+    [<Theory; FileInlineData("staticMembers-Records.fs")>]
     let ``staticMembers-Records_fs`` compilation =
         compilation
+        |> getCompilation
         |> withOptions ["--nowarn:221"]
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=staticMembers-instance.fs		# StaticMembers-instance.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"staticMembers-instance.fs"|])>]
+    [<Theory; FileInlineData("staticMembers-instance.fs")>]
     let ``StaticMembers-instance_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=tupesAndFuncsAsArgs.fs			# TupesAndFuncsAsArgs.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"tupesAndFuncsAsArgs.fs"|])>]
+    [<Theory; FileInlineData("tupesAndFuncsAsArgs.fs")>]
     let ``TupesAndFuncsAsArgs_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=TupledIndexer.fs				# TupledIndexer.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TupledIndexer.fs"|])>]
+    [<Theory; FileInlineData("TupledIndexer.fs")>]
     let ``TupledIndexer_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=typeMethodsCurrable.fs			# TypeMethodsCurrable.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"typeMethodsCurrable.fs"|])>]
+    [<Theory; FileInlineData("typeMethodsCurrable.fs")>]
     let ``TypeMethodsCurrable_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=tupledValueProperties01.fs							# tupledValueProperties01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"tupledValueProperties01.fs"|])>]
+    [<Theory; FileInlineData("tupledValueProperties01.fs")>]
     let ``tupledValueProperties01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=tupledValueProperties02.fsx SCFLAGS="--nologo" FSIMODE=PIPE COMPILE_ONLY=1	# tupledValueProperties02.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"tupledValueProperties02.fsx"|])>]
+    [<Theory; FileInlineData("tupledValueProperties02.fsx")>]
     let ``tupledValueProperties02_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
@@ -595,9 +643,10 @@ type I =
             (Error 3550, Line 7, Col 5, Line 7, Col 54, "Duplicate parameter. The parameter 'j' has been used more that once in this method.")
         ]
     
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"IndexedPropertiesSameType.fs"|])>]
+    [<Theory; FileInlineData("IndexedPropertiesSameType.fs")>]
     let ``IndexedPropertiesSameType_fs`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion70
         |> verifyCompileAndRun
         |> shouldSucceed

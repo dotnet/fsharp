@@ -9,9 +9,10 @@ open FSharp.Test.Compiler
 module ExplicitObjectConstructors =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/ClassTypes/ExplicitObjectConstructors)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"new_while_01.fs"|])>]
+    [<Theory; FileInlineData("new_while_01.fs")>]
     let ``new_while_01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> typecheck
         |> shouldSucceed
@@ -19,9 +20,10 @@ module ExplicitObjectConstructors =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/ClassTypes/ExplicitObjectConstructors)
     
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"WithAttribute01.fs"|])>]
+    [<Theory; FileInlineData("WithAttribute01.fs")>]
     let ``WithAttribute01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["-a"; "--test:ErrorRanges"]
         |> compile
@@ -32,9 +34,10 @@ module ExplicitObjectConstructors =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/ClassTypes/ExplicitObjectConstructors)
     
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"WithAttribute02.fs"|])>]
+    [<Theory; FileInlineData("WithAttribute02.fs")>]
     let ``WithAttribute02_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["-a"; "--test:ErrorRanges"]
         |> compile

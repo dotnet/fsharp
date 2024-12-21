@@ -25,9 +25,10 @@ module MemberDefinitions_OptionalArguments =
         |> compileAndRun
 
     // SOURCE=E_OptionalNamedArgs.fs SCFLAGS="-r:TestLib.dll" PRECMD="\$CSC_PIPE /t:library TestLib.cs"	# E_OptionalNamedArgs.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_OptionalNamedArgs.fs"|])>]
+    [<Theory; FileInlineData("E_OptionalNamedArgs.fs")>]
     let ``E_OptionalNamedArgs_fs`` compilation =
         compilation
+        |> getCompilation 
         |> withReferences [csTestLib]
         |> verifyCompile
         |> shouldFail
@@ -36,39 +37,43 @@ module MemberDefinitions_OptionalArguments =
         ]
 
     // SOURCE=NullOptArgsFromCS.fs   SCFLAGS="-r:TestLib.dll" PRECMD="\$CSC_PIPE /t:library TestLib.cs"	# NullOptArgsFromCS.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NullOptArgsFromCS.fs"|])>]
+    [<Theory; FileInlineData("NullOptArgsFromCS.fs")>]
     let ``NullOptArgsFromCS_fs`` compilation =
         compilation
+        |> getCompilation 
         |> withReferences [csTestLib]
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=NullOptArgsFromVB.fs   SCFLAGS="-r:TestLibVB.dll" PRECMD="\$VBC_PIPE /t:library TestLibVB.vb"	# NullOptArgsFromVB.fs
-    //[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NullOptArgsFromVB.fs"|])>]
+    //[<Theory; FileInlineData("NullOptArgsFromVB.fs")>]
     //let ``NullOptArgsFromVB_fs`` compilation =
     //    compilation
     //    |> verifyCompileAndRun
     //    |> shouldSucceed
 
     // SOURCE=OptionalArgOnAbstract01.fs			# OptionalArgOnAbstract01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"OptionalArgOnAbstract01.fs"|])>]
+    [<Theory; FileInlineData("OptionalArgOnAbstract01.fs")>]
     let ``OptionalArgOnAbstract01_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=SanityOptArgsFromCS.fs SCFLAGS="-r:TestLib.dll" PRECMD="\$CSC_PIPE /t:library TestLib.cs"	# SanityOptArgsFromCS.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SanityOptArgsFromCS.fs"|])>]
+    [<Theory; FileInlineData("SanityOptArgsFromCS.fs")>]
     let ``SanityOptArgsFromCS_fs`` compilation =
         compilation
+        |> getCompilation 
         |> withReferences [csTestLib]
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=E_SanityCheck.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SanityCheck.fs"|])>]
+    [<Theory; FileInlineData("E_SanityCheck.fs")>]
     let ``E_SanityCheck_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -77,9 +82,10 @@ module MemberDefinitions_OptionalArguments =
         ]
 
     // SOURCE=E_SanityCheck02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SanityCheck02.fs"|])>]
+    [<Theory; FileInlineData("E_SanityCheck02.fs")>]
     let ``E_SanityCheck02_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -88,30 +94,34 @@ module MemberDefinitions_OptionalArguments =
         ]
 
     // SOURCE=optionalOfOptOptA.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"optionalOfOptOptA.fs"|])>]
+    [<Theory; FileInlineData("optionalOfOptOptA.fs")>]
     let ``optionalOfOptOptA_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=SanityCheck.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SanityCheck.fs"|])>]
+    [<Theory; FileInlineData("SanityCheck.fs")>]
     let ``SanityCheck_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=SanityCheck02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SanityCheck02.fs"|])>]
+    [<Theory; FileInlineData("SanityCheck02.fs")>]
     let ``SanityCheck02_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=SanityCheck03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SanityCheck03.fs"|])>]
+    [<Theory; FileInlineData("SanityCheck03.fs")>]
     let ``SanityCheck03_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompileAndRun
         |> shouldSucceed
 

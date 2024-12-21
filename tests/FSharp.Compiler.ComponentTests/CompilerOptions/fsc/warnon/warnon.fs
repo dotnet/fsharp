@@ -6,13 +6,14 @@ open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 
-module warnon =
+module CompilerWarnOn =
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/warnon)
     //<Expects status="warning" span="(18,11-18,12)" id="FS1182">The value 'n' is unused$</Expects>
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"warnon01.fs"|])>]
+    [<Theory; FileInlineData("warnon01.fs")>]
     let ``warnon - warnon01_fs - --warnon:1182 --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation 
         |> asFsx
         |> withOptions ["--warnon:1182"; "--test:ErrorRanges"]
         |> compile
@@ -23,9 +24,10 @@ module warnon =
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/warnon)
     //<Expects status="warning" span="(18,11-18,12)" id="FS1182">The value 'n' is unused$</Expects>
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"warnon01.fs"|])>]
+    [<Theory; FileInlineData("warnon01.fs")>]
     let ``warnon - warnon01_fs - --warnon:NU0001;FS1182;NU0001 --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation 
         |> asFsx
         |> withOptions ["--warnon:NU0001;FS1182;NU0001"; "--test:ErrorRanges"]
         |> compile

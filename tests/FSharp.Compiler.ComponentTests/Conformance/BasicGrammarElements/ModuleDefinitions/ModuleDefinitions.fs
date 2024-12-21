@@ -22,16 +22,18 @@ module ModuleDefinitions =
         |> compileAndRun
 
     // SOURCE=AutoOpen01.fs                                                                                                # AutoOpen01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AutoOpen01.fs"|])>]
+    [<Theory; FileInlineData("AutoOpen01.fs")>]
     let ``AutoOpen01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=AutoOpen02.fs                                                                                                # AutoOpen02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AutoOpen02.fs"|])>]
+    [<Theory; FileInlineData("AutoOpen02.fs")>]
     let ``AutoOpen02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -39,23 +41,26 @@ module ModuleDefinitions =
         ]
 
     // SOURCE=AutoOpen03.fs                                                                                                # AutoOpen03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AutoOpen03.fs"|])>]
+    [<Theory; FileInlineData("AutoOpen03.fs")>]
     let ``AutoOpen03_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=DefineModule01.fs                                                                                            # DefineModule01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"DefineModule01.fs"|])>]
+    [<Theory; FileInlineData("DefineModule01.fs")>]
     let ``DefineModule01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=E_CannotAccessPrivateMembersOfAnotherType.fs    SCFLAGS="--test:ErrorRanges" COMPILE_ONLY=1 	# E_CannotAccessPrivateMembersOfAnotherType.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_CannotAccessPrivateMembersOfAnotherType.fs"|])>]
+    [<Theory; FileInlineData("E_CannotAccessPrivateMembersOfAnotherType.fs")>]
     let ``E_CannotAccessPrivateMembersOfAnotherType_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -64,9 +69,10 @@ module ModuleDefinitions =
         ]
 
     // SOURCE=E_ModuleSuffix01.fsx SCFLAGS="--test:ErrorRanges"                                                            # E_ModuleSuffix01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ModuleSuffix01.fsx"|])>]
+    [<Theory; FileInlineData("E_ModuleSuffix01.fsx")>]
     let ``E_ModuleSuffix01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -74,9 +80,10 @@ module ModuleDefinitions =
         ]
 
     // SOURCE=E_ModuleSuffix_NameClash01.fsx SCFLAGS="--test:ErrorRanges"                                                  # E_ModuleSuffix_NameClash01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ModuleSuffix_NameClash01.fsx"|])>]
+    [<Theory; FileInlineData("E_ModuleSuffix_NameClash01.fsx")>]
     let ``E_ModuleSuffix_NameClash01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -84,9 +91,10 @@ module ModuleDefinitions =
         ]
 
     // SOURCE=E_ModuleWithExpression02.fs COMPILE_ONLY=1 SCFLAGS="--test:ErrorRanges"                                      # E_ModuleWithExpression02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ModuleWithExpression02.fs"|])>]
+    [<Theory; FileInlineData("E_ModuleWithExpression02.fs")>]
     let ``E_ModuleWithExpression02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -94,9 +102,10 @@ module ModuleDefinitions =
         ]
 
     // SOURCE=E_ModuleWithSameNameInNamespace01.fsx SCFLAGS="--test:ErrorRanges"                                           # E_ModuleWithSameNameInNamespace01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ModuleWithSameNameInNamespace01.fsx"|])>]
+    [<Theory; FileInlineData("E_ModuleWithSameNameInNamespace01.fsx")>]
     let ``E_ModuleWithSameNameInNamespace01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -104,9 +113,10 @@ module ModuleDefinitions =
         ]
 
     // SOURCE="E_ModuleWithSameNameInNamespace02a.fsx E_ModuleWithSameNameInNamespace02b.fsx" SCFLAGS="--test:ErrorRanges" # E_ModuleWithSameNameInNamespace02 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ModuleWithSameNameInNamespace02a.fsx"|])>]
+    [<Theory; FileInlineData("E_ModuleWithSameNameInNamespace02a.fsx")>]
     let ``E_ModuleWithSameNameInNamespace02a_fsx`` compilation =
         compilation
+        |> getCompilation
         |> withAdditionalSourceFile (SourceFromPath (__SOURCE_DIRECTORY__ ++"E_ModuleWithSameNameInNamespace02b.fsx"))
         |> verifyCompile
         |> shouldFail
@@ -115,9 +125,10 @@ module ModuleDefinitions =
         ]
 
     // SOURCE=E_ObsoleteAttribOnModules01.fs SCFLAGS="--test:ErrorRanges"                                                  # E_ObsoleteAttribOnModules01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ObsoleteAttribOnModules01.fs"|])>]
+    [<Theory; FileInlineData("E_ObsoleteAttribOnModules01.fs")>]
     let ``E_ObsoleteAttribOnModules01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -128,42 +139,47 @@ module ModuleDefinitions =
         ]
 
     // SOURCE=FullyQualify01.fs                                                                                            # FullyQualify01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"FullyQualify01.fs"|])>]
+    [<Theory; FileInlineData("FullyQualify01.fs")>]
     let ``FullyQualify01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=LightSyntax01.fsx                                                                                            # LightSyntax01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"LightSyntax01.fsx"|])>]
+    [<Theory; FileInlineData("LightSyntax01.fsx")>]
     let ``LightSyntax01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=ModuleAbbreviationWithModule01.fs COMPILE_ONLY=1 SCFLAGS="--test:ErrorRanges"                                # ModuleAbbreviationWithModule01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ModuleAbbreviationWithModule01.fs"|])>]
+    [<Theory; FileInlineData("ModuleAbbreviationWithModule01.fs")>]
     let ``ModuleAbbreviationWithModule01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE="Module_internal01.fs Module_internalConsumer01.fs"                                                          # Module_internal01
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Module_internal01.fs"|])>]
+    [<Theory; FileInlineData("Module_internal01.fs")>]
     let ``Module_internal01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=ModuleSuffix02.fsx                                                                                           # ModuleSuffix02.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ModuleSuffix02.fsx"|])>]
+    [<Theory; FileInlineData("ModuleSuffix02.fsx")>]
     let ``ModuleSuffix02_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // NoMT SOURCE=ModuleSuffix03.fsx PRECMD="\$FSC_PIPE -a ModuleSuffix03Lib.fsx" SCFLAGS="-r:ModuleSuffix03Lib.dll"      # ModuleSuffix03.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ModuleSuffix03.fsx"|])>]
+    [<Theory; FileInlineData("ModuleSuffix03.fsx")>]
     let ``ModuleSuffix03_fsx`` compilation =
         let lib =
             FsFromPath (Path.Combine(__SOURCE_DIRECTORY__,  "ModuleSuffix03Lib.fsx"))
@@ -171,94 +187,107 @@ module ModuleDefinitions =
             |> asLibrary
 
         compilation
+        |> getCompilation
         |> withReferences [lib]
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=ModuleSuffix04.fsx                                                                                           # ModuleSuffix04.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ModuleSuffix04.fsx"|])>]
+    [<Theory; FileInlineData("ModuleSuffix04.fsx")>]
     let ``ModuleSuffix04_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=ModuleWithExpression01.fs COMPILE_ONLY=1 SCFLAGS="--test:ErrorRanges"                                        # ModuleWithExpression01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ModuleWithExpression01.fs"|])>]
+    [<Theory; FileInlineData("ModuleWithExpression01.fs")>]
     let ``ModuleWithExpression01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=ModuleWithExpression02.fs COMPILE_ONLY=1 SCFLAGS="--test:ErrorRanges"                                        # ModuleWithExpression02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ModuleWithExpression02.fs"|])>]
+    [<Theory; FileInlineData("ModuleWithExpression02.fs")>]
     let ``ModuleWithExpression02_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Production_ExceptionDefinition.fsx                                                                           # Production_ExceptionDefinition.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Production_ExceptionDefinition.fsx"|])>]
+    [<Theory; FileInlineData("Production_ExceptionDefinition.fsx")>]
     let ``Production_ExceptionDefinition_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Production_ImportDeclaration.fsx                                                                             # Production_ImportDeclaration.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Production_ImportDeclaration.fsx"|])>]
+    [<Theory; FileInlineData("Production_ImportDeclaration.fsx")>]
     let ``Production_ImportDeclaration_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Production_LetBindings_Binding.fsx                                                                           # Production_LetBindings_Binding.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Production_LetBindings_Binding.fsx"|])>]
+    [<Theory; FileInlineData("Production_LetBindings_Binding.fsx")>]
     let ``Production_LetBindings_Binding_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Production_LetBindings_SideEff.fsx                                                                           # Production_LetBindings_SideEff.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Production_LetBindings_SideEff.fsx"|])>]
+    [<Theory; FileInlineData("Production_LetBindings_SideEff.fsx")>]
     let ``Production_LetBindings_SideEff_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Production_ModuleAbbreviation.fsx                                                                            # Production_ModuleAbbreviation.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Production_ModuleAbbreviation.fsx"|])>]
+    [<Theory; FileInlineData("Production_ModuleAbbreviation.fsx")>]
     let ``Production_ModuleAbbreviation_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Production_ModuleDefinition.fsx                                                                              # Production_ModuleDefinition.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Production_ModuleDefinition.fsx"|])>]
+    [<Theory; FileInlineData("Production_ModuleDefinition.fsx")>]
     let ``Production_ModuleDefinition_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Production_OCamlCompat.fsx                                                                                   # Production_OCamlCompat.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Production_OCamlCompat.fsx"|])>]
+    [<Theory; FileInlineData("Production_OCamlCompat.fsx")>]
     let ``Production_OCamlCompat_fsx`` compilation =
         compilation
+        |> getCompilation
         |> withOcamlCompat
         |> withLangVersion50
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Production_TypeDefinitions.fsx                                                                               # Production_TypeDefinitions.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Production_TypeDefinitions.fsx"|])>]
+    [<Theory; FileInlineData("Production_TypeDefinitions.fsx")>]
     let ``Production_TypeDefinitions_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=W_ModuleAbbreviationWithNamespace01.fs COMPILE_ONLY=1 SCFLAGS="--test:ErrorRanges"                           # W_ModuleAbbreviationWithNamespace01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_ModuleAbbreviationWithNamespace01.fs"|])>]
+    [<Theory; FileInlineData("W_ModuleAbbreviationWithNamespace01.fs")>]
     let ``W_ModuleAbbreviationWithNamespace01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -266,9 +295,10 @@ module ModuleDefinitions =
         ]
 
     // SOURCE=W_Production_OCamlCompat.fsx SCFLAGS="--test:ErrorRanges"                                                    # W_Production_OCamlCompat.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_Production_OCamlCompat.fsx"|])>]
+    [<Theory; FileInlineData("W_Production_OCamlCompat.fsx")>]
     let ``W_Production_OCamlCompat_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -286,7 +316,7 @@ module ModuleDefinitions =
     // SOURCE=LibFoo1.fs SCFLAGS="-a"
     // SOURCE=LibFOo2.fs SCFLAGS="-a"
     // SOURCE=SameTypeInTwoReferences01.fs SCFLAGS="-r:LibFoo1.dll -r:LibFoo2.dll"                                         # SameTypeInTwoReferences01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SameTypeInTwoReferences01.fs"|])>]
+    [<Theory; FileInlineData("SameTypeInTwoReferences01.fs")>]
     let ``SameTypeInTwoReferences01_fs`` compilation =
         let libFoo1 =
             FsFromPath (Path.Combine(__SOURCE_DIRECTORY__,  "LibFoo1.fs"))
@@ -298,12 +328,13 @@ module ModuleDefinitions =
             |> asLibrary
 
         compilation
+        |> getCompilation
         |> withReferences [libFoo1; libFoo2]
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=SameTypeInTwoReferences02.fs SCFLAGS="-r:LibFoo2.dll -r:LibFoo1.dll"                                         # SameTypeInTwoReferences02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SameTypeInTwoReferences02.fs"|])>]
+    [<Theory; FileInlineData("SameTypeInTwoReferences02.fs")>]
     let ``SameTypeInTwoReferences02_fs`` compilation =
         let libFoo1 =
             FsFromPath (Path.Combine(__SOURCE_DIRECTORY__,  "LibFoo1.fs"))
@@ -316,6 +347,7 @@ module ModuleDefinitions =
             |> asLibrary
 
         compilation
+        |> getCompilation
         |> withReferences [libFoo2; libFoo1]
         |> verifyCompileAndRun
         |> shouldSucceed

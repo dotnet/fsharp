@@ -9,27 +9,30 @@ open FSharp.Test.Compiler
 module ExceptionDefinition =
 
     // SOURCE=Abbreviation01.fsx                                                               # Abbreviation01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Abbreviation01.fsx"|])>]
+    [<Theory; FileInlineData("Abbreviation01.fsx")>]
     let``Abbreviation01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
         |> shouldSucceed
 
     // SOURCE=AbbreviationForSystemException.fsx                                               # AbbreviationForSystemException.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AbbreviationForSystemException.fsx"|])>]
+    [<Theory; FileInlineData("AbbreviationForSystemException.fsx")>]
     let``AbbreviationForSystemException_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
         |> shouldSucceed
 
     // SOURCE=Abbreviation_SampleCodeFromSpec01.fsx                                            # Abbreviation_SampleCodeFromSpec01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Abbreviation_SampleCodeFromSpec01.fsx"|])>]
+    [<Theory; FileInlineData("Abbreviation_SampleCodeFromSpec01.fsx")>]
     let``Abbreviation_SampleCodeFromSpec01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> asExe
         |> withOptions ["--nowarn:52"; "--nowarn:988"]
@@ -37,45 +40,50 @@ module ExceptionDefinition =
         |> shouldSucceed
 
     // SOURCE=ActiveRecognizer.fsx                                                             # ActiveRecognizer.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ActiveRecognizer.fsx"|])>]
+    [<Theory; FileInlineData("ActiveRecognizer.fsx")>]
     let``ActiveRecognizer_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
         |> shouldSucceed
 
     // SOURCE=AddMethsProps01.fs                                                               # AddMethsProps01
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AddMethsProps01.fs"|])>]
+    [<Theory; FileInlineData("AddMethsProps01.fs")>]
     let``AddMethsProps01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
         |> shouldSucceed
 
         // SOURCE=AddMessageProperty.fs                                                               # AddMessageProperty
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AddMessageProperty.fs"|])>]
+    [<Theory; FileInlineData("AddMessageProperty.fs")>]
     let``AddMessageProperty`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
         |> shouldSucceed
 
      // SOURCE=ManualMessagePropertyWinsOverAutomaticOne.fs                                                               # ManualMessagePropertyWinsOverAutomaticOne
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ManualMessagePropertyWinsOverAutomaticOne.fs"|])>]
+    [<Theory; FileInlineData("ManualMessagePropertyWinsOverAutomaticOne.fs")>]
     let``ManualMessagePropertyWinsOverAutomaticOne`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
         |> shouldSucceed
 
      // SOURCE=PrivateMessagePropertyIsNotReplacingBuiltinMessage.fs                                                               # PrivateMessagePropertyIsNotReplacingBuiltinMessage
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PrivateMessagePropertyIsNotReplacingBuiltinMessage.fs"|])>]
+    [<Theory; FileInlineData("PrivateMessagePropertyIsNotReplacingBuiltinMessage.fs")>]
     let``PrivateMessagePropertyIsNotReplacingBuiltinMessage`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--nowarn:988"]
         |> ignoreWarnings
@@ -83,45 +91,50 @@ module ExceptionDefinition =
         |> shouldSucceed
 
     // SOURCE=CatchWOTypecheck01.fs                                                            # CatchWOTypeCheck01
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CatchWOTypecheck01.fs"|])>]
+    [<Theory; FileInlineData("CatchWOTypecheck01.fs")>]
     let``CatchWOTypecheck01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
         |> shouldSucceed
 
     // SOURCE=EqualAndBoxing01.fs                                                              # EqualAndBoxing01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"EqualAndBoxing01.fs"|])>]
+    [<Theory; FileInlineData("EqualAndBoxing01.fs")>]
     let``EqualAndBoxing01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
         |> shouldSucceed
 
     // SOURCE=ExceptionAsDerivedFromSystemException01.fsx                                      # ExceptionAsDerivedFromSystemException01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ExceptionAsDerivedFromSystemException01.fsx"|])>]
+    [<Theory; FileInlineData("ExceptionAsDerivedFromSystemException01.fsx")>]
     let``ExceptionAsDerivedFromSystemException01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
         |> shouldSucceed
 
     // SOURCE=ExnAsDiscriminatedUnion01.fsx                                                    # ExnAsDiscriminatedUnion01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ExnAsDiscriminatedUnion01.fsx"|])>]
+    [<Theory; FileInlineData("ExnAsDiscriminatedUnion01.fsx")>]
     let``ExnAsDiscriminatedUnion01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
         |> shouldSucceed
 
     // SOURCE=E_Abbreviation_NonMatchingObjConstructor.fsx SCFLAGS="--test:ErrorRanges"        # E_Abbreviation_NonMatchingObjConstructor.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Abbreviation_NonMatchingObjConstructor.fsx"|])>]
+    [<Theory; FileInlineData("E_Abbreviation_NonMatchingObjConstructor.fsx")>]
     let``E_Abbreviation_NonMatchingObjConstructor_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -129,9 +142,10 @@ module ExceptionDefinition =
             (Error 920, Line 8, Col 1, Line 8, Col 28, "Abbreviations for Common IL exception types must have a matching object constructor")        ]
 
     // SOURCE=E_AssertionFailureExn.fs                     SCFLAGS="--test:ErrorRanges"        # E_AssertionFailureExn.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AssertionFailureExn.fs"|])>]
+    [<Theory; FileInlineData("E_AssertionFailureExn.fs")>]
     let``E_AssertionFailureExn_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -140,9 +154,10 @@ module ExceptionDefinition =
         ]
 
     // SOURCE=E_BeginWithUppercase01.fsx                   SCFLAGS="--test:ErrorRanges"        # E_BeginWithUppercase01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_BeginWithUppercase01.fsx"|])>]
+    [<Theory; FileInlineData("E_BeginWithUppercase01.fsx")>]
     let``E_BeginWithUppercase01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -152,9 +167,10 @@ module ExceptionDefinition =
         ]
 
     // SOURCE=E_BeginWithUppercase02.fsx                   SCFLAGS="--test:ErrorRanges"        # E_BeginWithUppercase02.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_BeginWithUppercase02.fsx"|])>]
+    [<Theory; FileInlineData("E_BeginWithUppercase02.fsx")>]
     let``E_BeginWithUppercase02_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -163,9 +179,10 @@ module ExceptionDefinition =
         ]
 
     // SOURCE=E_BeginWithUppercase03.fsx                   SCFLAGS="--test:ErrorRanges"        # E_BeginWithUppercase03.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_BeginWithUppercase03.fsx"|])>]
+    [<Theory; FileInlineData("E_BeginWithUppercase03.fsx")>]
     let``E_BeginWithUppercase03_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -174,9 +191,10 @@ module ExceptionDefinition =
         ]
 
     // SOURCE=E_BeginWithUppercase04.fsx                   SCFLAGS="--test:ErrorRanges"        # E_BeginWithUppercase04.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_BeginWithUppercase04.fsx"|])>]
+    [<Theory; FileInlineData("E_BeginWithUppercase04.fsx")>]
     let``E_BeginWithUppercase04_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -185,9 +203,10 @@ module ExceptionDefinition =
         ]
 
     // SOURCE=E_DynamicInvocationNotSupported.fsx SCFLAGS=--test:ErrorRanges                   # E_DynamicInvocationNotSupported.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_DynamicInvocationNotSupported.fsx"|])>]
+    [<Theory; FileInlineData("E_DynamicInvocationNotSupported.fsx")>]
     let``E_DynamicInvocationNotSupported_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -196,9 +215,10 @@ module ExceptionDefinition =
         ]
 
     // SOURCE=E_ExnAsDiscriminatedUnion01.fsx              SCFLAGS="--test:ErrorRanges"        # E_ExnAsDiscriminatedUnion01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ExnAsDiscriminatedUnion01.fsx"|])>]
+    [<Theory; FileInlineData("E_ExnAsDiscriminatedUnion01.fsx")>]
     let``E_ExnAsDiscriminatedUnion01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -207,9 +227,10 @@ module ExceptionDefinition =
         ]
 
     // SOURCE=E_ExnConstructorBadFieldName.fs              SCFLAGS="--test:ErrorRanges"        # E_ExnConstructorBadFieldName.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ExnConstructorBadFieldName.fs"|])>]
+    [<Theory; FileInlineData("E_ExnConstructorBadFieldName.fs")>]
     let``E_ExnConstructorBadFieldName_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -219,9 +240,10 @@ module ExceptionDefinition =
         ]
 
     // SOURCE=E_ExnFieldConflictingName.fs                 SCFLAGS="--test:ErrorRanges"        # E_ExnFieldConflictingName.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ExnFieldConflictingName.fs"|])>]
+    [<Theory; FileInlineData("E_ExnFieldConflictingName.fs")>]
     let``E_ExnFieldConflictingName_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -233,9 +255,10 @@ module ExceptionDefinition =
         ]
 
     // SOURCE=E_FieldNameUsedMulti.fs                      SCFLAGS="--test:ErrorRanges"        # E_FieldNameUsedMulti.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_FieldNameUsedMulti.fs"|])>]
+    [<Theory; FileInlineData("E_FieldNameUsedMulti.fs")>]
     let``E_FieldNameUsedMulti_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -245,9 +268,10 @@ module ExceptionDefinition =
         ]
 
     // SOURCE=E_FieldMemberClash.fs                        SCFLAGS="--test:ErrorRanges"        # E_FieldMemberClash.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_FieldMemberClash.fs"|])>]
+    [<Theory; FileInlineData("E_FieldMemberClash.fs")>]
     let``E_FieldMemberClash_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -258,9 +282,10 @@ module ExceptionDefinition =
         ]
 
     // SOURCE=E_GeneratedTypeName01.fsx                    SCFLAGS="--test:ErrorRanges"        # E_GeneratedTypeName01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_GeneratedTypeName01.fsx"|])>]
+    [<Theory; FileInlineData("E_GeneratedTypeName01.fsx")>]
     let``E_GeneratedTypeName01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -271,9 +296,10 @@ module ExceptionDefinition =
         ]
 
     // SOURCE=E_GeneratedTypeNameClash02.fsx               SCFLAGS="--test:ErrorRanges"        # E_GeneratedTypeNameClash02.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_GeneratedTypeNameClash02.fsx"|])>]
+    [<Theory; FileInlineData("E_GeneratedTypeNameClash02.fsx")>]
     let``E_GeneratedTypeNameClash02_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -282,9 +308,10 @@ module ExceptionDefinition =
         ]
 
     // SOURCE=E_InheritException.fs                        SCFLAGS="--test:ErrorRanges"        # E_InheritException.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_InheritException.fs"|])>]
+    [<Theory; FileInlineData("E_InheritException.fs")>]
     let``E_InheritException_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -294,9 +321,10 @@ module ExceptionDefinition =
         ]
 
     // SOURCE=E_MatchFailure.fsx                  SCFLAGS=--test:ErrorRanges                   # E_MatchFailure.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_MatchFailure.fsx"|])>]
+    [<Theory; FileInlineData("E_MatchFailure.fsx")>]
     let``E_MatchFailure_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -305,9 +333,10 @@ module ExceptionDefinition =
         ]
 
     // SOURCE=E_MustStartWithCap01.fs                                                          # E_MustStartWithCap01
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_MustStartWithCap01.fs"|])>]
+    [<Theory; FileInlineData("E_MustStartWithCap01.fs")>]
     let``E_MustStartWithCap01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -316,9 +345,10 @@ module ExceptionDefinition =
         ]
 
     // SOURCE=E_Undefined.fsx                     SCFLAGS=--test:ErrorRanges                   # E_Undefined.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Undefined.fsx"|])>]
+    [<Theory; FileInlineData("E_Undefined.fsx")>]
     let``E_Undefined_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -327,16 +357,17 @@ module ExceptionDefinition =
         ]
 
     // SOURCE=GeneratedTypeNameNoClash01.fsx               SCFLAGS="--test:ErrorRanges"        # GeneratedTypeNameNoClash01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"GeneratedTypeNameNoClash01.fsx"|])>]
+    [<Theory; FileInlineData("GeneratedTypeNameNoClash01.fsx")>]
     let``GeneratedTypeNameNoClash01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
         |> shouldSucceed
 
     // SOURCE=ImportCSharpException01.fsx                                                      # ImportCSharpException01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ImportCSharpException01.fsx"|])>]
+    [<Theory; FileInlineData("ImportCSharpException01.fsx")>]
     let``ImportCSharpException01_fsx`` compilation =
 
         let cSharpException =
@@ -344,6 +375,7 @@ module ExceptionDefinition =
             |> withName "CSharpException"
 
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> withReferences [cSharpException]
@@ -351,36 +383,40 @@ module ExceptionDefinition =
         |> shouldSucceed
 
     // SOURCE=LowercaseIdentifier01.fsx                                                        # LowercaseIdentifier01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"LowercaseIdentifier01.fsx"|])>]
+    [<Theory; FileInlineData("LowercaseIdentifier01.fsx")>]
     let``LowercaseIdentifier01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
         |> shouldSucceed
 
     // SOURCE=NamedFields01.fsx                                                                # NamedFields01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NamedFields01.fsx"|])>]
+    [<Theory; FileInlineData("NamedFields01.fsx")>]
     let``NamedFields01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror+"; "--nowarn:988"; "--nowarn:25"]
         |> compileExeAndRun
         |> shouldSucceed
 
     // SOURCE=PatternMatch_SampleCodeFromSpec01.fsx                                            # PatternMatch_SampleCodeFromSpec01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PatternMatch_SampleCodeFromSpec01.fsx"|])>]
+    [<Theory; FileInlineData("PatternMatch_SampleCodeFromSpec01.fsx")>]
     let``PatternMatch_SampleCodeFromSpec01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
         |> shouldSucceed
 
     // SOURCE=ReflectionAPI.fsx                                                                # ReflectionAPI.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ReflectionAPI.fsx"|])>]
+    [<Theory; FileInlineData("ReflectionAPI.fsx")>]
     let``ReflectionAPI_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun

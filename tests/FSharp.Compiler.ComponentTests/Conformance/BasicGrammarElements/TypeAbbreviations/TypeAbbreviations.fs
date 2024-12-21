@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Conformance.BasicGrammarElements
 
@@ -22,23 +22,26 @@ module TypeAbbreviations =
         |> compileAndRun
 
     //SOURCE=AbbreviatedTypeSameAsValueId.fsx                                                                   # AbbreviatedTypeSameAsValueId.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AbbreviatedTypeSameAsValueId.fsx"|])>]
+    [<Theory; FileInlineData("AbbreviatedTypeSameAsValueId.fsx")>]
     let ``AbbreviatedTypeSameAsValueId_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=Constraints_SampleFromSpec01.fsx                                                                   # Constraints_SampleFromSpec01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Constraints_SampleFromSpec01.fsx"|])>]
+    [<Theory; FileInlineData("Constraints_SampleFromSpec01.fsx")>]
     let ``Constraints_SampleFromSpec01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldSucceed
 
     //SOURCE=E_AbbreviatedTypeAlreadyUsed01.fsx SCFLAGS="--test:ErrorRanges"                                    # E_AbbreviatedTypeAlreadyUsed01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AbbreviatedTypeAlreadyUsed01.fsx"|])>]
+    [<Theory; FileInlineData("E_AbbreviatedTypeAlreadyUsed01.fsx")>]
     let ``E_AbbreviatedTypeAlreadyUsed01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -47,9 +50,10 @@ module TypeAbbreviations =
         ]
 
     //SOURCE=E_AbbreviatedTypeDoesNotExist01.fsx SCFLAGS="--test:ErrorRanges"                                   # E_AbbreviatedTypeDoesNotExist01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AbbreviatedTypeDoesNotExist01.fsx"|])>]
+    [<Theory; FileInlineData("E_AbbreviatedTypeDoesNotExist01.fsx")>]
     let ``E_AbbreviatedTypeDoesNotExist01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -57,9 +61,10 @@ module TypeAbbreviations =
         ]
 
     //SOURCE=E_InfiniteAbbreviation01.fs SCFLAGS="--test:ErrorRanges --flaterrors"                              # E_InfiniteAbbreviation01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_InfiniteAbbreviation01.fs"|])>]
+    [<Theory; FileInlineData("E_InfiniteAbbreviation01.fs")>]
     let ``E_InfiniteAbbreviation01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -68,9 +73,10 @@ module TypeAbbreviations =
         ]
 
     //SOURCE=E_InfiniteAbbreviation02.fs                                                                        # E_InfiniteAbbreviation02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_InfiniteAbbreviation02.fs"|])>]
+    [<Theory; FileInlineData("E_InfiniteAbbreviation02.fs")>]
     let ``E_InfiniteAbbreviation02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -78,9 +84,10 @@ module TypeAbbreviations =
         ]
 
     //SOURCE=E_Constraints_SampleFromSpec02.fsx SCFLAGS="--test:ErrorRanges"                                    # E_Constraints_SampleFromSpec02.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Constraints_SampleFromSpec02.fsx"|])>]
+    [<Theory; FileInlineData("E_Constraints_SampleFromSpec02.fsx")>]
     let ``E_Constraints_SampleFromSpec02_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -89,9 +96,10 @@ module TypeAbbreviations =
         ]
 
     //SOURCE=E_DroppedTypeVariable01.fsx SCFLAGS="--test:ErrorRanges -a"                                        # E_DroppedTypeVariable01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_DroppedTypeVariable01.fsx"|])>]
+    [<Theory; FileInlineData("E_DroppedTypeVariable01.fsx")>]
     let ``E_DroppedTypeVariable01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -99,9 +107,10 @@ module TypeAbbreviations =
         ]
 
     //SOURCE=E_FlexibleType01.fsx SCFLAGS="--test:ErrorRanges"                                                  # E_FlexibleType01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_FlexibleType01.fsx"|])>]
+    [<Theory; FileInlineData("E_FlexibleType01.fsx")>]
     let ``E_FlexibleType01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -109,9 +118,10 @@ module TypeAbbreviations =
         ]
 
     //SOURCE="E_FlexibleTypeInSignature01.fsi E_FlexibleTypeInSignature01.fsx" SCFLAGS="--test:ErrorRanges"     # E_FlexibleTypeInSignature01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_FlexibleTypeInSignature01.fsi"|])>]
+    [<Theory; FileInlineData("E_FlexibleTypeInSignature01.fsi")>]
     let ``E_FlexibleTypeInSignature01_fsi`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -121,9 +131,10 @@ module TypeAbbreviations =
         ]
 
     //SOURCE=E_IncorrectRightSide_Hash.fsx SCFLAGS="--test:ErrorRanges"                                         # E_IncorrectRightSide_Hash.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_IncorrectRightSide_Hash.fsx"|])>]
+    [<Theory; FileInlineData("E_IncorrectRightSide_Hash.fsx")>]
     let ``E_IncorrectRightSide_Hash_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -131,9 +142,10 @@ module TypeAbbreviations =
         ]
 
     //SOURCE=E_IncorrectRightSide_Keyword.fsx SCFLAGS="--test:ErrorRanges"                                      # E_IncorrectRightSide_Keyword.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_IncorrectRightSide_Keyword.fsx"|])>]
+    [<Theory; FileInlineData("E_IncorrectRightSide_Keyword.fsx")>]
     let ``E_IncorrectRightSide_Keyword_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -141,9 +153,10 @@ module TypeAbbreviations =
         ]
 
     //SOURCE=E_IncorrectRightSide_Quotation.fsx SCFLAGS="--test:ErrorRanges"                                    # E_IncorrectRightSide_Quotation.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_IncorrectRightSide_Quotation.fsx"|])>]
+    [<Theory; FileInlineData("E_IncorrectRightSide_Quotation.fsx")>]
     let ``E_IncorrectRightSide_Quotation_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -151,9 +164,10 @@ module TypeAbbreviations =
         ]
 
     //SOURCE=E_InheritTypeAbbrev.fs                                                                              # E_InheritTypeAbbrev.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_InheritTypeAbbrev.fs"|])>]
+    [<Theory; FileInlineData("E_InheritTypeAbbrev.fs")>]
     let ``E_InheritTypeAbbrev_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -161,9 +175,10 @@ module TypeAbbreviations =
         ]
 
     //SOURCE=E_PrivateTypeAbbreviation02.fs SCFLAGS="--test:ErrorRanges"                                        # E_PrivateTypeAbbreviation02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_PrivateTypeAbbreviation02.fs"|])>]
+    [<Theory; FileInlineData("E_PrivateTypeAbbreviation02.fs")>]
     let ``E_PrivateTypeAbbreviation02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -171,9 +186,10 @@ module TypeAbbreviations =
         ]
 
     //SOURCE=E_Recursive01.fsx SCFLAGS="--test:ErrorRanges"                                                     # E_Recursive01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Recursive01.fsx"|])>]
+    [<Theory; FileInlineData("E_Recursive01.fsx")>]
     let ``E_Recursive01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -181,9 +197,10 @@ module TypeAbbreviations =
         ]
 
     //SOURCE=E_Recursive02.fsx SCFLAGS="--test:ErrorRanges"                                                     # E_Recursive02.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Recursive02.fsx"|])>]
+    [<Theory; FileInlineData("E_Recursive02.fsx")>]
     let ``E_Recursive02_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -191,9 +208,10 @@ module TypeAbbreviations =
         ]
 
     //SOURCE=E_Recursive03.fsx SCFLAGS="--test:ErrorRanges"                                                     # E_Recursive03.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Recursive03.fsx"|])>]
+    [<Theory; FileInlineData("E_Recursive03.fsx")>]
     let ``E_Recursive03_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -201,9 +219,10 @@ module TypeAbbreviations =
         ]
 
     //SOURCE=E_UnexpectedCharInTypeName01.fs SCFLAGS="--test:ErrorRanges"                                       # E_UnexpectedCharInTypeName01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UnexpectedCharInTypeName01.fs"|])>]
+    [<Theory; FileInlineData("E_UnexpectedCharInTypeName01.fs")>]
     let ``E_UnexpectedCharInTypeName01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -211,36 +230,41 @@ module TypeAbbreviations =
         ]
 
     //SOURCE=Identity01.fsx                                                                                     # Identity01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Identity01.fsx"|])>]
+    [<Theory; FileInlineData("Identity01.fsx")>]
     let ``Identity01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=PrivateTypeAbbreviation01.fs                                                                       # PrivateTypeAbbreviation01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PrivateTypeAbbreviation01.fs"|])>]
+    [<Theory; FileInlineData("PrivateTypeAbbreviation01.fs")>]
     let ``PrivateTypeAbbreviation01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
          |> shouldSucceed
 
     //SOURCE=ReorderingTypeVariables01.fsx SCFLAGS="--test:ErrorRanges --warnaserror+ -a"                       # ReorderingTypeVariables01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ReorderingTypeVariables01.fsx"|])>]
+    [<Theory; FileInlineData("ReorderingTypeVariables01.fsx")>]
     let ``ReorderingTypeVariables01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=TypeNestedInModules01.fsx                                                                          # TypeNestedInModules01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TypeNestedInModules01.fsx"|])>]
+    [<Theory; FileInlineData("TypeNestedInModules01.fsx")>]
     let ``TypeNestedInModules01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=TypeAbbreviationAfterForwardRef.fs                                                                 # TypeAbbreviationAfterForwardRef.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TypeAbbreviationAfterForwardRef.fs"|])>]
+    [<Theory; FileInlineData("TypeAbbreviationAfterForwardRef.fs")>]
     let ``TypeAbbreviationAfterForwardRef_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed

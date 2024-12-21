@@ -21,9 +21,10 @@ module ImportDeclarations =
         |> compileAndRun
 
     // SOURCE=E_OpenTwice.fs        SCFLAGS="--warnaserror+ --test:ErrorRanges"		# E_OpenTwice.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_OpenTwice.fs"|])>]
+    [<Theory; FileInlineData("E_OpenTwice.fs")>]
     let ``E_OpenTwice_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -32,9 +33,10 @@ module ImportDeclarations =
         ]
 
     // SOURCE=E_OpenUnknownNS.fs					# E_OpenUnknownNS.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_OpenUnknownNS.fs"|])>]
+    [<Theory; FileInlineData("E_OpenUnknownNS.fs")>]
     let ``E_OpenUnknownNS_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -42,9 +44,10 @@ module ImportDeclarations =
         ]
 
     // SOURCE=E_openEnum.fs       SCFLAGS="--test:ErrorRanges"		# E_openEnum.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_openEnum.fs"|])>]
+    [<Theory; FileInlineData("E_openEnum.fs")>]
     let ``E_openEnum_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -54,9 +57,10 @@ module ImportDeclarations =
         ]
 
     // SOURCE=E_openInTypeDecl.fs SCFLAGS="--test:ErrorRanges"		# E_openInTypeDecl.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_openInTypeDecl.fs"|])>]
+    [<Theory; FileInlineData("E_openInTypeDecl.fs")>]
     let ``E_openInTypeDecl_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -64,9 +68,10 @@ module ImportDeclarations =
         ]
 
     // SOURCE=E_openModInFun.fs   SCFLAGS="--test:ErrorRanges"		# E_openModInFun.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_openModInFun.fs"|])>]
+    [<Theory; FileInlineData("E_openModInFun.fs")>]
     let ``E_openModInFun_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -77,16 +82,18 @@ module ImportDeclarations =
         ]
 
     // SOURCE=OpenNestedModule01.fs					# OpenNestedModule01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"OpenNestedModule01.fs"|])>]
+    [<Theory; FileInlineData("OpenNestedModule01.fs")>]
     let ``OpenNestedModule01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=W_OpenUnqualifiedNamespace01.fs				# W_OpenUnqualifiedNamespace01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_OpenUnqualifiedNamespace01.fs"|])>]
+    [<Theory; FileInlineData("W_OpenUnqualifiedNamespace01.fs")>]
     let ``W_OpenUnqualifiedNamespace01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -94,16 +101,18 @@ module ImportDeclarations =
         ]
 
     // SOURCE=openDU.fs						# openDU.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"openDU.fs"|])>]
+    [<Theory; FileInlineData("openDU.fs")>]
     let ``openDU_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=openSystem01.fs							# openSystem01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"openSystem01.fs"|])>]
+    [<Theory; FileInlineData("openSystem01.fs")>]
     let ``openSystem01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> verifyCompileAndRun
         |> shouldSucceed

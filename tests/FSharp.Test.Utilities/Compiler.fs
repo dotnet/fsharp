@@ -409,16 +409,21 @@ module rec Compiler =
     let CSharpFromPath (path: string) : CompilationUnit =
         csFromString (SourceFromPath path) |> CS
 
-    let asFsx (cUnit: CompilationUnit) : CompilationUnit =
-        match cUnit with
-        | FS src -> FS {src with Source=SourceCodeFileKind.Fsx({FileName=src.Source.GetSourceFileName; SourceText=src.Source.GetSourceText})}
-        | _ -> failwith "Only F# compilation can be of type Fsx."
-
     let asFs (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS { Source = SourceCodeFileKind.Fsi _} -> cUnit
         | FS src -> FS {src with Source=SourceCodeFileKind.Fs({FileName=src.Source.GetSourceFileName; SourceText=src.Source.GetSourceText})}
         | _ -> failwith "Only F# compilation can be of type Fs."
+
+    let asFsi (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS src -> FS {src with Source=SourceCodeFileKind.Fsi({FileName=src.Source.GetSourceFileName; SourceText=src.Source.GetSourceText})}
+        | _ -> failwith "Only F# compilation can be of type Fsi."
+
+    let asFsx (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS src -> FS {src with Source=SourceCodeFileKind.Fsx({FileName=src.Source.GetSourceFileName; SourceText=src.Source.GetSourceText})}
+        | _ -> failwith "Only F# compilation can be of type Fsx."
 
     let withName (name: string) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with

@@ -6,7 +6,7 @@ open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 
-module AccessibilityAnnotations_Basic =
+module AccessibilityBasic =
 
     let verifyCompile compilation =
         compilation
@@ -21,9 +21,10 @@ module AccessibilityAnnotations_Basic =
         |> compileAndRun
 
     //SOURCE=E_ExposeLessVisible01.fs                                                 # E_ExposeLessVisible01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ExposeLessVisible01.fs"|])>]
+    [<Theory; FileInlineData("E_ExposeLessVisible01.fs")>]
     let ``E_ExposeLessVisible01_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -31,9 +32,10 @@ module AccessibilityAnnotations_Basic =
         ]
 
     //SOURCE=E_BaseIFaceLessAccessible01.fs SCFLAGS="-a --test:ErrorRanges"           # E_BaseIFaceLessAccessible01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_BaseIFaceLessAccessible01.fs"|])>]
+    [<Theory; FileInlineData("E_BaseIFaceLessAccessible01.fs")>]
     let ``E_BaseIFaceLessAccessible01_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -41,9 +43,10 @@ module AccessibilityAnnotations_Basic =
         ]
 
     //SOURCE=E_LocalLetBinding02.fs SCFLAGS="--test:ErrorRanges"                      # E_LocalLetBinding02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_LocalLetBinding02.fs"|])>]
+    [<Theory; FileInlineData("E_LocalLetBinding02.fs")>]
     let ``E_LocalLetBinding02_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -51,9 +54,10 @@ module AccessibilityAnnotations_Basic =
         ]
 
     //SOURCE=E_privateThingsInaccessible.fs                                           # E_privateThingsInaccessible.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_privateThingsInaccessible.fs"|])>]
+    [<Theory; FileInlineData("E_privateThingsInaccessible.fs")>]
     let ``E_privateThingsInaccessible_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -63,9 +67,10 @@ module AccessibilityAnnotations_Basic =
         ]
 
     //SOURCE=E_privateThingsInaccessible02.fs SCFLAGS="--test:ErrorRanges"            # E_privateThingsInaccessible02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_privateThingsInaccessible02.fs"|])>]
+    [<Theory; FileInlineData("E_privateThingsInaccessible02.fs")>]
     let ``E_PrivateThingsInaccessible02_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -78,9 +83,10 @@ module AccessibilityAnnotations_Basic =
         ]
 
     //SOURCE=E_privateThingsInaccessible03.fs SCFLAGS="--test:ErrorRanges"            # E_privateThingsInaccessible03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_privateThingsInaccessible03.fs"|])>]
+    [<Theory; FileInlineData("E_privateThingsInaccessible03.fs")>]
     let ``E_PrivateThingsInaccessible03_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -90,9 +96,10 @@ module AccessibilityAnnotations_Basic =
         ]
 
     //SOURCE=E_privateThingsInaccessible04.fs SCFLAGS="--test:ErrorRanges"            # E_privateThingsInaccessible04.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_privateThingsInaccessible04.fs"|])>]
+    [<Theory; FileInlineData("E_privateThingsInaccessible04.fs")>]
     let ``E_PrivateThingsInaccessible04_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -103,9 +110,10 @@ module AccessibilityAnnotations_Basic =
         ]
 
     //SOURCE=E_privateThingsInaccessible05.fs SCFLAGS="--test:ErrorRanges"            # E_privateThingsInaccessible05.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_privateThingsInaccessible05.fs"|])>]
+    [<Theory; FileInlineData("E_privateThingsInaccessible05.fs")>]
     let ``E_PrivateThingsInaccessible05_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -113,9 +121,10 @@ module AccessibilityAnnotations_Basic =
         ]
 
     //SOURCE=E_PrivateImplicitCtor01.fs SCFLAGS="--test:ErrorRanges"                  # E_PrivateImplicitCtor01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_PrivateImplicitCtor01.fs"|])>]
+    [<Theory;FileInlineData("E_PrivateImplicitCtor01.fs")>]
     let ``E_PrivateImplicitCtor01_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -123,9 +132,10 @@ module AccessibilityAnnotations_Basic =
         ]
 
     //SOURCE=E_ProtectedThingsInaccessible01.fs SCFLAGS="--test:ErrorRanges"          # E_ProtectedThingsInaccessible01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ProtectedThingsInaccessible01.fs"|])>]
+    [<Theory; FileInlineData("E_ProtectedThingsInaccessible01.fs")>]
     let ``E_ProtectedThingsInaccessible01_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -133,9 +143,10 @@ module AccessibilityAnnotations_Basic =
         ]
 
     //SOURCE=E_MoreAccessibleBaseClass01.fs                                           # E_MoreAccessibleBaseClass01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_MoreAccessibleBaseClass01.fs"|])>]
+    [<Theory;FileInlineData("E_MoreAccessibleBaseClass01.fs")>]
     let ``E_MoreAccessibleBaseClass01_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -143,9 +154,10 @@ module AccessibilityAnnotations_Basic =
         ]
 
     //SOURCE=E_MoreAccessibleBaseClass02.fs                                           # E_MoreAccessibleBaseClass02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_MoreAccessibleBaseClass02.fs"|])>]
+    [<Theory; FileInlineData("E_MoreAccessibleBaseClass02.fs")>]
     let ``E_MoreAccessibleBaseClass02_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -154,38 +166,43 @@ module AccessibilityAnnotations_Basic =
         ]
 
     //SOURCE=InterfaceImplementationVisibility.fs                                     # InterfaceImplementationVisibility.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InterfaceImplementationVisibility.fs"|])>]
+    [<Theory; FileInlineData("InterfaceImplementationVisibility.fs")>]
     let ``InterfaceImplementationVisibility_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=InternalizedIFaces02.fs SCFLAGS="-a --warnaserror"                       # InternalizedIFaces02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InternalizedIFaces02.fs"|])>]
+    [<Theory; FileInlineData("InternalizedIFaces02.fs")>]
     let ``InternalizedIFaces02_fs`` compilation =
         compilation
+        |> getCompilation 
         |> withOptions ["--nowarn:1178";]
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=internalMethodsWorkCorrectly.fs                                          # InternalMethodsWorkCorrectly.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InternalMethodsWorkCorrectly.fs"|])>]
+    [<Theory; FileInlineData("InternalMethodsWorkCorrectly.fs")>]
     let ``InternalMethodsWorkCorrectly_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=LessOrMoreAccessibleCode01.fs                                            # LessOrMoreAccessibleCode01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"LessOrMoreAccessibleCode01.fs"|])>]
+    [<Theory; FileInlineData("LessOrMoreAccessibleCode01.fs")>]
     let ``LessOrMoreAccessibleCode01_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=LocalLetBinding01.fs SCFLAGS="-a --test:ErrorRanges"                     # LocalLetBinding01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"LocalLetBinding01.fs"|])>]
+    [<Theory; FileInlineData("LocalLetBinding01.fs")>]
     let ``LocalLetBinding01_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompileAndRun
         |> shouldSucceed
 

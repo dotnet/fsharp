@@ -21,42 +21,47 @@ module UnionTypes =
         |> compileAndRun
 
     //SOURCE=BeginWithUppercase01.fsx SCFLAGS=                                                    # BeginWithUppercase01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"BeginWithUppercase01.fsx"|])>]
+    [<Theory; FileInlineData("BeginWithUppercase01.fsx")>]
     let ``BeginWithUppercase01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //# Renaming the .exe because for some weird reason on some OSes having 'DispatchSlot' in the .exe
     //# seems to trigger the UAC dialog... (e.g. Win7 x86)
     //SOURCE=DispatchSlot_Equals01.fsx SCFLAGS="-o dl_equals01.exe"                               # DispatchSlot_Equals01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"DispatchSlot_Equals01.fsx"|])>]
+    [<Theory; FileInlineData("DispatchSlot_Equals01.fsx")>]
     let ``DispatchSlot_Equals01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> withName "dl_equals01"
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=DispatchSlot_GetHashCode.fsx SCFLAGS="-o dl_gethashcode01.exe"                       # DispatchSlot_GetHashCode.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"DispatchSlot_GetHashCode.fsx"|])>]
+    [<Theory; FileInlineData("DispatchSlot_GetHashCode.fsx")>]
     let ``DispatchSlot_GetHashCode_fsx`` compilation =
         compilation
+        |> getCompilation
         |> withName "dl_gethashcode01"
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=EqualAndBoxing01.fs                                                                  # EqualAndBoxing01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"EqualAndBoxing01.fs"|])>]
+    [<Theory; FileInlineData("EqualAndBoxing01.fs")>]
     let ``EqualAndBoxing01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=E_BeginWithUppercase01.fsx SCFLAGS="--test:ErrorRanges"                              # E_BeginWithUppercase01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_BeginWithUppercase01.fsx"|])>]
+    [<Theory; FileInlineData("E_BeginWithUppercase01.fsx")>]
     let ``E_BeginWithUppercase01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -65,9 +70,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_BeginWithUppercase02.fsx SCFLAGS="--test:ErrorRanges"                              # E_BeginWithUppercase02.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_BeginWithUppercase02.fsx"|])>]
+    [<Theory; FileInlineData("E_BeginWithUppercase02.fsx")>]
     let ``E_BeginWithUppercase02_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -75,9 +81,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_BeginWithUppercase03.fsx SCFLAGS="--test:ErrorRanges"                              # E_BeginWithUppercase03.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_BeginWithUppercase03.fsx"|])>]
+    [<Theory; FileInlineData("E_BeginWithUppercase03.fsx")>]
     let ``E_BeginWithUppercase03_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -85,9 +92,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_BeginWithUppercase04.fsx SCFLAGS="--test:ErrorRanges"                              # E_BeginWithUppercase04.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_BeginWithUppercase04.fsx"|])>]
+    [<Theory; FileInlineData("E_BeginWithUppercase04.fsx")>]
     let ``E_BeginWithUppercase04_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -95,9 +103,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_BeginWithUppercaseNoPipe01.fsx SCFLAGS="--test:ErrorRanges"                        # E_BeginWithUppercaseNoPipe01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_BeginWithUppercaseNoPipe01.fsx"|])>]
+    [<Theory; FileInlineData("E_BeginWithUppercaseNoPipe01.fsx")>]
     let ``E_BeginWithUppercaseNoPipe01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -107,9 +116,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_GenericFunctionValuedStaticProp01.fs SCFLAGS="--test:ErrorRanges --warnaserror-"   # E_GenericFunctionValuedStaticProp01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_GenericFunctionValuedStaticProp01.fs"|])>]
+    [<Theory; FileInlineData("E_GenericFunctionValuedStaticProp01.fs")>]
     let ``E_GenericFunctionValuedStaticProp01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -118,9 +128,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_Interface_IComparable.fsx SCFLAGS="--test:ErrorRanges"                             # E_Interface_IComparable.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Interface_IComparable.fsx"|])>]
+    [<Theory; FileInlineData("E_Interface_IComparable.fsx")>]
     let ``E_Interface_IComparable_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -129,9 +140,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_Member_Duplicate01.fsx SCFLAGS="--test:ErrorRanges"                                # E_Member_Duplicate01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Member_Duplicate01.fsx"|])>]
+    [<Theory; FileInlineData("E_Member_Duplicate01.fsx")>]
     let ``E_Member_Duplicate01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -141,9 +153,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_ScopeAndDataConstrAndPattern01.fsx SCFLAGS="--test:ErrorRanges"	                # E_ScopeAndDataConstrAndPattern01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ScopeAndDataConstrAndPattern01.fsx"|])>]
+    [<Theory; FileInlineData("E_ScopeAndDataConstrAndPattern01.fsx")>]
     let ``E_ScopeAndDataConstrAndPattern01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -151,9 +164,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_Interface_IStructuralHash.fsx                                                      # E_Interface_IStructuralHash.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Interface_IStructuralHash.fsx"|])>]
+    [<Theory; FileInlineData("E_Interface_IStructuralHash.fsx")>]
     let ``E_Interface_IStructuralHash_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -164,9 +178,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_FieldNameUsedMulti.fs SCFLAGS="--test:ErrorRanges"                                 # E_FieldNameUsedMulti.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_FieldNameUsedMulti.fs"|])>]
+    [<Theory; FileInlineData("E_FieldNameUsedMulti.fs")>]
     let ``E_FieldNameUsedMulti_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -176,9 +191,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_FieldMemberClash.fs SCFLAGS="--test:ErrorRanges"                                   # E_FieldMemberClash.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_FieldMemberClash.fs"|])>]
+    [<Theory; FileInlineData("E_FieldMemberClash.fs")>]
     let ``E_FieldMemberClash_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -189,9 +205,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_InheritUnion.fs                                                                    # E_InheritUnion.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_InheritUnion.fs"|])>]
+    [<Theory; FileInlineData("E_InheritUnion.fs")>]
     let ``E_InheritUnion_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -200,9 +217,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_LowercaseDT.fs                                                                     # E_LowercaseDT.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_LowercaseDT.fs"|])>]
+    [<Theory; FileInlineData("E_LowercaseDT.fs")>]
     let ``E_LowercaseDT_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -210,9 +228,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_Overload_Equals.fs SCFLAGS="--test:ErrorRanges"                                    # E_Overload_Equals.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Overload_Equals.fs"|])>]
+    [<Theory; FileInlineData("E_Overload_Equals.fs")>]
     let ``E_Overload_Equals_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -221,9 +240,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_Overload_GetHashCode.fs SCFLAGS="--test:ErrorRanges"                               # E_Overload_GetHashCode.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Overload_GetHashCode.fs"|])>]
+    [<Theory; FileInlineData("E_Overload_GetHashCode.fs")>]
     let ``E_Overload_GetHashCode_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -232,9 +252,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_SampleFromSpec01d.fsx SCFLAGS="--test:ErrorRanges"                                 # E_SampleFromSpec01d.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SampleFromSpec01d.fsx"|])>]
+    [<Theory; FileInlineData("E_SampleFromSpec01d.fsx")>]
     let ``E_SampleFromSpec01d_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -242,9 +263,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_SampleFromSpec01d2.fsx SCFLAGS="--test:ErrorRanges"                                # E_SampleFromSpec01d2.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SampleFromSpec01d2.fsx"|])>]
+    [<Theory; FileInlineData("E_SampleFromSpec01d2.fsx")>]
     let ``E_SampleFromSpec01d2_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -252,9 +274,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_UnionConstructorBadFieldName.fs SCFLAGS="--test:ErrorRanges"                       # E_UnionConstructorBadFieldName.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UnionConstructorBadFieldName.fs"|])>]
+    [<Theory; FileInlineData("E_UnionConstructorBadFieldName.fs")>]
     let ``E_UnionConstructorBadFieldName_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -266,9 +289,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_UnionFieldConflictingName.fs SCFLAGS="--test:ErrorRanges"                          # E_UnionFieldConflictingName.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UnionFieldConflictingName.fs"|])>]
+    [<Theory; FileInlineData("E_UnionFieldConflictingName.fs")>]
     let ``E_UnionFieldConflictingName_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -278,9 +302,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_UnionFieldNamedTag.fs SCFLAGS="--test:ErrorRanges"                                 # E_UnionFieldNamedTag.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UnionFieldNamedTag.fs"|])>]
+    [<Theory; FileInlineData("E_UnionFieldNamedTag.fs")>]
     let ``E_UnionFieldNamedTag_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -288,9 +313,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_UnionFieldNamedTagNoDefault.fs SCFLAGS="--test:ErrorRanges"                        # E_UnionFieldNamedTagNoDefault.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UnionFieldNamedTagNoDefault.fs"|])>]
+    [<Theory; FileInlineData("E_UnionFieldNamedTagNoDefault.fs")>]
     let ``E_UnionFieldNamedTagNoDefault_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -298,9 +324,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_UnionMemberNamedTag.fs SCFLAGS="--test:ErrorRanges"                                # E_UnionMemberNamedTag.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UnionMemberNamedTag.fs"|])>]
+    [<Theory; FileInlineData("E_UnionMemberNamedTag.fs")>]
     let ``E_UnionMemberNamedTag_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -308,9 +335,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_UnionMemberNamedTagNoDefault.fs SCFLAGS="--test:ErrorRanges"                       # E_UnionMemberNamedTagNoDefault.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UnionMemberNamedTagNoDefault.fs"|])>]
+    [<Theory; FileInlineData("E_UnionMemberNamedTagNoDefault.fs")>]
     let ``E_UnionMemberNamedTagNoDefault_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -318,9 +346,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_UnionMemberNamedTags.fs SCFLAGS="--test:ErrorRanges"                               # E_UnionMemberNamedTags.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UnionMemberNamedTags.fs"|])>]
+    [<Theory; FileInlineData("E_UnionMemberNamedTags.fs")>]
     let ``E_UnionMemberNamedTags_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -328,9 +357,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_UnionMemberNamedTagsNoDefault.fs SCFLAGS="--test:ErrorRanges"                      # E_UnionMemberNamedTagsNoDefault.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UnionMemberNamedTagsNoDefault.fs"|])>]
+    [<Theory; FileInlineData("E_UnionMemberNamedTagsNoDefault.fs")>]
     let ``E_UnionMemberNamedTagsNoDefault_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -338,9 +368,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_UnionsNotNull01.fs                                                                 # E_UnionsNotNull01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UnionsNotNull01.fs"|])>]
+    [<Theory; FileInlineData("E_UnionsNotNull01.fs")>]
     let ``E_UnionsNotNull01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -348,191 +379,217 @@ module UnionTypes =
         ]
 
     //SOURCE=ImplicitEquals001.fs                                                                 # ImplicitEquals001.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ImplicitEquals001.fs"|])>]
+    [<Theory; FileInlineData("ImplicitEquals001.fs")>]
     let ``ImplicitEquals001_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=Interface01.fsx SCFLAGS=                                                             # Interface01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Interface01.fsx"|])>]
+    [<Theory; FileInlineData("Interface01.fsx")>]
     let ``Interface01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=Interface_IComparable.fsx SCFLAGS=                                                   # Interface_IComparable.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Interface_IComparable.fsx"|])>]
+    [<Theory; FileInlineData("Interface_IComparable.fsx")>]
     let ``Interface_IComparable_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=Member01.fsx                                                                         # Member01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Member01.fsx"|])>]
+    [<Theory; FileInlineData("Member01.fsx")>]
     let ``Member01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=NamedFields01.fsx SCFLAGS=                                                           # NamedFields01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NamedFields01.fsx"|])>]
+    [<Theory; FileInlineData("NamedFields01.fsx")>]
     let ``NamedFields01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=NamedFields02.fsx SCFLAGS=                                                           # NamedFields02.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NamedFields02.fsx"|])>]
+    [<Theory; FileInlineData("NamedFields02.fsx")>]
     let ``NamedFields02_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=NamedFields03.fsx SCFLAGS=                                                           # NamedFields03.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NamedFields03.fsx"|])>]
+    [<Theory; FileInlineData("NamedFields03.fsx")>]
     let ``NamedFields03_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/BasicTypeAndModuleDefinitions/UnionTypes)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Overload_Equals.fs"|])>]
+    [<Theory; FileInlineData("Overload_Equals.fs")>]
     let ``Overload_Equals_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> verifyCompile
         |> shouldSucceed
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/BasicTypeAndModuleDefinitions/UnionTypes)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Overload_GetHashCode.fs"|])>]
+    [<Theory; FileInlineData("Overload_GetHashCode.fs")>]
     let ``Overload_GetHashCode_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> verifyCompile
         |> shouldSucceed
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/BasicTypeAndModuleDefinitions/UnionTypes)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Overload_ToString.fs"|])>]
+    [<Theory; FileInlineData("Overload_ToString.fs")>]
     let ``Overload_ToString_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> verifyCompile
         |> shouldSucceed
 
     //SOURCE=Overrides01.fsx                                                                      # Overrides01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Overrides01.fsx"|])>]
+    [<Theory; FileInlineData("Overrides01.fsx")>]
     let ``Overrides01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=Parenthesis01.fsx                                                                    # Parenthesis01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Parenthesis01.fsx"|])>]
+    [<Theory; FileInlineData("Parenthesis01.fsx")>]
     let ``Parenthesis01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=Parenthesis02.fsx                                                                    # Parenthesis02.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Parenthesis02.fsx"|])>]
+    [<Theory; FileInlineData("Parenthesis02.fsx")>]
     let ``Parenthesis02_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=Parenthesis03.fsx                                                                    # Parenthesis03.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Parenthesis03.fsx"|])>]
+    [<Theory; FileInlineData("Parenthesis03.fsx")>]
     let ``Parenthesis03_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=Recursive01.fsx SCFLAGS=                                                             # Recursive01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Recursive01.fsx"|])>]
+    [<Theory; FileInlineData("Recursive01.fsx")>]
     let ``Recursive01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=ReflectionOnUnionTypes01.fs SCFLAGS=                                                 # ReflectionOnUnionTypes01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ReflectionOnUnionTypes01.fs"|])>]
+    [<Theory; FileInlineData("ReflectionOnUnionTypes01.fs")>]
     let ``ReflectionOnUnionTypes01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=SampleFromSpec01.fsx SCFLAGS	                                                        # SampleFromSpec01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SampleFromSpec01.fsx"|])>]
+    [<Theory; FileInlineData("SampleFromSpec01.fsx")>]
     let ``SampleFromSpec01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=SampleFromSpec01b.fsx SCFLAGS=                                                       # SampleFromSpec01b.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SampleFromSpec01b.fsx"|])>]
+    [<Theory; FileInlineData("SampleFromSpec01b.fsx")>]
     let ``SampleFromSpec01b_fsx`` compilation =
         compilation
+        |> getCompilation
         |> withOcamlCompat
         |> withLangVersion50
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=SampleFromSpec01d.fsx SCFLAGS=                                                       # SampleFromSpec01d.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SampleFromSpec01d.fsx"|])>]
+    [<Theory; FileInlineData("SampleFromSpec01d.fsx")>]
     let ``SampleFromSpec01d_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=ScopeAndDataConstrAndPattern01.fsx SCFLAGS=                                          # ScopeAndDataConstrAndPattern01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ScopeAndDataConstrAndPattern01.fsx"|])>]
+    [<Theory; FileInlineData("ScopeAndDataConstrAndPattern01.fsx")>]
     let ``ScopeAndDataConstrAndPattern01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=UnionCaseProduction01.fsx SCFLAGS=-a                                                 # UnionCaseProduction01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UnionCaseProduction01.fsx"|])>]
+    [<Theory; FileInlineData("UnionCaseProduction01.fsx")>]
     let ``UnionCaseProduction01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=UnionCasesProduction01.fsx SCFLAGS=-a                                                # UnionCasesProduction01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UnionCasesProduction01.fsx"|])>]
+    [<Theory; FileInlineData("UnionCasesProduction01.fsx")>]
     let ``UnionCasesProduction01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=UnionsNotNull02.fs                                                                 # UnionsNotNull02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UnionsNotNull02.fs"|])>]
+    [<Theory; FileInlineData("UnionsNotNull02.fs")>]
     let ``UnionsNotNull02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=LowercaseWhenRequireQualifiedAccess.fsx                                                                 # LowercaseWhenRequireQualifiedAccess.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"LowercaseWhenRequireQualifiedAccess.fsx"|])>]
+    [<Theory; FileInlineData("LowercaseWhenRequireQualifiedAccess.fsx")>]
     let ``LowercaseWhenRequireQualifiedAccess_fs in langversion 6`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion60
         |> verifyCompile
         |> shouldFail
 
     //SOURCE=LowercaseWhenRequireQualifiedAccess.fsx                                                                 # LowercaseWhenRequireQualifiedAccess.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"LowercaseWhenRequireQualifiedAccess.fsx"|])>]
+    [<Theory; FileInlineData("LowercaseWhenRequireQualifiedAccess.fsx")>]
     let ``LowercaseWhenRequireQualifiedAccess_fs in preview`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion70
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=E_LowercaseWhenRequireQualifiedAccess.fsx                                                                 # E_LowercaseWhenRequireQualifiedAccess.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_LowercaseWhenRequireQualifiedAccess.fsx"|])>]
+    [<Theory; FileInlineData("E_LowercaseWhenRequireQualifiedAccess.fsx")>]
     let ``E_LowercaseWhenRequireQualifiedAccess_fs in preview`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion70
         |> verifyCompile
         |> shouldFail
@@ -552,9 +609,10 @@ module UnionTypes =
         ]
 
     //SOURCE=E_LowercaseWhenRequireQualifiedAccess.fsx                                                                 # E_LowercaseWhenRequireQualifiedAccess.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_LowercaseWhenRequireQualifiedAccess.fsx"|])>]
+    [<Theory; FileInlineData("E_LowercaseWhenRequireQualifiedAccess.fsx")>]
     let ``E_LowercaseWhenRequireQualifiedAccess_fs in langversion 6`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion60
         |> verifyCompile
         |> shouldFail
@@ -581,9 +639,10 @@ module UnionTypes =
         ]
 
     //SOURCE=W_GenericFunctionValuedStaticProp02.fs SCFLAGS="--test:ErrorRanges --warnaserror-"   # W_GenericFunctionValuedStaticProp02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_GenericFunctionValuedStaticProp02.fs"|])>]
+    [<Theory; FileInlineData("W_GenericFunctionValuedStaticProp02.fs")>]
     let ``W_GenericFunctionValuedStaticProp02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -591,9 +650,10 @@ module UnionTypes =
         ]
 
     //SOURCE=W_SampleFromSpec01c.fsx SCFLAGS="--test:ErrorRanges"                                 # W_SampleFromSpec01c.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_SampleFromSpec01c.fsx"|])>]
+    [<Theory; FileInlineData("W_SampleFromSpec01c.fsx")>]
     let ``W_SampleFromSpec01c_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -603,9 +663,10 @@ module UnionTypes =
         ]
 
     //SOURCE=W_UnionCaseProduction01.fsx SCFLAGS="-a --test:ErrorRanges"                          # W_UnionCaseProduction01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_UnionCaseProduction01.fsx"|])>]
+    [<Theory; FileInlineData("W_UnionCaseProduction01.fsx")>]
     let ``W_UnionCaseProduction01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [

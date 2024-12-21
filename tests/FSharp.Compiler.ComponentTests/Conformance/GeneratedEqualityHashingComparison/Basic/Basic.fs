@@ -10,25 +10,28 @@ open FSharp.Test.Compiler
 module Basic =
 
     // SOURCE=Arrays.fsx                                                        # Arrays.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Arrays.fsx"|])>]
+    [<Theory; FileInlineData("Arrays.fsx")>]
     let``Arrays_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed
 
     // SOURCE=Comparison01.fs                                                   # Comparison01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Comparison01.fs"|])>]
+    [<Theory; FileInlineData("Comparison01.fs")>]
     let``Comparison01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed
 
     // SOURCE=CustomEquality01.fs                                               # CustomEquality01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CustomEquality01.fs"|])>]
+    [<Theory; FileInlineData("CustomEquality01.fs")>]
     let``CustomEquality01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -36,9 +39,10 @@ module Basic =
             (Warning 988, Line 37, Col 1, Line 37, Col 1, "Main module of program is empty: nothing will happen when it is run")
         ]
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_CustomEqualityEquals01.fs"|])>]
+    [<Theory; FileInlineData("E_CustomEqualityEquals01.fs")>]
     let``E_CustomEqualityEquals01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -52,9 +56,10 @@ module Basic =
         ]
 
     // SOURCE=E_CustomEqualityGetHashCode01.fs SCFLAGS="--test:ErrorRanges"     # E_CustomEqualityGetHashCode01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_CustomEqualityGetHashCode01.fs"|])>]
+    [<Theory; FileInlineData("E_CustomEqualityGetHashCode01.fs")>]
     let``E_CustomEqualityGetHashCode01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -71,9 +76,10 @@ module Basic =
            ]
 
     // SOURCE=E_ExceptionsNoComparison.fs SCFLAGS="--test:ErrorRanges"          # E_ExceptionsNoComparison.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ExceptionsNoComparison.fs"|])>]
+    [<Theory; FileInlineData("E_ExceptionsNoComparison.fs")>]
     let``E_ExceptionsNoComparison_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -84,122 +90,137 @@ module Basic =
 
 
     // SOURCE=EqualOnTuples01.fs                                                # EqualOnTuples01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"EqualOnTuples01.fs"|])>]
+    [<Theory; FileInlineData("EqualOnTuples01.fs")>]
     let``EqualOnTuples01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed
 
     // SOURCE=Equality01.fs                                                     # Equality01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Equality01.fs"|])>]
+    [<Theory; FileInlineData("Equality01.fs")>]
     let``Equality01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed
 
 
     // SOURCE=Exceptions.fsx                                                    # Exceptions.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Exceptions.fsx"|])>]
+    [<Theory; FileInlineData("Exceptions.fsx")>]
     let``Exceptions_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed
 
     // SOURCE=Generated_Record.fsx                                              # Generated_Record.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Generated_Record.fsx"|])>]
+    [<Theory; FileInlineData("Generated_Record.fsx")>]
     let``Generated_Record_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed
 
     // SOURCE=Hashing01.fs                                                      # Hashing01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Hashing01.fs"|])>]
+    [<Theory; FileInlineData("Hashing01.fs")>]
     let``Hashing01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed
 
     // SOURCE=Lists.fsx                                                         # Lists.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Lists.fsx"|])>]
+    [<Theory; FileInlineData("Lists.fsx")>]
     let``Lists_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed
 
     // SOURCE=NeverGenerated_Class.fsx                                          # NeverGenerated_Class.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NeverGenerated_Class.fsx"|])>]
+    [<Theory; FileInlineData("NeverGenerated_Class.fsx")>]
     let``NeverGenerated_Class_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed
 
     // SOURCE=NeverGenerated_Delegate.fsx                                       # NeverGenerated_Delegate.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NeverGenerated_Delegate.fsx"|])>]
+    [<Theory; FileInlineData("NeverGenerated_Delegate.fsx")>]
     let``NeverGenerated_Delegate_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed
 
     // SOURCE=NeverGenerated_Enum.fsx                                           # NeverGenerated_Enum.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NeverGenerated_Enum.fsx"|])>]
+    [<Theory; FileInlineData("NeverGenerated_Enum.fsx")>]
     let``NeverGenerated_Enum_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed
 
     // SOURCE=NeverGenerated_Interface.fsx                                      # NeverGenerated_Interface.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NeverGenerated_Interface.fsx"|])>]
+    [<Theory; FileInlineData("NeverGenerated_Interface.fsx")>]
     let``NeverGenerated_Interface_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed
 
     // SOURCE=Options.fsx                                                       # Options.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Options.fsx"|])>]
+    [<Theory; FileInlineData("Options.fsx")>]
     let``Options_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed
 
     // SOURCE=Sample_Records.fsx                                                # Sample_Records.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Sample_Records.fsx"|])>]
+    [<Theory; FileInlineData("Sample_Records.fsx")>]
     let``Sample_Records_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed
 
     // SOURCE=Sample_Tuples.fsx                                                 # Sample_Tuples.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Sample_Tuples.fsx"|])>]
+    [<Theory; FileInlineData("Sample_Tuples.fsx")>]
     let``Sample_Tuples_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed
 
     // SOURCE=Structs.fsx                                                       # Structs.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Structs.fsx"|])>]
+    [<Theory; FileInlineData("Structs.fsx")>]
     let``Structs_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed
 
     // SOURCE=Unions.fsx                                                        # Unions.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Unions.fsx"|])>]
+    [<Theory; FileInlineData("Unions.fsx")>]
     let``Unions_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed

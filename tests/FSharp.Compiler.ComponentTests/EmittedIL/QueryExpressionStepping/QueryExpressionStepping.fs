@@ -24,138 +24,71 @@ module QueryExpressionStepping =
         |> verifyILBaseline
 
     // SOURCE=Linq101Aggregates01.fs         SCFLAGS="-r:Utils.dll -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Linq101Aggregates01.exe"        # Linq101Aggregates01.fs - CodeGen
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"Linq101Aggregates01.fs"|])>]
-    let ``Linq101Aggregates01_RealInternalSignatureOn_fs`` compilation =
+    [<Theory; FileInlineData("Linq101Aggregates01.fs", Realsig=BooleanOptions.Both)>]
+    let ``Linq101Aggregates01_fs`` compilation =
         compilation
-        |> withRealInternalSignatureOn
-        |> verifyCompilation
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"Linq101Aggregates01.fs"|])>]
-    let ``Linq101Aggregates01_RealInternalSignatureOff_fs`` compilation =
-        compilation
-        |> withRealInternalSignatureOff
+        |> getCompilation
         |> verifyCompilation
 
     // SOURCE=Linq101ElementOperators01.fs   SCFLAGS="-r:Utils.dll -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Linq101ElementOperators01.exe"  # Linq101ElementOperators01.fs - CodeGen
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"Linq101ElementOperators01.fs"|])>]
-    let ``Linq101ElementOperators01_RealInternalSignatureOn_fs`` compilation =
+    [<Theory; FileInlineData("Linq101ElementOperators01.fs", Realsig=BooleanOptions.Both)>]
+    let ``Linq101ElementOperators01_fs`` compilation =
         compilation
-        |> withRealInternalSignatureOn
-        |> verifyCompilation
-    // SOURCE=Linq101ElementOperators01.fs   SCFLAGS="-r:Utils.dll -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Linq101ElementOperators01.exe"  # Linq101ElementOperators01.fs - CodeGen
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"Linq101ElementOperators01.fs"|])>]
-    let ``Linq101ElementOperators01_RealInternalSignatureOff_fs`` compilation =
-        compilation
-        |> withRealInternalSignatureOff
+        |> getCompilation
         |> verifyCompilation
 
     // SOURCE=Linq101Grouping01.fs           SCFLAGS="-r:Utils.dll -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Linq101Grouping01.exe"          # Linq101Grouping01.fs - CodeGen
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"Linq101Grouping01.fs"|])>]
-    let ``Linq101Grouping01_RealInternalSignatureOn_fs`` compilation =
+    [<Theory; FileInlineData("Linq101Grouping01.fs", Realsig=BooleanOptions.Both)>]
+    let ``Linq101Grouping01_fs`` compilation =
         compilation
-        |> withRealInternalSignatureOn
-        |> verifyCompilation
-
-    // SOURCE=Linq101Grouping01.fs           SCFLAGS="-r:Utils.dll -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Linq101Grouping01.exe"          # Linq101Grouping01.fs - CodeGen
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"Linq101Grouping01.fs"|])>]
-    let ``Linq101Grouping01_RealInternalSignatureOff_fs`` compilation =
-        compilation
-        |> withRealInternalSignatureOff
+        |> getCompilation
         |> verifyCompilation
 
     // SOURCE=Linq101Joins01.fs              SCFLAGS="-r:Utils.dll -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Linq101Joins01.exe"             # Linq101Joins01.fs - CodeGen
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"Linq101Joins01.fs"|])>]
-    let ``Linq101Joins01_RealInternalSignatureOn_fs`` compilation =
+    [<Theory; FileInlineData("Linq101Joins01.fs", Realsig=BooleanOptions.Both)>]
+    let ``Linq101Joins01_fs`` compilation =
         compilation
-        |> withRealInternalSignatureOn
-        |> verifyCompilation
-
-    // SOURCE=Linq101Joins01.fs              SCFLAGS="-r:Utils.dll -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Linq101Joins01.exe"             # Linq101Joins01.fs - CodeGen
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"Linq101Joins01.fs"|])>]
-    let ``Linq101Joins01_RealInternalSignatureOff_fs`` compilation =
-        compilation
-        |> withRealInternalSignatureOff
+        |> getCompilation
         |> verifyCompilation
 
     // SOURCE=Linq101Ordering01.fs           SCFLAGS="-r:Utils.dll -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Linq101Ordering01.exe"          # Linq101Ordering01.fs - CodeGen
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"Linq101Ordering01.fs"|])>]
-    let ``Linq101Ordering01_RealInternalSignatureOn_fs`` compilation =
+    [<Theory; FileInlineData("Linq101Ordering01.fs", Realsig=BooleanOptions.Both)>]
+    let ``Linq101Ordering01_fs`` compilation =
         compilation
-        |> withRealInternalSignatureOn
-        |> verifyCompilation
-
-    // SOURCE=Linq101Ordering01.fs           SCFLAGS="-r:Utils.dll -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Linq101Ordering01.exe"          # Linq101Ordering01.fs - CodeGen
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"Linq101Ordering01.fs"|])>]
-    let ``Linq101Ordering01_RealInternalSignatureOff_fs`` compilation =
-        compilation
-        |> withRealInternalSignatureOff
+        |> getCompilation
         |> verifyCompilation
 
     // SOURCE=Linq101Partitioning01.fs       SCFLAGS="-r:Utils.dll -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Linq101Partitioning01.exe"      # Linq101Partitioning01.fs - CodeGen
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"Linq101Partitioning01.fs"|])>]
-    let ``Linq101Partitioning01_RealInternalSignatureOn_fs`` compilation =
+    [<Theory; FileInlineData("Linq101Partitioning01.fs", Realsig=BooleanOptions.Both)>]
+    let ``Linq101Partitioning01_fs`` compilation =
         compilation
-        |> withRealInternalSignatureOn
-        |> verifyCompilation
-
-    // SOURCE=Linq101Partitioning01.fs       SCFLAGS="-r:Utils.dll -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Linq101Partitioning01.exe"      # Linq101Partitioning01.fs - CodeGen
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"Linq101Partitioning01.fs"|])>]
-    let ``Linq101Partitioning01_RealInternalSignatureOff_fs`` compilation =
-        compilation
-        |> withRealInternalSignatureOff
+        |> getCompilation
         |> verifyCompilation
 
     // SOURCE=Linq101Quantifiers01.fs        SCFLAGS="-r:Utils.dll -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Linq101Quantifiers01.exe"       # Linq101Quantifiers01.fs - CodeGen
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"Linq101Quantifiers01.fs"|])>]
-    let ``Linq101Quantifiers01_RealInternalSignatureOn_fs`` compilation =
+    [<Theory; FileInlineData("Linq101Quantifiers01.fs", Realsig=BooleanOptions.Both)>]
+    let ``Linq101Quantifiers01_fs`` compilation =
         compilation
-        |> withRealInternalSignatureOn
+        |> getCompilation
         |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"Linq101Quantifiers01.fs"|])>]
-    let ``Linq101Quantifiers01_RealInternalSignatureOff_fs`` compilation =
+    // SOURCE=Linq101Select01.fs             SCFLAGS="-r:Utils.dll -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Linq101Select01.exe"            # Linq101Select01.fs - CodeGen
+    [<Theory; FileInlineData("Linq101Select01.fs", Realsig=BooleanOptions.Both)>]
+    let ``Linq101Select01_fs`` compilation =
         compilation
-        |> withRealInternalSignatureOff
-        |> verifyCompilation
-
-        // SOURCE=Linq101Select01.fs             SCFLAGS="-r:Utils.dll -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Linq101Select01.exe"            # Linq101Select01.fs - CodeGen
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"Linq101Select01.fs"|])>]
-    let ``Linq101Select01_RealInternalSignatureOn_fs`` compilation =
-        compilation
-        |> withRealInternalSignatureOn
-        |> verifyCompilation
-
-        // SOURCE=Linq101Select01.fs             SCFLAGS="-r:Utils.dll -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Linq101Select01.exe"            # Linq101Select01.fs - CodeGen
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"Linq101Select01.fs"|])>]
-    let ``Linq101Select01_RealInternalSignatureOff_fs`` compilation =
-        compilation
-        |> withRealInternalSignatureOff
+        |> getCompilation
         |> verifyCompilation
 
     // SOURCE=Linq101SetOperators01.fs       SCFLAGS="-r:Utils.dll -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Linq101SetOperators01.exe"      # Linq101SetOperators01.fs - CodeGen
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"Linq101SetOperators01.fs"|])>]
-    let ``Linq101SetOperators01_RealInternalSignatureOn_fs`` compilation =
+    [<Theory; FileInlineData("Linq101SetOperators01.fs", Realsig=BooleanOptions.Both)>]
+    let ``Linq101SetOperators01_fs`` compilation =
         compilation
-        |> withRealInternalSignatureOn
-        |> verifyCompilation
-
-    // SOURCE=Linq101SetOperators01.fs       SCFLAGS="-r:Utils.dll -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Linq101SetOperators01.exe"      # Linq101SetOperators01.fs - CodeGen
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"Linq101SetOperators01.fs"|])>]
-    let ``Linq101SetOperators01_RealInternalSignatureOff_fs`` compilation =
-        compilation
-        |> withRealInternalSignatureOff
+        |> getCompilation
         |> verifyCompilation
 
     // SOURCE=Linq101Where01.fs              SCFLAGS="-r:Utils.dll -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Linq101Where01.exe"             # Linq101Where01.fs - CodeGen
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"Linq101Where01.fs"|])>]
-    let ``Linq101Where01_RealInternalSignatureOn_fs`` compilation =
+    [<Theory; FileInlineData("Linq101Where01.fs", Realsig=BooleanOptions.Both)>]
+    let ``Linq101Where01_fs`` compilation =
         compilation
-        |> withRealInternalSignatureOn
-        |> verifyCompilation
-
-    // SOURCE=Linq101Where01.fs              SCFLAGS="-r:Utils.dll -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Linq101Where01.exe"             # Linq101Where01.fs - CodeGen
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"Linq101Where01.fs"|])>]
-    let ``Linq101Where01_RealInternalSignatureOff_fs`` compilation =
-        compilation
-        |> withRealInternalSignatureOff
+        |> getCompilation
         |> verifyCompilation
