@@ -10,9 +10,10 @@ module ImplicitObjectConstructors =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/ClassTypes/ImplicitObjectConstructors)
     
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"WithAttribute.fs"|])>]
+    [<Theory; FileInlineData("WithAttribute.fs")>]
     let ``WithAttribute_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["-a"; "--test:ErrorRanges"]
         |> compile

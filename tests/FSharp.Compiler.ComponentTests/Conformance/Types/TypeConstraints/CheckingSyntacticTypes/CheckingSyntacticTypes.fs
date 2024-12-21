@@ -10,9 +10,10 @@ module CheckingSyntacticTypes =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/TypesAndTypeConstraints/CheckingSyntacticTypes)
     //<Expects status="error" id="FS3151" span="(12,5-12,35)">This member, function or value declaration may not be declared 'inline'</Expects>
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_CannotInlineVirtualMethods1.fs"|])>]
+    [<Theory; FileInlineData("E_CannotInlineVirtualMethods1.fs")>]
     let ``E_CannotInlineVirtualMethods1_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> withOptions ["--test:ErrorRanges"]
         |> compile
@@ -23,9 +24,10 @@ module CheckingSyntacticTypes =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/TypesAndTypeConstraints/CheckingSyntacticTypes)
     //<Expects status="error" id="FS3151" span="(27,20-27,34)">This member, function or value declaration may not be declared 'inline'</Expects>
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_CannotInlineVirtualMethod2.fs"|])>]
+    [<Theory; FileInlineData("E_CannotInlineVirtualMethod2.fs")>]
     let ``E_CannotInlineVirtualMethod2_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> withOptions ["--test:ErrorRanges"]
         |> compile

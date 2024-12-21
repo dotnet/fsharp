@@ -1023,9 +1023,7 @@ type ProjectWorkflowBuilder
 
     member this.DeleteProjectDir() =
         if Directory.Exists initialProject.ProjectDir then
-            try
-                Directory.Delete(initialProject.ProjectDir, true)
-            with _ -> ()
+            () //try Directory.Delete(initialProject.ProjectDir, true) with _ -> ()
 
     member this.Execute(workflow: Async<WorkflowContext>) =
         try

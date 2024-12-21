@@ -6,7 +6,7 @@ open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 
-module AccessibilityAnnotations_OnOverridesAndIFaceImpl =
+module OnOverrides =
 
     let verifyCompile compilation =
         compilation
@@ -21,9 +21,10 @@ module AccessibilityAnnotations_OnOverridesAndIFaceImpl =
         |> compileAndRun
 
     // SOURCE=E_InterfaceImpl01.fs SCFLAGS="--test:ErrorRanges"             # E_InterfaceImpl01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_InterfaceImpl01.fs"|])>]
+    [<Theory; FileInlineData("E_InterfaceImpl01.fs")>]
     let ``E_InterfaceImpl01_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -33,9 +34,10 @@ module AccessibilityAnnotations_OnOverridesAndIFaceImpl =
         ]
 
     // SOURCE=E_OnOverrides01.fs SCFLAGS="--test:ErrorRanges"               # E_OnOverrides01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_OnOverrides01.fs"|])>]
+    [<Theory; FileInlineData("E_OnOverrides01.fs")>]
     let ``E_OnOverrides01_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -45,9 +47,10 @@ module AccessibilityAnnotations_OnOverridesAndIFaceImpl =
         ]
 
     // SOURCE=E_OnOverrides02.fs SCFLAGS="--test:ErrorRanges"               # E_OnOverrides02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_OnOverrides02.fs"|])>]
+    [<Theory; FileInlineData("E_OnOverrides02.fs")>]
     let ``E_OnOverrides02_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -57,9 +60,10 @@ module AccessibilityAnnotations_OnOverridesAndIFaceImpl =
         ]
 
     // SOURCE=E_OnOverrides03.fs SCFLAGS="--test:ErrorRanges"               # E_OnOverrides03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_OnOverrides03.fs"|])>]
+    [<Theory; FileInlineData("E_OnOverrides03.fs")>]
     let ``E_OnOverrides03_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -69,9 +73,10 @@ module AccessibilityAnnotations_OnOverridesAndIFaceImpl =
         ]
 
     // SOURCE=E_OnOverrides04.fs SCFLAGS="--test:ErrorRanges"               # E_OnOverrides04.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_OnOverrides04.fs"|])>]
+    [<Theory; FileInlineData("E_OnOverrides04.fs")>]
     let ``E_OnOverrides04_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -81,9 +86,10 @@ module AccessibilityAnnotations_OnOverridesAndIFaceImpl =
         ]
 
     // SOURCE=E_OnOverrides05.fs SCFLAGS="--test:ErrorRanges"               # E_OnOverrides05.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_OnOverrides05.fs"|])>]
+    [<Theory; FileInlineData("E_OnOverrides05.fs")>]
     let ``E_OnOverrides05_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [

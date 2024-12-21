@@ -9,9 +9,10 @@ open FSharp.Test.Compiler
 module HashLight =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalFiltering/HashLight)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"IndentationWithComputationExpression01.fs"|])>]
+    [<Theory; FileInlineData("IndentationWithComputationExpression01.fs")>]
     let ``IndentationWithComputationExpression01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> withOptions ["--warnaserror+"]
         |> typecheck

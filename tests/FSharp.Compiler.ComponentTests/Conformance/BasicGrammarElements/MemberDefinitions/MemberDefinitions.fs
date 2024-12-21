@@ -21,9 +21,10 @@ module MemberDefinitionsModule =
         |> compileAndRun
 
     // SOURCE="BasicMembers.fs"	# BasicMembers
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"BasicMembers.fs"|])>]
+    [<Theory; FileInlineData("BasicMembers.fs")>]
     let ``BasicMembers_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 

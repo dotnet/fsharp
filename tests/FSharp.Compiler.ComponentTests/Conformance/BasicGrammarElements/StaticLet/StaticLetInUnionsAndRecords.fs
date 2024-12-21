@@ -73,9 +73,10 @@ let verifyCompileAndRun compilation =
     |> compileAndRun
 
 
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UnionShowCase.fs"|])>]
+[<Theory; FileInlineData("UnionShowCase.fs")>]
 let ``Static let - union showcase`` compilation =
     compilation
+    |> getCompilation
     |> verifyCompileAndRun
     |> shouldSucceed
     |> withStdOutContains """init U 1
@@ -85,9 +86,10 @@ Case2 1
 Case2 2"""
 
 
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"RecordShowCase.fs"|])>]
+[<Theory; FileInlineData("RecordShowCase.fs")>]
 let ``Static let - record showcase`` compilation =
     compilation
+    |> getCompilation
     |> verifyCompileAndRun
     |> shouldSucceed
     |> withStdOutContains """init R 1
@@ -95,101 +97,114 @@ init R 2
 1
 2"""
 
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"LowercaseDuTest.fs"|])>]
+[<Theory; FileInlineData("LowercaseDuTest.fs")>]
 let ``Static let - lowercase DU`` compilation =
     compilation
+    |> getCompilation
     |> withLangVersion80
     |> typecheck
     |> shouldSucceed    
 
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SimpleEmptyType.fs"|])>]
+[<Theory; FileInlineData("SimpleEmptyType.fs")>]
 let ``Static let in empty type`` compilation =
     compilation
+    |> getCompilation
     |> verifyCompileAndRun
     |> shouldSucceed
     |> withStdOutContains """init
 5
 3"""
 
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SimpleEmptyGenericType.fs"|])>]
+[<Theory; FileInlineData("SimpleEmptyGenericType.fs")>]
 let ``Static let in empty generic type`` compilation =
     compilation
+    |> getCompilation
     |> verifyCompileAndRun
     |> shouldSucceed
     |> withStdOutContains """Accessing name for Int32
 Accessing name for String
 Accessing name for Byte"""
 
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StaticMemberValInEmptyType.fs"|])>]
+[<Theory; FileInlineData("StaticMemberValInEmptyType.fs")>]
 let ``Static member val in empty type`` compilation =
     compilation
+    |> getCompilation
     |> withLangVersion80
     |> typecheck
     |> shouldSucceed
 
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StaticMemberValInEmptyType.fs"|])>]
+[<Theory; FileInlineData("StaticMemberValInEmptyType.fs")>]
 let ``Static member val in empty type Fsharp 7`` compilation =
     compilation
+    |> getCompilation
     |> withLangVersion70
     |> typecheck
     |> shouldFail
     |> withDiagnostics [Error 902, Line 4, Col 5, Line 4, Col 41, "For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher."]
 
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SimpleUnion.fs"|])>]
+[<Theory; FileInlineData("SimpleUnion.fs")>]
 let ``Static let in simple union`` compilation =
     compilation
+    |> getCompilation
     |> verifyCompileAndRun
     |> shouldSucceed
     |> withStdOutContains "A 42"
 
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PlainEnum.fs"|])>]
+[<Theory; FileInlineData("PlainEnum.fs")>]
 let ``Support in plain enums - typecheck should fail`` compilation =
     compilation
+    |> getCompilation
     |> withLangVersion80
     |> typecheck    
     |> shouldFail
     |> withDiagnosticMessage "Enumerations cannot have members"
 
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ActivePatternForUnion.fs"|])>]
+[<Theory; FileInlineData("ActivePatternForUnion.fs")>]
 let ``Static active pattern in  union`` compilation =
     compilation
+    |> getCompilation
     |> verifyCompileAndRun
     |> shouldSucceed
     |> withStdOutContains """B 999"""
 
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StructUnion.fs"|])>]
+[<Theory; FileInlineData("StructUnion.fs")>]
 let ``Static let in struct union`` compilation =
     compilation
+    |> getCompilation
     |> verifyCompileAndRun
     |> shouldSucceed
     |> withStdOutContains "A 42"
 
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SimpleRecord.fs"|])>]
+[<Theory; FileInlineData("SimpleRecord.fs")>]
 let ``Static let in simple record`` compilation =
     compilation
+    |> getCompilation
     |> verifyCompileAndRun
     |> shouldSucceed
     |> withStdOutContains "7"
 
 
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StructRecord.fs"|])>]
+[<Theory; FileInlineData("StructRecord.fs")>]
 let ``Static let in struct record`` compilation =
     compilation
+    |> getCompilation
     |> verifyCompileAndRun
     |> shouldSucceed
     |> withStdOutContains "7"
     
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CreateUnionCases.fs"|])>]
+[<Theory; FileInlineData("CreateUnionCases.fs")>]
 let ``Static let creating DU cases`` compilation =
     compilation
+    |> getCompilation
     |> verifyCompileAndRun
     |> shouldSucceed
     |> withStdOutContains "..."
 
     
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UnionOrderOfExecution.fs"|])>]
+[<Theory; FileInlineData("UnionOrderOfExecution.fs")>]
 let ``Static let union - order of execution`` compilation =
     compilation
+    |> getCompilation
     |> verifyCompileAndRun
     |> shouldSucceed
     |> withStdOutContains """init type U
@@ -200,9 +215,10 @@ calling print Case2 42
 side effect in member Singleton
 calling print Case2 42"""
     
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"RecordOrderOfExecution.fs"|])>]
+[<Theory; FileInlineData("RecordOrderOfExecution.fs")>]
 let ``Static let record - order of execution`` compilation =
     compilation
+    |> getCompilation
     |> verifyCompileAndRun
     |> shouldSucceed
     |> withStdOutContains """init R 1
@@ -214,9 +230,10 @@ side effect in member R1
 calling print 1"""
 
     
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"RecursiveDUs.fs"|])>]
+[<Theory; FileInlineData("RecursiveDUs.fs")>]
 let ``Static let - recursive DU definitions calling each other`` compilation =
     compilation
+    |> getCompilation
     |> verifyCompileAndRun
     |> shouldSucceed
     |> withStdOutContains """DuA init
@@ -228,9 +245,10 @@ DuC allVals access
 total = 999
 uniq = 2"""
 
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"RecursiveRecords.fs"|])>]
+[<Theory; FileInlineData("RecursiveRecords.fs")>]
 let ``Static let - recursive record definitions calling each other`` compilation =
     compilation
+    |> getCompilation
     |> verifyCompileAndRun
     |> shouldSucceed
     |> withStdOutContains """Chicken init
@@ -239,32 +257,36 @@ Egg init
 Omelette init
 1"""
 
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"QuotationsForStaticLetUnions.fs"|])>]
+[<Theory; FileInlineData("QuotationsForStaticLetUnions.fs")>]
 let ``Static let - quotations support for unions`` compilation =
     compilation
+    |> getCompilation
     |> verifyCompileAndRun
     |> shouldSucceed
     |> withStdOutContains """Let (s, Value ("A"), Call (None, ofString, [s]))"""
 
 
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StaticLetExtensionToBuiltinType.fs"|])>]
+[<Theory; FileInlineData("StaticLetExtensionToBuiltinType.fs")>]
 let ``Static let extension to builtin type`` compilation =
     compilation
+    |> getCompilation
     |> typecheck
     |> shouldFail
     |> withDiagnostics [Error 3573, Line 4, Col 5, Line 4, Col 51, "Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead."]
     
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"QuotationsForStaticLetRecords.fs"|])>]
+[<Theory; FileInlineData("QuotationsForStaticLetRecords.fs")>]
 let ``Static let - quotations support for records`` compilation =
     compilation
+    |> getCompilation
     |> verifyCompileAndRun
     |> shouldSucceed
     |> withStdOutContains "Let (v1, Value (42), Lambda (r, Call (None, createRecord, [v1, r])))"
 
 
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StaticLetInGenericUnion.fs"|])>]
+[<Theory; FileInlineData("StaticLetInGenericUnion.fs")>]
 let ``Static let union - executes per generic struct typar`` compilation =
     compilation
+    |> getCompilation
     |> verifyCompileAndRun
     |> shouldSucceed
     |> withStdOutContains """Creating cached val for Int32 * Int32
@@ -275,9 +297,10 @@ Creating cached val for String * String
 sizeof MyUnion<string,string> = 24"""
 
 
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StaticLetInGenericRecords.fs"|])>]
+[<Theory; FileInlineData("StaticLetInGenericRecords.fs")>]
 let ``Static let record - executes per generic typar`` compilation =
     compilation
+    |> getCompilation
     |> verifyCompileAndRun
     |> shouldSucceed
     |> withStdOutContains """Creating cached val for Int32
@@ -289,9 +312,10 @@ Creating cached val for DateTime
 Creating cached val for Uri
 2x sizeof<System.Uri> = 16"""
 
-[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StaticLetInGenericRecordsILtest.fs"|])>]
+[<Theory; FileInlineData("StaticLetInGenericRecordsILtest.fs")>]
 let ``Static let record - generics - IL test`` compilation =
     compilation
+    |> getCompilation
     |> withLangVersion80
     |> compile
     |> verifyIL ["""        .method private specialname rtspecialname static 

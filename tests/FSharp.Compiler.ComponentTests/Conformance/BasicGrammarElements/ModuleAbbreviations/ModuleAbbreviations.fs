@@ -21,9 +21,10 @@ module ModuleAbbreviations =
         |> compileAndRun
 
     // SOURCE=E_AbbreviationOnNamespace01.fs SCFLAGS="--test:ErrorRanges"	# E_AbbreviationOnNamespace01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AbbreviationOnNamespace01.fs"|])>]
+    [<Theory; FileInlineData("E_AbbreviationOnNamespace01.fs")>]
     let ``E_AbbreviationOnNamespace01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -35,9 +36,10 @@ module ModuleAbbreviations =
         ]
 
     // SOURCE=E_InvalidAbbrevName01.fs  SCFLAGS="--test:ErrorRanges"		# E_InvalidAbbrevName01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_InvalidAbbrevName01.fs"|])>]
+    [<Theory; FileInlineData("E_InvalidAbbrevName01.fs")>]
     let ``E_InvalidAbbrevName01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -45,9 +47,10 @@ module ModuleAbbreviations =
         ]
 
     // SOURCE=E_InvalidAbbrevName02.fs						# E_InvalidAbbrevName02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_InvalidAbbrevName02.fs"|])>]
+    [<Theory; FileInlineData("E_InvalidAbbrevName02.fs")>]
     let ``E_InvalidAbbrevName02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -55,9 +58,10 @@ module ModuleAbbreviations =
         ]
 
     // SOURCE=E_NameConflict01.fs						# E_NameConflict01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_NameConflict01.fs"|])>]
+    [<Theory; FileInlineData("E_NameConflict01.fs")>]
     let ``E_NameConflict01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -65,9 +69,10 @@ module ModuleAbbreviations =
         ]
 
     // SOURCE=E_UseInsideFunc.fs SCFLAGS="--test:ErrorRanges"			# E_UseInsideFunc.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UseInsideFunc.fs"|])>]
+    [<Theory; FileInlineData("E_UseInsideFunc.fs")>]
     let ``E_UseInsideFunc_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -75,36 +80,40 @@ module ModuleAbbreviations =
         ]
 
     // SOURCE=SanityCheck.fs							# SanityCheck.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SanityCheck.fs"|])>]
+    [<Theory; FileInlineData("SanityCheck.fs")>]
     let ``SanityCheck_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=SanityCheck02.fs							# SanityCheck02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SanityCheck02.fs"|])>]
+    [<Theory; FileInlineData("SanityCheck02.fs")>]
     let ``SanityCheck02_fs`` compilation =
         compilation
+        |> getCompilation
         |> withNoWarn 1104
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=useInsideModuleDef.fs						# useInsideModuleDef.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"useInsideModuleDef.fs"|])>]
+    [<Theory; FileInlineData("useInsideModuleDef.fs")>]
     let ``useInsideModuleDef_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=useInsideNamespaceDef.fs COMPILE_ONLY=1				# useInsideNamespaceDef.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"useInsideNamespaceDef.fs"|])>]
+    [<Theory; FileInlineData("useInsideNamespaceDef.fs")>]
     let ``useInsideNamespaceDef_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // NoMT	SOURCE=useInsideNamespaceDefExternal.fs PRECMD="\$FSC_PIPE -a useInsideNamespaceDefExternal_DLL.fs" SCFLAGS="-r:useInsideNamespaceDefExternal_DLL.dll"	# useInsideNamespaceDefExternal.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"useInsideNamespaceDefExternal.fs"|])>]
+    [<Theory; FileInlineData("useInsideNamespaceDefExternal.fs")>]
     let ``useInsideNamespaceDefExternal_fs`` compilation =
 
         let useInsideNamespaceDefExternal_DLL =
@@ -113,6 +122,7 @@ module ModuleAbbreviations =
             |> withName "useInsideNamespaceDefExternal_DLL"
 
         compilation
+        |> getCompilation
         |> withReferences [useInsideNamespaceDefExternal_DLL]
         |> verifyCompileAndRun
         |> shouldSucceed

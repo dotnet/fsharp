@@ -10,9 +10,10 @@ open FSharp.Test.Compiler
 module AttributesNew =
 
     // SOURCE=Test01.fs SCFLAGS="--test:ErrorRanges"        # Test01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test01.fs"|])>]
+    [<Theory; FileInlineData("Test01.fs")>]
     let``Test01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -21,9 +22,10 @@ module AttributesNew =
         ]
 
     // SOURCE=Test02.fs SCFLAGS="--test:ErrorRanges"        # Test02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test02.fs"|])>]
+    [<Theory; FileInlineData("Test02.fs")>]
     let``Test02_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -34,9 +36,10 @@ module AttributesNew =
         ]
 
     // SOURCE=Test03.fs SCFLAGS="--test:ErrorRanges"        # Test03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test03.fs"|])>]
+    [<Theory; FileInlineData("Test03.fs")>]
     let``Test03_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -45,9 +48,10 @@ module AttributesNew =
         ]
 
     // SOURCE=Test04.fs SCFLAGS="--test:ErrorRanges"        # Test04.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test04.fs"|])>]
+    [<Theory; FileInlineData("Test04.fs")>]
     let``Test04_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -57,9 +61,10 @@ module AttributesNew =
         ]
 
     // SOURCE=Test05.fs SCFLAGS="--test:ErrorRanges"        # Test05.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test05.fs"|])>]
+    [<Theory; FileInlineData("Test05.fs")>]
     let``Test05_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -70,9 +75,10 @@ module AttributesNew =
         ]
 
     // SOURCE=Test06.fs SCFLAGS="--test:ErrorRanges"        # Test06.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test06.fs"|])>]
+    [<Theory; FileInlineData("Test06.fs")>]
     let``Test06_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -82,9 +88,10 @@ module AttributesNew =
         ]
 
     // SOURCE=Test07.fs SCFLAGS="--test:ErrorRanges"        # Test07.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test07.fs"|])>]
+    [<Theory; FileInlineData("Test07.fs")>]
     let``Test07_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -93,9 +100,10 @@ module AttributesNew =
         ]
 
     // SOURCE=Test08.fs SCFLAGS="--test:ErrorRanges"        # Test08.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test08.fs"|])>]
+    [<Theory; FileInlineData("Test08.fs")>]
     let``Test08_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -105,17 +113,19 @@ module AttributesNew =
         ]
 
     // SOURCE=Test09.fs SCFLAGS="--test:ErrorRanges"        # Test09.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test09.fs"|])>]
+    [<Theory; FileInlineData("Test09.fs")>]
     let``Test09_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed
 
     // SOURCE=Test10.fs SCFLAGS="--test:ErrorRanges"        # Test10.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test10.fs"|])>]
+    [<Theory; FileInlineData("Test10.fs")>]
     let``Test10_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -124,9 +134,10 @@ module AttributesNew =
         ]
 
     // SOURCE=Test11.fs SCFLAGS="--test:ErrorRanges"        # Test11.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test11.fs"|])>]
+    [<Theory; FileInlineData("Test11.fs")>]
     let``Test11_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -137,9 +148,10 @@ module AttributesNew =
         ]
 
     // SOURCE=Test12.fs SCFLAGS="--test:ErrorRanges"        # Test12.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test12.fs"|])>]
+    [<Theory; FileInlineData("Test12.fs")>]
     let``Test12_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -148,9 +160,10 @@ module AttributesNew =
         ]
 
     // SOURCE=Test13.fs SCFLAGS="--test:ErrorRanges"        # Test13.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test13.fs"|])>]
+    [<Theory; FileInlineData("Test13.fs")>]
     let``Test13_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -159,9 +172,10 @@ module AttributesNew =
         ]
 
     // SOURCE=Test14.fs SCFLAGS="--test:ErrorRanges"        # Test14.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test14.fs"|])>]
+    [<Theory; FileInlineData("Test14.fs")>]
     let``Test14_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -172,9 +186,10 @@ module AttributesNew =
         ]
 
     // SOURCE=Test15.fs SCFLAGS="--test:ErrorRanges"        # Test15.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test15.fs"|])>]
+    [<Theory; FileInlineData("Test15.fs")>]
     let``Test15_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -183,9 +198,10 @@ module AttributesNew =
         ]
 
     // SOURCE=Test16.fs SCFLAGS="--test:ErrorRanges"        # Test16.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test16.fs"|])>]
+    [<Theory; FileInlineData("Test16.fs")>]
     let``Test16_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -194,9 +210,10 @@ module AttributesNew =
         ]
 
     // SOURCE=Test17.fs SCFLAGS="--test:ErrorRanges"        # Test17.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test17.fs"|])>]
+    [<Theory; FileInlineData("Test17.fs")>]
     let``Test17_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -208,25 +225,28 @@ module AttributesNew =
         ]
 
     // SOURCE=Test18.fs SCFLAGS="--test:ErrorRanges"        # Test18.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test18.fs"|])>]
+    [<Theory; FileInlineData("Test18.fs")>]
     let``Test18_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed
 
     // SOURCE=Test19.fs SCFLAGS="--test:ErrorRanges"        # Test19.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test19.fs"|])>]
+    [<Theory; FileInlineData("Test19.fs")>]
     let``Test19_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed
 
     // SOURCE=Test20.fs SCFLAGS="--test:ErrorRanges"        # Test20.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test20.fs"|])>]
+    [<Theory; FileInlineData("Test20.fs")>]
     let``Test20_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -237,9 +257,10 @@ module AttributesNew =
         ]
 
     // SOURCE=Test21.fs SCFLAGS="--test:ErrorRanges"        # Test21.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test21.fs"|])>]
+    [<Theory; FileInlineData("Test21.fs")>]
     let``Test21_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -248,9 +269,10 @@ module AttributesNew =
         ]
 
     // SOURCE=Test22.fs SCFLAGS="--test:ErrorRanges"        # Test22.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test22.fs"|])>]
+    [<Theory; FileInlineData("Test22.fs")>]
     let``Test22_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -259,9 +281,10 @@ module AttributesNew =
         ]
 
     // SOURCE=Test23.fs SCFLAGS="--test:ErrorRanges"        # Test23.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test23.fs"|])>]
+    [<Theory; FileInlineData("Test23.fs")>]
     let``Test23_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -272,9 +295,10 @@ module AttributesNew =
         ]
 
     // SOURCE=Test24.fs SCFLAGS="--test:ErrorRanges"        # Test24.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test24.fs"|])>]
+    [<Theory; FileInlineData("Test24.fs")>]
     let``Test24_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -283,9 +307,10 @@ module AttributesNew =
         ]
 
     // SOURCE=Test25.fs SCFLAGS="--test:ErrorRanges"        # Test25.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test25.fs"|])>]
+    [<Theory; FileInlineData("Test25.fs")>]
     let``Test25_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -294,9 +319,10 @@ module AttributesNew =
         ]
 
     // SOURCE=Test26.fs SCFLAGS="--test:ErrorRanges"        # Test26.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test26.fs"|])>]
+    [<Theory; FileInlineData("Test26.fs")>]
     let``Test26_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -307,18 +333,20 @@ module AttributesNew =
         ]
 
     // SOURCE=Test27.fs SCFLAGS="--test:ErrorRanges"        # Test27.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test27.fs"|])>]
+    [<Theory; FileInlineData("Test27.fs")>]
     let``Test27_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--test:ErrorRanges"; "--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
         |> shouldSucceed
 
     // SOURCE=Test28.fs SCFLAGS="--test:ErrorRanges"        # Test28.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Test28.fs"|])>]
+    [<Theory; FileInlineData("Test28.fs")>]
     let``Test28_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail

@@ -32,87 +32,44 @@ module ComputationExpressions =
         |> ignoreWarnings
         |> verifyILBaseline
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"ComputationExpr01.fs"|])>]
-    let ``ComputationExpr01_realsig=true`` compilation =
+    [<Theory; FileInlineData("ComputationExpr01.fs", Realsig=BooleanOptions.Both)>]
+    let ``ComputationExpr01_fs`` compilation =
         compilation
-        |> withRealInternalSignature
+        |> getCompilation
         |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"ComputationExpr01.fs"|])>]
-    let ``ComputationExpr01_realsig=false`` compilation =
+    [<Theory; FileInlineData("ComputationExpr02.fs", Realsig=BooleanOptions.Both)>]
+    let ``ComputationExpr02_fs`` compilation =
         compilation
-        |> withoutRealInternalSignature
+        |> getCompilation
         |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"ComputationExpr02.fs"|])>]
-    let ``ComputationExpr02_realsig=true`` compilation =
+    [<Theory; FileInlineData("ComputationExpr03.fs", Realsig=BooleanOptions.Both)>]
+    let ``ComputationExpr03_fs`` compilation =
         compilation
-        |> withRealInternalSignature
+        |> getCompilation
         |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"ComputationExpr02.fs"|])>]
-    let ``ComputationExpr02_realsig=false`` compilation =
+    [<Theory; FileInlineData("ComputationExpr04.fs", Realsig=BooleanOptions.Both)>]
+    let ``ComputationExpr04_fs`` compilation =
         compilation
-        |> withoutRealInternalSignature
-        |> verifyCompilation
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"ComputationExpr03.fs"|])>]
-    let ``ComputationExpr03_realsig=true`` compilation =
-        compilation
-        |> withRealInternalSignature
-        |> verifyCompilation
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"ComputationExpr03.fs"|])>]
-    let ``ComputationExpr03_realsig=false`` compilation =
-        compilation
-        |> withoutRealInternalSignature
-        |> verifyCompilation
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"ComputationExpr04.fs"|])>]
-    let ``ComputationExpr04_realsig=true`` compilation =
-        compilation
-        |> withRealInternalSignature
+        |> getCompilation
         |> verifyCompilation 
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"ComputationExpr04.fs"|])>]
-    let ``ComputationExpr04_realsig=false`` compilation =
+    [<Theory; FileInlineData("ComputationExpr05.fs", Realsig=BooleanOptions.Both)>]
+    let ``ComputationExpr05_fs`` compilation =
         compilation
-        |> withoutRealInternalSignature
+        |> getCompilation
         |> verifyCompilation 
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"ComputationExpr05.fs"|])>]
-    let ``ComputationExpr05_realsig=true`` compilation =
+    [<Theory; FileInlineData("ComputationExpr06.fs", Realsig=BooleanOptions.Both)>]
+    let ``ComputationExpr06_fs`` compilation =
         compilation
-        |> withRealInternalSignature
+        |> getCompilation
         |> verifyCompilation 
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"ComputationExpr05.fs"|])>]
-    let ``ComputationExpr05_realsig=false`` compilation =
+    [<Theory; FileInlineData("ComputationExpr07.fs", Realsig=BooleanOptions.Both)>]
+    let ``ComputationExpr07_fs`` compilation =
         compilation
-        |> withoutRealInternalSignature
-        |> verifyCompilation 
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"ComputationExpr06.fs"|])>]
-    let ``ComputationExpr06_realsig=true`` compilation =
-        compilation
-        |> withRealInternalSignature
-        |> verifyCompilation 
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"ComputationExpr06.fs"|])>]
-    let ``ComputationExpr06_realsig=false`` compilation =
-        compilation
-        |> withoutRealInternalSignature
-        |> verifyCompilation 
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"ComputationExpr07.fs"|])>]
-    let ``ComputationExpr07_realsig=true`` compilation =
-        compilation
-        |> withRealInternalSignature
-        |> verifyCompilation 
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"ComputationExpr07.fs"|])>]
-    let ``ComputationExpr07_realsig=false`` compilation =
-        compilation
-        |> withoutRealInternalSignature
-        |> withLangVersionPreview // TODO https://github.com/dotnet/fsharp/issues/16739: Remove this when LanguageFeature.LowerIntegralRangesToFastLoops is out of preview.
+        |> getCompilation
         |> verifyCompilation 

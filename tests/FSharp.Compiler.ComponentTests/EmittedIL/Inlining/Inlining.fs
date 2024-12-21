@@ -21,31 +21,25 @@ module Inlining =
         |> withOptions [if realSig then "--realsig+" else "--realsig-" ]
 
     // SOURCE=Match01.fs SCFLAGS="-a --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Match01.dll"	# Match01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Match01_RealInternalSignatureOn.fs"|])>]
-    let ``Match01_RealInternalSignatureOn_fs`` compilation =
+    [<Theory; FileInlineData("Match01.fs", Realsig=BooleanOptions.Both)>]
+    let ``Match01_fs`` compilation =
         compilation
-        |> withRealInternalSignatureOn
-        |> verifyCompilation
-
-    // SOURCE=Match01.fs SCFLAGS="-a --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Match01.dll"	# Match01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Match01_RealInternalSignatureOff.fs"|])>]
-    let ``Match01_RealInternalSignatureOff_fs`` compilation =
-        compilation
-        |> withRealInternalSignatureOff
+        |> getCompilation
         |> verifyCompilation
 
     // SOURCE=Match02.fs SCFLAGS="-a --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Match02.dll"	# Match02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Match02.fs"|])>]
+    [<Theory; FileInlineData("Match02.fs")>]
     let ``Match02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompilation
 
     // SOURCE=StructUnion01.fs SCFLAGS="-a --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd StructUnion01.dll"	# StructUnion01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StructUnion01.fs"|])>]
+    [<Theory; FileInlineData("StructUnion01.fs")>]
     let ``StructUnion01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompilation
-
 
     [<Fact>]
     let ``List contains inlining`` () =

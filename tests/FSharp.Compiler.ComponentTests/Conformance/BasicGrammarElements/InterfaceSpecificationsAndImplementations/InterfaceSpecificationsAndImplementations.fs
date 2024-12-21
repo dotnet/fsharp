@@ -21,23 +21,26 @@ module InterfaceSpecificationsAndImplementations =
         |> compileAndRun
 
     // SOURCE=ConcreteUnitOnInterface01.fs		# ConcreteUnitOnInterface01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ConcreteUnitOnInterface01.fs"|])>]
+    [<Theory; FileInlineData("ConcreteUnitOnInterface01.fs")>]
     let ``ConcreteUnitOnInterface01_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=GenericMethodsOnInterface01.fs		# GenericMethodsOnInterface01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"GenericMethodsOnInterface01.fs"|])>]
+    [<Theory; FileInlineData("GenericMethodsOnInterface01.fs")>]
     let ``GenericMethodsOnInterface01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=GenericMethodsOnInterface02.fs		# GenericMethodsOnInterface02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"GenericMethodsOnInterface02.fs"|])>]
+    [<Theory; FileInlineData("GenericMethodsOnInterface02.fs")>]
     let ``GenericMethodsOnInterface02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
