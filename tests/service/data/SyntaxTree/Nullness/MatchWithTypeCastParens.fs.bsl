@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/MatchWithTypeCastParens.fs", false,
-      QualifiedNameOfFile MatchWithTypeCastParens, [], [],
+      QualifiedNameOfFile MatchWithTypeCastParens, [],
       [SynModuleOrNamespace
          ([MatchWithTypeCastParens], false, AnonModule,
           [Expr
@@ -21,4 +21,5 @@ ImplFile
                    WithKeyword = (1,8--1,12) }), (1,0--2,26))], PreXmlDocEmpty,
           [], None, (1,0--3,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

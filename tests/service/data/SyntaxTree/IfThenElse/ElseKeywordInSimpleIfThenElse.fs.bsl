@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/IfThenElse/ElseKeywordInSimpleIfThenElse.fs", false,
-      QualifiedNameOfFile ElseKeywordInSimpleIfThenElse, [], [],
+      QualifiedNameOfFile ElseKeywordInSimpleIfThenElse, [],
       [SynModuleOrNamespace
          ([ElseKeywordInSimpleIfThenElse], false, AnonModule,
           [Expr
@@ -14,4 +14,5 @@ ImplFile
                                 IfToThenRange = (2,0--2,9) }), (2,0--2,18))],
           PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

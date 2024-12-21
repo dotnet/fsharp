@@ -2,7 +2,7 @@ ImplFile
   (ParsedImplFileInput
      ("/root/ParsedHashDirective/SourceIdentifierAsParsedHashDirectiveArgument.fs",
       false, QualifiedNameOfFile SourceIdentifierAsParsedHashDirectiveArgument,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([SourceIdentifierAsParsedHashDirectiveArgument], false, AnonModule,
           [HashDirective
@@ -13,4 +13,5 @@ ImplFile
                      (0,0--0,0))], (0,0--0,0)), (2,0--2,23))], PreXmlDocEmpty,
           [], None, (2,0--2,23), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
