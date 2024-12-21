@@ -37,9 +37,9 @@
         <target state="translated">Si un type utilise les attributs [&lt;Sealed&gt;] et [&lt;AbstractClass&gt;], cela signifie qu’il est statique. Un constructeur supplémentaire n’est pas autorisé.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkAutoOpenAttributeInTypeAbbrev">
-        <source>FSharp.Core.AutoOpenAttribute should not be aliased.</source>
-        <target state="translated">FSharp.Core.AutoOpenAttribute ne doit pas avoir d'alias.</target>
+      <trans-unit id="chkAttributeAliased">
+        <source>{0} should not be aliased.</source>
+        <target state="new">{0} should not be aliased.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">
@@ -615,6 +615,11 @@
       <trans-unit id="featureStructActivePattern">
         <source>struct representation for active patterns</source>
         <target state="translated">représentation de structure pour les modèles actifs</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureSupportValueOptionsAsOptionalParameters">
+        <source>Support ValueOption as valid type for optional member parameters</source>
+        <target state="new">Support ValueOption as valid type for optional member parameters</target>
         <note />
       </trans-unit>
       <trans-unit id="featureUnionIsPropertiesVisible">

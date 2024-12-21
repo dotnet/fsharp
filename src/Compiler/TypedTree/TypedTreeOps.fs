@@ -3887,9 +3887,15 @@ let mkSome g ty arg m = mkUnionCaseExpr(mkSomeCase g, [ty], [arg], m)
 
 let mkNone g ty m = mkUnionCaseExpr(mkNoneCase g, [ty], [], m)
 
+let mkValueNoneCase (g: TcGlobals) = mkUnionCaseRef g.valueoption_tcr_canon "ValueNone"
+
 let mkValueSomeCase (g: TcGlobals) = mkUnionCaseRef g.valueoption_tcr_canon "ValueSome"
 
 let mkAnySomeCase g isStruct = (if isStruct then mkValueSomeCase g else mkSomeCase g)
+
+let mkValueSome g ty arg m = mkUnionCaseExpr(mkValueSomeCase g, [ty], [arg], m)
+
+let mkValueNone g ty m = mkUnionCaseExpr(mkValueNoneCase g, [ty], [], m)
 
 type ValRef with 
     member vref.IsDispatchSlot = 

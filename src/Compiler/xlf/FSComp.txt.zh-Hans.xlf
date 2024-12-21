@@ -37,9 +37,9 @@
         <target state="translated">如果类型同时使用 [&lt;Sealed&gt;] 和 [&lt;AbstractClass&gt;] 属性，则表示它是静态的。不允许使用其他构造函数。</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkAutoOpenAttributeInTypeAbbrev">
-        <source>FSharp.Core.AutoOpenAttribute should not be aliased.</source>
-        <target state="translated">FSharp.Core.AutoOpenAttribute 不应为别名。</target>
+      <trans-unit id="chkAttributeAliased">
+        <source>{0} should not be aliased.</source>
+        <target state="new">{0} should not be aliased.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkConstructorWithArgumentsOnStaticClasses">
@@ -615,6 +615,11 @@
       <trans-unit id="featureStructActivePattern">
         <source>struct representation for active patterns</source>
         <target state="translated">活动模式的结构表示形式</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureSupportValueOptionsAsOptionalParameters">
+        <source>Support ValueOption as valid type for optional member parameters</source>
+        <target state="new">Support ValueOption as valid type for optional member parameters</target>
         <note />
       </trans-unit>
       <trans-unit id="featureUnionIsPropertiesVisible">

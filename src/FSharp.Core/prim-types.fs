@@ -183,7 +183,7 @@ namespace Microsoft.FSharp.Core
         inherit Attribute()
         member _.CompiledName = compiledName
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct ||| AttributeTargets.ReturnValue, AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct ||| AttributeTargets.ReturnValue ||| AttributeTargets.Parameter ,AllowMultiple=false)>]  
     [<Sealed>]
     type StructAttribute() =
         inherit Attribute()
