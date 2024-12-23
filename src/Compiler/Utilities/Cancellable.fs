@@ -14,8 +14,7 @@ type Cancellable =
         tokenHolder.Value
         |> ValueOption.defaultWith (fun () -> if guard then failwith msg else CancellationToken.None)
 
-    static member HasCancellationToken =
-        tokenHolder.Value.IsSome
+    static member HasCancellationToken = tokenHolder.Value.IsSome
 
     static member Token = ensureToken "Token not available outside of Cancellable computation."
 
