@@ -3217,7 +3217,7 @@ type Measure =
     | RationalPower of measure: Measure * power: Rational * range: range
 
     override ToString: unit -> string
-    
+
     member Range: range
 
 type Attribs = Attrib list
