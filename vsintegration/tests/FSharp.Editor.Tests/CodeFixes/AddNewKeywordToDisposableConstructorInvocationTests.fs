@@ -75,7 +75,7 @@ let sr = new System.IO.StreamReader(path)
     Assert.Equal(expected, actual)
 
 [<Fact>]
-let ``Fixes FS0760 — adds parentheses when needed and keeps space`` () =
+let ``Fixes FS0760 — keeps space`` () =
     let code =
         """
 let stream = System.IO.MemoryStream ()
@@ -96,7 +96,7 @@ let stream = new System.IO.MemoryStream ()
     Assert.Equal(expected, actual)
 
 [<Fact>]
-let ``Fixes FS0760 — adds parentheses when needed and does not add space`` () =
+let ``Fixes FS0760 — does not add space`` () =
     let code =
         """
 let stream = System.IO.MemoryStream()
