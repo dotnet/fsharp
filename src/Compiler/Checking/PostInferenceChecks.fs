@@ -397,37 +397,24 @@ let rec CheckTypeDeep (cenv: cenv) (visitTy, visitTyconRefOpt, visitAppTyOpt, vi
         CheckTypeDeep cenv f g env typeInstParentOpt body
         tps |> List.iter (fun tp -> tp.Constraints |> List.iter (CheckTypeConstraintDeep cenv f g env))
 
-    | TType_measure (Measure.Var(typar= { typar_solution = Some typeApp } )) -> CheckTypeDeep cenv f g env typeInstParentOpt typeApp
     | TType_measure tm ->
-        match tm with
-        | Measure.Const(range = m) ->
+        let checkAttribs tm m =
             match tm with
-            | MeasureAttrib attribs ->
-                CheckFSharpAttributes g attribs m |> CommitOperationResult
+            | MeasureAttrib attribs when not attribs.IsEmpty -> CheckFSharpAttributes g attribs m |> CommitOperationResult
             | _ -> ()
+
+        match tm with
+        | Measure.Const(range = m) -> checkAttribs tm m
+        | Measure.Inv ms -> checkAttribs ms ms.Range
+        | Measure.One(m) -> checkAttribs tm m
+        | Measure.RationalPower(measure = ms1; range = m) -> checkAttribs ms1 m
         | Measure.Prod(ms1, ms2, m) ->
             match ms1, ms2 with
-            | MeasureAttrib attribs1, MeasureAttrib attribs2 ->
-                CheckFSharpAttributes g attribs1 ms1.Range |> CommitOperationResult
-                CheckFSharpAttributes g attribs2 ms2.Range |> CommitOperationResult
-            | _ -> ()
-            
-        | Measure.Inv ms ->
-            match ms with
-            | MeasureAttrib attribs ->
-                CheckFSharpAttributes g attribs ms.Range |> CommitOperationResult
-            | _ -> ()
-        | Measure.One(m) ->
-            match tm with
-            | MeasureAttrib attribs ->
-                CheckFSharpAttributes g attribs m |> CommitOperationResult
-            | _ -> ()
-        | Measure.RationalPower(measure = ms; range = m) ->
-            match ms with
-            | MeasureAttrib attribs ->
-                CheckFSharpAttributes g attribs m |> CommitOperationResult
-            | _ -> ()
-        | Measure.Var(typar, m) -> ()
+            | MeasureAttrib _, MeasureAttrib _ ->
+                checkAttribs ms1 ms1.Range
+                checkAttribs ms2 ms2.Range
+            | _ -> ()            
+        | _ -> ()
 
     | TType_app (tcref, tinst, _) ->
         match visitTyconRefOpt with
