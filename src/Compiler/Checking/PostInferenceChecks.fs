@@ -7,6 +7,8 @@ module internal FSharp.Compiler.PostTypeCheckSemanticChecks
 open System
 open System.Collections.Generic
 
+open FSharp.Compiler.AttributeChecking
+open FSharp.Compiler.NameResolution
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -347,6 +349,18 @@ type TypeInstCtx =
                         match x with
                         | IlGenericInst(_,ilTypar) -> ilTypar.HasAllowsRefStruct
                         | _ -> false
+      
+/// Check the attributes of a measure
+[<return:Struct>]
+let rec (|MeasureAttrib|_|) measure =
+    match measure with
+    | Measure.Const(tcref, _) -> ValueSome(tcref.Attribs)
+    | Measure.Prod(measure1= MeasureAttrib ms1; measure2= MeasureAttrib ms2) -> ValueSome (ms1 @ ms2)
+    | Measure.Inv(MeasureAttrib ms) -> ValueSome ms
+    | Measure.One(m) -> ValueNone
+    | Measure.RationalPower(measure = MeasureAttrib ms) -> ValueSome ms
+    | Measure.Var _ -> ValueNone
+    | _ -> ValueNone
 
 let rec CheckTypeDeep (cenv: cenv) (visitTy, visitTyconRefOpt, visitAppTyOpt, visitTraitSolutionOpt, visitTyparOpt as f) (g: TcGlobals) env (typeInstParentOpt:TypeInstCtx) ty =
     // We iterate the _solved_ constraints as well, to pick up any record of trait constraint solutions
@@ -383,7 +397,37 @@ let rec CheckTypeDeep (cenv: cenv) (visitTy, visitTyconRefOpt, visitAppTyOpt, vi
         CheckTypeDeep cenv f g env typeInstParentOpt body
         tps |> List.iter (fun tp -> tp.Constraints |> List.iter (CheckTypeConstraintDeep cenv f g env))
 
-    | TType_measure _ -> ()
+    | TType_measure (Measure.Var(typar= { typar_solution = Some typeApp } )) -> CheckTypeDeep cenv f g env typeInstParentOpt typeApp
+    | TType_measure tm ->
+        match tm with
+        | Measure.Const(range = m) ->
+            match tm with
+            | MeasureAttrib attribs ->
+                CheckFSharpAttributes g attribs m |> CommitOperationResult
+            | _ -> ()
+        | Measure.Prod(ms1, ms2, m) ->
+            match ms1, ms2 with
+            | MeasureAttrib attribs1, MeasureAttrib attribs2 ->
+                CheckFSharpAttributes g attribs1 ms1.Range |> CommitOperationResult
+                CheckFSharpAttributes g attribs2 ms2.Range |> CommitOperationResult
+            | _ -> ()
+            
+        | Measure.Inv ms ->
+            match ms with
+            | MeasureAttrib attribs ->
+                CheckFSharpAttributes g attribs ms.Range |> CommitOperationResult
+            | _ -> ()
+        | Measure.One(m) ->
+            match tm with
+            | MeasureAttrib attribs ->
+                CheckFSharpAttributes g attribs m |> CommitOperationResult
+            | _ -> ()
+        | Measure.RationalPower(measure = ms; range = m) ->
+            match ms with
+            | MeasureAttrib attribs ->
+                CheckFSharpAttributes g attribs m |> CommitOperationResult
+            | _ -> ()
+        | Measure.Var(typar, m) -> ()
 
     | TType_app (tcref, tinst, _) ->
         match visitTyconRefOpt with

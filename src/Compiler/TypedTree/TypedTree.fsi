@@ -3199,24 +3199,26 @@ type TupInfo =
 type Measure =
 
     /// A variable unit-of-measure
-    | Var of typar: Typar
+    | Var of typar: Typar * range: range
 
     /// A constant, leaf unit-of-measure such as 'kg' or 'm'
-    | Const of tyconRef: TyconRef
+    | Const of tyconRef: TyconRef * range: range
 
     /// A product of two units of measure
-    | Prod of measure1: Measure * measure2: Measure
+    | Prod of measure1: Measure * measure2: Measure * range: range
 
     /// An inverse of a units of measure expression
     | Inv of measure: Measure
 
     /// The unit of measure '1', e.g. float = float<1>
-    | One
+    | One of range: range
 
     /// Raising a measure to a rational power
-    | RationalPower of measure: Measure * power: Rational
+    | RationalPower of measure: Measure * power: Rational * range: range
 
     override ToString: unit -> string
+    
+    member Range: range
 
 type Attribs = Attrib list
 

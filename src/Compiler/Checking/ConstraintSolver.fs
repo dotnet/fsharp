@@ -42,6 +42,7 @@
 
 module internal FSharp.Compiler.ConstraintSolver
 
+open FSharp.Compiler.Text.Range
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -729,12 +730,12 @@ let SubstMeasureWarnIfRigid (csenv: ConstraintSolverEnv) trace (v: Typar) ms =
             let tpnmOpt = if v.IsCompilerGenerated then None else Some v.Name
             do! SolveTypStaticReq csenv trace v.StaticReq (TType_measure ms)
             SubstMeasure v ms
-            return! WarnD(NonRigidTypar(csenv.DisplayEnv, tpnmOpt, v.Range, TType_measure (Measure.Var v), TType_measure ms, csenv.m))
+            return! WarnD(NonRigidTypar(csenv.DisplayEnv, tpnmOpt, v.Range, TType_measure (Measure.Var(v, v.Range)), TType_measure ms, csenv.m))
         else
             // Propagate static requirements from 'tp' to 'ty'
             do! SolveTypStaticReq csenv trace v.StaticReq (TType_measure ms)
             SubstMeasure v ms
-            if v.Rigidity = TyparRigidity.Anon && measureEquiv csenv.g ms Measure.One then 
+            if v.Rigidity = TyparRigidity.Anon && measureEquiv csenv.g ms (Measure.One(ms.Range)) then 
                 return! WarnD(Error(FSComp.SR.csCodeLessGeneric(), v.Range))
             else
                 ()
@@ -760,17 +761,17 @@ let UnifyMeasureWithOne (csenv: ConstraintSolverEnv) trace ms =
     match FindPreferredTypar nonRigidVars with
     | (v, e) :: vs ->
         let unexpandedCons = ListMeasureConOccsWithNonZeroExponents csenv.g false ms
-        let newms = ProdMeasures (List.map (fun (c, e') -> Measure.RationalPower (Measure.Const c, NegRational (DivRational e' e))) unexpandedCons 
-                                @ List.map (fun (v, e') -> Measure.RationalPower (Measure.Var v, NegRational (DivRational e' e))) (vs @ rigidVars))
+        let newms = ProdMeasures (List.map (fun (c, e') -> Measure.RationalPower(Measure.Const(c, c.Range), NegRational (DivRational e' e), ms.Range)) unexpandedCons 
+                                @ List.map (fun (v, e') -> Measure.RationalPower (Measure.Var(v, v.Range), NegRational (DivRational e' e), ms.Range)) (vs @ rigidVars))
 
         SubstMeasureWarnIfRigid csenv trace v newms
 
     // Otherwise we require ms to be 1
-    | [] -> if measureEquiv csenv.g ms Measure.One then CompleteD else localAbortD
+    | [] -> if measureEquiv csenv.g ms (Measure.One(ms.Range)) then CompleteD else localAbortD
     
 /// Imperatively unify unit-of-measure expression ms1 against ms2
 let UnifyMeasures (csenv: ConstraintSolverEnv) trace ms1 ms2 = 
-    UnifyMeasureWithOne csenv trace (Measure.Prod(ms1, Measure.Inv ms2))
+    UnifyMeasureWithOne csenv trace (Measure.Prod(ms1, Measure.Inv ms2, (unionRanges ms1.Range ms2.Range)))
 
 /// Simplify a unit-of-measure expression ms that forms part of a type scheme. 
 /// We make substitutions for vars, which are the (remaining) bound variables
@@ -785,18 +786,18 @@ let SimplifyMeasure g vars ms =
           let newvar = if v.IsCompilerGenerated then NewAnonTypar (TyparKind.Measure, v.Range, TyparRigidity.Flexible, v.StaticReq, v.DynamicReq)
                                                 else NewNamedInferenceMeasureVar (v.Range, TyparRigidity.Flexible, v.StaticReq, v.Id)
           let remainingvars = ListSet.remove typarEq v vars
-          let newvarExpr = if SignRational e < 0 then Measure.Inv (Measure.Var newvar) else Measure.Var newvar
+          let newvarExpr = if SignRational e < 0 then Measure.Inv (Measure.Var(newvar, newvar.Range)) else Measure.Var(newvar, newvar.Range)
           let nonZeroCon = ListMeasureConOccsWithNonZeroExponents g false ms
           let nonZeroVar = ListMeasureVarOccsWithNonZeroExponents ms
           let newms =
               ProdMeasures [
                   for (c, e') in nonZeroCon do
-                      Measure.RationalPower (Measure.Const c, NegRational (DivRational e' e)) 
+                      Measure.RationalPower (Measure.Const(c, c.Range), NegRational (DivRational e' e), ms.Range) 
                   for (v', e') in nonZeroVar do
                       if typarEq v v' then 
                           newvarExpr 
                       else 
-                          Measure.RationalPower (Measure.Var v', NegRational (DivRational e' e))
+                          Measure.RationalPower (Measure.Var(v', v'.Range), NegRational (DivRational e' e), ms.Range)
               ]
           SubstMeasure v newms
           match vs with 
@@ -880,7 +881,7 @@ let NormalizeExponentsInTypeScheme uvars ty =
         v 
     else
         let v' = NewAnonTypar (TyparKind.Measure, v.Range, TyparRigidity.Flexible, v.StaticReq, v.DynamicReq)
-        SubstMeasure v (Measure.RationalPower (Measure.Var v', DivRational OneRational expGcd))
+        SubstMeasure v (Measure.RationalPower (Measure.Var(v', v'.Range), DivRational OneRational expGcd, v.Range))
         v')
     
 // We normalize unit-of-measure-polymorphic type schemes. There  
@@ -922,7 +923,7 @@ let SimplifyMeasuresInTypeScheme g resultFirst (generalizable: Typar list) ty co
     let generalized' = NormalizeExponentsInTypeScheme generalized ty 
     vars @ List.rev generalized'
 
-let freshMeasure () = Measure.Var (NewInferenceMeasurePar ())
+let freshMeasure () = Measure.Var((NewInferenceMeasurePar ()), range0)
 
 let CheckWarnIfRigid (csenv: ConstraintSolverEnv) ty1 (r: Typar) ty =
     let g = csenv.g
@@ -1112,7 +1113,7 @@ and SolveTyparEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalT
         do! DepthCheck ndeep m
         match ty1 with 
         | TType_var (r, _)
-        | TType_measure (Measure.Var r) ->
+        | TType_measure (Measure.Var(r, _)) ->
             do! SolveTyparEqualsTypePart1 csenv m2 trace ty1 r ty 
             do! SolveTyparEqualsTypePart2 csenv ndeep m2 trace r ty 
         | _ -> failwith "SolveTyparEqualsType"
@@ -1125,7 +1126,7 @@ and SolveTyparsEqualTypes (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
                 fun tpTy ty ->
                     match tpTy with
                     | TType_var (r, _)
-                    | TType_measure (Measure.Var r) ->
+                    | TType_measure (Measure.Var(r, _)) ->
                         SolveTyparEqualsTypePart1 csenv m2 trace tpTy r ty
                     | _ ->
                         failwith "SolveTyparsEqualTypes") tpTys tys
@@ -1133,7 +1134,7 @@ and SolveTyparsEqualTypes (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
                 fun tpTy ty -> 
                     match tpTy with 
                     | TType_var (r, _)
-                    | TType_measure (Measure.Var r) ->
+                    | TType_measure (Measure.Var(r, _)) ->
                         SolveTyparEqualsTypePart2 csenv ndeep m2 trace r ty 
                     | _ ->
                         failwith "SolveTyparsEqualTypes") tpTys tys
@@ -1329,13 +1330,13 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
         // Catch float<_>=float<1>, float32<_>=float32<1> and decimal<_>=decimal<1> 
         | (_, TType_app (tc2, [ms2], _)) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty1 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms2])) ->
             trackErrors {
-                do! SolveTypeEqualsType csenv ndeep m2 trace None (TType_measure Measure.One) ms2
+                do! SolveTypeEqualsType csenv ndeep m2 trace None (TType_measure(Measure.One(m2))) ms2
                 do! SolveNullnessEquiv csenv m2 trace ty1 ty2 (nullnessOfTy g sty1) (nullnessOfTy g sty2)
             }
 
         | (TType_app (tc1, [ms1], _), _) when (tc1.IsMeasureableReprTycon && typeEquiv csenv.g sty2 (reduceTyconRefMeasureableOrProvided csenv.g tc1 [ms1])) ->
             trackErrors {
-                do! SolveTypeEqualsType csenv ndeep m2 trace None ms1 (TType_measure Measure.One)
+                do! SolveTypeEqualsType csenv ndeep m2 trace None ms1 (TType_measure(Measure.One(m2)))
                 do! SolveNullnessEquiv csenv m2 trace ty1 ty2 (nullnessOfTy g sty1) (nullnessOfTy g sty2)
             }
 
@@ -1518,13 +1519,13 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
         // Enforce the identities float=float<1>, float32=float32<1> and decimal=decimal<1> 
         | _, TType_app (tc2, [ms2], _) when tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty1 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms2]) ->
             trackErrors {
-                do! SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ms2 (TType_measure Measure.One)
+                do! SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ms2 (TType_measure(Measure.One(m2)))
                 do! SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 (nullnessOfTy g sty1) (nullnessOfTy g sty2)
             }
 
         | TType_app (tc1, [ms1], _), _ when tc1.IsMeasureableReprTycon && typeEquiv csenv.g sty2 (reduceTyconRefMeasureableOrProvided csenv.g tc1 [ms1]) ->
             trackErrors {
-                do! SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ms1 (TType_measure Measure.One)
+                do! SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ms1 (TType_measure(Measure.One(m2)))
                 do! SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 (nullnessOfTy g sty1) (nullnessOfTy g sty2)
             }
 
@@ -1620,7 +1621,7 @@ and DepthCheck ndeep m =
 and SolveDimensionlessNumericType (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
     match getMeasureOfType csenv.g ty with
     | Some (tcref, _) -> 
-        SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty (mkWoNullAppTy tcref [TType_measure Measure.One])
+        SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty (mkWoNullAppTy tcref [TType_measure(Measure.One(m2))])
     | None ->
         CompleteD
 
@@ -1727,7 +1728,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                         | Some (tcref, ms1) ->
                             let ms2 = freshMeasure ()
                             do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy2 (mkWoNullAppTy tcref [TType_measure ms2])
-                            do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkWoNullAppTy tcref [TType_measure (Measure.Prod(ms1, if nm = "op_Multiply" then ms2 else Measure.Inv ms2))])
+                            do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkWoNullAppTy tcref [TType_measure (Measure.Prod(ms1, (if nm = "op_Multiply" then ms2 else Measure.Inv ms2), unionRanges ms1.Range ms2.Range))])
                             return TTraitBuiltIn
 
                         | _ ->
@@ -1736,7 +1737,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                             | Some (tcref, ms2) ->
                                 let ms1 = freshMeasure ()
                                 do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy1 (mkWoNullAppTy tcref [TType_measure ms1]) 
-                                do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkWoNullAppTy tcref [TType_measure (Measure.Prod(ms1, if nm = "op_Multiply" then ms2 else Measure.Inv ms2))])
+                                do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkWoNullAppTy tcref [TType_measure (Measure.Prod(ms1, (if nm = "op_Multiply" then ms2 else Measure.Inv ms2), unionRanges ms1.Range ms2.Range))])
                                 return TTraitBuiltIn
 
                             | _ ->
@@ -1870,7 +1871,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                         match getMeasureOfType g argTy1 with
                             | Some (tcref, _) -> 
                                 let ms1 = freshMeasure () 
-                                do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy1 (mkWoNullAppTy tcref [TType_measure (Measure.Prod (ms1, ms1))])
+                                do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy1 (mkWoNullAppTy tcref [TType_measure (Measure.Prod (ms1, ms1, ms1.Range))])
                                 do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkWoNullAppTy tcref [TType_measure ms1])
                                 return TTraitBuiltIn
                             | None -> 
@@ -1923,7 +1924,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                         do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy2 argTy1
                         match getMeasureOfType g argTy1 with
                         | None -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy argTy1
-                        | Some (tcref, _) -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkWoNullAppTy tcref [TType_measure Measure.One])
+                        | Some (tcref, _) -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy (mkWoNullAppTy tcref [TType_measure(Measure.One(tcref.Range))])
                         return TTraitBuiltIn
 
                     | _ -> 

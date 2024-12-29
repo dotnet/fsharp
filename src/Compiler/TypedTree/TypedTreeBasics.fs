@@ -192,7 +192,7 @@ let KnownWithoutNull = Nullness.Known NullnessInfo.WithoutNull
 let mkTyparTy (tp:Typar) = 
     match tp.Kind with 
     | TyparKind.Type -> tp.AsType KnownWithoutNull
-    | TyparKind.Measure -> TType_measure (Measure.Var tp)
+    | TyparKind.Measure -> TType_measure (Measure.Var(tp, tp.Range))
 
 // For fresh type variables clear the StaticReq when copying because the requirement will be re-established through the
 // process of type inference.
@@ -219,7 +219,7 @@ let tryShortcutSolvedUnitPar canShortcut (r: Typar) =
     | Some (TType_measure unt) -> 
         if canShortcut then 
             match unt with 
-            | Measure.Var r2 -> 
+            | Measure.Var(typar= r2) -> 
                match r2.Solution with
                | None -> ()
                | Some _ as soln -> 
@@ -231,7 +231,7 @@ let tryShortcutSolvedUnitPar canShortcut (r: Typar) =
       
 let rec stripUnitEqnsAux canShortcut unt = 
     match unt with 
-    | Measure.Var r when r.IsSolved -> stripUnitEqnsAux canShortcut (tryShortcutSolvedUnitPar canShortcut r)
+    | Measure.Var(typar = r) when r.IsSolved -> stripUnitEqnsAux canShortcut (tryShortcutSolvedUnitPar canShortcut r)
     | _ -> unt
 
 let combineNullness (nullnessOrig: Nullness) (nullnessNew: Nullness) = 

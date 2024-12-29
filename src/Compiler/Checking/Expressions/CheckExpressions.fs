@@ -798,23 +798,23 @@ let TcConst (cenv: cenv) (overallTy: TType) m env synConst =
     let g = cenv.g
     let rec tcMeasure ms =
         match ms with
-        | SynMeasure.One _ -> Measure.One
+        | SynMeasure.One(range = m) -> Measure.One(m)
         | SynMeasure.Named(tc, m) ->
             let ad = env.eAccessRights
             let _, tcref, _ = ForceRaise(ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurrence.Use OpenQualified env.eNameResEnv ad tc TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.No)
             match tcref.TypeOrMeasureKind with
             | TyparKind.Type -> error(Error(FSComp.SR.tcExpectedUnitOfMeasureNotType(), m))
-            | TyparKind.Measure -> Measure.Const tcref
+            | TyparKind.Measure -> Measure.Const(tcref, m)
 
-        | SynMeasure.Power(measure = ms; power = exponent) -> Measure.RationalPower (tcMeasure ms, TcSynRationalConst exponent)
-        | SynMeasure.Product(measure1 = ms1; measure2 = ms2) -> Measure.Prod(tcMeasure ms1, tcMeasure ms2)
+        | SynMeasure.Power(measure = ms; power = exponent; range= m) -> Measure.RationalPower (tcMeasure ms, TcSynRationalConst exponent, m)
+        | SynMeasure.Product(measure1 = ms1; measure2 = ms2; range= m) -> Measure.Prod(tcMeasure ms1, tcMeasure ms2, m)
         | SynMeasure.Divide(ms1, _, (SynMeasure.Seq (_ :: _ :: _, _) as ms2), m) ->
             warning(Error(FSComp.SR.tcImplicitMeasureFollowingSlash(), m))
             let factor1 = ms1 |> Option.defaultValue (SynMeasure.One Range.Zero)
-            Measure.Prod(tcMeasure factor1, Measure.Inv (tcMeasure ms2))
-        | SynMeasure.Divide(measure1 = ms1; measure2 = ms2) ->
+            Measure.Prod(tcMeasure factor1, Measure.Inv (tcMeasure ms2), m)
+        | SynMeasure.Divide(measure1 = ms1; measure2 = ms2; range= m) ->
             let factor1 = ms1 |> Option.defaultValue (SynMeasure.One Range.Zero)
-            Measure.Prod(tcMeasure factor1, Measure.Inv (tcMeasure ms2))
+            Measure.Prod(tcMeasure factor1, Measure.Inv (tcMeasure ms2), m)
         | SynMeasure.Seq(mss, _) -> ProdMeasures (List.map tcMeasure mss)
         | SynMeasure.Anon _ -> error(Error(FSComp.SR.tcUnexpectedMeasureAnon(), m))
         | SynMeasure.Var(_, m) -> error(Error(FSComp.SR.tcNonZeroConstantCannotHaveGenericUnit(), m))
@@ -826,10 +826,10 @@ let TcConst (cenv: cenv) (overallTy: TType) m env synConst =
         let measureTy =
             match synConst with
             | SynConst.Measure(synMeasure = SynMeasure.Anon _) ->
-              (mkWoNullAppTy tcr [TType_measure (Measure.Var (NewAnonTypar (TyparKind.Measure, m, TyparRigidity.Anon, (if iszero then TyparStaticReq.None else TyparStaticReq.HeadType), TyparDynamicReq.No)))])
+              (mkWoNullAppTy tcr [TType_measure (Measure.Var(NewAnonTypar (TyparKind.Measure, m, TyparRigidity.Anon, (if iszero then TyparStaticReq.None else TyparStaticReq.HeadType), TyparDynamicReq.No), m))])
 
             | SynConst.Measure(synMeasure = ms) -> mkWoNullAppTy tcr [TType_measure (tcMeasure ms)]
-            | _ -> mkWoNullAppTy tcr [TType_measure Measure.One]
+            | _ -> mkWoNullAppTy tcr [TType_measure(Measure.One(m))]
         unif measureTy
 
     let expandedMeasurablesEnabled =
@@ -4550,7 +4550,7 @@ and TcLongIdentType kindOpt (cenv: cenv) newOk checkConstraints occ iwsam env tp
         error(Error(FSComp.SR.tcExpectedUnitOfMeasureNotType(), m))
         TType_measure (NewErrorMeasure ()), tpenv
     | _, TyparKind.Measure ->
-        TType_measure (Measure.Const tcref), tpenv
+        TType_measure (Measure.Const(tcref, m)), tpenv
     | _, TyparKind.Type ->
         TcTypeApp cenv newOk checkConstraints occ env tpenv m tcref tinstEnclosing [] inst
 
@@ -4585,7 +4585,7 @@ and TcLongIdentAppType kindOpt (cenv: cenv) newOk checkConstraints occ iwsam env
         match args, postfix with
         | [arg], true ->
             let ms, tpenv = TcMeasure cenv newOk checkConstraints occ env tpenv arg m
-            TType_measure (Measure.Prod(Measure.Const tcref, ms)), tpenv
+            TType_measure (Measure.Prod(Measure.Const(tcref, tcref.Range), ms, ms.Range)), tpenv
 
         | _, _ ->
             errorR(Error(FSComp.SR.tcUnitsOfMeasureInvalidInTypeConstructor(), m))
@@ -4662,14 +4662,14 @@ and TcArrayType (cenv: cenv) newOk checkConstraints occ env tpenv rank elemTy m 
 and TcTypeParameter kindOpt (cenv: cenv) env newOk tpenv tp =
     let tpR, tpenv = TcTypeOrMeasureParameter kindOpt cenv env newOk tpenv tp
     match tpR.Kind with
-    | TyparKind.Measure -> TType_measure (Measure.Var tpR), tpenv
+    | TyparKind.Measure -> TType_measure (Measure.Var(tpR, tpR.Range)), tpenv
     | TyparKind.Type -> mkTyparTy tpR, tpenv
 
 // _ types
 and TcAnonType kindOpt (cenv: cenv) newOk tpenv m =
     let tp: Typar = TcAnonTypeOrMeasure kindOpt cenv TyparRigidity.Anon TyparDynamicReq.No newOk m
     match tp.Kind with
-    | TyparKind.Measure -> TType_measure (Measure.Var tp), tpenv
+    | TyparKind.Measure -> TType_measure (Measure.Var(tp, m)), tpenv
     | TyparKind.Type -> mkTyparTy tp, tpenv
 
 and TcTypeWithConstraints (cenv: cenv) env newOk checkConstraints occ tpenv synTy synConstraints =
@@ -4715,7 +4715,7 @@ and TcTypeStaticConstant kindOpt tpenv c m =
         errorR(Error(FSComp.SR.parsInvalidLiteralInType(), m))
         NewErrorType (), tpenv
     | SynConst.Int32 1, _ ->
-        TType_measure Measure.One, tpenv
+        TType_measure (Measure.One(m)), tpenv
     | _ ->
         errorR(Error(FSComp.SR.parsInvalidLiteralInType(), m))
         NewErrorType (), tpenv
@@ -4727,7 +4727,7 @@ and TcTypeMeasurePower kindOpt (cenv: cenv) newOk checkConstraints occ env tpenv
         NewErrorType (), tpenv
     | _ ->
         let ms, tpenv = TcMeasure cenv newOk checkConstraints occ env tpenv ty m
-        TType_measure (Measure.RationalPower (ms, TcSynRationalConst exponent)), tpenv
+        TType_measure (Measure.RationalPower (ms, TcSynRationalConst exponent, ms.Range)), tpenv
 
 and TcTypeMeasureApp kindOpt (cenv: cenv) newOk checkConstraints occ env tpenv arg1 args postfix m =
     match arg1 with
@@ -4736,7 +4736,7 @@ and TcTypeMeasureApp kindOpt (cenv: cenv) newOk checkConstraints occ env tpenv a
         | (None | Some TyparKind.Measure), [arg2], true ->
             let ms1, tpenv = TcMeasure cenv newOk checkConstraints occ env tpenv arg1 m1
             let ms2, tpenv = TcMeasure cenv newOk checkConstraints occ env tpenv arg2 m
-            TType_measure (Measure.Prod(ms1, ms2)), tpenv
+            TType_measure (Measure.Prod(ms1, ms2, m)), tpenv
 
         | _ ->
             errorR(Error(FSComp.SR.tcTypeParameterInvalidAsTypeConstructor(), m))
@@ -4810,12 +4810,12 @@ and TcMeasuresAsTuple (cenv: cenv) newOk checkConstraints occ env (tpenv: Unscop
             gather args tpenv ms1
         | SynTupleTypeSegment.Star _ :: SynTupleTypeSegment.Type ty :: args ->
             let ms1, tpenv = TcMeasure cenv newOk checkConstraints occ env tpenv ty m
-            gather args tpenv (Measure.Prod(acc, ms1))
+            gather args tpenv (Measure.Prod(acc, ms1, m))
         | SynTupleTypeSegment.Slash _ :: SynTupleTypeSegment.Type ty :: args ->
             let ms1, tpenv = TcMeasure cenv newOk checkConstraints occ env tpenv ty m
-            gather args tpenv (Measure.Prod(acc, Measure.Inv ms1))
+            gather args tpenv (Measure.Prod(acc, Measure.Inv ms1, m))
         | _ -> failwith "impossible"
-    gather args tpenv Measure.One
+    gather args tpenv (Measure.One(m))
 
 and TcTypesOrMeasures optKinds (cenv: cenv) newOk checkConstraints occ env tpenv args m =
     match optKinds with
@@ -5043,7 +5043,7 @@ and TcTypeApp (cenv: cenv) newOk checkConstraints occ env tpenv m tcref pathType
     let tps = tinst |> List.skip pathTypeArgsLength |> List.map (fun t ->
         match t with
         | TType_var(typar, _)
-        | TType_measure(Measure.Var typar) -> typar
+        | TType_measure(Measure.Var(typar= typar)) -> typar
         | t -> failwith $"TcTypeApp: {t}"
     )
 
@@ -5077,7 +5077,7 @@ and TcTypeOrMeasureAndRecover kindOpt (cenv: cenv) newOk checkConstraints occ iw
 
         let recoveryTy =
             match kindOpt, newOk with
-            | Some TyparKind.Measure, NoNewTypars -> TType_measure Measure.One
+            | Some TyparKind.Measure, NoNewTypars -> TType_measure(Measure.One ty.Range)
             | Some TyparKind.Measure, _ -> TType_measure (NewErrorMeasure ())
             | _, NoNewTypars -> g.obj_ty_ambivalent
             | _ -> NewErrorType ()

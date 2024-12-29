@@ -359,10 +359,10 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
         debug.WriteMeasure isStandalone ms
 
         match ms with
-        | Measure.Var typar ->
+        | Measure.Var(typar= typar) ->
             writeString ItemKeyTags.typeMeasureVar
             writeTypar isStandalone typar
-        | Measure.Const tcref ->
+        | Measure.Const(tyconRef= tcref) ->
             writeString ItemKeyTags.typeMeasureCon
             writeEntityRef tcref
         | _ -> ()
