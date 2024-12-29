@@ -44,6 +44,22 @@ type internal AddNewKeywordCodeFixProvider() =
                         match expr with
                         | SynExpr.Ident id -> Some(SynType.LongIdent(SynLongIdent([ id ], [], [])))
                         | SynExpr.LongIdent(longDotId = longDotId) -> Some(SynType.LongIdent longDotId)
+                        | SynExpr.TypeApp(SynExpr.Ident id, lessRange, typeArgs, commaRanges, greaterRange, _, range) ->
+                            Some(
+                                SynType.App(
+                                    SynType.LongIdent(SynLongIdent([ id ], [], [])),
+                                    Some lessRange,
+                                    typeArgs,
+                                    commaRanges,
+                                    greaterRange,
+                                    false,
+                                    range
+                                )
+                            )
+                        | SynExpr.TypeApp(SynExpr.LongIdent(longDotId = longDotId), lessRange, typeArgs, commaRanges, greaterRange, _, range) ->
+                            Some(
+                                SynType.App(SynType.LongIdent longDotId, Some lessRange, typeArgs, commaRanges, greaterRange, false, range)
+                            )
                         | _ -> None
 
                     match node with
