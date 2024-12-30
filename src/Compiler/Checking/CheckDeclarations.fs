@@ -5689,7 +5689,7 @@ let CheckModuleSignature g (cenv: cenv) m denvAtEnd rootSigOpt implFileTypePrior
                 |]
 
         // We want to show imperative type variables in any types in error messages at this late point 
-        let denv = { denvAtEnd with showInferenceTyparAnnotations=true }
+        let denv = { denvAtEnd with showInferenceTyparAnnotations=true;showNullnessAnnotations=Some g.checkNullness }
         try 
                 
             // As typechecked the signature and implementation use different tycons etc. 
