@@ -1991,7 +1991,7 @@ let rec TryTranslateComputationExpression
         | SynExpr.LetOrUseBang(
             bindDebugPoint = spBind
             isUse = true
-            pat = pat
+            pat = SynPat.Wild _ as pat
             isFromSource = isFromSource
             rhs = rhsExpr
             andBangs = andBangs
@@ -2022,7 +2022,7 @@ let rec TryTranslateComputationExpression
                             ceenv.builderTy
                     )
                 then
-                    error (Error(FSComp.SR.tcRequireBuilderMethod ("Using"), mBind))
+                    error (Error(FSComp.SR.tcRequireBuilderMethod "Using", mBind))
 
                 if
                     isNil (
@@ -2036,7 +2036,7 @@ let rec TryTranslateComputationExpression
                             ceenv.builderTy
                     )
                 then
-                    error (Error(FSComp.SR.tcRequireBuilderMethod ("Bind"), mBind))
+                    error (Error(FSComp.SR.tcRequireBuilderMethod "Bind", mBind))
 
                 let bindExpr =
                     let consumeExpr =
@@ -2064,6 +2064,17 @@ let rec TryTranslateComputationExpression
                     |> addBindDebugPoint spBind
 
                 Some(translatedCtxt bindExpr)
+
+        | SynExpr.LetOrUseBang(isUse = true; andBangs = andBangs; trivia = { LetOrUseBangKeyword = mBind }) ->
+            if isNil andBangs then
+                error (Error(FSComp.SR.tcInvalidUseBangBinding (), mBind))
+            else
+                let m =
+                    match andBangs with
+                    | [] -> comp.Range
+                    | h :: _ -> h.Trivia.AndBangKeyword
+
+                error (Error(FSComp.SR.tcInvalidUseBangBindingNoAndBangs (), m))
 
         // 'let! pat1 = expr1 and! pat2 = expr2 in ...' -->
         //     build.BindN(expr1, expr2, ...)

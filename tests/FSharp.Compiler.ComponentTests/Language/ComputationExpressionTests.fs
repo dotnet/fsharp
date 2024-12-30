@@ -772,3 +772,20 @@ let doSomething () =
     """
         |> typecheck
         |> shouldSucceed
+    
+    [<Fact>]
+    let ``error when using use! binding with wrong form.`` () =
+        Fsx """
+open System
+let doSomething () =
+    async {
+        use! [| r1; r2 |] = Async.Parallel [| async.Return(1); async.Return(2) |]
+        let y = 4
+        return r1,r2
+    }
+    """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1228, Line 5, Col 9, Line 5, Col 13, "'use!' bindings must be of the form 'use! <var> = <expr>'")
+        ]
