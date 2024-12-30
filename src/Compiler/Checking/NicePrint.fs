@@ -764,7 +764,7 @@ module PrintTypes =
             |> ListSet.setify (fun (_, cx1) (_, cx2) ->
                 match cx1, cx2 with 
                 | TyparConstraint.MayResolveMember(traitInfo1, _),
-                  TyparConstraint.MayResolveMember(traitInfo2, _) -> traitsAEquiv denv.g TypeEquivEnv.Empty traitInfo1 traitInfo2
+                  TyparConstraint.MayResolveMember(traitInfo2, _) -> traitsAEquiv denv.g (TypeEquivEnv.EmptyWithNullChecks denv.g) traitInfo1 traitInfo2
                 | _ -> false)
 
         let cxsL = List.collect (layoutConstraintWithInfo denv env) cxs

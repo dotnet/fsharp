@@ -879,15 +879,17 @@ val stripMeasuresFromTy: TcGlobals -> TType -> TType
 [<NoEquality; NoComparison>]
 type TypeEquivEnv =
     { EquivTypars: TyparMap<TType>
-      EquivTycons: TyconRefRemap }
+      EquivTycons: TyconRefRemap
+      NullnessMustEqual: bool}
 
-    static member Empty: TypeEquivEnv
+    static member EmptyIgnoreNulls: TypeEquivEnv
+    static member EmptyWithNullChecks: TcGlobals -> TypeEquivEnv
 
     member BindEquivTypars: Typars -> Typars -> TypeEquivEnv
 
-    static member FromTyparInst: TyparInstantiation -> TypeEquivEnv
+    member FromTyparInst: TyparInstantiation -> TypeEquivEnv
 
-    static member FromEquivTypars: Typars -> Typars -> TypeEquivEnv
+    member FromEquivTypars: Typars -> Typars -> TypeEquivEnv
 
 val traitsAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TraitConstraintInfo -> TraitConstraintInfo -> bool
 
@@ -904,8 +906,6 @@ val typarConstraintsAEquiv: TcGlobals -> TypeEquivEnv -> TyparConstraint -> Typa
 val typarsAEquiv: TcGlobals -> TypeEquivEnv -> Typars -> Typars -> bool
 
 val typeAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TType -> TType -> bool
-
-val nullnessSensitivetypeAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TType -> TType -> bool
 
 val typeAEquiv: TcGlobals -> TypeEquivEnv -> TType -> TType -> bool
 
