@@ -215,6 +215,37 @@ let run r2 r3 =
         ]
         
     [<Fact>]
+    let ``multiple use! _ may not be combined with and!`` () =
+        Fsx """
+module Result =
+    let zip x1 x2 =
+        match x1,x2 with
+        | Ok x1res, Ok x2res -> Ok (x1res, x2res)
+        | Error e, _ -> Error e
+        | _, Error e -> Error e
+
+type ResultBuilder() =
+    member _.MergeSources(t1: Result<'T,'U>, t2: Result<'T1,'U>) = Result.zip t1 t2
+    member _.BindReturn(x: Result<'T,'U>, f) = Result.map f x
+
+let result = ResultBuilder()
+
+let run r2 r3 =
+    result {
+        use! _ = r2
+        and! c = r3
+        use! _ = r2
+        return b - c
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3345, Line 18, Col 9, Line 18, Col 13, "use! may not be combined with and!")
+        ]
+        
+    [<Fact>]
     let ``multiple use! may not be combined with multiple and!`` () =
         Fsx """
 module Result =
@@ -726,3 +757,18 @@ let x18mutable =
             (Error 3147, Line 13, Col 20, Line 13, Col 23, "This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.")
             (Error 3147, Line 20, Col 21, Line 20, Col 22, "This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.")
         ]
+
+    [<Fact>]
+    let ``Allow _ in async use! _ pattern (lift FS1228 restriction)`` () =
+        Fsx """
+open System
+let doSomething () =
+    async {
+        use _ = { new IDisposable with member _.Dispose() = printfn "disposed" }
+        use! _ = Async.OnCancel (fun () -> printfn "disposed")
+        use! res = Async.OnCancel (fun () -> printfn "disposed")
+        return ()
+    }
+    """
+        |> typecheck
+        |> shouldSucceed
