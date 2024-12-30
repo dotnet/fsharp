@@ -149,6 +149,7 @@
     <Compile Include="Utilities\lib.fsi" />
     <Compile Include="Utilities\lib.fs" />
     <Compile Include="Utilities\DependencyGraph.fs" />
+    <Compile Include="Utilities\Caches.fs" />
     <Compile Include="Utilities\LruCache.fsi" />
     <Compile Include="Utilities\LruCache.fs" />
     <Compile Include="Utilities\ImmutableArray.fsi" />
