@@ -880,7 +880,7 @@ val stripMeasuresFromTy: TcGlobals -> TType -> TType
 type TypeEquivEnv =
     { EquivTypars: TyparMap<TType>
       EquivTycons: TyconRefRemap
-      NullnessMustEqual: bool}
+      NullnessMustEqual: bool }
 
     static member EmptyIgnoreNulls: TypeEquivEnv
     static member EmptyWithNullChecks: TcGlobals -> TypeEquivEnv
