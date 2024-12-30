@@ -107,6 +107,20 @@ let rec pushUnaryArg expr arg =
         errorR (Error(FSComp.SR.tcDotLambdaAtNotSupportedExpression (), expr.Range))
         expr
 
+/// CAUTION: This function operates over the untyped tree, so should be used only when absolutely necessary. It doesn't verify assembly origine nor does it respect type aliases.
+/// Also, keep in mind that it will only check last part of the assembly (with or without the `Attribute` suffix).
+let inline findSynAttribute (attrName: string) (synAttrs: SynAttributes) =
+    let attributesToSearch =
+        if attrName.EndsWith("Attribute") then
+            set [ attrName; attrName.Substring(0, attrName.Length - 9) ]
+        else
+            set [ attrName; attrName + "Attribute" ]
+
+    synAttrs
+    |> List.exists (fun synAttr ->
+        synAttr.Attributes
+        |> List.exists (fun attr -> attributesToSearch.Contains(attr.TypeName.LongIdent |> List.last |> _.idText)))
+
 [<return: Struct>]
 let (|SynSingleIdent|_|) x =
     match x with

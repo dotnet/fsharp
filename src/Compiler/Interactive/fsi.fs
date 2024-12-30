@@ -1797,6 +1797,9 @@ type internal FsiDynamicCompiler
 
         let multiAssemblyName = ilxMainModule.ManifestOfAssembly.Name
 
+        // The name of the assembly is "FSI-ASSEMBLY" for all submissions. This number is used for the Version
+        let dynamicAssemblyId = Interlocked.Increment &dynamicAssemblyId
+
         // Adjust the assembly name of this fragment, and add InternalsVisibleTo attributes to
         // allow internals access by all future assemblies with the same name (and only differing in version)
         let manifest =
@@ -1811,12 +1814,9 @@ type internal FsiDynamicCompiler
             { manifest with
                 Name = multiAssemblyName
                 // Because the coreclr loader will not load a higher assembly make versions go downwards
-                Version = Some(parseILVersion $"0.0.0.{maxVersion - dynamicAssemblyId}")
+                Version = Some(parseILVersion $"0.0.0.{maxVersion - dynamicAssemblyId % maxVersion}")
                 CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs attrs)
             }
-
-        // The name of the assembly is "FSI-ASSEMBLY" for all submissions. This number is used for the Version
-        dynamicAssemblyId <- (dynamicAssemblyId + 1) % maxVersion
 
         let ilxMainModule =
             { ilxMainModule with
