@@ -288,10 +288,10 @@ open Printf
         if isNull s then
             System.Diagnostics.Debug.Assert(false, sprintf ""**RESOURCE ERROR**: Resource token %s does not exist!"" name)
     #endif
-    #if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
-        s
-    #else
+    #if NULLABLE
         Unchecked.nonNull s
+    #else
+        s
     #endif
 
 

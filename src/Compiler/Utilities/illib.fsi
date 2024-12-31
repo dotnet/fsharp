@@ -286,7 +286,7 @@ module internal String =
 
     val (|StartsWith|_|): pattern: string -> value: string -> unit option
 
-    val (|Contains|_|): pattern: string -> value: string -> unit option
+    val (|Contains|_|): pattern: string -> value: string|null -> unit option
 
     val getLines: str: string -> string[]
 

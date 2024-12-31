@@ -13,3 +13,6 @@ type GenericContainer<'T when 'T:not null and 'T:not struct>(x:'T) =
 
     member _.GetNull() : ('T) = x
     member _.GetNotNull() : ('T|null) = null
+
+let private GetString(key:string) : string = key + ""
+let GetTextOpt(key:string) = GetString(key) |> Option.ofObj
