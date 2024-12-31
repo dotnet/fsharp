@@ -206,9 +206,9 @@ module Order =
             member _.Compare(x, xx) = compare (p !!x) (p !!xx)
         }
 
-    let orderOn p (pxOrder: IComparer<'U>) =
+    let orderOn (p:'T->'U) (pxOrder: IComparer<'U>) =
         { new IComparer<'T> with
-            member _.Compare(x, xx) = pxOrder.Compare(p x, p xx)
+            member _.Compare(x, xx) = pxOrder.Compare(p !!x, p !!xx)
         }
 
     let toFunction (pxOrder: IComparer<'U>) (x:'U) (y:'U) = pxOrder.Compare(x, y)

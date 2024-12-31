@@ -374,7 +374,7 @@ open Printf
             messageString <- postProcessString messageString
             createMessageString messageString fmt
 
-    static member GetTextOpt(key:string) = GetString(key) |> Option.ofObj
+    static member GetTextOpt(key:string) : string option = GetString(key) |> Option.ofObj
 
     /// If set to true, then all error messages will just return the filled 'holes' delimited by ',,,'s - this is for language-neutral testing (e.g. localization-invariant baselines).
     static member SwallowResourceText with get () = swallowResourceText
