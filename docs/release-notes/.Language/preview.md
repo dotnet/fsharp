@@ -8,5 +8,6 @@
 ### Fixed
 
 * Warn on uppercase identifiers in patterns. ([PR #15816](https://github.com/dotnet/fsharp/pull/15816))
+* Allow `_` in `use! _` pattern (lift FS1228 restriction) ([PR #18189](https://github.com/dotnet/fsharp/pull/18189))
 
 ### Changed
