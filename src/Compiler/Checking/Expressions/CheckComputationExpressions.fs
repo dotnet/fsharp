@@ -1900,113 +1900,14 @@ let rec TryTranslateComputationExpression
             bindDebugPoint = spBind
             isUse = true
             isFromSource = isFromSource
-            pat = SynPat.Named(ident = SynIdent(id, _); isThisVal = false) as pat
-            rhs = rhsExpr
-            andBangs = []
-            body = innerComp
-            trivia = { LetOrUseBangKeyword = mBind })
-        | SynExpr.LetOrUseBang(
-            bindDebugPoint = spBind
-            isUse = true
-            isFromSource = isFromSource
-            pat = SynPat.LongIdent(longDotId = SynLongIdent(id = [ id ])) as pat
-            rhs = rhsExpr
-            andBangs = []
-            body = innerComp
-            trivia = { LetOrUseBangKeyword = mBind }) ->
-
-            if ceenv.isQuery then
-                error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), mBind))
-
-            if
-                isNil (
-                    TryFindIntrinsicOrExtensionMethInfo
-                        ResultCollectionSettings.AtMostOneResult
-                        cenv
-                        ceenv.env
-                        mBind
-                        ceenv.ad
-                        "Using"
-                        ceenv.builderTy
-                )
-            then
-                error (Error(FSComp.SR.tcRequireBuilderMethod ("Using"), mBind))
-
-            if
-                isNil (
-                    TryFindIntrinsicOrExtensionMethInfo
-                        ResultCollectionSettings.AtMostOneResult
-                        cenv
-                        ceenv.env
-                        mBind
-                        ceenv.ad
-                        "Bind"
-                        ceenv.builderTy
-                )
-            then
-                error (Error(FSComp.SR.tcRequireBuilderMethod ("Bind"), mBind))
-
-            let bindExpr =
-                let consumeExpr =
-                    SynExpr.MatchLambda(
-                        false,
-                        mBind,
-                        [
-                            SynMatchClause(
-                                pat,
-                                None,
-                                TranslateComputationExpressionNoQueryOps ceenv innerComp,
-                                innerComp.Range,
-                                DebugPointAtTarget.Yes,
-                                SynMatchClauseTrivia.Zero
-                            )
-                        ],
-                        DebugPointAtBinding.NoneAtInvisible,
-                        mBind
-                    )
-
-                let consumeExpr =
-                    mkSynCall "Using" mBind [ SynExpr.Ident id; consumeExpr ] ceenv.builderValName
-
-                let consumeExpr =
-                    SynExpr.MatchLambda(
-                        false,
-                        mBind,
-                        [
-                            SynMatchClause(pat, None, consumeExpr, id.idRange, DebugPointAtTarget.No, SynMatchClauseTrivia.Zero)
-                        ],
-                        DebugPointAtBinding.NoneAtInvisible,
-                        mBind
-                    )
-
-                let rhsExpr =
-                    mkSourceExprConditional isFromSource rhsExpr ceenv.sourceMethInfo ceenv.builderValName
-
-                mkSynCall "Bind" mBind [ rhsExpr; consumeExpr ] ceenv.builderValName
-                |> addBindDebugPoint spBind
-
-            Some(translatedCtxt bindExpr)
-
-        // 'use! pat = e1 ... in e2' where 'pat' is not a simple name -> error
-        | SynExpr.LetOrUseBang(
-            bindDebugPoint = spBind
-            isUse = true
-            pat = SynPat.Wild _ as pat
-            isFromSource = isFromSource
+            pat = pat
             rhs = rhsExpr
             andBangs = andBangs
             body = innerComp
             trivia = { LetOrUseBangKeyword = mBind }) ->
-
-            if not (isNil (andBangs)) then
-                let m =
-                    match andBangs with
-                    | [] -> comp.Range
-                    | h :: _ -> h.Trivia.AndBangKeyword
-
-                error (Error(FSComp.SR.tcInvalidUseBangBindingNoAndBangs (), m))
-
-            else
+            match pat with
+            | SynPat.Named(ident = SynIdent(id, _); isThisVal = false)
+            | SynPat.LongIdent(longDotId = SynLongIdent(id = [ id ])) when andBangs.IsEmpty ->
                 if ceenv.isQuery then
                     error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), mBind))
 
@@ -2022,7 +1923,7 @@ let rec TryTranslateComputationExpression
                             ceenv.builderTy
                     )
                 then
-                    error (Error(FSComp.SR.tcRequireBuilderMethod "Using", mBind))
+                    error (Error(FSComp.SR.tcRequireBuilderMethod ("Using"), mBind))
 
                 if
                     isNil (
@@ -2036,7 +1937,7 @@ let rec TryTranslateComputationExpression
                             ceenv.builderTy
                     )
                 then
-                    error (Error(FSComp.SR.tcRequireBuilderMethod "Bind", mBind))
+                    error (Error(FSComp.SR.tcRequireBuilderMethod ("Bind"), mBind))
 
                 let bindExpr =
                     let consumeExpr =
@@ -2057,6 +1958,20 @@ let rec TryTranslateComputationExpression
                             mBind
                         )
 
+                    let consumeExpr =
+                        mkSynCall "Using" mBind [ SynExpr.Ident id; consumeExpr ] ceenv.builderValName
+
+                    let consumeExpr =
+                        SynExpr.MatchLambda(
+                            false,
+                            mBind,
+                            [
+                                SynMatchClause(pat, None, consumeExpr, id.idRange, DebugPointAtTarget.No, SynMatchClauseTrivia.Zero)
+                            ],
+                            DebugPointAtBinding.NoneAtInvisible,
+                            mBind
+                        )
+
                     let rhsExpr =
                         mkSourceExprConditional isFromSource rhsExpr ceenv.sourceMethInfo ceenv.builderValName
 
@@ -2065,17 +1980,82 @@ let rec TryTranslateComputationExpression
 
                 Some(translatedCtxt bindExpr)
 
-        | SynExpr.LetOrUseBang(isUse = true; andBangs = andBangs; trivia = { LetOrUseBangKeyword = mBind }) ->
-            if isNil andBangs then
-                error (Error(FSComp.SR.tcInvalidUseBangBinding (), mBind))
-            else
-                let m =
-                    match andBangs with
-                    | [] -> comp.Range
-                    | h :: _ -> h.Trivia.AndBangKeyword
+            | SynPat.Wild _ ->
+                if not (isNil andBangs) then
+                    let m =
+                        match andBangs with
+                        | [] -> comp.Range
+                        | h :: _ -> h.Trivia.AndBangKeyword
 
-                error (Error(FSComp.SR.tcInvalidUseBangBindingNoAndBangs (), m))
+                    error (Error(FSComp.SR.tcInvalidUseBangBindingNoAndBangs (), m))
+                else
+                    if ceenv.isQuery then
+                        error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), mBind))
 
+                    if
+                        isNil (
+                            TryFindIntrinsicOrExtensionMethInfo
+                                ResultCollectionSettings.AtMostOneResult
+                                cenv
+                                ceenv.env
+                                mBind
+                                ceenv.ad
+                                "Using"
+                                ceenv.builderTy
+                        )
+                    then
+                        error (Error(FSComp.SR.tcRequireBuilderMethod "Using", mBind))
+
+                    if
+                        isNil (
+                            TryFindIntrinsicOrExtensionMethInfo
+                                ResultCollectionSettings.AtMostOneResult
+                                cenv
+                                ceenv.env
+                                mBind
+                                ceenv.ad
+                                "Bind"
+                                ceenv.builderTy
+                        )
+                    then
+                        error (Error(FSComp.SR.tcRequireBuilderMethod "Bind", mBind))
+
+                    let bindExpr =
+                        let consumeExpr =
+                            SynExpr.MatchLambda(
+                                false,
+                                mBind,
+                                [
+                                    SynMatchClause(
+                                        pat,
+                                        None,
+                                        TranslateComputationExpressionNoQueryOps ceenv innerComp,
+                                        innerComp.Range,
+                                        DebugPointAtTarget.Yes,
+                                        SynMatchClauseTrivia.Zero
+                                    )
+                                ],
+                                DebugPointAtBinding.NoneAtInvisible,
+                                mBind
+                            )
+
+                        let rhsExpr =
+                            mkSourceExprConditional isFromSource rhsExpr ceenv.sourceMethInfo ceenv.builderValName
+
+                        mkSynCall "Bind" mBind [ rhsExpr; consumeExpr ] ceenv.builderValName
+                        |> addBindDebugPoint spBind
+
+                    Some(translatedCtxt bindExpr)
+            | _ ->
+                if isNil andBangs then
+                    error (Error(FSComp.SR.tcInvalidUseBangBinding (), mBind))
+                else
+                    let m =
+                        match andBangs with
+                        | [] -> comp.Range
+                        | h :: _ -> h.Trivia.AndBangKeyword
+
+                    error (Error(FSComp.SR.tcInvalidUseBangBindingNoAndBangs (), m))
         // 'let! pat1 = expr1 and! pat2 = expr2 in ...' -->
         //     build.BindN(expr1, expr2, ...)
         // or
