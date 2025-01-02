@@ -46,6 +46,7 @@ type Weak<'K>(key) =
     [<CLIEvent>]
     member val Collected = collected.Publish
 
+    // TODO: Do we want to store it as WeakReference here?
     override _.Finalize() = collected.Trigger key
 
 // TODO: This has a very naive and straightforward implementation for managing lifetimes, when evicting, will have to traverse the dictionary.
