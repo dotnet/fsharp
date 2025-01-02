@@ -245,6 +245,39 @@ let run r2 r3 =
             (Error 3345, Line 18, Col 9, Line 18, Col 13, "use! may not be combined with and!")
         ]
         
+        
+    [<Fact>]
+    let ``multiple use! _ may not be combined with and!. Lang version preview`` () =
+        Fsx """
+module Result =
+    let zip x1 x2 =
+        match x1,x2 with
+        | Ok x1res, Ok x2res -> Ok (x1res, x2res)
+        | Error e, _ -> Error e
+        | _, Error e -> Error e
+
+type ResultBuilder() =
+    member _.MergeSources(t1: Result<'T,'U>, t2: Result<'T1,'U>) = Result.zip t1 t2
+    member _.BindReturn(x: Result<'T,'U>, f) = Result.map f x
+
+let result = ResultBuilder()
+
+let run r2 r3 =
+    result {
+        use! _ = r2
+        and! c = r3
+        use! _ = r2
+        return b - c
+    }
+        """
+        |> withLangVersionPreview
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3345, Line 18, Col 9, Line 18, Col 13, "use! may not be combined with and!")
+        ]
+        
     [<Fact>]
     let ``multiple use! may not be combined with multiple and!`` () =
         Fsx """
@@ -759,22 +792,60 @@ let x18mutable =
         ]
 
     [<Fact>]
-    let ``Allow _ in async use! _ pattern (lift FS1228 restriction)`` () =
+    let ``Allow _ in async use! _ pattern (lift FS1228 restriction). Lang version 9`` () =
         Fsx """
 open System
 let doSomething () =
     async {
         use _ = { new IDisposable with member _.Dispose() = printfn "disposed" }
         use! _ = Async.OnCancel (fun () -> printfn "disposed")
+        use! __ = Async.OnCancel (fun () -> printfn "disposed")
         use! res = Async.OnCancel (fun () -> printfn "disposed")
         return ()
     }
     """
         |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1228, Line 6, Col 9, Line 6, Col 13, "'use!' bindings must be of the form 'use! <var> = <expr>'")
+        ]
+        
+    [<Fact>]
+    let ``Allow _ in async use! _ pattern (lift FS1228 restriction). Lang version preview`` () =
+        Fsx """
+open System
+let doSomething () =
+    async {
+        use _ = { new IDisposable with member _.Dispose() = printfn "disposed" }
+        use! _ = Async.OnCancel (fun () -> printfn "disposed")
+        use! __ = Async.OnCancel (fun () -> printfn "disposed")
+        use! res = Async.OnCancel (fun () -> printfn "disposed")
+        return ()
+    }
+    """
+        |> withLangVersionPreview
+        |> typecheck
         |> shouldSucceed
     
     [<Fact>]
-    let ``error when using use! binding with wrong form.`` () =
+    let ``Error when using use! binding with wrong form. Lang version 9`` () =
+        Fsx """
+open System
+let doSomething () =
+    async {
+        use! [| r1; r2 |] = Async.Parallel [| async.Return(1); async.Return(2) |]
+        let y = 4
+        return r1,r2
+    }
+    """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1228, Line 5, Col 9, Line 5, Col 13, "'use!' bindings must be of the form 'use! <var> = <expr>'")
+        ]    
+
+    [<Fact>]
+    let ``Error when using use! binding with wrong form. Lang version preview`` () =
         Fsx """
 open System
 let doSomething () =
