@@ -3,6 +3,7 @@ namespace FSharp.Compiler
 open System
 open System.Collections.Concurrent
 open System.Threading
+open System.Threading.Tasks
 
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
 type CachingStrategy =
@@ -14,7 +15,7 @@ type CachingStrategy =
     | LFU
 
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
-type EvictionMethod = Blocking | ThreadPool
+type EvictionMethod = Blocking | Background
 
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
 type CacheOptions =
@@ -29,19 +30,40 @@ type CacheOptions =
 type CachedEntity<'Key, 'Value> =
     val Key: 'Key
     val Value: 'Value
-    val mutable LastAccessed: DateTimeOffset
+    val mutable LastAccessed: int64
     val mutable AccessCount: uint64
 
-    new(key: 'Key, value: 'Value) = { Key = key; Value = value; LastAccessed = DateTimeOffset.Now; AccessCount = 0UL }
+    new(key: 'Key, value: 'Value) = { Key = key; Value = value; LastAccessed = DateTimeOffset.Now.Ticks; AccessCount = 0UL }
 
 
 // TODO: This has a very naive and straightforward implementation for managing lifetimes, when evicting, will have to traverse the dictionary.
 [<NoComparison; NoEquality>]
-type Cache<'Key, 'Value when 'Key: struct> (options: CacheOptions) =
+type Cache<'Key, 'Value when 'Key: struct> (options: CacheOptions) as this =
 
     // Increase expected capacity by the percentage to evict, since we want to not resize the dictionary.
     let capacity = options.Capacity + (options.Capacity * options.PercentageToEvict / 100)
     let store = ConcurrentDictionary<'Key, CachedEntity<'Key,'Value>>(options.LevelOfConcurrency, capacity)
+    let cts = new CancellationTokenSource()
+
+    do
+        Task.Run(fun () -> this.TryEvictTask(), cts.Token) |> ignore
+
+
+    let cacheHit = Event<'Key * 'Value>()
+    let cacheMiss = Event<'Key>()
+    let eviction = Event<'Key * 'Value>()
+
+    [<CLIEvent>]
+    member val CacheHit = cacheHit.Publish
+
+    [<CLIEvent>]
+    member val CacheMiss = cacheMiss.Publish
+
+    [<CLIEvent>]
+
+    member val Eviction = eviction.Publish
+
+
     // TODO: Explore an eviction shortcut, some sort of list of keys to evict first, based on the strategy.
 
     member _.GetStats() = {|
@@ -62,39 +84,30 @@ type Cache<'Key, 'Value when 'Key: struct> (options: CacheOptions) =
         count * options.PercentageToEvict / 100
 
     // TODO: All of these are proofs of concept, a very naive implementation of eviction strategies.
-    member private this.TryEvictLRU () =
+    member private this.TryGetItemsToEvict () =
+        match options.Strategy with
+        | CachingStrategy.LRU -> store.Values |> Seq.sortByDescending _.LastAccessed |> Seq.take (this.GetEvictCount()) |> Seq.map (fun x -> x.Key)
+        | CachingStrategy.MRU -> store.Values |> Seq.sortBy _.LastAccessed |> Seq.take (this.GetEvictCount()) |> Seq.map (fun x -> x.Key)
+        | CachingStrategy.LFU -> store.Values |> Seq.sortBy _.AccessCount |> Seq.take (this.GetEvictCount()) |> Seq.map (fun x -> x.Key)
 
-        printfn $"Evicting {this.GetEvictCount()} items using LRU strategy."
-
-        let evictKeys = store.Values |> Seq.sortByDescending _.LastAccessed |> Seq.take (this.GetEvictCount()) |> Seq.map (fun x -> x.Key)
-
-        printfn $"""  Evicting keys: {{{String.Join(", ", evictKeys)}}}"""
-
-        if this.GetEvictCount() > 0 then
-            for key in evictKeys do
-                let _ = store.TryRemove(key) in ()
-
-    member private this.TryEvictMRU () =
-        printfn $"Evicting {this.GetEvictCount()} items using MRU strategy."
-
-        let evictKeys = store.Values |> Seq.sortBy _.LastAccessed |> Seq.take (this.GetEvictCount()) |> Seq.map (fun x -> x.Key)
-
-        printfn $"""  Evicting keys: {{{String.Join(", ", evictKeys)}}}"""
+    member private this.TryEvictItems () =
+        let evictKeys = this.TryGetItemsToEvict ()
 
         if this.GetEvictCount() > 0 then
             for key in evictKeys do
-                let _ = store.TryRemove(key) in ()
+                let (removed, value) = store.TryRemove(key)
+                if removed then
+                    eviction.Trigger(key, value.Value)
 
-    member private this.TryEvictLFU () =
-        printfn $"Evicting {this.GetEvictCount()} items using MRU strategy."
-
-        let evictKeys = store.Values |> Seq.sortBy _.AccessCount |> Seq.take (this.GetEvictCount()) |> Seq.map (fun x -> x.Key)
-
-        printfn $"""  Evicting keys: {{{String.Join(", ", evictKeys)}}}"""
-
-        if this.GetEvictCount() > 0 then
-            for key in evictKeys do
-                let _ = store.TryRemove(key) in ()
+    member private this.TryEvictTask () =
+        task {
+            while not cts.Token.IsCancellationRequested do
+                let evictCount = this.GetEvictCount()
+                if evictCount > 0 then
+                    // printfn $"Evicting {evictCount} items using {options.EvictionMethod} strategy."
+                    this.TryEvictItems ()
+                do! Task.Delay(1000, cts.Token)
+        }
 
     member this.TryEvict() =
 
@@ -103,34 +116,26 @@ type Cache<'Key, 'Value when 'Key: struct> (options: CacheOptions) =
         if evictCount <= 0 then
             ()
         else
-
-            printfn $"Need to evict {evictCount} items."
-
-            let evictionJob =
-                match options.Strategy with
-                | CachingStrategy.LRU -> this.TryEvictLRU
-                | CachingStrategy.MRU -> this.TryEvictMRU
-                | CachingStrategy.LFU -> fun () -> ()
-
+            // printfn $"Need to evict {evictCount} items."
 
             if store.Count <= options.Capacity then
                 ()
             else
-                // TODO: Handle any already running eviction jobs (?)
-
                 match options.EvictionMethod with
-                | EvictionMethod.Blocking -> evictionJob ()
-                | EvictionMethod.ThreadPool -> ThreadPool.QueueUserWorkItem (fun _ -> evictionJob ()) |> ignore
+                | EvictionMethod.Blocking -> this.TryEvictItems ()
+                | EvictionMethod.Background -> ()
 
 
     member _.TryGet(key: 'Key) =
         match store.TryGetValue(key) with
         | true, value ->
             // this is fine to be non-atomic, I guess, we are okay with race if the time is within the time of multiple concurrent calls.
-            value.LastAccessed <- DateTimeOffset.Now
+            value.LastAccessed <- DateTimeOffset.Now.Ticks
             value.AccessCount <- Interlocked.Increment(&value.AccessCount)
+            cacheHit.Trigger(key, value.Value)
             ValueSome value
         | _ ->
+            cacheMiss.Trigger(key)
             ValueNone
 
     member this.Add(key: 'Key, value: 'Value) = let _ = this.TryAdd(key, value) in ()
@@ -141,3 +146,6 @@ type Cache<'Key, 'Value when 'Key: struct> (options: CacheOptions) =
             let _ = this.TryEvict() in ()
 
         store.TryAdd(key, CachedEntity<'Key, 'Value>(key, value))
+
+    interface IDisposable with
+        member _.Dispose() = cts.Cancel()
