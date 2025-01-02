@@ -102,8 +102,8 @@ type Cache<'Key, 'Value> (options: CacheOptions) as this =
     // TODO: All of these are proofs of concept, a very naive implementation of eviction strategies, it will always walk the dictionary to find the items to evict, this is not efficient.
     member private this.TryGetItemsToEvict () =
         match options.Strategy with
-        | CachingStrategy.LRU -> store.Values |> Seq.sortByDescending _.LastAccessed |> Seq.take (this.GetEvictCount()) |> Seq.map (fun x -> x.Key)
-        | CachingStrategy.MRU -> store.Values |> Seq.sortBy _.LastAccessed |> Seq.take (this.GetEvictCount()) |> Seq.map (fun x -> x.Key)
+        | CachingStrategy.LRU -> store.Values |> Seq.sortBy _.LastAccessed |> Seq.take (this.GetEvictCount()) |> Seq.map (fun x -> x.Key)
+        | CachingStrategy.MRU -> store.Values |> Seq.sortByDescending _.LastAccessed |> Seq.take (this.GetEvictCount()) |> Seq.map (fun x -> x.Key)
         | CachingStrategy.LFU -> store.Values |> Seq.sortBy _.AccessCount |> Seq.take (this.GetEvictCount()) |> Seq.map (fun x -> x.Key)
 
     member private this.TryEvictItems () =
