@@ -1843,7 +1843,7 @@ let rec TryTranslateComputationExpression
                         ceenv.builderTy
                 )
             then
-                error (Error(FSComp.SR.tcRequireBuilderMethod ("Using"), mBind))
+                error (Error(FSComp.SR.tcRequireBuilderMethod "Using", mBind))
 
             Some(
                 translatedCtxt (mkSynCall "Using" mBind [ rhsExpr; consumeExpr ] ceenv.builderValName)
@@ -1923,7 +1923,7 @@ let rec TryTranslateComputationExpression
                             ceenv.builderTy
                     )
                 then
-                    error (Error(FSComp.SR.tcRequireBuilderMethod ("Using"), mBind))
+                    error (Error(FSComp.SR.tcRequireBuilderMethod "Using", mBind))
 
                 if
                     isNil (
@@ -1937,7 +1937,7 @@ let rec TryTranslateComputationExpression
                             ceenv.builderTy
                     )
                 then
-                    error (Error(FSComp.SR.tcRequireBuilderMethod ("Bind"), mBind))
+                    error (Error(FSComp.SR.tcRequireBuilderMethod "Bind", mBind))
 
                 let bindExpr =
                     let consumeExpr =
@@ -1980,7 +1980,7 @@ let rec TryTranslateComputationExpression
 
                 Some(translatedCtxt bindExpr)
 
-            | SynPat.Wild _ ->
+            | SynPat.Wild _ when cenv.g.langVersion.SupportsFeature(LanguageFeature.UseBangBindingValueDiscard) ->
                 if not (isNil andBangs) then
                     let m =
                         match andBangs with
