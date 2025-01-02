@@ -4,6 +4,7 @@ open System
 open System.Collections.Concurrent
 open System.Threading
 open System.Threading.Tasks
+open System.Runtime.CompilerServices
 
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
 type CachingStrategy =
@@ -14,8 +15,11 @@ type CachingStrategy =
     /// Least Frequently Used - replaces/evicts the item with the least number of requests.
     | LFU
 
-[<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
+[<Struct; RequireQualifiedAccess; NoComparison>]
 type EvictionMethod = Blocking | Background
+
+[<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
+type EvictionReason = Evicted | Collected
 
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
 type CacheOptions =
@@ -23,8 +27,9 @@ type CacheOptions =
       PercentageToEvict: int
       Strategy: CachingStrategy
       EvictionMethod: EvictionMethod
-      LevelOfConcurrency: int } with
-    static member Default = { MaximumCapacity = 100; PercentageToEvict = 5; Strategy = CachingStrategy.LRU; LevelOfConcurrency = Environment.ProcessorCount; EvictionMethod = EvictionMethod.Blocking }
+      LevelOfConcurrency: int
+      Weak: bool } with
+    static member Default = { MaximumCapacity = 100; PercentageToEvict = 5; Strategy = CachingStrategy.LRU; LevelOfConcurrency = Environment.ProcessorCount; EvictionMethod = EvictionMethod.Blocking; Weak = false }
 
 [<NoComparison; NoEquality>]
 type CachedEntity<'Key, 'Value> =
@@ -35,22 +40,33 @@ type CachedEntity<'Key, 'Value> =
 
     new(key: 'Key, value: 'Value) = { Key = key; Value = value; LastAccessed = DateTimeOffset.Now.Ticks; AccessCount = 0UL }
 
+[<NoComparison; NoEquality>]
+type Weak<'K>(key) =
+    let collected = new Event<'K>()
+    [<CLIEvent>]
+    member val Collected = collected.Publish
+
+    override _.Finalize() = collected.Trigger key
 
 // TODO: This has a very naive and straightforward implementation for managing lifetimes, when evicting, will have to traverse the dictionary.
 [<NoComparison; NoEquality>]
-type Cache<'Key, 'Value when 'Key: struct> (options: CacheOptions) as this =
+type Cache<'Key, 'Value> (options: CacheOptions) as this =
 
     // Increase expected capacity by the percentage to evict, since we want to not resize the dictionary.
     let capacity = options.MaximumCapacity + (options.MaximumCapacity * options.PercentageToEvict / 100)
     let store = ConcurrentDictionary<'Key, CachedEntity<'Key,'Value>>(options.LevelOfConcurrency, capacity)
+
+    let conditionalWeakTable = new ConditionalWeakTable<_, Weak<_>>();
+
     let cts = new CancellationTokenSource()
 
     do
-        Task.Run(this.TryEvictTask, cts.Token) |> ignore
+        if options.EvictionMethod = EvictionMethod.Background then
+            Task.Run(this.TryEvictTask, cts.Token) |> ignore
 
     let cacheHit = Event<'Key * 'Value>()
     let cacheMiss = Event<'Key>()
-    let eviction = Event<'Key * 'Value>()
+    let eviction = Event<'Key * EvictionReason>()
 
     [<CLIEvent>]
     member val CacheHit = cacheHit.Publish
@@ -63,17 +79,18 @@ type Cache<'Key, 'Value when 'Key: struct> (options: CacheOptions) as this =
     member val Eviction = eviction.Publish
 
 
-    member _.GetStats() = {|
-        Capacity = options.MaximumCapacity
-        PercentageToEvict = options.PercentageToEvict
-        Strategy = options.Strategy
-        LevelOfConcurrency = options.LevelOfConcurrency
-        Count = store.Count
-        LeastRecentlyAccesssed = store.Values |> Seq.minBy _.LastAccessed |> _.LastAccessed
-        MostRecentlyAccesssed = store.Values |> Seq.maxBy _.LastAccessed |> _.LastAccessed
-        LeastFrequentlyAccessed = store.Values |> Seq.minBy _.AccessCount |> _.AccessCount
-        MostFrequentlyAccessed = store.Values |> Seq.maxBy _.AccessCount |> _.AccessCount
-    |}
+    member _.GetStats() =
+        {|
+            Capacity = options.MaximumCapacity
+            PercentageToEvict = options.PercentageToEvict
+            Strategy = options.Strategy
+            LevelOfConcurrency = options.LevelOfConcurrency
+            Count = store.Count
+            LeastRecentlyAccesssed = store.Values |> Seq.minBy _.LastAccessed |> _.LastAccessed
+            MostRecentlyAccesssed = store.Values |> Seq.maxBy _.LastAccessed |> _.LastAccessed
+            LeastFrequentlyAccessed = store.Values |> Seq.minBy _.AccessCount |> _.AccessCount
+            MostFrequentlyAccessed = store.Values |> Seq.maxBy _.AccessCount |> _.AccessCount
+        |}
 
 
     member private _.GetEvictCount() =
@@ -94,7 +111,7 @@ type Cache<'Key, 'Value when 'Key: struct> (options: CacheOptions) as this =
             for key in this.TryGetItemsToEvict () do
                 let (removed, value) = store.TryRemove(key)
                 if removed then
-                    eviction.Trigger(key, value.Value)
+                    eviction.Trigger(key, EvictionReason.Evicted)
 
     member private this.TryEvictTask () =
         // This will spin in the background trying to evict items.
@@ -128,10 +145,20 @@ type Cache<'Key, 'Value when 'Key: struct> (options: CacheOptions) as this =
             ValueNone
 
     member this.Add(key: 'Key, value: 'Value) = let _ = this.TryAdd(key, value) in ()
+    member this.TryAdd<'Key>(key: 'Key, value: 'Value) =
 
-    member this.TryAdd(key: 'Key, value: 'Value) =
+        if options.Weak then
+            let weak = new Weak<'Key>(key)
+            conditionalWeakTable.TryAdd(key :> obj, weak) |> ignore
+            weak.Collected.Add(this.RemoveCollected)
+
         this.TryEvict()
         store.TryAdd(key, CachedEntity<'Key, 'Value>(key, value))
+
+    // TODO: This needs heavy testing to ensure we aren't leaking anything.
+    member private _.RemoveCollected(key: 'Key) =
+        store.TryRemove(key) |> ignore
+        eviction.Trigger(key, EvictionReason.Collected);
 
     interface IDisposable with
         member _.Dispose() = cts.Cancel()
