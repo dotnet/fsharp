@@ -179,7 +179,7 @@ and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synS
         let patEnvR = TcPatLinearEnv(tpenv, namesR, takenNamesR)
         [id.idText], patEnvR
 
-    | SynSimplePats.SimplePats (pats = [synSimplePat]) ->
+    | SynSimplePats.SimplePats (pats = [synSimplePat]; isStruct = _isStruct) ->
         let v, patEnv = TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnv synSimplePat []
         [v], patEnv
 

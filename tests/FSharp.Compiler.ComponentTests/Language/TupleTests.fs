@@ -46,6 +46,16 @@ type Class() =
      |> typecheck
      |> shouldSucceed
      
+    [<Fact>]
+    let ``Function - Simple tuple destructuring in a lambda`` () =
+        FSharp """
+let f (a: (int * int) list) =
+    a |> List.map fst
+    """
+     |> ignoreWarnings
+     |> typecheck
+     |> shouldSucceed
+     
 module StructTupleTests =
 
     [<Fact>]
@@ -175,6 +185,16 @@ is not compatible with type
 let f (a: struct (int * int)) =
     a |> (fun ((x, y)) -> x + y)
     a |> (fun (struct(x, y)) -> x + y)
+    """
+     |> ignoreWarnings
+     |> typecheck
+     |> shouldSucceed
+    
+    [<Fact>]
+    let ``Function - Simple struct tuple destructuring in a lambda`` () =
+        FSharp """
+let f (a: struct (int * int) list) =
+    a |> List.map fst
     """
      |> ignoreWarnings
      |> typecheck
