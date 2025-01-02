@@ -19,12 +19,12 @@ type EvictionMethod = Blocking | Background
 
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
 type CacheOptions =
-    { Capacity: int
+    { MaximumCapacity: int
       PercentageToEvict: int
       Strategy: CachingStrategy
       EvictionMethod: EvictionMethod
       LevelOfConcurrency: int } with
-    static member Default = { Capacity = 100; PercentageToEvict = 5; Strategy = CachingStrategy.LRU; LevelOfConcurrency = Environment.ProcessorCount; EvictionMethod = EvictionMethod.Blocking }
+    static member Default = { MaximumCapacity = 100; PercentageToEvict = 5; Strategy = CachingStrategy.LRU; LevelOfConcurrency = Environment.ProcessorCount; EvictionMethod = EvictionMethod.Blocking }
 
 [<NoComparison; NoEquality>]
 type CachedEntity<'Key, 'Value> =
@@ -41,13 +41,12 @@ type CachedEntity<'Key, 'Value> =
 type Cache<'Key, 'Value when 'Key: struct> (options: CacheOptions) as this =
 
     // Increase expected capacity by the percentage to evict, since we want to not resize the dictionary.
-    let capacity = options.Capacity + (options.Capacity * options.PercentageToEvict / 100)
+    let capacity = options.MaximumCapacity + (options.MaximumCapacity * options.PercentageToEvict / 100)
     let store = ConcurrentDictionary<'Key, CachedEntity<'Key,'Value>>(options.LevelOfConcurrency, capacity)
     let cts = new CancellationTokenSource()
 
     do
-        Task.Run(fun () -> this.TryEvictTask(), cts.Token) |> ignore
-
+        Task.Run(this.TryEvictTask, cts.Token) |> ignore
 
     let cacheHit = Event<'Key * 'Value>()
     let cacheMiss = Event<'Key>()
@@ -67,7 +66,7 @@ type Cache<'Key, 'Value when 'Key: struct> (options: CacheOptions) as this =
     // TODO: Explore an eviction shortcut, some sort of list of keys to evict first, based on the strategy.
 
     member _.GetStats() = {|
-        Capacity = options.Capacity
+        Capacity = options.MaximumCapacity
         PercentageToEvict = options.PercentageToEvict
         Strategy = options.Strategy
         LevelOfConcurrency = options.LevelOfConcurrency
@@ -80,8 +79,10 @@ type Cache<'Key, 'Value when 'Key: struct> (options: CacheOptions) as this =
 
 
     member private _.GetEvictCount() =
-        let count = store.Count
-        count * options.PercentageToEvict / 100
+        if store.Count >= options.MaximumCapacity then
+            store.Count * options.PercentageToEvict / 100
+        else
+            0
 
     // TODO: All of these are proofs of concept, a very naive implementation of eviction strategies.
     member private this.TryGetItemsToEvict () =
@@ -91,39 +92,26 @@ type Cache<'Key, 'Value when 'Key: struct> (options: CacheOptions) as this =
         | CachingStrategy.LFU -> store.Values |> Seq.sortBy _.AccessCount |> Seq.take (this.GetEvictCount()) |> Seq.map (fun x -> x.Key)
 
     member private this.TryEvictItems () =
-        let evictKeys = this.TryGetItemsToEvict ()
-
         if this.GetEvictCount() > 0 then
-            for key in evictKeys do
+            for key in this.TryGetItemsToEvict () do
                 let (removed, value) = store.TryRemove(key)
                 if removed then
                     eviction.Trigger(key, value.Value)
 
     member private this.TryEvictTask () =
-        task {
+        backgroundTask {
             while not cts.Token.IsCancellationRequested do
                 let evictCount = this.GetEvictCount()
                 if evictCount > 0 then
-                    // printfn $"Evicting {evictCount} items using {options.EvictionMethod} strategy."
                     this.TryEvictItems ()
-                do! Task.Delay(1000, cts.Token)
+                //do! Task.Delay(500, cts.Token)
         }
 
     member this.TryEvict() =
-
-        let evictCount = this.GetEvictCount()
-
-        if evictCount <= 0 then
-            ()
-        else
-            // printfn $"Need to evict {evictCount} items."
-
-            if store.Count <= options.Capacity then
-                ()
-            else
-                match options.EvictionMethod with
-                | EvictionMethod.Blocking -> this.TryEvictItems ()
-                | EvictionMethod.Background -> ()
+        if this.GetEvictCount() > 0 then
+            match options.EvictionMethod with
+            | EvictionMethod.Blocking -> this.TryEvictItems ()
+            | EvictionMethod.Background -> ()
 
 
     member _.TryGet(key: 'Key) =
@@ -141,11 +129,10 @@ type Cache<'Key, 'Value when 'Key: struct> (options: CacheOptions) as this =
     member this.Add(key: 'Key, value: 'Value) = let _ = this.TryAdd(key, value) in ()
 
     member this.TryAdd(key: 'Key, value: 'Value) =
-
-        if store.Count >= options.Capacity then
-            let _ = this.TryEvict() in ()
-
+        this.TryEvict()
         store.TryAdd(key, CachedEntity<'Key, 'Value>(key, value))
 
     interface IDisposable with
         member _.Dispose() = cts.Cancel()
+
+    member this.Dispose() = (this :> IDisposable).Dispose()
