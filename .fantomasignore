@@ -4,7 +4,6 @@ buildtools/
 docs/
 eng/
 fcs-samples/
-scripts/
 setup/
 tests/
 vsintegration/*
