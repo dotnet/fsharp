@@ -139,7 +139,7 @@ type Cache<'Key, 'Value> (options: CacheOptions) as this =
     member this.TryAdd<'Key>(key: 'Key, value: 'Value) =
 
         // Weak table/references only make sense if we work with reference types (for obvious reasons).
-        // So, if this collection is storing value types as keys, it will simply box them.
+        // So, if `Weak` is enabled for value types as keys of the cache, it will simply box them, resulting in additional allocations.
         // GC-based eviction shall not be used with value types as keys.
         if options.Weak then
             let weak = Weak<'Key>(key)
