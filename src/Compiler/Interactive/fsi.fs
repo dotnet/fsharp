@@ -1135,7 +1135,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                         tagNone,
                         OptionSwitch(fun flag -> gui <- (flag = OptionSwitch.On)),
                         None,
-                        Some(FSIstrings.SR.fsiGui ())
+                        Some(FSIstrings.SR.fsiGui (formatOptionSwitch gui))
                     )
                     CompilerOption("quiet", "", OptionUnit(fun () -> tcConfigB.noFeedback <- true), None, Some(FSIstrings.SR.fsiQuiet ()))
                     CompilerOption(
@@ -1143,28 +1143,28 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                         tagNone,
                         OptionSwitch(fun flag -> enableConsoleKeyProcessing <- (flag = OptionSwitch.On)),
                         None,
-                        Some(FSIstrings.SR.fsiReadline ())
+                        Some(FSIstrings.SR.fsiReadline (formatOptionSwitch enableConsoleKeyProcessing))
                     )
                     CompilerOption(
                         "quotations-debug",
                         tagNone,
                         OptionSwitch(fun switch -> tcConfigB.emitDebugInfoInQuotations <- switch = OptionSwitch.On),
                         None,
-                        Some(FSIstrings.SR.fsiEmitDebugInfoInQuotations ())
+                        Some(FSIstrings.SR.fsiEmitDebugInfoInQuotations (formatOptionSwitch tcConfigB.emitDebugInfoInQuotations))
                     )
                     CompilerOption(
                         "shadowcopyreferences",
                         tagNone,
                         OptionSwitch(fun flag -> tcConfigB.shadowCopyReferences <- flag = OptionSwitch.On),
                         None,
-                        Some(FSIstrings.SR.shadowCopyReferences ())
+                        Some(FSIstrings.SR.shadowCopyReferences (formatOptionSwitch tcConfigB.shadowCopyReferences))
                     )
                     CompilerOption(
                         "multiemit",
                         tagNone,
                         OptionSwitch(fun flag -> tcConfigB.fsiMultiAssemblyEmit <- flag = OptionSwitch.On),
                         None,
-                        Some(FSIstrings.SR.fsiMultiAssemblyEmitOption ())
+                        Some(FSIstrings.SR.fsiMultiAssemblyEmitOption (formatOptionSwitch tcConfigB.fsiMultiAssemblyEmit))
                     )
                 ]
             )
@@ -1797,6 +1797,9 @@ type internal FsiDynamicCompiler
 
         let multiAssemblyName = ilxMainModule.ManifestOfAssembly.Name
 
+        // The name of the assembly is "FSI-ASSEMBLY" for all submissions. This number is used for the Version
+        let dynamicAssemblyId = Interlocked.Increment &dynamicAssemblyId
+
         // Adjust the assembly name of this fragment, and add InternalsVisibleTo attributes to
         // allow internals access by all future assemblies with the same name (and only differing in version)
         let manifest =
@@ -1811,12 +1814,9 @@ type internal FsiDynamicCompiler
             { manifest with
                 Name = multiAssemblyName
                 // Because the coreclr loader will not load a higher assembly make versions go downwards
-                Version = Some(parseILVersion $"0.0.0.{maxVersion - dynamicAssemblyId}")
+                Version = Some(parseILVersion $"0.0.0.{maxVersion - dynamicAssemblyId % maxVersion}")
                 CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs attrs)
             }
-
-        // The name of the assembly is "FSI-ASSEMBLY" for all submissions. This number is used for the Version
-        dynamicAssemblyId <- (dynamicAssemblyId + 1) % maxVersion
 
         let ilxMainModule =
             { ilxMainModule with

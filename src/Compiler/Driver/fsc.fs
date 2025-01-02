@@ -1129,7 +1129,10 @@ let main6
     DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent ctok
 
     let pdbfile =
-        pdbfile |> Option.map (tcConfig.MakePathAbsolute >> FileSystem.GetFullPathShim)
+        pdbfile
+        |> Option.map (fun s ->
+            let absolutePath = tcConfig.MakePathAbsolute s
+            FileSystem.GetFullPathShim(absolutePath))
 
     let normalizeAssemblyRefs (aref: ILAssemblyRef) =
         match tcImports.TryFindDllInfo(ctok, rangeStartup, aref.Name, lookupOnly = false) with

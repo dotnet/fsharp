@@ -97,3 +97,40 @@ let ``Type decl - Record - Field type 01`` () =
 type Record = { Field:  }
 """
     assertHasItemWithNames ["string"] info
+
+
+[<Fact>]
+let ``Expr - Qualifier 01`` () =
+    let info =
+        getCompletionInfo "s.Trim(). " (3, 13) """
+let f (s: string) =
+    s.Trim().
+    s.Trim()
+    s.Trim()
+    ()
+"""
+    assertHasItemWithNames ["Length"] info
+
+[<Fact>]
+let ``Expr - Qualifier 02`` () =
+    let info =
+        getCompletionInfo "s.Trim(). " (4, 13) """
+let f (s: string) =
+    s.Trim()
+    s.Trim().
+    s.Trim()
+    ()
+"""
+    assertHasItemWithNames ["Length"] info
+
+[<Fact>]
+let ``Expr - Qualifier 03`` () =
+    let info =
+        getCompletionInfo "s.Trim(). " (5, 13) """
+let f (s: string) =
+    s.Trim()
+    s.Trim()
+    s.Trim().
+    ()
+"""
+    assertHasItemWithNames ["Length"] info

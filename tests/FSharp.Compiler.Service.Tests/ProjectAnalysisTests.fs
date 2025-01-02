@@ -105,28 +105,31 @@ let ``Test project1 whole project errors`` () =
     wholeProjectResults.Diagnostics[0].Range.StartColumn |> shouldEqual 43
     wholeProjectResults.Diagnostics[0].Range.EndColumn |> shouldEqual 44
 
-[<Fact>]
-let ``Test project1 and make sure TcImports gets cleaned up`` () =
+[<Collection(nameof NotThreadSafeResourceCollection)>]
+module ClearLanguageServiceRootCachesTest =
+    [<Fact>]
+    let ``Test project1 and make sure TcImports gets cleaned up`` () =
 
-    // A private checker for this test.
-    let checker = FSharpChecker.Create()
+        // A private checker for this test.
+        let checker = FSharpChecker.Create()
     
-    let test () =
-        let _, checkFileAnswer = checker.ParseAndCheckFileInProject(Project1.fileName1, 0, Project1.fileSource1, Project1.options) |> Async.RunImmediate
-        match checkFileAnswer with
-        | FSharpCheckFileAnswer.Aborted -> failwith "should not be aborted"
-        | FSharpCheckFileAnswer.Succeeded checkFileResults ->
-            let tcImportsOpt = checkFileResults.TryGetCurrentTcImports ()
-            Assert.True tcImportsOpt.IsSome
-            let weakTcImports = WeakReference tcImportsOpt.Value
-            Assert.True weakTcImports.IsAlive
-            weakTcImports
+        let test () =
+            let _, checkFileAnswer = checker.ParseAndCheckFileInProject(Project1.fileName1, 0, Project1.fileSource1, Project1.options) |> Async.RunImmediate
+            match checkFileAnswer with
+            | FSharpCheckFileAnswer.Aborted -> failwith "should not be aborted"
+            | FSharpCheckFileAnswer.Succeeded checkFileResults ->
+                let tcImportsOpt = checkFileResults.TryGetCurrentTcImports ()
+                Assert.True tcImportsOpt.IsSome
+                let weakTcImports = WeakReference tcImportsOpt.Value
+                Assert.True weakTcImports.IsAlive
+                weakTcImports
 
-    // Here we are only keeping a handle to weakTcImports and nothing else
-    let weakTcImports = test ()
-    checker.InvalidateConfiguration Project1.options
-    checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-    System.Threading.SpinWait.SpinUntil(fun () -> not weakTcImports.IsAlive)
+        // Here we are only keeping a handle to weakTcImports and nothing else
+        let weakTcImports = test ()
+        checker.InvalidateConfiguration Project1.options
+        checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+        GC.Collect()
+        System.Threading.SpinWait.SpinUntil(fun () -> not weakTcImports.IsAlive)
 
 [<Fact>]
 let ``Test Project1 should have protected FullName and TryFullName return same results`` () =
@@ -5788,18 +5791,20 @@ let checkContentAsScript content =
     | FSharpCheckFileAnswer.Aborted -> failwith "no check results"
     | FSharpCheckFileAnswer.Succeeded r -> r
 
-[<Fact>]
-let ``References from #r nuget are included in script project options`` () =
-    let checkResults = checkContentAsScript """
-#i "nuget:https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json"
-#r "nuget: Dapper"
-"""
-    let assemblyNames =
-        checkResults.ProjectContext.GetReferencedAssemblies()
-        |> Seq.choose (fun f -> f.FileName |> Option.map Path.GetFileName)
-        |> Seq.distinct
-    printfn "%s" (assemblyNames |> String.concat "\n")
-    Assert.Contains("Dapper.dll", assemblyNames)
+[<Collection(nameof NotThreadSafeResourceCollection)>]
+module ScriptClosureCacheUse =
+    [<Fact>]
+    let ``References from #r nuget are included in script project options`` () =
+        let checkResults = checkContentAsScript """
+    #i "nuget:https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json"
+    #r "nuget: Dapper"
+    """
+        let assemblyNames =
+            checkResults.ProjectContext.GetReferencedAssemblies()
+            |> Seq.choose (fun f -> f.FileName |> Option.map Path.GetFileName)
+            |> Seq.distinct
+        printfn "%s" (assemblyNames |> String.concat "\n")
+        Assert.Contains("Dapper.dll", assemblyNames)
 
 module internal EmptyProject =
     let base2 = getTemporaryFileName ()
