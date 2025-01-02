@@ -537,6 +537,10 @@ module rec Compiler =
     let withOptimize (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--optimize+" ] "withOptimize is only supported for F#" cUnit
 
+    let withOptimization (optimization: bool) (cUnit: CompilationUnit) : CompilationUnit =
+        let option = if optimization then "--optimize+" else "--optimize-"
+        withOptionsHelper [ option ] "withOptimization is only supported for F#" cUnit
+
     let withFullPdb(cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--debug:full" ] "withFullPdb is only supported for F#" cUnit
 
