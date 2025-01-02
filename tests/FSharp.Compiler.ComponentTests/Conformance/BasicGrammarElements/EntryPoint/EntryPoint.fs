@@ -9,43 +9,48 @@ open FSharp.Test.Compiler
 module EntryPoint =
 
     //	SOURCE=behavior001.fs							# noarguments001.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"behavior001.fs"|])>]
+    [<Theory; FileInlineData("behavior001.fs")>]
     let ``behavior001_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed
 
     //	SOURCE=noarguments001.fs							# noarguments001.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"noarguments001.fs"|])>]
+    [<Theory; FileInlineData("noarguments001.fs")>]
     let ``noarguments001_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed
 
 
     //NoMT	SOURCE="twofiles_001a.fs twofiles_001b.fs"					# twofiles_001a/b
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"twofiles_001a.fs"|])>]
+    [<Theory; FileInlineData("twofiles_001a.fs")>]
     let ``twofiles_001a_fs_twofiles_001b_fs`` compilation =
         compilation
+        |> getCompilation
         |> withAdditionalSourceFile (SourceFromPath (__SOURCE_DIRECTORY__ ++ "twofiles_001b.fs"))
         |> asExe
         |> compile
         |> shouldSucceed
 
     //NoMT	SOURCE=inamodule001.fs								# inamodule001.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"inamodule001.fs"|])>]
+    [<Theory; FileInlineData("inamodule001.fs")>]
     let ``inamodule001_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed
 
     //	SOURCE=E_twoentrypoints001.fs                   SCFLAGS="--test:ErrorRanges"		# E_twoentrypoints001.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_twoentrypoints001.fs"|])>]
+    [<Theory; FileInlineData("E_twoentrypoints001.fs")>]
     let ``E_twoentrypoints001_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions [ "--test:ErrorRanges" ]
         |> compile
@@ -55,9 +60,10 @@ module EntryPoint =
         ]
 
     //	SOURCE="E_twofiles_002b.fs E_twofiles_002a.fs"  SCFLAGS="--test:ErrorRanges"		# E_twofiles_002b/a
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_twofiles_002b.fs"|])>]
+    [<Theory; FileInlineData("E_twofiles_002b.fs")>]
     let ``E_twofiles_002b_fs_E_twofiles_002a_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withAdditionalSourceFile (SourceFromPath (__SOURCE_DIRECTORY__ ++ "E_twofiles_002a.fs"))
         |> withOptions [ "--test:ErrorRanges" ]
@@ -68,9 +74,10 @@ module EntryPoint =
         ]
 
     //	SOURCE=E_oninvalidlanguageelement001.fs         SCFLAGS="--test:ErrorRanges"		# E_oninvalidlanguageelement001.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_oninvalidlanguageelement001.fs"|])>]
+    [<Theory; FileInlineData("E_oninvalidlanguageelement001.fs")>]
     let ``E_oninvalidlanguageelement001_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -79,9 +86,10 @@ module EntryPoint =
         ]
 
     //	SOURCE=E_twoattributesonsamefunction001.fs      SCFLAGS="--test:ErrorRanges"	# E_twoattributesonsamefunction001.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_twoattributesonsamefunction001.fs"|])>]
+    [<Theory; FileInlineData("E_twoattributesonsamefunction001.fs")>]
     let ``E_twoattributesonsamefunction001_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -90,17 +98,19 @@ module EntryPoint =
         ]
 
     //	SOURCE=entrypointfunctionnotmain001.fs						# entrypointfunctionnotmain001.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"entrypointfunctionnotmain001.fs"|])>]
+    [<Theory; FileInlineData("entrypointfunctionnotmain001.fs")>]
     let ``entrypointfunctionnotmain001_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed
 
     //	SOURCE=E_invalidsignature001.fs                 SCFLAGS="--test:ErrorRanges"	# E_invalidsignature001.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_invalidsignature001.fs"|])>]
+    [<Theory; FileInlineData("E_invalidsignature001.fs")>]
     let ``E_invalidsignature001_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -112,9 +122,10 @@ but here has type
         ]
 
     //	SOURCE=E_InvalidSignature02.fs                  SCFLAGS="--test:ErrorRanges"	# E_InvalidSignature02
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_InvalidSignature02.fs"|])>]
+    [<Theory; FileInlineData("E_InvalidSignature02.fs")>]
     let ``E_InvalidSignature02_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -126,51 +137,57 @@ but here has type
         ]
 
     //NoMT	SOURCE=entrypointandFSI.fs    SCFLAGS="--multiemit-" FSIMODE=PIPE COMPILE_ONLY=1				# entrypointandFSI.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"entrypointandFSI.fs"|])>]
+    [<Theory; FileInlineData("entrypointandFSI.fs")>]
     let ``entrypointandFSI_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed
 
     //NoMT	SOURCE=entrypointandFSI02.fsx SCFLAGS="--multiemit-" FSIMODE=EXEC COMPILE_ONLY=1				# entrypointandFSI02.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"entrypointandFSI02.fsx"|])>]
+    [<Theory; FileInlineData("entrypointandFSI02.fsx")>]
     let ``entrypointandFSI02_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed
 
     //	SOURCE=E_CompilingToALibrary01.fs SCFLAGS="--test:ErrorRanges --target:library"	# E_CompilingToALibrary01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CompilingToALibrary01.fs"|])>]
+    [<Theory; FileInlineData("CompilingToALibrary01.fs")>]
     let ``CompilingToALibrary01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asLibrary
         |> withOptions [ "--test:ErrorRanges" ]
         |> compile
         |> shouldSucceed
 
     //	SOURCE=E_CompilingToAModule01.fs  SCFLAGS="--test:ErrorRanges --target:module"	# E_CompilingToAModule01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CompilingToAModule01.fs"|])>]
+    [<Theory; FileInlineData("CompilingToAModule01.fs")>]
     let ``CompilingToAModule01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asModule
         |> withOptions [ "--test:ErrorRanges" ]
         |> compile
         |> shouldSucceed
 
     //	SOURCE=EntryPointAndAssemblyCulture.fs								# EntryPointAndAssemblyCulture.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"EntryPointAndAssemblyCulture.fs"|])>]
+    [<Theory; FileInlineData("EntryPointAndAssemblyCulture.fs")>]
     let ``EntryPointAndAssemblyCulture_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldSucceed
 
     //	SOURCE=W_NoEntryPointInLastModuleInsideMultipleNamespace.fs SCFLAGS="--test:ErrorRanges"	# W_NoEntryPointInLastModuleInsideMultipleNamespace.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_NoEntryPointInLastModuleInsideMultipleNamespace.fs"|])>]
+    [<Theory; FileInlineData("W_NoEntryPointInLastModuleInsideMultipleNamespace.fs")>]
     let ``W_NoEntryPointInLastModuleInsideMultipleNamespace_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -179,9 +196,10 @@ but here has type
         ]
 
     //	SOURCE=W_NoEntryPointModuleInNamespace.fs SCFLAGS="--test:ErrorRanges"	# W_NoEntryPointModuleInNamespace.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_NoEntryPointModuleInNamespace.fs"|])>]
+    [<Theory; FileInlineData("W_NoEntryPointModuleInNamespace.fs")>]
     let ``W_NoEntryPointModuleInNamespace_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -190,9 +208,10 @@ but here has type
         ]
 
     //	SOURCE=W_NoEntryPointMultipleModules.fs SCFLAGS="--test:ErrorRanges"	# W_NoEntryPointMultipleModules.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_NoEntryPointMultipleModules.fs"|])>]
+    [<Theory; FileInlineData("W_NoEntryPointMultipleModules.fs")>]
     let ``W_NoEntryPointMultipleModules_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -201,9 +220,10 @@ but here has type
         ]
 
     //	SOURCE=W_NoEntryPointTypeInNamespace.fs SCFLAGS="--test:ErrorRanges"	# W_NoEntryPointTypeInNamespace.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_NoEntryPointTypeInNamespace.fs"|])>]
+    [<Theory; FileInlineData("W_NoEntryPointTypeInNamespace.fs")>]
     let ``W_NoEntryPointTypeInNamespace_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail

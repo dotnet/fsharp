@@ -30,9 +30,10 @@ module MemberDefinitions_OptionalDefaultParamArgs =
         |> compileAndRun
 
     // SOURCE=E_OnlyDefault.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_OnlyDefault.fs"|])>]
+    [<Theory; FileInlineData("E_OnlyDefault.fs")>]
     let ``E_OnlyDefault_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -40,39 +41,44 @@ module MemberDefinitions_OptionalDefaultParamArgs =
         ]
 
     // SOURCE=InterfaceMethod.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InterfaceMethod.fs"|])>]
+    [<Theory; FileInlineData("InterfaceMethod.fs")>]
     let ``InterfaceMethod_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //// SOURCE=Library.fs POSTCMD="\$CSC_PIPE -r:Library.dll CallFSharpMethods.cs && CallFSharpMethods.exe" SCFLAGS=-a
-    //[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CallFSharpMethods.cs"|])>]
+    //[<Theory; FileInlineData("CallFSharpMethods.cs")>]
     //let ``CallFSharpMethods_cs`` _compilation =
     //    compilation
+    //    |> getCompilation
     //    |> withReferences [fsLibrary]
     //    |> verifyCompileAndRun
     //    |> shouldSucceed
 
     // SOURCE=Library.fs POSTCMD="\$FSC_PIPE -r:Library.dll CallMethods.fs && CallMethods.exe" SCFLAGS=-a
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CallMethods.fs"|])>]
+    [<Theory; FileInlineData("CallMethods.fs")>]
     let ``CallMethods_fs`` compilation =
         compilation
+        |> getCompilation
         |> withReferences [fsLibrary]
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Sanity.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Sanity.fs"|])>]
+    [<Theory; FileInlineData("Sanity.fs")>]
     let ``Sanity_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=W_WrongDefaultType.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_WrongDefaultType.fs"|])>]
+    [<Theory; FileInlineData("W_WrongDefaultType.fs")>]
     let ``W_WrongDefaultType_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [

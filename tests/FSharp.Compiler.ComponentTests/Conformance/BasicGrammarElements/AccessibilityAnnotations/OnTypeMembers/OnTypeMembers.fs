@@ -6,7 +6,7 @@ open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 
-module AccessibilityAnnotations_OnTypeMembers =
+module OnTypeMembers =
 
     let verifyCompile compilation =
         compilation
@@ -21,33 +21,36 @@ module AccessibilityAnnotations_OnTypeMembers =
         |> compileAndRun
 
     // SOURCE=AccessProtectedStatic01.fs SCFLAGS="-r:BaseClass.dll"    PRECMD="\$CSC_PIPE /target:library BaseClass.cs"                         # AccessProtectedStatic01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AccessProtectedStatic01.fs"|])>]
+    [<Theory; FileInlineData("AccessProtectedStatic01.fs")>]
     let ``AccessProtectedStatic01_fs`` compilation =
         let lib =
             CSharpFromPath (__SOURCE_DIRECTORY__ ++ "BaseClass.cs")
             |> withName "ReadWriteLib"
 
         compilation
+        |> getCompilation 
         |> withReferences [lib]
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=E_AccessProtectedInstance01.fs SCFLAGS="-r:BaseClass.dll --test:ErrorRanges"    PRECMD="\$CSC_PIPE /target:library BaseClass.cs"  # AccessProtectedInstance01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AccessProtectedInstance01.fs"|])>]
+    [<Theory; FileInlineData("AccessProtectedInstance01.fs")>]
     let ``AccessProtectedInstance01_fs`` compilation =
         let lib =
             CSharpFromPath (__SOURCE_DIRECTORY__ ++ "BaseClass.cs")
             |> withName "ReadWriteLib"
 
         compilation
+        |> getCompilation 
         |> withReferences [lib]
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=E_AccessPrivateMember01.fs SCFLAGS="--test:ErrorRanges"          # E_AccessPrivateMember01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AccessPrivateMember01.fs"|])>]
+    [<Theory; FileInlineData("E_AccessPrivateMember01.fs")>]
     let ``E_AccessPrivateMember01_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -56,9 +59,10 @@ module AccessibilityAnnotations_OnTypeMembers =
         ]
 
     // SOURCE=E_OnProperty01.fs                                                # E_OnProperty01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_OnProperty01.fs"|])>]
+    [<Theory; FileInlineData("E_OnProperty01.fs")>]
     let ``E_OnProperty01_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -77,9 +81,10 @@ module AccessibilityAnnotations_OnTypeMembers =
         ]
 
     // SOURCE=E_OnProperty02.fs SCFLAGS="--test:ErrorRanges"                   # E_OnProperty02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_OnProperty02.fs"|])>]
+    [<Theory; FileInlineData("E_OnProperty02.fs")>]
     let ``E_OnProperty02_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -94,8 +99,9 @@ module AccessibilityAnnotations_OnTypeMembers =
         ]
 
     // SOURCE=OnProperty01.fs                                                  # OnProperty01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"OnProperty01.fs"|])>]
+    [<Theory; FileInlineData("OnProperty01.fs")>]
     let ``OnProperty01_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompileAndRun
         |> shouldSucceed

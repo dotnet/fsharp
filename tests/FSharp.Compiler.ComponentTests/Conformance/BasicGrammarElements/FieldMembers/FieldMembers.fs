@@ -21,16 +21,18 @@ module FieldMembers =
         |> compileAndRun
 
     // SOURCE=DefaultValue01.fs	# DefaultValue01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"DefaultValue01.fs"|])>]
+    [<Theory; FileInlineData("DefaultValue01.fs")>]
     let ``DefaultValue01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=E_StaticField01.fs	# E_StaticField01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_StaticField01.fs"|])>]
+    [<Theory; FileInlineData("E_StaticField01.fs")>]
     let ``E_StaticField01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -39,9 +41,10 @@ module FieldMembers =
         ]
 
     // SOURCE=E_StaticField02a.fs	# E_StaticField02a.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_StaticField02a.fs"|])>]
+    [<Theory; FileInlineData("E_StaticField02a.fs")>]
     let ``E_StaticField02a_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -50,23 +53,26 @@ module FieldMembers =
         ]
 
     // SOURCE=StaticField01.fs		# StaticField01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StaticField01.fs"|])>]
+    [<Theory; FileInlineData("StaticField01.fs")>]
     let ``StaticField01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=StaticField02.fs		# StaticField02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StaticField02.fs"|])>]
+    [<Theory; FileInlineData("StaticField02.fs")>]
     let ``StaticField02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Staticfield03.fs		# Staticfield03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Staticfield03.fs"|])>]
+    [<Theory; FileInlineData("Staticfield03.fs")>]
     let ``StaticField03_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 

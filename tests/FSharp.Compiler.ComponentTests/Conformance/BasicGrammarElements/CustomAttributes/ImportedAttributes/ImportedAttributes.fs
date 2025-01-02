@@ -21,9 +21,10 @@ module CustomAttributes_ImportedAttributes =
         |> compileAndRun
 
     // SOURCE=FieldOffset01.fs SCFLAGS="" PEVER=/MD 	# FieldOffset01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"FieldOffset01.fs"|])>]
+    [<Theory; FileInlineData("FieldOffset01.fs")>]
     let ``FieldOffset01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 

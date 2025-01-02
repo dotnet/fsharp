@@ -21,24 +21,27 @@ module LetBindings_Basic =
         |> compileAndRun
 
     // SOURCE=AsPat01.fs                                                       # AsPat01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AsPat01.fs"|])>]
+    [<Theory; FileInlineData("AsPat01.fs")>]
     let ``AsPat01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=AsPat02.fs                                                       # AsPat02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AsPat02.fs"|])>]
+    [<Theory; FileInlineData("AsPat02.fs")>]
     let ``AsPat02_fs`` compilation =
         compilation
+        |> getCompilation
         |> withOptions ["--nowarn:25";]
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=E_AsPat01.fs                                                     # E_AsPat01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AsPat01.fs"|])>]
+    [<Theory; FileInlineData("E_AsPat01.fs")>]
     let ``E_AsPat01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -46,9 +49,10 @@ module LetBindings_Basic =
         ]
 
     // SOURCE=E_AttributesOnLet01.fs SCFLAGS="--test:ErrorRanges"              # E_AttributesOnLet01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributesOnLet01.fs"|])>]
+    [<Theory; FileInlineData("E_AttributesOnLet01.fs")>]
     let ``E_AttributesOnLet01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -59,9 +63,10 @@ module LetBindings_Basic =
         ]
 
     // SOURCE=E_ErrorsForInlineValue.fs SCFLAGS="--test:ErrorRanges"           # E_ErrorsForInlineValue.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ErrorsForInlineValue.fs"|])>]
+    [<Theory; FileInlineData("E_ErrorsForInlineValue.fs")>]
     let ``E_ErrorsForInlineValue_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -70,9 +75,10 @@ module LetBindings_Basic =
         ]
 
     // SOURCE=E_ErrorsforIncompleteTryWith.fs SCFLAGS="--test:ErrorRanges"     # E_ErrorsforIncompleteTryWith.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ErrorsforIncompleteTryWith.fs"|])>]
+    [<Theory; FileInlineData("E_ErrorsforIncompleteTryWith.fs")>]
     let ``E_ErrorsforIncompleteTryWith_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -83,9 +89,10 @@ module LetBindings_Basic =
         ]
 
     // SOURCE=E_GenericTypeAnnotations01.fs SCFLAGS="--test:ErrorRanges"       # E_GenericTypeAnnotations01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_GenericTypeAnnotations01.fs"|])>]
+    [<Theory; FileInlineData("E_GenericTypeAnnotations01.fs")>]
     let ``E_GenericTypeAnnotations01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -94,9 +101,10 @@ module LetBindings_Basic =
         ]
 
     // SOURCE=E_InvalidInnerRecursiveBinding.fs SCFLAGS="--test:ErrorRanges"   # E_InvalidInnerRecursiveBinding.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_InvalidInnerRecursiveBinding.fs"|])>]
+    [<Theory; FileInlineData("E_InvalidInnerRecursiveBinding.fs")>]
     let ``E_InvalidInnerRecursiveBinding_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -104,9 +112,10 @@ module LetBindings_Basic =
         ]
 
     // SOURCE=E_InvalidInnerRecursiveBinding2.fs SCFLAGS="--test:ErrorRanges"  # E_InvalidInnerRecursiveBinding2.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_InvalidInnerRecursiveBinding2.fs"|])>]
+    [<Theory; FileInlineData("E_InvalidInnerRecursiveBinding2.fs")>]
     let ``E_InvalidInnerRecursiveBinding2_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -114,9 +123,10 @@ module LetBindings_Basic =
         ]
 
     // SOURCE="E_Literals02.fsi E_Literals02.fs"                               # E_Literals02.fsi
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Literals02.fsi"|])>]
+    [<Theory; FileInlineData("E_Literals02.fsi")>]
     let ``E_Literals02_fsi`` compilation =
         compilation
+        |> getCompilation
         |> withAdditionalSourceFile (SourceFromPath (__SOURCE_DIRECTORY__ ++"E_Literals02.fs"))
         |> typecheck
         |> shouldFail
@@ -126,9 +136,10 @@ module LetBindings_Basic =
         ]
 
     // SOURCE="E_Literals03.fsi E_Literals03.fs"                               # E_Literals03.fsi
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Literals03.fsi"|])>]
+    [<Theory; FileInlineData("E_Literals03.fsi")>]
     let ``E_Literals03_fsi`` compilation =
         compilation
+        |> getCompilation
         |> withAdditionalSourceFile (SourceFromPath (__SOURCE_DIRECTORY__ ++"E_Literals03.fs"))
         |> verifyCompile
         |> shouldFail
@@ -138,9 +149,10 @@ module LetBindings_Basic =
         ]
 
     // // // SOURCE="E_Literals04.fs"                                                # E_Literals04.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Literals04.fs"|])>]
+    [<Theory; FileInlineData("E_Literals04.fs")>]
     let ``E_Literals04_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -153,9 +165,10 @@ module LetBindings_Basic =
         ]
 
     // SOURCE=E_Pathological01.fs SCFLAGS=--test:ErrorRanges                   # E_Pathological01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Pathological01.fs"|])>]
+    [<Theory; FileInlineData("E_Pathological01.fs")>]
     let ``E_Pathological01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -163,9 +176,10 @@ module LetBindings_Basic =
         ]
 
     // SOURCE=E_Pathological03.fs SCFLAGS=--test:ErrorRanges                   # E_Pathological03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Pathological03.fs"|])>]
+    [<Theory; FileInlineData("E_Pathological03.fs")>]
     let ``E_Pathological03_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -173,9 +187,10 @@ module LetBindings_Basic =
         ]
 
     // SOURCE=E_Pathological05.fs SCFLAGS=--test:ErrorRanges                   # E_Pathological05.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Pathological05.fs"|])>]
+    [<Theory; FileInlineData("E_Pathological05.fs")>]
     let ``E_Pathological05_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -183,9 +198,10 @@ module LetBindings_Basic =
         ]
 
     // SOURCE=E_Pathological06.fs SCFLAGS=--test:ErrorRanges                   # E_Pathological06.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Pathological06.fs"|])>]
+    [<Theory; FileInlineData("E_Pathological06.fs")>]
     let ``E_Pathological06_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -193,14 +209,15 @@ module LetBindings_Basic =
         ]
 
     // SOURCE=Literals01.fs                                                    # Literals01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Literals01.fs"|])>]
+    [<Theory; FileInlineData("Literals01.fs")>]
     let ``Literals01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //// SOURCE=ManyLetBindings.fs SCFLAGS="--debug:full     --optimize-"        # Full ManyLetBindings.fs
-    //[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ManyLetBindings.fs"|])>]
+    //[<Theory; FileInlineData("ManyLetBindings.fs")>]
     //let ``ManyLetBindings_fs_Full_pdbs`` compilation =
     //    compilation
     //    |> withFullPdb
@@ -209,48 +226,54 @@ module LetBindings_Basic =
     //    |> shouldSucceed
 
     // SOURCE=ManyLetBindings.fs SCFLAGS="--debug:portable --optimize-"        # Portable ManyLetBindings.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ManyLetBindings.fs"|])>]
+    [<Theory; FileInlineData("ManyLetBindings.fs")>]
     let ``ManyLetBindings_fs_PortablePdbs`` compilation =
         compilation
+        |> getCompilation
         |> withPortablePdb
         |> withNoOptimize
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=nestedLetBindings.fs                                             # nestedLetBindings.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"nestedLetBindings.fs"|])>]
+    [<Theory; FileInlineData("nestedLetBindings.fs")>]
     let ``nestedLetBindings_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Pathological02.fs SCFLAGS=-a                                     # Pathological02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Pathological02.fs"|])>]
+    [<Theory; FileInlineData("Pathological02.fs")>]
     let ``Pathological02_fs`` compilation =
         compilation
+        |> getCompilation
         |> withOptions ["--nowarn:193"]
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Pathological04.fs SCFLAGS=-a                                     # Pathological04.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Pathological04.fs"|])>]
+    [<Theory; FileInlineData("Pathological04.fs")>]
     let ``Pathological04_fs`` compilation =
         compilation
+        |> getCompilation
         |> withOptions ["--nowarn:193"]
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=SanityCheck.fs                                                   # SanityCheck.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SanityCheck.fs"|])>]
+    [<Theory; FileInlineData("SanityCheck.fs")>]
     let ``SanityCheck_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=W_DoBindingsNotUnit01.fs                                         # W_DoBindingsNotUnit01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_DoBindingsNotUnit01.fs"|])>]
+    [<Theory; FileInlineData("W_DoBindingsNotUnit01.fs")>]
     let ``W_DoBindingsNotUnit01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -258,16 +281,18 @@ module LetBindings_Basic =
         ]
 
     // SOURCE=W_DoBindingsNotUnit02.fsx SCFLAGS="--warnaserror"                # W_DoBindingsNotUnit02.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_DoBindingsNotUnit02.fsx"|])>]
+    [<Theory; FileInlineData("W_DoBindingsNotUnit02.fsx")>]
     let ``W_DoBindingsNotUnit02_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=RecursiveBindingGroup.fs SCFLAGS=""                              # RecursiveBindingGroup.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"RecursiveBindingGroup.fs"|])>]
+    [<Theory; FileInlineData("RecursiveBindingGroup.fs")>]
     let ``RecursiveBindingGroup_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 

@@ -21,9 +21,10 @@ module MemberDefinitions_NamedArguments =
         |> compileAndRun
 
     // SOURCE=E_MisspeltParam01.fs		# E_MisspeltParam01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_MisspeltParam01.fs"|])>]
+    [<Theory; FileInlineData("E_MisspeltParam01.fs")>]
     let ``E_MisspeltParam01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -31,9 +32,10 @@ module MemberDefinitions_NamedArguments =
         ]
 
     // SOURCE=E_MustBePrefix.fs		# E_MustBePrefix.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_MustBePrefix.fs"|])>]
+    [<Theory; FileInlineData("E_MustBePrefix.fs")>]
     let ``E_MustBePrefix_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -41,9 +43,10 @@ module MemberDefinitions_NamedArguments =
         ]
 
     // SOURCE=E_NonNamedAfterNamed.fs		# E_NonNamedAfterNamed.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_NonNamedAfterNamed.fs"|])>]
+    [<Theory; FileInlineData("E_NonNamedAfterNamed.fs")>]
     let ``E_NonNamedAfterNamed_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -51,9 +54,10 @@ module MemberDefinitions_NamedArguments =
         ]
 
     // SOURCE=E_NumParamMismatch01.fs		# E_NumParamMismatch01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_NumParamMismatch01.fs"|])>]
+    [<Theory; FileInlineData("E_NumParamMismatch01.fs")>]
     let ``E_NumParamMismatch01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -63,9 +67,10 @@ module MemberDefinitions_NamedArguments =
         ]
 
     // SOURCE=E_ReusedParam.fs			# E_ReusedParam.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ReusedParam.fs"|])>]
+    [<Theory; FileInlineData("E_ReusedParam.fs")>]
     let ``E_ReusedParam_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -74,9 +79,10 @@ module MemberDefinitions_NamedArguments =
         ]
 
     // SOURCE=E_SyntaxErrors01.fs               SCFLAGS="--test:ErrorRanges"		# E_SyntaxErrors01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SyntaxErrors01.fs"|])>]
+    [<Theory; FileInlineData("E_SyntaxErrors01.fs")>]
     let ``E_SyntaxErrors01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -86,72 +92,82 @@ module MemberDefinitions_NamedArguments =
         ]
 
     // SOURCE=genericNamedParams.fs		# genericNamedParams.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"genericNamedParams.fs"|])>]
+    [<Theory; FileInlineData("genericNamedParams.fs")>]
     let ``genericNamedParams_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=mixNamedNonNamed.fs		# mixNamedNonNamed.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"mixNamedNonNamed.fs"|])>]
+    [<Theory; FileInlineData("mixNamedNonNamed.fs")>]
     let ``mixNamedNonNamed_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=PropSetAfterConstrn01.fs	# PropSetAfterConstrn01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PropSetAfterConstrn01.fs"|])>]
+    [<Theory; FileInlineData("PropSetAfterConstrn01.fs")>]
     let ``PropertySetterAfterConstruction01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=PropertySetterAfterConstruction01NamedExtensions.fs	# PropertySetterAfterConstruction01NamedExtensions.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PropSetAfterConstrn01NamedExt.fs"|])>]
+    [<Theory; FileInlineData("PropSetAfterConstrn01NamedExt.fs")>]
     let ``PropertySetterAfterConstruction01NamedExtensions_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=PropSetAfterConstrn01NamedExtInherit.fs	# PropSetAfterConstrn01NamedExtInherit.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PropSetAfterConstrn01NamedExtInherit.fs"|])>]
+    [<Theory; FileInlineData("PropSetAfterConstrn01NamedExtInherit.fs")>]
     let ``PropertySetterAfterConstruction01NamedExtensionsInheritance_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=PropertySetterAfterConstruction01NamedExtensionsOptional.fs	# PropSetAfterConstrn01NamedExtOpt.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PropSetAfterConstrn01NamedExtOpt.fs"|])>]
+    [<Theory; FileInlineData("PropSetAfterConstrn01NamedExtOpt.fs")>]
     let ``PropertySetterAfterConstruction01NamedExtensionsOptional_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCEPropSetAfterConstrn02.fs	# PropSetAfterConstrn02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PropSetAfterConstrn02.fs"|])>]
+    [<Theory; FileInlineData("PropSetAfterConstrn02.fs")>]
     let ``PropertySetterAfterConstruction02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=PropSetAfterConstrn02NamedExt.fs	# PropSetAfterConstrn02NamedExt.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PropSetAfterConstrn02NamedExt.fs"|])>]
+    [<Theory; FileInlineData("PropSetAfterConstrn02NamedExt.fs")>]
     let ``PropertySetterAfterConstruction02NamedExtensions_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=refLibsHaveNamedParams.fs	# refLibsHaveNamedParams.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"refLibsHaveNamedParams.fs"|])>]
+    [<Theory; FileInlineData("refLibsHaveNamedParams.fs")>]
     let ``refLibsHaveNamedParams_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=SanityCheck.fs			# SanityCheck.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SanityCheck.fs"|])>]
+    [<Theory; FileInlineData("SanityCheck.fs")>]
     let ``SanityCheck_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed

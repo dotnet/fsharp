@@ -21,9 +21,10 @@ module AccessibilityAnnotations_PermittedLocations =
         |> compileAndRun
 
     // SOURCE=E_accessibilityOnInterface.fs                SCFLAGS="--test:ErrorRanges"         # E_accessibilityOnInterface.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_accessibilityOnInterface.fs"|])>]
+    [<Theory; FileInlineData("E_accessibilityOnInterface.fs")>]
     let ``E_accessibilityOnInterface_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -39,9 +40,10 @@ module AccessibilityAnnotations_PermittedLocations =
         ]
 
     // SOURCE=E_accessibilityOnInterface01.fs              SCFLAGS="--test:ErrorRanges"         # E_accessibilityOnInterface01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_accessibilityOnInterface01.fs"|])>]
+    [<Theory; FileInlineData("E_accessibilityOnInterface01.fs")>]
     let ``E_accessibilityOnInterface01_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -50,9 +52,10 @@ module AccessibilityAnnotations_PermittedLocations =
         ]
 
     // SOURCE=E_accessibilityOnInterface02.fs              SCFLAGS="--test:ErrorRanges"         # E_accessibilityOnInterface02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_accessibilityOnInterface02.fs"|])>]
+    [<Theory; FileInlineData("E_accessibilityOnInterface02.fs")>]
     let ``E_accessibilityOnInterface02_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -61,9 +64,10 @@ module AccessibilityAnnotations_PermittedLocations =
         ]
 
     // SOURCE=E_accessibilityOnInterface03.fs              SCFLAGS="--test:ErrorRanges"         # E_accessibilityOnInterface03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_accessibilityOnInterface03.fs"|])>]
+    [<Theory; FileInlineData("E_accessibilityOnInterface03.fs")>]
     let ``E_accessibilityOnInterface03_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -72,9 +76,10 @@ module AccessibilityAnnotations_PermittedLocations =
         ]
 
     // SOURCE=E_accessibilityOnInterface04.fs              SCFLAGS="--test:ErrorRanges"         # E_accessibilityOnInterface04.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_accessibilityOnInterface04.fs"|])>]
+    [<Theory; FileInlineData("E_accessibilityOnInterface04.fs")>]
     let ``E_accessibilityOnInterface04_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -82,9 +87,10 @@ module AccessibilityAnnotations_PermittedLocations =
         ]
 
     // SOURCE=E_accessibilityOnInterface05.fs              SCFLAGS="--test:ErrorRanges"         # E_accessibilityOnInterface05.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_accessibilityOnInterface05.fs"|])>]
+    [<Theory; FileInlineData("E_accessibilityOnInterface05.fs")>]
     let ``E_accessibilityOnInterface05_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -92,9 +98,10 @@ module AccessibilityAnnotations_PermittedLocations =
         ]
 
     // SOURCE=E_accessibilityOnInterface06.fs              SCFLAGS="--test:ErrorRanges"         # E_accessibilityOnInterface06.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_accessibilityOnInterface06.fs"|])>]
+    [<Theory; FileInlineData("E_accessibilityOnInterface06.fs")>]
     let ``E_accessibilityOnInterface06_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -102,9 +109,10 @@ module AccessibilityAnnotations_PermittedLocations =
         ]
 
     // SOURCE=E_accessibilityOnRecords.fs                  SCFLAGS="--test:ErrorRanges"         # E_accessibilityOnRecords.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_accessibilityOnRecords.fs"|])>]
+    [<Theory; FileInlineData("E_accessibilityOnRecords.fs")>]
     let ``E_accessibilityOnRecords_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -114,9 +122,10 @@ module AccessibilityAnnotations_PermittedLocations =
         ]
 
     // SOURCE=E_accessibilityOnRecords02.fs                SCFLAGS="--test:ErrorRanges"         # E_accessibilityOnRecords02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_accessibilityOnRecords02.fs"|])>]
+    [<Theory; FileInlineData("E_accessibilityOnRecords02.fs")>]
     let ``E_accessibilityOnRecords02_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -124,9 +133,10 @@ module AccessibilityAnnotations_PermittedLocations =
         ]
 
     // SOURCE=E_orderingOfAccessibilityKeyword_let01.fs    SCFLAGS="--test:ErrorRanges"         # E_orderingOfAccessibilityKeyword_let01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_orderingOfAccessibilityKeyword_let01.fs"|])>]
+    [<Theory; FileInlineData("E_orderingOfAccessibilityKeyword_let01.fs")>]
     let ``E_orderingOfAccessibilityKeyword_let01_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -138,9 +148,10 @@ module AccessibilityAnnotations_PermittedLocations =
         ]
 
     // SOURCE=E_orderingOfAccessibilityKeyword_member01.fs SCFLAGS="--test:ErrorRanges"         # E_orderingOfAccessibilityKeyword_member01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_orderingOfAccessibilityKeyword_member01.fs"|])>]
+    [<Theory; FileInlineData("E_orderingOfAccessibilityKeyword_member01.fs")>]
     let ``E_orderingOfAccessibilityKeyword_member01_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -148,9 +159,10 @@ module AccessibilityAnnotations_PermittedLocations =
         ]
 
     // SOURCE=E_orderingOfAccessibilityKeyword_module01.fs SCFLAGS="--test:ErrorRanges"         # E_orderingOfAccessibilityKeyword_module01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_orderingOfAccessibilityKeyword_module01.fs"|])>]
+    [<Theory; FileInlineData("E_orderingOfAccessibilityKeyword_module01.fs")>]
     let ``E_orderingOfAccessibilityKeyword_module01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -158,9 +170,10 @@ module AccessibilityAnnotations_PermittedLocations =
         ]
 
     // SOURCE=E_orderingOfAccessibilityKeyword_type01.fs   SCFLAGS="--test:ErrorRanges"         # E_orderingOfAccessibilityKeyword_type01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_orderingOfAccessibilityKeyword_type01.fs"|])>]
+    [<Theory; FileInlineData("E_orderingOfAccessibilityKeyword_type01.fs")>]
     let ``E_orderingOfAccessibilityKeyword_type01_fs`` compilation =
         compilation
+        |> getCompilation 
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [

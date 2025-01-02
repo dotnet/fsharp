@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Conformance.BasicGrammarElements
 
@@ -21,83 +21,94 @@ module CustomAttributes_AttributeUsage =
         |> compileAndRun
 
     // SOURCE=AssemblyVersion01.fs							# AssemblyVersion01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyVersion01.fs"|])>]
+    [<Theory; FileInlineData("AssemblyVersion01.fs")>]
     let ``AssemblyVersion01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=AssemblyVersion02.fs							# AssemblyVersion02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyVersion02.fs"|])>]
+    [<Theory; FileInlineData("AssemblyVersion02.fs")>]
     let ``AssemblyVersion02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=AssemblyVersion03.fs                          # AssemblyVersion03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyVersion03.fs"|])>]
+    [<Theory; FileInlineData("AssemblyVersion03.fs")>]
     let ``AssemblyVersion03_fs`` compilation =
         compilation
+        |> getCompilation
         |> withOptions ["--nowarn:52"]
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=AssemblyVersion04.fs							# AssemblyVersion04.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyVersion04.fs"|])>]
+    [<Theory; FileInlineData("AssemblyVersion04.fs")>]
     let ``AssemblyVersion04_fs`` compilation =
         compilation
+        |> getCompilation
         |> withOptions ["--nowarn:52"]
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=AttributeTargetsIsCtor01.fs				# AttributeTargetsIsCtor01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsCtor01.fs"|])>]
+    [<Theory; FileInlineData("AttributeTargetsIsCtor01.fs")>]
     let ``AttributeTargetsIsCtor01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=AttributeTargetsIsMethod01.fs				# AttributeTargetsIsMethod01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsMethod01.fs"|])>]
+    [<Theory; FileInlineData("AttributeTargetsIsMethod01.fs")>]
     let ``AttributeTargetsIsMethod01_fs 8.0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion80
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=AttributeTargetsIsMethod01.fs				# AttributeTargetsIsMethod01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsMethod01.fs"|])>]
+    [<Theory; FileInlineData("AttributeTargetsIsMethod01.fs")>]
     let ``AttributeTargetsIsMethod01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
         
     // SOURCE=AttributeTargetsIsProperty.fs	# AttributeTargetsIsProperty.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsProperty.fs"|])>]
+    [<Theory; FileInlineData("AttributeTargetsIsProperty.fs")>]
     let ``AttributeTargetsIsProperty_fs 8.0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion80
         |> verifyCompile
         |> shouldSucceed
         
     // SOURCE=AttributeTargetsIsProperty.fs	# AttributeTargetsIsProperty.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsProperty.fs"|])>]
+    [<Theory; FileInlineData("AttributeTargetsIsProperty.fs")>]
     let ``AttributeTargetsIsProperty_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldSucceed
 
     // SOURCE=ConditionalAttribute.fs					# ConditionalAttribute.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ConditionalAttribute.fs"|])>]
+    [<Theory; FileInlineData("ConditionalAttribute.fs")>]
     let ``ConditionalAttribute_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=E_AttributeTargets01.fs					# E_AttributeTargets01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargets01.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargets01.fs")>]
     let ``E_AttributeTargets01_fs`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldFail
@@ -109,9 +120,10 @@ module CustomAttributes_AttributeUsage =
         ]
 
     // SOURCE=E_AttributeTargets02.fs					# E_AttributeTargets02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargets02.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargets02.fs")>]
     let ``E_AttributeTargets02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -121,18 +133,20 @@ module CustomAttributes_AttributeUsage =
         ]
         
     // SOURCE=E_AttributeTargetIsField01.fs					# E_AttributeTargetIsField01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField01.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsField01.fs")>]
     let ``E_AttributeTargetIsField01_fs 8_0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion80
         |> withOptions ["--nowarn:25"]
         |> verifyCompile
         |> shouldSucceed
         
     // SOURCE=E_AttributeTargetIsField01.fs					# E_AttributeTargetIsField01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField01.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsField01.fs")>]
     let ``E_AttributeTargetIsField01_fs`` compilation =
         compilation
+        |> getCompilation
         |> withOptions ["--nowarn:25"]
         |> withLangVersion90
         |> verifyCompile
@@ -158,35 +172,39 @@ module CustomAttributes_AttributeUsage =
         ]
         
     // SOURCE=E_AttributeTargetIsField02.fs					# E_AttributeTargetIsField02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField02.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsField02.fs")>]
     let ``E_AttributeTargetIsField02_fs 8.0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion80
         |> withOptions ["--nowarn:25"]
         |> verifyCompile
         |> shouldSucceed
         
     // SOURCE=E_AttributeTargetIsField02.fs					# E_AttributeTargetIsField02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField02.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsField02.fs")>]
     let ``E_AttributeTargetIsField02_fs`` compilation =
         compilation
+        |> getCompilation
         |> withOptions ["--nowarn:25"]
         |> verifyCompile
         |> shouldSucceed
         
     // SOURCE=E_AttributeTargetIsMethod02.fs					# E_AttributeTargetIsMethod02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsMethod02.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsMethod02.fs")>]
     let ``E_AttributeTargetIsMethod02_fs 8_0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion80
         |> withOptions ["--nowarn:25"]
         |> verifyCompile
         |> shouldSucceed
         
     // SOURCE=E_AttributeTargetIsMethod02.fs					# E_AttributeTargetIsMethod02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsMethod02.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsMethod02.fs")>]
     let ``E_AttributeTargetIsMethod02_fs`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion90
         |> withOptions ["--nowarn:25"]
         |> verifyCompile
@@ -206,18 +224,20 @@ module CustomAttributes_AttributeUsage =
         ]
         
     // SOURCE=E_AttributeTargetIsMethod03.fs					# E_AttributeTargetIsMethod03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsMethod03.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsMethod03.fs")>]
     let ``E_AttributeTargetIsMethod03_fs 8_0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion80
         |> withOptions ["--nowarn:25"]
         |> verifyCompile
         |> shouldSucceed
         
     // SOURCE=E_AttributeTargetIsMethod03.fs					# E_AttributeTargetIsMethod03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsMethod03.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsMethod03.fs")>]
     let ``E_AttributeTargetIsMethod03_fs`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion90
         |> withOptions ["--nowarn:25"]
         |> verifyCompile
@@ -241,9 +261,10 @@ module CustomAttributes_AttributeUsage =
         ]
 
     // SOURCE=E_AttributeTargetIsMethod04.fs					# E_AttributeTargetIsMethod04.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsMethod04.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsMethod04.fs")>]
     let ``E_AttributeTargetIsMethod04_fs`` compilation =
         compilation
+        |> getCompilation
         |> withOptions ["--nowarn:25"]
         |> verifyCompile
         |> shouldFail
@@ -253,9 +274,10 @@ module CustomAttributes_AttributeUsage =
         ]
         
     // SOURCE=E_ConditionalAttribute.fs SCFLAGS="--test:ErrorRanges"	# E_ConditionalAttribute.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ConditionalAttribute.fs"|])>]
+    [<Theory; FileInlineData("E_ConditionalAttribute.fs")>]
     let ``E_ConditionalAttribute_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -263,9 +285,10 @@ module CustomAttributes_AttributeUsage =
         ]
 
     // SOURCE=E_RequiresExplicitTypeArguments01.fs SCFLAGS="--test:ErrorRanges"	# E_RequiresExplicitTypeArguments01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_RequiresExplicitTypeArguments01.fs"|])>]
+    [<Theory; FileInlineData("E_RequiresExplicitTypeArguments01.fs")>]
     let ``E_RequiresExplicitTypeArguments01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -275,9 +298,10 @@ module CustomAttributes_AttributeUsage =
         ]
 
     // SOURCE=E_RequiresExplicitTypeArguments02.fs SCFLAGS="--test:ErrorRanges"	# E_RequiresExplicitTypeArguments02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_RequiresExplicitTypeArguments02.fs"|])>]
+    [<Theory; FileInlineData("E_RequiresExplicitTypeArguments02.fs")>]
     let ``E_RequiresExplicitTypeArguments02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -285,9 +309,10 @@ module CustomAttributes_AttributeUsage =
         ]
 
     // SOURCE=E_WithBitwiseOr01.fsx  SCFLAGS="--test:ErrorRanges -a"	# E_WithBitwiseOr01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_WithBitwiseOr01.fsx"|])>]
+    [<Theory; FileInlineData("E_WithBitwiseOr01.fsx")>]
     let ``E_WithBitwiseOr01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -295,47 +320,53 @@ module CustomAttributes_AttributeUsage =
         ]
         
     // SOURCE=AttributeTargetIsStruct.fs 	# AttributeTargetIsStruct.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsStruct.fs"|])>]
+    [<Theory; FileInlineData("AttributeTargetsIsStruct.fs")>]
     let ``AttributeTargetIsStruct_fs 8.0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion80
         |> verifyCompile
         |> shouldSucceed
         
     // SOURCE=AttributeTargetIsStruct.fs 	# AttributeTargetIsStruct.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsStruct.fs"|])>]
+    [<Theory; FileInlineData("AttributeTargetsIsStruct.fs")>]
     let ``AttributeTargetIsStruct_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldSucceed
         
     // SOURCE=AttributeTargetIsClass.fs 	# AttributeTargetIsClass.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsClass.fs"|])>]
+    [<Theory; FileInlineData("AttributeTargetsIsClass.fs")>]
     let ``AttributeTargetIsClass_fs 8.0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion80
         |> verifyCompile
         |> shouldSucceed
         
     // SOURCE=AttributeTargetIsClass.fs 	# AttributeTargetIsClass.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsClass.fs"|])>]
+    [<Theory; FileInlineData("AttributeTargetsIsClass.fs")>]
     let ``AttributeTargetIsClass_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldSucceed
         
     // SOURCE=E_AttributeTargetIsStruct.fs 	# E_AttributeTargetIsStruct.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsStruct.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsStruct.fs")>]
     let ``E_AttributeTargetIsStruct_fs 8.0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion80
         |> verifyCompile
         |> shouldSucceed
         
     // SOURCE=E_AttributeTargetIsStruct.fs 	# E_AttributeTargetIsStruct.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsStruct.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsStruct.fs")>]
     let ``E_AttributeTargetIsStruct_fs`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldFail
@@ -355,17 +386,19 @@ module CustomAttributes_AttributeUsage =
         ]
 
     // SOURCE=E_AttributeTargetIsClass.fs 	# E_AttributeTargetIsClass.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsClass.fs")>]
     let ``E_AttributeTargetIsClass_fs 8_0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion80
         |> verifyCompile
         |> shouldSucceed
         
     // SOURCE=E_AttributeTargetIsClass.fs 	# E_AttributeTargetIsClass.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsClass.fs")>]
     let ``E_AttributeTargetIsClass_fs`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldFail
@@ -376,17 +409,19 @@ module CustomAttributes_AttributeUsage =
         ]
         
     // SOURCE=E_AttributeTargetIsClass01.fs 	# E_AttributeTargetIsClass01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass01.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsClass01.fs")>]
     let ``E_AttributeTargetIsClass01_fs 8_0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion80
         |> verifyCompile
         |> shouldSucceed
         
     // SOURCE=E_AttributeTargetIsClass01.fs 	# E_AttributeTargetIsClass01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass01.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsClass01.fs")>]
     let ``E_AttributeTargetIsClass01_fs`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldFail
@@ -396,30 +431,34 @@ module CustomAttributes_AttributeUsage =
         ]
 
     // SOURCE=MarshalAsAttribute.fs					# MarshalAsAttribute.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MarshalAsAttribute.fs"|])>]
+    [<Theory; FileInlineData("MarshalAsAttribute.fs")>]
     let ``MarshalAsAttribute_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=RequiresExplicitTypeArguments01.fs					# RequiresExplicitTypeArguments01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"RequiresExplicitTypeArguments01.fs"|])>]
+    [<Theory; FileInlineData("RequiresExplicitTypeArguments01.fs")>]
     let ``RequiresExplicitTypeArguments01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=RequiresExplicitTypeArguments02.fs					# RequiresExplicitTypeArguments02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"RequiresExplicitTypeArguments02.fs"|])>]
+    [<Theory; FileInlineData("RequiresExplicitTypeArguments02.fs")>]
     let ``RequiresExplicitTypeArguments02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=W_AssemblyVersion01.fs SCFLAGS="--test:ErrorRanges"	# W_AssemblyVersion01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_AssemblyVersion01.fs"|])>]
+    [<Theory; FileInlineData("W_AssemblyVersion01.fs")>]
     let ``W_AssemblyVersion01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -427,9 +466,10 @@ module CustomAttributes_AttributeUsage =
         ]
 
     // SOURCE=W_AssemblyVersion02.fs SCFLAGS="--test:ErrorRanges"	# W_AssemblyVersion02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_AssemblyVersion02.fs"|])>]
+    [<Theory; FileInlineData("W_AssemblyVersion02.fs")>]
     let ``W_AssemblyVersion02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -437,23 +477,26 @@ module CustomAttributes_AttributeUsage =
         ]
 
     // SOURCE=WithBitwiseOr02a.fsx   SCFLAGS=-a			# WithBitwiseOr02a.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"WithBitwiseOr02a.fsx"|])>]
+    [<Theory; FileInlineData("WithBitwiseOr02a.fsx")>]
     let ``WithBitwiseOr02a_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=WithBitwiseOr02b.fsx   SCFLAGS=-a			# WithBitwiseOr02b.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"WithBitwiseOr02b.fsx"|])>]
+    [<Theory; FileInlineData("WithBitwiseOr02b.fsx")>]
     let ``WithBitwiseOr02b_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=X_AssemblyVersion01.fs SCFLAGS="--test:ErrorRanges"	# X_AssemblyVersion01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"X_AssemblyVersion01.fs"|])>]
+    [<Theory; FileInlineData("X_AssemblyVersion01.fs")>]
     let ``X_AssemblyVersion01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -461,9 +504,10 @@ module CustomAttributes_AttributeUsage =
         ]
 
     // SOURCE=X_AssemblyVersion02.fs SCFLAGS="--test:ErrorRanges"	# X_AssemblyVersion02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"X_AssemblyVersion02.fs"|])>]
+    [<Theory; FileInlineData("X_AssemblyVersion02.fs")>]
     let ``X_AssemblyVersion02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -471,9 +515,10 @@ module CustomAttributes_AttributeUsage =
         ]
         
     // SOURCE=E_AttributeTargetIsField03.fs	# E_AttributeTargetIsField03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField03.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsField03.fs")>]
     let ``E_AttributeTargetIsField03_fs 8_0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion80
         |> verifyCompile
         |> shouldFail
@@ -482,9 +527,10 @@ module CustomAttributes_AttributeUsage =
         ]
     
     // SOURCE=E_AttributeTargetIsField03.fs	# E_AttributeTargetIsField03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField03.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsField03.fs")>]
     let ``E_AttributeTargetIsField03_fs`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldFail
@@ -494,17 +540,19 @@ module CustomAttributes_AttributeUsage =
         ]
         
     // SOURCE=E_AttributeTargetIsProperty01.fs	# E_AttributeTargetIsField03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsProperty01.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsProperty01.fs")>]
     let ``E_AttributeTargetIsProperty01_fs 8_0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion80
         |> verifyCompile
         |> shouldSucceed
     
     // SOURCE=E_AttributeTargetIsProperty01.fs	# E_AttributeTargetIsField03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsProperty01.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsProperty01.fs")>]
     let ``E_AttributeTargetIsProperty01_fs`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldFail
@@ -514,17 +562,19 @@ module CustomAttributes_AttributeUsage =
         ]
         
     // SOURCE=E_AttributeTargetIsCtor01.fs	# E_AttributeTargetIsCtor01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsCtor01.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsCtor01.fs")>]
     let ``E_AttributeTargetIsCtor01_fs 8_0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion80
         |> verifyCompile
         |> shouldSucceed
     
     // SOURCE=E_AttributeTargetIsCtor01.fs	# E_AttributeTargetIsCtor01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsCtor01.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsCtor01.fs")>]
     let ``E_AttributeTargetIsCtor01_fs`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldFail
@@ -536,32 +586,36 @@ module CustomAttributes_AttributeUsage =
         ]
         
     // SOURCE=AttributeTargetsIsEnum01.fs	# AttributeTargetsIsEnum01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsEnum01.fs"|])>]
+    [<Theory; FileInlineData("AttributeTargetsIsEnum01.fs")>]
     let ``AttributeTargetsIsEnum01_fs 8.0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion80
         |> verifyCompile
         |> shouldSucceed
     
     // SOURCE=AttributeTargetsIsEnum01.fs	# AttributeTargetsIsEnum01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsEnum01.fs"|])>]
+    [<Theory; FileInlineData("AttributeTargetsIsEnum01.fs")>]
     let ``AttributeTargetsIsEnum01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldSucceed
         
     // SOURCE=E_AttributeTargetIsEnum01.fs	# E_AttributeTargetIsEnum01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsEnum01.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsEnum01.fs")>]
     let ``E_AttributeTargetIsEnum01_fs 8_0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion80
         |> verifyCompile
         |> shouldSucceed
     
     // SOURCE=E_AttributeTargetIsEnum01.fs	# E_AttributeTargetIsEnum01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsEnum01.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsEnum01.fs")>]
     let ``E_AttributeTargetIsEnum01_fs`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldFail
@@ -573,32 +627,36 @@ module CustomAttributes_AttributeUsage =
         ]        
 
      // SOURCE=AttributeTargetsIsDelegate01.fs	# AttributeTargetsIsDelegate01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsDelegate01.fs"|])>]
+    [<Theory; FileInlineData("AttributeTargetsIsDelegate01.fs")>]
     let ``AttributeTargetsIsDelegate01_fs 8.0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion80
         |> verifyCompile
         |> shouldSucceed
     
     // SOURCE=AttributeTargetsIsDelegate01.fs	# AttributeTargetsIsDelegate01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsDelegate01.fs"|])>]
+    [<Theory; FileInlineData("AttributeTargetsIsDelegate01.fs")>]
     let ``AttributeTargetsIsDelegate01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldSucceed
         
     // SOURCE=E_AttributeTargetIsDelegate01.fs	# E_AttributeTargetIsDelegate01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsDelegate01.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsDelegate01.fs")>]
     let ``E_AttributeTargetIsDelegate01_fs 8.0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion80
         |> verifyCompile
         |> shouldSucceed
     
     // SOURCE=E_AttributeTargetIsDelegate01.fs	# E_AttributeTargetIsDelegate01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsDelegate01.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsDelegate01.fs")>]
     let ``E_AttributeTargetsIsDelegate01_fs`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldFail
@@ -621,33 +679,37 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         |> shouldSucceed
         
      // SOURCE=AttributeTargetsIsInterface.fs	# AttributeTargetsIsInterface.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsInterface.fs"|])>]
+    [<Theory; FileInlineData("AttributeTargetsIsInterface.fs")>]
     let ``AttributeTargetsIsInterface_fs 8.0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion80
         |> verifyCompile
         |> shouldSucceed
     
     // SOURCE=AttributeTargetsIsInterface.fs	# AttributeTargetsIsInterface.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsInterface.fs"|])>]
+    [<Theory; FileInlineData("AttributeTargetsIsInterface.fs")>]
     let ``AttributeTargetsIsInterface_fs`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
         
     // SOURCE=E_AttributeTargetIsInterface.fs	# E_AttributeTargetIsInterface.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsInterface.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsInterface.fs")>]
     let ``E_AttributeTargetIsInterface_fs 8_0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion80
         |> verifyCompile
         |> shouldSucceed
     
     // SOURCE=E_AttributeTargetIsInterface.fs	# E_AttributeTargetIsInterface.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsInterface.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsInterface.fs")>]
     let ``E_AttributeTargetIsInterface_fs`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldFail
@@ -659,17 +721,19 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         ]
 
     // SOURCE= E_AttributeTargetIsClass02.fs	# E_AttributeTargetIsClass02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass02.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsClass02.fs")>]
     let ``E_AttributeTargetIsClass02_fs 8.0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion80
         |> verifyCompile
         |> shouldSucceed
     
     // SOURCE=E_AttributeTargetIsClass02.fs	# E_AttributeTargetIsClass02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass02.fs"|])>]
+    [<Theory; FileInlineData("E_AttributeTargetIsClass02.fs")>]
     let ``E_AttributeTargetIsClass02_fs`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldFail
@@ -689,25 +753,28 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         ]
         
     // SOURCE= CLIMutableAttribute01.fs	# CLIMutableAttribute01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CLIMutableAttribute01.fs"|])>]
+    [<Theory; FileInlineData("CLIMutableAttribute01.fs")>]
     let ``CLIMutableAttribute01 8.0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion80
         |> verifyCompile
         |> shouldSucceed
     
     // SOURCE=CLIMutableAttribute01.fs	# CLIMutableAttribute01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CLIMutableAttribute01.fs"|])>]
+    [<Theory; FileInlineData("CLIMutableAttribute01.fs")>]
     let ``CLIMutableAttribute01 90`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
         
     // SOURCE= E_CLIMutableAttribute.fs	# E_CLIMutableAttribute.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_CLIMutableAttribute.fs"|])>]
+    [<Theory; FileInlineData("E_CLIMutableAttribute.fs")>]
     let ``E_CLIMutableAttribute 8.0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion80
         |> verifyCompile
         |> shouldFail
@@ -723,9 +790,10 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         ]
     
     // SOURCE=E_CLIMutableAttribute.fs	# E_CLIMutableAttribute.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_CLIMutableAttribute.fs"|])>]
+    [<Theory; FileInlineData("E_CLIMutableAttribute.fs")>]
     let ``E_CLIMutableAttribute 90`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldFail
@@ -741,9 +809,10 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         ]
 
     // SOURCE= E_AllowNullLiteral.fs	# E_AllowNullLiteral.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AllowNullLiteral.fs"|])>]
+    [<Theory; FileInlineData("E_AllowNullLiteral.fs")>]
     let ``E_AllowNullLiteral 8.0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion80
         |> verifyCompile
         |> shouldFail
@@ -760,9 +829,10 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         ]
     
     // SOURCE=E_AllowNullLiteral.fs	# E_AllowNullLiteral.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AllowNullLiteral.fs"|])>]
+    [<Theory; FileInlineData("E_AllowNullLiteral.fs")>]
     let ``E_AllowNullLiteral 90`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldFail
@@ -779,25 +849,28 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         ]
         
     // SOURCE= AllowNullLiteral01.fs	# AllowNullLiteral01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AllowNullLiteral01.fs"|])>]
+    [<Theory; FileInlineData("AllowNullLiteral01.fs")>]
     let ``AllowNullLiteral01 8.0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion80
         |> verifyCompile
         |> shouldSucceed
     
     // SOURCE=AllowNullLiteral01.fs	# AllowNullLiteral01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AllowNullLiteral01.fs"|])>]
+    [<Theory; FileInlineData("AllowNullLiteral01.fs")>]
     let ``AllowNullLiteral01 90`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
         
     // SOURCE= E_VolatileField.fs	# E_VolatileField.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_VolatileField.fs"|])>]
+    [<Theory; FileInlineData("E_VolatileField.fs")>]
     let ``E_VolatileField 9.0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldFail
@@ -815,9 +888,10 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         ]
     
     // SOURCE=E_VolatileField.fs	# E_VolatileField.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_VolatileField.fs"|])>]
+    [<Theory; FileInlineData("E_VolatileField.fs")>]
     let ``E_VolatileField 90`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldFail
@@ -835,25 +909,28 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         ]
         
     // SOURCE= VolatileField01.fs	# VolatileField01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"VolatileField01.fs"|])>]
+    [<Theory; FileInlineData("VolatileField01.fs")>]
     let ``VolatileField01 9.0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
     
     // SOURCE=VolatileField01.fs	# VolatileField01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"VolatileField01.fs"|])>]
+    [<Theory; FileInlineData("VolatileField01.fs")>]
     let ``VolatileField01 90`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
         
     // SOURCE= E_SealedAttribute01.fs	# E_SealedAttribute01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SealedAttribute01.fs"|])>]
+    [<Theory; FileInlineData("E_SealedAttribute01.fs")>]
     let ``E_SealedAttribute01 9.0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldFail
@@ -864,9 +941,10 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         ]
     
     // SOURCE=E_SealedAttribute01.fs	# E_SealedAttribute01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SealedAttribute01.fs"|])>]
+    [<Theory; FileInlineData("E_SealedAttribute01.fs")>]
     let ``E_SealedAttribute01 90`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldFail
@@ -877,9 +955,10 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         ]
 
     // SOURCE= E_StructLayout01.fs	# E_StructLayout01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_StructLayout01.fs"|])>]
+    [<Theory; FileInlineData("E_StructLayout01.fs")>]
     let ``E_StructLayout01 9.0`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldFail
@@ -892,9 +971,10 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         ]
 
     // SOURCE=E_StructLayout01.fs	# E_StructLayout01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_StructLayout01.fs"|])>]
+    [<Theory; FileInlineData("E_StructLayout01.fs")>]
     let ``E_StructLayout01 90`` compilation =
         compilation
+        |> getCompilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldFail

@@ -8,18 +8,20 @@ open FSharp.Test.Compiler
 
 module UseBindings =
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UseBindingDiscard01.fs"|])>]
+    [<Theory; FileInlineData("UseBindingDiscard01.fs")>]
     let ``UseBindings - UseBindingDiscard01_fs - Current LangVersion`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> withLangVersion60
         |> compile
         |> shouldSucceed
         |> ignore
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UseBindingDiscard01.fs"|])>]
+    [<Theory; FileInlineData("UseBindingDiscard01.fs")>]
     let ``UseBindings - UseBindingDiscard01_fs - Bad LangVersion`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> withOptions ["--langversion:5.0"]
         |> compile

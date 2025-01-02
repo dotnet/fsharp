@@ -21,26 +21,29 @@ module LetBindings_ActivePatternBindings =
         |> compileAndRun
 
     //SOURCE=SanityCheck.fs SCFLAGS=""                  # SanityCheck.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SanityCheck.fs"|])>]
+    [<Theory; FileInlineData("SanityCheck.fs")>]
     let ``SanityCheck_fs`` compilation =
         compilation
+        |> getCompilation
         |> withOptions ["--nowarn:52"]
         |> asFsx
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=parameterizedActivePattern.fs              # parameterizedActivePattern.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"parameterizedActivePattern.fs"|])>]
+    [<Theory; FileInlineData("parameterizedActivePattern.fs")>]
     let ``parameterizedActivePattern_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=partialActivePattern.fs                    # partialActivePattern.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"partialActivePattern.fs"|])>]
+    [<Theory; FileInlineData("partialActivePattern.fs")>]
     let ``partialActivePattern1_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> verifyCompileAndRun
         |> shouldSucceed

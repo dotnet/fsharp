@@ -22,9 +22,10 @@ module NullRepresentations =
         |> compileAndRun
 
     // SOURCE=E_NullInvalidForFSTypes01.fs              # E_NullInvalidForFSTypes01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_NullInvalidForFSTypes01.fs"|])>]
+    [<Theory; FileInlineData("E_NullInvalidForFSTypes01.fs")>]
     let ``E_NullInvalidForFSTypes01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [

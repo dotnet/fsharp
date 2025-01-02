@@ -21,17 +21,19 @@ module CustomAttributes_AttributeInheritance =
         |> compileAndRun
 
     // SOURCE=InheritedAttribute_001.fs  SCFLAGS="--target:library --warnaserror:3242" 	# InheritedAttribute_001.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InheritedAttribute_001.fs"|])>]
+    [<Theory; FileInlineData("InheritedAttribute_001.fs")>]
     let ``InheritedAttribute_001_fs`` compilation =
         compilation
+        |> getCompilation
         |> withOptions ["--nowarn:3242"]
         |> verifyCompile
         |> shouldSucceed
 
     // SOURCE=InheritedAttribute_002.fs  SCFLAGS="--target:library"		                # InheritedAttribute_002.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InheritedAttribute_002.fs"|])>]
+    [<Theory; FileInlineData("InheritedAttribute_002.fs")>]
     let ``InheritedAttribute_002_fs`` compilation =
         compilation
+        |> getCompilation
         |> withOptions ["--nowarn:3242"]
         |> verifyCompile
         |> shouldSucceed

@@ -21,25 +21,28 @@ module LetBindings_ExplicitTypeParameters =
         |> compileAndRun
 
     //SOURCE=SanityCheck.fs                     # SanityCheck.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SanityCheck.fs"|])>]
+    [<Theory; FileInlineData("SanityCheck.fs")>]
     let ``SanityCheck_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=SanityCheck2.fs                    # SanityCheck2.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SanityCheck2.fs"|])>]
+    [<Theory; FileInlineData("SanityCheck2.fs")>]
     let ``SanityCheck2_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> verifyCompileAndRun
         |> shouldSucceed
 
     //SOURCE=W_TypeParamsWhenNotNeeded.fs       # W_TypeParamsWhenNotNeeded.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_TypeParamsWhenNotNeeded.fs"|])>]
+    [<Theory; FileInlineData("W_TypeParamsWhenNotNeeded.fs")>]
     let ``W_TypeParamsWhenNotNeeded_fs_warning`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> verifyCompile
         |> shouldFail
@@ -48,9 +51,10 @@ module LetBindings_ExplicitTypeParameters =
         ]
 
     //SOURCE=W_TypeParamsWhenNotNeeded.fs       # W_TypeParamsWhenNotNeeded.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_TypeParamsWhenNotNeeded.fs"|])>]
+    [<Theory; FileInlineData("W_TypeParamsWhenNotNeeded.fs")>]
     let ``W_TypeParamsWhenNotNeeded_fs_execute`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> withOptions ["--nowarn:686"]
         |> verifyCompileAndRun

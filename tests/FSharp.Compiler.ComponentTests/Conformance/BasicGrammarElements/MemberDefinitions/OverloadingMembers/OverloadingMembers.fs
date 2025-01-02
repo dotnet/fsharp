@@ -21,7 +21,7 @@ module MemberDefinitions_OverloadingMembers =
         |> compileAndRun
 
     // NOMONO,NoMT	SOURCE=ConsumeOverloadGenericMethods.fs SCFLAGS="-r:lib.dll" PRECMD="\$CSC_PIPE /t:library /reference:System.Core.dll lib.cs"	# ConsumeOverloadGenericMethods.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ConsumeOverloadGenericMethods.fs"|])>]
+    [<Theory; FileInlineData("ConsumeOverloadGenericMethods.fs")>]
     let ``ConsumeOverloadGenericMethods_fs`` compilation =
 
         let lib =
@@ -29,21 +29,24 @@ module MemberDefinitions_OverloadingMembers =
             |> withName "Library"
 
         compilation
+        |> getCompilation
         |> withReferences [lib]
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=diffNumArguments.fs							# diffNumArguments.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"diffNumArguments.fs"|])>]
+    [<Theory; FileInlineData("diffNumArguments.fs")>]
     let ``diffNumArguments_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=E_InferredTypeNotUnique01.fs SCFLAGS="--test:ErrorRanges"			# E_InferredTypeNotUnique01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_InferredTypeNotUnique01.fs"|])>]
+    [<Theory; FileInlineData("E_InferredTypeNotUnique01.fs")>]
     let ``E_InferredTypeNotUnique01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -52,9 +55,10 @@ module MemberDefinitions_OverloadingMembers =
         ]
 
     // SOURCE=E_OperatorOverloading01.fs SCFLAGS="--test:ErrorRanges"		# E_OperatorOverloading01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_OperatorOverloading01.fs"|])>]
+    [<Theory; FileInlineData("E_OperatorOverloading01.fs")>]
     let ``E_OperatorOverloading01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -68,9 +72,10 @@ module MemberDefinitions_OverloadingMembers =
         ]
 
     // SOURCE=E_OverloadCurriedFunc.fs		# E_OverloadCurriedFunc.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_OverloadCurriedFunc.fs"|])>]
+    [<Theory; FileInlineData("E_OverloadCurriedFunc.fs")>]
     let ``E_OverloadCurriedFunc_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -82,9 +87,10 @@ module MemberDefinitions_OverloadingMembers =
         ]
 
     // SOURCE=E_OverloadMismatch.fs		# E_OverloadMismatch.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_OverloadMismatch.fs"|])>]
+    [<Theory; FileInlineData("E_OverloadMismatch.fs")>]
     let ``E_OverloadMismatch_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -92,9 +98,10 @@ module MemberDefinitions_OverloadingMembers =
         ]
 
     // SOURCE=E_ReturnGenericUnit01.fs							# E_ReturnGenericUnit01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ReturnGenericUnit01.fs"|])>]
+    [<Theory; FileInlineData("E_ReturnGenericUnit01.fs")>]
     let ``E_ReturnGenericUnit01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -102,136 +109,155 @@ module MemberDefinitions_OverloadingMembers =
         ]
 
     //// SOURCE=E_UnsolvableConstraints01.fs     SCFLAGS="--test:ErrorRanges"		# E_UnsolvableConstraints01.fs
-    //[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UnsolvableConstraints01.fs"|])>]
+    //[<Theory; FileInlineData("E_UnsolvableConstraints01.fs")>]
     //let ``E_UnsolvableConstraints01_fs`` compilation =
     //    compilation
+    //    |> getCompilation
     //    |> verifyCompile
     //    |> shouldFail
     //    |> withDiagnostics [
     //    ]
 
     // SOURCE=InferenceForLambdaArgs.fs						# InferenceForLambdaArgs.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InferenceForLambdaArgs.fs"|])>]
+    [<Theory; FileInlineData("InferenceForLambdaArgs.fs")>]
     let ``InferenceForLambdaArgs_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=NoOverloadIDSpecified.fs							# NoOverloadIDSpecified.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NoOverloadIDSpecified.fs"|])>]
+    [<Theory; FileInlineData("NoOverloadIDSpecified.fs")>]
     let ``NoOverloadIDSpecified_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=NoWarningWhenDoingDispatchSlotInference01.fs SCFLAGS="--warnaserror+" COMPILE_ONLY=1	# NoWarningWhenDoingDispatchSlotInference01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NoWarningWhenDoingDispatchSlotInference01.fs"|])>]
+    [<Theory; FileInlineData("NoWarningWhenDoingDispatchSlotInference01.fs")>]
     let ``NoWarningWhenDoingDispatchSlotInference01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=NoWarningWhenOverloadingInSubClass01.fs SCFLAGS="--warnaserror"		# NoWarningWhenOverloadingInSubClass01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NoWarningWhenOverloadingInSubClass01.fs"|])>]
+    [<Theory; FileInlineData("NoWarningWhenOverloadingInSubClass01.fs")>]
     let ``NoWarningWhenOverloadingInSubClass01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=OnAllOverloads01.fs							# OnAllOverloads01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"OnAllOverloads01.fs"|])>]
+    [<Theory; FileInlineData("OnAllOverloads01.fs")>]
     let ``OnAllOverloads01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=OperatorOverloading01.fs						# OperatorOverloading01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"OperatorOverloading01.fs"|])>]
+    [<Theory; FileInlineData("OperatorOverloading01.fs")>]
     let ``OperatorOverloading01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=OperatorOverloading02.fs						# OperatorOverloading02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"OperatorOverloading02.fs"|])>]
+    [<Theory; FileInlineData("OperatorOverloading02.fs")>]
     let ``OperatorOverloading02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=OperatorOverloading03.fs						# OperatorOverloading03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"OperatorOverloading03.fs"|])>]
+    [<Theory; FileInlineData("OperatorOverloading03.fs")>]
     let ``OperatorOverloading03_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=OperatorOverloading04.fs						# OperatorOverloading04.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"OperatorOverloading04.fs"|])>]
+    [<Theory; FileInlineData("OperatorOverloading04.fs")>]
     let ``OperatorOverloading04_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // NoMT	SOURCE=OverloadingAndExtensionMethodsForGenericTypes.fs				# OverloadingAndExtensionMethodsForGenericTypes.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"OverloadingAndExtensionMethodsForGenericTypes.fs"|])>]
+    [<Theory; FileInlineData("OverloadingAndExtensionMethodsForGenericTypes.fs")>]
     let ``OverloadingAndExtensionMethodsForGenericTypes_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=reuseOverloadIDs.fs							# reuseOverloadIDs.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"reuseOverloadIDs.fs"|])>]
+    [<Theory; FileInlineData("reuseOverloadIDs.fs")>]
     let ``reuseOverloadIDs_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=SanityCheck.fs								# SanityCheck.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SanityCheck.fs"|])>]
+    [<Theory; FileInlineData("SanityCheck.fs")>]
     let ``SanityCheck_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=TieBreakerRule01a.fs	# TieBreakerRule01a.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TieBreakerRule01a.fs"|])>]
+    [<Theory; FileInlineData("TieBreakerRule01a.fs")>]
     let ``TieBreakerRule01a_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=TieBreakerRule01b.fs	# TieBreakerRule01b.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TieBreakerRule01b.fs"|])>]
+    [<Theory; FileInlineData("TieBreakerRule01b.fs")>]
     let ``TieBreakerRule01b_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=TieBreakerRule02.fs	# TieBreakerRule02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TieBreakerRule02.fs"|])>]
+    [<Theory; FileInlineData("TieBreakerRule02.fs")>]
     let ``TieBreakerRule02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=TieBreakerRule03.fs	# TieBreakerRule03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TieBreakerRule03.fs"|])>]
+    [<Theory; FileInlineData("TieBreakerRule03.fs")>]
     let ``TieBreakerRule03_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=TooGeneric.fs SCFLAGS="--define:TOO_GENERIC"	# TooGeneric.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TooGeneric.fs"|])>]
+    [<Theory; FileInlineData("TooGeneric.fs")>]
     let ``TooGeneric_fs`` compilation =
         compilation
+        |> getCompilation
         |> withDefines ["TOO_GENERIC"]
         |> verifyCompileAndRun
         |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"OverloadResolutionUsingFunction.fs"|])>]
+    [<Theory; FileInlineData("OverloadResolutionUsingFunction.fs")>]
     let ``OverloadResolutionUsingFunction_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
