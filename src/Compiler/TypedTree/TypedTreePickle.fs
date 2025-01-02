@@ -1592,7 +1592,7 @@ let rec u_measure_expr st =
     | 0 -> let a = u_tcref st in Measure.Const(a, range0)
     | 1 -> let a = u_measure_expr st in Measure.Inv a
     | 2 -> let a, b = u_tup2 u_measure_expr u_measure_expr st in Measure.Prod (a, b, range0)
-    | 3 -> let a = u_tpref st in Measure.Var(a, range0)
+    | 3 -> let a = u_tpref st in Measure.Var(a)
     | 4 -> Measure.One(range0)
     | 5 -> let a = u_measure_expr st in let b = u_rational st in Measure.RationalPower (a, b, range0)
     | _ -> ufailwith st "u_measure_expr"

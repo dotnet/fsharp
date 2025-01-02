@@ -217,9 +217,9 @@ open System
 // Time, seconds.
 [<Measure; Obsolete("Use s2")>] type s
 
-let genericSumUnits ( x : float<'u>) (y: float<'u>) = x + y
+let genericSumUnits (x : float<'u>) (y: float<'u>) = x + y
 
-let genericSumUnits2 ( x : float<m>) (y: float<s>) = ()
+let genericSumUnits2 (x : float<m>) (y: float<s>) = ()
 
 let v1 = 3.1<m/s>
 let v2 = 2.7<m/s>
@@ -231,8 +231,7 @@ let result1 = genericSumUnits v1 v2
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Warning 44, Line 11, Col 34, Line 11, Col 35, "This construct is deprecated. Use m2")
-            (Warning 44, Line 11, Col 48, Line 11, Col 49, "This construct is deprecated. Use s2")
+            (Warning 44, Line 11, Col 33, Line 11, Col 34, "This construct is deprecated. Use m2")
             (Warning 44, Line 13, Col 14, Line 13, Col 15, "This construct is deprecated. Use m2")
             (Warning 44, Line 13, Col 16, Line 13, Col 17, "This construct is deprecated. Use s2")
             (Warning 44, Line 14, Col 14, Line 14, Col 15, "This construct is deprecated. Use m2")

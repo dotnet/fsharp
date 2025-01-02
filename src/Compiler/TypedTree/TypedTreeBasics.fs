@@ -192,7 +192,7 @@ let KnownWithoutNull = Nullness.Known NullnessInfo.WithoutNull
 let mkTyparTy (tp:Typar) = 
     match tp.Kind with 
     | TyparKind.Type -> tp.AsType KnownWithoutNull
-    | TyparKind.Measure -> TType_measure (Measure.Var(tp, tp.Range))
+    | TyparKind.Measure -> TType_measure (Measure.Var(tp))
 
 // For fresh type variables clear the StaticReq when copying because the requirement will be re-established through the
 // process of type inference.

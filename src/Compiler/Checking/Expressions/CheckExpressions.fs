@@ -826,7 +826,7 @@ let TcConst (cenv: cenv) (overallTy: TType) m env synConst =
         let measureTy =
             match synConst with
             | SynConst.Measure(synMeasure = SynMeasure.Anon _) ->
-              (mkWoNullAppTy tcr [TType_measure (Measure.Var(NewAnonTypar (TyparKind.Measure, m, TyparRigidity.Anon, (if iszero then TyparStaticReq.None else TyparStaticReq.HeadType), TyparDynamicReq.No), m))])
+              (mkWoNullAppTy tcr [TType_measure (Measure.Var(NewAnonTypar (TyparKind.Measure, m, TyparRigidity.Anon, (if iszero then TyparStaticReq.None else TyparStaticReq.HeadType), TyparDynamicReq.No)))])
 
             | SynConst.Measure(synMeasure = ms) -> mkWoNullAppTy tcr [TType_measure (tcMeasure ms)]
             | _ -> mkWoNullAppTy tcr [TType_measure(Measure.One(m))]
@@ -4662,14 +4662,14 @@ and TcArrayType (cenv: cenv) newOk checkConstraints occ env tpenv rank elemTy m 
 and TcTypeParameter kindOpt (cenv: cenv) env newOk tpenv tp =
     let tpR, tpenv = TcTypeOrMeasureParameter kindOpt cenv env newOk tpenv tp
     match tpR.Kind with
-    | TyparKind.Measure -> TType_measure (Measure.Var(tpR, tpR.Range)), tpenv
+    | TyparKind.Measure -> TType_measure (Measure.Var(tpR)), tpenv
     | TyparKind.Type -> mkTyparTy tpR, tpenv
 
 // _ types
 and TcAnonType kindOpt (cenv: cenv) newOk tpenv m =
     let tp: Typar = TcAnonTypeOrMeasure kindOpt cenv TyparRigidity.Anon TyparDynamicReq.No newOk m
     match tp.Kind with
-    | TyparKind.Measure -> TType_measure (Measure.Var(tp, m)), tpenv
+    | TyparKind.Measure -> TType_measure (Measure.Var(tp)), tpenv
     | TyparKind.Type -> mkTyparTy tp, tpenv
 
 and TcTypeWithConstraints (cenv: cenv) env newOk checkConstraints occ tpenv synTy synConstraints =
@@ -11155,7 +11155,38 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
 
         let supportEnforceAttributeTargets =
             (g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) && memberFlagsOpt.IsNone && not attrs.IsEmpty)
-            && not isVolatile // // VolatileFieldAttribute has a special treatment(specific error FS823)
+            && not isVolatile // VolatileFieldAttribute has a special treatment(specific error FS823)
+        
+        // Check for attributes in unit of measure expressions
+        // e.g. let x = 1.0<m>
+        //                  ^
+        let rec checkAttributeInMeasure ty =
+            match stripTyEqns g ty with
+            | TType_app(typeInstantiation= [ TType_measure tm ]) ->
+                let checkAttribs tm m =
+                    let attribs =
+                        ListMeasureConOccsWithNonZeroExponents g true tm
+                        |> List.map fst
+                        |> List.map(_.Attribs)
+                        |> List.concat
+
+                    CheckFSharpAttributes g attribs m |> CommitOperationResult
+                
+                match tm with
+                | Measure.Const(range = m) -> checkAttribs tm m
+                | Measure.Inv ms -> checkAttribs tm ms.Range
+                | Measure.One(m) -> checkAttribs tm m
+                | Measure.RationalPower(measure = ms1; range = m) -> checkAttribs tm m
+                | Measure.Prod(ms1, ms2, m) ->
+                    checkAttribs ms1 ms1.Range
+                    checkAttribs ms2 ms2.Range
+                | Measure.Var(typar) -> checkAttribs tm typar.Range
+    
+            | TType_var(typar={typar_solution = Some(typeApp) }) -> checkAttributeInMeasure typeApp
+            | TType_fun(domainType = domainType) -> checkAttributeInMeasure domainType
+            | _ -> ()
+
+        checkAttributeInMeasure overallExprTy
 
         if supportEnforceAttributeTargets then
             TcAttributeTargetsOnLetBindings { cenv with tcSink = TcResultsSink.NoSink } env attrs overallPatTy overallExprTy (not declaredTypars.IsEmpty) isClassLetBinding

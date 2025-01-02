@@ -3241,8 +3241,35 @@ module EstablishTypeDefinitionCores =
                                     warning(Error(FSComp.SR.chkAttributeAliased(attrib.TypeRef.FullName), tycon.Id.idRange))
                         | _ -> ()
 
+                    // Check for attributes in unit of measure definitions
+                    // e.g. [<Measure>] type m = 1<m>
+                    //                             ^
+                    let checkAttributeInMeasure ty =
+                        match ty with
+                        | TType_measure tm ->
+                            let checkAttribs tm m =
+                                let attribs =
+                                    ListMeasureConOccsWithNonZeroExponents g true tm
+                                    |> List.map fst
+                                    |> List.map(_.Attribs)
+                                    |> List.concat
+
+                                CheckFSharpAttributes g attribs m |> CommitOperationResult
+                            
+                            match tm with
+                            | Measure.Const(range = m) -> checkAttribs tm m
+                            | Measure.Inv ms -> checkAttribs tm ms.Range
+                            | Measure.One(m) -> checkAttribs tm m
+                            | Measure.RationalPower(measure = ms1; range = m) -> checkAttribs tm m
+                            | Measure.Prod(ms1, ms2, m) ->
+                                checkAttribs ms1 ms1.Range
+                                checkAttribs ms2 ms2.Range
+                            | _ -> ()    
+                        | _ -> ()
+                        
                     checkAttributeAliased ty tycon g.attrib_AutoOpenAttribute
                     checkAttributeAliased ty tycon g.attrib_StructAttribute
+                    checkAttributeInMeasure ty
 
                     if not firstPass then
                         let ftyvs = freeInTypeLeftToRight g false ty

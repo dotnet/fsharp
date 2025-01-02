@@ -4556,7 +4556,7 @@ type TupInfo =
 type Measure = 
 
     /// A variable unit-of-measure
-    | Var of typar: Typar * range: range
+    | Var of typar: Typar
 
     /// A constant, leaf unit-of-measure such as 'kg' or 'm'
     | Const of tyconRef: TyconRef * range: range
@@ -4581,7 +4581,7 @@ type Measure =
     
     member x.Range = 
         match x with 
-        | Var(range= m) -> m
+        | Var(typar) -> typar.Range
         | Const(range= m) -> m
         | Prod(range= m) -> m
         | Inv(m) -> m.Range

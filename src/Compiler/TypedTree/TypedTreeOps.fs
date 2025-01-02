@@ -581,12 +581,12 @@ let normalizeMeasure g ms =
     let cs = ListMeasureConOccsWithNonZeroExponents g false ms
     match vs, cs with
     | [], [] -> Measure.One(range0)
-    | [(v, e)], [] when e = OneRational -> Measure.Var(v, v.Range)
+    | [(v, e)], [] when e = OneRational -> Measure.Var(v)
     | vs, cs ->
         List.foldBack
             (fun (v, e) ->
                 fun unt ->
-                    let measureVar = Measure.Var(v, v.Range)
+                    let measureVar = Measure.Var(v)
                     let measureRational = Measure.RationalPower(measureVar, e, measureVar.Range)
                     Measure.Prod(measureRational, unt, unionRanges measureVar.Range unt.Range))
             vs
