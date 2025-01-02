@@ -63,8 +63,6 @@ type Cache<'Key, 'Value when 'Key: struct> (options: CacheOptions) as this =
     member val Eviction = eviction.Publish
 
 
-    // TODO: Explore an eviction shortcut, some sort of list of keys to evict first, based on the strategy.
-
     member _.GetStats() = {|
         Capacity = options.MaximumCapacity
         PercentageToEvict = options.PercentageToEvict
@@ -84,7 +82,7 @@ type Cache<'Key, 'Value when 'Key: struct> (options: CacheOptions) as this =
         else
             0
 
-    // TODO: All of these are proofs of concept, a very naive implementation of eviction strategies.
+    // TODO: All of these are proofs of concept, a very naive implementation of eviction strategies, it will always walk the dictionary to find the items to evict, this is not efficient.
     member private this.TryGetItemsToEvict () =
         match options.Strategy with
         | CachingStrategy.LRU -> store.Values |> Seq.sortByDescending _.LastAccessed |> Seq.take (this.GetEvictCount()) |> Seq.map (fun x -> x.Key)
@@ -99,14 +97,17 @@ type Cache<'Key, 'Value when 'Key: struct> (options: CacheOptions) as this =
                     eviction.Trigger(key, value.Value)
 
     member private this.TryEvictTask () =
+        // This will spin in the background trying to evict items.
+        // One of the issues is that if the delay is high (>100ms), it will not be able to evict items in time, and the cache will grow beyond the maximum capacity.
         backgroundTask {
             while not cts.Token.IsCancellationRequested do
                 let evictCount = this.GetEvictCount()
                 if evictCount > 0 then
                     this.TryEvictItems ()
-                //do! Task.Delay(500, cts.Token)
+                // do! Task.Delay(100, cts.Token)
         }
 
+    // TODO: Explore an eviction shortcut, some sort of list of keys to evict first, based on the strategy.
     member this.TryEvict() =
         if this.GetEvictCount() > 0 then
             match options.EvictionMethod with
