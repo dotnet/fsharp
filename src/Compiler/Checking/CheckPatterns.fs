@@ -138,7 +138,7 @@ and ValidateOptArgOrder (synSimplePats: SynSimplePats) =
 
     let rec getPats synSimplePats =
         match synSimplePats with
-        | SynSimplePats.SimplePats(p, _, m) -> p, m
+        | SynSimplePats.SimplePats(p, _, _, m) -> p, m
 
     let rec isOptArg pat =
         match pat with
@@ -163,7 +163,7 @@ and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synS
     ValidateOptArgOrder synSimplePats
 
     match synSimplePats with
-    | SynSimplePats.SimplePats ([],_, m) ->
+    | SynSimplePats.SimplePats ([],_, _, m) ->
         // Unit "()" patterns in argument position become SynSimplePats.SimplePats([], _) in the
         // syntactic translation when building bindings. This is done because the
         // use of "()" has special significance for arity analysis and argument counting.
@@ -183,8 +183,8 @@ and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synS
         let v, patEnv = TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnv synSimplePat []
         [v], patEnv
 
-    | SynSimplePats.SimplePats (ps, _, m) ->
-        let ptys = UnifyRefTupleType env.eContextInfo cenv env.DisplayEnv m ty ps
+    | SynSimplePats.SimplePats (ps, isStruct, _, m) ->
+        let _, ptys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m ty isStruct ps
         let ps', patEnvR = (patEnv, List.zip ptys ps) ||> List.mapFold (fun patEnv (ty, pat) -> TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnv pat [])
         ps', patEnvR
 

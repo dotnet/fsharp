@@ -136,7 +136,7 @@ let TcImplicitCtorInfo_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, att
     let env = AddDeclaredTypars CheckForDuplicateTypars copyOfTyconTypars env
 
     // Type check arguments by processing them as 'simple' patterns 
-    let ctorArgNames, patEnv, SynSimplePats.SimplePats(spats, _, _) = TcSimplePatsOfUnknownType cenv true CheckCxs env tpenv pat
+    let ctorArgNames, patEnv, SynSimplePats.SimplePats(pats= spats) = TcSimplePatsOfUnknownType cenv true CheckCxs env tpenv pat
 
     let rec reportGeneratedPattern spat =
         match spat with

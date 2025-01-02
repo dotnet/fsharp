@@ -372,24 +372,24 @@ let rec SimplePatsOfPat synArgNameGenerator p =
     match p with
     | SynPat.FromParseError(p, _) -> SimplePatsOfPat synArgNameGenerator p
 
-    | SynPat.Tuple(false, ps, commas, m)
+    | SynPat.Tuple(isStruct, ps, commas, m)
 
-    | SynPat.Paren(SynPat.Tuple(false, ps, commas, _), m) ->
+    | SynPat.Paren(SynPat.Tuple(isStruct, ps, commas, _), m) ->
         let sps = List.map (SimplePatOfPat synArgNameGenerator) ps
 
         let ps2, laterF =
             List.foldBack (fun (p', rhsf) (ps', rhsf') -> p' :: ps', (composeFunOpt rhsf rhsf')) sps ([], None)
 
-        SynSimplePats.SimplePats(ps2, commas, m), laterF
+        SynSimplePats.SimplePats(ps2, isStruct, commas, m), laterF
 
     | SynPat.Paren(SynPat.Const(SynConst.Unit, m), _)
 
-    | SynPat.Const(SynConst.Unit, m) -> SynSimplePats.SimplePats([], [], m), None
+    | SynPat.Const(SynConst.Unit, m) -> SynSimplePats.SimplePats([], false, [], m), None
 
     | _ ->
         let m = p.Range
         let sp, laterF = SimplePatOfPat synArgNameGenerator p
-        SynSimplePats.SimplePats([ sp ], [], m), laterF
+        SynSimplePats.SimplePats([ sp ], false, [], m), laterF
 
 let PushPatternToExpr synArgNameGenerator isMember pat (rhs: SynExpr) =
     let nowPats, laterF = SimplePatsOfPat synArgNameGenerator pat
@@ -513,7 +513,7 @@ let mkSynUnitPat m = SynPat.Const(SynConst.Unit, m)
 
 let mkSynDelay m e =
     let svar = mkSynCompGenSimplePatVar (mkSynId m "unitVar")
-    SynExpr.Lambda(false, false, SynSimplePats.SimplePats([ svar ], [], m), e, None, m, SynExprLambdaTrivia.Zero)
+    SynExpr.Lambda(false, false, SynSimplePats.SimplePats([ svar ], false, [], m), e, None, m, SynExprLambdaTrivia.Zero)
 
 let mkSynAssign (l: SynExpr) (r: SynExpr) =
     let m = unionRanges l.Range r.Range
