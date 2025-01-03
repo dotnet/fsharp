@@ -186,6 +186,29 @@ let myCm = 3<cm/kg>
         |> withDiagnostics [
             (Warning 44, Line 10, Col 14, Line 10, Col 16, "This construct is deprecated. Use cm2")
         ]
+
+    [<Fact>]
+    let ``Obsolete attribute warning taken into account when used within a complex unit of measure. Define conversion constants.`` () =
+        Fsx """
+open System
+
+[<Measure; Obsolete("Use m2")>]
+type m
+
+[<Measure; Obsolete("Use cm2")>]
+type cm
+
+let cmPerMeter : float<cm/m> = 100.0<cm/m>
+let mPerCm = 0.01<m/cm>
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 10, Col 24, Line 10, Col 26, "This construct is deprecated. Use cm2")
+            (Warning 44, Line 10, Col 27, Line 10, Col 28, "This construct is deprecated. Use m2")
+            (Warning 44, Line 11, Col 19, Line 11, Col 20, "This construct is deprecated. Use m2")
+            (Warning 44, Line 11, Col 21, Line 11, Col 23, "This construct is deprecated. Use cm2")
+        ]
         
     [<Fact>]
     let ``Obsolete attribute warning taken into account when used with a complex(multiple obsolete) unit of measure`` () =
@@ -293,6 +316,9 @@ type MyClass() =
     member this.GenericSumUnits4 (x: float<m>, y: float<s>) = ()
     
     member this.GenericSumUnits5 (x: float<m>, y: float<s>, z: float<m>) = ()
+    
+type A<[<Measure>] 'u>(x: int<m>) =
+    member _.X = x
         """
         |> typecheck
         |> shouldFail
@@ -323,6 +349,7 @@ type MyClass() =
             (Warning 44, Line 36, Col 44, Line 36, Col 45, "This construct is deprecated. Use m2")
             (Warning 44, Line 36, Col 57, Line 36, Col 58, "This construct is deprecated. Use s2")
             (Warning 44, Line 36, Col 70, Line 36, Col 71, "This construct is deprecated. Use m2")
+            (Warning 44, Line 38, Col 31, Line 38, Col 32, "This construct is deprecated. Use m2")
         ]
     
     [<Fact>]
