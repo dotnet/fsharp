@@ -1,4 +1,4 @@
-﻿namespace EmittedIL
+namespace EmittedIL
 
 open Xunit
 open FSharp.Test
@@ -23,120 +23,134 @@ module Platform =
         |> asExe
         |> withName "PlatformedExe.exe"
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForExe.fs"|])>]
+    [<Theory; FileInlineData("AssemblyNameForExe.fs")>]
     let platformExeAnyCpuDefault compilation =
         compilation
+        |> getCompilation
         |> withReferences [ buildPlatformedExe |> withPlatform ExecutionPlatform.Anycpu ]
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForExe.fs"|])>]
+    [<Theory; FileInlineData("AssemblyNameForExe.fs")>]
     let platformExeAnyCpu32BitPreferred compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withReferences [ buildPlatformedExe |> withPlatform ExecutionPlatform.AnyCpu32bitPreferred ]
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForExe.fs"|])>]
+    [<Theory; FileInlineData("AssemblyNameForExe.fs")>]
     let platformExeArm compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withReferences [ buildPlatformedExe |> withPlatform ExecutionPlatform.Arm ]
         |>  if isArm then compileExeAndRun else compile
         |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForExe.fs"|])>]
+    [<Theory; FileInlineData("AssemblyNameForExe.fs")>]
     let platformExeArm64 compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withPlatform ExecutionPlatform.Arm64
         |> withReferences [ buildPlatformedExe |> withPlatform ExecutionPlatform.Arm64 ]
         |>  if isArm then compileExeAndRun else compile
         |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForExe.fs"|])>]
+    [<Theory; FileInlineData("AssemblyNameForExe.fs")>]
     let platformExeItanium compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withReferences [ buildPlatformedExe |> withPlatform ExecutionPlatform.Itanium ]
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForExe.fs"|])>]
+    [<Theory; FileInlineData("AssemblyNameForExe.fs")>]
     let platformExeX86 compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withReferences [ buildPlatformedExe |> withPlatform ExecutionPlatform.X86 ]
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForExe.fs"|])>]
+    [<Theory; FileInlineData("AssemblyNameForExe.fs")>]
     let platformExeX64 compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withReferences [ buildPlatformedExe |> withPlatform ExecutionPlatform.X64 ]
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForDll.fs"|])>]
+    [<Theory; FileInlineData("AssemblyNameForDll.fs")>]
     let platformDllDefault compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withReferences [ buildPlatformedDll ]
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForDll.fs"|])>]
+    [<Theory; FileInlineData("AssemblyNameForDll.fs")>]
     let platformDllAnyCpuDefault compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withReferences [ buildPlatformedDll |> withPlatform ExecutionPlatform.Anycpu ]
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForDll.fs"|])>]
+    [<Theory; FileInlineData("AssemblyNameForDll.fs")>]
     let platformDllArm compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withReferences [ buildPlatformedDll |> withPlatform ExecutionPlatform.Arm ]
         |>  if isArm then compileExeAndRun else compile
         |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForDll.fs"|])>]
+    [<Theory; FileInlineData("AssemblyNameForDll.fs")>]
     let platformDllArm64 compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withPlatform ExecutionPlatform.Arm64
         |> withReferences [ buildPlatformedDll |> withPlatform ExecutionPlatform.Arm64 ]
         |>  if isArm then compileExeAndRun else compile
         |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForDll.fs"|])>]
+    [<Theory; FileInlineData("AssemblyNameForDll.fs")>]
     let platformDllItanium compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withReferences [ buildPlatformedDll |> withPlatform ExecutionPlatform.Itanium ]
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForDll.fs"|])>]
+    [<Theory; FileInlineData("AssemblyNameForDll.fs")>]
     let platformDllX86 compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withReferences [ buildPlatformedDll |> withPlatform ExecutionPlatform.X86 ]
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForDll.fs"|])>]
+    [<Theory; FileInlineData("AssemblyNameForDll.fs")>]
     let platformDllX64 compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withReferences [ buildPlatformedDll |> withPlatform ExecutionPlatform.X64 ]
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyHasMvidSection.fs"|])>]
+    [<Theory; FileInlineData("AssemblyHasMvidSection.fs")>]
     let withRefOnlyGeneratesMvidSection compilation =
 
         let mvidReader =
@@ -150,6 +164,7 @@ module Platform =
             |> withRefOnly
 
         compilation
+        |> getCompilation
         |> asExe
         |> withReferences [mvidReader]
         |> withReferences [assemblyHasMvidSection]
@@ -157,7 +172,7 @@ module Platform =
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyHasMvidSection.fs"|])>]
+    [<Theory; FileInlineData("AssemblyHasMvidSection.fs")>]
     let withoutRefOnlyGeneratesNoMvidSection compilation =
 
         let mvidReader =
@@ -169,6 +184,7 @@ module Platform =
             |> asLibrary
 
         compilation
+        |> getCompilation
         |> asExe
         |> withReferences [mvidReader]
         |> withReferences [assemblyHasMvidSection]

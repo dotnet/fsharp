@@ -18,16 +18,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -40,22 +30,23 @@
 
 
 
-.class public abstract auto ansi sealed Decimal_comparison_RealInternalSignatureOff
+.class public abstract auto ansi sealed Decimal_comparison
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-} 
-
-.class private abstract auto ansi sealed '<StartupCode$assembly>'.$Decimal_comparison_RealInternalSignatureOff
-       extends [runtime]System.Object
-{
-  .field static assembly int32 init@
-  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method public static void  main@() cil managed
+  .method private specialname rtspecialname static void  .cctor() cil managed
   {
-    .entrypoint
+    
+    .maxstack  8
+    IL_0000:  ldc.i4.0
+    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$Decimal_comparison::init@
+    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$Decimal_comparison::init@
+    IL_000b:  pop
+    IL_000c:  ret
+  } 
+
+  .method assembly specialname static void staticInitialization@() cil managed
+  {
     
     .maxstack  8
     IL_0000:  ldc.i4.s   10
@@ -245,6 +236,24 @@
                                                                     valuetype [netstandard]System.Decimal)
     IL_00e2:  pop
     IL_00e3:  ret
+  } 
+
+} 
+
+.class private abstract auto ansi sealed '<StartupCode$assembly>'.$Decimal_comparison
+       extends [runtime]System.Object
+{
+  .field static assembly int32 init@
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+  .method public static void  main@() cil managed
+  {
+    .entrypoint
+    
+    .maxstack  8
+    IL_0000:  call       void Decimal_comparison::staticInitialization@()
+    IL_0005:  ret
   } 
 
 } 
