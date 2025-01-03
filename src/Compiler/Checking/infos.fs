@@ -2503,7 +2503,7 @@ let MethInfosEquivByPartialSig erasureFlag ignoreFinal g amap m (minfo: MethInfo
     let argTys = minfo.GetParamTypes(amap, m, fminst)
     let argTys2 = minfo2.GetParamTypes(amap, m, fminst2)
     (argTys, argTys2) ||> List.lengthsEqAndForall2 (List.lengthsEqAndForall2 (fun ty1 ty2 ->
-        typeAEquivAux erasureFlag g (TypeEquivEnv.FromEquivTypars formalMethTypars formalMethTypars2) (stripByrefTy g ty1) (stripByrefTy g ty2)))
+        typeAEquivAux erasureFlag g (TypeEquivEnv.EmptyIgnoreNulls.FromEquivTypars formalMethTypars formalMethTypars2) (stripByrefTy g ty1) (stripByrefTy g ty2)))
 
 /// Used to hide/filter members from super classes based on signature
 /// Inref and outref parameter types will be treated as a byref type for equivalency.
@@ -2525,7 +2525,7 @@ let MethInfosEquivByNameAndSig erasureFlag ignoreFinal g amap m minfo minfo2 =
     let (CompiledSig(_, retTy2, formalMethTypars2, _)) = CompiledSigOfMeth g amap m minfo2
     match retTy, retTy2 with
     | None, None -> true
-    | Some retTy, Some retTy2 -> typeAEquivAux erasureFlag g (TypeEquivEnv.FromEquivTypars formalMethTypars formalMethTypars2) retTy retTy2
+    | Some retTy, Some retTy2 -> typeAEquivAux erasureFlag g (TypeEquivEnv.EmptyIgnoreNulls.FromEquivTypars formalMethTypars formalMethTypars2) retTy retTy2
     | _ -> false
 
 /// Used to hide/filter members from super classes based on signature

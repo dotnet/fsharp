@@ -269,7 +269,7 @@ module DispatchSlotChecking =
         // Compare the types. CompiledSigOfMeth, GetObjectExprOverrideInfo and GetTypeMemberOverrideInfo have already 
         // applied all relevant substitutions except the renamings from fvtmps <-> methTypars 
 
-        let aenv = TypeEquivEnv.FromEquivTypars fvmethTypars methTypars 
+        let aenv = (TypeEquivEnv.EmptyIgnoreNulls).FromEquivTypars fvmethTypars methTypars 
 
         List.forall2 (List.lengthsEqAndForall2 (typeAEquiv g aenv)) vargTys argTys &&
         returnTypesAEquiv g aenv vrty retTy &&
@@ -305,7 +305,7 @@ module DispatchSlotChecking =
                 ComposeTyparInsts ttpinst (ReverseTyparRenaming g memberToParentInst)
 
         // Compare under the composed substitutions 
-        let aenv = TypeEquivEnv.FromTyparInst ttpinst 
+        let aenv = (TypeEquivEnv.EmptyIgnoreNulls).FromTyparInst ttpinst 
         
         typarsAEquiv g aenv fvmethTypars methTypars
 

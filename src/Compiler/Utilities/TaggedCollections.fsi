@@ -114,7 +114,7 @@ namespace Internal.Utilities.Collections.Tagged
 
         interface IComparable
 
-        override Equals : obj -> bool
+        override Equals : obj|null -> bool
 
     type internal Set<'T> = Set<'T, IComparer<'T>>    
 
@@ -218,7 +218,7 @@ namespace Internal.Utilities.Collections.Tagged
 
         interface IComparable
 
-        override Equals : obj -> bool
+        override Equals : obj|null -> bool
 
     type internal Map<'Key,'Value> = Map<'Key, 'Value, IComparer<'Key>>    
 

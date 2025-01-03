@@ -1474,11 +1474,15 @@ Actual:
                 if not (List.exists (fun (el: ErrorInfo) -> (getErrorNumber el.Error) = exp) source) then
                     failwith (sprintf "Mismatch in ErrorNumber, expected '%A' was not found during compilation.\nAll errors:\n%A" exp (List.map getErrorInfo source))
 
+        let consequtiveWhiteSpaceTrimmer = new Regex(@"\s\s+")
+        let trimExtraSpaces s = consequtiveWhiteSpaceTrimmer.Replace(s," ")
+
         let private assertErrors (what: string) libAdjust (source: ErrorInfo list) (expected: ErrorInfo list) : unit =
 
             // (Error 67, Line 14, Col 3, Line 14, Col 24, "This type test or downcast will always hold")
             let errorMessage error =
                 let { Error = err; Range = range; Message = message } = error
+                let message = trimExtraSpaces message
                 let errorType =
                     match err with
                     | ErrorType.Error n -> $"Error {n}"
