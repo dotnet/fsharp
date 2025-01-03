@@ -11181,9 +11181,11 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                     checkAttribs ms1 ms1.Range
                     checkAttribs ms2 ms2.Range
                 | Measure.Var(typar) -> checkAttribs tm typar.Range
-    
+            | TType_tuple(elementTypes= elementTypes) -> elementTypes |> List.iter checkAttributeInMeasure
             | TType_var(typar={typar_solution = Some(typeApp) }) -> checkAttributeInMeasure typeApp
-            | TType_fun(domainType = domainType) -> checkAttributeInMeasure domainType
+            | TType_fun(domainType = domainType; rangeType= rangeType) ->
+                checkAttributeInMeasure domainType
+                checkAttributeInMeasure rangeType
             | _ -> ()
 
         checkAttributeInMeasure overallExprTy
