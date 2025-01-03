@@ -843,6 +843,8 @@ val CollectAllNoCaching: FreeVarOptions
 
 val CollectAll: FreeVarOptions
 
+val ListMeasureVarOccs: Measure -> Typar list
+
 val accFreeInTypes: FreeVarOptions -> TType list -> FreeTyvars -> FreeTyvars
 
 val accFreeInType: FreeVarOptions -> TType -> FreeTyvars -> FreeTyvars

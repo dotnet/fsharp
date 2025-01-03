@@ -202,6 +202,18 @@ type SynMeasure =
 
     | Paren of measure: SynMeasure * range: range
 
+    member x.Range =
+        match x with
+        | SynMeasure.Named(range = m)
+        | SynMeasure.Product(range = m)
+        | SynMeasure.Seq(range = m)
+        | SynMeasure.Divide(range = m)
+        | SynMeasure.Power(range = m)
+        | SynMeasure.One(range = m)
+        | SynMeasure.Anon(range = m)
+        | SynMeasure.Var(range = m)
+        | SynMeasure.Paren(range = m) -> m
+
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynRationalConst =
 
