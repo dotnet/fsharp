@@ -244,7 +244,7 @@ An error occurred getting netcoreapp references: %A{e}
                     raise (Exception (message, e))
             finally
                 if cleanUp then
-                    try Directory.Delete(projectDirectory, recursive=true) with | _ -> ()
+                    () //try Directory.Delete(projectDirectory, recursive=true) with | _ -> ()
 
         open TestReferences
 
