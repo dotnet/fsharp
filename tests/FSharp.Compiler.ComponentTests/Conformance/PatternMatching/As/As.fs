@@ -8,18 +8,20 @@ open FSharp.Test.Compiler
 
 module As =
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/As)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"asPattern01.fs"|])>]
+    [<Theory; FileInlineData("asPattern01.fs")>]
     let ``Simple - asPattern01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldSucceed
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/As)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"asPattern02.fs"|])>]
+    [<Theory; FileInlineData("asPattern02.fs")>]
     let ``Simple - asPattern02_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> withOptions ["--test:ErrorRanges"]
         |> compile

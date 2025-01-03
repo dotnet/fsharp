@@ -15,9 +15,10 @@ module RecursiveSafetyAnalysis =
         |> compileExeAndRun
 
     // SOURCE=E_CyclicReference01.fs SCFLAGS="--mlcompatibility --test:ErrorRanges --flaterrors"  # E_CyclicReference01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_CyclicReference01.fs"|])>]
+    [<Theory; FileInlineData("E_CyclicReference01.fs")>]
     let ``E_CyclicReference01_fs`` compilation =
         compilation
+        |> getCompilation
         |> withOptions ["--mlcompatibility"; "--flaterrors"]
         |> withLangVersion50
         |> asExe
@@ -29,9 +30,10 @@ module RecursiveSafetyAnalysis =
         ]
 
     // SOURCE=E_DuplicateRecursiveRecords.fs SCFLAGS="--test:ErrorRanges"          # E_DuplicateRecursiveRecords.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_DuplicateRecursiveRecords.fs"|])>]
+    [<Theory; FileInlineData("E_DuplicateRecursiveRecords.fs")>]
     let``E_DuplicateRecursiveRecords_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -39,9 +41,10 @@ module RecursiveSafetyAnalysis =
             (Error 37, Line 10, Col 5, Line 10, Col 8, "Duplicate definition of type, exception or module 'Foo'")
         ]
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_RecursiveInline.fs"|])>]
+    [<Theory; FileInlineData("E_RecursiveInline.fs")>]
     let ``E_RecursiveInline_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -53,9 +56,10 @@ module RecursiveSafetyAnalysis =
         ]
 
     // SOURCE=E_TypeDeclaration01.fs SCFLAGS="--langversion:5.0 --test:ErrorRanges" COMPILE_ONLY=1	# E_TypeDeclaration01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_TypeDeclaration01.fs"|])>]
+    [<Theory; FileInlineData("E_TypeDeclaration01.fs")>]
     let ``E_TypeDeclaration01`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -64,9 +68,10 @@ module RecursiveSafetyAnalysis =
         ]
 
     //<Expects status="error" id="FS0193" span="(21,27-21,28)">Type constraint mismatch</Expects>
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_TypeDeclaration02.fs"|])>]
+    [<Theory; FileInlineData("E_TypeDeclaration02.fs")>]
     let ``E_TypeDeclaration02_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -78,9 +83,10 @@ module RecursiveSafetyAnalysis =
         ]
 
     // SOURCE=E_VariationsOnRecursiveStruct.fs SCFLAGS="--test:ErrorRanges"     # E_VariationsOnRecursiveStruct.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_VariationsOnRecursiveStruct.fs"|])>]
+    [<Theory; FileInlineData("E_VariationsOnRecursiveStruct.fs")>]
     let ``E_VariationsOnRecursiveStruct_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -89,35 +95,39 @@ module RecursiveSafetyAnalysis =
             (Error 912, Line 6, Col 6, Line 6, Col 8, "This declaration element is not permitted in an augmentation")
         ]
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InfiniteRecursiveExplicitConstructor.fs"|])>]
+    [<Theory; FileInlineData("InfiniteRecursiveExplicitConstructor.fs")>]
     let ``InfiniteRecursiveExplicitConstructor_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> compile
         |> shouldSucceed
 
     // SOURCE=RecursiveTypeDeclarations01.fs                        # RecursiveTypeDeclarations01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"RecursiveTypeDeclarations01.fs"|])>]
+    [<Theory; FileInlineData("RecursiveTypeDeclarations01.fs")>]
     let ``RecursiveTypeDeclarations01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> ignoreWarnings
         |> compile
         |> shouldSucceed
 
     // SOURCE=RecursiveValueDeclarations01.fs                        # RecursiveValueDeclarations01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"RecursiveValueDeclarations01.fs"|])>]
+    [<Theory; FileInlineData("RecursiveValueDeclarations01.fs")>]
     let ``RecursiveValueDeclarations01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> ignoreWarnings
         |> compile
         |> shouldSucceed
 
     // SOURCE=RecursiveTypeDeclarations02.fs                        # RecursiveTypeDeclarations02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"RecursiveTypeDeclarations02.fs"|])>]
+    [<Theory; FileInlineData("RecursiveTypeDeclarations02.fs")>]
     let ``RecursiveTypeDeclarations02_fs`` compilation =
         compilation
+        |> getCompilation
         |> withOptions ["--nowarn:3370"]
         |> verifyCompileAndRun
         |> shouldSucceed

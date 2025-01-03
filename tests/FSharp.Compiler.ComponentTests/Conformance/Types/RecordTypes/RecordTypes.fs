@@ -29,43 +29,49 @@ module RecordTypes =
 
     //# Fails due to stack overflow.
     //#ReqNOCov	SOURCE=BigRecord01.fs                                                           # BigRecord01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"BigRecord01.fs"|])>]
+    [<Theory; FileInlineData("BigRecord01.fs")>]
     let ``BigRecord01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     //# Renaming the .exe because for some weird reason on some OSes having 'DispatchSlot' in the .exe
     //# seems to trigger the UAC dialog... (e.g. Win7 x86)
     // SOURCE=DispatchSlot_Equals01.fsx SCFLAGS="-o dl_equals01.exe"                            # DispatchSlot_Equals01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"DispatchSlot_Equals01.fsx"|])>]
+    [<Theory; FileInlineData("DispatchSlot_Equals01.fsx")>]
     let ``DispatchSlot_Equals01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> withName "dl_equals01"
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=DispatchSlot_GetHashCode.fsx SCFLAGS="-o dl_gethashcode01.exe"                    # DispatchSlot_GetHashCode.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"DispatchSlot_GetHashCode.fsx"|])>]
+    [<Theory; FileInlineData("DispatchSlot_GetHashCode.fsx")>]
     let ``DispatchSlot_GetHashCode_fsx`` compilation =
         compilation
+        |> getCompilation
         |> withName "dl_gethashcode01"
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=DuckTypingRecords01.fs                                                            # DuckTypingRecords01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"DuckTypingRecords01.fs"|])>]
+    [<Theory; FileInlineData("DuckTypingRecords01.fs")>]
     let ``DuckTypingRecords01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=EqualAndBoxing01.fs                                                               # EqualAndBoxing01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"EqualAndBoxing01.fs"|])>]
+    [<Theory; FileInlineData("EqualAndBoxing01.fs")>]
     let ``EqualAndBoxing01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=E_InheritRecord01.fs SCFLAGS="--test:ErrorRanges"                                # E_InheritRecord01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_InheritRecord01.fs"|])>]
+    [<Theory; FileInlineData("E_InheritRecord01.fs")>]
     let ``E_InheritRecord01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyTypeCheck
         |> shouldFail
         |> withDiagnostics [
@@ -73,9 +79,10 @@ module RecordTypes =
         ]
 
     // SOURCE=E_Interface_IComparable.fsx SCFLAGS="--test:ErrorRanges"                          # E_Interface_IComparable.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Interface_IComparable.fsx"|])>]
+    [<Theory; FileInlineData("E_Interface_IComparable.fsx")>]
     let ``E_Interface_IComparable_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyTypeCheck
         |> shouldFail
         |> withDiagnostics [
@@ -85,9 +92,10 @@ module RecordTypes =
 
 
     // SOURCE=E_Interface_IStructuralHash.fsx                                                   # E_Interface_IStructuralHash.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Interface_IStructuralHash.fsx"|])>]
+    [<Theory; FileInlineData("E_Interface_IStructuralHash.fsx")>]
     let ``E_Interface_IStructuralHash_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyTypeCheck
         |> shouldFail
         |> withDiagnostics [
@@ -98,9 +106,10 @@ module RecordTypes =
         ]
 
     // SOURCE=E_MutableFields01.fsx SCFLAGS="--test:ErrorRanges"                                # E_MutableFields01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_MutableFields01.fsx"|])>]
+    [<Theory; FileInlineData("E_MutableFields01.fsx")>]
     let ``E_MutableFields01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyTypeCheck
         |> shouldFail
         |> withDiagnostics [
@@ -113,9 +122,10 @@ module RecordTypes =
         ]
 
     // SOURCE=E_RecordCloning01.fs                                                              # E_RecordCloning01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_RecordCloning01.fs"|])>]
+    [<Theory; FileInlineData("E_RecordCloning01.fs")>]
     let ``E_RecordCloning01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyTypeCheck
         |> shouldFail
         |> withDiagnostics [
@@ -123,9 +133,10 @@ module RecordTypes =
         ]
 
     // SOURCE=E_RecordsNotNull01.fs                                                             # E_RecordsNotNull01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_RecordsNotNull01.fs"|])>]
+    [<Theory; FileInlineData("E_RecordsNotNull01.fs")>]
     let ``E_RecordsNotNull01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyTypeCheck
         |> shouldFail
         |> withDiagnostics [
@@ -133,15 +144,17 @@ module RecordTypes =
         ]
 
     // SOURCE=E_RecordsNotNull02.fs                                                             # E_RecordsNotNull02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_RecordsNotNull02.fs"|])>]
+    [<Theory; FileInlineData("E_RecordsNotNull02.fs")>]
     let ``E_RecordsNotNull02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=E_Scoping01.fsx SCFLAGS="--test:ErrorRanges"                                      # E_Scoping01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Scoping01.fsx"|])>]
+    [<Theory; FileInlineData("E_Scoping01.fsx")>]
     let ``E_Scoping01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyTypeCheck
         |> shouldFail
         |> withDiagnostics [
@@ -149,9 +162,10 @@ module RecordTypes =
         ]
 
     // SOURCE=E_Scoping02.fsx SCFLAGS=" --test:ErrorRanges --flaterrors"                        # E_Scoping02.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Scoping02.fsx"|])>]
+    [<Theory; FileInlineData("E_Scoping02.fsx")>]
     let ``E_Scoping02_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyTypeCheck
         |> shouldFail
         |> withDiagnostics [
@@ -159,9 +173,10 @@ module RecordTypes =
         ]
 
     // SOURCE=E_TypeInference01.fs SCFLAGS="--test:ErrorRanges"                                 # E_TypeInference01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_TypeInference01.fs"|])>]
+    [<Theory; FileInlineData("E_TypeInference01.fs")>]
     let ``E_TypeInference01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyTypeCheck
         |> shouldFail
         |> withDiagnostics [
@@ -169,9 +184,10 @@ module RecordTypes =
         ]
 
     // SOURCE=E_TypeInference01b.fs SCFLAGS="--test:ErrorRanges"                                # E_TypeInference01b.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_TypeInference01b.fs"|])>]
+    [<Theory; FileInlineData("E_TypeInference01b.fs")>]
     let ``E_TypeInference01b_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyTypeCheck
         |> shouldFail
         |> withDiagnostics [
@@ -179,9 +195,10 @@ module RecordTypes =
         ]
 
     // SOURCE=E_TypeInference02.fs SCFLAGS="--test:ErrorRanges"                                 # E_TypeInference02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_TypeInference02.fs"|])>]
+    [<Theory; FileInlineData("E_TypeInference02.fs")>]
     let ``E_TypeInference02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyTypeCheck
         |> shouldFail
         |> withDiagnostics [
@@ -189,9 +206,10 @@ module RecordTypes =
         ]
 
     // SOURCE=E_UnitType01.fsx SCFLAGS="-a --test:ErrorRanges"                                  # E_UnitType01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UnitType01.fsx"|])>]
+    [<Theory; FileInlineData("E_UnitType01.fsx")>]
     let ``E_UnitType01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyTypeCheck
         |> shouldFail
         |> withDiagnostics [
@@ -199,184 +217,214 @@ module RecordTypes =
         ]
 
     // SOURCE=FieldBindingAfterWith01a.fs SCFLAGS=-a                                            # FieldBindingAfterWith01a.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"FieldBindingAfterWith01a.fs"|])>]
+    [<Theory; FileInlineData("FieldBindingAfterWith01a.fs")>]
     let ``FieldBindingAfterWith01a_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyTypeCheckAsFsxAsLibrary
 
     // SOURCE=FieldBindingAfterWith01b.fs SCFLAGS=-a                                            # FieldBindingAfterWith01b.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"FieldBindingAfterWith01b.fs"|])>]
+    [<Theory; FileInlineData("FieldBindingAfterWith01b.fs")>]
     let ``FieldBindingAfterWith01b_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyTypeCheckAsFsxAsLibrary
 
     // SOURCE=FullyQualify01.fs                                                                 # FullyQualify01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"FullyQualify01.fs"|])>]
+    [<Theory; FileInlineData("FullyQualify01.fs")>]
     let ``FullyQualify01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=Interface01.fsx                                                                   # Interface01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Interface01.fsx"|])>]
+    [<Theory; FileInlineData("Interface01.fsx")>]
     let ``Interface01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=Interface_Empty.fsx                                                               # Interface_Empty.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Interface_Empty.fsx"|])>]
+    [<Theory; FileInlineData("Interface_Empty.fsx")>]
     let ``Interface_Empty_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=Interface_IComparable.fsx                                                         # Interface_IComparable.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Interface_IComparable.fsx"|])>]
+    [<Theory; FileInlineData("Interface_IComparable.fsx")>]
     let ``Interface_IComparable_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=ImplicitEquals01.fs                                                              # ImplicitEquals001.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ImplicitEquals01.fs"|])>]
+    [<Theory; FileInlineData("ImplicitEquals01.fs")>]
     let ``ImplicitEquals01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=LongIdentifiers01.fsx                                                             # LongIdentifiers01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"LongIdentifiers01.fsx"|])>]
+    [<Theory; FileInlineData("LongIdentifiers01.fsx")>]
     let ``LongIdentifiers01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=Member01.fsx                                                                      # Member01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Member01.fsx"|])>]
+    [<Theory; FileInlineData("Member01.fsx")>]
     let ``Member01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=MutableFields01.fsx                                                               # MutableFields01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MutableFields01.fsx"|])>]
+    [<Theory; FileInlineData("MutableFields01.fsx")>]
     let ``MutableFields01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> withOptions ["--nowarn:464"]
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=MutableFields_SampleFromSpec02.fsx                                                # MutableFields_SampleFromSpec02.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MutableFields_SampleFromSpec02.fsx"|])>]
+    [<Theory; FileInlineData("MutableFields_SampleFromSpec02.fsx")>]
     let ``MutableFields_SampleFromSpec02_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=NoClashMemberIFaceMember.fs SCFLAGS="--warnaserror+"                              # NoClashMemberIFaceMember.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NoClashMemberIFaceMember.fs"|])>]
+    [<Theory; FileInlineData("NoClashMemberIFaceMember.fs")>]
     let ``NoClashMemberIFaceMember_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // NoMT SOURCE=Overload_Equals.fs COMPILE_ONLY=1 SCFLAGS=--warnaserror+ FSIMODE=PIPE        # Overload_Equals.fs - fsi
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Overload_Equals.fs"|])>]
+    [<Theory; FileInlineData("Overload_Equals.fs")>]
     let ``Overload_Equals_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // NoMT SOURCE=Overload_GetHashCode.fs COMPILE_ONLY=1 SCFLAGS=--warnaserror+ FSIMODE=PIPE   # Overload_GetHashCode.fs - fsi
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Overload_GetHashCode.fs"|])>]
+    [<Theory; FileInlineData("Overload_GetHashCode.fs")>]
     let ``Overload_GetHashCode_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // NoMT SOURCE=Overload_ToString.fs COMPILE_ONLY=1 SCFLAGS=--warnaserror+ FSIMODE=PIPE	    # Overload_ToString.fs - fsi
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Overload_ToString.fs"|])>]
+    [<Theory; FileInlineData("Overload_ToString.fs")>]
     let ``Overload_ToString_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=SampleFromSpec01.fsx                                                              # SampleFromSpec01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SampleFromSpec01.fsx"|])>]
+    [<Theory; FileInlineData("SampleFromSpec01.fsx")>]
     let ``SampleFromSpec01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=SampleFromSpec03.fsx                                                              # SampleFromSpec03.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SampleFromSpec03.fsx"|])>]
+    [<Theory; FileInlineData("SampleFromSpec03.fsx")>]
     let ``SampleFromSpec03_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=Scoping03.fsx                                                                     # Scoping03.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Scoping03.fsx"|])>]
+    [<Theory; FileInlineData("Scoping03.fsx")>]
     let ``Scoping03_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=Scoping04.fsx                                                                     # Scoping04.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Scoping04.fsx"|])>]
+    [<Theory; FileInlineData("Scoping04.fsx")>]
     let ``Scoping04_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=RecordCloning01.fs                                                                # RecordCloning01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"RecordCloning01.fs"|])>]
+    [<Theory; FileInlineData("RecordCloning01.fs")>]
     let ``RecordCloning01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=RecordCloning02.fs                                                                # RecordCloning02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"RecordCloning02.fs"|])>]
+    [<Theory; FileInlineData("RecordCloning02.fs")>]
     let ``RecordCloning02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=RecordCloning03.fs                                                                # RecordCloning03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"RecordCloning03.fs"|])>]
+    [<Theory; FileInlineData("RecordCloning03.fs")>]
     let ``RecordCloning03_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=StructRecordCloning01.fs                                                          # StructRecordCloning01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StructRecordCloning01.fs"|])>]
+    [<Theory; FileInlineData("StructRecordCloning01.fs")>]
     let ``StructRecordCloning01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=StructRecordCloning02.fs                                                          # StructRecordCloning02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StructRecordCloning02.fs"|])>]
+    [<Theory; FileInlineData("StructRecordCloning02.fs")>]
     let ``StructRecordCloning02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=StructRecordCloning03.fs                                                          # StructRecordCloning03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StructRecordCloning03.fs"|])>]
+    [<Theory; FileInlineData("StructRecordCloning03.fs")>]
     let ``StructRecordCloning03_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=Syntax01.fs                                                                       # Syntax01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Syntax01.fs"|])>]
+    [<Theory; FileInlineData("Syntax01.fs")>]
     let ``Syntax01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=TypeInference01.fs                                                                # TypeInference01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TypeInference01.fs"|])>]
+    [<Theory; FileInlineData("TypeInference01.fs")>]
     let ``TypeInference01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=TypeInference02.fs                                                                # TypeInference02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TypeInference02.fs"|])>]
+    [<Theory; FileInlineData("TypeInference02.fs")>]
     let ``TypeInference02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/BasicTypeAndModuleDefinitions/RecordTypes)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UnitType01.fsx"|])>]
+    [<Theory; FileInlineData("UnitType01.fsx")>]
     let ``UnitType01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRunSucceeds
 
     // SOURCE=W_Overrides01.fsx SCFLAGS="--test:ErrorRanges"                                    # W_Overrides01.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_Overrides01.fsx"|])>]
+    [<Theory; FileInlineData("W_Overrides01.fsx")>]
     let ``W_Overrides01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> verifyTypeCheck
         |> shouldFail
         |> withDiagnostics [

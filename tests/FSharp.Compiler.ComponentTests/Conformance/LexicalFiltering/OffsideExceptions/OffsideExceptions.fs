@@ -9,23 +9,22 @@ open FSharp.Test.Compiler.Assertions.StructuredResultsAsserts
 
 module OffsideExceptions =
 
-    type FileAttribute(file) =
-        inherit DirectoryAttribute(__SOURCE_DIRECTORY__, Includes=[|file|])
-
     // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalFiltering/Basic/OffsideExceptions)
     //<Expects status="success"></Expects>
-    [<Theory; File "InfixTokenPlusOne.fs">]
+    [<Theory; FileInlineData("InfixTokenPlusOne.fs")>]
     let InfixTokenPlusOne compilation =
         compilation
+        |> getCompilation 
         |> asFsx
         |> typecheck
         |> shouldSucceed
         |> shouldSucceed
         |> ignore
 
-    [<Theory; File "RelaxWhitespace2.fs">]
+    [<Theory; FileInlineData("RelaxWhitespace2.fs")>]
     let RelaxWhitespace2 compilation =
         compilation
+        |> getCompilation 
         |> asFsx
         |> withLangVersion60
         |> withOptions ["--nowarn:25"] // Incomplete pattern matches on this expression.
@@ -33,9 +32,10 @@ module OffsideExceptions =
         |> shouldSucceed
         |> ignore
 
-    [<Theory; File "RelaxWhitespace2.fs">]
+    [<Theory; FileInlineData("RelaxWhitespace2.fs")>]
     let RelaxWhitespace2_Warning25 compilation =
         compilation
+        |> getCompilation 
         |> asFsx
         |> withLangVersion60
         |> verifyBaseline
@@ -488,9 +488,10 @@ raise (new Exception("exit 1"))
               Message = "Unexpected end of input in type definition" }
         ] |> ignore
 
-    [<Theory; File "RelaxWhitespace2.fs">]
+    [<Theory;  FileInlineData("RelaxWhitespace2.fs")>]
     let RelaxWhitespace2_Fs50 compilation =
         compilation
+        |> getCompilation 
         |> asFsx
         |> withLangVersion50
         |> compile

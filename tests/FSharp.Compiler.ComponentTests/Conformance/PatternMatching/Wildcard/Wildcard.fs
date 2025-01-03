@@ -8,9 +8,10 @@ open FSharp.Test.Compiler
 
 module Wildcard =
         // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Wildcard)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"wildCardPatterns01.fs"|])>]
+    [<Theory; FileInlineData("wildCardPatterns01.fs")>]
     let ``Wildcard - wildCardPatterns01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck

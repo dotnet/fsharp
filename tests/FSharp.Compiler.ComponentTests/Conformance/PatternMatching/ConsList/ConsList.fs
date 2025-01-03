@@ -8,18 +8,20 @@ open FSharp.Test.Compiler
 
 module ConsList =
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/ConsList)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"consPattern01.fs"|])>]
+    [<Theory; FileInlineData("consPattern01.fs")>]
     let ``ConsList - consPattern01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/ConsList)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_consOnNonList.fs"|])>]
+    [<Theory; FileInlineData("E_consOnNonList.fs")>]
     let ``ConsList - E_consOnNonList_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -36,9 +38,10 @@ but here has type
         ]
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/ConsList)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_consPattern01.fs"|])>]
+    [<Theory; FileInlineData("E_consPattern01.fs")>]
     let ``ConsList - E_consPattern01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -49,9 +52,10 @@ but here has type
     ''a list'    ")
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/ConsList)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"OutsideMatch01.fs"|])>]
+    [<Theory; FileInlineData("OutsideMatch01.fs")>]
     let ``ConsList - OutsideMatch01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck

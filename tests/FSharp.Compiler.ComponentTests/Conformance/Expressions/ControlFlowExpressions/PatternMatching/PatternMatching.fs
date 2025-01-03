@@ -10,9 +10,10 @@ module PatternMatching =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/Expressions/ControlFlowExpressions/PatternMatching)
     
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_PatternMatchingCounterExample01.fs"|])>]
+    [<Theory; FileInlineData("W_PatternMatchingCounterExample01.fs")>]
     let ``W_PatternMatchingCounterExample01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -23,9 +24,10 @@ module PatternMatching =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/Expressions/ControlFlowExpressions/PatternMatching)
     
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_PatternMatchingCounterExample02.fs"|])>]
+    [<Theory; FileInlineData("W_PatternMatchingCounterExample02.fs")>]
     let ``W_PatternMatchingCounterExample02_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -36,9 +38,10 @@ module PatternMatching =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/Expressions/ControlFlowExpressions/PatternMatching)
     
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_PatternMatchingCounterExample03.fs"|])>]
+    [<Theory; FileInlineData("W_PatternMatchingCounterExample03.fs")>]
     let ``W_PatternMatchingCounterExample03_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> withOptions ["--test:ErrorRanges"]
         |> compile
