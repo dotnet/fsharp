@@ -2,7 +2,6 @@ ImplFile
   (ParsedImplFileInput
      ("/root/Binding/RangeOfEqualSignShouldBePresentInLocalLetBinding.fs", false,
       QualifiedNameOfFile RangeOfEqualSignShouldBePresentInLocalLetBinding, [],
-      [],
       [SynModuleOrNamespace
          ([RangeOfEqualSignShouldBePresentInLocalLetBinding], false, AnonModule,
           [Expr
@@ -25,4 +24,5 @@ ImplFile
                       InKeyword = None }), (2,0--4,6)), (2,0--4,6))],
           PreXmlDocEmpty, [], None, (2,0--5,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

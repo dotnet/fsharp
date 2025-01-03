@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/MemberFlag/SynMemberDefnAbstractSlotHasCorrectKeyword.fs", false,
-      QualifiedNameOfFile SynMemberDefnAbstractSlotHasCorrectKeyword, [], [],
+      QualifiedNameOfFile SynMemberDefnAbstractSlotHasCorrectKeyword, [],
       [SynModuleOrNamespace
          ([SynMemberDefnAbstractSlotHasCorrectKeyword], false, AnonModule,
           [Types
@@ -58,4 +58,5 @@ ImplFile
                                  WithKeyword = None })], (2,0--4,26))],
           PreXmlDocEmpty, [], None, (2,0--5,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

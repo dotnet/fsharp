@@ -1176,7 +1176,7 @@ let languageFlags tcConfigB =
         CompilerOption(
             "langversion",
             tagLangVersionValues,
-            OptionString(fun switch -> tcConfigB.langVersion <- setLanguageVersion (switch)),
+            OptionString(fun switch -> tcConfigB.SetLangVersion(setLanguageVersion (switch))),
             None,
             Some(FSComp.SR.optsSetLangVersion ())
         )
