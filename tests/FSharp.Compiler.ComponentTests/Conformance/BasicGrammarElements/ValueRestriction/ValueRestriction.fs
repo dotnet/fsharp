@@ -10,9 +10,10 @@ module ValueRestriction =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/ClassTypes/ValueRestriction)
     //<Expects status="success"></Expects>
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TypeArgs01.fsx"|])>]
+    [<Theory; FileInlineData("TypeArgs01.fsx")>]
     let ``TypeArgs01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> withOptions ["-a"; "--test:ErrorRanges"; "--warnaserror+"]
         |> compile
@@ -21,9 +22,10 @@ module ValueRestriction =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/ClassTypes/ValueRestriction)
     //<Expects status="success"></Expects>
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MemberOrFunction01.fsx"|])>]
+    [<Theory; FileInlineData("MemberOrFunction01.fsx")>]
     let ``MemberOrFunction01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> withOptions ["-a"; "--test:ErrorRanges"; "--warnaserror+"]
         |> compile
@@ -32,9 +34,10 @@ module ValueRestriction =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/ClassTypes/ValueRestriction)
     //<Expects status="success"></Expects>
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MemberOrFunction01Gen.fsx"|])>]
+    [<Theory; FileInlineData("MemberOrFunction01Gen.fsx")>]
     let ``MemberOrFunction01Gen_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> withOptions ["-a"; "--test:ErrorRanges"; "--warnaserror+"]
         |> compile
@@ -43,9 +46,10 @@ module ValueRestriction =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/ClassTypes/ValueRestriction)
     //<Expects status="success"></Expects>
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MemberOrFunction02.fsx"|])>]
+    [<Theory; FileInlineData("MemberOrFunction02.fsx")>]
     let ``MemberOrFunction02_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> withOptions ["-a"; "--test:ErrorRanges"; "--warnaserror+"]
         |> compile
@@ -54,9 +58,10 @@ module ValueRestriction =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/ClassTypes/ValueRestriction)
     //<Expects status="success"></Expects>
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MemberOrFunction02Gen.fsx"|])>]
+    [<Theory; FileInlineData("MemberOrFunction02Gen.fsx")>]
     let ``MemberOrFunction02Gen_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> withOptions ["-a"; "--test:ErrorRanges"; "--warnaserror+"]
         |> compile
@@ -65,9 +70,10 @@ module ValueRestriction =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/ClassTypes/ValueRestriction)
     //<Expects status="success"></Expects>
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TypeFunction01.fsx"|])>]
+    [<Theory; FileInlineData("TypeFunction01.fsx")>]
     let ``TypeFunction01_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> withOptions ["-a"; "--test:ErrorRanges"; "--warnaserror+"]
         |> compile

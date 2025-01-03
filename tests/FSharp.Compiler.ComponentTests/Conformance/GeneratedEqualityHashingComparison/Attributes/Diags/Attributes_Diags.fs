@@ -10,9 +10,10 @@ open FSharp.Test.Compiler
 module Attributes_Diags =
 
     // SOURCE=E_AdjustUses01a.fs SCFLAGS=--test:ErrorRanges                 # E_AdjustUses01a.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AdjustUses01a.fs"|])>]
+    [<Theory; FileInlineData("E_AdjustUses01a.fs")>]
     let``E_AdjustUses01a_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -21,9 +22,10 @@ module Attributes_Diags =
         ]
 
     // SOURCE=E_AdjustUses01b.fs SCFLAGS=--test:ErrorRanges                 # E_AdjustUses01b.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AdjustUses01b.fs"|])>]
+    [<Theory; FileInlineData("E_AdjustUses01b.fs")>]
     let``E_AdjustUses01b_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail

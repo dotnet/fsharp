@@ -30,14 +30,17 @@ module ByrefSafetyAnalysis =
         |> compileAndRun
     
     // SOURCE=Migrated02.fs SCFLAGS="--test:ErrorRanges"                                  # Migrated02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MigratedTest02.fs"|])>]
+    [<Theory; FileInlineData("MigratedTest02.fs")>]
     let``MigratedTest02_fs`` compilation =
-        compilation |> verifyCompileAndRun |> shouldSucceed
-        
+        compilation
+        |> getCompilation
+        |> verifyCompileAndRun |> shouldSucceed
+
     // SOURCE=E_Migrated02.fs SCFLAGS="--test:ErrorRanges"                                # E_Migrated02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_MigratedTest02.fs"|])>]
+    [<Theory; FileInlineData("E_MigratedTest02.fs")>]
     let``E_Migrated02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -108,26 +111,28 @@ module ByrefSafetyAnalysis =
         ]
         
     // SOURCE=Migrated03.fs SCFLAGS="--test:ErrorRanges"                                  # Migrated03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MigratedTest03.fs"|])>]
+    [<Theory; FileInlineData("MigratedTest03.fs")>]
     let``MigratedTest03_fs`` compilation =
         let csharpLib =
             CSharpFromPath (__SOURCE_DIRECTORY__ ++ "MigratedTest03CSharpLib.cs")
             |> withName "CSharpLib3"
         
         compilation
+        |> getCompilation
         |> withReferences [ csharpLib ]
         |> withOptions ["--nowarn:3370"]
         |> compileExeAndRun
         |> shouldSucceed
         
     // SOURCE=E_Migrated03.fs SCFLAGS="--test:ErrorRanges"                                # E_Migrated03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_MigratedTest03.fs"|])>]
+    [<Theory; FileInlineData("E_MigratedTest03.fs")>]
     let``E_Migrated03_fs`` compilation =
         let csharpLib =
             CSharpFromPath (__SOURCE_DIRECTORY__ ++ "MigratedTest03CSharpLib.cs")
             |> withName "CSharpLib3"
         
         compilation
+        |> getCompilation
         |> asExe
         |> withReferences [ csharpLib ]
         |> withNoWarn 52
@@ -149,94 +154,155 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
             (Error 3239, Line 46, Col 17, Line 46, Col 25, "Cannot partially apply the extension method 'Test2' because the first parameter is a byref type.")
         ]
     
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TryGetValue.fs"|])>]
+    [<Theory; FileInlineData("TryGetValue.fs")>]
     let``TryGetValue_fs`` compilation =
-        compilation |> withPrelude |> compileExeAndRun |> shouldSucceed
+        compilation
+        |> getCompilation
+        |> withPrelude |> compileExeAndRun |> shouldSucceed
     
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CompareExchange.fs"|])>]
+    [<Theory; FileInlineData("CompareExchange.fs")>]
     let``CompareExchange_fs`` compilation =
         compilation
+        |> getCompilation
         |> withPrelude
         |> withOptions ["--nowarn:3370"]
         |> compileExeAndRun
         |> shouldSucceed
         
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ByRefParam.fs"|])>]
+    [<Theory; FileInlineData("ByRefParam.fs")>]
     let``ByRefParam_fs`` compilation =
-        compilation |> verifyCompileAndRun |> shouldSucceed
-        
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ByRefParam_ExplicitOutAttribute.fs"|])>]
+        compilation
+        |> getCompilation
+        |> verifyCompileAndRun |> shouldSucceed
+
+    [<Theory; FileInlineData("ByRefParam_ExplicitOutAttribute.fs")>]
     let``ByRefParam_ExplicitOutAttribute_fs`` compilation =
-        compilation |> withPrelude |> withOptions ["--nowarn:3370"] |> compileExeAndRun |> shouldSucceed
-        
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ByRefParam_ExplicitInAttribute.fs"|])>]
+        compilation
+        |> getCompilation
+        |> withPrelude
+        |> withOptions ["--nowarn:3370"] |> compileExeAndRun |> shouldSucceed
+
+    [<Theory; FileInlineData("ByRefParam_ExplicitInAttribute.fs")>]
     let``ByRefParam_ExplicitInAttribute_fs`` compilation =
-        compilation |> verifyCompileAndRun |> shouldSucceed
-        
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ByRefReturn.fs"|])>]
+        compilation
+        |> getCompilation
+        |> verifyCompileAndRun |> shouldSucceed
+
+    [<Theory; FileInlineData("ByRefReturn.fs")>]
     let``ByRefReturn_fs`` compilation =
-        compilation |> verifyCompileAndRun |> shouldSucceed
-        
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Slot_ByRefReturn.fs"|])>]
+        compilation
+        |> getCompilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("Slot_ByRefReturn.fs")>]
     let``Slot_ByRefReturn_fs`` compilation =
-        compilation |> verifyCompileAndRun |> shouldSucceed
-        
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefReturn.fs"|])>]
+        compilation
+        |> getCompilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("InRefReturn.fs")>]
     let``InRefReturn_fs`` compilation =
-        compilation |> verifyCompileAndRun |> shouldSucceed
-        
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Slot_InRefReturn.fs"|])>]
+        compilation
+        |> getCompilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("Slot_InRefReturn.fs")>]
     let``Slot_InRefReturn_fs`` compilation =
-        compilation |> verifyCompileAndRun |> shouldSucceed
-        
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"OutRefParam.fs"|])>]
+        compilation
+        |> getCompilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("OutRefParam.fs")>]
     let``OutRefParam_fs`` compilation =
-        compilation |> verifyCompileAndRun |> shouldSucceed
-        
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"OutRefParam_ExplicitOutAttribute.fs"|])>]
+        compilation
+        |> getCompilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("OutRefParam_ExplicitOutAttribute.fs")>]
     let``OutRefParam_ExplicitOutAttribute_fs`` compilation =
-        compilation |> verifyCompileAndRun |> shouldSucceed
-        
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Slot_OutRefParam.fs"|])>]
+        compilation
+        |> getCompilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("Slot_OutRefParam.fs")>]
     let``Slot_OutRefParam_fs`` compilation =
-        compilation |> verifyCompileAndRun |> shouldSucceed
-        
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ByRefParam_OverloadedTest_ExplicitOutAttribute.fs"|])>]
+        compilation
+        |> getCompilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("ByRefParam_OverloadedTest_ExplicitOutAttribute.fs")>]
     let``ByRefParam_OverloadedTest_ExplicitOutAttribute_fs`` compilation =
-        compilation |> verifyCompileAndRun |> shouldSucceed
-        
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"OutRefParam_Overloaded_ExplicitOutAttribute.fs"|])>]
+        compilation
+        |> getCompilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("OutRefParam_Overloaded_ExplicitOutAttribute.fs")>]
     let``OutRefParam_Overloaded_ExplicitOutAttribute_fs`` compilation =
-        compilation |> verifyCompileAndRun |> shouldSucceed
-        
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"OutRefParam_Overloaded.fs"|])>]
+        compilation
+        |> getCompilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("OutRefParam_Overloaded.fs")>]
     let``OutRefParam_Overloaded_fs`` compilation =
-        compilation |> verifyCompileAndRun |> shouldSucceed
-        
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParam_ExplicitInAttribute.fs"|])>]
+        compilation
+        |> getCompilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("InRefParam_ExplicitInAttribute.fs")>]
     let``InRefParam_ExplicitInAttribute_fs`` compilation =
-        compilation |> verifyCompileAndRun |> shouldSucceed
-        
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParam_ExplicitInAttributeDateTime.fs"|])>]
+        compilation
+        |> getCompilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("InRefParam_ExplicitInAttributeDateTime.fs")>]
     let``InRefParam_ExplicitInAttributeDateTime_fs`` compilation =
-        compilation |> verifyCompileAndRun |> shouldSucceed
-        
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParam.fs"|])>]
+        compilation
+        |> getCompilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("InRefParam.fs")>]
     let``InRefParam`` compilation =
-        compilation |> verifyCompileAndRun |> shouldSucceed
-        
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParamOverload_ExplicitAddressOfAtCallSite.fs"|])>]
+        compilation
+        |> getCompilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("InRefParamOverload_ExplicitAddressOfAtCallSite.fs")>]
     let``InRefParamOverload_ExplicitAddressOfAtCallSite`` compilation =
-        compilation |> withNoWarn 52 |> verifyCompileAndRun |> shouldSucceed
-        
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParamOverload_ImplicitAddressOfAtCallSite.fs"|])>]
+        compilation
+        |> getCompilation
+        |> withNoWarn 52
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("InRefParamOverload_ImplicitAddressOfAtCallSite.fs")>]
     let``InRefParamOverload_ImplicitAddressOfAtCallSite`` compilation =
-        compilation |> withNoWarn 52 |> verifyCompileAndRun |> shouldSucceed
-        
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParamOverload_ImplicitAddressOfAtCallSite2.fs"|])>]
+        compilation
+        |> getCompilation
+        |> withNoWarn 52
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("InRefParamOverload_ImplicitAddressOfAtCallSite2.fs")>]
     let``InRefParamOverload_ImplicitAddressOfAtCallSite2`` compilation =
-        compilation |> withNoWarn 52 |> verifyCompileAndRun |> shouldSucceed
-    
+        compilation
+        |> getCompilation
+        |> withNoWarn 52
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
     // TODO: Delete this, move into feature branch, or finish this. See: https://github.com/dotnet/fsharp/pull/7989#discussion_r369841104
 #if IMPLICIT_ADDRESS_OF
     module FeatureImplicitAddressOf =
@@ -262,14 +328,20 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
             compilation |> verifyCompileAndRun |> shouldSucceed
 #endif
     
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParam_Generic_ExplicitAddressOfAttCallSite1.fs"|])>]
+    [<Theory; FileInlineData("InRefParam_Generic_ExplicitAddressOfAttCallSite1.fs")>]
     let``InRefParam_Generic_ExplicitAddressOfAttCallSite1`` compilation =
-        compilation |> verifyCompileAndRun |> shouldSucceed
-        
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InRefParam_Generic_ExplicitAddressOfAttCallSite2.fs"|])>]
+        compilation
+        |> getCompilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("InRefParam_Generic_ExplicitAddressOfAttCallSite2.fs")>]
     let``InRefParam_Generic_ExplicitAddressOfAttCallSite2`` compilation =
-        compilation |> verifyCompileAndRun |> shouldSucceed
-    
+        compilation
+        |> getCompilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
     module ByrefReturn =
         [<Theory; Directory(__SOURCE_DIRECTORY__, "ByrefReturn", Includes=[|"TestImmediateReturn.fs"|])>]
         let``TestImmediateReturn`` compilation =
@@ -492,13 +564,18 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
         let``TestStructRecord`` compilation =
             compilation |> withNoWarn 988 |> withNoWarn 3560 |> verifyCompileAndRun |> shouldSucceed
     
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NoTailcallToByrefsWithModReq.fs"|])>]
+    [<Theory; FileInlineData("NoTailcallToByrefsWithModReq.fs")>]
     let``NoTailcallToByrefsWithModReq`` compilation =
-        compilation |> withNoWarn 20 |> verifyCompileAndRun |> shouldSucceed
+        compilation
+        |> getCompilation
+        |> withNoWarn 20
+        |> verifyCompileAndRun
+        |> shouldSucceed
     
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_CantTakeAddressOfExpressionReturningReferenceType.fs"|])>]
+    [<Theory; FileInlineData("E_CantTakeAddressOfExpressionReturningReferenceType.fs")>]
     let``E_CantTakeAddressOfExpressionReturningReferenceType`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -722,9 +799,10 @@ type outref<'T> with
     
     
     // SOURCE=E_ByrefAsArrayElement.fs SCFLAGS="--test:ErrorRanges"                       # E_ByrefAsArrayElement.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ByrefAsArrayElement.fs"|])>]
+    [<Theory; FileInlineData("E_ByrefAsArrayElement.fs")>]
     let``E_ByrefAsArrayElement_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -736,9 +814,10 @@ type outref<'T> with
         ]
 
     // SOURCE=E_ByrefAsGenericArgument01.fs SCFLAGS="--test:ErrorRanges"                  # E_ByrefAsGenericArgument01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ByrefAsGenericArgument01.fs"|])>]
+    [<Theory; FileInlineData("E_ByrefAsGenericArgument01.fs")>]
     let``E_ByrefAsGenericArgument01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -749,18 +828,20 @@ type outref<'T> with
         ]
 
     // NoMT SOURCE=ByrefInFSI1.fsx FSIMODE=PIPE COMPILE_ONLY=1                            # ByrefInFSI1.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ByrefInFSI1.fsx"|])>]
+    [<Theory; FileInlineData("ByrefInFSI1.fsx")>]
     let``ByrefInFSI1_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
         |> shouldSucceed
 
     // SOURCE=E_ByrefUsedInInnerLambda01.fs SCFLAGS="--test:ErrorRanges"                  # E_ByrefUsedInInnerLambda01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ByrefUsedInInnerLambda01.fs"|])>]
+    [<Theory; FileInlineData("E_ByrefUsedInInnerLambda01.fs")>]
     let``E_ByrefUsedInInnerLambda01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -769,9 +850,10 @@ type outref<'T> with
         ]
 
     // SOURCE=E_ByrefUsedInInnerLambda02.fs SCFLAGS="--test:ErrorRanges"                  # E_ByrefUsedInInnerLambda02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ByrefUsedInInnerLambda02.fs"|])>]
+    [<Theory; FileInlineData("E_ByrefUsedInInnerLambda02.fs")>]
     let``E_ByrefUsedInInnerLambda02_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -780,9 +862,10 @@ type outref<'T> with
         ]
 
     // SOURCE=E_ByrefUsedInInnerLambda03.fs SCFLAGS="--test:ErrorRanges"                  # E_ByrefUsedInInnerLambda03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ByrefUsedInInnerLambda03.fs"|])>]
+    [<Theory; FileInlineData("E_ByrefUsedInInnerLambda03.fs")>]
     let``E_ByrefUsedInInnerLambda03_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -791,9 +874,10 @@ type outref<'T> with
         ]
 
     // SOURCE=E_SetFieldToByref01.fs        SCFLAGS="--test:ErrorRanges"                  # E_SetFieldToByref01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SetFieldToByref01.fs"|])>]
+    [<Theory; FileInlineData("E_SetFieldToByref01.fs")>]
     let``E_SetFieldToByref01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -804,9 +888,10 @@ type outref<'T> with
         ]
 
     // SOURCE=E_SetFieldToByref02.fs        SCFLAGS="--test:ErrorRanges"                  # E_SetFieldToByref02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SetFieldToByref02.fs"|])>]
+    [<Theory; FileInlineData("E_SetFieldToByref02.fs")>]
     let``E_SetFieldToByref02_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -814,9 +899,10 @@ type outref<'T> with
             (Error 431, Line 8, Col 9, Line 8, Col 17, "A byref typed value would be stored here. Top-level let-bound byref values are not permitted.")
         ]
     // SOURCE=E_SetFieldToByref03.fs        SCFLAGS="--test:ErrorRanges"                  # E_SetFieldToByref03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SetFieldToByref03.fs"|])>]
+    [<Theory; FileInlineData("E_SetFieldToByref03.fs")>]
     let``E_SetFieldToByref03_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -827,9 +913,10 @@ type outref<'T> with
         ]
 
     // SOURCE=E_SetFieldToByref04.fs        SCFLAGS="--test:ErrorRanges"                  # E_SetFieldToByref04.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SetFieldToByref04.fs"|])>]
+    [<Theory; FileInlineData("E_SetFieldToByref04.fs")>]
     let``E_SetFieldToByref04_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -840,9 +927,10 @@ type outref<'T> with
         ]
 
     // SOURCE=E_SetFieldToByref05.fs        SCFLAGS="--test:ErrorRanges"                  # E_SetFieldToByref05.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SetFieldToByref05.fs"|])>]
+    [<Theory; FileInlineData("E_SetFieldToByref05.fs")>]
     let``E_SetFieldToByref05_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -854,9 +942,10 @@ type outref<'T> with
         ]
 
     // SOURCE=E_FirstClassFuncTakesByref.fs SCFLAGS="--test:ErrorRanges --flaterrors"     # E_FirstClassFuncTakesByref.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_FirstClassFuncTakesByref.fs"|])>]
+    [<Theory; FileInlineData("E_FirstClassFuncTakesByref.fs")>]
     let``E_FirstClassFuncTakesByref_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -865,9 +954,10 @@ type outref<'T> with
         ]
 
     // SOURCE=E_StaticallyResolvedByRef01.fs SCFLAGS="--test:ErrorRanges"                 # E_StaticallyResolvedByRef01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_StaticallyResolvedByRef01.fs"|])>]
+    [<Theory; FileInlineData("E_StaticallyResolvedByRef01.fs")>]
     let``E_StaticallyResolvedByRef01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -880,9 +970,10 @@ type outref<'T> with
         ]
 
     // SOURCE=UseByrefInLambda01.fs                                                       # UseByrefInLambda01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UseByrefInLambda01.fs"|])>]
+    [<Theory; FileInlineData("UseByrefInLambda01.fs")>]
     let``UseByrefInLambda01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
@@ -890,17 +981,19 @@ type outref<'T> with
         
 #if NET7_0_OR_GREATER
 // This constructor added in .NET 7: https://learn.microsoft.com/en-us/dotnet/api/system.span-1.-ctor?view=net-7.0#system-span-1-ctor(-0@)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ReturnFieldSetBySpan.fs"|])>]
+    [<Theory; FileInlineData("ReturnFieldSetBySpan.fs")>]
     let``ReturnFieldSetBySpan_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
         |> shouldSucceed
         
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ReturnSpan01.fs"|])>]
+    [<Theory; FileInlineData("ReturnSpan01.fs")>]
     let``ReturnSpan01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
@@ -908,9 +1001,10 @@ type outref<'T> with
 #endif
 
 #if NETSTANDARD2_1_OR_GREATER
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_TopLevelByref.fs"|])>]
+    [<Theory; FileInlineData("E_TopLevelByref.fs")>]
     let``E_TopLevelByref_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -918,9 +1012,10 @@ type outref<'T> with
             (Error 431, Line 6, Col 5, Line 6, Col 13, "A byref typed value would be stored here. Top-level let-bound byref values are not permitted.")
         ]
         
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SpanUsedInInnerLambda01.fs"|])>]
+    [<Theory; FileInlineData("E_SpanUsedInInnerLambda01.fs")>]
     let``E_SpanUsedInInnerLambda01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -928,9 +1023,10 @@ type outref<'T> with
             (Error 406, Line 8, Col 34, Line 8, Col 45, "The byref-typed variable 'span' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.")
         ]
         
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SpanUsedInInnerLambda02.fs"|])>]
+    [<Theory; FileInlineData("E_SpanUsedInInnerLambda02.fs")>]
     let``E_SpanUsedInInnerLambda02_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail

@@ -22,9 +22,10 @@ module NamespaceDeclGroups =
         |> compileAndRun
 
     // SOURCE="E_BeginWithNamespace01a.fs E_BeginWithNamespace01b.fs" SCFLAGS="--test:ErrorRanges --vserrors"   # E_BeginWithNamespace01
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_BeginWithNamespace01a.fs"|])>]
+    [<Theory; FileInlineData("E_BeginWithNamespace01a.fs")>]
     let ``E_BeginWithNamespace01a_fs`` compilation =
         compilation
+        |> getCompilation
         |> withAdditionalSourceFile (SourceFromPath (__SOURCE_DIRECTORY__ ++ "E_BeginWithNamespace01b.fs"))
         |> verifyCompile
         |> shouldFail
@@ -33,14 +34,15 @@ module NamespaceDeclGroups =
         ]
 
     // SOURCE=NoWarnOnJustNamespace.fs SCFLAGS="--warnaserror:58"                                               # NoWarnOnJustNamespace.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NoWarnOnJustNamespace.fs"|])>]
+    [<Theory; FileInlineData("NoWarnOnJustNamespace.fs")>]
     let ``NoWarnOnJustNamespace_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=TypeInGlobalNamespace01.fs SCFLAGS="-r:FooGlobal.dll"  PRECMD="\$FSC_PIPE -a FooGlobal.fs"        # TypeInGlobalNamespace01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TypeInGlobalNamespace01.fs"|])>]
+    [<Theory; FileInlineData("TypeInGlobalNamespace01.fs")>]
     let ``TypeInGlobalNamespace01_fs`` compilation =
         let libFoo =
             FsFromPath (Path.Combine(__SOURCE_DIRECTORY__,  "FooGlobal.fs"))
@@ -48,12 +50,13 @@ module NamespaceDeclGroups =
             |> asLibrary
 
         compilation
+        |> getCompilation
         |> withReferences [libFoo]
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=TypeInGlobalNamespace02.fs SCFLAGS="-r:FooGlobal.dll"  PRECMD="\$FSC_PIPE -a FooGlobal.fs"        # TypeInGlobalNamespace02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TypeInGlobalNamespace02.fs"|])>]
+    [<Theory; FileInlineData("TypeInGlobalNamespace02.fs")>]
     let ``TypeInGlobalNamespace02_fs`` compilation =
         let libFoo =
             FsFromPath (Path.Combine(__SOURCE_DIRECTORY__,  "FooGlobal.fs"))
@@ -61,6 +64,7 @@ module NamespaceDeclGroups =
             |> asLibrary
 
         compilation
+        |> getCompilation
         |> withReferences [libFoo]
         |> verifyCompileAndRun
         |> shouldSucceed

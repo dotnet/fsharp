@@ -9,9 +9,10 @@ open FSharp.Test.Compiler
 module LogicalPropertiesOfTypes =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/TypesAndTypeConstraints/LogicalPropertiesOfTypes)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TypeWithNullLiteral_NetRef.fsx"|])>]
+    [<Theory; FileInlineData("TypeWithNullLiteral_NetRef.fsx")>]
     let ``TypeWithNullLiteral_NetRef_fsx`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> withOptions ["-a"]
         |> typecheck

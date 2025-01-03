@@ -10,36 +10,40 @@ module PrecedenceAndOperators =
 
 
     // SOURCE=checkedOperatorsNoOverflow.fs                             # checkedOperatorsNoOverflow.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"checkedOperatorsNoOverflow.fs"|])>]
+    [<Theory; FileInlineData("checkedOperatorsNoOverflow.fs")>]
     let ``checkedOperatorsNoOverflow_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
         |> shouldSucceed
 
     // SOURCE=checkedOperatorsOverflow.fs                               # checkedOperatorsOverflow.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"checkedOperatorsOverflow.fs"|])>]
+    [<Theory; FileInlineData("checkedOperatorsOverflow.fs")>]
     let ``checkedOperatorsOverflow_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
         |> shouldSucceed
 
     // SOURCE=DotNotationAfterGenericMethod01.fs                        # DotNotationAfterGenericMethod01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"DotNotationAfterGenericMethod01.fs"|])>]
+    [<Theory; FileInlineData("DotNotationAfterGenericMethod01.fs")>]
     let ``DotNotationAfterGenericMethod01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
         |> shouldSucceed
 
     // SOURCE=E_ExclamationMark01.fs   SCFLAGS="--test:ErrorRanges -a"  # E_ExclamationMark01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ExclamationMark01.fs"|])>]
+    [<Theory; FileInlineData("E_ExclamationMark01.fs")>]
     let ``E_ExclamationMark01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -49,9 +53,10 @@ module PrecedenceAndOperators =
         ]
 
     // SOURCE=E_Negation01.fs          SCFLAGS="--test:ErrorRanges -a"  # E_Negation01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Negation01.fs"|])>]
+    [<Theory; FileInlineData("E_Negation01.fs")>]
     let ``E_Negation01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -63,9 +68,10 @@ module PrecedenceAndOperators =
         ]
 
     // SOURCE=E_QuestionMark01.fs      SCFLAGS="--test:ErrorRanges -a"  # E_QuestionMark01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_QuestionMark01.fs"|])>]
+    [<Theory; FileInlineData("E_QuestionMark01.fs")>]
     let ``E_QuestionMark01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -77,9 +83,10 @@ module PrecedenceAndOperators =
         ]
 
     // SOURCE=E_QuestionMark02.fs      SCFLAGS="--test:ErrorRanges -a"  # E_QuestionMark02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_QuestionMark02.fs"|])>]
+    [<Theory; FileInlineData("E_QuestionMark02.fs")>]
     let ``E_QuestionMark02_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -90,9 +97,10 @@ module PrecedenceAndOperators =
         ]
 
     // SOURCE=E_Tilde01.fs             SCFLAGS="--test:ErrorRanges -a"  # E_Tilde01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Tilde01.fs"|])>]
+    [<Theory; FileInlineData("E_Tilde01.fs")>]
     let ``E_Tilde01_01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -104,9 +112,10 @@ module PrecedenceAndOperators =
         ]
 
     // SOURCE=E_Tilde02.fs             SCFLAGS="--test:ErrorRanges -a"  # E_Tilde02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Tilde02.fs"|])>]
+    [<Theory; FileInlineData("E_Tilde02.fs")>]
     let ``E_Tilde02_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -118,9 +127,10 @@ module PrecedenceAndOperators =
         ]
 
     // SOURCE=ExclamationMark02.fs                                      # ExclamationMark02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ExclamationMark02.fs"|])>]
+    [<Theory; FileInlineData("ExclamationMark02.fs")>]
     let ``ExclamationMark02_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> withOptions ["--nowarn:44"]
         |> typecheck
@@ -128,18 +138,20 @@ module PrecedenceAndOperators =
         |> ignore
 
     // SOURCE=Negation01.fs                                             # Negation01.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Negation01.fs"|])>]
+    [<Theory; FileInlineData("Negation01.fs")>]
     let ``Negation01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
         |> shouldSucceed
 
     // SOURCE=VerticalbarOptionalinDU.fs                                # VerticalbarOptionalinDU.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"VerticalbarOptionalinDU.fs"|])>]
+    [<Theory; FileInlineData("VerticalbarOptionalinDU.fs")>]
     let ``VerticalbarOptionalinDU_fs`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
