@@ -8040,6 +8040,8 @@ FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure+Product
 FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure+Seq
 FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure+Tags
 FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure+Var
+FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynMeasure: Int32 Tag
 FSharp.Compiler.Syntax.SynMeasure: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynMeasure: System.String ToString()
