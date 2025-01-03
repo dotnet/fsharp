@@ -761,8 +761,8 @@ let UnifyMeasureWithOne (csenv: ConstraintSolverEnv) trace ms =
     match FindPreferredTypar nonRigidVars with
     | (v, e) :: vs ->
         let unexpandedCons = ListMeasureConOccsWithNonZeroExponents csenv.g false ms
-        let newms = ProdMeasures (List.map (fun (c, e') -> Measure.RationalPower(Measure.Const(c, c.Range), NegRational (DivRational e' e), ms.Range)) unexpandedCons 
-                                @ List.map (fun (v, e') -> Measure.RationalPower (Measure.Var(v), NegRational (DivRational e' e), ms.Range)) (vs @ rigidVars))
+        let newms = ProdMeasures (List.map (fun (c, e') -> Measure.RationalPower(Measure.Const(c, c.Range), NegRational (DivRational e' e))) unexpandedCons 
+                                @ List.map (fun (v, e') -> Measure.RationalPower (Measure.Var(v), NegRational (DivRational e' e))) (vs @ rigidVars))
 
         SubstMeasureWarnIfRigid csenv trace v newms
 
@@ -792,12 +792,12 @@ let SimplifyMeasure g vars ms =
           let newms =
               ProdMeasures [
                   for (c, e') in nonZeroCon do
-                      Measure.RationalPower (Measure.Const(c, c.Range), NegRational (DivRational e' e), ms.Range) 
+                      Measure.RationalPower (Measure.Const(c, c.Range), NegRational (DivRational e' e)) 
                   for (v', e') in nonZeroVar do
                       if typarEq v v' then 
                           newvarExpr 
                       else 
-                          Measure.RationalPower (Measure.Var(v'), NegRational (DivRational e' e), ms.Range)
+                          Measure.RationalPower (Measure.Var(v'), NegRational (DivRational e' e))
               ]
           SubstMeasure v newms
           match vs with 
@@ -881,7 +881,7 @@ let NormalizeExponentsInTypeScheme uvars ty =
         v 
     else
         let v' = NewAnonTypar (TyparKind.Measure, v.Range, TyparRigidity.Flexible, v.StaticReq, v.DynamicReq)
-        SubstMeasure v (Measure.RationalPower (Measure.Var(v'), DivRational OneRational expGcd, v.Range))
+        SubstMeasure v (Measure.RationalPower (Measure.Var(v'), DivRational OneRational expGcd))
         v')
     
 // We normalize unit-of-measure-polymorphic type schemes. There  

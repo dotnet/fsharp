@@ -806,7 +806,7 @@ let TcConst (cenv: cenv) (overallTy: TType) m env synConst =
             | TyparKind.Type -> error(Error(FSComp.SR.tcExpectedUnitOfMeasureNotType(), m))
             | TyparKind.Measure -> Measure.Const(tcref, m)
 
-        | SynMeasure.Power(measure = ms; power = exponent; range= m) -> Measure.RationalPower (tcMeasure ms, TcSynRationalConst exponent, m)
+        | SynMeasure.Power(measure = ms; power = exponent; range= m) -> Measure.RationalPower (tcMeasure ms, TcSynRationalConst exponent)
         | SynMeasure.Product(measure1 = ms1; measure2 = ms2; range= m) -> Measure.Prod(tcMeasure ms1, tcMeasure ms2, m)
         | SynMeasure.Divide(ms1, _, (SynMeasure.Seq (_ :: _ :: _, _) as ms2), m) ->
             warning(Error(FSComp.SR.tcImplicitMeasureFollowingSlash(), m))
@@ -4727,7 +4727,7 @@ and TcTypeMeasurePower kindOpt (cenv: cenv) newOk checkConstraints occ env tpenv
         NewErrorType (), tpenv
     | _ ->
         let ms, tpenv = TcMeasure cenv newOk checkConstraints occ env tpenv ty m
-        TType_measure (Measure.RationalPower (ms, TcSynRationalConst exponent, ms.Range)), tpenv
+        TType_measure (Measure.RationalPower (ms, TcSynRationalConst exponent)), tpenv
 
 and TcTypeMeasureApp kindOpt (cenv: cenv) newOk checkConstraints occ env tpenv arg1 args postfix m =
     match arg1 with
@@ -11176,8 +11176,8 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 | Measure.Const(range = m) -> checkAttribs tm m
                 | Measure.Inv ms -> checkAttribs tm ms.Range
                 | Measure.One(m) -> checkAttribs tm m
-                | Measure.RationalPower(measure = ms1; range = m) -> checkAttribs tm m
-                | Measure.Prod(ms1, ms2, m) ->
+                | Measure.RationalPower(measure = ms1) -> checkAttribs tm ms1.Range
+                | Measure.Prod(measure1= ms1; measure2= ms2) ->
                     checkAttribs ms1 ms1.Range
                     checkAttribs ms2 ms2.Range
                 | Measure.Var(typar) -> checkAttribs tm typar.Range
@@ -11188,7 +11188,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 checkAttributeInMeasure rangeType
             | _ -> ()
 
-        checkAttributeInMeasure overallExprTy
+        checkAttributeInMeasure overallTy
 
         if supportEnforceAttributeTargets then
             TcAttributeTargetsOnLetBindings { cenv with tcSink = TcResultsSink.NoSink } env attrs overallPatTy overallExprTy (not declaredTypars.IsEmpty) isClassLetBinding

@@ -3214,7 +3214,7 @@ type Measure =
     | One of range: range
 
     /// Raising a measure to a rational power
-    | RationalPower of measure: Measure * power: Rational * range: range
+    | RationalPower of measure: Measure * power: Rational
 
     override ToString: unit -> string
 

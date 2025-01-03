@@ -4571,7 +4571,7 @@ type Measure =
     | One of range: range
 
     /// Raising a measure to a rational power 
-    | RationalPower of measure: Measure * power: Rational * range: range
+    | RationalPower of measure: Measure * power: Rational
 
     // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -4586,7 +4586,7 @@ type Measure =
         | Prod(range= m) -> m
         | Inv(m) -> m.Range
         | One(range= m) -> m
-        | RationalPower(range= m) -> m
+        | RationalPower(measure= ms) -> ms.Range
 
 type Attribs = Attrib list 
 

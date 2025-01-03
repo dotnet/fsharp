@@ -234,7 +234,7 @@ and remapMeasureAux tyenv unt =
         | Some tcref -> Measure.Const(tcref, m)
         | None -> unt
     | Measure.Prod(u1, u2, m) -> Measure.Prod(remapMeasureAux tyenv u1, remapMeasureAux tyenv u2, m)
-    | Measure.RationalPower(u, q, m) -> Measure.RationalPower(remapMeasureAux tyenv u, q, m)
+    | Measure.RationalPower(u, q) -> Measure.RationalPower(remapMeasureAux tyenv u, q)
     | Measure.Inv u -> Measure.Inv(remapMeasureAux tyenv u)
     | Measure.Var(typar= tp) as unt -> 
        match tp.Solution with
@@ -539,7 +539,7 @@ let ListMeasureConOccsAfterRemapping g r unt =
 let MeasurePower u n = 
     if n = 1 then u
     elif n = 0 then Measure.One(range0)
-    else Measure.RationalPower (u, intToRational n, range0)
+    else Measure.RationalPower (u, intToRational n)
 
 let MeasureProdOpt m1 m2 =
     match m1, m2 with
@@ -580,22 +580,23 @@ let normalizeMeasure g ms =
     let vs = ListMeasureVarOccsWithNonZeroExponents ms
     let cs = ListMeasureConOccsWithNonZeroExponents g false ms
     match vs, cs with
-    | [], [] -> Measure.One(range0)
+    | [], [] -> Measure.One(ms.Range)
     | [(v, e)], [] when e = OneRational -> Measure.Var(v)
     | vs, cs ->
         List.foldBack
             (fun (v, e) ->
                 fun unt ->
                     let measureVar = Measure.Var(v)
-                    let measureRational = Measure.RationalPower(measureVar, e, measureVar.Range)
-                    Measure.Prod(measureRational, unt, unionRanges measureVar.Range unt.Range))
+                    let measureRational = Measure.RationalPower(measureVar, e)
+                    Measure.Prod(measureRational, unt, unionRanges measureRational.Range unt.Range))
             vs
             (List.foldBack
                 (fun (c, e) ->
                 fun unt ->
                     let measureConst = Measure.Const(c, c.Range)
-                    let measureRational = Measure.RationalPower(measureConst, e, measureConst.Range)
-                    Measure.Prod(measureRational, unt, range0)) cs (Measure.One(range0)))
+                    let measureRational = Measure.RationalPower(measureConst, e)
+                    let prodM = unionRanges measureConst.Range unt.Range
+                    Measure.Prod(measureRational, unt, prodM)) cs (Measure.One(ms.Range)))
  
 let tryNormalizeMeasureInType g ty =
     match ty with
