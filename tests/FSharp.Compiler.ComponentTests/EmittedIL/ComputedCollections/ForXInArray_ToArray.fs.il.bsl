@@ -1789,537 +1789,537 @@
   } 
 
   .method public static int8[]  '[|for x in sbyteArray -> x|]'(int8[] xs) cil managed
-        {
+  {
+    
+    .maxstack  6
+    .locals init (int8[] V_0,
+             int8[] V_1,
+             int32 V_2,
+             int8 V_3)
+    IL_0000:  ldarg.0
+    IL_0001:  stloc.0
+    IL_0002:  ldloc.0
+    IL_0003:  ldlen
+    IL_0004:  conv.i4
+    IL_0005:  newarr     [runtime]System.SByte
+    IL_000a:  stloc.1
+    IL_000b:  ldc.i4.0
+    IL_000c:  stloc.2
+    IL_000d:  br.s       IL_001b
 
-          .maxstack  6
-          .locals init (int8[] V_0,
-                   int8[] V_1,
-                   int32 V_2,
-                   int8 V_3)
-          IL_0000:  ldarg.0
-          IL_0001:  stloc.0
-          IL_0002:  ldloc.0
-          IL_0003:  ldlen
-          IL_0004:  conv.i4
-          IL_0005:  newarr     [runtime]System.SByte
-          IL_000a:  stloc.1
-          IL_000b:  ldc.i4.0
-          IL_000c:  stloc.2
-          IL_000d:  br.s       IL_001b
+    IL_000f:  ldloc.1
+    IL_0010:  ldloc.2
+    IL_0011:  ldloc.0
+    IL_0012:  ldloc.2
+    IL_0013:  ldelem.i1
+    IL_0014:  stloc.3
+    IL_0015:  ldloc.3
+    IL_0016:  stelem.i1
+    IL_0017:  ldloc.2
+    IL_0018:  ldc.i4.1
+    IL_0019:  add
+    IL_001a:  stloc.2
+    IL_001b:  ldloc.2
+    IL_001c:  ldloc.1
+    IL_001d:  ldlen
+    IL_001e:  conv.i4
+    IL_001f:  blt.s      IL_000f
 
-          IL_000f:  ldloc.1
-          IL_0010:  ldloc.2
-          IL_0011:  ldloc.0
-          IL_0012:  ldloc.2
-          IL_0013:  ldelem.i1
-          IL_0014:  stloc.3
-          IL_0015:  ldloc.3
-          IL_0016:  stelem.i1
-          IL_0017:  ldloc.2
-          IL_0018:  ldc.i4.1
-          IL_0019:  add
-          IL_001a:  stloc.2
-          IL_001b:  ldloc.2
-          IL_001c:  ldloc.1
-          IL_001d:  ldlen
-          IL_001e:  conv.i4
-          IL_001f:  blt.s      IL_000f
+    IL_0021:  ldloc.1
+    IL_0022:  ret
+  } 
 
-          IL_0021:  ldloc.1
-          IL_0022:  ret
-        }
+  .method public static uint8[]  '[|for x in byteArray -> x|]'(uint8[] xs) cil managed
+  {
+    
+    .maxstack  6
+    .locals init (uint8[] V_0,
+             uint8[] V_1,
+             int32 V_2,
+             uint8 V_3)
+    IL_0000:  ldarg.0
+    IL_0001:  stloc.0
+    IL_0002:  ldloc.0
+    IL_0003:  ldlen
+    IL_0004:  conv.i4
+    IL_0005:  newarr     [runtime]System.Byte
+    IL_000a:  stloc.1
+    IL_000b:  ldc.i4.0
+    IL_000c:  stloc.2
+    IL_000d:  br.s       IL_001b
 
-        .method public static uint8[]  '[|for x in byteArray -> x|]'(uint8[] xs) cil managed
-        {
+    IL_000f:  ldloc.1
+    IL_0010:  ldloc.2
+    IL_0011:  ldloc.0
+    IL_0012:  ldloc.2
+    IL_0013:  ldelem.u1
+    IL_0014:  stloc.3
+    IL_0015:  ldloc.3
+    IL_0016:  stelem.i1
+    IL_0017:  ldloc.2
+    IL_0018:  ldc.i4.1
+    IL_0019:  add
+    IL_001a:  stloc.2
+    IL_001b:  ldloc.2
+    IL_001c:  ldloc.1
+    IL_001d:  ldlen
+    IL_001e:  conv.i4
+    IL_001f:  blt.s      IL_000f
 
-          .maxstack  6
-          .locals init (uint8[] V_0,
-                   uint8[] V_1,
-                   int32 V_2,
-                   uint8 V_3)
-          IL_0000:  ldarg.0
-          IL_0001:  stloc.0
-          IL_0002:  ldloc.0
-          IL_0003:  ldlen
-          IL_0004:  conv.i4
-          IL_0005:  newarr     [runtime]System.Byte
-          IL_000a:  stloc.1
-          IL_000b:  ldc.i4.0
-          IL_000c:  stloc.2
-          IL_000d:  br.s       IL_001b
+    IL_0021:  ldloc.1
+    IL_0022:  ret
+  } 
 
-          IL_000f:  ldloc.1
-          IL_0010:  ldloc.2
-          IL_0011:  ldloc.0
-          IL_0012:  ldloc.2
-          IL_0013:  ldelem.u1
-          IL_0014:  stloc.3
-          IL_0015:  ldloc.3
-          IL_0016:  stelem.i1
-          IL_0017:  ldloc.2
-          IL_0018:  ldc.i4.1
-          IL_0019:  add
-          IL_001a:  stloc.2
-          IL_001b:  ldloc.2
-          IL_001c:  ldloc.1
-          IL_001d:  ldlen
-          IL_001e:  conv.i4
-          IL_001f:  blt.s      IL_000f
+  .method public static int16[]  '[|for x in int16Array -> x|]'(int16[] xs) cil managed
+  {
+    
+    .maxstack  6
+    .locals init (int16[] V_0,
+             int16[] V_1,
+             int32 V_2,
+             int16 V_3)
+    IL_0000:  ldarg.0
+    IL_0001:  stloc.0
+    IL_0002:  ldloc.0
+    IL_0003:  ldlen
+    IL_0004:  conv.i4
+    IL_0005:  newarr     [runtime]System.Int16
+    IL_000a:  stloc.1
+    IL_000b:  ldc.i4.0
+    IL_000c:  stloc.2
+    IL_000d:  br.s       IL_001b
 
-          IL_0021:  ldloc.1
-          IL_0022:  ret
-        }
+    IL_000f:  ldloc.1
+    IL_0010:  ldloc.2
+    IL_0011:  ldloc.0
+    IL_0012:  ldloc.2
+    IL_0013:  ldelem.i2
+    IL_0014:  stloc.3
+    IL_0015:  ldloc.3
+    IL_0016:  stelem.i2
+    IL_0017:  ldloc.2
+    IL_0018:  ldc.i4.1
+    IL_0019:  add
+    IL_001a:  stloc.2
+    IL_001b:  ldloc.2
+    IL_001c:  ldloc.1
+    IL_001d:  ldlen
+    IL_001e:  conv.i4
+    IL_001f:  blt.s      IL_000f
 
-        .method public static int16[]  '[|for x in int16Array -> x|]'(int16[] xs) cil managed
-        {
+    IL_0021:  ldloc.1
+    IL_0022:  ret
+  } 
 
-          .maxstack  6
-          .locals init (int16[] V_0,
-                   int16[] V_1,
-                   int32 V_2,
-                   int16 V_3)
-          IL_0000:  ldarg.0
-          IL_0001:  stloc.0
-          IL_0002:  ldloc.0
-          IL_0003:  ldlen
-          IL_0004:  conv.i4
-          IL_0005:  newarr     [runtime]System.Int16
-          IL_000a:  stloc.1
-          IL_000b:  ldc.i4.0
-          IL_000c:  stloc.2
-          IL_000d:  br.s       IL_001b
+  .method public static uint16[]  '[|for x in uint16Array -> x|]'(uint16[] xs) cil managed
+  {
+    
+    .maxstack  6
+    .locals init (uint16[] V_0,
+             uint16[] V_1,
+             int32 V_2,
+             uint16 V_3)
+    IL_0000:  ldarg.0
+    IL_0001:  stloc.0
+    IL_0002:  ldloc.0
+    IL_0003:  ldlen
+    IL_0004:  conv.i4
+    IL_0005:  newarr     [runtime]System.UInt16
+    IL_000a:  stloc.1
+    IL_000b:  ldc.i4.0
+    IL_000c:  stloc.2
+    IL_000d:  br.s       IL_001b
 
-          IL_000f:  ldloc.1
-          IL_0010:  ldloc.2
-          IL_0011:  ldloc.0
-          IL_0012:  ldloc.2
-          IL_0013:  ldelem.i2
-          IL_0014:  stloc.3
-          IL_0015:  ldloc.3
-          IL_0016:  stelem.i2
-          IL_0017:  ldloc.2
-          IL_0018:  ldc.i4.1
-          IL_0019:  add
-          IL_001a:  stloc.2
-          IL_001b:  ldloc.2
-          IL_001c:  ldloc.1
-          IL_001d:  ldlen
-          IL_001e:  conv.i4
-          IL_001f:  blt.s      IL_000f
+    IL_000f:  ldloc.1
+    IL_0010:  ldloc.2
+    IL_0011:  ldloc.0
+    IL_0012:  ldloc.2
+    IL_0013:  ldelem.u2
+    IL_0014:  stloc.3
+    IL_0015:  ldloc.3
+    IL_0016:  stelem.i2
+    IL_0017:  ldloc.2
+    IL_0018:  ldc.i4.1
+    IL_0019:  add
+    IL_001a:  stloc.2
+    IL_001b:  ldloc.2
+    IL_001c:  ldloc.1
+    IL_001d:  ldlen
+    IL_001e:  conv.i4
+    IL_001f:  blt.s      IL_000f
 
-          IL_0021:  ldloc.1
-          IL_0022:  ret
-        }
+    IL_0021:  ldloc.1
+    IL_0022:  ret
+  } 
 
-        .method public static uint16[]  '[|for x in uint16Array -> x|]'(uint16[] xs) cil managed
-        {
+  .method public static char[]  '[|for x in charArray -> x|]'(char[] xs) cil managed
+  {
+    
+    .maxstack  6
+    .locals init (char[] V_0,
+             char[] V_1,
+             int32 V_2,
+             char V_3)
+    IL_0000:  ldarg.0
+    IL_0001:  stloc.0
+    IL_0002:  ldloc.0
+    IL_0003:  ldlen
+    IL_0004:  conv.i4
+    IL_0005:  newarr     [runtime]System.Char
+    IL_000a:  stloc.1
+    IL_000b:  ldc.i4.0
+    IL_000c:  stloc.2
+    IL_000d:  br.s       IL_001b
 
-          .maxstack  6
-          .locals init (uint16[] V_0,
-                   uint16[] V_1,
-                   int32 V_2,
-                   uint16 V_3)
-          IL_0000:  ldarg.0
-          IL_0001:  stloc.0
-          IL_0002:  ldloc.0
-          IL_0003:  ldlen
-          IL_0004:  conv.i4
-          IL_0005:  newarr     [runtime]System.UInt16
-          IL_000a:  stloc.1
-          IL_000b:  ldc.i4.0
-          IL_000c:  stloc.2
-          IL_000d:  br.s       IL_001b
+    IL_000f:  ldloc.1
+    IL_0010:  ldloc.2
+    IL_0011:  ldloc.0
+    IL_0012:  ldloc.2
+    IL_0013:  ldelem.u2
+    IL_0014:  stloc.3
+    IL_0015:  ldloc.3
+    IL_0016:  stelem.i2
+    IL_0017:  ldloc.2
+    IL_0018:  ldc.i4.1
+    IL_0019:  add
+    IL_001a:  stloc.2
+    IL_001b:  ldloc.2
+    IL_001c:  ldloc.1
+    IL_001d:  ldlen
+    IL_001e:  conv.i4
+    IL_001f:  blt.s      IL_000f
 
-          IL_000f:  ldloc.1
-          IL_0010:  ldloc.2
-          IL_0011:  ldloc.0
-          IL_0012:  ldloc.2
-          IL_0013:  ldelem.u2
-          IL_0014:  stloc.3
-          IL_0015:  ldloc.3
-          IL_0016:  stelem.i2
-          IL_0017:  ldloc.2
-          IL_0018:  ldc.i4.1
-          IL_0019:  add
-          IL_001a:  stloc.2
-          IL_001b:  ldloc.2
-          IL_001c:  ldloc.1
-          IL_001d:  ldlen
-          IL_001e:  conv.i4
-          IL_001f:  blt.s      IL_000f
+    IL_0021:  ldloc.1
+    IL_0022:  ret
+  } 
 
-          IL_0021:  ldloc.1
-          IL_0022:  ret
-        }
+  .method public static int32[]  '[|for x in intArray -> x|]'(int32[] xs) cil managed
+  {
+    
+    .maxstack  6
+    .locals init (int32[] V_0,
+             int32[] V_1,
+             int32 V_2,
+             int32 V_3)
+    IL_0000:  ldarg.0
+    IL_0001:  stloc.0
+    IL_0002:  ldloc.0
+    IL_0003:  ldlen
+    IL_0004:  conv.i4
+    IL_0005:  newarr     [runtime]System.Int32
+    IL_000a:  stloc.1
+    IL_000b:  ldc.i4.0
+    IL_000c:  stloc.2
+    IL_000d:  br.s       IL_001b
 
-        .method public static char[]  '[|for x in charArray -> x|]'(char[] xs) cil managed
-        {
+    IL_000f:  ldloc.1
+    IL_0010:  ldloc.2
+    IL_0011:  ldloc.0
+    IL_0012:  ldloc.2
+    IL_0013:  ldelem.i4
+    IL_0014:  stloc.3
+    IL_0015:  ldloc.3
+    IL_0016:  stelem.i4
+    IL_0017:  ldloc.2
+    IL_0018:  ldc.i4.1
+    IL_0019:  add
+    IL_001a:  stloc.2
+    IL_001b:  ldloc.2
+    IL_001c:  ldloc.1
+    IL_001d:  ldlen
+    IL_001e:  conv.i4
+    IL_001f:  blt.s      IL_000f
 
-          .maxstack  6
-          .locals init (char[] V_0,
-                   char[] V_1,
-                   int32 V_2,
-                   char V_3)
-          IL_0000:  ldarg.0
-          IL_0001:  stloc.0
-          IL_0002:  ldloc.0
-          IL_0003:  ldlen
-          IL_0004:  conv.i4
-          IL_0005:  newarr     [runtime]System.Char
-          IL_000a:  stloc.1
-          IL_000b:  ldc.i4.0
-          IL_000c:  stloc.2
-          IL_000d:  br.s       IL_001b
+    IL_0021:  ldloc.1
+    IL_0022:  ret
+  } 
 
-          IL_000f:  ldloc.1
-          IL_0010:  ldloc.2
-          IL_0011:  ldloc.0
-          IL_0012:  ldloc.2
-          IL_0013:  ldelem.u2
-          IL_0014:  stloc.3
-          IL_0015:  ldloc.3
-          IL_0016:  stelem.i2
-          IL_0017:  ldloc.2
-          IL_0018:  ldc.i4.1
-          IL_0019:  add
-          IL_001a:  stloc.2
-          IL_001b:  ldloc.2
-          IL_001c:  ldloc.1
-          IL_001d:  ldlen
-          IL_001e:  conv.i4
-          IL_001f:  blt.s      IL_000f
+  .method public static uint32[]  '[|for x in uintArray -> x|]'(uint32[] xs) cil managed
+  {
+    
+    .maxstack  6
+    .locals init (uint32[] V_0,
+             uint32[] V_1,
+             int32 V_2,
+             uint32 V_3)
+    IL_0000:  ldarg.0
+    IL_0001:  stloc.0
+    IL_0002:  ldloc.0
+    IL_0003:  ldlen
+    IL_0004:  conv.i4
+    IL_0005:  newarr     [runtime]System.UInt32
+    IL_000a:  stloc.1
+    IL_000b:  ldc.i4.0
+    IL_000c:  stloc.2
+    IL_000d:  br.s       IL_001b
 
-          IL_0021:  ldloc.1
-          IL_0022:  ret
-        }
+    IL_000f:  ldloc.1
+    IL_0010:  ldloc.2
+    IL_0011:  ldloc.0
+    IL_0012:  ldloc.2
+    IL_0013:  ldelem.u4
+    IL_0014:  stloc.3
+    IL_0015:  ldloc.3
+    IL_0016:  stelem.i4
+    IL_0017:  ldloc.2
+    IL_0018:  ldc.i4.1
+    IL_0019:  add
+    IL_001a:  stloc.2
+    IL_001b:  ldloc.2
+    IL_001c:  ldloc.1
+    IL_001d:  ldlen
+    IL_001e:  conv.i4
+    IL_001f:  blt.s      IL_000f
 
-        .method public static int32[]  '[|for x in intArray -> x|]'(int32[] xs) cil managed
-        {
+    IL_0021:  ldloc.1
+    IL_0022:  ret
+  } 
 
-          .maxstack  6
-          .locals init (int32[] V_0,
-                   int32[] V_1,
-                   int32 V_2,
-                   int32 V_3)
-          IL_0000:  ldarg.0
-          IL_0001:  stloc.0
-          IL_0002:  ldloc.0
-          IL_0003:  ldlen
-          IL_0004:  conv.i4
-          IL_0005:  newarr     [runtime]System.Int32
-          IL_000a:  stloc.1
-          IL_000b:  ldc.i4.0
-          IL_000c:  stloc.2
-          IL_000d:  br.s       IL_001b
+  .method public static int64[]  '[|for x in int64Array -> x|]'(int64[] xs) cil managed
+  {
+    
+    .maxstack  6
+    .locals init (int64[] V_0,
+             int64[] V_1,
+             int32 V_2,
+             int64 V_3)
+    IL_0000:  ldarg.0
+    IL_0001:  stloc.0
+    IL_0002:  ldloc.0
+    IL_0003:  ldlen
+    IL_0004:  conv.i4
+    IL_0005:  newarr     [runtime]System.Int64
+    IL_000a:  stloc.1
+    IL_000b:  ldc.i4.0
+    IL_000c:  stloc.2
+    IL_000d:  br.s       IL_001b
 
-          IL_000f:  ldloc.1
-          IL_0010:  ldloc.2
-          IL_0011:  ldloc.0
-          IL_0012:  ldloc.2
-          IL_0013:  ldelem.i4
-          IL_0014:  stloc.3
-          IL_0015:  ldloc.3
-          IL_0016:  stelem.i4
-          IL_0017:  ldloc.2
-          IL_0018:  ldc.i4.1
-          IL_0019:  add
-          IL_001a:  stloc.2
-          IL_001b:  ldloc.2
-          IL_001c:  ldloc.1
-          IL_001d:  ldlen
-          IL_001e:  conv.i4
-          IL_001f:  blt.s      IL_000f
+    IL_000f:  ldloc.1
+    IL_0010:  ldloc.2
+    IL_0011:  ldloc.0
+    IL_0012:  ldloc.2
+    IL_0013:  ldelem.i8
+    IL_0014:  stloc.3
+    IL_0015:  ldloc.3
+    IL_0016:  stelem.i8
+    IL_0017:  ldloc.2
+    IL_0018:  ldc.i4.1
+    IL_0019:  add
+    IL_001a:  stloc.2
+    IL_001b:  ldloc.2
+    IL_001c:  ldloc.1
+    IL_001d:  ldlen
+    IL_001e:  conv.i4
+    IL_001f:  blt.s      IL_000f
 
-          IL_0021:  ldloc.1
-          IL_0022:  ret
-        }
+    IL_0021:  ldloc.1
+    IL_0022:  ret
+  } 
 
-        .method public static uint32[]  '[|for x in uintArray -> x|]'(uint32[] xs) cil managed
-        {
+  .method public static uint64[]  '[|for x in uint64Array -> x|]'(uint64[] xs) cil managed
+  {
+    
+    .maxstack  6
+    .locals init (uint64[] V_0,
+             uint64[] V_1,
+             int32 V_2,
+             uint64 V_3)
+    IL_0000:  ldarg.0
+    IL_0001:  stloc.0
+    IL_0002:  ldloc.0
+    IL_0003:  ldlen
+    IL_0004:  conv.i4
+    IL_0005:  newarr     [runtime]System.UInt64
+    IL_000a:  stloc.1
+    IL_000b:  ldc.i4.0
+    IL_000c:  stloc.2
+    IL_000d:  br.s       IL_001b
 
-          .maxstack  6
-          .locals init (uint32[] V_0,
-                   uint32[] V_1,
-                   int32 V_2,
-                   uint32 V_3)
-          IL_0000:  ldarg.0
-          IL_0001:  stloc.0
-          IL_0002:  ldloc.0
-          IL_0003:  ldlen
-          IL_0004:  conv.i4
-          IL_0005:  newarr     [runtime]System.UInt32
-          IL_000a:  stloc.1
-          IL_000b:  ldc.i4.0
-          IL_000c:  stloc.2
-          IL_000d:  br.s       IL_001b
+    IL_000f:  ldloc.1
+    IL_0010:  ldloc.2
+    IL_0011:  ldloc.0
+    IL_0012:  ldloc.2
+    IL_0013:  ldelem.i8
+    IL_0014:  stloc.3
+    IL_0015:  ldloc.3
+    IL_0016:  stelem.i8
+    IL_0017:  ldloc.2
+    IL_0018:  ldc.i4.1
+    IL_0019:  add
+    IL_001a:  stloc.2
+    IL_001b:  ldloc.2
+    IL_001c:  ldloc.1
+    IL_001d:  ldlen
+    IL_001e:  conv.i4
+    IL_001f:  blt.s      IL_000f
 
-          IL_000f:  ldloc.1
-          IL_0010:  ldloc.2
-          IL_0011:  ldloc.0
-          IL_0012:  ldloc.2
-          IL_0013:  ldelem.u4
-          IL_0014:  stloc.3
-          IL_0015:  ldloc.3
-          IL_0016:  stelem.i4
-          IL_0017:  ldloc.2
-          IL_0018:  ldc.i4.1
-          IL_0019:  add
-          IL_001a:  stloc.2
-          IL_001b:  ldloc.2
-          IL_001c:  ldloc.1
-          IL_001d:  ldlen
-          IL_001e:  conv.i4
-          IL_001f:  blt.s      IL_000f
+    IL_0021:  ldloc.1
+    IL_0022:  ret
+  } 
 
-          IL_0021:  ldloc.1
-          IL_0022:  ret
-        }
+  .method public static native int[]  '[|for x in nativeintArray -> x|]'(native int[] xs) cil managed
+  {
+    
+    .maxstack  6
+    .locals init (native int[] V_0,
+             native int[] V_1,
+             int32 V_2,
+             native int V_3)
+    IL_0000:  ldarg.0
+    IL_0001:  stloc.0
+    IL_0002:  ldloc.0
+    IL_0003:  ldlen
+    IL_0004:  conv.i4
+    IL_0005:  newarr     [runtime]System.IntPtr
+    IL_000a:  stloc.1
+    IL_000b:  ldc.i4.0
+    IL_000c:  stloc.2
+    IL_000d:  br.s       IL_001b
 
-        .method public static int64[]  '[|for x in int64Array -> x|]'(int64[] xs) cil managed
-        {
+    IL_000f:  ldloc.1
+    IL_0010:  ldloc.2
+    IL_0011:  ldloc.0
+    IL_0012:  ldloc.2
+    IL_0013:  ldelem.i
+    IL_0014:  stloc.3
+    IL_0015:  ldloc.3
+    IL_0016:  stelem.i
+    IL_0017:  ldloc.2
+    IL_0018:  ldc.i4.1
+    IL_0019:  add
+    IL_001a:  stloc.2
+    IL_001b:  ldloc.2
+    IL_001c:  ldloc.1
+    IL_001d:  ldlen
+    IL_001e:  conv.i4
+    IL_001f:  blt.s      IL_000f
 
-          .maxstack  6
-          .locals init (int64[] V_0,
-                   int64[] V_1,
-                   int32 V_2,
-                   int64 V_3)
-          IL_0000:  ldarg.0
-          IL_0001:  stloc.0
-          IL_0002:  ldloc.0
-          IL_0003:  ldlen
-          IL_0004:  conv.i4
-          IL_0005:  newarr     [runtime]System.Int64
-          IL_000a:  stloc.1
-          IL_000b:  ldc.i4.0
-          IL_000c:  stloc.2
-          IL_000d:  br.s       IL_001b
+    IL_0021:  ldloc.1
+    IL_0022:  ret
+  } 
 
-          IL_000f:  ldloc.1
-          IL_0010:  ldloc.2
-          IL_0011:  ldloc.0
-          IL_0012:  ldloc.2
-          IL_0013:  ldelem.i8
-          IL_0014:  stloc.3
-          IL_0015:  ldloc.3
-          IL_0016:  stelem.i8
-          IL_0017:  ldloc.2
-          IL_0018:  ldc.i4.1
-          IL_0019:  add
-          IL_001a:  stloc.2
-          IL_001b:  ldloc.2
-          IL_001c:  ldloc.1
-          IL_001d:  ldlen
-          IL_001e:  conv.i4
-          IL_001f:  blt.s      IL_000f
+  .method public static native uint[]  '[|for x in unativeintArray -> x|]'(native uint[] xs) cil managed
+  {
+    
+    .maxstack  6
+    .locals init (native uint[] V_0,
+             native uint[] V_1,
+             int32 V_2,
+             native uint V_3)
+    IL_0000:  ldarg.0
+    IL_0001:  stloc.0
+    IL_0002:  ldloc.0
+    IL_0003:  ldlen
+    IL_0004:  conv.i4
+    IL_0005:  newarr     [runtime]System.UIntPtr
+    IL_000a:  stloc.1
+    IL_000b:  ldc.i4.0
+    IL_000c:  stloc.2
+    IL_000d:  br.s       IL_001b
 
-          IL_0021:  ldloc.1
-          IL_0022:  ret
-        }
+    IL_000f:  ldloc.1
+    IL_0010:  ldloc.2
+    IL_0011:  ldloc.0
+    IL_0012:  ldloc.2
+    IL_0013:  ldelem.i
+    IL_0014:  stloc.3
+    IL_0015:  ldloc.3
+    IL_0016:  stelem.i
+    IL_0017:  ldloc.2
+    IL_0018:  ldc.i4.1
+    IL_0019:  add
+    IL_001a:  stloc.2
+    IL_001b:  ldloc.2
+    IL_001c:  ldloc.1
+    IL_001d:  ldlen
+    IL_001e:  conv.i4
+    IL_001f:  blt.s      IL_000f
 
-        .method public static uint64[]  '[|for x in uint64Array -> x|]'(uint64[] xs) cil managed
-        {
+    IL_0021:  ldloc.1
+    IL_0022:  ret
+  } 
 
-          .maxstack  6
-          .locals init (uint64[] V_0,
-                   uint64[] V_1,
-                   int32 V_2,
-                   uint64 V_3)
-          IL_0000:  ldarg.0
-          IL_0001:  stloc.0
-          IL_0002:  ldloc.0
-          IL_0003:  ldlen
-          IL_0004:  conv.i4
-          IL_0005:  newarr     [runtime]System.UInt64
-          IL_000a:  stloc.1
-          IL_000b:  ldc.i4.0
-          IL_000c:  stloc.2
-          IL_000d:  br.s       IL_001b
+  .method public static float64[]  '[|for x in floatArray -> x|]'(float64[] xs) cil managed
+  {
+    
+    .maxstack  6
+    .locals init (float64[] V_0,
+             float64[] V_1,
+             int32 V_2,
+             float64 V_3)
+    IL_0000:  ldarg.0
+    IL_0001:  stloc.0
+    IL_0002:  ldloc.0
+    IL_0003:  ldlen
+    IL_0004:  conv.i4
+    IL_0005:  newarr     [runtime]System.Double
+    IL_000a:  stloc.1
+    IL_000b:  ldc.i4.0
+    IL_000c:  stloc.2
+    IL_000d:  br.s       IL_001b
 
-          IL_000f:  ldloc.1
-          IL_0010:  ldloc.2
-          IL_0011:  ldloc.0
-          IL_0012:  ldloc.2
-          IL_0013:  ldelem.i8
-          IL_0014:  stloc.3
-          IL_0015:  ldloc.3
-          IL_0016:  stelem.i8
-          IL_0017:  ldloc.2
-          IL_0018:  ldc.i4.1
-          IL_0019:  add
-          IL_001a:  stloc.2
-          IL_001b:  ldloc.2
-          IL_001c:  ldloc.1
-          IL_001d:  ldlen
-          IL_001e:  conv.i4
-          IL_001f:  blt.s      IL_000f
+    IL_000f:  ldloc.1
+    IL_0010:  ldloc.2
+    IL_0011:  ldloc.0
+    IL_0012:  ldloc.2
+    IL_0013:  ldelem.r8
+    IL_0014:  stloc.3
+    IL_0015:  ldloc.3
+    IL_0016:  stelem.r8
+    IL_0017:  ldloc.2
+    IL_0018:  ldc.i4.1
+    IL_0019:  add
+    IL_001a:  stloc.2
+    IL_001b:  ldloc.2
+    IL_001c:  ldloc.1
+    IL_001d:  ldlen
+    IL_001e:  conv.i4
+    IL_001f:  blt.s      IL_000f
 
-          IL_0021:  ldloc.1
-          IL_0022:  ret
-        }
+    IL_0021:  ldloc.1
+    IL_0022:  ret
+  } 
 
-        .method public static native int[]  '[|for x in nativeintArray -> x|]'(native int[] xs) cil managed
-        {
+  .method public static float32[]  '[|for x in float32Array -> x|]'(float32[] xs) cil managed
+  {
+    
+    .maxstack  6
+    .locals init (float32[] V_0,
+             float32[] V_1,
+             int32 V_2,
+             float32 V_3)
+    IL_0000:  ldarg.0
+    IL_0001:  stloc.0
+    IL_0002:  ldloc.0
+    IL_0003:  ldlen
+    IL_0004:  conv.i4
+    IL_0005:  newarr     [runtime]System.Single
+    IL_000a:  stloc.1
+    IL_000b:  ldc.i4.0
+    IL_000c:  stloc.2
+    IL_000d:  br.s       IL_001b
 
-          .maxstack  6
-          .locals init (native int[] V_0,
-                   native int[] V_1,
-                   int32 V_2,
-                   native int V_3)
-          IL_0000:  ldarg.0
-          IL_0001:  stloc.0
-          IL_0002:  ldloc.0
-          IL_0003:  ldlen
-          IL_0004:  conv.i4
-          IL_0005:  newarr     [runtime]System.IntPtr
-          IL_000a:  stloc.1
-          IL_000b:  ldc.i4.0
-          IL_000c:  stloc.2
-          IL_000d:  br.s       IL_001b
+    IL_000f:  ldloc.1
+    IL_0010:  ldloc.2
+    IL_0011:  ldloc.0
+    IL_0012:  ldloc.2
+    IL_0013:  ldelem.r4
+    IL_0014:  stloc.3
+    IL_0015:  ldloc.3
+    IL_0016:  stelem.r4
+    IL_0017:  ldloc.2
+    IL_0018:  ldc.i4.1
+    IL_0019:  add
+    IL_001a:  stloc.2
+    IL_001b:  ldloc.2
+    IL_001c:  ldloc.1
+    IL_001d:  ldlen
+    IL_001e:  conv.i4
+    IL_001f:  blt.s      IL_000f
 
-          IL_000f:  ldloc.1
-          IL_0010:  ldloc.2
-          IL_0011:  ldloc.0
-          IL_0012:  ldloc.2
-          IL_0013:  ldelem.i
-          IL_0014:  stloc.3
-          IL_0015:  ldloc.3
-          IL_0016:  stelem.i
-          IL_0017:  ldloc.2
-          IL_0018:  ldc.i4.1
-          IL_0019:  add
-          IL_001a:  stloc.2
-          IL_001b:  ldloc.2
-          IL_001c:  ldloc.1
-          IL_001d:  ldlen
-          IL_001e:  conv.i4
-          IL_001f:  blt.s      IL_000f
-
-          IL_0021:  ldloc.1
-          IL_0022:  ret
-        }
-
-        .method public static native uint[]  '[|for x in unativeintArray -> x|]'(native uint[] xs) cil managed
-        {
-
-          .maxstack  6
-          .locals init (native uint[] V_0,
-                   native uint[] V_1,
-                   int32 V_2,
-                   native uint V_3)
-          IL_0000:  ldarg.0
-          IL_0001:  stloc.0
-          IL_0002:  ldloc.0
-          IL_0003:  ldlen
-          IL_0004:  conv.i4
-          IL_0005:  newarr     [runtime]System.UIntPtr
-          IL_000a:  stloc.1
-          IL_000b:  ldc.i4.0
-          IL_000c:  stloc.2
-          IL_000d:  br.s       IL_001b
-
-          IL_000f:  ldloc.1
-          IL_0010:  ldloc.2
-          IL_0011:  ldloc.0
-          IL_0012:  ldloc.2
-          IL_0013:  ldelem.i
-          IL_0014:  stloc.3
-          IL_0015:  ldloc.3
-          IL_0016:  stelem.i
-          IL_0017:  ldloc.2
-          IL_0018:  ldc.i4.1
-          IL_0019:  add
-          IL_001a:  stloc.2
-          IL_001b:  ldloc.2
-          IL_001c:  ldloc.1
-          IL_001d:  ldlen
-          IL_001e:  conv.i4
-          IL_001f:  blt.s      IL_000f
-
-          IL_0021:  ldloc.1
-          IL_0022:  ret
-        }
-
-        .method public static float64[]  '[|for x in floatArray -> x|]'(float64[] xs) cil managed
-        {
-
-          .maxstack  6
-          .locals init (float64[] V_0,
-                   float64[] V_1,
-                   int32 V_2,
-                   float64 V_3)
-          IL_0000:  ldarg.0
-          IL_0001:  stloc.0
-          IL_0002:  ldloc.0
-          IL_0003:  ldlen
-          IL_0004:  conv.i4
-          IL_0005:  newarr     [runtime]System.Double
-          IL_000a:  stloc.1
-          IL_000b:  ldc.i4.0
-          IL_000c:  stloc.2
-          IL_000d:  br.s       IL_001b
-
-          IL_000f:  ldloc.1
-          IL_0010:  ldloc.2
-          IL_0011:  ldloc.0
-          IL_0012:  ldloc.2
-          IL_0013:  ldelem.r8
-          IL_0014:  stloc.3
-          IL_0015:  ldloc.3
-          IL_0016:  stelem.r8
-          IL_0017:  ldloc.2
-          IL_0018:  ldc.i4.1
-          IL_0019:  add
-          IL_001a:  stloc.2
-          IL_001b:  ldloc.2
-          IL_001c:  ldloc.1
-          IL_001d:  ldlen
-          IL_001e:  conv.i4
-          IL_001f:  blt.s      IL_000f
-
-          IL_0021:  ldloc.1
-          IL_0022:  ret
-        }
-
-        .method public static float32[]  '[|for x in float32Array -> x|]'(float32[] xs) cil managed
-        {
-
-          .maxstack  6
-          .locals init (float32[] V_0,
-                   float32[] V_1,
-                   int32 V_2,
-                   float32 V_3)
-          IL_0000:  ldarg.0
-          IL_0001:  stloc.0
-          IL_0002:  ldloc.0
-          IL_0003:  ldlen
-          IL_0004:  conv.i4
-          IL_0005:  newarr     [runtime]System.Single
-          IL_000a:  stloc.1
-          IL_000b:  ldc.i4.0
-          IL_000c:  stloc.2
-          IL_000d:  br.s       IL_001b
-
-          IL_000f:  ldloc.1
-          IL_0010:  ldloc.2
-          IL_0011:  ldloc.0
-          IL_0012:  ldloc.2
-          IL_0013:  ldelem.r4
-          IL_0014:  stloc.3
-          IL_0015:  ldloc.3
-          IL_0016:  stelem.r4
-          IL_0017:  ldloc.2
-          IL_0018:  ldc.i4.1
-          IL_0019:  add
-          IL_001a:  stloc.2
-          IL_001b:  ldloc.2
-          IL_001c:  ldloc.1
-          IL_001d:  ldlen
-          IL_001e:  conv.i4
-          IL_001f:  blt.s      IL_000f
-
-          IL_0021:  ldloc.1
-          IL_0022:  ret
-        }
+    IL_0021:  ldloc.1
+    IL_0022:  ret
+  } 
 
 } 
 
