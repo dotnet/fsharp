@@ -10,9 +10,10 @@ module BasicApplication =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/Expressions/ApplicationExpressions/BasicApplication)
     //<Expects status="error" span="(7,17-7,18)" id="FS0010">Unexpected identifier in expression$</Expects>
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_PostfixType01.fs"|])>]
+    [<Theory; FileInlineData("E_PostfixType01.fs")>]
     let ``E_PostfixType01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> withOptions ["--test:ErrorRanges"]
         |> compile
@@ -23,9 +24,10 @@ module BasicApplication =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/Expressions/ApplicationExpressions/BasicApplication)
     //<Expects status="error" span="(9,31-9,32)" id="FS0010">Unexpected identifier in member definition$</Expects>
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_PostfixType03.fs"|])>]
+    [<Theory; FileInlineData("E_PostfixType03.fs")>]
     let ``E_PostfixType03_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> withOptions ["--test:ErrorRanges"]
         |> compile
@@ -37,9 +39,10 @@ module BasicApplication =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/Expressions/ApplicationExpressions/BasicApplication)
     //<Expects status="success"></Expects>
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PostfixType02.fs"|])>]
+    [<Theory; FileInlineData("PostfixType02.fs")>]
     let ``PostfixType02_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> withOptions ["--test:ErrorRanges"]
         |> compile

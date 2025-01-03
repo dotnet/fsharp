@@ -10,9 +10,10 @@ module SequenceIteration =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/Expressions/ControlFlowExpressions/SequenceIteration)
     
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_IncompleteMatchFor01.fs"|])>]
+    [<Theory; FileInlineData("W_IncompleteMatchFor01.fs")>]
     let ``W_IncompleteMatchFor01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> withOptions ["--test:ErrorRanges"]
         |> compile

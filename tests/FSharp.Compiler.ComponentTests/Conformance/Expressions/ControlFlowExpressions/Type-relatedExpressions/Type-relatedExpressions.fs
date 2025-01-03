@@ -9,9 +9,10 @@ open FSharp.Test.Compiler
 module TyperelatedExpressions =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/Expressions/Type-relatedExpressions)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_rigidtypeannotation02.fs"|])>]
+    [<Theory; FileInlineData("E_rigidtypeannotation02.fs")>]
     let ``E_rigidtypeannotation02_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> typecheck
         |> shouldFail
@@ -22,9 +23,10 @@ module TyperelatedExpressions =
         ]
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/Expressions/Type-relatedExpressions)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_rigidtypeannotation02b.fs"|])>]
+    [<Theory; FileInlineData("E_rigidtypeannotation02b.fs")>]
     let ``E_rigidtypeannotation02b_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> typecheck
         |> shouldFail
@@ -34,17 +36,19 @@ module TyperelatedExpressions =
         ]
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/Expressions/Type-relatedExpressions)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"rigidtypeannotation01.fs"|])>]
+    [<Theory; FileInlineData("rigidtypeannotation01.fs")>]
     let ``rigidtypeannotation01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> typecheck
         |> shouldSucceed
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/Expressions/Type-relatedExpressions)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"staticcoercion01.fs"|])>]
+    [<Theory; FileInlineData("staticcoercion01.fs")>]
     let ``staticcoercion01_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> typecheck
         |> shouldFail
@@ -56,9 +60,10 @@ module TyperelatedExpressions =
         ]
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/Expressions/Type-relatedExpressions)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"staticcoercion01b.fs"|])>]
+    [<Theory; FileInlineData("staticcoercion01b.fs")>]
     let ``staticcoercion01b_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> typecheck
         |> shouldFail
