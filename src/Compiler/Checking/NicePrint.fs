@@ -946,7 +946,7 @@ module PrintTypes =
             match nullness.Evaluate() with
             | NullnessInfo.WithNull -> part2 ^^ wordL (tagText "| null")
             | NullnessInfo.WithoutNull -> part2
-            | NullnessInfo.AmbivalentToNull -> part2 ^^ wordL (tagText "__maybenull")
+            | NullnessInfo.AmbivalentToNull -> part2 //^^ wordL (tagText "__maybenull")
         else
             part2
     
