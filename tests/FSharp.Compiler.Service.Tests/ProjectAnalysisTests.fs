@@ -3691,7 +3691,7 @@ let _ = XmlProvider<"<root><value>1</value><value>3</value></root>">.GetSample()
     let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 // ".NET Core SKIPPED: Disabled until FSharp.Data.dll is build for dotnet core."
-[<FactForDESKTOP>]
+[<FactForDESKTOP; RunTestCasesInSequence>]
 let ``Test Project25 whole project errors`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project25.options) |> Async.RunImmediate
     for e in wholeProjectResults.Diagnostics do
@@ -3699,7 +3699,7 @@ let ``Test Project25 whole project errors`` () =
     wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 // ".NET Core SKIPPED: Disabled until FSharp.Data.dll is build for dotnet core."
-[<FactForDESKTOP>]
+[<FactForDESKTOP; RunTestCasesInSequence>]
 let ``Test Project25 symbol uses of type-provided members`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project25.options) |> Async.RunImmediate
     let backgroundParseResults1, backgroundTypedParse1 =
@@ -3756,8 +3756,8 @@ let ``Test Project25 symbol uses of type-provided members`` () =
     usesOfGetSampleSymbol |> shouldEqual [|("file1", ((5, 8), (5, 25))); ("file1", ((10, 8), (10, 78)))|]
 
 // ".NET Core SKIPPED: Disabled until FSharp.Data.dll is build for dotnet core.")>]
-[<FactForDESKTOP>]
-let ``Test symbol uses of type-provided types`` () =
+[<FactForDESKTOP; RunTestCasesInSequence>]
+let ``Test Project25 symbol uses of type-provided types`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project25.options) |> Async.RunImmediate
     let backgroundParseResults1, backgroundTypedParse1 =
         checker.GetBackgroundCheckResultsForFileInProject(Project25.fileName1, Project25.options)
@@ -3776,8 +3776,8 @@ let ``Test symbol uses of type-provided types`` () =
 
     usesOfGetSampleSymbol |> shouldEqual [|("file1", ((4, 15), (4, 26))); ("file1", ((10, 8), (10, 19)))|]
 
-[<Fact>]
-let ``Test symbol uses of fully-qualified records`` () =
+[<Fact; RunTestCasesInSequence>]
+let ``Test Project25 symbol uses of fully-qualified records`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project25.options) |> Async.RunImmediate
     let backgroundParseResults1, backgroundTypedParse1 =
         checker.GetBackgroundCheckResultsForFileInProject(Project25.fileName1, Project25.options)
