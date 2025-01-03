@@ -804,21 +804,21 @@ let TcConst (cenv: cenv) (overallTy: TType) m env synConst =
             let _, tcref, _ = ForceRaise(ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurrence.Use OpenQualified env.eNameResEnv ad tc TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.No)
             match tcref.TypeOrMeasureKind with
             | TyparKind.Type -> error(Error(FSComp.SR.tcExpectedUnitOfMeasureNotType(), m))
-            | TyparKind.Measure -> Measure.Const(tcref, m)
+            | TyparKind.Measure -> Measure.Const(tcref, ms.Range)
 
         | SynMeasure.Power(measure = ms; power = exponent; range= m) -> Measure.RationalPower (tcMeasure ms, TcSynRationalConst exponent)
         | SynMeasure.Product(measure1 = ms1; measure2 = ms2; range= m) -> Measure.Prod(tcMeasure ms1, tcMeasure ms2, m)
         | SynMeasure.Divide(ms1, _, (SynMeasure.Seq (_ :: _ :: _, _) as ms2), m) ->
             warning(Error(FSComp.SR.tcImplicitMeasureFollowingSlash(), m))
             let factor1 = ms1 |> Option.defaultValue (SynMeasure.One Range.Zero)
-            Measure.Prod(tcMeasure factor1, Measure.Inv (tcMeasure ms2), m)
+            Measure.Prod(tcMeasure factor1, Measure.Inv (tcMeasure ms2), ms.Range)
         | SynMeasure.Divide(measure1 = ms1; measure2 = ms2; range= m) ->
             let factor1 = ms1 |> Option.defaultValue (SynMeasure.One Range.Zero)
-            Measure.Prod(tcMeasure factor1, Measure.Inv (tcMeasure ms2), m)
+            Measure.Prod(tcMeasure factor1, Measure.Inv (tcMeasure ms2), ms.Range)
         | SynMeasure.Seq(mss, _) -> ProdMeasures (List.map tcMeasure mss)
         | SynMeasure.Anon _ -> error(Error(FSComp.SR.tcUnexpectedMeasureAnon(), m))
-        | SynMeasure.Var(_, m) -> error(Error(FSComp.SR.tcNonZeroConstantCannotHaveGenericUnit(), m))
-        | SynMeasure.Paren(measure, _) -> tcMeasure measure
+        | SynMeasure.Var(range= m) -> error(Error(FSComp.SR.tcNonZeroConstantCannotHaveGenericUnit(), m))
+        | SynMeasure.Paren(measure= measure) -> tcMeasure measure
 
     let unif expectedTy = UnifyTypes cenv env m overallTy expectedTy
 

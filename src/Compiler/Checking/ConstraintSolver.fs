@@ -761,7 +761,7 @@ let UnifyMeasureWithOne (csenv: ConstraintSolverEnv) trace ms =
     match FindPreferredTypar nonRigidVars with
     | (v, e) :: vs ->
         let unexpandedCons = ListMeasureConOccsWithNonZeroExponents csenv.g false ms
-        let newms = ProdMeasures (List.map (fun (c, e') -> Measure.RationalPower(Measure.Const(c, c.Range), NegRational (DivRational e' e))) unexpandedCons 
+        let newms = ProdMeasures (List.map (fun (c, e') -> Measure.RationalPower(Measure.Const(c, ms.Range), NegRational (DivRational e' e))) unexpandedCons 
                                 @ List.map (fun (v, e') -> Measure.RationalPower (Measure.Var(v), NegRational (DivRational e' e))) (vs @ rigidVars))
 
         SubstMeasureWarnIfRigid csenv trace v newms
@@ -792,7 +792,7 @@ let SimplifyMeasure g vars ms =
           let newms =
               ProdMeasures [
                   for (c, e') in nonZeroCon do
-                      Measure.RationalPower (Measure.Const(c, c.Range), NegRational (DivRational e' e)) 
+                      Measure.RationalPower (Measure.Const(c, ms.Range), NegRational (DivRational e' e)) 
                   for (v', e') in nonZeroVar do
                       if typarEq v v' then 
                           newvarExpr 
