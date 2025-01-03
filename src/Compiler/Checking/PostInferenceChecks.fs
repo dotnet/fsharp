@@ -349,18 +349,6 @@ type TypeInstCtx =
                         match x with
                         | IlGenericInst(_,ilTypar) -> ilTypar.HasAllowsRefStruct
                         | _ -> false
-      
-// /// Check the attributes of a measure
-// [<return:Struct>]
-// let rec (|MeasureAttrib|_|) measure =
-//     match measure with
-//     | Measure.Const(tcref, _) -> ValueSome(tcref.Attribs)
-//     | Measure.Prod(measure1= MeasureAttrib ms1; measure2= MeasureAttrib ms2) -> ValueSome (ms1 @ ms2)
-//     | Measure.Inv(MeasureAttrib ms) -> ValueSome ms
-//     | Measure.One(m) -> ValueNone
-//     | Measure.RationalPower(measure = MeasureAttrib ms) -> ValueSome ms
-//     | Measure.Var _ -> ValueNone
-//     | _ -> ValueNone
 
 let rec CheckTypeDeep (cenv: cenv) (visitTy, visitTyconRefOpt, visitAppTyOpt, visitTraitSolutionOpt, visitTyparOpt as f) (g: TcGlobals) env (typeInstParentOpt:TypeInstCtx) ty =
     // We iterate the _solved_ constraints as well, to pick up any record of trait constraint solutions
@@ -398,25 +386,6 @@ let rec CheckTypeDeep (cenv: cenv) (visitTy, visitTyconRefOpt, visitAppTyOpt, vi
         tps |> List.iter (fun tp -> tp.Constraints |> List.iter (CheckTypeConstraintDeep cenv f g env))
 
     | TType_measure _ -> ()
-        // let checkAttribs tm m =
-        //     let attribs =
-        //         ListMeasureVarOccs tm
-        //         |> List.map(_.Attribs)
-        //         |> List.concat
-        //     CheckFSharpAttributes g attribs m |> CommitOperationResult
-        //
-        // match tm with
-        // | Measure.Const(range = m) -> checkAttribs tm m
-        // | Measure.Inv ms -> checkAttribs ms ms.Range
-        // | Measure.One(m) -> checkAttribs tm m
-        // | Measure.RationalPower(measure = ms1; range = m) -> checkAttribs ms1 m
-        // | Measure.Prod(ms1, ms2, m) ->
-        //     match ms1, ms2 with
-        //     | MeasureAttrib _, MeasureAttrib _ ->
-        //         checkAttribs ms1 ms1.Range
-        //         checkAttribs ms2 ms2.Range
-        //     | _ -> ()            
-        // | _ -> ()
 
     | TType_app (tcref, tinst, _) ->
         match visitTyconRefOpt with
