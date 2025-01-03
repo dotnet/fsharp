@@ -966,8 +966,8 @@ type TypeEquivEnv =
       NullnessMustEqual : bool}
 
 let private nullnessEqual anev (n1:Nullness) (n2:Nullness) =
-    if anev.NullnessMustEqual then
-        (n1.Evaluate()) = (n2.Evaluate())
+    if anev.NullnessMustEqual then        
+        (n1.Evaluate() = NullnessInfo.WithNull) = (n2.Evaluate() = NullnessInfo.WithNull)
     else 
         true
 
