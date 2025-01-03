@@ -122,7 +122,6 @@ $(PACKAGEREFERENCES)
             <NormalizedPathInPackage Condition="'%(__InteractiveReferencedAssemblies.PathInPackage)'!=''">$([System.String]::Copy('%(__InteractiveReferencedAssemblies.PathInPackage)').Replace('\', '/'))</NormalizedPathInPackage>
             <PositionPathInPackage Condition="'%(InteractiveResolvedFile.NormalizedPathInPackage)'!=''">$([System.String]::Copy('%(InteractiveResolvedFile.NormalizedIdentity)').IndexOf('%(InteractiveResolvedFile.NormalizedPathInPackage)'))</PositionPathInPackage>
             <PackageRoot Condition="'%(InteractiveResolvedFile.NormalizedPathInPackage)'!='' and '%(InteractiveResolvedFile.PositionPathInPackage)'!='-1'">$([System.String]::Copy('%(InteractiveResolvedFile.NormalizedIdentity)').Substring(0, %(InteractiveResolvedFile.PositionPathInPackage)).Replace('\', '/'))</PackageRoot>
-            <InitializeSourcePath Condition="Exists('%(InteractiveResolvedFile.PackageRoot)content\%(InteractiveResolvedFile.NugetPackageId)$(SCRIPTEXTENSION)')">%(InteractiveResolvedFile.PackageRoot)content\%(InteractiveResolvedFile.NugetPackageId)$(SCRIPTEXTENSION)</InitializeSourcePath>
             <IsNotImplementationReference>$([System.String]::Copy('%(__InteractiveReferencedAssemblies.PathInPackage)').StartsWith('ref/'))</IsNotImplementationReference>
             <NuGetPackageId>%(__InteractiveReferencedAssemblies.NuGetPackageId)</NuGetPackageId>
             <NuGetPackageVersion>%(__InteractiveReferencedAssemblies.NuGetPackageVersion)</NuGetPackageVersion>
@@ -133,10 +132,13 @@ $(PACKAGEREFERENCES)
             <NormalizedPathInPackage Condition="'%(__InteractiveReferencedAssembliesCopyLocal.PathInPackage)'!=''">$([System.String]::Copy('%(__InteractiveReferencedAssembliesCopyLocal.PathInPackage)').Replace('\', '/'))</NormalizedPathInPackage>
             <PositionPathInPackage Condition="'%(InteractiveResolvedFile.NormalizedPathInPackage)'!=''">$([System.String]::Copy('%(InteractiveResolvedFile.NormalizedIdentity)').IndexOf('%(InteractiveResolvedFile.NormalizedPathInPackage)'))</PositionPathInPackage>
             <PackageRoot Condition="'%(InteractiveResolvedFile.NormalizedPathInPackage)'!='' and '%(InteractiveResolvedFile.PositionPathInPackage)'!='-1'">$([System.String]::Copy('%(InteractiveResolvedFile.NormalizedIdentity)').Substring(0, %(InteractiveResolvedFile.PositionPathInPackage)).Replace('\', '/'))</PackageRoot>
-            <InitializeSourcePath Condition="Exists('%(__InteractiveReferencedAssembliesCopyLocal.PackageRoot)content\%(__InteractiveReferencedAssembliesCopyLocal.NugetPackageId)$(SCRIPTEXTENSION)')">%(__InteractiveReferencedAssembliesCopyLocal.PackageRoot)content\%(__InteractiveReferencedAssembliesCopyLocal.NugetPackageId)$(SCRIPTEXTENSION)</InitializeSourcePath>
             <IsNotImplementationReference>$([System.String]::Copy('%(__InteractiveReferencedAssembliesCopyLocal.PathInPackage)').StartsWith('ref/'))</IsNotImplementationReference>
             <NuGetPackageId>%(__InteractiveReferencedAssembliesCopyLocal.NuGetPackageId)</NuGetPackageId>
             <NuGetPackageVersion>%(__InteractiveReferencedAssembliesCopyLocal.NuGetPackageVersion)</NuGetPackageVersion>
+        </InteractiveResolvedFile>
+        
+        <InteractiveResolvedFile Update="*">
+            <InitializeSourcePath Condition="Exists('%(InteractiveResolvedFile.PackageRoot)content\%(InteractiveResolvedFile.NugetPackageId)$(SCRIPTEXTENSION)')">%(InteractiveResolvedFile.PackageRoot)content\%(InteractiveResolvedFile.NugetPackageId)$(SCRIPTEXTENSION)</InitializeSourcePath>
         </InteractiveResolvedFile>
 
         <NativeIncludeRoots
