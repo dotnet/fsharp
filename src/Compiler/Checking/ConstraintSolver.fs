@@ -1134,7 +1134,7 @@ and SolveTyparsEqualTypes (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
                 fun tpTy ty -> 
                     match tpTy with 
                     | TType_var (r, _)
-                    | TType_measure (Measure.Var(r)) ->
+                    | TType_measure (Measure.Var r) ->
                         SolveTyparEqualsTypePart2 csenv ndeep m2 trace r ty 
                     | _ ->
                         failwith "SolveTyparsEqualTypes") tpTys tys

@@ -798,7 +798,7 @@ let TcConst (cenv: cenv) (overallTy: TType) m env synConst =
     let g = cenv.g
     let rec tcMeasure ms =
         match ms with
-        | SynMeasure.One(range = m) -> Measure.One(m)
+        | SynMeasure.One m -> Measure.One m
         | SynMeasure.Named(tc, m) ->
             let ad = env.eAccessRights
             let _, tcref, _ = ForceRaise(ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurrence.Use OpenQualified env.eNameResEnv ad tc TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.No)
