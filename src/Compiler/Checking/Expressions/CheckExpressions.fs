@@ -2739,7 +2739,7 @@ let TcValEarlyGeneralizationConsistencyCheck (cenv: cenv) (env: TcEnv) (v: Val, 
 /// instantiationInfoOpt is is also set when building the final call for a reference to an
 /// F# object model member, in which case the instantiationInfoOpt is the type instantiation
 /// inferred by member overload resolution.
-let TcVal checkAttributes (cenv: cenv) env (tpenv: UnscopedTyparEnv) (vref: ValRef) instantiationInfoOpt optAfterResolution m =
+let TcVal (cenv: cenv) env (tpenv: UnscopedTyparEnv) (vref: ValRef) instantiationInfoOpt optAfterResolution m =
     let g = cenv.g
 
     let tpsorig, _, _, _, tinst, _ as res =
@@ -2749,8 +2749,7 @@ let TcVal checkAttributes (cenv: cenv) env (tpenv: UnscopedTyparEnv) (vref: ValR
 
         CheckValAccessible m env.eAccessRights vref
 
-        if checkAttributes then
-            CheckValAttributes g vref m |> CommitOperationResult
+        CheckValAttributes g vref m |> CommitOperationResult
 
         let vTy = vref.Type
 
@@ -3046,7 +3045,7 @@ let BuildPossiblyConditionalMethodCall (cenv: cenv) env isMutable m isProp minfo
         | _ ->
 #endif
         let tcVal valref valUse ttypes m =
-            let _, exprForVal, _, tau, _, _ = TcVal true cenv env emptyUnscopedTyparEnv valref (Some (valUse, (fun x _ -> ttypes, x))) None m
+            let _, exprForVal, _, tau, _, _ = TcVal cenv env emptyUnscopedTyparEnv valref (Some (valUse, (fun x _ -> ttypes, x))) None m
             exprForVal, tau
 
         BuildMethodCall tcVal g cenv.amap isMutable m isProp minfo valUseFlags minst objArgs args staticTyOpt
@@ -5164,7 +5163,7 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
     CallNameResolutionSink cenv.tcSink (mLongId, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Pattern, env.eAccessRights)
 
     // TOTAL/PARTIAL ACTIVE PATTERNS
-    let _, vExpr, _, _, tinst, _ = TcVal true cenv env tpenv vref None None m
+    let _, vExpr, _, _, tinst, _ = TcVal cenv env tpenv vref None None m
     let vExpr = MakeApplicableExprWithFlex cenv env vExpr
     let vExprTy = vExpr.Type
 
@@ -9259,7 +9258,7 @@ and TcValueItemThen cenv overallTy env vref tpenv mItem afterResolution delayed 
                 error (Error(FSComp.SR.expressionHasNoName(), mExprAndTypeArgs))
         | _ ->
         let checkTys tpenv kinds = TcTypesOrMeasures (Some kinds) cenv NewTyparsOK CheckCxs ItemOccurrence.UseInType env tpenv tys mItem
-        let _, vExpr, isSpecial, _, _, tpenv = TcVal true cenv env tpenv vref (Some (NormalValUse, checkTys)) (Some afterResolution) mItem
+        let _, vExpr, isSpecial, _, _, tpenv = TcVal cenv env tpenv vref (Some (NormalValUse, checkTys)) (Some afterResolution) mItem
 
         let vexpFlex = (if isSpecial then MakeApplicableExprNoFlex cenv vExpr else MakeApplicableExprWithFlex cenv env vExpr)
         // We need to eventually record the type resolution for an expression, but this is done
@@ -9268,7 +9267,7 @@ and TcValueItemThen cenv overallTy env vref tpenv mItem afterResolution delayed 
 
     // Value get
     | _ ->
-        let _, vExpr, isSpecial, _, _, tpenv = TcVal true cenv env tpenv vref None (Some afterResolution) mItem
+        let _, vExpr, isSpecial, _, _, tpenv = TcVal cenv env tpenv vref None (Some afterResolution) mItem
 
         let vExpr, tpenv =
             match vExpr with
