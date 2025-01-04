@@ -1540,7 +1540,7 @@ let p_measure_one = p_byte 4
 let p_measure_varcon unt st =
      match unt with
      | Measure.Const(tyconRef= tcref)   -> p_measure_con tcref st
-     | Measure.Var(typar= v)       -> p_measure_var v st
+     | Measure.Var v       -> p_measure_var v st
      | _                  -> pfailwith st "p_measure_varcon: expected measure variable or constructor"
 
 // Pickle a positive integer power of a unit-of-measure variable or constructor
@@ -1571,7 +1571,7 @@ let rec p_normalized_measure unt st =
      | Measure.Const(tyconRef= tcref)   -> p_measure_con tcref st
      | Measure.Inv x       -> p_byte 1 st; p_normalized_measure x st
      | Measure.Prod(measure1= x1; measure2= x2) -> p_byte 2 st; p_normalized_measure x1 st; p_normalized_measure x2 st
-     | Measure.Var(typar= v)       -> p_measure_var v st
+     | Measure.Var v       -> p_measure_var v st
      | Measure.One _         -> p_measure_one st
      | Measure.RationalPower(measure= x; power= q) -> p_measure_power x q st
 

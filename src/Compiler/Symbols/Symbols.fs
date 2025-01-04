@@ -2638,7 +2638,7 @@ type FSharpType(cenv, ty:TType) =
        protect <| fun () -> 
         match stripTyparEqns ty with 
         | TType_var (tp, _) 
-        | TType_measure (Measure.Var(typar= tp)) -> 
+        | TType_measure (Measure.Var tp) -> 
             FSharpGenericParameter (cenv, tp)
         | _ -> invalidOp "not a generic parameter type"
 

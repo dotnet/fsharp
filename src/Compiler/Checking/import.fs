@@ -557,8 +557,7 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
                         | TType_app (tcref, [ty1;ty2], _) when tyconRefEq g tcref g.measureproduct_tcr ->
                             let ms1: Measure = conv ty1
                             let ms2: Measure = conv ty2
-                            let m = unionRanges ms1.Range ms2.Range
-                            Measure.Prod(ms1, ms2, m)
+                            Measure.Prod(ms1, ms2, unionRanges ms1.Range ms2.Range)
                         | TType_app (tcref, [ty1], _) when tyconRefEq g tcref g.measureinverse_tcr -> Measure.Inv (conv ty1)
                         | TType_app (tcref, [], _) when tyconRefEq g tcref g.measureone_tcr -> Measure.One(tcref.Range)
                         | TType_app (tcref, [], _) when tcref.TypeOrMeasureKind = TyparKind.Measure -> Measure.Const(tcref, tcref.Range)

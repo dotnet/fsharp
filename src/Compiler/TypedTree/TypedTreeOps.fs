@@ -236,7 +236,7 @@ and remapMeasureAux tyenv unt =
     | Measure.Prod(u1, u2, m) -> Measure.Prod(remapMeasureAux tyenv u1, remapMeasureAux tyenv u2, m)
     | Measure.RationalPower(u, q) -> Measure.RationalPower(remapMeasureAux tyenv u, q)
     | Measure.Inv u -> Measure.Inv(remapMeasureAux tyenv u)
-    | Measure.Var(typar= tp) as unt -> 
+    | Measure.Var tp as unt -> 
        match tp.Solution with
        | None -> 
           match ListAssoc.tryFind typarEq tp tyenv.tpinst with
@@ -476,7 +476,7 @@ let rec MeasureConExponentAfterRemapping g r ucref unt =
 /// What is the contribution of unit-of-measure variable tp to unit-of-measure expression unt? 
 let rec MeasureVarExponent tp unt =
     match stripUnitEqnsFromMeasure unt with
-    | Measure.Var(typar= tpR) -> if typarEq tp tpR then OneRational else ZeroRational
+    | Measure.Var tpR -> if typarEq tp tpR then OneRational else ZeroRational
     | Measure.Inv untR -> NegRational(MeasureVarExponent tp untR)
     | Measure.Prod(measure1= unt1; measure2= unt2) -> AddRational(MeasureVarExponent tp unt1) (MeasureVarExponent tp unt2)
     | Measure.RationalPower(measure = untR; power= q) -> MulRational (MeasureVarExponent tp untR) q
@@ -486,7 +486,7 @@ let rec MeasureVarExponent tp unt =
 let ListMeasureVarOccs unt =
     let rec gather acc unt =  
         match stripUnitEqnsFromMeasure unt with
-        | Measure.Var(typar= tp) -> if List.exists (typarEq tp) acc then acc else tp :: acc
+        | Measure.Var tp -> if List.exists (typarEq tp) acc then acc else tp :: acc
         | Measure.Prod(measure1= unt1; measure2= unt2) -> gather (gather acc unt1) unt2
         | Measure.RationalPower(measure= untR) -> gather acc untR
         | Measure.Inv untR -> gather acc untR
@@ -497,7 +497,7 @@ let ListMeasureVarOccs unt =
 let ListMeasureVarOccsWithNonZeroExponents untexpr =
     let rec gather acc unt =  
         match stripUnitEqnsFromMeasure unt with
-        | Measure.Var(typar= tp) -> 
+        | Measure.Var tp -> 
             if List.exists (fun (tpR, _) -> typarEq tp tpR) acc then acc 
             else 
                 let e = MeasureVarExponent tp untexpr
@@ -545,7 +545,7 @@ let MeasureProdOpt m1 m2 =
     match m1, m2 with
     | Measure.One _, _ -> m2
     | _, Measure.One _ -> m1
-    | _, _ -> Measure.Prod (m1, m2, range0)
+    | _, _ -> Measure.Prod (m1, m2, unionRanges m1.Range m2.Range)
 
 /// Construct a measure expression representing the product of a list of measures
 let ProdMeasures ms = 
@@ -581,7 +581,7 @@ let normalizeMeasure g ms =
     let cs = ListMeasureConOccsWithNonZeroExponents g false ms
     match vs, cs with
     | [], [] -> Measure.One(ms.Range)
-    | [(v, e)], [] when e = OneRational -> Measure.Var(v)
+    | [(v, e)], [] when e = OneRational -> Measure.Var v
     | vs, cs ->
         List.foldBack
             (fun (v, e) ->
@@ -600,7 +600,7 @@ let normalizeMeasure g ms =
  
 let tryNormalizeMeasureInType g ty =
     match ty with
-    | TType_measure (Measure.Var(typar= v)) ->
+    | TType_measure (Measure.Var v) ->
         match v.Solution with
         | Some (TType_measure ms) ->
             v.typar_solution <- Some (TType_measure (normalizeMeasure g ms))

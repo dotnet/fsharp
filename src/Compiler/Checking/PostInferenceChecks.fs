@@ -7,8 +7,6 @@ module internal FSharp.Compiler.PostTypeCheckSemanticChecks
 open System
 open System.Collections.Generic
 
-open FSharp.Compiler.AttributeChecking
-open FSharp.Compiler.NameResolution
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
