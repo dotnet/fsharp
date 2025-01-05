@@ -10,8 +10,6 @@ open FSharp.Compiler.DiagnosticsLogger
 
 [<AutoOpen>]
 module internal ConsoleHelpers =
-
-
 type internal Style =
     | Prompt
     | Out
