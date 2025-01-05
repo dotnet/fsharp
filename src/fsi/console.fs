@@ -8,8 +8,6 @@ open System.Collections.Generic
 open System.Runtime.InteropServices
 open FSharp.Compiler.DiagnosticsLogger
 
-[<AutoOpen>]
-module internal ConsoleHelpers =
 type internal Style =
     | Prompt
     | Out
