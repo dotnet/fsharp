@@ -1,3 +1,4 @@
+#!/usr/bin/env perl
 # workaround for Windows 8 issue with stream redirection
 # my $dir = `cd`;
 system "cd > cd.tmp";
