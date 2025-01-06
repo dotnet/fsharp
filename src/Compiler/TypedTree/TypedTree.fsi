@@ -4297,6 +4297,12 @@ type PickledCcuInfo =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member DebugText: string
 
+type PickledTcInfo =
+    { MainMethodAttrs: Attribs
+      NetModuleAttrs: Attribs
+      AssemblyAttrs: Attribs
+      DeclaredImpls: CheckedImplFile list }
+
 /// Represents a set of free local values. Computed type cached by later phases
 /// (never cached type checking). Cached in expressions. Not pickled.
 type FreeLocals = Zset<Val>
